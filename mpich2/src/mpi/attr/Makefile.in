@@ -28,6 +28,7 @@ CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 
 VPATH = .:@srcdir@
+DOCTEXT         = @DOCTEXT@
 mpi_sources = attr_delete.c attr_get.c attr_put.c \
  comm_create_keyval.c comm_delete_attr.c comm_free_keyval.c \
  comm_get_attr.c comm_set_attr.c keyval_create.c keyval_free.c \
@@ -38,30 +39,62 @@ HEADERS = attr.h
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c 
+.SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
 	$(C_COMPILE) -c $<
 .c.lo:
 	$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+.c.man:
+	$(DOCTEXT) -man -mpath ../../../man/man3 -ext 3 -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.html:
+	$(DOCTEXT) -html -mpath ../../../www/www3  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.latex:
+	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=. \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=src/mpi/attr/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 .libstamp2 .libstamp3 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
 	    ${MAKE} .libstamp2 ; \
@@ -193,7 +226,116 @@ _win_set_attr.o: win_set_attr.c
 _win_set_attr.lo: win_set_attr.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_attr.c -o _win_set_attr.lo
 # --------------------------------------------------------------------------
+coverage: 
+	-@for file in ${mpi_sources} attrutil.c dup_fn.c  ; do \
+		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
+mandoc: ${mpi_sources:.c=.man}
+htmldoc: ${mpi_sources:.c=.html}
+latexdoc: ${mpi_sources:.c=.latex}
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+$(DEPS_DIR)/attr_delete.d: $(srcdir)/attr_delete.c
+	$(MAKE_DEPEND_C) -MT '_attr_delete.o attr_delete.o' $(srcdir)/attr_delete.c >$(DEPS_DIR)/attr_delete.d
+$(DEPS_DIR)/attr_get.d: $(srcdir)/attr_get.c
+	$(MAKE_DEPEND_C) -MT '_attr_get.o attr_get.o' $(srcdir)/attr_get.c >$(DEPS_DIR)/attr_get.d
+$(DEPS_DIR)/attr_put.d: $(srcdir)/attr_put.c
+	$(MAKE_DEPEND_C) -MT '_attr_put.o attr_put.o' $(srcdir)/attr_put.c >$(DEPS_DIR)/attr_put.d
+$(DEPS_DIR)/comm_create_keyval.d: $(srcdir)/comm_create_keyval.c
+	$(MAKE_DEPEND_C) -MT '_comm_create_keyval.o comm_create_keyval.o' $(srcdir)/comm_create_keyval.c >$(DEPS_DIR)/comm_create_keyval.d
+$(DEPS_DIR)/comm_delete_attr.d: $(srcdir)/comm_delete_attr.c
+	$(MAKE_DEPEND_C) -MT '_comm_delete_attr.o comm_delete_attr.o' $(srcdir)/comm_delete_attr.c >$(DEPS_DIR)/comm_delete_attr.d
+$(DEPS_DIR)/comm_free_keyval.d: $(srcdir)/comm_free_keyval.c
+	$(MAKE_DEPEND_C) -MT '_comm_free_keyval.o comm_free_keyval.o' $(srcdir)/comm_free_keyval.c >$(DEPS_DIR)/comm_free_keyval.d
+$(DEPS_DIR)/comm_get_attr.d: $(srcdir)/comm_get_attr.c
+	$(MAKE_DEPEND_C) -MT '_comm_get_attr.o comm_get_attr.o' $(srcdir)/comm_get_attr.c >$(DEPS_DIR)/comm_get_attr.d
+$(DEPS_DIR)/comm_set_attr.d: $(srcdir)/comm_set_attr.c
+	$(MAKE_DEPEND_C) -MT '_comm_set_attr.o comm_set_attr.o' $(srcdir)/comm_set_attr.c >$(DEPS_DIR)/comm_set_attr.d
+$(DEPS_DIR)/keyval_create.d: $(srcdir)/keyval_create.c
+	$(MAKE_DEPEND_C) -MT '_keyval_create.o keyval_create.o' $(srcdir)/keyval_create.c >$(DEPS_DIR)/keyval_create.d
+$(DEPS_DIR)/keyval_free.d: $(srcdir)/keyval_free.c
+	$(MAKE_DEPEND_C) -MT '_keyval_free.o keyval_free.o' $(srcdir)/keyval_free.c >$(DEPS_DIR)/keyval_free.d
+$(DEPS_DIR)/type_create_keyval.d: $(srcdir)/type_create_keyval.c
+	$(MAKE_DEPEND_C) -MT '_type_create_keyval.o type_create_keyval.o' $(srcdir)/type_create_keyval.c >$(DEPS_DIR)/type_create_keyval.d
+$(DEPS_DIR)/type_delete_attr.d: $(srcdir)/type_delete_attr.c
+	$(MAKE_DEPEND_C) -MT '_type_delete_attr.o type_delete_attr.o' $(srcdir)/type_delete_attr.c >$(DEPS_DIR)/type_delete_attr.d
+$(DEPS_DIR)/type_free_keyval.d: $(srcdir)/type_free_keyval.c
+	$(MAKE_DEPEND_C) -MT '_type_free_keyval.o type_free_keyval.o' $(srcdir)/type_free_keyval.c >$(DEPS_DIR)/type_free_keyval.d
+$(DEPS_DIR)/type_get_attr.d: $(srcdir)/type_get_attr.c
+	$(MAKE_DEPEND_C) -MT '_type_get_attr.o type_get_attr.o' $(srcdir)/type_get_attr.c >$(DEPS_DIR)/type_get_attr.d
+$(DEPS_DIR)/type_set_attr.d: $(srcdir)/type_set_attr.c
+	$(MAKE_DEPEND_C) -MT '_type_set_attr.o type_set_attr.o' $(srcdir)/type_set_attr.c >$(DEPS_DIR)/type_set_attr.d
+$(DEPS_DIR)/win_create_keyval.d: $(srcdir)/win_create_keyval.c
+	$(MAKE_DEPEND_C) -MT '_win_create_keyval.o win_create_keyval.o' $(srcdir)/win_create_keyval.c >$(DEPS_DIR)/win_create_keyval.d
+$(DEPS_DIR)/win_delete_attr.d: $(srcdir)/win_delete_attr.c
+	$(MAKE_DEPEND_C) -MT '_win_delete_attr.o win_delete_attr.o' $(srcdir)/win_delete_attr.c >$(DEPS_DIR)/win_delete_attr.d
+$(DEPS_DIR)/win_free_keyval.d: $(srcdir)/win_free_keyval.c
+	$(MAKE_DEPEND_C) -MT '_win_free_keyval.o win_free_keyval.o' $(srcdir)/win_free_keyval.c >$(DEPS_DIR)/win_free_keyval.d
+$(DEPS_DIR)/win_get_attr.d: $(srcdir)/win_get_attr.c
+	$(MAKE_DEPEND_C) -MT '_win_get_attr.o win_get_attr.o' $(srcdir)/win_get_attr.c >$(DEPS_DIR)/win_get_attr.d
+$(DEPS_DIR)/win_set_attr.d: $(srcdir)/win_set_attr.c
+	$(MAKE_DEPEND_C) -MT '_win_set_attr.o win_set_attr.o' $(srcdir)/win_set_attr.c >$(DEPS_DIR)/win_set_attr.d
+$(DEPS_DIR)/attrutil.d: $(srcdir)/attrutil.c
+	$(MAKE_DEPEND_C) -MT '_attrutil.o attrutil.o' $(srcdir)/attrutil.c >$(DEPS_DIR)/attrutil.d
+$(DEPS_DIR)/dup_fn.d: $(srcdir)/dup_fn.c
+	$(MAKE_DEPEND_C) -MT '_dup_fn.o dup_fn.o' $(srcdir)/dup_fn.c >$(DEPS_DIR)/dup_fn.d
+$(DEPS_DIR)/timestamp: ${mpi_sources} attrutil.c dup_fn.c  Makefile
+	rm -f $(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_attr_delete.o attr_delete.o' $(srcdir)/attr_delete.c >$(DEPS_DIR)/attr_delete.d
+	echo "include $(DEPS_DIR)/attr_delete.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_attr_get.o attr_get.o' $(srcdir)/attr_get.c >$(DEPS_DIR)/attr_get.d
+	echo "include $(DEPS_DIR)/attr_get.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_attr_put.o attr_put.o' $(srcdir)/attr_put.c >$(DEPS_DIR)/attr_put.d
+	echo "include $(DEPS_DIR)/attr_put.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_create_keyval.o comm_create_keyval.o' $(srcdir)/comm_create_keyval.c >$(DEPS_DIR)/comm_create_keyval.d
+	echo "include $(DEPS_DIR)/comm_create_keyval.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_delete_attr.o comm_delete_attr.o' $(srcdir)/comm_delete_attr.c >$(DEPS_DIR)/comm_delete_attr.d
+	echo "include $(DEPS_DIR)/comm_delete_attr.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_free_keyval.o comm_free_keyval.o' $(srcdir)/comm_free_keyval.c >$(DEPS_DIR)/comm_free_keyval.d
+	echo "include $(DEPS_DIR)/comm_free_keyval.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_get_attr.o comm_get_attr.o' $(srcdir)/comm_get_attr.c >$(DEPS_DIR)/comm_get_attr.d
+	echo "include $(DEPS_DIR)/comm_get_attr.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_set_attr.o comm_set_attr.o' $(srcdir)/comm_set_attr.c >$(DEPS_DIR)/comm_set_attr.d
+	echo "include $(DEPS_DIR)/comm_set_attr.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_keyval_create.o keyval_create.o' $(srcdir)/keyval_create.c >$(DEPS_DIR)/keyval_create.d
+	echo "include $(DEPS_DIR)/keyval_create.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_keyval_free.o keyval_free.o' $(srcdir)/keyval_free.c >$(DEPS_DIR)/keyval_free.d
+	echo "include $(DEPS_DIR)/keyval_free.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_create_keyval.o type_create_keyval.o' $(srcdir)/type_create_keyval.c >$(DEPS_DIR)/type_create_keyval.d
+	echo "include $(DEPS_DIR)/type_create_keyval.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_delete_attr.o type_delete_attr.o' $(srcdir)/type_delete_attr.c >$(DEPS_DIR)/type_delete_attr.d
+	echo "include $(DEPS_DIR)/type_delete_attr.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_free_keyval.o type_free_keyval.o' $(srcdir)/type_free_keyval.c >$(DEPS_DIR)/type_free_keyval.d
+	echo "include $(DEPS_DIR)/type_free_keyval.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_get_attr.o type_get_attr.o' $(srcdir)/type_get_attr.c >$(DEPS_DIR)/type_get_attr.d
+	echo "include $(DEPS_DIR)/type_get_attr.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_set_attr.o type_set_attr.o' $(srcdir)/type_set_attr.c >$(DEPS_DIR)/type_set_attr.d
+	echo "include $(DEPS_DIR)/type_set_attr.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_win_create_keyval.o win_create_keyval.o' $(srcdir)/win_create_keyval.c >$(DEPS_DIR)/win_create_keyval.d
+	echo "include $(DEPS_DIR)/win_create_keyval.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_win_delete_attr.o win_delete_attr.o' $(srcdir)/win_delete_attr.c >$(DEPS_DIR)/win_delete_attr.d
+	echo "include $(DEPS_DIR)/win_delete_attr.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_win_free_keyval.o win_free_keyval.o' $(srcdir)/win_free_keyval.c >$(DEPS_DIR)/win_free_keyval.d
+	echo "include $(DEPS_DIR)/win_free_keyval.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_win_get_attr.o win_get_attr.o' $(srcdir)/win_get_attr.c >$(DEPS_DIR)/win_get_attr.d
+	echo "include $(DEPS_DIR)/win_get_attr.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_win_set_attr.o win_set_attr.o' $(srcdir)/win_set_attr.c >$(DEPS_DIR)/win_set_attr.d
+	echo "include $(DEPS_DIR)/win_set_attr.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_attrutil.o attrutil.o' $(srcdir)/attrutil.c >$(DEPS_DIR)/attrutil.d
+	echo "include $(DEPS_DIR)/attrutil.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_dup_fn.o dup_fn.o' $(srcdir)/dup_fn.c >$(DEPS_DIR)/dup_fn.d
+	echo "include $(DEPS_DIR)/dup_fn.d" >>$(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  attr_delete.c attr_get.c attr_put.c comm_create_keyval.c \

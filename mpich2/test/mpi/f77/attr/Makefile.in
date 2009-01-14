@@ -25,11 +25,28 @@ F77INCLUDES = -I.
 F77HEADERS = attraints.h
 
 .SUFFIXES:
-.SUFFIXES: .o .f 
+.SUFFIXES: .o .f .txt 
 .f.o:
 	$(F77_COMPILE) -c $<
 .f:
 	$(F77_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../../ \
+	-configdir=test/mpi/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=f77/attr/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
@@ -37,6 +54,9 @@ clean:
 	-@rm -f typeattrf.exe baseattr2f.exe baseattrf.exe commattrf.exe commattr2f.exe commattr3f.exe typeattr3f.exe typeattr2f.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -44,13 +64,15 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: baseattrf baseattr2f commattrf commattr2f commattr3f typeattrf\
 	 typeattr2f typeattr3f
 
+coverage: 
 typeattrf: typeattrf.o   @MPILIBLOC@ ../util/mtestf.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o typeattrf typeattrf.o  ${LIBS}
 baseattr2f: baseattr2f.o   @MPILIBLOC@ ../util/mtestf.o
@@ -68,6 +90,16 @@ typeattr3f: typeattr3f.o   @MPILIBLOC@ ../util/mtestf.o
 typeattr2f: typeattr2f.o   @MPILIBLOC@ ../util/mtestf.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o typeattr2f typeattr2f.o  ${LIBS}
 # --------------------------------------------------------------------------
+htmldoc:
+mandoc:
+latexdoc:
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  baseattrf.f baseattr2f.f commattrf.f commattr2f.f \

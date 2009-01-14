@@ -310,7 +310,7 @@ ac_includes_default="\
 #endif"
 
 ac_subdirs_all="$ac_subdirs_all test/mpi"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS RELEASE_DATE CONFIGURE_ARGS_CLEAN NUMVERSION VERSION ABIVERSION CONFIGURE_ARGUMENTS MPIFLIBNAME PMPIFLIBNAME FWRAPNAME htmldir docdir master_top_builddir master_top_srcdir DEVICE DEVICE_NAME DEVICE_ARGS INCLUDE_MPIDDEFS_H MPICXXLIBNAME logging_dir logging_name logging_subdirs debugger_dir romio_dir HAVE_ROMIO device_name MANY_PM pm_name other_pm_names pmi_name mpe_dir other_install_dirs CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CREATESHLIB NEEDSPLIB NO_WEAK_SYM NO_WEAK_SYM_TARGET PROFILE_DEF_MPI F77 FFLAGS ac_ct_F77 FLIBS F77_NAME_MANGLE F77_OTHER_LIBS F90 F90FLAGS ac_ct_F90 F77_INCDIR FINCLUDES F77_LIBDIR_LEADER MPIFPMPI F77_IN_C_LIBS FC_SHL FC_LINKPATH_SHL F77CPP F90MODEXT F90_WORK_FILES_ARG F90MODINCFLAG F90MODINCSPEC MPIMODNAME MPICONSTMODNAME MPISIZEOFMODNAME MPIBASEMODNAME modincdir F90INC F90INCFLAG F90EXT F90CPP F90_OTHER_LIBS F90_SHL F90_LINKPATH_SHL CXX CXXFLAGS ac_ct_CXX HAVE_CXX_EXCEPTIONS CXX_DEFS CXX_SHL CXX_LINKPATH_SHL GNUC_VERSION GNUC_MINORVERSION INCLUDE_MPICXX_H FORTRAN_BINDING MPIR_CXX_BOOL MPIR_CXX_COMPLEX MPIR_CXX_DOUBLE_COMPLEX MPIR_CXX_LONG_DOUBLE_COMPLEX bindings bindings_dirs FC PERL AR RANLIB ETAGS ETAGSADD KILLALL XARGS_NODATA_OPT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA ac_ct_RANLIB RANLIB_AFTER_INSTALL MKDIR_P MAKE VPATH SET_CFLAGS SET_MAKE BASH BUILD_BASH_SCRIPTS CPP BUILD_DLLS CC_SHL C_LINK_SHL C_LINKPATH_SHL SHLIB_EXT SHLIB_FROM_LO SHLIB_INSTALL ENABLE_SHLIB pac_prog LIBTOOL BUILD_TVDLL CC_SHL_DBG C_LINK_SHL_DBG nameserv_name DOCTEXT DOCTEXTSTYLE MAKE_DEPEND_C GCC EGREP INT16_T INT32_T INT64_T MPI_CHAR MPI_UNSIGNED_CHAR MPI_SHORT MPI_UNSIGNED_SHORT MPI_INT MPI_UNSIGNED_INT MPI_LONG MPI_UNSIGNED_LONG MPI_LONG_LONG MPI_FLOAT MPI_DOUBLE MPI_LONG_DOUBLE MPI_BYTE MPI_WCHAR MPI_PACKED MPI_LB MPI_UB MPI_FLOAT_INT MPI_DOUBLE_INT MPI_LONG_INT MPI_SHORT_INT MPI_2INT MPI_LONG_DOUBLE_INT MPI_SIGNED_CHAR MPI_UNSIGNED_LONG_LONG MPI_REAL4 MPI_REAL8 MPI_REAL16 MPI_COMPLEX8 MPI_COMPLEX16 MPI_COMPLEX32 MPI_INTEGER1 MPI_INTEGER2 MPI_INTEGER4 MPI_INTEGER8 MPI_INTEGER16 MPI_CHARACTER MPI_INTEGER MPI_REAL MPI_LOGICAL MPI_COMPLEX MPI_DOUBLE_PRECISION MPI_2INTEGER MPI_2REAL MPI_DOUBLE_COMPLEX MPI_2DOUBLE_PRECISION MPI_2COMPLEX MPI_2DOUBLE_COMPLEX MPI_F77_PACKED MPI_F77_UB MPI_F77_LB MPI_F77_BYTE F77_INTEGER1 F77_INTEGER2 F77_INTEGER4 F77_INTEGER8 F77_INTEGER16 F77_REAL4 F77_REAL8 F77_REAL16 F77_COMPLEX8 F77_COMPLEX16 F77_COMPLEX32 SIZEOF_MPI_STATUS MPI_STATUS_SIZE TESTCPP ADDRESS_KIND OFFSET_KIND DLLIMPORT SIZEOF_F90_INTEGER SIZEOF_F90_REAL SIZEOF_F90_DOUBLE_PRECISION SIZEOF_F90_CHARACTER REQD CXXCPP BSEND_OVERHEAD ALLOCA MPID_TIMER_TYPE MPICH_TIMER_KIND MPILIBNAME PMPILIBNAME MPI_AINT THR_DEFS THR_CFLAGS THR_CPPFLAGS THR_LDFLAGS THR_LIBS MPE_THREAD_LIB_NAME subsystems MPI_FINT MPI_OFFSET MPI_OFFSET_TYPEDEF FORTRAN_MPI_OFFSET EXTRA_STATUS_DECL MPI_MAX_PROCESSOR_NAME EXAMPLE_LIBS MPI_CFLAGS MPI_FFLAGS MPI_CXXFLAGS MPI_F90FLAGS MPI_LDFLAGS MPIU_DLL_SPEC_DEF MPICVSHOME EXTERNAL_SRC_DIRS subdirs MPICC MPICXX MPIF77 MPIF90 LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CONFIGURE_ARGS_CLEAN RELEASE_DATE NUMVERSION VERSION ABIVERSION CONFIGURE_ARGUMENTS MPIFLIBNAME PMPIFLIBNAME FWRAPNAME htmldir docdir master_top_builddir master_top_srcdir DEVICE DEVICE_NAME DEVICE_ARGS INCLUDE_MPIDDEFS_H MPICXXLIBNAME logging_dir logging_name logging_subdirs debugger_dir romio_dir HAVE_ROMIO device_name MANY_PM pm_name other_pm_names pmi_name mpe_dir other_install_dirs CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CREATESHLIB NEEDSPLIB NO_WEAK_SYM NO_WEAK_SYM_TARGET PROFILE_DEF_MPI F77 FFLAGS ac_ct_F77 FLIBS F77_NAME_MANGLE F77_OTHER_LIBS F90 F90FLAGS ac_ct_F90 F77_INCDIR FINCLUDES F77_LIBDIR_LEADER MPIFPMPI F77_IN_C_LIBS FC_SHL FC_LINKPATH_SHL F77CPP F90MODEXT F90_WORK_FILES_ARG F90MODINCFLAG F90MODINCSPEC MPIMODNAME MPICONSTMODNAME MPISIZEOFMODNAME MPIBASEMODNAME modincdir F90INC F90INCFLAG F90EXT F90CPP F90_OTHER_LIBS F90_SHL F90_LINKPATH_SHL CXX CXXFLAGS ac_ct_CXX HAVE_CXX_EXCEPTIONS CXX_DEFS CXX_SHL CXX_LINKPATH_SHL GNUC_VERSION GNUC_MINORVERSION INCLUDE_MPICXX_H FORTRAN_BINDING MPIR_CXX_BOOL MPIR_CXX_COMPLEX MPIR_CXX_DOUBLE_COMPLEX MPIR_CXX_LONG_DOUBLE_COMPLEX bindings bindings_dirs FC PERL AR RANLIB ETAGS ETAGSADD KILLALL XARGS_NODATA_OPT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA ac_ct_RANLIB RANLIB_AFTER_INSTALL MKDIR_P MAKE VPATH SET_CFLAGS SET_MAKE BASH BUILD_BASH_SCRIPTS CPP BUILD_DLLS CC_SHL C_LINK_SHL C_LINKPATH_SHL SHLIB_EXT SHLIB_FROM_LO SHLIB_INSTALL ENABLE_SHLIB pac_prog LIBTOOL BUILD_TVDLL CC_SHL_DBG C_LINK_SHL_DBG nameserv_name DOCTEXT DOCTEXTSTYLE MAKE_DEPEND_C GCC EGREP INT16_T INT32_T INT64_T MPI_CHAR MPI_UNSIGNED_CHAR MPI_SHORT MPI_UNSIGNED_SHORT MPI_INT MPI_UNSIGNED_INT MPI_LONG MPI_UNSIGNED_LONG MPI_LONG_LONG MPI_FLOAT MPI_DOUBLE MPI_LONG_DOUBLE MPI_BYTE MPI_WCHAR MPI_PACKED MPI_LB MPI_UB MPI_FLOAT_INT MPI_DOUBLE_INT MPI_LONG_INT MPI_SHORT_INT MPI_2INT MPI_LONG_DOUBLE_INT MPI_SIGNED_CHAR MPI_UNSIGNED_LONG_LONG MPI_REAL4 MPI_REAL8 MPI_REAL16 MPI_COMPLEX8 MPI_COMPLEX16 MPI_COMPLEX32 MPI_INTEGER1 MPI_INTEGER2 MPI_INTEGER4 MPI_INTEGER8 MPI_INTEGER16 MPI_CHARACTER MPI_INTEGER MPI_REAL MPI_LOGICAL MPI_COMPLEX MPI_DOUBLE_PRECISION MPI_2INTEGER MPI_2REAL MPI_DOUBLE_COMPLEX MPI_2DOUBLE_PRECISION MPI_2COMPLEX MPI_2DOUBLE_COMPLEX MPI_F77_PACKED MPI_F77_UB MPI_F77_LB MPI_F77_BYTE F77_INTEGER1 F77_INTEGER2 F77_INTEGER4 F77_INTEGER8 F77_INTEGER16 F77_REAL4 F77_REAL8 F77_REAL16 F77_COMPLEX8 F77_COMPLEX16 F77_COMPLEX32 SIZEOF_MPI_STATUS MPI_STATUS_SIZE TESTCPP ADDRESS_KIND OFFSET_KIND DLLIMPORT SIZEOF_F90_INTEGER SIZEOF_F90_REAL SIZEOF_F90_DOUBLE_PRECISION SIZEOF_F90_CHARACTER REQD CXXCPP BSEND_OVERHEAD ALLOCA MPID_TIMER_TYPE MPICH_TIMER_KIND MPILIBNAME PMPILIBNAME MPI_AINT MPI_AINT_FMT_DEC_SPEC MPI_AINT_FMT_HEX_SPEC THR_DEFS THR_CFLAGS THR_CPPFLAGS THR_LDFLAGS THR_LIBS MPE_THREAD_LIB_NAME subsystems MPI_FINT MPI_OFFSET MPI_OFFSET_TYPEDEF FORTRAN_MPI_OFFSET EXTRA_STATUS_DECL MPI_MAX_PROCESSOR_NAME EXAMPLE_LIBS MPI_CFLAGS MPI_FFLAGS MPI_CXXFLAGS MPI_F90FLAGS MPI_LDFLAGS MPIU_DLL_SPEC_DEF MPISVNHOME EXTERNAL_SRC_DIRS subdirs MPICC MPICXX MPIF77 MPIF90 LIBOBJS LTLIBOBJS'
 ac_subst_files='MPE_THREAD_TYPEDEFS MPE_THREAD_FUNCS'
 
 # Initialize some variables set by options.
@@ -922,6 +922,7 @@ implementation.  option may be a list of common separated names including
     all      - All of the above choices
 --enable-fast - pick the appropriate options for fast execution.  This
                 turns off error checking and timing collection
+--enable-ndebug - Set NDEBUG and disable asserts
 --enable-f77 - Enable Fortran 77 bindings
 --enable-f90 - Enable Fortran 90 bindings
 --enable-cxx - Enable C++ bindings
@@ -967,6 +968,7 @@ for MPI_Wtime and internal timestamps.  name may be one of
     linux86_cycle - Linux x86; returns cycle counts, not time in seconds*
     linuxalpha_cycle - Like linux86_cycle, but for Linux Alpha*
     gcc_ia64_cycle - IPF ar.itc timer*
+    device - The timer is provided by the device
        *Note that the cycle timers are intended to be used by MPICH2
         developers for internal low-level timing.  Normal users should
         not use these as they are not guaranteed to be accurate in
@@ -1574,12 +1576,11 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-# Try to find the version
-if test -s "$srcdir/maint/Version" ; then
-    VERSION="`cat $srcdir/maint/Version`"
-else
-    VERSION="1.0.6"
-fi
+
+CONFIGURE_ARGS_CLEAN=`echo $* | tr '"' ' '`
+
+
+# Try to find the release date
 if test -s "$srcdir/maint/ReleaseDate" ; then
     RELEASE_DATE="`cat $srcdir/maint/ReleaseDate`"
 else
@@ -1587,19 +1588,58 @@ else
 fi
 
 
-CONFIGURE_ARGS_CLEAN=`echo $* | tr '"' ' '`
+# Try to find the version
+if test -s "$srcdir/maint/Version" ; then
+    VERSION="`cat $srcdir/maint/Version`"
+else
+    { { echo "$as_me:$LINENO: error: Version information not found. Configuration aborted." >&5
+echo "$as_me: error: Version information not found. Configuration aborted." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 
-# Produce a numeric version assuming that the version is of the form
-# x.yy.zz, prefixing zeros for single digit verison numbers
-
-V1=`expr $VERSION : '\([0-9]*\)\..*'`
-V2=`expr $VERSION : '[0-9]*\.\([0-9]*\)\..*'`
-V3=`expr $VERSION : '[0-9]*\.[0-9]*\.\([0-9]*\)'`
-
+# Produce a numeric version assuming the following format:
+# Version: [MAJ].[MIN].[REV][EXT][EXT_NUMBER]
+# Example: 1.0.7rc1 has
+#          MAJ = 1
+#          MIN = 0
+#          REV = 7
+#          EXT = rc
+#          EXT_NUMBER = 1
 #
-if test "$V2" -lt 9 ; then V2=0$V2 ; fi
-if test "$V3" -lt 9 ; then V3=0$V3 ; fi
-NUMVERSION=$V1$V2$V3
+# Converting to numeric version will convert EXT to a format number:
+#          ALPHA (a) = 0
+#          BETA (b)  = 1
+#          RC (rc)   = 2
+#          PATCH (p) = 3
+# Regular releases are treated as patch 0
+#
+# Numeric version will have 1 digit for MAJ, 2 digits for MIN,
+# 2 digits for REV, 1 digit for EXT and 1 digit for EXT_NUMBER.
+
+V1=`expr $VERSION : '\([0-9]*\)\.[0-9]*\.[0-9]*[a-zA-Z]*[0-9]*'`
+V2=`expr $VERSION : '[0-9]*\.\([0-9]*\)\.[0-9]*[a-zA-Z]*[0-9]*'`
+V3=`expr $VERSION : '[0-9]*\.[0-9]*\.\([0-9]*\)[a-zA-Z]*[0-9]*'`
+V4=`expr $VERSION : '[0-9]*\.[0-9]*\.[0-9]*\([a-zA-Z]*\)[0-9]*'`
+V5=`expr $VERSION : '[0-9]*\.[0-9]*\.[0-9]*[a-zA-Z]*\([0-9]*\)'`
+
+
+if test "$V2" -le 9 ; then V2=0$V2 ; fi
+if test "$V3" -le 9 ; then V3=0$V3 ; fi
+if test "$V4" = "a" ; then
+    V4=0
+elif test "$V4" = "b" ; then
+    V4=1
+elif test "$V4" = "rc" ; then
+    V4=2
+elif test "$V4" = "" ; then
+    V4=3
+    V5=0
+elif test "$V4" = "p" ; then
+    V4=3
+fi
+if test "$V5" -le 9 ; then V5=0$V5 ; fi
+
+NUMVERSION=$V1$V2$V3$V4$V5
 
 
 
@@ -1732,6 +1772,23 @@ if test "${enable_fast+set}" = set; then
 else
   enable_fast=no
 fi;
+
+# Check whether --enable-ndebug or --disable-ndebug was given.
+if test "${enable_ndebug+set}" = set; then
+  enableval="$enable_ndebug"
+  enable_ndebug=$enableval
+else
+  enable_ndebug=no
+fi;
+
+if test "$enable_ndebug" = "yes" ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define NDEBUG 1
+_ACEOF
+
+fi
+
 # Check whether --enable-f77 or --disable-f77 was given.
 if test "${enable_f77+set}" = set; then
   enableval="$enable_f77"
@@ -2699,21 +2756,6 @@ if test "$enable_romio" = "yes" ; then HAVE_ROMIO='#include "mpio.h"'; fi
    else
        { echo "$as_me:$LINENO: WARNING: ROMIO src directory is not available" >&5
 echo "$as_me: WARNING: ROMIO src directory is not available" >&2;}
-       # Check for local developers
-       if test -d /home/MPI/cvsMaster/romio -o -d /homes/MPI/cvsMaster/romio ; then
-           { echo "$as_me:$LINENO: WARNING: You need to check ROMIO out with
-          cd $use_top_srcdir/src/mpi
-          cvs -d /home/MPI/cvsMaster checkout romio
-	  followed by
-	  cd ../.. && maint/updatefiles
-          " >&5
-echo "$as_me: WARNING: You need to check ROMIO out with
-          cd $use_top_srcdir/src/mpi
-          cvs -d /home/MPI/cvsMaster checkout romio
-	  followed by
-	  cd ../.. && maint/updatefiles
-          " >&2;}
-       fi
    fi
 fi
 #
@@ -4839,7 +4881,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4842:" \
+echo "$as_me:4884:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5080,7 +5122,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5083:" \
+echo "$as_me:5125:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5333,7 +5375,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5336: \"$ac_link\") >&5
+(eval echo $as_me:5378: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5411,7 +5453,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5414: \"$ac_link\") >&5
+(eval echo $as_me:5456: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7011,7 +7053,7 @@ echo "${ECHO_T}unknown!" >&6
     rm -f conftest*
 fi
 # Provide some information about the compiler.
-echo "$as_me:7014:" \
+echo "$as_me:7056:" \
      "checking for Fortran 90 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7249,7 +7291,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:7252:" \
+echo "$as_me:7294:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -8448,7 +8490,7 @@ echo "${ECHO_T}unknown!" >&6
     rm -f conftest*
 fi
 # Provide some information about the compiler.
-echo "$as_me:8451:" \
+echo "$as_me:8493:" \
      "checking for Fortran 90 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -11607,7 +11649,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 11610 "configure"
+#line 11652 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -13687,7 +13729,7 @@ if test "${pac_cv_c_max_integer_align+set}" = set; then
 else
 
 if test "$cross_compiling" = yes; then
-  pac_cv_c_max_integer_align="$CROSS_STRUCT_INT_ALIGN"
+  pac_cv_c_max_integer_align="$CROSS_ALIGN_STRUCT_INT"
 else
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -13871,7 +13913,7 @@ if test "${pac_cv_c_max_fp_align+set}" = set; then
 else
 
 if test "$cross_compiling" = yes; then
-  pac_cv_c_max_fp_align="$CROSS_STRUCT_FP_ALIGN"
+  pac_cv_c_max_fp_align="$CROSS_ALIGN_STRUCT_FP"
 else
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -14037,7 +14079,7 @@ if test "${pac_cv_c_max_double_fp_align+set}" = set; then
 else
 
 if test "$cross_compiling" = yes; then
-  pac_cv_c_max_double_fp_align="$CROSS_STRUCT_FP_ALIGN"
+  pac_cv_c_max_double_fp_align="$CROSS_ALIGN_STRUCT_DOUBLE_FP"
 else
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -14144,7 +14186,7 @@ if test "${pac_cv_c_max_longdouble_fp_align+set}" = set; then
 else
 
 if test "$cross_compiling" = yes; then
-  pac_cv_c_max_longdouble_fp_align="$CROSS_STRUCT_LONGDOUBLE_FP_ALIGN"
+  pac_cv_c_max_longdouble_fp_align="$CROSS_ALIGN_STRUCT_LONGDOUBLE_FP"
 else
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -14290,7 +14332,7 @@ if test "${pac_cv_c_double_pos_align+set}" = set; then
 else
 
 if test "$cross_compiling" = yes; then
-  pac_cv_c_double_pos_align="$CROSS_DOUBLE_POS_ALIGN"
+  pac_cv_c_double_pos_align="$CROSS_ALIGN_DOUBLE_POS"
 else
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -14369,7 +14411,7 @@ if test "${pac_cv_c_llint_pos_align+set}" = set; then
 else
 
 if test "$cross_compiling" = yes; then
-  pac_cv_c_llint_pos_align="$CROSS_LLINT_POS_ALIGN"
+  pac_cv_c_llint_pos_align="$CROSS_ALIGN_LLINT_POS"
 else
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -14450,7 +14492,7 @@ if test "${pac_cv_c_double_alignment_exception+set}" = set; then
 else
 
 if test "$cross_compiling" = yes; then
-  pac_cv_c_double_alignment_exception="$CROSS_DOUBLE_ALIGNMENT_EXCEPTION"
+  pac_cv_c_double_alignment_exception="$CROSS_ALIGN_DOUBLE_EXCEPTION"
 else
   cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
@@ -14839,7 +14881,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 14842 "configure"
+#line 14884 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -18587,7 +18629,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 18590 "configure"
+#line 18632 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -19508,7 +19550,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 19511 "configure"
+#line 19553 "configure"
 #include "confdefs.h"
 #include <sys/bitypes.h>
 int conftest() {return 0;}
@@ -23482,7 +23524,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
     else
         cat > conftest.$ac_ext <<EOF
 
-#line 23485 "configure"
+#line 23527 "configure"
 #include "confdefs.h"
 
 main(){return(0);}
@@ -23573,7 +23615,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
         else
             cat > conftest.$ac_ext <<EOF
 
-#line 23576 "configure"
+#line 23618 "configure"
 #include "confdefs.h"
 
 int main(){return(0);}
@@ -24701,7 +24743,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 24704 "configure"
+#line 24746 "configure"
 #include "confdefs.h"
 #include <complex>
 int conftest() {return 0;}
@@ -26978,7 +27020,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 26981 "configure"
+#line 27023 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -28437,7 +28479,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 28440 "configure"
+#line 28482 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -29975,6 +30017,14 @@ echo "$as_me: error: LinuxAlpha cycle counter is not available on this system  a
     MPID_TIMER_TYPE="long"
     ;;
 
+    device)
+    # The device selected should export the datatype for the timer
+    # in MPID_DEVICE_TIMER_TYPE if something other than long is needed
+    if test -n "$MPID_DEVICE_TIMER_TYPE" ; then
+       MPID_TIMER_TYPE=$MPID_DEVICE_TIMER_TYPE
+    fi
+    ;;
+
     *)
     { { echo "$as_me:$LINENO: error: Invalid timer type $timer_type" >&5
 echo "$as_me: error: Invalid timer type $timer_type" >&2;}
@@ -29997,12 +30047,39 @@ for type in int long long_long short ; do
     eval len=\$ac_cv_sizeof_$type
     if test "$len" = "$ac_cv_sizeof_void_p" ; then
         MPI_AINT=`echo $type | sed -e 's/_/ /'`
-	# Make the sizeof AINT available to other configures
-	MPI_SIZEOF_AINT=$len
-	export MPI_SIZEOF_AINT
+        # Make the sizeof AINT available to other configures
+        MPI_SIZEOF_AINT=$len
+        export MPI_SIZEOF_AINT
+        case $type in
+            int)
+                MPI_AINT_FMT_DEC_SPEC="%d"
+                MPI_AINT_FMT_HEX_SPEC="%x"
+                ;;
+            long)
+                MPI_AINT_FMT_DEC_SPEC="%ld"
+                MPI_AINT_FMT_HEX_SPEC="%lx"
+                ;;
+            long_long)
+                MPI_AINT_FMT_DEC_SPEC="%lld"
+                MPI_AINT_FMT_HEX_SPEC="%llx"
+                ;;
+            short)
+                MPI_AINT_FMT_DEC_SPEC="%hd"
+                MPI_AINT_FMT_HEX_SPEC="%hx"
+                ;;
+            *)
+                { echo "$as_me:$LINENO: WARNING: unable to determine format specifiers for MPI_Aint, defaulting to int" >&5
+echo "$as_me: WARNING: unable to determine format specifiers for MPI_Aint, defaulting to int" >&2;}
+                MPI_AINT_FMT_DEC_SPEC="%d"
+                MPI_AINT_FMT_HEX_SPEC="%x"
+            ;;
+        esac
+        export MPI_AINT_FMT_DEC_SPEC MPI_AINT_FMT_HEX_SPEC
         break
     fi
 done
+
+
 
 
 # If sizeof(mpi_aint) = sizeof(int), set this value
@@ -30154,7 +30231,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 30157 "configure"
+#line 30234 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -30758,7 +30835,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 30761 "configure"
+#line 30838 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -31907,7 +31984,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
     else
         cat > conftest.$ac_ext <<EOF
 
-#line 31910 "configure"
+#line 31987 "configure"
 #include "confdefs.h"
 
 main(){return(0);}
@@ -31996,7 +32073,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
         else
             cat > conftest.$ac_ext <<EOF
 
-#line 31999 "configure"
+#line 32076 "configure"
 #include "confdefs.h"
 
 int main(){return(0);}
@@ -32205,14 +32282,14 @@ MPI_LDFLAGS="$MPI_LDFLAGS $LDFLAGS $THR_LDFLAGS"
 MPIU_DLL_SPEC_DEF="#define MPIU_DLL_SPEC"
 
 
-# Get the location of the CVS repository, if present
-    # We can use this test (for CVS/Root) for creating maintainer targets
+# Get the location of the SVN repository, if present
+    # We can use this test for creating maintainer targets
     # as well, and tests for maintainer-required software, such as
     # doctext
-if test -s CVS/Root ; then
-    MPICVSHOME=`cat CVS/Root`
-elif test -s "$srcdir/CVS/Root" ; then
-    MPICVSHOME=`cat $srcdir/CVS/Root`
+if test -d .svn ; then
+    MPISVNHOME=`svn info . | sed -n "/Repository Root: /s/Repository Root: //p"`
+elif test -d "$srcdir/.svn" ; then
+    MPISVNHOME=`svn info $srcdir | sed -n "/Repository Root: /s/Repository Root: //p"`
 fi
 
 
@@ -33151,8 +33228,8 @@ s,@ECHO_C@,$ECHO_C,;t t
 s,@ECHO_N@,$ECHO_N,;t t
 s,@ECHO_T@,$ECHO_T,;t t
 s,@LIBS@,$LIBS,;t t
-s,@RELEASE_DATE@,$RELEASE_DATE,;t t
 s,@CONFIGURE_ARGS_CLEAN@,$CONFIGURE_ARGS_CLEAN,;t t
+s,@RELEASE_DATE@,$RELEASE_DATE,;t t
 s,@NUMVERSION@,$NUMVERSION,;t t
 s,@VERSION@,$VERSION,;t t
 s,@ABIVERSION@,$ABIVERSION,;t t
@@ -33369,6 +33446,8 @@ s,@MPICH_TIMER_KIND@,$MPICH_TIMER_KIND,;t t
 s,@MPILIBNAME@,$MPILIBNAME,;t t
 s,@PMPILIBNAME@,$PMPILIBNAME,;t t
 s,@MPI_AINT@,$MPI_AINT,;t t
+s,@MPI_AINT_FMT_DEC_SPEC@,$MPI_AINT_FMT_DEC_SPEC,;t t
+s,@MPI_AINT_FMT_HEX_SPEC@,$MPI_AINT_FMT_HEX_SPEC,;t t
 s,@THR_DEFS@,$THR_DEFS,;t t
 s,@THR_CFLAGS@,$THR_CFLAGS,;t t
 s,@THR_CPPFLAGS@,$THR_CPPFLAGS,;t t
@@ -33389,7 +33468,7 @@ s,@MPI_CXXFLAGS@,$MPI_CXXFLAGS,;t t
 s,@MPI_F90FLAGS@,$MPI_F90FLAGS,;t t
 s,@MPI_LDFLAGS@,$MPI_LDFLAGS,;t t
 s,@MPIU_DLL_SPEC_DEF@,$MPIU_DLL_SPEC_DEF,;t t
-s,@MPICVSHOME@,$MPICVSHOME,;t t
+s,@MPISVNHOME@,$MPISVNHOME,;t t
 s,@EXTERNAL_SRC_DIRS@,$EXTERNAL_SRC_DIRS,;t t
 s,@subdirs@,$subdirs,;t t
 s,@MPICC@,$MPICC,;t t

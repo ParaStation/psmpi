@@ -13,14 +13,14 @@
  */
 
 #undef FUNCNAME
-#define FUNCNAME MPIDI_CH3_SendEagerNoncontig
+#define FUNCNAME MPIDI_CH3_SendNoncontig
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-/* MPIDI_CH3_SendEagerNoncontig - Sends an eager message by loading an
+/* MPIDI_CH3_SendNoncontig - Sends a message by loading an
    IOV and calling iSendv.  The caller must initialize
    sreq->dev.segment as well as segment_first and segment_size. */
-int MPIDI_CH3_SendEagerNoncontig( MPIDI_VC_t *vc, MPID_Request *sreq,
-                                  void *header, MPIDI_msg_sz_t hdr_sz )
+int MPIDI_CH3_SendNoncontig( MPIDI_VC_t *vc, MPID_Request *sreq,
+			     void *header, MPIDI_msg_sz_t hdr_sz )
 {
     int mpi_errno = MPI_SUCCESS;
     int iov_n;
@@ -117,7 +117,7 @@ int MPIDI_CH3_EagerNoncontigSend( MPID_Request **sreq_p,
     sreq->dev.segment_first = 0;
     sreq->dev.segment_size = data_sz;
 	    
-    mpi_errno = vc->sendEagerNoncontig_fn(vc, sreq, eager_pkt, 
+    mpi_errno = vc->sendNoncontig_fn(vc, sreq, eager_pkt, 
 					  sizeof(MPIDI_CH3_Pkt_eager_send_t));
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
@@ -736,6 +736,7 @@ int MPIDI_CH3_PktPrint_EagerSend( FILE *fp, MPIDI_CH3_Pkt_t *pkt )
 #endif
 }
 
+#if defined(USE_EAGER_SHORT)
 int MPIDI_CH3_PktPrint_EagerShortSend( FILE *fp, MPIDI_CH3_Pkt_t *pkt )
 {
     int datalen;
@@ -759,6 +760,7 @@ int MPIDI_CH3_PktPrint_EagerShortSend( FILE *fp, MPIDI_CH3_Pkt_t *pkt )
 	MPIU_DBG_PRINTF((" data ......... %s\n", databytes));
     }
 }
+#endif /* defined(USE_EAGER_SHORT) */
 
 int MPIDI_CH3_PktPrint_ReadySend( FILE *fp, MPIDI_CH3_Pkt_t *pkt )
 {

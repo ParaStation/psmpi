@@ -10,10 +10,14 @@
 #define NUM_OBJS 4
 #define OBJ_SIZE 1048576 
 
+extern char *optarg;
+extern int optind, opterr, optopt;
+
+
 char *prog = NULL;
 int  debug = 0;
 
-void
+static void
 Usage( int line ) {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -27,13 +31,13 @@ Usage( int line ) {
     exit( 0 );
 }
 
-void
+static void
 fatal_error( int mpi_ret, MPI_Status *mpi_stat, char *msg ) {
     fprintf( stderr, "Fatal error %s: %d\n", msg, mpi_ret );
     MPI_Abort( MPI_COMM_WORLD, -1 );
 }
 
-void
+static void
 print_hints( int rank, MPI_File *mfh ) {
     MPI_Info info;
     int nkeys;
@@ -57,20 +61,20 @@ print_hints( int rank, MPI_File *mfh ) {
     MPI_Barrier( MPI_COMM_WORLD );
 }
 
-void
+static void
 fill_buffer( char *buffer, int bufsize, int rank, MPI_Offset offset ) {
     memset( (void*)buffer, 0, bufsize );
     snprintf( buffer, bufsize, "Hello from %d at %lld\n", rank, offset );
 }
 
-MPI_Offset
+static MPI_Offset
 get_offset( int rank, int num_objs, int obj_size, int which_obj ) {
     MPI_Offset offset;
     offset = (MPI_Offset)rank * num_objs * obj_size + which_obj * obj_size;
     return offset;
 }
 
-void
+static void
 write_file( char *target, int rank, MPI_Info *info ) {
     MPI_File wfh;
     MPI_Status mpi_stat;
@@ -106,7 +110,7 @@ write_file( char *target, int rank, MPI_Info *info ) {
     if ( debug ) printf( "%d wrote file %s\n", rank, target );
 }
 
-int
+static int
 reduce_corruptions( int corrupt_blocks ) {
     int mpi_ret;
     int sum;
@@ -118,7 +122,7 @@ reduce_corruptions( int corrupt_blocks ) {
     return sum;
 }
 
-void
+static void
 read_file( char *target, int rank, MPI_Info *info, int *corrupt_blocks ) {
     MPI_File rfh;
     MPI_Status mpi_stat;
@@ -162,7 +166,7 @@ read_file( char *target, int rank, MPI_Info *info, int *corrupt_blocks ) {
 
 }
 
-void
+static void
 set_hints( MPI_Info *info ) {
     MPI_Info_set( *info, "romio_cb_write", "enable" ); 
     MPI_Info_set( *info, "romio_no_indep_rw", "1" ); 
@@ -193,7 +197,6 @@ set_hints( MPI_Info *info, char *hints ) {
 int 
 main( int argc, char *argv[] ) {
 	int nproc = 1, rank = 0;
-    char myname[256];
     char *target = NULL;
     int c;
     MPI_Info info;

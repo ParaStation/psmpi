@@ -33,14 +33,38 @@ VPATH = .:@srcdir@
 INCLUDES = -I../../../include -I${master_top_srcdir}/src/include -I../../../mpi/timer -I../common -I${master_top_srcdir}/src/util/logging/common
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c 
+.SUFFIXES: .o .lo .c .txt 
 .c.o:
 	$(C_COMPILE) -c $<
 .c.lo:
 	$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+
+${srcdir}/configure: ${srcdir}/configure.in 
+	@rm -rf autom4te*.cache
+	(cd ${srcdir} && autoheader -I ../../../../confdb && \
+	autoconf -I \
+	../../../../confdb ) 
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../../ \
+	-configdir=src/util/logging/rlog/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile pprintirlog config.status config.log config.cache *conf.cache config.system" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-if [ -x config.status ] ; then CONFIG_FILES=Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
@@ -49,6 +73,9 @@ clean:
 	-@rm -f printrlog.exe printirlog.exe minalignrlog.exe irlog2rlog.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -57,10 +84,12 @@ distclean-xxx:
 	-@rm -f rlogconf.h
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
+	-rm -f rlogconf.h.in 
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a irlog2rlog\
 	 printirlog printrlog minalignrlog
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
@@ -76,6 +105,9 @@ all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a irlog2rlog\
 	rlogtime.lo irlogutil.lo 
 	${AR} cr ../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
+coverage: 
+	-@for file in rlog.c rlogutil.c rlogtime.c irlogutil.c ; do \
+		gcov -b -f $$file ; done
 printrlog: printrlog.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o printrlog printrlog.o  \
 	-L../../../../lib -L${master_top_srcdir}/lib -lmpich ${LIBS} 
@@ -89,6 +121,40 @@ irlog2rlog: irlog2rlog.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o irlog2rlog irlog2rlog.o  \
 	-L../../../../lib -L${master_top_srcdir}/lib -lmpich ${LIBS} 
 # --------------------------------------------------------------------------
+htmldoc:
+mandoc:
+latexdoc:
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+$(DEPS_DIR)/rlog.d: $(srcdir)/rlog.c
+	$(MAKE_DEPEND_C)  $(srcdir)/rlog.c >$(DEPS_DIR)/rlog.d
+$(DEPS_DIR)/rlogutil.d: $(srcdir)/rlogutil.c
+	$(MAKE_DEPEND_C)  $(srcdir)/rlogutil.c >$(DEPS_DIR)/rlogutil.d
+$(DEPS_DIR)/rlogtime.d: $(srcdir)/rlogtime.c
+	$(MAKE_DEPEND_C)  $(srcdir)/rlogtime.c >$(DEPS_DIR)/rlogtime.d
+$(DEPS_DIR)/irlogutil.d: $(srcdir)/irlogutil.c
+	$(MAKE_DEPEND_C)  $(srcdir)/irlogutil.c >$(DEPS_DIR)/irlogutil.d
+$(DEPS_DIR)/timestamp: rlog.c rlogutil.c rlogtime.c irlogutil.c Makefile
+	rm -f $(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/rlog.c >$(DEPS_DIR)/rlog.d
+	echo "include $(DEPS_DIR)/rlog.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/rlogutil.c >$(DEPS_DIR)/rlogutil.d
+	echo "include $(DEPS_DIR)/rlogutil.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/rlogtime.c >$(DEPS_DIR)/rlogtime.d
+	echo "include $(DEPS_DIR)/rlogtime.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/irlogutil.c >$(DEPS_DIR)/irlogutil.d
+	echo "include $(DEPS_DIR)/irlogutil.d" >>$(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  rlog.c rlogutil.c rlogtime.c irlogutil.c irlog2rlog.c \

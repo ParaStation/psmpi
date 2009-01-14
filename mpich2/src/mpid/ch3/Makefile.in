@@ -15,8 +15,29 @@ MPILIBNAME      = @MPILIBNAME@
 VPATH = .:@srcdir@
 
 .SUFFIXES:
-# Some make programs complain if no suffixes are set
-.SUFFIXES: .c .o
+.SUFFIXES:  .txt 
+
+${srcdir}/configure: ${srcdir}/configure.in  ../common/thread/mpid_thread.m4
+	@rm -rf autom4te*.cache
+	(cd ${srcdir} && autoheader -I ../../../confdb && \
+	autoconf -I \
+	../../../confdb ) 
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=src/mpid/ch3/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile src/Makefile util/Makefile util/shm/Makefile util/shmbase/Makefile channels/Makefile localdefs config.status config.log config.cache *conf.cache config.system" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-if [ -x config.status ] ; then CONFIG_FILES=Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	for dir in channels src util ; do \
@@ -24,6 +45,9 @@ apply:
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	for dir in channels src util ; do \
 		(cd $$dir && ${MAKE} clean ; ) ; done
 distclean:  clean distclean-local distclean-xxx remove-makefile
@@ -36,16 +60,41 @@ distclean-xxx:
 	-@rm -f include/mpidi_ch3_conf.h
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  maintainer-clean-local distclean-xxx remove-genmakefiles
+	for dir in channels src util ; do \
+		(cd $$dir && ${MAKE} maintainer-clean ; ) ; done
+	-rm -f include/mpidi_ch3_conf.h.in 
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect:
 	@(cd channels && ${MAKE} all )
 	@(cd src && ${MAKE} all )
 	@(cd util && ${MAKE} all )
 
+coverage: 
+	for dir in channels src util ; do \
+		(cd $$dir && ${MAKE} coverage ; ) ; done
 # --------------------------------------------------------------------------
+htmldoc:
+	for dir in channels src util ; do \
+		(cd $$dir && ${MAKE} htmldoc ; ) ; done
+mandoc:
+	for dir in channels src util ; do \
+		(cd $$dir && ${MAKE} mandoc ; ) ; done
+latexdoc:
+	for dir in channels src util ; do \
+		(cd $$dir && ${MAKE} latexdoc ; ) ; done
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+	for dir in channels src util ; do \
+		(cd $$dir && ${MAKE} dependencies ; ) ; done
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)

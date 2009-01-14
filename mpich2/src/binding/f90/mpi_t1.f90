@@ -301,6 +301,8 @@
            MODULE PROCEDURE MPI_WIN_SET_ATTR_T
         END INTERFACE MPI_WIN_SET_ATTR
 
+        CONTAINS
+
         SUBROUTINE MPI_SSEND_INIT_T(v0,v1,v2,v3,v4,v5,v6,ierror)
         <type> v0<dims>
         INTEGER v1

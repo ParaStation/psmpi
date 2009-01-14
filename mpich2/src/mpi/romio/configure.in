@@ -136,6 +136,10 @@ if test "$enable_weak_symbols" = "no" ; then
     TRY_WEAK_SYMBOLS=0
 fi
 MPI=$with_mpi
+if test -n "$with_mpi"; then
+       CC=$MPI/bin/mpicc
+fi
+
 FILE_SYSTEM=$with_file_system
 #
 dnl AC_CONFIG_AUX_DIR(../../../confdb)

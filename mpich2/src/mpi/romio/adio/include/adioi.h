@@ -113,6 +113,8 @@ typedef struct ADIOI_AIO_req_str {
 #ifdef ROMIO_PVFS2
 	PVFS_sys_op_id op_id;
 	PVFS_sysresp_io resp_io;
+	PVFS_Request file_req;
+	PVFS_Request mem_req;
 #endif
 #ifdef ROMIO_NTFS
     /* Ptr to Overlapped struct */

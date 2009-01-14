@@ -6,10 +6,10 @@
 </HEAD>
 <BODY BGCOLOR="FFFFFF">
 <A NAME="MPE_Describe_comm_state"><H1>MPE_Describe_comm_state</H1></A>
-Describe attributes of a state with byte informational data in a specified MPI_Comm. 
+Describe attributes of a state with byte informational data in a specified MPI_Comm and on the thread that the function is invoked. 
 <H2>Synopsis</H2>
 <PRE>
-int MPE_Describe_comm_state( MPI_Comm comm, int local_thread,
+int MPE_Describe_comm_state( MPI_Comm comm,
                              int state_startID, int state_finalID,
                              const char *name, const char *color,
                              const char *format )
@@ -17,8 +17,6 @@ int MPE_Describe_comm_state( MPI_Comm comm, int local_thread,
 <H2>Input Parameters</H2>
 <DL>
 <DT><B>comm          </B><DD>MPI_Comm where this process is part of.
-
-<DT><B>local_thread  </B><DD>local thread ID where the state is being defined.
 
 <DT><B>state_startID </B><DD>event number for the starting of the state.
 
@@ -44,6 +42,8 @@ interface of this routine considers the zero-length string,
 Adds a state definition to the logfile.
 States are added to a logfile by calling 'MPE_Log_comm_event()'
 for the start and end event numbers.
+<P>
+This function is threadsafe.
 <P>
 <H2>Notes on storage format control support</H2>
 The format control string is printf like, e.g. "Comment = %s".

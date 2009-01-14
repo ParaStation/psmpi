@@ -35,39 +35,72 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)
 
 
 VPATH = .:@srcdir@
+DOCTEXT         = @DOCTEXT@
 mpi_sources = mpicxx.h initcxx.cxx 
 MPICXXLIBNAME = @MPICXXLIBNAME@
 INCLUDES = -I../../include -I${top_srcdir}/src/include -I$(master_top_srcdir)/src/include 
 doc_sources = mpicxx.txt
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .cxx .h 
+.SUFFIXES: .o .lo .cxx .h .man .html .latex .txt 
 .cxx.o:
 	$(CXX_COMPILE) -c $<
 .cxx.lo:
 	$(CXX_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
+.cxx.txt:
+	$(CXXCPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .cxx:
 	$(CXX_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .h.o:
 
 .h.lo:
+.txt.man:
+	$(DOCTEXT) -man -mpath ../../../man/man1 -ext 1 -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.txt.html:
+	$(DOCTEXT) -html -mpath ../../../www/www1  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.txt.latex:
+	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=. \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile mpif.h setbotf.f" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=src/binding/cxx/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile mpicxx.h
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPICXXLIBNAME}.a
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    ${MAKE} .libstamp1 ; \
@@ -80,6 +113,14 @@ all-redirect: .libstamp0 ../../../lib/lib${MPICXXLIBNAME}.a
 .libstamp1 ../../../lib/lib${MPICXXLIBNAME}.la: initcxx.lo 
 	${AR} cr ../../../lib/lib${MPICXXLIBNAME}.la $?
 	date > .libstamp1
+coverage: 
+	-@for file in ${mpi_sources}  ; do \
+		gcov -b -f $$file ; done
+# --------------------------------------------------------------------------
+mandoc: ${doc_sources:.txt=.man}
+htmldoc: ${doc_sources:.txt=.html}
+latexdoc: ${doc_sources:.txt=.latex}
+# --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Install target
 install:  FORCE_TARGET 

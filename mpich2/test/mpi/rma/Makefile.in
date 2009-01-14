@@ -27,11 +27,30 @@ VPATH = .:@srcdir@
 INCLUDES = -I../include -I${top_srcdir}/include
 
 .SUFFIXES:
-.SUFFIXES: .o .c 
+.SUFFIXES: .o .c .txt 
 .c.o:
 	$(C_COMPILE) -c $<
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=test/mpi/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=rma/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
@@ -39,6 +58,9 @@ clean:
 	-@rm -f nullpscw.exe transpose6.exe test4_am.exe allocmem.exe lockcontention.exe fetchandadd_tree_am.exe transpose7.exe transpose2.exe attrorderwin.exe test3.exe fetchandadd_tree.exe accfence2_am.exe test5_am.exe test3_am.exe transpose5.exe fetchandadd.exe test1_am.exe getgroup.exe getfence1.exe test4.exe transpose4.exe accfence1.exe transpose3.exe ircpi.exe wintest.exe test2.exe wincall.exe baseattrwin.exe fetchandadd_am.exe putpscw1.exe accfence2.exe test1.exe test5.exe transpose1.exe fkeyvalwin.exe contig_displ.exe winname.exe test2_am.exe putfence1.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -46,10 +68,11 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: allocmem ircpi test1 test2 test3 test4 test5 lockcontention\
 	 wintest transpose1 transpose2 transpose3 transpose4 transpose5\
 	 transpose6 transpose7 fetchandadd fetchandadd_tree winname putfence1\
@@ -58,6 +81,7 @@ all-redirect: allocmem ircpi test1 test2 test3 test4 test5 lockcontention\
 	 fetchandadd_tree_am accfence2_am attrorderwin wincall fkeyvalwin\
 	 baseattrwin nullpscw
 
+coverage: 
 nullpscw: nullpscw.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o nullpscw nullpscw.o  ${LIBS}
 transpose6: transpose6.o   @MPILIBLOC@ ../util/mtest.o
@@ -144,6 +168,16 @@ test2_am: test2_am.o   @MPILIBLOC@ ../util/mtest.o
 putfence1: putfence1.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o putfence1 putfence1.o  ${LIBS}
 # --------------------------------------------------------------------------
+htmldoc:
+mandoc:
+latexdoc:
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  allocmem.c ircpi.c test1.c test2.c test3.c test4.c test5.c \

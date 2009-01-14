@@ -2333,14 +2333,13 @@ int smpd_kill_process(smpd_process_t *process, int exit_code)
     smpd_enter_fn(FCNAME);
 
     smpd_process_from_registry(process);
-    if (!SafeTerminateProcess(process->wait.hProcess, exit_code))
-    {
-	if (GetLastError() != ERROR_PROCESS_ABORTED)
-	{
-	    TerminateProcess(process->wait.hProcess, exit_code);
-	}
+    if (!SafeTerminateProcess(process->wait.hProcess, exit_code)){
+	    if (GetLastError() != ERROR_PROCESS_ABORTED){
+	        TerminateProcess(process->wait.hProcess, exit_code);
+	    }
+        smpd_exit_fn(FCNAME);
+        return SMPD_FAIL;
     }
-
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #else
@@ -2348,8 +2347,10 @@ int smpd_kill_process(smpd_process_t *process, int exit_code)
     smpd_enter_fn(FCNAME);
 
     smpd_dbg_printf("killing process %d\n", process->wait);
-    kill(process->wait, /*SIGTERM*/SIGKILL);
-
+    if(kill(process->wait, /*SIGTERM*/SIGKILL) == -1){
+        smpd_exit_fn(FCNAME);
+        return SMPD_FAIL;
+    }
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
 #endif
@@ -2383,7 +2384,7 @@ int smpd_kill_all_processes(void)
 	if (count > 0)
 	{
 	    smpd_pwait_t *wait_array;
-	    wait_array = (smpd_pwait_t*)malloc(sizeof(smpd_pwait_t) * count);
+	    wait_array = (smpd_pwait_t*)MPIU_Malloc(sizeof(smpd_pwait_t) * count);
 	    for (i=0, iter = smpd_process.process_list; i<count; i++)
 	    {
 		wait_array[i] = iter->wait;

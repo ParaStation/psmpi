@@ -13,5 +13,9 @@ typem2f_SOURCES    = typem2f.f
 gaddressf_SOURCES  = gaddressf.f
 packef_SOURCES     = packef.f
 
+testing:
+	../../runtests -srcdir=$(srcdir) -tests=testlist \
+			-mpiexec=$(bindir)/mpiexec \
+		   	-xmlfile=summary.xml
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)

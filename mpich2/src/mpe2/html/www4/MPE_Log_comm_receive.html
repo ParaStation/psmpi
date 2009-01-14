@@ -6,17 +6,14 @@
 </HEAD>
 <BODY BGCOLOR="FFFFFF">
 <A NAME="MPE_Log_comm_receive"><H1>MPE_Log_comm_receive</H1></A>
-log the receive event of a message within a specified MPI_Comm. 
+log the receive event of a message within a specified MPI_Comm (on the calling thread where receive event takes place) 
 <H2>Synopsis</H2>
 <PRE>
-int MPE_Log_comm_receive( MPI_Comm comm, int local_thread,
-                          int other_party, int tag, int size )
+int MPE_Log_comm_receive( MPI_Comm comm, int other_party, int tag, int size )
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
 <DT><B>comm          </B><DD>MPI_Comm where this process is part of.
-
-<DT><B>local_thread  </B><DD>local thread ID where the receive event takes place.
 
 <DT><B>other_party   </B><DD>the rank of the other party, i.e. send event's rank.
 
@@ -24,5 +21,8 @@ int MPE_Log_comm_receive( MPI_Comm comm, int local_thread,
 
 <DT><B>size          </B><DD>message size in byte.
 </DL>
+<P>
+<H2>Notes</H2>
+This function is threadsafe.
 <P><B>Location:</B>../src/logging/src/mpe_log.c<P>
 </BODY></HTML>

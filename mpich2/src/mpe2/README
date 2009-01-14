@@ -1,7 +1,7 @@
                       MPE (Multi-Processing Environment)
                       ----------------------------------
 
-                          Version 2.4.5. August, 2007
+                          Version 2.4.6. February, 2008
 
                     Mathematics and Computer Science Division
                            Argonne National Laboratory
@@ -265,6 +265,20 @@ MPE_TMPDIR: MPE_TMPDIR takes precedence over TMPDIR.  It specifies a
              Note : The final merged logfile will be written back to the 
                     file system where process 0 is.
 
+MPE_SAME_TMPDIR: The boolean value determines whether MPE_TMPDIR will be
+                 the same across the whole MPI_COMM_WORLD. By default,
+                 MPE_SAME_TMPDIR is set to true and only rank 0's MPE_TMPDIR
+                 will be broadcasted to every process. There is scalability
+                 implication on whether MPE_SAME_TMPDIR is true.  When
+                 MPE_SAME_TMPDIR=false, MPE_TMPDIR could be set differently
+                 on different processes and hence mkstemp() will be called
+                 once on each process to create temporary filename.  Calling
+                 mkstemp() on the same filesystem, e.g. $HOME, for each process
+                 is not scalable, i.e. the shared filesystem may be hanging.
+                 MPE_SAME_TMPDIR=false is provided for cases that MPE_TMPDIR
+                 has to be set differently on different process but it is
+                 in general not scalable when MPI_COMM_WORLD's size >> 1K.
+
 MPE_DELETE_LOCALFILE:  The boolean value determines whether to delete the
                        temporary local clog2 file.  When this flag is
                        set to true, user needs to collect from the temporary
@@ -321,6 +335,11 @@ MPE_LOG_OVERHEAD: The boolean value determines to log MPE/CLOG2's internal
                   data in the memory to the disk.  The frequency and location
                   of CLOG_Buffer_write2disk state can be altered by changing
                   CLOG_BLOCK_SIZE and/or CLOG_BUFFERED_BLOCKS.
+
+MPE_LOG_RANK2PROCNAME: The boolean value determines if a .clog2.pnm file
+                       that contains the MPI_COMM_WORLD rank to processor
+                       name determined by MPI_Get_processor_name().  The
+                       default is No.
 
 MPE_WRAPPERS_ADD_LDFLAGS: The variable tells MPE wrappers, mpecc/mpefc
                           (includes mpich2's mpicc and friends), to use

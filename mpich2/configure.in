@@ -121,13 +121,13 @@ dnl conf file will not be consistent.
 dnl define([AC_PACKAGE_STRING],[MPICH2 1.0.6])
 dnl AC_INIT(mpich2,1.0.6,mpich2-maint@mcs.anl.gov,mpich2-1.0.6)
 dnl Use the oldstyle AC_INIT instead
+
 AC_INIT(src/include/mpichconf.h.in)
-# Try to find the version
-if test -s "$srcdir/maint/Version" ; then
-    VERSION="`cat $srcdir/maint/Version`"
-else
-    VERSION="1.0.6"
-fi
+
+CONFIGURE_ARGS_CLEAN=`echo $* | tr '"' ' '`
+AC_SUBST(CONFIGURE_ARGS_CLEAN)
+
+# Try to find the release date
 if test -s "$srcdir/maint/ReleaseDate" ; then
     RELEASE_DATE="`cat $srcdir/maint/ReleaseDate`"
 else
@@ -135,23 +135,57 @@ else
 fi
 AC_SUBST(RELEASE_DATE)
 
-CONFIGURE_ARGS_CLEAN=`echo $* | tr '"' ' '`
-AC_SUBST(CONFIGURE_ARGS_CLEAN)
-# Produce a numeric version assuming that the version is of the form
-# x.yy.zz, prefixing zeros for single digit verison numbers
-changequote(<<,>>)
-V1=`expr $VERSION : '\([0-9]*\)\..*'`
-V2=`expr $VERSION : '[0-9]*\.\([0-9]*\)\..*'`
-V3=`expr $VERSION : '[0-9]*\.[0-9]*\.\([0-9]*\)'`
-changequote([,])
+# Try to find the version
+if test -s "$srcdir/maint/Version" ; then
+    VERSION="`cat $srcdir/maint/Version`"
+else
+    AC_MSG_ERROR([Version information not found. Configuration aborted.])
+fi
+
+# Produce a numeric version assuming the following format:
+# Version: [MAJ].[MIN].[REV][EXT][EXT_NUMBER]
+# Example: 1.0.7rc1 has
+#          MAJ = 1
+#          MIN = 0
+#          REV = 7
+#          EXT = rc
+#          EXT_NUMBER = 1
 #
-if test "$V2" -lt 9 ; then V2=0$V2 ; fi
-if test "$V3" -lt 9 ; then V3=0$V3 ; fi
-NUMVERSION=$V1$V2$V3
+# Converting to numeric version will convert EXT to a format number:
+#          ALPHA (a) = 0
+#          BETA (b)  = 1
+#          RC (rc)   = 2
+#          PATCH (p) = 3
+# Regular releases are treated as patch 0
+#
+# Numeric version will have 1 digit for MAJ, 2 digits for MIN,
+# 2 digits for REV, 1 digit for EXT and 1 digit for EXT_NUMBER.
+changequote(<<,>>)
+V1=`expr $VERSION : '\([0-9]*\)\.[0-9]*\.[0-9]*[a-zA-Z]*[0-9]*'`
+V2=`expr $VERSION : '[0-9]*\.\([0-9]*\)\.[0-9]*[a-zA-Z]*[0-9]*'`
+V3=`expr $VERSION : '[0-9]*\.[0-9]*\.\([0-9]*\)[a-zA-Z]*[0-9]*'`
+V4=`expr $VERSION : '[0-9]*\.[0-9]*\.[0-9]*\([a-zA-Z]*\)[0-9]*'`
+V5=`expr $VERSION : '[0-9]*\.[0-9]*\.[0-9]*[a-zA-Z]*\([0-9]*\)'`
+changequote([,])
+
+if test "$V2" -le 9 ; then V2=0$V2 ; fi
+if test "$V3" -le 9 ; then V3=0$V3 ; fi
+if test "$V4" = "a" ; then
+    V4=0
+elif test "$V4" = "b" ; then
+    V4=1
+elif test "$V4" = "rc" ; then
+    V4=2
+elif test "$V4" = "" ; then
+    V4=3
+    V5=0
+elif test "$V4" = "p" ; then
+    V4=3
+fi
+if test "$V5" -le 9 ; then V5=0$V5 ; fi
+
+NUMVERSION=$V1$V2$V3$V4$V5
 AC_SUBST(NUMVERSION)
-dnl if test "$VERSION" != "$PACKAGE_VERSION" ; then
-dnl     AC_MSG_WARN([PACKAGE_VERSION = $PACKAGE_VERSION but VERSION = $VERSION])
-dnl fi
 AC_SUBST(VERSION)
 
 #
@@ -263,6 +297,15 @@ AC_ARG_ENABLE(fast,
 [--enable-fast - pick the appropriate options for fast execution.  This
                 turns off error checking and timing collection],,
 enable_fast=no)
+
+AC_ARG_ENABLE(ndebug,
+[--enable-ndebug - Set NDEBUG and disable asserts],enable_ndebug=$enableval,
+enable_ndebug=no)
+
+if test "$enable_ndebug" = "yes" ; then
+    AC_DEFINE(NDEBUG,1,[Define to suppress assertions])
+fi
+
 dnl
 dnl We enable f77 and f90 if we can find compilers for them.
 dnl In addition, we check whether f77 and f90 can work together.
@@ -1034,15 +1077,6 @@ if test "$enable_romio" = "yes" ; then
        PAC_HAVE_ROMIO
    else
        AC_MSG_WARN([ROMIO src directory is not available])
-       # Check for local developers
-       if test -d /home/MPI/cvsMaster/romio -o -d /homes/MPI/cvsMaster/romio ; then
-           AC_MSG_WARN([You need to check ROMIO out with 
-          cd $use_top_srcdir/src/mpi
-          cvs -d /home/MPI/cvsMaster checkout romio
-	  followed by
-	  cd ../.. && maint/updatefiles
-          ])
-       fi
    fi
 fi
 #
@@ -4608,6 +4642,7 @@ for MPI_Wtime and internal timestamps.  name may be one of
     linux86_cycle - Linux x86; returns cycle counts, not time in seconds*
     linuxalpha_cycle - Like linux86_cycle, but for Linux Alpha*
     gcc_ia64_cycle - IPF ar.itc timer*
+    device - The timer is provided by the device
        *Note that the cycle timers are intended to be used by MPICH2
         developers for internal low-level timing.  Normal users should
         not use these as they are not guaranteed to be accurate in
@@ -4811,6 +4846,14 @@ pac_cv_linuxalpha_cycle,[
     MPID_TIMER_TYPE="long"
     ;;
 
+    device)
+    # The device selected should export the datatype for the timer
+    # in MPID_DEVICE_TIMER_TYPE if something other than long is needed
+    if test -n "$MPID_DEVICE_TIMER_TYPE" ; then 
+       MPID_TIMER_TYPE=$MPID_DEVICE_TIMER_TYPE
+    fi
+    ;;
+
     *)
     AC_MSG_ERROR([Invalid timer type $timer_type])
     ;;
@@ -4831,13 +4874,39 @@ for type in int long long_long short ; do
     eval len=\$ac_cv_sizeof_$type
     if test "$len" = "$ac_cv_sizeof_void_p" ; then
         MPI_AINT=`echo $type | sed -e 's/_/ /'`
-	# Make the sizeof AINT available to other configures
-	MPI_SIZEOF_AINT=$len
-	export MPI_SIZEOF_AINT
+        # Make the sizeof AINT available to other configures
+        MPI_SIZEOF_AINT=$len
+        export MPI_SIZEOF_AINT
+        case $type in
+            int)
+                MPI_AINT_FMT_DEC_SPEC="%d"
+                MPI_AINT_FMT_HEX_SPEC="%x"
+                ;;
+            long)
+                MPI_AINT_FMT_DEC_SPEC="%ld"
+                MPI_AINT_FMT_HEX_SPEC="%lx"
+                ;;
+            long_long)
+                MPI_AINT_FMT_DEC_SPEC="%lld"
+                MPI_AINT_FMT_HEX_SPEC="%llx"
+                ;;
+            short)
+                MPI_AINT_FMT_DEC_SPEC="%hd"
+                MPI_AINT_FMT_HEX_SPEC="%hx"
+                ;;
+            *)
+                AC_MSG_WARN([unable to determine format specifiers for MPI_Aint, defaulting to int])
+                MPI_AINT_FMT_DEC_SPEC="%d"
+                MPI_AINT_FMT_HEX_SPEC="%x"
+            ;;
+        esac
+        export MPI_AINT_FMT_DEC_SPEC MPI_AINT_FMT_HEX_SPEC
         break
     fi
 done
 AC_SUBST(MPI_AINT)
+AC_SUBST(MPI_AINT_FMT_DEC_SPEC)
+AC_SUBST(MPI_AINT_FMT_HEX_SPEC)
 
 # If sizeof(mpi_aint) = sizeof(int), set this value
 if test "$ac_cv_sizeof_int" = "$ac_cv_sizeof_void_p" ; then
@@ -5463,16 +5532,16 @@ AC_SUBST(MPI_LDFLAGS)
 MPIU_DLL_SPEC_DEF="#define MPIU_DLL_SPEC"
 AC_SUBST(MPIU_DLL_SPEC_DEF)
 
-# Get the location of the CVS repository, if present
-    # We can use this test (for CVS/Root) for creating maintainer targets
+# Get the location of the SVN repository, if present
+    # We can use this test for creating maintainer targets
     # as well, and tests for maintainer-required software, such as 
     # doctext
-if test -s CVS/Root ; then
-    MPICVSHOME=`cat CVS/Root`
-elif test -s "$srcdir/CVS/Root" ; then
-    MPICVSHOME=`cat $srcdir/CVS/Root`
+if test -d .svn ; then
+    MPISVNHOME=`svn info . | sed -n "/Repository Root: /s/Repository Root: //p"`
+elif test -d "$srcdir/.svn" ; then
+    MPISVNHOME=`svn info $srcdir | sed -n "/Repository Root: /s/Repository Root: //p"`
 fi
-AC_SUBST(MPICVSHOME)
+AC_SUBST(MPISVNHOME)
 
 dnl We can include external packages at configure/build time by 
 dnl adding them to EXTERNAL_SRC_DIRS.

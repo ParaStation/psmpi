@@ -6,19 +6,16 @@
 </HEAD>
 <BODY BGCOLOR="FFFFFF">
 <A NAME="MPE_Describe_comm_event"><H1>MPE_Describe_comm_event</H1></A>
-Describe the attributes of an event with byte informational data in a specified MPI_Comm. 
+Describe the attributes of an event with byte informational data in a specified MPI_Comm and on the thread that the function is invoked. 
 <H2>Synopsis</H2>
 <PRE>
-int MPE_Describe_comm_event( MPI_Comm comm, int local_thread,
-                             int eventID,
+int MPE_Describe_comm_event( MPI_Comm comm, int eventID,
                              const char *name, const char *color,
                              const char *format )
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
 <DT><B>comm         </B><DD>MPI_Comm where this process is part of.
-
-<DT><B>local_thread </B><DD>local thread ID where the event is being defined.
 
 <DT><B>eventID      </B><DD>event number for the event.
 
@@ -40,6 +37,8 @@ interface of this routine considers the zero-length string,
 <P>
 <H2>Notes</H2>
 Adds a event definition to the logfile.
+<P>
+This function is threadsafe.
 <P>
 <H2>Notes on storage format control support</H2>
 The format control string is printf like, e.g. "Comment = %s".

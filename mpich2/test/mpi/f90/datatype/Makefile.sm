@@ -15,6 +15,10 @@ typem2f90_SOURCES    = typem2f90.f90
 gaddressf90_SOURCES  = gaddressf90.f90
 packef90_SOURCES     = packef90.f90
 
+testing:
+	../../runtests -srcdir=$(srcdir) -tests=testlist \
+			-mpiexec=$(bindir)/mpiexec \
+		   	-xmlfile=summary.xml
 ../util/mtestf90.o: 
 	(cd ../util && $(MAKE) mtestf90.o)
 structf_SOURCES    = structf.f90

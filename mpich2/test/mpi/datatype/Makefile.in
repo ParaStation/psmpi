@@ -26,11 +26,30 @@ VPATH = .:@srcdir@
 INCLUDES = -I../include -I${srcdir}/../include
 
 .SUFFIXES:
-.SUFFIXES: .o .c 
+.SUFFIXES: .o .c .txt 
 .c.o:
 	$(C_COMPILE) -c $<
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=test/mpi/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=datatype/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
@@ -38,6 +57,9 @@ clean:  clean-local
 	-@rm -f typename.exe unusual-noncontigs.exe blockindexed-zero-count.exe simple-size-extent.exe transpose-pack.exe slice-pack-external.exe contig-zero-count.exe contents.exe indexed-misc.exe gaddress.exe struct-zero-count.exe tresized2.exe darray-pack.exe simple-resized.exe localpack.exe simple-pack.exe blockindexed-misc.exe zeroparms.exe simple-commit.exe pairtype-size-extent.exe get-elements-pairtype.exe struct-no-real-types.exe struct-empty-el.exe unpack.exe slice-pack.exe simple-pack-external.exe contigstruct.exe lots-of-types.exe hindexed-zeros.exe pairtype-pack.exe struct-ezhov.exe typefree.exe tfree.exe struct-pack.exe subarray-pack.exe getpartelm.exe tmatchsize.exe tresized.exe triangular-pack.exe lbub.exe sizedtypes.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -45,10 +67,11 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: typename typefree contents struct-pack struct-empty-el\
 	 simple-resized triangular-pack get-elements-pairtype simple-commit\
 	 simple-commit simple-size-extent slice-pack struct-no-real-types\
@@ -60,6 +83,7 @@ all-redirect: typename typefree contents struct-pack struct-empty-el\
 	 getpartelm tresized tmatchsize tresized2 tfree sizedtypes\
 	 contigstruct
 
+coverage: 
 typename: typename.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o typename typename.o  ${LIBS}
 unusual-noncontigs: unusual-noncontigs.o   
@@ -175,6 +199,16 @@ sizedtypes: sizedtypes.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o sizedtypes sizedtypes.o  \
 	../util/mtest.o ${LIBS} 
 # --------------------------------------------------------------------------
+htmldoc:
+mandoc:
+latexdoc:
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  typename.c typefree.c contents.c struct-pack.c \

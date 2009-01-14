@@ -13,7 +13,7 @@ C
       
       call mtest_init( ierr )
 C
-C A simple test of exscan
+C A simple test of allreduce for the optional integer*8 type
 
       call mpi_allreduce(inbuf, outbuf, 1, MPI_INTEGER8, MPI_SUM, 
      &                   MPI_COMM_WORLD, ierr)

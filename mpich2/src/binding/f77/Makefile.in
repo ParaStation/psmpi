@@ -39,6 +39,7 @@ F77_COMPILE_SHL = $(FC_SHL) $(FFLAGS)
 
 
 VPATH = .:@srcdir@
+DOCTEXT         = @DOCTEXT@
 mpi_sources = sendf.c recvf.c get_countf.c bsendf.c ssendf.c rsendf.c \
 	bufattachf.c bufdetachf.c isendf.c ibsendf.c issendf.c irsendf.c \
 	irecvf.c waitf.c testf.c request_freef.c waitanyf.c testanyf.c \
@@ -192,12 +193,14 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include -I${master_top_src
 doc_sources = mpif77.txt
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .f .o 
+.SUFFIXES: .o .lo .c .f .o .man .html .latex .txt 
 .c.o:
 	$(C_COMPILE) -c $<
 .c.lo:
 	$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f.o:
@@ -207,22 +210,52 @@ doc_sources = mpif77.txt
 	@mv -f _s$*.o $*.lo
 .f:
 	$(F77_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+.txt.man:
+	$(DOCTEXT) -man -mpath ../../../man/man1 -ext 1 -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.txt.html:
+	$(DOCTEXT) -html -mpath ../../../www/www1  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.txt.latex:
+	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=. \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=src/binding/f77/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 .libstamp2 .libstamp3 .libstamp4 .libstamp5 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile mpif.h setbotf.f
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	 ../../../lib/lib${MPIFLIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
@@ -1901,6 +1934,16 @@ _statusc2f.o: statusc2f.c
 	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/statusc2f.c -o _statusc2f.o
 _statusc2f.lo: statusc2f.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/statusc2f.c -o _statusc2f.lo
+# --------------------------------------------------------------------------
+coverage: 
+	-@for file in ${wrap_objs} ; do \
+		gcov -b -f $$file ; done
+	-@for file in ${mpi_sources} setbot.c setbotf.f ; do \
+		gcov -b -f $$file ; done
+# --------------------------------------------------------------------------
+mandoc: ${doc_sources:.txt=.man}
+htmldoc: ${doc_sources:.txt=.html}
+latexdoc: ${doc_sources:.txt=.latex}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Install target

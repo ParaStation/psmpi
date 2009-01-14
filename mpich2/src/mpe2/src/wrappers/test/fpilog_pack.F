@@ -60,7 +60,7 @@
 
       call MPI_COMM_RANK( MPI_COMM_WORLD, myid, ierr )
       call MPI_COMM_SIZE( MPI_COMM_WORLD, numprocs, ierr )
-      print *, "Process ", myid, " of ", numprocs, " is alive"
+      write(6,*) "Process ", myid, " of ", numprocs, " is alive"
 
 ! Use of MPE_Log_get_state_eventIDs() instead of the
 ! deprecated function MPE_Log_get_event_number().
@@ -143,6 +143,11 @@
           endif
 
       enddo
+!     - Only GNU fortran does not flush stdout, so calling flush() is 
+!       absolutely needed with GNU compiler to get all stdout messages.
+!     - XLF needs flush_() instead of flush() otherwise needs -qextname=flush
+!     - Pathscale fortran compiler needs -intrinsic=G77{or PGI}.
+!     call flush(6)
 
 #if defined( NO_MPI_LOGGING )
       ierr = MPE_FINISH_LOG( "nfpilog_pack" )

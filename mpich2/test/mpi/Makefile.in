@@ -12,13 +12,33 @@ abs_srcdir      = @abs_srcdir@
 MAKE            = @MAKE@
 
 VPATH = .:@srcdir@
-MPICVSHOME = @MPICVSHOME@
+MPISVNHOME = @MPISVNHOME@
 PACKAGE    = mpi2test
 VERSION    = @VERSION@
 
 .SUFFIXES:
-# Some make programs complain if no suffixes are set
-.SUFFIXES: .c .o
+.SUFFIXES:  .txt 
+
+${srcdir}/configure: ${srcdir}/configure.in 
+	@rm -rf autom4te*.cache
+	(cd ${srcdir} && autoheader -I ../../confdb && \
+	autoconf -I ../../confdb )
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../ \
+	-configdir=test/mpi/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="maint/testmerge runtests Makefile basic/Makefile attr/Makefile util/Makefile coll/Makefile comm/Makefile datatype/Makefile errhan/Makefile group/Makefile info/Makefile init/Makefile pt2pt/Makefile rma/Makefile spawn/Makefile topo/Makefile io/Makefile f77/Makefile f77/attr/Makefile f77/attr/attraints.h f77/pt2pt/attr1aints.h f77/ext/add1size.h f77/datatype/Makefile f77/datatype/typeaints.h f77/util/Makefile f77/coll/Makefile f77/comm/Makefile f77/topo/Makefile f77/init/Makefile f77/rma/addsize.h f77/pt2pt/Makefile f77/info/Makefile f77/spawn/Makefile f77/spawn/type1aint.h f77/rma/Makefile f77/ext/Makefile f77/ext/testlist f77/io/Makefile f77/io/iooffset.h f77/io/iodisp.h f77/io/ioaint.h f90/Makefile f90/attr/Makefile f90/datatype/Makefile f90/f90types/Makefile f90/util/Makefile f90/coll/Makefile f90/comm/Makefile f90/topo/Makefile f90/init/Makefile f90/pt2pt/Makefile f90/rma/Makefile f90/info/Makefile f90/spawn/Makefile f90/timer/Makefile f90/ext/Makefile f90/ext/testlist f90/io/Makefile f90/misc/Makefile cxx/Makefile cxx/util/Makefile cxx/attr/Makefile cxx/pt2pt/Makefile cxx/comm/Makefile cxx/coll/Makefile cxx/info/Makefile cxx/datatype/Makefile cxx/io/Makefile cxx/init/Makefile cxx/rma/Makefile cxx/spawn/Makefile threads/Makefile threads/pt2pt/Makefile threads/util/Makefile threads/comm/Makefile errors/Makefile errors/coll/Makefile errors/comm/Makefile errors/group/Makefile errors/pt2pt/Makefile errors/rma/Makefile errors/spawn/Makefile errors/topo/Makefile errors/io/Makefile errors/cxx/Makefile errors/cxx/errhan/Makefile errors/cxx/io/Makefile errors/f77/Makefile errors/f90/Makefile manual/Makefile manual/manyconnect perf/Makefile testlist cxx/testlist f77/testlist f90/testlist errors/testlist errors/cxx/testlist config.status config.log config.cache *conf.cache config.system" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-if [ -x config.status ] ; then CONFIG_FILES=Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	for dir in util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo io @otherlangs@ @threadsdir@ errors manual perf - ; do \
@@ -27,6 +47,9 @@ apply:
 clean:  clean-local
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	for dir in util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo io @otherlangs@ @threadsdir@ errors manual perf - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} clean ; ) ; done
@@ -45,10 +68,15 @@ distclean-xxx:
 	done
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
+	for dir in util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo io @otherlangs@ @threadsdir@ errors manual perf - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} maintainer-clean ; ) ; done
+	-rm -f include/mpitestconf.h.in 
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f Makefile.in  Makefile
+	rm -f Makefile.in  Makefile.in Makefile
 all-redirect:
 	@(cd util && ${MAKE} all )
 	@(cd attr && ${MAKE} all )
@@ -77,7 +105,33 @@ all-redirect:
 	@(cd manual && ${MAKE} all )
 	@(cd perf && ${MAKE} all )
 
+coverage: 
+	for dir in util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo io @otherlangs@ @threadsdir@ errors manual perf - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} coverage ; ) ; done
 # --------------------------------------------------------------------------
+htmldoc:
+	for dir in util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo io @otherlangs@ @threadsdir@ errors manual perf - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} htmldoc ; ) ; done
+mandoc:
+	for dir in util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo io @otherlangs@ @threadsdir@ errors manual perf - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} mandoc ; ) ; done
+latexdoc:
+	for dir in util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo io @otherlangs@ @threadsdir@ errors manual perf - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} latexdoc ; ) ; done
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+	for dir in util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo io @otherlangs@ @threadsdir@ errors manual perf - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} dependencies ; ) ; done
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
@@ -103,7 +157,7 @@ clean-local:
 dist:
 	@version=${VERSION} ; \
 	prever=`echo ${VERSION} | sed -e 's/^[^-]*//'` ; \
-	if [ "$$prever" = "-CVS" ] ; then version=$${version}-`date "+%Y%m%d%H%M"` ; fi ; \
+	if [ "$$prever" = "-SVN" ] ; then version=$${version}-`date "+%Y%m%d%H%M"` ; fi ; \
 	if [ -z "${TAG}" ] ; then tag=HEAD ; else tag=${TAG}; fi ; \
 	$(MAKE) version=$${version} tag=$${tag} doc=yes dist-with-version
 
@@ -116,8 +170,8 @@ dist-with-version:
 	    exit 1 ; fi 
 	@echo ""; echo "Cutting version ${version} of the MPICH2 distribution from tag ${tag}" ; echo ""
 	if [ ! -d tmpdir ] ; then mkdir tmpdir ; fi 
-	rm -f cvsexp.log 
-	( cd tmpdir && cvs -d $(MPICVSHOME) export -r "${tag}" -d mpi2test mpich2-01/test/mpi >cvsexp.log 2>&1 ) || (echo "cvs export failed; see tmpdir/cvsexp.log" && exit 1 )
+	rm -f svnexp.log 
+	( cd tmpdir && svn export $(MPISVNHOME)/mpich2/tags/release/${tag} mpich2 > svnexp.log 2>&1 ) || (echo "svn export failed; see tmpdir/svnexp.log" && exit 1 )
 	mv tmpdir/mpi2test tmpdir/${PACKAGE}-${version}
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles -distrib )
 	( cd tmpdir && tar cf ${PACKAGE}-${version}.tar ${PACKAGE}-${version} )

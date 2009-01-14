@@ -1481,6 +1481,10 @@ if test "$enable_weak_symbols" = "no" ; then
     TRY_WEAK_SYMBOLS=0
 fi
 MPI=$with_mpi
+if test -n "$with_mpi"; then
+       CC=$MPI/bin/mpicc
+fi
+
 FILE_SYSTEM=$with_file_system
 #
 ac_aux_dir=
@@ -2963,7 +2967,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:2966:" \
+echo "$as_me:2970:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -10486,8 +10490,12 @@ echo $ECHO_N "checking if a simple MPI program compiles and links... $ECHO_C" >&
      }
 EOF
   rm -f conftest
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
+  cmd="$CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB"
+  echo "$as_me:$LINENO: $cmd" >&5
+  $cmd >&5 2>&5
   if test ! -x conftest ; then
+      echo "$as_me:$LINENO: failed program was:" >&5
+      sed 's/^/| /' mpitest.c >&5
       rm -f conftest mpitest.c
       { { echo "$as_me:$LINENO: error: Unable to compile a simple MPI program.
 Use environment variables to provide the location of MPI libraries and

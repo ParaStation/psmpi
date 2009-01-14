@@ -21,6 +21,7 @@ RM           = @RM@
 TARGET  = $(libbuild_dir)/clog2TOdrawable.jar
 TARGET1 = $(libbuild_dir)/clog2TOdrawable_1pass.jar
 TARGET2 = $(libbuild_dir)/clog2TOdrawable_2pass.jar
+TARGET3 = $(libbuild_dir)/clog2perftest.jar
 PACKAGE = logformat.clog2TOdrawable
 SRC     = ColorNameMap.java ObjDef.java \
           Obj_Event.java Obj_Arrow.java Obj_State.java ObjMethod.java \
@@ -30,6 +31,10 @@ SRC     = ColorNameMap.java ObjDef.java \
           InputLog.java Print.java Print_1pass.java Print_2pass.java
 
 OBJ    = $(SRC:.java=.class)
+
+TS_SRC = PerfTest.java
+
+TS_OBJ = $(TS_SRC:.java=.class)
 
 .SUFFIXES:      .java .class .jar
 
@@ -46,6 +51,8 @@ JCFLAGS = -sourcepath @JPATH_START@$(SRCDIR)@JPATH_FINAL@ -classpath @JPATH_STAR
 
 #  ALL: $(TARGET) $(TARGET1) $(TARGET2)
 ALL: $(TARGET)
+
+test: $(TARGET3)
 
 $(TARGET): $(OBJ)
 	cd $(CLASSDIR) && \
@@ -75,6 +82,18 @@ $(TARGET2): $(OBJ)
 	cd $(CLASSDIR) && \
 	$(RM) -f $(PACKAGE).manifest && \
 	echo "Main-Class: $(PACKAGE).Print_2pass" > $(PACKAGE).manifest ; \
+	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
+	$(JAR) $(JARFLAGS)cfm $${jarfile} $(PACKAGE).manifest ; \
+	for dir in base/io/ logformat/clog2/ base/drawable/ $(PKGDIR)/ ; do \
+	    classdir_prefix=@JPATH_START@$${dir}@JPATH_FINAL@ ; \
+	    $(JAR) $(JARFLAGS)uf $${jarfile} $${classdir_prefix}*.class ; \
+	done ; \
+	$(JAR) $(JARFLAGS)uf $${jarfile} jumpshot.colors
+
+$(TARGET3): $(OBJ) $(TS_OBJ)
+	cd $(CLASSDIR) && \
+	$(RM) $(PACKAGE).manifest && \
+	echo "Main-Class: $(PACKAGE).PerfTest" > $(PACKAGE).manifest ; \
 	jarfile=@JPATH_START@$@@JPATH_FINAL@ ; \
 	$(JAR) $(JARFLAGS)cfm $${jarfile} $(PACKAGE).manifest ; \
 	for dir in base/io/ logformat/clog2/ base/drawable/ $(PKGDIR)/ ; do \

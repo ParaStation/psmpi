@@ -394,7 +394,6 @@ int
 get_local_procs (int global_rank, int num_global, int *num_local_p, int **local_procs_p, int *local_rank_p, int *num_nodes_p, int **node_ids_p)
 {
 #if defined (ENABLED_NO_LOCAL)
-#warning shared-memory communication disabled
     /* used for debugging only */
     /* return an array as if there are no other processes on this processor */
     int mpi_errno = MPI_SUCCESS;
@@ -422,7 +421,7 @@ get_local_procs (int global_rank, int num_global, int *num_local_p, int **local_
     /* --END ERROR HANDLING-- */
 
 #elif 0 /* PMI_Get_clique_(size)|(ranks) don't work with mpd */
-#warning PMI_Get_clique doesnt work with mpd
+#error PMI_Get_clique doesnt work with mpd
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
     int *lrank_p;
@@ -630,7 +629,7 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	vc_ch->recv_queue = MPID_nem_mem_region.RecvQ[vc->lpid];
 
         /* override nocontig send function */
-        vc->sendEagerNoncontig_fn = MPIDI_CH3I_SendEagerNoncontig;
+        vc->sendNoncontig_fn = MPIDI_CH3I_SendNoncontig;
 
         /* local processes use the default method */
         vc_ch->iStartContigMsg = NULL;
@@ -649,6 +648,8 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
         vc_ch->lmt_queue.tail      = NULL;        
         vc_ch->lmt_active_lmt      = NULL;
         vc_ch->lmt_enqueued        = FALSE;
+
+        vc->eager_max_msg_sz = MPID_NEM_MPICH2_DATA_LEN - sizeof(MPIDI_CH3_Pkt_t);
     }
     else
     {
@@ -671,10 +672,10 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
 	if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
 /* FIXME: DARIUS -- enable this assert once these functions are implemented */
-/*         /\* iStartContigMsg iSendContig and sendEagerNoncontig_fn must */
+/*         /\* iStartContigMsg iSendContig and sendNoncontig_fn must */
 /*            be set for nonlocal processes.  Default functions only */
 /*            support shared-memory communication. *\/ */
-/*         MPIU_Assert(vc_ch->iStartContigMsg && vc_ch->iSendContig && vc->sendEagerNoncontig_fn); */
+/*         MPIU_Assert(vc_ch->iStartContigMsg && vc_ch->iSendContig && vc->sendNoncontig_fn); */
 
     }
 

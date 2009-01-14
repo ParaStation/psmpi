@@ -20,5 +20,14 @@ either "mpicc -mpe=mpilog" or "mpecc -mpilog"
 This routine outputs the logfile in CLOG2 format, i.e.
 a collective call over 'MPI_COMM_WORLD'.
 <P>
-<P><B>Location:</B>../src/logging/src/mpe_log.c<P>
+This function is threadsafe, but
+MPE_Finish_log() is expected to be called only on the main thread
+which initializes MPE logging through MPE_Init_log().
+<P>
+<H2>Returns</H2>
+Always return MPE_LOG_OK.
+<P>
+<H2>See Also</H2>
+ MPE_Init_log()
+<BR><P><B>Location:</B>../src/logging/src/mpe_log.c<P>
 </BODY></HTML>

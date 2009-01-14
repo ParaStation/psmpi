@@ -81,6 +81,8 @@ smpd_global_t smpd_process =
 #endif
       SMPD_FALSE,       /* do_console             */
       SMPD_LISTENER_PORT, /* smpd port            */
+      SMPD_FALSE,       /* Is singleton client ? */
+      -1,               /* Port to connect back to a singleton client*/
       "",               /* console_host           */
       NULL,             /* host_list              */
       NULL,             /* launch_list            */
@@ -595,6 +597,10 @@ int smpd_init_process(void)
     smpd_process.hBombDiffuseEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
     smpd_process.hLaunchProcessMutex = CreateMutex(NULL, FALSE, NULL);
 #else
+    /* Setting the smpd_filename to default filename is done in smpd_get_smpd_data()
+     * Avoid duplicating the effort
+     */ 
+	/*
     homedir = getenv("HOME");
     if(homedir != NULL){
         strcpy(smpd_process.smpd_filename, homedir);
@@ -609,7 +615,7 @@ int smpd_init_process(void)
     {
 	if (s.st_mode & 00077)
 	{
-	    /*printf("smpd file, %s, cannot be readable by anyone other than the current user, please set the permissions accordingly (0600).\n", smpd_process.smpd_filename);*/
+	    printf("smpd file, %s, cannot be readable by anyone other than the current user, please set the permissions accordingly (0600).\n", smpd_process.smpd_filename);
 	    smpd_process.smpd_filename[0] = '\0';
 	}
     }
@@ -617,9 +623,12 @@ int smpd_init_process(void)
     {
 	smpd_process.smpd_filename[0] = '\0';
     }
+	*/
 #endif
-
-    smpd_get_smpd_data("phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+	smpd_process.smpd_filename[0] = '\0';
+	smpd_process.passphrase[0] = '\0';
+    /* smpd_init_process() should not try to get the passphrase. Just initialize the values */
+    /* smpd_get_smpd_data("phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH); */
 
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
@@ -663,6 +672,9 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, MPIDU_S
     context->pwd_request[0] = '\0';
     context->session[0] = '\0';
     context->session_header[0] = '\0';
+    context->singleton_init_hostname[0] = '\0';
+    context->singleton_init_kvsname[0] = '\0';
+    context->singleton_init_pm_port = -1;
     context->smpd_pwd[0] = '\0';
 #ifdef HAVE_WINDOWS_H
     context->wait.hProcess = NULL;
@@ -700,7 +712,7 @@ int smpd_create_sspi_client_context(smpd_sspi_client_context_t **new_context)
 
     smpd_enter_fn(FCNAME);
 
-    context = (smpd_sspi_client_context_t *)malloc(sizeof(smpd_sspi_client_context_t));
+    context = (smpd_sspi_client_context_t *)MPIU_Malloc(sizeof(smpd_sspi_client_context_t));
     if (context == NULL)
     {
 	*new_context = NULL;
@@ -769,7 +781,7 @@ int smpd_free_sspi_client_context(smpd_sspi_client_context_t **context)
 	smpd_dbg_printf("freeing a sspi_client_context not in the global list\n");
     }
     /* FIXME: cleanup sspi structures */
-    free(*context);
+    MPIU_Free(*context);
     *context = NULL;
     smpd_exit_fn(FCNAME);
     return SMPD_SUCCESS;
@@ -1031,7 +1043,7 @@ int smpd_get_default_hosts()
 	{
 	    if (smpd_get_hostname(myhostname, SMPD_MAX_HOST_LENGTH) == SMPD_SUCCESS)
 	    {
-		smpd_process.default_host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+		smpd_process.default_host_list = (smpd_host_node_t*)MPIU_Malloc(sizeof(smpd_host_node_t));
 		if (smpd_process.default_host_list == NULL)
 		{
 		    smpd_exit_fn(FCNAME);
@@ -1059,7 +1071,7 @@ int smpd_get_default_hosts()
 	    smpd_unlock_smpd_data();
 	    if (smpd_get_hostname(hosts, 8192) == 0)
 	    {
-		smpd_process.default_host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+		smpd_process.default_host_list = (smpd_host_node_t*)MPIU_Malloc(sizeof(smpd_host_node_t));
 		if (smpd_process.default_host_list == NULL)
 		{
 		    smpd_exit_fn(FCNAME);
@@ -1116,7 +1128,7 @@ int smpd_get_default_hosts()
     host = strtok(hosts, " \t\r\n");
     while (host)
     {
-	cur_host = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+	cur_host = (smpd_host_node_t*)MPIU_Malloc(sizeof(smpd_host_node_t));
 	if (cur_host != NULL)
 	{
 	    /*printf("default host: %s\n", host);*/
@@ -1223,7 +1235,7 @@ int smpd_add_extended_host_to_default_list(const char *hostname, const char *alt
     iter = smpd_process.default_host_list;
     if (iter == NULL)
     {
-	smpd_process.default_host_list = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+	smpd_process.default_host_list = (smpd_host_node_t*)MPIU_Malloc(sizeof(smpd_host_node_t));
 	if (smpd_process.default_host_list == NULL)
 	{
 	    smpd_exit_fn(FCNAME);
@@ -1261,7 +1273,7 @@ int smpd_add_extended_host_to_default_list(const char *hostname, const char *alt
 	}
     }
 
-    iter->next = (smpd_host_node_t*)malloc(sizeof(smpd_host_node_t));
+    iter->next = (smpd_host_node_t*)MPIU_Malloc(sizeof(smpd_host_node_t));
     if (iter->next == NULL)
     {
 	smpd_exit_fn(FCNAME);

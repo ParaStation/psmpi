@@ -31,15 +31,34 @@ F77INCLUDES = -I. -I../attr
 F77HEADERS = addsize.h
 
 .SUFFIXES:
-.SUFFIXES: .o .c .f 
+.SUFFIXES: .o .c .f .txt 
 .c.o:
 	$(C_COMPILE) -c $<
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f.o:
 	$(F77_COMPILE) -c $<
 .f:
 	$(F77_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../../ \
+	-configdir=test/mpi/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=f77/rma/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
@@ -47,6 +66,9 @@ clean:
 	-@rm -f wingetf.exe winscale1f.exe winattrf.exe winerrf.exe baseattrwinf.exe c2f2cwinf.exe winscale2f.exe wingroupf.exe winfencef.exe winaccf.exe winattr2f.exe winnamef.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -54,13 +76,15 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: winscale1f winscale2f winfencef wingetf winerrf winnamef\
 	 wingroupf winaccf c2f2cwinf baseattrwinf winattrf winattr2f
 
+coverage: 
 wingetf: wingetf.o   @MPILIBLOC@ ../util/mtestf.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o wingetf wingetf.o  \
 	../util/mtestf.o ${LIBS} 
@@ -98,6 +122,16 @@ winnamef: winnamef.o   @MPILIBLOC@ ../util/mtestf.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winnamef winnamef.o  \
 	../util/mtestf.o ${LIBS} 
 # --------------------------------------------------------------------------
+htmldoc:
+mandoc:
+latexdoc:
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  winscale1f.f winscale2f.f winfencef.f wingetf.f winerrf.f \

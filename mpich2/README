@@ -1,4 +1,4 @@
-			 MPICH2 Release 1.0.6
+			MPICH2 Release 1.0.7rc1
 
 MPICH2 is an all-new implementation of MPI from the group at Argonne
 National Laboratory.  It shares many goals with the original MPICH but
@@ -34,7 +34,7 @@ later, in the section "Alternative configurations".
 
 1.  You will need the following prerequisites.
 
-    - This tar file mpich2-1.0.6.tar.gz
+    - This tar file mpich2-1.0.7rc1.tar.gz
 
     - A C compiler (gcc is sufficient)
 
@@ -65,14 +65,14 @@ later, in the section "Alternative configurations".
 
 2.  Unpack the tar file and go to the top level directory:
 
-      tar xfz mpich2.tar.gz
-      cd mpich2-1.0.6
+      tar xfz mpich2-1.0.7rc1.tar.gz
+      cd mpich2-1.0.7rc1
 
     If your tar doesn't accept the z option, use
 
       gunzip mpich2.tar.gz
       tar xf mpich2.tar
-      cd mpich2-1.0.6
+      cd mpich2-1.0.7rc1
 
 3.  Choose an installation directory (the default is /usr/local/bin):
 
@@ -154,7 +154,7 @@ later, in the section "Alternative configurations".
     MPD, which is a ring of daemons on the machines where you will run
     your MPI programs.  In the next few steps, you will get his ring up
     and tested.  More details on interacting with MPD can be found in
-    the README file in mpich2-1.0.6/src/pm/mpd, such as how to list
+    the README file in mpich2-1.0.7rc1/src/pm/mpd, such as how to list
     running jobs, kill, suspend, or otherwise signal them, and how to
     debug programs with "mpiexec -gdb".
 
@@ -237,7 +237,7 @@ later, in the section "Alternative configurations".
 
     to see which machines are in the ring so far.  More details on
     mpdboot and other options for starting the mpd's are in
-    mpich2-1.0.6/src/pm/mpd/README.
+    mpich2-1.0.7rc1/src/pm/mpd/README.
 
  !! ***************************
     If you are still having problems getting the mpd ring established,
@@ -279,7 +279,7 @@ later, in the section "Alternative configurations".
 14. Now we will run an MPI job, using the mpiexec command as specified
     in the MPI-2 standard.  There are some examples in the install
     directory, which you have already put in your path, as well as in
-    the directory mpich2-1.0.6/examples.  One of them is the classic
+    the directory mpich2-1.0.7rc1/examples.  One of them is the classic
     cpi example, which computes the value of pi by numerical
     integration in parallel.
 
@@ -347,17 +347,17 @@ configured by adding arguments to the configure step.
 Compiler Optimization Levels
 ============================
 
-By default, from version 1.0.6 onwards the MPICH2 library is built
-with the -O2 optimization level if it is available. The mpicc and
-other scripts that are used to compile applications do not include any
-optimization flag by default. If you want to build the MPICH2 library
-with a specific optimization level, set the environment variable
-CFLAGS to that level before running configure. If you do not want this
-CFLAGS value to be included in the mpicc script, set the environment
-variable MPI_CFLAGS to MPI_CFLAGS_EMPTY. For example, to build a
-"production" MPICH2 in a GNU environment, you may want to do:
+By default, the MPICH2 library is built with the -O2 optimization
+level if it is available. The mpicc and other scripts that are used to
+compile applications do not include any optimization flag by
+default. If you want to build the MPICH2 library with a specific
+optimization level, set the environment variable CFLAGS to that level
+before running configure. If you do not want this CFLAGS value to be
+included in the mpicc script, set the environment variable MPI_CFLAGS
+to MPI_FLAGS_EMPTY. For example, to build a "production" MPICH2 in a
+GNU environment, you may want to do:
      setenv CFLAGS -O3
-     setenv MPI_CFLAGS MPI_CFLAGS_EMPTY
+     setenv MPI_CFLAGS MPI_FLAGS_EMPTY
 before running configure. This will cause the MPICH2 library to be
 built with -O3, but -O3 will not be included in the mpicc script.
 
@@ -368,7 +368,7 @@ Alternative Process Managers
 mpd
 ---
 MPD is the default process manager.  Its setup and use have been
-described above.  The file mpich2-1.0.6/src/pm/mpd/README has more 
+described above.  The file mpich2-1.0.7rc1/src/pm/mpd/README has more 
 information about interactive commands for managing the ring of MPDs.
 
 smpd
@@ -376,7 +376,7 @@ smpd
 SMPD is a process management system for both Microsoft Windows and UNIX.
 SMPD is capable of starting a job where some processes are running on
 Windows and others are running on a variant of UNIX.  For more
-information, please see mpich2-1.0.6/src/pm/smpd/README. 
+information, please see mpich2-1.0.7rc1/src/pm/smpd/README. 
 
 gforker
 -------
@@ -399,15 +399,17 @@ specified explicitly by putting
 
   --with-device=ch3:sock
 
-on the configure command line.  The ch3 device has two other channels
-which are rigorously tested: "shm" (shared memory) for use on SMPs (all
-communication goes through shared memory instead of over TCP sockets)
-and "ssm" (sockets and shared memory) for use on clusters of SMPs
-(communication between processes on the same machine goes through shared
-memory; communication between processes on different machines goes over
-sockets).  Configure these by putting
+on the configure command line.  The ch3 device has three other
+channels which are rigorously tested: "nemesis" for high-performance
+communication on shared memory as well as different network stacks
+(tcp, ib, sctp and myrinet), "shm" (shared memory) for use on SMPs
+(all communication goes through shared memory instead of over TCP
+sockets) and "ssm" (sockets and shared memory) for use on clusters of
+SMPs (communication between processes on the same machine goes through
+shared memory; communication between processes on different machines
+goes over sockets).  Configure these by putting
 
-  --with-device=ch3:shm
+  --with-device=ch3:nemesis
 
 or 
 
@@ -415,15 +417,26 @@ or
 
 on the configure command line.
 
+For the best performance, the "nemesis" channel should be picked
+unless one of the following cases is true:
+
+ * The target platform is not an Intel 32-bit or Intel/AMD 64-bit
+(x86_64) machine.
+
+ * The target operating systems is not Linux.
+
+ * Dynamic processes (part of the MPI-2 standard) are needed.
+
+
 A new channel supports the dynamic loading of other channels.  To use this
 channel, configure with
 
   --with-device=ch3:dllchan:sock,shm,ssm 
 
-(This provides the sock, shm, and ssm channels as options, with sock being 
-the default.)  In addition, you must specify the shared library type; under
-Linux and when using gcc (or compilers that mimic gcc for shared-library 
-construction) add
+(This provides the sock, shm, and ssm channels as options, with sock
+being the default.)  In addition, you must specify the shared library
+type; under Linux and when using gcc (or compilers that mimic gcc for
+shared-library construction) add
 
    --enable-sharedlibs=gcc
 
@@ -431,11 +444,11 @@ On Mac OSX, use
 
    --enable-sharedlibs=gcc-osx
 
-This is an experimental channel in the 1.0.6 release.  To select a channel
-other than the default channel, set the environment variable MPICH_CH3CHANNEL
-to the channel name (i.e., sock, shm, or ssm).  If the process manager is
-gforker, you can also use a commandline option to mpiexec; specify
--channel=name, as in
+This is an experimental channel in the current release.  To select a
+channel other than the default channel, set the environment variable
+MPICH_CH3CHANNEL to the channel name (i.e., sock, shm, or ssm).  If
+the process manager is gforker, you can also use a commandline option
+to mpiexec; specify -channel=name, as in
 
     mpiexec -n 4 -channel=shm a.out
 
@@ -446,16 +459,11 @@ and does not work.  The next release will have a more robust,
 ready-for-production, version of this channel.
 
 
-The sshm (scalable shared memory) channel is not supported for
-1.0.6. The code has been retained to provide an example of some MPI-2
-RMA optimizations (the immediate method as opposed to the deferred
-method used in other channels for implementing the synchronization in
-MPI-2 one-sided communication). 
-
-The InfiniBand (ib) channel has not been kept up to date in a long time
-and hence we have not included it in this release. If you need to use
-MPI on InfiniBand, we recommend using MVAPICH2 or MVAPICH from Ohio
-State Univ.   http://nowlab.cse.ohio-state.edu/projects/mpi-iba/
+The sshm (scalable shared memory) channel is currently not
+supported. The code has been retained to provide an example of some
+MPI-2 RMA optimizations (the immediate method as opposed to the
+deferred method used in other channels for implementing the
+synchronization in MPI-2 one-sided communication).
 
 The Nemesis channel is a new low-latency channel that uses shared
 memory for intra-node communication and various networks for
@@ -627,6 +635,12 @@ Performance Options:
  --enable-timing=no - Turns off just the collection of internal timing
                  information
 
+ --enable-ndebug - Turns on NDEBUG, which disables asserts. This is a
+		subset of the optimizations provided by enable-fast,
+		but is useful in environments where the user wishes
+		to retain the debug symbols, e.g., this can be combined
+		with the --enable-g option.
+
 MPI Features:
 
   --enable-romio - Build the ROMIO implementation of MPI-IO.  This is
@@ -709,14 +723,15 @@ Compilation options for development:
                      clock_gettime    - Posix timer (where available)
                      gettimeofday     - Most Unix systems
                      linux86_cycle    - Linux x86; returns cycle
-                                        counts, not time in seconds 
+                                        counts, not time in seconds*
                      linuxalpha_cycle - Like linux86_cycle, but for
-                                        Linux Alpha 
-                     gcc_ia64_cycle   - IPF ar.itc timer
-                 Note that the cycle timers are intended to be used by
-                 MPICH2 developers for internal low-level timing.
-                 Normal users should not use these as they are not
-                 guaranteed to be accurate in certain situations.
+                                        Linux Alpha* 
+                     gcc_ia64_cycle   - IPF ar.itc timer*
+                     device           - The timer is provided by the device
+                 *Note that the cycle timers are intended to be used by
+                  MPICH2 developers for internal low-level timing.
+                  Normal users should not use these as they are not
+                  guaranteed to be accurate in certain situations.
 
 
 

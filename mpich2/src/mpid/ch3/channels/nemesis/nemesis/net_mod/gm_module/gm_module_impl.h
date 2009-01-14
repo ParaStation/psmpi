@@ -37,6 +37,7 @@ int MPID_nem_gm_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz
                                 MPID_Request **sreq_ptr);;
 int MPID_nem_gm_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, MPIDI_msg_sz_t hdr_sz,
                             void *data, MPIDI_msg_sz_t data_sz);;
+int MPID_nem_gm_SendNoncontig(MPIDI_VC_t *vc, MPID_Request *sreq, void *header, MPIDI_msg_sz_t hdr_sz);
 
 int MPID_nem_gm_module_lmt_init();
 int MPID_nem_gm_module_lmt_finalize();

@@ -30,46 +30,103 @@ VPATH = .:@srcdir@
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c 
+.SUFFIXES: .o .lo .c .txt 
 .c.o:
 	$(C_COMPILE) -c $<
 .c.lo:
 	$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=. \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile mpe_thread.h" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=src/util/dbg/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile getfuncstack
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    ${MAKE} .libstamp1 ; \
 	fi
 
-.libstamp0 ../../../lib/lib${MPILIBNAME}.a: dbg_printf.o timelimit.o 
+.libstamp0 ../../../lib/lib${MPILIBNAME}.a: dbg_printf.o timelimit.o exit.o 
 	${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
 	${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../lib/lib${MPILIBNAME}.la: dbg_printf.lo timelimit.lo 
+.libstamp1 ../../../lib/lib${MPILIBNAME}.la: dbg_printf.lo timelimit.lo \
+	exit.lo 
 	${AR} cr ../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
+coverage: 
+	-@for file in dbg_printf.c timelimit.c exit.c ; do \
+		gcov -b -f $$file ; done
+# --------------------------------------------------------------------------
+htmldoc:
+mandoc:
+latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  dbg_printf.c timelimit.c
+# --------------------------------------------------------------------------
+# Dependencies
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+$(DEPS_DIR)/dbg_printf.d: $(srcdir)/dbg_printf.c
+	$(MAKE_DEPEND_C)  $(srcdir)/dbg_printf.c >$(DEPS_DIR)/dbg_printf.d
+$(DEPS_DIR)/timelimit.d: $(srcdir)/timelimit.c
+	$(MAKE_DEPEND_C)  $(srcdir)/timelimit.c >$(DEPS_DIR)/timelimit.d
+$(DEPS_DIR)/exit.d: $(srcdir)/exit.c
+	$(MAKE_DEPEND_C)  $(srcdir)/exit.c >$(DEPS_DIR)/exit.d
+$(DEPS_DIR)/timestamp: dbg_printf.c timelimit.c exit.c Makefile
+	rm -f $(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/dbg_printf.c >$(DEPS_DIR)/dbg_printf.d
+	echo "include $(DEPS_DIR)/dbg_printf.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/timelimit.c >$(DEPS_DIR)/timelimit.d
+	echo "include $(DEPS_DIR)/timelimit.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/exit.c >$(DEPS_DIR)/exit.d
+	echo "include $(DEPS_DIR)/exit.d" >>$(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
+# End of Dependencies
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+SOURCES         =  dbg_printf.c timelimit.c exit.c
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)

@@ -28,6 +28,7 @@ CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 
 VPATH = .:@srcdir@
+DOCTEXT         = @DOCTEXT@
 mpi_sources = cart_coords.c cart_create.c cart_get.c \
  cart_map.c cart_rank.c cart_shift.c cart_sub.c dims_create.c graph_get.c \
  graph_map.c graph_nbr.c graphcreate.c graphdimsget.c graphnbrcnt.c \
@@ -36,30 +37,62 @@ HEADERS = topo.h
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c 
+.SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
 	$(C_COMPILE) -c $<
 .c.lo:
 	$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+.c.man:
+	$(DOCTEXT) -man -mpath ../../../man/man3 -ext 3 -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.html:
+	$(DOCTEXT) -html -mpath ../../../www/www3  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.latex:
+	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=. \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=src/mpi/topo/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 .libstamp2 .libstamp3 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
 	    ${MAKE} .libstamp2 ; \
@@ -165,7 +198,96 @@ _topo_test.o: topo_test.c
 _topo_test.lo: topo_test.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/topo_test.c -o _topo_test.lo
 # --------------------------------------------------------------------------
+coverage: 
+	-@for file in ${mpi_sources} topoutil.c ; do \
+		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
+mandoc: ${mpi_sources:.c=.man}
+htmldoc: ${mpi_sources:.c=.html}
+latexdoc: ${mpi_sources:.c=.latex}
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+$(DEPS_DIR)/cart_coords.d: $(srcdir)/cart_coords.c
+	$(MAKE_DEPEND_C) -MT '_cart_coords.o cart_coords.o' $(srcdir)/cart_coords.c >$(DEPS_DIR)/cart_coords.d
+$(DEPS_DIR)/cart_create.d: $(srcdir)/cart_create.c
+	$(MAKE_DEPEND_C) -MT '_cart_create.o cart_create.o' $(srcdir)/cart_create.c >$(DEPS_DIR)/cart_create.d
+$(DEPS_DIR)/cart_get.d: $(srcdir)/cart_get.c
+	$(MAKE_DEPEND_C) -MT '_cart_get.o cart_get.o' $(srcdir)/cart_get.c >$(DEPS_DIR)/cart_get.d
+$(DEPS_DIR)/cart_map.d: $(srcdir)/cart_map.c
+	$(MAKE_DEPEND_C) -MT '_cart_map.o cart_map.o' $(srcdir)/cart_map.c >$(DEPS_DIR)/cart_map.d
+$(DEPS_DIR)/cart_rank.d: $(srcdir)/cart_rank.c
+	$(MAKE_DEPEND_C) -MT '_cart_rank.o cart_rank.o' $(srcdir)/cart_rank.c >$(DEPS_DIR)/cart_rank.d
+$(DEPS_DIR)/cart_shift.d: $(srcdir)/cart_shift.c
+	$(MAKE_DEPEND_C) -MT '_cart_shift.o cart_shift.o' $(srcdir)/cart_shift.c >$(DEPS_DIR)/cart_shift.d
+$(DEPS_DIR)/cart_sub.d: $(srcdir)/cart_sub.c
+	$(MAKE_DEPEND_C) -MT '_cart_sub.o cart_sub.o' $(srcdir)/cart_sub.c >$(DEPS_DIR)/cart_sub.d
+$(DEPS_DIR)/dims_create.d: $(srcdir)/dims_create.c
+	$(MAKE_DEPEND_C) -MT '_dims_create.o dims_create.o' $(srcdir)/dims_create.c >$(DEPS_DIR)/dims_create.d
+$(DEPS_DIR)/graph_get.d: $(srcdir)/graph_get.c
+	$(MAKE_DEPEND_C) -MT '_graph_get.o graph_get.o' $(srcdir)/graph_get.c >$(DEPS_DIR)/graph_get.d
+$(DEPS_DIR)/graph_map.d: $(srcdir)/graph_map.c
+	$(MAKE_DEPEND_C) -MT '_graph_map.o graph_map.o' $(srcdir)/graph_map.c >$(DEPS_DIR)/graph_map.d
+$(DEPS_DIR)/graph_nbr.d: $(srcdir)/graph_nbr.c
+	$(MAKE_DEPEND_C) -MT '_graph_nbr.o graph_nbr.o' $(srcdir)/graph_nbr.c >$(DEPS_DIR)/graph_nbr.d
+$(DEPS_DIR)/graphcreate.d: $(srcdir)/graphcreate.c
+	$(MAKE_DEPEND_C) -MT '_graphcreate.o graphcreate.o' $(srcdir)/graphcreate.c >$(DEPS_DIR)/graphcreate.d
+$(DEPS_DIR)/graphdimsget.d: $(srcdir)/graphdimsget.c
+	$(MAKE_DEPEND_C) -MT '_graphdimsget.o graphdimsget.o' $(srcdir)/graphdimsget.c >$(DEPS_DIR)/graphdimsget.d
+$(DEPS_DIR)/graphnbrcnt.d: $(srcdir)/graphnbrcnt.c
+	$(MAKE_DEPEND_C) -MT '_graphnbrcnt.o graphnbrcnt.o' $(srcdir)/graphnbrcnt.c >$(DEPS_DIR)/graphnbrcnt.d
+$(DEPS_DIR)/cartdim_get.d: $(srcdir)/cartdim_get.c
+	$(MAKE_DEPEND_C) -MT '_cartdim_get.o cartdim_get.o' $(srcdir)/cartdim_get.c >$(DEPS_DIR)/cartdim_get.d
+$(DEPS_DIR)/topo_test.d: $(srcdir)/topo_test.c
+	$(MAKE_DEPEND_C) -MT '_topo_test.o topo_test.o' $(srcdir)/topo_test.c >$(DEPS_DIR)/topo_test.d
+$(DEPS_DIR)/topoutil.d: $(srcdir)/topoutil.c
+	$(MAKE_DEPEND_C) -MT '_topoutil.o topoutil.o' $(srcdir)/topoutil.c >$(DEPS_DIR)/topoutil.d
+$(DEPS_DIR)/timestamp: ${mpi_sources} topoutil.c Makefile
+	rm -f $(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_cart_coords.o cart_coords.o' $(srcdir)/cart_coords.c >$(DEPS_DIR)/cart_coords.d
+	echo "include $(DEPS_DIR)/cart_coords.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_cart_create.o cart_create.o' $(srcdir)/cart_create.c >$(DEPS_DIR)/cart_create.d
+	echo "include $(DEPS_DIR)/cart_create.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_cart_get.o cart_get.o' $(srcdir)/cart_get.c >$(DEPS_DIR)/cart_get.d
+	echo "include $(DEPS_DIR)/cart_get.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_cart_map.o cart_map.o' $(srcdir)/cart_map.c >$(DEPS_DIR)/cart_map.d
+	echo "include $(DEPS_DIR)/cart_map.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_cart_rank.o cart_rank.o' $(srcdir)/cart_rank.c >$(DEPS_DIR)/cart_rank.d
+	echo "include $(DEPS_DIR)/cart_rank.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_cart_shift.o cart_shift.o' $(srcdir)/cart_shift.c >$(DEPS_DIR)/cart_shift.d
+	echo "include $(DEPS_DIR)/cart_shift.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_cart_sub.o cart_sub.o' $(srcdir)/cart_sub.c >$(DEPS_DIR)/cart_sub.d
+	echo "include $(DEPS_DIR)/cart_sub.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_dims_create.o dims_create.o' $(srcdir)/dims_create.c >$(DEPS_DIR)/dims_create.d
+	echo "include $(DEPS_DIR)/dims_create.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_graph_get.o graph_get.o' $(srcdir)/graph_get.c >$(DEPS_DIR)/graph_get.d
+	echo "include $(DEPS_DIR)/graph_get.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_graph_map.o graph_map.o' $(srcdir)/graph_map.c >$(DEPS_DIR)/graph_map.d
+	echo "include $(DEPS_DIR)/graph_map.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_graph_nbr.o graph_nbr.o' $(srcdir)/graph_nbr.c >$(DEPS_DIR)/graph_nbr.d
+	echo "include $(DEPS_DIR)/graph_nbr.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_graphcreate.o graphcreate.o' $(srcdir)/graphcreate.c >$(DEPS_DIR)/graphcreate.d
+	echo "include $(DEPS_DIR)/graphcreate.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_graphdimsget.o graphdimsget.o' $(srcdir)/graphdimsget.c >$(DEPS_DIR)/graphdimsget.d
+	echo "include $(DEPS_DIR)/graphdimsget.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_graphnbrcnt.o graphnbrcnt.o' $(srcdir)/graphnbrcnt.c >$(DEPS_DIR)/graphnbrcnt.d
+	echo "include $(DEPS_DIR)/graphnbrcnt.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_cartdim_get.o cartdim_get.o' $(srcdir)/cartdim_get.c >$(DEPS_DIR)/cartdim_get.d
+	echo "include $(DEPS_DIR)/cartdim_get.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_topo_test.o topo_test.o' $(srcdir)/topo_test.c >$(DEPS_DIR)/topo_test.d
+	echo "include $(DEPS_DIR)/topo_test.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_topoutil.o topoutil.o' $(srcdir)/topoutil.c >$(DEPS_DIR)/topoutil.d
+	echo "include $(DEPS_DIR)/topoutil.d" >>$(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  cart_coords.c cart_create.c cart_get.c cart_map.c \

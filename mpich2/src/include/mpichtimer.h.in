@@ -1,5 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id: mpichtimer.h.in,v 1.4.6.2 2007/09/26 17:24:57 buntinas Exp $
+/*  $Id: mpichtimer.h.in,v 1.4 2007/07/26 21:08:57 buntinas Exp $
  *
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -23,6 +23,8 @@
 #define USE_QUERYPERFORMANCECOUNTER 6
 #define USE_WIN86_CYCLE 7
 #define USE_GCC_IA64_CYCLE 8
+/* The value "USE_DEVICE" means that the ADI device provides the timer */
+#define USE_DEVICE 9
 #define MPICH_TIMER_KIND @MPICH_TIMER_KIND@
 
 #if MPICH_TIMER_KIND == USE_GETHRTIME 
@@ -229,8 +231,7 @@ void MPID_Wtime_init(void);
    the rdtscp instruction which is synchronizing, we use this when we
    can. */
 #ifdef LINUX86_CYCLE_RDTSCP
-#define MPID_Wtime(var_ptr)                                                                     \
-    __asm__ __volatile__("rdtscp; shl $32, %%rdx; or %%rdx, %%rax" : "=a" (*var_ptr) : : "ecx", "rdx")
+#define MPID_Wtime(var_ptr) __asm__ __volatile__("rdtscp" : "=A" (*var_ptr))
 #elif defined(LINUX86_CYCLE_CPUID_RDTSC)
 /* Here we have to save the ebx register for when the compiler is
    generating position independent code (e.g., when it's generating

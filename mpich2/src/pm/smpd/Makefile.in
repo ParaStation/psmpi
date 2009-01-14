@@ -37,14 +37,38 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
     -I../../pmi/smpd -I${master_top_srcdir}/src/pmi/smpd
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c 
+.SUFFIXES: .o .lo .c .txt 
 .c.o:
 	$(C_COMPILE) -c $<
 .c.lo:
 	$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+
+${srcdir}/configure: ${srcdir}/configure.in 
+	@rm -rf autom4te*.cache
+	(cd ${srcdir} && autoheader -I ../../../confdb && \
+	autoconf -I \
+	../../../confdb ) 
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=src/pm/smpd/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile localdefs config.status config.log config.cache *conf.cache config.system" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-if [ -x config.status ] ; then CONFIG_FILES=Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	(cd ../../mpid/common/sock && $(MAKE) apply )
@@ -52,6 +76,9 @@ clean:
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	(cd ../../mpid/common/sock && $(MAKE) clean )
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
@@ -61,10 +88,13 @@ distclean-xxx:
 	-@rm -f smpdconf.h
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
+	(cd ../../mpid/common/sock && $(MAKE) maintainer-clean )
+	-rm -f smpdconf.h.in 
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect:
 	@(cd ../../mpid/common/sock && ${MAKE} all )
 	${MAKE} all-local
@@ -92,6 +122,23 @@ all-local: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	smpd_host_util.lo smpd_handle_spawn.lo 
 	${AR} cr ../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
+coverage: 
+	-@for file in smpd_hash.c smpd_authenticate.c smpd_printf.c  \
+	smpd_read_write.c smpd_user_data.c smpd_connect.c smpd_get_opt.c  \
+	smpd_launch_process.c smpd_command.c smpd_database.c \
+	smpd_state_machine.c  smpd_handle_command.c smpd_session.c \
+	smpd_start_mgr.c smpd_barrier.c  smpd_do_console.c smpd_restart.c \
+	smpd_host_util.c smpd_handle_spawn.c ; do \
+		gcov -b -f $$file ; done
+	(cd ../../mpid/common/sock && $(MAKE) coverage )
+# --------------------------------------------------------------------------
+htmldoc:
+	(cd ../../mpid/common/sock && $(MAKE) htmldoc )
+mandoc:
+	(cd ../../mpid/common/sock && $(MAKE) mandoc )
+latexdoc:
+	(cd ../../mpid/common/sock && $(MAKE) latexdoc )
+# --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Install target
 install:  FORCE_TARGET 
@@ -107,6 +154,101 @@ uninstall:
 	-rm -f ${DESTDIR}${bindir}/mpiexec
 	-rm -f ${DESTDIR}${bindir}/smpd
 installcheck: 
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+	(cd ../../mpid/common/sock && $(MAKE) dependencies )
+$(DEPS_DIR)/smpd_hash.d: $(srcdir)/smpd_hash.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_hash.c >$(DEPS_DIR)/smpd_hash.d
+$(DEPS_DIR)/smpd_authenticate.d: $(srcdir)/smpd_authenticate.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_authenticate.c >$(DEPS_DIR)/smpd_authenticate.d
+$(DEPS_DIR)/smpd_printf.d: $(srcdir)/smpd_printf.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_printf.c >$(DEPS_DIR)/smpd_printf.d
+$(DEPS_DIR)/smpd_read_write.d: $(srcdir)/smpd_read_write.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_read_write.c >$(DEPS_DIR)/smpd_read_write.d
+$(DEPS_DIR)/smpd_user_data.d: $(srcdir)/smpd_user_data.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_user_data.c >$(DEPS_DIR)/smpd_user_data.d
+$(DEPS_DIR)/smpd_connect.d: $(srcdir)/smpd_connect.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_connect.c >$(DEPS_DIR)/smpd_connect.d
+$(DEPS_DIR)/smpd_get_opt.d: $(srcdir)/smpd_get_opt.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_get_opt.c >$(DEPS_DIR)/smpd_get_opt.d
+$(DEPS_DIR)/smpd_launch_process.d: $(srcdir)/smpd_launch_process.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_launch_process.c >$(DEPS_DIR)/smpd_launch_process.d
+$(DEPS_DIR)/smpd_command.d: $(srcdir)/smpd_command.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_command.c >$(DEPS_DIR)/smpd_command.d
+$(DEPS_DIR)/smpd_database.d: $(srcdir)/smpd_database.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_database.c >$(DEPS_DIR)/smpd_database.d
+$(DEPS_DIR)/smpd_state_machine.d: $(srcdir)/smpd_state_machine.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_state_machine.c >$(DEPS_DIR)/smpd_state_machine.d
+$(DEPS_DIR)/smpd_handle_command.d: $(srcdir)/smpd_handle_command.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_handle_command.c >$(DEPS_DIR)/smpd_handle_command.d
+$(DEPS_DIR)/smpd_session.d: $(srcdir)/smpd_session.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_session.c >$(DEPS_DIR)/smpd_session.d
+$(DEPS_DIR)/smpd_start_mgr.d: $(srcdir)/smpd_start_mgr.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_start_mgr.c >$(DEPS_DIR)/smpd_start_mgr.d
+$(DEPS_DIR)/smpd_barrier.d: $(srcdir)/smpd_barrier.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_barrier.c >$(DEPS_DIR)/smpd_barrier.d
+$(DEPS_DIR)/smpd_do_console.d: $(srcdir)/smpd_do_console.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_do_console.c >$(DEPS_DIR)/smpd_do_console.d
+$(DEPS_DIR)/smpd_restart.d: $(srcdir)/smpd_restart.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_restart.c >$(DEPS_DIR)/smpd_restart.d
+$(DEPS_DIR)/smpd_host_util.d: $(srcdir)/smpd_host_util.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_host_util.c >$(DEPS_DIR)/smpd_host_util.d
+$(DEPS_DIR)/smpd_handle_spawn.d: $(srcdir)/smpd_handle_spawn.c
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_handle_spawn.c >$(DEPS_DIR)/smpd_handle_spawn.d
+$(DEPS_DIR)/timestamp: smpd_hash.c smpd_authenticate.c smpd_printf.c  smpd_read_write.c \
+	smpd_user_data.c smpd_connect.c smpd_get_opt.c  smpd_launch_process.c \
+	smpd_command.c smpd_database.c smpd_state_machine.c  \
+	smpd_handle_command.c smpd_session.c smpd_start_mgr.c smpd_barrier.c  \
+	smpd_do_console.c smpd_restart.c smpd_host_util.c smpd_handle_spawn.c \
+	Makefile 
+	rm -f $(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_hash.c >$(DEPS_DIR)/smpd_hash.d
+	echo "include $(DEPS_DIR)/smpd_hash.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_authenticate.c >$(DEPS_DIR)/smpd_authenticate.d
+	echo "include $(DEPS_DIR)/smpd_authenticate.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_printf.c >$(DEPS_DIR)/smpd_printf.d
+	echo "include $(DEPS_DIR)/smpd_printf.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_read_write.c >$(DEPS_DIR)/smpd_read_write.d
+	echo "include $(DEPS_DIR)/smpd_read_write.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_user_data.c >$(DEPS_DIR)/smpd_user_data.d
+	echo "include $(DEPS_DIR)/smpd_user_data.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_connect.c >$(DEPS_DIR)/smpd_connect.d
+	echo "include $(DEPS_DIR)/smpd_connect.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_get_opt.c >$(DEPS_DIR)/smpd_get_opt.d
+	echo "include $(DEPS_DIR)/smpd_get_opt.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_launch_process.c >$(DEPS_DIR)/smpd_launch_process.d
+	echo "include $(DEPS_DIR)/smpd_launch_process.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_command.c >$(DEPS_DIR)/smpd_command.d
+	echo "include $(DEPS_DIR)/smpd_command.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_database.c >$(DEPS_DIR)/smpd_database.d
+	echo "include $(DEPS_DIR)/smpd_database.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_state_machine.c >$(DEPS_DIR)/smpd_state_machine.d
+	echo "include $(DEPS_DIR)/smpd_state_machine.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_handle_command.c >$(DEPS_DIR)/smpd_handle_command.d
+	echo "include $(DEPS_DIR)/smpd_handle_command.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_session.c >$(DEPS_DIR)/smpd_session.d
+	echo "include $(DEPS_DIR)/smpd_session.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_start_mgr.c >$(DEPS_DIR)/smpd_start_mgr.d
+	echo "include $(DEPS_DIR)/smpd_start_mgr.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_barrier.c >$(DEPS_DIR)/smpd_barrier.d
+	echo "include $(DEPS_DIR)/smpd_barrier.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_do_console.c >$(DEPS_DIR)/smpd_do_console.d
+	echo "include $(DEPS_DIR)/smpd_do_console.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_restart.c >$(DEPS_DIR)/smpd_restart.d
+	echo "include $(DEPS_DIR)/smpd_restart.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_host_util.c >$(DEPS_DIR)/smpd_host_util.d
+	echo "include $(DEPS_DIR)/smpd_host_util.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/smpd_handle_spawn.c >$(DEPS_DIR)/smpd_handle_spawn.d
+	echo "include $(DEPS_DIR)/smpd_handle_spawn.d" >>$(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  smpd_hash.c smpd_authenticate.c smpd_printf.c \

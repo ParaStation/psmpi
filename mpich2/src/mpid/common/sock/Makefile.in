@@ -17,8 +17,29 @@ VPATH = .:@srcdir@
 INCLUDES = -I../../../include -I${master_top_srcdir}/src/include
 
 .SUFFIXES:
-# Some make programs complain if no suffixes are set
-.SUFFIXES: .c .o
+.SUFFIXES:  .txt 
+
+${srcdir}/configure: ${srcdir}/configure.in 
+	@rm -rf autom4te*.cache
+	(cd ${srcdir} && autoheader -I ../../../../confdb && \
+	autoconf -I \
+	../../../../confdb ) 
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../../ \
+	-configdir=src/mpid/common/sock/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile localdefs config.status config.log config.cache *conf.cache config.system" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-if [ -x config.status ] ; then CONFIG_FILES=Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	for dir in @sock_name@ - ; do \
@@ -27,6 +48,9 @@ apply:
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	for dir in @sock_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} clean ; ) ; done
@@ -43,17 +67,48 @@ distclean-xxx:
 	if [ -s poll/Makefile ] ; then (cd poll && $(MAKE) distclean ) ; fi
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
+	for dir in @sock_name@ - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} maintainer-clean ; ) ; done
+	-rm -f mpidu_sock_conf.h.in 
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect:
 	@for dir in @sock_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		if ( cd $$dir && ${MAKE} all ) ; then : ; else exit 1; fi \
 	done
 
+coverage: 
+	for dir in @sock_name@ - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} coverage ; ) ; done
 # --------------------------------------------------------------------------
+htmldoc:
+	for dir in @sock_name@ - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} htmldoc ; ) ; done
+mandoc:
+	for dir in @sock_name@ - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} mandoc ; ) ; done
+latexdoc:
+	for dir in @sock_name@ - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} latexdoc ; ) ; done
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+	for dir in @sock_name@ - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} dependencies ; ) ; done
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)

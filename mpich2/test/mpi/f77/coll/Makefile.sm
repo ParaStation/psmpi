@@ -7,6 +7,11 @@ exscanf_SOURCES     = exscanf.f
 alltoallwf_SOURCES  = alltoallwf.f
 inplacef_SOURCES  = inplacef.f
 allredint8f_SOURCES  = allredint8f.f
+allredopttf_SOURCES = allredopttf.f
 
+testing:
+	../../runtests -srcdir=$(srcdir) -tests=testlist \
+			-mpiexec=$(bindir)/mpiexec \
+		   	-xmlfile=summary.xml
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)

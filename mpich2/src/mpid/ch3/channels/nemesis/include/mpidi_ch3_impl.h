@@ -61,7 +61,7 @@ extern struct MPID_Request *MPIDI_CH3I_active_send[CH3_NUM_QUEUES];
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 
-int MPIDI_CH3I_SendEagerNoncontig( MPIDI_VC_t *vc, MPID_Request *sreq, void *header, MPIDI_msg_sz_t hdr_sz );
+int MPIDI_CH3I_SendNoncontig( MPIDI_VC_t *vc, MPID_Request *sreq, void *header, MPIDI_msg_sz_t hdr_sz );
 
 int MPID_nem_lmt_shm_initiate_lmt(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *rts_pkt, MPID_Request *req);
 int MPID_nem_lmt_shm_start_recv(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV s_cookie);
@@ -135,6 +135,7 @@ typedef struct MPIDI_CH3I_VC
     volatile struct MPID_nem_copy_buf *lmt_copy_buf;
     char *lmt_copy_buf_handle;
     int lmt_buf_num;
+    MPIDI_msg_sz_t lmt_surfeit;
     struct {struct MPID_nem_lmt_shm_wait_element *head, *tail;} lmt_queue;
     struct MPID_nem_lmt_shm_wait_element *lmt_active_lmt;
     int lmt_enqueued; /* FIXME: used for debugging */

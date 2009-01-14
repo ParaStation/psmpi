@@ -244,8 +244,6 @@ int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     MPI_Aint dt_true_lb;
     MPIDI_msg_sz_t data_sz;
     MPID_Datatype * dt_ptr;
-    MPID_IOV iov[MPID_IOV_LIMIT];
-    int iov_n;
     int mpi_errno = MPI_SUCCESS;
     
     MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"received rndv CTS pkt");
@@ -270,22 +268,27 @@ int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 
     MPIDI_Pkt_init(rs_pkt, MPIDI_CH3_PKT_RNDV_SEND);
     rs_pkt->receiver_req_id = cts_pkt->receiver_req_id;
-    iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rs_pkt;
-    iov[0].MPID_IOV_LEN = sizeof(*rs_pkt);
     
     MPIDI_Datatype_get_info(sreq->dev.user_count, sreq->dev.datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
     
     if (dt_contig) 
     {
+	MPID_IOV iov[MPID_IOV_LIMIT];
+
 	MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
 		    "sending contiguous rndv data, data_sz=" MPIDI_MSG_SZ_FMT, 
 					    data_sz));
 	
 	sreq->dev.OnDataAvail = 0;
 	
+	iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)rs_pkt;
+	iov[0].MPID_IOV_LEN = sizeof(*rs_pkt);
+	
 	iov[1].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *)sreq->dev.user_buf + dt_true_lb);
 	iov[1].MPID_IOV_LEN = data_sz;
-	iov_n = 2;
+
+	mpi_errno = MPIU_CALL(MPIDI_CH3,iSendv(vc, sreq, iov, 2));
+	MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**ch3|senddata");
     }
     else
     {
@@ -293,25 +296,12 @@ int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	/* if (!sreq->dev.segment_ptr) { MPIU_ERR_POP(); } */
 	MPID_Segment_init(sreq->dev.user_buf, sreq->dev.user_count, 
 			  sreq->dev.datatype, sreq->dev.segment_ptr, 0);
-	iov_n = MPID_IOV_LIMIT - 1;
 	sreq->dev.segment_first = 0;
 	sreq->dev.segment_size = data_sz;
-	/* One the initial load of a send iov req, set the OnFinal action (null
-	   for point-to-point) */
-	sreq->dev.OnFinal = 0;
-	mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
-	if (mpi_errno != MPI_SUCCESS)  {
-	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, 
-				"**ch3|loadsendiov");
-	}
-	iov_n += 1;
-    }
-	    
-    mpi_errno = MPIU_CALL(MPIDI_CH3,iSendv(vc, sreq, iov, iov_n));
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|senddata");
-    }
-    
+
+	mpi_errno = vc->sendNoncontig_fn(vc, sreq, rs_pkt, sizeof(*rs_pkt));
+	MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**ch3|senddata");
+    }    
     *rreqp = NULL;
 
  fn_fail:

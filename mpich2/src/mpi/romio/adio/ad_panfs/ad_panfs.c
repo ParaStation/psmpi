@@ -13,8 +13,8 @@
 
 struct ADIOI_Fns_struct ADIO_PANFS_operations = {
     ADIOI_PANFS_Open, /* Open */
-    ADIOI_GEN_ReadContig, /* ReadContig */
-    ADIOI_GEN_WriteContig, /* WriteContig */
+    ADIOI_PANFS_ReadContig, /* ReadContig */
+    ADIOI_PANFS_WriteContig, /* WriteContig */
     ADIOI_GEN_ReadStridedColl, /* ReadStridedColl */
     ADIOI_GEN_WriteStridedColl, /* WriteStridedColl */
     ADIOI_GEN_SeekIndividual, /* SeekIndividual */
@@ -37,6 +37,6 @@ struct ADIOI_Fns_struct ADIO_PANFS_operations = {
     ADIOI_GEN_IreadStrided, /* IreadStrided */
     ADIOI_GEN_IwriteStrided, /* IwriteStrided */
     ADIOI_GEN_Flush, /* Flush */
-    ADIOI_GEN_Resize, /* Resize */
+    ADIOI_PANFS_Resize, /* Resize */
     ADIOI_GEN_Delete, /* Delete */
 };

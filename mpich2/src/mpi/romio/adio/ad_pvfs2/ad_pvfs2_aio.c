@@ -48,7 +48,6 @@ void ADIOI_PVFS2_AIO_contig(ADIO_File fd, void *buf, int count,
 {
 
     int ret, datatype_size, len;
-    PVFS_Request file_req, mem_req;
     ADIOI_PVFS2_fs *pvfs_fs;
     ADIOI_AIO_Request *aio_req;
     static char myname[] = "ADIOI_PVFS2_AIO_contig";
@@ -60,7 +59,7 @@ void ADIOI_PVFS2_AIO_contig(ADIO_File fd, void *buf, int count,
     MPI_Type_size(datatype, &datatype_size);
     len = datatype_size * count;
 
-    ret = PVFS_Request_contiguous(len, PVFS_BYTE, &mem_req);
+    ret = PVFS_Request_contiguous(len, PVFS_BYTE, &(aio_req->mem_req));
     /* --BEGIN ERROR HANDLING-- */
     if (ret != 0) {
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
@@ -72,7 +71,7 @@ void ADIOI_PVFS2_AIO_contig(ADIO_File fd, void *buf, int count,
     }
     /* --END ERROR HANDLING-- */
 
-    ret = PVFS_Request_contiguous(len, PVFS_BYTE, &file_req);
+    ret = PVFS_Request_contiguous(len, PVFS_BYTE, &(aio_req->file_req));
     /* --BEGIN ERROR HANDLING-- */
     if (ret != 0) {
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
@@ -92,9 +91,9 @@ void ADIOI_PVFS2_AIO_contig(ADIO_File fd, void *buf, int count,
 #ifdef ADIOI_MPE_LOGGING
 	MPE_Log_event( ADIOI_MPE_iread_a, 0, NULL );
 #endif
-	ret = PVFS_isys_read(pvfs_fs->object_ref, file_req, offset, buf, 
-			mem_req, &(pvfs_fs->credentials), &(aio_req->resp_io),
-			aio_req->op_id, NULL);
+	ret = PVFS_isys_read(pvfs_fs->object_ref, aio_req->file_req, offset, 
+		buf, aio_req->mem_req, &(pvfs_fs->credentials), 
+		&(aio_req->resp_io), &(aio_req->op_id), NULL);
 #ifdef ADIOI_MPE_LOGGING
 	MPE_Log_event( ADIOI_MPE_iread_b, 0, NULL );
 #endif
@@ -102,16 +101,16 @@ void ADIOI_PVFS2_AIO_contig(ADIO_File fd, void *buf, int count,
 #ifdef ADIOI_MPE_LOGGING
 	MPE_Log_event( ADIOI_MPE_iwrite_a, 0, NULL );
 #endif
-	ret = PVFS_isys_write(pvfs_fs->object_ref, file_req, offset, buf, 
-			mem_req, &(pvfs_fs->credentials), &(aio_req->resp_io),
-			aio_req->op_id, aio_req);
+	ret = PVFS_isys_write(pvfs_fs->object_ref, aio_req->file_req, offset, 
+		buf, aio_req->mem_req, &(pvfs_fs->credentials), 
+		&(aio_req->resp_io), &(aio_req->op_id), NULL);
 #ifdef ADIOI_MPE_LOGGING
 	MPE_Log_event( ADIOI_MPE_iwrite_b, 0, NULL );
-#endif
+#endif 
+    } 
 
-} 
     /* --BEGIN ERROR HANDLING-- */
-    if (ret != 0 ) {
+    if (ret < 0 ) {
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS,
 					   MPIR_ERR_RECOVERABLE,
 					   myname, __LINE__,
@@ -121,14 +120,22 @@ void ADIOI_PVFS2_AIO_contig(ADIO_File fd, void *buf, int count,
     }
     /* --END ERROR HANDLING-- */
 
-    if (ADIOI_PVFS2_greq_class == 0) {
-	MPIX_Grequest_class_create(ADIOI_GEN_aio_query_fn, 
-		ADIOI_PVFS2_aio_free_fn, MPIU_Greq_cancel_fn,
-		ADIOI_PVFS2_aio_poll_fn, ADIOI_PVFS2_aio_wait_fn,
-		&ADIOI_PVFS2_greq_class);
+    /* posted. defered completion */
+    if (ret == 0) { 
+	if (ADIOI_PVFS2_greq_class == 0) {
+	    MPIX_Grequest_class_create(ADIOI_GEN_aio_query_fn, 
+		    ADIOI_PVFS2_aio_free_fn, MPIU_Greq_cancel_fn,
+		    ADIOI_PVFS2_aio_poll_fn, ADIOI_PVFS2_aio_wait_fn,
+		    &ADIOI_PVFS2_greq_class);
+	}
+	MPIX_Grequest_class_allocate(ADIOI_PVFS2_greq_class, aio_req, request);
+	memcpy(&(aio_req->req), request, sizeof(request));
     }
-    MPIX_Grequest_class_allocate(ADIOI_PVFS2_greq_class, aio_req, request);
-    memcpy(&(aio_req->req), request, sizeof(request));
+
+    /* immediate completion */
+    if (ret == 1) {
+	MPIO_Completed_request_create(&fd, len, error_code, request);
+    }
 
     if (file_ptr_type == ADIO_INDIVIDUAL) {
 	fd->fp_ind += len;
@@ -137,8 +144,6 @@ void ADIOI_PVFS2_AIO_contig(ADIO_File fd, void *buf, int count,
 
     *error_code = MPI_SUCCESS;
 fn_exit:
-    PVFS_Request_free(&mem_req);
-    PVFS_Request_free(&file_req);
     return;
 }
 
@@ -147,6 +152,8 @@ int ADIOI_PVFS2_aio_free_fn(void *extra_state)
     ADIOI_AIO_Request *aio_req;
     aio_req = (ADIOI_AIO_Request*)extra_state;
 
+    PVFS_Request_free(&(aio_req->mem_req));
+    PVFS_Request_free(&(aio_req->file_req));
     ADIOI_Free(aio_req);
 
     return MPI_SUCCESS;
@@ -177,33 +184,33 @@ int ADIOI_PVFS2_aio_wait_fn(int count, void ** array_of_states,
 {
 
     ADIOI_AIO_Request **aio_reqlist;
-    ADIOI_AIO_Request *tmp_req;
     PVFS_sys_op_id *op_id_array;
-    int i;
+    int i,j, greq_count;
     int *error_array;
 
     aio_reqlist = (ADIOI_AIO_Request **)array_of_states;
 
     op_id_array = (PVFS_sys_op_id*)ADIOI_Calloc(count, sizeof(PVFS_sys_op_id));
     error_array = (int *)ADIOI_Calloc(count, sizeof(int));
+    greq_count = count;
 
-    PVFS_sys_testsome(op_id_array, &count, (void *)aio_reqlist, 
-	    error_array, INT_MAX);
+    /* PVFS-2.6: testsome actually tests all requests and fills in op_id_array
+     * with the ones that have completed.  count is an in/out parameter.
+     * returns with the number of completed operations.  what a mess! */
+    PVFS_sys_testsome(op_id_array, &count, NULL, error_array, INT_MAX);
     for (i=0; i< count; i++) {
-	tmp_req = aio_reqlist[i];
-	if (tmp_req->op_id != op_id_array[i])
-	    continue;
-	tmp_req->nbytes = tmp_req->resp_io.total_completed;
-	MPIR_Nest_incr();
-	MPI_Grequest_complete(tmp_req->req);
-	MPIR_Nest_decr();
+	for (j=0; j<greq_count; j++) {
+	    if (op_id_array[i] == aio_reqlist[j]->op_id) {
+		aio_reqlist[j]->nbytes = 
+		    aio_reqlist[j]->resp_io.total_completed;
+		MPIR_Nest_incr();
+		MPI_Grequest_complete(aio_reqlist[j]->req);
+		MPIR_Nest_decr();
+	    }
+	}
     }
     return MPI_SUCCESS; /* TODO: no idea how to deal with errors */
 }
-
-
-
-
 
 
 /*

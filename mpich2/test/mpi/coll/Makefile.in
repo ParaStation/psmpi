@@ -26,11 +26,30 @@ VPATH = .:@srcdir@
 INCLUDES = -I../include -I${srcdir}/../include
 
 .SUFFIXES:
-.SUFFIXES: .o .c 
+.SUFFIXES: .o .c .txt 
 .c.o:
 	$(C_COMPILE) -c $<
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=test/mpi/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=coll/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
@@ -38,6 +57,9 @@ clean:  clean-local
 	-@rm -f icreduce.exe red3.exe bcasttest.exe icbarrier.exe coll4.exe allgatherv2.exe alltoallv.exe allredmany.exe icallgather.exe scatter3.exe opsum.exe icallreduce.exe scatterv.exe alltoallw2.exe coll13.exe opmax.exe alltoall1.exe longuser.exe coll9.exe icalltoallw.exe icgatherv.exe exscan2.exe alltoallw1.exe icgather.exe reduce.exe allgather3.exe alltoallv0.exe coll10.exe opband.exe icalltoall.exe scattern.exe scatter2.exe oplxor.exe opprod.exe opbxor.exe gather2.exe icscatterv.exe icalltoallv.exe coll12.exe allred.exe coll7.exe coll11.exe opbor.exe exscan.exe allgather2.exe opland.exe scantst.exe oplor.exe coll5.exe red4.exe opminloc.exe bcast2.exe coll3.exe icbcast.exe allred2.exe allgatherv3.exe bcast3.exe coll6.exe coll2.exe icscatter.exe opmin.exe gather.exe opmaxloc.exe allred3.exe coll8.exe redscat.exe icallgatherv.exe allred4.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -45,10 +67,11 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: bcasttest bcast2 bcast3 allred allred2 allred3 allred4 red3 red4\
 	 reduce coll8 coll13 alltoallv alltoallv0 alltoallw1 alltoallw2\
 	 alltoall1 redscat coll9 coll7 coll6 coll5 coll4 coll3 coll2\
@@ -59,6 +82,7 @@ all-redirect: bcasttest bcast2 bcast3 allred allred2 allred3 allred4 red3 red4\
 	 icalltoallw opland oplor oplxor opband opbor opbxor opsum opmax opmin\
 	 opminloc opmaxloc opprod exscan exscan2
 
+coverage: 
 icreduce: icreduce.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o icreduce icreduce.o  \
 	../util/mtest.o ${LIBS} 
@@ -244,6 +268,16 @@ allred4: allred4.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o allred4 allred4.o  ../util/mtest.o \
 	${LIBS} 
 # --------------------------------------------------------------------------
+htmldoc:
+mandoc:
+latexdoc:
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  bcasttest.c bcast2.c bcast3.c allred.c allred2.c allred3.c \

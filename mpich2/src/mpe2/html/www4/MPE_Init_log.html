@@ -16,8 +16,12 @@ This routine must be called before any of the other MPE logging routines.
 It is a collective call over 'MPI_COMM_WORLD'.
 MPE_Init_log() &amp; MPE_Finish_log() are NOT needed when liblmpe.a is linked
 because MPI_Init() would have called MPE_Init_log() already.
-liblmpe.a will be included in the final executable if it is linked with
-either "mpicc -mpe=mpilog" or "mpecc -mpilog"
+liblmpe.a will be included in the link path if either "mpicc -mpe=mpilog"
+or "mpecc -mpilog" is used in the link step.
+<P>
+This function is threadsafe, but
+MPE_Init_log() is expected to be called on only one thread in each
+process.  This thread will be labelled as main thread.
 <P>
 <H2>Returns</H2>
 Always return MPE_LOG_OK.

@@ -253,6 +253,7 @@ MPID_nem_gm_module_vc_init (MPIDI_VC_t *vc, const char *business_card)
 
     vc_ch->iStartContigMsg  = MPID_nem_gm_iStartContigMsg;
     vc_ch->iSendContig      = MPID_nem_gm_iSendContig;
+    vc->sendNoncontig_fn    = MPID_nem_gm_SendNoncontig;
     VC_FIELD(vc, source_id) = my_pg_rank; /* FIXME: this is only valid for processes in COMM_WORLD */
 
     mpi_errno = MPID_nem_gm_module_get_port_unique_from_bc (business_card, &VC_FIELD(vc, gm_port_id), VC_FIELD(vc, gm_unique_id));

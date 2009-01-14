@@ -29,30 +29,53 @@ HEADERS = dataloop.h dataloop_parts.h dataloop_create.h ../mpid_dataloop.h  type
 INCLUDES = -I${srcdir}/.. -I${top_builddir}/src/include -I${master_top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c 
+.SUFFIXES: .o .lo .c .txt 
 .c.o:
 	$(C_COMPILE) -c $<
 .c.lo:
 	$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../../../ \
+	-configdir=. \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../../../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=src/mpid/common/datatype/dataloop/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    ${MAKE} .libstamp1 ; \
@@ -73,7 +96,84 @@ all-redirect: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	dataloop_create_pairtype.lo subarray_support.lo darray_support.lo 
 	${AR} cr ../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
+coverage: 
+	-@for file in dataloop.c 	segment.c 	segment_ops.c 	dataloop_create.c \
+		dataloop_create_contig.c 	dataloop_create_vector.c \
+		dataloop_create_blockindexed.c 	dataloop_create_indexed.c \
+		dataloop_create_struct.c 	dataloop_create_pairtype.c \
+		subarray_support.c 	darray_support.c  ; do \
+		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
+htmldoc:
+mandoc:
+latexdoc:
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+$(DEPS_DIR)/dataloop.d: $(srcdir)/dataloop.c
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop.c >$(DEPS_DIR)/dataloop.d
+$(DEPS_DIR)/segment.d: $(srcdir)/segment.c
+	$(MAKE_DEPEND_C)  $(srcdir)/segment.c >$(DEPS_DIR)/segment.d
+$(DEPS_DIR)/segment_ops.d: $(srcdir)/segment_ops.c
+	$(MAKE_DEPEND_C)  $(srcdir)/segment_ops.c >$(DEPS_DIR)/segment_ops.d
+$(DEPS_DIR)/dataloop_create.d: $(srcdir)/dataloop_create.c
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create.c >$(DEPS_DIR)/dataloop_create.d
+$(DEPS_DIR)/dataloop_create_contig.d: $(srcdir)/dataloop_create_contig.c
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_contig.c >$(DEPS_DIR)/dataloop_create_contig.d
+$(DEPS_DIR)/dataloop_create_vector.d: $(srcdir)/dataloop_create_vector.c
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_vector.c >$(DEPS_DIR)/dataloop_create_vector.d
+$(DEPS_DIR)/dataloop_create_blockindexed.d: $(srcdir)/dataloop_create_blockindexed.c
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_blockindexed.c >$(DEPS_DIR)/dataloop_create_blockindexed.d
+$(DEPS_DIR)/dataloop_create_indexed.d: $(srcdir)/dataloop_create_indexed.c
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_indexed.c >$(DEPS_DIR)/dataloop_create_indexed.d
+$(DEPS_DIR)/dataloop_create_struct.d: $(srcdir)/dataloop_create_struct.c
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_struct.c >$(DEPS_DIR)/dataloop_create_struct.d
+$(DEPS_DIR)/dataloop_create_pairtype.d: $(srcdir)/dataloop_create_pairtype.c
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_pairtype.c >$(DEPS_DIR)/dataloop_create_pairtype.d
+$(DEPS_DIR)/subarray_support.d: $(srcdir)/subarray_support.c
+	$(MAKE_DEPEND_C)  $(srcdir)/subarray_support.c >$(DEPS_DIR)/subarray_support.d
+$(DEPS_DIR)/darray_support.d: $(srcdir)/darray_support.c
+	$(MAKE_DEPEND_C)  $(srcdir)/darray_support.c >$(DEPS_DIR)/darray_support.d
+$(DEPS_DIR)/timestamp: dataloop.c 	segment.c 	segment_ops.c 	dataloop_create.c \
+		dataloop_create_contig.c 	dataloop_create_vector.c \
+		dataloop_create_blockindexed.c 	dataloop_create_indexed.c \
+		dataloop_create_struct.c 	dataloop_create_pairtype.c \
+		subarray_support.c 	darray_support.c Makefile
+	rm -f $(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop.c >$(DEPS_DIR)/dataloop.d
+	echo "include $(DEPS_DIR)/dataloop.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/segment.c >$(DEPS_DIR)/segment.d
+	echo "include $(DEPS_DIR)/segment.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/segment_ops.c >$(DEPS_DIR)/segment_ops.d
+	echo "include $(DEPS_DIR)/segment_ops.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create.c >$(DEPS_DIR)/dataloop_create.d
+	echo "include $(DEPS_DIR)/dataloop_create.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_contig.c >$(DEPS_DIR)/dataloop_create_contig.d
+	echo "include $(DEPS_DIR)/dataloop_create_contig.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_vector.c >$(DEPS_DIR)/dataloop_create_vector.d
+	echo "include $(DEPS_DIR)/dataloop_create_vector.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_blockindexed.c >$(DEPS_DIR)/dataloop_create_blockindexed.d
+	echo "include $(DEPS_DIR)/dataloop_create_blockindexed.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_indexed.c >$(DEPS_DIR)/dataloop_create_indexed.d
+	echo "include $(DEPS_DIR)/dataloop_create_indexed.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_struct.c >$(DEPS_DIR)/dataloop_create_struct.d
+	echo "include $(DEPS_DIR)/dataloop_create_struct.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_pairtype.c >$(DEPS_DIR)/dataloop_create_pairtype.d
+	echo "include $(DEPS_DIR)/dataloop_create_pairtype.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/subarray_support.c >$(DEPS_DIR)/subarray_support.d
+	echo "include $(DEPS_DIR)/subarray_support.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/darray_support.c >$(DEPS_DIR)/darray_support.d
+	echo "include $(DEPS_DIR)/darray_support.d" >>$(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  dataloop.c segment.c segment_ops.c dataloop_create.c \

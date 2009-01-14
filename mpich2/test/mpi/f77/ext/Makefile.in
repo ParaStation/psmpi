@@ -28,15 +28,34 @@ VPATH = .:@srcdir@
 c2f2c_CFLAGSADD = -I../../include
 
 .SUFFIXES:
-.SUFFIXES: .o .c .f 
+.SUFFIXES: .o .c .f .txt 
 .c.o:
 	$(C_COMPILE) -c $<
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f.o:
 	$(F77_COMPILE) -c $<
 .f:
 	$(F77_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../../ \
+	-configdir=test/mpi/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile iooffset.h iodisp.h ioaint.h" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=f77/ext/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
@@ -44,6 +63,9 @@ clean:
 	-@rm -f allocmemf.exe c2fmult.exe c2f2cf.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -51,12 +73,14 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: c2f2cf c2fmult
 
+coverage: 
 allocmemf: allocmemf.o   @MPILIBLOC@ ../util/mtestf.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o allocmemf allocmemf.o  \
 	../util/mtestf.o ${LIBS} 
@@ -66,6 +90,16 @@ c2f2cf: c2f2c.o c2f2cf.o   @MPILIBLOC@ ../util/mtestf.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o c2f2cf c2f2c.o c2f2cf.o  \
 	../util/mtestf.o  ${LIBS} 
 # --------------------------------------------------------------------------
+htmldoc:
+mandoc:
+latexdoc:
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  allocmemf.f c2f2c.c c2f2cf.f c2fmult.c

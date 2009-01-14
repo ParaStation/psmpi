@@ -176,8 +176,12 @@ define(PAC_TEST_MPI,[
      }
 EOF
   rm -f conftest
-  $CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB > /dev/null 2>&1
+  cmd="$CC $USER_CFLAGS -I$MPI_INCLUDE_DIR -o conftest mpitest.c $MPI_LIB"
+  echo "$as_me:$LINENO: $cmd" >&5
+  $cmd >&5 2>&5
   if test ! -x conftest ; then
+      echo "$as_me:$LINENO: failed program was:" >&5
+      sed 's/^/| /' mpitest.c >&5
       rm -f conftest mpitest.c
       AC_MSG_ERROR([Unable to compile a simple MPI program.
 Use environment variables to provide the location of MPI libraries and

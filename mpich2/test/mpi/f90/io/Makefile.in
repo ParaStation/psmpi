@@ -33,15 +33,34 @@ F90INCLUDES = -I.
 F90HEADERS = iodisp.h iooffset.h
 
 .SUFFIXES:
-.SUFFIXES: .o .c .f90 
+.SUFFIXES: .o .c .f90 .txt 
 .c.o:
 	$(C_COMPILE) -c $<
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f90.o:
 	$(F90_COMPILE) -c $<
 .f90:
 	$(F90_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../../ \
+	-configdir=test/mpi/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=f90/io/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
@@ -49,6 +68,9 @@ clean:  clean-local
 	-@rm -f setviewcurf90.exe shpositionf90.exe c2f90multio.exe atomicityf90.exe fileerrf90.exe c2f2ciof90.exe fileinfof90.exe miscfilef90.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -56,13 +78,15 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: fileerrf90 fileinfof90 shpositionf90 atomicityf90 miscfilef90\
 	 setviewcurf90 c2f90multio c2f2ciof90
 
+coverage: 
 setviewcurf90: setviewcurf90.o   @MPILIBLOC@ ../util/mtestf90.o
 	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o setviewcurf90 setviewcurf90.o  \
 	../util/mtestf90.o ${LIBS} 
@@ -87,6 +111,16 @@ miscfilef90: miscfilef90.o   @MPILIBLOC@ ../util/mtestf90.o
 	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o miscfilef90 miscfilef90.o  \
 	${LIBS} 
 # --------------------------------------------------------------------------
+htmldoc:
+mandoc:
+latexdoc:
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  fileerrf90.f90 fileinfof90.f90 shpositionf90.f90 \

@@ -28,6 +28,7 @@ CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 
 VPATH = .:@srcdir@
+DOCTEXT         = @DOCTEXT@
 mpi_sources = group_compare.c group_difference.c group_excl.c \
  group_free.c group_incl.c group_intersection.c group_range_excl.c \
  group_range_incl.c group_rank.c group_size.c group_translate_ranks.c \
@@ -36,30 +37,62 @@ HEADERS = group.h
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c 
+.SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
 	$(C_COMPILE) -c $<
 .c.lo:
 	$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+.c.man:
+	$(DOCTEXT) -man -mpath ../../../man/man3 -ext 3 -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.html:
+	$(DOCTEXT) -html -mpath ../../../www/www3  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.latex:
+	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=. \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=src/mpi/group/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 .libstamp2 .libstamp3 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
 	    ${MAKE} .libstamp2 ; \
@@ -150,7 +183,80 @@ _group_union.o: group_union.c
 _group_union.lo: group_union.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_union.c -o _group_union.lo
 # --------------------------------------------------------------------------
+coverage: 
+	-@for file in ${mpi_sources} grouputil.c ; do \
+		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
+mandoc: ${mpi_sources:.c=.man}
+htmldoc: ${mpi_sources:.c=.html}
+latexdoc: ${mpi_sources:.c=.latex}
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+$(DEPS_DIR)/group_compare.d: $(srcdir)/group_compare.c
+	$(MAKE_DEPEND_C) -MT '_group_compare.o group_compare.o' $(srcdir)/group_compare.c >$(DEPS_DIR)/group_compare.d
+$(DEPS_DIR)/group_difference.d: $(srcdir)/group_difference.c
+	$(MAKE_DEPEND_C) -MT '_group_difference.o group_difference.o' $(srcdir)/group_difference.c >$(DEPS_DIR)/group_difference.d
+$(DEPS_DIR)/group_excl.d: $(srcdir)/group_excl.c
+	$(MAKE_DEPEND_C) -MT '_group_excl.o group_excl.o' $(srcdir)/group_excl.c >$(DEPS_DIR)/group_excl.d
+$(DEPS_DIR)/group_free.d: $(srcdir)/group_free.c
+	$(MAKE_DEPEND_C) -MT '_group_free.o group_free.o' $(srcdir)/group_free.c >$(DEPS_DIR)/group_free.d
+$(DEPS_DIR)/group_incl.d: $(srcdir)/group_incl.c
+	$(MAKE_DEPEND_C) -MT '_group_incl.o group_incl.o' $(srcdir)/group_incl.c >$(DEPS_DIR)/group_incl.d
+$(DEPS_DIR)/group_intersection.d: $(srcdir)/group_intersection.c
+	$(MAKE_DEPEND_C) -MT '_group_intersection.o group_intersection.o' $(srcdir)/group_intersection.c >$(DEPS_DIR)/group_intersection.d
+$(DEPS_DIR)/group_range_excl.d: $(srcdir)/group_range_excl.c
+	$(MAKE_DEPEND_C) -MT '_group_range_excl.o group_range_excl.o' $(srcdir)/group_range_excl.c >$(DEPS_DIR)/group_range_excl.d
+$(DEPS_DIR)/group_range_incl.d: $(srcdir)/group_range_incl.c
+	$(MAKE_DEPEND_C) -MT '_group_range_incl.o group_range_incl.o' $(srcdir)/group_range_incl.c >$(DEPS_DIR)/group_range_incl.d
+$(DEPS_DIR)/group_rank.d: $(srcdir)/group_rank.c
+	$(MAKE_DEPEND_C) -MT '_group_rank.o group_rank.o' $(srcdir)/group_rank.c >$(DEPS_DIR)/group_rank.d
+$(DEPS_DIR)/group_size.d: $(srcdir)/group_size.c
+	$(MAKE_DEPEND_C) -MT '_group_size.o group_size.o' $(srcdir)/group_size.c >$(DEPS_DIR)/group_size.d
+$(DEPS_DIR)/group_translate_ranks.d: $(srcdir)/group_translate_ranks.c
+	$(MAKE_DEPEND_C) -MT '_group_translate_ranks.o group_translate_ranks.o' $(srcdir)/group_translate_ranks.c >$(DEPS_DIR)/group_translate_ranks.d
+$(DEPS_DIR)/group_union.d: $(srcdir)/group_union.c
+	$(MAKE_DEPEND_C) -MT '_group_union.o group_union.o' $(srcdir)/group_union.c >$(DEPS_DIR)/group_union.d
+$(DEPS_DIR)/grouputil.d: $(srcdir)/grouputil.c
+	$(MAKE_DEPEND_C) -MT '_grouputil.o grouputil.o' $(srcdir)/grouputil.c >$(DEPS_DIR)/grouputil.d
+$(DEPS_DIR)/timestamp: ${mpi_sources} grouputil.c Makefile
+	rm -f $(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_group_compare.o group_compare.o' $(srcdir)/group_compare.c >$(DEPS_DIR)/group_compare.d
+	echo "include $(DEPS_DIR)/group_compare.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_group_difference.o group_difference.o' $(srcdir)/group_difference.c >$(DEPS_DIR)/group_difference.d
+	echo "include $(DEPS_DIR)/group_difference.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_group_excl.o group_excl.o' $(srcdir)/group_excl.c >$(DEPS_DIR)/group_excl.d
+	echo "include $(DEPS_DIR)/group_excl.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_group_free.o group_free.o' $(srcdir)/group_free.c >$(DEPS_DIR)/group_free.d
+	echo "include $(DEPS_DIR)/group_free.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_group_incl.o group_incl.o' $(srcdir)/group_incl.c >$(DEPS_DIR)/group_incl.d
+	echo "include $(DEPS_DIR)/group_incl.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_group_intersection.o group_intersection.o' $(srcdir)/group_intersection.c >$(DEPS_DIR)/group_intersection.d
+	echo "include $(DEPS_DIR)/group_intersection.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_group_range_excl.o group_range_excl.o' $(srcdir)/group_range_excl.c >$(DEPS_DIR)/group_range_excl.d
+	echo "include $(DEPS_DIR)/group_range_excl.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_group_range_incl.o group_range_incl.o' $(srcdir)/group_range_incl.c >$(DEPS_DIR)/group_range_incl.d
+	echo "include $(DEPS_DIR)/group_range_incl.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_group_rank.o group_rank.o' $(srcdir)/group_rank.c >$(DEPS_DIR)/group_rank.d
+	echo "include $(DEPS_DIR)/group_rank.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_group_size.o group_size.o' $(srcdir)/group_size.c >$(DEPS_DIR)/group_size.d
+	echo "include $(DEPS_DIR)/group_size.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_group_translate_ranks.o group_translate_ranks.o' $(srcdir)/group_translate_ranks.c >$(DEPS_DIR)/group_translate_ranks.d
+	echo "include $(DEPS_DIR)/group_translate_ranks.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_group_union.o group_union.o' $(srcdir)/group_union.c >$(DEPS_DIR)/group_union.d
+	echo "include $(DEPS_DIR)/group_union.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_grouputil.o grouputil.o' $(srcdir)/grouputil.c >$(DEPS_DIR)/grouputil.d
+	echo "include $(DEPS_DIR)/grouputil.d" >>$(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  group_compare.c group_difference.c group_excl.c \

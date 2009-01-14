@@ -221,7 +221,8 @@ static inline void *nt_memcpy (volatile void *dst, volatile void *src, size_t le
                                  ? nt_memcpy (a, b, c)			\
                                  : asm_memcpy (a, b, c))
 
-#elif defined(HAVE_GCC_AND_X86_64_ASM)
+#elif 0 && defined(HAVE_GCC_AND_X86_64_ASM)
+
 #define asm_memcpy(dst, src, n) ({                                                              \
             const char *p = (char *)(src);                                                      \
             char *q = (char *)(dst);                                                            \

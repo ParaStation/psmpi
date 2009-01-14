@@ -6,6 +6,9 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+bindir          = @bindir@
+exec_prefix     = @exec_prefix@
+prefix          = @prefix@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -22,11 +25,28 @@ F90INCLUDES = -I.
 F90HEADERS = typeaints.h
 
 .SUFFIXES:
-.SUFFIXES: .o .f90 
+.SUFFIXES: .o .f90 .txt 
 .f90.o:
 	$(F90_COMPILE) -c $<
 .f90:
 	$(F90_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../../ \
+	-configdir=test/mpi/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=f90/datatype/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
@@ -34,6 +54,9 @@ clean:
 	-@rm -f gaddressf90.exe typesubf90.exe structf.exe typenamef90.exe createf90.exe typem2f90.exe sizeof.exe packef90.exe indtype.exe typesnamef90.exe typecntsf90.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -41,13 +64,15 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: typenamef90 typesnamef90 typecntsf90 typesubf90 typem2f90\
 	 gaddressf90 packef90 structf indtype createf90 sizeof
 
+coverage: 
 gaddressf90: gaddressf90.o   @MPILIBLOC@ ../util/mtestf90.o
 	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o gaddressf90 gaddressf90.o  \
 	${LIBS} 
@@ -76,6 +101,16 @@ typecntsf90: typecntsf90.o   @MPILIBLOC@ ../util/mtestf90.o
 	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o typecntsf90 typecntsf90.o  \
 	${LIBS} 
 # --------------------------------------------------------------------------
+htmldoc:
+mandoc:
+latexdoc:
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  typenamef90.f90 typesnamef90.f90 typecntsf90.f90 \
@@ -93,6 +128,10 @@ TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 
 
 
+testing:
+	../../runtests -srcdir=$(srcdir) -tests=testlist \
+			-mpiexec=$(bindir)/mpiexec \
+		   	-xmlfile=summary.xml
 ../util/mtestf90.o: 
 	(cd ../util && $(MAKE) mtestf90.o)
 

@@ -28,6 +28,7 @@ CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 
 VPATH = .:@srcdir@
+DOCTEXT         = @DOCTEXT@
 mpi_sources = add_error_code.c add_error_class.c \
  add_error_string.c \
  comm_call_errhandler.c comm_create_errhandler.c \
@@ -44,30 +45,62 @@ HEADERS = defmsg.h errcodes.h
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c 
+.SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
 	$(C_COMPILE) -c $<
 .c.lo:
 	$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+.c.man:
+	$(DOCTEXT) -man -mpath ../../../man/man3 -ext 3 -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.html:
+	$(DOCTEXT) -html -mpath ../../../www/www3  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.latex:
+	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=. \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=src/mpi/errhan/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 .libstamp2 .libstamp3 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
 	    ${MAKE} .libstamp2 ; \
@@ -209,7 +242,120 @@ _win_set_errhandler.o: win_set_errhandler.c
 _win_set_errhandler.lo: win_set_errhandler.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_errhandler.c -o _win_set_errhandler.lo
 # --------------------------------------------------------------------------
+coverage: 
+	-@for file in ${mpi_sources} errutil.c dynerrutil.c ; do \
+		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
+mandoc: ${mpi_sources:.c=.man}
+htmldoc: ${mpi_sources:.c=.html}
+latexdoc: ${mpi_sources:.c=.latex}
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+$(DEPS_DIR)/add_error_code.d: $(srcdir)/add_error_code.c
+	$(MAKE_DEPEND_C) -MT '_add_error_code.o add_error_code.o' $(srcdir)/add_error_code.c >$(DEPS_DIR)/add_error_code.d
+$(DEPS_DIR)/add_error_class.d: $(srcdir)/add_error_class.c
+	$(MAKE_DEPEND_C) -MT '_add_error_class.o add_error_class.o' $(srcdir)/add_error_class.c >$(DEPS_DIR)/add_error_class.d
+$(DEPS_DIR)/add_error_string.d: $(srcdir)/add_error_string.c
+	$(MAKE_DEPEND_C) -MT '_add_error_string.o add_error_string.o' $(srcdir)/add_error_string.c >$(DEPS_DIR)/add_error_string.d
+$(DEPS_DIR)/comm_call_errhandler.d: $(srcdir)/comm_call_errhandler.c
+	$(MAKE_DEPEND_C) -MT '_comm_call_errhandler.o comm_call_errhandler.o' $(srcdir)/comm_call_errhandler.c >$(DEPS_DIR)/comm_call_errhandler.d
+$(DEPS_DIR)/comm_create_errhandler.d: $(srcdir)/comm_create_errhandler.c
+	$(MAKE_DEPEND_C) -MT '_comm_create_errhandler.o comm_create_errhandler.o' $(srcdir)/comm_create_errhandler.c >$(DEPS_DIR)/comm_create_errhandler.d
+$(DEPS_DIR)/comm_get_errhandler.d: $(srcdir)/comm_get_errhandler.c
+	$(MAKE_DEPEND_C) -MT '_comm_get_errhandler.o comm_get_errhandler.o' $(srcdir)/comm_get_errhandler.c >$(DEPS_DIR)/comm_get_errhandler.d
+$(DEPS_DIR)/comm_set_errhandler.d: $(srcdir)/comm_set_errhandler.c
+	$(MAKE_DEPEND_C) -MT '_comm_set_errhandler.o comm_set_errhandler.o' $(srcdir)/comm_set_errhandler.c >$(DEPS_DIR)/comm_set_errhandler.d
+$(DEPS_DIR)/errhandler_create.d: $(srcdir)/errhandler_create.c
+	$(MAKE_DEPEND_C) -MT '_errhandler_create.o errhandler_create.o' $(srcdir)/errhandler_create.c >$(DEPS_DIR)/errhandler_create.d
+$(DEPS_DIR)/errhandler_free.d: $(srcdir)/errhandler_free.c
+	$(MAKE_DEPEND_C) -MT '_errhandler_free.o errhandler_free.o' $(srcdir)/errhandler_free.c >$(DEPS_DIR)/errhandler_free.d
+$(DEPS_DIR)/errhandler_get.d: $(srcdir)/errhandler_get.c
+	$(MAKE_DEPEND_C) -MT '_errhandler_get.o errhandler_get.o' $(srcdir)/errhandler_get.c >$(DEPS_DIR)/errhandler_get.d
+$(DEPS_DIR)/errhandler_set.d: $(srcdir)/errhandler_set.c
+	$(MAKE_DEPEND_C) -MT '_errhandler_set.o errhandler_set.o' $(srcdir)/errhandler_set.c >$(DEPS_DIR)/errhandler_set.d
+$(DEPS_DIR)/error_class.d: $(srcdir)/error_class.c
+	$(MAKE_DEPEND_C) -MT '_error_class.o error_class.o' $(srcdir)/error_class.c >$(DEPS_DIR)/error_class.d
+$(DEPS_DIR)/error_string.d: $(srcdir)/error_string.c
+	$(MAKE_DEPEND_C) -MT '_error_string.o error_string.o' $(srcdir)/error_string.c >$(DEPS_DIR)/error_string.d
+$(DEPS_DIR)/file_create_errhandler.d: $(srcdir)/file_create_errhandler.c
+	$(MAKE_DEPEND_C) -MT '_file_create_errhandler.o file_create_errhandler.o' $(srcdir)/file_create_errhandler.c >$(DEPS_DIR)/file_create_errhandler.d
+$(DEPS_DIR)/file_get_errhandler.d: $(srcdir)/file_get_errhandler.c
+	$(MAKE_DEPEND_C) -MT '_file_get_errhandler.o file_get_errhandler.o' $(srcdir)/file_get_errhandler.c >$(DEPS_DIR)/file_get_errhandler.d
+$(DEPS_DIR)/file_set_errhandler.d: $(srcdir)/file_set_errhandler.c
+	$(MAKE_DEPEND_C) -MT '_file_set_errhandler.o file_set_errhandler.o' $(srcdir)/file_set_errhandler.c >$(DEPS_DIR)/file_set_errhandler.d
+$(DEPS_DIR)/file_call_errhandler.d: $(srcdir)/file_call_errhandler.c
+	$(MAKE_DEPEND_C) -MT '_file_call_errhandler.o file_call_errhandler.o' $(srcdir)/file_call_errhandler.c >$(DEPS_DIR)/file_call_errhandler.d
+$(DEPS_DIR)/win_create_errhandler.d: $(srcdir)/win_create_errhandler.c
+	$(MAKE_DEPEND_C) -MT '_win_create_errhandler.o win_create_errhandler.o' $(srcdir)/win_create_errhandler.c >$(DEPS_DIR)/win_create_errhandler.d
+$(DEPS_DIR)/win_call_errhandler.d: $(srcdir)/win_call_errhandler.c
+	$(MAKE_DEPEND_C) -MT '_win_call_errhandler.o win_call_errhandler.o' $(srcdir)/win_call_errhandler.c >$(DEPS_DIR)/win_call_errhandler.d
+$(DEPS_DIR)/win_get_errhandler.d: $(srcdir)/win_get_errhandler.c
+	$(MAKE_DEPEND_C) -MT '_win_get_errhandler.o win_get_errhandler.o' $(srcdir)/win_get_errhandler.c >$(DEPS_DIR)/win_get_errhandler.d
+$(DEPS_DIR)/win_set_errhandler.d: $(srcdir)/win_set_errhandler.c
+	$(MAKE_DEPEND_C) -MT '_win_set_errhandler.o win_set_errhandler.o' $(srcdir)/win_set_errhandler.c >$(DEPS_DIR)/win_set_errhandler.d
+$(DEPS_DIR)/errutil.d: $(srcdir)/errutil.c
+	$(MAKE_DEPEND_C) -MT '_errutil.o errutil.o' $(srcdir)/errutil.c >$(DEPS_DIR)/errutil.d
+$(DEPS_DIR)/dynerrutil.d: $(srcdir)/dynerrutil.c
+	$(MAKE_DEPEND_C) -MT '_dynerrutil.o dynerrutil.o' $(srcdir)/dynerrutil.c >$(DEPS_DIR)/dynerrutil.d
+$(DEPS_DIR)/timestamp: ${mpi_sources} errutil.c dynerrutil.c Makefile
+	rm -f $(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_add_error_code.o add_error_code.o' $(srcdir)/add_error_code.c >$(DEPS_DIR)/add_error_code.d
+	echo "include $(DEPS_DIR)/add_error_code.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_add_error_class.o add_error_class.o' $(srcdir)/add_error_class.c >$(DEPS_DIR)/add_error_class.d
+	echo "include $(DEPS_DIR)/add_error_class.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_add_error_string.o add_error_string.o' $(srcdir)/add_error_string.c >$(DEPS_DIR)/add_error_string.d
+	echo "include $(DEPS_DIR)/add_error_string.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_call_errhandler.o comm_call_errhandler.o' $(srcdir)/comm_call_errhandler.c >$(DEPS_DIR)/comm_call_errhandler.d
+	echo "include $(DEPS_DIR)/comm_call_errhandler.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_create_errhandler.o comm_create_errhandler.o' $(srcdir)/comm_create_errhandler.c >$(DEPS_DIR)/comm_create_errhandler.d
+	echo "include $(DEPS_DIR)/comm_create_errhandler.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_get_errhandler.o comm_get_errhandler.o' $(srcdir)/comm_get_errhandler.c >$(DEPS_DIR)/comm_get_errhandler.d
+	echo "include $(DEPS_DIR)/comm_get_errhandler.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_set_errhandler.o comm_set_errhandler.o' $(srcdir)/comm_set_errhandler.c >$(DEPS_DIR)/comm_set_errhandler.d
+	echo "include $(DEPS_DIR)/comm_set_errhandler.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_errhandler_create.o errhandler_create.o' $(srcdir)/errhandler_create.c >$(DEPS_DIR)/errhandler_create.d
+	echo "include $(DEPS_DIR)/errhandler_create.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_errhandler_free.o errhandler_free.o' $(srcdir)/errhandler_free.c >$(DEPS_DIR)/errhandler_free.d
+	echo "include $(DEPS_DIR)/errhandler_free.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_errhandler_get.o errhandler_get.o' $(srcdir)/errhandler_get.c >$(DEPS_DIR)/errhandler_get.d
+	echo "include $(DEPS_DIR)/errhandler_get.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_errhandler_set.o errhandler_set.o' $(srcdir)/errhandler_set.c >$(DEPS_DIR)/errhandler_set.d
+	echo "include $(DEPS_DIR)/errhandler_set.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_error_class.o error_class.o' $(srcdir)/error_class.c >$(DEPS_DIR)/error_class.d
+	echo "include $(DEPS_DIR)/error_class.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_error_string.o error_string.o' $(srcdir)/error_string.c >$(DEPS_DIR)/error_string.d
+	echo "include $(DEPS_DIR)/error_string.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_file_create_errhandler.o file_create_errhandler.o' $(srcdir)/file_create_errhandler.c >$(DEPS_DIR)/file_create_errhandler.d
+	echo "include $(DEPS_DIR)/file_create_errhandler.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_file_get_errhandler.o file_get_errhandler.o' $(srcdir)/file_get_errhandler.c >$(DEPS_DIR)/file_get_errhandler.d
+	echo "include $(DEPS_DIR)/file_get_errhandler.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_file_set_errhandler.o file_set_errhandler.o' $(srcdir)/file_set_errhandler.c >$(DEPS_DIR)/file_set_errhandler.d
+	echo "include $(DEPS_DIR)/file_set_errhandler.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_file_call_errhandler.o file_call_errhandler.o' $(srcdir)/file_call_errhandler.c >$(DEPS_DIR)/file_call_errhandler.d
+	echo "include $(DEPS_DIR)/file_call_errhandler.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_win_create_errhandler.o win_create_errhandler.o' $(srcdir)/win_create_errhandler.c >$(DEPS_DIR)/win_create_errhandler.d
+	echo "include $(DEPS_DIR)/win_create_errhandler.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_win_call_errhandler.o win_call_errhandler.o' $(srcdir)/win_call_errhandler.c >$(DEPS_DIR)/win_call_errhandler.d
+	echo "include $(DEPS_DIR)/win_call_errhandler.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_win_get_errhandler.o win_get_errhandler.o' $(srcdir)/win_get_errhandler.c >$(DEPS_DIR)/win_get_errhandler.d
+	echo "include $(DEPS_DIR)/win_get_errhandler.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_win_set_errhandler.o win_set_errhandler.o' $(srcdir)/win_set_errhandler.c >$(DEPS_DIR)/win_set_errhandler.d
+	echo "include $(DEPS_DIR)/win_set_errhandler.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_errutil.o errutil.o' $(srcdir)/errutil.c >$(DEPS_DIR)/errutil.d
+	echo "include $(DEPS_DIR)/errutil.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_dynerrutil.o dynerrutil.o' $(srcdir)/dynerrutil.c >$(DEPS_DIR)/dynerrutil.d
+	echo "include $(DEPS_DIR)/dynerrutil.d" >>$(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  add_error_code.c add_error_class.c add_error_string.c \

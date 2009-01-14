@@ -190,8 +190,12 @@ buildfiles_channel = "sock"
 '
 MPI_MAX_PROCESSOR_NAME = "128"
 MPI_AINT64               = "__int64"
+MPI_AINT64_FMT_DEC_SPEC  = "%I64d"
+MPI_AINT64_FMT_HEX_SPEC  = "%I64x"
 BSEND_OVERHEAD64         = "95"
 MPI_AINT32               = "int"
+MPI_AINT32_FMT_DEC_SPEC  = "%d"
+MPI_AINT32_FMT_HEX_SPEC  = "%x"
 BSEND_OVERHEAD32         = "59"
 MPI_FINT               = "int"
 'MPI_OFFSET             = "long long"
@@ -1020,24 +1024,172 @@ Function GetMPICH2Version()
 	end if
 End Function
 
-' 
-' Assume version is of the form x.yy.zz
+' Does the string contain only ints ?
+Function IsIntString(str)
+	Dim regExpObj, matchesCollection
+	Set regExpObj = New regexp
+
+	if IsNull(str) then
+		IsIntString = False
+		Exit Function
+	end if
+	if IsEmpty(str) then
+		IsIntString = False
+		Exit Function
+	end if
+
+	regExpObj.Pattern = "[^0-9]+"
+	regExpObj.Global = True
+	regExpObj.IgnoreCase = True
+	Set matchesCollection = regExpObj.Execute(str)
+	if matchesCollection.Count > 0 then
+		IsIntString = False		
+	else
+		IsIntString = True
+	end if
+End Function
+
+' Produce a numeric version assuming the following format:
+' Version: [MAJ].[MIN].[REV][EXT][EXT_NUMBER]
+'                 or
+' Version: [MAJ].[MIN].[REV] 
+' Example: 1.0.7rc1 has
+'          MAJ = 1
+'          MIN = 0
+'          REV = 7
+'          EXT = rc
+'          EXT_NUMBER = 1
 '
-' eg: ver = 1.0.5 ; numver = 10005
+'			1.0.7 has EXT converted to 0 and EXT_NUMBER = 0
 '
+' Converting to numeric version will convert EXT to a format number:
+'          ALPHA (a) = 0
+'          BETA (b)  = 1
+'          RC (rc)   = 2
+'          PATCH (p) = 3
+' Regular releases are treated as patch 0
+'
+' Numeric version will have 1 digit for MAJ, 2 digits for MIN,
+' 2 digits for REV, 1 digit for EXT and 1 digit for EXT_NUMBER.
 
 Function GetMPICH2NumVersion(ver)
-	Dim verTokenArray, numver
+	Dim verTokenArray, numVer, majorVer, minorVer, revNum, ext, extNum, tmpStr
+	Dim regExpObj, matchesCollection, verHasExt
+	Set regExpObj = New regexp
+	regExpObj.Global = True
+	regExpObj.IgnoreCase = True
+
+	GetMPICH2NumVersion = 0
 	verTokenArray = Split(ver, ".", -1, 1)
-	numver = verTokenArray(0)
-	For i = 1 to UBound(verTokenArray, 1)
-		if(verTokenArray(i) <= 9) then
-			numver = numver + "0" + verTokenArray(i)
+	if(UBound(verTokenArray, 1) <> 2) then
+		WScript.Echo "Error: " & ver & " not in expected format - eg: 1.0.7rc1"
+		Exit Function
+	end if
+
+	majorVer = verTokenArray(0)
+	if (Len(majorVer) = 1) then
+		if Not IsIntString(majorVer) then
+			WScript.Echo "Error: " & ver & " not in expected format - eg: 1.0.7rc1"
+			WScript.Echo "Major version :" & majorVer & " is not an int"
+			GetMPICH2NumVersion = 0
+			Exit Function
+		end if
+	else
+		WScript.Echo "Error: " & ver & " not in expected format - eg: 1.0.7rc1"
+		WScript.Echo "Major ver not in range [0-9]"
+		GetMPICH2NumVersion = 0
+		Exit Function
+	end if
+	
+	minorVer = verTokenArray(1)
+	if Not ((Len(minorVer) < 0) Or (Len(minorVer) > 2)) then
+		if IsIntString(minorVer) then
+			if(minorVer <= 9) then
+				minorVer = "0" & Right(minorVer, 1)
+			end if 
 		else
-			numver = numver + verTokenArray(i)
-		end if	
-	Next
-	GetMPICH2NumVersion = numver
+			WScript.Echo "Error: " & ver & " not in expected format - eg: 1.0.7rc1"
+			WScript.Echo "Minor version: " & minorVer & " is not an int"
+			Exit Function
+		end if
+	else
+		WScript.Echo "Error: " & ver & " not in expected format - eg: 1.0.7rc1"
+		WScript.Echo "Minor ver not in range [0-99]"
+		Exit Function
+	end if
+
+
+	regExpObj.Pattern = "[^0-9]+"
+	Set matchesCollection = regExpObj.Execute(verTokenArray(2))
+	if(matchesCollection.Count = 1) then
+		tmpStr = matchesCollection(0)
+		verHasExt = True			
+		select case tmpStr
+			case "a"
+				ext = 0
+			case "b"
+				ext = 1
+			case "rc"
+				ext = 2
+			case "p"
+				ext = 3
+			case Else
+				verHasExt = False
+		end select
+	else
+		verHasExt = False
+	end if 
+
+	regExpObj.Pattern = "[0-9]+"
+	Set matchesCollection = regExpObj.Execute(verTokenArray(2))
+	if matchesCollection.Count = 0 then
+		WScript.Echo "Error: " & ver & " not in expected format - eg: 1.0.7rc1"
+		WScript.Echo "No revision num specified"
+		Exit Function
+	end if
+
+	revNum = matchesCollection(0)
+	if Not ((Len(revNum) < 0) Or (Len(revNum) > 2)) then
+		if IsIntString(revNum) then
+			if( revNum <= 9) then
+				revNum = "0" & Right(revNum, 1)
+			end if
+		else
+			WScript.Echo "Error: " & ver & " not in expected format - eg: 1.0.7rc1"
+			WScript.Echo "Revision number: " & revNum & " not an int"
+			Exit Function
+		end if
+	else
+		WScript.Echo "Error: " & ver & " not in expected format - eg: 1.0.7rc1"
+		WScript.Echo "Rev no not in range [0-99]"
+		Exit Function
+	end if
+	if verHasExt then
+'		There has to be an extension number
+		if(matchesCollection.Count = 2) then
+			extNum = matchesCollection(1)
+			if Len(extNum) = 1 then
+				if Not IsIntString(extNum) then
+					WScript.Echo "Error: " & ver & " not in expected format - eg: 1.0.7rc1"
+					WScript.Echo "Extension number : " & extNum & " is not an int"
+					Exit Function
+				end if
+			else
+				WScript.Echo "Error: " & ver & " not in expected format - eg: 1.0.7rc1"
+				WScript.Echo "Extension number no in range [0-9]"
+				Exit Function
+			end if 
+		else
+			WScript.Echo "Error: " & ver & " not in expected format - eg: 1.0.7rc1"
+			WScript.Echo "No version extension number provided"
+			Exit Function
+		end if
+		numVer = majorVer & minorVer & revNum & ext & extNum
+	else
+		numVer = majorVer & minorVer & revNum & "0" & "0"
+	end if
+	GetMPICH2NumVersion = 0 + numVer
+'	WScript.Echo " MPICH2 NUM VERSION " & numVer
 End Function
 
 mpich2Version = GetMPICH2Version()
@@ -1455,7 +1607,9 @@ If f.FileExists("src\mpi\romio\adio\include\romioconf.h.in") Then
 	fout.WriteLine("#ifndef FORTRANDOUBLEUNDERSCORE")
 	fout.WriteLine("#define FORTRANCAPS")
 	fout.WriteLine("#endif")
+	fout.WriteLine("#define HAVE_IO_H 1")
 	fout.WriteLine("#define snprintf _snprintf")
+    fout.WriteLine("#define strtok_r strtok_s")
 	Call WriteFooter(fout)
 	fout.Close()
 
@@ -1547,11 +1701,38 @@ Else
 	fout.WriteLine("")
 	fout.WriteLine("#define restrict")
 	fout.WriteLine("")
+	fout.WriteLine("#define HAVE_IO_H 1")
+	fout.WriteLine("#define snprintf _snprintf")
+    fout.WriteLine("#define strtok_r strtok_s")
 	fout.WriteLine("#endif")
 
 	fout.Close()
 
 End If
+
+'   Convert mpif.h - F77 header to F90 header
+Function ConvertF77HeaderToF90(headerFileName)
+	set fs = CreateObject("Scripting.FileSystemObject")
+	set headerFileObj = fs.OpenTextFile(headerFileName)
+	tmpFileName = fs.GetTempName()
+	set tmpFileObj = fs.CreateTextFile(tmpFileName, true)
+	Do Until headerFileObj.AtEndOfStream = True
+		contents = headerFileObj.ReadLine()
+		posCommentChar = InStr(1, contents, "C", 1)
+		If posCommentChar = 1 Then
+			contents = Replace(contents, "C", "!", 1, 1, 1)
+		End If
+		tmpFileObj.WriteLine(contents)
+	Loop
+	headerFileObj.Close()
+	tmpFileObj.Close()
+
+	set headerFileObj = fs.GetFile(headerFileName)
+	set tmpFileObj = fs.GetFile(tmpFileName)
+	headerFileObj.Delete(True)
+	tmpFileObj.Move(headerFileName)
+	ConvertF77HeaderToF90 = True
+End Function 
 
 Function BuildIFaces()
 
@@ -1694,6 +1875,8 @@ Function BuildIFaces()
 			fout.Write(contents)
 			fin.Close()
 			fout.Close()
+			' Assume all windows fortran compilers are F90 compilers
+			retVal = ConvertF77HeaderToF90("src\include\win32\mpif.h")
 
 			set fin = f.OpenTextFile("src\binding\f77\mpif.h.in")
 			cEcho "Creating src\include\win64\mpif.h"
@@ -1703,6 +1886,8 @@ Function BuildIFaces()
 			fout.Write(contents)
 			fin.Close()
 			fout.Close()
+			' Assume all windows fortran compilers are F90 compilers
+			retVal = ConvertF77HeaderToF90("src\include\win64\mpif.h")
 
 		Else
 	
@@ -1751,6 +1936,71 @@ Function BuildIFaces()
 			WshShell.CurrentDirectory = "src\binding\f90"
 			cEcho WshShell.CurrentDirectory & ">perl buildiface"
 			WshShell.Run "perl buildiface", 0, true
+
+			' Generate mpifnoext.h
+			' - Remove EXTERNAL, DOUBLE PRECISION from mpif.h
+			' - Change comment style in mpif.h from "C ..." to "! ..."
+			cEcho "Creating src\include\win32\mpifnoext.h"
+			set fs = CreateObject("Scripting.FileSystemObject")
+			set fout = fs.CreateTextFile("..\..\include\win32\mpifnoext.h")
+			set fin = fs.OpenTextFile("..\..\include\win32\mpif.h")
+			Do Until fin.AtEndOfStream = True
+				contents = fin.ReadLine()
+				posExternal = InStr(1, contents, "EXTERNAL", 1)
+				posDoubleP = InStr(1, contents, "DOUBLE PRECISION", 1)
+				posCommentChar = InStr(1, contents, "C", 1)
+				If posCommentChar = 1 Then
+					contents = Replace(contents, "C", "!", 1, 1, 1)
+				End If
+				If (posExternal < 1) And (posDoubleP < 1) Then
+					fout.WriteLine(contents)
+				End If
+			Loop
+			fin.Close()
+			fout.Close()
+			cEcho "Creating src\include\win64\mpifnoext.h"
+			set fout = fs.CreateTextFile("..\..\include\win64\mpifnoext.h")
+			set fin = fs.OpenTextFile("..\..\include\win64\mpif.h")
+			Do Until fin.AtEndOfStream = True
+				contents = fin.ReadLine()
+				posExternal = InStr(1, contents, "EXTERNAL", 1)
+				posDoubleP = InStr(1, contents, "DOUBLE PRECISION", 1)
+				posCommentChar = InStr(1, contents, "C", 1)
+				If posCommentChar = 1 Then
+					contents = Replace(contents, "C", "!", 1, 1, 1)
+				End If
+				If (posExternal < 1) And (posDoubleP < 1) Then
+					fout.WriteLine(contents)
+				End If
+			Loop
+			fin.Close()
+			fout.Close()
+
+			' Create mpi_sizeofs.f90 in arch dependent dirs
+			If Not fs.FolderExists("win32") Then
+				fs.CreateFolder("win32")
+			End If
+			cEcho "Creating src\binding\f90\win32\mpi_sizeofs.f90"
+			set fout = fs.CreateTextFile("win32\mpi_sizeofs.f90" , True)
+			set fin  = fs.OpenTextFile("mpi_sizeofs.f90.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false, false)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
+
+			If Not fs.FolderExists("win64") Then
+				fs.CreateFolder("win64")
+			End If
+			cEcho "Creating src\binding\f90\win64\mpi_sizeofs.f90"
+			set fout = fs.CreateTextFile("win64\mpi_sizeofs.f90", True)
+			set fin  = fs.OpenTextFile("mpi_sizeofs.f90.in")
+			contents = fin.ReadAll()
+			contents = ReplaceAts(contents, false, true)
+			fout.Write(contents)
+			fin.Close()
+			fout.Close()
+			
 			WshShell.CurrentDirectory = "..\..\.."
 
 		End If
@@ -1766,6 +2016,7 @@ Function BuildIFaces()
 End Function
 
 BuildIFaces()
+
 
 '
 ' Generate defmsg.h
@@ -2016,7 +2267,7 @@ End Function
 Function ReplaceAts( str, use_f77, b64 )
 	Dim regEx, Match, Matches
 	Set regEx = New RegExp
-	regEx.Pattern = "@.*@"
+	regEx.Pattern = "@.[0-9a-z_]*@"
 	regEx.IgnoreCase = True
 	regEx.Global = True
 	Set Matches = regEx.Execute(str)
@@ -2202,6 +2453,18 @@ Function ReplaceAts( str, use_f77, b64 )
 				else
 					str = Replace(str, "@MPI_AINT@", MPI_AINT32)
 				end if
+			Case "@MPI_AINT_FMT_DEC_SPEC@"
+				if b64 then
+					str = Replace(str, "@MPI_AINT_FMT_DEC_SPEC@", MPI_AINT64_FMT_DEC_SPEC)
+				else
+					str = Replace(str, "@MPI_AINT_FMT_DEC_SPEC@", MPI_AINT32_FMT_DEC_SPEC)
+				end if
+			Case "@MPI_AINT_FMT_HEX_SPEC@"
+				if b64 then
+					str = Replace(str, "@MPI_AINT_FMT_HEX_SPEC@", MPI_AINT64_FMT_HEX_SPEC)
+				else
+					str = Replace(str, "@MPI_AINT_FMT_HEX_SPEC@", MPI_AINT32_FMT_HEX_SPEC)
+				end if
 			Case "@MPI_FINT@"
 				str = Replace(str, "@MPI_FINT@", MPI_FINT)
 			Case "@MPI_OFFSET@"
@@ -2314,6 +2577,33 @@ Function ReplaceAts( str, use_f77, b64 )
 				Else
 					str = Replace(str, "@F77_MPI_OFFSET@", "INTEGER (KIND=8)")
 				End If
+			' FIXME: The size of int,... could depend on compiler options
+			Case "@SIZEOF_F90_INTEGER@"
+				If b64 then
+					str = Replace(str, "@SIZEOF_F90_INTEGER@", "4")
+				Else
+					str = Replace(str, "@SIZEOF_F90_INTEGER@", "4")
+				End If
+			Case "@SIZEOF_F90_REAL@"
+				If b64 then
+					str = Replace(str, "@SIZEOF_F90_REAL@", "4")
+				Else
+					str = Replace(str, "@SIZEOF_F90_REAL@", "4")
+				End If
+			Case "@SIZEOF_F90_CHARACTER@"
+				If b64 then
+					str = Replace(str, "@SIZEOF_F90_CHARACTER@", "1")
+				Else
+					str = Replace(str, "@SIZEOF_F90_CHARACTER@", "1")
+				End If
+			Case "@SIZEOF_F90_DOUBLE_PRECISION@"
+				If b64 then
+					str = Replace(str, "@SIZEOF_F90_DOUBLE_PRECISION@", "8")
+				Else
+					str = Replace(str, "@SIZEOF_F90_DOUBLE_PRECISION@", "8")
+				End If
+			Case "@REQD@"
+				str = Replace(str, "@REQD@", "")
 			Case "@PCONTROL_LIST@"
 				'str = Replace(str, "@PCONTROL_LIST@", "")
 			Case "@configure_input@"
@@ -2385,20 +2675,24 @@ Function ReplaceAts( str, use_f77, b64 )
 				str = Replace(str, "@RELEASE_DATE@", Date)
 			Case "@DEVICE@"
 				str = Replace(str, "@DEVICE@", "ch3")
-			Case "@CC@ @CFLAGS@"
+			Case "@CC@"
 				str = Replace(str, "@CC@", "cl.exe")
+			Case "@CFLAGS@"
 				' FIXME: Not the complete list of CFLAGS --- only some listed
 				str = Replace(str, "@CFLAGS@", "/O2 /Ob1 /Oi /Oy /W4")
-			Case "@CXX@ @CXXFLAGS@"
+			Case "@CXX@"
 				str = Replace(str, "@CXX@", "cl.exe")
+			Case "@CXXFLAGS@" 
 				' FIXME: Not the complete list of CXXFLAGS --- only some listed
 				str = Replace(str, "@CXXFLAGS@", "/O2 /Ob1 /Oi /Oy /W4")
-			Case "@F77@ @FFLAGS@"
+			Case "@F77@"
 				str = Replace(str, "@F77@", "ifort.exe")
+			Case "@FFLAGS@"
 				' FIXME: Not the complete list of FFLAGS --- only some listed
 				str = Replace(str, "@FFLAGS@", "/names:lowercase /iface:cref /assume:underscore")
-			Case "@F90@ @F90FLAGS@"
+			Case "@F90@"
 				str = Replace(str, "@F90@", "ifort.exe")
+			Case "@F90FLAGS@"
 				' FIXME: Not the complete list of F90FLAGS --- only some listed
 				str = Replace(str, "@F90FLAGS@", "/names:lowercase /iface:cref /assume:underscore")
 			Case "@VERSION@"
@@ -5030,6 +5324,7 @@ Function GenBuild()
 	mfile.WriteLine("	$(OUTDIR)\ad_iread_fake.obj \")
 	mfile.WriteLine("	$(OUTDIR)\ad_iwrite_fake.obj \")
 	mfile.WriteLine("	$(OUTDIR)\ad_open.obj \")
+	mfile.WriteLine("	$(OUTDIR)\system_hints.obj \")
 	mfile.WriteLine("	$(OUTDIR)\ad_prealloc.obj \")
 	mfile.WriteLine("	$(OUTDIR)\ad_read_coll.obj \")
 	mfile.WriteLine("	$(OUTDIR)\ad_read_str.obj \")

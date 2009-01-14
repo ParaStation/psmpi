@@ -43,7 +43,24 @@ MPICXX = $(bindir)/mpicxx
 MPIF77 = $(bindir)/mpif77
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .cxx .f 
+.SUFFIXES: .o .lo .c .cxx .f .txt 
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../ \
+	-configdir=. \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=test/commands/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
@@ -51,6 +68,9 @@ clean:  clean-local
 	-@rm -f rtest.exe stdintest.exe checkenv1.exe stdintest2.exe rtestx.exe stdiotest.exe testout.exe rtestf.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -58,13 +78,15 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: stdiotest stdintest stdintest2 checkenv1 rtest rtestf rtestx\
 	 testout
 
+coverage: 
 rtest: rtest.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o rtest rtest.o  ${LIBS}
 stdintest: stdintest.o   
@@ -82,6 +104,16 @@ testout: testout.o
 rtestf: rtestf.o   
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o rtestf rtestf.o  ${LIBS}
 # --------------------------------------------------------------------------
+htmldoc:
+mandoc:
+latexdoc:
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  stdiotest.c stdintest.c stdintest2.c checkenv1.c rtest.c \

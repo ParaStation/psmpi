@@ -48,6 +48,7 @@ int main(int argc, char* argv[])
     smpd_enter_fn(FCNAME);
 
     /* initialization */
+    putenv("PMI_SMPD_FD=0");
     result = PMPI_Init(&argc, &argv);
     SMPD_CS_ENTER();
     if (result != MPI_SUCCESS)
@@ -199,6 +200,7 @@ int smpd_entry_point()
 	    return result;
 	}
 	smpd_clear_process_registry();
+    smpd_get_smpd_data("phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
     }
 #endif
 
@@ -253,8 +255,11 @@ int smpd_entry_point()
     }
     smpd_process.listener_context->state = SMPD_SMPD_LISTENING;
 
-    if (smpd_process.root_smpd)
-	smpd_insert_into_dynamic_hosts();
+    if (smpd_process.root_smpd){
+		if(smpd_option_on("no_dynamic_hosts") == SMPD_FALSE){
+			smpd_insert_into_dynamic_hosts();
+		}
+	}
 
 #ifndef HAVE_WINDOWS_H
     /* put myself in the background if flag is set */

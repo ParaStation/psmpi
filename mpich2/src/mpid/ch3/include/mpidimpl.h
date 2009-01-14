@@ -618,12 +618,12 @@ typedef struct MPIDI_VC
     /* eager message threshold */
     int eager_max_msg_sz;
     
-    /* eager noncontiguous send function pointer.  Called to send a
-       noncontiguous eager message.  Caller must initialize
+    /* noncontiguous send function pointer.  Called to send a
+       noncontiguous message.  Caller must initialize
        sreq->dev.segment, _first and _size.  Contiguous messages are
        called directly from CH3 and cannot be overridden. */
-    int (* sendEagerNoncontig_fn)( struct MPIDI_VC *vc, struct MPID_Request *sreq,
-                                   void *header, MPIDI_msg_sz_t hdr_sz );
+    int (* sendNoncontig_fn)( struct MPIDI_VC *vc, struct MPID_Request *sreq,
+			      void *header, MPIDI_msg_sz_t hdr_sz );
     
     /* Rather than have each channel define its own fields for the 
        channel-specific data, we provide a fixed-sized scratchpad.  Currently,
@@ -1724,8 +1724,8 @@ int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **, const void *, int,
 				      int, int, MPID_Comm *, int );
 int MPIDI_CH3_EagerSyncZero(MPID_Request **, int, int, MPID_Comm *, int );
 
-int MPIDI_CH3_SendEagerNoncontig( struct MPIDI_VC *vc, struct MPID_Request *sreq,
-                                  void *header, MPIDI_msg_sz_t hdr_sz );
+int MPIDI_CH3_SendNoncontig( struct MPIDI_VC *vc, struct MPID_Request *sreq,
+			     void *header, MPIDI_msg_sz_t hdr_sz );
 
 /* Routines to ack packets, called in the receive routines when a 
    message is matched */

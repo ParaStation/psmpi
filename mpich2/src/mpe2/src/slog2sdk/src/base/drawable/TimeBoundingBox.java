@@ -66,7 +66,7 @@ public class TimeBoundingBox implements DataIO
         }
     }
 
-    private TimeBoundingBox( double starttime, double finaltime )
+    public TimeBoundingBox( double starttime, double finaltime )
     {
         earliest_time = starttime;
         latest_time   = finaltime;
@@ -337,10 +337,12 @@ public class TimeBoundingBox implements DataIO
             return ( "TimeBBox( - )" );
         */
         return ( "TimeBBox(" + earliest_time + "," + latest_time + ")" );
-        /*
+    }
+
+    public String toShortString()
+    {
         return ( "TimeBBox(" + (float) earliest_time
                        + "," + (float) latest_time + ")" );
-        */
     }
 
 

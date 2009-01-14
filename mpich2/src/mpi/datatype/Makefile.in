@@ -28,6 +28,7 @@ CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 
 VPATH = .:@srcdir@
+DOCTEXT         = @DOCTEXT@
 mpi_sources = address.c get_address.c get_count.c \
  get_elements.c pack.c unpack.c pack_size.c status_set_elements.c \
  type_get_name.c \
@@ -46,30 +47,62 @@ HEADERS = datatype.h
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c 
+.SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
 	$(C_COMPILE) -c $<
 .c.lo:
 	$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+.c.man:
+	$(DOCTEXT) -man -mpath ../../../man/man3 -ext 3 -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.html:
+	$(DOCTEXT) -html -mpath ../../../www/www3  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.latex:
+	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=. \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=src/mpi/datatype/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 .libstamp2 .libstamp3 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
 	    ${MAKE} .libstamp2 ; \
@@ -291,7 +324,184 @@ _type_create_subarray.o: type_create_subarray.c
 _type_create_subarray.lo: type_create_subarray.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_subarray.c -o _type_create_subarray.lo
 # --------------------------------------------------------------------------
+coverage: 
+	-@for file in $(mpi_sources) typeutil.c ; do \
+		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
+mandoc: ${mpi_sources:.c=.man}
+htmldoc: ${mpi_sources:.c=.html}
+latexdoc: ${mpi_sources:.c=.latex}
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+$(DEPS_DIR)/address.d: $(srcdir)/address.c
+	$(MAKE_DEPEND_C) -MT '_address.o address.o' $(srcdir)/address.c >$(DEPS_DIR)/address.d
+$(DEPS_DIR)/get_address.d: $(srcdir)/get_address.c
+	$(MAKE_DEPEND_C) -MT '_get_address.o get_address.o' $(srcdir)/get_address.c >$(DEPS_DIR)/get_address.d
+$(DEPS_DIR)/get_count.d: $(srcdir)/get_count.c
+	$(MAKE_DEPEND_C) -MT '_get_count.o get_count.o' $(srcdir)/get_count.c >$(DEPS_DIR)/get_count.d
+$(DEPS_DIR)/get_elements.d: $(srcdir)/get_elements.c
+	$(MAKE_DEPEND_C) -MT '_get_elements.o get_elements.o' $(srcdir)/get_elements.c >$(DEPS_DIR)/get_elements.d
+$(DEPS_DIR)/pack.d: $(srcdir)/pack.c
+	$(MAKE_DEPEND_C) -MT '_pack.o pack.o' $(srcdir)/pack.c >$(DEPS_DIR)/pack.d
+$(DEPS_DIR)/unpack.d: $(srcdir)/unpack.c
+	$(MAKE_DEPEND_C) -MT '_unpack.o unpack.o' $(srcdir)/unpack.c >$(DEPS_DIR)/unpack.d
+$(DEPS_DIR)/pack_size.d: $(srcdir)/pack_size.c
+	$(MAKE_DEPEND_C) -MT '_pack_size.o pack_size.o' $(srcdir)/pack_size.c >$(DEPS_DIR)/pack_size.d
+$(DEPS_DIR)/status_set_elements.d: $(srcdir)/status_set_elements.c
+	$(MAKE_DEPEND_C) -MT '_status_set_elements.o status_set_elements.o' $(srcdir)/status_set_elements.c >$(DEPS_DIR)/status_set_elements.d
+$(DEPS_DIR)/type_get_name.d: $(srcdir)/type_get_name.c
+	$(MAKE_DEPEND_C) -MT '_type_get_name.o type_get_name.o' $(srcdir)/type_get_name.c >$(DEPS_DIR)/type_get_name.d
+$(DEPS_DIR)/type_set_name.d: $(srcdir)/type_set_name.c
+	$(MAKE_DEPEND_C) -MT '_type_set_name.o type_set_name.o' $(srcdir)/type_set_name.c >$(DEPS_DIR)/type_set_name.d
+$(DEPS_DIR)/type_size.d: $(srcdir)/type_size.c
+	$(MAKE_DEPEND_C) -MT '_type_size.o type_size.o' $(srcdir)/type_size.c >$(DEPS_DIR)/type_size.d
+$(DEPS_DIR)/type_extent.d: $(srcdir)/type_extent.c
+	$(MAKE_DEPEND_C) -MT '_type_extent.o type_extent.o' $(srcdir)/type_extent.c >$(DEPS_DIR)/type_extent.d
+$(DEPS_DIR)/type_vector.d: $(srcdir)/type_vector.c
+	$(MAKE_DEPEND_C) -MT '_type_vector.o type_vector.o' $(srcdir)/type_vector.c >$(DEPS_DIR)/type_vector.d
+$(DEPS_DIR)/type_commit.d: $(srcdir)/type_commit.c
+	$(MAKE_DEPEND_C) -MT '_type_commit.o type_commit.o' $(srcdir)/type_commit.c >$(DEPS_DIR)/type_commit.d
+$(DEPS_DIR)/type_indexed.d: $(srcdir)/type_indexed.c
+	$(MAKE_DEPEND_C) -MT '_type_indexed.o type_indexed.o' $(srcdir)/type_indexed.c >$(DEPS_DIR)/type_indexed.d
+$(DEPS_DIR)/type_hindexed.d: $(srcdir)/type_hindexed.c
+	$(MAKE_DEPEND_C) -MT '_type_hindexed.o type_hindexed.o' $(srcdir)/type_hindexed.c >$(DEPS_DIR)/type_hindexed.d
+$(DEPS_DIR)/type_struct.d: $(srcdir)/type_struct.c
+	$(MAKE_DEPEND_C) -MT '_type_struct.o type_struct.o' $(srcdir)/type_struct.c >$(DEPS_DIR)/type_struct.d
+$(DEPS_DIR)/type_contiguous.d: $(srcdir)/type_contiguous.c
+	$(MAKE_DEPEND_C) -MT '_type_contiguous.o type_contiguous.o' $(srcdir)/type_contiguous.c >$(DEPS_DIR)/type_contiguous.d
+$(DEPS_DIR)/type_free.d: $(srcdir)/type_free.c
+	$(MAKE_DEPEND_C) -MT '_type_free.o type_free.o' $(srcdir)/type_free.c >$(DEPS_DIR)/type_free.d
+$(DEPS_DIR)/type_hvector.d: $(srcdir)/type_hvector.c
+	$(MAKE_DEPEND_C) -MT '_type_hvector.o type_hvector.o' $(srcdir)/type_hvector.c >$(DEPS_DIR)/type_hvector.d
+$(DEPS_DIR)/type_dup.d: $(srcdir)/type_dup.c
+	$(MAKE_DEPEND_C) -MT '_type_dup.o type_dup.o' $(srcdir)/type_dup.c >$(DEPS_DIR)/type_dup.d
+$(DEPS_DIR)/type_get_envelope.d: $(srcdir)/type_get_envelope.c
+	$(MAKE_DEPEND_C) -MT '_type_get_envelope.o type_get_envelope.o' $(srcdir)/type_get_envelope.c >$(DEPS_DIR)/type_get_envelope.d
+$(DEPS_DIR)/type_get_contents.d: $(srcdir)/type_get_contents.c
+	$(MAKE_DEPEND_C) -MT '_type_get_contents.o type_get_contents.o' $(srcdir)/type_get_contents.c >$(DEPS_DIR)/type_get_contents.d
+$(DEPS_DIR)/type_ub.d: $(srcdir)/type_ub.c
+	$(MAKE_DEPEND_C) -MT '_type_ub.o type_ub.o' $(srcdir)/type_ub.c >$(DEPS_DIR)/type_ub.d
+$(DEPS_DIR)/type_lb.d: $(srcdir)/type_lb.c
+	$(MAKE_DEPEND_C) -MT '_type_lb.o type_lb.o' $(srcdir)/type_lb.c >$(DEPS_DIR)/type_lb.d
+$(DEPS_DIR)/type_get_extent.d: $(srcdir)/type_get_extent.c
+	$(MAKE_DEPEND_C) -MT '_type_get_extent.o type_get_extent.o' $(srcdir)/type_get_extent.c >$(DEPS_DIR)/type_get_extent.d
+$(DEPS_DIR)/type_get_true_extent.d: $(srcdir)/type_get_true_extent.c
+	$(MAKE_DEPEND_C) -MT '_type_get_true_extent.o type_get_true_extent.o' $(srcdir)/type_get_true_extent.c >$(DEPS_DIR)/type_get_true_extent.d
+$(DEPS_DIR)/type_match_size.d: $(srcdir)/type_match_size.c
+	$(MAKE_DEPEND_C) -MT '_type_match_size.o type_match_size.o' $(srcdir)/type_match_size.c >$(DEPS_DIR)/type_match_size.d
+$(DEPS_DIR)/type_create_struct.d: $(srcdir)/type_create_struct.c
+	$(MAKE_DEPEND_C) -MT '_type_create_struct.o type_create_struct.o' $(srcdir)/type_create_struct.c >$(DEPS_DIR)/type_create_struct.d
+$(DEPS_DIR)/type_create_hindexed.d: $(srcdir)/type_create_hindexed.c
+	$(MAKE_DEPEND_C) -MT '_type_create_hindexed.o type_create_hindexed.o' $(srcdir)/type_create_hindexed.c >$(DEPS_DIR)/type_create_hindexed.d
+$(DEPS_DIR)/type_create_hvector.d: $(srcdir)/type_create_hvector.c
+	$(MAKE_DEPEND_C) -MT '_type_create_hvector.o type_create_hvector.o' $(srcdir)/type_create_hvector.c >$(DEPS_DIR)/type_create_hvector.d
+$(DEPS_DIR)/pack_external.d: $(srcdir)/pack_external.c
+	$(MAKE_DEPEND_C) -MT '_pack_external.o pack_external.o' $(srcdir)/pack_external.c >$(DEPS_DIR)/pack_external.d
+$(DEPS_DIR)/pack_external_size.d: $(srcdir)/pack_external_size.c
+	$(MAKE_DEPEND_C) -MT '_pack_external_size.o pack_external_size.o' $(srcdir)/pack_external_size.c >$(DEPS_DIR)/pack_external_size.d
+$(DEPS_DIR)/unpack_external.d: $(srcdir)/unpack_external.c
+	$(MAKE_DEPEND_C) -MT '_unpack_external.o unpack_external.o' $(srcdir)/unpack_external.c >$(DEPS_DIR)/unpack_external.d
+$(DEPS_DIR)/type_create_indexed_block.d: $(srcdir)/type_create_indexed_block.c
+	$(MAKE_DEPEND_C) -MT '_type_create_indexed_block.o type_create_indexed_block.o' $(srcdir)/type_create_indexed_block.c >$(DEPS_DIR)/type_create_indexed_block.d
+$(DEPS_DIR)/type_create_resized.d: $(srcdir)/type_create_resized.c
+	$(MAKE_DEPEND_C) -MT '_type_create_resized.o type_create_resized.o' $(srcdir)/type_create_resized.c >$(DEPS_DIR)/type_create_resized.d
+$(DEPS_DIR)/type_create_darray.d: $(srcdir)/type_create_darray.c
+	$(MAKE_DEPEND_C) -MT '_type_create_darray.o type_create_darray.o' $(srcdir)/type_create_darray.c >$(DEPS_DIR)/type_create_darray.d
+$(DEPS_DIR)/type_create_subarray.d: $(srcdir)/type_create_subarray.c
+	$(MAKE_DEPEND_C) -MT '_type_create_subarray.o type_create_subarray.o' $(srcdir)/type_create_subarray.c >$(DEPS_DIR)/type_create_subarray.d
+$(DEPS_DIR)/typeutil.d: $(srcdir)/typeutil.c
+	$(MAKE_DEPEND_C) -MT '_typeutil.o typeutil.o' $(srcdir)/typeutil.c >$(DEPS_DIR)/typeutil.d
+$(DEPS_DIR)/timestamp: $(mpi_sources) typeutil.c Makefile
+	rm -f $(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_address.o address.o' $(srcdir)/address.c >$(DEPS_DIR)/address.d
+	echo "include $(DEPS_DIR)/address.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_get_address.o get_address.o' $(srcdir)/get_address.c >$(DEPS_DIR)/get_address.d
+	echo "include $(DEPS_DIR)/get_address.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_get_count.o get_count.o' $(srcdir)/get_count.c >$(DEPS_DIR)/get_count.d
+	echo "include $(DEPS_DIR)/get_count.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_get_elements.o get_elements.o' $(srcdir)/get_elements.c >$(DEPS_DIR)/get_elements.d
+	echo "include $(DEPS_DIR)/get_elements.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_pack.o pack.o' $(srcdir)/pack.c >$(DEPS_DIR)/pack.d
+	echo "include $(DEPS_DIR)/pack.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_unpack.o unpack.o' $(srcdir)/unpack.c >$(DEPS_DIR)/unpack.d
+	echo "include $(DEPS_DIR)/unpack.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_pack_size.o pack_size.o' $(srcdir)/pack_size.c >$(DEPS_DIR)/pack_size.d
+	echo "include $(DEPS_DIR)/pack_size.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_status_set_elements.o status_set_elements.o' $(srcdir)/status_set_elements.c >$(DEPS_DIR)/status_set_elements.d
+	echo "include $(DEPS_DIR)/status_set_elements.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_get_name.o type_get_name.o' $(srcdir)/type_get_name.c >$(DEPS_DIR)/type_get_name.d
+	echo "include $(DEPS_DIR)/type_get_name.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_set_name.o type_set_name.o' $(srcdir)/type_set_name.c >$(DEPS_DIR)/type_set_name.d
+	echo "include $(DEPS_DIR)/type_set_name.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_size.o type_size.o' $(srcdir)/type_size.c >$(DEPS_DIR)/type_size.d
+	echo "include $(DEPS_DIR)/type_size.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_extent.o type_extent.o' $(srcdir)/type_extent.c >$(DEPS_DIR)/type_extent.d
+	echo "include $(DEPS_DIR)/type_extent.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_vector.o type_vector.o' $(srcdir)/type_vector.c >$(DEPS_DIR)/type_vector.d
+	echo "include $(DEPS_DIR)/type_vector.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_commit.o type_commit.o' $(srcdir)/type_commit.c >$(DEPS_DIR)/type_commit.d
+	echo "include $(DEPS_DIR)/type_commit.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_indexed.o type_indexed.o' $(srcdir)/type_indexed.c >$(DEPS_DIR)/type_indexed.d
+	echo "include $(DEPS_DIR)/type_indexed.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_hindexed.o type_hindexed.o' $(srcdir)/type_hindexed.c >$(DEPS_DIR)/type_hindexed.d
+	echo "include $(DEPS_DIR)/type_hindexed.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_struct.o type_struct.o' $(srcdir)/type_struct.c >$(DEPS_DIR)/type_struct.d
+	echo "include $(DEPS_DIR)/type_struct.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_contiguous.o type_contiguous.o' $(srcdir)/type_contiguous.c >$(DEPS_DIR)/type_contiguous.d
+	echo "include $(DEPS_DIR)/type_contiguous.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_free.o type_free.o' $(srcdir)/type_free.c >$(DEPS_DIR)/type_free.d
+	echo "include $(DEPS_DIR)/type_free.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_hvector.o type_hvector.o' $(srcdir)/type_hvector.c >$(DEPS_DIR)/type_hvector.d
+	echo "include $(DEPS_DIR)/type_hvector.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_dup.o type_dup.o' $(srcdir)/type_dup.c >$(DEPS_DIR)/type_dup.d
+	echo "include $(DEPS_DIR)/type_dup.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_get_envelope.o type_get_envelope.o' $(srcdir)/type_get_envelope.c >$(DEPS_DIR)/type_get_envelope.d
+	echo "include $(DEPS_DIR)/type_get_envelope.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_get_contents.o type_get_contents.o' $(srcdir)/type_get_contents.c >$(DEPS_DIR)/type_get_contents.d
+	echo "include $(DEPS_DIR)/type_get_contents.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_ub.o type_ub.o' $(srcdir)/type_ub.c >$(DEPS_DIR)/type_ub.d
+	echo "include $(DEPS_DIR)/type_ub.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_lb.o type_lb.o' $(srcdir)/type_lb.c >$(DEPS_DIR)/type_lb.d
+	echo "include $(DEPS_DIR)/type_lb.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_get_extent.o type_get_extent.o' $(srcdir)/type_get_extent.c >$(DEPS_DIR)/type_get_extent.d
+	echo "include $(DEPS_DIR)/type_get_extent.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_get_true_extent.o type_get_true_extent.o' $(srcdir)/type_get_true_extent.c >$(DEPS_DIR)/type_get_true_extent.d
+	echo "include $(DEPS_DIR)/type_get_true_extent.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_match_size.o type_match_size.o' $(srcdir)/type_match_size.c >$(DEPS_DIR)/type_match_size.d
+	echo "include $(DEPS_DIR)/type_match_size.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_create_struct.o type_create_struct.o' $(srcdir)/type_create_struct.c >$(DEPS_DIR)/type_create_struct.d
+	echo "include $(DEPS_DIR)/type_create_struct.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_create_hindexed.o type_create_hindexed.o' $(srcdir)/type_create_hindexed.c >$(DEPS_DIR)/type_create_hindexed.d
+	echo "include $(DEPS_DIR)/type_create_hindexed.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_create_hvector.o type_create_hvector.o' $(srcdir)/type_create_hvector.c >$(DEPS_DIR)/type_create_hvector.d
+	echo "include $(DEPS_DIR)/type_create_hvector.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_pack_external.o pack_external.o' $(srcdir)/pack_external.c >$(DEPS_DIR)/pack_external.d
+	echo "include $(DEPS_DIR)/pack_external.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_pack_external_size.o pack_external_size.o' $(srcdir)/pack_external_size.c >$(DEPS_DIR)/pack_external_size.d
+	echo "include $(DEPS_DIR)/pack_external_size.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_unpack_external.o unpack_external.o' $(srcdir)/unpack_external.c >$(DEPS_DIR)/unpack_external.d
+	echo "include $(DEPS_DIR)/unpack_external.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_create_indexed_block.o type_create_indexed_block.o' $(srcdir)/type_create_indexed_block.c >$(DEPS_DIR)/type_create_indexed_block.d
+	echo "include $(DEPS_DIR)/type_create_indexed_block.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_create_resized.o type_create_resized.o' $(srcdir)/type_create_resized.c >$(DEPS_DIR)/type_create_resized.d
+	echo "include $(DEPS_DIR)/type_create_resized.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_create_darray.o type_create_darray.o' $(srcdir)/type_create_darray.c >$(DEPS_DIR)/type_create_darray.d
+	echo "include $(DEPS_DIR)/type_create_darray.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_type_create_subarray.o type_create_subarray.o' $(srcdir)/type_create_subarray.c >$(DEPS_DIR)/type_create_subarray.d
+	echo "include $(DEPS_DIR)/type_create_subarray.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_typeutil.o typeutil.o' $(srcdir)/typeutil.c >$(DEPS_DIR)/typeutil.d
+	echo "include $(DEPS_DIR)/typeutil.d" >>$(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  address.c get_address.c get_count.c get_elements.c pack.c \

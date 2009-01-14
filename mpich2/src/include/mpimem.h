@@ -1,5 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id: mpimem.h,v 1.37 2007/05/14 20:39:21 gropp Exp $
+/*  $Id: mpimem.h,v 1.38 2007/09/26 15:39:29 gropp Exp $
  *
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -9,6 +9,9 @@
 
 /* Make sure that we have the definitions for the malloc routines and size_t */
 #include <stdlib.h>
+/* strdup is often declared in string.h, so if we plan to redefine strdup, 
+   we need to include string first.  That is done below, only in the
+   case where we redefine strdup */
 
 #if defined(__cplusplus)
 extern "C" {
@@ -218,6 +221,10 @@ int MPIU_Str_get_string(char **str_ptr, char *val, int maxlen);
 #if defined(strdup) || defined(__strdup)
 #undef strdup
 #endif
+    /* We include string.h first, so that if it contains a definition of 
+     strdup, we won't have an obscure failure when a file include string.h
+    later in the compilation process. */
+#include <string.h>
     /* The ::: should cause the compiler to choke; the string 
        will give the explanation */
 #define strdup(a)         'Error use MPIU_Strdup' :::

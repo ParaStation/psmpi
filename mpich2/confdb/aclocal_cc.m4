@@ -1516,7 +1516,7 @@ int main( int argc, char *argv[] )
     return 0;
 }],
 pac_cv_c_struct_align=`cat ctest.out`
-,pac_cv_c_struct_align="unknown",pac_cv_c_struct_align="$CROSS_STRUCT_ALIGN")
+,pac_cv_c_struct_align="unknown",pac_cv_c_struct_align="$CROSS_ALIGN_STRUCT")
 rm -f ctest.out
 ])
 if test -z "$pac_cv_c_struct_align" ; then
@@ -1645,7 +1645,7 @@ int main( int argc, char *argv[] )
 }],
 pac_cv_c_max_integer_align=`cat ctest.out`,
 pac_cv_c_max_integer_align="unknown",
-pac_cv_c_max_integer_align="$CROSS_STRUCT_INT_ALIGN")
+pac_cv_c_max_integer_align="$CROSS_ALIGN_STRUCT_INT")
 rm -f ctest.out
 ])
 if test -z "$pac_cv_c_max_integer_align" ; then
@@ -1761,7 +1761,7 @@ int main( int argc, char *argv[] )
 }],
 pac_cv_c_max_fp_align=`cat ctest.out`,
 pac_cv_c_max_fp_align="unknown",
-pac_cv_c_max_fp_align="$CROSS_STRUCT_FP_ALIGN")
+pac_cv_c_max_fp_align="$CROSS_ALIGN_STRUCT_FP")
 rm -f ctest.out
 ])
 if test -z "$pac_cv_c_max_fp_align" ; then
@@ -1845,7 +1845,7 @@ int main( int argc, char *argv[] )
 }],
 pac_cv_c_max_double_fp_align=`cat ctest.out`,
 pac_cv_c_max_double_fp_align="unknown",
-pac_cv_c_max_double_fp_align="$CROSS_STRUCT_FP_ALIGN")
+pac_cv_c_max_double_fp_align="$CROSS_ALIGN_STRUCT_DOUBLE_FP")
 rm -f ctest.out
 ])
 if test -z "$pac_cv_c_max_double_fp_align" ; then
@@ -1917,7 +1917,7 @@ int main( int argc, char *argv[] )
 }],
 pac_cv_c_max_longdouble_fp_align=`cat ctest.out`,
 pac_cv_c_max_longdouble_fp_align="unknown",
-pac_cv_c_max_longdouble_fp_align="$CROSS_STRUCT_LONGDOUBLE_FP_ALIGN")
+pac_cv_c_max_longdouble_fp_align="$CROSS_ALIGN_STRUCT_LONGDOUBLE_FP")
 rm -f ctest.out
 ])
 if test -z "$pac_cv_c_max_longdouble_fp_align" ; then
@@ -1979,7 +1979,7 @@ int main( int argc, char *argv[] )
 }],
 pac_cv_c_double_alignment_exception=`cat ctest.out`,
 pac_cv_c_double_alignment_exception="unknown",
-pac_cv_c_double_alignment_exception="$CROSS_DOUBLE_ALIGNMENT_EXCEPTION")
+pac_cv_c_double_alignment_exception="$CROSS_ALIGN_DOUBLE_EXCEPTION")
 rm -f ctest.out
 ])
 if test -z "$pac_cv_c_double_alignment_exception" ; then
@@ -2023,7 +2023,7 @@ int main( int argc, char *argv[] )
 }],
 pac_cv_c_double_pos_align=`cat ctest.out`,
 pac_cv_c_double_pos_align="unknown",
-pac_cv_c_double_pos_align="$CROSS_DOUBLE_POS_ALIGN")
+pac_cv_c_double_pos_align="$CROSS_ALIGN_DOUBLE_POS")
 rm -f ctest.out
 ])
 if test -z "$pac_cv_c_double_pos_align" ; then
@@ -2069,7 +2069,7 @@ int main( int argc, char *argv[] )
 }],
 pac_cv_c_llint_pos_align=`cat ctest.out`,
 pac_cv_c_llint_pos_align="unknown",
-pac_cv_c_llint_pos_align="$CROSS_LLINT_POS_ALIGN")
+pac_cv_c_llint_pos_align="$CROSS_ALIGN_LLINT_POS")
 rm -f ctest.out
 ])
 if test -z "$pac_cv_c_llint_pos_align" ; then

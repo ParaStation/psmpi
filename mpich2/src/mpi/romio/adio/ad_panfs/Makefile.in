@@ -6,14 +6,14 @@ srcdir      = @srcdir@
 CC_SHL      = @CC_SHL@
 SHLIBNAME   = @SHLIBNAME@
 
-INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I../../include -I/opt/panfs/include
+INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I../../include -I${srcdir}/../../../../include -I../../../../include -I/opt/panfs/include
 CFLAGS      = @CFLAGS@ $(INCLUDE_DIR)
 
 C_COMPILE_SHL = $(CC_SHL)
 
 @VPATH@
 
-AD_PANFS_OBJECTS = ad_panfs.o ad_panfs_open.o ad_panfs_hints.o
+AD_PANFS_OBJECTS = ad_panfs.o ad_panfs_open.o ad_panfs_hints.o ad_panfs_read.o ad_panfs_resize.o ad_panfs_write.o
 
 
 default: $(LIBNAME)

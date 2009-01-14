@@ -30,17 +30,36 @@ PMPILIBNAME     = @PMPILIBNAME@
 
 
 VPATH = .:@srcdir@
+DOCTEXT         = @DOCTEXT@
 PACKAGE = mpich2
-VERSION = 1.0.6
-MPICVSHOME = @MPICVSHOME@
+VERSION = @VERSION@
+MPISVNHOME = @MPISVNHOME@
 MODULE_DIRS = confdb src/util/thread src/mpi/romio src/mpe2 src/pm/smpd src/pm/mpd doc/notes 
 MPICXXLIBNAME = @MPICXXLIBNAME@
 MPIFLIBNAME   = @MPIFLIBNAME@
 MPIFWRAPNAME  = @FWRAPNAME@
 
 .SUFFIXES:
-# Some make programs complain if no suffixes are set
-.SUFFIXES: .c .o
+.SUFFIXES:  .txt 
+
+${srcdir}/configure: ${srcdir}/configure.in 
+	@rm -rf autom4te*.cache
+	(cd ${srcdir} && autoheader -I ./confdb && \
+	autoconf -I ./confdb )
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-configdir=. \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-if [ -x config.status ] ; then CONFIG_FILES=Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	for dir in src @EXTERNAL_SRC_DIRS@ examples - ; do \
@@ -50,6 +69,9 @@ clean:  clean-preamble
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	for dir in src @EXTERNAL_SRC_DIRS@ examples - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} clean ; ) ; done
@@ -65,10 +87,15 @@ distclean-xxx:
 	-@rm -f test/Makefile test/util/Makefile test/basic/Makefile test/commands/Makefile test/commands/cmdtests test/mpid/Makefile test/mpid/ch3/Makefile doc/Makefile doc/mansrc/Makefile doc/mansrc/createhtmlindex
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
+	for dir in src @EXTERNAL_SRC_DIRS@ examples - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} maintainer-clean ; ) ; done
+	-rm -f src/include/mpichconf.h.in 
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: all-preamble
 	${MAKE} all-local
 	@(cd src && ${MAKE} all )
@@ -113,6 +140,42 @@ lib/lib${MPICXXLIBNAME}.@SHLIB_EXT@: lib/lib${MPICXXLIBNAME}.la
 # --------------------------------------------------------------------------
 .libstamp0: 
 .libstamp1: 
+# --------------------------------------------------------------------------
+coverage: 
+	for dir in src @EXTERNAL_SRC_DIRS@ examples - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} coverage ; ) ; done
+# --------------------------------------------------------------------------
+mandoc: 
+	if [ ! -d ${DESTDIR}man ] ; then mkdir ${DESTDIR}man ; fi
+	if [ ! -d ${DESTDIR}man/man1 ] ; then mkdir ${DESTDIR}man/man1 ; fi
+	if [ ! -d ${DESTDIR}man/man3 ] ; then mkdir ${DESTDIR}man/man3 ; fi
+	for dir in src @EXTERNAL_SRC_DIRS@ examples - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} mandoc ; ) ; done
+	for dir in doc - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} mandoc ; ) ; done
+htmldoc: 
+	if [ ! -d ${DESTDIR}www ] ; then mkdir ${DESTDIR}www ; fi
+	if [ ! -d ${DESTDIR}www/www1 ] ; then mkdir ${DESTDIR}www/www1 ; fi
+	if [ ! -d ${DESTDIR}www/www3 ] ; then mkdir ${DESTDIR}www/www3 ; fi
+	for dir in src @EXTERNAL_SRC_DIRS@ examples - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} htmldoc ; ) ; done
+	for dir in doc - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} htmldoc ; ) ; done
+	${MAKE} htmldoc-local
+latexdoc: 
+	if [ ! -d ${DESTDIR}doc ] ; then mkdir ${DESTDIR}doc ; fi
+	if [ ! -d ${DESTDIR}doc/refman ] ; then mkdir ${DESTDIR}doc/refman ; fi
+	for dir in src @EXTERNAL_SRC_DIRS@ examples - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} latexdoc ; ) ; done
+	for dir in doc - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} latexdoc ; ) ; done
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Install target
@@ -212,10 +275,10 @@ uninstall:
 	-rm -f ${DESTDIR}${libdir}/lib${MPIFWRAPNAME}.a
 	-rm -f ${DESTDIR}${libdir}/lib${PMPILIBNAME}.a
 	-rm -f ${DESTDIR}${libdir}/libf${MPILIBNAME}.a
-	-rm -f ${DESTDIR}${libdir}/lib${MPILIBNAME}.@SHLIB_EXT@
-	-rm -f ${DESTDIR}${libdir}/lib${PMPILIBNAME}.@SHLIB_EXT@
-	-rm -f ${DESTDIR}${libdir}/libf${MPILIBNAME}.@SHLIB_EXT@
-	-rm -f ${DESTDIR}${libdir}/lib${MPICXXLIBNAME}.@SHLIB_EXT@
+	$(CREATESHLIB) --mode=uninstall lib/lib${MPILIBNAME}.@SHLIB_EXT@ ${DESTDIR}${libdir}/lib${MPILIBNAME}.@SHLIB_EXT@
+	$(CREATESHLIB) --mode=uninstall lib/lib${PMPILIBNAME}.@SHLIB_EXT@ ${DESTDIR}${libdir}/lib${PMPILIBNAME}.@SHLIB_EXT@
+	$(CREATESHLIB) --mode=uninstall lib/libf${MPILIBNAME}.@SHLIB_EXT@ ${DESTDIR}${libdir}/libf${MPILIBNAME}.@SHLIB_EXT@
+	$(CREATESHLIB) --mode=uninstall lib/lib${MPICXXLIBNAME}.@SHLIB_EXT@ ${DESTDIR}${libdir}/lib${MPICXXLIBNAME}.@SHLIB_EXT@
 	-rm -f ${DESTDIR}${docdir}/user.pdf
 	-rm -f ${DESTDIR}${docdir}/install.pdf
 	-rm -f ${DESTDIR}${docdir}/smpd_pmi.pdf
@@ -228,6 +291,14 @@ installcheck:
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} installcheck ; ) ; done
 	${MAKE} installcheck-postamble
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+	for dir in src @EXTERNAL_SRC_DIRS@ examples - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} dependencies ; ) ; done
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
@@ -333,7 +404,7 @@ distclean-local:
 #
 # Build a distribution tarfile
 #  Extract into a temporary directory
-#     cvs update output into cvsexp.log to reduce the volume of noise
+#     svn update output into svnexp.log to reduce the volume of noise
 #     in the output
 #  Rename the directory
 #  Run updatefiles with distribution options
@@ -341,7 +412,7 @@ distclean-local:
 dist: dist-check
 	@version=${VERSION} ; \
 	prever=`echo ${VERSION} | sed -e 's/^[^-]*//'` ; \
-	if [ "$$prever" = "-CVS" ] ; then version=$${version}-`date "+%Y%m%d%H%M"` ; fi ; \
+	if [ "$$prever" = "-SVN" ] ; then version=$${version}-`date "+%Y%m%d%H%M"` ; fi ; \
 	if [ -z "${TAG}" ] ; then tag=HEAD ; else tag=${TAG}; fi ; \
 	$(MAKE) version=$${version} tag=$${tag} doc=yes dist-with-version
 
@@ -370,8 +441,13 @@ dist-with-version:
 	    exit 1 ; fi 
 	@echo ""; echo "Cutting version ${version} of the MPICH2 distribution from tag ${tag}" ; echo ""
 	if [ ! -d tmpdir ] ; then mkdir tmpdir ; fi 
-	rm -f cvsexp.log 
-	( cd tmpdir && cvs -d $(MPICVSHOME) export -r "${tag}" mpich2allWithMPE >cvsexp.log 2>&1 ) || (echo "cvs export failed; see tmpdir/cvsexp.log" && exit 1 )
+	rm -f svnexp.log 
+	if [ "$(tag)" == HEAD ] ; then
+	    URL=$(MPISVNHOME)/mpich2/trunk
+	else
+	    URL=$(MPISVNHOME)/mpich2/tags/release/${tag}
+	fi
+	( cd tmpdir && svn export $(URL) mpich2 > svnexp.log 2>&1 ) || (echo "svn export failed; see tmpdir/svnexp.log" && exit 1 )
 	( cd tmpdir/mpich2 && sed -e "s/^VERSION = .*/VERSION = ${version}/" Makefile.sm >.tmp && mv .tmp Makefile.sm )
 	echo "${version}" >tmpdir/mpich2/maint/Version
 	mv tmpdir/mpich2 tmpdir/${PACKAGE}-${version}
@@ -425,7 +501,7 @@ dist-with-version:
 	    ( cd tmpdir/${PACKAGE}-${version}/src/mpe2/maint && ${MAKE} -f Makefile4man ) ; \
 	fi
 	( cd tmpdir/${PACKAGE}-${version} && maint/updatefiles -distrib )
-	( cd tmpdir/${PACKAGE}-${version} && find . -name 'CVS' -print | \
+	( cd tmpdir/${PACKAGE}-${version} && find . -name '.svn' -print | \
 	    xargs @XARGS_NODATA_OPT@ rm -rf )
 	( cd tmpdir && tar cf ${PACKAGE}-${version}.tar ${PACKAGE}-${version} )
 	mv -f tmpdir/${PACKAGE}-${version}.tar . 

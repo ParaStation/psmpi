@@ -337,7 +337,7 @@ int MPI_File_open( MPI_Comm  comm,char * filename,int  amode,MPI_Info  info,MPI_
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_open - prototyping replacement for MPI_File_open
@@ -360,7 +360,7 @@ int MPI_File_open( MPI_Comm  comm,char * filename,int  amode,MPI_Info  info,MPI_
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(comm)
+  MPE_LOG_STATE_END(comm,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -370,7 +370,7 @@ int MPI_File_close( MPI_File * fh  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_close - prototyping replacement for MPI_File_close
@@ -393,7 +393,7 @@ int MPI_File_close( MPI_File * fh  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -403,7 +403,7 @@ int MPI_File_delete( char * filename,MPI_Info  info  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_delete - prototyping replacement for MPI_File_delete
@@ -426,7 +426,7 @@ int MPI_File_delete( char * filename,MPI_Info  info  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -436,7 +436,7 @@ int MPI_File_set_size( MPI_File  fh,MPI_Offset  size  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_set_size - prototyping replacement for MPI_File_set_size
@@ -459,7 +459,7 @@ int MPI_File_set_size( MPI_File  fh,MPI_Offset  size  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -469,7 +469,7 @@ int MPI_File_preallocate( MPI_File  fh,MPI_Offset  size  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_preallocate - prototyping replacement for MPI_File_preallocate
@@ -492,7 +492,7 @@ int MPI_File_preallocate( MPI_File  fh,MPI_Offset  size  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -502,7 +502,7 @@ int MPI_File_get_size( MPI_File  fh,MPI_Offset * size  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_get_size - prototyping replacement for MPI_File_get_size
@@ -525,7 +525,7 @@ int MPI_File_get_size( MPI_File  fh,MPI_Offset * size  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -535,7 +535,7 @@ int MPI_File_get_group( MPI_File  fh,MPI_Group * group  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_get_group - prototyping replacement for MPI_File_get_group
@@ -558,7 +558,7 @@ int MPI_File_get_group( MPI_File  fh,MPI_Group * group  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -568,7 +568,7 @@ int MPI_File_get_amode( MPI_File  fh,int * amode  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_get_amode - prototyping replacement for MPI_File_get_amode
@@ -591,7 +591,7 @@ int MPI_File_get_amode( MPI_File  fh,int * amode  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -601,7 +601,7 @@ int MPI_File_set_info( MPI_File  fh,MPI_Info  info  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_set_info - prototyping replacement for MPI_File_set_info
@@ -624,7 +624,7 @@ int MPI_File_set_info( MPI_File  fh,MPI_Info  info  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -634,7 +634,7 @@ int MPI_File_get_info( MPI_File  fh,MPI_Info * info_used  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_get_info - prototyping replacement for MPI_File_get_info
@@ -657,7 +657,7 @@ int MPI_File_get_info( MPI_File  fh,MPI_Info * info_used  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -667,7 +667,7 @@ int MPI_File_set_view( MPI_File  fh,MPI_Offset  disp,MPI_Datatype  etype,MPI_Dat
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_set_view - prototyping replacement for MPI_File_set_view
@@ -690,7 +690,7 @@ int MPI_File_set_view( MPI_File  fh,MPI_Offset  disp,MPI_Datatype  etype,MPI_Dat
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -700,7 +700,7 @@ int MPI_File_get_view( MPI_File  fh,MPI_Offset * disp,MPI_Datatype * etype,MPI_D
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_get_view - prototyping replacement for MPI_File_get_view
@@ -723,7 +723,7 @@ int MPI_File_get_view( MPI_File  fh,MPI_Offset * disp,MPI_Datatype * etype,MPI_D
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -733,7 +733,7 @@ int MPI_File_read_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MPI_
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_read_at - prototyping replacement for MPI_File_read_at
@@ -756,7 +756,7 @@ int MPI_File_read_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MPI_
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -766,7 +766,7 @@ int MPI_File_read_at_all( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_read_at_all - prototyping replacement for MPI_File_read_at_all
@@ -789,7 +789,7 @@ int MPI_File_read_at_all( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -799,7 +799,7 @@ int MPI_File_write_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MPI
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_write_at - prototyping replacement for MPI_File_write_at
@@ -822,7 +822,7 @@ int MPI_File_write_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MPI
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -832,7 +832,7 @@ int MPI_File_write_at_all( MPI_File  fh,MPI_Offset  offset,void * buf,int  count
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_write_at_all - prototyping replacement for MPI_File_write_at_all
@@ -855,7 +855,7 @@ int MPI_File_write_at_all( MPI_File  fh,MPI_Offset  offset,void * buf,int  count
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -865,7 +865,7 @@ int MPI_File_iread_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MPI
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_iread_at - prototyping replacement for MPI_File_iread_at
@@ -888,7 +888,7 @@ int MPI_File_iread_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MPI
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -898,7 +898,7 @@ int MPI_File_iwrite_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MP
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_iwrite_at - prototyping replacement for MPI_File_iwrite_at
@@ -921,7 +921,7 @@ int MPI_File_iwrite_at( MPI_File  fh,MPI_Offset  offset,void * buf,int  count,MP
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -931,7 +931,7 @@ int MPI_File_read( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,MPI
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_read - prototyping replacement for MPI_File_read
@@ -954,7 +954,7 @@ int MPI_File_read( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,MPI
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -964,7 +964,7 @@ int MPI_File_read_all( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_read_all - prototyping replacement for MPI_File_read_all
@@ -987,7 +987,7 @@ int MPI_File_read_all( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -997,7 +997,7 @@ int MPI_File_write( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,MP
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_write - prototyping replacement for MPI_File_write
@@ -1020,7 +1020,7 @@ int MPI_File_write( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,MP
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1030,7 +1030,7 @@ int MPI_File_write_all( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatyp
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_write_all - prototyping replacement for MPI_File_write_all
@@ -1053,7 +1053,7 @@ int MPI_File_write_all( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatyp
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1063,7 +1063,7 @@ int MPI_File_iread( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,MP
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_iread - prototyping replacement for MPI_File_iread
@@ -1086,7 +1086,7 @@ int MPI_File_iread( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,MP
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1096,7 +1096,7 @@ int MPI_File_iwrite( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,M
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_iwrite - prototyping replacement for MPI_File_iwrite
@@ -1119,7 +1119,7 @@ int MPI_File_iwrite( MPI_File  fh,void * buf,int  count,MPI_Datatype  datatype,M
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1129,7 +1129,7 @@ int MPI_File_seek( MPI_File  fh,MPI_Offset  offset,int  whence  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_seek - prototyping replacement for MPI_File_seek
@@ -1152,7 +1152,7 @@ int MPI_File_seek( MPI_File  fh,MPI_Offset  offset,int  whence  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1162,7 +1162,7 @@ int MPI_File_get_position( MPI_File  fh,MPI_Offset * offset  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_get_position - prototyping replacement for MPI_File_get_position
@@ -1185,7 +1185,7 @@ int MPI_File_get_position( MPI_File  fh,MPI_Offset * offset  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1195,7 +1195,7 @@ int MPI_File_get_byte_offset( MPI_File  fh,MPI_Offset  offset,MPI_Offset * disp 
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_get_byte_offset - prototyping replacement for MPI_File_get_byte_offset
@@ -1218,7 +1218,7 @@ int MPI_File_get_byte_offset( MPI_File  fh,MPI_Offset  offset,MPI_Offset * disp 
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1228,7 +1228,7 @@ int MPI_File_read_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  datat
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_read_shared - prototyping replacement for MPI_File_read_shared
@@ -1251,7 +1251,7 @@ int MPI_File_read_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  datat
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1261,7 +1261,7 @@ int MPI_File_write_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  data
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_write_shared - prototyping replacement for MPI_File_write_shared
@@ -1284,7 +1284,7 @@ int MPI_File_write_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  data
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1294,7 +1294,7 @@ int MPI_File_iread_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  data
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_iread_shared - prototyping replacement for MPI_File_iread_shared
@@ -1317,7 +1317,7 @@ int MPI_File_iread_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  data
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1327,7 +1327,7 @@ int MPI_File_iwrite_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  dat
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_iwrite_shared - prototyping replacement for MPI_File_iwrite_shared
@@ -1350,7 +1350,7 @@ int MPI_File_iwrite_shared( MPI_File  fh,void * buf,int  count,MPI_Datatype  dat
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1360,7 +1360,7 @@ int MPI_File_read_ordered( MPI_File  fh,void * buf,int  count,MPI_Datatype  data
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_read_ordered - prototyping replacement for MPI_File_read_ordered
@@ -1383,7 +1383,7 @@ int MPI_File_read_ordered( MPI_File  fh,void * buf,int  count,MPI_Datatype  data
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1393,7 +1393,7 @@ int MPI_File_write_ordered( MPI_File  fh,void * buf,int  count,MPI_Datatype  dat
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_write_ordered - prototyping replacement for MPI_File_write_ordered
@@ -1416,7 +1416,7 @@ int MPI_File_write_ordered( MPI_File  fh,void * buf,int  count,MPI_Datatype  dat
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1426,7 +1426,7 @@ int MPI_File_seek_shared( MPI_File  fh,MPI_Offset  offset,int  whence  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_seek_shared - prototyping replacement for MPI_File_seek_shared
@@ -1449,7 +1449,7 @@ int MPI_File_seek_shared( MPI_File  fh,MPI_Offset  offset,int  whence  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1459,7 +1459,7 @@ int MPI_File_get_position_shared( MPI_File  fh,MPI_Offset * offset  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_get_position_shared - prototyping replacement for MPI_File_get_position_shared
@@ -1482,7 +1482,7 @@ int MPI_File_get_position_shared( MPI_File  fh,MPI_Offset * offset  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1492,7 +1492,7 @@ int MPI_File_read_at_all_begin( MPI_File  fh,MPI_Offset  offset,void * buf,int  
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_read_at_all_begin - prototyping replacement for MPI_File_read_at_all_begin
@@ -1515,7 +1515,7 @@ int MPI_File_read_at_all_begin( MPI_File  fh,MPI_Offset  offset,void * buf,int  
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1525,7 +1525,7 @@ int MPI_File_read_at_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_read_at_all_end - prototyping replacement for MPI_File_read_at_all_end
@@ -1548,7 +1548,7 @@ int MPI_File_read_at_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1558,7 +1558,7 @@ int MPI_File_write_at_all_begin( MPI_File  fh,MPI_Offset  offset,void * buf,int 
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_write_at_all_begin - prototyping replacement for MPI_File_write_at_all_begin
@@ -1581,7 +1581,7 @@ int MPI_File_write_at_all_begin( MPI_File  fh,MPI_Offset  offset,void * buf,int 
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1591,7 +1591,7 @@ int MPI_File_write_at_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_write_at_all_end - prototyping replacement for MPI_File_write_at_all_end
@@ -1614,7 +1614,7 @@ int MPI_File_write_at_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1624,7 +1624,7 @@ int MPI_File_read_all_begin( MPI_File  fh,void * buf,int  count,MPI_Datatype  da
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_read_all_begin - prototyping replacement for MPI_File_read_all_begin
@@ -1647,7 +1647,7 @@ int MPI_File_read_all_begin( MPI_File  fh,void * buf,int  count,MPI_Datatype  da
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1657,7 +1657,7 @@ int MPI_File_read_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_read_all_end - prototyping replacement for MPI_File_read_all_end
@@ -1680,7 +1680,7 @@ int MPI_File_read_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1690,7 +1690,7 @@ int MPI_File_write_all_begin( MPI_File  fh,void * buf,int  count,MPI_Datatype  d
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_write_all_begin - prototyping replacement for MPI_File_write_all_begin
@@ -1713,7 +1713,7 @@ int MPI_File_write_all_begin( MPI_File  fh,void * buf,int  count,MPI_Datatype  d
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1723,7 +1723,7 @@ int MPI_File_write_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_write_all_end - prototyping replacement for MPI_File_write_all_end
@@ -1746,7 +1746,7 @@ int MPI_File_write_all_end( MPI_File  fh,void * buf,MPI_Status * status  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1756,7 +1756,7 @@ int MPI_File_read_ordered_begin( MPI_File  fh,void * buf,int  count,MPI_Datatype
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_read_ordered_begin - prototyping replacement for MPI_File_read_ordered_begin
@@ -1779,7 +1779,7 @@ int MPI_File_read_ordered_begin( MPI_File  fh,void * buf,int  count,MPI_Datatype
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1789,7 +1789,7 @@ int MPI_File_read_ordered_end( MPI_File  fh,void * buf,MPI_Status * status  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_read_ordered_end - prototyping replacement for MPI_File_read_ordered_end
@@ -1812,7 +1812,7 @@ int MPI_File_read_ordered_end( MPI_File  fh,void * buf,MPI_Status * status  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1822,7 +1822,7 @@ int MPI_File_write_ordered_begin( MPI_File  fh,void * buf,int  count,MPI_Datatyp
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_write_ordered_begin - prototyping replacement for MPI_File_write_ordered_begin
@@ -1845,7 +1845,7 @@ int MPI_File_write_ordered_begin( MPI_File  fh,void * buf,int  count,MPI_Datatyp
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1855,7 +1855,7 @@ int MPI_File_write_ordered_end( MPI_File  fh,void * buf,MPI_Status * status  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_write_ordered_end - prototyping replacement for MPI_File_write_ordered_end
@@ -1878,7 +1878,7 @@ int MPI_File_write_ordered_end( MPI_File  fh,void * buf,MPI_Status * status  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1888,7 +1888,7 @@ int MPI_File_get_type_extent( MPI_File  fh,MPI_Datatype  datatype,MPI_Aint * ext
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_get_type_extent - prototyping replacement for MPI_File_get_type_extent
@@ -1911,7 +1911,7 @@ int MPI_File_get_type_extent( MPI_File  fh,MPI_Datatype  datatype,MPI_Aint * ext
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1921,7 +1921,7 @@ int MPI_File_set_atomicity( MPI_File  fh,int  flag  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_set_atomicity - prototyping replacement for MPI_File_set_atomicity
@@ -1944,7 +1944,7 @@ int MPI_File_set_atomicity( MPI_File  fh,int  flag  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1954,7 +1954,7 @@ int MPI_File_get_atomicity( MPI_File  fh,int * flag  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_get_atomicity - prototyping replacement for MPI_File_get_atomicity
@@ -1977,7 +1977,7 @@ int MPI_File_get_atomicity( MPI_File  fh,int * flag  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;
@@ -1987,7 +1987,7 @@ int MPI_File_sync( MPI_File  fh  )
 {
   int returnVal;
   MPE_LOG_STATE_DECL
-  MPE_LOG_THREAD_DECL
+  MPE_LOG_THREADSTM_DECL
 
 /*
     MPI_File_sync - prototyping replacement for MPI_File_sync
@@ -2010,7 +2010,7 @@ int MPI_File_sync( MPI_File  fh  )
 #endif
 
   MPE_LOG_THREAD_LOCK
-  MPE_LOG_STATE_END(MPE_COMM_NULL)
+  MPE_LOG_STATE_END(MPE_COMM_NULL,NULL)
   MPE_LOG_THREAD_UNLOCK
 
   return returnVal;

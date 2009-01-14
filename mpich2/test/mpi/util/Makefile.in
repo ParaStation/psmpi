@@ -25,11 +25,30 @@ INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include \
 	 -I${srcdir}/../include
 
 .SUFFIXES:
-.SUFFIXES: .o .c 
+.SUFFIXES: .o .c .txt 
 .c.o:
 	$(C_COMPILE) -c $<
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=test/mpi/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="maint/testmerge runtests Makefile basic/Makefile attr/Makefile util/Makefile coll/Makefile comm/Makefile datatype/Makefile errhan/Makefile group/Makefile info/Makefile init/Makefile pt2pt/Makefile rma/Makefile spawn/Makefile topo/Makefile io/Makefile f77/Makefile f77/attr/Makefile f77/attr/attraints.h f77/pt2pt/attr1aints.h f77/ext/add1size.h f77/datatype/Makefile f77/datatype/typeaints.h f77/util/Makefile f77/coll/Makefile f77/comm/Makefile f77/topo/Makefile f77/init/Makefile f77/rma/addsize.h f77/pt2pt/Makefile f77/info/Makefile f77/spawn/Makefile f77/spawn/type1aint.h f77/rma/Makefile f77/ext/Makefile f77/ext/testlist f77/io/Makefile f77/io/iooffset.h f77/io/iodisp.h f77/io/ioaint.h f90/Makefile f90/attr/Makefile f90/datatype/Makefile f90/f90types/Makefile f90/util/Makefile f90/coll/Makefile f90/comm/Makefile f90/topo/Makefile f90/init/Makefile f90/pt2pt/Makefile f90/rma/Makefile f90/info/Makefile f90/spawn/Makefile f90/timer/Makefile f90/ext/Makefile f90/ext/testlist f90/io/Makefile f90/misc/Makefile cxx/Makefile cxx/util/Makefile cxx/attr/Makefile cxx/pt2pt/Makefile cxx/comm/Makefile cxx/coll/Makefile cxx/info/Makefile cxx/datatype/Makefile cxx/io/Makefile cxx/init/Makefile cxx/rma/Makefile cxx/spawn/Makefile threads/Makefile threads/pt2pt/Makefile threads/util/Makefile threads/comm/Makefile errors/Makefile errors/coll/Makefile errors/comm/Makefile errors/group/Makefile errors/pt2pt/Makefile errors/rma/Makefile errors/spawn/Makefile errors/topo/Makefile errors/io/Makefile errors/cxx/Makefile errors/cxx/errhan/Makefile errors/cxx/io/Makefile errors/f77/Makefile errors/f90/Makefile manual/Makefile manual/manyconnect perf/Makefile testlist cxx/testlist f77/testlist f90/testlist errors/testlist errors/cxx/testlist config.status config.log config.cache *conf.cache config.system" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=util/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
@@ -37,6 +56,9 @@ clean:
 	-@rm -f mtestcheck.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -44,16 +66,28 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: all-local 
 
+coverage: 
 mtestcheck: mtestcheck.o mtest.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o mtestcheck mtestcheck.o mtest.o  \
 	${LIBS} 
 # --------------------------------------------------------------------------
+htmldoc:
+mandoc:
+latexdoc:
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  mtestcheck.c mtest.c

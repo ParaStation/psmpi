@@ -15,8 +15,24 @@ MPILIBNAME      = @MPILIBNAME@
 VPATH = .:@srcdir@
 
 .SUFFIXES:
-# Some make programs complain if no suffixes are set
-.SUFFIXES: .c .o
+.SUFFIXES:  .txt 
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../ \
+	-configdir=. \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=src/mpid/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	for dir in @device_name@ common - ; do \
@@ -25,6 +41,9 @@ apply:
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	for dir in @device_name@ common - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} clean ; ) ; done
@@ -36,16 +55,18 @@ distclean-xxx:
 		(cd $$dir && ${MAKE} distclean ; ) ; done
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
-	-@for dir in  mm ch3 rdma globus ; do \
-	    if [ -s $$dir/Makefile ] ; then \
-	      (cd $$dir && ${MAKE} distclean ;) ; fi ; \
-	done
+	if [ -s ch3/Makefile ] ; then (cd ch3 && $(MAKE) distclean ) ; fi
+	if [ -s globus/Makefile ] ; then (cd globus && $(MAKE) distclean ) ; fi
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
+	for dir in @device_name@ common - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} maintainer-clean ; ) ; done
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect:
 	@for dir in @device_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
@@ -53,7 +74,33 @@ all-redirect:
 	done
 	@(cd common && ${MAKE} all )
 
+coverage: 
+	for dir in @device_name@ common - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} coverage ; ) ; done
 # --------------------------------------------------------------------------
+htmldoc:
+	for dir in @device_name@ common - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} htmldoc ; ) ; done
+mandoc:
+	for dir in @device_name@ common - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} mandoc ; ) ; done
+latexdoc:
+	for dir in @device_name@ common - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} latexdoc ; ) ; done
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+	for dir in @device_name@ common - ; do \
+		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		(cd $$dir && ${MAKE} dependencies ; ) ; done
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)

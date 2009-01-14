@@ -48,6 +48,10 @@ public class Print
                 objdefs.add( objdef );
                 shadefs.put( topo, objdef );
             }
+            if ( next_kind == Kind.YCOORDMAP ) {
+                // invoke InputLog().getNextYCoordMap() to get stream moving
+                dobj_ins.getNextYCoordMap();
+            }
             if ( next_kind == Kind.CATEGORY ) {
                 objdef = dobj_ins.getNextCategory();
                 objdefs.add( objdef );

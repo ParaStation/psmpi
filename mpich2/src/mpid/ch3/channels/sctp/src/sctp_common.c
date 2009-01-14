@@ -48,7 +48,7 @@ static int buf_size(int fd) {
 static int bind_from_file(char* fName, int sockfd, int port) {
   int rc = MPI_SUCCESS;
   FILE* fptr = NULL;
-  char emName[10];
+  char emName[100];
   char emIP[16];
   char hostName[100];
   struct sockaddr_in addr;
@@ -137,11 +137,19 @@ int sctp_open_dgm_socket2(int num_stream, int block_mode,
   addr.sin_family = AF_INET;
 
   char* env;
-  env = getenv("MPICH_INTERFACE_HOSTNAME");
-  if (env != NULL && *env != '\0') {
-    addr.sin_addr.s_addr = inet_addr(env);
-  } else 
+  env = getenv("MPICH_SCTP_BINDALL");
+  if (env != NULL) {
+    /* let SCTP handle the multihoming */
     addr.sin_addr.s_addr = htonl(INADDR_ANY);
+  } else {
+    env = getenv("MPICH_INTERFACE_HOSTNAME");
+    if (env != NULL && *env != '\0') {
+      addr.sin_addr.s_addr = inet_addr(env);
+    } else {
+      /* MPICH_INTERFACE_HOSTNAME should be set by mpd, so this shouldn't happen.. */
+      addr.sin_addr.s_addr = htonl(INADDR_ANY);
+    }
+  }
   
   addr.sin_port = htons((unsigned short) port);
   rc = bind(*fd, (struct sockaddr *) &addr, sizeof(addr));
@@ -149,6 +157,19 @@ int sctp_open_dgm_socket2(int num_stream, int block_mode,
   if(rc == -1) {
     goto fn_fail;
   }
+
+  /* retrieve port value if wasn't specified */
+  if(!port){
+    /* Can reuse addr since bind already succeeded. */
+    len = sizeof(addr);
+    if (getsockname(*fd, (struct sockaddr *) &addr, &len)) {
+	goto fn_fail;
+    }
+    
+    *real_port = (int) ntohs(addr.sin_port);
+    port = *real_port;
+  } else 
+    *real_port = port;
 
   env = getenv("MPICH_SCTP_MULTIHOME_FILE");
   if (env != NULL && *env != '\0') {
@@ -162,18 +183,6 @@ int sctp_open_dgm_socket2(int num_stream, int block_mode,
   if (rc == -1) {
     goto fn_fail;
   }
-
-  /* retrieve port value if wasn't specified */
-  if(!port){
-    /* Can reuse addr since bind already succeeded. */
-    len = sizeof(addr);
-    if (getsockname(*fd, (struct sockaddr *) &addr, &len)) {
-	goto fn_fail;
-    }
-    
-    *real_port = (int) ntohs(addr.sin_port);
-  } else 
-    *real_port = port;
 
   /* register events */
   if (setsockopt(*fd, IPPROTO_SCTP, SCTP_EVENTS, evnts, sizeof(*evnts))) {

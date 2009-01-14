@@ -43,7 +43,7 @@
     subprogram of the Office of Advanced Scientific Computing Research,
     SciDAC Program, Office of Science, U.S. Department of Energy, under
     Contract DE-AC02-06CH11357.}\\
-  Version 1.0.6\\
+  Version 1.0.7rc1\\
   Mathematics and Computer Science Division\\
   Argonne National Laboratory}
 
@@ -167,7 +167,7 @@ If your tar doesn't accept the z option, use
 \end{verbatim}
 Let us assume that the directory where you do this is
 \texttt{/home/you/libraries}.  It will now contain a subdirectory named
-\texttt{mpich2-1.0.6}.
+\texttt{mpich2-1.0.7rc1}.
 
 \item
 Choose an installation directory (the default is \texttt{/usr/local/bin)}:
@@ -187,7 +187,7 @@ that this also be separate from the source directory, so that the
 source directories remain
 clean and can be reused to build other copies on other machines.
 \begin{verbatim}
-    mkdir /tmp/you/mpich2-1.0.6
+    mkdir /tmp/you/mpich2-1.0.7rc1
 \end{verbatim}
 
 \item
@@ -199,8 +199,8 @@ important options to consider.
 Configure MPICH2, specifying the installation directory, and running
 the \texttt{configure} script in the source directory:
 \begin{verbatim}
-    cd  /tmp/you/mpich2-1.0.6
-    /home/you/libraries/mpich2-1.0.6/configure \
+    cd  /tmp/you/mpich2-1.0.7rc1
+    /home/you/libraries/mpich2-1.0.7rc1/configure \
             -prefix=/home/you/mpich2-install |& tee configure.log
 \end{verbatim}
 where the \texttt{$\backslash$} means that this is really one line.  (On
@@ -381,7 +381,7 @@ started.  From each machine, after starting the mpd, you can do
 \end{verbatim}
 to see which machines are in the ring so far.  More details on
 \texttt{mpdboot} and other options for starting the mpd's are in
-\texttt{mpich2-1.0.6/src/pm/mpd/README}.
+\texttt{mpich2-1.0.7rc1/src/pm/mpd/README}.
 
 {\em In case of persistent difficulties getting the ring of mpd's up
 and running on the machines you want, please see
@@ -431,13 +431,13 @@ in the MPI-2 standard.
 
 % There are some examples in the install
 % directory, which you have already put in your path, as well as in
-% the directory \texttt{mpich2-1.0.6/examples}.  
+% the directory \texttt{mpich2-1.0.7rc1/examples}.  
 % One of them is the classic \texttt{cpi}
 % example, which computes the value of $\pi$ by numerical integration in
 % parallel.   
 As part of the build process for MPICH2, a simple program to compute the value
 of $\pi$ by numerical integration is created in the
-\texttt{mpich2-1.0.6/examples} directory.  If the current directory is the top
+\texttt{mpich2-1.0.7rc1/examples} directory.  If the current directory is the top
 level MPICH2 build directory, then you can run this program with
 \begin{verbatim}
     mpiexec -n 5 examples/cpi
@@ -481,18 +481,18 @@ installed MPICH2 and run an MPI example.
 
 
 \subsection{Compiler Optimization Levels}
-From version 1.0.6 onwards, by default, the MPICH2 library is built
+From version 1.0.7rc1 onwards, by default, the MPICH2 library is built
 with the -O2 optimization level if it is available. The mpicc and
 other scripts that are used to compile applications do not include any
 optimization flag by default. If you want to build the MPICH2 library
 with a specific optimization level, set the environment variable
 \texttt{CFLAGS} to that level before running configure. If you do not want this
 \texttt{CFLAGS} value to be included in the mpicc script, set the environment
-variable \texttt{MPI\_CFLAGS} to \texttt{MPI\_CFLAGS\_EMPTY}. For example, to build a
+variable \texttt{MPI\_CFLAGS} to \texttt{MPI\_FLAGS\_EMPTY}. For example, to build a
 ``production'' MPICH2 in a GNU environment, you may want to do:
 \begin{verbatim}
      setenv CFLAGS -O3
-     setenv MPI_CFLAGS MPI_CFLAGS_EMPTY
+     setenv MPI_CFLAGS MPI_FLAGS_EMPTY
 \end{verbatim}
 before running configure. This will cause the MPICH2 library to be
 built with -O3, but -O3 will not be included in the mpicc script.
@@ -1057,8 +1057,8 @@ tests are run on an occasional basis.
 
 % \begin{small}
 % \begin{verbatim}
-% 1) checkout the Intel test suite (cvs co IntelMPITEST) (outside users
-%    should access the most recent version of the test suite from the
+% 1) checkout the Intel test suite (svn co https://svn.mcs.anl.gov/repos/mpi/test_suites/intel/trunk IntelMPITEST) (outside users
+%    can access the most recent version of the test suite from the
 %    test suite web page).
 
 % 2) create a testing directory separate from the IntelMPITEST source
@@ -1117,12 +1117,13 @@ tests are run on an occasional basis.
 \section{Benchmarking}
 \label{sec:benchmarking}
 
-There are many benchmarking programs for MPI implementations.  Three that we
-use are \texttt{mpptest} (\url{http://www.mcs.anl.gov/mpi/mpptest}),
-\texttt{netpipe} (\url{http://www.scl.ameslab.gov/netpipe}), and
-\texttt{SkaMPI} (\url{http://liinwww.ira.uka.de/~skampi}).  Each of these has
-different strengths and weaknesses and reveals different properties of the MPI
-implementation.  
+There are many benchmarking programs for MPI implementations.  Three
+that we use are \texttt{mpptest}
+(\url{http://www.mcs.anl.gov/mpi/mpptest}), \texttt{netpipe}
+(\url{http://www.scl.ameslab.gov/netpipe}), and \texttt{SkaMPI}
+(\url{http://liinwww.ira.uka.de/~skampi}).  Each of these has
+different strengths and weaknesses and reveals different properties of
+the MPI implementation.
 
 In addition, the
 MPICH2 test suite contains a few programs to test for performance artifacts in
@@ -1620,7 +1621,7 @@ To run some programs in parallel:
     n1 $  mpiexec -l -n 4 PATH_TO_MPICH2_EXAMPLES/cpi
 \end{verbatim}
 where \texttt{PATH\_TO\_MPICH2\_EXAMPLES} is the path to the
-\texttt{mpich2-1.0.6/examples} directory.
+\texttt{mpich2-1.0.7rc1/examples} directory.
 
 To bring down the ring of mpds:
 \begin{verbatim}

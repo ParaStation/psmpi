@@ -28,6 +28,7 @@ CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 
 VPATH = .:@srcdir@
+DOCTEXT         = @DOCTEXT@
 mpi_sources = comm_compare.c comm_create.c comm_dup.c comm_free.c \
  comm_get_name.c comm_group.c \
  comm_rank.c comm_size.c comm_remote_group.c comm_remote_size.c \
@@ -37,30 +38,62 @@ HEADERS = mpicomm.h
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c 
+.SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
 	$(C_COMPILE) -c $<
 .c.lo:
 	$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+.c.man:
+	$(DOCTEXT) -man -mpath ../../../man/man3 -ext 3 -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.html:
+	$(DOCTEXT) -html -mpath ../../../www/www3  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.latex:
+	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=. \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=src/mpi/comm/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 .libstamp2 .libstamp3 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
 	    ${MAKE} .libstamp2 ; \
@@ -163,7 +196,92 @@ _intercomm_merge.o: intercomm_merge.c
 _intercomm_merge.lo: intercomm_merge.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/intercomm_merge.c -o _intercomm_merge.lo
 # --------------------------------------------------------------------------
+coverage: 
+	-@for file in $(mpi_sources) commutil.c ; do \
+		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
+mandoc: ${mpi_sources:.c=.man}
+htmldoc: ${mpi_sources:.c=.html}
+latexdoc: ${mpi_sources:.c=.latex}
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+$(DEPS_DIR)/comm_compare.d: $(srcdir)/comm_compare.c
+	$(MAKE_DEPEND_C) -MT '_comm_compare.o comm_compare.o' $(srcdir)/comm_compare.c >$(DEPS_DIR)/comm_compare.d
+$(DEPS_DIR)/comm_create.d: $(srcdir)/comm_create.c
+	$(MAKE_DEPEND_C) -MT '_comm_create.o comm_create.o' $(srcdir)/comm_create.c >$(DEPS_DIR)/comm_create.d
+$(DEPS_DIR)/comm_dup.d: $(srcdir)/comm_dup.c
+	$(MAKE_DEPEND_C) -MT '_comm_dup.o comm_dup.o' $(srcdir)/comm_dup.c >$(DEPS_DIR)/comm_dup.d
+$(DEPS_DIR)/comm_free.d: $(srcdir)/comm_free.c
+	$(MAKE_DEPEND_C) -MT '_comm_free.o comm_free.o' $(srcdir)/comm_free.c >$(DEPS_DIR)/comm_free.d
+$(DEPS_DIR)/comm_get_name.d: $(srcdir)/comm_get_name.c
+	$(MAKE_DEPEND_C) -MT '_comm_get_name.o comm_get_name.o' $(srcdir)/comm_get_name.c >$(DEPS_DIR)/comm_get_name.d
+$(DEPS_DIR)/comm_group.d: $(srcdir)/comm_group.c
+	$(MAKE_DEPEND_C) -MT '_comm_group.o comm_group.o' $(srcdir)/comm_group.c >$(DEPS_DIR)/comm_group.d
+$(DEPS_DIR)/comm_rank.d: $(srcdir)/comm_rank.c
+	$(MAKE_DEPEND_C) -MT '_comm_rank.o comm_rank.o' $(srcdir)/comm_rank.c >$(DEPS_DIR)/comm_rank.d
+$(DEPS_DIR)/comm_size.d: $(srcdir)/comm_size.c
+	$(MAKE_DEPEND_C) -MT '_comm_size.o comm_size.o' $(srcdir)/comm_size.c >$(DEPS_DIR)/comm_size.d
+$(DEPS_DIR)/comm_remote_group.d: $(srcdir)/comm_remote_group.c
+	$(MAKE_DEPEND_C) -MT '_comm_remote_group.o comm_remote_group.o' $(srcdir)/comm_remote_group.c >$(DEPS_DIR)/comm_remote_group.d
+$(DEPS_DIR)/comm_remote_size.d: $(srcdir)/comm_remote_size.c
+	$(MAKE_DEPEND_C) -MT '_comm_remote_size.o comm_remote_size.o' $(srcdir)/comm_remote_size.c >$(DEPS_DIR)/comm_remote_size.d
+$(DEPS_DIR)/comm_set_name.d: $(srcdir)/comm_set_name.c
+	$(MAKE_DEPEND_C) -MT '_comm_set_name.o comm_set_name.o' $(srcdir)/comm_set_name.c >$(DEPS_DIR)/comm_set_name.d
+$(DEPS_DIR)/comm_split.d: $(srcdir)/comm_split.c
+	$(MAKE_DEPEND_C) -MT '_comm_split.o comm_split.o' $(srcdir)/comm_split.c >$(DEPS_DIR)/comm_split.d
+$(DEPS_DIR)/comm_test_inter.d: $(srcdir)/comm_test_inter.c
+	$(MAKE_DEPEND_C) -MT '_comm_test_inter.o comm_test_inter.o' $(srcdir)/comm_test_inter.c >$(DEPS_DIR)/comm_test_inter.d
+$(DEPS_DIR)/intercomm_create.d: $(srcdir)/intercomm_create.c
+	$(MAKE_DEPEND_C) -MT '_intercomm_create.o intercomm_create.o' $(srcdir)/intercomm_create.c >$(DEPS_DIR)/intercomm_create.d
+$(DEPS_DIR)/intercomm_merge.d: $(srcdir)/intercomm_merge.c
+	$(MAKE_DEPEND_C) -MT '_intercomm_merge.o intercomm_merge.o' $(srcdir)/intercomm_merge.c >$(DEPS_DIR)/intercomm_merge.d
+$(DEPS_DIR)/commutil.d: $(srcdir)/commutil.c
+	$(MAKE_DEPEND_C) -MT '_commutil.o commutil.o' $(srcdir)/commutil.c >$(DEPS_DIR)/commutil.d
+$(DEPS_DIR)/timestamp: $(mpi_sources) commutil.c Makefile
+	rm -f $(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_compare.o comm_compare.o' $(srcdir)/comm_compare.c >$(DEPS_DIR)/comm_compare.d
+	echo "include $(DEPS_DIR)/comm_compare.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_create.o comm_create.o' $(srcdir)/comm_create.c >$(DEPS_DIR)/comm_create.d
+	echo "include $(DEPS_DIR)/comm_create.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_dup.o comm_dup.o' $(srcdir)/comm_dup.c >$(DEPS_DIR)/comm_dup.d
+	echo "include $(DEPS_DIR)/comm_dup.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_free.o comm_free.o' $(srcdir)/comm_free.c >$(DEPS_DIR)/comm_free.d
+	echo "include $(DEPS_DIR)/comm_free.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_get_name.o comm_get_name.o' $(srcdir)/comm_get_name.c >$(DEPS_DIR)/comm_get_name.d
+	echo "include $(DEPS_DIR)/comm_get_name.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_group.o comm_group.o' $(srcdir)/comm_group.c >$(DEPS_DIR)/comm_group.d
+	echo "include $(DEPS_DIR)/comm_group.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_rank.o comm_rank.o' $(srcdir)/comm_rank.c >$(DEPS_DIR)/comm_rank.d
+	echo "include $(DEPS_DIR)/comm_rank.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_size.o comm_size.o' $(srcdir)/comm_size.c >$(DEPS_DIR)/comm_size.d
+	echo "include $(DEPS_DIR)/comm_size.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_remote_group.o comm_remote_group.o' $(srcdir)/comm_remote_group.c >$(DEPS_DIR)/comm_remote_group.d
+	echo "include $(DEPS_DIR)/comm_remote_group.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_remote_size.o comm_remote_size.o' $(srcdir)/comm_remote_size.c >$(DEPS_DIR)/comm_remote_size.d
+	echo "include $(DEPS_DIR)/comm_remote_size.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_set_name.o comm_set_name.o' $(srcdir)/comm_set_name.c >$(DEPS_DIR)/comm_set_name.d
+	echo "include $(DEPS_DIR)/comm_set_name.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_split.o comm_split.o' $(srcdir)/comm_split.c >$(DEPS_DIR)/comm_split.d
+	echo "include $(DEPS_DIR)/comm_split.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_comm_test_inter.o comm_test_inter.o' $(srcdir)/comm_test_inter.c >$(DEPS_DIR)/comm_test_inter.d
+	echo "include $(DEPS_DIR)/comm_test_inter.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_intercomm_create.o intercomm_create.o' $(srcdir)/intercomm_create.c >$(DEPS_DIR)/intercomm_create.d
+	echo "include $(DEPS_DIR)/intercomm_create.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_intercomm_merge.o intercomm_merge.o' $(srcdir)/intercomm_merge.c >$(DEPS_DIR)/intercomm_merge.d
+	echo "include $(DEPS_DIR)/intercomm_merge.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C) -MT '_commutil.o commutil.o' $(srcdir)/commutil.c >$(DEPS_DIR)/commutil.d
+	echo "include $(DEPS_DIR)/commutil.d" >>$(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  comm_compare.c comm_create.c comm_dup.c comm_free.c \

@@ -31,20 +31,54 @@ C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
+DOCTEXT         = @DOCTEXT@
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
     -I../../pmi/simple -I${master_top_srcdir}/src/pmi/simple \
 	-I${master_top_srcdir}/src/pm/util 
 doc_sources = mpiexec.txt
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c 
+.SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
 	$(C_COMPILE) -c $<
 .c.lo:
 	$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+.txt.man:
+	$(DOCTEXT) -man -mpath ../../../man/man1 -ext 1 -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes ${master_top_srcdir}/doc/mansrc/cmdnotes $<
+.txt.html:
+	$(DOCTEXT) -html -mpath ../../../www/www1  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes ${master_top_srcdir}/doc/mansrc/cmdnotes $<
+.txt.latex:
+	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes ${master_top_srcdir}/doc/mansrc/cmdnotes $<
+
+${srcdir}/configure: ${srcdir}/configure.in 
+	@rm -rf autom4te*.cache
+	(cd ${srcdir} && autoheader -I ../../../confdb && \
+	autoconf -I \
+	../../../confdb ) 
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=src/pm/gforker/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile config.status config.log config.cache *conf.cache config.system" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-if [ -x config.status ] ; then CONFIG_FILES=Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
@@ -52,6 +86,9 @@ clean:  clean-local
 	-@rm -f mpiexec.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
@@ -60,15 +97,23 @@ distclean-xxx:
 	-@rm -f forkerconf.h
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
+	-rm -f forkerconf.h.in 
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: mpiexec
 
+coverage: 
 mpiexec: mpiexec.o  ../util/libmpiexec.a  
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o mpiexec mpiexec.o  \
 	../util/libmpiexec.a ../../../lib/libmpich.a ${LIBS} 
+# --------------------------------------------------------------------------
+mandoc: ${doc_sources:.txt=.man}
+htmldoc: ${doc_sources:.txt=.html}
+latexdoc: ${doc_sources:.txt=.latex}
+# --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Install target
 install:  FORCE_TARGET 
@@ -82,6 +127,11 @@ install-strip:
 uninstall: 
 	-rm -f ${DESTDIR}${bindir}/mpiexec
 installcheck: 
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  mpiexec.c

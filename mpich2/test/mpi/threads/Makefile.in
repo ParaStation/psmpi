@@ -17,8 +17,24 @@ MAKE            = @MAKE@
 VPATH = .:@srcdir@
 
 .SUFFIXES:
-# Some make programs complain if no suffixes are set
-.SUFFIXES: .c .o
+.SUFFIXES:  .txt 
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=test/mpi/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=threads/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	(cd util && $(MAKE) apply )
@@ -27,6 +43,9 @@ apply:
 clean:  clean-local
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	(cd util && $(MAKE) clean )
 	(cd pt2pt && $(MAKE) clean )
 	(cd comm && $(MAKE) clean )
@@ -41,16 +60,46 @@ distclean-xxx:
 	if [ -s cxx/Makefile ] ; then (cd cxx && $(MAKE) distclean ) ; fi
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
+	(cd util && $(MAKE) maintainer-clean )
+	(cd pt2pt && $(MAKE) maintainer-clean )
+	(cd comm && $(MAKE) maintainer-clean )
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect:
 	@(cd util && ${MAKE} all )
 	@(cd pt2pt && ${MAKE} all )
 	@(cd comm && ${MAKE} all )
 
+coverage: 
+	(cd util && $(MAKE) coverage )
+	(cd pt2pt && $(MAKE) coverage )
+	(cd comm && $(MAKE) coverage )
 # --------------------------------------------------------------------------
+htmldoc:
+	(cd util && $(MAKE) htmldoc )
+	(cd pt2pt && $(MAKE) htmldoc )
+	(cd comm && $(MAKE) htmldoc )
+mandoc:
+	(cd util && $(MAKE) mandoc )
+	(cd pt2pt && $(MAKE) mandoc )
+	(cd comm && $(MAKE) mandoc )
+latexdoc:
+	(cd util && $(MAKE) latexdoc )
+	(cd pt2pt && $(MAKE) latexdoc )
+	(cd comm && $(MAKE) latexdoc )
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+	(cd util && $(MAKE) dependencies )
+	(cd pt2pt && $(MAKE) dependencies )
+	(cd comm && $(MAKE) dependencies )
+# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)

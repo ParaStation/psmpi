@@ -41,6 +41,7 @@ F90_COMPILE_SHL = $(F90_SHL) $(F90FLAGS)
 
 
 VPATH = .:@srcdir@
+DOCTEXT         = @DOCTEXT@
 MOD              = @F90MODEXT@
 MPIMOD           = @MPIMODNAME@
 MPICONSTMOD      = @MPICONSTMODNAME@
@@ -57,12 +58,14 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 doc_sources =
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .f90 .o 
+.SUFFIXES: .o .lo .c .f90 .o .man .html .latex .txt 
 .c.o:
 	$(C_COMPILE) -c $<
 .c.lo:
 	$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f90.o:
@@ -72,22 +75,56 @@ doc_sources =
 	@mv -f _s$*.o $*.lo
 .f90:
 	$(F90_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+.c.man:
+	$(DOCTEXT) -man -mpath ../../../man/man1 -ext 1 -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.html:
+	$(DOCTEXT) -html -mpath ../../../www/www1  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+.c.latex:
+	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
+		-quotefmt ${master_top_srcdir}/maint/docnotes $<
+
+${srcdir}/configure: ${srcdir}/configure.in 
+	@rm -rf autom4te*.cache
+	(cd ${srcdir} && autoconf -I ../../../confdb )
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=src/binding/f90/ \
+	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-distcleanfiles="Makefile mpi_sizeofs.f90 mpif90model.h config.status config.log config.cache *conf.cache config.system" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=src/binding/f90/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 .libstamp2 .libstamp3 .libstamp4 
 	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile mpi_sizeofs.f90 mpif90model.h config.status config.log config.cache *conf.cache config.system
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile
+	rm -f  Makefile.in Makefile
 all-redirect: all-preamble .libstamp0 ../../../lib/lib${MPILIBNAME}.a lib${MPILIBNAME}f90.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
 	    ${MAKE} .libstamp2 ; \
@@ -149,6 +186,16 @@ _typef90intf.o: typef90intf.c
 	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typef90intf.c -o _typef90intf.o
 _typef90intf.lo: typef90intf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typef90intf.c -o _typef90intf.lo
+# --------------------------------------------------------------------------
+coverage: 
+	-@for file in mpi.o mpi_constants.o mpi_sizeofs.o mpi_base.o ; do \
+		gcov -b -f $$file ; done
+	-@for file in ${mpi_sources} create_f90_util.c  ; do \
+		gcov -b -f $$file ; done
+# --------------------------------------------------------------------------
+mandoc: ${doc_sources}
+htmldoc: ${doc_sources}
+latexdoc: ${doc_sources}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Install target

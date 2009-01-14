@@ -92,6 +92,8 @@ int mypostfork( void *, void *, ProcessState* );
 int mypostamble( void *, void *, ProcessState* );
 int myspawn( ProcessWorld *, void * );
 
+static int AddEnvSetToCmdLine( const char *, const char *, const char ** );
+
 /* Set printFailure to 1 to get an explanation of the failure reason
    for each process when a process fails */
 static int printFailure = 0;
@@ -275,22 +277,16 @@ int mypostfork( void *predata, void *data, ProcessState *pState )
 	rankStr[12-1] = 0;
 	curarg = 0;
 	newargs[curarg++] = pState->hostname;
-	newargs[curarg++] = strdup( "setenv" );
-	newargs[curarg++] = strdup( "PMI_PORT" );
-	newargs[curarg++] = strdup( s->pmiinfo.portName ); 
-	newargs[curarg++] = strdup( ";" );
-	newargs[curarg++] = strdup( "setenv" );
-	newargs[curarg++] = strdup( "PMI_ID" );
-	newargs[curarg++] = strdup( rankStr ); 
-	newargs[curarg++] = strdup( ";" );
+	curarg += AddEnvSetToCmdLine( "PMI_PORT", s->pmiinfo.portName, 
+				      newargs + curarg );
+	curarg += AddEnvSetToCmdLine( "PMI_ID", rankStr, newargs + curarg );
 	pmiDebugStr = getenv( "PMI_DEBUG" );
 	if (pmiDebugStr) {
 	    /* Use this to help debug the connection process */
-	    newargs[curarg++] = strdup( "setenv" );
-	    newargs[curarg++] = strdup( "PMI_DEBUG" );
-	    newargs[curarg++] = strdup( pmiDebugStr );
-	    newargs[curarg++] = strdup( ";" );
+	    curarg += AddEnvSetToCmdLine( "PMI_DEBUG", pmiDebugStr, 
+					  newargs + curarg );
 	}
+
 	newargs[curarg++] = app->exename;
 	for (j=0; j<app->nArgs; j++) {
 	    newargs[j+curarg] = app->args[j];
@@ -470,3 +466,50 @@ int MPIE_GetRemshellArgv( char *argv[], int nargv )
     return remargs;
 }
 #endif
+
+/* 
+   
+ */
+static int AddEnvSetToCmdLine( const char *envName, const char *envValue, 
+			       const char **args )
+{
+    int nArgs = 0;
+    static int useCSHFormat = -1;
+    
+    /* Determine the Shell type the first time*/
+    if (useCSHFormat == -1) {
+	char *shell = getenv( "SHELL" ), *sname;
+	if (shell) {
+	    printf( "Shell is %s\n", shell );
+	    sname = strrchr( shell, '/' );
+	    if (!sname) sname = shell;
+	    else sname++;
+	    printf( "Sname is %s\n", sname );
+	    if (strcmp( sname, "bash" ) == 0 || strcmp( sname, "sh" ) ||
+		strcmp( sname, "ash" ) == 0) useCSHFormat = 0;
+	    else 
+		useCSHFormat = 1;
+	}
+	else {
+	    /* Default is to assume csh (setenv) format */
+	    useCSHFormat = 1;
+	}
+    }
+
+    if (useCSHFormat) {
+	args[nArgs++] = strdup( "setenv" );
+	args[nArgs++] = strdup( envName );
+	args[nArgs++] = strdup( envValue ); 
+	args[nArgs++] = strdup( ";" );
+    }
+    else {
+	char tmpBuf[1024];
+	args[nArgs++] = strdup( "export" );
+	MPIU_Strncpy( tmpBuf, envName, sizeof(tmpBuf) );
+	MPIU_Strnapp( tmpBuf, "=", sizeof(tmpBuf) );
+	MPIU_Strnapp( tmpBuf, envValue, sizeof(tmpBuf) );
+	args[nArgs++] = strdup( tmpBuf );
+	args[nArgs++] = strdup( ";" );
+    }
+    return nArgs;
+}

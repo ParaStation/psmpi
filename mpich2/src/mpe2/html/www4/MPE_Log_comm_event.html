@@ -6,17 +6,14 @@
 </HEAD>
 <BODY BGCOLOR="FFFFFF">
 <A NAME="MPE_Log_comm_event"><H1>MPE_Log_comm_event</H1></A>
-Log an event in a specified MPI_Comm. 
+Log an event in a specified MPI_Comm. (on the calling thread where the event takes place) 
 <H2>Synopsis</H2>
 <PRE>
-int MPE_Log_comm_event( MPI_Comm comm, int local_thread,
-                        int event, const char *bytebuf )
+int MPE_Log_comm_event( MPI_Comm comm, int event, const char *bytebuf )
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
 <DT><B>comm          </B><DD>MPI_Comm where this process is part of.
-
-<DT><B>local_thread  </B><DD>local thread ID where the receive event takes place.
 
 <DT><B>event         </B><DD>event number.
 
@@ -25,6 +22,9 @@ set to NULL when no extra byte informational data.  In
 Fortran, an zero-length string "", or a single blank string
 " ", is equivalent to NULL in C.
 </DL>
+<P>
+<H2>Notes</H2>
+This function is threadsafe.
 <P>
 <H2>Returns</H2>
 alway returns MPE_LOG_OK

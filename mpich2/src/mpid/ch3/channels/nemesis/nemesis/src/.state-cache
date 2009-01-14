@@ -1,17 +1,17 @@
 <dir>
-<file name="mpid_nem_mpich2_rma.c" info="1161162474"/>
-<file name="mpid_nem_ckpt.c" info="1153263033"/>
-<file name="mpid_nem_lmt.c" info="1174685039"/>
-<file name="mpid_nem_alloc.c" info="1187367880"/>
-<file name="mpid_nem_debug.c" info="1153263033"/>
-<file name="mpid_nem_mpich2.c" info="1173987214"/>
-<file name="mpid_nem_queue.c" info="1185437766"/>
-<file name="mpid_nem_network_poll.c" info="1153263033"/>
-<file name="mpid_nem_network.c" info="1185553510"/>
-<file name="mpid_nem_init.c" info="1186074682"/>
-<file name="mpid_nem_finalize.c" info="1186074682"/>
-<file name="mpid_nem_lmt_shm.c" info="1186074683"/>
-<file name="mpid_nem_barrier.c" info="1153263033"/>
+<file name="mpid_nem_mpich2_rma.c" info="1194043819"/>
+<file name="mpid_nem_ckpt.c" info="1194043819"/>
+<file name="mpid_nem_lmt.c" info="1194043819"/>
+<file name="mpid_nem_debug.c" info="1194043819"/>
+<file name="mpid_nem_alloc.c" info="1196113943"/>
+<file name="mpid_nem_mpich2.c" info="1194043819"/>
+<file name="mpid_nem_queue.c" info="1194043819"/>
+<file name="mpid_nem_network_poll.c" info="1194043819"/>
+<file name="mpid_nem_network.c" info="1194043819"/>
+<file name="mpid_nem_init.c" info="1202400732"/>
+<file name="mpid_nem_finalize.c" info="1194043819"/>
+<file name="mpid_nem_lmt_shm.c" info="1201302554"/>
+<file name="mpid_nem_barrier.c" info="1194043819"/>
 </dir>
 <data>
 <fileinfo name="mpid_nem_mpich2_rma.c">
@@ -30,9 +30,10 @@ MPID_STATE_DO_CTS do_cts
 MPID_STATE_DO_SEND do_send
 MPID_STATE_DO_COOKIE do_cookie
 </fileinfo>
-<fileinfo name="mpid_nem_alloc.c">
-</fileinfo>
 <fileinfo name="mpid_nem_debug.c">
+</fileinfo>
+<fileinfo name="mpid_nem_alloc.c">
+MPID_STATE_NEM_SEG_ALLOC MPID_nem_seg_alloc
 </fileinfo>
 <fileinfo name="mpid_nem_mpich2.c">
 MPID_STATE_MPID_NEM_SEND_IOV MPID_nem_send_iov
