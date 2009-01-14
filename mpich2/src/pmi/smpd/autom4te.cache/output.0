@@ -1351,6 +1351,15 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
+# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
+    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
+    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
+    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
+    F90FLAGS="$MPICH2_INTERNAL_C90FLAGS"
+
+
           ac_config_headers="$ac_config_headers pmiconf.h"
 
 
@@ -3192,6 +3201,9 @@ CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
 
 
 
+
+
+
                     ac_config_files="$ac_config_files Makefile localdefs"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -4312,7 +4324,6 @@ if test "$no_create" != yes; then
   # would make configure fail if this is the last instruction.
   $ac_cs_success || { (exit 1); exit 1; }
 fi
-
 
 
 

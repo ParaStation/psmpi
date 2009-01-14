@@ -36,10 +36,10 @@ INCLUDES = -I../include -I${srcdir}/../include
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
 	-rootdir=../../../ \
 	-configdir=test/mpi/ \
-	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
 	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
 	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
@@ -53,8 +53,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
-	-@rm -f *.o ${srcdir}/*.o baseattrcomm attric attrerr baseattr2 fkeyvaltype attrordertype attr2type attrt attrerrtype attrerrcomm fkeyvalcomm attrorder fkeyval attrordercomm
-	-@rm -f baseattrcomm.exe attric.exe attrerr.exe baseattr2.exe fkeyvaltype.exe attrordertype.exe attr2type.exe attrt.exe attrerrtype.exe attrerrcomm.exe fkeyvalcomm.exe attrorder.exe fkeyval.exe attrordercomm.exe
+	-@rm -f *.o ${srcdir}/*.o baseattrcomm attric attrerr baseattr2 attrend fkeyvaltype attrordertype attr2type attrt attrerrtype attrerrcomm fkeyvalcomm attrorder fkeyval attrordercomm
+	-@rm -f baseattrcomm.exe attric.exe attrerr.exe baseattr2.exe attrend.exe fkeyvaltype.exe attrordertype.exe attr2type.exe attrt.exe attrerrtype.exe attrerrcomm.exe fkeyvalcomm.exe attrorder.exe fkeyval.exe attrordercomm.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -72,8 +72,8 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: attrt attric attrerr attrerrcomm attrerrtype attr2type attrorder\
-	 attrordercomm attrordertype baseattr2 baseattrcomm fkeyval\
+all-redirect: attrt attrend attric attrerr attrerrcomm attrerrtype attr2type\
+	 attrorder attrordercomm attrordertype baseattr2 baseattrcomm fkeyval\
 	 fkeyvalcomm fkeyvaltype
 
 coverage: 
@@ -86,6 +86,8 @@ attrerr: attrerr.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o attrerr attrerr.o  ${LIBS}
 baseattr2: baseattr2.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o baseattr2 baseattr2.o  ${LIBS}
+attrend: attrend.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o attrend attrend.o  ${LIBS}
 fkeyvaltype: fkeyvaltype.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o fkeyvaltype fkeyvaltype.o  ${LIBS}
 attrordertype: attrordertype.o   @MPILIBLOC@ ../util/mtest.o
@@ -121,9 +123,9 @@ dependencies:
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  attrt.c attric.c attrerr.c attrerrcomm.c attrerrtype.c \
-	attr2type.c attrorder.c attrordercomm.c attrordertype.c baseattr2.c \
-	baseattrcomm.c fkeyval.c fkeyvalcomm.c fkeyvaltype.c 
+SOURCES         =  attrt.c attrend.c attric.c attrerr.c attrerrcomm.c \
+	attrerrtype.c attr2type.c attrorder.c attrordercomm.c attrordertype.c \
+	baseattr2.c baseattrcomm.c fkeyval.c fkeyvalcomm.c fkeyvaltype.c 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)

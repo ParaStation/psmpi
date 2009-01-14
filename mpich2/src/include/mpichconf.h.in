@@ -74,6 +74,9 @@
 /* Define if int64_t works with any alignment */
 #undef HAVE_ANY_INT64_T_ALIGNMENT
 
+/* Define to 1 if you have the <assert.h> header file. */
+#undef HAVE_ASSERT_H
+
 /* Define to 1 if you have the `clock_getres' function. */
 #undef HAVE_CLOCK_GETRES
 
@@ -408,9 +411,6 @@
 
 /* Set to a type that can express the size of the entire address space */
 #undef MPIU_SIZE_T
-
-/* Define to suppress assertions */
-#undef NDEBUG
 
 /* define if pointers must be aligned on pointer boundaries */
 #undef NEEDS_POINTER_ALIGNMENT_ADJUST

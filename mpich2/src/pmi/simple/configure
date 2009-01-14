@@ -1353,6 +1353,15 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
+# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
+    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
+    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
+    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
+    F90FLAGS="$MPICH2_INTERNAL_C90FLAGS"
+
+
           ac_config_headers="$ac_config_headers pmiconf.h"
 
 
@@ -2914,7 +2923,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 2917 "configure"
+#line 2926 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -3195,7 +3204,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 3198 "configure"
+#line 3207 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -3776,6 +3785,9 @@ if test -n "$CONF_BASE_CACHEFILE" -a -s "$CONF_BASE_CACHEFILE" ; then
 	mv $CONF_BASE_CACHEFILE.new $CONF_BASE_CACHEFILE
     fi
 fi
+
+
+
 
 
                     ac_config_files="$ac_config_files Makefile localdefs"
@@ -4904,7 +4916,6 @@ if test "$no_create" != yes; then
   # would make configure fail if this is the last instruction.
   $ac_cs_success || { (exit 1); exit 1; }
 fi
-
 
 
 

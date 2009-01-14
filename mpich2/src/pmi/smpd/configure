@@ -1351,6 +1351,15 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
+# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
+    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
+    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
+    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
+    F90FLAGS="$MPICH2_INTERNAL_C90FLAGS"
+
+
           ac_config_headers="$ac_config_headers pmiconf.h"
 
 
@@ -2849,7 +2858,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 2852 "configure"
+#line 2861 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -3179,6 +3188,9 @@ LIBS=$save_libs
 # SMPD needs a definition for MPID_IOV and the sock utilities, so
 # it needs the MPICH2 include paths
 CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
+
+
+
 
 
 
@@ -4312,7 +4324,6 @@ if test "$no_create" != yes; then
   # would make configure fail if this is the last instruction.
   $ac_cs_success || { (exit 1); exit 1; }
 fi
-
 
 
 

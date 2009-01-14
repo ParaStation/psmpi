@@ -47,10 +47,10 @@ MPIF77 = $(bindir)/mpif77
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
 	-rootdir=../../ \
 	-configdir=. \
-	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
 	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
 	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
@@ -139,7 +139,7 @@ TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 	$(MPICXX) -c $<
 
 testing:
-	./cmdtests
+#	./cmdtests
 
 clean-local:
 	-rm -f err.txt out.log out.txt stdintest stdintest2 sdtiotest a.out

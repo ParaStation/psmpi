@@ -26,7 +26,6 @@ C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 
 VPATH = .:@srcdir@
 INCLUDES = -I../../../../../include -I${master_top_srcdir}/src/include
-win_sources = ch3_istartrndvmsg.c ch3_istartrndvtransfer.c
 ssmsources = \
  ch3_finalize.c              \
  ch3_init.c                  \
@@ -54,10 +53,10 @@ ssmsources = \
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
 	-rootdir=../../../../../../ \
 	-configdir=src/mpid/ch3/channels/ssm/ \
-	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
 	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
 	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \

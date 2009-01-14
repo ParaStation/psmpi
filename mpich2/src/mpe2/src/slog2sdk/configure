@@ -2006,7 +2006,7 @@ if test -n "$PATH" ; then
     JVM=""
             jac_PATH=`echo $PATH | sed 's/:/ /g'`
     for dir in ${jac_PATH} ; do
-        if test -d $dir -a -x "$dir/$pac_JVM" ; then
+        if test -d "$dir" -a -x "$dir/$pac_JVM" ; then
             JVM="$dir/$pac_JVM"
             # Not all releases work.  Try a simple program
             if test -n "$JVM" ; then
@@ -2519,7 +2519,7 @@ echo $ECHO_N "checking for cygpath... $ECHO_C" >&6
 jac_hasProg=no
 IFS="${IFS=   }"; pac_saved_ifs="$IFS"; IFS=":"
 for path_elem in $PATH ; do
-    if test -d $path_elem -a -x "$path_elem/cygpath" ; then
+    if test -d "$path_elem" -a -x "$path_elem/cygpath" ; then
         jac_hasProg=yes
         break
     fi
@@ -2589,7 +2589,8 @@ fi
 # Copying $srcdir/logfiles to sharebuild_dir
 if test -d $srcdir/logfiles ; then
     echo "creating sample logfiles from source"
-    $CPRP -pr $srcdir/logfiles $sharebuild_dir
+    $CPRP -pr $srcdir/logfiles/*.clog* $sharebuild_dir
+    $CPRP -pr $srcdir/logfiles/*.slog* $sharebuild_dir
 fi
 
 

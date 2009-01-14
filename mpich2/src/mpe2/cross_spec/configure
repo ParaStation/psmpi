@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS top_srcdir_abs VPATH MAKE RM MV CPRP CROSS_SPEC_FILE MPI_CC MPI_F77 MPI_INC MPI_LIBS MPERUN CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP EGREP F77 FFLAGS ac_ct_F77 FLIBS F77_NAME_MANGLE F77_OTHER_LIBS F77_LIBDIR_LEADER F77_INCDIR MPE_BUILD_FORTRAN2C CLINKER MPE_CLINKER FLINKER MPE_FLINKER AR RANLIB LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS top_srcdir_abs VPATH MAKE RM MV CPRP CROSS_SPEC_FILE MPI_LIBS MPI_CC MPI_F77 MPI_INC MPI_CFLAGS MPI_FFLAGS MPERUN CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP EGREP F77 FFLAGS ac_ct_F77 FLIBS F77_NAME_MANGLE F77_OTHER_LIBS F77_LIBDIR_LEADER F77_INCDIR MPE_BUILD_FORTRAN2C CLINKER MPE_CLINKER FLINKER MPE_FLINKER AR RANLIB LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -749,6 +749,10 @@ ac_env_target_alias_set=${target_alias+set}
 ac_env_target_alias_value=$target_alias
 ac_cv_env_target_alias_set=${target_alias+set}
 ac_cv_env_target_alias_value=$target_alias
+ac_env_MPI_LIBS_set=${MPI_LIBS+set}
+ac_env_MPI_LIBS_value=$MPI_LIBS
+ac_cv_env_MPI_LIBS_set=${MPI_LIBS+set}
+ac_cv_env_MPI_LIBS_value=$MPI_LIBS
 ac_env_MPI_CC_set=${MPI_CC+set}
 ac_env_MPI_CC_value=$MPI_CC
 ac_cv_env_MPI_CC_set=${MPI_CC+set}
@@ -761,10 +765,14 @@ ac_env_MPI_INC_set=${MPI_INC+set}
 ac_env_MPI_INC_value=$MPI_INC
 ac_cv_env_MPI_INC_set=${MPI_INC+set}
 ac_cv_env_MPI_INC_value=$MPI_INC
-ac_env_MPI_LIBS_set=${MPI_LIBS+set}
-ac_env_MPI_LIBS_value=$MPI_LIBS
-ac_cv_env_MPI_LIBS_set=${MPI_LIBS+set}
-ac_cv_env_MPI_LIBS_value=$MPI_LIBS
+ac_env_MPI_CFLAGS_set=${MPI_CFLAGS+set}
+ac_env_MPI_CFLAGS_value=$MPI_CFLAGS
+ac_cv_env_MPI_CFLAGS_set=${MPI_CFLAGS+set}
+ac_cv_env_MPI_CFLAGS_value=$MPI_CFLAGS
+ac_env_MPI_FFLAGS_set=${MPI_FFLAGS+set}
+ac_env_MPI_FFLAGS_value=$MPI_FFLAGS
+ac_cv_env_MPI_FFLAGS_set=${MPI_FFLAGS+set}
+ac_cv_env_MPI_FFLAGS_value=$MPI_FFLAGS
 ac_env_MPERUN_set=${MPERUN+set}
 ac_env_MPERUN_value=$MPERUN
 ac_cv_env_MPERUN_set=${MPERUN+set}
@@ -904,18 +912,23 @@ Optional Packages:
                                      e.g. -L/pkgs/MPI/lib -lpmpich -lmpich.
 
 Some influential environment variables:
-  MPI_CC      C compiler to compile MPI program and to create parallel
-              executable, e.g. mpcc for IBM MPI, or mpicc from MPICHx or
-              LAM-MPI.
-  MPI_F77     F77 compiler to compile MPI program and to create parallel
-              executable, e.g. mpxlf for IBM MPI, or mpif77 from MPICHx or
-              LAM-MPI.
-  MPI_INC     MPI compiler's include flags prefixed with -I. It specifies
-              where mpi.h and mpif.h are located, e.g. -I/pkgs/MPI/include.
   MPI_LIBS    MPI compiler's library flags prefixed with -L for the library
               path and prefixed with -l for the name of the MPI libraries. It
               specifies the location of the MPI libraries. e.g.
               -L/pkgs/MPI/lib -lpmpich -lmpich.
+  MPI_CC      C compiler to compile MPI program and to create parallel
+              executable, e.g. mpcc for IBM MPI, or mpicc from MPICHx,
+              Open-MPI, or LAM-MPI.
+  MPI_F77     Fortran compiler to compile MPI program and to create parallel
+              executable, e.g. mpxlf for IBM MPI, or mpif77 from MPICHx,
+              Open-MPI, or LAM-MPI.
+  MPI_INC     MPI compiler's include path prefixed with -I. It specifies where
+              mpi.h and mpif.h are located, e.g. -I/pkgs/MPI/include. This
+              flag will be added to MPI_CFLAGS and MPI_FFLAGS, i.e. the MPI
+              include path can be explicitly set in MPI_CFLAGS and MPI_FFLAGS
+              without setting MPI_INC.
+  MPI_CFLAGS  MPI C compiler flags to compile MPI program.
+  MPI_FFLAGS  MPI Fortran compiler flags to compile MPI Fortran program.
   MPERUN      MPI application launch command for the test programs created by
               this package. This variable is necessary only if user needs a
               special command to launch MPI testing application to run in the
@@ -1665,6 +1678,17 @@ fi;
 
 
 
+
+
+
+
+
+
+# Preppend MPI_INC to MPI_CFLAGS/MPI_FFLAGS
+if test "x$MPI_INC" != "x" ; then
+    MPI_CFLAGS="$MPI_INC $MPI_CFLAGS"
+    MPI_FFLAGS="$MPI_INC $MPI_FFLAGS"
+fi
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -3330,7 +3354,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3333:" \
+echo "$as_me:3357:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -3490,7 +3514,7 @@ echo "$as_me:$LINENO: checking for the linkage of the supplied MPI C definitions
 echo $ECHO_N "checking for the linkage of the supplied MPI C definitions ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -3614,7 +3638,7 @@ echo $ECHO_N "checking for the linkage of the supplied MPI F77 definitions ... $
 
 
     pac_MPI_F77="$MPI_F77"
-    pac_MPI_FFLAGS="$FFLAGS $MPI_INC"
+    pac_MPI_FFLAGS="$MPI_FFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -3782,7 +3806,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:3785: \"$ac_link\") >&5
+(eval echo $as_me:3809: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -3860,7 +3884,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:3863: \"$ac_link\") >&5
+(eval echo $as_me:3887: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5000,7 +5024,7 @@ fi
 echo $ECHO_N "checking for MPI_Fint ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -5113,6 +5137,7 @@ fi
 
 if test -z "$CLINKER" ; then CLINKER="$CC" ; fi
 if test -z "$FLINKER" ; then FLINKER="$F77" ; fi
+
 
 
 
@@ -5709,10 +5734,12 @@ s,@RM@,$RM,;t t
 s,@MV@,$MV,;t t
 s,@CPRP@,$CPRP,;t t
 s,@CROSS_SPEC_FILE@,$CROSS_SPEC_FILE,;t t
+s,@MPI_LIBS@,$MPI_LIBS,;t t
 s,@MPI_CC@,$MPI_CC,;t t
 s,@MPI_F77@,$MPI_F77,;t t
 s,@MPI_INC@,$MPI_INC,;t t
-s,@MPI_LIBS@,$MPI_LIBS,;t t
+s,@MPI_CFLAGS@,$MPI_CFLAGS,;t t
+s,@MPI_FFLAGS@,$MPI_FFLAGS,;t t
 s,@MPERUN@,$MPERUN,;t t
 s,@CC@,$CC,;t t
 s,@CFLAGS@,$CFLAGS,;t t

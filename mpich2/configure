@@ -310,7 +310,7 @@ ac_includes_default="\
 #endif"
 
 ac_subdirs_all="$ac_subdirs_all test/mpi"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CONFIGURE_ARGS_CLEAN RELEASE_DATE NUMVERSION VERSION ABIVERSION CONFIGURE_ARGUMENTS MPIFLIBNAME PMPIFLIBNAME FWRAPNAME htmldir docdir master_top_builddir master_top_srcdir DEVICE DEVICE_NAME DEVICE_ARGS INCLUDE_MPIDDEFS_H MPICXXLIBNAME logging_dir logging_name logging_subdirs debugger_dir romio_dir HAVE_ROMIO device_name MANY_PM pm_name other_pm_names pmi_name mpe_dir other_install_dirs CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CREATESHLIB NEEDSPLIB NO_WEAK_SYM NO_WEAK_SYM_TARGET PROFILE_DEF_MPI F77 FFLAGS ac_ct_F77 FLIBS F77_NAME_MANGLE F77_OTHER_LIBS F90 F90FLAGS ac_ct_F90 F77_INCDIR FINCLUDES F77_LIBDIR_LEADER MPIFPMPI F77_IN_C_LIBS FC_SHL FC_LINKPATH_SHL F77CPP F90MODEXT F90_WORK_FILES_ARG F90MODINCFLAG F90MODINCSPEC MPIMODNAME MPICONSTMODNAME MPISIZEOFMODNAME MPIBASEMODNAME modincdir F90INC F90INCFLAG F90EXT F90CPP F90_OTHER_LIBS F90_SHL F90_LINKPATH_SHL CXX CXXFLAGS ac_ct_CXX HAVE_CXX_EXCEPTIONS CXX_DEFS CXX_SHL CXX_LINKPATH_SHL GNUC_VERSION GNUC_MINORVERSION INCLUDE_MPICXX_H FORTRAN_BINDING MPIR_CXX_BOOL MPIR_CXX_COMPLEX MPIR_CXX_DOUBLE_COMPLEX MPIR_CXX_LONG_DOUBLE_COMPLEX bindings bindings_dirs FC PERL AR RANLIB ETAGS ETAGSADD KILLALL XARGS_NODATA_OPT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA ac_ct_RANLIB RANLIB_AFTER_INSTALL MKDIR_P MAKE VPATH SET_CFLAGS SET_MAKE BASH BUILD_BASH_SCRIPTS CPP BUILD_DLLS CC_SHL C_LINK_SHL C_LINKPATH_SHL SHLIB_EXT SHLIB_FROM_LO SHLIB_INSTALL ENABLE_SHLIB pac_prog LIBTOOL BUILD_TVDLL CC_SHL_DBG C_LINK_SHL_DBG nameserv_name DOCTEXT DOCTEXTSTYLE MAKE_DEPEND_C GCC EGREP INT16_T INT32_T INT64_T MPI_CHAR MPI_UNSIGNED_CHAR MPI_SHORT MPI_UNSIGNED_SHORT MPI_INT MPI_UNSIGNED_INT MPI_LONG MPI_UNSIGNED_LONG MPI_LONG_LONG MPI_FLOAT MPI_DOUBLE MPI_LONG_DOUBLE MPI_BYTE MPI_WCHAR MPI_PACKED MPI_LB MPI_UB MPI_FLOAT_INT MPI_DOUBLE_INT MPI_LONG_INT MPI_SHORT_INT MPI_2INT MPI_LONG_DOUBLE_INT MPI_SIGNED_CHAR MPI_UNSIGNED_LONG_LONG MPI_REAL4 MPI_REAL8 MPI_REAL16 MPI_COMPLEX8 MPI_COMPLEX16 MPI_COMPLEX32 MPI_INTEGER1 MPI_INTEGER2 MPI_INTEGER4 MPI_INTEGER8 MPI_INTEGER16 MPI_CHARACTER MPI_INTEGER MPI_REAL MPI_LOGICAL MPI_COMPLEX MPI_DOUBLE_PRECISION MPI_2INTEGER MPI_2REAL MPI_DOUBLE_COMPLEX MPI_2DOUBLE_PRECISION MPI_2COMPLEX MPI_2DOUBLE_COMPLEX MPI_F77_PACKED MPI_F77_UB MPI_F77_LB MPI_F77_BYTE F77_INTEGER1 F77_INTEGER2 F77_INTEGER4 F77_INTEGER8 F77_INTEGER16 F77_REAL4 F77_REAL8 F77_REAL16 F77_COMPLEX8 F77_COMPLEX16 F77_COMPLEX32 SIZEOF_MPI_STATUS MPI_STATUS_SIZE TESTCPP ADDRESS_KIND OFFSET_KIND DLLIMPORT SIZEOF_F90_INTEGER SIZEOF_F90_REAL SIZEOF_F90_DOUBLE_PRECISION SIZEOF_F90_CHARACTER REQD CXXCPP BSEND_OVERHEAD ALLOCA MPID_TIMER_TYPE MPICH_TIMER_KIND MPILIBNAME PMPILIBNAME MPI_AINT MPI_AINT_FMT_DEC_SPEC MPI_AINT_FMT_HEX_SPEC THR_DEFS THR_CFLAGS THR_CPPFLAGS THR_LDFLAGS THR_LIBS MPE_THREAD_LIB_NAME subsystems MPI_FINT MPI_OFFSET MPI_OFFSET_TYPEDEF FORTRAN_MPI_OFFSET EXTRA_STATUS_DECL MPI_MAX_PROCESSOR_NAME EXAMPLE_LIBS MPI_CFLAGS MPI_FFLAGS MPI_CXXFLAGS MPI_F90FLAGS MPI_LDFLAGS MPIU_DLL_SPEC_DEF MPISVNHOME EXTERNAL_SRC_DIRS subdirs MPICC MPICXX MPIF77 MPIF90 LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CONFIGURE_ARGS_CLEAN RELEASE_DATE NUMVERSION VERSION ABIVERSION CONFIGURE_ARGUMENTS MPIFLIBNAME PMPIFLIBNAME FWRAPNAME htmldir docdir master_top_builddir master_top_srcdir DEVICE DEVICE_NAME DEVICE_ARGS INCLUDE_MPIDDEFS_H MPICXXLIBNAME logging_dir logging_name logging_subdirs debugger_dir romio_dir HAVE_ROMIO device_name MANY_PM pm_name other_pm_names pmi_name mpe_dir other_install_dirs CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CREATESHLIB NEEDSPLIB NO_WEAK_SYM NO_WEAK_SYM_TARGET PROFILE_DEF_MPI F77 FFLAGS ac_ct_F77 FLIBS F77_NAME_MANGLE F77_OTHER_LIBS F90 F90FLAGS ac_ct_F90 F77_INCDIR FINCLUDES F77_LIBDIR_LEADER MPIFPMPI F77_IN_C_LIBS FC_SHL FC_LINKPATH_SHL F77CPP F90MODEXT F90_WORK_FILES_ARG F90MODINCFLAG F90MODINCSPEC MPIMODNAME MPICONSTMODNAME MPISIZEOFMODNAME MPIBASEMODNAME modincdir F90INC F90INCFLAG F90EXT F90CPP F90_OTHER_LIBS F90_SHL F90_LINKPATH_SHL CXX CXXFLAGS ac_ct_CXX HAVE_CXX_EXCEPTIONS CXX_DEFS CXX_SHL CXX_LINKPATH_SHL GNUC_VERSION GNUC_MINORVERSION INCLUDE_MPICXX_H FORTRAN_BINDING MPIR_CXX_BOOL MPIR_CXX_COMPLEX MPIR_CXX_DOUBLE_COMPLEX MPIR_CXX_LONG_DOUBLE_COMPLEX bindings bindings_dirs FC PERL AR RANLIB ETAGS ETAGSADD KILLALL XARGS_NODATA_OPT INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA ac_ct_RANLIB RANLIB_AFTER_INSTALL MKDIR_P MAKE VPATH SET_CFLAGS SET_MAKE BASH BUILD_BASH_SCRIPTS CPP BUILD_DLLS CC_SHL C_LINK_SHL C_LINKPATH_SHL SHLIB_EXT SHLIB_FROM_LO SHLIB_INSTALL ENABLE_SHLIB pac_prog LIBTOOL BUILD_TVDLL CC_SHL_DBG C_LINK_SHL_DBG nameserv_name DOCTEXT DOCTEXTSTYLE MAKE_DEPEND_C GCC EGREP INT16_T INT32_T INT64_T MPI_CHAR MPI_UNSIGNED_CHAR MPI_SHORT MPI_UNSIGNED_SHORT MPI_INT MPI_UNSIGNED_INT MPI_LONG MPI_UNSIGNED_LONG MPI_LONG_LONG MPI_FLOAT MPI_DOUBLE MPI_LONG_DOUBLE MPI_BYTE MPI_WCHAR MPI_PACKED MPI_LB MPI_UB MPI_FLOAT_INT MPI_DOUBLE_INT MPI_LONG_INT MPI_SHORT_INT MPI_2INT MPI_LONG_DOUBLE_INT MPI_SIGNED_CHAR MPI_UNSIGNED_LONG_LONG MPI_REAL4 MPI_REAL8 MPI_REAL16 MPI_COMPLEX8 MPI_COMPLEX16 MPI_COMPLEX32 MPI_INTEGER1 MPI_INTEGER2 MPI_INTEGER4 MPI_INTEGER8 MPI_INTEGER16 MPI_CHARACTER MPI_INTEGER MPI_REAL MPI_LOGICAL MPI_COMPLEX MPI_DOUBLE_PRECISION MPI_2INTEGER MPI_2REAL MPI_DOUBLE_COMPLEX MPI_2DOUBLE_PRECISION MPI_2COMPLEX MPI_2DOUBLE_COMPLEX MPI_F77_PACKED MPI_F77_UB MPI_F77_LB MPI_F77_BYTE F77_INTEGER1 F77_INTEGER2 F77_INTEGER4 F77_INTEGER8 F77_INTEGER16 F77_REAL4 F77_REAL8 F77_REAL16 F77_COMPLEX8 F77_COMPLEX16 F77_COMPLEX32 SIZEOF_MPI_STATUS MPI_STATUS_SIZE TESTCPP ADDRESS_KIND OFFSET_KIND DLLIMPORT SIZEOF_F90_INTEGER SIZEOF_F90_REAL SIZEOF_F90_DOUBLE_PRECISION SIZEOF_F90_CHARACTER REQD CXXCPP BSEND_OVERHEAD ALLOCA MPID_TIMER_TYPE MPICH_TIMER_KIND MPILIBNAME PMPILIBNAME MPI_AINT MPI_AINT_FMT_DEC_SPEC MPI_AINT_FMT_HEX_SPEC THR_DEFS THR_CFLAGS THR_CPPFLAGS THR_LDFLAGS THR_LIBS MPE_THREAD_LIB_NAME subsystems MPI_FINT MPI_OFFSET MPI_OFFSET_TYPEDEF FORTRAN_MPI_OFFSET EXTRA_STATUS_DECL MPI_MAX_PROCESSOR_NAME WRAPPER_CFLAGS WRAPPER_CXXFLAGS WRAPPER_FFLAGS WRAPPER_F90FLAGS WRAPPER_LDFLAGS MPIU_DLL_SPEC_DEF EXTERNAL_SRC_DIRS subdirs MPICH2LIB_CFLAGS MPICH2LIB_CXXFLAGS MPICH2LIB_FFLAGS MPICH2LIB_F90FLAGS MPICC MPICXX MPIF77 MPIF90 LIBOBJS LTLIBOBJS'
 ac_subst_files='MPE_THREAD_TYPEDEFS MPE_THREAD_FUNCS'
 
 # Initialize some variables set by options.
@@ -799,22 +799,22 @@ ac_env_CXXCPP_set=${CXXCPP+set}
 ac_env_CXXCPP_value=$CXXCPP
 ac_cv_env_CXXCPP_set=${CXXCPP+set}
 ac_cv_env_CXXCPP_value=$CXXCPP
-ac_env_MPI_CFLAGS_set=${MPI_CFLAGS+set}
-ac_env_MPI_CFLAGS_value=$MPI_CFLAGS
-ac_cv_env_MPI_CFLAGS_set=${MPI_CFLAGS+set}
-ac_cv_env_MPI_CFLAGS_value=$MPI_CFLAGS
-ac_env_MPI_CXXFLAGS_set=${MPI_CXXFLAGS+set}
-ac_env_MPI_CXXFLAGS_value=$MPI_CXXFLAGS
-ac_cv_env_MPI_CXXFLAGS_set=${MPI_CXXFLAGS+set}
-ac_cv_env_MPI_CXXFLAGS_value=$MPI_CXXFLAGS
-ac_env_MPI_FFLAGS_set=${MPI_FFLAGS+set}
-ac_env_MPI_FFLAGS_value=$MPI_FFLAGS
-ac_cv_env_MPI_FFLAGS_set=${MPI_FFLAGS+set}
-ac_cv_env_MPI_FFLAGS_value=$MPI_FFLAGS
-ac_env_MPI_F90FLAGS_set=${MPI_F90FLAGS+set}
-ac_env_MPI_F90FLAGS_value=$MPI_F90FLAGS
-ac_cv_env_MPI_F90FLAGS_set=${MPI_F90FLAGS+set}
-ac_cv_env_MPI_F90FLAGS_value=$MPI_F90FLAGS
+ac_env_MPICH2LIB_CFLAGS_set=${MPICH2LIB_CFLAGS+set}
+ac_env_MPICH2LIB_CFLAGS_value=$MPICH2LIB_CFLAGS
+ac_cv_env_MPICH2LIB_CFLAGS_set=${MPICH2LIB_CFLAGS+set}
+ac_cv_env_MPICH2LIB_CFLAGS_value=$MPICH2LIB_CFLAGS
+ac_env_MPICH2LIB_CXXFLAGS_set=${MPICH2LIB_CXXFLAGS+set}
+ac_env_MPICH2LIB_CXXFLAGS_value=$MPICH2LIB_CXXFLAGS
+ac_cv_env_MPICH2LIB_CXXFLAGS_set=${MPICH2LIB_CXXFLAGS+set}
+ac_cv_env_MPICH2LIB_CXXFLAGS_value=$MPICH2LIB_CXXFLAGS
+ac_env_MPICH2LIB_FFLAGS_set=${MPICH2LIB_FFLAGS+set}
+ac_env_MPICH2LIB_FFLAGS_value=$MPICH2LIB_FFLAGS
+ac_cv_env_MPICH2LIB_FFLAGS_set=${MPICH2LIB_FFLAGS+set}
+ac_cv_env_MPICH2LIB_FFLAGS_value=$MPICH2LIB_FFLAGS
+ac_env_MPICH2LIB_F90FLAGS_set=${MPICH2LIB_F90FLAGS+set}
+ac_env_MPICH2LIB_F90FLAGS_value=$MPICH2LIB_F90FLAGS
+ac_cv_env_MPICH2LIB_F90FLAGS_set=${MPICH2LIB_F90FLAGS+set}
+ac_cv_env_MPICH2LIB_F90FLAGS_value=$MPICH2LIB_F90FLAGS
 
 #
 # Report the --help message.
@@ -910,19 +910,30 @@ collected by the MPICH implementation.  level may be
     runtime - Runtime control of data collected
 The default is none.
 --enable-g=option - Control the level of debugging support in the MPICH
-implementation.  option may be a list of common separated names including
+implementation.  option is a list of comma separated names including
     none     - No debugging
     mem      - Memory usage tracing
     handle   - Trace handle operations
-    dbg      - Add compiler -g flags
+    dbg      - Add compiler flag, -g, to CFLAGS, CXXFLAGS FFLAGS and F90FLAGS.
     log      - Enable debug event logging
     meminit  - Preinitialize memory associated structures and unions to
                eliminate access warnings from programs like valgrind
     mutex    - Enable error checking on pthread mutexes
     all      - All of the above choices
---enable-fast - pick the appropriate options for fast execution.  This
-                turns off error checking and timing collection
---enable-ndebug - Set NDEBUG and disable asserts
+--enable-fast=option - Control the level of fast execution in the MPICH
+implementation.   option is a list of comma separated names including
+    defopt   - Default compiler optimization -O2 for all language bindings.
+               when neither --enable-fast nor --disable-fast is specified.
+    nochkmsg - No error checking and no error messages, i.e.
+               --disable-error-checking and --disable-error-messages.
+    notiming - No timing collection, i.e. --disable-timing.
+    ndebug   - Appends -DNDEBUG to CFLAGS.
+    all|yes  - "defopt", "nochkmsg", "notiming" and "ndebug" are enabled
+               when --enable-fast is specified without any option.
+    O<n>     - Appends default optimization flags, -O<n>, to
+               CFLAGS, FFLAGS, CXXFLAGS, F90FLAGS.
+    none     - None of above options, i.e. --disable-fast.
+
 --enable-f77 - Enable Fortran 77 bindings
 --enable-f90 - Enable Fortran 90 bindings
 --enable-cxx - Enable C++ bindings
@@ -947,7 +958,6 @@ If MPI_Init_thread is not called, the default is funneled .
 For other channels, the --enable-threads option is not supported currently, and
 the default is funneled.
 --enable-weak-symbols - Use weak symbols to implement PMPI routines (default)
---enable-compiler-optimizations -- Turn on compiler optimizations by default
 --enable-sharedlibs=kind - Enable shared libraries.  kind may be
     gcc     - Standard gcc and GNU ld options for creating shared libraries
     osx-gcc - Special options for gcc needed only on OS/X
@@ -1028,16 +1038,26 @@ Some influential environment variables:
   CXXFLAGS    C++ compiler flags
   CPP         C preprocessor
   CXXCPP      C++ preprocessor
-  MPI_CFLAGS  CFLAGS to be added to mpicc; assign this to MPI_FLAGS_EMPTY for
-              no CFLAGS
-  MPI_CXXFLAGS
-              CXXFLAGS to be added to mpicc; assign this to MPI_FLAGS_EMPTY
-              for no CXXFLAGS
-  MPI_FFLAGS  FFLAGS to be added to mpicc; assign this to MPI_FLAGS_EMPTY for
-              no FFLAGS
-  MPI_F90FLAGS
-              F90FLAGS to be added to mpicc; assign this to MPI_FLAGS_EMPTY
-              for no F90FLAGS
+  MPICH2LIB_CFLAGS
+              extra CFLAGS used in building MPICH2 libraries, this flags won't
+              be passed down to the mpicc script(Only standard CFLAGS will be
+              used in the mpicc script). CFLAGS and MPICH2LIB_CFLAGS are
+              non-overlapping
+  MPICH2LIB_CXXFLAGS
+              extra CXXFLAGS used in building MPICH2 libraries, this flags
+              won't be passed down to the mpicxx script(Only standard CXXFLAGS
+              will be used in the mpicxx script). CXXFLAGS and
+              MPICH2LIB_CXXFLAGS are non-overlapping.
+  MPICH2LIB_FFLAGS
+              extra FFLAGS used in building MPICH2 libraries, this flags won't
+              be passed down to the mpif77 script(Only standard FFLAGS will be
+              used in the mpif77 script). FFLAGS and MPICH2LIB_FFLAGS are
+              non-overlapping.
+  MPICH2LIB_F90FLAGS
+              extra F90FLAGS used in building MPICH2 libraries, this flags
+              won't be passed down to the mpif90 script(Only standard F90FLAGS
+              will be used in the mpif90 script). F90FLAGS and
+              MPICH2LIB_F90FLAGS are non-overlapping.
 
 Use these variables to override the choices made by `configure' or to help
 it to find libraries and programs with nonstandard names/locations.
@@ -1614,7 +1634,7 @@ fi
 # Regular releases are treated as patch 0
 #
 # Numeric version will have 1 digit for MAJ, 2 digits for MIN,
-# 2 digits for REV, 1 digit for EXT and 1 digit for EXT_NUMBER.
+# 2 digits for REV, 1 digit for EXT and 2 digits for EXT_NUMBER.
 
 V1=`expr $VERSION : '\([0-9]*\)\.[0-9]*\.[0-9]*[a-zA-Z]*[0-9]*'`
 V2=`expr $VERSION : '[0-9]*\.\([0-9]*\)\.[0-9]*[a-zA-Z]*[0-9]*'`
@@ -1770,24 +1790,8 @@ if test "${enable_fast+set}" = set; then
   enableval="$enable_fast"
 
 else
-  enable_fast=no
+  enable_fast=defopt
 fi;
-
-# Check whether --enable-ndebug or --disable-ndebug was given.
-if test "${enable_ndebug+set}" = set; then
-  enableval="$enable_ndebug"
-  enable_ndebug=$enableval
-else
-  enable_ndebug=no
-fi;
-
-if test "$enable_ndebug" = "yes" ; then
-
-cat >>confdefs.h <<\_ACEOF
-#define NDEBUG 1
-_ACEOF
-
-fi
 
 # Check whether --enable-f77 or --disable-f77 was given.
 if test "${enable_f77+set}" = set; then
@@ -1937,6 +1941,23 @@ if test "${with_fwrapname+set}" = set; then
 else
   FWRAPNAME=fmpich
 fi;
+
+#
+# Save a copy of CFLAGS, CXXFLAGS, FFLAGS, F90FLAGS, LDFLAGS as WRAPPER_*
+# before any of these flags are being modified by configure tests.
+#
+# WRAPPER_xFLAGS are used by mpicc and friends.
+# Don't modify WRAPPER_xFLAGS
+WRAPPER_CFLAGS=$CFLAGS
+WRAPPER_CXXFLAGS=$CXXFLAGS
+WRAPPER_FFLAGS=$FFLAGS
+WRAPPER_F90FLAGS=$F90FLAGS
+WRAPPER_LDFLAGS=$LDFLAGS
+export WRAPPER_CFLAGS
+export WRAPPER_CXXFLAGS
+export WRAPPER_FFLAGS
+export WRAPPER_F90FLAGS
+export WRAPPER_LDFLAGS
 
 # -----------------------------------------------------------------------------
 # First check that we have a clean build if we are doing a VPATH build
@@ -2121,17 +2142,30 @@ export MPICXXLIBNAME
 # We'll set FORTRAN_BINDING to 1 if we support Fortran
 FORTRAN_BINDING=0
 
-# ----------------------------------------------------------------------------
-# Process any enable or with values
-# We must do enable-fast first, because it changes the other enable values
-if test "$enable_fast" = "yes" ; then
-    enable_error_checking=no
-    enable_error_messages=no
-    enable_timing=no
-    # Export a variable that will allow the test suite to detect that
-    # MPICH has no error testing
-    MPICH_FAST=yes
-    export MPICH_FAST
+# Set up default compiler optimization
+MPI_DEFAULT_COPTS="-O2"
+MPI_DEFAULT_CXXOPTS="-O2"
+MPI_DEFAULT_FOPTS="-O2"
+MPI_DEFAULT_F90OPTS="-O2"
+
+# enable-fast
+# strip off multiple options, separated by commas
+save_IFS="$IFS"
+IFS=","
+for option in $enable_fast ; do
+    case "$option" in
+        defopt)
+        enable_default_optimize=yes
+        ;;
+        nochkmsg)
+        enable_fast_nochkmsg=yes
+        ;;
+        notiming)
+        enable_timing=no
+        ;;
+        ndebug)
+        enable_append_ndebug=yes
+        ;;
 #
 # [BRT] removed the reseting of enable_g so that --with-enable=dbg,meminit
 # can be specified with -enable-fast.  This change was largely made for the
@@ -2139,13 +2173,52 @@ if test "$enable_fast" = "yes" ; then
 # overhead, but also wish to use meminit to eliminate initialization
 # warnings from valgrind.
 #
-#   enable_g=no
-#
+        all|yes)
+        enable_default_optimize=yes
+        enable_fast_nochkmsg=yes
+        # Disable timing/logging stuffs
+        enable_timing=no
+        enable_append_ndebug=yes
+        ;;
+        O*)
+        # Allows O<n> where <n> can be [0-9] or ' '.
+        opt_flags=`echo $option | sed -e 's%\(O0-9 \)%\1%g'`
+        if test -n "$opt_flags" ; then
+            enable_default_optimize=yes
+            MPI_DEFAULT_COPTS="-$option"
+            MPI_DEFAULT_CXXOPTS="-$option"
+            MPI_DEFAULT_FOPTS="-$option"
+            MPI_DEFAULT_F90OPTS="-$option"
+        else
+            { echo "$as_me:$LINENO: WARNING: Unknown value $option for --enable-fast" >&5
+echo "$as_me: WARNING: Unknown value $option for --enable-fast" >&2;}
+        fi
+        ;;
+        none|no)
+        enable_default_optimize=no
+        enable_fast_nochkmsg=no
+        # Reset timing/logging stuffs to when --enable-timing isn't specified.
+        enable_timing=default
+        enable_append_ndebug=no
+        ;;
+        *)
+        { echo "$as_me:$LINENO: WARNING: Unknown value $option for --enable-fast" >&5
+echo "$as_me: WARNING: Unknown value $option for --enable-fast" >&2;}
+        ;;
+    esac
+done
+IFS="$save_IFS"
 
-cat >>confdefs.h <<\_ACEOF
-#define NDEBUG 1
-_ACEOF
-
+# ----------------------------------------------------------------------------
+# Process any enable or with values
+# We must do enable-fast first, because it changes the other enable values
+if test "$enable_fast_nochkmsg" = "yes" ; then
+    enable_error_checking=no
+    enable_error_messages=no
+    # Export a variable that will allow the test suite to detect that
+    # MPICH has no error testing
+    MPICH_FAST=yes
+    export MPICH_FAST
 fi
 
 # error-checking
@@ -2561,7 +2634,7 @@ IFS=","
 for option in $enable_g ; do
     case "$option" in
         debug|dbg)
-	CFLAGS="$CFLAGS -g"
+        enable_append_g=yes
 	;;
         no|none)
 	;;
@@ -2598,7 +2671,7 @@ _ACEOF
 	perform_memtracing=yes
 	perform_nesttesting=yes
 	perform_dbglog=yes
-	CFLAGS="$CFLAGS -g"
+	enable_append_g=yes
 	perform_meminit=yes
 	perform_dbgmutex=yes
 	;;
@@ -2609,6 +2682,35 @@ echo "$as_me: WARNING: Unknown value $enable_g for enable-g" >&2;}
     esac
 done
 IFS="$save_IFS"
+
+# MPICH2_EXTRA_xFLAGS contains MPICH2LIB_xFLAGS and
+# all the extra compiler flags added by MPICH2.
+# Initial all MPICH2_EXTRA_xFLAGS to empty string.
+MPICH2_EXTRA_CFLAGS=""
+MPICH2_EXTRA_CXXFLAGS=""
+MPICH2_EXTRA_FFLAGS=""
+MPICH2_EXTRA_F90FLAGS=""
+
+if test "$enable_append_g" = "yes" ; then
+    CFLAGS="$CFLAGS -g"
+    CXXFLAGS="$CXXFLAGS -g"
+    FFLAGS="$FFLAGS -g"
+    F90FLAGS="$F90FLAGS -g"
+    MPICH2_EXTRA_CFLAGS="$MPICH2_EXTRA_CFLAGS -g"
+    MPICH2_EXTRA_CXXFLAGS="$MPICH2_EXTRA_CXXFLAGS -g"
+    MPICH2_EXTRA_FFLAGS="$MPICH2_EXTRA_FFLAGS -g"
+    MPICH2_EXTRA_F90FLAGS="$MPICH2_EXTRA_F90FLAGS -g"
+fi
+if test "$enable_append_ndebug" = "yes" ; then
+    CFLAGS="$CFLAGS -DNDEBUG"
+    CXXFLAGS="$CXXFLAGS -DNDEBUG"
+    FFLAGS="$FFLAGS -DNDEBUG"
+    F90FLAGS="$F90FLAGS -DNDEBUG"
+    MPICH2_EXTRA_CFLAGS="$MPICH2_EXTRA_CFLAGS -DNDEBUG"
+    MPICH2_EXTRA_CXXFLAGS="$MPICH2_EXTRA_CXXFLAGS -DNDEBUG"
+    MPICH2_EXTRA_FFLAGS="$MPICH2_EXTRA_FFLAGS -DNDEBUG"
+    MPICH2_EXTRA_F90FLAGS="$MPICH2_EXTRA_F90FLAGS -DNDEBUG"
+fi
 if test -n "$perform_meminit" ; then
 
 cat >>confdefs.h <<\_ACEOF
@@ -3005,14 +3107,6 @@ echo "$as_me: WARNING: No configure available for MPE" >&2;}
 fi
 
 
-
-# Check whether --enable-compiler-optimizations or --disable-compiler-optimizations was given.
-if test "${enable_compiler_optimizations+set}" = set; then
-  enableval="$enable_compiler_optimizations"
-  compiler_optimizations=$enableval
-else
-  compiler_optimizations=yes
-fi;
 
 #
 #
@@ -3968,54 +4062,6 @@ if test -z "$saveCFLAGS" -a -n "$CFLAGS" ; then
     CFLAGS=$saveCFLAGS
 fi
 
-MPI_DEFAULT_COPTS="-O2"
-if test "$compiler_optimizations" == "yes"; then
-   echo "$as_me:$LINENO: checking whether $CC accepts default optimizations" >&5
-echo $ECHO_N "checking whether $CC accepts default optimizations... $ECHO_C" >&6
-   rm -f conftest.c
-   cat > conftest.c <<EOF
-#include <stdio.h>
-int main() { return 0; }
-EOF
-   pac_tmp_compile_stderr_opt="$CC $CFLAGS ${MPI_DEFAULT_COPTS} -o conftest conftest.c 2> pac_tmp_compile_stderr_opt.out > /dev/null"
-   { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stderr_opt\"") >&5
-  (eval $pac_tmp_compile_stderr_opt) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-   pac_tmp_compile_stderr="$CC $CFLAGS -o conftest conftest.c 2> pac_tmp_compile_stderr.out > /dev/null"
-   { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stderr\"") >&5
-  (eval $pac_tmp_compile_stderr) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-   pac_tmp_compile_stdout_opt="$CC $CFLAGS ${MPI_DEFAULT_COPTS} -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout_opt.out"
-   { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stdout_opt\"") >&5
-  (eval $pac_tmp_compile_stdout_opt) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-   pac_tmp_compile_stdout="$CC $CFLAGS -o conftest conftest.c 2> /dev/null > pac_tmp_compile_stdout.out"
-   { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stdout\"") >&5
-  (eval $pac_tmp_compile_stdout) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-   if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
-	   "`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
-	   echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-	   { echo "$as_me:$LINENO: WARNING: Compiler does not accept default optimizations" >&5
-echo "$as_me: WARNING: Compiler does not accept default optimizations" >&2;}
-	   MPI_DEFAULT_COPTS=""
-   else
-	   echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-   fi
-   rm -f pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out
-   rm -f conftest*
-fi
-
 # Check whether shared libraries are enabled.  We need to know this
 # before we start chosing the Fortran, Fortran 90, and C++ compilers
 ENABLE_SHLIB=$enable_sharedlibs
@@ -4085,14 +4131,16 @@ fi
 done
 
     fi
+    pac_cc_strict_flags=""
     case "$enable_strict" in
-	yes)
+        yes)
         enable_strict_done="yes"
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="${CFLAGS} -Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
-	    echo "$as_me:$LINENO: result: Adding strict check arguments to CFLAGS" >&5
+            pac_cc_strict_flags="-Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
+            CFLAGS="$CFLAGS $pac_cc_strict_flags"
+            echo "$as_me:$LINENO: result: Adding strict check arguments to CFLAGS" >&5
 echo "${ECHO_T}Adding strict check arguments to CFLAGS" >&6
-	    echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
+            echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
 echo $ECHO_N "checking whether we can add -std=c89... $ECHO_C" >&6
             # See if we can add -std=c89
             savCFLAGS=$CFLAGS
@@ -4145,17 +4193,20 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "${ECHO_T}$stdc_ok" >&6
             if test "$stdc_ok" != yes ; then
                 CFLAGS="$savCFLAGS"
+            else
+                pac_cc_strict_flags="$pac_cc_strict_flags -std=c89"
             fi
-	else
-	    { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
+        else
+            { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
 echo "$as_me: WARNING: enable strict supported only for gcc" >&2;}
-    	fi
- 	;;
-	all)
+        fi
+        ;;
+        all)
         enable_strict_done="yes"
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="${CFLAGS} -Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wunused-parameter -Wunused-value -Wno-long-long"
-	    echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
+            pac_cc_strict_flags="-Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wunused-parameter -Wunused-value -Wno-long-long"
+            CFLAGS="$CFLAGS $pac_cc_strict_flags"
+            echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
 echo $ECHO_N "checking whether we can add -std=c89... $ECHO_C" >&6
             # See if we can add -std=c89
             savCFLAGS=$CFLAGS
@@ -4208,20 +4259,23 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "${ECHO_T}$stdc_ok" >&6
             if test "$stdc_ok" != yes ; then
                 CFLAGS="$savCFLAGS"
+            else
+                pac_cc_strict_flags="$pac_cc_strict_flags -std=c89"
             fi
-	else
-	    { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
+        else
+            { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
 echo "$as_me: WARNING: enable strict supported only for gcc" >&2;}
-    	fi
-	;;
+        fi
+        ;;
 
-	posix)
-	enable_strict_done="yes"
+        posix)
+        enable_strict_done="yes"
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="${CFLAGS} -Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L"
-	    echo "$as_me:$LINENO: result: Adding strict check arguments (POSIX flavor) to CFLAGS" >&5
+            pac_cc_strict_flags="-Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L"
+            CFLAGS="$CFLAGS $pac_cc_strict_flags"
+            echo "$as_me:$LINENO: result: Adding strict check arguments (POSIX flavor) to CFLAGS" >&5
 echo "${ECHO_T}Adding strict check arguments (POSIX flavor) to CFLAGS" >&6
-	    echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
+            echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
 echo $ECHO_N "checking whether we can add -std=c89... $ECHO_C" >&6
             # See if we can add -std=c89
             savCFLAGS=$CFLAGS
@@ -4274,20 +4328,23 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "${ECHO_T}$stdc_ok" >&6
             if test "$stdc_ok" != yes ; then
                 CFLAGS="$savCFLAGS"
+            else
+                pac_cc_strict_flags="$pac_cc_strict_flags -std=c89"
             fi
-	else
-	    { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
+        else
+            { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
 echo "$as_me: WARNING: enable strict supported only for gcc" >&2;}
-    	fi
- 	;;
+        fi
+        ;;
 
-	noopt)
+        noopt)
         enable_strict_done="yes"
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="${CFLAGS} -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
-	    echo "$as_me:$LINENO: result: Adding strict check arguments to CFLAGS" >&5
+            pac_cc_strict_flags="-Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
+            CFLAGS="$CFLAGS $pac_cc_strict_flags"
+            echo "$as_me:$LINENO: result: Adding strict check arguments to CFLAGS" >&5
 echo "${ECHO_T}Adding strict check arguments to CFLAGS" >&6
-	    echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
+            echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
 echo $ECHO_N "checking whether we can add -std=c89... $ECHO_C" >&6
             # See if we can add -std=c89
             savCFLAGS=$CFLAGS
@@ -4340,23 +4397,262 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "${ECHO_T}$stdc_ok" >&6
             if test "$stdc_ok" != yes ; then
                 CFLAGS="$savCFLAGS"
+            else
+                pac_cc_strict_flags="$pac_cc_strict_flags -std=c89"
             fi
-	else
-	    { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
+        else
+            { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
 echo "$as_me: WARNING: enable strict supported only for gcc" >&2;}
-    	fi
-	;;
-	no)
-	# Accept and ignore this value
-	:
-	;;
-	*)
-	if test -n "$enable_strict" ; then
-  	    { echo "$as_me:$LINENO: WARNING: Unrecognized value for enable-strict:$enable_strict" >&5
+        fi
+        ;;
+        no)
+        # Accept and ignore this value
+        :
+        ;;
+        *)
+        if test -n "$enable_strict" ; then
+            { echo "$as_me:$LINENO: WARNING: Unrecognized value for enable-strict:$enable_strict" >&5
 echo "$as_me: WARNING: Unrecognized value for enable-strict:$enable_strict" >&2;}
-	fi
-	;;
+        fi
+        ;;
     esac
+fi
+
+if test -n "$pac_cc_strict_flags" ; then
+    MPICH2_EXTRA_CFLAGS="$MPICH2_EXTRA_CFLAGS $pac_cc_strict_flags"
+fi
+
+# Check if $MPI_DEFAULT_COPTS is valid with $CC
+if test "$enable_default_optimize" = "yes" \
+     -a -n "$MPI_DEFAULT_COPTS" ; then
+
+echo "$as_me:$LINENO: checking whether C compiler accepts option $MPI_DEFAULT_COPTS" >&5
+echo $ECHO_N "checking whether C compiler accepts option $MPI_DEFAULT_COPTS... $ECHO_C" >&6
+save_CFLAGS="$CFLAGS"
+CFLAGS="$MPI_DEFAULT_COPTS $CFLAGS"
+rm -f conftest.out
+echo 'int foo(void);int foo(void){return 0;}' > conftest2.c
+echo 'int main(void);int main(void){return 0;}' > conftest.c
+if ${CC-cc} $save_CFLAGS $CPPFLAGS -o conftest conftest.c $LDFLAGS >conftest.bas 2>&1 ; then
+   if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest.c $LDFLAGS >conftest.out 2>&1 ; then
+      if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+         echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+         echo "$as_me:$LINENO: checking whether routines compiled with $MPI_DEFAULT_COPTS can be linked with ones compiled without $MPI_DEFAULT_COPTS" >&5
+echo $ECHO_N "checking whether routines compiled with $MPI_DEFAULT_COPTS can be linked with ones compiled without $MPI_DEFAULT_COPTS... $ECHO_C" >&6
+         rm -f conftest.out
+         rm -f conftest.bas
+         if ${CC-cc} -c $save_CFLAGS $CPPFLAGS conftest2.c >conftest2.out 2>&1 ; then
+            if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest2.o conftest.c $LDFLAGS >conftest.bas 2>&1 ; then
+               if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest2.o conftest.c $LDFLAGS >conftest.out 2>&1 ; then
+                  if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+	             echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+		     CFLAGS="$save_CFLAGS"
+                     CFLAGS="$CFLAGS $MPI_DEFAULT_COPTS"
+        MPICH2_EXTRA_CFLAGS="$MPICH2_EXTRA_CFLAGS $MPI_DEFAULT_COPTS"
+
+                  elif test -s conftest.out ; then
+	             cat conftest.out >&5
+	             echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                     CFLAGS="$save_CFLAGS"
+
+                  else
+                     echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                     CFLAGS="$save_CFLAGS"
+
+                  fi
+               else
+	          if test -s conftest.out ; then
+	             cat conftest.out >&5
+	          fi
+                  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                  CFLAGS="$save_CFLAGS"
+
+               fi
+	    else
+               # Could not link with the option!
+               echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+            fi
+         else
+            if test -s conftest2.out ; then
+               cat conftest2.out >&5
+            fi
+	    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+            CFLAGS="$save_CFLAGS"
+
+         fi
+      else
+         cat conftest.out >&5
+         echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+         CFLAGS="$save_CFLAGS"
+      fi
+   else
+      echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+      if test -s conftest.out ; then cat conftest.out >&5 ; fi
+      CFLAGS="$save_CFLAGS"
+   fi
+else
+    # Could not compile without the option!
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+rm -f conftest*
+
+fi
+# Up till here, MPICH2_EXTRA_CFLAGS contains only flags added by MPICH2.
+# Check with "grep -n MPICH2_EXTRA_CFLAGS configure.in"
+# Remove duplicated flags from MPICH2_EXTRA_CFLAGS.
+
+saveIFS="$IFS"
+inflags="$MPICH2_EXTRA_CFLAGS"
+pac_ifs='\&'
+IFS=$pac_ifs
+outflags=`echo $inflags | sed -e 's%\"\(^\"*\)\"%'"$pac_ifs"'&'"$pac_ifs"'%g'`
+tokens=""
+for outflag in $outflags ; do
+    case $outflag in
+    \"*\")
+                flag=`echo $outflag | sed -e 's/ /'"$pac_ifs"'/g'`
+        tokens=$tokens$flag
+        ;;
+    *)
+        tokens=$tokens$outflag
+        ;;
+    esac
+done
+inflags=$tokens
+IFS=$pac_ifs
+outflags=`echo $inflags | sed -e "s%\'\(^\'*\)\'%""$pac_ifs""&""$pac_ifs""%g"`
+tokens=""
+for outflag in $outflags ; do
+    case $outflag in
+    \'*\')
+                flag=`echo $outflag | sed -e 's/ /'"$pac_ifs"'/g'`
+        tokens=$tokens$flag
+        ;;
+    *)
+        tokens=$tokens$outflag
+        ;;
+    esac
+done
+IFS=' '
+uniqtokens=""
+dupltokens=""
+for token in $tokens ; do
+    match=no
+    for uniqtoken in $uniqtokens ; do
+        if test "$uniqtoken" = "$token" ; then
+            match=yes
+            break
+        fi
+    done
+    if test "$match" = "yes" ; then
+        dupltokens="$dupltokens $token"
+    else
+        uniqtokens="$uniqtokens $token"
+    fi
+done
+uniqflags=`echo $uniqtokens | sed -e 's%'"$pac_ifs"'% %g'`
+duplflags=`echo $dupltokens | sed -e 's%'"$pac_ifs"'% %g'`
+MPICH2_EXTRA_CFLAGS="$uniqflags"
+:
+IFS="$saveIFS"
+
+# Check if $MPICH2LIB_CFLAGS is valid with $CC
+if test -n "$MPICH2LIB_CFLAGS" ; then
+
+echo "$as_me:$LINENO: checking whether C compiler accepts option $MPICH2LIB_CFLAGS" >&5
+echo $ECHO_N "checking whether C compiler accepts option $MPICH2LIB_CFLAGS... $ECHO_C" >&6
+save_CFLAGS="$CFLAGS"
+CFLAGS="$MPICH2LIB_CFLAGS $CFLAGS"
+rm -f conftest.out
+echo 'int foo(void);int foo(void){return 0;}' > conftest2.c
+echo 'int main(void);int main(void){return 0;}' > conftest.c
+if ${CC-cc} $save_CFLAGS $CPPFLAGS -o conftest conftest.c $LDFLAGS >conftest.bas 2>&1 ; then
+   if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest.c $LDFLAGS >conftest.out 2>&1 ; then
+      if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+         echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+         echo "$as_me:$LINENO: checking whether routines compiled with $MPICH2LIB_CFLAGS can be linked with ones compiled without $MPICH2LIB_CFLAGS" >&5
+echo $ECHO_N "checking whether routines compiled with $MPICH2LIB_CFLAGS can be linked with ones compiled without $MPICH2LIB_CFLAGS... $ECHO_C" >&6
+         rm -f conftest.out
+         rm -f conftest.bas
+         if ${CC-cc} -c $save_CFLAGS $CPPFLAGS conftest2.c >conftest2.out 2>&1 ; then
+            if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest2.o conftest.c $LDFLAGS >conftest.bas 2>&1 ; then
+               if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest2.o conftest.c $LDFLAGS >conftest.out 2>&1 ; then
+                  if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+	             echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+		     CFLAGS="$save_CFLAGS"
+                     CFLAGS="$CFLAGS $MPICH2LIB_CFLAGS"
+        MPICH2_EXTRA_CFLAGS="$MPICH2_EXTRA_CFLAGS $MPICH2LIB_CFLAGS"
+
+                  elif test -s conftest.out ; then
+	             cat conftest.out >&5
+	             echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                     CFLAGS="$save_CFLAGS"
+
+                  else
+                     echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                     CFLAGS="$save_CFLAGS"
+
+                  fi
+               else
+	          if test -s conftest.out ; then
+	             cat conftest.out >&5
+	          fi
+                  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                  CFLAGS="$save_CFLAGS"
+
+               fi
+	    else
+               # Could not link with the option!
+               echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+            fi
+         else
+            if test -s conftest2.out ; then
+               cat conftest2.out >&5
+            fi
+	    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+            CFLAGS="$save_CFLAGS"
+
+         fi
+      else
+         cat conftest.out >&5
+         echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+         CFLAGS="$save_CFLAGS"
+      fi
+   else
+      echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+      if test -s conftest.out ; then cat conftest.out >&5 ; fi
+      CFLAGS="$save_CFLAGS"
+   fi
+else
+    # Could not compile without the option!
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+rm -f conftest*
+
 fi
 
 # Check for support for weak symbols.  If not found, set NO_WEAK_SYM
@@ -4881,7 +5177,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:4884:" \
+echo "$as_me:5180:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5122,7 +5418,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5125:" \
+echo "$as_me:5421:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -5267,53 +5563,262 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
     FFLAGS=$saveFFLAGS
 fi
 
-MPI_DEFAULT_FOPTS="-O2"
 if test "$enable_f77" = yes ; then
-    if test "$compiler_optimizations" == "yes"; then
-        echo "$as_me:$LINENO: checking whether $F77 accepts default optimizations" >&5
-echo $ECHO_N "checking whether $F77 accepts default optimizations... $ECHO_C" >&6
-            rm -f conftest.f
-            cat > conftest.f <<EOF
-program main
-end
+    # Check if $MPI_DEFAULT_FOPTS is valid with $F77
+    if test "$enable_default_optimize" = "yes" \
+         -a -n "$MPI_DEFAULT_FOPTS" ; then
+
+echo "$as_me:$LINENO: checking whether Fortran 77 compiler accepts option $MPI_DEFAULT_FOPTS" >&5
+echo $ECHO_N "checking whether Fortran 77 compiler accepts option $MPI_DEFAULT_FOPTS... $ECHO_C" >&6
+ac_result="no"
+save_FFLAGS="$FFLAGS"
+FFLAGS="$MPI_DEFAULT_FOPTS $FFLAGS"
+rm -f conftest.out
+cat >conftest2.f <<EOF
+        subroutine try()
+        end
 EOF
-        pac_tmp_compile_stderr_opt="$F77 $FFLAGS ${MPI_DEFAULT_FOPTS} -o conftest conftest.f 2> pac_tmp_compile_stderr_opt.out > /dev/null"
-        { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stderr_opt\"") >&5
-  (eval $pac_tmp_compile_stderr_opt) 2>&5
+cat >conftest.f <<EOF
+        program main
+        end
+EOF
+ac_fscompilelink='${F77-f77} $save_FFLAGS -o conftest conftest.f $LDFLAGS >conftest.bas 2>&1'
+ac_fscompilelink2='${F77-f77} $FFLAGS -o conftest conftest.f $LDFLAGS >conftest.out 2>&1'
+if { (eval echo "$as_me:$LINENO: \"$ac_fscompilelink\"") >&5
+  (eval $ac_fscompilelink) 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-        pac_tmp_compile_stderr="$F77 $FFLAGS -o conftest conftest.f 2> pac_tmp_compile_stderr.out > /dev/null"
-        { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stderr\"") >&5
-  (eval $pac_tmp_compile_stderr) 2>&5
+  (exit $ac_status); } && test -x conftest ; then
+   if { (eval echo "$as_me:$LINENO: \"$ac_fscompilelink2\"") >&5
+  (eval $ac_fscompilelink2) 2>&5
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-        pac_tmp_compile_stdout_opt="$F77 $FFLAGS ${MPI_DEFAULT_FOPTS} -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout_opt.out"
-        { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stdout_opt\"") >&5
-  (eval $pac_tmp_compile_stdout_opt) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-        pac_tmp_compile_stdout="$F77 $FFLAGS -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout.out"
-        { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stdout\"") >&5
-  (eval $pac_tmp_compile_stdout) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-        if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
-		"`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
-            echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-	    { echo "$as_me:$LINENO: WARNING: Compiler does not accept default optimizations" >&5
-echo "$as_me: WARNING: Compiler does not accept default optimizations" >&2;}
-	    MPI_DEFAULT_FOPTS=""
-        else
-            echo "$as_me:$LINENO: result: yes" >&5
+  (exit $ac_status); } && test -x conftest ; then
+      if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+         echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
+         echo "$as_me:$LINENO: checking whether routines compiled with $MPI_DEFAULT_FOPTS can be linked with ones compiled without $MPI_DEFAULT_FOPTS" >&5
+echo $ECHO_N "checking whether routines compiled with $MPI_DEFAULT_FOPTS can be linked with ones compiled without $MPI_DEFAULT_FOPTS... $ECHO_C" >&6
+         rm -f conftest2.out
+         rm -f conftest.bas
+	 ac_fscompile3='${F77-f77} -c $save_FFLAGS conftest2.f >conftest2.out 2>&1'
+	 ac_fscompilelink4='${F77-f77} $FFLAGS -o conftest conftest2.o conftest.f $LDFLAGS >conftest.bas 2>&1'
+         if { (eval echo "$as_me:$LINENO: \"$ac_fscompile3\"") >&5
+  (eval $ac_fscompile3) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && test -s conftest2.o ; then
+            if { (eval echo "$as_me:$LINENO: \"$ac_fscompilelink4\"") >&5
+  (eval $ac_fscompilelink4) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && test -x conftest ; then
+               if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+	          ac_result="yes"
+	       else
+		  echo "configure: Compiler output differed in two cases" >&5
+                  diff -b conftest.out conftest.bas >&5
+	       fi
+	    else
+	       echo "configure: failed program was:" >&5
+	       cat conftest.f >&5
+	    fi
+	  else
+	    echo "configure: failed program was:" >&5
+	    cat conftest2.f >&5
+	  fi
+      else
+	# diff
+        echo "configure: Compiler output differed in two cases" >&5
+        diff -b conftest.out conftest.bas >&5
+      fi
+   else
+      # try_eval(fscompilelink2)
+      echo "configure: failed program was:" >&5
+      cat conftest.f >&5
+   fi
+   if test "$ac_result" != "yes" -a -s conftest.out ; then
+	cat conftest.out >&5
+   fi
+else
+    # Could not compile without the option!
+    echo "configure: Could not compile program" >&5
+    cat conftest.f >&5
+    cat conftest.bas >&5
+fi
+# Restore FFLAGS before 2nd/3rd argument commands are executed,
+# as 2nd/3rd argument command could be modifying FFLAGS.
+FFLAGS="$save_FFLAGS"
+if test "$ac_result" = "yes" ; then
+     echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+     FFLAGS="$FFLAGS $MPI_DEFAULT_FOPTS"
+            MPICH2_EXTRA_FFLAGS="$MPICH2_EXTRA_FFLAGS $MPI_DEFAULT_FOPTS"
+
+else
+     echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+fi
+rm -f conftest*
+
+    fi
+    # Up till here, MPICH2_EXTRA_FFLAGS contains only flags added by MPICH2.
+    # Check with "grep -n MPICH2_EXTRA_FFLAGS configure.in"
+    # Remove duplicated flags from MPICH2_EXTRA_FFLAGS.
+
+saveIFS="$IFS"
+inflags="$MPICH2_EXTRA_FFLAGS"
+pac_ifs='\&'
+IFS=$pac_ifs
+outflags=`echo $inflags | sed -e 's%\"\(^\"*\)\"%'"$pac_ifs"'&'"$pac_ifs"'%g'`
+tokens=""
+for outflag in $outflags ; do
+    case $outflag in
+    \"*\")
+                flag=`echo $outflag | sed -e 's/ /'"$pac_ifs"'/g'`
+        tokens=$tokens$flag
+        ;;
+    *)
+        tokens=$tokens$outflag
+        ;;
+    esac
+done
+inflags=$tokens
+IFS=$pac_ifs
+outflags=`echo $inflags | sed -e "s%\'\(^\'*\)\'%""$pac_ifs""&""$pac_ifs""%g"`
+tokens=""
+for outflag in $outflags ; do
+    case $outflag in
+    \'*\')
+                flag=`echo $outflag | sed -e 's/ /'"$pac_ifs"'/g'`
+        tokens=$tokens$flag
+        ;;
+    *)
+        tokens=$tokens$outflag
+        ;;
+    esac
+done
+IFS=' '
+uniqtokens=""
+dupltokens=""
+for token in $tokens ; do
+    match=no
+    for uniqtoken in $uniqtokens ; do
+        if test "$uniqtoken" = "$token" ; then
+            match=yes
+            break
         fi
-        rm -f pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out
-        rm -f conftest*
+    done
+    if test "$match" = "yes" ; then
+        dupltokens="$dupltokens $token"
+    else
+        uniqtokens="$uniqtokens $token"
+    fi
+done
+uniqflags=`echo $uniqtokens | sed -e 's%'"$pac_ifs"'% %g'`
+duplflags=`echo $dupltokens | sed -e 's%'"$pac_ifs"'% %g'`
+MPICH2_EXTRA_FFLAGS="$uniqflags"
+:
+IFS="$saveIFS"
+
+    # Check if $MPICH2LIB_FFLAGS is valid with $F77
+    if test -n "$MPICH2LIB_FFLAGS" ; then
+
+echo "$as_me:$LINENO: checking whether Fortran 77 compiler accepts option $MPICH2LIB_FFLAGS" >&5
+echo $ECHO_N "checking whether Fortran 77 compiler accepts option $MPICH2LIB_FFLAGS... $ECHO_C" >&6
+ac_result="no"
+save_FFLAGS="$FFLAGS"
+FFLAGS="$MPICH2LIB_FFLAGS $FFLAGS"
+rm -f conftest.out
+cat >conftest2.f <<EOF
+        subroutine try()
+        end
+EOF
+cat >conftest.f <<EOF
+        program main
+        end
+EOF
+ac_fscompilelink='${F77-f77} $save_FFLAGS -o conftest conftest.f $LDFLAGS >conftest.bas 2>&1'
+ac_fscompilelink2='${F77-f77} $FFLAGS -o conftest conftest.f $LDFLAGS >conftest.out 2>&1'
+if { (eval echo "$as_me:$LINENO: \"$ac_fscompilelink\"") >&5
+  (eval $ac_fscompilelink) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && test -x conftest ; then
+   if { (eval echo "$as_me:$LINENO: \"$ac_fscompilelink2\"") >&5
+  (eval $ac_fscompilelink2) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && test -x conftest ; then
+      if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+         echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+         echo "$as_me:$LINENO: checking whether routines compiled with $MPICH2LIB_FFLAGS can be linked with ones compiled without $MPICH2LIB_FFLAGS" >&5
+echo $ECHO_N "checking whether routines compiled with $MPICH2LIB_FFLAGS can be linked with ones compiled without $MPICH2LIB_FFLAGS... $ECHO_C" >&6
+         rm -f conftest2.out
+         rm -f conftest.bas
+	 ac_fscompile3='${F77-f77} -c $save_FFLAGS conftest2.f >conftest2.out 2>&1'
+	 ac_fscompilelink4='${F77-f77} $FFLAGS -o conftest conftest2.o conftest.f $LDFLAGS >conftest.bas 2>&1'
+         if { (eval echo "$as_me:$LINENO: \"$ac_fscompile3\"") >&5
+  (eval $ac_fscompile3) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && test -s conftest2.o ; then
+            if { (eval echo "$as_me:$LINENO: \"$ac_fscompilelink4\"") >&5
+  (eval $ac_fscompilelink4) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && test -x conftest ; then
+               if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+	          ac_result="yes"
+	       else
+		  echo "configure: Compiler output differed in two cases" >&5
+                  diff -b conftest.out conftest.bas >&5
+	       fi
+	    else
+	       echo "configure: failed program was:" >&5
+	       cat conftest.f >&5
+	    fi
+	  else
+	    echo "configure: failed program was:" >&5
+	    cat conftest2.f >&5
+	  fi
+      else
+	# diff
+        echo "configure: Compiler output differed in two cases" >&5
+        diff -b conftest.out conftest.bas >&5
+      fi
+   else
+      # try_eval(fscompilelink2)
+      echo "configure: failed program was:" >&5
+      cat conftest.f >&5
+   fi
+   if test "$ac_result" != "yes" -a -s conftest.out ; then
+	cat conftest.out >&5
+   fi
+else
+    # Could not compile without the option!
+    echo "configure: Could not compile program" >&5
+    cat conftest.f >&5
+    cat conftest.bas >&5
+fi
+# Restore FFLAGS before 2nd/3rd argument commands are executed,
+# as 2nd/3rd argument command could be modifying FFLAGS.
+FFLAGS="$save_FFLAGS"
+if test "$ac_result" = "yes" ; then
+     echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+     FFLAGS="$FFLAGS $MPICH2LIB_FFLAGS"
+            MPICH2_EXTRA_FFLAGS="$MPICH2_EXTRA_FFLAGS $MPICH2LIB_FFLAGS"
+
+else
+     echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+fi
+rm -f conftest*
+
     fi
 fi
 
@@ -5375,7 +5880,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:5378: \"$ac_link\") >&5
+(eval echo $as_me:5883: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5453,7 +5958,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:5456: \"$ac_link\") >&5
+(eval echo $as_me:5961: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -7053,7 +7558,7 @@ echo "${ECHO_T}unknown!" >&6
     rm -f conftest*
 fi
 # Provide some information about the compiler.
-echo "$as_me:7056:" \
+echo "$as_me:7561:" \
      "checking for Fortran 90 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7291,7 +7796,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:7294:" \
+echo "$as_me:7799:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7630,56 +8135,6 @@ if test "$enable_f90" = "yes" -a "$enable_f77" != "yes" ; then
 echo "$as_me: WARNING: Fortran 90 support requires compatible Fortran 77 support.  To force the use of the Fortran 90 compiler for Fortran 77, set the environment variable F77 to the name of the Fortran 90 compiler." >&2;}
    # We should probably do the compatibility test as well
    enable_f77=yes
-fi
-
-MPI_DEFAULT_F90OPTS="-O2"
-if test "$enable_f90" = yes ; then
-    if test "$compiler_optimizations" == "yes"; then
-        echo "$as_me:$LINENO: checking whether $F90 accepts default optimizations" >&5
-echo $ECHO_N "checking whether $F90 accepts default optimizations... $ECHO_C" >&6
-            rm -f conftest.f
-            cat > conftest.f <<EOF
-program main
-end
-EOF
-        pac_tmp_compile_stderr_opt="$F90 $F90FLAGS ${MPI_DEFAULT_F90OPTS} -o conftest conftest.f 2> pac_tmp_compile_stderr_opt.out > /dev/null"
-        { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stderr_opt\"") >&5
-  (eval $pac_tmp_compile_stderr_opt) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-        pac_tmp_compile_stderr="$F90 $F90FLAGS -o conftest conftest.f 2> pac_tmp_compile_stderr.out > /dev/null"
-        { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stderr\"") >&5
-  (eval $pac_tmp_compile_stderr) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-        pac_tmp_compile_stdout_opt="$F90 $F90FLAGS ${MPI_DEFAULT_F90OPTS} -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout_opt.out"
-        { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stdout_opt\"") >&5
-  (eval $pac_tmp_compile_stdout_opt) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-        pac_tmp_compile_stdout="$F90 $F90FLAGS -o conftest conftest.f 2> /dev/null > pac_tmp_compile_stdout.out"
-        { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stdout\"") >&5
-  (eval $pac_tmp_compile_stdout) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-        if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
-		"`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
-            echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-	    { echo "$as_me:$LINENO: WARNING: Compiler does not accept default optimizations" >&5
-echo "$as_me: WARNING: Compiler does not accept default optimizations" >&2;}
-	    MPI_DEFAULT_F90OPTS=""
-        else
-            echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6
-        fi
-        rm -f pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out
-        rm -f conftest*
-    fi
 fi
 
 # ----------------------------------------------------------------------------
@@ -8490,7 +8945,7 @@ echo "${ECHO_T}unknown!" >&6
     rm -f conftest*
 fi
 # Provide some information about the compiler.
-echo "$as_me:8493:" \
+echo "$as_me:8948:" \
      "checking for Fortran 90 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -9032,6 +9487,264 @@ else
 fi
 
     F90EXT=$pac_cv_f90_ext
+
+
+    # Check if $MPI_DEFAULT_F90OPTS is valid with $F90
+    if test "$enable_default_optimize" = "yes" \
+         -a -n "$MPI_DEFAULT_F90OPTS" ; then
+
+echo "$as_me:$LINENO: checking whether Fortran 90 compiler accepts option $MPI_DEFAULT_F90OPTS" >&5
+echo $ECHO_N "checking whether Fortran 90 compiler accepts option $MPI_DEFAULT_F90OPTS... $ECHO_C" >&6
+ac_result="no"
+save_F90FLAGS="$F90FLAGS"
+F90FLAGS="$MPI_DEFAULT_F90OPTS $F90FLAGS"
+rm -f conftest.out
+cat >conftest2.$ac_f90ext <<EOF
+        subroutine try()
+        end
+EOF
+cat >conftest.$ac_f90ext <<EOF
+        program main
+        end
+EOF
+ac_fscompilelink='${F90-f90} $save_F90FLAGS -o conftest conftest.$ac_f90ext $LDFLAGS >conftest.bas 2>&1'
+ac_fscompilelink2='${F90-f90} $F90FLAGS -o conftest conftest.$ac_f90ext $LDFLAGS >conftest.out 2>&1'
+if { (eval echo "$as_me:$LINENO: \"$ac_fscompilelink\"") >&5
+  (eval $ac_fscompilelink) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && test -x conftest ; then
+   if { (eval echo "$as_me:$LINENO: \"$ac_fscompilelink2\"") >&5
+  (eval $ac_fscompilelink2) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && test -x conftest ; then
+      if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+         echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+         echo "$as_me:$LINENO: checking whether routines compiled with $MPI_DEFAULT_F90OPTS can be linked with ones compiled without $MPI_DEFAULT_F90OPTS" >&5
+echo $ECHO_N "checking whether routines compiled with $MPI_DEFAULT_F90OPTS can be linked with ones compiled without $MPI_DEFAULT_F90OPTS... $ECHO_C" >&6
+         rm -f conftest2.out
+         rm -f conftest.bas
+	 ac_fscompile3='${F90-f90} -c $save_F90FLAGS conftest2.$ac_f90ext >conftest2.out 2>&1'
+	 ac_fscompilelink4='${F90-f90} $F90FLAGS -o conftest conftest2.o conftest.$ac_f90ext $LDFLAGS >conftest.bas 2>&1'
+         if { (eval echo "$as_me:$LINENO: \"$ac_fscompile3\"") >&5
+  (eval $ac_fscompile3) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && test -s conftest2.o ; then
+            if { (eval echo "$as_me:$LINENO: \"$ac_fscompilelink4\"") >&5
+  (eval $ac_fscompilelink4) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && test -x conftest ; then
+               if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+	          ac_result="yes"
+	       else
+		  echo "configure: Compiler output differed in two cases" >&5
+                  diff -b conftest.out conftest.bas >&5
+	       fi
+	    else
+	       echo "configure: failed program was:" >&5
+	       cat conftest.$ac_f90ext >&5
+	    fi
+	  else
+	    echo "configure: failed program was:" >&5
+	    cat conftest2.$ac_f90ext >&5
+	  fi
+      else
+	# diff
+        echo "configure: Compiler output differed in two cases" >&5
+        diff -b conftest.out conftest.bas >&5
+      fi
+   else
+      # try_eval(fscompilelink2)
+      echo "configure: failed program was:" >&5
+      cat conftest.$ac_f90ext >&5
+   fi
+   if test "$ac_result" != "yes" -a -s conftest.out ; then
+	cat conftest.out >&5
+   fi
+else
+    # Could not compile without the option!
+    echo "configure: Could not compile program" >&5
+    cat conftest.$ac_f90ext >&5
+    cat conftest.bas >&5
+fi
+# Restore F90FLAGS before 2nd/3rd argument commands are executed,
+# # as 2nd/3rd argument command could be modifying F90FLAGS.
+F90FLAGS="$save_F90FLAGS"
+if test "$ac_result" = "yes" ; then
+     echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+     F90FLAGS="$F90FLAGS $MPI_DEFAULT_F90OPTS"
+            MPICH2_EXTRA_F90FLAGS="$MPICH2_EXTRA_F90FLAGS $MPI_DEFAULT_F90OPTS"
+
+else
+     echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+fi
+rm -f conftest*
+
+    fi
+    # Up till here, MPICH2_EXTRA_F90FLAGS contains only flags added by MPICH2.
+    # Check with "grep -n MPICH2_EXTRA_F90FLAGS configure.in"
+    # Remove duplicated flags from MPICH2_EXTRA_F90FLAGS.
+
+saveIFS="$IFS"
+inflags="$MPICH2_EXTRA_F90FLAGS"
+pac_ifs='\&'
+IFS=$pac_ifs
+outflags=`echo $inflags | sed -e 's%\"\(^\"*\)\"%'"$pac_ifs"'&'"$pac_ifs"'%g'`
+tokens=""
+for outflag in $outflags ; do
+    case $outflag in
+    \"*\")
+                flag=`echo $outflag | sed -e 's/ /'"$pac_ifs"'/g'`
+        tokens=$tokens$flag
+        ;;
+    *)
+        tokens=$tokens$outflag
+        ;;
+    esac
+done
+inflags=$tokens
+IFS=$pac_ifs
+outflags=`echo $inflags | sed -e "s%\'\(^\'*\)\'%""$pac_ifs""&""$pac_ifs""%g"`
+tokens=""
+for outflag in $outflags ; do
+    case $outflag in
+    \'*\')
+                flag=`echo $outflag | sed -e 's/ /'"$pac_ifs"'/g'`
+        tokens=$tokens$flag
+        ;;
+    *)
+        tokens=$tokens$outflag
+        ;;
+    esac
+done
+IFS=' '
+uniqtokens=""
+dupltokens=""
+for token in $tokens ; do
+    match=no
+    for uniqtoken in $uniqtokens ; do
+        if test "$uniqtoken" = "$token" ; then
+            match=yes
+            break
+        fi
+    done
+    if test "$match" = "yes" ; then
+        dupltokens="$dupltokens $token"
+    else
+        uniqtokens="$uniqtokens $token"
+    fi
+done
+uniqflags=`echo $uniqtokens | sed -e 's%'"$pac_ifs"'% %g'`
+duplflags=`echo $dupltokens | sed -e 's%'"$pac_ifs"'% %g'`
+MPICH2_EXTRA_F90FLAGS="$uniqflags"
+:
+IFS="$saveIFS"
+
+    # Check if $MPICH2LIB_F90FLAGS works with $F90
+    if test -n "$MPICH2LIB_F90FLAGS" ; then
+
+echo "$as_me:$LINENO: checking whether Fortran 90 compiler accepts option $MPICH2LIB_F90FLAGS" >&5
+echo $ECHO_N "checking whether Fortran 90 compiler accepts option $MPICH2LIB_F90FLAGS... $ECHO_C" >&6
+ac_result="no"
+save_F90FLAGS="$F90FLAGS"
+F90FLAGS="$MPICH2LIB_F90FLAGS $F90FLAGS"
+rm -f conftest.out
+cat >conftest2.$ac_f90ext <<EOF
+        subroutine try()
+        end
+EOF
+cat >conftest.$ac_f90ext <<EOF
+        program main
+        end
+EOF
+ac_fscompilelink='${F90-f90} $save_F90FLAGS -o conftest conftest.$ac_f90ext $LDFLAGS >conftest.bas 2>&1'
+ac_fscompilelink2='${F90-f90} $F90FLAGS -o conftest conftest.$ac_f90ext $LDFLAGS >conftest.out 2>&1'
+if { (eval echo "$as_me:$LINENO: \"$ac_fscompilelink\"") >&5
+  (eval $ac_fscompilelink) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && test -x conftest ; then
+   if { (eval echo "$as_me:$LINENO: \"$ac_fscompilelink2\"") >&5
+  (eval $ac_fscompilelink2) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && test -x conftest ; then
+      if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+         echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+         echo "$as_me:$LINENO: checking whether routines compiled with $MPICH2LIB_F90FLAGS can be linked with ones compiled without $MPICH2LIB_F90FLAGS" >&5
+echo $ECHO_N "checking whether routines compiled with $MPICH2LIB_F90FLAGS can be linked with ones compiled without $MPICH2LIB_F90FLAGS... $ECHO_C" >&6
+         rm -f conftest2.out
+         rm -f conftest.bas
+	 ac_fscompile3='${F90-f90} -c $save_F90FLAGS conftest2.$ac_f90ext >conftest2.out 2>&1'
+	 ac_fscompilelink4='${F90-f90} $F90FLAGS -o conftest conftest2.o conftest.$ac_f90ext $LDFLAGS >conftest.bas 2>&1'
+         if { (eval echo "$as_me:$LINENO: \"$ac_fscompile3\"") >&5
+  (eval $ac_fscompile3) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && test -s conftest2.o ; then
+            if { (eval echo "$as_me:$LINENO: \"$ac_fscompilelink4\"") >&5
+  (eval $ac_fscompilelink4) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && test -x conftest ; then
+               if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+	          ac_result="yes"
+	       else
+		  echo "configure: Compiler output differed in two cases" >&5
+                  diff -b conftest.out conftest.bas >&5
+	       fi
+	    else
+	       echo "configure: failed program was:" >&5
+	       cat conftest.$ac_f90ext >&5
+	    fi
+	  else
+	    echo "configure: failed program was:" >&5
+	    cat conftest2.$ac_f90ext >&5
+	  fi
+      else
+	# diff
+        echo "configure: Compiler output differed in two cases" >&5
+        diff -b conftest.out conftest.bas >&5
+      fi
+   else
+      # try_eval(fscompilelink2)
+      echo "configure: failed program was:" >&5
+      cat conftest.$ac_f90ext >&5
+   fi
+   if test "$ac_result" != "yes" -a -s conftest.out ; then
+	cat conftest.out >&5
+   fi
+else
+    # Could not compile without the option!
+    echo "configure: Could not compile program" >&5
+    cat conftest.$ac_f90ext >&5
+    cat conftest.bas >&5
+fi
+# Restore F90FLAGS before 2nd/3rd argument commands are executed,
+# # as 2nd/3rd argument command could be modifying F90FLAGS.
+F90FLAGS="$save_F90FLAGS"
+if test "$ac_result" = "yes" ; then
+     echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+     F90FLAGS="$F90FLAGS $MPICH2LIB_F90FLAGS"
+            MPICH2_EXTRA_F90FLAGS="$MPICH2_EXTRA_F90FLAGS $MPICH2LIB_F90FLAGS"
+
+else
+     echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+fi
+rm -f conftest*
+
+    fi
 
     #
     # Most systems allow the Fortran compiler to process .F and .F90 files
@@ -10380,55 +11093,245 @@ _ACEOF
 
 fi
 
-MPI_DEFAULT_CXXOPTS="-O2"
 if test "$enable_cxx" = yes; then
-    if test "$compiler_optimizations" == "yes"; then
-        echo "$as_me:$LINENO: checking whether $CXX accepts default optimizations" >&5
-echo $ECHO_N "checking whether $CXX accepts default optimizations... $ECHO_C" >&6
-            rm -f conftest.cpp
-            cat > conftest.cpp <<EOF
-#include <iostream>
-int main() { return 0; }
-EOF
-        pac_tmp_compile_stderr_opt="$CXX $CXXFLAGS ${MPI_DEFAULT_CXXOPTS} -o conftest conftest.cpp 2> pac_tmp_compile_stderr_opt.out > /dev/null"
-        { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stderr_opt\"") >&5
-  (eval $pac_tmp_compile_stderr_opt) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-        pac_tmp_compile_stderr="$CXX $CXXFLAGS -o conftest conftest.cpp 2> pac_tmp_compile_stderr.out > /dev/null"
-        { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stderr\"") >&5
-  (eval $pac_tmp_compile_stderr) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-        pac_tmp_compile_stdout_opt="$CXX $CXXFLAGS ${MPI_DEFAULT_CXXOPTS} -o conftest conftest.cpp 2> /dev/null > pac_tmp_compile_stdout_opt.out"
-        { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stdout_opt\"") >&5
-  (eval $pac_tmp_compile_stdout_opt) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-        pac_tmp_compile_stdout="$CXX $CXXFLAGS -o conftest conftest.cpp 2> /dev/null > pac_tmp_compile_stdout.out"
-        { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile_stdout\"") >&5
-  (eval $pac_tmp_compile_stdout) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }
-        if test "`diff pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out`" != "" -o \
-		"`diff pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out`" != "" ; then
-            echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6
-	    { echo "$as_me:$LINENO: WARNING: Compiler does not accept default optimizations" >&5
-echo "$as_me: WARNING: Compiler does not accept default optimizations" >&2;}
-	    MPI_DEFAULT_CXXOPTS=""
-        else
-            echo "$as_me:$LINENO: result: yes" >&5
+    # Check if $MPI_DEFAULT_CXXOPTS is valid with $CXX
+    if test "$enable_default_optimize" = "yes" \
+         -a -n "$MPI_DEFAULT_CXXOPTS" ; then
+
+echo "$as_me:$LINENO: checking whether C++ compiler accepts option $MPI_DEFAULT_CXXOPTS" >&5
+echo $ECHO_N "checking whether C++ compiler accepts option $MPI_DEFAULT_CXXOPTS... $ECHO_C" >&6
+save_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="$MPI_DEFAULT_CXXOPTS $CXXFLAGS"
+rm -f conftest.out
+echo 'int foo(void);int foo(void){return 0;}' > conftest2.cpp
+echo 'int main(void);int main(void){return 0;}' > conftest.cpp
+if ${CXX-g++} $save_CXXFLAGS $CPPFLAGS -o conftest conftest.cpp $LDFLAGS >conftest.bas 2>&1 ; then
+   if ${CXX-g++} $CXXFLAGS $CPPFLAGS -o conftest conftest.cpp $LDFLAGS >conftest.out 2>&1 ; then
+      if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+         echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
+         echo "$as_me:$LINENO: checking whether routines compiled with $MPI_DEFAULT_CXXOPTS can be linked with ones compiled without $MPI_DEFAULT_CXXOPTS" >&5
+echo $ECHO_N "checking whether routines compiled with $MPI_DEFAULT_CXXOPTS can be linked with ones compiled without $MPI_DEFAULT_CXXOPTS... $ECHO_C" >&6
+         rm -f conftest.out
+         rm -f conftest.bas
+         if ${CXX-g++} -c $save_CXXFLAGS $CPPFLAGS conftest2.cpp >conftest2.out 2>&1 ; then
+            if ${CXX-g++} $CXXFLAGS $CPPFLAGS -o conftest conftest2.o conftest.cpp $LDFLAGS >conftest.bas 2>&1 ; then
+               if ${CXX-g++} $CXXFLAGS $CPPFLAGS -o conftest conftest2.o conftest.cpp $LDFLAGS >conftest.out 2>&1 ; then
+                  if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+	             echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+		     CXXFLAGS="$save_CXXFLAGS"
+                     CXXFLAGS="$CXXFLAGS $MPI_DEFAULT_CXXOPTS"
+            MPICH2_EXTRA_CXXFLAGS="$MPICH2_EXTRA_CXXFLAGS $MPI_DEFAULT_CXXOPTS"
+
+                  elif test -s conftest.out ; then
+	             cat conftest.out >&5
+	             echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                     CXXFLAGS="$save_CXXFLAGS"
+
+                  else
+                     echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                     CXXFLAGS="$save_CXXFLAGS"
+
+                  fi
+               else
+	          if test -s conftest.out ; then
+	             cat conftest.out >&5
+	          fi
+                  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                  CXXFLAGS="$save_CXXFLAGS"
+
+               fi
+	    else
+               # Could not link with the option!
+               echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+            fi
+         else
+            if test -s conftest2.out ; then
+               cat conftest2.out >&5
+            fi
+	    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+            CXXFLAGS="$save_CXXFLAGS"
+
+         fi
+      else
+         cat conftest.out >&5
+         echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+         CXXFLAGS="$save_CXXFLAGS"
+      fi
+   else
+      echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+      if test -s conftest.out ; then cat conftest.out >&5 ; fi
+      CXXFLAGS="$save_CXXFLAGS"
+   fi
+else
+    # Could not compile without the option!
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+rm -f conftest*
+
+    fi
+    # Up till here, MPICH2_EXTRA_CXXFLAGS contains only flags added by MPICH2.
+    # Check with "grep -n MPICH2_EXTRA_CXXFLAGS configure.in"
+    # Remove duplicated flags from MPICH2_EXTRA_CXXFLAGS.
+
+saveIFS="$IFS"
+inflags="$MPICH2_EXTRA_CXXFLAGS"
+pac_ifs='\&'
+IFS=$pac_ifs
+outflags=`echo $inflags | sed -e 's%\"\(^\"*\)\"%'"$pac_ifs"'&'"$pac_ifs"'%g'`
+tokens=""
+for outflag in $outflags ; do
+    case $outflag in
+    \"*\")
+                flag=`echo $outflag | sed -e 's/ /'"$pac_ifs"'/g'`
+        tokens=$tokens$flag
+        ;;
+    *)
+        tokens=$tokens$outflag
+        ;;
+    esac
+done
+inflags=$tokens
+IFS=$pac_ifs
+outflags=`echo $inflags | sed -e "s%\'\(^\'*\)\'%""$pac_ifs""&""$pac_ifs""%g"`
+tokens=""
+for outflag in $outflags ; do
+    case $outflag in
+    \'*\')
+                flag=`echo $outflag | sed -e 's/ /'"$pac_ifs"'/g'`
+        tokens=$tokens$flag
+        ;;
+    *)
+        tokens=$tokens$outflag
+        ;;
+    esac
+done
+IFS=' '
+uniqtokens=""
+dupltokens=""
+for token in $tokens ; do
+    match=no
+    for uniqtoken in $uniqtokens ; do
+        if test "$uniqtoken" = "$token" ; then
+            match=yes
+            break
         fi
-        rm -f pac_tmp_compile_stderr_opt.out pac_tmp_compile_stderr.out pac_tmp_compile_stdout_opt.out pac_tmp_compile_stdout.out
-        rm -f conftest*
+    done
+    if test "$match" = "yes" ; then
+        dupltokens="$dupltokens $token"
+    else
+        uniqtokens="$uniqtokens $token"
+    fi
+done
+uniqflags=`echo $uniqtokens | sed -e 's%'"$pac_ifs"'% %g'`
+duplflags=`echo $dupltokens | sed -e 's%'"$pac_ifs"'% %g'`
+MPICH2_EXTRA_CXXFLAGS="$uniqflags"
+:
+IFS="$saveIFS"
+
+    # Check if $MPICH2LIB_CXXFLAGS is valid with $CXX
+    if test -n "$MPICH2LIB_CXXFLAGS" ; then
+
+echo "$as_me:$LINENO: checking whether C++ compiler accepts option $MPICH2LIB_CXXFLAGS" >&5
+echo $ECHO_N "checking whether C++ compiler accepts option $MPICH2LIB_CXXFLAGS... $ECHO_C" >&6
+save_CXXFLAGS="$CXXFLAGS"
+CXXFLAGS="$MPICH2LIB_CXXFLAGS $CXXFLAGS"
+rm -f conftest.out
+echo 'int foo(void);int foo(void){return 0;}' > conftest2.cpp
+echo 'int main(void);int main(void){return 0;}' > conftest.cpp
+if ${CXX-g++} $save_CXXFLAGS $CPPFLAGS -o conftest conftest.cpp $LDFLAGS >conftest.bas 2>&1 ; then
+   if ${CXX-g++} $CXXFLAGS $CPPFLAGS -o conftest conftest.cpp $LDFLAGS >conftest.out 2>&1 ; then
+      if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+         echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+         echo "$as_me:$LINENO: checking whether routines compiled with $MPICH2LIB_CXXFLAGS can be linked with ones compiled without $MPICH2LIB_CXXFLAGS" >&5
+echo $ECHO_N "checking whether routines compiled with $MPICH2LIB_CXXFLAGS can be linked with ones compiled without $MPICH2LIB_CXXFLAGS... $ECHO_C" >&6
+         rm -f conftest.out
+         rm -f conftest.bas
+         if ${CXX-g++} -c $save_CXXFLAGS $CPPFLAGS conftest2.cpp >conftest2.out 2>&1 ; then
+            if ${CXX-g++} $CXXFLAGS $CPPFLAGS -o conftest conftest2.o conftest.cpp $LDFLAGS >conftest.bas 2>&1 ; then
+               if ${CXX-g++} $CXXFLAGS $CPPFLAGS -o conftest conftest2.o conftest.cpp $LDFLAGS >conftest.out 2>&1 ; then
+                  if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
+	             echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+		     CXXFLAGS="$save_CXXFLAGS"
+                     CXXFLAGS="$CXXFLAGS $MPICH2LIB_CXXFLAGS"
+            MPICH2_EXTRA_CXXFLAGS="$MPICH2_EXTRA_CXXFLAGS $MPICH2LIB_CXXFLAGS"
+
+                  elif test -s conftest.out ; then
+	             cat conftest.out >&5
+	             echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                     CXXFLAGS="$save_CXXFLAGS"
+
+                  else
+                     echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                     CXXFLAGS="$save_CXXFLAGS"
+
+                  fi
+               else
+	          if test -s conftest.out ; then
+	             cat conftest.out >&5
+	          fi
+                  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+                  CXXFLAGS="$save_CXXFLAGS"
+
+               fi
+	    else
+               # Could not link with the option!
+               echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+            fi
+         else
+            if test -s conftest2.out ; then
+               cat conftest2.out >&5
+            fi
+	    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+            CXXFLAGS="$save_CXXFLAGS"
+
+         fi
+      else
+         cat conftest.out >&5
+         echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+         CXXFLAGS="$save_CXXFLAGS"
+      fi
+   else
+      echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+
+      if test -s conftest.out ; then cat conftest.out >&5 ; fi
+      CXXFLAGS="$save_CXXFLAGS"
+   fi
+else
+    # Could not compile without the option!
+    echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+rm -f conftest*
+
     fi
 fi
+
+export MPICH2_EXTRA_CFLAGS
+export MPICH2_EXTRA_CXXFLAGS
+export MPICH2_EXTRA_FFLAGS
+export MPICH2_EXTRA_F90FLAGS
 
 # Copy the mpicxx.h file to the main include directory
           ac_config_commands="$ac_config_commands default-3"
@@ -10733,7 +11636,7 @@ fi
 # This autoconf macro checks for this.
 
 # Note that if an option is added to CFLAGS, that option MUST NOT appear
-# in MPI_CFLAGS (i.e., the options used in mpicc)
+# in WRAPPER_CFLAGS (i.e., the options used in mpicc)
 
 # Also note that it should not be necessary to use this option - it
 # is almost always possible to avoid "common" symbols, and this approach
@@ -11649,7 +12552,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 11652 "configure"
+#line 12555 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -14881,7 +15784,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 14884 "configure"
+#line 15787 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -18629,7 +19532,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 18632 "configure"
+#line 19535 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -19550,7 +20453,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 19553 "configure"
+#line 20456 "configure"
 #include "confdefs.h"
 #include <sys/bitypes.h>
 int conftest() {return 0;}
@@ -23524,7 +24427,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
     else
         cat > conftest.$ac_ext <<EOF
 
-#line 23527 "configure"
+#line 24430 "configure"
 #include "confdefs.h"
 
 main(){return(0);}
@@ -23615,7 +24518,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
         else
             cat > conftest.$ac_ext <<EOF
 
-#line 23618 "configure"
+#line 24521 "configure"
 #include "confdefs.h"
 
 int main(){return(0);}
@@ -24743,7 +25646,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 24746 "configure"
+#line 25649 "configure"
 #include "confdefs.h"
 #include <complex>
 int conftest() {return 0;}
@@ -26648,6 +27551,7 @@ fi
 if test "$enable_coverage" = "yes" ; then
     if test "$ac_cv_c_compiler_gnu" = "yes" ; then
         CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage"
+        MPICH2_EXTRA_CFLAGS="$MPICH2_EXTRA_CFLAGS -fprofile-arcs -ftest-coverage"
     else
         { echo "$as_me:$LINENO: WARNING: --enable-coverage only supported for GCC" >&5
 echo "$as_me: WARNING: --enable-coverage only supported for GCC" >&2;}
@@ -26655,6 +27559,7 @@ echo "$as_me: WARNING: --enable-coverage only supported for GCC" >&2;}
     if test "$enable_cxx" = "yes" ; then
         if test "$ac_cv_cxx_compiler_gnu" = "yes" ; then
             CXXFLAGS="$CXXFLAGS -fprofile-arcs -ftest-coverage"
+            MPICH2_EXTRA_CXXFLAGS="$MPICH2_EXTRA_CXXFLAGS -fprofile-arcs -ftest-coverage"
         else
             { echo "$as_me:$LINENO: WARNING: --enable-coverage only supported for GCC" >&5
 echo "$as_me: WARNING: --enable-coverage only supported for GCC" >&2;}
@@ -26665,16 +27570,18 @@ echo "$as_me: WARNING: --enable-coverage only supported for GCC" >&2;}
     if test "$enable_f77" = yes ; then
         if test "$ac_cv_f77_compiler_gnu" = "yes" ; then
              FFLAGS="$FFLAGS -fprofile-arcs -ftest-coverage"
+             MPICH2_EXTRA_FFLAGS="$MPICH2_EXTRA_FFLAGS -fprofile-arcs -ftest-coverage"
         else
-	     { echo "$as_me:$LINENO: WARNING: --enable-coverage only supported for G77/GFORTRAN" >&5
+            { echo "$as_me:$LINENO: WARNING: --enable-coverage only supported for G77/GFORTRAN" >&5
 echo "$as_me: WARNING: --enable-coverage only supported for G77/GFORTRAN" >&2;}
         fi
     fi
     if test "$enable_f90" = yes ; then
         if test "$ac_cv_f90_compiler_gnu" = "yes" ; then
              F90FLAGS="$F90FLAGS -fprofile-arcs -ftest-coverage"
+             MPICH2_EXTRA_F90FLAGS="$MPICH2_EXTRA_F90FLAGS -fprofile-arcs -ftest-coverage"
         else
-	     { echo "$as_me:$LINENO: WARNING: --enable-coverage only supported for GFORTRAN" >&5
+            { echo "$as_me:$LINENO: WARNING: --enable-coverage only supported for GFORTRAN" >&5
 echo "$as_me: WARNING: --enable-coverage only supported for GFORTRAN" >&2;}
         fi
     fi
@@ -26971,7 +27878,8 @@ fi
 
 
 
-for ac_header in stdlib.h stdarg.h sys/types.h inttypes.h limits.h stddef.h errno.h sys/socket.h sys/time.h unistd.h endian.h
+
+for ac_header in stdlib.h stdarg.h sys/types.h inttypes.h limits.h stddef.h errno.h sys/socket.h sys/time.h unistd.h endian.h assert.h
 do
 ac_safe=`echo "$ac_header" | sed 'y%./+-%__p_%'`
 echo "$as_me:$LINENO: checking for $ac_header" >&5
@@ -27020,7 +27928,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 27023 "configure"
+#line 27931 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -28479,7 +29387,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 28482 "configure"
+#line 29390 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -30231,7 +31139,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 30234 "configure"
+#line 31142 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -30835,7 +31743,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 30838 "configure"
+#line 31746 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -31230,10 +32138,10 @@ done
 
 
 #
-# THR_LDFLAGS are added to the MPI_LDFLAGS (used to link user MPI programs)
+# THR_LDFLAGS are added to the WRAPPER_LDFLAGS (used to link user MPI programs)
 # THR_CFLAGS should be used only to compile the MPI library, not to compile
 # user programs.  We cannot set CFLAGS to THR_CFLAGS because we will
-# use CFLAGS to set MPI_CFLAGS at the end of this configure step.
+# use CFLAGS to set WRAPPER_CFLAGS at the end of this configure step.
 # FIXME: We need to propagate THR_CFLAGS
 if test "$with_thread_package" != "none" ; then
     if $CC -V 2>&1 | grep -i "sun workshop" 2>&1 >/dev/null ; then
@@ -31407,6 +32315,31 @@ done
 
 	# We use eval to handle quotes around the arguments added by
 	# autoconf when saving the args
+
+
+# Exporting the MPICH2_INTERNAL_xFLAGS with modified xFLAGS
+# before calling subconfigure.
+# Check if the env variable MPICH2_UNIQ_XFLAGS is set to no.
+# MPICH2_UNIQ_XFLAGS is default to yes. It is a way to check
+# if uniq'ed MPICH2_EXTRA_xFLAGS messes up xFLAGS.
+pac_replace=${MPICH2_UNIQ_XFLAGS:-yes}
+# Use user-supplied flags, WRAPPER_xFLAGS, and uniq'ed MPICH2_EXTRA_xFLAGS.
+    if test "$pac_replace" = "yes" ; then
+        CFLAGS="$WRAPPER_CFLAGS $MPICH2_EXTRA_CFLAGS"
+        CXXFLAGS="$WRAPPER_CXXFLAGS $MPICH2_EXTRA_CXXFLAGS"
+        FFLAGS="$WRAPPER_FFLAGS $MPICH2_EXTRA_FFLAGS"
+        F90FLAGS="$WRAPPER_F90FLAGS $MPICH2_EXTRA_F90FLAGS"
+    fi
+    MPICH2_INTERNAL_CFLAGS="$CFLAGS"
+    MPICH2_INTERNAL_CXXFLAGS="$CXXFLAGS"
+    MPICH2_INTERNAL_FFLAGS="$FFLAGS"
+    MPICH2_INTERNAL_F90FLAGS="$F90FLAGS"
+    export MPICH2_INTERNAL_CFLAGS
+    export MPICH2_INTERNAL_CXXFLAGS
+    export MPICH2_INTERNAL_FFLAGS
+    export MPICH2_INTERNAL_F90FLAGS
+# Not sure if we need AC_SUBST(MPICH2_INTERNAL_xFLAGS)
+
         if (cd $subsys && eval $use_top_srcdir/$subsys/configure $ac_sub_configure_args ) ; then
 	    :
 	else
@@ -31984,7 +32917,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
     else
         cat > conftest.$ac_ext <<EOF
 
-#line 31987 "configure"
+#line 32920 "configure"
 #include "confdefs.h"
 
 main(){return(0);}
@@ -32073,7 +33006,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
         else
             cat > conftest.$ac_ext <<EOF
 
-#line 32076 "configure"
+#line 33009 "configure"
 #include "confdefs.h"
 
 int main(){return(0);}
@@ -32252,26 +33185,19 @@ else
     MPI_MAX_PROCESSOR_NAME=$MPID_MAX_PROCESSOR_NAME
 fi
 
-# -----------------------------------------------------------------------------
-# Set the libraries to use in building programs
-if test "$NEEDSPLIB" = "yes" ; then
-    EXAMPLE_LIBS="-l$PMPILIBNAME -l$MPILIBNAME $LIBS"
-else
-    EXAMPLE_LIBS="-l$MPILIBNAME $LIBS"
-fi
 
 # default settings for compiler and linker flags
 # Note:
-#   The MPI_CFLAGS must not contain *all* of the CFLAGS, just the
+#   The WRAPPER_CFLAGS must not contain *all* of the CFLAGS, just the
 #   flags needed to compile with the mpi.h header.  Normally, no flags
 #   should be required to compile MPI programs (otherwise, users that choose
 #   not to use the compile scripts will submit bug reports).
-#   For now, we try using no extra Flags.  (Never, ever set MPI_CFLAGS to
+#   For now, we try using no extra Flags.  (Never, ever set WRAPPER_CFLAGS to
 #   $CFLAGS)
 #
-# Unlike MPI_CFLAGS, the linker flags will always be needed to ensure that
+# Unlike WRAPPER_CFLAGS, the linker flags will always be needed to ensure that
 # all of the required libraries are present.
-MPI_LDFLAGS="$MPI_LDFLAGS $LDFLAGS $THR_LDFLAGS"
+WRAPPER_LDFLAGS="$WRAPPER_LDFLAGS $LDFLAGS $THR_LDFLAGS"
 
 
 
@@ -32280,17 +33206,6 @@ MPI_LDFLAGS="$MPI_LDFLAGS $LDFLAGS $THR_LDFLAGS"
 #
 # Add a definition that is used to help support Windows DLLs (used in mpi.h.in)
 MPIU_DLL_SPEC_DEF="#define MPIU_DLL_SPEC"
-
-
-# Get the location of the SVN repository, if present
-    # We can use this test for creating maintainer targets
-    # as well, and tests for maintainer-required software, such as
-    # doctext
-if test -d .svn ; then
-    MPISVNHOME=`svn info . | sed -n "/Repository Root: /s/Repository Root: //p"`
-elif test -d "$srcdir/.svn" ; then
-    MPISVNHOME=`svn info $srcdir | sed -n "/Repository Root: /s/Repository Root: //p"`
-fi
 
 
 
@@ -32386,46 +33301,19 @@ fi
 # MPICH must be placed in the "usual" places, e.g. CFLAGS (the values
 # are captured during the [AC_INIT] step).
 #
-# Normally, the flags used in 1 and 2 will be the same.  If, for some
-# reason, the user needs different flags in the compilation scripts,
-# they can override the choice in CFLAGS etc. by setting MPI_CFLAGS.
+# Normally, the flags used in 1 and 2 will be the same.  If the user needs
+# different flags in the building MPICH2 libraries than those in the
+# compilation scripts, they can set CFLAGS and MPICH2LIB_CFLAGS during
+# configure, where $CFLAGS + $MPICH2LIB_CFLAGS will be used to build
+# MPICH2 libraries, only $CFLAGS will be used in the MPI compiler
+# wrapper script.
 #
 
-if test "$MPI_CFLAGS" = "MPI_FLAGS_EMPTY" ; then
-   MPI_CFLAGS=""
-elif test -z "$MPI_CFLAGS" -a -n "$CFLAGS" ; then
-    MPI_CFLAGS="$CFLAGS"
-fi
-CFLAGS="$CFLAGS $MPI_DEFAULT_COPTS"
 
 
-if test "MPI_CXXFLAGS" = "MPI_FLAGS_EMPTY" ; then
-   MPI_CXXFLAGS=""
-elif test -z "$MPI_CXXFLAGS" -a -n "$CXXFLAGS" ; then
-    MPI_CXXFLAGS="$CXXFLAGS"
-fi
-CXXFLAGS="$CXXFLAGS $MPI_DEFAULT_CXXOPTS"
 
 
-if test "MPI_FFLAGS" = "MPI_FLAGS_EMPTY" ; then
-   MPI_FFLAGS=""
-elif test -z "$MPI_FFLAGS" -a -n "$FFLAGS" ; then
-    MPI_FFLAGS="$FFLAGS"
-fi
-FFLAGS="$FFLAGS $MPI_DEFAULT_FOPTS"
-
-
-if test "MPI_F90FLAGS" = "MPI_FLAGS_EMPTY" ; then
-   MPI_F90FLAGS=""
-elif test -z "$MPI_F90FLAGS" -a -n "$F90FLAGS" ; then
-    MPI_F90FLAGS="$F90FLAGS"
-fi
-F90FLAGS="$F90FLAGS $MPI_DEFAULT_F90OPTS"
-
-export MPI_CFLAGS
-export MPI_FFLAGS
-export MPI_CXXFLAGS
-export MPI_F90FLAGS
+# AC_ARG_VAR( MPICH2LIB_LDFLAGS, [extra LDFLAGS used in building MPICH2 libraries, this flags won't be used in any of mpiXXX script.  LDFLAGS and MPICH2LIB_LDFLAGS are non-overlapping.] )
 
 # For the examples, we want to use the scripts to encourage users
 # to use them and to make them work more robustly with shared libraries
@@ -32449,6 +33337,8 @@ _ACEOF
 # which include flags should start in MPICH2_INCLUDE_FLAGS and which in
 # CPPFLAGS
 CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
+
+
 
 
                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   ac_config_files="$ac_config_files Makefile src/Makefile src/include/Makefile src/include/mpich2info.h mpich2-doxygen src/include/mpichtimer.h src/binding/Makefile src/binding/cxx/Makefile src/binding/cxx/mpicxx.h src/binding/f77/Makefile src/binding/f77/mpif.h src/binding/f77/setbotf.f src/binding/f90/Makefile src/binding/f90/mpi_sizeofs.f90 src/pkgconfig/mpich2-ch3.pc src/pkgconfig/Makefile src/env/mpicc src/env/mpicc.conf src/env/mpicc.bash src/env/mpicxx src/env/mpicxx.conf src/env/mpicxx.bash src/env/mpif77 src/env/mpif77.conf src/env/mpif77.bash src/env/mpif90 src/env/mpif90.conf src/env/mpif90.bash src/env/parkill src/env/Makefile src/util/createshlib src/mpi/Makefile src/mpi/attr/Makefile src/mpi/coll/Makefile src/mpi/comm/Makefile src/mpi/datatype/Makefile src/mpi/debugger/Makefile src/mpi/errhan/Makefile src/mpi/group/Makefile src/mpi/init/Makefile src/mpi/misc/Makefile src/mpi/pt2pt/Makefile src/mpi/rma/Makefile src/mpi/spawn/Makefile src/mpi/timer/Makefile src/mpi/topo/Makefile src/mpid/Makefile src/mpid/common/Makefile src/mpid/common/datatype/Makefile src/mpid/common/datatype/dataloop/Makefile src/mpid/common/locks/Makefile src/pm/Makefile src/pmi/Makefile src/nameserv/Makefile src/nameserv/file/Makefile src/nameserv/mpd/Makefile src/nameserv/pmi/Makefile src/nameserv/test/Makefile src/util/Makefile src/util/info/Makefile src/util/instrm/Makefile src/util/thread/Makefile src/util/thread/mpe_thread.h src/util/mem/Makefile src/util/msgs/Makefile src/util/param/Makefile src/util/dbg/Makefile src/util/dbg/getfuncstack src/util/osserv/Makefile src/include/mpi.h test/Makefile test/util/Makefile test/basic/Makefile test/commands/Makefile test/commands/cmdtests test/mpid/Makefile test/mpid/ch3/Makefile examples/Makefile examples/f77/Makefile examples/f90/Makefile examples/cxx/Makefile src/util/logging/Makefile src/util/logging/common/Makefile doc/Makefile doc/mansrc/Makefile doc/mansrc/createhtmlindex doc/refman/Makefile doc/installguide/Makefile doc/userguide/Makefile doc/logging/Makefile doc/design/Makefile doc/smpd/Makefile doc/windev/Makefile"
@@ -33461,16 +34351,18 @@ s,@MPI_OFFSET_TYPEDEF@,$MPI_OFFSET_TYPEDEF,;t t
 s,@FORTRAN_MPI_OFFSET@,$FORTRAN_MPI_OFFSET,;t t
 s,@EXTRA_STATUS_DECL@,$EXTRA_STATUS_DECL,;t t
 s,@MPI_MAX_PROCESSOR_NAME@,$MPI_MAX_PROCESSOR_NAME,;t t
-s,@EXAMPLE_LIBS@,$EXAMPLE_LIBS,;t t
-s,@MPI_CFLAGS@,$MPI_CFLAGS,;t t
-s,@MPI_FFLAGS@,$MPI_FFLAGS,;t t
-s,@MPI_CXXFLAGS@,$MPI_CXXFLAGS,;t t
-s,@MPI_F90FLAGS@,$MPI_F90FLAGS,;t t
-s,@MPI_LDFLAGS@,$MPI_LDFLAGS,;t t
+s,@WRAPPER_CFLAGS@,$WRAPPER_CFLAGS,;t t
+s,@WRAPPER_CXXFLAGS@,$WRAPPER_CXXFLAGS,;t t
+s,@WRAPPER_FFLAGS@,$WRAPPER_FFLAGS,;t t
+s,@WRAPPER_F90FLAGS@,$WRAPPER_F90FLAGS,;t t
+s,@WRAPPER_LDFLAGS@,$WRAPPER_LDFLAGS,;t t
 s,@MPIU_DLL_SPEC_DEF@,$MPIU_DLL_SPEC_DEF,;t t
-s,@MPISVNHOME@,$MPISVNHOME,;t t
 s,@EXTERNAL_SRC_DIRS@,$EXTERNAL_SRC_DIRS,;t t
 s,@subdirs@,$subdirs,;t t
+s,@MPICH2LIB_CFLAGS@,$MPICH2LIB_CFLAGS,;t t
+s,@MPICH2LIB_CXXFLAGS@,$MPICH2LIB_CXXFLAGS,;t t
+s,@MPICH2LIB_FFLAGS@,$MPICH2LIB_FFLAGS,;t t
+s,@MPICH2LIB_F90FLAGS@,$MPICH2LIB_F90FLAGS,;t t
 s,@MPICC@,$MPICC,;t t
 s,@MPICXX@,$MPICXX,;t t
 s,@MPIF77@,$MPIF77,;t t

@@ -1347,6 +1347,14 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
+    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
+    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
+    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
+    F90FLAGS="$MPICH2_INTERNAL_C90FLAGS"
+
+
 if test -f $CONFIG_AUX_DIR/install-sh ; then ac_aux_dir=$CONFIG_AUX_DIR
 else
 ac_aux_dir=
@@ -3306,7 +3314,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 3309 "configure"
+#line 3317 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -3386,6 +3394,9 @@ echo "$as_me: WARNING: libtool selected for shared library support but LIBTOOL i
 
 export ETAGS
 export ETAGSADD
+
+
+
 
 
           ac_config_files="$ac_config_files Makefile"

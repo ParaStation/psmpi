@@ -6,14 +6,14 @@
 <file name="sctp_module.h" info="1194043819"/>
 <file name="mpid_nem_queue.h" info="1194043819"/>
 <file name="mpid_nem_datatypes.h" info="1194043819"/>
-<file name="mpid_nem_atomics.h" info="1194043819"/>
+<file name="mpid_nem_atomics.h" info="1204147630"/>
 <file name="ib_module.h" info="1194043819"/>
 <file name="kaput.h" info="1194043819"/>
 <file name="newtcp_module.h" info="1194043819"/>
 <file name="mx_module.h" info="1194043819"/>
 <file name="mpid_nem_memdefs.h" info="1194043819"/>
 <file name="elan_module.h" info="1194043819"/>
-<file name="mpid_nem_inline.h" info="1194043819"/>
+<file name="mpid_nem_inline.h" info="1205871161"/>
 <file name="mpid_nem_fbox.h" info="1194043819"/>
 <file name="mpid_nem_defs.h" info="1194043819"/>
 <file name="mpid_nem_post.h" info="1194043819"/>
@@ -54,6 +54,8 @@
 <fileinfo name="elan_module.h">
 </fileinfo>
 <fileinfo name="mpid_nem_inline.h">
+MPID_STATE_MPID_NEM_MPICH2_SENDV MPID_nem_mpich2_sendv
+MPID_STATE_MPID_NEM_MPICH2_SENDV_HEADER MPID_nem_mpich2_sendv_header
 </fileinfo>
 <fileinfo name="mpid_nem_fbox.h">
 </fileinfo>

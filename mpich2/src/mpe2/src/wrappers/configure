@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS top_srcdir_abs VPATH MAKE MKDIR CPRP RM MV includebuild_dir libbuild_dir binbuild_dir sbinbuild_dir etcbuild_dir CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AR RANLIB ac_ct_RANLIB CPP DEBUG_LIBS EGREP ALLOCA build build_cpu build_vendor build_os host host_cpu host_vendor host_os MPI_IMPL MPE_BUILD_FORTRAN2C CLINKER MPI_CC MPE_CLINKER F77 FLINKER FFLAGS MPI_F77 MPE_FLINKER FINC_PATH_LEADER FLIB_PATH_LEADER MPI_INC MPI_LIBS LOG_LIBNAME TRACE_LIBNAME F2CMPI_LIBNAME PROF_LIBS LOG_LIBS TRACE_LIBS F2CMPI_LIBS LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS top_srcdir_abs VPATH MAKE MKDIR CPRP RM MV includebuild_dir libbuild_dir binbuild_dir sbinbuild_dir etcbuild_dir CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AR RANLIB ac_ct_RANLIB CPP DEBUG_LIBS EGREP ALLOCA build build_cpu build_vendor build_os host host_cpu host_vendor host_os MPI_IMPL MPE_BUILD_FORTRAN2C CLINKER MPI_CC MPE_CLINKER F77 FLINKER FFLAGS MPI_F77 MPE_FLINKER FINC_PATH_LEADER FLIB_PATH_LEADER MPI_CFLAGS MPI_FFLAGS MPI_LIBS LOG_LIBNAME TRACE_LIBNAME F2CMPI_LIBNAME PROF_LIBS LOG_LIBS TRACE_LIBS F2CMPI_LIBS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1410,7 +1410,8 @@ MPI_F77=${MPI_F77:-${F77}}
 MPE_FLINKER=${MPE_FLINKER}
 FINC_PATH_LEADER=${FINC_PATH_LEADER:-"-I"}
 FLIB_PATH_LEADER=${FLIB_PATH_LEADER:-"-L"}
-MPI_INC=${MPI_INC}
+MPI_CFLAGS=${MPI_CFLAGS}
+MPI_FFLAGS=${MPI_FFLAGS}
 MPI_LIBS=${MPI_LIBS}
 
 MPE_LIBNAME=${MPE_LIBNAME:-mpe}
@@ -4073,7 +4074,7 @@ return 0;
 }
 int main() { func( 1, 2 ); return 0;}
 EOF
-if { (eval echo configure:4076: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
+if { (eval echo configure:4077: \"$ac_compile\") 1>&5; (eval $ac_compile) 2>&5; }; then
   echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
   rm -rf conftest*
@@ -4351,7 +4352,7 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
 echo $ECHO_N "checking for the C version of MPI_Init_thread ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -4455,7 +4456,7 @@ echo "${ECHO_T}yes" >&6
 echo $ECHO_N "checking for the C version of PMPI_Init_thread ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -4586,7 +4587,7 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
 echo $ECHO_N "checking for the C version of MPI_File_open() ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -4691,7 +4692,7 @@ echo "${ECHO_T}yes" >&6
 echo $ECHO_N "checking for the C version of PMPI_File_open() ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -4801,7 +4802,7 @@ _ACEOF
 echo $ECHO_N "checking for ROMIO's MPIO_Request ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -4933,7 +4934,7 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
 echo $ECHO_N "checking for the C version of MPI_Win_create ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -5037,7 +5038,7 @@ echo "${ECHO_T}yes" >&6
 echo $ECHO_N "checking for the C version of PMPI_Win_create ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -5147,7 +5148,7 @@ _ACEOF
 echo $ECHO_N "checking for the C version of MPI_Win_lock/unlock... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -5253,7 +5254,7 @@ echo "${ECHO_T}yes" >&6
 echo $ECHO_N "checking for the C version of PMPI_Win_lock/unlock... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -5373,7 +5374,7 @@ echo "${ECHO_T}no" >&6
 echo $ECHO_N "checking for the C version of MPI_Win_test... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -5478,7 +5479,7 @@ echo "${ECHO_T}yes" >&6
 echo $ECHO_N "checking for the C version of PMPI_Win_test... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -5628,7 +5629,7 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
 echo $ECHO_N "checking for the C version of MPI_Comm_connect/accept() ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -5733,7 +5734,7 @@ echo "${ECHO_T}yes" >&6
 echo $ECHO_N "checking for the C version of PMPI_Comm_connect/accept() ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -5844,7 +5845,7 @@ _ACEOF
 echo $ECHO_N "checking for the C version of MPI_Publish/Lookup_name() ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -5950,7 +5951,7 @@ echo "${ECHO_T}yes" >&6
 echo $ECHO_N "checking for the C version of PMPI_Publish/Lookup_name() ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -6089,7 +6090,7 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
 echo $ECHO_N "checking for MPI_STATUS_IGNORE ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -6208,7 +6209,7 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
 echo $ECHO_N "checking for MPI_STATUSES_IGNORE ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -6433,7 +6434,7 @@ if test "${F2CMPI_LIBS}" = "-l${F2CMPI_LIBNAME}" \
 echo $ECHO_N "checking for MPI_Fint ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -6547,7 +6548,7 @@ _ACEOF
 echo $ECHO_N "checking for MPI_F_STATUS_IGNORE ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -6659,7 +6660,7 @@ fi
 echo $ECHO_N "checking for MPI_F_STATUSES_IGNORE ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -6771,7 +6772,7 @@ fi
 echo $ECHO_N "checking for MPI_Comm_c2f() and MPI_Comm_f2c() ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -6909,7 +6910,7 @@ fi
     else
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_SER_CC="$CC"
     pac_SER_CFLAGS="$CFLAGS"
     pac_SER_LIBS="$LIBS"
@@ -7022,7 +7023,7 @@ fi
 echo $ECHO_N "checking for MPI_Status_c2f() and MPI_Status_f2c() ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -7139,7 +7140,7 @@ _ACEOF
 echo $ECHO_N "checking for MPI_Type_c2f() and MPI_Type_f2c() ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -7252,7 +7253,7 @@ _ACEOF
 echo $ECHO_N "checking for MPI_Group_c2f() and MPI_Group_f2c() ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -7365,7 +7366,7 @@ _ACEOF
 echo $ECHO_N "checking for MPI_Request_c2f() and MPI_Request_f2c() ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -7478,7 +7479,7 @@ _ACEOF
 echo $ECHO_N "checking for MPI_Op_c2f() and MPI_Op_f2c() ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -7591,7 +7592,7 @@ _ACEOF
 echo $ECHO_N "checking for MPI_Errhandler_c2f() and MPI_Errhandler_f2c() ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -7756,7 +7757,7 @@ echo $ECHO_N "checking for the Fortran logical values in MPI C program ... $ECHO
     pac_MPI_F77="$F77"
     pac_MPI_FFLAGS="$FFLAGS"
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="-I../.. $CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="-I../.. $MPI_CFLAGS"
     pac_SER_CC="$CC"
     pac_SER_CFLAGS="$CFLAGS"
     pac_SER_LIBS="$LIBS"
@@ -7928,6 +7929,7 @@ fi
     fi
 
 fi
+
 
 
 
@@ -8563,7 +8565,8 @@ s,@MPI_F77@,$MPI_F77,;t t
 s,@MPE_FLINKER@,$MPE_FLINKER,;t t
 s,@FINC_PATH_LEADER@,$FINC_PATH_LEADER,;t t
 s,@FLIB_PATH_LEADER@,$FLIB_PATH_LEADER,;t t
-s,@MPI_INC@,$MPI_INC,;t t
+s,@MPI_CFLAGS@,$MPI_CFLAGS,;t t
+s,@MPI_FFLAGS@,$MPI_FFLAGS,;t t
 s,@MPI_LIBS@,$MPI_LIBS,;t t
 s,@LOG_LIBNAME@,$LOG_LIBNAME,;t t
 s,@TRACE_LIBNAME@,$TRACE_LIBNAME,;t t

@@ -2,14 +2,12 @@
 <file name="ch3_open_port.c" info="1194043819"/>
 <file name="shm_memory.c" info="1194043819"/>
 <file name="ch3_istartmsgv.c" info="1194043819"/>
-<file name="ch3_istartrndvmsg.c" info="1194043819"/>
 <file name="ch3_progress.c" info="1194043819"/>
 <file name="ch3_setup_connections.c" info="1194043819"/>
 <file name="ch3_finalize.c" info="1194043819"/>
 <file name="ch3_istartmsg.c" info="1194043819"/>
 <file name="ch3_init.c" info="1194043819"/>
 <file name="ch3_isendv.c" info="1194043819"/>
-<file name="ch3_istartrndvtransfer.c" info="1194043819"/>
 <file name="ch3_isend.c" info="1194043819"/>
 <file name="shm_old.c" info="1194043819"/>
 </dir>
@@ -24,9 +22,6 @@ MPID_STATE_MPIDI_CH3I_SHM_RELEASE_MEM MPIDI_CH3I_SHM_Release_mem
 MPID_STATE_CREATE_REQUEST create_request
 MPID_STATE_MEMCPY memcpy
 MPID_STATE_MPIDI_CH3_ISTARTMSGV MPIDI_CH3_iStartMsgv
-</fileinfo>
-<fileinfo name="ch3_istartrndvmsg.c">
-MPID_STATE_MPIDI_CH3_ISTARTRNDVMSG MPIDI_CH3_iStartRndvMsg
 </fileinfo>
 <fileinfo name="ch3_progress.c">
 MPID_STATE_MPIDI_CH3I_REQUEST_ADJUST_IOV MPIDI_CH3U_Request_adjust_iov
@@ -51,9 +46,6 @@ MPID_STATE_MPIDI_CH3_ISTARTMSG MPIDI_CH3_iStartMsg
 <fileinfo name="ch3_isendv.c">
 MPID_STATE_UPDATE_REQUEST update_request
 MPID_STATE_MPIDI_CH3_ISENDV MPIDI_CH3_iSendv
-</fileinfo>
-<fileinfo name="ch3_istartrndvtransfer.c">
-MPID_STATE_MPIDI_CH3_ISTARTRNDVTRANSFER MPIDI_CH3_iStartRndvTransfer
 </fileinfo>
 <fileinfo name="ch3_isend.c">
 MPID_STATE_UPDATE_REQUEST update_request

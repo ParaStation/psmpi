@@ -1414,6 +1414,14 @@ ac_config_sub=$ac_aux_dir/config.sub
 ac_configure=$ac_aux_dir/configure # This should be Cygnus configure.
 
 
+
+# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
+    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
+    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
+    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
+    F90FLAGS="$MPICH2_INTERNAL_C90FLAGS"
+
+
           ac_config_headers="$ac_config_headers include/mpidi_ch3i_nemesis_conf.h"
 
 
@@ -3090,7 +3098,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 3093 "configure"
+#line 3101 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -3289,7 +3297,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 3292 "configure"
+#line 3300 "configure"
 #include "confdefs.h"
 #include <gm.h>
 int conftest() {return 0;}
@@ -3484,7 +3492,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 3487 "configure"
+#line 3495 "configure"
 #include "confdefs.h"
 #include <verbs.h>
 int conftest() {return 0;}
@@ -3679,7 +3687,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 3682 "configure"
+#line 3690 "configure"
 #include "confdefs.h"
 #include <myriexpress.h>
 int conftest() {return 0;}
@@ -3887,7 +3895,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 3890 "configure"
+#line 3898 "configure"
 #include "confdefs.h"
 #include <elan/elan.h>
 int conftest() {return 0;}
@@ -4082,7 +4090,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 4085 "configure"
+#line 4093 "configure"
 #include "confdefs.h"
 #include <netinet/sctp.h>
 int conftest() {return 0;}
@@ -4277,7 +4285,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 4280 "configure"
+#line 4288 "configure"
 #include "confdefs.h"
 #include <psm.h>
 int conftest() {return 0;}
@@ -4541,7 +4549,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 4544 "configure"
+#line 4552 "configure"
 #include "confdefs.h"
 #include <papi.h>
 int conftest() {return 0;}
@@ -4713,7 +4721,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 4716 "configure"
+#line 4724 "configure"
 #include "confdefs.h"
 #include <cli.h>
 int conftest() {return 0;}
@@ -4876,7 +4884,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 4879 "configure"
+#line 4887 "configure"
 #include "confdefs.h"
 #include <ckpt.h>
 int conftest() {return 0;}
@@ -6639,6 +6647,9 @@ echo "$as_me: WARNING: libtool selected for shared library support but LIBTOOL i
 # which include flags should start in MPICH2_INCLUDE_FLAGS and which in
 # CPPFLAGS
 CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
+
+
+
 
                                                                                                                                                                                     ac_config_files="$ac_config_files Makefile src/Makefile nemesis/Makefile nemesis/src/Makefile nemesis/utils/Makefile nemesis/utils/replacements/Makefile nemesis/utils/monitor/Makefile nemesis/net_mod/Makefile nemesis/net_mod/elan_module/Makefile nemesis/net_mod/gm_module/Makefile nemesis/net_mod/mx_module/Makefile nemesis/net_mod/tcp_module/Makefile nemesis/net_mod/newtcp_module/Makefile nemesis/net_mod/sctp_module/Makefile nemesis/net_mod/ib_module/Makefile nemesis/net_mod/psm_module/Makefile nemesis/net_mod/none_module/Makefile localdefs"
 cat >confcache <<\_ACEOF

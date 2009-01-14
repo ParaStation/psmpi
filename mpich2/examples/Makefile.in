@@ -10,24 +10,27 @@ abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 top_srcdir      = @top_srcdir@
-LIBS            = @EXAMPLE_LIBS@@LIBS@
 MAKE            = @MAKE@
 MPILIBNAME      = @MPILIBNAME@
 PMPILIBNAME     = @PMPILIBNAME@
 
-CFLAGS          = @CFLAGS@
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
-LDFLAGS     =  @LDFLAGS@ -L../lib
 
 VPATH = .:@srcdir@
 MPICHDIR=..
 CC       = $(MPICHDIR)/bin/mpicc
+CFLAGS   =
+CXXFLAGS =
+FFLAGS   =
+F90FLAGS =
+LDFLAGS  =
 CPPFLAGS = 
 DEFS     = 
 INCLUDES = -I../src/include -I${top_srcdir}/src/include
+LIBS   =
 
 EXTRA_PROGRAMS = pmandel pmandel_spawn pmandel_service pmandel_spaserv 	         pmandel_fence hellow icpi parent child srtest srvec sr 		 spawn_merge_parent spawn_merge_child1 spawn_merge_child2
 
@@ -45,10 +48,10 @@ EXTRA_PROGRAMS = pmandel pmandel_spawn pmandel_service pmandel_spaserv 	        
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
 	-rootdir=../ \
 	-configdir=. \
-	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
 	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
 	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \

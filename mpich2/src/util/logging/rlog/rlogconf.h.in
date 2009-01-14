@@ -27,9 +27,6 @@
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* Define to enable memory tracing */
-#undef USE_MEMORY_TRACING
-
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
 

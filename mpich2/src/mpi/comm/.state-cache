@@ -15,7 +15,7 @@
 <file name="comm_remote_size.c" info="1194043819"/>
 <file name="comm_compare.c" info="1194043819"/>
 <file name="mpicomm.h" info="1194043819"/>
-<file name="intercomm_merge.c" info="1194043819"/>
+<file name="intercomm_merge.c" info="1204239541"/>
 </dir>
 <data>
 <fileinfo name="comm_size.c">

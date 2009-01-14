@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS top_build_dir docdir htmldir RANLIB ac_ct_RANLIB CC F77 CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT FFLAGS ac_ct_F77 CPP EGREP F90 HAVE_WEAK_SYMBOLS PVFS2_CONFIG srcdir master_top_srcdir master_top_builddir master_topbuild_dir MPIO_EXTRA_OBJECTS MPIO_EXTRA_TMP_POBJECTS MPIO_EXTRA_REAL_POBJECTS MPIO_REQOBJECTS MPIO_REQ_TMP_POBJECTS MPIO_REQ_REAL_POBJECTS DOCTEXT EXTRA_SRC_DIRS FILE_SYS_DIRS GLUE_DIR VPATH ARCH FILE_SYSTEM USER_CFLAGS USER_FFLAGS MIPS BITS MPI AR MPI_INCLUDE_DIR MPI_LIB NOF77 NOPROFILE MAKE arch_IRIX ROMIO_HOME LIBNAME TEST_LIBNAME LL F77GETARG F77IARGC F77MPIOINC FTESTDEFINE FORTRAN_MPI_OFFSET FROM_MPICH FROM_MPICH2 FROM_LAM WITHIN_KNOWN_MPI_IMPL NEEDS_MPI_FINT HAVE_MPI_INFO BUILD_MPI_INFO HAVE_MPI_DARRAY_SUBARRAY BUILD_MPI_ARRAY DEFINE_MPI_OFFSET DEFINE_HAVE_MPI_GREQUEST MPI_OFFSET_TYPE MPI_FINFO1 MPI_FINFO2 MPI_FINFO3 MPI_FINFO4 MPI_FARRAY1 MPI_FARRAY2 MPI_FARRAY3 MPI_FARRAY4 MPI_FARRAY5 MPI_FARRAY6 MPI_FARRAY7 MPI_OFFSET_KIND1 MPI_OFFSET_KIND2 TEST_CC TEST_F77 ROMIO_INCLUDE ROMIO_LFLAGS ROMIO_LIBLIST ROMIO_TCFLAGS ROMIO_TCPPFLAGS ROMIO_TFFLAGS MPIRUN FORTRAN_TEST MAKE_DEPEND_C ENABLE_SHLIB CC_SHL LIBTOOL SHLIBNAME LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS top_build_dir docdir htmldir RANLIB ac_ct_RANLIB CC F77 CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT FFLAGS ac_ct_F77 CPP EGREP F90 HAVE_WEAK_SYMBOLS PVFS2_CONFIG srcdir master_top_srcdir master_top_builddir master_topbuild_dir MPIO_EXTRA_OBJECTS MPIO_EXTRA_TMP_POBJECTS MPIO_EXTRA_REAL_POBJECTS MPIO_REQOBJECTS MPIO_REQ_TMP_POBJECTS MPIO_REQ_REAL_POBJECTS DOCTEXT EXTRA_SRC_DIRS FILE_SYS_DIRS GLUE_DIR SYSDEP_INC VPATH ARCH FILE_SYSTEM USER_CFLAGS USER_FFLAGS MIPS BITS MPI AR MPI_INCLUDE_DIR MPI_LIB NOF77 NOPROFILE MAKE arch_IRIX ROMIO_HOME LIBNAME TEST_LIBNAME LL F77GETARG F77IARGC F77MPIOINC FTESTDEFINE FORTRAN_MPI_OFFSET FROM_MPICH FROM_MPICH2 FROM_LAM WITHIN_KNOWN_MPI_IMPL NEEDS_MPI_FINT HAVE_MPI_INFO BUILD_MPI_INFO HAVE_MPI_DARRAY_SUBARRAY BUILD_MPI_ARRAY DEFINE_MPI_OFFSET DEFINE_HAVE_MPI_GREQUEST MPI_OFFSET_TYPE MPI_FINFO1 MPI_FINFO2 MPI_FINFO3 MPI_FINFO4 MPI_FARRAY1 MPI_FARRAY2 MPI_FARRAY3 MPI_FARRAY4 MPI_FARRAY5 MPI_FARRAY6 MPI_FARRAY7 MPI_OFFSET_KIND1 MPI_OFFSET_KIND2 TEST_CC TEST_F77 ROMIO_INCLUDE ROMIO_LFLAGS ROMIO_LIBLIST ROMIO_TCFLAGS ROMIO_TCPPFLAGS ROMIO_TFFLAGS MPIRUN FORTRAN_TEST MAKE_DEPEND_C ENABLE_SHLIB CC_SHL LIBTOOL SHLIBNAME LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1322,6 +1322,13 @@ if test -n "$CONFIGURE_ARGS" ; then
     echo "Configuring with args $CONFIGURE_ARGS"
 fi
 
+if test "$FROM_MPICH2" = "yes" ; then
+    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
+    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
+    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
+    F90FLAGS="$MPICH2_INTERNAL_F90FLAGS"
+fi
+
           ac_config_headers="$ac_config_headers adio/include/romioconf.h"
 
 
@@ -1402,7 +1409,7 @@ MPIO_REQ_REAL_POBJECTS="_iotest.o _iowait.o _iowaitall.o _iowaitany.o _iotestall
 #
 have_aio=no
 #
-known_filesystems="nfs ufs pfs pvfs pvfs2 testfs xfs panfs gridftp"
+known_filesystems="nfs ufs pfs pvfs pvfs2 testfs xfs panfs gridftp lustre bgl bglockless"
 known_mpi_impls="mpich2_mpi mpich_mpi sgi_mpi hp_mpi cray_mpi lam_mpi"
 #
 # Defaults
@@ -1782,7 +1789,7 @@ fi
 #
 C_DEBUG_FLAG="-g"
 F77_DEBUG_FLAG="-g"
-C_OPT_FLAG=${CFLAGS:-"-O"}
+# C_OPT_FLAG=${CFLAGS:-"-O"}
 # MPICH1 uses OPTFLAGS and OPTFLAGSC to specify separate optimization
 # flags for the C compiler (this is better that adding it to the
 # undifferentiated CFLAGS, at least on input).
@@ -2871,6 +2878,7 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
 if test "$NOF77" != 1 ; then
     # Grrr.   The autoconf test for F77 will abort the configure
     # if no compiler is found.  We'd prefer to simply turn off
@@ -2967,7 +2975,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:2970:" \
+echo "$as_me:2978:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -3118,7 +3126,6 @@ if test $DEBUG = "yes" ; then
 else
     CFLAGS="$CFLAGS $C_OPT_FLAG"
 fi
-
 # ---------------------------------------------------------------------------
 # Here go the rest of the tests
 # ---------------------------------------------------------------------------
@@ -6905,6 +6912,8 @@ FILE_SYSTEM="testfs $FILE_SYSTEM"
 # - if we can find 'pvfs2-config' in our path, we can use it to set CFLAGS,
 #   LIBS, and LDFLAGS accordingly
 # - as a fallback, use CFLAGS, LIBS, and LDFLAGS passed in by the user
+# - don't do any of this if --with-file-system was given and did not include
+#   'pvfs2': i.e. don't surprise the user with pvfs support.
 
 # Extract the first word of "pvfs2-config", so it can be a program name with args.
 set dummy pvfs2-config; ac_word=$2
@@ -6919,7 +6928,7 @@ else
   ;;
   *)
   as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-as_dummy="$PATH:${with_pvfs2}/bin"
+as_dummy="${with_pvfs2}/bin:$PATH"
 for as_dir in $as_dummy
 do
   IFS=$as_save_IFS
@@ -6948,11 +6957,15 @@ echo "${ECHO_T}no" >&6
 fi
 
 if test $PVFS2_CONFIG != "notfound" ; then
-	CFLAGS="$CFLAGS $( $PVFS2_CONFIG --cflags)"
-	LIBS="$LIBS $( $PVFS2_CONFIG --libs)"
-	ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
-	FILE_SYSTEM="pvfs2 $FILE_SYSTEM"
-	file_system_pvfs2=1
+	if test -n "${with_pvfs2}" -o -n "${file_system_pvfs2}" ; then
+		# the user either told us where pvfs is or asked for it in
+		# --with-file-system (or both)
+		CFLAGS="$CFLAGS $( $PVFS2_CONFIG --cflags)"
+		LIBS="$LIBS $( $PVFS2_CONFIG --libs)"
+		ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
+		FILE_SYSTEM="pvfs2 $FILE_SYSTEM"
+		file_system_pvfs2=1
+	fi
 fi
 
 if test "$PVFS2_CONFIG" = "notfound" -a -n "$with_pvfs2" ; then
@@ -6997,6 +7010,25 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
+if test -n "$file_system_bgl"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define ROMIO_BGL 1
+_ACEOF
+
+fi
+if test -n "$file_system_bglockless"; then
+    if test x"$file_system_bgl" = x ; then
+	    { { echo "$as_me:$LINENO: error: \"bglockless requested without bgl\"" >&5
+echo "$as_me: error: \"bglockless requested without bgl\"" >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+
+cat >>confdefs.h <<\_ACEOF
+#define ROMIO_BGLOCKLESS 1
+_ACEOF
+
+fi
 if test -n "$file_system_hfs"; then
 
 cat >>confdefs.h <<\_ACEOF
@@ -7024,6 +7056,13 @@ if test -n "$file_system_testfs"; then
 
 cat >>confdefs.h <<\_ACEOF
 #define ROMIO_TESTFS 1
+_ACEOF
+
+fi
+if test -n "$file_system_lustre"; then
+
+cat >>confdefs.h <<\_ACEOF
+#define ROMIO_LUSTRE 1
 _ACEOF
 
 fi
@@ -7634,6 +7673,10 @@ _ACEOF
 
 fi
 
+if test -n "$file_system_bgl"; then
+    SYSDEP_INC=-I${prefix}/include
+else
+    SYSDEP_INC=
 #
 # Check for presence and characteristics of async. I/O calls if
 # not disabled.
@@ -8357,9 +8400,9 @@ echo $ECHO_N "checking whether aio routines can be used... $ECHO_C" >&6
     # fail for some pre-POSIX implementations of the aio interface
     # (an old IBM interface needs an fd argument as well)
     if test "$cross_compiling" = yes; then
-  aio_runs=unknown
-	echo "$as_me:$LINENO: result: unknown" >&5
-echo "${ECHO_T}unknown" >&6
+  aio_runs=no
+	echo "$as_me:$LINENO: result: no: aio routines disabled when cross compiling" >&5
+echo "${ECHO_T}no: aio routines disabled when cross compiling" >&6
 
 else
   cat >conftest.$ac_ext <<_ACEOF
@@ -8434,9 +8477,9 @@ _ACEOF
     echo "$as_me:$LINENO: checking for obsolete two-argument aio_write" >&5
 echo $ECHO_N "checking for obsolete two-argument aio_write... $ECHO_C" >&6
     if test "$cross_compiling" = yes; then
-  aio_two_arg_write=unknown
-	echo "$as_me:$LINENO: result: unknown" >&5
-echo "${ECHO_T}unknown" >&6
+  aio_two_arg_write=no
+	echo "$as_me:$LINENO: result: no: cannot test when cross-compiling" >&5
+echo "${ECHO_T}no: cannot test when cross-compiling" >&6
 
 else
   cat >conftest.$ac_ext <<_ACEOF
@@ -8508,9 +8551,9 @@ _ACEOF
     echo "$as_me:$LINENO: checking for obsolete two-argument aio_suspend" >&5
 echo $ECHO_N "checking for obsolete two-argument aio_suspend... $ECHO_C" >&6
     if test "$cross_compiling" = yes; then
-  aio_two_arg_suspend=unknown
-	echo "$as_me:$LINENO: result: unknown" >&5
-echo "${ECHO_T}unknown" >&6
+  aio_two_arg_suspend=no
+	echo "$as_me:$LINENO: result: no: cannot test when cross compiling" >&5
+echo "${ECHO_T}no: cannot test when cross compiling" >&6
 
 else
   cat >conftest.$ac_ext <<_ACEOF
@@ -8932,6 +8975,7 @@ echo "${ECHO_T}no" >&6
 fi
 rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 
+fi
 fi
 # End of aio-related tests
 
@@ -11769,6 +11813,214 @@ else
 fi
 
 
+for ac_header in unistd.h
+do
+as_ac_Header=`echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+else
+  # Is the header compilable?
+echo "$as_me:$LINENO: checking $ac_header usability" >&5
+echo $ECHO_N "checking $ac_header usability... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_header_compiler=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_header_compiler=no
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+echo "${ECHO_T}$ac_header_compiler" >&6
+
+# Is the header present?
+echo "$as_me:$LINENO: checking $ac_header presence" >&5
+echo $ECHO_N "checking $ac_header presence... $ECHO_C" >&6
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (eval echo "$as_me:$LINENO: \"$ac_cpp conftest.$ac_ext\"") >&5
+  (eval $ac_cpp conftest.$ac_ext) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null; then
+  if test -s conftest.err; then
+    ac_cpp_err=$ac_c_preproc_warn_flag
+    ac_cpp_err=$ac_cpp_err$ac_c_werror_flag
+  else
+    ac_cpp_err=
+  fi
+else
+  ac_cpp_err=yes
+fi
+if test -z "$ac_cpp_err"; then
+  ac_header_preproc=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+rm -f conftest.err conftest.$ac_ext
+echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+echo "${ECHO_T}$ac_header_preproc" >&6
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## ------------------------------------------ ##
+## Report this to the AC_PACKAGE_NAME lists.  ##
+## ------------------------------------------ ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+echo "$as_me:$LINENO: checking for $ac_header" >&5
+echo $ECHO_N "checking for $ac_header... $ECHO_C" >&6
+if eval "test \"\${$as_ac_Header+set}\" = set"; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+echo "$as_me:$LINENO: result: `eval echo '${'$as_ac_Header'}'`" >&5
+echo "${ECHO_T}`eval echo '${'$as_ac_Header'}'`" >&6
+
+fi
+if test `eval echo '${'$as_ac_Header'}'` = yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+ echo "$as_me:$LINENO: checking for large file defines" >&5
+echo $ECHO_N "checking for large file defines... $ECHO_C" >&6
+        cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+                #include <unistd.h>
+
+int
+main ()
+{
+
+                #ifndef _LFS64_LARGEFILE
+                #error no largefile defines
+                #endif
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
+  (eval $ac_compile) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest.$ac_objext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  CFLAGS="${CFLAGS} -D_LARGEFILE64_SOURCE -D_FILE_OFFSET_BITS=64"
+                echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+echo "$as_me:$LINENO: result: none" >&5
+echo "${ECHO_T}none" >&6
+fi
+rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+
+fi
+
+done
+
+
+echo "setting SYSDEP_INC to $SYSDEP_INC"
+
+
+
 echo "$as_me:$LINENO: checking for restrict" >&5
 echo $ECHO_N "checking for restrict... $ECHO_C" >&6
 if test "${pac_cv_c_restrict+set}" = set; then
@@ -12147,7 +12399,7 @@ rm -f adio/include/romioconf.h ${use_top_srcdir}/src/mpi/romio/adio/include/romi
 # are active will be called by the top level ROMIO make
           ac_config_commands="$ac_config_commands default-1"
 
-                                                                                                                                                                                                                                                                                                                                                    ac_config_files="$ac_config_files Makefile localdefs mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h adio/ad_nfs/Makefile adio/ad_ufs/Makefile adio/ad_panfs/Makefile adio/ad_xfs/Makefile adio/ad_sfs/Makefile adio/ad_pfs/Makefile adio/ad_testfs/Makefile adio/ad_pvfs/Makefile adio/ad_pvfs2/Makefile adio/ad_gridftp/Makefile mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/pfcoll_test.f test/fperf.f mpi-io/glue/mpich2/Makefile mpi-io/glue/mpich1/Makefile mpi-io/glue/default/Makefile common/dataloop/Makefile"
+                                                                                                                                                                                                                                                                                                                                                                                  ac_config_files="$ac_config_files Makefile localdefs mpi-io/Makefile mpi2-other/info/Makefile mpi2-other/array/Makefile adio/common/Makefile test/Makefile test/misc.c test/large_file.c test/runtests util/romioinstall include/mpio.h include/mpiof.h adio/ad_nfs/Makefile adio/ad_ufs/Makefile adio/ad_bgl/Makefile adio/ad_bglockless/Makefile adio/ad_panfs/Makefile adio/ad_xfs/Makefile adio/ad_sfs/Makefile adio/ad_pfs/Makefile adio/ad_testfs/Makefile adio/ad_pvfs/Makefile adio/ad_pvfs2/Makefile adio/ad_gridftp/Makefile adio/ad_lustre/Makefile mpi-io/fortran/Makefile mpi2-other/info/fortran/Makefile mpi2-other/array/fortran/Makefile test/fmisc.f test/fcoll_test.f test/pfcoll_test.f test/fperf.f mpi-io/glue/mpich2/Makefile mpi-io/glue/mpich1/Makefile mpi-io/glue/default/Makefile common/dataloop/Makefile"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -12697,6 +12949,8 @@ do
   "include/mpiof.h" ) CONFIG_FILES="$CONFIG_FILES include/mpiof.h" ;;
   "adio/ad_nfs/Makefile" ) CONFIG_FILES="$CONFIG_FILES adio/ad_nfs/Makefile" ;;
   "adio/ad_ufs/Makefile" ) CONFIG_FILES="$CONFIG_FILES adio/ad_ufs/Makefile" ;;
+  "adio/ad_bgl/Makefile" ) CONFIG_FILES="$CONFIG_FILES adio/ad_bgl/Makefile" ;;
+  "adio/ad_bglockless/Makefile" ) CONFIG_FILES="$CONFIG_FILES adio/ad_bglockless/Makefile" ;;
   "adio/ad_panfs/Makefile" ) CONFIG_FILES="$CONFIG_FILES adio/ad_panfs/Makefile" ;;
   "adio/ad_xfs/Makefile" ) CONFIG_FILES="$CONFIG_FILES adio/ad_xfs/Makefile" ;;
   "adio/ad_sfs/Makefile" ) CONFIG_FILES="$CONFIG_FILES adio/ad_sfs/Makefile" ;;
@@ -12705,6 +12959,7 @@ do
   "adio/ad_pvfs/Makefile" ) CONFIG_FILES="$CONFIG_FILES adio/ad_pvfs/Makefile" ;;
   "adio/ad_pvfs2/Makefile" ) CONFIG_FILES="$CONFIG_FILES adio/ad_pvfs2/Makefile" ;;
   "adio/ad_gridftp/Makefile" ) CONFIG_FILES="$CONFIG_FILES adio/ad_gridftp/Makefile" ;;
+  "adio/ad_lustre/Makefile" ) CONFIG_FILES="$CONFIG_FILES adio/ad_lustre/Makefile" ;;
   "mpi-io/fortran/Makefile" ) CONFIG_FILES="$CONFIG_FILES mpi-io/fortran/Makefile" ;;
   "mpi2-other/info/fortran/Makefile" ) CONFIG_FILES="$CONFIG_FILES mpi2-other/info/fortran/Makefile" ;;
   "mpi2-other/array/fortran/Makefile" ) CONFIG_FILES="$CONFIG_FILES mpi2-other/array/fortran/Makefile" ;;
@@ -12837,6 +13092,7 @@ s,@DOCTEXT@,$DOCTEXT,;t t
 s,@EXTRA_SRC_DIRS@,$EXTRA_SRC_DIRS,;t t
 s,@FILE_SYS_DIRS@,$FILE_SYS_DIRS,;t t
 s,@GLUE_DIR@,$GLUE_DIR,;t t
+s,@SYSDEP_INC@,$SYSDEP_INC,;t t
 s,@VPATH@,$VPATH,;t t
 s,@ARCH@,$ARCH,;t t
 s,@FILE_SYSTEM@,$FILE_SYSTEM,;t t

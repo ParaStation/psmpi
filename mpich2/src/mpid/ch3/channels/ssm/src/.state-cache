@@ -1,6 +1,5 @@
 <dir>
 <file name="ch3_istartmsgv.c" info="1194043819"/>
-<file name="ch3_istartrndvmsg.c" info="1194043819"/>
 <file name="ch3_progress.c" info="1194043819"/>
 <file name="ch3_shm_memory.c" info="1194043819"/>
 <file name="ch3_finalize.c" info="1194043819"/>
@@ -8,7 +7,6 @@
 <file name="ch3_init.c" info="1194043819"/>
 <file name="ch3_isendv.c" info="1194043819"/>
 <file name="ch3_istartmsg.c" info="1194043819"/>
-<file name="ch3_istartrndvtransfer.c" info="1194043819"/>
 <file name="ch3_isend.c" info="1194043819"/>
 <file name="ch3_progress_shm.c" info="1194043819"/>
 <file name="ch3_progress_connect.c" info="1194043819"/>
@@ -18,10 +16,6 @@
 MPID_STATE_CREATE_REQUEST create_request
 MPID_STATE_MEMCPY memcpy
 MPID_STATE_MPIDI_CH3_ISTARTMSGV MPIDI_CH3_iStartMsgv
-</fileinfo>
-<fileinfo name="ch3_istartrndvmsg.c">
-MPID_STATE_MPIDI_CH3_ISTARTRNDVMSGSHM MPIDI_CH3_iStartRndvMsgShm
-MPID_STATE_MPIDI_CH3_ISTARTRNDVMSG MPIDI_CH3_iStartRndvMsg
 </fileinfo>
 <fileinfo name="ch3_progress.c">
 MPID_STATE_MPIDI_CH3I_PROGRESS MPIDI_CH3I_Progress
@@ -61,10 +55,6 @@ MPID_STATE_MPIDI_CH3_ISENDV MPIDI_CH3_iSendv
 <fileinfo name="ch3_istartmsg.c">
 MPID_STATE_CREATE_AND_ENQUEUE_REQUEST ssm_ch3istartmsg_createRequest
 MPID_STATE_MPIDI_CH3_ISTARTMSG MPIDI_CH3_iStartMsg
-</fileinfo>
-<fileinfo name="ch3_istartrndvtransfer.c">
-MPID_STATE_MPIDI_CH3_ISTARTRNDVTRANSFERSHM MPIDI_CH3_iStartRndvTransferShm
-MPID_STATE_MPIDI_CH3_ISTARTRNDVTRANSFER MPIDI_CH3_iStartRndvTransfer
 </fileinfo>
 <fileinfo name="ch3_isend.c">
 MPID_STATE_UPDATE_REQUEST update_request

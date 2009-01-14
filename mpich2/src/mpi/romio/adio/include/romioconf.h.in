@@ -225,6 +225,12 @@
 /* Define for printing error messages */
 #undef PRINT_ERR_MSG
 
+/* Define for ROMIO with BGL */
+#undef ROMIO_BGL
+
+/* Define for lock-free ROMIO with BGL */
+#undef ROMIO_BGLOCKLESS
+
 /* Define for ROMIO with gridftp */
 #undef ROMIO_GRIDFTP
 
@@ -266,6 +272,9 @@
 
 /* Define if compiling within MPICH2 */
 #undef ROMIO_INSIDE_MPICH2
+
+/* Define for ROMIO with LUSTRE */
+#undef ROMIO_LUSTRE
 
 /* Define for ROMIO with NFS */
 #undef ROMIO_NFS

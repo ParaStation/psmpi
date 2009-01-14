@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS VERSION errordir MAKE VPATH SET_CFLAGS SET_MAKE MPILIBLOC CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT F77 FFLAGS ac_ct_F77 CXX CXXFLAGS ac_ct_CXX spawndir rmadir CPP f77dir EGREP F77_NAME_MANGLE F77_GETARG_LIBS F90_GETARG_LIBS ALLOCMEMF F77_MPI_OFFSET F77_MPI_ADDRESS f90dir F90 F90FLAGS ac_ct_F90 ALLOCMEMF90 cxxdir CXXCPP iodir PERL otherlangs threadsdir FC MPIEXEC MPILIBNAME MPI_SOURCE MPISVNHOME ETAGS ETAGSADD LIB@&t@OBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS VERSION errordir MAKE VPATH SET_CFLAGS SET_MAKE MPILIBLOC CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT F77 FFLAGS ac_ct_F77 CXX CXXFLAGS ac_ct_CXX spawndir rmadir CPP f77dir EGREP F77_NAME_MANGLE F77_GETARG_LIBS F90_GETARG_LIBS ALLOCMEMF F77_MPI_OFFSET F77_MPI_ADDRESS f90dir F90 F90FLAGS ac_ct_F90 ALLOCMEMF90 cxxdir CXXCPP iodir PERL otherlangs threadsdir FC MPIEXEC MPILIBNAME MPI_SOURCE ETAGS ETAGSADD LIB@&t@OBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1610,6 +1610,14 @@ fi
 # Only run the threads tests if multiple is specified
 if test "$enable_threads" = "multiple" ; then
     threadsdir="threads"
+fi
+
+# If it is building with MPICH2, set xFLAGS to null, as mpiXX contains xFLAGS.
+if test "$FROM_MPICH2" = "yes" ; then
+    CFLAGS=""
+    CXXFLAGS=""
+    FFLAGS=""
+    F90FLAGS=""
 fi
 
 
@@ -8425,17 +8433,6 @@ if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
 
 
 
-# Get the location of the SVN repository, if present
-    # We can use this test for creating maintainer targets
-    # as well, and tests for maintainer-required software, such as 
-    # doctext
-if test -d .svn ; then
-    MPISVNHOME=`svn info . | sed -n "/Repository Root: /s/Repository Root: //p"`
-elif test -d "$srcdir/.svn" ; then
-    MPISVNHOME=`svn info $srcdir | sed -n "/Repository Root: /s/Repository Root: //p"`
-fi
-
-
 for ac_prog in etags
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
@@ -9259,7 +9256,6 @@ s,@FC@,$FC,;t t
 s,@MPIEXEC@,$MPIEXEC,;t t
 s,@MPILIBNAME@,$MPILIBNAME,;t t
 s,@MPI_SOURCE@,$MPI_SOURCE,;t t
-s,@MPISVNHOME@,$MPISVNHOME,;t t
 s,@ETAGS@,$ETAGS,;t t
 s,@ETAGSADD@,$ETAGSADD,;t t
 s,@LIB@&t@OBJS@,$LIB@&t@OBJS,;t t

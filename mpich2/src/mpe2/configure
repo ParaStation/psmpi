@@ -278,7 +278,7 @@ ac_subdirs_all="$ac_subdirs_all src/wrappers"
 ac_subdirs_all="$ac_subdirs_all src/graphics"
 ac_subdirs_all="$ac_subdirs_all src/collchk"
 ac_subdirs_all="$ac_subdirs_all src/slog2sdk"
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS top_srcdir_abs VPATH MAKE MKDIR CPRP RM MV includebuild_dir libbuild_dir binbuild_dir sbinbuild_dir etcbuild_dir MPI_CC MPI_F77 MPI_INC MPI_LIBS MPERUN htmldir docdir CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT F77 FFLAGS ac_ct_F77 FLIBS F77_NAME_MANGLE F77_OTHER_LIBS F77_LIBDIR_LEADER F77_INCDIR CPP LN_S INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA RANLIB ac_ct_RANLIB RANLIB_AFTER_INSTALL MPI_IMPL MPE_LIBNAME MPE_BUILD_FORTRAN2C CLINKER MPE_CFLAGS MPE_CLINKER FLINKER MPE_FFLAGS MPE_FLINKER subdirs LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS top_srcdir_abs VPATH MAKE MKDIR CPRP RM MV includebuild_dir libbuild_dir binbuild_dir sbinbuild_dir etcbuild_dir MPI_CC MPI_F77 MPI_INC MPI_CFLAGS MPI_FFLAGS MPI_LIBS MPERUN htmldir docdir CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT F77 FFLAGS ac_ct_F77 FLIBS F77_NAME_MANGLE F77_OTHER_LIBS F77_LIBDIR_LEADER F77_INCDIR CPP LN_S INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA RANLIB ac_ct_RANLIB RANLIB_AFTER_INSTALL MPI_IMPL MPE_LIBNAME MPE_BUILD_FORTRAN2C CLINKER MPE_CFLAGS MPE_CLINKER FLINKER MPE_FFLAGS MPE_FLINKER subdirs LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -731,6 +731,14 @@ ac_env_MPI_INC_set=${MPI_INC+set}
 ac_env_MPI_INC_value=$MPI_INC
 ac_cv_env_MPI_INC_set=${MPI_INC+set}
 ac_cv_env_MPI_INC_value=$MPI_INC
+ac_env_MPI_CFLAGS_set=${MPI_CFLAGS+set}
+ac_env_MPI_CFLAGS_value=$MPI_CFLAGS
+ac_cv_env_MPI_CFLAGS_set=${MPI_CFLAGS+set}
+ac_cv_env_MPI_CFLAGS_value=$MPI_CFLAGS
+ac_env_MPI_FFLAGS_set=${MPI_FFLAGS+set}
+ac_env_MPI_FFLAGS_value=$MPI_FFLAGS
+ac_cv_env_MPI_FFLAGS_set=${MPI_FFLAGS+set}
+ac_cv_env_MPI_FFLAGS_value=$MPI_FFLAGS
 ac_env_MPI_LIBS_set=${MPI_LIBS+set}
 ac_env_MPI_LIBS_value=$MPI_LIBS
 ac_cv_env_MPI_LIBS_set=${MPI_LIBS+set}
@@ -903,24 +911,32 @@ Optional Packages:
                                      default value is -I.
 --with-flib_path_leader=FLIB_PATH_LEADER - Specify a Fortran library path
                                      leader for linking, default value is -L.
---with-mpicc=MPI_CC                - C compiler used to compile MPI program
-                                     and to create parallel executable,
-                                     e.g. mpcc for IBM MPI, or mpicc from
-                                     MPICHx or LAM-MPI.
---with-mpif77=MPI_F77              - F77 compiler used to compile MPI program
-                                     and to create parallel executable,
-                                     e.g. mpxlf for IBM MPI, or mpif77 from
-                                     MPICHx or LAM-MPI.
---with-mpiinc=MPI_INC              - MPI compiler's include flags prefixed
-                                     with -I.  It specifies where mpi.h and
-                                     mpif.h are located,
-                                     e.g. -I/pkgs/MPI/include.
---with-mpilibs=MPI_LIBS            - MPI compiler's library flags prefixed
-                                     with -L for the library path and prefixed
-                                     with -l for the name of the MPI libraries.
+--with-mpicc=MPI_CC                - C compiler for MPI program,
+                                     e.g. mpixlc_r for BG/P MPI, or
+                                     mpicc from MPICHx, Open-MPI, or LAM-MPI.
+                                     Setting --with-mpicc to MPI wrapper
+                                     means no need to set --with-mpiinc
+                                     and --with-mpilibs.
+--with-mpif77=MPI_F77              - Fortran compiler for MPI program,
+                                     e.g. mpixlf77_r for BG/P MPI, or
+                                     mpif77 from MPICHx, Open-MPI, or LAM-MPI.
+                                     Setting --with-mpif77 to MPI wrapper
+                                     means no need to set --with-mpiinc
+                                     and --with-mpilibs.
+--with-mpiinc=MPI_INC              - MPI include path prefixed with -I.
+                                     It specifies MPI header files location,
+                                     where mpi.h and mpif.h are located,
+                                     e.g. -I/pkgs/MPI/include. This flag will
+                                     be added to MPI_CFLAGS and MPI_FFLAGS,
+                                     i.e. the MPI include path can be
+                                     explicitly set in MPI_CFLAGS and
+                                     MPI_FFLAGS without setting --with-mpiinc.
+--with-mpilibs=MPI_LIBS            - MPI library flags with -L and -l.
                                      It specifies the location of the MPI
-                                     libraries.
-                                     e.g. -L/pkgs/MPI/lib -lpmpich -lmpich.
+                                     libraries.  The flags contains library
+                                     path prefixed with -L and MPI libraries
+                                     name prefixed with -l,
+                                     e.g. -L/opt/MPI/lib -lpmpich -lmpich.
 --with-htmldir=dir                 - Specify the HTML directory.
 --with-docdir=dir                  - Specify the documentation directory.
 --with-cross-spec=file             - Specify the values of variables that
@@ -929,18 +945,23 @@ Optional Packages:
                                      a file
 
 Some influential environment variables:
-  MPI_CC      C compiler to compile MPI program and to create parallel
-              executable, e.g. mpcc for IBM MPI, or mpicc from MPICHx or
-              LAM-MPI.
-  MPI_F77     F77 compiler to compile MPI program and to create parallel
-              executable, e.g. mpxlf for IBM MPI, or mpif77 from MPICHx or
-              LAM-MPI.
-  MPI_INC     MPI compiler's include flags prefixed with -I. It specifies
-              where mpi.h and mpif.h are located, e.g. -I/pkgs/MPI/include.
-  MPI_LIBS    MPI compiler's library flags prefixed with -L for the library
-              path and prefixed with -l for the name of the MPI libraries. It
-              specifies the location of the MPI libraries. e.g.
-              -L/pkgs/MPI/lib -lpmpich -lmpich.
+  MPI_CC      C compiler for MPI program, e.g. mpixlc_r for BG/P MPI, or mpicc
+              from MPICHx, Open-MPI, or LAM-MPI. Setting MPI_CC to MPI wrapper
+              means no need to set MPI_INC and MPI_LIBS.
+  MPI_F77     Fortran compiler for MPI program, e.g. mpixlf77_r for BG/P MPI,
+              or mpif77 from MPICHx, Open-MPI, or LAM-MPI. Setting MPI_F77 to
+              MPI wrapper means no need to set MPI_INC and MPI_LIBS.
+  MPI_INC     MPI include path prefixed with -I. It specifies MPI header files
+              location, where mpi.h and mpif.h are located, e.g.
+              -I/pkgs/MPI/include. This flag will be added to MPI_CFLAGS and
+              MPI_FFLAGS, i.e. the MPI include path can be explicitly set in
+              MPI_CFLAGS and MPI_FFLAGS without setting MPI_INC.
+  MPI_CFLAGS  MPI C compiler flags to compile MPI program.
+  MPI_FFLAGS  MPI Fortran compiler flags to compile MPI Fortran program.
+  MPI_LIBS    MPI library flags with -L and -l. It specifies the location of
+              the MPI libraries. The flags contains library path prefixed with
+              -L and MPI libraries name prefixed with -l, e.g. -L/opt/MPI/lib
+              -lpmpich -lmpich.
   MPERUN      MPI application launch command. This variable is necessary only
               if user wants to run "make check", "make installcheck-all" or
               "$sbindir/mpecheckinstall -run" when the default MPERUN value,
@@ -1497,6 +1518,11 @@ if test "$FROM_MPICH2" != "yes" ; then
     F77=${F77:-f77}
     CFLAGS=${CFLAGS}
     FFLAGS=${FFLAGS}
+else
+    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
+    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
+    MPI_CFLAGS="$MPICH2_EXTRA_CFLAGS"
+    MPI_FFLAGS="$MPICH2_EXTRA_FFLAGS"
 fi
 MPE_LIBNAME=""
 
@@ -1739,13 +1765,17 @@ if test "${with_flib_path_leader+set}" = set; then
   FLIB_PATH_LEADER="$withval"
 fi;
 
-if test "$enable_g" = "yes" ; then
-    if test -z "`echo $CFLAGS | grep '\-g'`" ; then
-        CFLAGS="-g $CFLAGS"
-    fi
-    if test -z "`echo $FFLAGS | grep '\-g'`" ; then
-        FFLAGS="-g $FFLAGS"
-    fi
+if test "$enable_g" = "yes" -a "$FROM_MPICH2" != "yes" ; then
+    for flagname in CFLAGS FFLAGS MPI_CFLAGS MPI_FFLAGS ; do
+        eval flagvalue=\$"$flagname"
+        case " $flagvalue " in
+           *" -g "*)
+              ;;  # Avoid duplication, do nothing
+           *)
+              eval $flagname=\"\$flagvalue -g\"
+              ;;
+        esac
+    done
 fi
 
 # Set the various build directories and export them as environmental variables.
@@ -1832,9 +1862,17 @@ fi;
 
 
 
+
+
 # Prepend/Append '"' before/after MPERUN.
 if test "x$MPERUN" != "x" ; then
     MPERUN="\"$MPERUN\""
+fi
+
+# Preppend MPI_INC to MPI_CFLAGS/MPI_FFLAGS
+if test "x$MPI_INC" != "x" ; then
+    MPI_CFLAGS="$MPI_INC $MPI_CFLAGS"
+    MPI_FFLAGS="$MPI_INC $MPI_FFLAGS"
 fi
 
 
@@ -2832,6 +2870,8 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
+if test "$FROM_MPICH2" != "yes" ; then
+    MPE_COPTION=""
 
 
 # We must know the compiler type
@@ -2879,19 +2919,19 @@ done
 fi
 case "$enable_strict" in
     yes)
-        echo "$as_me:$LINENO: checking whether CFLAGS accepts strict compiler flags " >&5
-echo $ECHO_N "checking whether CFLAGS accepts strict compiler flags ... $ECHO_C" >&6
+        echo "$as_me:$LINENO: checking whether MPE_COPTION accepts strict compiler flags " >&5
+echo $ECHO_N "checking whether MPE_COPTION accepts strict compiler flags ... $ECHO_C" >&6
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="$CFLAGS -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
+            MPE_COPTION="$MPE_COPTION -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
             echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
 
-echo "$as_me:$LINENO: checking whether CFLAGS accepts -std=c89" >&5
-echo $ECHO_N "checking whether CFLAGS accepts -std=c89... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether MPE_COPTION accepts -std=c89" >&5
+echo $ECHO_N "checking whether MPE_COPTION accepts -std=c89... $ECHO_C" >&6
 # We must know the compiler type, assumed used in PAC_GET_GCC_STRICT_FLAGS.
 # See if we can add -std=c89
-savedCFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS -std=c89"
+savedCFLAGS="$MPE_COPTION"
+MPE_COPTION="$MPE_COPTION -std=c89"
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -2939,7 +2979,7 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "$as_me:$LINENO: result: $stdc_ok" >&5
 echo "${ECHO_T}$stdc_ok" >&6
 if test "$stdc_ok" != yes ; then
-   CFLAGS="$savedCFLAGS"
+   MPE_COPTION="$savedCFLAGS"
 fi
 
         else
@@ -2948,19 +2988,19 @@ echo "$as_me: WARNING: no, strict support for gcc only!" >&2;}
         fi
         ;;
     all)
-        echo "$as_me:$LINENO: checking whether CFLAGS accepts strict compiler flags " >&5
-echo $ECHO_N "checking whether CFLAGS accepts strict compiler flags ... $ECHO_C" >&6
+        echo "$as_me:$LINENO: checking whether MPE_COPTION accepts strict compiler flags " >&5
+echo $ECHO_N "checking whether MPE_COPTION accepts strict compiler flags ... $ECHO_C" >&6
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="$CFLAGS -Wall -O -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wno-long-long"
+            MPE_COPTION="$MPE_COPTION -Wall -O -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wno-long-long"
             echo "$as_me:$LINENO: result: yes, all possible flags." >&5
 echo "${ECHO_T}yes, all possible flags." >&6
 
-echo "$as_me:$LINENO: checking whether CFLAGS accepts -std=c89" >&5
-echo $ECHO_N "checking whether CFLAGS accepts -std=c89... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether MPE_COPTION accepts -std=c89" >&5
+echo $ECHO_N "checking whether MPE_COPTION accepts -std=c89... $ECHO_C" >&6
 # We must know the compiler type, assumed used in PAC_GET_GCC_STRICT_FLAGS.
 # See if we can add -std=c89
-savedCFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS -std=c89"
+savedCFLAGS="$MPE_COPTION"
+MPE_COPTION="$MPE_COPTION -std=c89"
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -3008,7 +3048,7 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "$as_me:$LINENO: result: $stdc_ok" >&5
 echo "${ECHO_T}$stdc_ok" >&6
 if test "$stdc_ok" != yes ; then
-   CFLAGS="$savedCFLAGS"
+   MPE_COPTION="$savedCFLAGS"
 fi
 
         else
@@ -3017,19 +3057,19 @@ echo "$as_me: WARNING: no, strict support for gcc only!" >&2;}
         fi
         ;;
     posix)
-        echo "$as_me:$LINENO: checking whether CFLAGS accepts strict compiler flags " >&5
-echo $ECHO_N "checking whether CFLAGS accepts strict compiler flags ... $ECHO_C" >&6
+        echo "$as_me:$LINENO: checking whether MPE_COPTION accepts strict compiler flags " >&5
+echo $ECHO_N "checking whether MPE_COPTION accepts strict compiler flags ... $ECHO_C" >&6
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="$CFLAGS -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L"
+            MPE_COPTION="$MPE_COPTION -Wall -O2 -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L"
             echo "$as_me:$LINENO: result: yes, POSIX flavored flags." >&5
 echo "${ECHO_T}yes, POSIX flavored flags." >&6
 
-echo "$as_me:$LINENO: checking whether CFLAGS accepts -std=c89" >&5
-echo $ECHO_N "checking whether CFLAGS accepts -std=c89... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether MPE_COPTION accepts -std=c89" >&5
+echo $ECHO_N "checking whether MPE_COPTION accepts -std=c89... $ECHO_C" >&6
 # We must know the compiler type, assumed used in PAC_GET_GCC_STRICT_FLAGS.
 # See if we can add -std=c89
-savedCFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS -std=c89"
+savedCFLAGS="$MPE_COPTION"
+MPE_COPTION="$MPE_COPTION -std=c89"
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -3077,7 +3117,7 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "$as_me:$LINENO: result: $stdc_ok" >&5
 echo "${ECHO_T}$stdc_ok" >&6
 if test "$stdc_ok" != yes ; then
-   CFLAGS="$savedCFLAGS"
+   MPE_COPTION="$savedCFLAGS"
 fi
 
         else
@@ -3086,19 +3126,19 @@ echo "$as_me: WARNING: no, strict support for gcc only!" >&2;}
         fi
         ;;
     noopt)
-        echo "$as_me:$LINENO: checking whether CFLAGS accepts strict compiler flags " >&5
-echo $ECHO_N "checking whether CFLAGS accepts strict compiler flags ... $ECHO_C" >&6
+        echo "$as_me:$LINENO: checking whether MPE_COPTION accepts strict compiler flags " >&5
+echo $ECHO_N "checking whether MPE_COPTION accepts strict compiler flags ... $ECHO_C" >&6
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="$CFLAGS -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
+            MPE_COPTION="$MPE_COPTION -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
             echo "$as_me:$LINENO: result: yes, non-optimized flags." >&5
 echo "${ECHO_T}yes, non-optimized flags." >&6
 
-echo "$as_me:$LINENO: checking whether CFLAGS accepts -std=c89" >&5
-echo $ECHO_N "checking whether CFLAGS accepts -std=c89... $ECHO_C" >&6
+echo "$as_me:$LINENO: checking whether MPE_COPTION accepts -std=c89" >&5
+echo $ECHO_N "checking whether MPE_COPTION accepts -std=c89... $ECHO_C" >&6
 # We must know the compiler type, assumed used in PAC_GET_GCC_STRICT_FLAGS.
 # See if we can add -std=c89
-savedCFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS -std=c89"
+savedCFLAGS="$MPE_COPTION"
+MPE_COPTION="$MPE_COPTION -std=c89"
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -3146,7 +3186,7 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "$as_me:$LINENO: result: $stdc_ok" >&5
 echo "${ECHO_T}$stdc_ok" >&6
 if test "$stdc_ok" != yes ; then
-   CFLAGS="$savedCFLAGS"
+   MPE_COPTION="$savedCFLAGS"
 fi
 
         else
@@ -3166,6 +3206,11 @@ echo "$as_me: WARNING: Unrecognized value for enable-strict:$enable_strict" >&2;
         ;;
 esac
 
+    if test "x$MPE_COPTION" != "x" ; then
+        CFLAGS="$CFLAGS $MPE_COPTION"
+        MPI_CFLAGS="$MPI_CFLAGS $MPE_COPTION"
+    fi
+fi
 
 echo "$as_me:$LINENO: checking whether MPI_CC has been set " >&5
 echo $ECHO_N "checking whether MPI_CC has been set ... $ECHO_C" >&6
@@ -3268,7 +3313,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:3271:" \
+echo "$as_me:3316:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -3437,7 +3482,7 @@ if test "$MPI_IMPL" != "MPICH" -a "$MPI_IMPL" != "MPICH2" ; then
 echo $ECHO_N "checking for the linkage of the supplied MPI C definitions ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -3561,7 +3606,7 @@ echo $ECHO_N "checking for the linkage of the supplied MPI F77 definitions ... $
 
 
     pac_MPI_F77="$MPI_F77"
-    pac_MPI_FFLAGS="$FFLAGS $MPI_INC"
+    pac_MPI_FFLAGS="$MPI_FFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -3667,7 +3712,7 @@ fi
 echo $ECHO_N "checking for the C version of MPI_Wtime() ... $ECHO_C" >&6
 
     pac_MPI_CC="$MPI_CC"
-    pac_MPI_CFLAGS="$CFLAGS $MPI_INC"
+    pac_MPI_CFLAGS="$MPI_CFLAGS"
     pac_MPI_LIBS="$MPI_LIBS"
 
 
@@ -3859,7 +3904,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_verb"
-(eval echo $as_me:3862: \"$ac_link\") >&5
+(eval echo $as_me:3907: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -3937,7 +3982,7 @@ _ACEOF
 # flags.
 ac_save_FFLAGS=$FFLAGS
 FFLAGS="$FFLAGS $ac_cv_prog_f77_v"
-(eval echo $as_me:3940: \"$ac_link\") >&5
+(eval echo $as_me:3985: \"$ac_link\") >&5
 ac_f77_v_output=`eval $ac_link 5>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f77_v_output" >&5
 FFLAGS=$ac_save_FFLAGS
@@ -5614,6 +5659,7 @@ if test -z "$FLINKER" ; then FLINKER="$F77" ; fi
 
 
 
+
 $RM -f $srcdir/mpe_conf.h
 
 export MPI_IMPL
@@ -5622,14 +5668,15 @@ export MPE_BUILD_FORTRAN2C
 export CC
 export CLINKER
 export MPI_CC
+export MPI_CFLAGS
 export MPE_CLINKER
 export MPE_CFLAGS
 export F77
 export FLINKER
 export MPI_F77
+export MPI_FFLAGS
 export MPE_FLINKER
 export MPE_FFLAGS
-export MPI_INC
 export MPI_LIBS
 export LDFLAGS
 export FINC_PATH_LEADER
@@ -6412,6 +6459,8 @@ s,@etcbuild_dir@,$etcbuild_dir,;t t
 s,@MPI_CC@,$MPI_CC,;t t
 s,@MPI_F77@,$MPI_F77,;t t
 s,@MPI_INC@,$MPI_INC,;t t
+s,@MPI_CFLAGS@,$MPI_CFLAGS,;t t
+s,@MPI_FFLAGS@,$MPI_FFLAGS,;t t
 s,@MPI_LIBS@,$MPI_LIBS,;t t
 s,@MPERUN@,$MPERUN,;t t
 s,@htmldir@,$htmldir,;t t

@@ -33,10 +33,10 @@ F77HEADERS = typeaints.h
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
 	-rootdir=../../../../ \
 	-configdir=test/mpi/ \
-	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
 	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
 	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \

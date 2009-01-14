@@ -1361,6 +1361,15 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
+# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
+    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
+    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
+    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
+    F90FLAGS="$MPICH2_INTERNAL_C90FLAGS"
+
+
 if test -f $CONFIG_AUX_DIR/install-sh ; then ac_aux_dir=$CONFIG_AUX_DIR
 else
 ac_aux_dir=
@@ -1621,14 +1630,16 @@ fi
 done
 
     fi
+    pac_cc_strict_flags=""
     case "$enable_strict" in
-	yes)
+        yes)
         enable_strict_done="yes"
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="${CFLAGS} -Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
-	    echo "$as_me:$LINENO: result: Adding strict check arguments to CFLAGS" >&5
+            pac_cc_strict_flags="-Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
+            CFLAGS="$CFLAGS $pac_cc_strict_flags"
+            echo "$as_me:$LINENO: result: Adding strict check arguments to CFLAGS" >&5
 echo "${ECHO_T}Adding strict check arguments to CFLAGS" >&6
-	    echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
+            echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
 echo $ECHO_N "checking whether we can add -std=c89... $ECHO_C" >&6
             # See if we can add -std=c89
             savCFLAGS=$CFLAGS
@@ -1681,17 +1692,20 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "${ECHO_T}$stdc_ok" >&6
             if test "$stdc_ok" != yes ; then
                 CFLAGS="$savCFLAGS"
+            else
+                pac_cc_strict_flags="$pac_cc_strict_flags -std=c89"
             fi
-	else
-	    { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
+        else
+            { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
 echo "$as_me: WARNING: enable strict supported only for gcc" >&2;}
-    	fi
- 	;;
-	all)
+        fi
+        ;;
+        all)
         enable_strict_done="yes"
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="${CFLAGS} -Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wunused-parameter -Wunused-value -Wno-long-long"
-	    echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
+            pac_cc_strict_flags="-Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wunused-parameter -Wunused-value -Wno-long-long"
+            CFLAGS="$CFLAGS $pac_cc_strict_flags"
+            echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
 echo $ECHO_N "checking whether we can add -std=c89... $ECHO_C" >&6
             # See if we can add -std=c89
             savCFLAGS=$CFLAGS
@@ -1744,20 +1758,23 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "${ECHO_T}$stdc_ok" >&6
             if test "$stdc_ok" != yes ; then
                 CFLAGS="$savCFLAGS"
+            else
+                pac_cc_strict_flags="$pac_cc_strict_flags -std=c89"
             fi
-	else
-	    { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
+        else
+            { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
 echo "$as_me: WARNING: enable strict supported only for gcc" >&2;}
-    	fi
-	;;
+        fi
+        ;;
 
-	posix)
-	enable_strict_done="yes"
+        posix)
+        enable_strict_done="yes"
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="${CFLAGS} -Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L"
-	    echo "$as_me:$LINENO: result: Adding strict check arguments (POSIX flavor) to CFLAGS" >&5
+            pac_cc_strict_flags="-Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L"
+            CFLAGS="$CFLAGS $pac_cc_strict_flags"
+            echo "$as_me:$LINENO: result: Adding strict check arguments (POSIX flavor) to CFLAGS" >&5
 echo "${ECHO_T}Adding strict check arguments (POSIX flavor) to CFLAGS" >&6
-	    echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
+            echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
 echo $ECHO_N "checking whether we can add -std=c89... $ECHO_C" >&6
             # See if we can add -std=c89
             savCFLAGS=$CFLAGS
@@ -1810,20 +1827,23 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "${ECHO_T}$stdc_ok" >&6
             if test "$stdc_ok" != yes ; then
                 CFLAGS="$savCFLAGS"
+            else
+                pac_cc_strict_flags="$pac_cc_strict_flags -std=c89"
             fi
-	else
-	    { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
+        else
+            { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
 echo "$as_me: WARNING: enable strict supported only for gcc" >&2;}
-    	fi
- 	;;
+        fi
+        ;;
 
-	noopt)
+        noopt)
         enable_strict_done="yes"
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="${CFLAGS} -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
-	    echo "$as_me:$LINENO: result: Adding strict check arguments to CFLAGS" >&5
+            pac_cc_strict_flags="-Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
+            CFLAGS="$CFLAGS $pac_cc_strict_flags"
+            echo "$as_me:$LINENO: result: Adding strict check arguments to CFLAGS" >&5
 echo "${ECHO_T}Adding strict check arguments to CFLAGS" >&6
-	    echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
+            echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
 echo $ECHO_N "checking whether we can add -std=c89... $ECHO_C" >&6
             # See if we can add -std=c89
             savCFLAGS=$CFLAGS
@@ -1876,22 +1896,24 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "${ECHO_T}$stdc_ok" >&6
             if test "$stdc_ok" != yes ; then
                 CFLAGS="$savCFLAGS"
+            else
+                pac_cc_strict_flags="$pac_cc_strict_flags -std=c89"
             fi
-	else
-	    { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
+        else
+            { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
 echo "$as_me: WARNING: enable strict supported only for gcc" >&2;}
-    	fi
-	;;
-	no)
-	# Accept and ignore this value
-	:
-	;;
-	*)
-	if test -n "$enable_strict" ; then
-  	    { echo "$as_me:$LINENO: WARNING: Unrecognized value for enable-strict:$enable_strict" >&5
+        fi
+        ;;
+        no)
+        # Accept and ignore this value
+        :
+        ;;
+        *)
+        if test -n "$enable_strict" ; then
+            { echo "$as_me:$LINENO: WARNING: Unrecognized value for enable-strict:$enable_strict" >&5
 echo "$as_me: WARNING: Unrecognized value for enable-strict:$enable_strict" >&2;}
-	fi
-	;;
+        fi
+        ;;
     esac
 fi
 
@@ -2156,7 +2178,7 @@ echo "${ECHO_T}unknown!" >&6
     rm -f conftest*
 fi
 # Provide some information about the compiler.
-echo "$as_me:2159:" \
+echo "$as_me:2181:" \
      "checking for Fortran 90 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -2800,7 +2822,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:2803:" \
+echo "$as_me:2825:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4046,6 +4068,9 @@ F90INCFLAG=-I
 if test -z "$F90_LIBDIR_LEADER" ; then
     F90_LIBDIR_LEADER="-L"
 fi
+
+
+
 
 
           ac_config_files="$ac_config_files mpif90model.h"

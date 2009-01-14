@@ -1,6 +1,6 @@
 #! /usr/bin/perl -w
 # -*- Mode: perl; -*-
-$abs_mpich2srcdir = "/sandbox/thakur/mpich2-1.0.7rc1";
+$abs_mpich2srcdir = "/sandbox/balaji/trunk/maint/mpich2-1.0.7";
 # 
 # (C) 2006 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
@@ -3765,7 +3765,7 @@ sub TargetInstall {
                 # $file as the first argument.  Strictly speaking, this is not compatible with using
                 # libtool directly, so if we ever replace createshlib then we should rework this
                 # uninstall target just a bit. [goodell@mcs 2007-11-28]
-                print FD "\t$uninstall_methods{$kind} $file \${DESTDIR}\${$dir}/$destfile$newline";
+                print FD "\t-$uninstall_methods{$kind} $file \${DESTDIR}\${$dir}/$destfile$newline";
             }
             else {
                 print FD "\t-rm -f \${DESTDIR}\${$dir}/$destfile$newline";
@@ -3782,7 +3782,7 @@ sub TargetInstall {
                 # $file as the first argument.  Strictly speaking, this is not compatible with using
                 # libtool directly, so if we ever replace createshlib then we should rework this
                 # uninstall target just a bit. [goodell@mcs 2007-11-28]
-                print FD "\t$uninstall_methods{$kind} $file \${DESTDIR}\${$dir}/$destfile$newline";
+                print FD "\t-$uninstall_methods{$kind} $file \${DESTDIR}\${$dir}/$destfile$newline";
             }
             else {
                 print FD "\t-rm -f \${DESTDIR}\${$dir}/$destfile$newline";

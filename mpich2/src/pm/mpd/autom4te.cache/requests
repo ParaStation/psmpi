@@ -7,7 +7,8 @@
                       '0',
                       1,
                       [
-                        '/usr/share/autoconf'
+                        '/usr/share/autoconf',
+                        '../../../confdb'
                       ],
                       [
                         '/usr/share/autoconf/autoconf/autoconf.m4f',

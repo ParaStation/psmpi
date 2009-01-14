@@ -1384,6 +1384,14 @@ ac_config_sub=$ac_aux_dir/config.sub
 ac_configure=$ac_aux_dir/configure # This should be Cygnus configure.
 
 
+
+# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
+    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
+    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
+    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
+    F90FLAGS="$MPICH2_INTERNAL_C90FLAGS"
+
+
           ac_config_headers="$ac_config_headers include/mpidi_ch3i_sctp_conf.h"
 
 
@@ -2938,7 +2946,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 2941 "configure"
+#line 2949 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -3121,7 +3129,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 3124 "configure"
+#line 3132 "configure"
 #include "confdefs.h"
 #include <netinet/sctp.h>
 int conftest() {return 0;}
@@ -3279,6 +3287,9 @@ export ETAGS
 export ETAGSADD
 
 CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
+
+
+
 
                               ac_config_files="$ac_config_files Makefile src/Makefile localdefs"
 cat >confcache <<\_ACEOF

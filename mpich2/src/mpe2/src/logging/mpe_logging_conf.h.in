@@ -33,6 +33,9 @@
 /* Define to 1 if O_BINARY flag for open() exists. */
 #undef HAVE_O_BINARY
 
+/* Define to 1 if O_LARGEFILE flag for open() exists. */
+#undef HAVE_O_LARGEFILE
+
 /* Define if PMPI_Comm_Create_keyval() available */
 #undef HAVE_PMPI_COMM_CREATE_KEYVAL
 
@@ -173,7 +176,7 @@
 
 #else
 
-#if defined(_LARGEFILE64_SOURCE)
+#if defined(HAVE_O_LARGEFILE)
 
 #if defined(HAVE_O_BINARY)
 #define OPEN( a, b, c )    open( a, b | O_LARGEFILE | O_BINARY, c )
@@ -189,7 +192,7 @@
 #define OPEN( a, b, c )    open( a, b, c )
 #endif    /* HAVE_O_BINARY */
 
-#endif    /* _LARGEFILE64_SOURCE */
+#endif    /* HAVE_O_LARGEFILE */
 
 #endif    /* HAVE_WINDOWS_H */
 

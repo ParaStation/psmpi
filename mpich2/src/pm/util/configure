@@ -842,11 +842,6 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
 --enable-cache  - Turn on configure caching
 --enable-echo  - Turn on strong echoing. The default is enable=no.
---enable-strict - Turn on strict debugging with gcc
---enable-g=option - Control the level of debugging support in the PMI
-implementation.  option may be a list of common separated names including
-    none  - No debugging
-    all   - All of the above choices
 --enable-onsig - Control the handling of processes that signal (e.g., SEGV)
  using ptrace.  Disabled by default
 --enable-newsession - Create a new process group session if standard in is
@@ -1398,6 +1393,15 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
+# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
+    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
+    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
+    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
+    F90FLAGS="$MPICH2_INTERNAL_C90FLAGS"
+
+
           ac_config_headers="$ac_config_headers pmutilconf.h"
 
 
@@ -1448,20 +1452,7 @@ if test "${enable_echo+set}" = set; then
   enableval="$enable_echo"
   set -x
 fi;
-# Check whether --enable-strict or --disable-strict was given.
-if test "${enable_strict+set}" = set; then
-  enableval="$enable_strict"
 
-else
-  enable_strict=no
-fi;
-# Check whether --enable-g or --disable-g was given.
-if test "${enable_g+set}" = set; then
-  enableval="$enable_g"
-
-else
-  enable_g=none
-fi;
 # Check whether --enable-onsig or --disable-onsig was given.
 if test "${enable_onsig+set}" = set; then
   enableval="$enable_onsig"
@@ -1525,26 +1516,7 @@ echo "$as_me: error: You cannot do a VPATH build if the source directory has bee
 fi
 rm -f conftest*
 
-# strip off multiple options, separated by commas
-save_IFS="$IFS"
-IFS=","
-for option in $enable_g ; do
-case "$option" in
-    no|none)
-    ;;
-    mem|dbg|all|yes|debug)
-    CFLAGS="$CFLAGS -g"
-    ;;
-    log|handle|fine-grain-nesting|fg-nesting|nesting)
-    # Simply ignore these
-    ;;
-    *)
-    { echo "$as_me:$LINENO: WARNING: Unknown value $option for enable-g" >&5
-echo "$as_me: WARNING: Unknown value $option for enable-g" >&2;}
-    ;;
-esac
-done
-IFS="$save_IFS"
+
 if test -z "$top_srcdir" ; then
    use_top_srcdir=$srcdir
 else
@@ -2919,14 +2891,16 @@ fi
 done
 
     fi
+    pac_cc_strict_flags=""
     case "$enable_strict" in
-	yes)
+        yes)
         enable_strict_done="yes"
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="${CFLAGS} -Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
-	    echo "$as_me:$LINENO: result: Adding strict check arguments to CFLAGS" >&5
+            pac_cc_strict_flags="-Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
+            CFLAGS="$CFLAGS $pac_cc_strict_flags"
+            echo "$as_me:$LINENO: result: Adding strict check arguments to CFLAGS" >&5
 echo "${ECHO_T}Adding strict check arguments to CFLAGS" >&6
-	    echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
+            echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
 echo $ECHO_N "checking whether we can add -std=c89... $ECHO_C" >&6
             # See if we can add -std=c89
             savCFLAGS=$CFLAGS
@@ -2979,17 +2953,20 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "${ECHO_T}$stdc_ok" >&6
             if test "$stdc_ok" != yes ; then
                 CFLAGS="$savCFLAGS"
+            else
+                pac_cc_strict_flags="$pac_cc_strict_flags -std=c89"
             fi
-	else
-	    { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
+        else
+            { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
 echo "$as_me: WARNING: enable strict supported only for gcc" >&2;}
-    	fi
- 	;;
-	all)
+        fi
+        ;;
+        all)
         enable_strict_done="yes"
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="${CFLAGS} -Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wunused-parameter -Wunused-value -Wno-long-long"
-	    echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
+            pac_cc_strict_flags="-Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -Wunused -Wshadow -Wmissing-declarations -Wunused-parameter -Wunused-value -Wno-long-long"
+            CFLAGS="$CFLAGS $pac_cc_strict_flags"
+            echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
 echo $ECHO_N "checking whether we can add -std=c89... $ECHO_C" >&6
             # See if we can add -std=c89
             savCFLAGS=$CFLAGS
@@ -3042,20 +3019,23 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "${ECHO_T}$stdc_ok" >&6
             if test "$stdc_ok" != yes ; then
                 CFLAGS="$savCFLAGS"
+            else
+                pac_cc_strict_flags="$pac_cc_strict_flags -std=c89"
             fi
-	else
-	    { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
+        else
+            { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
 echo "$as_me: WARNING: enable strict supported only for gcc" >&2;}
-    	fi
-	;;
+        fi
+        ;;
 
-	posix)
-	enable_strict_done="yes"
+        posix)
+        enable_strict_done="yes"
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="${CFLAGS} -Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L"
-	    echo "$as_me:$LINENO: result: Adding strict check arguments (POSIX flavor) to CFLAGS" >&5
+            pac_cc_strict_flags="-Wall $GCC_OPTFLAG -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL -D_POSIX_C_SOURCE=199506L"
+            CFLAGS="$CFLAGS $pac_cc_strict_flags"
+            echo "$as_me:$LINENO: result: Adding strict check arguments (POSIX flavor) to CFLAGS" >&5
 echo "${ECHO_T}Adding strict check arguments (POSIX flavor) to CFLAGS" >&6
-	    echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
+            echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
 echo $ECHO_N "checking whether we can add -std=c89... $ECHO_C" >&6
             # See if we can add -std=c89
             savCFLAGS=$CFLAGS
@@ -3108,20 +3088,23 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "${ECHO_T}$stdc_ok" >&6
             if test "$stdc_ok" != yes ; then
                 CFLAGS="$savCFLAGS"
+            else
+                pac_cc_strict_flags="$pac_cc_strict_flags -std=c89"
             fi
-	else
-	    { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
+        else
+            { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
 echo "$as_me: WARNING: enable strict supported only for gcc" >&2;}
-    	fi
- 	;;
+        fi
+        ;;
 
-	noopt)
+        noopt)
         enable_strict_done="yes"
         if test "$ac_cv_c_compiler_gnu" = "yes" ; then
-            CFLAGS="${CFLAGS} -Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
-	    echo "$as_me:$LINENO: result: Adding strict check arguments to CFLAGS" >&5
+            pac_cc_strict_flags="-Wall -Wstrict-prototypes -Wmissing-prototypes -Wundef -Wpointer-arith -Wbad-function-cast -ansi -DGCC_WALL"
+            CFLAGS="$CFLAGS $pac_cc_strict_flags"
+            echo "$as_me:$LINENO: result: Adding strict check arguments to CFLAGS" >&5
 echo "${ECHO_T}Adding strict check arguments to CFLAGS" >&6
-	    echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
+            echo "$as_me:$LINENO: checking whether we can add -std=c89" >&5
 echo $ECHO_N "checking whether we can add -std=c89... $ECHO_C" >&6
             # See if we can add -std=c89
             savCFLAGS=$CFLAGS
@@ -3174,22 +3157,24 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 echo "${ECHO_T}$stdc_ok" >&6
             if test "$stdc_ok" != yes ; then
                 CFLAGS="$savCFLAGS"
+            else
+                pac_cc_strict_flags="$pac_cc_strict_flags -std=c89"
             fi
-	else
-	    { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
+        else
+            { echo "$as_me:$LINENO: WARNING: enable strict supported only for gcc" >&5
 echo "$as_me: WARNING: enable strict supported only for gcc" >&2;}
-    	fi
-	;;
-	no)
-	# Accept and ignore this value
-	:
-	;;
-	*)
-	if test -n "$enable_strict" ; then
-  	    { echo "$as_me:$LINENO: WARNING: Unrecognized value for enable-strict:$enable_strict" >&5
+        fi
+        ;;
+        no)
+        # Accept and ignore this value
+        :
+        ;;
+        *)
+        if test -n "$enable_strict" ; then
+            { echo "$as_me:$LINENO: WARNING: Unrecognized value for enable-strict:$enable_strict" >&5
 echo "$as_me: WARNING: Unrecognized value for enable-strict:$enable_strict" >&2;}
-	fi
-	;;
+        fi
+        ;;
     esac
 fi
 
@@ -4521,7 +4506,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 4524 "configure"
+#line 4509 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -5407,7 +5392,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 5410 "configure"
+#line 5395 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -6412,7 +6397,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 6415 "configure"
+#line 6400 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -6590,7 +6575,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 6593 "configure"
+#line 6578 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -6763,6 +6748,9 @@ if test -n "$CONF_BASE_CACHEFILE" -a -s "$CONF_BASE_CACHEFILE" ; then
 	mv $CONF_BASE_CACHEFILE.new $CONF_BASE_CACHEFILE
     fi
 fi
+
+
+
 
 
                     ac_config_files="$ac_config_files Makefile test/Makefile"

@@ -1,4 +1,4 @@
-			MPICH2 Release 1.0.7rc1
+			MPICH2 Release 1.0.7
 
 MPICH2 is an all-new implementation of MPI from the group at Argonne
 National Laboratory.  It shares many goals with the original MPICH but
@@ -34,7 +34,7 @@ later, in the section "Alternative configurations".
 
 1.  You will need the following prerequisites.
 
-    - This tar file mpich2-1.0.7rc1.tar.gz
+    - This tar file mpich2-1.0.7.tar.gz
 
     - A C compiler (gcc is sufficient)
 
@@ -65,24 +65,24 @@ later, in the section "Alternative configurations".
 
 2.  Unpack the tar file and go to the top level directory:
 
-      tar xfz mpich2-1.0.7rc1.tar.gz
-      cd mpich2-1.0.7rc1
+      tar xfz mpich2-1.0.7.tar.gz
+      cd mpich2-1.0.7
 
     If your tar doesn't accept the z option, use
 
       gunzip mpich2.tar.gz
       tar xf mpich2.tar
-      cd mpich2-1.0.7rc1
+      cd mpich2-1.0.7
 
-3.  Choose an installation directory (the default is /usr/local/bin):
-
-      mkdir /home/you/mpich2-install
-
+3.  Choose an installation directory (the default is /usr/local/bin),
+    /home/you/mpich2-install which is assumed to non-existent or empty.
     It will be most convenient if this directory is shared by all of the
     machines where you intend to run processes.  If not, you will have
     to duplicate it on the other machines after installation.
 
-4.  Configure MPICH2, specifying the installation directory:
+4.  Configure MPICH2 (The steps described here are called inpath-build,
+    we recommend user to do vpath build if possible), specifying the
+    installation directory:
 
     for csh and tcsh:
 
@@ -154,7 +154,7 @@ later, in the section "Alternative configurations".
     MPD, which is a ring of daemons on the machines where you will run
     your MPI programs.  In the next few steps, you will get his ring up
     and tested.  More details on interacting with MPD can be found in
-    the README file in mpich2-1.0.7rc1/src/pm/mpd, such as how to list
+    the README file in mpich2-1.0.7/src/pm/mpd, such as how to list
     running jobs, kill, suspend, or otherwise signal them, and how to
     debug programs with "mpiexec -gdb".
 
@@ -237,7 +237,7 @@ later, in the section "Alternative configurations".
 
     to see which machines are in the ring so far.  More details on
     mpdboot and other options for starting the mpd's are in
-    mpich2-1.0.7rc1/src/pm/mpd/README.
+    mpich2-1.0.7/src/pm/mpd/README.
 
  !! ***************************
     If you are still having problems getting the mpd ring established,
@@ -279,7 +279,7 @@ later, in the section "Alternative configurations".
 14. Now we will run an MPI job, using the mpiexec command as specified
     in the MPI-2 standard.  There are some examples in the install
     directory, which you have already put in your path, as well as in
-    the directory mpich2-1.0.7rc1/examples.  One of them is the classic
+    the directory mpich2-1.0.7/examples.  One of them is the classic
     cpi example, which computes the value of pi by numerical
     integration in parallel.
 
@@ -344,22 +344,41 @@ in the mpich2 directory.  The alternatives described below are
 configured by adding arguments to the configure step.
 
 
-Compiler Optimization Levels
-============================
+Compiler Flags
+==============
 
-By default, the MPICH2 library is built with the -O2 optimization
-level if it is available. The mpicc and other scripts that are used to
-compile applications do not include any optimization flag by
-default. If you want to build the MPICH2 library with a specific
-optimization level, set the environment variable CFLAGS to that level
-before running configure. If you do not want this CFLAGS value to be
-included in the mpicc script, set the environment variable MPI_CFLAGS
-to MPI_FLAGS_EMPTY. For example, to build a "production" MPICH2 in a
-GNU environment, you may want to do:
-     setenv CFLAGS -O3
-     setenv MPI_CFLAGS MPI_FLAGS_EMPTY
-before running configure. This will cause the MPICH2 library to be
-built with -O3, but -O3 will not be included in the mpicc script.
+MPICH2 can be configured with two sets of compiler flags:
+CFLAGS, CXXFLAGS, FFLAGS, F90FLAGS (abbreviated as xFLAGS) and
+MPICH2LIB_CFLAGS, MPICH2LIB_CXXFLAGS, MPICH2LIB_FFLAGS, MPICH2LIB_F90FLAGS
+(abbreviated as MPICH2LIB_xFLAGS) for compilation;
+LDFLAGS and MPICH2LIB_LDFLAGS for linking. All these flags can be set
+as part of configure command or through environment variables.
+(CPPFLAGS stands for C preprocessor flags, which should NOT be set)
+
+Both xFLAGS and MPICH2LIB_xFLAGS affect the compilation of the MPICH2
+libraries. However, only xFLAGS is appended to MPI wrapper scripts, mpicc
+and friends.
+
+MPICH2 libraries are built with default compiler optimization, -O2,
+which can be modified by --enable-fast configure option.  For instance,
+--disable-fast disables the default optimization option.
+--enable-fast=O<n> sets default compiler optimization as -O<n>.
+For more details of --enable-fast, see the output of "configure --help".
+Any other complicated optimization flags for MPICH2 libraries have
+to be set throught MPICH2LIB_xFLAGS.  CFLAGS and friends
+are empty by default.
+
+For example, to build a "production" MPICH2 environment with -O3 for all
+language bindings, one can simply do
+
+  ./configure --enable-fast=O3
+
+or
+
+  ./configure --disable-fast MPICH2LIB_CFLAGS=-O3 MPICH2LIB_FFLAGS=-O3 MPICH2LIB_CXXFLAGS=-O3 MPICH2LIB_F90FLAGS=-O3
+
+This will cause the MPICH2 libraries to be built with -O3, and -O3 will
+not be included in the mpicc and other MPI wrapper script.
 
 
 Alternative Process Managers
@@ -368,7 +387,7 @@ Alternative Process Managers
 mpd
 ---
 MPD is the default process manager.  Its setup and use have been
-described above.  The file mpich2-1.0.7rc1/src/pm/mpd/README has more 
+described above.  The file mpich2-1.0.7/src/pm/mpd/README has more 
 information about interactive commands for managing the ring of MPDs.
 
 smpd
@@ -376,7 +395,7 @@ smpd
 SMPD is a process management system for both Microsoft Windows and UNIX.
 SMPD is capable of starting a job where some processes are running on
 Windows and others are running on a variant of UNIX.  For more
-information, please see mpich2-1.0.7rc1/src/pm/smpd/README. 
+information, please see mpich2-1.0.7/src/pm/smpd/README.
 
 gforker
 -------
@@ -386,6 +405,13 @@ particularly appropriate for shared-memory multiprocessors (SMPs) where
 you want to create all the processes on the same machine.  gforker is
 also useful for debugging, where running all the processes on a single
 machine is often convenient.
+
+slurm
+-----
+SLURM is an external process manager not distributed with
+MPICH2. However, we provide configure options that allow integration
+with SLURM. To enable this support, use "--with-pmi=slurm
+--with-pm=no" option with configure.
 
 
 Alternative Channels and Devices
@@ -502,7 +528,7 @@ TCP.
   If you're using gcc, you can do this by adding 
     LD_LIBRARY_PATH=/path/to/lib 
   and
-    MPI_LDFLAGS="-Wl,-rpath -Wl,/path/to/lib"
+    LDFLAGS="-Wl,-rpath -Wl,/path/to/lib"
   as arguments to configure.
 
   Using the --enable-fast configure option significantly improves
@@ -574,13 +600,14 @@ SCTP stack specific instructions:
   For Solaris, SCTP comes with the default Solaris 10 kernel; the lib
   and include in /usr, so nothing needs to be specified for --with-sctp
   since /usr is often in the default search path.  In order to compile
-  under Solaris, CFLAGS must have -DMPICH_SCTP_CONCATENATES_IOVS set
-  when running MPICH2's configure script.
+  under Solaris, MPICH2LIB_CFLAGS must have
+  -DMPICH_SCTP_CONCATENATES_IOVS set when running MPICH2's configure
+  script.
 
-MPICH2 v1.0.5 was the initial release of the SCTP channel, so feedback is
-definitely still welcomed.  All MPI features except multithreading are 
-supported.  Some performance optimizations could surely exist for this 
-channel and will be investigated for future releases.
+MPICH2 v1.0.5 was the initial release of the SCTP channel, so feedback
+is definitely still welcomed. All MPI features except multithreading
+are supported. Some performance optimizations could surely exist for
+this channel and will be investigated for future releases.
 
 
 VPATH Builds

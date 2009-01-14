@@ -1416,6 +1416,14 @@ ac_config_sub=$ac_aux_dir/config.sub
 ac_configure=$ac_aux_dir/configure # This should be Cygnus configure.
 
 
+
+# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
+    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
+    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
+    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
+    F90FLAGS="$MPICH2_INTERNAL_C90FLAGS"
+
+
           ac_config_headers="$ac_config_headers include/mpidi_ch3_conf.h"
 
 
@@ -3043,7 +3051,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 3046 "configure"
+#line 3054 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -3324,7 +3332,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 3327 "configure"
+#line 3335 "configure"
 #include "confdefs.h"
 #include <$ac_header>
 int conftest() {return 0;}
@@ -6221,6 +6229,9 @@ subdirs="$subdirs channels/${channel_name}"
 # which include flags should start in MPICH2_INCLUDE_FLAGS and which in
 # CPPFLAGS
 CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
+
+
+
 
                                                                                 ac_config_files="$ac_config_files Makefile src/Makefile util/Makefile util/shm/Makefile util/shmbase/Makefile channels/Makefile localdefs $MPID_THREAD_OUTPUT_FILES"
 cat >confcache <<\_ACEOF

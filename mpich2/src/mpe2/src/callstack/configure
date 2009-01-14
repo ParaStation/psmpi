@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS top_srcdir_abs VPATH MAKE MKDIR CPRP RM MV includebuild_dir libbuild_dir binbuild_dir etcbuild_dir CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AR RANLIB ac_ct_RANLIB CPP EGREP mpe_callstack_impl_type mpe_callstack_ldflags mpe_callstack_string_h mpe_callstack_unistd_h MPE_BUILD_FORTRAN2C CLINKER MPI_CC MPI_INC MPI_LIBS PROF_LIBNAME LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS top_srcdir_abs VPATH MAKE MKDIR CPRP RM MV includebuild_dir libbuild_dir binbuild_dir etcbuild_dir CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT AR RANLIB ac_ct_RANLIB CPP EGREP mpe_callstack_impl_type mpe_callstack_ldflags mpe_callstack_string_h mpe_callstack_unistd_h MPE_BUILD_FORTRAN2C CLINKER MPI_CC MPI_CFLAGS MPI_LIBS PROF_LIBNAME LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1360,7 +1360,7 @@ CC=${CC:-cc}
 CLINKER=${CLINKER:-$CC}
 CFLAGS=${MPE_CFLAGS}
 MPI_CC=${MPI_CC:-${CC}}
-MPI_INC=${MPI_INC}
+MPI_CFLAGS=${MPI_CFLAGS}
 MPI_LIBS=${MPI_LIBS}
 
 MPE_LIBNAME=${MPE_LIBNAME:-mpe}
@@ -4741,7 +4741,7 @@ s,@mpe_callstack_unistd_h@,$mpe_callstack_unistd_h,;t t
 s,@MPE_BUILD_FORTRAN2C@,$MPE_BUILD_FORTRAN2C,;t t
 s,@CLINKER@,$CLINKER,;t t
 s,@MPI_CC@,$MPI_CC,;t t
-s,@MPI_INC@,$MPI_INC,;t t
+s,@MPI_CFLAGS@,$MPI_CFLAGS,;t t
 s,@MPI_LIBS@,$MPI_LIBS,;t t
 s,@PROF_LIBNAME@,$PROF_LIBNAME,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t

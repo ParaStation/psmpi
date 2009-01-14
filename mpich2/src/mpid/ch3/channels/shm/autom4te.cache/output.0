@@ -1377,6 +1377,14 @@ ac_config_sub=$ac_aux_dir/config.sub
 ac_configure=$ac_aux_dir/configure # This should be Cygnus configure.
 
 
+
+# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
+    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
+    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
+    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
+    F90FLAGS="$MPICH2_INTERNAL_C90FLAGS"
+
+
           ac_config_headers="$ac_config_headers include/mpidi_ch3i_shm_conf.h"
 
 
@@ -4753,6 +4761,9 @@ CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
 
 # define the ABI version of the channel ABI that we are using.
 ABIVERSION=1:1
+
+
+
 
 
           ac_config_commands="$ac_config_commands default-1"

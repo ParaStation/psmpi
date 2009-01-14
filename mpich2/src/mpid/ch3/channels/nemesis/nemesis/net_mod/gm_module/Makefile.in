@@ -42,10 +42,10 @@ INCLUDES = -I. -I../../include -I${master_top_srcdir}/src/ch3/channels/nemesis/n
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
 	-rootdir=../../../../../../../../ \
 	-configdir=src/mpid/ch3/channels/nemesis/ \
-	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
 	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
 	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
@@ -83,20 +83,20 @@ all-redirect: .libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a
 
 .libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a: \
 	gm_module_finalize.o gm_module_init.o gm_module_poll.o \
-	gm_module_send.o gm_module_lmt.o gm_module_register.o \
-	gm_module_test.o 
+	gm_module_send.o gm_module_getput.o gm_module_lmt.o \
+	gm_module_register.o gm_module_test.o 
 	${AR} cr ../../../../../../../../lib/lib${MPILIBNAME}.a $?
 	${RANLIB} ../../../../../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
 .libstamp1 ../../../../../../../../lib/lib${MPILIBNAME}.la: \
 	gm_module_finalize.lo gm_module_init.lo gm_module_poll.lo \
-	gm_module_send.lo gm_module_lmt.lo gm_module_register.lo \
-	gm_module_test.lo 
+	gm_module_send.lo gm_module_getput.lo gm_module_lmt.lo \
+	gm_module_register.lo gm_module_test.lo 
 	${AR} cr ../../../../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 coverage: 
 	-@for file in gm_module_finalize.c  gm_module_init.c  gm_module_poll.c      \
-	gm_module_send.c                         gm_module_lmt.c   \
+	gm_module_send.c   gm_module_getput.c    gm_module_lmt.c   \
 	gm_module_register.c  gm_module_test.c ; do \
 		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
@@ -120,6 +120,8 @@ $(DEPS_DIR)/gm_module_poll.d: $(srcdir)/gm_module_poll.c
 	$(MAKE_DEPEND_C)  $(srcdir)/gm_module_poll.c >$(DEPS_DIR)/gm_module_poll.d
 $(DEPS_DIR)/gm_module_send.d: $(srcdir)/gm_module_send.c
 	$(MAKE_DEPEND_C)  $(srcdir)/gm_module_send.c >$(DEPS_DIR)/gm_module_send.d
+$(DEPS_DIR)/gm_module_getput.d: $(srcdir)/gm_module_getput.c
+	$(MAKE_DEPEND_C)  $(srcdir)/gm_module_getput.c >$(DEPS_DIR)/gm_module_getput.d
 $(DEPS_DIR)/gm_module_lmt.d: $(srcdir)/gm_module_lmt.c
 	$(MAKE_DEPEND_C)  $(srcdir)/gm_module_lmt.c >$(DEPS_DIR)/gm_module_lmt.d
 $(DEPS_DIR)/gm_module_register.d: $(srcdir)/gm_module_register.c
@@ -127,7 +129,7 @@ $(DEPS_DIR)/gm_module_register.d: $(srcdir)/gm_module_register.c
 $(DEPS_DIR)/gm_module_test.d: $(srcdir)/gm_module_test.c
 	$(MAKE_DEPEND_C)  $(srcdir)/gm_module_test.c >$(DEPS_DIR)/gm_module_test.d
 $(DEPS_DIR)/timestamp: gm_module_finalize.c  gm_module_init.c  gm_module_poll.c      \
-	gm_module_send.c                         gm_module_lmt.c   \
+	gm_module_send.c   gm_module_getput.c    gm_module_lmt.c   \
 	gm_module_register.c  gm_module_test.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
 	$(MAKE_DEPEND_C)  $(srcdir)/gm_module_finalize.c >$(DEPS_DIR)/gm_module_finalize.d
@@ -138,6 +140,8 @@ $(DEPS_DIR)/timestamp: gm_module_finalize.c  gm_module_init.c  gm_module_poll.c 
 	echo "include $(DEPS_DIR)/gm_module_poll.d" >>$(DEPS_DIR)/newalldeps
 	$(MAKE_DEPEND_C)  $(srcdir)/gm_module_send.c >$(DEPS_DIR)/gm_module_send.d
 	echo "include $(DEPS_DIR)/gm_module_send.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/gm_module_getput.c >$(DEPS_DIR)/gm_module_getput.d
+	echo "include $(DEPS_DIR)/gm_module_getput.d" >>$(DEPS_DIR)/newalldeps
 	$(MAKE_DEPEND_C)  $(srcdir)/gm_module_lmt.c >$(DEPS_DIR)/gm_module_lmt.d
 	echo "include $(DEPS_DIR)/gm_module_lmt.d" >>$(DEPS_DIR)/newalldeps
 	$(MAKE_DEPEND_C)  $(srcdir)/gm_module_register.c >$(DEPS_DIR)/gm_module_register.d
@@ -151,8 +155,8 @@ include $(DEPS_DIR)/alldeps
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  gm_module_finalize.c gm_module_init.c gm_module_poll.c \
-	gm_module_send.c gm_module_lmt.c gm_module_register.c \
-	gm_module_test.c 
+	gm_module_send.c gm_module_getput.c gm_module_lmt.c \
+	gm_module_register.c gm_module_test.c 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)

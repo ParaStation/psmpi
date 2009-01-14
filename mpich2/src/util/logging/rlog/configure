@@ -805,11 +805,6 @@ Optional Features:
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
 --enable-cache  - Turn on configure caching
 --enable-echo  - Turn on strong echoing. The default is enable=no.
---enable-strict - Turn on strict debugging with gcc
---enable-g=option - Control the level of debugging support in the implementation.
-option may be a list of common separated names including
-    none  - No debugging
-    all   - All of the above choices
 --enable-sharedlibs=kind - Enable shared libraries.  kind may be
     gnu     - Standard gcc and GNU ld options for creating shared libraries
     libtool - GNU libtool
@@ -1361,6 +1356,15 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
+# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
+    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
+    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
+    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
+    F90FLAGS="$MPICH2_INTERNAL_C90FLAGS"
+
+
           ac_config_headers="$ac_config_headers rlogconf.h"
 
 
@@ -1382,49 +1386,13 @@ if test "${enable_echo+set}" = set; then
   enableval="$enable_echo"
   set -x
 fi;
-# Check whether --enable-strict or --disable-strict was given.
-if test "${enable_strict+set}" = set; then
-  enableval="$enable_strict"
-  CFLAGS="$CFLAGS -O2 -Wall -Wstrict-prototypes -Wmissing-prototypes"
-fi;
-# Check whether --enable-g or --disable-g was given.
-if test "${enable_g+set}" = set; then
-  enableval="$enable_g"
 
-else
-  enable_g=none
-fi;
 # Check whether --enable-sharedlibs or --disable-sharedlibs was given.
 if test "${enable_sharedlibs+set}" = set; then
   enableval="$enable_sharedlibs"
 
 fi;
-# strip off multiple options, separated by commas
-save_IFS="$IFS"
-IFS=","
-for option in $enable_g ; do
-case "$option" in
-    no|none)
-    ;;
-    mem|all|yes)
 
-cat >>confdefs.h <<\_ACEOF
-#define USE_MEMORY_TRACING
-_ACEOF
-
-    enable_g_mem=yes
-    CFLAGS="$CFLAGS -g"
-    ;;
-    log|nesting|handle|debug|dbg)
-    # Ignore these (they are valid for other configures)
-    ;;
-    *)
-    { echo "$as_me:$LINENO: WARNING: Unknown value $option for enable-g" >&5
-echo "$as_me: WARNING: Unknown value $option for enable-g" >&2;}
-    ;;
-esac
-done
-IFS="$save_IFS"
 
 rm -f conftest*
 date >conftest$$
@@ -3658,7 +3626,7 @@ fi
 # If cpp failed, see if the compiler accepts the header.
 if test "$pac_found_header" != "yes" ; then
     cat >conftest.c<<EOF
-#line 3661 "configure"
+#line 3629 "configure"
 #include "confdefs.h"
 #include <jni.h>
 int conftest() {return 0;}
@@ -3735,6 +3703,9 @@ echo "$as_me: WARNING: libtool selected for shared library support but LIBTOOL i
 
 export ETAGS
 export ETAGSADD
+
+
+
 
 
           ac_config_commands="$ac_config_commands default-1"
@@ -5000,5 +4971,4 @@ if test "$no_create" != yes; then
   # would make configure fail if this is the last instruction.
   $ac_cs_success || { (exit 1); exit 1; }
 fi
-
 

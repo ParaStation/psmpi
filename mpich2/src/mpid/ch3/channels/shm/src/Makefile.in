@@ -35,9 +35,7 @@ shmsources = \
  ch3_istartmsgv.c \
  ch3_progress.c \
  shm_memory.c \
- ch3_open_port.c \
- ch3_istartrndvmsg.c \
- ch3_istartrndvtransfer.c
+ ch3_open_port.c
 
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .txt 
@@ -53,10 +51,10 @@ shmsources = \
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/thakur/mpich2-1.0.7rc1/maint/simplemake \
+	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
 	-rootdir=../../../../../../ \
 	-configdir=src/mpid/ch3/channels/shm/ \
-	-common=/sandbox/thakur/mpich2-1.0.7rc1/maint/makedefs \
+	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
 	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
 	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
@@ -96,24 +94,22 @@ all-redirect: .libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a
 
 libmpich2-ch3-shm.a: ch3_finalize.o ch3_init.o ch3_isend.o ch3_isendv.o \
 	ch3_istartmsg.o ch3_istartmsgv.o ch3_progress.o shm_memory.o \
-	ch3_open_port.o ch3_istartrndvmsg.o ch3_istartrndvtransfer.o 
+	ch3_open_port.o 
 	${AR} cr libmpich2-ch3-shm.a $?
 	${RANLIB} libmpich2-ch3-shm.a
 .libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a: ch3_finalize.o \
 	ch3_init.o ch3_isend.o ch3_isendv.o ch3_istartmsg.o ch3_istartmsgv.o \
-	ch3_progress.o shm_memory.o ch3_open_port.o ch3_istartrndvmsg.o \
-	ch3_istartrndvtransfer.o 
+	ch3_progress.o shm_memory.o ch3_open_port.o 
 	${AR} cr ../../../../../../lib/lib${MPILIBNAME}.a $?
 	${RANLIB} ../../../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
 libmpich2-ch3-shm.la: ch3_finalize.lo ch3_init.lo ch3_isend.lo ch3_isendv.lo \
 	ch3_istartmsg.lo ch3_istartmsgv.lo ch3_progress.lo shm_memory.lo \
-	ch3_open_port.lo ch3_istartrndvmsg.lo ch3_istartrndvtransfer.lo 
+	ch3_open_port.lo 
 	${AR} cr libmpich2-ch3-shm.la $?
 .libstamp1 ../../../../../../lib/lib${MPILIBNAME}.la: ch3_finalize.lo \
 	ch3_init.lo ch3_isend.lo ch3_isendv.lo ch3_istartmsg.lo \
-	ch3_istartmsgv.lo ch3_progress.lo shm_memory.lo ch3_open_port.lo \
-	ch3_istartrndvmsg.lo ch3_istartrndvtransfer.lo 
+	ch3_istartmsgv.lo ch3_progress.lo shm_memory.lo ch3_open_port.lo 
 	${AR} cr ../../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 coverage: 
@@ -152,10 +148,6 @@ $(DEPS_DIR)/shm_memory.d: $(srcdir)/shm_memory.c
 	$(MAKE_DEPEND_C)  $(srcdir)/shm_memory.c >$(DEPS_DIR)/shm_memory.d
 $(DEPS_DIR)/ch3_open_port.d: $(srcdir)/ch3_open_port.c
 	$(MAKE_DEPEND_C)  $(srcdir)/ch3_open_port.c >$(DEPS_DIR)/ch3_open_port.d
-$(DEPS_DIR)/ch3_istartrndvmsg.d: $(srcdir)/ch3_istartrndvmsg.c
-	$(MAKE_DEPEND_C)  $(srcdir)/ch3_istartrndvmsg.c >$(DEPS_DIR)/ch3_istartrndvmsg.d
-$(DEPS_DIR)/ch3_istartrndvtransfer.d: $(srcdir)/ch3_istartrndvtransfer.c
-	$(MAKE_DEPEND_C)  $(srcdir)/ch3_istartrndvtransfer.c >$(DEPS_DIR)/ch3_istartrndvtransfer.d
 $(DEPS_DIR)/timestamp: ${shmsources} ${shmsources} Makefile
 	rm -f $(DEPS_DIR)/newalldeps
 	$(MAKE_DEPEND_C)  $(srcdir)/ch3_finalize.c >$(DEPS_DIR)/ch3_finalize.d
@@ -176,10 +168,6 @@ $(DEPS_DIR)/timestamp: ${shmsources} ${shmsources} Makefile
 	echo "include $(DEPS_DIR)/shm_memory.d" >>$(DEPS_DIR)/newalldeps
 	$(MAKE_DEPEND_C)  $(srcdir)/ch3_open_port.c >$(DEPS_DIR)/ch3_open_port.d
 	echo "include $(DEPS_DIR)/ch3_open_port.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/ch3_istartrndvmsg.c >$(DEPS_DIR)/ch3_istartrndvmsg.d
-	echo "include $(DEPS_DIR)/ch3_istartrndvmsg.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/ch3_istartrndvtransfer.c >$(DEPS_DIR)/ch3_istartrndvtransfer.d
-	echo "include $(DEPS_DIR)/ch3_istartrndvtransfer.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
 include $(DEPS_DIR)/alldeps
@@ -188,10 +176,9 @@ include $(DEPS_DIR)/alldeps
 # --------------------------------------------------------------------------
 SOURCES         =  ch3_finalize.c ch3_init.c ch3_isend.c ch3_isendv.c \
 	ch3_istartmsg.c ch3_istartmsgv.c ch3_progress.c shm_memory.c \
-	ch3_open_port.c ch3_istartrndvmsg.c ch3_istartrndvtransfer.c \
-	ch3_finalize.c ch3_init.c ch3_isend.c ch3_isendv.c ch3_istartmsg.c \
-	ch3_istartmsgv.c ch3_progress.c shm_memory.c ch3_open_port.c \
-	ch3_istartrndvmsg.c ch3_istartrndvtransfer.c 
+	ch3_open_port.c ch3_finalize.c ch3_init.c ch3_isend.c ch3_isendv.c \
+	ch3_istartmsg.c ch3_istartmsgv.c ch3_progress.c shm_memory.c \
+	ch3_open_port.c 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)

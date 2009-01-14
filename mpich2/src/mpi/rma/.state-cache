@@ -13,11 +13,11 @@
 <file name="win_get_name.c" info="1194043819"/>
 <file name="get.c" info="1194043819"/>
 <file name="put.c" info="1194043819"/>
-<file name="winutil.c" info="1194043819"/>
-<file name="win_fence.c" info="1194043819"/>
 <file name="win_lock.c" info="1194043819"/>
-<file name="free_mem.c" info="1194043819"/>
+<file name="win_fence.c" info="1194043819"/>
+<file name="winutil.c" info="1194043819"/>
 <file name="win_start.c" info="1194043819"/>
+<file name="free_mem.c" info="1194043819"/>
 </dir>
 <data>
 <fileinfo name="alloc_mem.c">
@@ -62,18 +62,18 @@ MPID_STATE_MPI_GET MPI_Get
 <fileinfo name="put.c">
 MPID_STATE_MPI_PUT MPI_Put
 </fileinfo>
-<fileinfo name="winutil.c">
+<fileinfo name="win_lock.c">
+MPID_STATE_MPI_WIN_LOCK MPI_Win_lock
 </fileinfo>
 <fileinfo name="win_fence.c">
 MPID_STATE_MPI_WIN_FENCE MPI_Win_fence
 </fileinfo>
-<fileinfo name="win_lock.c">
-MPID_STATE_MPI_WIN_LOCK MPI_Win_lock
-</fileinfo>
-<fileinfo name="free_mem.c">
-MPID_STATE_MPI_FREE_MEM MPI_Free_mem
+<fileinfo name="winutil.c">
 </fileinfo>
 <fileinfo name="win_start.c">
 MPID_STATE_MPI_WIN_START MPI_Win_start
+</fileinfo>
+<fileinfo name="free_mem.c">
+MPID_STATE_MPI_FREE_MEM MPI_Free_mem
 </fileinfo>
 </data>

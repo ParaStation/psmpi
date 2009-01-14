@@ -841,7 +841,6 @@ Optional Features:
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
 --enable-echo - turn on echoing from within configure script
---enable-g  - turn on debugging flags
 --enable-totalview - turn on mpd-totalview support
 
 Optional Packages:
@@ -1297,6 +1296,15 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
+
+
+# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
+    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
+    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
+    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
+    F90FLAGS="$MPICH2_INTERNAL_C90FLAGS"
+
+
 # Autoconf header:
 rm -f ${srcdir}/mpdconf.h mpdconf.h
           ac_config_headers="$ac_config_headers mpdconf.h"
@@ -1304,6 +1312,32 @@ rm -f ${srcdir}/mpdconf.h mpdconf.h
 
 
 
+
+
+ac_aux_dir=
+for ac_dir in ../../../confdb $srcdir/../../../confdb; do
+  if test -f $ac_dir/install-sh; then
+    ac_aux_dir=$ac_dir
+    ac_install_sh="$ac_aux_dir/install-sh -c"
+    break
+  elif test -f $ac_dir/install.sh; then
+    ac_aux_dir=$ac_dir
+    ac_install_sh="$ac_aux_dir/install.sh -c"
+    break
+  elif test -f $ac_dir/shtool; then
+    ac_aux_dir=$ac_dir
+    ac_install_sh="$ac_aux_dir/shtool install -c"
+    break
+  fi
+done
+if test -z "$ac_aux_dir"; then
+  { { echo "$as_me:$LINENO: error: cannot find install-sh or install.sh in ../../../confdb $srcdir/../../../confdb" >&5
+echo "$as_me: error: cannot find install-sh or install.sh in ../../../confdb $srcdir/../../../confdb" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+ac_config_guess="$SHELL $ac_aux_dir/config.guess"
+ac_config_sub="$SHELL $ac_aux_dir/config.sub"
+ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
 
 
 # Check whether --enable-echo or --disable-echo was given.
@@ -1316,15 +1350,6 @@ if test -n "$CONFIGURE_ARGS" ; then
     echo "Configuring with args $CONFIGURE_ARGS"
 fi
 
-
-# Check whether --enable-g or --disable-g was given.
-if test "${enable_g+set}" = set; then
-  enableval="$enable_g"
-
-fi;
-if test "$enable_g" = "yes" -o "$enable_g" = "all" ; then
-    COPTIONS="${COPTIONS} -g"
-fi
 
 
 
@@ -2296,31 +2321,6 @@ fi
 # A quick check to ensure that install-sh has the execute bit set
 # (we've had some problems with that)
 if test -f install.sh -a ! -x install.sh ; then chmod +x install.sh ; fi
-ac_aux_dir=
-for ac_dir in $srcdir $srcdir/.. $srcdir/../..; do
-  if test -f $ac_dir/install-sh; then
-    ac_aux_dir=$ac_dir
-    ac_install_sh="$ac_aux_dir/install-sh -c"
-    break
-  elif test -f $ac_dir/install.sh; then
-    ac_aux_dir=$ac_dir
-    ac_install_sh="$ac_aux_dir/install.sh -c"
-    break
-  elif test -f $ac_dir/shtool; then
-    ac_aux_dir=$ac_dir
-    ac_install_sh="$ac_aux_dir/shtool install -c"
-    break
-  fi
-done
-if test -z "$ac_aux_dir"; then
-  { { echo "$as_me:$LINENO: error: cannot find install-sh or install.sh in $srcdir $srcdir/.. $srcdir/../.." >&5
-echo "$as_me: error: cannot find install-sh or install.sh in $srcdir $srcdir/.. $srcdir/../.." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-ac_config_guess="$SHELL $ac_aux_dir/config.guess"
-ac_config_sub="$SHELL $ac_aux_dir/config.sub"
-ac_configure="$SHELL $ac_aux_dir/configure" # This should be Cygnus configure.
-
 # Find a good install program.  We prefer a C program (faster),
 # so one script is as good as another.  But avoid the broken or
 # incompatible versions:
@@ -3881,6 +3881,10 @@ fi
 
 # Starting output
 MPD_HOME=`pwd`
+
+
+
+
 
 
 # AC_OUTPUT_COMMANDS(chmod +x startdaemons)

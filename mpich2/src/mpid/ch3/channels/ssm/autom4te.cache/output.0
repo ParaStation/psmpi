@@ -1419,6 +1419,14 @@ ac_config_sub=$ac_aux_dir/config.sub
 ac_configure=$ac_aux_dir/configure # This should be Cygnus configure.
 
 
+
+# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
+    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
+    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
+    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
+    F90FLAGS="$MPICH2_INTERNAL_C90FLAGS"
+
+
           ac_config_headers="$ac_config_headers include/mpidi_ch3i_ssm_conf.h"
 
 
@@ -6524,6 +6532,9 @@ fi
 # which include flags should start in MPICH2_INCLUDE_FLAGS and which in 
 # CPPFLAGS
 CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
+
+
+
 
           ac_config_commands="$ac_config_commands default-1"
 

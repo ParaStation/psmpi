@@ -51,9 +51,9 @@ m4trace:configure.in:2: -1- AC_SUBST([ECHO_C])
 m4trace:configure.in:2: -1- AC_SUBST([ECHO_N])
 m4trace:configure.in:2: -1- AC_SUBST([ECHO_T])
 m4trace:configure.in:2: -1- AC_SUBST([LIBS])
-m4trace:configure.in:12: -1- AC_CONFIG_AUX_DIR([../../../../confdb])
-m4trace:configure.in:17: -1- AC_CONFIG_HEADERS([mpid_locksconf.h])
-m4trace:configure.in:25: -1- AH_OUTPUT([00001], [/* -*- Mode: C; c-basic-offset:4 ; -*- */
+m4trace:configure.in:20: -1- AC_CONFIG_AUX_DIR([../../../../confdb])
+m4trace:configure.in:25: -1- AC_CONFIG_HEADERS([mpid_locksconf.h])
+m4trace:configure.in:33: -1- AH_OUTPUT([00001], [/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*  
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -61,102 +61,102 @@ m4trace:configure.in:25: -1- AH_OUTPUT([00001], [/* -*- Mode: C; c-basic-offset:
 #ifndef MPID_LOCKSCONF_H_INCLUDED
 #define MPID_LOCKSCONF_H_INCLUDED
 ])
-m4trace:configure.in:26: -1- AH_OUTPUT([zzzz2], [#endif])
-m4trace:configure.in:35: -1- AC_SUBST([MAKE])
-m4trace:configure.in:35: -1- AC_SUBST([VPATH])
-m4trace:configure.in:35: -1- AC_SUBST([SET_CFLAGS])
-m4trace:configure.in:35: -1- AC_PROG_MAKE_SET
-m4trace:configure.in:35: -1- AC_SUBST([SET_MAKE])
-m4trace:configure.in:36: -1- AC_SUBST([AR])
-m4trace:configure.in:42: -1- AC_SUBST([RANLIB])
-m4trace:configure.in:44: -1- AC_CHECK_FUNCS([yield sched_yield usleep sleep select ])
-m4trace:configure.in:44: -1- AH_OUTPUT([HAVE_YIELD], [/* Define to 1 if you have the `yield\' function. */
+m4trace:configure.in:34: -1- AH_OUTPUT([zzzz2], [#endif])
+m4trace:configure.in:43: -1- AC_SUBST([MAKE])
+m4trace:configure.in:43: -1- AC_SUBST([VPATH])
+m4trace:configure.in:43: -1- AC_SUBST([SET_CFLAGS])
+m4trace:configure.in:43: -1- AC_PROG_MAKE_SET
+m4trace:configure.in:43: -1- AC_SUBST([SET_MAKE])
+m4trace:configure.in:44: -1- AC_SUBST([AR])
+m4trace:configure.in:50: -1- AC_SUBST([RANLIB])
+m4trace:configure.in:52: -1- AC_CHECK_FUNCS([yield sched_yield usleep sleep select ])
+m4trace:configure.in:52: -1- AH_OUTPUT([HAVE_YIELD], [/* Define to 1 if you have the `yield\' function. */
 #undef HAVE_YIELD])
-m4trace:configure.in:44: -1- AH_OUTPUT([HAVE_SCHED_YIELD], [/* Define to 1 if you have the `sched_yield\' function. */
+m4trace:configure.in:52: -1- AH_OUTPUT([HAVE_SCHED_YIELD], [/* Define to 1 if you have the `sched_yield\' function. */
 #undef HAVE_SCHED_YIELD])
-m4trace:configure.in:44: -1- AH_OUTPUT([HAVE_USLEEP], [/* Define to 1 if you have the `usleep\' function. */
+m4trace:configure.in:52: -1- AH_OUTPUT([HAVE_USLEEP], [/* Define to 1 if you have the `usleep\' function. */
 #undef HAVE_USLEEP])
-m4trace:configure.in:44: -1- AH_OUTPUT([HAVE_SLEEP], [/* Define to 1 if you have the `sleep\' function. */
+m4trace:configure.in:52: -1- AH_OUTPUT([HAVE_SLEEP], [/* Define to 1 if you have the `sleep\' function. */
 #undef HAVE_SLEEP])
-m4trace:configure.in:44: -1- AH_OUTPUT([HAVE_SELECT], [/* Define to 1 if you have the `select\' function. */
+m4trace:configure.in:52: -1- AH_OUTPUT([HAVE_SELECT], [/* Define to 1 if you have the `select\' function. */
 #undef HAVE_SELECT])
-m4trace:configure.in:44: -1- AC_PROG_CC
-m4trace:configure.in:44: -1- AC_SUBST([CC])
-m4trace:configure.in:44: -1- AC_SUBST([CFLAGS])
-m4trace:configure.in:44: -1- AC_SUBST([LDFLAGS])
-m4trace:configure.in:44: -1- AC_SUBST([CPPFLAGS])
-m4trace:configure.in:44: -1- AC_SUBST([CC])
-m4trace:configure.in:44: -1- AC_SUBST([ac_ct_CC])
-m4trace:configure.in:44: -1- AC_SUBST([CC])
-m4trace:configure.in:44: -1- AC_SUBST([ac_ct_CC])
-m4trace:configure.in:44: -1- AC_SUBST([CC])
-m4trace:configure.in:44: -1- AC_SUBST([CC])
-m4trace:configure.in:44: -1- AC_SUBST([ac_ct_CC])
-m4trace:configure.in:44: -1- AC_SUBST([EXEEXT], [$ac_cv_exeext])
-m4trace:configure.in:44: -1- AC_SUBST([OBJEXT], [$ac_cv_objext])
-m4trace:configure.in:45: -1- AC_CHECK_FUNCS([mutex_init compare_and_swap ])
-m4trace:configure.in:45: -1- AH_OUTPUT([HAVE_MUTEX_INIT], [/* Define to 1 if you have the `mutex_init\' function. */
+m4trace:configure.in:52: -1- AC_PROG_CC
+m4trace:configure.in:52: -1- AC_SUBST([CC])
+m4trace:configure.in:52: -1- AC_SUBST([CFLAGS])
+m4trace:configure.in:52: -1- AC_SUBST([LDFLAGS])
+m4trace:configure.in:52: -1- AC_SUBST([CPPFLAGS])
+m4trace:configure.in:52: -1- AC_SUBST([CC])
+m4trace:configure.in:52: -1- AC_SUBST([ac_ct_CC])
+m4trace:configure.in:52: -1- AC_SUBST([CC])
+m4trace:configure.in:52: -1- AC_SUBST([ac_ct_CC])
+m4trace:configure.in:52: -1- AC_SUBST([CC])
+m4trace:configure.in:52: -1- AC_SUBST([CC])
+m4trace:configure.in:52: -1- AC_SUBST([ac_ct_CC])
+m4trace:configure.in:52: -1- AC_SUBST([EXEEXT], [$ac_cv_exeext])
+m4trace:configure.in:52: -1- AC_SUBST([OBJEXT], [$ac_cv_objext])
+m4trace:configure.in:53: -1- AC_CHECK_FUNCS([mutex_init compare_and_swap ])
+m4trace:configure.in:53: -1- AH_OUTPUT([HAVE_MUTEX_INIT], [/* Define to 1 if you have the `mutex_init\' function. */
 #undef HAVE_MUTEX_INIT])
-m4trace:configure.in:45: -1- AH_OUTPUT([HAVE_COMPARE_AND_SWAP], [/* Define to 1 if you have the `compare_and_swap\' function. */
+m4trace:configure.in:53: -1- AH_OUTPUT([HAVE_COMPARE_AND_SWAP], [/* Define to 1 if you have the `compare_and_swap\' function. */
 #undef HAVE_COMPARE_AND_SWAP])
-m4trace:configure.in:46: -1- AC_CHECK_FUNCS([pthread_mutexattr_init pthread_mutexattr_setpshared ])
-m4trace:configure.in:46: -1- AH_OUTPUT([HAVE_PTHREAD_MUTEXATTR_INIT], [/* Define to 1 if you have the `pthread_mutexattr_init\' function. */
+m4trace:configure.in:54: -1- AC_CHECK_FUNCS([pthread_mutexattr_init pthread_mutexattr_setpshared ])
+m4trace:configure.in:54: -1- AH_OUTPUT([HAVE_PTHREAD_MUTEXATTR_INIT], [/* Define to 1 if you have the `pthread_mutexattr_init\' function. */
 #undef HAVE_PTHREAD_MUTEXATTR_INIT])
-m4trace:configure.in:46: -1- AH_OUTPUT([HAVE_PTHREAD_MUTEXATTR_SETPSHARED], [/* Define to 1 if you have the `pthread_mutexattr_setpshared\' function. */
+m4trace:configure.in:54: -1- AH_OUTPUT([HAVE_PTHREAD_MUTEXATTR_SETPSHARED], [/* Define to 1 if you have the `pthread_mutexattr_setpshared\' function. */
 #undef HAVE_PTHREAD_MUTEXATTR_SETPSHARED])
-m4trace:configure.in:47: -1- AC_CHECK_HEADERS([pthread.h sched.h ])
-m4trace:configure.in:47: -1- AH_OUTPUT([HAVE_PTHREAD_H], [/* Define to 1 if you have the <pthread.h> header file. */
+m4trace:configure.in:55: -1- AC_CHECK_HEADERS([pthread.h sched.h ])
+m4trace:configure.in:55: -1- AH_OUTPUT([HAVE_PTHREAD_H], [/* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H])
-m4trace:configure.in:47: -1- AH_OUTPUT([HAVE_SCHED_H], [/* Define to 1 if you have the <sched.h> header file. */
+m4trace:configure.in:55: -1- AH_OUTPUT([HAVE_SCHED_H], [/* Define to 1 if you have the <sched.h> header file. */
 #undef HAVE_SCHED_H])
-m4trace:configure.in:47: -1- _m4_warn([obsolete], [The macro `AC_TRY_CPP' is obsolete.
+m4trace:configure.in:55: -1- _m4_warn([obsolete], [The macro `AC_TRY_CPP' is obsolete.
 You should run autoupdate.], [autoconf/general.m4:2107: AC_TRY_CPP is expanded from...
 autoconf/general.m4:1799: AC_CACHE_VAL is expanded from...
 aclocal_bugfix.m4:140: AC_CHECK_HEADER is expanded from...
 autoconf/headers.m4:206: AC_CHECK_HEADERS is expanded from...
-configure.in:47: the top level])
-m4trace:configure.in:47: -1- AC_PROG_CPP
-m4trace:configure.in:47: -1- AC_SUBST([CPP])
-m4trace:configure.in:47: -1- AC_SUBST([CPPFLAGS])
-m4trace:configure.in:47: -1- AC_SUBST([CPP])
-m4trace:configure.in:47: -1- _m4_warn([obsolete], [The macro `AC_FD_CC' is obsolete.
+configure.in:55: the top level])
+m4trace:configure.in:55: -1- AC_PROG_CPP
+m4trace:configure.in:55: -1- AC_SUBST([CPP])
+m4trace:configure.in:55: -1- AC_SUBST([CPPFLAGS])
+m4trace:configure.in:55: -1- AC_SUBST([CPP])
+m4trace:configure.in:55: -1- _m4_warn([obsolete], [The macro `AC_FD_CC' is obsolete.
 You should run autoupdate.], [autoconf/general.m4:376: AC_FD_CC is expanded from...
 autoconf/general.m4:1799: AC_CACHE_VAL is expanded from...
 aclocal_bugfix.m4:140: AC_CHECK_HEADER is expanded from...
 autoconf/headers.m4:206: AC_CHECK_HEADERS is expanded from...
-configure.in:47: the top level])
-m4trace:configure.in:47: -1- _m4_warn([obsolete], [The macro `AC_FD_CC' is obsolete.
+configure.in:55: the top level])
+m4trace:configure.in:55: -1- _m4_warn([obsolete], [The macro `AC_FD_CC' is obsolete.
 You should run autoupdate.], [autoconf/general.m4:376: AC_FD_CC is expanded from...
 autoconf/general.m4:1799: AC_CACHE_VAL is expanded from...
 aclocal_bugfix.m4:140: AC_CHECK_HEADER is expanded from...
 autoconf/headers.m4:206: AC_CHECK_HEADERS is expanded from...
-configure.in:47: the top level])
-m4trace:configure.in:47: -1- _m4_warn([obsolete], [The macro `AC_FD_CC' is obsolete.
+configure.in:55: the top level])
+m4trace:configure.in:55: -1- _m4_warn([obsolete], [The macro `AC_FD_CC' is obsolete.
 You should run autoupdate.], [autoconf/general.m4:376: AC_FD_CC is expanded from...
 autoconf/general.m4:1799: AC_CACHE_VAL is expanded from...
 aclocal_bugfix.m4:140: AC_CHECK_HEADER is expanded from...
 autoconf/headers.m4:206: AC_CHECK_HEADERS is expanded from...
-configure.in:47: the top level])
-m4trace:configure.in:50: -1- AC_DEFINE_TRACE_LITERAL([HAVE_SPARC_INLINE_PROCESS_LOCKS])
-m4trace:configure.in:50: -1- AH_OUTPUT([HAVE_SPARC_INLINE_PROCESS_LOCKS], [/* Use inline spin locks on SPARC architectures */
+configure.in:55: the top level])
+m4trace:configure.in:58: -1- AC_DEFINE_TRACE_LITERAL([HAVE_SPARC_INLINE_PROCESS_LOCKS])
+m4trace:configure.in:58: -1- AH_OUTPUT([HAVE_SPARC_INLINE_PROCESS_LOCKS], [/* Use inline spin locks on SPARC architectures */
 #undef HAVE_SPARC_INLINE_PROCESS_LOCKS])
-m4trace:configure.in:62: -1- AC_SUBST([AR])
-m4trace:configure.in:63: -1- AC_SUBST([RANLIB])
-m4trace:configure.in:64: -1- AC_SUBST([MPILIBNAME])
-m4trace:configure.in:65: -1- AC_SUBST([CC])
-m4trace:configure.in:66: -1- AC_SUBST([CFLAGS])
-m4trace:configure.in:67: -1- AC_SUBST([CPPFLAGS])
-m4trace:configure.in:68: -1- AC_SUBST([CC_SHL])
-m4trace:configure.in:68: -1- AC_SUBST([C_LINK_SHL])
-m4trace:configure.in:68: -1- AC_SUBST([LIBTOOL])
-m4trace:configure.in:68: -1- AC_SUBST([ENABLE_SHLIB])
-m4trace:configure.in:68: -1- AC_SUBST([SHLIB_EXT])
-m4trace:configure.in:69: -1- AC_SUBST([master_top_srcdir])
-m4trace:configure.in:71: -1- AC_SUBST([ETAGS])
-m4trace:configure.in:72: -1- AC_SUBST([ETAGSADD])
-m4trace:configure.in:77: -1- AC_SUBST([MAKE_DEPEND_C])
-m4trace:configure.in:79: -1- AC_CONFIG_FILES([Makefile])
-m4trace:configure.in:79: -1- _m4_warn([obsolete], [AC_OUTPUT should be used without arguments.
+m4trace:configure.in:70: -1- AC_SUBST([AR])
+m4trace:configure.in:71: -1- AC_SUBST([RANLIB])
+m4trace:configure.in:72: -1- AC_SUBST([MPILIBNAME])
+m4trace:configure.in:73: -1- AC_SUBST([CC])
+m4trace:configure.in:74: -1- AC_SUBST([CFLAGS])
+m4trace:configure.in:75: -1- AC_SUBST([CPPFLAGS])
+m4trace:configure.in:76: -1- AC_SUBST([CC_SHL])
+m4trace:configure.in:76: -1- AC_SUBST([C_LINK_SHL])
+m4trace:configure.in:76: -1- AC_SUBST([LIBTOOL])
+m4trace:configure.in:76: -1- AC_SUBST([ENABLE_SHLIB])
+m4trace:configure.in:76: -1- AC_SUBST([SHLIB_EXT])
+m4trace:configure.in:77: -1- AC_SUBST([master_top_srcdir])
+m4trace:configure.in:79: -1- AC_SUBST([ETAGS])
+m4trace:configure.in:80: -1- AC_SUBST([ETAGSADD])
+m4trace:configure.in:85: -1- AC_SUBST([MAKE_DEPEND_C])
+m4trace:configure.in:90: -1- AC_CONFIG_FILES([Makefile])
+m4trace:configure.in:90: -1- _m4_warn([obsolete], [AC_OUTPUT should be used without arguments.
 You should run autoupdate.], [])
-m4trace:configure.in:79: -1- AC_SUBST([LIB@&t@OBJS], [$ac_libobjs])
-m4trace:configure.in:79: -1- AC_SUBST([LTLIBOBJS], [$ac_ltlibobjs])
+m4trace:configure.in:90: -1- AC_SUBST([LIB@&t@OBJS], [$ac_libobjs])
+m4trace:configure.in:90: -1- AC_SUBST([LTLIBOBJS], [$ac_ltlibobjs])
