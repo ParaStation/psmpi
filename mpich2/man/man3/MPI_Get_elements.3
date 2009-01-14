@@ -1,25 +1,27 @@
-.TH MPI_Get_elements 3 "11/2/2007" " " "MPI"
+.TH MPI_Get_elements 3 "4/16/2008" " " "MPI"
 .SH NAME
-MPI_Get_elements \-  get_elements 
+MPI_Get_elements \-  Returns the number of basic elements in a datatype 
 .SH SYNOPSIS
 .nf
 int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 .fi
-.SH ARGUMENTS
+.SH INPUT PARAMETERS
 .PD 0
 .TP
-.B MPI_Status *status 
-- status
+.B status 
+- return status of receive operation (Status) 
 .PD 1
 .PD 0
 .TP
-.B MPI_Datatype datatype 
-- datatype
+.B datatype 
+- datatype used by receive operation (handle) 
 .PD 1
+
+.SH OUTPUT PARAMETER
 .PD 0
 .TP
-.B int *elements 
-- elements
+.B count 
+- number of received basic elements (integer) 
 .PD 1
 
 .SH NOTES

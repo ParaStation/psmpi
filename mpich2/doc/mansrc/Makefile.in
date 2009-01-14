@@ -6,6 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+VERBOSE         = 1
 master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
@@ -33,13 +34,14 @@ doc_sources = manpage.txt
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
 	-rootdir=../../ \
 	-configdir=. \
-	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
-	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
 	-distcleanfiles="Makefile" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )

@@ -6,6 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+VERBOSE         = 1
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -25,7 +26,12 @@ INCLUDES = -I../../include -I${srcdir}/../../include
 .SUFFIXES:
 .SUFFIXES: .o .cxx .txt 
 .cxx.o:
-	$(CXX_COMPILE) -c $<
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CXX             $<" ; \
+	else \
+	  echo $(CXX_COMPILE) -c $< ; \
+	fi
+	@$(CXX_COMPILE) -c $<
 .cxx.txt:
 	$(CXXCPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .cxx:
@@ -33,13 +39,14 @@ INCLUDES = -I../../include -I${srcdir}/../../include
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
 	-rootdir=../../../../ \
 	-configdir=test/mpi/ \
-	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
-	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
 	-distcleanfiles="Makefile" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
@@ -50,8 +57,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o uallredx icallreducex alltoallw2x icscattervx icbcastx uallreduce uscan icgathervx icgatherx uexscan icscatterx ureduce icbarrierx icalltoallx icallgatherx icreducex icallgathervx
-	-@rm -f uallredx.exe icallreducex.exe alltoallw2x.exe icscattervx.exe icbcastx.exe uallreduce.exe uscan.exe icgathervx.exe icgatherx.exe uexscan.exe icscatterx.exe ureduce.exe icbarrierx.exe icalltoallx.exe icallgatherx.exe icreducex.exe icallgathervx.exe
+	-@rm -f *.o ${srcdir}/*.o uallredx icallreducex alltoallw2x icscattervx arcomplex icbcastx uallreduce uscan icgathervx icgatherx uexscan icscatterx ureduce icbarrierx icalltoallx icallgatherx icreducex icallgathervx
+	-@rm -f uallredx.exe icallreducex.exe alltoallw2x.exe icscattervx.exe arcomplex.exe icbcastx.exe uallreduce.exe uscan.exe icgathervx.exe icgatherx.exe uexscan.exe icscatterx.exe ureduce.exe icbarrierx.exe icalltoallx.exe icallgatherx.exe icreducex.exe icallgathervx.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -69,8 +76,8 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: uallredx uallreduce ureduce uscan uexscan icbcastx icbarrierx\
-	 icgatherx icgathervx icscatterx icscattervx icallgatherx\
+all-redirect: arcomplex uallredx uallreduce ureduce uscan uexscan icbcastx\
+	 icbarrierx icgatherx icgathervx icscatterx icscattervx icallgatherx\
 	 icallgathervx icallreducex icreducex icalltoallx alltoallw2x
 
 coverage: 
@@ -85,6 +92,8 @@ alltoallw2x: alltoallw2x.o   @MPILIBLOC@ ../util/mtest.o
 icscattervx: icscattervx.o   @MPILIBLOC@ ../util/mtest.o
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o icscattervx icscattervx.o  \
 	${LIBS} 
+arcomplex: arcomplex.o   @MPILIBLOC@ ../util/mtest.o
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o arcomplex arcomplex.o  ${LIBS}
 icbcastx: icbcastx.o   @MPILIBLOC@ ../util/mtest.o
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o icbcastx icbcastx.o  ${LIBS}
 uallreduce: uallreduce.o   @MPILIBLOC@ ../util/mtest.o
@@ -131,10 +140,11 @@ dependencies:
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  uallredx.cxx uallreduce.cxx ureduce.cxx uscan.cxx \
-	uexscan.cxx icbcastx.cxx icbarrierx.cxx icgatherx.cxx icgathervx.cxx \
-	icscatterx.cxx icscattervx.cxx icallgatherx.cxx icallgathervx.cxx \
-	icallreducex.cxx icreducex.cxx icalltoallx.cxx alltoallw2x.cxx 
+SOURCES         =  arcomplex.cxx uallredx.cxx uallreduce.cxx ureduce.cxx \
+	uscan.cxx uexscan.cxx icbcastx.cxx icbarrierx.cxx icgatherx.cxx \
+	icgathervx.cxx icscatterx.cxx icscattervx.cxx icallgatherx.cxx \
+	icallgathervx.cxx icallreducex.cxx icreducex.cxx icalltoallx.cxx \
+	alltoallw2x.cxx 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)

@@ -6,6 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+VERBOSE         = 1
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -21,13 +22,14 @@ VPATH = .:@srcdir@
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
 	-rootdir=../../../ \
 	-configdir=test/mpi/ \
-	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
-	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
 	-distcleanfiles="Makefile" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
@@ -37,23 +39,21 @@ Makefile: ${srcdir}/Makefile.in
 # --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
-	(cd util && $(MAKE) apply )
-	(cd pt2pt && $(MAKE) apply )
-	(cd comm && $(MAKE) apply )
+	for dir in util pt2pt comm spawn ; do \
+		(cd $$dir && ${MAKE} apply ; ) ; done
 clean:  clean-local
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
 	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
-	(cd util && $(MAKE) clean )
-	(cd pt2pt && $(MAKE) clean )
-	(cd comm && $(MAKE) clean )
+	for dir in util pt2pt comm spawn ; do \
+		(cd $$dir && ${MAKE} clean ; ) ; done
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
-	if [ -s util/Makefile ] ; then (cd util && $(MAKE) distclean ) ; fi
-	if [ -s pt2pt/Makefile ] ; then (cd pt2pt && $(MAKE) distclean ) ; fi
-	if [ -s comm/Makefile ] ; then (cd comm && $(MAKE) distclean ) ; fi
+	for dir in util pt2pt comm spawn ; do \
+		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
+		(cd $$dir && ${MAKE} distclean ; ) ; done
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	if [ -s f77/Makefile ] ; then (cd f77 && $(MAKE) distclean ) ; fi
@@ -61,9 +61,8 @@ distclean-xxx:
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
 maintainer-clean:  distclean-xxx remove-genmakefiles
-	(cd util && $(MAKE) maintainer-clean )
-	(cd pt2pt && $(MAKE) maintainer-clean )
-	(cd comm && $(MAKE) maintainer-clean )
+	for dir in util pt2pt comm spawn ; do \
+		(cd $$dir && ${MAKE} maintainer-clean ; ) ; done
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
@@ -72,33 +71,29 @@ all-redirect:
 	@(cd util && ${MAKE} all )
 	@(cd pt2pt && ${MAKE} all )
 	@(cd comm && ${MAKE} all )
+	@(cd spawn && ${MAKE} all )
 
 coverage: 
-	(cd util && $(MAKE) coverage )
-	(cd pt2pt && $(MAKE) coverage )
-	(cd comm && $(MAKE) coverage )
+	for dir in util pt2pt comm spawn ; do \
+		(cd $$dir && ${MAKE} coverage ; ) ; done
 # --------------------------------------------------------------------------
 htmldoc:
-	(cd util && $(MAKE) htmldoc )
-	(cd pt2pt && $(MAKE) htmldoc )
-	(cd comm && $(MAKE) htmldoc )
+	for dir in util pt2pt comm spawn ; do \
+		(cd $$dir && ${MAKE} htmldoc ; ) ; done
 mandoc:
-	(cd util && $(MAKE) mandoc )
-	(cd pt2pt && $(MAKE) mandoc )
-	(cd comm && $(MAKE) mandoc )
+	for dir in util pt2pt comm spawn ; do \
+		(cd $$dir && ${MAKE} mandoc ; ) ; done
 latexdoc:
-	(cd util && $(MAKE) latexdoc )
-	(cd pt2pt && $(MAKE) latexdoc )
-	(cd comm && $(MAKE) latexdoc )
+	for dir in util pt2pt comm spawn ; do \
+		(cd $$dir && ${MAKE} latexdoc ; ) ; done
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Dependencies
 dependencies:
-	(cd util && $(MAKE) dependencies )
-	(cd pt2pt && $(MAKE) dependencies )
-	(cd comm && $(MAKE) dependencies )
+	for dir in util pt2pt comm spawn ; do \
+		(cd $$dir && ${MAKE} dependencies ; ) ; done
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -106,9 +101,8 @@ HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 tags: TAGS
 TAGS: Makefile
-	(cd util && $(MAKE) TAGS )
-	(cd pt2pt && $(MAKE) TAGS )
-	(cd comm && $(MAKE) TAGS )
+	for dir in util pt2pt comm spawn ; do \
+		(cd $$dir && ${MAKE} TAGS ; ) ; done
 # --------------------------------------------------------------------------
 #SUBDIRS = util attr basic datatype coll comm errhan group info init pt2pt rma spawn topo io @otherlangs@ .
 

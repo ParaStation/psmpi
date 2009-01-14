@@ -39,6 +39,15 @@ used within the CPU.  There is one predefined data representation,
 <TT>external32</TT>.  Please consult the MPI-2 standard for details on this
 function.
 <P>
+<H2>Notes for Fortran</H2>
+All MPI routines in Fortran (except for <TT>MPI_WTIME</TT> and <TT>MPI_WTICK</TT>) have
+an additional argument <TT>ierr</TT> at the end of the argument list.  <TT>ierr
+</TT>is an integer and has the same meaning as the return value of the routine
+in C.  In Fortran, MPI routines are subroutines, and are invoked with the
+<TT>call</TT> statement.
+<P>
+All MPI objects (e.g., <TT>MPI_Datatype</TT>, <TT>MPI_Comm</TT>) are of type <TT>INTEGER
+</TT>in Fortran.
 <P>
 <P><B>Location:</B>register_datarep.c<P>
 </BODY></HTML>

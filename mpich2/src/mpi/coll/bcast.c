@@ -370,8 +370,8 @@ int MPIR_Bcast (
                   mpi_errno = MPIC_Sendrecv(((char *)tmp_buf + send_offset),
                                             curr_size, MPI_BYTE, dst, MPIR_BCAST_TAG, 
                                             ((char *)tmp_buf + recv_offset),
-                                            nbytes-recv_offset, MPI_BYTE, dst,
-                                            MPIR_BCAST_TAG, comm, &status);
+                                            (nbytes-recv_offset < 0 ? 0 : nbytes-recv_offset), 
+					    MPI_BYTE, dst, MPIR_BCAST_TAG, comm, &status);
                   if (mpi_errno != MPI_SUCCESS) {
 		      MPIU_ERR_POP(mpi_errno);
 		  }
@@ -744,8 +744,10 @@ int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root,
 
     if (comm_ptr->coll_fns != NULL && comm_ptr->coll_fns->Bcast != NULL)
     {
+	/* --BEGIN USEREXTENSION-- */
 	mpi_errno = comm_ptr->coll_fns->Bcast(buffer, count,
                                               datatype, root, comm_ptr);
+	/* --END USEREXTENSION-- */
     }
     else
     {

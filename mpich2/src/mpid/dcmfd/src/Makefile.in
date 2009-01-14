@@ -1,0 +1,144 @@
+# This Makefile.in created by simplemake.  Do not edit
+
+# @configure_input@
+
+# --------------------------------------------------------------------------
+all: all-redirect
+
+SHELL           = @SHELL@
+VERBOSE         = 1
+AR              = @AR@
+RANLIB          = @RANLIB@
+master_top_srcdir  = @master_top_srcdir@
+top_builddir    = @master_top_builddir@
+abs_builddir    = @abs_builddir@
+srcdir          = @srcdir@
+abs_srcdir      = @abs_srcdir@
+MAKE            = @MAKE@
+MPILIBNAME      = @MPILIBNAME@
+
+VPATH = .:@srcdir@
+INCLUDES = -I${master_top_srcdir}/src/include -I${top_builddir}/src/include
+
+.SUFFIXES:
+.SUFFIXES:  .txt 
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
+	-rootdir=../../../../ \
+	-configdir=src/mpid/dcmfd/ \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
+	-distcleanfiles="localdefs config.status config.log config.cache *conf.cache config.system" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=src/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
+apply: 
+	$(ACTION) $(ACTION_INPUT)
+	for dir in impl misc pt2pt persistent onesided comm coll ; do \
+		(cd $$dir && ${MAKE} apply ; ) ; done
+clean: 
+	-@rm -f *.o ${srcdir}/*.o 
+	-@rm -f .libstamp0 .libstamp1 
+	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
+	for dir in impl misc pt2pt persistent onesided comm coll ; do \
+		(cd $$dir && ${MAKE} clean ; ) ; done
+distclean:  clean distclean-xxx remove-makefile
+distclean-xxx:
+	for dir in impl misc pt2pt persistent onesided comm coll ; do \
+		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
+		(cd $$dir && ${MAKE} distclean ; ) ; done
+	-@rm -rf $(DEPS_DIR)
+	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
+	for dir in impl misc pt2pt persistent onesided comm coll ; do \
+		(cd $$dir && ${MAKE} maintainer-clean ; ) ; done
+remove-makefile:
+	rm -f Makefile
+remove-genmakefiles:
+	rm -f  Makefile.in Makefile
+all-redirect:
+	${MAKE} all-local
+	@(cd impl && ${MAKE} all )
+	@(cd misc && ${MAKE} all )
+	@(cd pt2pt && ${MAKE} all )
+	@(cd persistent && ${MAKE} all )
+	@(cd onesided && ${MAKE} all )
+	@(cd comm && ${MAKE} all )
+	@(cd coll && ${MAKE} all )
+all-local: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a
+	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
+	    ${MAKE} .libstamp1 ; \
+	fi
+
+.libstamp0 ../../../../lib/lib${MPILIBNAME}.a: 
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../../lib/lib${MPILIBNAME}.a $?" ; \
+	else \
+	  echo ${AR} cr ../../../../lib/lib${MPILIBNAME}.a $? ; \
+	fi
+	@${AR} cr ../../../../lib/lib${MPILIBNAME}.a $?
+	${RANLIB} ../../../../lib/lib${MPILIBNAME}.a
+	date > .libstamp0
+.libstamp1 ../../../../lib/lib${MPILIBNAME}.la: 
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../../lib/lib${MPILIBNAME}.la $?" ; \
+	else \
+	  echo ${AR} cr ../../../../lib/lib${MPILIBNAME}.la $? ; \
+	fi
+	@${AR} cr ../../../../lib/lib${MPILIBNAME}.la $?
+	date > .libstamp1
+coverage: 
+	-@for file in  ; do \
+		gcov -b -f $$file ; done
+	for dir in impl misc pt2pt persistent onesided comm coll ; do \
+		(cd $$dir && ${MAKE} coverage ; ) ; done
+# --------------------------------------------------------------------------
+htmldoc:
+	for dir in impl misc pt2pt persistent onesided comm coll ; do \
+		(cd $$dir && ${MAKE} htmldoc ; ) ; done
+mandoc:
+	for dir in impl misc pt2pt persistent onesided comm coll ; do \
+		(cd $$dir && ${MAKE} mandoc ; ) ; done
+latexdoc:
+	for dir in impl misc pt2pt persistent onesided comm coll ; do \
+		(cd $$dir && ${MAKE} latexdoc ; ) ; done
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+	for dir in impl misc pt2pt persistent onesided comm coll ; do \
+		(cd $$dir && ${MAKE} dependencies ; ) ; done
+$(DEPS_DIR)/timestamp:  Makefile
+	rm -f $(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
+# End of Dependencies
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+HEADERFILES     = $(HEADERS)
+SOURCEFILES     = $(SOURCES)
+tags: TAGS
+TAGS: Makefile
+	for dir in impl misc pt2pt persistent onesided comm coll ; do \
+		(cd $$dir && ${MAKE} TAGS ; ) ; done
+# --------------------------------------------------------------------------
+
+FORCE_TARGET:
+

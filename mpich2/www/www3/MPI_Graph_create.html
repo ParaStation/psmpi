@@ -9,7 +9,7 @@
 Makes a new communicator to which topology information has been attached 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges, 
+int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *indx, int *edges, 
                     int reorder, MPI_Comm *comm_graph)
 </PRE>
 <H2>Input Parameters</H2>
@@ -18,7 +18,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 
 <DT><B>nnodes </B><DD>number of nodes in graph (integer) 
 
-<DT><B>index </B><DD>array of integers describing node degrees (see below) 
+<DT><B>indx </B><DD>array of integers describing node degrees (see below) 
 
 <DT><B>edges </B><DD>array of integers describing graph edges (see below) 
 

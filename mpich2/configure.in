@@ -1,4 +1,4 @@
-AC_PREREQ(2.59)
+AC_PREREQ(2.62)
 # 
 # (C) 2006 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
@@ -286,6 +286,12 @@ implementation.  option is a list of comma separated names including
     mutex    - Enable error checking on pthread mutexes
     all      - All of the above choices],,enable_g=none)
 dnl
+dnl We may want to force MPI_Aint to be the same size as MPI_Offset, 
+dnl particularly on 32 bit systems with large (64 bit) file systems.
+AC_ARG_WITH(aint-size,
+[--with-aint-size - Override the size of MPI_AINT],,with_aint_size=0)
+dnl
+dnl
 dnl --enable-sharedlibs=kind is set with the PAC_ARG_SHAREDLIBS macro 
 dnl
 dnl AC_ARG_ENABLE(internat,
@@ -296,16 +302,18 @@ dnl --enable-fast
 AC_ARG_ENABLE(fast,
 [--enable-fast=option - Control the level of fast execution in the MPICH
 implementation.   option is a list of comma separated names including 
-    defopt   - Default compiler optimization -O2 for all language bindings.
-               when neither --enable-fast nor --disable-fast is specified.
+    O<n>     - Appends default optimization flags, -O<n>, to all internal
+               compiler flags, i.e. MPICH2LIB_CFLAGS, MPICH2LIB_CXXFLAGS,
+               MPICH2LIB_FFLAGS, and MPICH2LIB_F90FLAGS.
+    defopt   - Default compiler optimization -O2 for all language bindings,
+               i.e. --enable-fast=O2, when neither --enable-fast
+               nor --disable-fast is specified.
     nochkmsg - No error checking and no error messages, i.e.
                --disable-error-checking and --disable-error-messages.
     notiming - No timing collection, i.e. --disable-timing.
-    ndebug   - Appends -DNDEBUG to CFLAGS.
+    ndebug   - Appends -DNDEBUG to internal CFLAGS, i.e. MPICH2LIB_CFLAGS.
     all|yes  - "defopt", "nochkmsg", "notiming" and "ndebug" are enabled
                when --enable-fast is specified without any option.
-    O<n>     - Appends default optimization flags, -O<n>, to
-               CFLAGS, FFLAGS, CXXFLAGS, F90FLAGS.
     none     - None of above options, i.e. --disable-fast.
 ],,enable_fast=defopt)
 
@@ -326,6 +334,10 @@ AC_ARG_ENABLE(romio,
 dnl
 AC_ARG_ENABLE(debuginfo,
 [--enable-debuginfo - Enable support for debuggers],,enable_debuginfo=no)
+dnl
+dnl The environment variable MPICH_DEBUGLIBNAME may be used to override the
+dnl default name of the library that the debugger will load to access the
+dnl MPICH2 internal data structures.
 dnl
 AC_ARG_ENABLE(nmpi-as-mpi,
 [--enable-nmpi-as-mpi - Use MPI rather than PMPI routines for MPI routines,
@@ -389,10 +401,6 @@ AC_ARG_ENABLE(weak-symbols,
 [--enable-weak-symbols - Use weak symbols to implement PMPI routines (default)],,
 enable_weak_symbols=yes)
 dnl
-AC_ARG_WITH(htmldir,[--with-htmldir=dir - Specify the directory for html documentation],,
-with_htmldir='${prefix}/www')
-AC_ARG_WITH(docdir,[--with-docdir=dir - Specify the directory for documentation],,
-with_docdir='${prefix}/doc')
 dnl
 dnl
 AC_ARG_WITH(cross,
@@ -451,23 +459,6 @@ export WRAPPER_LDFLAGS
 PAC_VPATH_CHECK(src/include/mpi.h src/env/mpicc src/env/mpicc.conf,lib)
 
 # ----------------------------------------------------------------------------
-#
-# Set the defaults for directories that are not included in configure's
-# repetoire
-if test -n "$with_htmldir" ; then 
-    htmldir=$with_htmldir
-else
-    htmldir='${prefix}/www'
-fi
-AC_SUBST(htmldir)
-
-if test -n "$with_docdir" ; then 
-    docdir=$with_docdir
-else
-    docdir='${prefix}/doc'
-fi
-AC_SUBST(docdir)
-
 # This test is complicated by the fact that top_srcdir is not set until
 # the very end of configure.  Instead, we get it ourselves
 if test -z "$top_srcdir" ; then
@@ -880,6 +871,12 @@ if test "$MPID_NO_SPAWN" = yes ; then
     AC_MSG_WARN([The device $with_device does not support MPI dynamic process routines])   
 fi
 
+
+# ----------------------------------------------------------------------------
+# atomic operations
+# ----------------------------------------------------------------------------
+subsystems="$subsystems src/mpid/common/locks"
+
 # ----------------------------------------------------------------------------
 # Threads
 # ----------------------------------------------------------------------------
@@ -1111,26 +1108,6 @@ if test -n "$perform_dbgmutex" ; then
    AC_DEFINE(MPICH_DEBUG_MUTEX,1,[Define to enable mutex debugging])
 fi
 
-if test "$enable_debuginfo" = "yes" ; then
-    debugger_dir=debugger
-    AC_DEFINE(HAVE_DEBUGGER_SUPPORT,1,[Define if debugger support is included])
-    # The debugger support requires a shared library.  This is handled 
-    # below, after we check for compiler support for shared libraries
-    # Note: if libdir contains exec_prefix, handle the fact that the
-    # default exec_prefix is NONE, which (much later in configure)
-    # gets turned into the value of prefix
-    if test "x$exec_prefix" = xNONE ; then
-        saveExecPrefix=$exec_prefix
-	exec_prefix=$prefix
-        eval dlldir=$libdir/libtvmpich2.so
-	exec_prefix=$saveExecPrefix
-    else
-        eval dlldir=$libdir/libtvmpich2.so
-    fi
-    dlldir='"'$dlldir'"'
-    AC_DEFINE_UNQUOTED(MPICH_INFODLL_LOC,$dlldir,[Define as the name of the debugger support library])
-fi
-AC_SUBST(debugger_dir)
 pac_cross_compiling=no
 if test "$with_cross" != "no" ; then
     if test -s "$with_cross" ; then
@@ -1200,6 +1177,12 @@ else
     # Add the device to the configure list
     devsubsystems="$devsubsystems $devicereldir"
     # Make device_name available to subdirs
+fi
+#
+# Allow the device to request that the install step invoke the install 
+# target in the device's Makefile.
+if test -n "$device_name" -a "$INSTALL_FROM_DEVICE" = yes ; then
+    other_install_dirs="${other_install_dirs} $devicereldir"
 fi
 AC_SUBST(device_name)
 #
@@ -1789,6 +1772,8 @@ EOF
 		 AC_MSG_WARN([Cannot build shared libraries for Fortran with this compiler])
              fi
          fi
+	 # This is needed for Mac OSX 10.5
+	 rm -rf conftest.dSYM
          rm -f conftest*
 
 	 FC_LINKPATH_SHL="-Wl,-rpath -Wl,"
@@ -1822,6 +1807,8 @@ EOF
     # allow this or have serious bugs (OSF Fortran compilers have a bug
     # that generates an error message from cpp).  The following test
     # checks to see if .F works, and if not, whether "cpp -P -C" can be used
+    # This is needed for Mac OSX 10.5
+    rm -rf conftest.dSYM
     rm -f conftest*
     AC_MSG_CHECKING([whether Fortran compiler processes .F files with C preprocessor])
     cat >conftest.F <<EOF
@@ -1870,7 +1857,7 @@ fi
 dnl By modifying mpif.h to use ! for comments, it can work with many f90 
 dnl compilers without creating a separate version.  
 dnl Note that this is run AFTER the AC_OUTPUT actions
-AC_OUTPUT_COMMANDS([if test $enable_f77 = yes ; then 
+AC_OUTPUT_COMMANDS([if test "$enable_f77" = yes ; then 
 if test "$bashWorks" = yes ; then cp -f src/env/mpif77.bash src/env/mpif77 ; fi
 chmod a+x src/env/mpif77
 if test "$has_exclaim" = "yes" ; then
@@ -1879,6 +1866,24 @@ if test "$has_exclaim" = "yes" ; then
 else
     cp src/binding/f77/mpif.h src/include
 fi
+if test "$has_fort_real8" = "yes" ; then
+    sed -e 's/DOUBLE PRECISION/REAL*8/g' src/include/mpif.h > src/include/mpif.h.new
+    mv src/include/mpif.h.new src/include/mpif.h
+    cp src/include/mpif.h src/binding/f77/mpif.h
+fi
+# Save a copy of the original mpi_base.f90 file
+if test "$enable_f90" = "yes" ; then
+  if test ! -f "$master_top_srcdir/src/binding/f90/mpi_base.f90.orig" ; then
+    cp $master_top_srcdir/src/binding/f90/mpi_base.f90 $master_top_srcdir/src/binding/f90/mpi_base.f90.orig
+  fi
+  if test "$has_fort90_real8" = "yes" ; then
+    sed -e 's/DOUBLE PRECISION/REAL*8/g' $master_top_srcdir/src/binding/f90/mpi_base.f90 > $master_top_srcdir/src/binding/f90/mpi_base.f90.new
+    mv -f $master_top_srcdir/src/binding/f90/mpi_base.f90.new $master_top_srcdir/src/binding/f90/mpi_base.f90
+  else
+    cp -f $master_top_srcdir/src/binding/f90/mpi_base.f90.orig $master_top_srcdir/src/binding/f90/mpi_base.f90
+  fi
+fi
+
 if test ! -d bin  ; then mkdir bin ; fi 
 sed -e 's%includedir=.*%includedir='$includebuild_dir% \
    -e 's%libdir=.*%libdir='$libbuild_dir% src/env/mpif77 > bin/mpif77 ;
@@ -1886,8 +1891,12 @@ chmod a+x bin/mpif77
 else
     rm -f src/env/mpif77 src/env/mpif77.conf
 fi],
+master_top_srcdir=$master_top_srcdir
 enable_f77=$enable_f77
+enable_f90=$enable_f90
 has_exclaim=$has_exclaim
+has_fort_real8=$pac_cv_fort_real8
+has_fort90_real8=$pac_cv_fort90_real8
 includebuild_dir=$includebuild_dir
 libbuild_dir=$libbuild_dir
 bashWorks=$bashWorks)
@@ -1999,6 +2008,8 @@ if test "$enable_f90" = "yes" ; then
     # allow this or have serious bugs (OSF Fortran compilers have a bug
     # that generates an error message from cpp).  The following test
     # checks to see if .F works, and if not, whether "cpp -P -C" can be used
+    # This is needed for Mac OSX 10.5
+    rm -rf conftest.dSYM
     rm -f conftest*
     AC_MSG_CHECKING([whether Fortran 90 compiler processes .F90 files with C preprocessor])
     cat >conftest.F90 <<EOF
@@ -2171,7 +2182,7 @@ if test "$enable_cxx" = "default" ; then
     # not *link* C++ object files unless there is at least one C++ source
     # file present on the command that performs the linking.  icpc is the
     # Intel C++ compiler that both compiles and links C++ programs)
-    AC_CHECK_PROGS(CXX,$CCC c++ g++ gcc CC cxx cc++ cl pgCC xlC icpc)
+    AC_CHECK_PROGS(CXX,$CCC c++ g++ gcc CC cxx cc++ cl pgCC xlC icpc pathCC)
     if test -n "$CXX" ; then
         enable_cxx=yes
     fi
@@ -2222,8 +2233,19 @@ public:
  pac_cv_cxx_builds_exe=yes, ac_cv_builds_exe=no)
  AC_LANG_RESTORE
 ])
-    if test "$pac_cv_cxx_builds_exe" != yes; then
+    if test "$pac_cv_cxx_builds_exe" != yes ; then
        AC_MSG_ERROR([Aborting because C++ compiler does not work.  If you do not need a C++ compiler, configure with --disable-cxx])
+    fi
+    # Recent failures have come when a standard header is loaded
+    # The Intel icpc 10.x compiler fails with <string> if gcc 4.2 is installed. 
+    AC_CACHE_CHECK([whether C++ compiler works with string],pac_cv_cxx_compiles_string,[
+    AC_LANG_SAVE
+    AC_LANG_CPLUSPLUS
+    AC_TRY_COMPILE([#include <string>],[return 0;],pac_cv_cxx_compiles_string=yes,pac_cv_cxx_compiles_string=no)
+    AC_LANG_RESTORE
+])
+    if test "$pac_cv_cxx_compiles_string" != yes ; then 
+        AC_MSG_WARN([The C++ compiler $CXX cannot compile a program containing the <string> header - this may indicate a problem with the C++ installation.  Consider configuing with --disable-cxx])
     fi
 
     AC_LANG_CPLUSPLUS
@@ -2292,10 +2314,25 @@ public:
     esac
     # GNU changed the calling conventions between minor releases (!!!)
     # This is too hard to detect, but we should be able to detect
-    # the version mismatch
-    GNU_VERSION=0
-    GNU_MINORVERSION=0
-    if test "$ac_compiler_gnu" = "yes" ; then
+    # the version mismatch.  By default, we set the GNU version to 0.
+    # In a cross-compiling environment, these can be set with environment
+    # variables, either directly or through the standard "CROSS" variable.
+    if test -z "$GNUCXX_VERSION" ; then
+        if test -n "$CROSS_GNUCXX_VERSION" ; then 
+	     GNUCXX_VERSION=$CROSS_GNUCXX_VERSION
+        else
+             GNUCXX_VERSION=0
+        fi
+    fi
+    if test -z "$GNUCXX_MINORVERSION" ; then 
+	if test -n "$CROSS_GNUCXX_MINORVERSION" ; then
+	     GNUCXX_MINORVERSION=$CROSS_GNUCXX_MINORVERSION
+       	else
+             GNUCXX_MINORVERSION=0
+        fi
+    fi
+    if test "$cross_compiling" = "no" -a "$ac_compiler_gnu" = "yes" -a \
+       "$GNUCXX_VERSION" = 0 -a "$GNUCXX_MINORVERSION" = 0 ; then
          ac_vals=""
 	 AC_MSG_CHECKING([for GNU g++ version])
          AC_TRY_RUN([#include <stdio.h>
@@ -2316,14 +2353,14 @@ int main() {
              v=`echo "$ac_vals" | sed -e 's/v=\(.*\),.*/\1/'`
              m=`echo "$ac_vals" | sed -e 's/.*m=\(.*\)/\1/'`
              AC_MSG_RESULT([$v . $m])
-             GNUC_VERSION=$v
-             GNUC_MINORVERSION=$m
+             GNUCXX_VERSION=$v
+             GNUCXX_MINORVERSION=$m
          else
              AC_MSG_RESULT([unknown])
          fi 
-         AC_SUBST(GNUC_VERSION)
-         AC_SUBST(GNUC_MINORVERSION)
     fi    
+    AC_SUBST(GNUCXX_VERSION)
+    AC_SUBST(GNUCXX_MINORVERSION)
 
     bindings="$bindings cxx"
     bindings_dirs="$bindings_dirs src/binding/cxx"
@@ -2464,6 +2501,8 @@ EOF
     if test -n "$ETAGSADD" ; then
         AC_MSG_RESULT($ETAGSADD)
     fi
+     # This is needed for Mac OSX 10.5
+    rm -rf conftest.dSYM
     rm -f conftest*
 fi
 AC_SUBST(ETAGS)
@@ -2507,17 +2546,17 @@ PAC_PROG_MAKE
 
 #
 # Check for bash to allow more robust shell scripts
-AC_PATH_PROG(BASH,bash)
+AC_PATH_PROG(BASH_SHELL,bash)
 #
 # Confirm that bash has working arrays.  We can use this to 
 # build more robust versions of the scripts (particularly the 
 # compliation scripts) by taking advantage of the array features in 
 # bash.
 bashWorks=no
-if test -x "$BASH" ; then
+if test -x "$BASH_SHELL" ; then
 changequote(%%,::)dnl
     cat >>conftest <<EOF
-#! /bin/bash
+#! $BASH_SHELL
 A[0]="b"
 A[1]="c"
 rc=1
@@ -2525,7 +2564,7 @@ if test \${A[1]} != "c" ; then rc=2 ; else rc=0 ; fi
 exit \$rc
 EOF
 changequote([,])dnl
-    AC_MSG_CHECKING([whether $BASH supports arrays])
+    AC_MSG_CHECKING([whether $BASH_SHELL supports arrays])
     chmod +x conftest
     if ./conftest 2>&1 >/dev/null ; then
         bashWorks=yes
@@ -2657,10 +2696,11 @@ if test "$enable_debuginfo" = "yes" ; then
         BUILD_TVDLL=yes
 	CC_SHL_DBG="$CC_SHL"
 	C_LINK_SHL_DBG="$C_LINK_SHL"
+	DBG_SHLIB_TYPE=$ENABLE_SHLIB
    else
         # Try to determine how to build the tv shared library
-	AC_MSG_CHECKING([for how to build shared library for debugger interface])
-        PAC_CC_SHAREDLIBS(,CC_SHL_DBG,C_LINK_SHL_DBG)
+	AC_MSG_RESULT([for how to build shared library for debugger interface])
+        PAC_CC_SHAREDLIBS(,CC_SHL_DBG,C_LINK_SHL_DBG,DBG_SHLIB_TYPE)
 	PAC_CC_SHLIB_EXT
 	if test "$SHLIB_EXT" = "unknown" ; then
 	    # Guess that the extension is .so
@@ -2670,10 +2710,11 @@ if test "$enable_debuginfo" = "yes" ; then
 	    AC_MSG_RESULT([none found])
             AC_MSG_WARN([Debugger support requires shared libraries])      
 	else
-	    AC_MSG_RESULT($CC_SHL_DBG)
+	    AC_MSG_RESULT([Use this to build the debugger shared library: $CC_SHL_DBG])
 	    BUILD_TVDLL=yes
         fi
    fi
+   AC_SUBST(DBG_SHLIB_TYPE)
    # One more nasty problem.  Totalview relies on debugger symbols 
    # being present in the executable.  Some experimental versions of
    # gcc (3.2 20020329 for ia64) do *not* include the object symbols
@@ -2692,7 +2733,38 @@ on all link lines (consider adding it to LDFLAGS)])
    AC_SUBST(BUILD_TVDLL)
    AC_SUBST(CC_SHL_DBG)
    AC_SUBST(C_LINK_SHL_DBG)
+
+    # The debugger library name cannot be set until we know the extension
+    # of shared libraries - the name is so on most Unix system, dylib on OS X.
+    debugger_dir=debugger
+    AC_DEFINE(HAVE_DEBUGGER_SUPPORT,1,[Define if debugger support is included])
+    # The debugger support requires a shared library.  This is handled 
+    # below, after we check for compiler support for shared libraries
+    # Note: if libdir contains exec_prefix, handle the fact that the
+    # default exec_prefix is NONE, which (much later in configure)
+    # gets turned into the value of prefix
+    ##ENVVAR: MPICH_DEBUGLIBNAME - Set this environment variable to 
+    ## override the default name of the debugger support library.
+    ## The default name is libtvmpich2.so .
+    ##ENVVAR END:
+    if test -z "$MPICH_DEBUGLIBNAME" ; then
+        DEBUGLIBNAME=libtvmpich2.so
+    else
+        DEBUGLIBNAME=$MPICH_DEBUGLIBNAME
+    fi
+    if test "x$exec_prefix" = xNONE ; then
+        saveExecPrefix=$exec_prefix
+	exec_prefix=$prefix
+        eval dlldir=$libdir/$DEBUGLIBNAME
+	exec_prefix=$saveExecPrefix
+    else
+        eval dlldir=$libdir/$DEBUGLIBNAME
+    fi
+    dlldir='"'$dlldir'"'
+    AC_DEFINE_UNQUOTED(MPICH_INFODLL_LOC,$dlldir,[Define as the name of the debugger support library])
 fi
+AC_SUBST(debugger_dir)
+
 # ----------------------------------------------------------------------------
 
 nameserv_name=""
@@ -2803,7 +2875,34 @@ PAC_C_GNU_ATTRIBUTE
 # We need to check for the endianess in order to implement the
 # "external32" representations.  This defines "WORDS_BIGENDIAN when
 # the system is bigendian.
-AC_C_BIGENDIAN(,AC_DEFINE(WORDS_LITTLEENDIAN,1,[Define if words are little endian]))
+# As of autoconf 2.62, this macro takes an additional argument for systems
+# that can produce object files for either endianess.  
+# With the as-always-incompatible-with-every-version autoconf, the 
+# arguments for this macro *changed* in 2.62 to
+# (if-bigendian,if-littleendian,unknown,universal)
+# The fourth argument is new.
+# Also note that the definition emitted by autoheader requires that gcc
+# be used to compile the programs - other compilers may not define the 
+# non-standard __BIG_ENDIAN__ or __LITTLE_ENDIAN__ CPP names on which 
+# autoconf 2.62 now depends.
+byteOrdering=unknown
+AC_C_BIGENDIAN(byteOrdering=big,byteOrdering=little,,byteOrdering=universal)
+case $byteOrdering in
+    big)
+    # Nothing to do - the c_bigendian macro takes care of it
+    :
+    ;;
+    little)
+    AC_DEFINE(WORDS_LITTLEENDIAN,1,[Define if words are little endian])
+    ;;
+    universal)
+    AC_DEFINE(WORDS_UNIVERSAL_ENDIAN,1,[Define if configure will not tell us, for universal binaries])
+    ;;
+    unknown)
+    AC_MSG_ERROR([Unable to determine endianess])
+    ;;
+esac
+dnl AC_C_BIGENDIAN(,AC_DEFINE(WORDS_LITTLEENDIAN,1,[Define if words are little endian]))
 
 # We only need this test if we are using Fortran
 if test "$enable_f77" ; then
@@ -3046,10 +3145,15 @@ fi
 # Get the size of the C types for encoding in the basic datatypes and for
 # the specific-sized integers
 AC_CHECK_SIZEOF(char,$CROSS_SIZEOF_CHAR)
+AC_CHECK_SIZEOF(unsigned char,$CROSS_SIZEOF_UCHAR)
 AC_CHECK_SIZEOF(short,$CROSS_SIZEOF_SHORT)
+AC_CHECK_SIZEOF(unsigned short,$CROSS_SIZEOF_USHORT)
 AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_INT)
+AC_CHECK_SIZEOF(unsigned int,$CROSS_SIZEOF_UINT)
 AC_CHECK_SIZEOF(long,$CROSS_SIZEOF_LONG)
+AC_CHECK_SIZEOF(unsigned long,$CROSS_SIZEOF_ULONG)
 AC_CHECK_SIZEOF(long long,$CROSS_SIZEOF_LONG_LONG)
+AC_CHECK_SIZEOF(unsigned long long,$CROSS_SIZEOF_ULONG_LONG)
 AC_CHECK_SIZEOF(float,$CROSS_SIZEOF_FLOAT)
 AC_CHECK_SIZEOF(double,$CROSS_SIZEOF_DOUBLE)
 AC_CHECK_SIZEOF(long double,$CROSS_SIZEOF_LONG_DOUBLE)
@@ -3099,72 +3203,236 @@ dnl PAC_CHECK_SIZEOF_DERIVED(long double int,[struct { long double a; int b; }],
 # Include it when testing for these types
 AC_CHECK_HEADER(sys/bitypes.h,[use_bitypes="#include <sys/bitypes.h>"
 AC_DEFINE(HAVE_SYS_BITYPES_H,1,[Define if sys/bitypes.h exists])])
-AC_CACHE_CHECK([for int16_t],pac_cv_int16_t,[
-AC_TRY_COMPILE([#include <sys/types.h>
-$use_bitypes
-],[int16_t a=0;],
-pac_cv_int16_t=yes,pac_cv_int16_t=no)])
+# A C99 compliant compiler should have inttypes.h for fixed-size int types
+AC_CHECK_HEADER(inttypes.h)
 
-# If there is not int16_t, try to define one
-if test "$pac_cv_int16_t" = "no" ; then
-    if test -z "$CROSS_SIZEOF_SHORT" ; then CROSS_SIZEOF_SHORT=2 ; fi
-    AC_CHECK_SIZEOF(short,$CROSS_SIZEOF_SHORT)
-    if test "$ac_cv_sizeof_short" = 2 ; then 
-        INT16_T=short
-    else
-        # No good option
-        INT16_T=int
-    fi
-    AC_SUBST(INT16_T)
-    AC_DEFINE_UNQUOTED(MPIU_INT16_T,$INT16_T,[Define for the 16 bit integer type])
-else
+# Check for types
+AC_TYPE_INT8_T
+AC_TYPE_INT16_T
+AC_TYPE_INT32_T
+AC_TYPE_INT64_T
+
+# Temporary backwards compatiblity for the pre autoconf 2.62 integer
+# type checking
+if test "$ac_cv_c_int16_t" != no ; then
     AC_DEFINE(HAVE_INT16_T,1,[Define if int16_t is supported by the C compiler])
 fi
-AC_CACHE_CHECK([for int32_t],pac_cv_int32_t,[
-AC_TRY_COMPILE([#include <sys/types.h>
-$use_bitypes
-],[int32_t a=0;],
-pac_cv_int32_t=yes,pac_cv_int32_t=no)])
-# If there is not int32_t, try to define one
-if test "$pac_cv_int32_t" = "no" ; then
-    if test -z "$CROSS_SIZEOF_INT" ; then CROSS_SIZEOF_INT=4 ; fi
-    AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_INT)
-    if test "$ac_cv_sizeof_int" = 4 ; then 
-        INT32_T=int
-    else
-        # No good alternative
-        INT32_T=int
-    fi
-    AC_SUBST(INT32_T)
-    AC_DEFINE_UNQUOTED(MPIU_INT32_T,$INT32_T,[Define for the 32 bit integer type])
-else
+if test "$ac_cv_c_int32_t" != no ; then
     AC_DEFINE(HAVE_INT32_T,1,[Define if int32_t is supported by the C compiler])
 fi
-AC_CACHE_CHECK([for int64_t],pac_cv_int64_t,[
-AC_TRY_COMPILE([#include <sys/types.h>
-$use_bitypes
-],[int64_t a=0;],
-pac_cv_int64_t=yes,pac_cv_int64_t=no)])
-# If there is not int64_t, try to define one
-if test "$pac_cv_int64_t" = "no" ; then
-    if test -z "$CROSS_SIZEOF_LONG_LONG" ; then CROSS_SIZEOF_LONG_LONG=8 ; fi
-    AC_CHECK_SIZEOF(long,$CROSS_SIZEOF_LONG)
-    if test "$ac_cv_sizeof_long" = 8 ; then 
-        INT64_T="long"
-    else
-        AC_CHECK_SIZEOF(long long,$CROSS_SIZEOF_LONG_LONG)
-        if test "$ac_cv_sizeof_long_long" = 8 ; then 
-            INT64_T="long long"
-        else
-            # No good alternative
-            INT64_T="long long"
-        fi
-    fi
-    AC_SUBST(INT64_T)
-    AC_DEFINE_UNQUOTED(MPIU_INT64_T,$INT64_T,[Define for the 64 bit integer type])
-else
+if test "$ac_cv_c_int64_t" != no ; then
     AC_DEFINE(HAVE_INT64_T,1,[Define if int64_t is supported by the C compiler])
 fi
+
+dnl AC_CACHE_CHECK([for int16_t],pac_cv_int16_t,[
+dnl AC_TRY_COMPILE([#include <sys/types.h>
+dnl $use_bitypes
+dnl ],[int16_t a=0;],
+dnl pac_cv_int16_t=yes,pac_cv_int16_t=no)])
+
+dnl # If there is no int16_t, try to define one
+dnl if test "$pac_cv_int16_t" = "no" ; then
+dnl     if test -z "$CROSS_SIZEOF_SHORT" ; then CROSS_SIZEOF_SHORT=2 ; fi
+dnl     AC_CHECK_SIZEOF(short,$CROSS_SIZEOF_SHORT)
+dnl     if test "$ac_cv_sizeof_short" = 2 ; then 
+dnl         INT16_T=short
+dnl     else
+dnl         # No good option
+dnl         INT16_T=int
+dnl     fi
+dnl     AC_SUBST(INT16_T)
+dnl     AC_DEFINE_UNQUOTED(MPIU_INT16_T,$INT16_T,[Define for the 16 bit integer type])
+dnl else
+dnl     AC_DEFINE(HAVE_INT16_T,1,[Define if int16_t is supported by the C compiler])
+dnl fi
+dnl AC_CACHE_CHECK([for int32_t],pac_cv_int32_t,[
+dnl AC_TRY_COMPILE([#include <sys/types.h>
+dnl $use_bitypes
+dnl ],[int32_t a=0;],
+dnl pac_cv_int32_t=yes,pac_cv_int32_t=no)])
+dnl # If there is no int32_t, try to define one
+dnl if test "$pac_cv_int32_t" = "no" ; then
+dnl     if test -z "$CROSS_SIZEOF_INT" ; then CROSS_SIZEOF_INT=4 ; fi
+dnl     AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_INT)
+dnl     if test "$ac_cv_sizeof_int" = 4 ; then 
+dnl         INT32_T=int
+dnl     else
+dnl         # No good alternative
+dnl         INT32_T=int
+dnl     fi
+dnl     AC_SUBST(INT32_T)
+dnl     AC_DEFINE_UNQUOTED(MPIU_INT32_T,$INT32_T,[Define for the 32 bit integer type])
+dnl else
+dnl     AC_DEFINE(HAVE_INT32_T,1,[Define if int32_t is supported by the C compiler])
+dnl fi
+dnl AC_CACHE_CHECK([for int64_t],pac_cv_int64_t,[
+dnl AC_TRY_COMPILE([#include <sys/types.h>
+dnl $use_bitypes
+dnl ],[int64_t a=0;],
+dnl pac_cv_int64_t=yes,pac_cv_int64_t=no)])
+dnl # If there is no int64_t, try to define one
+dnl if test "$pac_cv_int64_t" = "no" ; then
+dnl     if test -z "$CROSS_SIZEOF_LONG_LONG" ; then CROSS_SIZEOF_LONG_LONG=8 ; fi
+dnl     AC_CHECK_SIZEOF(long,$CROSS_SIZEOF_LONG)
+dnl     if test "$ac_cv_sizeof_long" = 8 ; then 
+dnl         INT64_T="long"
+dnl     else
+dnl         AC_CHECK_SIZEOF(long long,$CROSS_SIZEOF_LONG_LONG)
+dnl         if test "$ac_cv_sizeof_long_long" = 8 ; then 
+dnl             INT64_T="long long"
+dnl         else
+dnl             # No good alternative
+dnl             INT64_T="long long"
+dnl         fi
+dnl     fi
+dnl     AC_SUBST(INT64_T)
+dnl     AC_DEFINE_UNQUOTED(MPIU_INT64_T,$INT64_T,[Define for the 64 bit integer type])
+dnl else
+dnl     AC_DEFINE(HAVE_INT64_T,1,[Define if int64_t is supported by the C compiler])
+dnl fi
+
+# The following make these definitions:
+#   define _UINT<n>_T 1 
+# if uint<n>_t is available.  E.g., define _UINT8_T as 1 if uint8_t is available
+# if not available, define uint<n>_t as the related C type, e.g.,
+#   define uint8_t unsigned char
+#
+AC_TYPE_UINT8_T
+AC_TYPE_UINT16_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
+
+dnl # Check for availability of uint8_t, uint16_t, uint32_t, uint64_t
+dnl if test "$ac_cv_header_inttypes.h" = "yes" ; then
+dnl 	AC_CACHE_CHECK([for uint8_t],pac_cv_uint8_t,[
+dnl 	AC_TRY_COMPILE([#include <inttypes.h>],
+dnl 	[uint8_t a=0;],
+dnl 	pac_cv_uint8_t=yes,pac_cv_uint8_t=no)])
+dnl 	AC_CACHE_CHECK([for uint16_t],pac_cv_uint16_t,[
+dnl 	AC_TRY_COMPILE([#include <inttypes.h>],
+dnl 	[uint16_t a=0;],
+dnl 	pac_cv_uint16_t=yes,pac_cv_uint16_t=no)])
+dnl 	AC_CACHE_CHECK([for uint32_t],pac_cv_uint32_t,[
+dnl 	AC_TRY_COMPILE([#include <inttypes.h>],
+dnl 	[uint32_t a=0;],
+dnl 	pac_cv_uint32_t=yes,pac_cv_uint32_t=no)])
+dnl 	AC_CACHE_CHECK([for uint64_t],pac_cv_uint64_t,[
+dnl 	AC_TRY_COMPILE([#include <inttypes.h>],
+dnl 	[uint64_t a=0;],
+dnl 	pac_cv_uint64_t=yes,pac_cv_uint64_t=no)])
+dnl else
+dnl 	AC_CACHE_CHECK([for uint8_t],pac_cv_uint8_t,[
+dnl 	AC_TRY_COMPILE([#include <sys/types.h>
+dnl 	$use_bitypes
+dnl 	],[uint8_t a=0;],
+dnl 	pac_cv_uint8_t=yes,pac_cv_uint8_t=no)])
+dnl 	AC_CACHE_CHECK([for uint16_t],pac_cv_uint16_t,[
+dnl 	AC_TRY_COMPILE([#include <sys/types.h>
+dnl 	$use_bitypes
+dnl 	],[uint16_t a=0;],
+dnl 	pac_cv_uint16_t=yes,pac_cv_uint16_t=no)])
+dnl 	AC_CACHE_CHECK([for uint32_t],pac_cv_uint32_t,[
+dnl 	AC_TRY_COMPILE([#include <sys/types.h>
+dnl 	$use_bitypes
+dnl 	],[uint32_t a=0;],
+dnl 	pac_cv_uint32_t=yes,pac_cv_uint32_t=no)])
+dnl 	AC_CACHE_CHECK([for uint64_t],pac_cv_uint64_t,[
+dnl 	AC_TRY_COMPILE([#include <sys/types.h>
+dnl 	$use_bitypes
+dnl 	],[uint64_t a=0;],
+dnl 	pac_cv_uint64_t=yes,pac_cv_uint64_t=no)])
+dnl fi
+
+dnl # Fallback types for uint8_t
+dnl if test "$pac_cv_uint8_t" = "no" ; then
+dnl 	# Check if u_int8_t is available
+dnl 	AC_CACHE_CHECK([for u_int8_t],pac_cv_u_int8_t,[
+dnl 	AC_TRY_COMPILE([#include <sys/types.h>
+dnl 	$use_bitypes
+dnl 	],[u_int8_t a=0;],
+dnl 	pac_cv_u_int8_t=yes,pac_cv_u_int8_t=no)])
+dnl 	if test "$pac_cv_u_int8_t" = "yes" ; then
+dnl 		UINT8_T="u_int8_t"
+dnl     elif test "$ac_cv_sizeof_unsigned_char" = 1 ; then 
+dnl         UINT8_T="unsigned char"
+dnl     else
+dnl         # No good option - Non-compliant C compilers?
+dnl         UINT8_T="unsigned int"
+dnl     fi
+dnl     AC_SUBST(UINT8_T)
+dnl     AC_DEFINE_UNQUOTED(MPIU_UINT8_T,$UINT8_T,[Define for the 8 bit unsigned integer type])
+dnl else
+dnl     AC_DEFINE(HAVE_UINT8_T,1,[Define if uint8_t is supported by the C compiler])
+dnl fi
+
+dnl # Fallback types for uint16_t
+dnl if test "$pac_cv_uint16_t" = "no" ; then
+dnl # Check if u_int16_t is available
+dnl 	AC_CACHE_CHECK([for u_int16_t],pac_cv_u_int16_t,[
+dnl 	AC_TRY_COMPILE([#include <sys/types.h>
+dnl 	$use_bitypes
+dnl 	],[u_int16_t a=0;],
+dnl 	pac_cv_u_int16_t=yes,pac_cv_u_int16_t=no)])
+dnl 	if test "$pac_cv_u_int16_t" = "yes" ; then
+dnl 		UINT16_T="u_int16_t"
+dnl     elif test "$ac_cv_sizeof_unsigned_short" = 2 ; then 
+dnl         UINT16_T="unsigned short"
+dnl     else
+dnl         # No good option
+dnl         UINT16_T="unsigned int"
+dnl     fi
+dnl     AC_SUBST(UINT16_T)
+dnl     AC_DEFINE_UNQUOTED(MPIU_UINT16_T,$UINT16_T,[Define for the 16 bit unsigned integer type])
+dnl else
+dnl     AC_DEFINE(HAVE_UINT16_T,1,[Define if uint16_t is supported by the C compiler])
+dnl fi
+
+dnl # Fallback types for uint32_t
+dnl if test "$pac_cv_uint32_t" = "no" ; then
+dnl # Check if u_int32_t is available
+dnl 	AC_CACHE_CHECK([for u_int32_t],pac_cv_u_int32_t,[
+dnl 	AC_TRY_COMPILE([#include <sys/types.h>
+dnl 	$use_bitypes
+dnl 	],[u_int32_t a=0;],
+dnl 	pac_cv_u_int32_t=yes,pac_cv_u_int32_t=no)])
+dnl 	if test "$pac_cv_u_int32_t" = "yes" ; then
+dnl 		UINT32_T="u_int32_t"
+dnl     elif test "$ac_cv_sizeof_unsigned_int" = 4 ; then 
+dnl         UINT32_T="unsigned int"
+dnl     else
+dnl         # No good option
+dnl         UINT32_T="unsigned int"
+dnl     fi
+dnl     AC_SUBST(UINT32_T)
+dnl     AC_DEFINE_UNQUOTED(MPIU_UINT32_T,$UINT32_T,[Define for the 32 bit unsigned integer type])
+dnl else
+dnl     AC_DEFINE(HAVE_UINT32_T,1,[Define if uint32_t is supported by the C compiler])
+dnl fi
+
+dnl # Fallback types for uint64_t
+dnl if test "$pac_cv_uint64_t" = "no" ; then
+dnl # Check if u_int64_t is available
+dnl 	AC_CACHE_CHECK([for u_int64_t],pac_cv_u_int64_t,[
+dnl 	AC_TRY_COMPILE([#include <sys/types.h>
+dnl 	$use_bitypes
+dnl 	],[u_int64_t a=0;],
+dnl 	pac_cv_u_int64_t=yes,pac_cv_u_int64_t=no)])
+dnl 	if test "$pac_cv_u_int64_t" = "yes" ; then
+dnl 		UINT64_T="u_int64_t"
+dnl     elif test "$ac_cv_sizeof_unsigned_long" = 8 ; then 
+dnl         UINT64_T="unsigned long"
+dnl     elif test "$ac_cv_sizeof_unsigned_long_long" = 8 ; then 
+dnl         UINT64_T="unsigned long long"
+dnl     else
+dnl         # No good option
+dnl         UINT64_T="unsigned int"
+dnl     fi
+dnl     AC_SUBST(UINT64_T)
+dnl     AC_DEFINE_UNQUOTED(MPIU_UINT64_T,$UINT64_T,[Define for the 64 bit unsigned integer type])
+dnl else
+dnl     AC_DEFINE(HAVE_UINT64_T,1,[Define if uint64_t is supported by the C compiler])
+dnl fi
+
 # Generate a hex version of the size of each type
 for type in short int long long_long float double long_double wchar_t \
     float_int double_int long_int short_int 2_int long_double_int ; do
@@ -3921,7 +4189,11 @@ if test "$enable_f77" = yes ; then
     default_status_size=`expr 5 \* $ac_cv_sizeof_int`
     AC_CACHE_CHECK([for size of MPI_Status],pac_cv_sizeof_mpi_status,[
     AC_TRY_RUN([
+#include "confdefs.h"
 #include <stdio.h>
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 typedef struct { 
     int count;
     int cancelled;
@@ -3983,6 +4255,9 @@ dnl     fi
         cat >conftestc.c <<EOF
 #include <stdio.h>
 #include "confdefs.h"
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 #ifdef F77_NAME_UPPER
 #define ftest_ FTEST
 #elif defined(F77_NAME_LOWER) || defined(F77_NAME_MIXED)
@@ -4127,6 +4402,10 @@ EOF
 	        OFFSET_KIND=$simpleintkind
             fi
         fi
+        AC_CACHE_CHECK([whether real*8 is supported in Fortran 90],pac_cv_fort90_real8,[
+        AC_COMPILE_IFELSE([AC_LANG_PROGRAM(,[      real*8 a])],
+            pac_cv_fort90_real8=yes,
+            pac_cv_fort90_real8=no)])
         PAC_LANG_POP_COMPILERS 
     fi
     # Make sure that address kind and offset kind have values.
@@ -4171,11 +4450,6 @@ EOF
     AC_SUBST(DLLIMPORT)
 
     # FIXME:
-    # Eventually, need to add 
-    # SIZEOF_F90_INTEGER
-    # SIZEOF_F90_REAL
-    # SIZEOF_F90_CHARACTER
-    # SIZEOF_F90_DOUBLE_PRECISION
     # We also need to include
     # SIZEOF_F90_MPI_OFFSET
     # SIZEOF_F90_MPI_AINT
@@ -4220,7 +4494,24 @@ EOF
         REQD="!"
     fi
     AC_SUBST(REQD)
-
+    # Is integer*1 supported, and is it a different size than integer?
+    REQI1="!"
+    if test "$pac_cv_fort_integer1" = yes -a "$SIZEOF_F90_INTEGER" != 1 ; then
+        REQI1=
+    fi
+    AC_SUBST(REQI1)
+    # Is integer*2 supported, and is it a different size than integer?
+    REQI2="!"
+    if test "$pac_cv_fort_integer2" = yes -a "$SIZEOF_F90_INTEGER" != 2 ; then
+        REQI2=
+    fi
+    AC_SUBST(REQI2)
+    # Is integer*8 supported, and is it a different size than integer?
+    REQI8="!"
+    if test "$pac_cv_fort_integer8" = yes -a "$SIZEOF_F90_INTEGER" != 8 ; then
+        REQI8=
+    fi
+    AC_SUBST(REQI8)
     # 
 
     AC_LANG_C
@@ -4283,6 +4574,18 @@ using namespace std;
         esac
     fi
     AC_LANG_C
+
+    # Make these available to the collective operations and other code
+    AC_DEFINE_UNQUOTED(MPIR_CXX_COMPLEX_VALUE,$MPIR_CXX_COMPLEX,[Define as the MPI Datatype handle for MPI::COMPLEX])
+    AC_DEFINE_UNQUOTED(MPIR_CXX_DOUBLE_COMPLEX_VALUE,$MPIR_CXX_DOUBLE_COMPLEX,[Define as the MPI Datatype handle for MPI::DOUBLE_COMPLEX])
+    AC_DEFINE_UNQUOTED(MPIR_CXX_LONG_DOUBLE_COMPLEX_VALUE,$MPIR_CXX_LONG_DOUBLE_COMPLEX,[Define as the MPI Datatype handle for MPI::LONG_DOUBLE_COMPLEX])
+    
+    # If either complex or double complex have length 0, then mark 
+    # c++ complex as unavailable
+    if test "$ac_cv_sizeof_Complex" != 0 -a \
+            "$ac_cv_sizeof_DoubleComplex" != 0 ; then
+	AC_DEFINE(HAVE_CXX_COMPLEX,1,[Define is C++ supports complex types])
+    fi
 fi
 
 # ----------------------------------------------------------------------------
@@ -4308,12 +4611,14 @@ fi
 # work efficiently.  The datatype pack code (should) allow the developer
 # to include stricter alignment rules than are needed for correctness to
 # get better performance.
-if test "$pac_cv_int64_t" = "yes" -o -n "$INT64_T" ; then
+if test "$ac_cv_c_int64_t" != "no" -o -n "$INT64_T" ; then
     default_int64_t_alignment=${CROSS_INT64_T_ALIGNMENT:-"unknown"}
-    if test "$pac_cv_int64_t" = "yes" ; then
-        MYINT64_T=int64_t
-    else
-        MYINT64_T=$INT64_T
+    if test -z "$INT64_T" ; then
+         if test "$ac_cv_c_int64_t" = yes ; then
+	     INT64_T="int64_t"
+         else
+             INT64_T="$ac_cv_int64_t"
+         fi
     fi
     # We use the type that we're going use for int64.
     AC_CACHE_CHECK([for alignment restrictions on $MYINT64_T],pac_cv_int64_t_alignment,[
@@ -4322,19 +4627,19 @@ if test "$pac_cv_int64_t" = "yes" -o -n "$INT64_T" ; then
 #include <stdlib.h>
 int main(int argc, char **argv )
 {
-    $MYINT64_T *p1, v;
+    $INT64_T *p1, v;
     char    *buf_p = (char *)malloc( 64 ), *bp;
     bp = buf_p;
     /* Make bp aligned on 4, not 8 bytes */
     if (!( (long)bp & 0x7 ) ) bp += 4;
-    p1 = (int64_t *)bp;
+    p1 = ($INT64_T *)bp;
     v = -1;
     *p1 = v;
     if (!( (long)bp & 0x3 ) ) bp += 2;
-    p1 = (int64_t *)bp;
+    p1 = ($INT64_T *)bp;
     *p1 = 1;
     if (!( (long)bp & 0x1 ) ) bp += 1;
-    p1 = (int64_t *)bp;
+    p1 = ($INT64_T *)bp;
     *p1 = 1;
     return 0;
 }
@@ -4345,8 +4650,15 @@ int main(int argc, char **argv )
     fi
 fi
 
-if test "$pac_cv_int32_t" = "yes" ; then
+if test "$ac_cv_int32_t" != "no" ; then
     default_int32_t_alignment=${CROSS_INT32_T_ALIGNMENT:-"unknown"}
+    if test -z "$INT32_T" ; then
+         if test "$ac_cv_c_int32_t" = yes ; then
+	     INT32_T="int32_t"
+         else
+             INT32_T="$ac_cv_int32_t"
+         fi
+    fi
     
     AC_CACHE_CHECK([for alignment restrictions on int32_t],pac_cv_int32_t_alignment,[
     AC_TRY_RUN([
@@ -4354,19 +4666,19 @@ if test "$pac_cv_int32_t" = "yes" ; then
 #include <stdlib.h>
 int main(int argc, char **argv )
 {
-    int32_t *p1, v;
+    $INT32_T *p1, v;
     char    *buf_p = (char *)malloc( 64 ), *bp;
     bp = buf_p;
     /* Make bp aligned on 4, not 8 bytes */
     if (!( (long)bp & 0x7 ) ) bp += 4;
-    p1 = (int32_t *)bp;
+    p1 = ($INT32_T *)bp;
     v = -1;
     *p1 = v;
     if (!( (long)bp & 0x3 ) ) bp += 2;
-    p1 = (int32_t *)bp;
+    p1 = ($INT32_T *)bp;
     *p1 = 1;
     if (!( (long)bp & 0x1 ) ) bp += 1;
-    p1 = (int32_t *)bp;
+    p1 = ($INT32_T *)bp;
     *p1 = 1;
     return 0;
 }
@@ -4385,9 +4697,20 @@ rm -f conftestval
 # defined in the mpiimpl.h file or in mpi.h have been replaced here. 
 # The sizeof(void*)-1 allows us to force the first byte of the 
 # buffer to be aligned.
+#
+# In the cross compilation case, set CROSS_BSEND_OVERHEAD to the size of the
+# struct BsendData used by the internal bsend code.
+bsend_overheaddefault=128
+if test -n "$CROSS_BSEND_OVERHEAD" ; then
+    bsend_overheaddefault=$CROSS_BSEND_OVERHEAD
+fi
 AC_CACHE_CHECK([for size of MPI_BSEND_OVERHEAD],pac_cv_mpi_bsend_overhead,[
 AC_TRY_RUN([
+#include "confdefs.h"
 #include <stdio.h>
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 /* BsendData describes a bsend request */
 typedef struct BsendData {
     int              size;             /* size that is available for data */
@@ -4411,11 +4734,15 @@ int main( int argc, char *argv[] ){
   fprintf(f, "%d\n", sizeof(BsendData_t)+sizeof(void*)-1);
   exit(0);
 }
-],pac_cv_mpi_bsend_overhead=`cat conftestval`,pac_cv_mpi_bsend_overhead=128,pac_cv_mpi_bsend_overhead=128)
+],pac_cv_mpi_bsend_overhead=`cat conftestval`,pac_cv_mpi_bsend_overhead=-1,pac_cv_mpi_bsend_overhead=-1)
 ])
-# If you change the default size (128 above) for pac_cv_mpi_bsend_overhead,
-# make the same change in src/binding/f77/configure.in (where there is 
-# a default value for BSEND_OVERHEAD if no value is provided).
+if test "$pac_cv_mpi_bsend_overhead" -le 0 ; then
+    if test -n "$bsend_overheaddefault" ; then
+        pac_cv_mpi_bsend_overhead=$bsend_overheaddefault
+    else
+        AC_MSG_ERROR([Unable to determine the size of BSEND_OVERHEAD])
+    fi
+fi
 BSEND_OVERHEAD=$pac_cv_mpi_bsend_overhead
 export BSEND_OVERHEAD
 AC_SUBST(BSEND_OVERHEAD)
@@ -4552,6 +4879,44 @@ if test "$enable_coverage" = "yes" ; then
             AC_MSG_WARN([--enable-coverage only supported for GFORTRAN])
         fi
     fi
+    # On some platforms (e.g., Mac Darwin), we must also *link* 
+    # with the -fprofile-args -ftest-coverage option.
+    # We cannot use TRY_LINK because that uses both the compilation and
+    # the linking flags.  
+    # This is needed for Mac OSX 10.5
+    rm -rf conftest.dSYM
+    rm -f conftest*
+    cat >>conftest.c <<EOF
+int main( int argc, char **argv ) { return 1; }
+EOF
+    #
+    compile_only='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext'
+    link_only='$CC -o conftest$ac_exeext $LDFLAGS conftest.$ac_objext $LIBS'
+    #
+    AC_MSG_CHECKING([whether compilation with coverage analysis enabled works])
+    if AC_TRY_EVAL(compile_only) ; then
+        AC_MSG_RESULT(yes)
+	AC_MSG_CHECKING([if extra options needed to link when coverage analysis enabled])
+        if AC_TRY_EVAL(link_only) ; then 
+	    AC_MSG_RESULT(no)
+        else
+	    LDFLAGSsave="$LDFLAGS"
+	    LDFLAGS="$LDFLAGS -ftest-coverage -fprofile-arcs"
+	    if AC_TRY_EVAL(link_only) ; then 
+	        AC_MSG_RESULT([need -ftest-coverage -fprofile-arcs])
+            else
+	        AC_MSG_RESULT([Unable to determine])
+	        AC_MSG_ERROR([Cannot link programs when coverage analysis enabled])
+            fi
+        fi
+    else
+        AC_MSG_RESULT(no)
+        AC_MSG_ERROR([Unable to compile programs when coverage analysis enabled])
+    fi
+    # This is needed for Mac OSX 10.5
+    rm -rf conftest.dSYM
+    rm -f conftest*
+    
     # Test for the routines that we need to use to ensure that the
     # data files are (usually) written out
     # FIXME: Some versions of Linux provide usleep, but it rounds times
@@ -4691,7 +5056,11 @@ fi
 #  --enable-timer-type=name argument and selects the timer based on 
 # both that field and what configure is able to determine is available.
 # The file src/include/mpichtimer.h is also created.
-
+# Note that at least the handling of the "device" option must come *after* 
+# the setup_device script is loaded so that the device can set the appropriate
+# fields.  For now, we've split this so that there is an update to the timer
+# after the setup_device script is loaded, but we should consider moving
+# this entire block.
 # ----------------------------------------------------------------------------
 # Default type for timer stamp.
 MPID_TIMER_TYPE=long
@@ -4949,10 +5318,19 @@ AC_SUBST(MPICH_TIMER_KIND)
 # Setup other replaceable values
 AC_SUBST(MPILIBNAME)
 AC_SUBST(PMPILIBNAME)
+# Note that aint_size must be used instead of void_p where the desired check
+# is on the size of MPI_Aint
+aint_size=$ac_cv_sizeof_void_p
+if test "$with_aint_size" -gt 0 ; then
+   aint_size=$with_aint_size
+   if test "$aint_size" !="$ac_cv_sizeof_void_p" ; then
+        AC_MSG_RESULT([Overriding MPI_Aint to be $aint_size bytes])
+   fi
+fi
 MPI_AINT=int
 for type in int long long_long short ; do
     eval len=\$ac_cv_sizeof_$type
-    if test "$len" = "$ac_cv_sizeof_void_p" ; then
+    if test "$len" = "$aint_size" ; then
         MPI_AINT=`echo $type | sed -e 's/_/ /'`
         # Make the sizeof AINT available to other configures
         MPI_SIZEOF_AINT=$len
@@ -4989,15 +5367,26 @@ AC_SUBST(MPI_AINT_FMT_DEC_SPEC)
 AC_SUBST(MPI_AINT_FMT_HEX_SPEC)
 
 # If sizeof(mpi_aint) = sizeof(int), set this value
-if test "$ac_cv_sizeof_int" = "$ac_cv_sizeof_void_p" ; then
-    AC_DEFINE(SIZEOF_INT_IS_AINT,1,[define if sizeof(int) = sizeof(void*)])
+if test "$ac_cv_sizeof_int" = "$aint_size" ; then
+    AC_DEFINE(SIZEOF_INT_IS_AINT,1,[define if sizeof(int) = sizeof(MPI_Aint)])
 fi
+
+# Find a pointer-sized int
+for type in int long long_long short ; do
+    eval len=\$ac_cv_sizeof_$type
+    if test "$len" = "$ac_cv_sizeof_void_p" ; then
+        MPIR_PINT=`echo $type | sed -e 's/_/ /'`
+        break
+    fi
+done
+AC_DEFINE_UNQUOTED(MPIR_Pint,$MPIR_PINT,[MPIR_PINT is a pointer-sized integer])
+AC_DEFINE_UNQUOTED(MPIR_Upint,unsigned $MPIR_PINT,[MPIR_PUINT is an unsigned pointer-sized integer])
 #
 # define MPIU_Size_t - used to express the size of objects
 # This is used in src/include/mpitypedefs.h to define MPIU_SIZE_T, 
 # and is used in various parts of ch3 and mpid/common/sock.  
 # This is used to handle the potential problem that a message is 
-# too long to fit within an int.  However, we may still need to make
+# too long to fit with an int.  However, we may still need to make
 # some more adjustments in the code (this may not be used everywhere
 # that it is needed).
 #
@@ -5034,6 +5423,15 @@ if test -f $devicedir/setup_device ; then
     echo sourcing $devicedir/setup_device
     . $devicedir/setup_device
 fi
+# See if we need to update the timer type
+if test "$timer_type" = "device" ; then
+    # The device selected should export the datatype for the timer
+    # in MPID_DEVICE_TIMER_TYPE if something other than long is needed
+    if test -n "$MPID_DEVICE_TIMER_TYPE" ; then 
+       MPID_TIMER_TYPE=$MPID_DEVICE_TIMER_TYPE
+    fi
+fi
+
 dnl Configure any subdirectories.  Note that config.status will *not* 
 dnl reexecute these!
 dnl Export any important variables first:
@@ -5428,9 +5826,15 @@ if test -n "$MPI_OFFSET_TYPE" ; then
         dnl We'd like to use AC_CHECK_SIZEOF, but that won't take a variable.
         AC_CACHE_CHECK([the sizeof MPI_Offset],ac_cv_sizeof_MPI_Offset,[
         ac_cv_sizeof_MPI_Offset=unknown
+	# This is needed for Mac OSX 10.5
+	rm -rf conftest.dSYM
         rm -f conftest*
         cat >> conftest.c <<EOF
+#include "confdefs.h"
 #include <stdio.h>
+#ifdef HAVE_STDLIB_H
+#include <stdlib.h>
+#endif
 int main( int argc, char **argv )
 {
     $MPI_OFFSET a;
@@ -5457,6 +5861,8 @@ EOF
 	    echo "configure: failed program was:" >&AC_FD_CC
 	    cat conftest.c >&AC_FD_CC
         fi
+	# This is needed for Mac OSX 10.5
+	rm -rf conftest.dSYM
         rm -f conftest*
 	])
 	if test "$ac_cv_sizeof_MPI_Offset" != "unknown" ; then 
@@ -5496,7 +5902,7 @@ AC_SUBST(MPI_OFFSET_TYPEDEF)
 # First, we check that this works with both Fortran compilers (if
 # they are defined)
 #
-# If there is not FORTRAN_MPI_OFFSET type (because ROMIO is disabled),
+# If there is no FORTRAN_MPI_OFFSET type (because ROMIO is disabled),
 # just use INTEGER
 if test -z "$FORTRAN_MPI_OFFSET" ; then
     FORTRAN_MPI_OFFSET=INTEGER
@@ -5789,6 +6195,7 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/binding/f90/mpi_sizeofs.f90 \
 	  src/pkgconfig/mpich2-ch3.pc \
 	  src/pkgconfig/Makefile \
+          src/env/mpixxx_opts.conf \
           src/env/mpicc \
 	  src/env/mpicc.conf \
 	  src/env/mpicc.bash \
@@ -5823,7 +6230,6 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
           src/mpid/common/Makefile \
           src/mpid/common/datatype/Makefile \
           src/mpid/common/datatype/dataloop/Makefile \
-          src/mpid/common/locks/Makefile \
           src/pm/Makefile \
           src/pmi/Makefile \
 	  src/nameserv/Makefile \
@@ -5849,6 +6255,7 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  test/commands/cmdtests \
 	  test/mpid/Makefile \
 	  test/mpid/ch3/Makefile \
+	  test/util/timer/Makefile \
 	  examples/Makefile \
 	  examples/f77/Makefile \
 	  examples/f90/Makefile \

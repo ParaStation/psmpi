@@ -15,6 +15,7 @@ test3_SOURCES = test3.c
 test4_SOURCES = test4.c
 test5_SOURCES = test5.c
 lockcontention_SOURCES = lockcontention.c
+locknull_SOURCES = locknull.c
 wintest_SOURCES = wintest.c
 transpose1_SOURCES = transpose1.c
 transpose2_SOURCES = transpose2.c
@@ -50,6 +51,9 @@ fkeyvalwin_SOURCES = fkeyvalwin.c
 baseattrwin_SOURCES = baseattrwin.c
 
 nullpscw_SOURCES = nullpscw.c
+
+mixedsync_SOURCES = mixedsync.c
+selfrma_SOURCES   = selfrma.c
 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) )

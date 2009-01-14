@@ -6,6 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+VERBOSE         = 1
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -28,21 +29,32 @@ INCLUDES = -I../include -I${srcdir}/../include
 .SUFFIXES:
 .SUFFIXES: .o .c .txt 
 .c.o:
-	$(C_COMPILE) -c $<
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -c $< ; \
+	fi
+	@$(C_COMPILE) -c $<
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
+	fi
+	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
 	-rootdir=../../../ \
 	-configdir=test/mpi/ \
-	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
-	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
 	-distcleanfiles="Makefile" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
@@ -53,8 +65,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
-	-@rm -f *.o ${srcdir}/*.o spawnintra selfconacc disconnect2 disconnect3 disconnect_reconnect2 multiple_ports2 join disconnect_reconnect disconnect_reconnect3 namepub spawnargv spawnmult2 spawn1 disconnect spawnminfo1 spaconacc2 concurrent_spawns spawn2 spawninfo1 multiple_ports spaconacc spaiccreate
-	-@rm -f spawnintra.exe selfconacc.exe disconnect2.exe disconnect3.exe disconnect_reconnect2.exe multiple_ports2.exe join.exe disconnect_reconnect.exe disconnect_reconnect3.exe namepub.exe spawnargv.exe spawnmult2.exe spawn1.exe disconnect.exe spawnminfo1.exe spaconacc2.exe concurrent_spawns.exe spawn2.exe spawninfo1.exe multiple_ports.exe spaconacc.exe spaiccreate.exe
+	-@rm -f *.o ${srcdir}/*.o spawnintra selfconacc disconnect2 disconnect3 disconnect_reconnect2 multiple_ports2 join disconnect_reconnect spaiccreate2 disconnect_reconnect3 namepub spawnargv spawnmult2 spawn1 disconnect spawnminfo1 spaconacc2 concurrent_spawns spawn2 spawninfo1 multiple_ports spaconacc spaiccreate
+	-@rm -f spawnintra.exe selfconacc.exe disconnect2.exe disconnect3.exe disconnect_reconnect2.exe multiple_ports2.exe join.exe disconnect_reconnect.exe spaiccreate2.exe disconnect_reconnect3.exe namepub.exe spawnargv.exe spawnmult2.exe spawn1.exe disconnect.exe spawnminfo1.exe spaconacc2.exe concurrent_spawns.exe spawn2.exe spawninfo1.exe multiple_ports.exe spaconacc.exe spaiccreate.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -75,8 +87,8 @@ remove-genmakefiles:
 all-redirect: namepub spawn1 spawninfo1 spawnminfo1 spawn2 spawnintra\
 	 spawnargv spaconacc spaconacc2 selfconacc spawnmult2 join\
 	 disconnect_reconnect disconnect_reconnect2 disconnect_reconnect3\
-	 multiple_ports multiple_ports2 spaiccreate disconnect disconnect2\
-	 disconnect3 concurrent_spawns
+	 multiple_ports multiple_ports2 spaiccreate spaiccreate2 disconnect\
+	 disconnect2 disconnect3 concurrent_spawns
 
 coverage: 
 spawnintra: spawnintra.o   @MPILIBLOC@ ../util/mtest.o
@@ -98,6 +110,9 @@ join: join.o   @MPILIBLOC@ ../util/mtest.o
 disconnect_reconnect: disconnect_reconnect.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o disconnect_reconnect \
 	disconnect_reconnect.o  ${LIBS} 
+spaiccreate2: spaiccreate2.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o spaiccreate2 spaiccreate2.o  \
+	${LIBS} 
 disconnect_reconnect3: disconnect_reconnect3.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o disconnect_reconnect3 \
 	disconnect_reconnect3.o  ${LIBS} 
@@ -146,7 +161,7 @@ SOURCES         =  namepub.c spawn1.c spawninfo1.c spawnminfo1.c spawn2.c \
 	spawnintra.c spawnargv.c spaconacc.c spaconacc2.c selfconacc.c \
 	spawnmult2.c join.c disconnect_reconnect.c disconnect_reconnect2.c \
 	disconnect_reconnect3.c multiple_ports.c multiple_ports2.c \
-	spaiccreate.c disconnect.c disconnect2.c disconnect3.c \
+	spaiccreate.c spaiccreate2.c disconnect.c disconnect2.c disconnect3.c \
 	concurrent_spawns.c 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)

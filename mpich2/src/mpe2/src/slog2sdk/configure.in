@@ -101,22 +101,6 @@ AC_ARG_WITH(trace_name,
                                      traceprint and traceTOslog2.],
 TRACE_NAME=$withval, )
 
-dnl
-dnl Set non-standard autoconf/GNU install directory variables, i.e. docdir 
-dnl
-AC_ARG_WITH(docdir,
-[--with-docdir=dir                  - Specify the documentation directory.],,
-with_docdir='${prefix}/doc')
-
-#
-# Set the defaults for directories that are not included in configure's
-if test -n "$with_docdir" ; then
-    docdir=$with_docdir
-else
-    docdir='${prefix}/doc'
-fi
-AC_SUBST(docdir)
-
 # Fixup for make
 MAKE=${MAKE:-make}
 PAC_MAKE_IS_GNUMAKE
@@ -155,16 +139,11 @@ else
 
     JAC_CHECK_CLASSPATH
     is_jvm_working=no
-    if test "x$JRE_TOPDIR" != "x" ; then
-        JVM="$JRE_TOPDIR/bin/$pac_JVM"
-        AC_MSG_CHECKING([if $JVM exists])
-        if test -x "$JVM" ; then
-            AC_MSG_RESULT(yes)
-            jac_java_working=yes
-        else
-            AC_MSG_RESULT(no)
-            jac_java_working=no
-        fi
+#
+dnl JVM="$JRE_TOPDIR/bin/$pac_JVM" is used in JAC_PATH_PROG
+    JAC_PATH_PROG(JVM, $pac_JVM, [
+dnl Initialize the checking flag.
+        jac_java_working=yes
 dnl
         if test "$jac_java_working" = "yes" ; then
             AC_MSG_CHECKING([if $JVM runs simple java class])
@@ -187,6 +166,26 @@ dnl
                 AC_MSG_RESULT(yes)
             else
                 AC_MSG_RESULT(no)
+            fi
+        fi
+dnl
+        if test "$jac_java_working" = "yes" ; then
+            AC_MSG_CHECKING([if $JVM runs non-GUI tool])
+            JAC_TRY_RUNJAR([$JVM], [$JVMFLAGS],
+                           [ac_javatest/awt_color.jar],
+                           [jac_java_working=yes], [jac_java_working=no])
+            if test "$jac_java_working" = "no" ; then
+                JAC_TRY_RUNJAR([$JVM], [$JVMFLAGS -Djava.awt.headless=true],
+                               [ac_javatest/awt_color.jar],
+                               [jac_java_working=yes], [jac_java_working=no])
+                if test "$jac_java_working" = "yes" ; then
+                    AC_MSG_RESULT([-Djava.awt.headless=true])
+                    NONGUI_JVMFLAGS="-Djava.awt.headless=true"
+                else
+                    AC_MSG_RESULT(no)
+                fi
+            else
+                AC_MSG_RESULT(yes)
             fi
         fi
 dnl
@@ -217,53 +216,18 @@ dnl
         fi
 dnl
         if test "$jac_java_working" = "yes" ; then
-            is_jvm_working=yes
+            jac_prog_working=yes
         else
-            is_jvm_working=no
+            jac_prog_working=no
         fi
+    ])
+    AC_SUBST(NONGUI_JVMFLAGS)
+#   If JVM still hasn't been found, we need to abort!
+    if test "x$JVM" = "x" ; then
+        PAC_MSG_ERROR($enable_softerror,
+                      [No Java Virtual Machine can be found anywhere!])
     fi
-#
-    if test "$is_jvm_working" = "no" ; then
-        JAC_PATH_PROG(JVM, $pac_JVM, [
-            JAC_TRY_RUN([$JVM], [$JVMFLAGS],
-                        [ac_javatest/simple.class],
-                        [jac_java_working=yes], [jac_java_working=no])
-            if test "$jac_java_working" = "yes" ; then
-                AC_MSG_RESULT(yes)
-                AC_MSG_CHECKING([if $JVM runs simple jar file])
-                JAC_TRY_RUNJAR([$JVM], [$JVMFLAGS],
-                               [ac_javatest/simple.jar],
-                               [jac_java_working=yes], [jac_java_working=no])
-            fi
-            if test "$jac_java_working" = "yes" \
-                 -a "$enable_swingcheck" = "yes" ; then
-                AC_MSG_RESULT(yes)
-                AC_MSG_CHECKING([if $JVM runs simple Swing class])
-                JAC_TRY_RUN([$JVM], [$JVMFLAGS],
-                            [ac_javatest/simple_swing.class],
-                            [jac_java_working=yes], [jac_java_working=no])
-            fi
-            if test "$jac_java_working" = "yes" \
-                 -a "$enable_swingcheck" = "yes" ; then
-                AC_MSG_RESULT(yes)
-                AC_MSG_CHECKING([if $JVM runs simple Swing jar file])
-                JAC_TRY_RUNJAR([$JVM], [$JVMFLAGS],
-                               [ac_javatest/simple_swing.jar],
-                               [jac_java_working=yes], [jac_java_working=no])
-            fi
-            if test "$jac_java_working" = "yes" ; then
-                jac_prog_working=yes
-            else
-                jac_prog_working=no
-            fi
-        ])
-#       If JVM still hasn't been found, we need to abort!
-        if test "x$JVM" = "x" ; then
-            PAC_MSG_ERROR($enable_softerror,
-                          [No Java Virtual Machine can be found anywhere!])
-        fi
-        is_jvm_working=yes
-    fi
+    is_jvm_working=yes
 fi
 
 # CHECK the version of Java used 
@@ -342,14 +306,18 @@ AC_SUBST(etcbuild_dir)
 if test ! -d $sharebuild_dir ; then
     echo "creating $sharebuild_dir"
     $MKDIR $sharebuild_dir
+    if test ! -d $sharebuild_dir/logfiles ; then
+        echo "creating $sharebuild_dir/logfiles"
+        $MKDIR $sharebuild_dir/logfiles
+    fi
 fi
 AC_SUBST(sharebuild_dir)
 
 # Copying $srcdir/logfiles to sharebuild_dir
 if test -d $srcdir/logfiles ; then
     echo "creating sample logfiles from source"
-    $CPRP -pr $srcdir/logfiles/*.clog* $sharebuild_dir
-    $CPRP -pr $srcdir/logfiles/*.slog* $sharebuild_dir
+    $CPRP -pr $srcdir/logfiles/*.clog* $sharebuild_dir/logfiles
+    $CPRP -pr $srcdir/logfiles/*.slog* $sharebuild_dir/logfiles
 fi
 
 AC_SUBST(sbinbuild_dir)

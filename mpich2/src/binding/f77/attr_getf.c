@@ -128,7 +128,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_attr_get_ ( MPI_Fint *v1, MPI_Fint *v2, void*v3
         *(MPI_Fint*)v3 = 0;
     }
     else {
-        *(MPI_Fint*)v3 = (MPI_Fint)(MPI_Aint)attrv3;
+        *(MPI_Fint*)v3 = (MPI_Fint)(MPIR_Pint)attrv3;
     }
     *v4 = MPIR_TO_FLOG(l4);
 }

@@ -1,4 +1,4 @@
-.TH MPI_Grequest_start 3 "11/2/2007" " " "MPI"
+.TH MPI_Grequest_start 3 "4/4/2008" " " "MPI"
 .SH NAME
 MPI_Grequest_start \-  Create and return a user-defined request 
 .SH SYNOPSIS
@@ -71,8 +71,7 @@ and expected these values to be returned by the
 .I MPI_Comm_dup
 when the
 attribute routines encountered an error.  Such error values may not be valid
-MPI error codes or classes.  Because of this, it is the user
-.I s responsibility
+MPI error codes or classes.  Because of this, it is the user's responsibility
 to either use valid MPI error codes in return from the attribute callbacks,
 if those error codes are to be returned by a generalized request callback,
 or to detect and convert those error codes to valid MPI error codes (recall
@@ -84,55 +83,55 @@ This routine is thread-safe.  This means that this routine may be
 safely used by multiple threads without the need for any user-provided
 thread locks.  However, the routine is not interrupt safe.  Typically,
 this is due to the use of memory allocation routines such as 
-malloc
-.I or other non-MPICH runtime routines that are themselves not interrupt-safe.
+.I malloc
+or other non-MPICH runtime routines that are themselves not interrupt-safe.
 
 .SH NOTES FOR FORTRAN
 All MPI routines in Fortran (except for 
-MPI_WTIME
-.I  and 
-MPI_WTICK
-.I ) have
+.I MPI_WTIME
+and 
+.I MPI_WTICK
+) have
 an additional argument 
-ierr
-.I  at the end of the argument list.  
-ierr
-.I is an integer and has the same meaning as the return value of the routine
+.I ierr
+at the end of the argument list.  
+.I ierr
+is an integer and has the same meaning as the return value of the routine
 in C.  In Fortran, MPI routines are subroutines, and are invoked with the
-call
-.I  statement.
+.I call
+statement.
 
 All MPI objects (e.g., 
-MPI_Datatype
-.I , 
-MPI_Comm
-.I ) are of type 
-INTEGER
-.I in Fortran.
+.I MPI_Datatype
+, 
+.I MPI_Comm
+) are of type 
+.I INTEGER
+in Fortran.
 
 .SH ERRORS
 
 All MPI routines (except 
-MPI_Wtime
-.I  and 
-MPI_Wtick
-.I ) return an error value;
+.I MPI_Wtime
+and 
+.I MPI_Wtick
+) return an error value;
 C routines as the value of the function and Fortran routines in the last
 argument.  Before the value is returned, the current MPI error handler is
 called.  By default, this error handler aborts the MPI job.  The error handler
 may be changed with 
-MPI_Comm_set_errhandler
-.I  (for communicators),
-MPI_File_set_errhandler
-.I  (for files), and 
-MPI_Win_set_errhandler
-.I  (for
+.I MPI_Comm_set_errhandler
+(for communicators),
+.I MPI_File_set_errhandler
+(for files), and 
+.I MPI_Win_set_errhandler
+(for
 RMA windows).  The MPI-1 routine 
-MPI_Errhandler_set
-.I  may be used but
+.I MPI_Errhandler_set
+may be used but
 its use is deprecated.  The predefined error handler
-MPI_ERRORS_RETURN
-.I  may be used to cause error values to be returned.
+.I MPI_ERRORS_RETURN
+may be used to cause error values to be returned.
 Note that MPI does 
 .B not
 guarentee that an MPI program can continue past
@@ -149,8 +148,8 @@ possible.
 .B MPI_ERR_ARG 
 - Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., 
-MPI_ERR_RANK
-.I ).
+.I MPI_ERR_RANK
+).
 .PD 1
 .SH LOCATION
 greq_start.c

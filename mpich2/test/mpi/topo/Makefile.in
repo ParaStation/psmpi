@@ -6,6 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+VERBOSE         = 1
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -28,21 +29,32 @@ INCLUDES = -I../include -I${srcdir}/../include
 .SUFFIXES:
 .SUFFIXES: .o .c .txt 
 .c.o:
-	$(C_COMPILE) -c $<
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -c $< ; \
+	fi
+	@$(C_COMPILE) -c $<
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
+	fi
+	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
 	-rootdir=../../../ \
 	-configdir=test/mpi/ \
-	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
-	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
 	-distcleanfiles="Makefile" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
@@ -53,8 +65,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o graphcr topodup cartsuball cartmap1 graphmap1 dims2 cartshift1 cartcreates topotest dims1
-	-@rm -f graphcr.exe topodup.exe cartsuball.exe cartmap1.exe graphmap1.exe dims2.exe cartshift1.exe cartcreates.exe topotest.exe dims1.exe
+	-@rm -f *.o ${srcdir}/*.o cartzero graphcr topodup graphcr2 cartsuball cartmap1 graphmap1 dims2 cartshift1 cartcreates topotest dims1
+	-@rm -f cartzero.exe graphcr.exe topodup.exe graphcr2.exe cartsuball.exe cartmap1.exe graphmap1.exe dims2.exe cartshift1.exe cartcreates.exe topotest.exe dims1.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -72,14 +84,18 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: cartmap1 cartshift1 cartsuball cartcreates dims1 dims2 graphmap1\
-	 topotest topodup graphcr
+all-redirect: cartmap1 cartzero cartshift1 cartsuball cartcreates dims1 dims2\
+	 graphmap1 topotest topodup graphcr graphcr2
 
 coverage: 
+cartzero: cartzero.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o cartzero cartzero.o  ${LIBS}
 graphcr: graphcr.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o graphcr graphcr.o  ${LIBS}
 topodup: topodup.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o topodup topodup.o  ${LIBS}
+graphcr2: graphcr2.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o graphcr2 graphcr2.o  ${LIBS}
 cartsuball: cartsuball.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o cartsuball cartsuball.o  ${LIBS}
 cartmap1: cartmap1.o   @MPILIBLOC@ ../util/mtest.o
@@ -109,8 +125,9 @@ dependencies:
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  cartmap1.c cartshift1.c cartsuball.c cartcreates.c dims1.c \
-	dims2.c graphmap1.c topotest.c topodup.c graphcr.c 
+SOURCES         =  cartmap1.c cartzero.c cartshift1.c cartsuball.c \
+	cartcreates.c dims1.c dims2.c graphmap1.c topotest.c topodup.c \
+	graphcr.c graphcr2.c 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)

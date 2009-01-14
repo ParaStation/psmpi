@@ -1,9 +1,9 @@
 <dir>
 <file name="ad_panfs_read.c" info="1194043819"/>
 <file name="ad_panfs_write.c" info="1194043819"/>
-<file name="ad_panfs_resize.c" info="1194043819"/>
 <file name="ad_panfs.c" info="1194043819"/>
 <file name="ad_panfs_open.c" info="1194043819"/>
+<file name="ad_panfs_resize.c" info="1194043819"/>
 <file name="ad_panfs_hints.c" info="1194043819"/>
 <file name="ad_panfs.h" info="1194043819"/>
 </dir>
@@ -12,11 +12,11 @@
 </fileinfo>
 <fileinfo name="ad_panfs_write.c">
 </fileinfo>
-<fileinfo name="ad_panfs_resize.c">
-</fileinfo>
 <fileinfo name="ad_panfs.c">
 </fileinfo>
 <fileinfo name="ad_panfs_open.c">
+</fileinfo>
+<fileinfo name="ad_panfs_resize.c">
 </fileinfo>
 <fileinfo name="ad_panfs_hints.c">
 </fileinfo>

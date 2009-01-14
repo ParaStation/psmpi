@@ -170,7 +170,9 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
      */
     ADIOI_Calc_file_domains(st_offsets, end_offsets, nprocs,
 			    nprocs_for_coll, &min_st_offset,
-			    &fd_start, &fd_end, &fd_size);
+			    &fd_start, &fd_end, 
+			    fd->hints->min_fdomain_size, &fd_size,
+			    fd->hints->striping_unit);
 
     /* calculate where the portions of the access requests of this process 
      * are located in terms of the file domains.  this could be on the same
@@ -267,7 +269,7 @@ void ADIOI_Calc_my_off_len(ADIO_File fd, int bufcount, MPI_Datatype
     int n_filetypes, etype_in_filetype;
     ADIO_Offset abs_off_in_filetype=0;
     int bufsize, sum, n_etypes_in_filetype, size_in_filetype;
-    int contig_access_count, *len_list, flag, filetype_is_contig;
+    int contig_access_count, *len_list, filetype_is_contig;
     MPI_Aint filetype_extent, filetype_lb;
     ADIOI_Flatlist_node *flat_file;
     ADIO_Offset *offset_list, off, end_offset=0, disp;
@@ -328,26 +330,32 @@ void ADIOI_Calc_my_off_len(ADIO_File fd, int bufcount, MPI_Datatype
 	disp = fd->disp;
 
 	if (file_ptr_type == ADIO_INDIVIDUAL) {
-	    offset = fd->fp_ind; /* in bytes */
-	    n_filetypes = -1;
-	    flag = 0;
-	    while (!flag) {
-		n_filetypes++;
-		for (i=0; i<flat_file->count; i++) {
-		    if (disp + flat_file->indices[i] + 
-			(ADIO_Offset) n_filetypes*filetype_extent + 
-			flat_file->blocklens[i] >= offset) 
-		    {
-			st_index = i;
-			frd_size = (int) (disp + flat_file->indices[i] + 
-			    (ADIO_Offset) n_filetypes*filetype_extent
-			        + flat_file->blocklens[i] - offset);
-			flag = 1;
+           /* Wei-keng reworked type processing to be a bit more efficient */
+            offset       = fd->fp_ind - disp;
+            n_filetypes  = (offset - flat_file->indices[0]) / filetype_extent;
+             offset     -= (ADIO_Offset)n_filetypes * filetype_extent;
+	     	/* now offset is local to this extent */
+ 
+            /* find the block where offset is located, skip blocklens[i]==0 */
+            for (i=0; i<flat_file->count; i++) {
+                ADIO_Offset dist;
+                if (flat_file->blocklens[i] == 0) continue;
+                dist = flat_file->indices[i] + flat_file->blocklens[i] - offset;
+                /* frd_size is from offset to the end of block i */
+		if (dist == 0) {
+			i++;
+			offset   = flat_file->indices[i];
+			frd_size = flat_file->blocklens[i];
 			break;
-		    }
+		}
+		if (dist > 0) {
+                    frd_size = dist;
+		    break;
 		}
 	    }
-	}
+            st_index = i;  /* starting index in flat_file->indices[] */
+            offset += disp + (ADIO_Offset)n_filetypes*filetype_extent;
+        }
 	else {
 	    n_etypes_in_filetype = filetype_size/etype_size;
 	    n_filetypes = (int) (offset / n_etypes_in_filetype);
@@ -425,13 +433,13 @@ void ADIOI_Calc_my_off_len(ADIO_File fd, int bufcount, MPI_Datatype
 		 */
 	    }
 	    else {
-		if (j < (flat_file->count - 1)) j++;
-		else {
-		    /* hit end of flattened filetype; 
-		     * start at beginning again 
-		     */
-		    j = 0;
-		    n_filetypes++;
+		j = (j+1) % flat_file->count;
+                n_filetypes += (j == 0) ? 1 : 0;
+                while (flat_file->blocklens[j]==0) {
+			j = (j+1) % flat_file->count;
+                    n_filetypes += (j == 0) ? 1 : 0;
+                    /* hit end of flattened filetype; start at beginning 
+		     * again */
 		}
 		off = disp + flat_file->indices[j] + 
 		    (ADIO_Offset) n_filetypes*filetype_extent;

@@ -53,7 +53,7 @@ PAC_LOAD_BASE_CACHE
 
 PAC_PROG_MAKE
 
-AC_CHECK_HEADERS(unistd.h string.h stdlib.h sys/socket.h strings.h)
+AC_CHECK_HEADERS(unistd.h string.h stdlib.h sys/socket.h strings.h assert.h)
 dnl Use snprintf if possible when creating messages
 AC_CHECK_FUNCS(snprintf)
 if test "$ac_cv_func_snprintf" = "yes" ; then
@@ -118,6 +118,7 @@ pac_cv_have_haddr_list=yes,pac_cv_have_haddr_list=no)])
 if test "$pac_cv_have_haddr_list" = "yes" ; then
     AC_DEFINE(HAVE_H_ADDR_LIST,1,[Define if struct hostent contains h_addr_list])
 fi
+PAC_C_GNU_ATTRIBUTE
 
 AC_SUBST(AR)
 AC_SUBST(RANLIB)

@@ -9,6 +9,12 @@
 #define PMICONF_H_INCLUDED
 
 
+/* Define to 1 if you have the <assert.h> header file. */
+#undef HAVE_ASSERT_H
+
+/* Define if GNU __attribute__ is supported */
+#undef HAVE_GCC_ATTRIBUTE
+
 /* Define to 1 if you have the `gethostbyname' function. */
 #undef HAVE_GETHOSTBYNAME
 

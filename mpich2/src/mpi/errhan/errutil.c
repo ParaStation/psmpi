@@ -112,9 +112,10 @@ static int checkForUserErrcode( int errcode );
 #endif
 
 /* Preallocated errorhandler objects */
-MPID_Errhandler MPID_Errhandler_builtin[2] = 
+MPID_Errhandler MPID_Errhandler_builtin[3] = 
           { { MPI_ERRORS_ARE_FATAL, 0},
-	    { MPI_ERRORS_RETURN, 0} }; 
+	    { MPI_ERRORS_RETURN, 0},
+	    { MPIR_ERRORS_THROW_EXCEPTIONS, 0 } }; 
 MPID_Errhandler MPID_Errhandler_direct[MPID_ERRHANDLER_PREALLOC] = { {0} };
 MPIU_Object_alloc_t MPID_Errhandler_mem = { 0, 0, 0, 0, MPID_ERRHANDLER, 
 					    sizeof(MPID_Errhandler), 
@@ -155,15 +156,15 @@ void MPIR_Errhandler_set_cxx( MPI_Errhandler errhand, void (*errcall)(void) )
 /* These routines export the nest increment and decrement for use in ROMIO */
 void MPIR_Nest_incr_export( void )
 {
-    MPICH_PerThread_t *p;
-    MPIR_GetPerThread(&p);
-    p->nest_count++;
+    MPIU_THREADPRIV_DECL;
+    MPIU_THREADPRIV_GET;
+    MPIU_THREADPRIV_FIELD(nest_count) = MPIU_THREADPRIV_FIELD(nest_count) + 1;
 }
 void MPIR_Nest_decr_export( void )
 {
-    MPICH_PerThread_t *p;
-    MPIR_GetPerThread(&p);
-    p->nest_count--;
+    MPIU_THREADPRIV_DECL;
+    MPIU_THREADPRIV_GET;
+    MPIU_THREADPRIV_FIELD(nest_count) = MPIU_THREADPRIV_FIELD(nest_count) - 1;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -231,8 +232,9 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 
     /* Check for the special case of a user-provided error code */
     errcode = checkForUserErrcode( errcode );
-    
-    if (comm_ptr->errhandler->handle == MPI_ERRORS_RETURN)
+
+    if (comm_ptr->errhandler->handle == MPI_ERRORS_RETURN ||
+	comm_ptr->errhandler->handle == MPIR_ERRORS_THROW_EXCEPTIONS)
     {
 	return errcode;
     }
@@ -303,7 +305,8 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
     /* Check for the special case of a user-provided error code */
     errcode = checkForUserErrcode( errcode );
     
-    if (win_ptr->errhandler->handle == MPI_ERRORS_RETURN)
+    if (win_ptr->errhandler->handle == MPI_ERRORS_RETURN ||
+	win_ptr->errhandler->handle == MPIR_ERRORS_THROW_EXCEPTIONS)
     {
 	return errcode;
     }

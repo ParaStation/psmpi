@@ -162,7 +162,8 @@ int MPIDI_CH3_ReqHandler_PutRespDerivedDTComplete( MPIDI_VC_t *vc,
     MPIU_Free(rreq->dev.dtype_info);
     
     rreq->dev.segment_ptr = MPID_Segment_alloc( );
-    /* if (!rreq->dev.segment_ptr) { MPIU_ERR_POP(); } */
+    MPIU_ERR_CHKANDJUMP1((rreq->dev.segment_ptr == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment_alloc");
+
     MPID_Segment_init(rreq->dev.user_buf,
 		      rreq->dev.user_count,
 		      rreq->dev.datatype,
@@ -240,7 +241,8 @@ int MPIDI_CH3_ReqHandler_AccumRespDerivedDTComplete( MPIDI_VC_t *vc,
     MPIU_Free(rreq->dev.dtype_info);
     
     rreq->dev.segment_ptr = MPID_Segment_alloc( );
-    /* if (!rreq->dev.segment_ptr) { MPIU_ERR_POP(); } */
+    MPIU_ERR_CHKANDJUMP1((rreq->dev.segment_ptr == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment_alloc");
+
     MPID_Segment_init(rreq->dev.user_buf,
 		      rreq->dev.user_count,
 		      rreq->dev.datatype,
@@ -308,7 +310,8 @@ int MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete( MPIDI_VC_t *vc,
     iov[0].MPID_IOV_LEN = sizeof(*get_resp_pkt);
     
     sreq->dev.segment_ptr = MPID_Segment_alloc( );
-    /* if (!sreq->dev.segment_ptr) { MPIU_ERR_POP(); } */
+    MPIU_ERR_CHKANDJUMP1((sreq->dev.segment_ptr == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment_alloc");
+
     MPID_Segment_init(sreq->dev.user_buf,
 		      sreq->dev.user_count,
 		      sreq->dev.datatype,
@@ -721,14 +724,9 @@ static int do_accumulate_op(MPID_Request *rreq)
     MPIR_Nest_incr();
     mpi_errno = NMPI_Type_get_true_extent(rreq->dev.datatype, &true_lb, &true_extent);
     MPIR_Nest_decr();
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno) 
-    {
-	mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-	MPIDI_FUNC_EXIT(MPID_STATE_DO_ACCUMULATE_OP);
-	return mpi_errno;
+    if (mpi_errno) {
+	MPIU_ERR_POP(mpi_errno);
     }
-    /* --END ERROR HANDLING-- */
     
     MPIU_Free((char *) rreq->dev.user_buf + true_lb);
 

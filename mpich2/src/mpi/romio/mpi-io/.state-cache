@@ -39,8 +39,8 @@
 <file name="iotestany.c" info="1194043819"/>
 <file name="read_at.c" info="1194043819"/>
 <file name="iotestall.c" info="1194043819"/>
-<file name="seek.c" info="1194043819"/>
 <file name="iowaitany.c" info="1194043819"/>
+<file name="seek.c" info="1194043819"/>
 <file name="read_ordb.c" info="1194043819"/>
 <file name="write_ordb.c" info="1194043819"/>
 <file name="fsync.c" info="1194043819"/>
@@ -50,8 +50,8 @@
 <file name="iread_at.c" info="1194043819"/>
 <file name="iwrite_at.c" info="1194043819"/>
 <file name="set_atom.c" info="1194043819"/>
-<file name="mpioprof.h" info="1194043819"/>
 <file name="write_all.c" info="1194043819"/>
+<file name="mpioprof.h" info="1194043819"/>
 <file name="seek_sh.c" info="1194043819"/>
 <file name="write_atall.c" info="1194043819"/>
 <file name="write_sh.c" info="1194043819"/>
@@ -59,8 +59,8 @@
 <file name="write_orde.c" info="1194043819"/>
 <file name="get_group.c" info="1194043819"/>
 <file name="get_posn.c" info="1194043819"/>
-<file name="read_all.c" info="1194043819"/>
 <file name="iowait.c" info="1194043819"/>
+<file name="read_all.c" info="1194043819"/>
 <file name="get_errh.c" info="1194043819"/>
 <file name="get_bytoff.c" info="1194043819"/>
 <file name="iread_sh.c" info="1194043819"/>
@@ -151,9 +151,9 @@
 </fileinfo>
 <fileinfo name="iotestall.c">
 </fileinfo>
-<fileinfo name="seek.c">
-</fileinfo>
 <fileinfo name="iowaitany.c">
+</fileinfo>
+<fileinfo name="seek.c">
 </fileinfo>
 <fileinfo name="read_ordb.c">
 </fileinfo>
@@ -173,9 +173,9 @@
 </fileinfo>
 <fileinfo name="set_atom.c">
 </fileinfo>
-<fileinfo name="mpioprof.h">
-</fileinfo>
 <fileinfo name="write_all.c">
+</fileinfo>
+<fileinfo name="mpioprof.h">
 </fileinfo>
 <fileinfo name="seek_sh.c">
 </fileinfo>
@@ -191,9 +191,9 @@
 </fileinfo>
 <fileinfo name="get_posn.c">
 </fileinfo>
-<fileinfo name="read_all.c">
-</fileinfo>
 <fileinfo name="iowait.c">
+</fileinfo>
+<fileinfo name="read_all.c">
 </fileinfo>
 <fileinfo name="get_errh.c">
 </fileinfo>

@@ -6,6 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+VERBOSE         = 1
 AR              = @AR@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
@@ -42,24 +43,41 @@ ssmsources = \
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .txt 
 .c.o:
-	$(C_COMPILE) -c $<
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -c $< ; \
+	fi
+	@$(C_COMPILE) -c $<
 .c.lo:
-	$(C_COMPILE_SHL) -c $< -o _s$*.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
+	echo mv -f _s$*.o $*.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
+	fi
+	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
 	-rootdir=../../../../../../ \
 	-configdir=src/mpid/ch3/channels/ssm/ \
-	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
-	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
 	-distcleanfiles="Makefile src/Makefile localdefs config.status config.log config.cache *conf.cache config.system" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
@@ -98,26 +116,46 @@ all-redirect: .libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a
 	ch3_init.o ch3_istartmsg.o ch3_istartmsgv.o ch3_isend.o ch3_isendv.o \
 	ch3_progress.o ch3_shm_memory.o ch3_progress_shm.o \
 	ch3_progress_sock.o ch3_progress_connect.o 
-	${AR} cr ../../../../../../lib/lib${MPILIBNAME}.a $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../../../../lib/lib${MPILIBNAME}.a $?" ; \
+	else \
+	  echo ${AR} cr ../../../../../../lib/lib${MPILIBNAME}.a $? ; \
+	fi
+	@${AR} cr ../../../../../../lib/lib${MPILIBNAME}.a $?
 	${RANLIB} ../../../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
 libmpich2-ch3-ssm.a: ch3_finalize.o ch3_init.o ch3_istartmsg.o \
 	ch3_istartmsgv.o ch3_isend.o ch3_isendv.o ch3_progress.o \
 	ch3_shm_memory.o ch3_progress_shm.o ch3_progress_sock.o \
 	ch3_progress_connect.o 
-	${AR} cr libmpich2-ch3-ssm.a $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr libmpich2-ch3-ssm.a $?" ; \
+	else \
+	  echo ${AR} cr libmpich2-ch3-ssm.a $? ; \
+	fi
+	@${AR} cr libmpich2-ch3-ssm.a $?
 	${RANLIB} libmpich2-ch3-ssm.a
 .libstamp1 ../../../../../../lib/lib${MPILIBNAME}.la: ch3_finalize.lo \
 	ch3_init.lo ch3_istartmsg.lo ch3_istartmsgv.lo ch3_isend.lo \
 	ch3_isendv.lo ch3_progress.lo ch3_shm_memory.lo ch3_progress_shm.lo \
 	ch3_progress_sock.lo ch3_progress_connect.lo 
-	${AR} cr ../../../../../../lib/lib${MPILIBNAME}.la $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../../../../lib/lib${MPILIBNAME}.la $?" ; \
+	else \
+	  echo ${AR} cr ../../../../../../lib/lib${MPILIBNAME}.la $? ; \
+	fi
+	@${AR} cr ../../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 libmpich2-ch3-ssm.la: ch3_finalize.lo ch3_init.lo ch3_istartmsg.lo \
 	ch3_istartmsgv.lo ch3_isend.lo ch3_isendv.lo ch3_progress.lo \
 	ch3_shm_memory.lo ch3_progress_shm.lo ch3_progress_sock.lo \
 	ch3_progress_connect.lo 
-	${AR} cr libmpich2-ch3-ssm.la $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr libmpich2-ch3-ssm.la $?" ; \
+	else \
+	  echo ${AR} cr libmpich2-ch3-ssm.la $? ; \
+	fi
+	@${AR} cr libmpich2-ch3-ssm.la $?
 coverage: 
 	-@for file in ${ssmsources} ; do \
 		gcov -b -f $$file ; done

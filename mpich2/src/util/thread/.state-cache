@@ -5,9 +5,9 @@
 <file name="posix_types.i" info="1194043819"/>
 <file name="solaris_funcs.i" info="1194043819"/>
 <file name="mpe_thread_solaris.c" info="1194043819"/>
-<file name="none_funcs.i" info="1194043819"/>
-<file name="mpe_thread_posix.c" info="1194043819"/>
 <file name="posix_funcs.i" info="1202766882"/>
+<file name="mpe_thread_posix.c" info="1194043819"/>
+<file name="none_funcs.i" info="1194043819"/>
 <file name="mpe_thread_none.c" info="1194043819"/>
 <file name="none_types.i" info="1194043819"/>
 <file name="mpe_thread_win.c" info="1194043819"/>
@@ -25,11 +25,11 @@
 </fileinfo>
 <fileinfo name="mpe_thread_solaris.c">
 </fileinfo>
-<fileinfo name="none_funcs.i">
+<fileinfo name="posix_funcs.i">
 </fileinfo>
 <fileinfo name="mpe_thread_posix.c">
 </fileinfo>
-<fileinfo name="posix_funcs.i">
+<fileinfo name="none_funcs.i">
 </fileinfo>
 <fileinfo name="mpe_thread_none.c">
 </fileinfo>

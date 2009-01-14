@@ -127,7 +127,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_get_address_ ( void*v1, MPI_Aint*v2, MPI_Fint *
     *ierr = MPI_Get_address( v1, &a );
 
 #ifndef USE_POINTER_FOR_BOTTOM
-    a = a - (MPI_Aint) MPIR_F_MPI_BOTTOM;
+    a = a - (MPIR_Pint) MPIR_F_MPI_BOTTOM;
 #endif
     *v2 =  a;
 }

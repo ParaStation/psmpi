@@ -54,7 +54,7 @@
 /* Define if pointers are 64 bits */
 #undef POINTER_64_BITS
 
-/* The size of a `void *', as computed by sizeof. */
+/* The size of `void *', as computed by sizeof. */
 #undef SIZEOF_VOID_P
 
 /* Define to 1 if you have the ANSI C header files. */

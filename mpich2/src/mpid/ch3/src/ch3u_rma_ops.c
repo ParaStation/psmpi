@@ -16,8 +16,7 @@
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIDI_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
-		     MPID_Comm *comm_ptr, MPID_Win **win_ptr, 
-		     MPIDI_RMAFns *RMAFns)
+		     MPID_Comm *comm_ptr, MPID_Win **win_ptr )
 {
     int mpi_errno=MPI_SUCCESS, i, comm_size, rank;
     MPI_Aint *tmp_buf;
@@ -30,7 +29,6 @@ int MPIDI_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
 
     /* FIXME: There should be no unreferenced args */
     MPIU_UNREFERENCED_ARG(info);
-    MPIU_UNREFERENCED_ARG(RMAFns);
 
     MPIU_THREADPRIV_GET;
 
@@ -160,9 +158,7 @@ int MPIDI_Win_free(MPID_Win **win_ptr)
 	    if (mpi_errno != MPI_SUCCESS)
 	    {
 		MPID_Progress_end(&progress_state);
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER,
-                                                     "**fail", "**fail %s", "making progress on the rma messages failed");
-		goto fn_exit;
+		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**winnoprogress");
 	    }
 	    /* --END ERROR HANDLING-- */
 	}
@@ -184,10 +180,9 @@ int MPIDI_Win_free(MPID_Win **win_ptr)
     MPIU_CHKLMEM_FREEALL();
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_WIN_FREE);
     return mpi_errno;
-    /* --BEGIN ERROR HANDLING-- */
+
  fn_fail:
     goto fn_exit;
-    /* --END ERROR HANDLING-- */
 }
 
 
@@ -506,36 +501,45 @@ int MPIDI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
 					   target_count, target_datatype);  
 		if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 	    }
-	    
-	    segp = MPID_Segment_alloc();
-	    MPIU_ERR_CHKANDJUMP((!segp), mpi_errno, MPI_ERR_OTHER, "**nomem"); 
-	    MPID_Segment_init(NULL, target_count, target_datatype, segp, 0);
-	    first = 0;
-	    last  = SEGMENT_IGNORE_LAST;
-	    
-	    MPID_Datatype_get_ptr(target_datatype, dtp);
-	    vec_len = dtp->n_contig_blocks * target_count + 1; 
-	    /* +1 needed because Rob says so */
-	    MPIU_CHKLMEM_MALLOC(dloop_vec, DLOOP_VECTOR *, 
-				vec_len * sizeof(DLOOP_VECTOR), 
-				mpi_errno, "dloop vector");
-	    
-	    MPID_Segment_pack_vector(segp, first, &last, dloop_vec, &vec_len);
-	    
-	    source_buf = (tmp_buf != NULL) ? tmp_buf : origin_addr;
-	    target_buf = (char *) win_ptr->base + 
-		win_ptr->disp_unit * target_disp;
-	    type = dtp->eltype;
-	    type_size = MPID_Datatype_get_basic_size(type);
-	    for (i=0; i<vec_len; i++)
-	    {
-		count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
-		(*uop)((char *)source_buf + MPIU_PtrToAint(dloop_vec[i].DLOOP_VECTOR_BUF),
-		       (char *)target_buf + MPIU_PtrToAint(dloop_vec[i].DLOOP_VECTOR_BUF),
-		       &count, &type);
+
+	    if (target_predefined) { 
+		/* target predefined type, origin derived datatype */
+
+		(*uop)(tmp_buf, (char *) win_ptr->base + win_ptr->disp_unit *
+		   target_disp, &target_count, &target_datatype);
 	    }
+	    else {
 	    
-	    MPID_Segment_free(segp);
+		segp = MPID_Segment_alloc();
+		MPIU_ERR_CHKANDJUMP((!segp), mpi_errno, MPI_ERR_OTHER, "**nomem"); 
+		MPID_Segment_init(NULL, target_count, target_datatype, segp, 0);
+		first = 0;
+		last  = SEGMENT_IGNORE_LAST;
+		
+		MPID_Datatype_get_ptr(target_datatype, dtp);
+		vec_len = dtp->n_contig_blocks * target_count + 1; 
+		/* +1 needed because Rob says so */
+		MPIU_CHKLMEM_MALLOC(dloop_vec, DLOOP_VECTOR *, 
+				    vec_len * sizeof(DLOOP_VECTOR), 
+				    mpi_errno, "dloop vector");
+		
+		MPID_Segment_pack_vector(segp, first, &last, dloop_vec, &vec_len);
+		
+		source_buf = (tmp_buf != NULL) ? tmp_buf : origin_addr;
+		target_buf = (char *) win_ptr->base + 
+		    win_ptr->disp_unit * target_disp;
+		type = dtp->eltype;
+		type_size = MPID_Datatype_get_basic_size(type);
+		for (i=0; i<vec_len; i++)
+		{
+		    count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
+		    (*uop)((char *)source_buf + MPIU_PtrToAint(dloop_vec[i].DLOOP_VECTOR_BUF),
+			   (char *)target_buf + MPIU_PtrToAint(dloop_vec[i].DLOOP_VECTOR_BUF),
+			   &count, &type);
+		}
+		
+		MPID_Segment_free(segp);
+	    }
 	}
     }
     else

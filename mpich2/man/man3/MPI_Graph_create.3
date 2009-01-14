@@ -1,9 +1,9 @@
-.TH MPI_Graph_create 3 "11/2/2007" " " "MPI"
+.TH MPI_Graph_create 3 "8/21/2008" " " "MPI"
 .SH NAME
 MPI_Graph_create \-  Makes a new communicator to which topology information has been attached 
 .SH SYNOPSIS
 .nf
-int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges, 
+int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *indx, int *edges, 
                     int reorder, MPI_Comm *comm_graph)
 .fi
 .SH INPUT PARAMETERS
@@ -19,7 +19,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 .PD 1
 .PD 0
 .TP
-.B index 
+.B indx 
 - array of integers describing node degrees (see below) 
 .PD 1
 .PD 0

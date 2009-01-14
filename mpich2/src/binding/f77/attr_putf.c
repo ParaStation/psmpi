@@ -120,5 +120,5 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_attr_put_( MPI_Fint *, MPI_Fint *, void*
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_attr_put_ ( MPI_Fint *v1, MPI_Fint *v2, void*v3, MPI_Fint *ierr ){
-    *ierr = MPI_Attr_put( (MPI_Comm)(*v1), *v2, (void *)(MPI_Aint)((int)*(int *)v3) );
+    *ierr = MPI_Attr_put( (MPI_Comm)(*v1), *v2, (void *)(MPIR_Pint)((int)*(int *)v3) );
 }

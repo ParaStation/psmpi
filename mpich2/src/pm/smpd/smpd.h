@@ -9,6 +9,7 @@
 #ifdef HAVE_WINDOWS_H
 #include <winsock2.h>
 #include <windows.h>
+#include <tchar.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <io.h>
@@ -545,6 +546,8 @@ typedef struct smpd_database_node_t
     smpd_database_element_t *pData, *pIter;
     struct smpd_database_node_t *pNext;
 } smpd_database_node_t;
+
+typedef smpd_database_element_t * smpd_dbsIter_t;
 
 typedef struct smpd_barrier_in_t
 {

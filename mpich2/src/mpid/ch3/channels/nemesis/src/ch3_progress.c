@@ -56,7 +56,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
     unsigned completions = MPIDI_CH3I_progress_completion_count;
     int mpi_errno = MPI_SUCCESS;
     int complete;
-#if !defined(ENABLE_NO_SCHED_YIELD) || defined(MPICH_IS_THREADED)
+#if !defined(ENABLE_NO_YIELD) || defined(MPICH_IS_THREADED)
     int pollcount = 0;
 #endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS);
@@ -74,7 +74,11 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 #ifdef MPICH_IS_THREADED
         MPIU_THREAD_CHECK_BEGIN;
         {
-            if (pollcount >= MPID_NEM_POLLS_BEFORE_YIELD)
+	    /* In the case of threads, we poll for lesser number of
+	     * iterations than the case with only processes, as
+	     * threads contend for CPU and the lock, while processes
+	     * only contend for the CPU. */
+            if (pollcount >= MPID_NEM_THREAD_POLLS_BEFORE_YIELD)
             {
                 pollcount = 0;
                 MPIDI_CH3I_progress_blocked = TRUE;
@@ -87,11 +91,11 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
             ++pollcount;
         }
         MPIU_THREAD_CHECK_END;
-#elif !defined(ENABLE_NO_SCHED_YIELD)
+#elif !defined(ENABLE_NO_YIELD)
         if (pollcount >= MPID_NEM_POLLS_BEFORE_YIELD)
         {
             pollcount = 0;
-            sched_yield();
+            MPIDU_Yield();
         }
         ++pollcount;
 #endif
@@ -112,7 +116,6 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
             /* make progress receiving */
             /* check queue */
-
             if (!MPID_nem_lmt_shm_pending && !MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE]
                 && !MPIDI_CH3I_SendQ_head(CH3_NORMAL_QUEUE) && is_blocking
 #ifdef MPICH_IS_THREADED
@@ -154,6 +157,9 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                     MPIU_Assert(((MPIDI_CH3I_VC *)vc->channel_private)->recv_active == NULL &&
                                 ((MPIDI_CH3I_VC *)vc->channel_private)->pending_pkt_len == 0);
                     vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
+
+                    /* invalid pkt data will result in unpredictable behavior */
+                    MPIU_Assert(pkt->type >= 0 && pkt->type < MPIDI_NEM_PKT_END);
 
                     mpi_errno = pktArray[pkt->type](vc, pkt, &buflen, &rreq);
                     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -463,6 +469,9 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
 
                 MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "received new message");
 
+                /* invalid pkt data will result in unpredictable behavior */
+                MPIU_Assert(pkt->type >= 0 && pkt->type < MPIDI_NEM_PKT_END);
+
                 mpi_errno = pktArray[pkt->type](vc, pkt, &len, &rreq);
                 if (mpi_errno) MPIU_ERR_POP(mpi_errno);
                 buflen -= len;
@@ -507,6 +516,9 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
 
             buflen -= copylen;
             buf    += copylen;
+
+            /* invalid pkt data will result in unpredictable behavior */
+            MPIU_Assert(pkt->type >= 0 && pkt->type < MPIDI_NEM_PKT_END);
 
             pktlen = sizeof(MPIDI_CH3_Pkt_t);
             mpi_errno = pktArray[pkt->type](vc, pkt, &pktlen, &rreq);

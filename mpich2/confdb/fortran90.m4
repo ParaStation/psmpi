@@ -262,7 +262,7 @@ AC_ARG_VAR([F90FLAGS], [Fortran 90 compiler flags])dnl
 _AC_ARG_VAR_LDFLAGS()dnl
 AC_CHECK_TOOLS(F90,
       [m4_default([$1],
-                  [f90 xlf90 pgf90 ifort epcf90 f95 fort xlf95 lf95 pathf90 g95 gfortran ifc efc])])
+                  [f90 xlf90 pgf90 ifort epcf90 f95 fort xlf95 lf95 pathf95 pathf90 g95 gfortran ifc efc])])
 
 # once we find the compiler, confirm the extension 
 AC_MSG_CHECKING([that $ac_ext works as the extension for Fortran 90 program])
@@ -283,6 +283,8 @@ EOF
     if AC_TRY_EVAL(ac_compile) ; then
         AC_MSG_RESULT([f90])
     else
+	# This is needed for Mac OSX 10.5
+	rm -rf conftest.dSYM
         rm -f conftest*
         ac_ext="f"
         cat > conftest.$ac_ext <<EOF
@@ -302,6 +304,8 @@ EOF
         pac_cv_f90_ext_f90=no
     fi
     pac_cv_f90_ext=$ac_ext
+    # This is needed for Mac OSX 10.5
+    rm -rf conftest.dSYM
     rm -f conftest*
 fi
 # Provide some information about the compiler.
@@ -384,6 +388,8 @@ if AC_TRY_EVAL(ac_try) &&
 else
   ac_cv_prog_f90_c_o=no
 fi
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*])
 if test $ac_cv_prog_f90_c_o = no; then
   AC_DEFINE(F90_NO_MINUS_C_MINUS_O, 1,
@@ -431,6 +437,8 @@ ac_f90_v_output=`eval $ac_link AS_MESSAGE_LOG_FD>&1 2>&1 | grep -v 'Driving:'`
 echo "$ac_f90_v_output" >&AS_MESSAGE_LOG_FD
 F90FLAGS=$ac_save_F90FLAGS
 
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 AC_LANG_POP(Fortran 90)dnl
 
@@ -659,6 +667,8 @@ AC_CACHE_CHECK([for dummy main to link with Fortran 90 libraries],
                     [ac_cv_f90_dummy_main=$ac_func; break])
    done
  fi
+ # This is needed for Mac OSX 10.5
+ rm -rf conftest.dSYM
  rm -f conftest*
  LIBS=$ac_f90_dm_save_LIBS
  AC_LANG_POP(C)dnl
@@ -698,6 +708,8 @@ AC_CACHE_CHECK([for alternate main to link with Fortran 90 libraries],
 @%:@define main $ac_func])],
                   [ac_cv_f90_main=$ac_func; break])
  done
+ # This is needed for Mac OSX 10.5
+ rm -rf conftest.dSYM
  rm -f conftest*
  LIBS=$ac_f90_m_save_LIBS
  AC_LANG_POP(C)dnl
@@ -792,6 +804,8 @@ AC_COMPILE_IFELSE(
 
   LIBS=$ac_save_LIBS
   AC_LANG_POP(C)dnl
+  # This is needed for Mac OSX 10.5
+  rm -rf conftest.dSYM
   rm -f cf90_test* conftest*],
   [AC_MSG_FAILURE([cannot compile a simple Fortran program])])
 AC_LANG_POP(Fortran 90)dnl
@@ -900,6 +914,8 @@ if test -n "$ac_compile" ; then
 	$1=$testval
     else
         # must compute
+	# This is needed for Mac OSX 10.5
+	rm -rf conftest.dSYM
         rm -f conftest*
         cat <<EOF > conftest.$ac_ext
       program main
@@ -922,6 +938,8 @@ EOF
 	        $1=$KINDVAL
             fi
         fi
+	# This is needed for Mac OSX 10.5
+	rm -rf conftest.dSYM
         rm -f conftest*
 	AC_MSG_RESULT($KINDVAL)
     fi # not cached
@@ -1006,6 +1024,8 @@ else
     pac_cv_f90_module_ext="unknown"
 fi
 AC_LANG_POP
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 ])
 AC_SUBST(F90MODEXT)
@@ -1078,7 +1098,6 @@ elif test -s work.pc ; then
          AC_MSG_RESULT([-cl,filename where filename contains a list of files and directories])
 	 F90_WORK_FILES_ARG="-cl,mpimod.pcl"
          F90MODINCSPEC="-cl,<dir>/<file>mod.pcl"
-	 AC_SUBST(F90_WORK_FILES_ARG)
      else 
          # The version of the Intel compiler that I have refuses to let
 	 # you put the "work catalog" list anywhere but the current directory.
@@ -1099,9 +1118,12 @@ else
     pac_cv_f90_module_incflag="unknown"
 fi
 if test "$pac_madedir" = "yes" ; then rm -rf conftestdir ; fi
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 AC_LANG_POP
 ])
+AC_SUBST(F90_WORK_FILES_ARG)
 AC_SUBST(F90MODINCFLAG)
 F90MODINCFLAG=$pac_cv_f90_module_incflag
 ])
@@ -1140,6 +1162,8 @@ AC_REQUIRE([PAC_PROG_F90_WORKS])
 AC_CACHE_CHECK([whether Fortran 90 works with Fortran 77],
 pac_cv_f90_and_f77,[
 pac_cv_f90_and_f77="unknown"
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 if test -z "$ac_ext_f90" -a -n "$pac_cv_f90_ext" ; then ac_ext_f90=$pac_cv_f90_ext ; fi
 # Define the two language-specific steps
@@ -1206,6 +1230,8 @@ ac_compile='${F90-f90} -c $F90FLAGS conftest.$pac_cv_f90_ext 1>&AC_FD_CC'
 if AC_TRY_EVAL(ac_compile) ; then
     AC_MSG_RESULT([f90])
 else
+    # This is needed for Mac OSX 10.5
+    rm -rf conftest.dSYM
     rm -f conftest*
     pac_cv_f90_ext="f"
     cat > conftest.$pac_cv_f90_ext <<EOF
@@ -1254,6 +1280,8 @@ else
   cat conftest.$ac_ext >&AC_FD_CC
   pac_cv_prog_f90_works="no"
 fi
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 # The intel compiler sometimes generates these work.pc and .pcl files
 rm -f work.pc work.pcl
@@ -1311,6 +1339,8 @@ AC_DEFUN([PAC_PROG_F90_AND_C_STDIO_LIBS],[
 
     AC_CACHE_CHECK([what libraries are needed to link Fortran90 programs with C routines that use stdio],pac_cv_prog_f90_and_c_stdio_libs,[
     pac_cv_prog_f90_and_c_stdio_libs=unknown
+    # This is needed for Mac OSX 10.5
+    rm -rf conftest.dSYM
     rm -f conftest*
     f90_ext=${ac_f90ext-f90}
     cat >conftest.$f90_ext <<EOF
@@ -1347,6 +1377,8 @@ EOF
          fi
     fi
 
+    # This is needed for Mac OSX 10.5
+    rm -rf conftest.dSYM
     rm -f conftest*
 ])
 if test "$pac_cv_prog_f90_and_c_stdio_libs" != none -a \
@@ -1449,5 +1481,7 @@ else
      AC_MSG_RESULT(no)
      $3
 fi
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 ])

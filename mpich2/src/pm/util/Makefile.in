@@ -6,6 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+VERBOSE         = 1
 AR              = @AR@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
@@ -32,30 +33,47 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .o .txt 
 .c.o:
-	$(C_COMPILE) -c $<
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -c $< ; \
+	fi
+	@$(C_COMPILE) -c $<
 .c.lo:
-	$(C_COMPILE_SHL) -c $< -o _s$*.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
+	echo mv -f _s$*.o $*.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
+	fi
+	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 
-${srcdir}/configure: ${srcdir}/configure.in 
+${srcdir}/pmutilconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && autoheader -I ../../../confdb && \
-	autoconf -I \
-	../../../confdb ) 
+	(cd ${srcdir} && /homes/chan/autoconf/2.62/bin/autoheader -I ../../../confdb \
+	&& \
+	/homes/chan/autoconf/2.62/bin/autoconf -I ../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
 	-rootdir=../../../ \
 	-configdir=src/pm/util/ \
-	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
-	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
 	-distcleanfiles="Makefile test/Makefile config.status config.log config.cache *conf.cache config.system" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
@@ -91,11 +109,21 @@ all-redirect: libmpiexec.a
 
 libmpiexec.a: cmnargs.o process.o ioloop.o pmiserv.o labelout.o env.o \
 	newsession.o rm.o pmiport.o dbgiface.o 
-	${AR} cr libmpiexec.a $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr libmpiexec.a $?" ; \
+	else \
+	  echo ${AR} cr libmpiexec.a $? ; \
+	fi
+	@${AR} cr libmpiexec.a $?
 	${RANLIB} libmpiexec.a
 libmpiexec.la: cmnargs.lo process.lo ioloop.lo pmiserv.lo labelout.lo env.lo \
 	newsession.lo rm.lo pmiport.lo dbgiface.lo 
-	${AR} cr libmpiexec.la $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr libmpiexec.la $?" ; \
+	else \
+	  echo ${AR} cr libmpiexec.la $? ; \
+	fi
+	@${AR} cr libmpiexec.la $?
 coverage: 
 	-@for file in cmnargs.c process.c ioloop.c pmiserv.c labelout.c 		     env.c \
 	newsession.c rm.c pmiport.o dbgiface.c ; do \

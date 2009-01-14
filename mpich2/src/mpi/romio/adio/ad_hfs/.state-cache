@@ -1,6 +1,6 @@
 <dir>
-<file name="ad_hfs_fcntl.c" info="1194043819"/>
 <file name="ad_hfs.c" info="1194043819"/>
+<file name="ad_hfs_fcntl.c" info="1194043819"/>
 <file name="ad_hfs_open.c" info="1194043819"/>
 <file name="ad_hfs_write.c" info="1194043819"/>
 <file name="ad_hfs.h" info="1194043819"/>
@@ -8,9 +8,9 @@
 <file name="ad_hfs_resize.c" info="1194043819"/>
 </dir>
 <data>
-<fileinfo name="ad_hfs_fcntl.c">
-</fileinfo>
 <fileinfo name="ad_hfs.c">
+</fileinfo>
+<fileinfo name="ad_hfs_fcntl.c">
 </fileinfo>
 <fileinfo name="ad_hfs_open.c">
 </fileinfo>

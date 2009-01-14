@@ -6,18 +6,20 @@
 </HEAD>
 <BODY BGCOLOR="FFFFFF">
 <A NAME="MPI_Get_elements"><H1>MPI_Get_elements</H1></A>
-get_elements 
+Returns the number of basic elements in a datatype 
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 </PRE>
-<H2>Arguments</H2>
+<H2>Input Parameters</H2>
 <DL>
-<DT><B>MPI_Status *status </B><DD>status
+<DT><B>status </B><DD>return status of receive operation (Status) 
 
-<DT><B>MPI_Datatype datatype </B><DD>datatype
-
-<DT><B>int *elements </B><DD>elements
+<DT><B>datatype </B><DD>datatype used by receive operation (handle) 
+</DL>
+<P>
+<H2>Output Parameter</H2>
+<DL><DT><B>count </B> <DD> number of received basic elements (integer) 
 </DL>
 <P>
 <H2>Notes</H2>

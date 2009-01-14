@@ -86,6 +86,9 @@
 /* Define if C++ is supported */
 #undef HAVE_CXX_BINDING
 
+/* Define is C++ supports complex types */
+#undef HAVE_CXX_COMPLEX
+
 /* define if the compiler supports exceptions */
 #undef HAVE_CXX_EXCEPTIONS
 
@@ -376,6 +379,15 @@
 /* Level of thread support selected at compile time */
 #undef MPICH_THREAD_LEVEL
 
+/* Define as the MPI Datatype handle for MPI::COMPLEX */
+#undef MPIR_CXX_COMPLEX_VALUE
+
+/* Define as the MPI Datatype handle for MPI::DOUBLE_COMPLEX */
+#undef MPIR_CXX_DOUBLE_COMPLEX_VALUE
+
+/* Define as the MPI Datatype handle for MPI::LONG_DOUBLE_COMPLEX */
+#undef MPIR_CXX_LONG_DOUBLE_COMPLEX_VALUE
+
 /* C type to use for MPI_INTEGER16 */
 #undef MPIR_INTEGER16_CTYPE
 
@@ -391,6 +403,9 @@
 /* C type to use for MPI_INTEGER8 */
 #undef MPIR_INTEGER8_CTYPE
 
+/* MPIR_PINT is a pointer-sized integer */
+#undef MPIR_Pint
+
 /* C type to use for MPI_REAL16 */
 #undef MPIR_REAL16_CTYPE
 
@@ -400,14 +415,8 @@
 /* C type to use for MPI_REAL8 */
 #undef MPIR_REAL8_CTYPE
 
-/* Define for the 16 bit integer type */
-#undef MPIU_INT16_T
-
-/* Define for the 32 bit integer type */
-#undef MPIU_INT32_T
-
-/* Define for the 64 bit integer type */
-#undef MPIU_INT64_T
+/* MPIR_PUINT is an unsigned pointer-sized integer */
+#undef MPIR_Upint
 
 /* Set to a type that can express the size of the entire address space */
 #undef MPIU_SIZE_T
@@ -442,19 +451,19 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
-/* The size of a `bool', as computed by sizeof. */
+/* The size of `bool', as computed by sizeof. */
 #undef SIZEOF_BOOL
 
-/* The size of a `char', as computed by sizeof. */
+/* The size of `char', as computed by sizeof. */
 #undef SIZEOF_CHAR
 
-/* The size of a `Complex', as computed by sizeof. */
+/* The size of `Complex', as computed by sizeof. */
 #undef SIZEOF_COMPLEX
 
-/* The size of a `double', as computed by sizeof. */
+/* The size of `double', as computed by sizeof. */
 #undef SIZEOF_DOUBLE
 
-/* The size of a `DoubleComplex', as computed by sizeof. */
+/* The size of `DoubleComplex', as computed by sizeof. */
 #undef SIZEOF_DOUBLECOMPLEX
 
 /* Define size of PAC_TYPE_NAME */
@@ -466,39 +475,54 @@
 /* Define size of PAC_TYPE_NAME */
 #undef SIZEOF_F77_REAL
 
-/* The size of a `float', as computed by sizeof. */
+/* The size of `float', as computed by sizeof. */
 #undef SIZEOF_FLOAT
 
-/* The size of a `int', as computed by sizeof. */
+/* The size of `int', as computed by sizeof. */
 #undef SIZEOF_INT
 
-/* define if sizeof(int) = sizeof(void*) */
+/* define if sizeof(int) = sizeof(MPI_Aint) */
 #undef SIZEOF_INT_IS_AINT
 
-/* The size of a `long', as computed by sizeof. */
+/* The size of `long', as computed by sizeof. */
 #undef SIZEOF_LONG
 
-/* The size of a `LongDoubleComplex', as computed by sizeof. */
+/* The size of `LongDoubleComplex', as computed by sizeof. */
 #undef SIZEOF_LONGDOUBLECOMPLEX
 
-/* The size of a `long double', as computed by sizeof. */
+/* The size of `long double', as computed by sizeof. */
 #undef SIZEOF_LONG_DOUBLE
 
-/* The size of a `long long', as computed by sizeof. */
+/* The size of `long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
 
-/* The size of a `short', as computed by sizeof. */
+/* The size of `short', as computed by sizeof. */
 #undef SIZEOF_SHORT
 
-/* The size of a `void *', as computed by sizeof. */
+/* The size of `unsigned char', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_CHAR
+
+/* The size of `unsigned int', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_INT
+
+/* The size of `unsigned long', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_LONG
+
+/* The size of `unsigned long long', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_LONG_LONG
+
+/* The size of `unsigned short', as computed by sizeof. */
+#undef SIZEOF_UNSIGNED_SHORT
+
+/* The size of `void *', as computed by sizeof. */
 #undef SIZEOF_VOID_P
 
-/* The size of a `wchar_t', as computed by sizeof. */
+/* The size of `wchar_t', as computed by sizeof. */
 #undef SIZEOF_WCHAR_T
 
 /* If using the C implementation of alloca, define if you know the
    direction of stack growth for your system; otherwise it will be
-   automatically deduced at run-time.
+   automatically deduced at runtime.
 	STACK_DIRECTION > 0 => grows toward higher addresses
 	STACK_DIRECTION < 0 => grows toward lower addresses
 	STACK_DIRECTION = 0 => direction of growth unknown */
@@ -556,12 +580,34 @@
 /* Define if weak symbols should be used */
 #undef USE_WEAK_SYMBOLS
 
-/* Define to 1 if your processor stores words with the most significant byte
-   first (like Motorola and SPARC, unlike Intel and VAX). */
-#undef WORDS_BIGENDIAN
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel and VAX). */
+#if defined __BIG_ENDIAN__
+# define WORDS_BIGENDIAN 1
+#elif ! defined __LITTLE_ENDIAN__
+# undef WORDS_BIGENDIAN
+#endif
 
 /* Define if words are little endian */
 #undef WORDS_LITTLEENDIAN
+
+/* Define if configure will not tell us, for universal binaries */
+#undef WORDS_UNIVERSAL_ENDIAN
+
+/* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,
+   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
+   #define below would cause a syntax error. */
+#undef _UINT32_T
+
+/* Define for Solaris 2.5.1 so the uint64_t typedef from <sys/synch.h>,
+   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
+   #define below would cause a syntax error. */
+#undef _UINT64_T
+
+/* Define for Solaris 2.5.1 so the uint8_t typedef from <sys/synch.h>,
+   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
+   #define below would cause a syntax error. */
+#undef _UINT8_T
 
 /* define if bool is a built-in type */
 #undef bool
@@ -575,11 +621,43 @@
 #undef inline
 #endif
 
+/* Define to the type of a signed integer type of width exactly 16 bits if
+   such a type exists and the standard includes do not define it. */
+#undef int16_t
+
+/* Define to the type of a signed integer type of width exactly 32 bits if
+   such a type exists and the standard includes do not define it. */
+#undef int32_t
+
+/* Define to the type of a signed integer type of width exactly 64 bits if
+   such a type exists and the standard includes do not define it. */
+#undef int64_t
+
+/* Define to the type of a signed integer type of width exactly 8 bits if such
+   a type exists and the standard includes do not define it. */
+#undef int8_t
+
 /* if C does not support restrict */
 #undef restrict
 
-/* Define to `unsigned' if <sys/types.h> does not define. */
+/* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
+
+/* Define to the type of an unsigned integer type of width exactly 16 bits if
+   such a type exists and the standard includes do not define it. */
+#undef uint16_t
+
+/* Define to the type of an unsigned integer type of width exactly 32 bits if
+   such a type exists and the standard includes do not define it. */
+#undef uint32_t
+
+/* Define to the type of an unsigned integer type of width exactly 64 bits if
+   such a type exists and the standard includes do not define it. */
+#undef uint64_t
+
+/* Define to the type of an unsigned integer type of width exactly 8 bits if
+   such a type exists and the standard includes do not define it. */
+#undef uint8_t
 
 /* if C does not support volatile */
 #undef volatile

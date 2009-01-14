@@ -166,7 +166,6 @@ typedef int MPI_Op;
 /* These are only guesses; make sure you change them in mpif.h as well */
 #define MPI_MAX_PROCESSOR_NAME @MPI_MAX_PROCESSOR_NAME@
 #define MPI_MAX_ERROR_STRING  1024 
-#define MPI_MAX_NAME_STRING     63
 #define MPI_MAX_PORT_NAME      256
 #define MPI_MAX_OBJECT_NAME    128
 
@@ -210,7 +209,11 @@ typedef void (MPI_Win_errhandler_fn)(MPI_Win *, int *, ...);
    in 22-25), index in the low bits */
 #define MPI_ERRORS_ARE_FATAL ((MPI_Errhandler)0x54000000)
 #define MPI_ERRORS_RETURN    ((MPI_Errhandler)0x54000001)
-      /* #define MPIR_ERRORS_WARN     ((MPI_Errhandler)0x54000002) */
+/* MPIR_ERRORS_THROW_EXCEPTIONS is not part of the MPI standard, it is here to
+   facilitate the c++ binding which has MPI::ERRORS_THROW_EXCEPTIONS. 
+   Using the MPIR prefix preserved the MPI_ names for objects defined by
+   the standard. */
+#define MPIR_ERRORS_THROW_EXCEPTIONS ((MPI_Errhandler)0x54000002)
 typedef int MPI_Errhandler;
 
 /* Make the C names for the dup function mixed case.
@@ -280,7 +283,7 @@ typedef int (MPI_Delete_function) ( MPI_Comm, int, void *, void * );
 #define MPICH2_RELEASE_TYPE_PATCH  3
 
 #define MPICH2_CALC_VERSION(MAJOR, MINOR, REVISION, TYPE, PATCH) \
-  ((MAJOR * 10000000) + (MINOR * 100000) + (REVISION * 1000) + (TYPE * 100) + (PATCH))
+    (((MAJOR) * 10000000) + ((MINOR) * 100000) + ((REVISION) * 1000) + ((TYPE) * 100) + (PATCH))
 
 /* for the datatype decoders */
 enum MPI_COMBINER_ENUM {
@@ -957,8 +960,6 @@ int PMPI_Errhandler_get(MPI_Comm, MPI_Errhandler *);
 int PMPI_Errhandler_free(MPI_Errhandler *);
 int PMPI_Error_string(int, char *, int *);
 int PMPI_Error_class(int, int *);
-
-int PMPI_Type_get_envelope(MPI_Datatype, int *, int *, int *, int *); 
 
 /* Wtime done above */
 int PMPI_Init(int *, char ***);

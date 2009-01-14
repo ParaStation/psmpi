@@ -6,6 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+VERBOSE         = 1
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -28,21 +29,32 @@ INCLUDES = -I../include -I${srcdir}/../include
 .SUFFIXES:
 .SUFFIXES: .o .c .txt 
 .c.o:
-	$(C_COMPILE) -c $<
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -c $< ; \
+	fi
+	@$(C_COMPILE) -c $<
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
+	fi
+	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
 	-rootdir=../../../ \
 	-configdir=test/mpi/ \
-	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
-	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
 	-distcleanfiles="Makefile" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
@@ -53,8 +65,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
-	-@rm -f *.o ${srcdir}/*.o setviewcur rdwrord userioerr i_noncontig setinfo async rdwrzero async_any getextent
-	-@rm -f setviewcur.exe rdwrord.exe userioerr.exe i_noncontig.exe setinfo.exe async.exe rdwrzero.exe async_any.exe getextent.exe
+	-@rm -f *.o ${srcdir}/*.o setviewcur rdwrord userioerr i_noncontig setinfo resized async rdwrzero async_any getextent
+	-@rm -f setviewcur.exe rdwrord.exe userioerr.exe i_noncontig.exe setinfo.exe resized.exe async.exe rdwrzero.exe async_any.exe getextent.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -73,7 +85,7 @@ remove-makefile:
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
 all-redirect: rdwrord rdwrzero getextent setinfo setviewcur i_noncontig async\
-	 async_any userioerr
+	 async_any userioerr resized
 
 coverage: 
 setviewcur: setviewcur.o   @MPILIBLOC@ ../util/mtest.o
@@ -86,6 +98,8 @@ i_noncontig: i_noncontig.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o i_noncontig i_noncontig.o  ${LIBS}
 setinfo: setinfo.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o setinfo setinfo.o  ${LIBS}
+resized: resized.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o resized resized.o  ${LIBS}
 async: async.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o async async.o  ${LIBS}
 rdwrzero: rdwrzero.o   @MPILIBLOC@ ../util/mtest.o
@@ -108,7 +122,7 @@ dependencies:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  rdwrord.c rdwrzero.c getextent.c setinfo.c setviewcur.c \
-	i_noncontig.c async.c async_any.c userioerr.c 
+	i_noncontig.c async.c async_any.c userioerr.c resized.c 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)

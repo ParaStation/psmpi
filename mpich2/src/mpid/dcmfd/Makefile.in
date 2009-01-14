@@ -1,0 +1,125 @@
+# This Makefile.in created by simplemake.  Do not edit
+
+# @configure_input@
+
+# --------------------------------------------------------------------------
+all: all-redirect
+
+SHELL           = @SHELL@
+VERBOSE         = 1
+INSTALL         = @INSTALL@
+INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_DATA    = @INSTALL_DATA@
+MKDIR_P         = @MKDIR_P@
+abs_builddir    = @abs_builddir@
+srcdir          = @srcdir@
+abs_srcdir      = @abs_srcdir@
+prefix          = @prefix@
+includedir      = @includedir@
+MAKE            = @MAKE@
+MPILIBNAME      = @MPILIBNAME@
+
+VPATH = .:@srcdir@
+
+.SUFFIXES:
+.SUFFIXES:  .txt 
+
+${srcdir}/include/mpid_config.h  ${srcdir}/configure: ${srcdir}/configure.in  \
+	../common/thread/mpid_thread.m4 
+	@rm -rf autom4te*.cache
+	(cd ${srcdir} && /homes/chan/autoconf/2.62/bin/autoheader -I ../../../confdb \
+	&& \
+	/homes/chan/autoconf/2.62/bin/autoconf -I ../../../confdb ) 
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
+	-rootdir=../../../ \
+	-configdir=src/mpid/dcmfd/ \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
+	-distcleanfiles="localdefs config.status config.log config.cache *conf.cache config.system" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-if [ -x config.status ] ; then CONFIG_FILES=Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
+apply: 
+	$(ACTION) $(ACTION_INPUT)
+	(cd src && $(MAKE) apply )
+clean: 
+	-@rm -f *.o ${srcdir}/*.o 
+	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
+	(cd src && $(MAKE) clean )
+distclean:  clean distclean-local distclean-xxx remove-makefile
+distclean-xxx:
+	if [ -s src/Makefile ] ; then (cd src && $(MAKE) distclean ) ; fi
+	-@rm -f localdefs config.status config.log config.cache *conf.cache config.system
+	-@rm -rf autom4te*.cache
+	-@rm -f include/mpid_config.h
+	-@rm -rf $(DEPS_DIR)
+	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
+	(cd src && $(MAKE) maintainer-clean )
+	-rm -f include/mpid_config.h.in 
+remove-makefile:
+	rm -f Makefile
+remove-genmakefiles:
+	rm -f  Makefile.in Makefile
+all-redirect:
+	@(cd src && ${MAKE} all )
+
+coverage: 
+	(cd src && $(MAKE) coverage )
+# --------------------------------------------------------------------------
+htmldoc:
+	(cd src && $(MAKE) htmldoc )
+mandoc:
+	(cd src && $(MAKE) mandoc )
+latexdoc:
+	(cd src && $(MAKE) latexdoc )
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Install target
+install:  FORCE_TARGET 
+	if [ ! -d ${DESTDIR}${prefix} ] ; then $(MKDIR_P) ${DESTDIR}${prefix} ; fi
+	if [ ! -d ${DESTDIR}${includedir} ] ; then $(MKDIR_P) ${DESTDIR}${includedir} ; fi
+	$(INSTALL_DATA) ${srcdir}/include/mpix.h ${DESTDIR}${includedir}/mpix.h
+
+install-strip:
+	$(MAKE) INSTALL_STRIP_FLAG=-s install
+uninstall: 
+	-rm -f ${DESTDIR}${includedir}/mpix.h
+installcheck: 
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+	(cd src && $(MAKE) dependencies )
+# End of Dependencies
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+HEADERFILES     = $(HEADERS)
+SOURCEFILES     = $(SOURCES)
+tags: TAGS
+TAGS: Makefile
+	(cd src && $(MAKE) TAGS )
+# --------------------------------------------------------------------------
+
+distclean-local:
+	-rm -f include/mpidi_bg_conf.h
+
+maintainerclean-local:
+	-rm -f include/mpidi_bg_conf.h.in
+
+echomaxprocname:
+	@echo 131070
+
+FORCE_TARGET:
+

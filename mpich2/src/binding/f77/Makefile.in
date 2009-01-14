@@ -6,6 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+VERBOSE         = 1
 AR              = @AR@
 RANLIB          = @RANLIB@
 INSTALL         = @INSTALL@
@@ -195,18 +196,45 @@ doc_sources = mpif77.txt
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .f .o .man .html .latex .txt 
 .c.o:
-	$(C_COMPILE) -c $<
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -c $< ; \
+	fi
+	@$(C_COMPILE) -c $<
 .c.lo:
-	$(C_COMPILE_SHL) -c $< -o _s$*.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
+	echo mv -f _s$*.o $*.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
+	fi
+	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f.o:
-	$(F77_COMPILE) -c $<
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  FC              $<" ; \
+	else \
+	  echo $(F77_COMPILE) -c $< ; \
+	fi
+	@$(F77_COMPILE) -c $<
 .f.lo:
-	$(F77_COMPILE_SHL) -c $< -o _s$*.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  FC              $<" ; \
+	else \
+	  echo $(F77_COMPILE_SHL) -c $< -o _s$*.o ; \
+	echo mv -f _s$*.o $*.lo ; \
+	fi
+	@$(F77_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
 .f:
 	$(F77_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
@@ -222,13 +250,14 @@ doc_sources = mpif77.txt
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
 	-rootdir=../../../ \
 	-configdir=. \
-	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
-	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
 	-distcleanfiles="Makefile" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
@@ -350,7 +379,12 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	_wnull_win_del_fnf.o _wnull_win_copy_fnf.o _wdup_type_fnf.o \
 	_wnull_type_del_fnf.o _wnull_type_copy_fnf.o _wstatusf2c.o \
 	_wstatusc2f.o 
-	${AR} cr ../../../lib/lib${FWRAPNAME}.a $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../lib/lib${FWRAPNAME}.a $?" ; \
+	else \
+	  echo ${AR} cr ../../../lib/lib${FWRAPNAME}.a $? ; \
+	fi
+	@${AR} cr ../../../lib/lib${FWRAPNAME}.a $?
 	${RANLIB} ../../../lib/lib${FWRAPNAME}.a
 	date > .libstamp0
 .libstamp2 ../../../lib/lib${MPIFLIBNAME}.a: sendf.o recvf.o get_countf.o \
@@ -422,7 +456,12 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	null_win_del_fnf.o null_win_copy_fnf.o dup_type_fnf.o \
 	null_type_del_fnf.o null_type_copy_fnf.o statusf2c.o statusc2f.o \
 	setbot.o setbotf.o 
-	${AR} cr ../../../lib/lib${MPIFLIBNAME}.a $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../lib/lib${MPIFLIBNAME}.a $?" ; \
+	else \
+	  echo ${AR} cr ../../../lib/lib${MPIFLIBNAME}.a $? ; \
+	fi
+	@${AR} cr ../../../lib/lib${MPIFLIBNAME}.a $?
 	${RANLIB} ../../../lib/lib${MPIFLIBNAME}.a
 	date > .libstamp2
 .libstamp1 ../../../lib/lib${FWRAPNAME}.la: _wsendf.lo _wrecvf.lo \
@@ -510,7 +549,12 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	_wdup_win_fnf.lo _wnull_win_del_fnf.lo _wnull_win_copy_fnf.lo \
 	_wdup_type_fnf.lo _wnull_type_del_fnf.lo _wnull_type_copy_fnf.lo \
 	_wstatusf2c.lo _wstatusc2f.lo 
-	${AR} cr ../../../lib/lib${FWRAPNAME}.la $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../lib/lib${FWRAPNAME}.la $?" ; \
+	else \
+	  echo ${AR} cr ../../../lib/lib${FWRAPNAME}.la $? ; \
+	fi
+	@${AR} cr ../../../lib/lib${FWRAPNAME}.la $?
 	date > .libstamp1
 .libstamp3 ../../../lib/lib${MPIFLIBNAME}.la: sendf.lo recvf.lo get_countf.lo \
 	bsendf.lo ssendf.lo rsendf.lo bufattachf.lo bufdetachf.lo isendf.lo \
@@ -587,7 +631,12 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	dup_win_fnf.lo null_win_del_fnf.lo null_win_copy_fnf.lo \
 	dup_type_fnf.lo null_type_del_fnf.lo null_type_copy_fnf.lo \
 	statusf2c.lo statusc2f.lo setbot.lo setbotf.lo 
-	${AR} cr ../../../lib/lib${MPIFLIBNAME}.la $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../lib/lib${MPIFLIBNAME}.la $?" ; \
+	else \
+	  echo ${AR} cr ../../../lib/lib${MPIFLIBNAME}.la $? ; \
+	fi
+	@${AR} cr ../../../lib/lib${MPIFLIBNAME}.la $?
 	date > .libstamp3
 
 # --------------------------------------------------------------------------
@@ -665,8 +714,18 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	_dup_win_fnf.o _null_win_del_fnf.o _null_win_copy_fnf.o \
 	_dup_type_fnf.o _null_type_del_fnf.o _null_type_copy_fnf.o \
 	_statusf2c.o _statusc2f.o 
-	${AR} cr ../../../lib/lib${PMPIFLIBNAME}.a $?
-	${RANLIB} ../../../lib/lib${PMPIFLIBNAME}.a
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../lib/lib${PMPIFLIBNAME}.a $?" ; \
+	else \
+	  echo ${AR} cr ../../../lib/lib${PMPIFLIBNAME}.a $? ; \
+	fi
+	@${AR} cr ../../../lib/lib${PMPIFLIBNAME}.a $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  RANLIB          lib${PMPIFLIBNAME}.a" ; \
+	else \
+	  echo ${RANLIB} ../../../lib/lib${PMPIFLIBNAME}.a ; \
+	fi
+	@${RANLIB} ../../../lib/lib${PMPIFLIBNAME}.a
 	date > .libstamp4
 .libstamp5: _sendf.lo _recvf.lo _get_countf.lo _bsendf.lo _ssendf.lo _rsendf.lo \
 	_bufattachf.lo _bufdetachf.lo _isendf.lo _ibsendf.lo _issendf.lo \
@@ -748,1190 +807,2675 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	_null_win_del_fnf.lo _null_win_copy_fnf.lo _dup_type_fnf.lo \
 	_null_type_del_fnf.lo _null_type_copy_fnf.lo _statusf2c.lo \
 	_statusc2f.lo 
-	${AR} cr ../../../lib/lib${PMPIFLIBNAME}.la $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../lib/lib${PMPIFLIBNAME}.la $?" ; \
+	else \
+	  echo ${AR} cr ../../../lib/lib${PMPIFLIBNAME}.la $?; \
+	fi
+	@${AR} cr ../../../lib/lib${PMPIFLIBNAME}.la $?
 	date > .libstamp5
 _sendf.o: sendf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/sendf.c -o _sendf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/sendf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/sendf.c -o _sendf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/sendf.c -o _sendf.o
 _sendf.lo: sendf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/sendf.c -o _sendf.lo
 _recvf.o: recvf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/recvf.c -o _recvf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/recvf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/recvf.c -o _recvf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/recvf.c -o _recvf.o
 _recvf.lo: recvf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/recvf.c -o _recvf.lo
 _get_countf.o: get_countf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_countf.c -o _get_countf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/get_countf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_countf.c -o _get_countf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_countf.c -o _get_countf.o
 _get_countf.lo: get_countf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_countf.c -o _get_countf.lo
 _bsendf.o: bsendf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bsendf.c -o _bsendf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/bsendf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bsendf.c -o _bsendf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bsendf.c -o _bsendf.o
 _bsendf.lo: bsendf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/bsendf.c -o _bsendf.lo
 _ssendf.o: ssendf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ssendf.c -o _ssendf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/ssendf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ssendf.c -o _ssendf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ssendf.c -o _ssendf.o
 _ssendf.lo: ssendf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/ssendf.c -o _ssendf.lo
 _rsendf.o: rsendf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/rsendf.c -o _rsendf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/rsendf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/rsendf.c -o _rsendf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/rsendf.c -o _rsendf.o
 _rsendf.lo: rsendf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/rsendf.c -o _rsendf.lo
 _bufattachf.o: bufattachf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bufattachf.c -o _bufattachf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/bufattachf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bufattachf.c -o _bufattachf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bufattachf.c -o _bufattachf.o
 _bufattachf.lo: bufattachf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/bufattachf.c -o _bufattachf.lo
 _bufdetachf.o: bufdetachf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bufdetachf.c -o _bufdetachf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/bufdetachf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bufdetachf.c -o _bufdetachf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bufdetachf.c -o _bufdetachf.o
 _bufdetachf.lo: bufdetachf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/bufdetachf.c -o _bufdetachf.lo
 _isendf.o: isendf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/isendf.c -o _isendf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/isendf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/isendf.c -o _isendf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/isendf.c -o _isendf.o
 _isendf.lo: isendf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/isendf.c -o _isendf.lo
 _ibsendf.o: ibsendf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ibsendf.c -o _ibsendf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/ibsendf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ibsendf.c -o _ibsendf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ibsendf.c -o _ibsendf.o
 _ibsendf.lo: ibsendf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/ibsendf.c -o _ibsendf.lo
 _issendf.o: issendf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/issendf.c -o _issendf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/issendf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/issendf.c -o _issendf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/issendf.c -o _issendf.o
 _issendf.lo: issendf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/issendf.c -o _issendf.lo
 _irsendf.o: irsendf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/irsendf.c -o _irsendf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/irsendf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/irsendf.c -o _irsendf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/irsendf.c -o _irsendf.o
 _irsendf.lo: irsendf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/irsendf.c -o _irsendf.lo
 _irecvf.o: irecvf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/irecvf.c -o _irecvf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/irecvf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/irecvf.c -o _irecvf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/irecvf.c -o _irecvf.o
 _irecvf.lo: irecvf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/irecvf.c -o _irecvf.lo
 _waitf.o: waitf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitf.c -o _waitf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/waitf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitf.c -o _waitf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitf.c -o _waitf.o
 _waitf.lo: waitf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/waitf.c -o _waitf.lo
 _testf.o: testf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testf.c -o _testf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/testf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testf.c -o _testf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testf.c -o _testf.o
 _testf.lo: testf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/testf.c -o _testf.lo
 _request_freef.o: request_freef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/request_freef.c -o _request_freef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/request_freef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/request_freef.c -o _request_freef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/request_freef.c -o _request_freef.o
 _request_freef.lo: request_freef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/request_freef.c -o _request_freef.lo
 _waitanyf.o: waitanyf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitanyf.c -o _waitanyf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/waitanyf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitanyf.c -o _waitanyf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitanyf.c -o _waitanyf.o
 _waitanyf.lo: waitanyf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/waitanyf.c -o _waitanyf.lo
 _testanyf.o: testanyf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testanyf.c -o _testanyf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/testanyf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testanyf.c -o _testanyf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testanyf.c -o _testanyf.o
 _testanyf.lo: testanyf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/testanyf.c -o _testanyf.lo
 _waitallf.o: waitallf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitallf.c -o _waitallf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/waitallf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitallf.c -o _waitallf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitallf.c -o _waitallf.o
 _waitallf.lo: waitallf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/waitallf.c -o _waitallf.lo
 _testallf.o: testallf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testallf.c -o _testallf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/testallf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testallf.c -o _testallf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testallf.c -o _testallf.o
 _testallf.lo: testallf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/testallf.c -o _testallf.lo
 _waitsomef.o: waitsomef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitsomef.c -o _waitsomef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/waitsomef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitsomef.c -o _waitsomef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitsomef.c -o _waitsomef.o
 _waitsomef.lo: waitsomef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/waitsomef.c -o _waitsomef.lo
 _testsomef.o: testsomef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testsomef.c -o _testsomef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/testsomef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testsomef.c -o _testsomef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testsomef.c -o _testsomef.o
 _testsomef.lo: testsomef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/testsomef.c -o _testsomef.lo
 _iprobef.o: iprobef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/iprobef.c -o _iprobef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/iprobef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/iprobef.c -o _iprobef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/iprobef.c -o _iprobef.o
 _iprobef.lo: iprobef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/iprobef.c -o _iprobef.lo
 _probef.o: probef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/probef.c -o _probef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/probef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/probef.c -o _probef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/probef.c -o _probef.o
 _probef.lo: probef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/probef.c -o _probef.lo
 _cancelf.o: cancelf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cancelf.c -o _cancelf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/cancelf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cancelf.c -o _cancelf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cancelf.c -o _cancelf.o
 _cancelf.lo: cancelf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cancelf.c -o _cancelf.lo
 _testcancelf.o: testcancelf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testcancelf.c -o _testcancelf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/testcancelf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testcancelf.c -o _testcancelf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testcancelf.c -o _testcancelf.o
 _testcancelf.lo: testcancelf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/testcancelf.c -o _testcancelf.lo
 _send_initf.o: send_initf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/send_initf.c -o _send_initf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/send_initf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/send_initf.c -o _send_initf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/send_initf.c -o _send_initf.o
 _send_initf.lo: send_initf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/send_initf.c -o _send_initf.lo
 _bsend_initf.o: bsend_initf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bsend_initf.c -o _bsend_initf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/bsend_initf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bsend_initf.c -o _bsend_initf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bsend_initf.c -o _bsend_initf.o
 _bsend_initf.lo: bsend_initf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/bsend_initf.c -o _bsend_initf.lo
 _ssend_initf.o: ssend_initf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ssend_initf.c -o _ssend_initf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/ssend_initf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ssend_initf.c -o _ssend_initf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ssend_initf.c -o _ssend_initf.o
 _ssend_initf.lo: ssend_initf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/ssend_initf.c -o _ssend_initf.lo
 _rsend_initf.o: rsend_initf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/rsend_initf.c -o _rsend_initf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/rsend_initf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/rsend_initf.c -o _rsend_initf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/rsend_initf.c -o _rsend_initf.o
 _rsend_initf.lo: rsend_initf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/rsend_initf.c -o _rsend_initf.lo
 _recv_initf.o: recv_initf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/recv_initf.c -o _recv_initf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/recv_initf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/recv_initf.c -o _recv_initf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/recv_initf.c -o _recv_initf.o
 _recv_initf.lo: recv_initf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/recv_initf.c -o _recv_initf.lo
 _startf.o: startf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/startf.c -o _startf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/startf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/startf.c -o _startf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/startf.c -o _startf.o
 _startf.lo: startf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/startf.c -o _startf.lo
 _startallf.o: startallf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/startallf.c -o _startallf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/startallf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/startallf.c -o _startallf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/startallf.c -o _startallf.o
 _startallf.lo: startallf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/startallf.c -o _startallf.lo
 _sendrecvf.o: sendrecvf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/sendrecvf.c -o _sendrecvf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/sendrecvf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/sendrecvf.c -o _sendrecvf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/sendrecvf.c -o _sendrecvf.o
 _sendrecvf.lo: sendrecvf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/sendrecvf.c -o _sendrecvf.lo
 _sndrcvrplf.o: sndrcvrplf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/sndrcvrplf.c -o _sndrcvrplf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/sndrcvrplf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/sndrcvrplf.c -o _sndrcvrplf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/sndrcvrplf.c -o _sndrcvrplf.o
 _sndrcvrplf.lo: sndrcvrplf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/sndrcvrplf.c -o _sndrcvrplf.lo
 _typecontigf.o: typecontigf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typecontigf.c -o _typecontigf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typecontigf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typecontigf.c -o _typecontigf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typecontigf.c -o _typecontigf.o
 _typecontigf.lo: typecontigf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typecontigf.c -o _typecontigf.lo
 _type_vectorf.o: type_vectorf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_vectorf.c -o _type_vectorf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/type_vectorf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_vectorf.c -o _type_vectorf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_vectorf.c -o _type_vectorf.o
 _type_vectorf.lo: type_vectorf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_vectorf.c -o _type_vectorf.lo
 _type_hvectorf.o: type_hvectorf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hvectorf.c -o _type_hvectorf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/type_hvectorf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hvectorf.c -o _type_hvectorf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hvectorf.c -o _type_hvectorf.o
 _type_hvectorf.lo: type_hvectorf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hvectorf.c -o _type_hvectorf.lo
 _type_indexedf.o: type_indexedf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_indexedf.c -o _type_indexedf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/type_indexedf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_indexedf.c -o _type_indexedf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_indexedf.c -o _type_indexedf.o
 _type_indexedf.lo: type_indexedf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_indexedf.c -o _type_indexedf.lo
 _type_hindexedf.o: type_hindexedf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hindexedf.c -o _type_hindexedf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/type_hindexedf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hindexedf.c -o _type_hindexedf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hindexedf.c -o _type_hindexedf.o
 _type_hindexedf.lo: type_hindexedf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hindexedf.c -o _type_hindexedf.lo
 _type_structf.o: type_structf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_structf.c -o _type_structf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/type_structf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_structf.c -o _type_structf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_structf.c -o _type_structf.o
 _type_structf.lo: type_structf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_structf.c -o _type_structf.lo
 _type_extentf.o: type_extentf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_extentf.c -o _type_extentf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/type_extentf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_extentf.c -o _type_extentf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_extentf.c -o _type_extentf.o
 _type_extentf.lo: type_extentf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_extentf.c -o _type_extentf.lo
 _type_sizef.o: type_sizef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_sizef.c -o _type_sizef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/type_sizef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_sizef.c -o _type_sizef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_sizef.c -o _type_sizef.o
 _type_sizef.lo: type_sizef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_sizef.c -o _type_sizef.lo
 _type_lbf.o: type_lbf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_lbf.c -o _type_lbf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/type_lbf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_lbf.c -o _type_lbf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_lbf.c -o _type_lbf.o
 _type_lbf.lo: type_lbf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_lbf.c -o _type_lbf.lo
 _type_ubf.o: type_ubf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_ubf.c -o _type_ubf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/type_ubf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_ubf.c -o _type_ubf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_ubf.c -o _type_ubf.o
 _type_ubf.lo: type_ubf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_ubf.c -o _type_ubf.lo
 _type_commitf.o: type_commitf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_commitf.c -o _type_commitf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/type_commitf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_commitf.c -o _type_commitf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_commitf.c -o _type_commitf.o
 _type_commitf.lo: type_commitf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_commitf.c -o _type_commitf.lo
 _type_freef.o: type_freef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_freef.c -o _type_freef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/type_freef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_freef.c -o _type_freef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_freef.c -o _type_freef.o
 _type_freef.lo: type_freef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_freef.c -o _type_freef.lo
 _get_elementsf.o: get_elementsf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_elementsf.c -o _get_elementsf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/get_elementsf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_elementsf.c -o _get_elementsf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_elementsf.c -o _get_elementsf.o
 _get_elementsf.lo: get_elementsf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_elementsf.c -o _get_elementsf.lo
 _packf.o: packf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/packf.c -o _packf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/packf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/packf.c -o _packf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/packf.c -o _packf.o
 _packf.lo: packf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/packf.c -o _packf.lo
 _unpackf.o: unpackf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpackf.c -o _unpackf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/unpackf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpackf.c -o _unpackf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpackf.c -o _unpackf.o
 _unpackf.lo: unpackf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpackf.c -o _unpackf.lo
 _pack_sizef.o: pack_sizef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_sizef.c -o _pack_sizef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/pack_sizef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_sizef.c -o _pack_sizef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_sizef.c -o _pack_sizef.o
 _pack_sizef.lo: pack_sizef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_sizef.c -o _pack_sizef.lo
 _barrierf.o: barrierf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/barrierf.c -o _barrierf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/barrierf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/barrierf.c -o _barrierf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/barrierf.c -o _barrierf.o
 _barrierf.lo: barrierf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/barrierf.c -o _barrierf.lo
 _bcastf.o: bcastf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bcastf.c -o _bcastf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/bcastf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bcastf.c -o _bcastf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bcastf.c -o _bcastf.o
 _bcastf.lo: bcastf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/bcastf.c -o _bcastf.lo
 _gatherf.o: gatherf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/gatherf.c -o _gatherf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/gatherf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/gatherf.c -o _gatherf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/gatherf.c -o _gatherf.o
 _gatherf.lo: gatherf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/gatherf.c -o _gatherf.lo
 _gathervf.o: gathervf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/gathervf.c -o _gathervf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/gathervf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/gathervf.c -o _gathervf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/gathervf.c -o _gathervf.o
 _gathervf.lo: gathervf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/gathervf.c -o _gathervf.lo
 _scatterf.o: scatterf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scatterf.c -o _scatterf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/scatterf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scatterf.c -o _scatterf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scatterf.c -o _scatterf.o
 _scatterf.lo: scatterf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scatterf.c -o _scatterf.lo
 _scattervf.o: scattervf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scattervf.c -o _scattervf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/scattervf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scattervf.c -o _scattervf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scattervf.c -o _scattervf.o
 _scattervf.lo: scattervf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scattervf.c -o _scattervf.lo
 _allgatherf.o: allgatherf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allgatherf.c -o _allgatherf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/allgatherf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allgatherf.c -o _allgatherf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allgatherf.c -o _allgatherf.o
 _allgatherf.lo: allgatherf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allgatherf.c -o _allgatherf.lo
 _allgathervf.o: allgathervf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allgathervf.c -o _allgathervf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/allgathervf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allgathervf.c -o _allgathervf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allgathervf.c -o _allgathervf.o
 _allgathervf.lo: allgathervf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allgathervf.c -o _allgathervf.lo
 _alltoallf.o: alltoallf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallf.c -o _alltoallf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/alltoallf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallf.c -o _alltoallf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallf.c -o _alltoallf.o
 _alltoallf.lo: alltoallf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallf.c -o _alltoallf.lo
 _alltoallvf.o: alltoallvf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallvf.c -o _alltoallvf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/alltoallvf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallvf.c -o _alltoallvf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallvf.c -o _alltoallvf.o
 _alltoallvf.lo: alltoallvf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallvf.c -o _alltoallvf.lo
 _reducef.o: reducef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/reducef.c -o _reducef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/reducef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/reducef.c -o _reducef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/reducef.c -o _reducef.o
 _reducef.lo: reducef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/reducef.c -o _reducef.lo
 _op_createf.o: op_createf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_createf.c -o _op_createf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/op_createf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_createf.c -o _op_createf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_createf.c -o _op_createf.o
 _op_createf.lo: op_createf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/op_createf.c -o _op_createf.lo
 _op_freef.o: op_freef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_freef.c -o _op_freef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/op_freef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_freef.c -o _op_freef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_freef.c -o _op_freef.o
 _op_freef.lo: op_freef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/op_freef.c -o _op_freef.lo
 _allreducef.o: allreducef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allreducef.c -o _allreducef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/allreducef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allreducef.c -o _allreducef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allreducef.c -o _allreducef.o
 _allreducef.lo: allreducef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allreducef.c -o _allreducef.lo
 _redscatf.o: redscatf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/redscatf.c -o _redscatf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/redscatf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/redscatf.c -o _redscatf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/redscatf.c -o _redscatf.o
 _redscatf.lo: redscatf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/redscatf.c -o _redscatf.lo
 _scanf.o: scanf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scanf.c -o _scanf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/scanf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scanf.c -o _scanf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scanf.c -o _scanf.o
 _scanf.lo: scanf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scanf.c -o _scanf.lo
 _group_sizef.o: group_sizef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_sizef.c -o _group_sizef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/group_sizef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_sizef.c -o _group_sizef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_sizef.c -o _group_sizef.o
 _group_sizef.lo: group_sizef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_sizef.c -o _group_sizef.lo
 _group_rankf.o: group_rankf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_rankf.c -o _group_rankf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/group_rankf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_rankf.c -o _group_rankf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_rankf.c -o _group_rankf.o
 _group_rankf.lo: group_rankf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_rankf.c -o _group_rankf.lo
 _grouptranksf.o: grouptranksf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/grouptranksf.c -o _grouptranksf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/grouptranksf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/grouptranksf.c -o _grouptranksf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/grouptranksf.c -o _grouptranksf.o
 _grouptranksf.lo: grouptranksf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/grouptranksf.c -o _grouptranksf.lo
 _group_comparef.o: group_comparef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_comparef.c -o _group_comparef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/group_comparef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_comparef.c -o _group_comparef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_comparef.c -o _group_comparef.o
 _group_comparef.lo: group_comparef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_comparef.c -o _group_comparef.lo
 _comm_groupf.o: comm_groupf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_groupf.c -o _comm_groupf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/comm_groupf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_groupf.c -o _comm_groupf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_groupf.c -o _comm_groupf.o
 _comm_groupf.lo: comm_groupf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_groupf.c -o _comm_groupf.lo
 _group_unionf.o: group_unionf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_unionf.c -o _group_unionf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/group_unionf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_unionf.c -o _group_unionf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_unionf.c -o _group_unionf.o
 _group_unionf.lo: group_unionf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_unionf.c -o _group_unionf.lo
 _groupinterf.o: groupinterf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/groupinterf.c -o _groupinterf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/groupinterf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/groupinterf.c -o _groupinterf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/groupinterf.c -o _groupinterf.o
 _groupinterf.lo: groupinterf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/groupinterf.c -o _groupinterf.lo
 _groupdifff.o: groupdifff.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/groupdifff.c -o _groupdifff.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/groupdifff.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/groupdifff.c -o _groupdifff.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/groupdifff.c -o _groupdifff.o
 _groupdifff.lo: groupdifff.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/groupdifff.c -o _groupdifff.lo
 _group_inclf.o: group_inclf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_inclf.c -o _group_inclf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/group_inclf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_inclf.c -o _group_inclf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_inclf.c -o _group_inclf.o
 _group_inclf.lo: group_inclf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_inclf.c -o _group_inclf.lo
 _group_exclf.o: group_exclf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_exclf.c -o _group_exclf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/group_exclf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_exclf.c -o _group_exclf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_exclf.c -o _group_exclf.o
 _group_exclf.lo: group_exclf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_exclf.c -o _group_exclf.lo
 _grouprinclf.o: grouprinclf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/grouprinclf.c -o _grouprinclf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/grouprinclf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/grouprinclf.c -o _grouprinclf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/grouprinclf.c -o _grouprinclf.o
 _grouprinclf.lo: grouprinclf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/grouprinclf.c -o _grouprinclf.lo
 _grouprexclf.o: grouprexclf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/grouprexclf.c -o _grouprexclf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/grouprexclf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/grouprexclf.c -o _grouprexclf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/grouprexclf.c -o _grouprexclf.o
 _grouprexclf.lo: grouprexclf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/grouprexclf.c -o _grouprexclf.lo
 _group_freef.o: group_freef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_freef.c -o _group_freef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/group_freef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_freef.c -o _group_freef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_freef.c -o _group_freef.o
 _group_freef.lo: group_freef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_freef.c -o _group_freef.lo
 _comm_sizef.o: comm_sizef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_sizef.c -o _comm_sizef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/comm_sizef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_sizef.c -o _comm_sizef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_sizef.c -o _comm_sizef.o
 _comm_sizef.lo: comm_sizef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_sizef.c -o _comm_sizef.lo
 _comm_rankf.o: comm_rankf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_rankf.c -o _comm_rankf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/comm_rankf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_rankf.c -o _comm_rankf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_rankf.c -o _comm_rankf.o
 _comm_rankf.lo: comm_rankf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_rankf.c -o _comm_rankf.lo
 _comm_comparef.o: comm_comparef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_comparef.c -o _comm_comparef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/comm_comparef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_comparef.c -o _comm_comparef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_comparef.c -o _comm_comparef.o
 _comm_comparef.lo: comm_comparef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_comparef.c -o _comm_comparef.lo
 _comm_dupf.o: comm_dupf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_dupf.c -o _comm_dupf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/comm_dupf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_dupf.c -o _comm_dupf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_dupf.c -o _comm_dupf.o
 _comm_dupf.lo: comm_dupf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_dupf.c -o _comm_dupf.lo
 _comm_createf.o: comm_createf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_createf.c -o _comm_createf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/comm_createf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_createf.c -o _comm_createf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_createf.c -o _comm_createf.o
 _comm_createf.lo: comm_createf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_createf.c -o _comm_createf.lo
 _comm_splitf.o: comm_splitf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_splitf.c -o _comm_splitf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/comm_splitf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_splitf.c -o _comm_splitf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_splitf.c -o _comm_splitf.o
 _comm_splitf.lo: comm_splitf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_splitf.c -o _comm_splitf.lo
 _comm_freef.o: comm_freef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_freef.c -o _comm_freef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/comm_freef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_freef.c -o _comm_freef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_freef.c -o _comm_freef.o
 _comm_freef.lo: comm_freef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_freef.c -o _comm_freef.lo
 _commtesticf.o: commtesticf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commtesticf.c -o _commtesticf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/commtesticf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commtesticf.c -o _commtesticf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commtesticf.c -o _commtesticf.o
 _commtesticf.lo: commtesticf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/commtesticf.c -o _commtesticf.lo
 _commrsizef.o: commrsizef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commrsizef.c -o _commrsizef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/commrsizef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commrsizef.c -o _commrsizef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commrsizef.c -o _commrsizef.o
 _commrsizef.lo: commrsizef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/commrsizef.c -o _commrsizef.lo
 _commrgroupf.o: commrgroupf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commrgroupf.c -o _commrgroupf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/commrgroupf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commrgroupf.c -o _commrgroupf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commrgroupf.c -o _commrgroupf.o
 _commrgroupf.lo: commrgroupf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/commrgroupf.c -o _commrgroupf.lo
 _iccreatef.o: iccreatef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/iccreatef.c -o _iccreatef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/iccreatef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/iccreatef.c -o _iccreatef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/iccreatef.c -o _iccreatef.o
 _iccreatef.lo: iccreatef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/iccreatef.c -o _iccreatef.lo
 _icmergef.o: icmergef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/icmergef.c -o _icmergef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/icmergef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/icmergef.c -o _icmergef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/icmergef.c -o _icmergef.o
 _icmergef.lo: icmergef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/icmergef.c -o _icmergef.lo
 _keyval_freef.o: keyval_freef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/keyval_freef.c -o _keyval_freef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/keyval_freef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/keyval_freef.c -o _keyval_freef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/keyval_freef.c -o _keyval_freef.o
 _keyval_freef.lo: keyval_freef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/keyval_freef.c -o _keyval_freef.lo
 _attr_putf.o: attr_putf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/attr_putf.c -o _attr_putf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/attr_putf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/attr_putf.c -o _attr_putf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/attr_putf.c -o _attr_putf.o
 _attr_putf.lo: attr_putf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/attr_putf.c -o _attr_putf.lo
 _attr_getf.o: attr_getf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/attr_getf.c -o _attr_getf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/attr_getf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/attr_getf.c -o _attr_getf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/attr_getf.c -o _attr_getf.o
 _attr_getf.lo: attr_getf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/attr_getf.c -o _attr_getf.lo
 _attr_deletef.o: attr_deletef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/attr_deletef.c -o _attr_deletef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/attr_deletef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/attr_deletef.c -o _attr_deletef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/attr_deletef.c -o _attr_deletef.o
 _attr_deletef.lo: attr_deletef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/attr_deletef.c -o _attr_deletef.lo
 _topo_testf.o: topo_testf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/topo_testf.c -o _topo_testf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/topo_testf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/topo_testf.c -o _topo_testf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/topo_testf.c -o _topo_testf.o
 _topo_testf.lo: topo_testf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/topo_testf.c -o _topo_testf.lo
 _cart_createf.o: cart_createf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_createf.c -o _cart_createf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/cart_createf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_createf.c -o _cart_createf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_createf.c -o _cart_createf.o
 _cart_createf.lo: cart_createf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_createf.c -o _cart_createf.lo
 _dims_createf.o: dims_createf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dims_createf.c -o _dims_createf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/dims_createf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dims_createf.c -o _dims_createf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dims_createf.c -o _dims_createf.o
 _dims_createf.lo: dims_createf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/dims_createf.c -o _dims_createf.lo
 _graph_createf.o: graph_createf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_createf.c -o _graph_createf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/graph_createf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_createf.c -o _graph_createf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_createf.c -o _graph_createf.o
 _graph_createf.lo: graph_createf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_createf.c -o _graph_createf.lo
 _graphdims_getf.o: graphdims_getf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graphdims_getf.c -o _graphdims_getf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/graphdims_getf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graphdims_getf.c -o _graphdims_getf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graphdims_getf.c -o _graphdims_getf.o
 _graphdims_getf.lo: graphdims_getf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graphdims_getf.c -o _graphdims_getf.lo
 _graph_getf.o: graph_getf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_getf.c -o _graph_getf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/graph_getf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_getf.c -o _graph_getf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_getf.c -o _graph_getf.o
 _graph_getf.lo: graph_getf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_getf.c -o _graph_getf.lo
 _cartdim_getf.o: cartdim_getf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cartdim_getf.c -o _cartdim_getf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/cartdim_getf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cartdim_getf.c -o _cartdim_getf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cartdim_getf.c -o _cartdim_getf.o
 _cartdim_getf.lo: cartdim_getf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cartdim_getf.c -o _cartdim_getf.lo
 _cart_getf.o: cart_getf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_getf.c -o _cart_getf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/cart_getf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_getf.c -o _cart_getf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_getf.c -o _cart_getf.o
 _cart_getf.lo: cart_getf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_getf.c -o _cart_getf.lo
 _cart_rankf.o: cart_rankf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_rankf.c -o _cart_rankf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/cart_rankf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_rankf.c -o _cart_rankf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_rankf.c -o _cart_rankf.o
 _cart_rankf.lo: cart_rankf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_rankf.c -o _cart_rankf.lo
 _cart_coordsf.o: cart_coordsf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_coordsf.c -o _cart_coordsf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/cart_coordsf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_coordsf.c -o _cart_coordsf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_coordsf.c -o _cart_coordsf.o
 _cart_coordsf.lo: cart_coordsf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_coordsf.c -o _cart_coordsf.lo
 _grfnbcountf.o: grfnbcountf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/grfnbcountf.c -o _grfnbcountf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/grfnbcountf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/grfnbcountf.c -o _grfnbcountf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/grfnbcountf.c -o _grfnbcountf.o
 _grfnbcountf.lo: grfnbcountf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/grfnbcountf.c -o _grfnbcountf.lo
 _grfnbrsf.o: grfnbrsf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/grfnbrsf.c -o _grfnbrsf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/grfnbrsf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/grfnbrsf.c -o _grfnbrsf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/grfnbrsf.c -o _grfnbrsf.o
 _grfnbrsf.lo: grfnbrsf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/grfnbrsf.c -o _grfnbrsf.lo
 _cart_shiftf.o: cart_shiftf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_shiftf.c -o _cart_shiftf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/cart_shiftf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_shiftf.c -o _cart_shiftf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_shiftf.c -o _cart_shiftf.o
 _cart_shiftf.lo: cart_shiftf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_shiftf.c -o _cart_shiftf.lo
 _cart_subf.o: cart_subf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_subf.c -o _cart_subf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/cart_subf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_subf.c -o _cart_subf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_subf.c -o _cart_subf.o
 _cart_subf.lo: cart_subf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_subf.c -o _cart_subf.lo
 _cart_mapf.o: cart_mapf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_mapf.c -o _cart_mapf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/cart_mapf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_mapf.c -o _cart_mapf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_mapf.c -o _cart_mapf.o
 _cart_mapf.lo: cart_mapf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_mapf.c -o _cart_mapf.lo
 _graph_mapf.o: graph_mapf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_mapf.c -o _graph_mapf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/graph_mapf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_mapf.c -o _graph_mapf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_mapf.c -o _graph_mapf.o
 _graph_mapf.lo: graph_mapf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_mapf.c -o _graph_mapf.lo
 _getpnamef.o: getpnamef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/getpnamef.c -o _getpnamef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/getpnamef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/getpnamef.c -o _getpnamef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/getpnamef.c -o _getpnamef.o
 _getpnamef.lo: getpnamef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/getpnamef.c -o _getpnamef.lo
 _get_versionf.o: get_versionf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_versionf.c -o _get_versionf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/get_versionf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_versionf.c -o _get_versionf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_versionf.c -o _get_versionf.o
 _get_versionf.lo: get_versionf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_versionf.c -o _get_versionf.lo
 _errhcreatef.o: errhcreatef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhcreatef.c -o _errhcreatef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/errhcreatef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhcreatef.c -o _errhcreatef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhcreatef.c -o _errhcreatef.o
 _errhcreatef.lo: errhcreatef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhcreatef.c -o _errhcreatef.lo
 _errhsetf.o: errhsetf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhsetf.c -o _errhsetf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/errhsetf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhsetf.c -o _errhsetf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhsetf.c -o _errhsetf.o
 _errhsetf.lo: errhsetf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhsetf.c -o _errhsetf.lo
 _errhgetf.o: errhgetf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhgetf.c -o _errhgetf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/errhgetf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhgetf.c -o _errhgetf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhgetf.c -o _errhgetf.o
 _errhgetf.lo: errhgetf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhgetf.c -o _errhgetf.lo
 _errhfreef.o: errhfreef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhfreef.c -o _errhfreef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/errhfreef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhfreef.c -o _errhfreef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhfreef.c -o _errhfreef.o
 _errhfreef.lo: errhfreef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhfreef.c -o _errhfreef.lo
 _error_stringf.o: error_stringf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/error_stringf.c -o _error_stringf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/error_stringf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/error_stringf.c -o _error_stringf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/error_stringf.c -o _error_stringf.o
 _error_stringf.lo: error_stringf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/error_stringf.c -o _error_stringf.lo
 _error_classf.o: error_classf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/error_classf.c -o _error_classf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/error_classf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/error_classf.c -o _error_classf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/error_classf.c -o _error_classf.o
 _error_classf.lo: error_classf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/error_classf.c -o _error_classf.lo
 _finalizef.o: finalizef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/finalizef.c -o _finalizef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/finalizef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/finalizef.c -o _finalizef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/finalizef.c -o _finalizef.o
 _finalizef.lo: finalizef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/finalizef.c -o _finalizef.lo
 _initializedf.o: initializedf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/initializedf.c -o _initializedf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/initializedf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/initializedf.c -o _initializedf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/initializedf.c -o _initializedf.o
 _initializedf.lo: initializedf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/initializedf.c -o _initializedf.lo
 _abortf.o: abortf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/abortf.c -o _abortf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/abortf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/abortf.c -o _abortf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/abortf.c -o _abortf.o
 _abortf.lo: abortf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/abortf.c -o _abortf.lo
 _close_portf.o: close_portf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/close_portf.c -o _close_portf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/close_portf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/close_portf.c -o _close_portf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/close_portf.c -o _close_portf.o
 _close_portf.lo: close_portf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/close_portf.c -o _close_portf.lo
 _comm_acceptf.o: comm_acceptf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_acceptf.c -o _comm_acceptf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/comm_acceptf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_acceptf.c -o _comm_acceptf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_acceptf.c -o _comm_acceptf.o
 _comm_acceptf.lo: comm_acceptf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_acceptf.c -o _comm_acceptf.lo
 _comm_connectf.o: comm_connectf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_connectf.c -o _comm_connectf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/comm_connectf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_connectf.c -o _comm_connectf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_connectf.c -o _comm_connectf.o
 _comm_connectf.lo: comm_connectf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_connectf.c -o _comm_connectf.lo
 _commdiscf.o: commdiscf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commdiscf.c -o _commdiscf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/commdiscf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commdiscf.c -o _commdiscf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commdiscf.c -o _commdiscf.o
 _commdiscf.lo: commdiscf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/commdiscf.c -o _commdiscf.lo
 _commparentf.o: commparentf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commparentf.c -o _commparentf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/commparentf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commparentf.c -o _commparentf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commparentf.c -o _commparentf.o
 _commparentf.lo: commparentf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/commparentf.c -o _commparentf.lo
 _comm_joinf.o: comm_joinf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_joinf.c -o _comm_joinf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/comm_joinf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_joinf.c -o _comm_joinf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_joinf.c -o _comm_joinf.o
 _comm_joinf.lo: comm_joinf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_joinf.c -o _comm_joinf.lo
 _comm_spawnf.o: comm_spawnf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_spawnf.c -o _comm_spawnf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/comm_spawnf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_spawnf.c -o _comm_spawnf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_spawnf.c -o _comm_spawnf.o
 _comm_spawnf.lo: comm_spawnf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_spawnf.c -o _comm_spawnf.lo
 _spawnmultf.o: spawnmultf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/spawnmultf.c -o _spawnmultf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/spawnmultf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/spawnmultf.c -o _spawnmultf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/spawnmultf.c -o _spawnmultf.o
 _spawnmultf.lo: spawnmultf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/spawnmultf.c -o _spawnmultf.lo
 _lookup_namef.o: lookup_namef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/lookup_namef.c -o _lookup_namef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/lookup_namef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/lookup_namef.c -o _lookup_namef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/lookup_namef.c -o _lookup_namef.o
 _lookup_namef.lo: lookup_namef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/lookup_namef.c -o _lookup_namef.lo
 _open_portf.o: open_portf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/open_portf.c -o _open_portf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/open_portf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/open_portf.c -o _open_portf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/open_portf.c -o _open_portf.o
 _open_portf.lo: open_portf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/open_portf.c -o _open_portf.lo
 _publish_namef.o: publish_namef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/publish_namef.c -o _publish_namef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/publish_namef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/publish_namef.c -o _publish_namef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/publish_namef.c -o _publish_namef.o
 _publish_namef.lo: publish_namef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/publish_namef.c -o _publish_namef.lo
 _unpubnamef.o: unpubnamef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpubnamef.c -o _unpubnamef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/unpubnamef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpubnamef.c -o _unpubnamef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpubnamef.c -o _unpubnamef.o
 _unpubnamef.lo: unpubnamef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpubnamef.c -o _unpubnamef.lo
 _accumulatef.o: accumulatef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/accumulatef.c -o _accumulatef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/accumulatef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/accumulatef.c -o _accumulatef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/accumulatef.c -o _accumulatef.o
 _accumulatef.lo: accumulatef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/accumulatef.c -o _accumulatef.lo
 _getf.o: getf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/getf.c -o _getf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/getf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/getf.c -o _getf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/getf.c -o _getf.o
 _getf.lo: getf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/getf.c -o _getf.lo
 _putf.o: putf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/putf.c -o _putf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/putf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/putf.c -o _putf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/putf.c -o _putf.o
 _putf.lo: putf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/putf.c -o _putf.lo
 _win_completef.o: win_completef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_completef.c -o _win_completef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/win_completef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_completef.c -o _win_completef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_completef.c -o _win_completef.o
 _win_completef.lo: win_completef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_completef.c -o _win_completef.lo
 _win_createf.o: win_createf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_createf.c -o _win_createf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/win_createf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_createf.c -o _win_createf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_createf.c -o _win_createf.o
 _win_createf.lo: win_createf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_createf.c -o _win_createf.lo
 _win_fencef.o: win_fencef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_fencef.c -o _win_fencef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/win_fencef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_fencef.c -o _win_fencef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_fencef.c -o _win_fencef.o
 _win_fencef.lo: win_fencef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_fencef.c -o _win_fencef.lo
 _win_freef.o: win_freef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_freef.c -o _win_freef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/win_freef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_freef.c -o _win_freef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_freef.c -o _win_freef.o
 _win_freef.lo: win_freef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_freef.c -o _win_freef.lo
 _win_get_groupf.o: win_get_groupf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_groupf.c -o _win_get_groupf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/win_get_groupf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_groupf.c -o _win_get_groupf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_groupf.c -o _win_get_groupf.o
 _win_get_groupf.lo: win_get_groupf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_groupf.c -o _win_get_groupf.lo
 _win_lockf.o: win_lockf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_lockf.c -o _win_lockf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/win_lockf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_lockf.c -o _win_lockf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_lockf.c -o _win_lockf.o
 _win_lockf.lo: win_lockf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_lockf.c -o _win_lockf.lo
 _win_postf.o: win_postf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_postf.c -o _win_postf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/win_postf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_postf.c -o _win_postf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_postf.c -o _win_postf.o
 _win_postf.lo: win_postf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_postf.c -o _win_postf.lo
 _win_startf.o: win_startf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_startf.c -o _win_startf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/win_startf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_startf.c -o _win_startf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_startf.c -o _win_startf.o
 _win_startf.lo: win_startf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_startf.c -o _win_startf.lo
 _win_testf.o: win_testf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_testf.c -o _win_testf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/win_testf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_testf.c -o _win_testf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_testf.c -o _win_testf.o
 _win_testf.lo: win_testf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_testf.c -o _win_testf.lo
 _win_unlockf.o: win_unlockf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_unlockf.c -o _win_unlockf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/win_unlockf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_unlockf.c -o _win_unlockf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_unlockf.c -o _win_unlockf.o
 _win_unlockf.lo: win_unlockf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_unlockf.c -o _win_unlockf.lo
 _win_waitf.o: win_waitf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_waitf.c -o _win_waitf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/win_waitf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_waitf.c -o _win_waitf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_waitf.c -o _win_waitf.o
 _win_waitf.lo: win_waitf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_waitf.c -o _win_waitf.lo
 _alltoallwf.o: alltoallwf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallwf.c -o _alltoallwf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/alltoallwf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallwf.c -o _alltoallwf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallwf.c -o _alltoallwf.o
 _alltoallwf.lo: alltoallwf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallwf.c -o _alltoallwf.lo
 _exscanf.o: exscanf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/exscanf.c -o _exscanf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/exscanf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/exscanf.c -o _exscanf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/exscanf.c -o _exscanf.o
 _exscanf.lo: exscanf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/exscanf.c -o _exscanf.lo
 _adderrclassf.o: adderrclassf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/adderrclassf.c -o _adderrclassf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/adderrclassf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/adderrclassf.c -o _adderrclassf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/adderrclassf.c -o _adderrclassf.o
 _adderrclassf.lo: adderrclassf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/adderrclassf.c -o _adderrclassf.lo
 _adderrcodef.o: adderrcodef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/adderrcodef.c -o _adderrcodef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/adderrcodef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/adderrcodef.c -o _adderrcodef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/adderrcodef.c -o _adderrcodef.o
 _adderrcodef.lo: adderrcodef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/adderrcodef.c -o _adderrcodef.lo
 _adderrstringf.o: adderrstringf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/adderrstringf.c -o _adderrstringf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/adderrstringf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/adderrstringf.c -o _adderrstringf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/adderrstringf.c -o _adderrstringf.o
 _adderrstringf.lo: adderrstringf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/adderrstringf.c -o _adderrstringf.lo
 _commcallerrf.o: commcallerrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commcallerrf.c -o _commcallerrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/commcallerrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commcallerrf.c -o _commcallerrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commcallerrf.c -o _commcallerrf.o
 _commcallerrf.lo: commcallerrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/commcallerrf.c -o _commcallerrf.lo
 _commnewkeyf.o: commnewkeyf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commnewkeyf.c -o _commnewkeyf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/commnewkeyf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commnewkeyf.c -o _commnewkeyf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commnewkeyf.c -o _commnewkeyf.o
 _commnewkeyf.lo: commnewkeyf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/commnewkeyf.c -o _commnewkeyf.lo
 _commdelattrf.o: commdelattrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commdelattrf.c -o _commdelattrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/commdelattrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commdelattrf.c -o _commdelattrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commdelattrf.c -o _commdelattrf.o
 _commdelattrf.lo: commdelattrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/commdelattrf.c -o _commdelattrf.lo
 _commfreekeyf.o: commfreekeyf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commfreekeyf.c -o _commfreekeyf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/commfreekeyf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commfreekeyf.c -o _commfreekeyf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commfreekeyf.c -o _commfreekeyf.o
 _commfreekeyf.lo: commfreekeyf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/commfreekeyf.c -o _commfreekeyf.lo
 _comm_get_attrf.o: comm_get_attrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_attrf.c -o _comm_get_attrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/comm_get_attrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_attrf.c -o _comm_get_attrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_attrf.c -o _comm_get_attrf.o
 _comm_get_attrf.lo: comm_get_attrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_attrf.c -o _comm_get_attrf.lo
 _commgetnamf.o: commgetnamf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commgetnamf.c -o _commgetnamf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/commgetnamf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commgetnamf.c -o _commgetnamf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commgetnamf.c -o _commgetnamf.o
 _commgetnamf.lo: commgetnamf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/commgetnamf.c -o _commgetnamf.lo
 _comm_set_attrf.o: comm_set_attrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_attrf.c -o _comm_set_attrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/comm_set_attrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_attrf.c -o _comm_set_attrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_attrf.c -o _comm_set_attrf.o
 _comm_set_attrf.lo: comm_set_attrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_attrf.c -o _comm_set_attrf.lo
 _comm_set_namef.o: comm_set_namef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_namef.c -o _comm_set_namef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/comm_set_namef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_namef.c -o _comm_set_namef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_namef.c -o _comm_set_namef.o
 _comm_set_namef.lo: comm_set_namef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_namef.c -o _comm_set_namef.lo
 _filecallerrf.o: filecallerrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/filecallerrf.c -o _filecallerrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/filecallerrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/filecallerrf.c -o _filecallerrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/filecallerrf.c -o _filecallerrf.o
 _filecallerrf.lo: filecallerrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/filecallerrf.c -o _filecallerrf.lo
 _greqcompletef.o: greqcompletef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/greqcompletef.c -o _greqcompletef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/greqcompletef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/greqcompletef.c -o _greqcompletef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/greqcompletef.c -o _greqcompletef.o
 _greqcompletef.lo: greqcompletef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/greqcompletef.c -o _greqcompletef.lo
 _greqstartf.o: greqstartf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/greqstartf.c -o _greqstartf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/greqstartf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/greqstartf.c -o _greqstartf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/greqstartf.c -o _greqstartf.o
 _greqstartf.lo: greqstartf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/greqstartf.c -o _greqstartf.lo
 _isthrmainf.o: isthrmainf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/isthrmainf.c -o _isthrmainf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/isthrmainf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/isthrmainf.c -o _isthrmainf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/isthrmainf.c -o _isthrmainf.o
 _isthrmainf.lo: isthrmainf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/isthrmainf.c -o _isthrmainf.lo
 _query_threadf.o: query_threadf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/query_threadf.c -o _query_threadf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/query_threadf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/query_threadf.c -o _query_threadf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/query_threadf.c -o _query_threadf.o
 _query_threadf.lo: query_threadf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/query_threadf.c -o _query_threadf.lo
 _statgetclf.o: statgetclf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/statgetclf.c -o _statgetclf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/statgetclf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/statgetclf.c -o _statgetclf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/statgetclf.c -o _statgetclf.o
 _statgetclf.lo: statgetclf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/statgetclf.c -o _statgetclf.lo
 _statsetelf.o: statsetelf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/statsetelf.c -o _statsetelf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/statsetelf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/statsetelf.c -o _statsetelf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/statsetelf.c -o _statsetelf.o
 _statsetelf.lo: statsetelf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/statsetelf.c -o _statsetelf.lo
 _typenewkeyf.o: typenewkeyf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typenewkeyf.c -o _typenewkeyf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typenewkeyf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typenewkeyf.c -o _typenewkeyf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typenewkeyf.c -o _typenewkeyf.o
 _typenewkeyf.lo: typenewkeyf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typenewkeyf.c -o _typenewkeyf.lo
 _typedelattrf.o: typedelattrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typedelattrf.c -o _typedelattrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typedelattrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typedelattrf.c -o _typedelattrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typedelattrf.c -o _typedelattrf.o
 _typedelattrf.lo: typedelattrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typedelattrf.c -o _typedelattrf.lo
 _type_dupf.o: type_dupf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_dupf.c -o _type_dupf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/type_dupf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_dupf.c -o _type_dupf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_dupf.c -o _type_dupf.o
 _type_dupf.lo: type_dupf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_dupf.c -o _type_dupf.lo
 _typefreekeyf.o: typefreekeyf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typefreekeyf.c -o _typefreekeyf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typefreekeyf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typefreekeyf.c -o _typefreekeyf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typefreekeyf.c -o _typefreekeyf.o
 _typefreekeyf.lo: typefreekeyf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typefreekeyf.c -o _typefreekeyf.lo
 _type_get_attrf.o: type_get_attrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_attrf.c -o _type_get_attrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/type_get_attrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_attrf.c -o _type_get_attrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_attrf.c -o _type_get_attrf.o
 _type_get_attrf.lo: type_get_attrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_attrf.c -o _type_get_attrf.lo
 _typegetcntsf.o: typegetcntsf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typegetcntsf.c -o _typegetcntsf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typegetcntsf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typegetcntsf.c -o _typegetcntsf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typegetcntsf.c -o _typegetcntsf.o
 _typegetcntsf.lo: typegetcntsf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typegetcntsf.c -o _typegetcntsf.lo
 _typegetenvf.o: typegetenvf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typegetenvf.c -o _typegetenvf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typegetenvf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typegetenvf.c -o _typegetenvf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typegetenvf.c -o _typegetenvf.o
 _typegetenvf.lo: typegetenvf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typegetenvf.c -o _typegetenvf.lo
 _typegnamef.o: typegnamef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typegnamef.c -o _typegnamef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typegnamef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typegnamef.c -o _typegnamef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typegnamef.c -o _typegnamef.o
 _typegnamef.lo: typegnamef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typegnamef.c -o _typegnamef.lo
 _typesetattrf.o: typesetattrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typesetattrf.c -o _typesetattrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typesetattrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typesetattrf.c -o _typesetattrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typesetattrf.c -o _typesetattrf.o
 _typesetattrf.lo: typesetattrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typesetattrf.c -o _typesetattrf.lo
 _typesetnamef.o: typesetnamef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typesetnamef.c -o _typesetnamef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typesetnamef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typesetnamef.c -o _typesetnamef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typesetnamef.c -o _typesetnamef.o
 _typesetnamef.lo: typesetnamef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typesetnamef.c -o _typesetnamef.lo
 _type_match_sizef.o: type_match_sizef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_match_sizef.c -o _type_match_sizef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/type_match_sizef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_match_sizef.c -o _type_match_sizef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_match_sizef.c -o _type_match_sizef.o
 _type_match_sizef.lo: type_match_sizef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_match_sizef.c -o _type_match_sizef.lo
 _wincallerrf.o: wincallerrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wincallerrf.c -o _wincallerrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/wincallerrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wincallerrf.c -o _wincallerrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wincallerrf.c -o _wincallerrf.o
 _wincallerrf.lo: wincallerrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/wincallerrf.c -o _wincallerrf.lo
 _winnewkeyf.o: winnewkeyf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/winnewkeyf.c -o _winnewkeyf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/winnewkeyf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/winnewkeyf.c -o _winnewkeyf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/winnewkeyf.c -o _winnewkeyf.o
 _winnewkeyf.lo: winnewkeyf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/winnewkeyf.c -o _winnewkeyf.lo
 _windelattrf.o: windelattrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/windelattrf.c -o _windelattrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/windelattrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/windelattrf.c -o _windelattrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/windelattrf.c -o _windelattrf.o
 _windelattrf.lo: windelattrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/windelattrf.c -o _windelattrf.lo
 _winfreekeyf.o: winfreekeyf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/winfreekeyf.c -o _winfreekeyf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/winfreekeyf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/winfreekeyf.c -o _winfreekeyf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/winfreekeyf.c -o _winfreekeyf.o
 _winfreekeyf.lo: winfreekeyf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/winfreekeyf.c -o _winfreekeyf.lo
 _win_get_attrf.o: win_get_attrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_attrf.c -o _win_get_attrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/win_get_attrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_attrf.c -o _win_get_attrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_attrf.c -o _win_get_attrf.o
 _win_get_attrf.lo: win_get_attrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_attrf.c -o _win_get_attrf.lo
 _win_get_namef.o: win_get_namef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_namef.c -o _win_get_namef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/win_get_namef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_namef.c -o _win_get_namef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_namef.c -o _win_get_namef.o
 _win_get_namef.lo: win_get_namef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_namef.c -o _win_get_namef.lo
 _win_set_attrf.o: win_set_attrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_attrf.c -o _win_set_attrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/win_set_attrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_attrf.c -o _win_set_attrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_attrf.c -o _win_set_attrf.o
 _win_set_attrf.lo: win_set_attrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_attrf.c -o _win_set_attrf.lo
 _win_set_namef.o: win_set_namef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_namef.c -o _win_set_namef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/win_set_namef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_namef.c -o _win_set_namef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_namef.c -o _win_set_namef.o
 _win_set_namef.lo: win_set_namef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_namef.c -o _win_set_namef.lo
 _alloc_memf.o: alloc_memf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alloc_memf.c -o _alloc_memf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/alloc_memf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alloc_memf.c -o _alloc_memf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alloc_memf.c -o _alloc_memf.o
 _alloc_memf.lo: alloc_memf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alloc_memf.c -o _alloc_memf.lo
 _commcreerrf.o: commcreerrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commcreerrf.c -o _commcreerrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/commcreerrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commcreerrf.c -o _commcreerrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commcreerrf.c -o _commcreerrf.o
 _commcreerrf.lo: commcreerrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/commcreerrf.c -o _commcreerrf.lo
 _commgeterrf.o: commgeterrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commgeterrf.c -o _commgeterrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/commgeterrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commgeterrf.c -o _commgeterrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commgeterrf.c -o _commgeterrf.o
 _commgeterrf.lo: commgeterrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/commgeterrf.c -o _commgeterrf.lo
 _commseterrf.o: commseterrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commseterrf.c -o _commseterrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/commseterrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commseterrf.c -o _commseterrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/commseterrf.c -o _commseterrf.o
 _commseterrf.lo: commseterrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/commseterrf.c -o _commseterrf.lo
 _filecreerrf.o: filecreerrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/filecreerrf.c -o _filecreerrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/filecreerrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/filecreerrf.c -o _filecreerrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/filecreerrf.c -o _filecreerrf.o
 _filecreerrf.lo: filecreerrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/filecreerrf.c -o _filecreerrf.lo
 _filegeterrf.o: filegeterrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/filegeterrf.c -o _filegeterrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/filegeterrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/filegeterrf.c -o _filegeterrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/filegeterrf.c -o _filegeterrf.o
 _filegeterrf.lo: filegeterrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/filegeterrf.c -o _filegeterrf.lo
 _fileseterrf.o: fileseterrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/fileseterrf.c -o _fileseterrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/fileseterrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/fileseterrf.c -o _fileseterrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/fileseterrf.c -o _fileseterrf.o
 _fileseterrf.lo: fileseterrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/fileseterrf.c -o _fileseterrf.lo
 _finalizedf.o: finalizedf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/finalizedf.c -o _finalizedf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/finalizedf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/finalizedf.c -o _finalizedf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/finalizedf.c -o _finalizedf.o
 _finalizedf.lo: finalizedf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/finalizedf.c -o _finalizedf.lo
 _free_memf.o: free_memf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/free_memf.c -o _free_memf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/free_memf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/free_memf.c -o _free_memf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/free_memf.c -o _free_memf.o
 _free_memf.lo: free_memf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/free_memf.c -o _free_memf.lo
 _info_createf.o: info_createf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_createf.c -o _info_createf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/info_createf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_createf.c -o _info_createf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_createf.c -o _info_createf.o
 _info_createf.lo: info_createf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/info_createf.c -o _info_createf.lo
 _info_deletef.o: info_deletef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_deletef.c -o _info_deletef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/info_deletef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_deletef.c -o _info_deletef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_deletef.c -o _info_deletef.o
 _info_deletef.lo: info_deletef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/info_deletef.c -o _info_deletef.lo
 _info_dupf.o: info_dupf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_dupf.c -o _info_dupf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/info_dupf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_dupf.c -o _info_dupf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_dupf.c -o _info_dupf.o
 _info_dupf.lo: info_dupf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/info_dupf.c -o _info_dupf.lo
 _info_freef.o: info_freef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_freef.c -o _info_freef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/info_freef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_freef.c -o _info_freef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_freef.c -o _info_freef.o
 _info_freef.lo: info_freef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/info_freef.c -o _info_freef.lo
 _info_getf.o: info_getf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_getf.c -o _info_getf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/info_getf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_getf.c -o _info_getf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_getf.c -o _info_getf.o
 _info_getf.lo: info_getf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/info_getf.c -o _info_getf.lo
 _infognkf.o: infognkf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/infognkf.c -o _infognkf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/infognkf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/infognkf.c -o _infognkf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/infognkf.c -o _infognkf.o
 _infognkf.lo: infognkf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/infognkf.c -o _infognkf.lo
 _infognthkf.o: infognthkf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/infognthkf.c -o _infognthkf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/infognthkf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/infognthkf.c -o _infognthkf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/infognthkf.c -o _infognthkf.o
 _infognthkf.lo: infognthkf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/infognthkf.c -o _infognthkf.lo
 _infovallenf.o: infovallenf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/infovallenf.c -o _infovallenf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/infovallenf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/infovallenf.c -o _infovallenf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/infovallenf.c -o _infovallenf.o
 _infovallenf.lo: infovallenf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/infovallenf.c -o _infovallenf.lo
 _info_setf.o: info_setf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_setf.c -o _info_setf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/info_setf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_setf.c -o _info_setf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/info_setf.c -o _info_setf.o
 _info_setf.lo: info_setf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/info_setf.c -o _info_setf.lo
 _pack_externalf.o: pack_externalf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_externalf.c -o _pack_externalf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/pack_externalf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_externalf.c -o _pack_externalf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_externalf.c -o _pack_externalf.o
 _pack_externalf.lo: pack_externalf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_externalf.c -o _pack_externalf.lo
 _packesizef.o: packesizef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/packesizef.c -o _packesizef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/packesizef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/packesizef.c -o _packesizef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/packesizef.c -o _packesizef.o
 _packesizef.lo: packesizef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/packesizef.c -o _packesizef.lo
 _reqgetstatf.o: reqgetstatf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/reqgetstatf.c -o _reqgetstatf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/reqgetstatf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/reqgetstatf.c -o _reqgetstatf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/reqgetstatf.c -o _reqgetstatf.o
 _reqgetstatf.lo: reqgetstatf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/reqgetstatf.c -o _reqgetstatf.lo
 _typedarrayf.o: typedarrayf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typedarrayf.c -o _typedarrayf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typedarrayf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typedarrayf.c -o _typedarrayf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typedarrayf.c -o _typedarrayf.o
 _typedarrayf.lo: typedarrayf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typedarrayf.c -o _typedarrayf.lo
 _typechindf.o: typechindf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typechindf.c -o _typechindf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typechindf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typechindf.c -o _typechindf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typechindf.c -o _typechindf.o
 _typechindf.lo: typechindf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typechindf.c -o _typechindf.lo
 _typechvecf.o: typechvecf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typechvecf.c -o _typechvecf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typechvecf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typechvecf.c -o _typechvecf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typechvecf.c -o _typechvecf.o
 _typechvecf.lo: typechvecf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typechvecf.c -o _typechvecf.lo
 _typecindbf.o: typecindbf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typecindbf.c -o _typecindbf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typecindbf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typecindbf.c -o _typecindbf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typecindbf.c -o _typecindbf.o
 _typecindbf.lo: typecindbf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typecindbf.c -o _typecindbf.lo
 _typecresizef.o: typecresizef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typecresizef.c -o _typecresizef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typecresizef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typecresizef.c -o _typecresizef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typecresizef.c -o _typecresizef.o
 _typecresizef.lo: typecresizef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typecresizef.c -o _typecresizef.lo
 _typecstructf.o: typecstructf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typecstructf.c -o _typecstructf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typecstructf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typecstructf.c -o _typecstructf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typecstructf.c -o _typecstructf.o
 _typecstructf.lo: typecstructf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typecstructf.c -o _typecstructf.lo
 _typecsubarrf.o: typecsubarrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typecsubarrf.c -o _typecsubarrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typecsubarrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typecsubarrf.c -o _typecsubarrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typecsubarrf.c -o _typecsubarrf.o
 _typecsubarrf.lo: typecsubarrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typecsubarrf.c -o _typecsubarrf.lo
 _typegetextentf.o: typegetextentf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typegetextentf.c -o _typegetextentf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typegetextentf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typegetextentf.c -o _typegetextentf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typegetextentf.c -o _typegetextentf.o
 _typegetextentf.lo: typegetextentf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typegetextentf.c -o _typegetextentf.lo
 _typegtextf.o: typegtextf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typegtextf.c -o _typegtextf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/typegtextf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typegtextf.c -o _typegtextf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/typegtextf.c -o _typegtextf.o
 _typegtextf.lo: typegtextf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/typegtextf.c -o _typegtextf.lo
 _unpackextf.o: unpackextf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpackextf.c -o _unpackextf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/unpackextf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpackextf.c -o _unpackextf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpackextf.c -o _unpackextf.o
 _unpackextf.lo: unpackextf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpackextf.c -o _unpackextf.lo
 _wincreerrf.o: wincreerrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wincreerrf.c -o _wincreerrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/wincreerrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wincreerrf.c -o _wincreerrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wincreerrf.c -o _wincreerrf.o
 _wincreerrf.lo: wincreerrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/wincreerrf.c -o _wincreerrf.lo
 _wingeterrf.o: wingeterrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wingeterrf.c -o _wingeterrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/wingeterrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wingeterrf.c -o _wingeterrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wingeterrf.c -o _wingeterrf.o
 _wingeterrf.lo: wingeterrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/wingeterrf.c -o _wingeterrf.lo
 _winseterrf.o: winseterrf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/winseterrf.c -o _winseterrf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/winseterrf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/winseterrf.c -o _winseterrf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/winseterrf.c -o _winseterrf.o
 _winseterrf.lo: winseterrf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/winseterrf.c -o _winseterrf.lo
 _file_openf.o: file_openf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_openf.c -o _file_openf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_openf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_openf.c -o _file_openf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_openf.c -o _file_openf.o
 _file_openf.lo: file_openf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_openf.c -o _file_openf.lo
 _file_closef.o: file_closef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_closef.c -o _file_closef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_closef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_closef.c -o _file_closef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_closef.c -o _file_closef.o
 _file_closef.lo: file_closef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_closef.c -o _file_closef.lo
 _file_deletef.o: file_deletef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_deletef.c -o _file_deletef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_deletef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_deletef.c -o _file_deletef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_deletef.c -o _file_deletef.o
 _file_deletef.lo: file_deletef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_deletef.c -o _file_deletef.lo
 _file_set_sizef.o: file_set_sizef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_sizef.c -o _file_set_sizef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_set_sizef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_sizef.c -o _file_set_sizef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_sizef.c -o _file_set_sizef.o
 _file_set_sizef.lo: file_set_sizef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_sizef.c -o _file_set_sizef.lo
 _file_preallocatef.o: file_preallocatef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_preallocatef.c -o _file_preallocatef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_preallocatef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_preallocatef.c -o _file_preallocatef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_preallocatef.c -o _file_preallocatef.o
 _file_preallocatef.lo: file_preallocatef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_preallocatef.c -o _file_preallocatef.lo
 _file_get_sizef.o: file_get_sizef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_sizef.c -o _file_get_sizef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_get_sizef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_sizef.c -o _file_get_sizef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_sizef.c -o _file_get_sizef.o
 _file_get_sizef.lo: file_get_sizef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_sizef.c -o _file_get_sizef.lo
 _file_get_groupf.o: file_get_groupf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_groupf.c -o _file_get_groupf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_get_groupf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_groupf.c -o _file_get_groupf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_groupf.c -o _file_get_groupf.o
 _file_get_groupf.lo: file_get_groupf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_groupf.c -o _file_get_groupf.lo
 _file_get_amodef.o: file_get_amodef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_amodef.c -o _file_get_amodef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_get_amodef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_amodef.c -o _file_get_amodef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_amodef.c -o _file_get_amodef.o
 _file_get_amodef.lo: file_get_amodef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_amodef.c -o _file_get_amodef.lo
 _file_set_infof.o: file_set_infof.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_infof.c -o _file_set_infof.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_set_infof.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_infof.c -o _file_set_infof.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_infof.c -o _file_set_infof.o
 _file_set_infof.lo: file_set_infof.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_infof.c -o _file_set_infof.lo
 _file_get_infof.o: file_get_infof.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_infof.c -o _file_get_infof.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_get_infof.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_infof.c -o _file_get_infof.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_infof.c -o _file_get_infof.o
 _file_get_infof.lo: file_get_infof.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_infof.c -o _file_get_infof.lo
 _file_set_viewf.o: file_set_viewf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_viewf.c -o _file_set_viewf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_set_viewf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_viewf.c -o _file_set_viewf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_viewf.c -o _file_set_viewf.o
 _file_set_viewf.lo: file_set_viewf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_viewf.c -o _file_set_viewf.lo
 _file_get_viewf.o: file_get_viewf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_viewf.c -o _file_get_viewf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_get_viewf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_viewf.c -o _file_get_viewf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_viewf.c -o _file_get_viewf.o
 _file_get_viewf.lo: file_get_viewf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_viewf.c -o _file_get_viewf.lo
 _file_read_atf.o: file_read_atf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_atf.c -o _file_read_atf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_read_atf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_atf.c -o _file_read_atf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_atf.c -o _file_read_atf.o
 _file_read_atf.lo: file_read_atf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_atf.c -o _file_read_atf.lo
 _file_read_at_allf.o: file_read_at_allf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_at_allf.c -o _file_read_at_allf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_read_at_allf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_at_allf.c -o _file_read_at_allf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_at_allf.c -o _file_read_at_allf.o
 _file_read_at_allf.lo: file_read_at_allf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_at_allf.c -o _file_read_at_allf.lo
 _file_write_atf.o: file_write_atf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_atf.c -o _file_write_atf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_write_atf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_atf.c -o _file_write_atf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_atf.c -o _file_write_atf.o
 _file_write_atf.lo: file_write_atf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_atf.c -o _file_write_atf.lo
 _file_write_at_allf.o: file_write_at_allf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_at_allf.c -o _file_write_at_allf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_write_at_allf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_at_allf.c -o _file_write_at_allf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_at_allf.c -o _file_write_at_allf.o
 _file_write_at_allf.lo: file_write_at_allf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_at_allf.c -o _file_write_at_allf.lo
 _file_iread_atf.o: file_iread_atf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iread_atf.c -o _file_iread_atf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_iread_atf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iread_atf.c -o _file_iread_atf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iread_atf.c -o _file_iread_atf.o
 _file_iread_atf.lo: file_iread_atf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iread_atf.c -o _file_iread_atf.lo
 _file_iwrite_atf.o: file_iwrite_atf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iwrite_atf.c -o _file_iwrite_atf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_iwrite_atf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iwrite_atf.c -o _file_iwrite_atf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iwrite_atf.c -o _file_iwrite_atf.o
 _file_iwrite_atf.lo: file_iwrite_atf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iwrite_atf.c -o _file_iwrite_atf.lo
 _file_readf.o: file_readf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_readf.c -o _file_readf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_readf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_readf.c -o _file_readf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_readf.c -o _file_readf.o
 _file_readf.lo: file_readf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_readf.c -o _file_readf.lo
 _file_read_allf.o: file_read_allf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_allf.c -o _file_read_allf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_read_allf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_allf.c -o _file_read_allf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_allf.c -o _file_read_allf.o
 _file_read_allf.lo: file_read_allf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_allf.c -o _file_read_allf.lo
 _file_writef.o: file_writef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_writef.c -o _file_writef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_writef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_writef.c -o _file_writef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_writef.c -o _file_writef.o
 _file_writef.lo: file_writef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_writef.c -o _file_writef.lo
 _file_write_allf.o: file_write_allf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_allf.c -o _file_write_allf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_write_allf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_allf.c -o _file_write_allf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_allf.c -o _file_write_allf.o
 _file_write_allf.lo: file_write_allf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_allf.c -o _file_write_allf.lo
 _file_ireadf.o: file_ireadf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_ireadf.c -o _file_ireadf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_ireadf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_ireadf.c -o _file_ireadf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_ireadf.c -o _file_ireadf.o
 _file_ireadf.lo: file_ireadf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_ireadf.c -o _file_ireadf.lo
 _file_iwritef.o: file_iwritef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iwritef.c -o _file_iwritef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_iwritef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iwritef.c -o _file_iwritef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iwritef.c -o _file_iwritef.o
 _file_iwritef.lo: file_iwritef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iwritef.c -o _file_iwritef.lo
 _file_seekf.o: file_seekf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_seekf.c -o _file_seekf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_seekf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_seekf.c -o _file_seekf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_seekf.c -o _file_seekf.o
 _file_seekf.lo: file_seekf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_seekf.c -o _file_seekf.lo
 _file_get_positionf.o: file_get_positionf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_positionf.c -o _file_get_positionf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_get_positionf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_positionf.c -o _file_get_positionf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_positionf.c -o _file_get_positionf.o
 _file_get_positionf.lo: file_get_positionf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_positionf.c -o _file_get_positionf.lo
 _file_get_byte_offsetf.o: file_get_byte_offsetf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_byte_offsetf.c -o _file_get_byte_offsetf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_get_byte_offsetf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_byte_offsetf.c -o _file_get_byte_offsetf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_byte_offsetf.c -o _file_get_byte_offsetf.o
 _file_get_byte_offsetf.lo: file_get_byte_offsetf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_byte_offsetf.c -o _file_get_byte_offsetf.lo
 _file_read_sharedf.o: file_read_sharedf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_sharedf.c -o _file_read_sharedf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_read_sharedf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_sharedf.c -o _file_read_sharedf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_sharedf.c -o _file_read_sharedf.o
 _file_read_sharedf.lo: file_read_sharedf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_sharedf.c -o _file_read_sharedf.lo
 _file_write_sharedf.o: file_write_sharedf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_sharedf.c -o _file_write_sharedf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_write_sharedf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_sharedf.c -o _file_write_sharedf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_sharedf.c -o _file_write_sharedf.o
 _file_write_sharedf.lo: file_write_sharedf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_sharedf.c -o _file_write_sharedf.lo
 _file_iread_sharedf.o: file_iread_sharedf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iread_sharedf.c -o _file_iread_sharedf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_iread_sharedf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iread_sharedf.c -o _file_iread_sharedf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iread_sharedf.c -o _file_iread_sharedf.o
 _file_iread_sharedf.lo: file_iread_sharedf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iread_sharedf.c -o _file_iread_sharedf.lo
 _file_iwrite_sharedf.o: file_iwrite_sharedf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iwrite_sharedf.c -o _file_iwrite_sharedf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_iwrite_sharedf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iwrite_sharedf.c -o _file_iwrite_sharedf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iwrite_sharedf.c -o _file_iwrite_sharedf.o
 _file_iwrite_sharedf.lo: file_iwrite_sharedf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_iwrite_sharedf.c -o _file_iwrite_sharedf.lo
 _file_read_orderedf.o: file_read_orderedf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_orderedf.c -o _file_read_orderedf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_read_orderedf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_orderedf.c -o _file_read_orderedf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_orderedf.c -o _file_read_orderedf.o
 _file_read_orderedf.lo: file_read_orderedf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_orderedf.c -o _file_read_orderedf.lo
 _file_write_orderedf.o: file_write_orderedf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_orderedf.c -o _file_write_orderedf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_write_orderedf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_orderedf.c -o _file_write_orderedf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_orderedf.c -o _file_write_orderedf.o
 _file_write_orderedf.lo: file_write_orderedf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_orderedf.c -o _file_write_orderedf.lo
 _file_seek_sharedf.o: file_seek_sharedf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_seek_sharedf.c -o _file_seek_sharedf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_seek_sharedf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_seek_sharedf.c -o _file_seek_sharedf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_seek_sharedf.c -o _file_seek_sharedf.o
 _file_seek_sharedf.lo: file_seek_sharedf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_seek_sharedf.c -o _file_seek_sharedf.lo
 _file_get_position_sharedf.o: file_get_position_sharedf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_position_sharedf.c -o _file_get_position_sharedf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_get_position_sharedf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_position_sharedf.c -o _file_get_position_sharedf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_position_sharedf.c -o _file_get_position_sharedf.o
 _file_get_position_sharedf.lo: file_get_position_sharedf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_position_sharedf.c -o _file_get_position_sharedf.lo
 _file_read_at_all_beginf.o: file_read_at_all_beginf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_at_all_beginf.c -o _file_read_at_all_beginf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_read_at_all_beginf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_at_all_beginf.c -o _file_read_at_all_beginf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_at_all_beginf.c -o _file_read_at_all_beginf.o
 _file_read_at_all_beginf.lo: file_read_at_all_beginf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_at_all_beginf.c -o _file_read_at_all_beginf.lo
 _file_read_at_all_endf.o: file_read_at_all_endf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_at_all_endf.c -o _file_read_at_all_endf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_read_at_all_endf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_at_all_endf.c -o _file_read_at_all_endf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_at_all_endf.c -o _file_read_at_all_endf.o
 _file_read_at_all_endf.lo: file_read_at_all_endf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_at_all_endf.c -o _file_read_at_all_endf.lo
 _file_write_at_all_beginf.o: file_write_at_all_beginf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_at_all_beginf.c -o _file_write_at_all_beginf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_write_at_all_beginf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_at_all_beginf.c -o _file_write_at_all_beginf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_at_all_beginf.c -o _file_write_at_all_beginf.o
 _file_write_at_all_beginf.lo: file_write_at_all_beginf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_at_all_beginf.c -o _file_write_at_all_beginf.lo
 _file_write_at_all_endf.o: file_write_at_all_endf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_at_all_endf.c -o _file_write_at_all_endf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_write_at_all_endf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_at_all_endf.c -o _file_write_at_all_endf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_at_all_endf.c -o _file_write_at_all_endf.o
 _file_write_at_all_endf.lo: file_write_at_all_endf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_at_all_endf.c -o _file_write_at_all_endf.lo
 _file_read_all_beginf.o: file_read_all_beginf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_all_beginf.c -o _file_read_all_beginf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_read_all_beginf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_all_beginf.c -o _file_read_all_beginf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_all_beginf.c -o _file_read_all_beginf.o
 _file_read_all_beginf.lo: file_read_all_beginf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_all_beginf.c -o _file_read_all_beginf.lo
 _file_read_all_endf.o: file_read_all_endf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_all_endf.c -o _file_read_all_endf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_read_all_endf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_all_endf.c -o _file_read_all_endf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_all_endf.c -o _file_read_all_endf.o
 _file_read_all_endf.lo: file_read_all_endf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_all_endf.c -o _file_read_all_endf.lo
 _file_write_all_beginf.o: file_write_all_beginf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_all_beginf.c -o _file_write_all_beginf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_write_all_beginf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_all_beginf.c -o _file_write_all_beginf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_all_beginf.c -o _file_write_all_beginf.o
 _file_write_all_beginf.lo: file_write_all_beginf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_all_beginf.c -o _file_write_all_beginf.lo
 _file_write_all_endf.o: file_write_all_endf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_all_endf.c -o _file_write_all_endf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_write_all_endf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_all_endf.c -o _file_write_all_endf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_all_endf.c -o _file_write_all_endf.o
 _file_write_all_endf.lo: file_write_all_endf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_all_endf.c -o _file_write_all_endf.lo
 _file_read_ordered_beginf.o: file_read_ordered_beginf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_ordered_beginf.c -o _file_read_ordered_beginf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_read_ordered_beginf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_ordered_beginf.c -o _file_read_ordered_beginf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_ordered_beginf.c -o _file_read_ordered_beginf.o
 _file_read_ordered_beginf.lo: file_read_ordered_beginf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_ordered_beginf.c -o _file_read_ordered_beginf.lo
 _file_read_ordered_endf.o: file_read_ordered_endf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_ordered_endf.c -o _file_read_ordered_endf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_read_ordered_endf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_ordered_endf.c -o _file_read_ordered_endf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_ordered_endf.c -o _file_read_ordered_endf.o
 _file_read_ordered_endf.lo: file_read_ordered_endf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_read_ordered_endf.c -o _file_read_ordered_endf.lo
 _file_write_ordered_beginf.o: file_write_ordered_beginf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_ordered_beginf.c -o _file_write_ordered_beginf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_write_ordered_beginf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_ordered_beginf.c -o _file_write_ordered_beginf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_ordered_beginf.c -o _file_write_ordered_beginf.o
 _file_write_ordered_beginf.lo: file_write_ordered_beginf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_ordered_beginf.c -o _file_write_ordered_beginf.lo
 _file_write_ordered_endf.o: file_write_ordered_endf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_ordered_endf.c -o _file_write_ordered_endf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_write_ordered_endf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_ordered_endf.c -o _file_write_ordered_endf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_ordered_endf.c -o _file_write_ordered_endf.o
 _file_write_ordered_endf.lo: file_write_ordered_endf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_write_ordered_endf.c -o _file_write_ordered_endf.lo
 _file_get_type_extentf.o: file_get_type_extentf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_type_extentf.c -o _file_get_type_extentf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_get_type_extentf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_type_extentf.c -o _file_get_type_extentf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_type_extentf.c -o _file_get_type_extentf.o
 _file_get_type_extentf.lo: file_get_type_extentf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_type_extentf.c -o _file_get_type_extentf.lo
 _register_datarepf.o: register_datarepf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/register_datarepf.c -o _register_datarepf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/register_datarepf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/register_datarepf.c -o _register_datarepf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/register_datarepf.c -o _register_datarepf.o
 _register_datarepf.lo: register_datarepf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/register_datarepf.c -o _register_datarepf.lo
 _file_set_atomicityf.o: file_set_atomicityf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_atomicityf.c -o _file_set_atomicityf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_set_atomicityf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_atomicityf.c -o _file_set_atomicityf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_atomicityf.c -o _file_set_atomicityf.o
 _file_set_atomicityf.lo: file_set_atomicityf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_atomicityf.c -o _file_set_atomicityf.lo
 _file_get_atomicityf.o: file_get_atomicityf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_atomicityf.c -o _file_get_atomicityf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_get_atomicityf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_atomicityf.c -o _file_get_atomicityf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_atomicityf.c -o _file_get_atomicityf.o
 _file_get_atomicityf.lo: file_get_atomicityf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_atomicityf.c -o _file_get_atomicityf.lo
 _file_syncf.o: file_syncf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_syncf.c -o _file_syncf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/file_syncf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_syncf.c -o _file_syncf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_syncf.c -o _file_syncf.o
 _file_syncf.lo: file_syncf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_syncf.c -o _file_syncf.lo
 _initf.o: initf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/initf.c -o _initf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/initf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/initf.c -o _initf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/initf.c -o _initf.o
 _initf.lo: initf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/initf.c -o _initf.lo
 _initthreadf.o: initthreadf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/initthreadf.c -o _initthreadf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/initthreadf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/initthreadf.c -o _initthreadf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/initthreadf.c -o _initthreadf.o
 _initthreadf.lo: initthreadf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/initthreadf.c -o _initthreadf.lo
 _pcontrolf.o: pcontrolf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pcontrolf.c -o _pcontrolf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/pcontrolf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pcontrolf.c -o _pcontrolf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pcontrolf.c -o _pcontrolf.o
 _pcontrolf.lo: pcontrolf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pcontrolf.c -o _pcontrolf.lo
 _addressf.o: addressf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/addressf.c -o _addressf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/addressf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/addressf.c -o _addressf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/addressf.c -o _addressf.o
 _addressf.lo: addressf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/addressf.c -o _addressf.lo
 _getaddressf.o: getaddressf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/getaddressf.c -o _getaddressf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/getaddressf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/getaddressf.c -o _getaddressf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/getaddressf.c -o _getaddressf.o
 _getaddressf.lo: getaddressf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/getaddressf.c -o _getaddressf.lo
 _wtimef.o: wtimef.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wtimef.c -o _wtimef.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/wtimef.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wtimef.c -o _wtimef.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wtimef.c -o _wtimef.o
 _wtimef.lo: wtimef.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/wtimef.c -o _wtimef.lo
 _wtickf.o: wtickf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wtickf.c -o _wtickf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/wtickf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wtickf.c -o _wtickf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wtickf.c -o _wtickf.o
 _wtickf.lo: wtickf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/wtickf.c -o _wtickf.lo
 _keyval_createf.o: keyval_createf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/keyval_createf.c -o _keyval_createf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/keyval_createf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/keyval_createf.c -o _keyval_createf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/keyval_createf.c -o _keyval_createf.o
 _keyval_createf.lo: keyval_createf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/keyval_createf.c -o _keyval_createf.lo
 _dup_fnf.o: dup_fnf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_fnf.c -o _dup_fnf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/dup_fnf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_fnf.c -o _dup_fnf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_fnf.c -o _dup_fnf.o
 _dup_fnf.lo: dup_fnf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_fnf.c -o _dup_fnf.lo
 _null_del_fnf.o: null_del_fnf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_del_fnf.c -o _null_del_fnf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/null_del_fnf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_del_fnf.c -o _null_del_fnf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_del_fnf.c -o _null_del_fnf.o
 _null_del_fnf.lo: null_del_fnf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/null_del_fnf.c -o _null_del_fnf.lo
 _null_copy_fnf.o: null_copy_fnf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_copy_fnf.c -o _null_copy_fnf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/null_copy_fnf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_copy_fnf.c -o _null_copy_fnf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_copy_fnf.c -o _null_copy_fnf.o
 _null_copy_fnf.lo: null_copy_fnf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/null_copy_fnf.c -o _null_copy_fnf.lo
 _dup_comm_fnf.o: dup_comm_fnf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_comm_fnf.c -o _dup_comm_fnf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/dup_comm_fnf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_comm_fnf.c -o _dup_comm_fnf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_comm_fnf.c -o _dup_comm_fnf.o
 _dup_comm_fnf.lo: dup_comm_fnf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_comm_fnf.c -o _dup_comm_fnf.lo
 _null_comm_del_fnf.o: null_comm_del_fnf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_comm_del_fnf.c -o _null_comm_del_fnf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/null_comm_del_fnf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_comm_del_fnf.c -o _null_comm_del_fnf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_comm_del_fnf.c -o _null_comm_del_fnf.o
 _null_comm_del_fnf.lo: null_comm_del_fnf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/null_comm_del_fnf.c -o _null_comm_del_fnf.lo
 _null_comm_copy_fnf.o: null_comm_copy_fnf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_comm_copy_fnf.c -o _null_comm_copy_fnf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/null_comm_copy_fnf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_comm_copy_fnf.c -o _null_comm_copy_fnf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_comm_copy_fnf.c -o _null_comm_copy_fnf.o
 _null_comm_copy_fnf.lo: null_comm_copy_fnf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/null_comm_copy_fnf.c -o _null_comm_copy_fnf.lo
 _dup_win_fnf.o: dup_win_fnf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_win_fnf.c -o _dup_win_fnf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/dup_win_fnf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_win_fnf.c -o _dup_win_fnf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_win_fnf.c -o _dup_win_fnf.o
 _dup_win_fnf.lo: dup_win_fnf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_win_fnf.c -o _dup_win_fnf.lo
 _null_win_del_fnf.o: null_win_del_fnf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_win_del_fnf.c -o _null_win_del_fnf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/null_win_del_fnf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_win_del_fnf.c -o _null_win_del_fnf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_win_del_fnf.c -o _null_win_del_fnf.o
 _null_win_del_fnf.lo: null_win_del_fnf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/null_win_del_fnf.c -o _null_win_del_fnf.lo
 _null_win_copy_fnf.o: null_win_copy_fnf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_win_copy_fnf.c -o _null_win_copy_fnf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/null_win_copy_fnf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_win_copy_fnf.c -o _null_win_copy_fnf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_win_copy_fnf.c -o _null_win_copy_fnf.o
 _null_win_copy_fnf.lo: null_win_copy_fnf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/null_win_copy_fnf.c -o _null_win_copy_fnf.lo
 _dup_type_fnf.o: dup_type_fnf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_type_fnf.c -o _dup_type_fnf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/dup_type_fnf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_type_fnf.c -o _dup_type_fnf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_type_fnf.c -o _dup_type_fnf.o
 _dup_type_fnf.lo: dup_type_fnf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/dup_type_fnf.c -o _dup_type_fnf.lo
 _null_type_del_fnf.o: null_type_del_fnf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_type_del_fnf.c -o _null_type_del_fnf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/null_type_del_fnf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_type_del_fnf.c -o _null_type_del_fnf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_type_del_fnf.c -o _null_type_del_fnf.o
 _null_type_del_fnf.lo: null_type_del_fnf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/null_type_del_fnf.c -o _null_type_del_fnf.lo
 _null_type_copy_fnf.o: null_type_copy_fnf.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_type_copy_fnf.c -o _null_type_copy_fnf.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/null_type_copy_fnf.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_type_copy_fnf.c -o _null_type_copy_fnf.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/null_type_copy_fnf.c -o _null_type_copy_fnf.o
 _null_type_copy_fnf.lo: null_type_copy_fnf.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/null_type_copy_fnf.c -o _null_type_copy_fnf.lo
 _statusf2c.o: statusf2c.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/statusf2c.c -o _statusf2c.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/statusf2c.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/statusf2c.c -o _statusf2c.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/statusf2c.c -o _statusf2c.o
 _statusf2c.lo: statusf2c.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/statusf2c.c -o _statusf2c.lo
 _statusc2f.o: statusc2f.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/statusc2f.c -o _statusc2f.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/statusc2f.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/statusc2f.c -o _statusc2f.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/statusc2f.c -o _statusc2f.o
 _statusc2f.lo: statusc2f.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/statusc2f.c -o _statusc2f.lo
 # --------------------------------------------------------------------------

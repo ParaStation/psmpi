@@ -9,7 +9,7 @@
 Maps process to graph topology information 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges,
+int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *indx, int *edges,
                   int *newrank)
 </PRE>
 <H2>Input Parameters</H2>
@@ -18,7 +18,7 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 
 <DT><B>nnodes </B><DD>number of graph nodes (integer) 
 
-<DT><B>index </B><DD>integer array specifying the graph structure, see <TT>MPI_GRAPH_CREATE</TT> 
+<DT><B>indx </B><DD>integer array specifying the graph structure, see <TT>MPI_GRAPH_CREATE</TT> 
 
 <DT><B>edges </B><DD>integer array specifying the graph structure 
 </DL>

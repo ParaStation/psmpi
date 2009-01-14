@@ -22,8 +22,8 @@
 /* Define to enable shared-memory collectives */
 #undef ENABLED_SHM_COLLECTIVES
 
-/* Define to remove sched_yield()s in polling loops */
-#undef ENABLE_NO_SCHED_YIELD
+/* Define to remove yield()s in polling loops */
+#undef ENABLE_NO_YIELD
 
 /* Define if using asm() on a x86 system with the lfence instruction */
 #undef HAVE_ASM_AND_X86_LFENCE

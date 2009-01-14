@@ -1,6 +1,6 @@
 <dir>
-<file name="ch3i_connaccept.c" info="1194043819"/>
 <file name="all_hash.c" info="1194043819"/>
+<file name="ch3i_connaccept.c" info="1194043819"/>
 <file name="ch3_istartmsgv.c" info="1194043819"/>
 <file name="ch3_progress.c" info="1196050567"/>
 <file name="sctp_common.c" info="1195897162"/>
@@ -12,10 +12,10 @@
 <file name="sctp_util.c" info="1194043819"/>
 </dir>
 <data>
+<fileinfo name="all_hash.c">
+</fileinfo>
 <fileinfo name="ch3i_connaccept.c">
 MPID_STATE_MPIDI_CH3_CLEANUP_AFTER_CONNECTION MPIDI_CH3_Cleanup_after_connection
-</fileinfo>
-<fileinfo name="all_hash.c">
 </fileinfo>
 <fileinfo name="ch3_istartmsgv.c">
 MPID_STATE_CREATE_REQUEST create_request

@@ -6,49 +6,28 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-AR              = @AR@
-RANLIB          = @RANLIB@
-master_top_srcdir  = @master_top_srcdir@
-top_builddir    = @master_top_builddir@
+VERBOSE         = 1
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
-DEFS            = @DEFS@ -I. -I${srcdir}
-CPPFLAGS        = @CPPFLAGS@
 MAKE            = @MAKE@
 MPILIBNAME      = @MPILIBNAME@
-CC              = @CC@
-CFLAGS          = @CFLAGS@
-C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
-LIBTOOL         = @LIBTOOL@
-CC_SHL          = @CC_SHL@
-C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 
 VPATH = .:@srcdir@
-INCLUDES = -I. -I../../include -I${master_top_srcdir}/src/ch3/channels/nemesis/nemesis/include -I${master_top_srcdir}/src/include \
-           -I${top_builddir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .txt 
-.c.o:
-	$(C_COMPILE) -c $<
-.c.lo:
-	$(C_COMPILE_SHL) -c $< -o _s$*.o
-	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
-.c:
-	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+.SUFFIXES:  .txt 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
 	-rootdir=../../../../../../../../ \
 	-configdir=src/mpid/ch3/channels/nemesis/ \
-	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
-	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
 	-distcleanfiles="Makefile" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
@@ -60,7 +39,6 @@ apply:
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
-	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
 	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
@@ -76,26 +54,9 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: .libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a
-	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
-	    ${MAKE} .libstamp1 ; \
-	fi
+all-redirect:
 
-.libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a: \
-	mx_module_finalize.o mx_module_init.o mx_module_poll.o \
-	mx_module_send.o mx_module_register.o mx_module_test.o 
-	${AR} cr ../../../../../../../../lib/lib${MPILIBNAME}.a $?
-	${RANLIB} ../../../../../../../../lib/lib${MPILIBNAME}.a
-	date > .libstamp0
-.libstamp1 ../../../../../../../../lib/lib${MPILIBNAME}.la: \
-	mx_module_finalize.lo mx_module_init.lo mx_module_poll.lo \
-	mx_module_send.lo mx_module_register.lo mx_module_test.lo 
-	${AR} cr ../../../../../../../../lib/lib${MPILIBNAME}.la $?
-	date > .libstamp1
 coverage: 
-	-@for file in mx_module_finalize.c  mx_module_init.c  mx_module_poll.c      \
-	mx_module_send.c   mx_module_register.c  mx_module_test.c ; do \
-		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
 htmldoc:
 mandoc:
@@ -105,52 +66,16 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/mx_module_finalize.d: $(srcdir)/mx_module_finalize.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mx_module_finalize.c >$(DEPS_DIR)/mx_module_finalize.d
-$(DEPS_DIR)/mx_module_init.d: $(srcdir)/mx_module_init.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mx_module_init.c >$(DEPS_DIR)/mx_module_init.d
-$(DEPS_DIR)/mx_module_poll.d: $(srcdir)/mx_module_poll.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mx_module_poll.c >$(DEPS_DIR)/mx_module_poll.d
-$(DEPS_DIR)/mx_module_send.d: $(srcdir)/mx_module_send.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mx_module_send.c >$(DEPS_DIR)/mx_module_send.d
-$(DEPS_DIR)/mx_module_register.d: $(srcdir)/mx_module_register.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mx_module_register.c >$(DEPS_DIR)/mx_module_register.d
-$(DEPS_DIR)/mx_module_test.d: $(srcdir)/mx_module_test.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mx_module_test.c >$(DEPS_DIR)/mx_module_test.d
-$(DEPS_DIR)/timestamp: mx_module_finalize.c  mx_module_init.c  mx_module_poll.c      \
-	mx_module_send.c   mx_module_register.c  mx_module_test.c Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mx_module_finalize.c >$(DEPS_DIR)/mx_module_finalize.d
-	echo "include $(DEPS_DIR)/mx_module_finalize.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mx_module_init.c >$(DEPS_DIR)/mx_module_init.d
-	echo "include $(DEPS_DIR)/mx_module_init.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mx_module_poll.c >$(DEPS_DIR)/mx_module_poll.d
-	echo "include $(DEPS_DIR)/mx_module_poll.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mx_module_send.c >$(DEPS_DIR)/mx_module_send.d
-	echo "include $(DEPS_DIR)/mx_module_send.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mx_module_register.c >$(DEPS_DIR)/mx_module_register.d
-	echo "include $(DEPS_DIR)/mx_module_register.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mx_module_test.c >$(DEPS_DIR)/mx_module_test.d
-	echo "include $(DEPS_DIR)/mx_module_test.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
+dependencies:
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  mx_module_finalize.c mx_module_init.c mx_module_poll.c \
-	mx_module_send.c mx_module_register.c mx_module_test.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../../../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
+TAGS: Makefile
 # --------------------------------------------------------------------------
+# Stub Makefile
 
 FORCE_TARGET:
 

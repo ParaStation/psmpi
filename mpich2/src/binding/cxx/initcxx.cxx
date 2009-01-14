@@ -118,7 +118,7 @@ const Request REQUEST_NULL;
 const Errhandler ERRHANDLER_NULL;
 const Errhandler ERRORS_RETURN(MPI_ERRORS_RETURN);
 const Errhandler ERRORS_ARE_FATAL(MPI_ERRORS_ARE_FATAL);
-const Errhandler ERRORS_THROW_EXCEPTIONS(MPI_ERRORS_RETURN);
+const Errhandler ERRORS_THROW_EXCEPTIONS(MPIR_ERRORS_THROW_EXCEPTIONS);
 const Info INFO_NULL;
 const Win WIN_NULL;
  File FILE_NULL;
@@ -143,7 +143,6 @@ const int LASTUSEDCODE= MPI_LASTUSEDCODE;
 const int APPNUM= MPI_APPNUM;
 const int MAX_PROCESSOR_NAME= MPI_MAX_PROCESSOR_NAME;
 const int MAX_ERROR_STRING= MPI_MAX_ERROR_STRING;
-const int MAX_NAME_STRING= MPI_MAX_NAME_STRING;
 const int MAX_PORT_NAME= MPI_MAX_PORT_NAME;
 const int MAX_OBJECT_NAME= MPI_MAX_OBJECT_NAME;
 const int MAX_INFO_VAL= MPI_MAX_INFO_VAL;
@@ -209,6 +208,9 @@ const int ERR_RMA_SYNC= MPI_ERR_RMA_SYNC;
 const int ERR_SIZE= MPI_ERR_SIZE;
 const int ERR_DISP= MPI_ERR_DISP;
 const int ERR_ASSERT= MPI_ERR_ASSERT;
+const int TYPECLASS_REAL= MPI_TYPECLASS_REAL;
+const int TYPECLASS_INTEGER= MPI_TYPECLASS_INTEGER;
+const int TYPECLASS_COMPLEX= MPI_TYPECLASS_COMPLEX;
 #if defined(MPI_SEEK_SET) && !defined(MPICH_IGNORE_CXX_SEEK) && !defined(SEEK_SET)
 const int SEEK_SET = MPI_SEEK_SET;
 const int SEEK_END = MPI_SEEK_END;
@@ -615,6 +617,36 @@ Errhandler Win::Create_errhandler( Errhandler_fn *f )
     return e1;
 }
 
+
+// Call_errhandler implementations.  These sadly must contain a bit of logic to
+// cover the ERRORS_THROW_EXCEPTIONS case.
+void Comm::Call_errhandler( int errorcode ) const
+{
+    if (Get_errhandler() == ERRORS_THROW_EXCEPTIONS) {
+        throw Exception(errorcode); // throw by value, catch by reference
+    }
+    MPIX_CALL( MPI_Comm_call_errhandler( (MPI_Comm) the_real_comm, errorcode ));
+}
+
+void Win::Call_errhandler( int errorcode ) const
+{
+    if (Get_errhandler() == ERRORS_THROW_EXCEPTIONS) {
+        throw Exception(errorcode); // throw by value, catch by reference
+    }
+    MPIX_CALL( MPI_Win_call_errhandler( (MPI_Win) the_real_win, errorcode ));
+}
+
+#ifdef MPI_MODE_RDONLY
+void File::Call_errhandler( int errorcode ) const
+{
+    if (Get_errhandler() == ERRORS_THROW_EXCEPTIONS) {
+        throw Exception(errorcode); // throw by value, catch by reference
+    }
+    MPIX_CALL( MPI_File_call_errhandler( (MPI_File) the_real_file, errorcode ));
+}
+#endif // IO
+
+
 #ifdef MPI_MODE_RDONLY
 
 extern "C" {
@@ -895,6 +927,7 @@ Grequest Grequest::Start( Grequest::Query_function query_fn,
     return req;
 }
 
+/* MT FIXME: this is not thread-safe */
 void MPIR_CXX_InitDatatypeNames( void )
 {
     static int _isInit = 1; 

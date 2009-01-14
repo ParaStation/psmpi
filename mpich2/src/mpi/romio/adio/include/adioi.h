@@ -42,6 +42,7 @@ struct ADIOI_Hints_struct {
     int ind_rd_buffer_size;
     int ind_wr_buffer_size;
     int deferred_open;
+    int min_fdomain_size;
     char *cb_config_list;
     int *ranklist;
     union {
@@ -302,6 +303,8 @@ void ADIOI_Get_eof_offset(ADIO_File fd, ADIO_Offset *eof_offset);
 void ADIOI_Get_byte_offset(ADIO_File fd, ADIO_Offset offset,
 			   ADIO_Offset *disp);
 void ADIOI_process_system_hints(MPI_Info info);
+void ADIOI_incorporate_system_hints(MPI_Info info, MPI_Info sysinfo, 
+		MPI_Info *new_info);
 
 
 void ADIOI_GEN_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
@@ -381,7 +384,9 @@ void ADIOI_Calc_file_domains(ADIO_Offset *st_offsets, ADIO_Offset
 			     *end_offsets, int nprocs, int nprocs_for_coll,
 			     ADIO_Offset *min_st_offset_ptr,
 			     ADIO_Offset **fd_start_ptr, ADIO_Offset 
-			     **fd_end_ptr, ADIO_Offset *fd_size_ptr);
+			     **fd_end_ptr, int min_fd_size, 
+			     ADIO_Offset *fd_size_ptr,
+			     int striping_unit);
 int ADIOI_Calc_aggregator(ADIO_File fd,
                                  ADIO_Offset off,
                                  ADIO_Offset min_off,

@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "rma.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Win_create */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -22,6 +23,7 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #undef MPI_Win_create
 #define MPI_Win_create PMPI_Win_create
+
 #endif
 
 #undef FUNCNAME
@@ -111,7 +113,8 @@ int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info,
 
     /* ... body of routine ...  */
     
-    mpi_errno = MPID_Win_create(base, size, disp_unit, info_ptr, comm_ptr, &win_ptr);
+    mpi_errno = MPID_Win_create(base, size, disp_unit, info_ptr, 
+				comm_ptr, &win_ptr);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* Initialize a few fields that have specific defaults */

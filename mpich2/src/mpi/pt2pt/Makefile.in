@@ -6,6 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+VERBOSE         = 1
 AR              = @AR@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
@@ -42,14 +43,30 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
-	$(C_COMPILE) -c $<
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -c $< ; \
+	fi
+	@$(C_COMPILE) -c $<
 .c.lo:
-	$(C_COMPILE_SHL) -c $< -o _s$*.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
+	echo mv -f _s$*.o $*.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
+	fi
+	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .c.man:
 	$(DOCTEXT) -man -mpath ../../../man/man3 -ext 3 -heading MPI \
 		-quotefmt ${master_top_srcdir}/maint/docnotes $<
@@ -62,13 +79,14 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
 	-rootdir=../../../ \
 	-configdir=. \
-	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
-	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
 	-distcleanfiles="Makefile" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
@@ -115,7 +133,12 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	ssend_init.o start.o startall.o test.o test_cancelled.o testall.o \
 	testany.o testsome.o wait.o waitall.o waitany.o waitsome.o \
 	bsendutil.o mpir_request.o 
-	${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
+	else \
+	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
+	fi
+	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
 	${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
 .libstamp1 ../../../lib/lib${MPILIBNAME}.la: bsend.lo bsend_init.lo \
@@ -126,7 +149,12 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	status_set_cancelled.lo ssend.lo ssend_init.lo start.lo startall.lo \
 	test.lo test_cancelled.lo testall.lo testany.lo testsome.lo wait.lo \
 	waitall.lo waitany.lo waitsome.lo bsendutil.lo mpir_request.lo 
-	${AR} cr ../../../lib/lib${MPILIBNAME}.la $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
+	else \
+	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
+	fi
+	@${AR} cr ../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 
 # --------------------------------------------------------------------------
@@ -138,8 +166,18 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	_ssend_init.o _start.o _startall.o _test.o _test_cancelled.o \
 	_testall.o _testany.o _testsome.o _wait.o _waitall.o _waitany.o \
 	_waitsome.o 
-	${AR} cr ../../../lib/lib${PMPILIBNAME}.a $?
-	${RANLIB} ../../../lib/lib${PMPILIBNAME}.a
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
+	else \
+	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.a $? ; \
+	fi
+	@${AR} cr ../../../lib/lib${PMPILIBNAME}.a $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  RANLIB          lib${PMPILIBNAME}.a" ; \
+	else \
+	  echo ${RANLIB} ../../../lib/lib${PMPILIBNAME}.a ; \
+	fi
+	@${RANLIB} ../../../lib/lib${PMPILIBNAME}.a
 	date > .libstamp2
 .libstamp3: _bsend.lo _bsend_init.lo _bufattach.lo _buffree.lo _cancel.lo _greq_start.lo \
 	_greq_complete.lo _ibsend.lo _iprobe.lo _irecv.lo _irsend.lo \
@@ -149,158 +187,353 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	_status_set_cancelled.lo _ssend.lo _ssend_init.lo _start.lo \
 	_startall.lo _test.lo _test_cancelled.lo _testall.lo _testany.lo \
 	_testsome.lo _wait.lo _waitall.lo _waitany.lo _waitsome.lo 
-	${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
+	else \
+	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?; \
+	fi
+	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _bsend.o: bsend.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bsend.c -o _bsend.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/bsend.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bsend.c -o _bsend.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bsend.c -o _bsend.o
 _bsend.lo: bsend.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/bsend.c -o _bsend.lo
 _bsend_init.o: bsend_init.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bsend_init.c -o _bsend_init.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/bsend_init.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bsend_init.c -o _bsend_init.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bsend_init.c -o _bsend_init.o
 _bsend_init.lo: bsend_init.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/bsend_init.c -o _bsend_init.lo
 _bufattach.o: bufattach.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bufattach.c -o _bufattach.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/bufattach.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bufattach.c -o _bufattach.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bufattach.c -o _bufattach.o
 _bufattach.lo: bufattach.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/bufattach.c -o _bufattach.lo
 _buffree.o: buffree.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/buffree.c -o _buffree.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/buffree.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/buffree.c -o _buffree.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/buffree.c -o _buffree.o
 _buffree.lo: buffree.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/buffree.c -o _buffree.lo
 _cancel.o: cancel.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cancel.c -o _cancel.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/cancel.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cancel.c -o _cancel.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cancel.c -o _cancel.o
 _cancel.lo: cancel.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cancel.c -o _cancel.lo
 _greq_start.o: greq_start.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/greq_start.c -o _greq_start.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/greq_start.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/greq_start.c -o _greq_start.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/greq_start.c -o _greq_start.o
 _greq_start.lo: greq_start.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/greq_start.c -o _greq_start.lo
 _greq_complete.o: greq_complete.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/greq_complete.c -o _greq_complete.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/greq_complete.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/greq_complete.c -o _greq_complete.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/greq_complete.c -o _greq_complete.o
 _greq_complete.lo: greq_complete.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/greq_complete.c -o _greq_complete.lo
 _ibsend.o: ibsend.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ibsend.c -o _ibsend.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/ibsend.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ibsend.c -o _ibsend.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ibsend.c -o _ibsend.o
 _ibsend.lo: ibsend.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/ibsend.c -o _ibsend.lo
 _iprobe.o: iprobe.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/iprobe.c -o _iprobe.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/iprobe.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/iprobe.c -o _iprobe.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/iprobe.c -o _iprobe.o
 _iprobe.lo: iprobe.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/iprobe.c -o _iprobe.lo
 _irecv.o: irecv.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/irecv.c -o _irecv.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/irecv.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/irecv.c -o _irecv.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/irecv.c -o _irecv.o
 _irecv.lo: irecv.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/irecv.c -o _irecv.lo
 _irsend.o: irsend.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/irsend.c -o _irsend.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/irsend.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/irsend.c -o _irsend.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/irsend.c -o _irsend.o
 _irsend.lo: irsend.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/irsend.c -o _irsend.lo
 _isend.o: isend.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/isend.c -o _isend.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/isend.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/isend.c -o _isend.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/isend.c -o _isend.o
 _isend.lo: isend.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/isend.c -o _isend.lo
 _issend.o: issend.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/issend.c -o _issend.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/issend.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/issend.c -o _issend.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/issend.c -o _issend.o
 _issend.lo: issend.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/issend.c -o _issend.lo
 _probe.o: probe.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/probe.c -o _probe.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/probe.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/probe.c -o _probe.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/probe.c -o _probe.o
 _probe.lo: probe.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/probe.c -o _probe.lo
 _recv.o: recv.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/recv.c -o _recv.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/recv.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/recv.c -o _recv.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/recv.c -o _recv.o
 _recv.lo: recv.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/recv.c -o _recv.lo
 _recv_init.o: recv_init.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/recv_init.c -o _recv_init.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/recv_init.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/recv_init.c -o _recv_init.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/recv_init.c -o _recv_init.o
 _recv_init.lo: recv_init.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/recv_init.c -o _recv_init.lo
 _request_free.o: request_free.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/request_free.c -o _request_free.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/request_free.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/request_free.c -o _request_free.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/request_free.c -o _request_free.o
 _request_free.lo: request_free.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/request_free.c -o _request_free.lo
 _request_get_status.o: request_get_status.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/request_get_status.c -o _request_get_status.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/request_get_status.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/request_get_status.c -o _request_get_status.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/request_get_status.c -o _request_get_status.o
 _request_get_status.lo: request_get_status.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/request_get_status.c -o _request_get_status.lo
 _rsend.o: rsend.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/rsend.c -o _rsend.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/rsend.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/rsend.c -o _rsend.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/rsend.c -o _rsend.o
 _rsend.lo: rsend.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/rsend.c -o _rsend.lo
 _rsend_init.o: rsend_init.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/rsend_init.c -o _rsend_init.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/rsend_init.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/rsend_init.c -o _rsend_init.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/rsend_init.c -o _rsend_init.o
 _rsend_init.lo: rsend_init.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/rsend_init.c -o _rsend_init.lo
 _send.o: send.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/send.c -o _send.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/send.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/send.c -o _send.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/send.c -o _send.o
 _send.lo: send.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/send.c -o _send.lo
 _send_init.o: send_init.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/send_init.c -o _send_init.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/send_init.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/send_init.c -o _send_init.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/send_init.c -o _send_init.o
 _send_init.lo: send_init.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/send_init.c -o _send_init.lo
 _sendrecv.o: sendrecv.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/sendrecv.c -o _sendrecv.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/sendrecv.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/sendrecv.c -o _sendrecv.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/sendrecv.c -o _sendrecv.o
 _sendrecv.lo: sendrecv.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/sendrecv.c -o _sendrecv.lo
 _sendrecv_rep.o: sendrecv_rep.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/sendrecv_rep.c -o _sendrecv_rep.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/sendrecv_rep.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/sendrecv_rep.c -o _sendrecv_rep.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/sendrecv_rep.c -o _sendrecv_rep.o
 _sendrecv_rep.lo: sendrecv_rep.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/sendrecv_rep.c -o _sendrecv_rep.lo
 _status_set_cancelled.o: status_set_cancelled.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/status_set_cancelled.c -o _status_set_cancelled.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/status_set_cancelled.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/status_set_cancelled.c -o _status_set_cancelled.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/status_set_cancelled.c -o _status_set_cancelled.o
 _status_set_cancelled.lo: status_set_cancelled.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/status_set_cancelled.c -o _status_set_cancelled.lo
 _ssend.o: ssend.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ssend.c -o _ssend.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/ssend.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ssend.c -o _ssend.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ssend.c -o _ssend.o
 _ssend.lo: ssend.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/ssend.c -o _ssend.lo
 _ssend_init.o: ssend_init.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ssend_init.c -o _ssend_init.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/ssend_init.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ssend_init.c -o _ssend_init.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/ssend_init.c -o _ssend_init.o
 _ssend_init.lo: ssend_init.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/ssend_init.c -o _ssend_init.lo
 _start.o: start.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/start.c -o _start.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/start.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/start.c -o _start.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/start.c -o _start.o
 _start.lo: start.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/start.c -o _start.lo
 _startall.o: startall.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/startall.c -o _startall.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/startall.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/startall.c -o _startall.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/startall.c -o _startall.o
 _startall.lo: startall.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/startall.c -o _startall.lo
 _test.o: test.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/test.c -o _test.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/test.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/test.c -o _test.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/test.c -o _test.o
 _test.lo: test.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/test.c -o _test.lo
 _test_cancelled.o: test_cancelled.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/test_cancelled.c -o _test_cancelled.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/test_cancelled.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/test_cancelled.c -o _test_cancelled.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/test_cancelled.c -o _test_cancelled.o
 _test_cancelled.lo: test_cancelled.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/test_cancelled.c -o _test_cancelled.lo
 _testall.o: testall.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testall.c -o _testall.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/testall.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testall.c -o _testall.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testall.c -o _testall.o
 _testall.lo: testall.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/testall.c -o _testall.lo
 _testany.o: testany.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testany.c -o _testany.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/testany.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testany.c -o _testany.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testany.c -o _testany.o
 _testany.lo: testany.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/testany.c -o _testany.lo
 _testsome.o: testsome.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testsome.c -o _testsome.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/testsome.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testsome.c -o _testsome.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/testsome.c -o _testsome.o
 _testsome.lo: testsome.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/testsome.c -o _testsome.lo
 _wait.o: wait.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wait.c -o _wait.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/wait.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wait.c -o _wait.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wait.c -o _wait.o
 _wait.lo: wait.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/wait.c -o _wait.lo
 _waitall.o: waitall.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitall.c -o _waitall.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/waitall.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitall.c -o _waitall.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitall.c -o _waitall.o
 _waitall.lo: waitall.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/waitall.c -o _waitall.lo
 _waitany.o: waitany.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitany.c -o _waitany.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/waitany.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitany.c -o _waitany.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitany.c -o _waitany.o
 _waitany.lo: waitany.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/waitany.c -o _waitany.lo
 _waitsome.o: waitsome.c
-	$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitsome.c -o _waitsome.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              ${srcdir}/waitsome.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitsome.c -o _waitsome.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/waitsome.c -o _waitsome.o
 _waitsome.lo: waitsome.c
 	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/waitsome.c -o _waitsome.lo
 # --------------------------------------------------------------------------

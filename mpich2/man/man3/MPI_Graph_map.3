@@ -1,9 +1,9 @@
-.TH MPI_Graph_map 3 "11/2/2007" " " "MPI"
+.TH MPI_Graph_map 3 "8/21/2008" " " "MPI"
 .SH NAME
 MPI_Graph_map \-  Maps process to graph topology information 
 .SH SYNOPSIS
 .nf
-int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges,
+int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *indx, int *edges,
                   int *newrank)
 .fi
 .SH INPUT PARAMETERS
@@ -19,7 +19,7 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *index, int *edges,
 .PD 1
 .PD 0
 .TP
-.B index 
+.B indx 
 - integer array specifying the graph structure, see 
 .I MPI_GRAPH_CREATE
 

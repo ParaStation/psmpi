@@ -1,0 +1,263 @@
+# This Makefile.in created by simplemake.  Do not edit
+
+# @configure_input@
+
+# --------------------------------------------------------------------------
+all: all-redirect
+
+SHELL           = @SHELL@
+VERBOSE         = 1
+AR              = @AR@
+RANLIB          = @RANLIB@
+master_top_srcdir  = @master_top_srcdir@
+top_builddir    = @master_top_builddir@
+abs_builddir    = @abs_builddir@
+srcdir          = @srcdir@
+abs_srcdir      = @abs_srcdir@
+DEFS            = @DEFS@ -I. -I${srcdir}
+CPPFLAGS        = @CPPFLAGS@
+MAKE            = @MAKE@
+MPILIBNAME      = @MPILIBNAME@
+CC              = @CC@
+CFLAGS          = @CFLAGS@
+C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
+LIBTOOL         = @LIBTOOL@
+CC_SHL          = @CC_SHL@
+C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
+
+VPATH = .:@srcdir@
+INCLUDES = -I${master_top_srcdir}/src/include -I${top_builddir}/src/include
+
+.SUFFIXES:
+.SUFFIXES: .o .lo .c .txt 
+.c.o:
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -c $< ; \
+	fi
+	@$(C_COMPILE) -c $<
+.c.lo:
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
+	echo mv -f _s$*.o $*.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c $< -o _s$*.o
+	@mv -f _s$*.o $*.lo
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
+.c:
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
+	fi
+	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
+	-rootdir=../../../../../ \
+	-configdir=src/mpid/dcmfd/ \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-cd ../../ && \
+	if [ -x config.status ] ; then CONFIG_FILES=src/pt2pt/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
+apply: 
+	$(ACTION) $(ACTION_INPUT)
+clean: 
+	-@rm -f *.o ${srcdir}/*.o 
+	-@rm -f .libstamp0 .libstamp1 
+	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
+distclean:  clean distclean-xxx remove-makefile
+distclean-xxx:
+	-@rm -rf $(DEPS_DIR)
+	-@rm -f TAGS
+maintainer-clean:  distclean-xxx remove-genmakefiles
+remove-makefile:
+	rm -f Makefile
+remove-genmakefiles:
+	rm -f  Makefile.in Makefile
+all-redirect:
+	${MAKE} all-local
+all-local: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
+	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
+	    ${MAKE} .libstamp1 ; \
+	fi
+
+.libstamp0 ../../../../../lib/lib${MPILIBNAME}.a: mpidi_isend_self.o \
+	mpid_irecv.o mpidi_irecv.o mpid_irsend.o mpid_isend.o mpid_issend.o \
+	mpid_recv.o mpid_rsend.o mpid_send.o mpid_ssend.o mpid_cancel_recv.o \
+	mpid_cancel_send.o mpidi_callback.o mpidi_callback_rzv.o \
+	mpidi_callback_short.o mpidi_callback_ssm.o mpidi_control.o \
+	mpidi_startmessage.o mpidi_rendezvous.o mpidi_done.o 
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../../../lib/lib${MPILIBNAME}.a $?" ; \
+	else \
+	  echo ${AR} cr ../../../../../lib/lib${MPILIBNAME}.a $? ; \
+	fi
+	@${AR} cr ../../../../../lib/lib${MPILIBNAME}.a $?
+	${RANLIB} ../../../../../lib/lib${MPILIBNAME}.a
+	date > .libstamp0
+.libstamp1 ../../../../../lib/lib${MPILIBNAME}.la: mpidi_isend_self.lo \
+	mpid_irecv.lo mpidi_irecv.lo mpid_irsend.lo mpid_isend.lo \
+	mpid_issend.lo mpid_recv.lo mpid_rsend.lo mpid_send.lo mpid_ssend.lo \
+	mpid_cancel_recv.lo mpid_cancel_send.lo mpidi_callback.lo \
+	mpidi_callback_rzv.lo mpidi_callback_short.lo mpidi_callback_ssm.lo \
+	mpidi_control.lo mpidi_startmessage.lo mpidi_rendezvous.lo \
+	mpidi_done.lo 
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../../../lib/lib${MPILIBNAME}.la $?" ; \
+	else \
+	  echo ${AR} cr ../../../../../lib/lib${MPILIBNAME}.la $? ; \
+	fi
+	@${AR} cr ../../../../../lib/lib${MPILIBNAME}.la $?
+	date > .libstamp1
+coverage: 
+	-@for file in mpidi_isend_self.c      			mpid_irecv.c            \
+				mpidi_irecv.c           			mpid_irsend.c           			mpid_isend.c \
+	           			mpid_issend.c           			mpid_recv.c             \
+				mpid_rsend.c            			mpid_send.c             			mpid_ssend.c \
+	           		        mpid_cancel_recv.c      			mpid_cancel_send.c    \
+	  			mpidi_callback.c        			mpidi_callback_rzv.c    \
+				mpidi_callback_short.c  			mpidi_callback_ssm.c    \
+				mpidi_control.c         			mpidi_startmessage.c    \
+				mpidi_rendezvous.c      			mpidi_done.c ; do \
+		gcov -b -f $$file ; done
+# --------------------------------------------------------------------------
+htmldoc:
+mandoc:
+latexdoc:
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+$(DEPS_DIR)/mpidi_isend_self.d: $(srcdir)/mpidi_isend_self.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_isend_self.c >$(DEPS_DIR)/mpidi_isend_self.d
+$(DEPS_DIR)/mpid_irecv.d: $(srcdir)/mpid_irecv.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_irecv.c >$(DEPS_DIR)/mpid_irecv.d
+$(DEPS_DIR)/mpidi_irecv.d: $(srcdir)/mpidi_irecv.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_irecv.c >$(DEPS_DIR)/mpidi_irecv.d
+$(DEPS_DIR)/mpid_irsend.d: $(srcdir)/mpid_irsend.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_irsend.c >$(DEPS_DIR)/mpid_irsend.d
+$(DEPS_DIR)/mpid_isend.d: $(srcdir)/mpid_isend.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_isend.c >$(DEPS_DIR)/mpid_isend.d
+$(DEPS_DIR)/mpid_issend.d: $(srcdir)/mpid_issend.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_issend.c >$(DEPS_DIR)/mpid_issend.d
+$(DEPS_DIR)/mpid_recv.d: $(srcdir)/mpid_recv.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_recv.c >$(DEPS_DIR)/mpid_recv.d
+$(DEPS_DIR)/mpid_rsend.d: $(srcdir)/mpid_rsend.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_rsend.c >$(DEPS_DIR)/mpid_rsend.d
+$(DEPS_DIR)/mpid_send.d: $(srcdir)/mpid_send.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_send.c >$(DEPS_DIR)/mpid_send.d
+$(DEPS_DIR)/mpid_ssend.d: $(srcdir)/mpid_ssend.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_ssend.c >$(DEPS_DIR)/mpid_ssend.d
+$(DEPS_DIR)/mpid_cancel_recv.d: $(srcdir)/mpid_cancel_recv.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_recv.c >$(DEPS_DIR)/mpid_cancel_recv.d
+$(DEPS_DIR)/mpid_cancel_send.d: $(srcdir)/mpid_cancel_send.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_send.c >$(DEPS_DIR)/mpid_cancel_send.d
+$(DEPS_DIR)/mpidi_callback.d: $(srcdir)/mpidi_callback.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback.c >$(DEPS_DIR)/mpidi_callback.d
+$(DEPS_DIR)/mpidi_callback_rzv.d: $(srcdir)/mpidi_callback_rzv.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_rzv.c >$(DEPS_DIR)/mpidi_callback_rzv.d
+$(DEPS_DIR)/mpidi_callback_short.d: $(srcdir)/mpidi_callback_short.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_short.c >$(DEPS_DIR)/mpidi_callback_short.d
+$(DEPS_DIR)/mpidi_callback_ssm.d: $(srcdir)/mpidi_callback_ssm.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_ssm.c >$(DEPS_DIR)/mpidi_callback_ssm.d
+$(DEPS_DIR)/mpidi_control.d: $(srcdir)/mpidi_control.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_control.c >$(DEPS_DIR)/mpidi_control.d
+$(DEPS_DIR)/mpidi_startmessage.d: $(srcdir)/mpidi_startmessage.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_startmessage.c >$(DEPS_DIR)/mpidi_startmessage.d
+$(DEPS_DIR)/mpidi_rendezvous.d: $(srcdir)/mpidi_rendezvous.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_rendezvous.c >$(DEPS_DIR)/mpidi_rendezvous.d
+$(DEPS_DIR)/mpidi_done.d: $(srcdir)/mpidi_done.c
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_done.c >$(DEPS_DIR)/mpidi_done.d
+$(DEPS_DIR)/timestamp: mpidi_isend_self.c      			mpid_irecv.c            			mpidi_irecv.c           \
+				mpid_irsend.c           			mpid_isend.c            \
+				mpid_issend.c           			mpid_recv.c             			mpid_rsend.c \
+	           			mpid_send.c             			mpid_ssend.c            		   \
+	     mpid_cancel_recv.c      			mpid_cancel_send.c      \
+				mpidi_callback.c        			mpidi_callback_rzv.c    \
+				mpidi_callback_short.c  			mpidi_callback_ssm.c    \
+				mpidi_control.c         			mpidi_startmessage.c    \
+				mpidi_rendezvous.c      			mpidi_done.c Makefile
+	rm -f $(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_isend_self.c >$(DEPS_DIR)/mpidi_isend_self.d
+	echo "include $(DEPS_DIR)/mpidi_isend_self.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_irecv.c >$(DEPS_DIR)/mpid_irecv.d
+	echo "include $(DEPS_DIR)/mpid_irecv.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_irecv.c >$(DEPS_DIR)/mpidi_irecv.d
+	echo "include $(DEPS_DIR)/mpidi_irecv.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_irsend.c >$(DEPS_DIR)/mpid_irsend.d
+	echo "include $(DEPS_DIR)/mpid_irsend.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_isend.c >$(DEPS_DIR)/mpid_isend.d
+	echo "include $(DEPS_DIR)/mpid_isend.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_issend.c >$(DEPS_DIR)/mpid_issend.d
+	echo "include $(DEPS_DIR)/mpid_issend.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_recv.c >$(DEPS_DIR)/mpid_recv.d
+	echo "include $(DEPS_DIR)/mpid_recv.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_rsend.c >$(DEPS_DIR)/mpid_rsend.d
+	echo "include $(DEPS_DIR)/mpid_rsend.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_send.c >$(DEPS_DIR)/mpid_send.d
+	echo "include $(DEPS_DIR)/mpid_send.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_ssend.c >$(DEPS_DIR)/mpid_ssend.d
+	echo "include $(DEPS_DIR)/mpid_ssend.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_recv.c >$(DEPS_DIR)/mpid_cancel_recv.d
+	echo "include $(DEPS_DIR)/mpid_cancel_recv.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_send.c >$(DEPS_DIR)/mpid_cancel_send.d
+	echo "include $(DEPS_DIR)/mpid_cancel_send.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback.c >$(DEPS_DIR)/mpidi_callback.d
+	echo "include $(DEPS_DIR)/mpidi_callback.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_rzv.c >$(DEPS_DIR)/mpidi_callback_rzv.d
+	echo "include $(DEPS_DIR)/mpidi_callback_rzv.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_short.c >$(DEPS_DIR)/mpidi_callback_short.d
+	echo "include $(DEPS_DIR)/mpidi_callback_short.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_ssm.c >$(DEPS_DIR)/mpidi_callback_ssm.d
+	echo "include $(DEPS_DIR)/mpidi_callback_ssm.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_control.c >$(DEPS_DIR)/mpidi_control.d
+	echo "include $(DEPS_DIR)/mpidi_control.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_startmessage.c >$(DEPS_DIR)/mpidi_startmessage.d
+	echo "include $(DEPS_DIR)/mpidi_startmessage.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_rendezvous.c >$(DEPS_DIR)/mpidi_rendezvous.d
+	echo "include $(DEPS_DIR)/mpidi_rendezvous.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_done.c >$(DEPS_DIR)/mpidi_done.d
+	echo "include $(DEPS_DIR)/mpidi_done.d" >>$(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
+# End of Dependencies
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+SOURCES         =  mpidi_isend_self.c mpid_irecv.c mpidi_irecv.c \
+	mpid_irsend.c mpid_isend.c mpid_issend.c mpid_recv.c mpid_rsend.c \
+	mpid_send.c mpid_ssend.c mpid_cancel_recv.c mpid_cancel_send.c \
+	mpidi_callback.c mpidi_callback_rzv.c mpidi_callback_short.c \
+	mpidi_callback_ssm.c mpidi_control.c mpidi_startmessage.c \
+	mpidi_rendezvous.c mpidi_done.c 
+ETAGS           = @ETAGS@ @ETAGSADD@
+HEADERFILES     = $(HEADERS)
+SOURCEFILES     = $(SOURCES)
+tags: TAGS
+TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
+	here=`cd ../../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
+# --------------------------------------------------------------------------
+
+FORCE_TARGET:
+

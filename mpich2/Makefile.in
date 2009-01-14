@@ -6,6 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+VERBOSE         = 1
 LIBTOOL         = @LIBTOOL@
 CREATESHLIB     = @CREATESHLIB@
 C_LINK_SHL      = @C_LINK_SHL@
@@ -20,6 +21,7 @@ exec_prefix     = @exec_prefix@
 prefix          = @prefix@
 abs_srcdir      = @abs_srcdir@
 libdir          = @libdir@
+datarootdir     = @datarootdir@
 includedir      = @includedir@
 docdir          = @docdir@
 htmldir         = @htmldir@
@@ -31,7 +33,6 @@ PMPILIBNAME     = @PMPILIBNAME@
 
 VPATH = .:@srcdir@
 DOCTEXT         = @DOCTEXT@
-PACKAGE = mpich2
 VERSION = @VERSION@
 MPICXXLIBNAME = @MPICXXLIBNAME@
 MPIFLIBNAME   = @MPIFLIBNAME@
@@ -40,19 +41,22 @@ MPIFWRAPNAME  = @FWRAPNAME@
 .SUFFIXES:
 .SUFFIXES:  .txt 
 
-${srcdir}/configure: ${srcdir}/configure.in 
+${srcdir}/src/include/mpichconf.h  ${srcdir}/configure: \
+	${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && autoheader -I ./confdb && \
-	autoconf -I ./confdb )
+	(cd ${srcdir} && /homes/chan/autoconf/2.62/bin/autoheader -I ./confdb && \
+	\
+	/homes/chan/autoconf/2.62/bin/autoconf -I ./confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && /sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/simplemake \
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
 	-configdir=. \
-	-common=/sandbox/balaji/trunk/maint/mpich2-1.0.7/maint/makedefs \
-	-docnamedefs=\$${master_top_srcdir}/maint/docnotes \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
 	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir=\$${MPILIBNAME}=ROOTDIR/lib \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
 Makefile: ${srcdir}/Makefile.in
@@ -82,7 +86,7 @@ distclean-xxx:
 	-@rm -f Makefile mpich2-doxygen examples/f77/Makefile examples/f90/Makefile examples/cxx/Makefile doc/refman/Makefile doc/installguide/Makefile doc/userguide/Makefile doc/logging/Makefile doc/design/Makefile doc/smpd/Makefile doc/windev/Makefile config.status config.log config.cache *conf.cache config.system
 	-@rm -rf autom4te*.cache
 	-@rm -f src/include/mpichconf.h
-	-@rm -f test/Makefile test/util/Makefile test/basic/Makefile test/commands/Makefile test/commands/cmdtests test/mpid/Makefile test/mpid/ch3/Makefile doc/Makefile doc/mansrc/Makefile doc/mansrc/createhtmlindex
+	-@rm -f test/Makefile test/util/Makefile test/basic/Makefile test/commands/Makefile test/commands/cmdtests test/mpid/Makefile test/mpid/ch3/Makefile test/util/timer/Makefile doc/Makefile doc/mansrc/Makefile doc/mansrc/createhtmlindex
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
 maintainer-clean:  distclean-xxx remove-genmakefiles
@@ -179,6 +183,7 @@ latexdoc:
 # Install target
 install:  install-preamble FORCE_TARGET 
 	if [ ! -d ${DESTDIR}${prefix} ] ; then $(MKDIR_P) ${DESTDIR}${prefix} ; fi
+	if [ ! -d ${DESTDIR}${datarootdir} ] ; then $(MKDIR_P) ${DESTDIR}${datarootdir} ; fi
 	if [ ! -d ${DESTDIR}${htmldir} ] ; then $(MKDIR_P) ${DESTDIR}${htmldir} ; fi
 	if [ ! -d ${DESTDIR}${mandir} ] ; then $(MKDIR_P) ${DESTDIR}${mandir} ; fi
 	if [ ! -d ${DESTDIR}${includedir} ] ; then $(MKDIR_P) ${DESTDIR}${includedir} ; fi
@@ -254,11 +259,11 @@ install:  install-preamble FORCE_TARGET
 	(cd src/pkgconfig && $(MAKE) INSTALL_STRIP_FLAG=$(INSTALL_STRIP_FLAG) install)
 	for dir in @bindings_dirs@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ;\
-		(cd $$dir && $(MAKE) INSTALL_STRIP_FLAG=$(INSTALL_STRIP_FLAG) install) ;\
+		(cd $$dir && $(MAKE) INSTALL_STRIP_FLAG=$(INSTALL_STRIP_FLAG) PACKAGE=$(PACKAGE) install) ;\
 	done
 	for dir in @other_install_dirs@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ;\
-		(cd $$dir && $(MAKE) INSTALL_STRIP_FLAG=$(INSTALL_STRIP_FLAG) install) ;\
+		(cd $$dir && $(MAKE) INSTALL_STRIP_FLAG=$(INSTALL_STRIP_FLAG) PACKAGE=$(PACKAGE) install) ;\
 	done
 
 install-strip:
@@ -371,6 +376,7 @@ cleanlibs:
 
 all-preamble:
 	@echo "Beginning make"
+	@echo "Using variables CC='@CC@' CFLAGS='@CFLAGS@' LDFLAGS='@LDFLAGS@' AR='@AR@' FC='@FC@' F90='@F90@' FFLAGS='@FFLAGS@' F90FLAGS='@F90FLAGS@' CXX='@CXX@'"
 
 # Add any final extras:
 #    1) Build the debugger interface if requested
@@ -399,6 +405,13 @@ distclean-local:
 # Version is now set in the Configure file so that we can easily include the
 # version on the configure output and to match the common practice of
 # current autoconfs
+# With PACKAGE set, all mpich2 and mpe2 documentation
+# will go to docdir=$datarootdir/doc/$PACKAGE,
+# and mpe2's exaamples_*/ and logfiles/ go to $datadir/$PACKAGE.
+# Unsetting PACKAGE enables docdir=$datarootdir/doc and mpe2 data in $datadir
+# User can do "make install PACKAGE=mpich2-xxx" enables
+# docdir=$datarootdir/doc/mpich2-xxx and mpe2 data in $datadir/mpich2-xxx.
+# PACKAGE = mpich2-$(VERSION)
 
 # We skip the mpid/mm directories because mm is no longer active
 # mpe2 is an outside project and is tested against the default
@@ -492,7 +505,7 @@ install-devdocs:
 # started first.  This step does not handle that.
 installcheck-postamble:
 	@if [ -n "@mpe_dir@" -a -d "src/@mpe_dir@" ] ; then \
-	    (cd src/@mpe_dir@ && $(MAKE) installcheck-all ; ) ; fi
+	    (cd src/@mpe_dir@ && $(MAKE) installcheck-all PACKAGE=$(PACKAGE) ; ) ; fi
 #
 # The documents are shipped as part of the release, and so should be 
 # installed from the source directory, not a VPATH build directory

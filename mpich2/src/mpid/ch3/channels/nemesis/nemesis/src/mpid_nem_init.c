@@ -29,9 +29,9 @@ char *MPID_nem_asymm_base_addr = 0;
 static int get_local_procs (int rank, int num_procs, int *num_local, int **local_procs, int *local_rank, int *num_nodes, int **node_ids);
 
 int
-MPID_nem_init (int rank, MPIDI_PG_t *pg_p)
+MPID_nem_init (int rank, MPIDI_PG_t *pg_p, int has_parent)
 {
-    return  _MPID_nem_init (rank, pg_p, 0);
+    return  _MPID_nem_init (rank, pg_p, 0, has_parent);
 }
 
 #undef FUNCNAME
@@ -39,7 +39,7 @@ MPID_nem_init (int rank, MPIDI_PG_t *pg_p)
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-_MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
+_MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart, int has_parent)
 {
     int    mpi_errno       = MPI_SUCCESS;
     int    pmi_errno;
@@ -84,7 +84,6 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 
     mpi_errno = get_local_procs (pg_rank, num_procs, &num_local, &local_procs, &local_rank, &num_nodes, &node_ids);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-
 
 #ifdef MEM_REGION_IN_HEAP
     MPIU_CHKPMEM_MALLOC (MPID_nem_mem_region_ptr, MPID_nem_mem_region_t *, sizeof(MPID_nem_mem_region_t), mpi_errno, "mem_region");
@@ -393,69 +392,9 @@ _MPID_nem_init (int pg_rank, MPIDI_PG_t *pg_p, int ckpt_restart)
 int
 get_local_procs (int global_rank, int num_global, int *num_local_p, int **local_procs_p, int *local_rank_p, int *num_nodes_p, int **node_ids_p)
 {
-#if defined (ENABLED_NO_LOCAL)
-    /* used for debugging only */
-    /* return an array as if there are no other processes on this processor */
     int mpi_errno = MPI_SUCCESS;
-    int i;
-    MPIU_CHKPMEM_DECL(2);
-
-    *num_local_p = 1;
-    *local_rank_p = 0;
-    *num_nodes_p = num_global;
-
-    MPIU_CHKPMEM_MALLOC (*local_procs_p, int *, *num_local_p * sizeof (int), mpi_errno, "local proc array");
-    **local_procs_p = global_rank;
-
-    MPIU_CHKPMEM_MALLOC (*node_ids_p, int *, num_global * sizeof (int), mpi_errno, "node_ids array");
-    for (i = 0; i < num_global; ++i)
-        (*node_ids_p)[i] = i;
-    
-    MPIU_CHKPMEM_COMMIT();
- fn_exit:
-    return mpi_errno;
- fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    MPIU_CHKPMEM_REAP();
-    goto fn_exit;
-    /* --END ERROR HANDLING-- */
-
-#elif 0 /* PMI_Get_clique_(size)|(ranks) don't work with mpd */
-#error PMI_Get_clique doesnt work with mpd
-    int mpi_errno = MPI_SUCCESS;
-    int pmi_errno;
-    int *lrank_p;
-    MPIU_CHKPMEM_DECL(1);
-
-    /* get an array of all processes on this node */
-    pmi_errno = PMI_Get_clique_size (num_local_p);
-    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_get_clique_size", "**pmi_get_clique_size %d", pmi_errno);
-    
-    MPIU_CHKPMEM_MALLOC (*local_procs_p, int *, *num_local_p * sizeof (int), mpi_errno, "local proc array");
-
-    pmi_errno = PMI_Get_clique_ranks (*local_procs_p, *num_local_p);
-    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_get_clique_ranks", "**pmi_get_clique_ranks %d", pmi_errno);
-
-    /* make sure it's sorted  so that ranks are consistent between processes */
-    qsort (*local_procs_p, *num_local_p, sizeof (**local_procs_p), intcompar);
-
-    /* find our local rank */
-    lrank_p = bsearch (&global_rank, *local_procs_p, *num_local_p, sizeof (**local_procs_p), intcompar);
-    MPIU_ERR_CHKANDJUMP (lrank_p == NULL, mpi_errno, MPI_ERR_OTHER, "**not_in_local_ranks");
-    *local_rank_p = lrank_p - *local_procs_p;
-
-    MPIU_CHKPMEM_COMMIT();
- fn_exit:
-    return mpi_errno;
- fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    MPIU_CHKPMEM_REAP();
-    goto fn_exit;
-    /* --END ERROR HANDLING-- */
-    
-#else
-
-    int mpi_errno = MPI_SUCCESS;
+    int ret;
+    int val;
     int pmi_errno;
     int *procs;
     int i, j;
@@ -466,8 +405,37 @@ get_local_procs (int global_rank, int num_global, int *num_local_p, int **local_
     int *node_ids;
     int num_nodes;
     int num_local;
+    int no_local = 0;
+    int odd_even_cliques = 0;
     MPIU_CHKPMEM_DECL(2);
     MPIU_CHKLMEM_DECL(2);
+
+    /* Used for debugging only.  This disables communication over
+       shared memory */
+#ifdef ENABLED_NO_LOCAL
+    no_local = 1;
+#else
+    ret = MPIU_GetEnvBool("MPICH_NO_LOCAL", &val);
+    if (ret == 1 && val)
+        no_local = 1;
+#endif
+
+    /* Used for debugging on a single machine: Odd procs on a node are
+       seen as local to each other, and even procs on a node are seen
+       as local to each other. */
+#ifdef ENABLED_ODD_EVEN_CLIQUES
+    odd_even_cliques = 1;
+#else
+    ret = MPIU_GetEnvBool("MPICH_ODD_EVEN_CLIQUES", &val);
+    if (ret == 1 && val)
+        odd_even_cliques = 1;
+#endif
+
+    if (no_local)
+    {
+        mpi_errno = get_local_procs_nolocal(global_rank, num_global, num_local_p, local_procs_p, local_rank_p, num_nodes_p, node_ids_p);
+        goto fn_exit;
+    }
 
     mpi_errno = MPIDI_PG_GetConnKVSname (&kvs_name);
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
@@ -521,13 +489,7 @@ get_local_procs (int global_rank, int num_global, int *num_local_p, int **local_
 	}
 
 	if (!strncmp (MPID_nem_hostname, node_names[num_nodes], MPID_NEM_MAX_KEY_VAL_LEN)
-#if defined (ENABLED_ODD_EVEN_CLIQUES)
-            /* Used for debugging on a single machine: Odd procs on a
-               node are seen as local to each other, and even procs on
-               a node are seen as local to each other. */
-            && ((global_rank & 0x1) == (i & 0x1))
-#endif
-            )
+            && (!odd_even_cliques || (global_rank & 0x1) == (i & 0x1)))
 	{
 	    if (i == global_rank)
 		*local_rank_p = num_local;
@@ -547,15 +509,15 @@ get_local_procs (int global_rank, int num_global, int *num_local_p, int **local_
         node_ids[i] = j;
     }
 
-#if defined (ENABLED_ODD_EVEN_CLIQUES)
-    /* create new processes for all odd numbered processes */
-    /* this may leave nodes ids with no processes assigned to them, but I think this is OK*/
-    for (i = 0; i < num_global; ++i)
-        if (i & 0x1)
-            node_ids[i] += num_nodes;
-    num_nodes *= 2;
-#endif        
-
+    if (odd_even_cliques)
+    {
+        /* create new processes for all odd numbered processes */
+        /* this may leave nodes ids with no processes assigned to them, but I think this is OK*/
+        for (i = 0; i < num_global; ++i)
+            if (i & 0x1)
+                node_ids[i] += num_nodes;
+        num_nodes *= 2;
+    }
 
     MPIU_Assert (num_local > 0); /* there's always at least one process */
 
@@ -582,8 +544,43 @@ get_local_procs (int global_rank, int num_global, int *num_local_p, int **local_
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
     /* --END ERROR HANDLING-- */
-#endif
 }
+
+#undef FUNCNAME
+#define FUNCNAME get_local_procs_nolocal
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int
+get_local_procs_nolocal(int global_rank, int num_global, int *num_local_p, int **local_procs_p, int *local_rank_p, int *num_nodes_p, int **node_ids_p)
+{
+    /* used for debugging only */
+    /* return an array as if there are no other processes on this processor */
+    int mpi_errno = MPI_SUCCESS;
+    int i;
+    MPIU_CHKPMEM_DECL(2);
+
+    *num_local_p = 1;
+    *local_rank_p = 0;
+    *num_nodes_p = num_global;
+
+    MPIU_CHKPMEM_MALLOC (*local_procs_p, int *, *num_local_p * sizeof (int), mpi_errno, "local proc array");
+    **local_procs_p = global_rank;
+
+    MPIU_CHKPMEM_MALLOC (*node_ids_p, int *, num_global * sizeof (int), mpi_errno, "node_ids array");
+    for (i = 0; i < num_global; ++i)
+        (*node_ids_p)[i] = i;
+
+    MPIU_CHKPMEM_COMMIT();
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+    MPIU_CHKPMEM_REAP();
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
+
+}
+
 
 /* MPID_nem_vc_init initialize nemesis' part of the vc */
 #undef FUNCNAME
@@ -591,7 +588,7 @@ get_local_procs (int global_rank, int num_global, int *num_local_p, int **local_
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
+MPID_nem_vc_init (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
@@ -668,8 +665,9 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
         vc_ch->iStartContigMsg = NULL;
         vc_ch->iSendContig     = NULL;
 
-        mpi_errno = MPID_nem_net_module_vc_init (vc, business_card);
-	if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        /*mpi_errno = MPID_nem_net_module_vc_init (vc, business_card);*/
+        mpi_errno = MPID_nem_net_module_vc_init (vc);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
 /* FIXME: DARIUS -- enable this assert once these functions are implemented */
 /*         /\* iStartContigMsg iSendContig and sendNoncontig_fn must */
@@ -688,7 +686,7 @@ MPID_nem_vc_init (MPIDI_VC_t *vc, const char *business_card)
        to NULL */
     vc_ch->sendq_head = NULL;
 
-     MPIU_CHKPMEM_COMMIT();
+    MPIU_CHKPMEM_COMMIT();
 fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_VC_INIT);
     return mpi_errno;

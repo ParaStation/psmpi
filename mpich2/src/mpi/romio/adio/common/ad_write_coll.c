@@ -156,7 +156,9 @@ void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
 
     ADIOI_Calc_file_domains(st_offsets, end_offsets, nprocs,
 			    nprocs_for_coll, &min_st_offset,
-			    &fd_start, &fd_end, &fd_size);   
+			    &fd_start, &fd_end, 
+			    fd->hints->min_fdomain_size, &fd_size,
+			    fd->hints->striping_unit);   
 
 
 /* calculate what portions of the access requests of this process are
@@ -558,7 +560,7 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
     MPI_Request *requests, *send_req;
     MPI_Datatype *recv_types;
     MPI_Status *statuses, status;
-    int *srt_len, sum, sum_recv;
+    int *srt_len, sum;
     ADIO_Offset *srt_off;
     static char myname[] = "ADIOI_W_EXCHANGE_DATA";
 
@@ -617,26 +619,27 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
         }
     ADIOI_Free(tmp_len);
 
-/* check if there are any holes */
+    /* check if there are any holes. If yes, must do read-modify-write.
+     * holes can be in three places.  'middle' is what you'd expect: the
+     * processes are operating on noncontigous data.  But holes can also show
+     * up at the beginning or end of the file domain (see John Bent ROMIO REQ
+     * #835). Missing these holes would result in us writing more data than
+     * recieved by everyone else. */
+
     *hole = 0;
-    for (i=0; i<sum-1; i++)
-	if (srt_off[i]+srt_len[i] < srt_off[i+1]) {
-	    *hole = 1;
-	    break;
-	}
-    /* In some cases (see John Bent ROMIO REQ # 835), an odd interaction
-     * between aggregation, nominally contiguous regions, and cb_buffer_size
-     * should be handled with a read-modify-write (otherwise we will write out
-     * more data than we receive from everyone else (inclusive), so override
-     * hole detection
-     */
-    if (*hole == 0) {
-        sum_recv=0;
-        for (i=0; i<nprocs; i++) {
-	   sum_recv += recv_size[i];
-	   sum_recv += partial_recv[i];
+    if (off != srt_off[0]) /* hole at the front */
+        *hole = 1;
+    else { /* coalesce the sorted offset-length pairs */
+        for (i=1; i<sum; i++) {
+            if (srt_off[i] <= srt_off[0] + srt_len[0]) {
+		int new_len = srt_off[i] + srt_len[i] - srt_off[0];
+		if (new_len > srt_len[0]) srt_len[0] = new_len;
+	    }
+            else
+                break;
         }
-        if (size > sum_recv) *hole = 1;
+        if (i < sum || size != srt_len[0]) /* hole in middle or end */
+            *hole = 1;
     }
 
     ADIOI_Free(srt_off);

@@ -8,6 +8,7 @@ $abs_mpich2srcdir = "@abs_mpich2srcdir@";
 #
 # Set some defaults
 $includedir = ".";
+$skipAction = 0;
 $makefilebase = "Makefile.base";
 $ranliblib    = 1;
 $useinclude = 0;     # set to 1 to make the Makefiles refer to a single
@@ -37,6 +38,9 @@ $gSubdirSMVarsSeen = "";      # Set to contain the names of variables in
                               # Makefile.sm that override variables for 
                               # a subdirectory
 @subdirsSMVars = ();          # Stack used with gSubdirSMVarsSeen
+
+$smrootdir = "";              # Location of simplemake - this will override 
+                              # the automatic setting if used.
 
 # makeBlockSep is used to deliniate blocks of code in the generated makefile
 # to enhance readability
@@ -107,17 +111,37 @@ $quietLine = "@";       # set to "" to make the clean targets echo commands
 $doc_heading = "MPI";
 #%doc_extra   = ();  # for kinds html, man, latex
 #
-$fixup_for_timestamps = 1; # make is broken
+# Set to 1 if make doesn't handle time stamps properly (some makes, including
+# some versions of gnumake, improperly and inconsistently 
+# handle comparisons of less than a second 
 $fixup_for_timestamps = 0;
-# FIXME:
+# Set a default sleepTime.
+$sleepTime = 1;
+$useSleepFast = 1;
 # The sleep amount should be parameterized.  One developer at IBM 
 # needed 10 seconds, not 1, because of the variation in file system times
-# between the local machine and the file server.  Perhaps something like
-# \@INTERDIR_SLEEP\@ or 
-# if [ -z "$(INTERDIR_SLEEP)" ] ; then INTERDIR_SLEEP=1 ; fi ; sleep $(INTERDIR_SLEEP)
-$SleepSlow = "sleep 1";
+# between the local machine and the file server. The environment
+# variable INTERDIR_SLEEP , for inter-directory sleep, sets both the
+# time and selects the use of slow sleep
+
+if (defined($ENV{'INTERDIR_SLEEP'})) {
+    $sleepTime = $ENV{'INTERDIR_SLEEP'};
+    $useSleepFast = 0;
+    $fixup_for_timestamps = 1; 
+}
+
+$SleepSlow = "sleep $sleepTime";
 $SleepFast = "perl -e \'\$\$now=time;\$\$now-=10;utime \$\$now, \$\$now, \"LIB\";\'";
-$Sleep = $SleepFast;
+
+# Set the default (it can be overridden by the command line)
+if ($useSleepFast) {
+    $Sleep = $SleepFast;
+} 
+else {
+    $Sleep = $SleepSlow;
+}
+
+
 #
 # Output File end-of-line character
 $newline = "\n";
@@ -143,6 +167,8 @@ $gDebugWhy = 0;             # Provide an explanation of why certain
                             # targets are created
 $gDebugSubdirVar = 0;       # Track changes to internal variables that 
                             # apply to a subdirectory
+$debugConfigHeaderDepend = 0;    # Print the config header targets added to
+                                 # makefile.in's
 # Allow us to set the debug variables from the environment:
 if (defined($ENV{"DEBUG"})) { $debug = 1; }
 if (defined($ENV{"DEBUG_DIRS"})) { $debug_dirs = 1; }
@@ -242,6 +268,22 @@ CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 	    'cpp:lo' => 'CXX_SHL         = @CXX_SHL@
 CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 	   );
+
+%extstring = ( 'c:o'    => '  CC              $<',
+	       'c:'     => '  CC              $<',
+	       'f:o'    => '  FC              $<',
+	       'cxx:o'  => '  CXX             $<',
+	       'cpp:o'  => '  CXX             $<',
+	       'cs:o'   => '  CS              $<',
+	       's:o'    => '  AS              $<',
+	       'f90:o'  => '  F90             $<',
+	       'c:lo'   => '  CC              $<',
+	       'f:lo'   => '  FC              $<',
+	       'f90:lo' => '  F90             $<',
+	       'cxx:lo' => '  CXX             $<',
+	       'cpp:lo' => '  CPP             $<',
+    );
+
 #
 # Rules to build programs (.o:)
 # 
@@ -295,6 +337,9 @@ $includedir_name =           "includedir      = \@includedir\@";
 $mandir_name =               "mandir          = \@mandir\@";
 $htmldir_name =              "htmldir         = \@htmldir\@";
 $docdir_name =               "docdir          = \@docdir\@";
+# datarootdir is new in autoconf 2.60, and is needed for other
+# dirs like mandir (much as prefix and execprefix are also needed)
+$datarootdir_name =          "datarootdir     = \@datarootdir\@";
 $sysconfdir_name =           "sysconfdir      = \@sysconfdir\@";
 $pkgconfigdir_name =         "pkgconfigdir    = \@libdir\@/pkgconfig";
 $builddir_name =             "builddir        = \@builddir\@";
@@ -318,6 +363,7 @@ $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 	     'builddir'   => $builddir_name,
 	     'abs_builddir' => $abs_builddir_name,
 	     'mandir'     => $mandir_name,
+	     'datarootdir' => $datarootdir_name,
 	     'htmldir'    => $htmldir_name,
 	     'docdir'     => $docdir_name,
 	     'sysconfdir' => $sysconfdir_name,
@@ -363,9 +409,9 @@ $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 # These give the directories that autoconf will require for the 
 %required_dirs = ( 'libdir'      => 'exec_prefix prefix',
 		   'bindir'      => 'exec_prefix prefix',
-		   'mandir'      => 'prefix',
-		   'htmldir'     => 'prefix',
-		   'docdir'      => 'prefix',
+		   'mandir'      => 'prefix datarootdir',
+		   'htmldir'     => 'prefix datarootdir',
+		   'docdir'      => 'prefix datarootdir',
 		   'includedir'  => 'prefix',
  		   'exec_prefix' => 'prefix',
 		   'sysconfdir'  => 'prefix',
@@ -416,6 +462,26 @@ $distcleanfiles = "";
                          # simplemake dirs
 
 # ---------------------------------------------------------------------------
+# Global variables that describe extensions
+#   Each extension has a name, related to the command-field in the
+#   Makefile.sm, and must be added to this array
+@KnownActions = ();
+# Load any extension definitions, in this order
+&SMReadDefnFiles( "maint/smlib" );
+# If we're not in the root of the source directory, then 
+# also read that directory.  We can use stat to check the inode numbers of the
+# directories; if they are the same, the directories are the same.
+# (Only read if there is a local maint/smlib directory)
+@d1 = stat( "maint/smlib" );
+@d2 = stat( "$abs_mpich2srcdir/maint/smlib" );
+if ( (! -d "maint/smlib") || $d1[1] != $d2[1]) {
+    &SMReadDefnFiles( "$abs_mpich2srcdir/maint/smlib" );
+}
+if (defined($ENV{"SMDIR"})) {
+    &SMReadDefnFiles( $ENV{"SMDIR"} );
+}
+&SMReadDefnFiles( "." );
+# ---------------------------------------------------------------------------
 @keepargs = ();    # Used to recreate simplemake invocation for make target
 $foundFile = "no";
 foreach $_ (@ARGV) {
@@ -426,6 +492,13 @@ foreach $_ (@ARGV) {
     elsif (/-libdir=([^=]*)=(.*)$/) {
 	print "libdir{$1} = $2$newline" if (!$quiet);
 	$libdir{$1}  = "$2/";
+	# Replace with an easier-to-preserve version
+	# FIXME: Replace a single $ with double $$ in $1?
+	my $lname = $1;
+	my $rname = $2;
+	# Replace a single $ with a double $ in lname *only*
+	$lname =~ s/\$/\$\$/;
+	$keepargs[$#keepargs] = "-libdir=\'$lname=$rname\'";
     }
     elsif (/-common=(.*)$/) {
 	$filename = $1;
@@ -437,7 +510,7 @@ foreach $_ (@ARGV) {
 	close(CD);
 	# Replace this argument with an updated version
 	if ($filename =~ /^[^\/]/) {
-  	    $keepargs[$#keepargs] = "-common=$curpwd/$filename";
+  	    $keepargs[$#keepargs] = "-common=\${master_top_srcdir}/$filename";
 	}
     }
     elsif (/-autoconf=(.*)$/) {
@@ -452,6 +525,18 @@ foreach $_ (@ARGV) {
 	$maint_perf_targets = 0;
 	$do_docs = 0;
 	# Use the robust sleep, not the fast perl version
+	$useSleepFast = 0;
+	$Sleep = $SleepSlow;
+	# FIXME: Sleep code only used if fixup set to 1
+	#$fixup_for_timestamps = 1; # make is broken
+    }
+    elsif (/-interdirsleep/) {
+	$useSleepFast = 0;
+	$fixup_for_timestamps = 1;
+	if (/-interdirsleep=(\d*)/) {
+	    $sleepTime = $1;
+	    $SleepSlow = "sleep $sleepTime";
+	}
 	$Sleep = $SleepSlow;
     }
     elsif (/-perftargets/) {
@@ -526,6 +611,7 @@ foreach $_ (@ARGV) {
     elsif (/-docheading=(.$)/) { $doc_heading = $1; }
     elsif (/-docdestdir=(.*)/) { $globaldocdir = $1; }	   
     elsif (/-docnamedefs=(.*)/) { $doc_namedefs = $1; }	   
+    elsif (/-smroot=(.*)/) { $smrootdir = $1; $smdir = $1; }
     elsif (/-help/) {
 	&printHelp;
 	exit 0;
@@ -536,6 +622,7 @@ foreach $_ (@ARGV) {
 	&ProcessFile ( $_ );
     }
 }
+
 
 # If there is no argument and the default filename, then process it
 print "found file = $foundFile\n" if $debug;
@@ -600,6 +687,35 @@ sub ReadMfile {
 	    print STDERR "File $curdir$Mfile contains a comment line beginning with a tab\nat line $linecount.  Some make programs will fail if this comment is part\nof a command script in a target\n";
 	}
 
+	# Look for commands that are defined by extensions.  These are
+	# of the form
+	#    name_COMMAND
+	# where COMMAND is all uppercase.  "name" may itself be of the form
+        #    name_subcommand
+        # an example is
+        #   libfoo_la_SOURCES
+        # where the command is SOURCES and the subcommand is la
+	# We allow the names to include make variables and autoconf 
+	# variables
+	if (/^([@\${}\(\)\w-]+)_([A-Z]+)\s*=(.*)/) {
+	    my $name    = $1;
+	    my $command = $2;
+	    my $value   = $3;
+	    # See if this is a known extension command
+	    my $fcnName = "Action" . $command;
+	    if (defined(&$fcnName)) {
+		# This is an extension.  Invoke its function
+		print "Executing $fcnName for $_\n" if $debug;
+		$skipAction = 0;
+		&$fcnName( $_ );
+		$origline = "";
+		# skip the processing of this line for the default commands
+		if (!defined($skipAction) || $skipAction == 1) {
+		    next;
+		}
+	    }
+	}
+
         # Look for reserved forms:
         #lib([\w-]*)_SOURCES = names
         #lib([\w-]*)_DIR = name
@@ -613,7 +729,7 @@ sub ReadMfile {
 	#.SUFFIXES:value
 	# Using the _a_ in the library lines is necessary to distinguish
 	# between libraries and programs that start with lib...
-        if (/^lib([@\${}\(\)\w-]*)_a_SOURCES\s*=\s*(.*)$/) {
+        if (/^lib([@\${}\(\)\w-]+)_a_SOURCES\s*=\s*(.*)$/) {
             $libname   = $1;
             $libsource = $2;
             $libraries{ $libname } = $libsource;
@@ -647,7 +763,7 @@ sub ReadMfile {
 	# In some cases, there is a library that should only be built as
 	# a non-shared library (e.g., built with Fortran)
         elsif (/^lib([@\${}\(\)\w-]*)_a_NOSHARED\s*$/) {
-	    print "Adding $1 as not-shared\n";
+	    print "Adding $1 as not-shared\n" if $debug;
 	    $libNotShared{$1} = 1;
 	}
 	# Using the _so_ in the library lines is necessary to distinguish
@@ -690,7 +806,7 @@ sub ReadMfile {
 	    # to modify a library in a different directory
 	    # Add a trailing / because this way we can unconditionally
 	    # specify the library directory
-	    print "Setting libdir{$1} to $2/\n";
+	    print "Setting libdir{$1} to $2/\n" if $debug;
             $libdir{$1}  = "$2/";
         }
 	elsif (/^install_local_DIR\s*=\s*(.*)\s*$/) {
@@ -996,7 +1112,8 @@ sub WriteMfile {
 
         &DefaultRules;
     }
-    
+
+    &SMInvokeAction( "OutputHeader" );
 
     # Generate the all-redirect: target (libraries, programs, and 
     # anything specified by all-local)
@@ -1011,7 +1128,7 @@ sub WriteMfile {
 	    &CreateOptInstallSHLibs( 'SHLIB' );
 	}
 	if (defined($optinstall_files{'DLLLIB'})) {
-	    print STDOUT "DLLLIB target in $curdir\n";
+	    print STDOUT "DLLLIB target in $curdir\n" if $debug;
 	    &CreateOptInstallSHLibs( 'DLLLIB' );
 	}
     }
@@ -1101,6 +1218,8 @@ sub DefaultVariables {
     # SHELL must be in uppercase for Make to use it as the shell to
     # execute commands with.
     printMakeVariable( FD, "SHELL", "\@SHELL\@" );
+
+    printMakeVariable( FD, "VERBOSE", "1" );
 
     # Library definitions
     if (scalar(%libraries)) {
@@ -1227,11 +1346,16 @@ sub DefaultVariables {
 	if (defined($extdef{$extkey})) {
 	    foreach $line (split(/\n/,$extdef{$extkey})) {
 		# Check for an override
-		if ($line =~ /^(\w+)\s*=/) {
+		if ($line =~ /^(\w+)(\s*)=(.*)/) {
 		    my $var = $1;
+		    my $spacing = $2;
+		    my $value = $3;
 		    if (defined($makevars{$var})) { 
 			print "Using override definition of $var\n" if $debug;
 			next; 
+		    }
+		    if (defined($PrependVar{$var})) {
+			$line = "$var$spacing= " . $PrependVar{$var} . " $value";
 		    }
 		}
 		print FD "$line$newline";
@@ -1340,12 +1464,34 @@ sub DefaultRules {
 	if ($found_profilelib) {
 	    # Use a special rule when building the non-profile-lib version
 	    $extkey = "$ext:o";
-	    print FD "\t$extrules_with_profile{$extkey}$newline";
+	    # COMMAND PRINTING
+	    if (defined($extstring{$extkey})) {
+		print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
+		print FD "\t  echo \"$extstring{$extkey}\" ; \\$newline";
+		print FD "\telse \\$newline";
+		print FD "\t  echo $extrules_with_profile{$extkey} ; \\$newline";
+		print FD "\tfi$newline";
+		print FD "\t\@$extrules_with_profile{$extkey}$newline";
+	    }
+	    else {
+		print FD "\t$extrules_with_profile{$extkey}$newline";
+	    }	    
 	}
 	else {
 	    $extkey = "$ext:o";
 	    if (defined($extrules{$extkey})) {
-		print FD "\t$extrules{$extkey}$newline";
+		# COMMAND PRINTING
+		if (defined($extstring{$extkey})) {
+		    print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
+		    print FD "\t  echo \"$extstring{$extkey}\" ; \\$newline";
+		    print FD "\telse \\$newline";
+		    print FD "\t  echo $extrules{$extkey} ; \\$newline";
+		    print FD "\tfi$newline";
+		    print FD "\t\@$extrules{$extkey}$newline";
+		}
+		else {
+		    print FD "\t$extrules{$extkey}$newline";
+		}
 	    }
 	    else {
 		print FD $newline;
@@ -1355,7 +1501,22 @@ sub DefaultRules {
 	    $extkey = "$ext:lo";
 	    print FD ".$ext.lo:$newline";
 	    if (defined($extrules{$extkey})) {
-		print FD "\t$extrules{$extkey}$newline";
+		# COMMAND PRINTING
+		if (defined($extstring{$extkey})) {
+		    # the lo rules have newlines in them, so we need to escape them,
+		    # as well as remove any @ prefixes
+		    my $escaped_rule = $extrules{$extkey};
+		    $escaped_rule =~ s/$newline(\t+)\@*/ ; \\$newline$1echo /g;
+		    print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
+		    print FD "\t  echo \"$extstring{$extkey}\" ; \\$newline";
+		    print FD "\telse \\$newline";
+		    print FD "\t  echo $escaped_rule ; \\$newline";
+		    print FD "\tfi$newline";
+		    print FD "\t\@$extrules{$extkey}$newline";
+		}
+		else {
+		    print FD "\t$extrules{$extkey}$newline";
+		}
 	    }
 	}
 	# For maintainers, make it easy to create the asm versions
@@ -1380,7 +1541,18 @@ sub DefaultRules {
 	# when desired.
 	if (defined($extrules{$extkey})) {
 	    print FD ".$extkey$newline";
-	    print FD "\t$extrules{$extkey}$newline";
+	    # COMMAND PRINTING
+	    if (defined($extstring{$extkey})) {
+		print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
+		print FD "\t  echo \"$extstring{$extkey}\" ; \\$newline";
+		print FD "\telse \\$newline";
+		print FD "\t  echo $extrules{$extkey} ; \\$newline";
+		print FD "\tfi$newline";
+		print FD "\t\@$extrules{$extkey}$newline";
+	    }
+	    else {
+		print FD "\t$extrules{$extkey}$newline";
+	    }
 	}
     }
     
@@ -1443,7 +1615,14 @@ sub DefaultRules {
 	close (AFD);
 	#
 	print FD "$newline";
-	&print_make_longline( FD,  "\${srcdir}/configure: \${srcdir}/configure.in $autoconf_deps" );
+	$header_depend="";
+	if ($configure_has_config_headers ne "no") {
+	    $header_depend="\${srcdir}/$configure_has_config_headers ";
+	    if ($debugConfigHeaderDepend) {
+		print "Adding $header_depend to configure target\n";
+	    }
+	}
+	&print_make_longline( FD,  "$header_depend \${srcdir}/configure: \${srcdir}/configure.in $autoconf_deps" );
 	&print_make_setpos( 8 );
 	&FindWorkingAutoconf ;
 	# Use autoheader only if AC_CONFIG_HEADER is in the configure file
@@ -1485,7 +1664,8 @@ sub DefaultRules {
 	    if ($curarg =~ /^-smvar_doc_attop=0/) { next; }
 	    # Must handle $ specially
 	    $tmparg = $curarg;
-	    $tmparg =~ s/\$/\\\$\$/;
+#	    # FIXME: Should this be s/../g (change all instances)?
+#	    $tmparg =~ s/\$/\\\$\$/;
 	    if ($tmparg =~ /\s/) {
 		print FD "\t\"$tmparg\" \\$newline";
 	    }
@@ -1733,6 +1913,10 @@ sub ClearVars {
     # every file.
     #$configure_has_config_headers = "no";
     %simplemake_vars = ();
+
+    # For any extensions, clear their global variables.
+    &SMInvokeAction( "Clear" );
+
 }	
 
 #
@@ -1761,6 +1945,10 @@ sub ExpandMakeVars {
 	    $processed .= $before;
 	    $line = $makevars{$mvar} . $after;
 	}
+#	elsif (defined($dirdefs{$mvar})) {
+#	    $processed .= $before;
+#	    $line = $dirdefs{$mvar} . $after;
+#	}
 	else {
 	    $processed .= $before . "\$$lb$mvar$rb";
 	    $line      = $after;
@@ -2267,7 +2455,7 @@ sub TargetAll {
 	    print FD "\tfi\n";
 	}
 	if (defined($optinstall_files{'DLLLIB'})) {
-	    print STDOUT "in optinstall_files dlllib\n";
+	    #print STDOUT "in optinstall_files dlllib\n";
 	    # Conditionally create the dynamically loadable shared libraries.
 	    print FD "\t\@if [ \"\@BUILD_DLLS\@\" = \"yes\" ] ; then \\\n";
 	    foreach $libspec (split(/\s+/,$optinstall_files{'DLLLIB'})) {
@@ -2523,6 +2711,9 @@ sub TargetClean {
 	}
     }
 
+    # For any extensions, handle the clean actions
+    &SMInvokeAction( "OutputClean", FD );
+
     # Finally, execute make clean in any subdirs
     &RecursiveOp( "clean" );
 
@@ -2579,6 +2770,10 @@ sub TargetClean {
 	    print FD "\t-${quietLine}rm -f $otherfiles$newline";
 	}
     }
+    
+    # For any extensions, handle the clean actions
+    &SMInvokeAction( "OutputDistClean", FD );
+
     # Another difficulty are the optional directories.  For example,
     # a SUBDIRS = foo \@bar\@ 
     # line (without the \, included since the simplemake.in file is
@@ -2604,6 +2799,10 @@ sub TargetClean {
 	}
 	print FD " distclean-xxx remove-genmakefiles";
 	print FD "$newline";
+
+	# For any extensions, handle the clean actions
+	&SMInvokeAction( "OutputMaintainerClean", FD );
+
 	&RecursiveOp( "maintainer-clean" );
 	# Remove the file that simplemake creates
 	$otherMakefiles .= " $output_name";
@@ -2707,6 +2906,12 @@ sub LibraryBuild {
 	if ($dolib_member) {
 	    &print_make_line( FD, "${libloc}lib$libname.$libext($obj): $obj" );
 	    &print_make_endline( FD );
+	    # COMMAND PRINTING
+	    print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
+	    print FD "\t  echo \"  AR cr ${libloc}lib$libname.$libext \$?\" ; \\$newline";
+	    print FD "\telse \\$newline";
+	    print FD "\t  echo \${AR} cr ${libloc}lib$libname.$libext \$? ; \\$newline";
+	    print FD "\tfi$newline";
 	    print FD "\t\${AR} cr ${libloc}lib$libname.$libext \$?$newline";
 	}
 	else {
@@ -2715,9 +2920,15 @@ sub LibraryBuild {
 	    }
 	}
     }
+    &SMInvokeAction( "OutputLibDependencies", $lib, $libloc, $memext );
     if (!$dolib_member) {
         &print_make_endline( FD );
-        print FD "\t\${AR} cr ${libloc}lib$libname.$libext \$?$newline";
+	print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
+	print FD "\t  echo \"  AR cr ${libloc}lib$libname.$libext \$?\" ; \\$newline";
+	print FD "\telse \\$newline";
+	print FD "\t  echo \${AR} cr ${libloc}lib$libname.$libext \$? ; \\$newline";
+	print FD "\tfi$newline";
+        print FD "\t\@\${AR} cr ${libloc}lib$libname.$libext \$?$newline";
     }
 }
 
@@ -2730,6 +2941,8 @@ sub TargetLibraries {
 
 	&LibraryTimestampPrefix( $lib, $libloc );
 	&LibraryBuild( $lib, $libloc, $sourcefiles, "a", "o" );
+	# Add any additional actions for this library.
+	&SMInvokeAction( "OutputLib", $lib, $libloc );
         if ($ranliblib) { 
 	    print FD "\t\${RANLIB} ${libloc}lib$lib.a$newline"; 
 	}
@@ -2749,14 +2962,17 @@ sub TargetLibraries {
 # LibraryTimestampClean - Add clean commands for library timestamps
 sub LibraryTimestampTarget {
     my ($fulllibname,$libstamp) = @_;
-    if ($fulllibname =~ /^\.\./ && !$fixup_for_timestamps) {
+    my $expandedFullName = &ExpandMakeVars( $fulllibname );
+    if ($expandedFullName =~ /^\.\./ && !$fixup_for_timestamps) {
 	$altalltargets{$fulllibname} = $libstamp;
     }
 }
 sub LibraryTimestampPrefix {
     my ($lib, $libloc) = @_;
 
-    if ($libloc =~ /^\.\./) {
+    my $expandedlibloc = &ExpandMakeVars( $libloc );
+
+    if ($expandedlibloc =~ /^\.\./) {
 	if (!$fixup_for_timestamps) {
 	    my $num = "";
 	    if (defined($libnum{$lib})) {
@@ -2768,7 +2984,8 @@ sub LibraryTimestampPrefix {
 }
 sub LibraryTimestampFix {
     my ($lib,$libloc) = @_;
-    if ($libloc =~ /^\.\./) {
+    my $expandedlibloc = &ExpandMakeVars( $libloc );
+    if ($expandedlibloc =~ /^\.\./) {
 	if ($fixup_for_timestamps) {
 	    my $SleepText = $Sleep;
 	    my $fulllibname = $libloc . "lib$lib.a";
@@ -2840,9 +3057,21 @@ sub TargetProfileLibraries {
 	&print_make_endline( FD );
 	if ($found_source_files) {
 	    # Add these files as objects to the archive
-	    print FD "\t\${AR} cr ${libloc}lib$proflib_name.a \$?$newline";
+	    # COMMAND PRINTING
+	    print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
+	    print FD "\t  echo \"  AR cr ${libloc}lib$proflib_name.a \$?\" ; \\$newline";
+	    print FD "\telse \\$newline";
+	    print FD "\t  echo \${AR} cr ${libloc}lib$proflib_name.a \$? ; \\$newline";
+	    print FD "\tfi$newline";
+	    print FD "\t\@\${AR} cr ${libloc}lib$proflib_name.a \$?$newline";
 	    if ($ranliblib) { 
-		print FD "\t\${RANLIB} ${libloc}lib$proflib_name.a$newline"; 
+		# COMMAND PRINTING
+		print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
+		print FD "\t  echo \"  RANLIB          lib$proflib_name.a\" ; \\$newline";
+		print FD "\telse \\$newline";
+		print FD "\t  echo \${RANLIB} ${libloc}lib$proflib_name.a ; \\$newline"; 
+		print FD "\tfi$newline";
+		print FD "\t\@\${RANLIB} ${libloc}lib$proflib_name.a$newline"; 
 	    }
 	    # To handle timestamp problems with recursive makes, 
 	    # add a delay
@@ -2878,7 +3107,13 @@ sub TargetProfileLibraries {
 	    &print_make_endline( FD );
 	    if ($found_source_files) {
 		# Add these files as objects to the archive
-		print FD "\t\${AR} cr ${libloc}lib$proflib_name.la \$?$newline";
+		# COMMAND PRINTING
+		print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
+		print FD "\t  echo \"  AR cr ${libloc}lib$proflib_name.la \$?\" ; \\$newline";
+		print FD "\telse \\$newline";
+		print FD "\t  echo \${AR} cr ${libloc}lib$proflib_name.la \$?; \\$newline";
+		print FD "\tfi$newline";
+		print FD "\t\@\${AR} cr ${libloc}lib$proflib_name.la \$?$newline";
 		# To handle timestamp problems with recursive makes, 
 		# add a delay
 		&LibraryTimestampFix( $proflib_name.".la", $libloc );
@@ -2901,7 +3136,13 @@ sub TargetProfileLibraries {
 	    # Note that many makes won't replace $< in an implicit rule,
 	    # so we explicitly list the source file
 	    print FD "$obj: $sourcefile$newline";
-	    print FD "\t\$(C_COMPILE) -c \@PROFILE_DEF_MPI\@ \$(srcdir)/$sourcefile -o $obj$newline";
+	    # COMMAND PRINTING
+	    print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
+	    print FD "\t  echo \"  CC              \${srcdir}/$sourcefile\" ; \\$newline";
+	    print FD "\telse \\$newline";
+	    print FD "\t  echo \$(C_COMPILE) -c \@PROFILE_DEF_MPI\@ \$(srcdir)/$sourcefile -o $obj ; \\$newline";
+	    print FD "\tfi$newline";
+	    print FD "\t\@\$(C_COMPILE) -c \@PROFILE_DEF_MPI\@ \$(srcdir)/$sourcefile -o $obj$newline";
 	    if ($do_sharedlibs) {
 		$obj =~ s/\.o/.lo/;
 	        print FD "$obj: $sourcefile$newline";
@@ -2972,7 +3213,7 @@ sub TargetSharedLibraries {
     my $libraries = $_[0];
 
     foreach $lib (keys(%$libraries)) {
-	# Skip the libraries that have no shared counter part
+	# Skip the libraries that have no shared counterpart
 	if (defined($libNotShared{$lib})) { 
 	    #print "Skipping $lib\n"; 
 	    next; 
@@ -2983,6 +3224,7 @@ sub TargetSharedLibraries {
 	&LibraryBuild( $lib, $libloc, $sourcefiles, "la", "lo" );
 	# no ranlib step here because we can't "link" the shared library
 	# until all members are added.
+	&SMInvokeAction( "OutputShLib", $lib, $libloc );
 	&LibraryTimestampFix( $lib.".la", $libloc )
     }
 }
@@ -3096,6 +3338,11 @@ library, or new library name)\n" if $debug;
 # ===========================================================================
 sub TargetPrograms {
     foreach $pgm (keys(%programs)) {
+	# If there was a manual target, skip
+	if (defined($usertargets{$pgm})) { 
+	    print "Skipping generation of rule for $pgm because Makefile.sm already contains one\n";
+	    next; 
+	}
 	&print_make_line( FD,  "$pgm: " );
 	$pgmobjs = "";
 	foreach $sourcefile (split(/\s+/,$programs{$pgm})) {
@@ -3273,8 +3520,16 @@ sub TargetTags {
         }
         elsif ($root_tags) {
 	    print FD "\${HEADERFILES} \${SOURCEFILES}$newline";
-	    $rpath = $rootdirpath;
-	    $rpath =~ s/\/$//;
+	    if (defined($rootdirpath)) {
+		$rpath = $rootdirpath;
+		$rpath =~ s/\/$//;
+	    }
+	    else {
+		# Use current directory
+		# Question: in this case, should we leave out the tags 
+		# target?
+		$rpath = ".";
+	    }
 	    # For vpath builds, make the root path point to the
 	    # VPATH root.
 	    
@@ -3733,7 +3988,7 @@ sub TargetInstall {
 	if ($extradir =~ /^@/) {
 	    print FD "\tfor dir in $extradir - ; do \\$newline";
 	    print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ;\\$newline";
-	    print FD "\t\t(cd \$\$dir && \$(MAKE) INSTALL_STRIP_FLAG=\$(INSTALL_STRIP_FLAG) install) ;\\$newline";
+	    print FD "\t\t(cd \$\$dir && \$(MAKE) INSTALL_STRIP_FLAG=\$(INSTALL_STRIP_FLAG) PACKAGE=\$(PACKAGE) install) ;\\$newline";
 	    print FD "\tdone$newline";
 	}
 	else {
@@ -3761,10 +4016,12 @@ sub TargetInstall {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
             if (defined($uninstall_methods{$kind})) {
-                # This branch subtly different from the else branch below because it also passes the
-                # $file as the first argument.  Strictly speaking, this is not compatible with using
-                # libtool directly, so if we ever replace createshlib then we should rework this
-                # uninstall target just a bit. [goodell@mcs 2007-11-28]
+                # This branch is subtly different from the else branch below 
+		# because it also passes the $file as the first argument.  
+		# Strictly speaking, this is not compatible with using
+                # libtool directly, so if we ever replace createshlib then 
+		# we should rework this uninstall target 
+		# just a bit. [goodell@mcs 2007-11-28]
                 print FD "\t-$uninstall_methods{$kind} $file \${DESTDIR}\${$dir}/$destfile$newline";
             }
             else {
@@ -3778,10 +4035,12 @@ sub TargetInstall {
 	    $destfile = $file;
 	    $destfile =~ s/.*\///;
             if (defined($uninstall_methods{$kind})) {
-                # This branch subtly different from the else branch below because it also passes the
-                # $file as the first argument.  Strictly speaking, this is not compatible with using
-                # libtool directly, so if we ever replace createshlib then we should rework this
-                # uninstall target just a bit. [goodell@mcs 2007-11-28]
+                # This branch is subtly different from the else branch below 
+		# because it also passes the $file as the first argument.  
+		# Strictly speaking, this is not compatible with using
+                # libtool directly, so if we ever replace createshlib then 
+		# we should rework this uninstall target just a 
+		# bit. [goodell@mcs 2007-11-28]
                 print FD "\t-$uninstall_methods{$kind} $file \${DESTDIR}\${$dir}/$destfile$newline";
             }
             else {
@@ -3855,6 +4114,11 @@ simplemake [ -nocomments ] [ -am ] [ -libdir=NAME=DIR ] [ -include=LIST ]\
                        Makefile.in)\
     -debug           - Turn on debugging output\
     -dos             - Use DOS-style newlines on output files\
+    -interdirsleep   - Use a sleep between directory builds to handle problems\
+                       with file systems that are not time-synchronized\
+                       with the build node.  -interdirsleep=nn specifies\
+                       an nn second sleep.\
+    -smroot=dir      - Location of simplemake (absolute location)\
     -help            - This output\
     \n";
     print STDERR "\
@@ -4134,13 +4398,18 @@ sub ReadAutoconf {
 	    $line = "";
 	    # Remove any M4 dnl line
 	    s/\sdnl\s.*//;
+	    # Later versions of Autoconf do not require explicit continuation
+	    # so we also read until we find the closing paren
 	    while (/\\\s*$/) {
 		s/\r?\n$//; # Removes eol on both Unix and Windows
 		chop($_); # remove the backslash
 		$line .= $_;
 		$_ = <FDCONF>;
+		die "unexpected EOF in configure.in, aborting" unless defined $_;
 		# Remove any M4 dnl line
 		s/\sdnl\s.*//;
+		# Remove any shell comment line
+		s/\s#.*//;
 	    }
 	    $line .= $_; 
 	    $line =~ s/\r?\n$//; # Removes eol on both Unix and Windows
@@ -4148,8 +4417,25 @@ sub ReadAutoconf {
                                  # AC_OUTPUT(files...,[command]),
                                  # where the final ) may not be on this line
 	    #print $line;
+	    # If there's no closing paren yet, keep reading
+	    while (! ($line =~ /\)/)) {
+		$_ = <FDCONF>;
+		die "unexpected EOF in configure.in, aborting" unless defined $_;
+		s/\r?\n$//; # Removes eol on both Unix and Windows
+		# Remove any M4 dnl line
+		s/\sdnl\s.*//;
+		# Remove any shell comment line
+		s/\s#.*//;
+		$line .= $_ . " ";
+	    }
+	    #print "ac_output line = $line\n";
 	    $line =~ /^\s*AC_OUTPUT\((.*)\)\s*$/;
 	    $files = $1;
+	    if (! defined($files) ) {
+		print STDERR "Unable to find file names in AC_OUTPUT\n";
+		$files = "";
+	    }
+	    #print "files for ac_output = $files\n";
 	    @autoconf_files = split(/\s+/,$files);
 	    # Create a hash by directory
 	    # FIXME: Should curdir be blank by default?
@@ -4249,6 +4535,8 @@ sub GetPathToParent {
     }
     else {
 	print STDERR "Path to parent is unknown in GetPathToParent\n";
+	# Set a default
+	$path_child = ".";
     }
     $path_child =~ s/[^\/\.]*\//..\//g;
     return $path_child;
@@ -4657,6 +4945,60 @@ sub CreateOptInstallSHLibs {
 		print "Building sharedlib library $baselibname (from $libname) in $libdir as part of optinstall\n" if $gDebugWhy;
 		&TargetSharedLibraryFinal( $libsrc, $libname, $libdir );
 	    }
+	}
+    }
+}
+
+# ---------------------------------------------------------------------------
+# These routines support the handling of extensions to simplemake.
+# There are several kinds of extensions.
+# One of the simplest is for new commands.  In this case, extensions are added 
+# by defining an "action"; this is associated with
+#  "Command"
+# Such an extension is placed into a file with extension .smlib;
+# it must add the action to known commands and 
+# provide the function
+#    Action<commandname>
+# In addition, the following may be defined:
+#    Clear<commandname>           - Called to clear variables between reading 
+#                                   Makefile.sm
+#    Output<commandname>          - Call to add output to the generated file
+#    OutputHeader<commandname>    - Call to add output to the header in the
+#                                   generated file
+#    OutputLib<commandname>       - Call to add output for a particular library
+#    OutputLibDependencies<commandname> - Add dependencies to the make 
+#                                   target for the specified library
+#    OutputClean<commandname>     - Call to add output for the clean target
+#    OutputDistClean<commandname> - Call to add output for the distclean target
+#    OutputMaintainerClean<commandname> - Call to add output for the 
+#                                   maintainerclean target
+#    
+# These routines may also update variables used by simplemake.  
+# 
+# SMReadDefnFiles( directory ) - include all files with extension .smlib
+# from the specified directory.
+sub SMReadDefnFiles {
+    my $dir = $_[0];
+    my $DIR = "SMDIR";
+
+    opendir ($DIR, "$dir" ) or return;
+    while ($file = readdir($DIR)) {
+	if ($file =~ /\.smlib$/) {
+	    require "$dir/$file";
+	}
+    }
+    closedir( $DIR );
+}
+# Invoke a function, defined as <name><module>, for all known functions, 
+# The argument is the name of the action.  All of the argument are passed
+# to the function (including the first, its own name)
+sub SMInvokeAction {
+    my $name = $_[0];
+    foreach my $module (@KnownActions) {
+	my $function = "${name}${module}";
+	if (defined(&$function)) {
+	    print "Invoking $function\n" if $debug;
+	    &$function ( @_ );
 	}
     }
 }

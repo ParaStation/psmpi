@@ -27,6 +27,11 @@
 ! starts are from zero, even in Fortran
       starts(1)    = 1
       starts(2)    = 2
+! In Fortran 90 notation, the original array is
+!    integer a(maxn,maxm)
+! and the subarray is
+!    a(1+1:(maxn-3) +(1+1)-1,2+1:(maxm-4)+(2+1)-1)
+! i.e., a (start:(len + start - 1),...)
       call mpi_type_create_subarray( 2, fullsizes, subsizes, starts,  &
       &         MPI_ORDER_FORTRAN, MPI_INTEGER, newtype, ierr )
       call mpi_type_commit( newtype, ierr )

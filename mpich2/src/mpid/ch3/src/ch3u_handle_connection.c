@@ -109,10 +109,12 @@ int MPIDI_CH3U_Handle_connection(MPIDI_VC_t * vc, MPIDI_VC_Event_t event)
 	    break;
 	}
     }
-	
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_CONNECTION);
 
+fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_HANDLE_CONNECTION);
     return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -276,7 +278,7 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	    vc->state = MPIDI_VC_STATE_REMOTE_CLOSE;
 	}
     }
-    else
+    else /* (close_pkt->ack == TRUE) */
     {
 	MPIU_DBG_MSG_D(CH3_DISCONNECT,TYPICAL,
                        "received close(TRUE) from %d, moving to CLOSE_ACKED.", 

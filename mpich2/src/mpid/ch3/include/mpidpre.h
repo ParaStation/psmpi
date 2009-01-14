@@ -19,7 +19,9 @@ struct MPID_Request;
 #include <sys/types.h>
 #endif
 
-typedef MPI_Aint MPIDI_msg_sz_t;
+/* The maximum message size is the size of a pointer; this allows MPI_Aint 
+   to be larger than a pointer */
+typedef MPIR_Pint MPIDI_msg_sz_t;
 
 #include "mpid_dataloop.h"
 #if 0
@@ -287,4 +289,7 @@ MPID_REQUEST_DECL
 /* Tell initthread to prepare a private comm_world */
 #define MPID_NEEDS_ICOMM_WORLD
 
+/* Tell the RMA code to use a table of RMA functions provided by the 
+   ADI */
+#define USE_MPID_RMA_TABLE
 #endif /* !defined(MPICH_MPIDPRE_H_INCLUDED) */

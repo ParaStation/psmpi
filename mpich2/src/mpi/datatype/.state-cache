@@ -3,20 +3,20 @@
 <file name="pack_external_size.c" info="1194043819"/>
 <file name="type_create_hindexed.c" info="1194043819"/>
 <file name="type_lb.c" info="1194043819"/>
-<file name="type_hindexed.c" info="1194043819"/>
 <file name="pack_size.c" info="1194043819"/>
+<file name="type_hindexed.c" info="1194043819"/>
 <file name="type_get_name.c" info="1194043819"/>
 <file name="type_create_hvector.c" info="1194043819"/>
 <file name="type_create_struct.c" info="1194043819"/>
 <file name="type_size.c" info="1194043819"/>
 <file name="unpack.c" info="1194043819"/>
 <file name="type_free.c" info="1194043819"/>
-<file name="address.c" info="1194043819"/>
 <file name="pack.c" info="1194043819"/>
+<file name="address.c" info="1194043819"/>
 <file name="pack_external.c" info="1194043819"/>
 <file name="type_struct.c" info="1194043819"/>
 <file name="type_dup.c" info="1194043819"/>
-<file name="type_match_size.c" info="1194043819"/>
+<file name="type_match_size.c" info="1219372702"/>
 <file name="typeutil.c" info="1194043819"/>
 <file name="type_extent.c" info="1194043819"/>
 <file name="type_vector.c" info="1194043819"/>
@@ -38,7 +38,7 @@
 <file name="type_contiguous.c" info="1194043819"/>
 <file name="type_get_extent.c" info="1194043819"/>
 <file name="type_create_subarray.c" info="1194043819"/>
-<file name="get_elements.c" info="1194043819"/>
+<file name="get_elements.c" info="1208359945"/>
 <file name="status_set_elements.c" info="1194043819"/>
 </dir>
 <data>
@@ -54,11 +54,11 @@ MPID_STATE_MPI_TYPE_CREATE_HINDEXED MPI_Type_create_hindexed
 <fileinfo name="type_lb.c">
 MPID_STATE_MPI_TYPE_LB MPI_Type_lb
 </fileinfo>
-<fileinfo name="type_hindexed.c">
-MPID_STATE_MPI_TYPE_HINDEXED MPI_Type_hindexed
-</fileinfo>
 <fileinfo name="pack_size.c">
 MPID_STATE_MPI_PACK_SIZE MPI_Pack_size
+</fileinfo>
+<fileinfo name="type_hindexed.c">
+MPID_STATE_MPI_TYPE_HINDEXED MPI_Type_hindexed
 </fileinfo>
 <fileinfo name="type_get_name.c">
 MPID_STATE_MPI_TYPE_GET_NAME MPI_Type_get_name
@@ -78,11 +78,11 @@ MPID_STATE_MPI_UNPACK MPI_Unpack
 <fileinfo name="type_free.c">
 MPID_STATE_MPI_TYPE_FREE MPI_Type_free
 </fileinfo>
-<fileinfo name="address.c">
-MPID_STATE_MPI_ADDRESS MPI_Address
-</fileinfo>
 <fileinfo name="pack.c">
 MPID_STATE_MPI_PACK MPI_Pack
+</fileinfo>
+<fileinfo name="address.c">
+MPID_STATE_MPI_ADDRESS MPI_Address
 </fileinfo>
 <fileinfo name="pack_external.c">
 MPID_STATE_MPI_PACK_EXTERNAL MPI_Pack_external

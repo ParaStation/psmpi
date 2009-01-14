@@ -89,6 +89,13 @@ void MPIR_LOR (
             a[i] = MPIR_LLOR(a[i],b[i]);
         break;
     }
+    case MPI_SIGNED_CHAR: {
+        signed char * restrict a = (signed char *)inoutvec; 
+        signed char * restrict b = (signed char *)invec;
+        for ( i=0; i<len; i++ )
+            a[i] = MPIR_LLOR(a[i],b[i]);
+        break;
+    }
     case MPI_UNSIGNED_CHAR: {
         unsigned char * restrict a = (unsigned char *)inoutvec; 
         unsigned char * restrict b = (unsigned char *)invec;
@@ -219,9 +226,9 @@ void MPIR_LOR (
 #endif
 	/* --BEGIN ERROR HANDLING-- */
     default: {
-        MPICH_PerThread_t *p;
-        MPIR_GetPerThread(&p);
-        p->op_errno = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_LOR" );
+	MPIU_THREADPRIV_DECL;
+	MPIU_THREADPRIV_GET;
+        MPIU_THREADPRIV_FIELD(op_errno) = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OP, "**opundefined","**opundefined %s", "MPI_LOR" );
         break;
     }
 	/* --END ERROR HANDLING-- */
@@ -247,6 +254,7 @@ int MPIR_LOR_check_dtype ( MPI_Datatype type )
 #ifdef HAVE_FORTRAN_BINDING
     case MPI_CHARACTER: 
 #endif
+    case MPI_SIGNED_CHAR: 
     case MPI_UNSIGNED_CHAR: 
     case MPI_FLOAT: 
 #ifdef HAVE_FORTRAN_BINDING
