@@ -6,15 +6,15 @@
 <file name="keyval_free.c" info="1194043819"/>
 <file name="type_create_keyval.c" info="1194043819"/>
 <file name="comm_free_keyval.c" info="1194043819"/>
-<file name="win_get_attr.c" info="1194043819"/>
 <file name="type_get_attr.c" info="1194043819"/>
-<file name="attr.h" info="1194043819"/>
+<file name="win_get_attr.c" info="1194043819"/>
 <file name="attr_delete.c" info="1194043819"/>
+<file name="attr.h" info="1194043819"/>
 <file name="win_free_keyval.c" info="1194043819"/>
 <file name="comm_get_attr.c" info="1194043819"/>
 <file name="dup_fn.c" info="1194043819"/>
-<file name="type_delete_attr.c" info="1194043819"/>
 <file name="attr_get.c" info="1194043819"/>
+<file name="type_delete_attr.c" info="1194043819"/>
 <file name="type_set_attr.c" info="1194043819"/>
 <file name="win_set_attr.c" info="1194043819"/>
 <file name="win_delete_attr.c" info="1194043819"/>
@@ -44,16 +44,16 @@ MPID_STATE_MPI_TYPE_CREATE_KEYVAL MPI_Type_create_keyval
 <fileinfo name="comm_free_keyval.c">
 MPID_STATE_MPI_COMM_FREE_KEYVAL MPI_Comm_free_keyval
 </fileinfo>
-<fileinfo name="win_get_attr.c">
-MPID_STATE_MPI_WIN_GET_ATTR MPI_Win_get_attr
-</fileinfo>
 <fileinfo name="type_get_attr.c">
 MPID_STATE_MPI_TYPE_GET_ATTR MPI_Type_get_attr
 </fileinfo>
-<fileinfo name="attr.h">
+<fileinfo name="win_get_attr.c">
+MPID_STATE_MPI_WIN_GET_ATTR MPI_Win_get_attr
 </fileinfo>
 <fileinfo name="attr_delete.c">
 MPID_STATE_MPI_ATTR_DELETE MPI_Attr_delete
+</fileinfo>
+<fileinfo name="attr.h">
 </fileinfo>
 <fileinfo name="win_free_keyval.c">
 MPID_STATE_MPI_WIN_FREE_KEYVAL MPI_Win_free_keyval
@@ -63,11 +63,11 @@ MPID_STATE_MPI_COMM_GET_ATTR MPI_Comm_get_attr
 </fileinfo>
 <fileinfo name="dup_fn.c">
 </fileinfo>
-<fileinfo name="type_delete_attr.c">
-MPID_STATE_MPI_TYPE_DELETE_ATTR MPI_Type_delete_attr
-</fileinfo>
 <fileinfo name="attr_get.c">
 MPID_STATE_MPI_ATTR_GET MPI_Attr_get
+</fileinfo>
+<fileinfo name="type_delete_attr.c">
+MPID_STATE_MPI_TYPE_DELETE_ATTR MPI_Type_delete_attr
 </fileinfo>
 <fileinfo name="type_set_attr.c">
 MPID_STATE_MPI_TYPE_SET_ATTR MPI_Type_set_attr

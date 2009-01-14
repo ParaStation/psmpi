@@ -1,9 +1,9 @@
 <dir>
 <file name="mpid_nem_mpich2_rma.c" info="1207189686"/>
 <file name="mpid_nem_ckpt.c" info="1207189686"/>
-<file name="mpid_nem_lmt.c" info="1217022556"/>
-<file name="mpid_nem_alloc.c" info="1207189686"/>
+<file name="mpid_nem_lmt.c" info="1224602380"/>
 <file name="mpid_nem_debug.c" info="1207189686"/>
+<file name="mpid_nem_alloc.c" info="1207189686"/>
 <file name="mpid_nem_mpich2.c" info="1220530266"/>
 <file name="mpid_nem_queue.c" info="1207189686"/>
 <file name="mpid_nem_network_poll.c" info="1207189686"/>
@@ -54,6 +54,9 @@ MPID_STATE_DO_CTS do_cts
 MPID_STATE_DO_SEND do_send
 MPID_STATE_DO_COOKIE do_cookie
 </fileinfo>
+<fileinfo name="mpid_nem_debug.c">
+MPID_STATE_MPID_NEM_DBG_DUMP_CELL MPID_nem_dbg_dump_cell
+</fileinfo>
 <fileinfo name="mpid_nem_alloc.c">
 MPID_STATE_MPID_NEM_SEG_CREATE MPID_nem_seg_create
 MPID_STATE_MPID_NEM_SEG_DESTROY MPID_nem_seg_destroy
@@ -63,9 +66,6 @@ MPID_STATE_MPID_NEM_ALLOCATE_SHARED_MEMORY MPID_nem_allocate_shared_memory
 MPID_STATE_MPID_NEM_ATTACH_SHARED_MEMORY MPID_nem_attach_shared_memory
 MPID_STATE_MPID_NEM_REMOVE_SHARED_MEMORY MPID_nem_remove_shared_memory
 MPID_STATE_MPID_NEM_DETACH_SHARED_MEMORY MPID_nem_detach_shared_memory
-</fileinfo>
-<fileinfo name="mpid_nem_debug.c">
-MPID_STATE_MPID_NEM_DBG_DUMP_CELL MPID_nem_dbg_dump_cell
 </fileinfo>
 <fileinfo name="mpid_nem_mpich2.c">
 MPID_STATE_MPID_NEM_MPICH2_INIT MPID_nem_mpich2_init

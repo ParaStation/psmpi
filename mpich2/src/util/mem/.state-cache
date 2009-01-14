@@ -1,8 +1,8 @@
 <dir>
 <file name="trmem.h" info="1194043819"/>
 <file name="argstr.c" info="1194043819"/>
-<file name="trmem.c" info="1194043819"/>
 <file name="check.c" info="1194043819"/>
+<file name="trmem.c" info="1194043819"/>
 <file name="handlemem.c" info="1194043819"/>
 <file name="safestr.c" info="1216927412"/>
 </dir>
@@ -11,9 +11,9 @@
 </fileinfo>
 <fileinfo name="argstr.c">
 </fileinfo>
-<fileinfo name="trmem.c">
-</fileinfo>
 <fileinfo name="check.c">
+</fileinfo>
+<fileinfo name="trmem.c">
 </fileinfo>
 <fileinfo name="handlemem.c">
 </fileinfo>

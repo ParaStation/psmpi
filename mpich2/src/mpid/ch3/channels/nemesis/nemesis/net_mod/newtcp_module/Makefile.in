@@ -7,16 +7,55 @@ all: all-redirect
 
 SHELL           = @SHELL@
 VERBOSE         = 1
+AR              = @AR@
+RANLIB          = @RANLIB@
+master_top_srcdir  = @master_top_srcdir@
+top_builddir    = @master_top_builddir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
+DEFS            = @DEFS@ -I. -I${srcdir}
+CPPFLAGS        = @CPPFLAGS@
 MAKE            = @MAKE@
 MPILIBNAME      = @MPILIBNAME@
+CC              = @CC@
+CFLAGS          = @CFLAGS@
+C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
+LIBTOOL         = @LIBTOOL@
+CC_SHL          = @CC_SHL@
+C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 
 VPATH = .:@srcdir@
+INCLUDES = -I. -I../../include -I${master_top_srcdir}/src/ch3/channels/nemesis/nemesis/include -I${master_top_srcdir}/src/include \
+           -I${top_builddir}/src/include
 
 .SUFFIXES:
-.SUFFIXES:  .txt 
+.SUFFIXES: .o .lo .c .txt 
+.c.o:
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -c $< ; \
+	fi
+	@$(C_COMPILE) -c $<
+.c.lo:
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
+	echo mv -f _s$*.o $*.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c $< -o _s$*.o
+	@mv -f _s$*.o $*.lo
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
+.c:
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
+	fi
+	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -39,6 +78,7 @@ apply:
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
+	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
 	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
@@ -54,9 +94,37 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect:
+all-redirect: .libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a
+	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
+	    ${MAKE} .libstamp1 ; \
+	fi
 
+.libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a: \
+	newtcp_module_finalize.o newtcp_module_init.o newtcp_module_poll.o \
+	newtcp_module_send.o newtcp_module_utility.o socksm.o 
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../../../../../../lib/lib${MPILIBNAME}.a $?" ; \
+	else \
+	  echo ${AR} cr ../../../../../../../../lib/lib${MPILIBNAME}.a $? ; \
+	fi
+	@${AR} cr ../../../../../../../../lib/lib${MPILIBNAME}.a $?
+	${RANLIB} ../../../../../../../../lib/lib${MPILIBNAME}.a
+	date > .libstamp0
+.libstamp1 ../../../../../../../../lib/lib${MPILIBNAME}.la: \
+	newtcp_module_finalize.lo newtcp_module_init.lo newtcp_module_poll.lo \
+	newtcp_module_send.lo newtcp_module_utility.lo socksm.lo 
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  AR cr ../../../../../../../../lib/lib${MPILIBNAME}.la $?" ; \
+	else \
+	  echo ${AR} cr ../../../../../../../../lib/lib${MPILIBNAME}.la $? ; \
+	fi
+	@${AR} cr ../../../../../../../../lib/lib${MPILIBNAME}.la $?
+	date > .libstamp1
 coverage: 
+	-@for file in newtcp_module_finalize.c  newtcp_module_init.c  \
+	newtcp_module_poll.c  newtcp_module_send.c newtcp_module_utility.c \
+	socksm.c ; do \
+		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
 htmldoc:
 mandoc:
@@ -66,16 +134,54 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Dependencies
-dependencies:
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+$(DEPS_DIR)/newtcp_module_finalize.d: $(srcdir)/newtcp_module_finalize.c
+	$(MAKE_DEPEND_C)  $(srcdir)/newtcp_module_finalize.c >$(DEPS_DIR)/newtcp_module_finalize.d
+$(DEPS_DIR)/newtcp_module_init.d: $(srcdir)/newtcp_module_init.c
+	$(MAKE_DEPEND_C)  $(srcdir)/newtcp_module_init.c >$(DEPS_DIR)/newtcp_module_init.d
+$(DEPS_DIR)/newtcp_module_poll.d: $(srcdir)/newtcp_module_poll.c
+	$(MAKE_DEPEND_C)  $(srcdir)/newtcp_module_poll.c >$(DEPS_DIR)/newtcp_module_poll.d
+$(DEPS_DIR)/newtcp_module_send.d: $(srcdir)/newtcp_module_send.c
+	$(MAKE_DEPEND_C)  $(srcdir)/newtcp_module_send.c >$(DEPS_DIR)/newtcp_module_send.d
+$(DEPS_DIR)/newtcp_module_utility.d: $(srcdir)/newtcp_module_utility.c
+	$(MAKE_DEPEND_C)  $(srcdir)/newtcp_module_utility.c >$(DEPS_DIR)/newtcp_module_utility.d
+$(DEPS_DIR)/socksm.d: $(srcdir)/socksm.c
+	$(MAKE_DEPEND_C)  $(srcdir)/socksm.c >$(DEPS_DIR)/socksm.d
+$(DEPS_DIR)/timestamp: newtcp_module_finalize.c  newtcp_module_init.c  newtcp_module_poll.c  \
+	newtcp_module_send.c newtcp_module_utility.c socksm.c Makefile
+	rm -f $(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/newtcp_module_finalize.c >$(DEPS_DIR)/newtcp_module_finalize.d
+	echo "include $(DEPS_DIR)/newtcp_module_finalize.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/newtcp_module_init.c >$(DEPS_DIR)/newtcp_module_init.d
+	echo "include $(DEPS_DIR)/newtcp_module_init.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/newtcp_module_poll.c >$(DEPS_DIR)/newtcp_module_poll.d
+	echo "include $(DEPS_DIR)/newtcp_module_poll.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/newtcp_module_send.c >$(DEPS_DIR)/newtcp_module_send.d
+	echo "include $(DEPS_DIR)/newtcp_module_send.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/newtcp_module_utility.c >$(DEPS_DIR)/newtcp_module_utility.d
+	echo "include $(DEPS_DIR)/newtcp_module_utility.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/socksm.c >$(DEPS_DIR)/socksm.d
+	echo "include $(DEPS_DIR)/socksm.d" >>$(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
+SOURCES         =  newtcp_module_finalize.c newtcp_module_init.c \
+	newtcp_module_poll.c newtcp_module_send.c newtcp_module_utility.c \
+	socksm.c 
+ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 tags: TAGS
-TAGS: Makefile
+TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
+	here=`cd ../../../../../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
-# Stub Makefile
+
 
 FORCE_TARGET:
 

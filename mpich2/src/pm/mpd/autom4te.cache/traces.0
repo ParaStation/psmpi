@@ -247,6 +247,12 @@ m4trace:configure.in:174: -1- m4_pattern_allow([^CPP$])
 m4trace:configure.in:174: -1- AC_SUBST([GREP])
 m4trace:configure.in:174: -1- AC_SUBST_TRACE([GREP])
 m4trace:configure.in:174: -1- m4_pattern_allow([^GREP$])
+m4trace:configure.in:174: -1- AC_SUBST([GREP])
+m4trace:configure.in:174: -1- AC_SUBST_TRACE([GREP])
+m4trace:configure.in:174: -1- m4_pattern_allow([^GREP$])
+m4trace:configure.in:174: -1- AC_SUBST([EGREP])
+m4trace:configure.in:174: -1- AC_SUBST_TRACE([EGREP])
+m4trace:configure.in:174: -1- m4_pattern_allow([^EGREP$])
 m4trace:configure.in:174: -1- AC_SUBST([EGREP])
 m4trace:configure.in:174: -1- AC_SUBST_TRACE([EGREP])
 m4trace:configure.in:174: -1- m4_pattern_allow([^EGREP$])
@@ -295,10 +301,10 @@ m4trace:configure.in:181: -1- AH_OUTPUT([HAVE_SOCKET], [/* Define to 1 if you ha
 m4trace:configure.in:183: -1- AH_OUTPUT([HAVE_SNPRINTF], [/* Define to 1 if you have the `snprintf\' function. */
 #undef HAVE_SNPRINTF])
 m4trace:configure.in:185: -1- _m4_warn([obsolete], [The macro `AC_TRY_COMPILE' is obsolete.
-You should run autoupdate.], [/sandbox/chan/autoconf/autoconf-2.62/lib/autoconf/general.m4:2469: AC_TRY_COMPILE is expanded from...
-/sandbox/chan/autoconf/autoconf-2.62/lib/m4sugar/m4sh.m4:508: AS_IF is expanded from...
-/sandbox/chan/autoconf/autoconf-2.62/lib/autoconf/general.m4:1973: AC_CACHE_VAL is expanded from...
-/sandbox/chan/autoconf/autoconf-2.62/lib/autoconf/general.m4:1993: AC_CACHE_CHECK is expanded from...
+You should run autoupdate.], [../../lib/autoconf/general.m4:2367: AC_TRY_COMPILE is expanded from...
+../../lib/m4sugar/m4sh.m4:516: AS_IF is expanded from...
+../../lib/autoconf/general.m4:1898: AC_CACHE_VAL is expanded from...
+../../lib/autoconf/general.m4:1911: AC_CACHE_CHECK is expanded from...
 aclocal_mpd.m4:70: PAC_FUNC_NEEDS_DECL is expanded from...
 configure.in:185: the top level])
 m4trace:configure.in:185: -1- AC_DEFINE_TRACE_LITERAL([NEEDS_SNPRINTF_DECL])
@@ -321,7 +327,6 @@ m4trace:configure.in:200: -1- AC_SUBST([LTLIBOBJS], [$ac_ltlibobjs])
 m4trace:configure.in:200: -1- AC_SUBST_TRACE([LTLIBOBJS])
 m4trace:configure.in:200: -1- m4_pattern_allow([^LTLIBOBJS$])
 m4trace:configure.in:200: -1- AC_SUBST_TRACE([top_builddir])
-m4trace:configure.in:200: -1- AC_SUBST_TRACE([top_build_prefix])
 m4trace:configure.in:200: -1- AC_SUBST_TRACE([srcdir])
 m4trace:configure.in:200: -1- AC_SUBST_TRACE([abs_srcdir])
 m4trace:configure.in:200: -1- AC_SUBST_TRACE([top_srcdir])

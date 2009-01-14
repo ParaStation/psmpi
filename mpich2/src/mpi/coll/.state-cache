@@ -2,10 +2,10 @@
 <file name="alltoallw.c" info="1194043819"/>
 <file name="gatherv.c" info="1194043819"/>
 <file name="reduce.c" info="1194043819"/>
-<file name="opbxor.c" info="1217705234"/>
 <file name="opband.c" info="1217705234"/>
-<file name="opland.c" info="1217705234"/>
+<file name="opbxor.c" info="1217705234"/>
 <file name="scatterv.c" info="1194043819"/>
+<file name="opland.c" info="1217705234"/>
 <file name="barrier.c" info="1194043819"/>
 <file name="op_create.c" info="1194043819"/>
 <file name="opprod.c" info="1219371703"/>
@@ -17,8 +17,8 @@
 <file name="opmax.c" info="1217705234"/>
 <file name="alltoall.c" info="1194043819"/>
 <file name="opmaxloc.c" info="1217705234"/>
-<file name="gather.c" info="1197749070"/>
 <file name="allgatherv.c" info="1194043819"/>
+<file name="gather.c" info="1197749070"/>
 <file name="exscan.c" info="1194043819"/>
 <file name="oplxor.c" info="1217705234"/>
 <file name="alltoallv.c" info="1194043819"/>
@@ -41,14 +41,14 @@ MPID_STATE_MPI_GATHERV MPI_Gatherv
 <fileinfo name="reduce.c">
 MPID_STATE_MPI_REDUCE MPI_Reduce
 </fileinfo>
-<fileinfo name="opbxor.c">
-</fileinfo>
 <fileinfo name="opband.c">
 </fileinfo>
-<fileinfo name="opland.c">
+<fileinfo name="opbxor.c">
 </fileinfo>
 <fileinfo name="scatterv.c">
 MPID_STATE_MPI_SCATTERV MPI_Scatterv
+</fileinfo>
+<fileinfo name="opland.c">
 </fileinfo>
 <fileinfo name="barrier.c">
 MPID_STATE_MPI_BARRIER MPI_Barrier
@@ -79,11 +79,11 @@ MPID_STATE_MPI_ALLTOALL MPI_Alltoall
 </fileinfo>
 <fileinfo name="opmaxloc.c">
 </fileinfo>
-<fileinfo name="gather.c">
-MPID_STATE_MPI_GATHER MPI_Gather
-</fileinfo>
 <fileinfo name="allgatherv.c">
 MPID_STATE_MPI_ALLGATHERV MPI_Allgatherv
+</fileinfo>
+<fileinfo name="gather.c">
+MPID_STATE_MPI_GATHER MPI_Gather
 </fileinfo>
 <fileinfo name="exscan.c">
 MPID_STATE_MPI_EXSCAN MPI_Exscan

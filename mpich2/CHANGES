@@ -9,7 +9,13 @@
 
 - Many other bug fixes, memory leak fixes and code cleanup. A full
 list of changes is available using:
-  svn log -r100:HEAD https://svn.mcs.anl.gov/repos/mpi/mpich2/branches/release/mpich2-1.0.8
+  https://trac.mcs.anl.gov/projects/mpich2/log/mpich2/branches/release/MPICH2_1_0_8?rev=HEAD&stop_rev=887&mode=follow_copy
+    or
+  svn log -r887:HEAD https://svn.mcs.anl.gov/repos/mpi/mpich2/branches/release/MPICH2_1_0_8
+
+- Autoconf-2.62 instead of 2.59 is used in this release.
+  The install directory structure is slightly modified to conform to
+  autoconf-2.62.
 
 
 ===============================================================================

@@ -337,7 +337,6 @@ int MPIDI_CH3U_Post_data_receive_found(MPID_Request * rreq)
     else {
 	/* user buffer is not contiguous or is too small to hold
 	   the entire message */
-	int mpi_errno;
 	
 	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"IOV loaded for non-contiguous read");
 	rreq->dev.segment_ptr = MPID_Segment_alloc( );
@@ -469,6 +468,9 @@ int MPIDI_CH3I_Try_acquire_win_lock(MPID_Win *win_ptr, int requested_lock)
 
 
 /* FIXME: we still need to implement flow control */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3_PktHandler_FlowCntlUpdate
+#undef FCNAME
 int MPIDI_CH3_PktHandler_FlowCntlUpdate( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 					 MPIDI_msg_sz_t *buflen, MPID_Request **rreqp)
 {

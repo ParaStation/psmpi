@@ -17,8 +17,8 @@
 <file name="win_fence.c" info="1210870285"/>
 <file name="winutil.c" info="1194043819"/>
 <file name="win_lock.c" info="1210870285"/>
-<file name="win_start.c" info="1210870285"/>
 <file name="free_mem.c" info="1210870285"/>
+<file name="win_start.c" info="1210870285"/>
 </dir>
 <data>
 <fileinfo name="alloc_mem.c">
@@ -73,10 +73,10 @@ MPID_STATE_MPI_WIN_FENCE MPI_Win_fence
 <fileinfo name="win_lock.c">
 MPID_STATE_MPI_WIN_LOCK MPI_Win_lock
 </fileinfo>
-<fileinfo name="win_start.c">
-MPID_STATE_MPI_WIN_START MPI_Win_start
-</fileinfo>
 <fileinfo name="free_mem.c">
 MPID_STATE_MPI_FREE_MEM MPI_Free_mem
+</fileinfo>
+<fileinfo name="win_start.c">
+MPID_STATE_MPI_WIN_START MPI_Win_start
 </fileinfo>
 </data>

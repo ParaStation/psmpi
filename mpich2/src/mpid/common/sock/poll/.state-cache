@@ -1,8 +1,8 @@
 <dir>
 <file name="sock_misc.i" info="1194043819"/>
 <file name="socki_util.i" info="1217621085"/>
-<file name="sock_immed.i" info="1194043819"/>
 <file name="sock_wait.i" info="1207576990"/>
+<file name="sock_immed.i" info="1194043819"/>
 <file name="sock_set.i" info="1194043819"/>
 <file name="sock.c" info="1201730851"/>
 <file name="sock_init.i" info="1194043819"/>
@@ -27,18 +27,6 @@ MPID_STATE_SOCKI_EVENT_ENQUEUE MPIDU_Socki_event_enqueue
 MPID_STATE_SOCKI_EVENT_DEQUEUE MPIDU_Socki_event_dequeue
 MPID_STATE_SOCKI_FREE_EVENTQ_MEM MPIDU_Socki_free_eventq_mem
 </fileinfo>
-<fileinfo name="sock_immed.i">
-MPID_STATE_MPIDU_SOCK_ACCEPT MPIDU_Sock_accept
-MPID_STATE_READ read
-MPID_STATE_MPIDU_SOCK_READ MPIDU_Sock_read
-MPID_STATE_READV readv
-MPID_STATE_MPIDU_SOCK_READV MPIDU_Sock_readv
-MPID_STATE_WRITE write
-MPID_STATE_MPIDU_SOCK_WRITE MPIDU_Sock_write
-MPID_STATE_WRITEV writev
-MPID_STATE_MPIDU_SOCK_WRITEV MPIDU_Sock_writev
-MPID_STATE_MPIDU_SOCK_WAKEUP MPIDU_Sock_wakeup
-</fileinfo>
 <fileinfo name="sock_wait.i">
 MPID_STATE_MPIDU_SOCK_WAIT MPIDU_Sock_wait
 MPID_STATE_POLL poll
@@ -51,6 +39,18 @@ MPID_STATE_WRITE write
 MPID_STATE_WRITEV writev
 MPID_STATE_MPIDU_SOCKI_HANDLE_WRITE MPIDU_Socki_handle_write
 MPID_STATE_MPIDU_SOCKI_HANDLE_CONNECT MPIDU_Socki_handle_connect
+</fileinfo>
+<fileinfo name="sock_immed.i">
+MPID_STATE_MPIDU_SOCK_ACCEPT MPIDU_Sock_accept
+MPID_STATE_READ read
+MPID_STATE_MPIDU_SOCK_READ MPIDU_Sock_read
+MPID_STATE_READV readv
+MPID_STATE_MPIDU_SOCK_READV MPIDU_Sock_readv
+MPID_STATE_WRITE write
+MPID_STATE_MPIDU_SOCK_WRITE MPIDU_Sock_write
+MPID_STATE_WRITEV writev
+MPID_STATE_MPIDU_SOCK_WRITEV MPIDU_Sock_writev
+MPID_STATE_MPIDU_SOCK_WAKEUP MPIDU_Sock_wakeup
 </fileinfo>
 <fileinfo name="sock_set.i">
 MPID_STATE_MPIDU_SOCK_CREATE_SET MPIDU_Sock_create_set

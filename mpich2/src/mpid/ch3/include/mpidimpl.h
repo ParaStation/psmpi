@@ -1286,6 +1286,7 @@ MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int, int, int, int * found);
 int MPIDI_CH3U_Recvq_DP(MPID_Request * rreq);
 MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match, 
 					   int * found);
+int MPIDI_CH3U_Recvq_count_unexp(void);
 
 #if 0
 /* FIXME: These are macros! Why do they have prototypes */

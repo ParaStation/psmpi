@@ -1,0 +1,117 @@
+# This Makefile.in created by simplemake.  Do not edit
+
+# @configure_input@
+
+# --------------------------------------------------------------------------
+all: all-redirect
+
+SHELL           = @SHELL@
+VERBOSE         = 1
+abs_builddir    = @abs_builddir@
+srcdir          = @srcdir@
+abs_srcdir      = @abs_srcdir@
+MAKE            = @MAKE@
+MPILIBNAME      = @MPILIBNAME@
+
+VPATH = .:@srcdir@
+
+.SUFFIXES:
+.SUFFIXES:  .txt 
+
+${srcdir}/include/mpidi_ch3i_sshm_conf.h  ${srcdir}/configure: \
+	${srcdir}/configure.in 
+	@rm -rf autom4te*.cache
+	(cd ${srcdir} && /homes/chan/autoconf/2.62/bin/autoheader -I \
+	../../../../../confdb && \
+	/homes/chan/autoconf/2.62/bin/autoconf -I \
+	../../../../../confdb ) 
+
+# --------------------------------------------------------------------------
+${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
+	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
+	-rootdir=../../../../../ \
+	-configdir=src/mpid/ch3/channels/sshm/ \
+	-common=${master_top_srcdir}/maint/makedefs \
+	-docnamedefs=${master_top_srcdir}/maint/docnotes \
+	"-autoconf=-I ROOTDIR/confdb" \
+	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
+	-smroot=${master_top_srcdir}/maint \
+	-distcleanfiles="Makefile src/Makefile localdefs config.status config.log config.cache *conf.cache config.system" \
+	-smvar_doc_attop=0 \
+		Makefile.sm )
+Makefile: ${srcdir}/Makefile.in
+	-if [ -x config.status ] ; then CONFIG_FILES=Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
+# --------------------------------------------------------------------------
+apply: 
+	$(ACTION) $(ACTION_INPUT)
+	(cd ../../../common/locks && $(MAKE) apply )
+	(cd src && $(MAKE) apply )
+clean: 
+	-@rm -f *.o ${srcdir}/*.o 
+	-@rm -f *.lo ${srcdir}/*.lo
+	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
+	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
+	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
+	(cd ../../../common/locks && $(MAKE) clean )
+	(cd src && $(MAKE) clean )
+distclean:  clean distclean-local distclean-xxx remove-makefile
+distclean-xxx:
+	if [ -s ../../../common/locks/Makefile ] ; then (cd ../../../common/locks && $(MAKE) distclean ) ; fi
+	if [ -s src/Makefile ] ; then (cd src && $(MAKE) distclean ) ; fi
+	-@rm -f Makefile src/Makefile localdefs config.status config.log config.cache *conf.cache config.system
+	-@rm -rf autom4te*.cache
+	-@rm -f include/mpidi_ch3i_sshm_conf.h
+	-@rm -rf $(DEPS_DIR)
+	-@rm -f TAGS
+maintainer-clean:  maintainer-clean-local distclean-xxx remove-genmakefiles
+	(cd ../../../common/locks && $(MAKE) maintainer-clean )
+	(cd src && $(MAKE) maintainer-clean )
+	-rm -f include/mpidi_ch3i_sshm_conf.h.in 
+remove-makefile:
+	rm -f Makefile
+remove-genmakefiles:
+	rm -f  Makefile.in Makefile
+all-redirect:
+	@(cd ../../../common/locks && ${MAKE} all )
+	@(cd src && ${MAKE} all )
+
+coverage: 
+	(cd ../../../common/locks && $(MAKE) coverage )
+	(cd src && $(MAKE) coverage )
+# --------------------------------------------------------------------------
+htmldoc:
+	(cd ../../../common/locks && $(MAKE) htmldoc )
+	(cd src && $(MAKE) htmldoc )
+mandoc:
+	(cd ../../../common/locks && $(MAKE) mandoc )
+	(cd src && $(MAKE) mandoc )
+latexdoc:
+	(cd ../../../common/locks && $(MAKE) latexdoc )
+	(cd src && $(MAKE) latexdoc )
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+# Dependencies
+dependencies:
+	(cd ../../../common/locks && $(MAKE) dependencies )
+	(cd src && $(MAKE) dependencies )
+# End of Dependencies
+# --------------------------------------------------------------------------
+# --------------------------------------------------------------------------
+HEADERFILES     = $(HEADERS)
+SOURCEFILES     = $(SOURCES)
+tags: TAGS
+TAGS: Makefile
+	(cd src && $(MAKE) TAGS )
+# --------------------------------------------------------------------------
+
+distclean-local:
+	-rm -f include/mpidi_ch3i_sshm_conf.h
+
+maintainer-clean-local:
+	-rm -f include/mpidi_ch3i_sshm_conf.h.in
+
+
+FORCE_TARGET:
+

@@ -10,8 +10,8 @@
 <file name="ib_module.h" info="1213827191"/>
 <file name="kaput.h" info="1194043819"/>
 <file name="newtcp_module.h" info="1213827191"/>
-<file name="mx_module.h" info="1213827191"/>
 <file name="mpid_nem_memdefs.h" info="1194043819"/>
+<file name="mx_module.h" info="1213827191"/>
 <file name="elan_module.h" info="1213827191"/>
 <file name="mpid_nem_inline.h" info="1220564459"/>
 <file name="mpid_nem_fbox.h" info="1194043819"/>
@@ -47,9 +47,9 @@
 </fileinfo>
 <fileinfo name="newtcp_module.h">
 </fileinfo>
-<fileinfo name="mx_module.h">
-</fileinfo>
 <fileinfo name="mpid_nem_memdefs.h">
+</fileinfo>
+<fileinfo name="mx_module.h">
 </fileinfo>
 <fileinfo name="elan_module.h">
 </fileinfo>

@@ -1,11 +1,12 @@
-			MPICH2 Release 1.0.8rc1
+			MPICH2 Release 1.0.8
 
 MPICH2 is an all-new implementation of MPI from the group at Argonne
 National Laboratory.  It shares many goals with the original MPICH but
 no actual code.  It is a portable, high-performance implementation of
-the entire MPI-2 standard.  This release has all MPI-2 functions and
+the entire MPI 2.1 standard.  This release has all MPI 2.1 functions and
 features required by the standard with the exception of support for the
-"external32" portable I/O format. 
+"external32" portable I/O format and user-defined data representations 
+for I/O. 
 
 The distribution has been tested by us on a variety of machines in our
 own environments. If you have problems, please report them to
@@ -34,7 +35,7 @@ later, in the section "Alternative configurations".
 
 1.  You will need the following prerequisites.
 
-    - This tar file mpich2-1.0.8rc1.tar.gz
+    - This tar file mpich2-1.0.8.tar.gz
 
     - A C compiler (gcc is sufficient)
 
@@ -65,14 +66,14 @@ later, in the section "Alternative configurations".
 
 2.  Unpack the tar file and go to the top level directory:
 
-      tar xfz mpich2-1.0.8rc1.tar.gz
-      cd mpich2-1.0.8rc1
+      tar xfz mpich2-1.0.8.tar.gz
+      cd mpich2-1.0.8
 
     If your tar doesn't accept the z option, use
 
       gunzip mpich2.tar.gz
       tar xf mpich2.tar
-      cd mpich2-1.0.8rc1
+      cd mpich2-1.0.8
 
 3.  Choose an installation directory (the default is /usr/local/bin),
     /home/you/mpich2-install which is assumed to non-existent or empty.
@@ -169,7 +170,7 @@ later, in the section "Alternative configurations".
     MPD, which is a ring of daemons on the machines where you will run
     your MPI programs.  In the next few steps, you will get his ring up
     and tested.  More details on interacting with MPD can be found in
-    the README file in mpich2-1.0.8rc1/src/pm/mpd, such as how to list
+    the README file in mpich2-1.0.8/src/pm/mpd, such as how to list
     running jobs, kill, suspend, or otherwise signal them, and how to
     debug programs with "mpiexec -gdb".
 
@@ -252,7 +253,7 @@ later, in the section "Alternative configurations".
 
     to see which machines are in the ring so far.  More details on
     mpdboot and other options for starting the mpd's are in
-    mpich2-1.0.8rc1/src/pm/mpd/README.
+    mpich2-1.0.8/src/pm/mpd/README.
 
  !! ***************************
     If you are still having problems getting the mpd ring established,
@@ -294,7 +295,7 @@ later, in the section "Alternative configurations".
 14. Now we will run an MPI job, using the mpiexec command as specified
     in the MPI-2 standard.  There are some examples in the install
     directory, which you have already put in your path, as well as in
-    the directory mpich2-1.0.8rc1/examples.  One of them is the classic
+    the directory mpich2-1.0.8/examples.  One of them is the classic
     cpi example, which computes the value of pi by numerical
     integration in parallel.
 
@@ -402,7 +403,7 @@ Alternative Process Managers
 mpd
 ---
 MPD is the default process manager.  Its setup and use have been
-described above.  The file mpich2-1.0.8rc1/src/pm/mpd/README has more 
+described above.  The file mpich2-1.0.8/src/pm/mpd/README has more 
 information about interactive commands for managing the ring of MPDs.
 
 smpd
@@ -410,7 +411,7 @@ smpd
 SMPD is a process management system for both Microsoft Windows and UNIX.
 SMPD is capable of starting a job where some processes are running on
 Windows and others are running on a variant of UNIX.  For more
-information, please see mpich2-1.0.8rc1/src/pm/smpd/README.
+information, please see mpich2-1.0.8/src/pm/smpd/README.
 
 gforker
 -------

@@ -7,10 +7,10 @@
 <file name="mpid_recv.c" info="1194043819"/>
 <file name="ch3u_rma_sync.c" info="1213037116"/>
 <file name="mpid_irecv.c" info="1194043819"/>
-<file name="mpid_ssend.c" info="1194043819"/>
 <file name="mpid_startall.c" info="1194043819"/>
-<file name="ch3u_handle_recv_pkt.c" info="1217020363"/>
-<file name="ch3u_rndv.c" info="1217020363"/>
+<file name="mpid_ssend.c" info="1194043819"/>
+<file name="ch3u_handle_recv_pkt.c" info="1224708396"/>
+<file name="ch3u_rndv.c" info="1224602380"/>
 <file name="ch3u_handle_connection.c" info="1223476897"/>
 <file name="mpid_rsend.c" info="1222985768"/>
 <file name="mpid_rma.c" info="1213037116"/>
@@ -19,8 +19,8 @@
 <file name="mpid_send.c" info="1194043819"/>
 <file name="ch3u_handle_send_req.c" info="1194043819"/>
 <file name="ch3u_rma_ops.c" info="1213820900"/>
-<file name="ch3u_recvq.c" info="1205870248"/>
-<file name="ch3u_eager.c" info="1217020363"/>
+<file name="ch3u_recvq.c" info="1224602380"/>
+<file name="ch3u_eager.c" info="1224602380"/>
 <file name="mpidi_pg.c" info="1213827191"/>
 <file name="ch3u_handle_recv_req.c" info="1217020363"/>
 <file name="mpid_cancel_recv.c" info="1194043819"/>
@@ -33,8 +33,8 @@
 <file name="mpid_abort.c" info="1223958441"/>
 <file name="mpid_finalize.c" info="1194043819"/>
 <file name="mpid_probe.c" info="1194043819"/>
-<file name="mpidi_isend_self.c" info="1194043819"/>
-<file name="ch3u_eagersync.c" info="1217020363"/>
+<file name="mpidi_isend_self.c" info="1224602380"/>
+<file name="ch3u_eagersync.c" info="1224602380"/>
 <file name="mpid_init.c" info="1214327340"/>
 <file name="mpid_comm_spawn_multiple.c" info="1213037116"/>
 <file name="mpidi_printf.c" info="1210967323"/>
@@ -106,9 +106,6 @@ MPID_STATE_MPIDI_CH3_PKTHANDLER_PTRMADONE MPIDI_CH3_PktHandler_PtRMADone
 <fileinfo name="mpid_irecv.c">
 MPID_STATE_MPID_IRECV MPID_Irecv
 </fileinfo>
-<fileinfo name="mpid_ssend.c">
-MPID_STATE_MPID_SSEND MPID_Ssend
-</fileinfo>
 <fileinfo name="mpid_startall.c">
 MPID_STATE_MPID_STARTALL MPID_Startall
 MPID_STATE_MPID_SEND_INIT MPID_Send_init
@@ -116,6 +113,9 @@ MPID_STATE_MPID_SSEND_INIT MPID_Ssend_init
 MPID_STATE_MPID_RSEND_INIT MPID_Rsend_init
 MPID_STATE_MPID_BSEND_INIT MPID_Bsend_init
 MPID_STATE_MPID_RECV_INIT MPID_Recv_init
+</fileinfo>
+<fileinfo name="mpid_ssend.c">
+MPID_STATE_MPID_SSEND MPID_Ssend
 </fileinfo>
 <fileinfo name="ch3u_handle_recv_pkt.c">
 MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT MPIDI_CH3U_Handle_ordered_recv_pkt
