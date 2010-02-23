@@ -38,29 +38,26 @@ do_smpdversion=yes
 # Allow MAKE to be set from the environment
 MAKE=${MAKE-make}
 
-openpa_dir="src/openpa"
-hydra_dir="src/pm/hydra"
+# ltdirs are the directories that make use of libtool and 
+# require libtoolize 
+# externals are the directories for external packages that we have 
+# included into MPICH2
+externals="src/pm/hydra/tools/bind/hwloc/hwloc"
+ltdirs="src/pm/hydra"
+# amdirs are the directories that make use of autoreconf
+amdirs="src/openpa src/pm/hydra src/mpl"
 
 # List of steps that we will consider
 # (We do not include depend because the values for depend are not just yes/no)
 AllSteps="geterrmsgs bindings f77 f77tof90 build_configure genstates makefiles smpdversion getparms"
 stepsCleared=no
 
-# Options for some steps
-autoconfdir=""
-automakedir=""
-autotoolsdir=""
 # Extract defaults from the environment
-if [ "x$MPICH2_AUTOCONF_DIR" != "x" ] ; then 
-    autoconfdir=$MPICH2_AUTOCONF_DIR
-fi
-if [ "x$MPICH2_AUTOMAKE_DIR" != "x" ] ; then 
-    automakedir=$MPICH2_AUTOMAKE_DIR
-fi
-if [ "x$MPICH2_AUTOTOOLS_DIR" != "x" ] ; then 
-    autotoolsdir=$MPICH2_AUTOTOOLS_DIR
-fi
-#
+autoconfdir=$MPICH2_AUTOCONF_DIR
+automakedir=$MPICH2_AUTOMAKE_DIR
+libtooldir=$MPICH2_LIBTOOL_DIR
+autotoolsdir=$MPICH2_AUTOTOOLS_DIR
+
 # Extract the arguments intended for updatefiles.  Any others are
 # given to simplemake.  
 temp_args=""
@@ -70,8 +67,8 @@ for arg in "$@" ; do
 	set -x
 	;;
 	
-    -do=*)
-    opt=`echo A$arg | sed -e 's/A-do=//'`
+    -do=*|--do=*)
+    opt=`echo A$arg | sed -e 's/^A--*do=//'`
     # Handle some synonyms
     case $opt in 
 	build-configure|configure) opt=build_configure ;;
@@ -131,6 +128,9 @@ for arg in "$@" ; do
     -with-automake=*|--with-automake=*)
     automakedir=`echo "A$arg" | sed -e 's/.*=//'`
     ;;
+    -with-libtool=*|--with-libtool=*)
+    libtooldir=`echo "A$arg" | sed -e 's/.*=//'`
+    ;;
     -with-autotools=*|--with-autotools=*)
     autotoolsdir=`echo "A$arg" | sed -e 's/.*=//'`
     ;;
@@ -144,23 +144,27 @@ for arg in "$@" ; do
     -help|--help|-usage|--usage)
     cat <<EOF
     updatefiles [ --with-autoconf=dir ] [ --with-automake=dir ] \\
-                [ --with-autotools=dir ] [ -do=stepname ]       \\
-                [ args for simplemake ] 
+                [ --with-libtool=dir ] [ --with-autotools=dir ] \\
+                [ --do=stepname ] [ args for simplemake ]
     Update the files in the MPICH2 build tree.  This file builds the 
     configure files, creates the Makefile.in files (using the simplemake
     program), extracts the error messages.
 
-    You can use --with-autoconf=dir to specify a directory that contains
-    an alternate autoconf and autoheader.  Similarly --with-automake can
-    be used to specify the location of automake and aclocal.  If
-    autoconf and automake are installed in the same location, they can
-    be specified by the --with-autotools option.
+    You can use --with-autoconf=dir to specify a directory that
+    contains an alternate autoconf and autoheader.  Similarly
+    --with-automake can be used to specify the location of automake
+    and aclocal and --with-libtool to specify the location of
+    libtoolize. If all the autotools are installed in the same
+    location, they can be specified by the --with-autotools option.
 
-    Use -do=stepname to update only a single step.  For example, 
-    -do=build_configure only updates the configure scripts.  The available
-    steps are
-    $AllSteps
+    Use --do=stepname to update only a single step.  For example, 
+    --do=build_configure only updates the configure scripts.  The available
+    steps are:
 EOF
+    for step in $AllSteps
+    do
+       echo "        $step"
+    done
     exit
     ;;
     *)
@@ -170,22 +174,24 @@ EOF
 done
 
 if [ -n "$autotoolsdir" ] ; then
-    if [ -n "$autoconfdir" -o -n "$automakedir" ] ; then
-        # Don't permit --with-autotools together with either --with-autoconf or
-        # --with-automake because which argument takes precedence is not obvious
-        # without immediate explanation.  --with-autotools is really only
-        # present to make life a little easier for those who preferred the old
-        # behavior where --with-autoconf was used to specify the location of
-        # both autoconf and automake.
+    if [ -n "$autoconfdir" -o -n "$automakedir" -o -n "$libtooldir" ] ; then
+        # Don't permit --with-autotools together with --with-autoconf,
+        # --with-automake or --with-libtool because which argument
+        # takes precedence is not obvious without immediate
+        # explanation.  --with-autotools is really only present to
+        # make life a little easier for those who preferred the old
+        # behavior where --with-autoconf was used to specify the
+        # location of both autoconf and automake.
         cat <<EOT
-Error: --with-autotools was specified together with either
---with-autoconf or --with-automake.  --with-autotools is incompatible
-with the other two options.  Please specify only one set or the other.
+Error: --with-autotools was specified together with --with-autoconf,
+--with-automake or --with-libtool.  --with-autotools is incompatible
+with the other options.  Please specify only one set or the other.
 EOT
         exit 1
     else
         autoconfdir=$autotoolsdir
         automakedir=$autotoolsdir
+	libtooldir=$autotoolsdir
     fi
 fi
 
@@ -267,6 +273,18 @@ else
     automake=${AUTOMAKE:-automake}
     aclocal=${ACLOCAL:-aclocal}
 fi
+if [ -n "$libtooldir" ] ; then
+    if [ -x "$libtooldir/libtoolize" ] ; then
+        libtoolize=$libtooldir/libtoolize
+        LIBTOOLIZE=$libtoolize
+        export LIBTOOLIZE
+    else
+        echo "could not find executable libtoolize in $libtooldir"
+        exit 1
+    fi
+else
+    libtoolize=${LIBTOOLIZE:-libtoolize}
+fi
 
 #
 # Check that you have a working autoconf.  Autoconf 2.57 is not compatible with
@@ -287,7 +305,9 @@ fi
 # -1 is used for unknown
 acSubversion=-1
 acIncDirFlag=-I
-for ver in 64 63 62 61 60 59 ; do
+# Try to keep at least one version ahead of autoconf (e.g., if current is
+# 2.64, include a test for 2.65)
+for ver in 65 64 63 62 61 60 59 ; do
     rm -f .tmp/configure.in .tmp/configure
     cat >.tmp/configure.in <<EOF
 AC_PREREQ(2.$ver)
@@ -301,9 +321,10 @@ rm -f .tmp/configure.in .tmp/configure
 if [ "$acSubversion" -gt 0 ] ; then
     acVersion="2.$acSubversion"
     echo "You have autoconf version $acVersion or greater."
-    if [ "$acSubversion" -lt 62 ] ; then 
+    # this used to be a check for >=63, but we only work with exactly 2.63 right now
+    if [ "$acSubversion" -ne 63 ] ; then
        cat <<EOF
-autoconf version 2.62 or later is required for MPICH2.
+autoconf version 2.63 (exactly) is required
 EOF
        if [ "$do_build_configure" = yes ] ; then 
             echo "Exiting updatefiles...."
@@ -637,23 +658,20 @@ if [ $do_build_configure = yes ] ; then
 	        # be used instead of this one when building that configure
 	        continue
             fi
-	    qhydra=`echo $dir | sed -e 's%.*'"$hydra_dir"'.*%FOUNDHYDRA%'`
-	    if [ "$qhydra" = "FOUNDHYDRA" ] ; then
-	        # hydra is updated using autoreconf later in this script
-	        continue
-            fi
-	    qopenpa=`echo $dir | sed -e 's%.*'"$openpa_dir"'.*%FOUNDOPENPA%'`
-	    if [ "$qopenpa" = "FOUNDOPENPA" ] ; then
-	        # openpa is updated using autoreconf later in this script
-	        continue
-            fi
-            qopenpa=`echo $dir | sed -e 's%.*openpa.*%FOUNDOPENPA%'`
-            if [ "$qopenpa" = "FOUNDOPENPA" ] ; then
-                # this is the old openpa location (in the root of the package)
-                # this clause exists because SVN won't delete the old directory
-                # when you run "svn update".
-                continue
-            fi
+
+	    found=0
+	    for amdir in $amdirs ; do
+		foo=`echo $dir | sed -e 's%.*'"$amdir"'.*%FOUNDFOO%'`
+		if [ "$foo" = "FOUNDFOO" ] ; then
+		    # We'll use autoreconf later in this script for these directories
+		    found=1
+		    break
+		fi
+	    done
+	    if [ "$found" = "1" ] ; then
+		continue
+	    fi
+
 	    if [ -s $dir/Makefile.in ] ; then 
                 #echo "Found $dir/configure.in"
 	        #
@@ -698,6 +716,10 @@ if [ $do_build_configure = yes ] ; then
 	        if grep 'configure:' $dir/Makefile.in >/dev/null 2>&1 ; then
  	            # The make -q checks whether the target is upto date first;
 	            # if it isn't, we remake it.
+		    # The make target should be for ${srcdir}/configure,
+		    # so in the make line, the target needs to be ./configure
+		    # Using just "configure" is incorrect and will fail with
+		    # some makes.
 		    rm -f $dir/mf.out 
 		    rm -f $dir/mf.newer
 		    date > $dir/mf.newer
@@ -706,10 +728,10 @@ if [ $do_build_configure = yes ] ; then
 		        -e "s%@srcdir@%.%g" \
 		        -e '/include .*alldeps/d' \
 		        -e '/@SET_MAKE@/d' Makefile.in > mf.tmp ;\
-		        if ${MAKE} -q -f mf.tmp configure >mf.out 2>&1 ; then \
+		        if ${MAKE} -q -f mf.tmp ./configure >mf.out 2>&1 ; then \
                     : ; else \
 	            echo "Found $dir/configure.in; executing make configure target" ; \
-	            ${MAKE} -f mf.tmp configure ; fi ; \
+	            ${MAKE} -f mf.tmp ./configure ; fi ; \
 			if [ -s configure ] ; then rm -f mf.tmp ; \
 			else echo "See `pwd`/mf.tmp for Makefile that failed" ;\
                         fi ;\
@@ -856,15 +878,30 @@ if [ $do_build_configure = yes ] ; then
     fi
 fi
 
-# must come after the above autoreconf-like logic because the above
-# logic will delete the results of this actual autoreconf
-if [ -d "$openpa_dir" -o -L "$openpa_dir" ] ; then
-    echo "running autoreconf in $openpa_dir"
-    (cd $openpa_dir && $autoreconf -vif) || exit 1
-fi
-if [ -d "$hydra_dir" -o -L "$hydra_dir" ] ; then
-    echo "running autoreconf in $hydra_dir"
-    (cd $hydra_dir && $autoreconf -vif) || exit 1
+if [ "$do_build_configure" = "yes" -o "$do_makefiles" = "yes" ] ; then
+    # must come after the above autoreconf-like logic because the above
+    # logic will delete the results of this actual autoreconf
+
+    for external in $externals ; do
+       if [ -d "$external" -o -L "$external" ] ; then
+           echo "running third-party initialization"
+           (cd $external && ./autogen.sh) || exit 1
+       fi
+    done
+
+    for ltdir in $ltdirs ; do
+	if [ -d "$ltdir" -o -L "$ltdir" ] ; then
+	    echo "running $libtoolize in $ltdir"
+	    (cd $ltdir && $libtoolize) || exit 1
+	fi
+    done
+
+    for amdir in $amdirs ; do
+	if [ -d "$amdir" -o -L "$amdir" ] ; then
+	    echo "running $autoreconf in $amdir"
+	    (cd $amdir && $autoreconf -vif) || exit 1
+	fi
+    done
 fi
 
 if [ -f src/mpe2/maint/updatefiles -a "$do_build_configure" = "yes" ] ; then
@@ -876,7 +913,7 @@ if [ $rm_prepost = yes ] ; then
 fi
 if [ "$do_smpdversion" = yes ] ; then
     echo "Creating src/pm/smpd/smpd_version.h"
-    smpdVersion=`cat maint/Version`
+    smpdVersion=`cat maint/Version | grep ^MPICH2_VERSION | cut -f2 -d' '`
     cat >src/pm/smpd/smpd_version.h <<EOF
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*  
@@ -887,16 +924,14 @@ if [ "$do_smpdversion" = yes ] ; then
 EOF
 fi
 
-echo "Updating README's version ID."
-VERSION=`cat maint/Version`
-sed -e "s/%VERSION%/${VERSION}/g" README.vin > README
+VERSION=`cat maint/Version | grep ^MPICH2_VERSION | cut -f2 -d' '`
+if [ -f README.vin ] ; then
+    echo "Updating README's version ID."
+    sed -e "s/%VERSION%/${VERSION}/g" README.vin > README
+else
+    echo "README.vin file not present, unable to update README version number (perhaps we are running in a release tarball source tree?)"
+fi
 
-BASIC_VERSION=`expr $VERSION : '\([0-9]*\.[0-9]*[\.]*[0-9]*\)[a-zA-Z]*[0-9]*'`
-VERSION_EXT=`expr $VERSION : '[0-9]*\.[0-9]*[\.]*[0-9]*\([a-zA-Z]*[0-9]*\)'`
-sed -e "s/%BASIC_VERSION%/${BASIC_VERSION}/g" -e "s/%VERSION_EXT%/${VERSION_EXT}/g" \
-    src/packaging/spec/fedora.spec.vin > src/packaging/spec/fedora.spec
-
-#
 # The following must be the last statements executed
 if [ -n "$error_summary" ] ; then
     echo " "

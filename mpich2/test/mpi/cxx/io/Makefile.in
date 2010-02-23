@@ -27,7 +27,7 @@ INCLUDES = -I../../include -I${srcdir}/../../include
 .SUFFIXES:
 .SUFFIXES: .o .cxx .txt 
 .cxx.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CXX             $<" ; \
 	else \
 	  echo $(CXX_COMPILE) -c $< ; \
@@ -177,12 +177,8 @@ SOURCES         =  iwriteatx.cxx iwritex.cxx iwriteshx.cxx writex.cxx \
 	writeallbenosx.cxx writeordnosx.cxx writeordbenosx.cxx \
 	writeshnosx.cxx writeatallbenosx.cxx fileerrx.cxx fileinfox.cxx \
 	shpositionx.cxx setinfox.cxx filemiscx.cxx seekavail.cxx 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 

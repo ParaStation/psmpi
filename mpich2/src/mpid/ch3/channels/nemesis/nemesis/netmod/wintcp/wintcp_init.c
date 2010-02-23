@@ -44,7 +44,6 @@ static int GetIPInterface( MPIDU_Sock_ifaddr_t *, int * );
 MPID_nem_netmod_funcs_t MPIDI_nem_newtcp_module_funcs = {
     MPID_nem_newtcp_module_init,
     MPID_nem_newtcp_module_finalize,
-    MPID_nem_newtcp_module_ckpt_shutdown,
     MPID_nem_newtcp_module_poll,
     MPID_nem_newtcp_module_send,
     MPID_nem_newtcp_module_get_business_card,
@@ -65,14 +64,17 @@ MPID_nem_netmod_funcs_t MPIDI_nem_newtcp_module_funcs = {
 int MPID_nem_newtcp_module_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_queue_ptr_t proc_free_queue,
                                  MPID_nem_cell_ptr_t proc_elements, int num_proc_elements, MPID_nem_cell_ptr_t module_elements,
                                  int num_module_elements, MPID_nem_queue_ptr_t *module_free_queue,
-                                 int ckpt_restart, MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_max_sz_p)
+                                 MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
-    int ret;
     int i;
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_INIT);
+
+    MPIU_UNREFERENCED_ARG(pg_p);
+    MPIU_UNREFERENCED_ARG(proc_elements);
+    MPIU_UNREFERENCED_ARG(num_proc_elements);
 
     /* first make sure that our private fields in the vc fit into the area provided  */
     MPIU_Assert(sizeof(MPID_nem_newtcp_module_vc_area) <= MPID_NEM_VC_NETMOD_AREA_LEN);
@@ -347,7 +349,7 @@ int MPID_nem_newtcp_module_connect_to_root (const char *business_card, MPIDI_VC_
 int MPID_nem_newtcp_module_vc_init (MPIDI_VC_t *vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    struct in_addr addr;
+
     MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_VC_INIT);
 
@@ -384,6 +386,7 @@ int MPID_nem_newtcp_module_vc_destroy(MPIDI_VC_t *vc)
     int mpi_errno = MPI_SUCCESS;   
 
     /* free any resources associated with this VC here */
+    MPIU_UNREFERENCED_ARG(vc);
 
  fn_exit:   
        return mpi_errno;
@@ -400,7 +403,7 @@ int MPID_nem_newtcp_module_get_addr_port_from_bc (const char *business_card, str
 {
     int mpi_errno = MPI_SUCCESS;
     int ret;
-    char desc_str[256];
+    /* char desc_str[256]; */
     char ifname[256];
     MPIDI_STATE_DECL(MPID_STATE_NEWTCP_MODULE_GET_ADDR_PORT_FROM_BC);
 
@@ -445,9 +448,8 @@ int MPID_nem_newtcp_module_get_addr_port_from_bc (const char *business_card, str
 int MPID_nem_newtcp_module_bind (int sockfd)
 {
     int mpi_errno = MPI_SUCCESS;
-    int ret;
     struct sockaddr_in sin;
-    int port, low_port, high_port;
+    int /* port, */ low_port, high_port;
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_BIND);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_BIND);
@@ -694,6 +696,7 @@ static int GetIPInterface( MPIDU_Sock_ifaddr_t *ifaddr, int *found )
 static int GetIPInterface( MPIDU_Sock_ifaddr_t *ifaddr, int *found )
 {
     *found = 0;
+    MPIU_UNREFERENCED_ARG(ifaddr);
     return 0;
 }
 #endif

@@ -39,27 +39,27 @@ Makefile: ${srcdir}/Makefile.in
 # --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
-	(cd io && $(MAKE) apply )
-	(cd errhan && $(MAKE) apply )
+	(cd io && ${MAKE} apply )
+	(cd errhan && ${MAKE} apply )
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
 	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
-	(cd io && $(MAKE) clean )
-	(cd errhan && $(MAKE) clean )
+	(cd io && ${MAKE} clean )
+	(cd errhan && ${MAKE} clean )
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
-	if [ -s io/Makefile ] ; then (cd io && $(MAKE) distclean ) ; fi
-	if [ -s errhan/Makefile ] ; then (cd errhan && $(MAKE) distclean ) ; fi
+	if [ -s io/Makefile ] ; then (cd io && ${MAKE} distclean ) ; fi
+	if [ -s errhan/Makefile ] ; then (cd errhan && ${MAKE} distclean ) ; fi
 	-@rm -f Makefile testlist
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
 maintainer-clean:  distclean-xxx remove-genmakefiles
-	(cd io && $(MAKE) maintainer-clean )
-	(cd errhan && $(MAKE) maintainer-clean )
+	(cd io && ${MAKE} maintainer-clean )
+	(cd errhan && ${MAKE} maintainer-clean )
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
@@ -69,28 +69,24 @@ all-redirect:
 	@(cd errhan && ${MAKE} all )
 
 coverage: 
-	(cd io && $(MAKE) coverage )
-	(cd errhan && $(MAKE) coverage )
+	(cd io && ${MAKE} coverage )
+	(cd errhan && ${MAKE} coverage )
 # --------------------------------------------------------------------------
 htmldoc:
-	(cd io && $(MAKE) htmldoc )
-	(cd errhan && $(MAKE) htmldoc )
+	(cd io && ${MAKE} htmldoc )
+	(cd errhan && ${MAKE} htmldoc )
 mandoc:
-	(cd io && $(MAKE) mandoc )
-	(cd errhan && $(MAKE) mandoc )
+	(cd io && ${MAKE} mandoc )
+	(cd errhan && ${MAKE} mandoc )
 latexdoc:
-	(cd io && $(MAKE) latexdoc )
-	(cd errhan && $(MAKE) latexdoc )
+	(cd io && ${MAKE} latexdoc )
+	(cd errhan && ${MAKE} latexdoc )
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
-	(cd io && $(MAKE) TAGS )
-	(cd errhan && $(MAKE) TAGS )
 # --------------------------------------------------------------------------
 
 # A special testing target to simplify testing just the C++ code

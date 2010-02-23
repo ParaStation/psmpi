@@ -25,7 +25,7 @@ INCLUDES = -I../../../../src/include -I${top_srcdir}/src/include \
 .SUFFIXES:
 .SUFFIXES: .o .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
@@ -34,7 +34,7 @@ INCLUDES = -I../../../../src/include -I${top_srcdir}/src/include \
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -90,8 +90,6 @@ latexdoc:
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
 # --------------------------------------------------------------------------
 mtestthread.o: mtestthread.c
 all-local: mtestthread.o

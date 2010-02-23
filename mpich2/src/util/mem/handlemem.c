@@ -7,17 +7,7 @@
 #include "mpiimpl.h"
 #include <stdio.h>
 
-#if defined(MPICH_DEBUG_MEMINIT)
-#  if defined(HAVE_VALGRIND_H) && defined(HAVE_MEMCHECK_H)
-#    include <valgrind.h>
-#    include <memcheck.h>
-#    define USE_VALGRIND_MACROS 1
-#  elif defined(HAVE_VALGRIND_VALGRIND_H) && defined(HAVE_VALGRIND_MEMCHECK_H)
-#    include <valgrind/valgrind.h>
-#    include <valgrind/memcheck.h>
-#    define USE_VALGRIND_MACROS 1
-#  endif
-#endif
+#include "mpiu_valgrind.h"
 
 #ifdef NEEDS_PRINT_HANDLE
 static void MPIU_Print_handle( int handle );
@@ -139,6 +129,25 @@ static int MPIU_Handle_free( void *((*indirect)[]), int indirect_size )
     return 0;
 }
 
+#if defined(MPIU_VG_AVAILABLE)
+#define MPIU_HANDLE_VG_LABEL(objptr_, objsize_, handle_type_, is_direct_)                        \
+    do {                                                                                         \
+        if (MPIU_VG_RUNNING_ON_VALGRIND()) {                                                     \
+            char desc_str[256];                                                                  \
+            MPIU_Snprintf(desc_str, sizeof(desc_str)-1,                                          \
+                          "[MPICH2 handle: objptr=%p handle=0x%x %s/%s]",                        \
+                          (objptr_), (objptr_)->handle,                                          \
+                          ((is_direct_) ? "DIRECT" : "INDIRECT"),                                \
+                          MPIU_Handle_get_kind_str(handle_type_));                               \
+            /* we don't keep track of the block descriptor because the handle */                 \
+            /* values never change once allocated */                                             \
+            MPIU_VG_CREATE_BLOCK((objptr_), (objsize_), desc_str);                               \
+        }                                                                                        \
+    } while (0)
+#else
+#define MPIU_HANDLE_VG_LABEL(objptr_, objsize_, handle_type_, is_direct_) do{}while(0)
+#endif
+
 void *MPIU_Handle_direct_init(void *direct,
 			      int direct_size, 
 			      int obj_size, 
@@ -147,7 +156,7 @@ void *MPIU_Handle_direct_init(void *direct,
     int                i;
     MPIU_Handle_common *hptr=0;
     char               *ptr = (char *)direct;
-    
+
     for (i=0; i<direct_size; i++) {
 	/* printf( "Adding %p in %d\n", ptr, handle_type ); */
 	hptr = (MPIU_Handle_common *)ptr;
@@ -155,9 +164,12 @@ void *MPIU_Handle_direct_init(void *direct,
 	hptr->next = ptr;
 	hptr->handle = ((unsigned)HANDLE_KIND_DIRECT << HANDLE_KIND_SHIFT) | 
 	    (handle_type << HANDLE_MPI_KIND_SHIFT) | i;
+
+        MPIU_HANDLE_VG_LABEL(hptr, obj_size, handle_type, 1);
     }
 
-    hptr->next = 0;
+    if (hptr)
+        hptr->next = 0;
     return direct;
 }
 
@@ -203,6 +215,8 @@ static void *MPIU_Handle_indirect_init( void *(**indirect)[],
 	hptr->handle   = ((unsigned)HANDLE_KIND_INDIRECT << HANDLE_KIND_SHIFT) | 
 	    (handle_type << HANDLE_MPI_KIND_SHIFT) | 
 	    (*indirect_size << HANDLE_INDIRECT_SHIFT) | i;
+
+        MPIU_HANDLE_VG_LABEL(hptr, obj_size, handle_type, 0);
     }
     hptr->next = 0;
     /* We're here because avail is null, so there is no need to set 
@@ -227,6 +241,10 @@ static int MPIU_Handle_finalize( void *objmem_ptr )
     (void)MPIU_Handle_free( objmem->indirect, objmem->indirect_size );
     /* This does *not* remove any Info objects that the user created 
        and then did not destroy */
+
+    /* at this point we are done with the memory pool, inform valgrind */
+    MPIU_VG_DESTROY_MEMPOOL(objmem_ptr);
+
     return 0;
 }
 
@@ -317,6 +335,8 @@ void *MPIU_Handle_obj_alloc_unsafe(MPIU_Object_alloc_t *objmem)
 	if (!objmem->initialized) {
 	    performed_initialize = 1;
 
+            MPIU_VG_CREATE_MEMPOOL(objmem, 0/*rzB*/, 0/*is_zeroed*/);
+
 	    /* Setup the first block.  This is done here so that short MPI
 	       jobs do not need to include any of the Info code if no
 	       Info-using routines are used */
@@ -333,7 +353,7 @@ void *MPIU_Handle_obj_alloc_unsafe(MPIU_Object_alloc_t *objmem)
 	    /* The priority of these callbacks must be greater than
 	       the priority of the callback that frees the objmem direct and 
 	       indirect storage. */
-	    MPIR_Add_finalize(MPIU_CheckHandlesOnFinalize, objmem, 1);
+	    MPIR_Add_finalize(MPIU_CheckHandlesOnFinalize, objmem, MPIR_FINALIZE_CALLBACK_HANDLE_CHECK_PRIO);
 #endif
 	    /* ptr points to object to allocate */
 	}
@@ -355,25 +375,27 @@ void *MPIU_Handle_obj_alloc_unsafe(MPIU_Object_alloc_t *objmem)
 	MPIU_Handle_obj_alloc_complete(objmem, performed_initialize);
     }
 
-    MPIU_DBG_MSG_FMT(HANDLE,TYPICAL,(MPIU_DBG_FDEST,
-				     "Allocating handle %p (0x%08x)\n",
-				     ptr, ptr->handle));
-
+    if (ptr) {
 #ifdef USE_MEMORY_TRACING
     /* We set the object to an invalid pattern.  This is similar to 
        what is done by MPIU_trmalloc by default (except that trmalloc uses
        0xda as the byte in the memset)
     */
-    if (ptr) {
-#if defined(USE_VALGRIND_MACROS)
-        VALGRIND_MAKE_MEM_DEFINED(&ptr->ref_count, objmem->size - sizeof(int));
-	memset( (void*)&ptr->ref_count, 0xef, objmem->size-sizeof(int));
-        VALGRIND_MAKE_MEM_UNDEFINED(&ptr->ref_count, objmem->size - sizeof(int));
-#else
-	memset( (void*)&ptr->ref_count, 0xef, objmem->size-sizeof(int));
-#endif
-    }
+        /* if the object was previously freed then MEMPOOL_FREE marked it as
+         * NOACCESS, so we need to make it addressable again before memsetting
+         * it */
+        MPIU_VG_MAKE_MEM_DEFINED(&ptr->ref_count, objmem->size - sizeof(ptr->handle));
+	memset( (void*)&ptr->ref_count, 0xef, objmem->size-sizeof(ptr->handle));
 #endif /* USE_MEMORY_TRACING */
+        /* mark the mem as addressable yet undefined if valgrind is available */
+        MPIU_VG_MEMPOOL_ALLOC(objmem, ptr, objmem->size);
+        /* the handle value is always valid at return from this function */
+        MPIU_VG_MAKE_MEM_DEFINED(&ptr->handle, sizeof(ptr->handle));
+
+        MPIU_DBG_MSG_FMT(HANDLE,TYPICAL,(MPIU_DBG_FDEST,
+                                         "Allocating object ptr %p (handle val 0x%08x)",
+                                         ptr, ptr->handle));
+    }
 
     return ptr;
 }
@@ -394,11 +416,21 @@ void MPIU_Handle_obj_free( MPIU_Object_alloc_t *objmem, void *object )
     MPIU_Handle_common *obj = (MPIU_Handle_common *)object;
 
     MPIU_THREAD_CS_ENTER(HANDLEALLOC,);
-#if defined(USE_VALGRIND_MACROS)
-    VALGRIND_MAKE_MEM_NOACCESS(&obj->ref_count, objmem->size - sizeof(int));
-    VALGRIND_MAKE_MEM_UNDEFINED(&obj->next, sizeof(obj->next));
-#endif
-    /* printf( "Freeing %p in %d\n", object, objmem->kind ); */
+
+    MPIU_DBG_MSG_FMT(HANDLE,TYPICAL,(MPIU_DBG_FDEST,
+                                     "Freeing object ptr %p (0x%08x kind=%s) refcount=%d",
+                                     (obj),
+                                     (obj)->handle,
+                                     MPIU_Handle_get_kind_str(HANDLE_GET_MPI_KIND((obj)->handle)),
+                                     MPIU_Object_get_ref(obj)));
+
+    MPIU_VG_MEMPOOL_FREE(objmem, obj);
+    /* MEMPOOL_FREE marks the object NOACCESS, so we have to make the
+     * MPIU_Handle_common area that is used for internal book keeping
+     * addressable again. */
+    MPIU_VG_MAKE_MEM_DEFINED(&obj->handle, sizeof(obj->handle));
+    MPIU_VG_MAKE_MEM_UNDEFINED(&obj->next, sizeof(obj->next));
+
     obj->next	        = objmem->avail;
     objmem->avail	= obj;
     MPIU_THREAD_CS_EXIT(HANDLEALLOC,);
@@ -439,6 +471,31 @@ void *MPIU_Handle_get_ptr_indirect( int handle, MPIU_Object_alloc_t *objmem )
 	block_ptr += index_num * objmem->size;
 	return block_ptr;
     }
+}
+
+/* returns the name of the handle kind for debugging/logging purposes */
+const char *MPIU_Handle_get_kind_str(int kind)
+{
+#define mpiu_name_case_(name_) case MPID_##name_: return (#name_)
+    switch (kind) {
+        mpiu_name_case_(COMM);
+        mpiu_name_case_(GROUP);
+        mpiu_name_case_(DATATYPE);
+        mpiu_name_case_(FILE);
+        mpiu_name_case_(ERRHANDLER);
+        mpiu_name_case_(OP);
+        mpiu_name_case_(INFO);
+        mpiu_name_case_(WIN);
+        mpiu_name_case_(KEYVAL);
+        mpiu_name_case_(ATTR);
+        mpiu_name_case_(REQUEST);
+        mpiu_name_case_(PROCGROUP);
+        mpiu_name_case_(VCONN);
+        mpiu_name_case_(GREQ_CLASS);
+        default:
+            return "unknown";
+    }
+#undef mpiu_name_case_
 }
 
 /* style: allow:printf:5 sig:0 */
@@ -545,26 +602,7 @@ static int MPIU_CheckHandlesOnFinalize( void *objmem_ptr )
 
 static const char *MPIR_ObjectName( MPIU_Object_alloc_t *objmem )
 {
-    const char *name=0;
-    switch (objmem->kind) {
-    case MPID_COMM: name = "COMM"; break;
-    case MPID_GROUP: name = "GROUP"; break;
-    case MPID_DATATYPE: name = "DATATYPE"; break;
-    case MPID_FILE: name = "FILE"; break;
-    case MPID_ERRHANDLER: name = "ERRHANDLER"; break;
-    case MPID_OP: name = "OP"; break;
-    case MPID_INFO: name = "INFO"; break;
-    case MPID_WIN: name = "WIN"; break;
-    case MPID_KEYVAL: name = "ATTRIBUTE KEY"; break;
-    case MPID_ATTR: name = "ATTRIBUTE"; break;
-    case MPID_REQUEST: name = "REQUEST"; break;
-    case MPID_PROCGROUP: name = "PROCGROUP"; break;
-    case MPID_VCONN: name = "VIRTUAL CONNECTION"; break;
-    case MPID_GREQ_CLASS: name = "GENERALIZED REQUEST CLASS"; break;
-    default:
-	name = "UNKNOWN OBJECT TYPE";
-    }
-    return name;
+    return MPIU_Handle_get_kind_str(objmem->kind);
 }
 #endif    
 

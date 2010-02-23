@@ -30,6 +30,7 @@
 #define NMPI_Pack_size MPI_Pack_size
 #define NMPI_Reduce MPI_Reduce
 #define NMPI_Reduce_scatter MPI_Reduce_scatter
+#define NMPI_Reduce_scatter_block MPI_Reduce_scatter_block
 #define NMPI_Unpack MPI_Unpack
 #define NMPI_Wait MPI_Wait
 #define NMPI_Test MPI_Test
@@ -50,6 +51,7 @@
 #define NMPI_Comm_size MPI_Comm_size 
 #define NMPI_Comm_rank MPI_Comm_rank
 #define NMPI_Alltoall MPI_Alltoall
+#define NMPI_Scatter MPI_Scatter
 #define NMPI_Isend MPI_Isend
 #define NMPI_Irecv MPI_Irecv
 #define NMPI_Recv MPI_Recv 
@@ -70,6 +72,7 @@
 #define NMPI_Cart_map  MPI_Cart_map
 #define NMPI_Graph_map  MPI_Graph_map
 #define NMPI_Iprobe MPI_Iprobe
+#define NMPI_Probe MPI_Probe
 #define NMPI_Barrier MPI_Barrier
 #define NMPI_Type_get_true_extent MPI_Type_get_true_extent
 #define NMPI_Group_translate_ranks MPI_Group_translate_ranks
@@ -115,6 +118,7 @@
 #define NMPI_Pack_size PMPI_Pack_size
 #define NMPI_Reduce PMPI_Reduce
 #define NMPI_Reduce_scatter PMPI_Reduce_scatter
+#define NMPI_Reduce_scatter_block PMPI_Reduce_scatter_block
 #define NMPI_Unpack PMPI_Unpack
 #define NMPI_Wait PMPI_Wait
 #define NMPI_Test PMPI_Test
@@ -135,6 +139,7 @@
 #define NMPI_Comm_size PMPI_Comm_size 
 #define NMPI_Comm_rank PMPI_Comm_rank
 #define NMPI_Alltoall PMPI_Alltoall
+#define NMPI_Scatter PMPI_Scatter
 #define NMPI_Isend PMPI_Isend
 #define NMPI_Irecv PMPI_Irecv
 #define NMPI_Recv PMPI_Recv 
@@ -155,6 +160,7 @@
 #define NMPI_Cart_map  PMPI_Cart_map
 #define NMPI_Graph_map  PMPI_Graph_map
 #define NMPI_Iprobe PMPI_Iprobe
+#define NMPI_Probe PMPI_Probe
 #define NMPI_Barrier PMPI_Barrier
 #define NMPI_Type_get_true_extent PMPI_Type_get_true_extent
 #define NMPI_Group_translate_ranks PMPI_Group_translate_ranks

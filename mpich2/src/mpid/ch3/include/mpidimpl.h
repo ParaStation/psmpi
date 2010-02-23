@@ -25,6 +25,8 @@
 #include "mpidpre.h"
 #endif
 
+#include "mpidftb.h"
+
 /* Add the ch3 packet definitions */
 #include "mpidpkt.h"
 
@@ -47,6 +49,8 @@
 int gethostname(char *name, size_t len);
 # endif
 
+extern int MPIDI_Use_pmi2_api;
+
 #define MPIDI_CHANGE_VC_STATE(vc, new_state) do {               \
         MPIU_DBG_VCSTATECHANGE(vc, VC_STATE_##new_state);       \
         (vc)->state = MPIDI_VC_STATE_##new_state;               \
@@ -65,8 +69,7 @@ typedef struct MPIDI_PG
        MPIU_Object system, but we do use the associated reference counting 
        routines.  Therefore, handle must be present, but is not used 
        except by debugging routines */
-    int handle;
-    volatile int ref_count;
+    MPIU_OBJECT_HEADER; /* adds handle and ref_count fields */
 
     /* Next pointer used to maintain a list of all process groups known to 
        this process */
@@ -232,10 +235,7 @@ extern MPIDI_Process_t MPIDI_Process;
  *     cancelled state
  */
 
-#define MPIU_HANDLE_ALLOCATION_MUTEX         0
-#define MPIU_HANDLE_ALLOCATION_THREAD_LOCAL  1
-
-/* XXX DJG for TLS hack */
+/* FIXME XXX DJG for TLS hack */
 #define MPID_REQUEST_TLS_MAX 128
 
 #if MPIU_HANDLE_ALLOCATION_METHOD == MPIU_HANDLE_ALLOCATION_THREAD_LOCAL
@@ -447,11 +447,17 @@ extern MPIDI_Process_t MPIDI_Process;
     (req_)->dev.cancel_pending = TRUE;			\
 }
 
-/* FIXME: Why does this have a side effect? */
-#define MPIDI_Request_recv_pending(req_, recv_pending_)	\
-    {								\
- 	*(recv_pending_) = --(req_)->dev.recv_pending_count;	\
-    }
+/* the following two macros were formerly a single confusing macro with side
+   effects named MPIDI_Request_recv_pending() */
+#define MPIDI_Request_check_pending(req_, recv_pending_)   \
+    do {                                                   \
+        *(recv_pending_) = (req_)->dev.recv_pending_count; \
+    } while (0)
+
+#define MPIDI_Request_decr_pending(req_)    \
+    do {                                    \
+        --(req_)->dev.recv_pending_count;   \
+    } while (0)
 
 /* MPIDI_Request_fetch_and_clear_rts_sreq() - atomically fetch current 
    partner RTS sreq and nullify partner request */
@@ -578,17 +584,13 @@ int MPIDI_PG_CheckForSingleton( void );
 int MPIDI_CH3_PG_Init( MPIDI_PG_t * );
 
 #define MPIDI_PG_add_ref(pg_)			\
-{						\
+do {                                            \
     MPIU_Object_add_ref(pg_);			\
-    MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
-         "Incr process group %p ref count to %d",pg_,pg_->ref_count));\
-}
+} while (0)
 #define MPIDI_PG_release_ref(pg_, inuse_)	\
-{						\
+do {                                            \
     MPIU_Object_release_ref(pg_, inuse_);	\
-    MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
-         "Decr process group %p ref count to %d",pg_,pg_->ref_count));\
-}
+} while (0)
 
 #define MPIDI_PG_Get_vc_set_active(pg_, rank_, vcp_)  do {              \
         *(vcp_) = &(pg_)->vct[rank_];                                   \
@@ -672,6 +674,12 @@ typedef struct MPIDI_Comm_ops
     
     int (*cancel_send)(struct MPIDI_VC *vc,  struct MPID_Request *sreq);
     int (*cancel_recv)(struct MPIDI_VC *vc,  struct MPID_Request *rreq);
+    
+    int (*probe)(struct MPIDI_VC *vc,  int source, int tag, MPID_Comm *comm, int context_offset,
+		                  MPI_Status *status);
+    int (*iprobe)(struct MPIDI_VC *vc,  int source, int tag, MPID_Comm *comm, int context_offset,
+		  int *flag, MPI_Status *status);
+   
 } MPIDI_Comm_ops_t;
 #endif
 
@@ -684,8 +692,7 @@ typedef struct MPIDI_VC
        when debugging objects (the handle kind is used in reporting
        on changes to the object).
     */
-    int handle;
-    volatile int ref_count;
+    MPIU_OBJECT_HEADER; /* adds handle and ref_count fields */
 
     /* state of the VC */
     MPIDI_VC_State_t state;
@@ -794,14 +801,10 @@ int MPIDI_VC_Init( MPIDI_VC_t *, MPIDI_PG_t *, int );
 
 
 #define MPIDI_VC_add_ref( _vc )                                 \
-    { MPIU_Object_add_ref( _vc );                               \
-      MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,        \
-         "Incr VC %p ref count to %d",_vc,_vc->ref_count));}
+    do { MPIU_Object_add_ref( _vc ); } while (0)
 
 #define MPIDI_VC_release_ref( _vc, _inuse ) \
-   { MPIU_Object_release_ref( _vc, _inuse ); \
-       MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
-         "Decr VC %p ref count to %d",_vc,_vc->ref_count));}
+    do { MPIU_Object_release_ref( _vc, _inuse ); } while (0)
 
 /*------------------------------
   END VIRTUAL CONNECTION SECTION

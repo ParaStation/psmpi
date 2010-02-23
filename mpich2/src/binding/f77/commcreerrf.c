@@ -12,10 +12,10 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_CREATE_ERRHANDLER( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler__( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler_( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_CREATE_ERRHANDLER( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler__( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler_( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak MPI_COMM_CREATE_ERRHANDLER = PMPI_COMM_CREATE_ERRHANDLER
@@ -44,19 +44,19 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler_( MPI_Comm_errhan
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_CREATE_ERRHANDLER( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_CREATE_ERRHANDLER( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
 
 #pragma weak MPI_COMM_CREATE_ERRHANDLER = PMPI_COMM_CREATE_ERRHANDLER
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler__( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler__( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
 
 #pragma weak mpi_comm_create_errhandler__ = pmpi_comm_create_errhandler__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
 
 #pragma weak mpi_comm_create_errhandler = pmpi_comm_create_errhandler
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler_( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler_( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
 
 #pragma weak mpi_comm_create_errhandler_ = pmpi_comm_create_errhandler_
 #endif
@@ -90,10 +90,10 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler_( MPI_Comm_errhan
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_CREATE_ERRHANDLER( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler__( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler_( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_CREATE_ERRHANDLER( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler__( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler_( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak mpi_comm_create_errhandler__ = MPI_COMM_CREATE_ERRHANDLER
@@ -120,16 +120,16 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler_( MPI_Comm_errhan
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_CREATE_ERRHANDLER( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_CREATE_ERRHANDLER( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_create_errhandler__( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_create_errhandler__( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_create_errhandler_( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_create_errhandler_( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_create_errhandler( MPI_Comm_errhandler_fn*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_create_errhandler( MPI_Comm_errhandler_function*, MPI_Fint *, MPI_Fint * );
 
 #endif
 
@@ -186,6 +186,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_create_errhandler( MPI_Comm_errhan
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler_ ( MPI_Comm_errhandler_fn*v1, MPI_Fint *v2, MPI_Fint *ierr ){
+FORT_DLL_SPEC void FORT_CALL mpi_comm_create_errhandler_ ( MPI_Comm_errhandler_function*v1, MPI_Fint *v2, MPI_Fint *ierr ){
     *ierr = MPI_Comm_create_errhandler( v1, v2 );
 }

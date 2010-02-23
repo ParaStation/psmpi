@@ -86,7 +86,7 @@ static void free_pmi_keyvals(PMI_keyval_t **kv, int size, int *counts)
 	for (j=0; j<counts[i]; j++)
 	{
 	    if (kv[i][j].key != NULL)
-		MPIU_Free(kv[i][j].key);
+		MPIU_Free((char *)kv[i][j].key);
 	    if (kv[i][j].val != NULL)
 		MPIU_Free(kv[i][j].val);
 	}
@@ -297,7 +297,7 @@ int MPIDI_CH3_GetParentPort(char ** parent_port)
         {
             int vallen = 0;
             MPIU_THREAD_CS_ENTER(PMI,);
-            mpi_errno = PMI_KVS_Get(kvsname, PARENT_PORT_KVSKEY, val, sizeof(val), &vallen);
+            mpi_errno = PMI2_KVS_Get(kvsname, PMI2_ID_NULL, PARENT_PORT_KVSKEY, val, sizeof(val), &vallen);
             MPIU_THREAD_CS_EXIT(PMI,);
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         }

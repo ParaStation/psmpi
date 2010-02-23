@@ -6,9 +6,9 @@
 
 #include "hydra_utils.h"
 
-HYD_Status HYDU_set_signal(int signum, void (*handler) (int))
+HYD_status HYDU_set_signal(int signum, void (*handler) (int))
 {
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 #if defined HAVE_SIGACTION
     struct sigaction act;
 #endif
@@ -38,9 +38,9 @@ HYD_Status HYDU_set_signal(int signum, void (*handler) (int))
 }
 
 
-HYD_Status HYDU_set_common_signals(void (*handler) (int))
+HYD_status HYDU_set_common_signals(void (*handler) (int))
 {
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
@@ -57,6 +57,9 @@ HYD_Status HYDU_set_common_signals(void (*handler) (int))
     status = HYDU_set_signal(SIGSTOP, handler);
     HYDU_ERR_POP(status, "unable to set SIGSTOP\n");
 #endif /* SIGSTOP */
+
+    status = HYDU_set_signal(SIGUSR1, handler);
+    HYDU_ERR_POP(status, "unable to set SIGUSR1\n");
 
 #if defined SIGCONT
     status = HYDU_set_signal(SIGCONT, handler);

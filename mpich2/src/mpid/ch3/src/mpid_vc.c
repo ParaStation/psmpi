@@ -35,8 +35,7 @@
  S*/
 typedef struct MPIDI_VCRT
 {
-    int handle;
-    volatile int ref_count;
+    MPIU_OBJECT_HEADER; /* adds handle and ref_count fields */
     int size;
     MPIDI_VC_t * vcr_table[1];
 }
@@ -78,6 +77,7 @@ int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_VCRT_CREATE);
 
     MPIU_CHKPMEM_MALLOC(vcrt, MPIDI_VCRT_t *, sizeof(MPIDI_VCRT_t) + (size - 1) * sizeof(MPIDI_VC_t *),	mpi_errno, "**nomem");
+    vcrt->handle = HANDLE_SET_KIND(0, HANDLE_KIND_INVALID);
     MPIU_Object_set_ref(vcrt, 1);
     vcrt->size = size;
     *vcrt_ptr = vcrt;
@@ -110,8 +110,7 @@ int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_VCRT_ADD_REF);
     MPIU_Object_add_ref(vcrt);
-    MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,
-         "Incr VCRT %p ref count to %d",vcrt,vcrt->ref_count));
+    MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST, "Incr VCRT %p ref count",vcrt));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_ADD_REF);
     return MPI_SUCCESS;
 }
@@ -137,8 +136,7 @@ int MPID_VCRT_Release(MPID_VCRT vcrt, int isDisconnect )
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_VCRT_RELEASE);
 
     MPIU_Object_release_ref(vcrt, &in_use);
-    MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,
-         "Decr VCRT %p ref count to %d",vcrt,vcrt->ref_count));
+    MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST, "Decr VCRT %p ref count",vcrt));
     
     /* If this VC reference table is no longer in use, we can
        decrement the reference count of each of the VCs.  If the
@@ -163,7 +161,21 @@ int MPID_VCRT_Release(MPID_VCRT vcrt, int isDisconnect )
             /* Dynamic connections start with a refcount of 2 instead of 1.
              * That way we can distinguish between an MPI_Free and an
              * MPI_Comm_disconnect. */
-	    if (isDisconnect && vc->ref_count == 1) {
+            /* XXX DJG FIXME-MT should we be checking this? */
+            /* probably not, need to do something like the following instead: */
+#if 0
+            if (isDisconnect) {
+                MPIU_Assert(in_use);
+                /* FIXME this is still bogus, the VCRT may contain a mix of
+                 * dynamic and non-dynamic VCs, so the ref_count isn't
+                 * guaranteed to have started at 2.  The best thing to do might
+                 * be to avoid overloading the reference counting this way and
+                 * use a separate check for dynamic VCs (another flag? compare
+                 * PGs?) */
+                MPIU_Object_release_ref(vc, &in_use);
+            }
+#endif
+	    if (isDisconnect && MPIU_Object_get_ref(vc) == 1) {
 		MPIDI_VC_release_ref(vc, &in_use);
 	    }
 
@@ -269,7 +281,9 @@ int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr)
     /* We are allowed to create a vc that belongs to no process group 
      as part of the initial connect/accept action, so in that case,
      ignore the pg ref count update */
-    if (orig_vcr->ref_count == 0 && orig_vcr->pg) {
+    /* XXX DJG FIXME-MT should we be checking this? */
+    /* we probably need a test-and-incr operation or equivalent to avoid races */
+    if (MPIU_Object_get_ref(orig_vcr) == 0 && orig_vcr->pg) {
 	MPIDI_VC_add_ref( orig_vcr );
 	MPIDI_VC_add_ref( orig_vcr );
 	MPIDI_PG_add_ref( orig_vcr->pg );
@@ -277,8 +291,7 @@ int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr)
     else {
 	MPIDI_VC_add_ref(orig_vcr);
     }
-    MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,\
-         "Incr VCR %p ref count to %d",orig_vcr,orig_vcr->ref_count));
+    MPIU_DBG_MSG_FMT(REFCOUNT,TYPICAL,(MPIU_DBG_FDEST,"Incr VCR %p ref count",orig_vcr));
     *new_vcr = orig_vcr;
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCR_DUP);
     return MPI_SUCCESS;
@@ -439,6 +452,7 @@ int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] )
 int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr, 
 			    int size, const int lpids[] )
 {
+    int mpi_errno = MPI_SUCCESS;
     MPID_Comm *commworld_ptr;
     int i;
     MPIDI_PG_iterator iter;
@@ -471,12 +485,7 @@ int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr,
 	    MPIDI_PG_Get_next( &iter, &pg );
 	    do {
 		MPIDI_PG_Get_next( &iter, &pg );
-		if (!pg) {
-		    return MPIR_Err_create_code( MPI_SUCCESS, 
-				     MPIR_ERR_RECOVERABLE,
-				     "MPID_VCR_CommFromLpids", __LINE__,
-				     MPI_ERR_INTERN, "**intern", 0 );
-		}
+                MPIU_ERR_CHKINTERNAL(!pg, mpi_errno, "no pg");
 		/* FIXME: a quick check on the min/max values of the lpid
 		   for this process group could help speed this search */
 		for (j=0; j<pg->size; j++) {
@@ -499,7 +508,10 @@ int MPID_VCR_CommFromLpids( MPID_Comm *newcomm_ptr,
 	   PG if necessary.  */
 	MPID_VCR_Dup( vc, &newcomm_ptr->vcr[i] );
     }
-    return 0;
+fn_exit:
+    return mpi_errno;
+fn_fail:
+    goto fn_exit;
 }
 
 /* The following is a temporary hook to ensure that all processes in 
@@ -690,8 +702,8 @@ static int lpid_counter = 0;
 int MPIDI_VC_Init( MPIDI_VC_t *vc, MPIDI_PG_t *pg, int rank )
 {
     vc->state = MPIDI_VC_STATE_INACTIVE;
+    vc->handle  = HANDLE_SET_MPI_KIND(0, MPID_VCONN);
     MPIU_Object_set_ref(vc, 0);
-    vc->handle  = MPID_VCONN;
     vc->pg      = pg;
     vc->pg_rank = rank;
     vc->lpid    = lpid_counter++;
@@ -798,7 +810,7 @@ fn_fail:
 #endif
 
 
-#define parse_error() MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "parse error")
+#define parse_error() MPIU_ERR_INTERNALANDJUMP(mpi_errno, "parse error")
 /* advance _c until we find a non whitespace character */
 #define skip_space(_c) while (isspace(*(_c))) ++(_c)
 /* return true iff _c points to a character valid as an indentifier, i.e., [-_a-zA-Z0-9] */
@@ -990,7 +1002,7 @@ done:
 static int populate_ids_from_mapping(char *mapping, int *num_nodes, MPIDI_PG_t *pg, int *did_map)
 {
     int mpi_errno = MPI_SUCCESS;
-    /* process-mapping is available */
+    /* PMI_process_mapping is available */
     mapping_type_t mt = -1;
     map_block_t *mb = NULL;
     int nblocks = 0;
@@ -1003,7 +1015,7 @@ static int populate_ids_from_mapping(char *mapping, int *num_nodes, MPIDI_PG_t *
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     if (NULL_MAPPING == mt) goto fn_fail;
-    MPIU_ERR_CHKANDJUMP1(mt != VECTOR_MAPPING, mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "unsupported mapping type");
+    MPIU_ERR_CHKINTERNAL(mt != VECTOR_MAPPING, mpi_errno, "unsupported mapping type");
 
     rank = 0;
     /* for a representation like (block,N,(1,1)) this while loop causes us to
@@ -1073,7 +1085,12 @@ int MPIDI_Populate_vc_node_ids(MPIDI_PG_t *pg, int our_pg_rank)
     char *node_name_buf;
     int no_local = 0;
     int odd_even_cliques = 0;
+    int pmi_version = MPIU_DEFAULT_PMI_VERSION, pmi_subversion = MPIU_DEFAULT_PMI_SUBVERSION;
     MPIU_CHKLMEM_DECL(4);
+
+    /* See if the user wants to override our default values */
+    MPIU_GetEnvInt("PMI_VERSION", &pmi_version);
+    MPIU_GetEnvInt("PMI_SUBVERSION", &pmi_subversion);
 
     if (pg->size == 1) {
         pg->vct[0].node_id = g_num_nodes++;
@@ -1116,10 +1133,10 @@ int MPIDI_Populate_vc_node_ids(MPIDI_PG_t *pg, int our_pg_rank)
         int found = FALSE;
         MPIU_CHKLMEM_MALLOC(node_ids, int *, pg->size * sizeof(int), mpi_errno, "node_ids");
 
-        mpi_errno = PMI_Info_GetJobAttrIntArray("nodeIDs", node_ids, pg->size, &outlen, &found);
+        mpi_errno = PMI2_Info_GetJobAttrIntArray("nodeIDs", node_ids, pg->size, &outlen, &found);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-        MPIU_ERR_CHKANDJUMP1(!found, mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "nodeIDs attribute not found");
-        MPIU_ERR_CHKANDJUMP1(outlen != pg->size, mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "did not receive enough nodeids");
+        MPIU_ERR_CHKINTERNAL(!found, mpi_errno, "nodeIDs attribute not found");
+        MPIU_ERR_CHKINTERNAL(outlen != pg->size, mpi_errno, "did not receive enough nodeids");
         g_num_nodes = 0;
         for (i = 0; i < pg->size; ++i) {
             pg->vct[i].node_id = node_ids[i];
@@ -1133,7 +1150,7 @@ int MPIDI_Populate_vc_node_ids(MPIDI_PG_t *pg, int our_pg_rank)
     }
 #else
     {
-        char process_mapping[PMI_MAX_VALLEN];
+        char process_mapping[PMI2_MAX_VALLEN];
         int outlen;
         int found = FALSE;
         int i;
@@ -1144,13 +1161,13 @@ int MPIDI_Populate_vc_node_ids(MPIDI_PG_t *pg, int our_pg_rank)
         int did_map = 0;
         int num_nodes = 0;
 
-        mpi_errno = PMI_Info_GetJobAttr("process-mapping", process_mapping, sizeof(process_mapping), &found);
+        mpi_errno = PMI2_Info_GetJobAttr("PMI_process_mapping", process_mapping, sizeof(process_mapping), &found);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-        MPIU_ERR_CHKANDJUMP1(!found, mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "process-mapping attribute not found");
+        MPIU_ERR_CHKINTERNAL(!found, mpi_errno, "PMI_process_mapping attribute not found");
         /* this code currently assumes pg is comm_world */
         mpi_errno = populate_ids_from_mapping(process_mapping, &num_nodes, pg, &did_map);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-        MPIU_ERR_CHKANDJUMP1(!did_map, mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "unable to populate node ids from process-mapping");
+        MPIU_ERR_CHKINTERNAL(!did_map, mpi_errno, "unable to populate node ids from PMI_process_mapping");
         g_num_nodes = num_nodes;
     }
 #endif
@@ -1173,27 +1190,29 @@ int MPIDI_Populate_vc_node_ids(MPIDI_PG_t *pg, int our_pg_rank)
     mpi_errno = MPIDI_PG_GetConnKVSname(&kvs_name);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-    /* See if process manager supports process-mapping keyval */
+    /* See if process manager supports PMI_process_mapping keyval */
 
-    /* FIXME 'process-mapping' only applies for the original PG (MPI_COMM_WORLD) */
-    pmi_errno = PMI_KVS_Get(kvs_name, "process-mapping", value, val_max_sz);
-    if (pmi_errno == 0) {
-        int did_map = 0;
-        int num_nodes = 0;
-        /* this code currently assumes pg is comm_world */
-        mpi_errno = populate_ids_from_mapping(value, &num_nodes, pg, &did_map);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-        g_num_nodes = num_nodes;
-        if (did_map) {
-            goto fn_exit;
+    /* FIXME 'PMI_process_mapping' only applies for the original PG (MPI_COMM_WORLD) */
+    if (pmi_version == 1 && pmi_subversion == 1) {
+        pmi_errno = PMI_KVS_Get(kvs_name, "PMI_process_mapping", value, val_max_sz);
+        if (pmi_errno == 0) {
+            int did_map = 0;
+            int num_nodes = 0;
+            /* this code currently assumes pg is comm_world */
+            mpi_errno = populate_ids_from_mapping(value, &num_nodes, pg, &did_map);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            g_num_nodes = num_nodes;
+            if (did_map) {
+                goto fn_exit;
+            }
+            else {
+                MPIU_DBG_MSG_S(CH3_OTHER,TERSE,"did_map==0, unable to populate node ids from mapping=%s",value);
+            }
+            /* else fall through to O(N^2) PMI_KVS_Gets version */
         }
         else {
-            MPIU_DBG_MSG_S(CH3_OTHER,TERSE,"did_map==0, unable to populate node ids from mapping=%s",value);
+            MPIU_DBG_MSG(CH3_OTHER,TERSE,"unable to obtain the 'PMI_process_mapping' PMI key");
         }
-        /* else fall through to O(N^2) PMI_KVS_Gets version */
-    }
-    else {
-        MPIU_DBG_MSG(CH3_OTHER,TERSE,"unable to obtain the 'process-mapping' PMI key");
     }
 
     mpi_errno = publish_node_id(pg, our_pg_rank);

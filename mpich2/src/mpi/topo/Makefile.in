@@ -32,21 +32,22 @@ DOCTEXT         = @DOCTEXT@
 mpi_sources = cart_coords.c cart_create.c cart_get.c \
  cart_map.c cart_rank.c cart_shift.c cart_sub.c dims_create.c graph_get.c \
  graph_map.c graph_nbr.c graphcreate.c graphdimsget.c graphnbrcnt.c \
- cartdim_get.c topo_test.c
+ cartdim_get.c topo_test.c \
+ dist_gr_create_adj.c dist_gr_create.c dist_gr_neighb_count.c dist_gr_neighb.c
 HEADERS = topo.h
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -57,7 +58,7 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -124,14 +125,16 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 .libstamp0 ../../../lib/lib${MPILIBNAME}.a: cart_coords.o cart_create.o \
 	cart_get.o cart_map.o cart_rank.o cart_shift.o cart_sub.o \
 	dims_create.o graph_get.o graph_map.o graph_nbr.o graphcreate.o \
-	graphdimsget.o graphnbrcnt.o cartdim_get.o topo_test.o topoutil.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	graphdimsget.o graphnbrcnt.o cartdim_get.o topo_test.o \
+	dist_gr_create_adj.o dist_gr_create.o dist_gr_neighb_count.o \
+	dist_gr_neighb.o topoutil.o 
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${MPILIBNAME}.a ; \
@@ -142,8 +145,9 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	cart_get.lo cart_map.lo cart_rank.lo cart_shift.lo cart_sub.lo \
 	dims_create.lo graph_get.lo graph_map.lo graph_nbr.lo graphcreate.lo \
 	graphdimsget.lo graphnbrcnt.lo cartdim_get.lo topo_test.lo \
-	topoutil.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	dist_gr_create_adj.lo dist_gr_create.lo dist_gr_neighb_count.lo \
+	dist_gr_neighb.lo topoutil.lo 
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -155,14 +159,15 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 .libstamp2: _cart_coords.o _cart_create.o _cart_get.o _cart_map.o _cart_rank.o \
 	_cart_shift.o _cart_sub.o _dims_create.o _graph_get.o _graph_map.o \
 	_graph_nbr.o _graphcreate.o _graphdimsget.o _graphnbrcnt.o \
-	_cartdim_get.o _topo_test.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	_cartdim_get.o _topo_test.o _dist_gr_create_adj.o _dist_gr_create.o \
+	_dist_gr_neighb_count.o _dist_gr_neighb.o 
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${PMPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${PMPILIBNAME}.a ; \
@@ -172,8 +177,9 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 .libstamp3: _cart_coords.lo _cart_create.lo _cart_get.lo _cart_map.lo _cart_rank.lo \
 	_cart_shift.lo _cart_sub.lo _dims_create.lo _graph_get.lo \
 	_graph_map.lo _graph_nbr.lo _graphcreate.lo _graphdimsget.lo \
-	_graphnbrcnt.lo _cartdim_get.lo _topo_test.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	_graphnbrcnt.lo _cartdim_get.lo _topo_test.lo _dist_gr_create_adj.lo \
+	_dist_gr_create.lo _dist_gr_neighb_count.lo _dist_gr_neighb.lo 
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $? ; \
@@ -181,229 +187,285 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _cart_coords.o: cart_coords.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/cart_coords.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_coords.c -o _cart_coords.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_coords.c -o _cart_coords.o
 _cart_coords.lo: cart_coords.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/cart_coords.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_coords.c -o _cart_coords.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_coords.c -o _cart_coords.lo
 _cart_create.o: cart_create.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/cart_create.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_create.c -o _cart_create.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_create.c -o _cart_create.o
 _cart_create.lo: cart_create.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/cart_create.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_create.c -o _cart_create.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_create.c -o _cart_create.lo
 _cart_get.o: cart_get.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/cart_get.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_get.c -o _cart_get.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_get.c -o _cart_get.o
 _cart_get.lo: cart_get.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/cart_get.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_get.c -o _cart_get.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_get.c -o _cart_get.lo
 _cart_map.o: cart_map.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/cart_map.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_map.c -o _cart_map.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_map.c -o _cart_map.o
 _cart_map.lo: cart_map.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/cart_map.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_map.c -o _cart_map.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_map.c -o _cart_map.lo
 _cart_rank.o: cart_rank.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/cart_rank.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_rank.c -o _cart_rank.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_rank.c -o _cart_rank.o
 _cart_rank.lo: cart_rank.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/cart_rank.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_rank.c -o _cart_rank.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_rank.c -o _cart_rank.lo
 _cart_shift.o: cart_shift.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/cart_shift.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_shift.c -o _cart_shift.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_shift.c -o _cart_shift.o
 _cart_shift.lo: cart_shift.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/cart_shift.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_shift.c -o _cart_shift.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_shift.c -o _cart_shift.lo
 _cart_sub.o: cart_sub.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/cart_sub.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_sub.c -o _cart_sub.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_sub.c -o _cart_sub.o
 _cart_sub.lo: cart_sub.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/cart_sub.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_sub.c -o _cart_sub.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cart_sub.c -o _cart_sub.lo
 _dims_create.o: dims_create.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/dims_create.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dims_create.c -o _dims_create.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dims_create.c -o _dims_create.o
 _dims_create.lo: dims_create.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/dims_create.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/dims_create.c -o _dims_create.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/dims_create.c -o _dims_create.lo
 _graph_get.o: graph_get.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/graph_get.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_get.c -o _graph_get.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_get.c -o _graph_get.o
 _graph_get.lo: graph_get.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/graph_get.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_get.c -o _graph_get.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_get.c -o _graph_get.lo
 _graph_map.o: graph_map.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/graph_map.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_map.c -o _graph_map.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_map.c -o _graph_map.o
 _graph_map.lo: graph_map.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/graph_map.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_map.c -o _graph_map.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_map.c -o _graph_map.lo
 _graph_nbr.o: graph_nbr.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/graph_nbr.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_nbr.c -o _graph_nbr.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_nbr.c -o _graph_nbr.o
 _graph_nbr.lo: graph_nbr.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/graph_nbr.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_nbr.c -o _graph_nbr.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graph_nbr.c -o _graph_nbr.lo
 _graphcreate.o: graphcreate.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/graphcreate.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graphcreate.c -o _graphcreate.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graphcreate.c -o _graphcreate.o
 _graphcreate.lo: graphcreate.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/graphcreate.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graphcreate.c -o _graphcreate.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graphcreate.c -o _graphcreate.lo
 _graphdimsget.o: graphdimsget.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/graphdimsget.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graphdimsget.c -o _graphdimsget.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graphdimsget.c -o _graphdimsget.o
 _graphdimsget.lo: graphdimsget.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/graphdimsget.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graphdimsget.c -o _graphdimsget.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graphdimsget.c -o _graphdimsget.lo
 _graphnbrcnt.o: graphnbrcnt.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/graphnbrcnt.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graphnbrcnt.c -o _graphnbrcnt.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/graphnbrcnt.c -o _graphnbrcnt.o
 _graphnbrcnt.lo: graphnbrcnt.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/graphnbrcnt.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graphnbrcnt.c -o _graphnbrcnt.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/graphnbrcnt.c -o _graphnbrcnt.lo
 _cartdim_get.o: cartdim_get.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/cartdim_get.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cartdim_get.c -o _cartdim_get.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/cartdim_get.c -o _cartdim_get.o
 _cartdim_get.lo: cartdim_get.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/cartdim_get.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cartdim_get.c -o _cartdim_get.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/cartdim_get.c -o _cartdim_get.lo
 _topo_test.o: topo_test.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/topo_test.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/topo_test.c -o _topo_test.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/topo_test.c -o _topo_test.o
 _topo_test.lo: topo_test.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/topo_test.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/topo_test.c -o _topo_test.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/topo_test.c -o _topo_test.lo
+_dist_gr_create_adj.o: dist_gr_create_adj.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "  CC             -D<profiling> ${srcdir}/dist_gr_create_adj.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_create_adj.c -o _dist_gr_create_adj.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_create_adj.c -o _dist_gr_create_adj.o
+_dist_gr_create_adj.lo: dist_gr_create_adj.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/dist_gr_create_adj.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_create_adj.c -o _dist_gr_create_adj.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_create_adj.c -o _dist_gr_create_adj.lo
+_dist_gr_create.o: dist_gr_create.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "  CC             -D<profiling> ${srcdir}/dist_gr_create.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_create.c -o _dist_gr_create.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_create.c -o _dist_gr_create.o
+_dist_gr_create.lo: dist_gr_create.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/dist_gr_create.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_create.c -o _dist_gr_create.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_create.c -o _dist_gr_create.lo
+_dist_gr_neighb_count.o: dist_gr_neighb_count.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "  CC             -D<profiling> ${srcdir}/dist_gr_neighb_count.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_neighb_count.c -o _dist_gr_neighb_count.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_neighb_count.c -o _dist_gr_neighb_count.o
+_dist_gr_neighb_count.lo: dist_gr_neighb_count.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/dist_gr_neighb_count.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_neighb_count.c -o _dist_gr_neighb_count.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_neighb_count.c -o _dist_gr_neighb_count.lo
+_dist_gr_neighb.o: dist_gr_neighb.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "  CC             -D<profiling> ${srcdir}/dist_gr_neighb.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_neighb.c -o _dist_gr_neighb.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_neighb.c -o _dist_gr_neighb.o
+_dist_gr_neighb.lo: dist_gr_neighb.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/dist_gr_neighb.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_neighb.c -o _dist_gr_neighb.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/dist_gr_neighb.c -o _dist_gr_neighb.lo
 # --------------------------------------------------------------------------
 coverage: 
 	-@for file in ${mpi_sources} topoutil.c ; do \
@@ -422,74 +484,300 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/cart_coords.d: $(srcdir)/cart_coords.c
-	$(MAKE_DEPEND_C) -MT '_cart_coords.o cart_coords.o' $(srcdir)/cart_coords.c >$(DEPS_DIR)/cart_coords.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cart_coords.c > $(DEPS_DIR)/cart_coords.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cart_coords.o cart_coords.o cart_coords.lo _cart_coords.lo' $(srcdir)/cart_coords.c >$(DEPS_DIR)/cart_coords.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cart_coords.o cart_coords.o cart_coords.lo _cart_coords.lo' $(srcdir)/cart_coords.c >$(DEPS_DIR)/cart_coords.d
 $(DEPS_DIR)/cart_create.d: $(srcdir)/cart_create.c
-	$(MAKE_DEPEND_C) -MT '_cart_create.o cart_create.o' $(srcdir)/cart_create.c >$(DEPS_DIR)/cart_create.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cart_create.c > $(DEPS_DIR)/cart_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cart_create.o cart_create.o cart_create.lo _cart_create.lo' $(srcdir)/cart_create.c >$(DEPS_DIR)/cart_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cart_create.o cart_create.o cart_create.lo _cart_create.lo' $(srcdir)/cart_create.c >$(DEPS_DIR)/cart_create.d
 $(DEPS_DIR)/cart_get.d: $(srcdir)/cart_get.c
-	$(MAKE_DEPEND_C) -MT '_cart_get.o cart_get.o' $(srcdir)/cart_get.c >$(DEPS_DIR)/cart_get.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cart_get.c > $(DEPS_DIR)/cart_get.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cart_get.o cart_get.o cart_get.lo _cart_get.lo' $(srcdir)/cart_get.c >$(DEPS_DIR)/cart_get.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cart_get.o cart_get.o cart_get.lo _cart_get.lo' $(srcdir)/cart_get.c >$(DEPS_DIR)/cart_get.d
 $(DEPS_DIR)/cart_map.d: $(srcdir)/cart_map.c
-	$(MAKE_DEPEND_C) -MT '_cart_map.o cart_map.o' $(srcdir)/cart_map.c >$(DEPS_DIR)/cart_map.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cart_map.c > $(DEPS_DIR)/cart_map.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cart_map.o cart_map.o cart_map.lo _cart_map.lo' $(srcdir)/cart_map.c >$(DEPS_DIR)/cart_map.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cart_map.o cart_map.o cart_map.lo _cart_map.lo' $(srcdir)/cart_map.c >$(DEPS_DIR)/cart_map.d
 $(DEPS_DIR)/cart_rank.d: $(srcdir)/cart_rank.c
-	$(MAKE_DEPEND_C) -MT '_cart_rank.o cart_rank.o' $(srcdir)/cart_rank.c >$(DEPS_DIR)/cart_rank.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cart_rank.c > $(DEPS_DIR)/cart_rank.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cart_rank.o cart_rank.o cart_rank.lo _cart_rank.lo' $(srcdir)/cart_rank.c >$(DEPS_DIR)/cart_rank.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cart_rank.o cart_rank.o cart_rank.lo _cart_rank.lo' $(srcdir)/cart_rank.c >$(DEPS_DIR)/cart_rank.d
 $(DEPS_DIR)/cart_shift.d: $(srcdir)/cart_shift.c
-	$(MAKE_DEPEND_C) -MT '_cart_shift.o cart_shift.o' $(srcdir)/cart_shift.c >$(DEPS_DIR)/cart_shift.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cart_shift.c > $(DEPS_DIR)/cart_shift.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cart_shift.o cart_shift.o cart_shift.lo _cart_shift.lo' $(srcdir)/cart_shift.c >$(DEPS_DIR)/cart_shift.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cart_shift.o cart_shift.o cart_shift.lo _cart_shift.lo' $(srcdir)/cart_shift.c >$(DEPS_DIR)/cart_shift.d
 $(DEPS_DIR)/cart_sub.d: $(srcdir)/cart_sub.c
-	$(MAKE_DEPEND_C) -MT '_cart_sub.o cart_sub.o' $(srcdir)/cart_sub.c >$(DEPS_DIR)/cart_sub.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cart_sub.c > $(DEPS_DIR)/cart_sub.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cart_sub.o cart_sub.o cart_sub.lo _cart_sub.lo' $(srcdir)/cart_sub.c >$(DEPS_DIR)/cart_sub.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cart_sub.o cart_sub.o cart_sub.lo _cart_sub.lo' $(srcdir)/cart_sub.c >$(DEPS_DIR)/cart_sub.d
 $(DEPS_DIR)/dims_create.d: $(srcdir)/dims_create.c
-	$(MAKE_DEPEND_C) -MT '_dims_create.o dims_create.o' $(srcdir)/dims_create.c >$(DEPS_DIR)/dims_create.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dims_create.c > $(DEPS_DIR)/dims_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dims_create.o dims_create.o dims_create.lo _dims_create.lo' $(srcdir)/dims_create.c >$(DEPS_DIR)/dims_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dims_create.o dims_create.o dims_create.lo _dims_create.lo' $(srcdir)/dims_create.c >$(DEPS_DIR)/dims_create.d
 $(DEPS_DIR)/graph_get.d: $(srcdir)/graph_get.c
-	$(MAKE_DEPEND_C) -MT '_graph_get.o graph_get.o' $(srcdir)/graph_get.c >$(DEPS_DIR)/graph_get.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C graph_get.c > $(DEPS_DIR)/graph_get.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_graph_get.o graph_get.o graph_get.lo _graph_get.lo' $(srcdir)/graph_get.c >$(DEPS_DIR)/graph_get.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_graph_get.o graph_get.o graph_get.lo _graph_get.lo' $(srcdir)/graph_get.c >$(DEPS_DIR)/graph_get.d
 $(DEPS_DIR)/graph_map.d: $(srcdir)/graph_map.c
-	$(MAKE_DEPEND_C) -MT '_graph_map.o graph_map.o' $(srcdir)/graph_map.c >$(DEPS_DIR)/graph_map.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C graph_map.c > $(DEPS_DIR)/graph_map.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_graph_map.o graph_map.o graph_map.lo _graph_map.lo' $(srcdir)/graph_map.c >$(DEPS_DIR)/graph_map.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_graph_map.o graph_map.o graph_map.lo _graph_map.lo' $(srcdir)/graph_map.c >$(DEPS_DIR)/graph_map.d
 $(DEPS_DIR)/graph_nbr.d: $(srcdir)/graph_nbr.c
-	$(MAKE_DEPEND_C) -MT '_graph_nbr.o graph_nbr.o' $(srcdir)/graph_nbr.c >$(DEPS_DIR)/graph_nbr.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C graph_nbr.c > $(DEPS_DIR)/graph_nbr.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_graph_nbr.o graph_nbr.o graph_nbr.lo _graph_nbr.lo' $(srcdir)/graph_nbr.c >$(DEPS_DIR)/graph_nbr.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_graph_nbr.o graph_nbr.o graph_nbr.lo _graph_nbr.lo' $(srcdir)/graph_nbr.c >$(DEPS_DIR)/graph_nbr.d
 $(DEPS_DIR)/graphcreate.d: $(srcdir)/graphcreate.c
-	$(MAKE_DEPEND_C) -MT '_graphcreate.o graphcreate.o' $(srcdir)/graphcreate.c >$(DEPS_DIR)/graphcreate.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C graphcreate.c > $(DEPS_DIR)/graphcreate.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_graphcreate.o graphcreate.o graphcreate.lo _graphcreate.lo' $(srcdir)/graphcreate.c >$(DEPS_DIR)/graphcreate.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_graphcreate.o graphcreate.o graphcreate.lo _graphcreate.lo' $(srcdir)/graphcreate.c >$(DEPS_DIR)/graphcreate.d
 $(DEPS_DIR)/graphdimsget.d: $(srcdir)/graphdimsget.c
-	$(MAKE_DEPEND_C) -MT '_graphdimsget.o graphdimsget.o' $(srcdir)/graphdimsget.c >$(DEPS_DIR)/graphdimsget.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C graphdimsget.c > $(DEPS_DIR)/graphdimsget.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_graphdimsget.o graphdimsget.o graphdimsget.lo _graphdimsget.lo' $(srcdir)/graphdimsget.c >$(DEPS_DIR)/graphdimsget.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_graphdimsget.o graphdimsget.o graphdimsget.lo _graphdimsget.lo' $(srcdir)/graphdimsget.c >$(DEPS_DIR)/graphdimsget.d
 $(DEPS_DIR)/graphnbrcnt.d: $(srcdir)/graphnbrcnt.c
-	$(MAKE_DEPEND_C) -MT '_graphnbrcnt.o graphnbrcnt.o' $(srcdir)/graphnbrcnt.c >$(DEPS_DIR)/graphnbrcnt.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C graphnbrcnt.c > $(DEPS_DIR)/graphnbrcnt.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_graphnbrcnt.o graphnbrcnt.o graphnbrcnt.lo _graphnbrcnt.lo' $(srcdir)/graphnbrcnt.c >$(DEPS_DIR)/graphnbrcnt.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_graphnbrcnt.o graphnbrcnt.o graphnbrcnt.lo _graphnbrcnt.lo' $(srcdir)/graphnbrcnt.c >$(DEPS_DIR)/graphnbrcnt.d
 $(DEPS_DIR)/cartdim_get.d: $(srcdir)/cartdim_get.c
-	$(MAKE_DEPEND_C) -MT '_cartdim_get.o cartdim_get.o' $(srcdir)/cartdim_get.c >$(DEPS_DIR)/cartdim_get.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cartdim_get.c > $(DEPS_DIR)/cartdim_get.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cartdim_get.o cartdim_get.o cartdim_get.lo _cartdim_get.lo' $(srcdir)/cartdim_get.c >$(DEPS_DIR)/cartdim_get.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cartdim_get.o cartdim_get.o cartdim_get.lo _cartdim_get.lo' $(srcdir)/cartdim_get.c >$(DEPS_DIR)/cartdim_get.d
 $(DEPS_DIR)/topo_test.d: $(srcdir)/topo_test.c
-	$(MAKE_DEPEND_C) -MT '_topo_test.o topo_test.o' $(srcdir)/topo_test.c >$(DEPS_DIR)/topo_test.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C topo_test.c > $(DEPS_DIR)/topo_test.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_topo_test.o topo_test.o topo_test.lo _topo_test.lo' $(srcdir)/topo_test.c >$(DEPS_DIR)/topo_test.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_topo_test.o topo_test.o topo_test.lo _topo_test.lo' $(srcdir)/topo_test.c >$(DEPS_DIR)/topo_test.d
+$(DEPS_DIR)/dist_gr_create_adj.d: $(srcdir)/dist_gr_create_adj.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dist_gr_create_adj.c > $(DEPS_DIR)/dist_gr_create_adj.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dist_gr_create_adj.o dist_gr_create_adj.o dist_gr_create_adj.lo _dist_gr_create_adj.lo' $(srcdir)/dist_gr_create_adj.c >$(DEPS_DIR)/dist_gr_create_adj.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dist_gr_create_adj.o dist_gr_create_adj.o dist_gr_create_adj.lo _dist_gr_create_adj.lo' $(srcdir)/dist_gr_create_adj.c >$(DEPS_DIR)/dist_gr_create_adj.d
+$(DEPS_DIR)/dist_gr_create.d: $(srcdir)/dist_gr_create.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dist_gr_create.c > $(DEPS_DIR)/dist_gr_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dist_gr_create.o dist_gr_create.o dist_gr_create.lo _dist_gr_create.lo' $(srcdir)/dist_gr_create.c >$(DEPS_DIR)/dist_gr_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dist_gr_create.o dist_gr_create.o dist_gr_create.lo _dist_gr_create.lo' $(srcdir)/dist_gr_create.c >$(DEPS_DIR)/dist_gr_create.d
+$(DEPS_DIR)/dist_gr_neighb_count.d: $(srcdir)/dist_gr_neighb_count.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dist_gr_neighb_count.c > $(DEPS_DIR)/dist_gr_neighb_count.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dist_gr_neighb_count.o dist_gr_neighb_count.o dist_gr_neighb_count.lo _dist_gr_neighb_count.lo' $(srcdir)/dist_gr_neighb_count.c >$(DEPS_DIR)/dist_gr_neighb_count.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dist_gr_neighb_count.o dist_gr_neighb_count.o dist_gr_neighb_count.lo _dist_gr_neighb_count.lo' $(srcdir)/dist_gr_neighb_count.c >$(DEPS_DIR)/dist_gr_neighb_count.d
+$(DEPS_DIR)/dist_gr_neighb.d: $(srcdir)/dist_gr_neighb.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dist_gr_neighb.c > $(DEPS_DIR)/dist_gr_neighb.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dist_gr_neighb.o dist_gr_neighb.o dist_gr_neighb.lo _dist_gr_neighb.lo' $(srcdir)/dist_gr_neighb.c >$(DEPS_DIR)/dist_gr_neighb.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dist_gr_neighb.o dist_gr_neighb.o dist_gr_neighb.lo _dist_gr_neighb.lo' $(srcdir)/dist_gr_neighb.c >$(DEPS_DIR)/dist_gr_neighb.d
 $(DEPS_DIR)/topoutil.d: $(srcdir)/topoutil.c
-	$(MAKE_DEPEND_C) -MT '_topoutil.o topoutil.o' $(srcdir)/topoutil.c >$(DEPS_DIR)/topoutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C topoutil.c > $(DEPS_DIR)/topoutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_topoutil.o topoutil.o topoutil.lo _topoutil.lo' $(srcdir)/topoutil.c >$(DEPS_DIR)/topoutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_topoutil.o topoutil.o topoutil.lo _topoutil.lo' $(srcdir)/topoutil.c >$(DEPS_DIR)/topoutil.d
 $(DEPS_DIR)/timestamp: ${mpi_sources} topoutil.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_cart_coords.o cart_coords.o' $(srcdir)/cart_coords.c >$(DEPS_DIR)/cart_coords.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cart_coords.c > $(DEPS_DIR)/cart_coords.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cart_coords.o cart_coords.o cart_coords.lo _cart_coords.lo' $(srcdir)/cart_coords.c >$(DEPS_DIR)/cart_coords.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cart_coords.o cart_coords.o cart_coords.lo _cart_coords.lo' $(srcdir)/cart_coords.c >$(DEPS_DIR)/cart_coords.d
 	echo "include $(DEPS_DIR)/cart_coords.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_cart_create.o cart_create.o' $(srcdir)/cart_create.c >$(DEPS_DIR)/cart_create.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cart_create.c > $(DEPS_DIR)/cart_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cart_create.o cart_create.o cart_create.lo _cart_create.lo' $(srcdir)/cart_create.c >$(DEPS_DIR)/cart_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cart_create.o cart_create.o cart_create.lo _cart_create.lo' $(srcdir)/cart_create.c >$(DEPS_DIR)/cart_create.d
 	echo "include $(DEPS_DIR)/cart_create.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_cart_get.o cart_get.o' $(srcdir)/cart_get.c >$(DEPS_DIR)/cart_get.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cart_get.c > $(DEPS_DIR)/cart_get.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cart_get.o cart_get.o cart_get.lo _cart_get.lo' $(srcdir)/cart_get.c >$(DEPS_DIR)/cart_get.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cart_get.o cart_get.o cart_get.lo _cart_get.lo' $(srcdir)/cart_get.c >$(DEPS_DIR)/cart_get.d
 	echo "include $(DEPS_DIR)/cart_get.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_cart_map.o cart_map.o' $(srcdir)/cart_map.c >$(DEPS_DIR)/cart_map.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cart_map.c > $(DEPS_DIR)/cart_map.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cart_map.o cart_map.o cart_map.lo _cart_map.lo' $(srcdir)/cart_map.c >$(DEPS_DIR)/cart_map.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cart_map.o cart_map.o cart_map.lo _cart_map.lo' $(srcdir)/cart_map.c >$(DEPS_DIR)/cart_map.d
 	echo "include $(DEPS_DIR)/cart_map.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_cart_rank.o cart_rank.o' $(srcdir)/cart_rank.c >$(DEPS_DIR)/cart_rank.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cart_rank.c > $(DEPS_DIR)/cart_rank.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cart_rank.o cart_rank.o cart_rank.lo _cart_rank.lo' $(srcdir)/cart_rank.c >$(DEPS_DIR)/cart_rank.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cart_rank.o cart_rank.o cart_rank.lo _cart_rank.lo' $(srcdir)/cart_rank.c >$(DEPS_DIR)/cart_rank.d
 	echo "include $(DEPS_DIR)/cart_rank.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_cart_shift.o cart_shift.o' $(srcdir)/cart_shift.c >$(DEPS_DIR)/cart_shift.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cart_shift.c > $(DEPS_DIR)/cart_shift.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cart_shift.o cart_shift.o cart_shift.lo _cart_shift.lo' $(srcdir)/cart_shift.c >$(DEPS_DIR)/cart_shift.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cart_shift.o cart_shift.o cart_shift.lo _cart_shift.lo' $(srcdir)/cart_shift.c >$(DEPS_DIR)/cart_shift.d
 	echo "include $(DEPS_DIR)/cart_shift.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_cart_sub.o cart_sub.o' $(srcdir)/cart_sub.c >$(DEPS_DIR)/cart_sub.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cart_sub.c > $(DEPS_DIR)/cart_sub.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cart_sub.o cart_sub.o cart_sub.lo _cart_sub.lo' $(srcdir)/cart_sub.c >$(DEPS_DIR)/cart_sub.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cart_sub.o cart_sub.o cart_sub.lo _cart_sub.lo' $(srcdir)/cart_sub.c >$(DEPS_DIR)/cart_sub.d
 	echo "include $(DEPS_DIR)/cart_sub.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_dims_create.o dims_create.o' $(srcdir)/dims_create.c >$(DEPS_DIR)/dims_create.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dims_create.c > $(DEPS_DIR)/dims_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dims_create.o dims_create.o dims_create.lo _dims_create.lo' $(srcdir)/dims_create.c >$(DEPS_DIR)/dims_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dims_create.o dims_create.o dims_create.lo _dims_create.lo' $(srcdir)/dims_create.c >$(DEPS_DIR)/dims_create.d
 	echo "include $(DEPS_DIR)/dims_create.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_graph_get.o graph_get.o' $(srcdir)/graph_get.c >$(DEPS_DIR)/graph_get.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C graph_get.c > $(DEPS_DIR)/graph_get.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_graph_get.o graph_get.o graph_get.lo _graph_get.lo' $(srcdir)/graph_get.c >$(DEPS_DIR)/graph_get.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_graph_get.o graph_get.o graph_get.lo _graph_get.lo' $(srcdir)/graph_get.c >$(DEPS_DIR)/graph_get.d
 	echo "include $(DEPS_DIR)/graph_get.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_graph_map.o graph_map.o' $(srcdir)/graph_map.c >$(DEPS_DIR)/graph_map.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C graph_map.c > $(DEPS_DIR)/graph_map.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_graph_map.o graph_map.o graph_map.lo _graph_map.lo' $(srcdir)/graph_map.c >$(DEPS_DIR)/graph_map.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_graph_map.o graph_map.o graph_map.lo _graph_map.lo' $(srcdir)/graph_map.c >$(DEPS_DIR)/graph_map.d
 	echo "include $(DEPS_DIR)/graph_map.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_graph_nbr.o graph_nbr.o' $(srcdir)/graph_nbr.c >$(DEPS_DIR)/graph_nbr.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C graph_nbr.c > $(DEPS_DIR)/graph_nbr.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_graph_nbr.o graph_nbr.o graph_nbr.lo _graph_nbr.lo' $(srcdir)/graph_nbr.c >$(DEPS_DIR)/graph_nbr.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_graph_nbr.o graph_nbr.o graph_nbr.lo _graph_nbr.lo' $(srcdir)/graph_nbr.c >$(DEPS_DIR)/graph_nbr.d
 	echo "include $(DEPS_DIR)/graph_nbr.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_graphcreate.o graphcreate.o' $(srcdir)/graphcreate.c >$(DEPS_DIR)/graphcreate.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C graphcreate.c > $(DEPS_DIR)/graphcreate.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_graphcreate.o graphcreate.o graphcreate.lo _graphcreate.lo' $(srcdir)/graphcreate.c >$(DEPS_DIR)/graphcreate.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_graphcreate.o graphcreate.o graphcreate.lo _graphcreate.lo' $(srcdir)/graphcreate.c >$(DEPS_DIR)/graphcreate.d
 	echo "include $(DEPS_DIR)/graphcreate.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_graphdimsget.o graphdimsget.o' $(srcdir)/graphdimsget.c >$(DEPS_DIR)/graphdimsget.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C graphdimsget.c > $(DEPS_DIR)/graphdimsget.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_graphdimsget.o graphdimsget.o graphdimsget.lo _graphdimsget.lo' $(srcdir)/graphdimsget.c >$(DEPS_DIR)/graphdimsget.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_graphdimsget.o graphdimsget.o graphdimsget.lo _graphdimsget.lo' $(srcdir)/graphdimsget.c >$(DEPS_DIR)/graphdimsget.d
 	echo "include $(DEPS_DIR)/graphdimsget.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_graphnbrcnt.o graphnbrcnt.o' $(srcdir)/graphnbrcnt.c >$(DEPS_DIR)/graphnbrcnt.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C graphnbrcnt.c > $(DEPS_DIR)/graphnbrcnt.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_graphnbrcnt.o graphnbrcnt.o graphnbrcnt.lo _graphnbrcnt.lo' $(srcdir)/graphnbrcnt.c >$(DEPS_DIR)/graphnbrcnt.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_graphnbrcnt.o graphnbrcnt.o graphnbrcnt.lo _graphnbrcnt.lo' $(srcdir)/graphnbrcnt.c >$(DEPS_DIR)/graphnbrcnt.d
 	echo "include $(DEPS_DIR)/graphnbrcnt.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_cartdim_get.o cartdim_get.o' $(srcdir)/cartdim_get.c >$(DEPS_DIR)/cartdim_get.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C cartdim_get.c > $(DEPS_DIR)/cartdim_get.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_cartdim_get.o cartdim_get.o cartdim_get.lo _cartdim_get.lo' $(srcdir)/cartdim_get.c >$(DEPS_DIR)/cartdim_get.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_cartdim_get.o cartdim_get.o cartdim_get.lo _cartdim_get.lo' $(srcdir)/cartdim_get.c >$(DEPS_DIR)/cartdim_get.d
 	echo "include $(DEPS_DIR)/cartdim_get.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_topo_test.o topo_test.o' $(srcdir)/topo_test.c >$(DEPS_DIR)/topo_test.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C topo_test.c > $(DEPS_DIR)/topo_test.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_topo_test.o topo_test.o topo_test.lo _topo_test.lo' $(srcdir)/topo_test.c >$(DEPS_DIR)/topo_test.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_topo_test.o topo_test.o topo_test.lo _topo_test.lo' $(srcdir)/topo_test.c >$(DEPS_DIR)/topo_test.d
 	echo "include $(DEPS_DIR)/topo_test.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_topoutil.o topoutil.o' $(srcdir)/topoutil.c >$(DEPS_DIR)/topoutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dist_gr_create_adj.c > $(DEPS_DIR)/dist_gr_create_adj.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dist_gr_create_adj.o dist_gr_create_adj.o dist_gr_create_adj.lo _dist_gr_create_adj.lo' $(srcdir)/dist_gr_create_adj.c >$(DEPS_DIR)/dist_gr_create_adj.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dist_gr_create_adj.o dist_gr_create_adj.o dist_gr_create_adj.lo _dist_gr_create_adj.lo' $(srcdir)/dist_gr_create_adj.c >$(DEPS_DIR)/dist_gr_create_adj.d
+	echo "include $(DEPS_DIR)/dist_gr_create_adj.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dist_gr_create.c > $(DEPS_DIR)/dist_gr_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dist_gr_create.o dist_gr_create.o dist_gr_create.lo _dist_gr_create.lo' $(srcdir)/dist_gr_create.c >$(DEPS_DIR)/dist_gr_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dist_gr_create.o dist_gr_create.o dist_gr_create.lo _dist_gr_create.lo' $(srcdir)/dist_gr_create.c >$(DEPS_DIR)/dist_gr_create.d
+	echo "include $(DEPS_DIR)/dist_gr_create.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dist_gr_neighb_count.c > $(DEPS_DIR)/dist_gr_neighb_count.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dist_gr_neighb_count.o dist_gr_neighb_count.o dist_gr_neighb_count.lo _dist_gr_neighb_count.lo' $(srcdir)/dist_gr_neighb_count.c >$(DEPS_DIR)/dist_gr_neighb_count.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dist_gr_neighb_count.o dist_gr_neighb_count.o dist_gr_neighb_count.lo _dist_gr_neighb_count.lo' $(srcdir)/dist_gr_neighb_count.c >$(DEPS_DIR)/dist_gr_neighb_count.d
+	echo "include $(DEPS_DIR)/dist_gr_neighb_count.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dist_gr_neighb.c > $(DEPS_DIR)/dist_gr_neighb.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dist_gr_neighb.o dist_gr_neighb.o dist_gr_neighb.lo _dist_gr_neighb.lo' $(srcdir)/dist_gr_neighb.c >$(DEPS_DIR)/dist_gr_neighb.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dist_gr_neighb.o dist_gr_neighb.o dist_gr_neighb.lo _dist_gr_neighb.lo' $(srcdir)/dist_gr_neighb.c >$(DEPS_DIR)/dist_gr_neighb.d
+	echo "include $(DEPS_DIR)/dist_gr_neighb.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C topoutil.c > $(DEPS_DIR)/topoutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_topoutil.o topoutil.o topoutil.lo _topoutil.lo' $(srcdir)/topoutil.c >$(DEPS_DIR)/topoutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_topoutil.o topoutil.o topoutil.lo _topoutil.lo' $(srcdir)/topoutil.c >$(DEPS_DIR)/topoutil.d
 	echo "include $(DEPS_DIR)/topoutil.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -500,13 +788,10 @@ include $(DEPS_DIR)/alldeps
 SOURCES         =  cart_coords.c cart_create.c cart_get.c cart_map.c \
 	cart_rank.c cart_shift.c cart_sub.c dims_create.c graph_get.c \
 	graph_map.c graph_nbr.c graphcreate.c graphdimsget.c graphnbrcnt.c \
-	cartdim_get.c topo_test.c topoutil.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
+	cartdim_get.c topo_test.c dist_gr_create_adj.c dist_gr_create.c \
+	dist_gr_neighb_count.c dist_gr_neighb.c topoutil.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 

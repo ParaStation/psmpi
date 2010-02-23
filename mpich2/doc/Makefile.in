@@ -65,13 +65,13 @@ coverage:
 # --------------------------------------------------------------------------
 htmldoc:
 	for dir in mansrc userguide installguide smpd logging windev design ; do \
-		(cd $$dir && ${MAKE} htmldoc ; ) ; done
+		(cd $$dir && ${MAKE} htmldoc ) ; done
 mandoc:
 	for dir in mansrc userguide installguide smpd logging windev design ; do \
-		(cd $$dir && ${MAKE} mandoc ; ) ; done
+		(cd $$dir && ${MAKE} mandoc ) ; done
 latexdoc:
 	for dir in mansrc userguide installguide smpd logging windev design ; do \
-		(cd $$dir && ${MAKE} latexdoc ; ) ; done
+		(cd $$dir && ${MAKE} latexdoc ) ; done
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -83,8 +83,6 @@ dependencies:
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
 # --------------------------------------------------------------------------
 
 

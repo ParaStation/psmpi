@@ -79,6 +79,9 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code,
 	    MPIU_Snprintf(error_str, sizeof(error_str), "internal ABORT - process %d", rank);
 	}
     }
+    
+    MPIDU_Ftb_publish(MPIDU_FTB_EV_ABORT, error_str);
+    MPIDU_Ftb_finalize();
 
 #ifdef HAVE_DEBUGGER_SUPPORT
     MPIR_DebuggerSetAborting( error_msg );
@@ -130,8 +133,8 @@ static int MPIDI_CH3I_PMI_Abort(int exit_code, const char *error_msg)
        Should PMI_Abort have a parameter for which of these two cases to
        perform? */
 #ifdef USE_PMI2_API
-    PMI_Abort(TRUE, error_msg);
-#else    
+    PMI2_Abort(TRUE, error_msg);
+#else
     PMI_Abort(exit_code, error_msg);
 #endif
 

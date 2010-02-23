@@ -36,7 +36,7 @@ F77HEADERS = iodisp.h iooffset.h
 .SUFFIXES:
 .SUFFIXES: .o .c .f .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
@@ -45,14 +45,14 @@ F77HEADERS = iodisp.h iooffset.h
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  FC              $<" ; \
 	else \
 	  echo $(F77_COMPILE) -c $< ; \
@@ -177,12 +177,8 @@ SOURCES         =  iwriteatf.f iwritef.f iwriteshf.f writef.f writeatf.f \
 	writeshf.f writeatallbef.f fileerrf.f fileinfof.f shpositionf.f \
 	atomicityf.f miscfilef.f setviewcurf.f c2fmultio.c c2f2cio.c \
 	c2f2ciof.f 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 

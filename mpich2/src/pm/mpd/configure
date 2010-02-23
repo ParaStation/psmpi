@@ -650,6 +650,7 @@ PY22
 PY23
 PY24
 PY25
+PY26
 DO_MTV
 TOTALVIEW
 INSTALL_DATA
@@ -1792,7 +1793,6 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
-
 
 
 
@@ -3022,7 +3022,44 @@ fi
 PYTHON=$with_python
 # echo "GOT PYTHON", $PYTHON
 if test -z "$PYTHON" ; then  ## user did not give us a python; find one
-        # Extract the first word of "python2.5", so it can be a program name with args.
+        # Extract the first word of "python2.6", so it can be a program name with args.
+set dummy python2.6; ac_word=$2
+{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_PY26+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$PY26"; then
+  ac_cv_prog_PY26="$PY26" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_PY26="python2.6"
+    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+fi
+fi
+PY26=$ac_cv_prog_PY26
+if test -n "$PY26"; then
+  { $as_echo "$as_me:$LINENO: result: $PY26" >&5
+$as_echo "$PY26" >&6; }
+else
+  { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    # Extract the first word of "python2.5", so it can be a program name with args.
 set dummy python2.5; ac_word=$2
 { $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
@@ -3244,7 +3281,8 @@ $as_echo "no" >&6; }
 fi
 
 
-    if test -z "$PY25"  -a  \
+    if test -z "$PY26"  -a  \
+            -z "$PY25"  -a  \
             -z "$PY24"  -a  \
             -z "$PY23"  -a  \
             -z "$PY22"  -a  \
@@ -3253,7 +3291,7 @@ fi
         { $as_echo "$as_me:$LINENO: WARNING: Could not find a python executable in path: $PATH" >&5
 $as_echo "$as_me: WARNING: Could not find a python executable in path: $PATH" >&2;}
     fi
-        for pypgm in $PY25 $PY24 $PY23 $PY22 $PY2 $PY ; do \
+        for pypgm in $PY26 $PY25 $PY24 $PY23 $PY22 $PY2 $PY ; do \
         { $as_echo "$as_me:$LINENO: checking that $pypgm is a valid python version" >&5
 $as_echo_n "checking that $pypgm is a valid python version... " >&6; }
                 py_version=`$pypgm -c "import sys;print sys.version_info[0]"`

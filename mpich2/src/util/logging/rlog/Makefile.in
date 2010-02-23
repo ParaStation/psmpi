@@ -43,14 +43,14 @@ INCLUDES = -I../../../include -I${master_top_srcdir}/src/include -I../../../mpi/
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -61,7 +61,7 @@ INCLUDES = -I../../../include -I${master_top_srcdir}/src/include -I../../../mpi/
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -70,9 +70,9 @@ INCLUDES = -I../../../include -I${master_top_srcdir}/src/include -I../../../mpi/
 
 ${srcdir}/rlogconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /opt/local/bin/autoheader -I ../../../../confdb && \
-	\
-	/opt/local/bin/autoconf -I ../../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../../confdb && \
+	autoconf -I \
+	../../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -123,13 +123,13 @@ all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a irlog2rlog\
 
 .libstamp0 ../../../../lib/lib${MPILIBNAME}.a: rlog.o rlogutil.o rlogtime.o \
 	irlogutil.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../../lib/lib${MPILIBNAME}.a ; \
@@ -138,7 +138,7 @@ all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a irlog2rlog\
 	date > .libstamp0
 .libstamp1 ../../../../lib/lib${MPILIBNAME}.la: rlog.lo rlogutil.lo \
 	rlogtime.lo irlogutil.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -190,30 +190,90 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/rlog.d: $(srcdir)/rlog.c
-	$(MAKE_DEPEND_C)  $(srcdir)/rlog.c >$(DEPS_DIR)/rlog.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C rlog.c > $(DEPS_DIR)/rlog.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/rlog.c >$(DEPS_DIR)/rlog.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/rlog.c >$(DEPS_DIR)/rlog.d
 $(DEPS_DIR)/rlogutil.d: $(srcdir)/rlogutil.c
-	$(MAKE_DEPEND_C)  $(srcdir)/rlogutil.c >$(DEPS_DIR)/rlogutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C rlogutil.c > $(DEPS_DIR)/rlogutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/rlogutil.c >$(DEPS_DIR)/rlogutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/rlogutil.c >$(DEPS_DIR)/rlogutil.d
 $(DEPS_DIR)/rlogtime.d: $(srcdir)/rlogtime.c
-	$(MAKE_DEPEND_C)  $(srcdir)/rlogtime.c >$(DEPS_DIR)/rlogtime.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C rlogtime.c > $(DEPS_DIR)/rlogtime.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/rlogtime.c >$(DEPS_DIR)/rlogtime.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/rlogtime.c >$(DEPS_DIR)/rlogtime.d
 $(DEPS_DIR)/irlogutil.d: $(srcdir)/irlogutil.c
-	$(MAKE_DEPEND_C)  $(srcdir)/irlogutil.c >$(DEPS_DIR)/irlogutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C irlogutil.c > $(DEPS_DIR)/irlogutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/irlogutil.c >$(DEPS_DIR)/irlogutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/irlogutil.c >$(DEPS_DIR)/irlogutil.d
 $(DEPS_DIR)/timestamp: rlog.c rlogutil.c rlogtime.c irlogutil.c printrlog.c printirlog.c minalignrlog.c irlog2rlog.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/rlog.c >$(DEPS_DIR)/rlog.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C rlog.c > $(DEPS_DIR)/rlog.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/rlog.c >$(DEPS_DIR)/rlog.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/rlog.c >$(DEPS_DIR)/rlog.d
 	echo "include $(DEPS_DIR)/rlog.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/rlogutil.c >$(DEPS_DIR)/rlogutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C rlogutil.c > $(DEPS_DIR)/rlogutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/rlogutil.c >$(DEPS_DIR)/rlogutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/rlogutil.c >$(DEPS_DIR)/rlogutil.d
 	echo "include $(DEPS_DIR)/rlogutil.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/rlogtime.c >$(DEPS_DIR)/rlogtime.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C rlogtime.c > $(DEPS_DIR)/rlogtime.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/rlogtime.c >$(DEPS_DIR)/rlogtime.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/rlogtime.c >$(DEPS_DIR)/rlogtime.d
 	echo "include $(DEPS_DIR)/rlogtime.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/irlogutil.c >$(DEPS_DIR)/irlogutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C irlogutil.c > $(DEPS_DIR)/irlogutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/irlogutil.c >$(DEPS_DIR)/irlogutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/irlogutil.c >$(DEPS_DIR)/irlogutil.d
 	echo "include $(DEPS_DIR)/irlogutil.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/printrlog.c >$(DEPS_DIR)/printrlog.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C printrlog.c > $(DEPS_DIR)/printrlog.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/printrlog.c >$(DEPS_DIR)/printrlog.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/printrlog.c >$(DEPS_DIR)/printrlog.d
 	echo "include $(DEPS_DIR)/printrlog.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/printirlog.c >$(DEPS_DIR)/printirlog.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C printirlog.c > $(DEPS_DIR)/printirlog.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/printirlog.c >$(DEPS_DIR)/printirlog.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/printirlog.c >$(DEPS_DIR)/printirlog.d
 	echo "include $(DEPS_DIR)/printirlog.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/minalignrlog.c >$(DEPS_DIR)/minalignrlog.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C minalignrlog.c > $(DEPS_DIR)/minalignrlog.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/minalignrlog.c >$(DEPS_DIR)/minalignrlog.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/minalignrlog.c >$(DEPS_DIR)/minalignrlog.d
 	echo "include $(DEPS_DIR)/minalignrlog.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/irlog2rlog.c >$(DEPS_DIR)/irlog2rlog.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C irlog2rlog.c > $(DEPS_DIR)/irlog2rlog.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/irlog2rlog.c >$(DEPS_DIR)/irlog2rlog.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/irlog2rlog.c >$(DEPS_DIR)/irlog2rlog.d
 	echo "include $(DEPS_DIR)/irlog2rlog.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -223,12 +283,8 @@ include $(DEPS_DIR)/alldeps
 # --------------------------------------------------------------------------
 SOURCES         =  rlog.c rlogutil.c rlogtime.c irlogutil.c irlog2rlog.c \
 	printirlog.c printrlog.c minalignrlog.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 #SUBDIRS = TraceInput .
 distclean-local:

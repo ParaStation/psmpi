@@ -29,7 +29,7 @@ INCLUDES = -I../../include -I${srcdir}/../../include
 .SUFFIXES:
 .SUFFIXES: .o .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
@@ -38,7 +38,7 @@ INCLUDES = -I../../include -I${srcdir}/../../include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -65,8 +65,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o multispawn taskmaster
-	-@rm -f multispawn.exe taskmaster.exe
+	-@rm -f *.o ${srcdir}/*.o th_taskmaster multispawn
+	-@rm -f th_taskmaster.exe multispawn.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -84,13 +84,14 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: multispawn taskmaster
+all-redirect: multispawn th_taskmaster
 
 coverage: 
+th_taskmaster: th_taskmaster.o   @MPILIBLOC@ ../../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o th_taskmaster th_taskmaster.o  \
+	${LIBS} 
 multispawn: multispawn.o   @MPILIBLOC@ ../../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o multispawn multispawn.o  ${LIBS}
-taskmaster: taskmaster.o   @MPILIBLOC@ ../../util/mtest.o
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o taskmaster taskmaster.o  ${LIBS}
 # --------------------------------------------------------------------------
 htmldoc:
 mandoc:
@@ -99,13 +100,9 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  multispawn.c taskmaster.c
-ETAGS           = @ETAGS@ @ETAGSADD@
+SOURCES         =  multispawn.c th_taskmaster.c
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 # Use extra programs to list programs that should not be built by default.

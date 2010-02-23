@@ -40,14 +40,14 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -58,7 +58,7 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -127,13 +127,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	comm_size.o comm_remote_group.o comm_remote_size.o comm_set_name.o \
 	comm_split.o comm_test_inter.o intercomm_create.o intercomm_merge.o \
 	commutil.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${MPILIBNAME}.a ; \
@@ -145,7 +145,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	comm_size.lo comm_remote_group.lo comm_remote_size.lo \
 	comm_set_name.lo comm_split.lo comm_test_inter.lo intercomm_create.lo \
 	intercomm_merge.lo commutil.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -158,13 +158,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	_comm_group.o _comm_rank.o _comm_size.o _comm_remote_group.o \
 	_comm_remote_size.o _comm_set_name.o _comm_split.o _comm_test_inter.o \
 	_intercomm_create.o _intercomm_merge.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${PMPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${PMPILIBNAME}.a ; \
@@ -175,7 +175,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	_comm_group.lo _comm_rank.lo _comm_size.lo _comm_remote_group.lo \
 	_comm_remote_size.lo _comm_set_name.lo _comm_split.lo \
 	_comm_test_inter.lo _intercomm_create.lo _intercomm_merge.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $? ; \
@@ -183,210 +183,210 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _comm_compare.o: comm_compare.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_compare.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_compare.c -o _comm_compare.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_compare.c -o _comm_compare.o
 _comm_compare.lo: comm_compare.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_compare.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_compare.c -o _comm_compare.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_compare.c -o _comm_compare.lo
 _comm_create.o: comm_create.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_create.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_create.c -o _comm_create.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_create.c -o _comm_create.o
 _comm_create.lo: comm_create.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_create.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_create.c -o _comm_create.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_create.c -o _comm_create.lo
 _comm_dup.o: comm_dup.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_dup.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_dup.c -o _comm_dup.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_dup.c -o _comm_dup.o
 _comm_dup.lo: comm_dup.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_dup.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_dup.c -o _comm_dup.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_dup.c -o _comm_dup.lo
 _comm_free.o: comm_free.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_free.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_free.c -o _comm_free.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_free.c -o _comm_free.o
 _comm_free.lo: comm_free.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_free.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_free.c -o _comm_free.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_free.c -o _comm_free.lo
 _comm_get_name.o: comm_get_name.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_get_name.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_name.c -o _comm_get_name.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_name.c -o _comm_get_name.o
 _comm_get_name.lo: comm_get_name.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_get_name.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_name.c -o _comm_get_name.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_name.c -o _comm_get_name.lo
 _comm_group.o: comm_group.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_group.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_group.c -o _comm_group.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_group.c -o _comm_group.o
 _comm_group.lo: comm_group.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_group.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_group.c -o _comm_group.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_group.c -o _comm_group.lo
 _comm_rank.o: comm_rank.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_rank.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_rank.c -o _comm_rank.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_rank.c -o _comm_rank.o
 _comm_rank.lo: comm_rank.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_rank.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_rank.c -o _comm_rank.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_rank.c -o _comm_rank.lo
 _comm_size.o: comm_size.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_size.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_size.c -o _comm_size.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_size.c -o _comm_size.o
 _comm_size.lo: comm_size.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_size.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_size.c -o _comm_size.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_size.c -o _comm_size.lo
 _comm_remote_group.o: comm_remote_group.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_remote_group.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_remote_group.c -o _comm_remote_group.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_remote_group.c -o _comm_remote_group.o
 _comm_remote_group.lo: comm_remote_group.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_remote_group.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_remote_group.c -o _comm_remote_group.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_remote_group.c -o _comm_remote_group.lo
 _comm_remote_size.o: comm_remote_size.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_remote_size.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_remote_size.c -o _comm_remote_size.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_remote_size.c -o _comm_remote_size.o
 _comm_remote_size.lo: comm_remote_size.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_remote_size.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_remote_size.c -o _comm_remote_size.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_remote_size.c -o _comm_remote_size.lo
 _comm_set_name.o: comm_set_name.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_set_name.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_name.c -o _comm_set_name.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_name.c -o _comm_set_name.o
 _comm_set_name.lo: comm_set_name.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_set_name.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_name.c -o _comm_set_name.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_name.c -o _comm_set_name.lo
 _comm_split.o: comm_split.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_split.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_split.c -o _comm_split.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_split.c -o _comm_split.o
 _comm_split.lo: comm_split.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_split.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_split.c -o _comm_split.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_split.c -o _comm_split.lo
 _comm_test_inter.o: comm_test_inter.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_test_inter.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_test_inter.c -o _comm_test_inter.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_test_inter.c -o _comm_test_inter.o
 _comm_test_inter.lo: comm_test_inter.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_test_inter.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_test_inter.c -o _comm_test_inter.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_test_inter.c -o _comm_test_inter.lo
 _intercomm_create.o: intercomm_create.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/intercomm_create.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/intercomm_create.c -o _intercomm_create.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/intercomm_create.c -o _intercomm_create.o
 _intercomm_create.lo: intercomm_create.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/intercomm_create.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/intercomm_create.c -o _intercomm_create.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/intercomm_create.c -o _intercomm_create.lo
 _intercomm_merge.o: intercomm_merge.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/intercomm_merge.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/intercomm_merge.c -o _intercomm_merge.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/intercomm_merge.c -o _intercomm_merge.o
 _intercomm_merge.lo: intercomm_merge.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/intercomm_merge.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/intercomm_merge.c -o _intercomm_merge.lo ; \
@@ -410,70 +410,230 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/comm_compare.d: $(srcdir)/comm_compare.c
-	$(MAKE_DEPEND_C) -MT '_comm_compare.o comm_compare.o' $(srcdir)/comm_compare.c >$(DEPS_DIR)/comm_compare.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_compare.c > $(DEPS_DIR)/comm_compare.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_compare.o comm_compare.o comm_compare.lo _comm_compare.lo' $(srcdir)/comm_compare.c >$(DEPS_DIR)/comm_compare.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_compare.o comm_compare.o comm_compare.lo _comm_compare.lo' $(srcdir)/comm_compare.c >$(DEPS_DIR)/comm_compare.d
 $(DEPS_DIR)/comm_create.d: $(srcdir)/comm_create.c
-	$(MAKE_DEPEND_C) -MT '_comm_create.o comm_create.o' $(srcdir)/comm_create.c >$(DEPS_DIR)/comm_create.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_create.c > $(DEPS_DIR)/comm_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_create.o comm_create.o comm_create.lo _comm_create.lo' $(srcdir)/comm_create.c >$(DEPS_DIR)/comm_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_create.o comm_create.o comm_create.lo _comm_create.lo' $(srcdir)/comm_create.c >$(DEPS_DIR)/comm_create.d
 $(DEPS_DIR)/comm_dup.d: $(srcdir)/comm_dup.c
-	$(MAKE_DEPEND_C) -MT '_comm_dup.o comm_dup.o' $(srcdir)/comm_dup.c >$(DEPS_DIR)/comm_dup.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_dup.c > $(DEPS_DIR)/comm_dup.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_dup.o comm_dup.o comm_dup.lo _comm_dup.lo' $(srcdir)/comm_dup.c >$(DEPS_DIR)/comm_dup.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_dup.o comm_dup.o comm_dup.lo _comm_dup.lo' $(srcdir)/comm_dup.c >$(DEPS_DIR)/comm_dup.d
 $(DEPS_DIR)/comm_free.d: $(srcdir)/comm_free.c
-	$(MAKE_DEPEND_C) -MT '_comm_free.o comm_free.o' $(srcdir)/comm_free.c >$(DEPS_DIR)/comm_free.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_free.c > $(DEPS_DIR)/comm_free.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_free.o comm_free.o comm_free.lo _comm_free.lo' $(srcdir)/comm_free.c >$(DEPS_DIR)/comm_free.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_free.o comm_free.o comm_free.lo _comm_free.lo' $(srcdir)/comm_free.c >$(DEPS_DIR)/comm_free.d
 $(DEPS_DIR)/comm_get_name.d: $(srcdir)/comm_get_name.c
-	$(MAKE_DEPEND_C) -MT '_comm_get_name.o comm_get_name.o' $(srcdir)/comm_get_name.c >$(DEPS_DIR)/comm_get_name.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_get_name.c > $(DEPS_DIR)/comm_get_name.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_get_name.o comm_get_name.o comm_get_name.lo _comm_get_name.lo' $(srcdir)/comm_get_name.c >$(DEPS_DIR)/comm_get_name.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_get_name.o comm_get_name.o comm_get_name.lo _comm_get_name.lo' $(srcdir)/comm_get_name.c >$(DEPS_DIR)/comm_get_name.d
 $(DEPS_DIR)/comm_group.d: $(srcdir)/comm_group.c
-	$(MAKE_DEPEND_C) -MT '_comm_group.o comm_group.o' $(srcdir)/comm_group.c >$(DEPS_DIR)/comm_group.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_group.c > $(DEPS_DIR)/comm_group.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_group.o comm_group.o comm_group.lo _comm_group.lo' $(srcdir)/comm_group.c >$(DEPS_DIR)/comm_group.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_group.o comm_group.o comm_group.lo _comm_group.lo' $(srcdir)/comm_group.c >$(DEPS_DIR)/comm_group.d
 $(DEPS_DIR)/comm_rank.d: $(srcdir)/comm_rank.c
-	$(MAKE_DEPEND_C) -MT '_comm_rank.o comm_rank.o' $(srcdir)/comm_rank.c >$(DEPS_DIR)/comm_rank.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_rank.c > $(DEPS_DIR)/comm_rank.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_rank.o comm_rank.o comm_rank.lo _comm_rank.lo' $(srcdir)/comm_rank.c >$(DEPS_DIR)/comm_rank.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_rank.o comm_rank.o comm_rank.lo _comm_rank.lo' $(srcdir)/comm_rank.c >$(DEPS_DIR)/comm_rank.d
 $(DEPS_DIR)/comm_size.d: $(srcdir)/comm_size.c
-	$(MAKE_DEPEND_C) -MT '_comm_size.o comm_size.o' $(srcdir)/comm_size.c >$(DEPS_DIR)/comm_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_size.c > $(DEPS_DIR)/comm_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_size.o comm_size.o comm_size.lo _comm_size.lo' $(srcdir)/comm_size.c >$(DEPS_DIR)/comm_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_size.o comm_size.o comm_size.lo _comm_size.lo' $(srcdir)/comm_size.c >$(DEPS_DIR)/comm_size.d
 $(DEPS_DIR)/comm_remote_group.d: $(srcdir)/comm_remote_group.c
-	$(MAKE_DEPEND_C) -MT '_comm_remote_group.o comm_remote_group.o' $(srcdir)/comm_remote_group.c >$(DEPS_DIR)/comm_remote_group.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_remote_group.c > $(DEPS_DIR)/comm_remote_group.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_remote_group.o comm_remote_group.o comm_remote_group.lo _comm_remote_group.lo' $(srcdir)/comm_remote_group.c >$(DEPS_DIR)/comm_remote_group.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_remote_group.o comm_remote_group.o comm_remote_group.lo _comm_remote_group.lo' $(srcdir)/comm_remote_group.c >$(DEPS_DIR)/comm_remote_group.d
 $(DEPS_DIR)/comm_remote_size.d: $(srcdir)/comm_remote_size.c
-	$(MAKE_DEPEND_C) -MT '_comm_remote_size.o comm_remote_size.o' $(srcdir)/comm_remote_size.c >$(DEPS_DIR)/comm_remote_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_remote_size.c > $(DEPS_DIR)/comm_remote_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_remote_size.o comm_remote_size.o comm_remote_size.lo _comm_remote_size.lo' $(srcdir)/comm_remote_size.c >$(DEPS_DIR)/comm_remote_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_remote_size.o comm_remote_size.o comm_remote_size.lo _comm_remote_size.lo' $(srcdir)/comm_remote_size.c >$(DEPS_DIR)/comm_remote_size.d
 $(DEPS_DIR)/comm_set_name.d: $(srcdir)/comm_set_name.c
-	$(MAKE_DEPEND_C) -MT '_comm_set_name.o comm_set_name.o' $(srcdir)/comm_set_name.c >$(DEPS_DIR)/comm_set_name.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_set_name.c > $(DEPS_DIR)/comm_set_name.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_set_name.o comm_set_name.o comm_set_name.lo _comm_set_name.lo' $(srcdir)/comm_set_name.c >$(DEPS_DIR)/comm_set_name.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_set_name.o comm_set_name.o comm_set_name.lo _comm_set_name.lo' $(srcdir)/comm_set_name.c >$(DEPS_DIR)/comm_set_name.d
 $(DEPS_DIR)/comm_split.d: $(srcdir)/comm_split.c
-	$(MAKE_DEPEND_C) -MT '_comm_split.o comm_split.o' $(srcdir)/comm_split.c >$(DEPS_DIR)/comm_split.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_split.c > $(DEPS_DIR)/comm_split.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_split.o comm_split.o comm_split.lo _comm_split.lo' $(srcdir)/comm_split.c >$(DEPS_DIR)/comm_split.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_split.o comm_split.o comm_split.lo _comm_split.lo' $(srcdir)/comm_split.c >$(DEPS_DIR)/comm_split.d
 $(DEPS_DIR)/comm_test_inter.d: $(srcdir)/comm_test_inter.c
-	$(MAKE_DEPEND_C) -MT '_comm_test_inter.o comm_test_inter.o' $(srcdir)/comm_test_inter.c >$(DEPS_DIR)/comm_test_inter.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_test_inter.c > $(DEPS_DIR)/comm_test_inter.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_test_inter.o comm_test_inter.o comm_test_inter.lo _comm_test_inter.lo' $(srcdir)/comm_test_inter.c >$(DEPS_DIR)/comm_test_inter.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_test_inter.o comm_test_inter.o comm_test_inter.lo _comm_test_inter.lo' $(srcdir)/comm_test_inter.c >$(DEPS_DIR)/comm_test_inter.d
 $(DEPS_DIR)/intercomm_create.d: $(srcdir)/intercomm_create.c
-	$(MAKE_DEPEND_C) -MT '_intercomm_create.o intercomm_create.o' $(srcdir)/intercomm_create.c >$(DEPS_DIR)/intercomm_create.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C intercomm_create.c > $(DEPS_DIR)/intercomm_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_intercomm_create.o intercomm_create.o intercomm_create.lo _intercomm_create.lo' $(srcdir)/intercomm_create.c >$(DEPS_DIR)/intercomm_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_intercomm_create.o intercomm_create.o intercomm_create.lo _intercomm_create.lo' $(srcdir)/intercomm_create.c >$(DEPS_DIR)/intercomm_create.d
 $(DEPS_DIR)/intercomm_merge.d: $(srcdir)/intercomm_merge.c
-	$(MAKE_DEPEND_C) -MT '_intercomm_merge.o intercomm_merge.o' $(srcdir)/intercomm_merge.c >$(DEPS_DIR)/intercomm_merge.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C intercomm_merge.c > $(DEPS_DIR)/intercomm_merge.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_intercomm_merge.o intercomm_merge.o intercomm_merge.lo _intercomm_merge.lo' $(srcdir)/intercomm_merge.c >$(DEPS_DIR)/intercomm_merge.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_intercomm_merge.o intercomm_merge.o intercomm_merge.lo _intercomm_merge.lo' $(srcdir)/intercomm_merge.c >$(DEPS_DIR)/intercomm_merge.d
 $(DEPS_DIR)/commutil.d: $(srcdir)/commutil.c
-	$(MAKE_DEPEND_C) -MT '_commutil.o commutil.o' $(srcdir)/commutil.c >$(DEPS_DIR)/commutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C commutil.c > $(DEPS_DIR)/commutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_commutil.o commutil.o commutil.lo _commutil.lo' $(srcdir)/commutil.c >$(DEPS_DIR)/commutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_commutil.o commutil.o commutil.lo _commutil.lo' $(srcdir)/commutil.c >$(DEPS_DIR)/commutil.d
 $(DEPS_DIR)/timestamp: $(mpi_sources) commutil.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_compare.o comm_compare.o' $(srcdir)/comm_compare.c >$(DEPS_DIR)/comm_compare.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_compare.c > $(DEPS_DIR)/comm_compare.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_compare.o comm_compare.o comm_compare.lo _comm_compare.lo' $(srcdir)/comm_compare.c >$(DEPS_DIR)/comm_compare.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_compare.o comm_compare.o comm_compare.lo _comm_compare.lo' $(srcdir)/comm_compare.c >$(DEPS_DIR)/comm_compare.d
 	echo "include $(DEPS_DIR)/comm_compare.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_create.o comm_create.o' $(srcdir)/comm_create.c >$(DEPS_DIR)/comm_create.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_create.c > $(DEPS_DIR)/comm_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_create.o comm_create.o comm_create.lo _comm_create.lo' $(srcdir)/comm_create.c >$(DEPS_DIR)/comm_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_create.o comm_create.o comm_create.lo _comm_create.lo' $(srcdir)/comm_create.c >$(DEPS_DIR)/comm_create.d
 	echo "include $(DEPS_DIR)/comm_create.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_dup.o comm_dup.o' $(srcdir)/comm_dup.c >$(DEPS_DIR)/comm_dup.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_dup.c > $(DEPS_DIR)/comm_dup.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_dup.o comm_dup.o comm_dup.lo _comm_dup.lo' $(srcdir)/comm_dup.c >$(DEPS_DIR)/comm_dup.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_dup.o comm_dup.o comm_dup.lo _comm_dup.lo' $(srcdir)/comm_dup.c >$(DEPS_DIR)/comm_dup.d
 	echo "include $(DEPS_DIR)/comm_dup.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_free.o comm_free.o' $(srcdir)/comm_free.c >$(DEPS_DIR)/comm_free.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_free.c > $(DEPS_DIR)/comm_free.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_free.o comm_free.o comm_free.lo _comm_free.lo' $(srcdir)/comm_free.c >$(DEPS_DIR)/comm_free.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_free.o comm_free.o comm_free.lo _comm_free.lo' $(srcdir)/comm_free.c >$(DEPS_DIR)/comm_free.d
 	echo "include $(DEPS_DIR)/comm_free.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_get_name.o comm_get_name.o' $(srcdir)/comm_get_name.c >$(DEPS_DIR)/comm_get_name.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_get_name.c > $(DEPS_DIR)/comm_get_name.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_get_name.o comm_get_name.o comm_get_name.lo _comm_get_name.lo' $(srcdir)/comm_get_name.c >$(DEPS_DIR)/comm_get_name.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_get_name.o comm_get_name.o comm_get_name.lo _comm_get_name.lo' $(srcdir)/comm_get_name.c >$(DEPS_DIR)/comm_get_name.d
 	echo "include $(DEPS_DIR)/comm_get_name.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_group.o comm_group.o' $(srcdir)/comm_group.c >$(DEPS_DIR)/comm_group.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_group.c > $(DEPS_DIR)/comm_group.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_group.o comm_group.o comm_group.lo _comm_group.lo' $(srcdir)/comm_group.c >$(DEPS_DIR)/comm_group.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_group.o comm_group.o comm_group.lo _comm_group.lo' $(srcdir)/comm_group.c >$(DEPS_DIR)/comm_group.d
 	echo "include $(DEPS_DIR)/comm_group.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_rank.o comm_rank.o' $(srcdir)/comm_rank.c >$(DEPS_DIR)/comm_rank.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_rank.c > $(DEPS_DIR)/comm_rank.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_rank.o comm_rank.o comm_rank.lo _comm_rank.lo' $(srcdir)/comm_rank.c >$(DEPS_DIR)/comm_rank.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_rank.o comm_rank.o comm_rank.lo _comm_rank.lo' $(srcdir)/comm_rank.c >$(DEPS_DIR)/comm_rank.d
 	echo "include $(DEPS_DIR)/comm_rank.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_size.o comm_size.o' $(srcdir)/comm_size.c >$(DEPS_DIR)/comm_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_size.c > $(DEPS_DIR)/comm_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_size.o comm_size.o comm_size.lo _comm_size.lo' $(srcdir)/comm_size.c >$(DEPS_DIR)/comm_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_size.o comm_size.o comm_size.lo _comm_size.lo' $(srcdir)/comm_size.c >$(DEPS_DIR)/comm_size.d
 	echo "include $(DEPS_DIR)/comm_size.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_remote_group.o comm_remote_group.o' $(srcdir)/comm_remote_group.c >$(DEPS_DIR)/comm_remote_group.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_remote_group.c > $(DEPS_DIR)/comm_remote_group.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_remote_group.o comm_remote_group.o comm_remote_group.lo _comm_remote_group.lo' $(srcdir)/comm_remote_group.c >$(DEPS_DIR)/comm_remote_group.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_remote_group.o comm_remote_group.o comm_remote_group.lo _comm_remote_group.lo' $(srcdir)/comm_remote_group.c >$(DEPS_DIR)/comm_remote_group.d
 	echo "include $(DEPS_DIR)/comm_remote_group.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_remote_size.o comm_remote_size.o' $(srcdir)/comm_remote_size.c >$(DEPS_DIR)/comm_remote_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_remote_size.c > $(DEPS_DIR)/comm_remote_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_remote_size.o comm_remote_size.o comm_remote_size.lo _comm_remote_size.lo' $(srcdir)/comm_remote_size.c >$(DEPS_DIR)/comm_remote_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_remote_size.o comm_remote_size.o comm_remote_size.lo _comm_remote_size.lo' $(srcdir)/comm_remote_size.c >$(DEPS_DIR)/comm_remote_size.d
 	echo "include $(DEPS_DIR)/comm_remote_size.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_set_name.o comm_set_name.o' $(srcdir)/comm_set_name.c >$(DEPS_DIR)/comm_set_name.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_set_name.c > $(DEPS_DIR)/comm_set_name.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_set_name.o comm_set_name.o comm_set_name.lo _comm_set_name.lo' $(srcdir)/comm_set_name.c >$(DEPS_DIR)/comm_set_name.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_set_name.o comm_set_name.o comm_set_name.lo _comm_set_name.lo' $(srcdir)/comm_set_name.c >$(DEPS_DIR)/comm_set_name.d
 	echo "include $(DEPS_DIR)/comm_set_name.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_split.o comm_split.o' $(srcdir)/comm_split.c >$(DEPS_DIR)/comm_split.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_split.c > $(DEPS_DIR)/comm_split.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_split.o comm_split.o comm_split.lo _comm_split.lo' $(srcdir)/comm_split.c >$(DEPS_DIR)/comm_split.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_split.o comm_split.o comm_split.lo _comm_split.lo' $(srcdir)/comm_split.c >$(DEPS_DIR)/comm_split.d
 	echo "include $(DEPS_DIR)/comm_split.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_test_inter.o comm_test_inter.o' $(srcdir)/comm_test_inter.c >$(DEPS_DIR)/comm_test_inter.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_test_inter.c > $(DEPS_DIR)/comm_test_inter.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_test_inter.o comm_test_inter.o comm_test_inter.lo _comm_test_inter.lo' $(srcdir)/comm_test_inter.c >$(DEPS_DIR)/comm_test_inter.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_test_inter.o comm_test_inter.o comm_test_inter.lo _comm_test_inter.lo' $(srcdir)/comm_test_inter.c >$(DEPS_DIR)/comm_test_inter.d
 	echo "include $(DEPS_DIR)/comm_test_inter.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_intercomm_create.o intercomm_create.o' $(srcdir)/intercomm_create.c >$(DEPS_DIR)/intercomm_create.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C intercomm_create.c > $(DEPS_DIR)/intercomm_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_intercomm_create.o intercomm_create.o intercomm_create.lo _intercomm_create.lo' $(srcdir)/intercomm_create.c >$(DEPS_DIR)/intercomm_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_intercomm_create.o intercomm_create.o intercomm_create.lo _intercomm_create.lo' $(srcdir)/intercomm_create.c >$(DEPS_DIR)/intercomm_create.d
 	echo "include $(DEPS_DIR)/intercomm_create.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_intercomm_merge.o intercomm_merge.o' $(srcdir)/intercomm_merge.c >$(DEPS_DIR)/intercomm_merge.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C intercomm_merge.c > $(DEPS_DIR)/intercomm_merge.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_intercomm_merge.o intercomm_merge.o intercomm_merge.lo _intercomm_merge.lo' $(srcdir)/intercomm_merge.c >$(DEPS_DIR)/intercomm_merge.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_intercomm_merge.o intercomm_merge.o intercomm_merge.lo _intercomm_merge.lo' $(srcdir)/intercomm_merge.c >$(DEPS_DIR)/intercomm_merge.d
 	echo "include $(DEPS_DIR)/intercomm_merge.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_commutil.o commutil.o' $(srcdir)/commutil.c >$(DEPS_DIR)/commutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C commutil.c > $(DEPS_DIR)/commutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_commutil.o commutil.o commutil.lo _commutil.lo' $(srcdir)/commutil.c >$(DEPS_DIR)/commutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_commutil.o commutil.o commutil.lo _commutil.lo' $(srcdir)/commutil.c >$(DEPS_DIR)/commutil.d
 	echo "include $(DEPS_DIR)/commutil.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -485,12 +645,8 @@ SOURCES         =  comm_compare.c comm_create.c comm_dup.c comm_free.c \
 	comm_get_name.c comm_group.c comm_rank.c comm_size.c \
 	comm_remote_group.c comm_remote_size.c comm_set_name.c comm_split.c \
 	comm_test_inter.c intercomm_create.c intercomm_merge.c commutil.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 

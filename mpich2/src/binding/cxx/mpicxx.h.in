@@ -100,7 +100,7 @@ extern     void Attach_buffer( void* v1, int v2 ) ;
 extern     int Get_error_class( int v1 ) ;
 
 class Exception  {
-		
+
   protected:
     int the_real_exception;
 
@@ -149,7 +149,8 @@ class Datatype  {
     friend class Intercomm;
     friend class Win;
     friend class File;
-		
+    friend class Op;
+
   protected:
     MPI_Datatype the_real_datatype;
 
@@ -398,7 +399,7 @@ class Info  {
     friend class Win;
     friend class Comm;
     friend class Intracomm;
-		
+
   protected:
     MPI_Info the_real_info;
 
@@ -478,7 +479,7 @@ class Status  {
     friend class Comm;
     friend class File;
     friend class Request;
-		
+
   protected:
     MPI_Status the_real_status;
 
@@ -544,7 +545,7 @@ class Group  {
     friend class Intercomm;
     friend class Win;
     friend class File;
-		
+
   protected:
     MPI_Group the_real_group;
 
@@ -647,7 +648,7 @@ class Op  {
     friend class Intercomm;
     friend class Win;
     friend class Comm;
-		
+
   protected:
     MPI_Op the_real_op;
 
@@ -679,6 +680,16 @@ class Op  {
     {
         MPIX_CALL( MPI_Op_free( (MPI_Op *) &the_real_op ));
     }
+    virtual bool Is_commutative( void )
+    {
+        int v2;
+        MPIX_CALL( MPI_Op_commutative( (MPI_Op) the_real_op, &v2 ));
+        return v2!= 0;
+    }
+    virtual void Reduce_local( void * v1, void * v2, int v3, Datatype v4 )
+    {
+        MPIX_CALL( MPI_Reduce_local( v1, v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPI_Op) the_real_op ));
+    }
 
     void Init( User_function *, bool );
 };
@@ -687,7 +698,7 @@ class Errhandler  {
     friend class Comm;
     friend class File;
     friend class Win;
-		
+
   protected:
     MPI_Errhandler the_real_errhandler;
 
@@ -725,7 +736,7 @@ class Request  {
     friend class Comm;
     friend class File;
     friend class Grequest;
-		
+
   protected:
     MPI_Request the_real_request;
 
@@ -1117,7 +1128,7 @@ class Comm  {
     friend class Datatype;
     friend class Win;
     friend class File;
-		
+
   protected:
     MPI_Comm the_real_comm;
 
@@ -1319,6 +1330,10 @@ class Comm  {
     {
         MPIX_CALL( MPI_Rsend( (void*)v1, v2, (MPI_Datatype)(v3.the_real_datatype), v4, v5, (MPI_Comm) the_real_comm ));
     }
+    virtual void Reduce_scatter_block( const void * v1, void * v2, int v3, const Datatype &v4, const Op &v5 ) const
+    {
+        MPIX_CALL( MPI_Reduce_scatter_block( (void *)v1, v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPI_Op)(v5.the_real_op), (MPI_Comm) the_real_comm ));
+    }
     virtual void Gatherv( const void* v1, int v2, const Datatype &v3, void* v4, const int * v5, const int * v6, const Datatype &v7, int v8 ) const
     {
         MPIX_CALL( MPI_Gatherv( (void*)v1, v2, (MPI_Datatype)(v3.the_real_datatype), v4, (int *)v5, (int *)v6, (MPI_Datatype)(v7.the_real_datatype), v8, (MPI_Comm) the_real_comm ));
@@ -1425,10 +1440,10 @@ class Comm  {
         MPIX_CALL( MPI_Allgatherv( (void*)v1, v2, (MPI_Datatype)(v3.the_real_datatype), v4, (int *)v5, (int *)v6, (MPI_Datatype)(v7.the_real_datatype), (MPI_Comm) the_real_comm ));
     }
     virtual Comm &Clone(void) const = 0;
-
     typedef int Copy_attr_function(const Comm& oldcomm, int comm_keyval, void* extra_state, void* attribute_val_in, void* attribute_val_out, bool& flag); 
     typedef int Delete_attr_function(Comm& comm, int comm_keyval, void* attribute_val, void* extra_state); 
-    typedef void Errhandler_fn(Comm &, int *, ... );
+    typedef void Errhandler_function(Comm &, int *, ... );
+    typedef Errhandler_function Errhandler_fn;
 
     static int Create_keyval( Copy_attr_function *, Delete_attr_function *,
                               void * );
@@ -1440,7 +1455,7 @@ class Comm  {
     static int DUP_FN( const Comm &oldcomm, int keyval, void *ex,
     void *attr_in, void *attr_out, bool &flag ) { flag = 1; 
     *(void **)attr_out = attr_in; return 0;} 
-    static Errhandler Create_errhandler( Errhandler_fn * );
+    static Errhandler Create_errhandler( Errhandler_function * );
 
 };
 
@@ -1720,14 +1735,14 @@ class Grequest : public Request {
     typedef int Free_function( void * );
     typedef int Cancel_function( void *, bool );
 
-    Grequest Start( Query_function query_fn,
-                    Free_function free_fn,
-                    Cancel_function cancel_fn,
+    Grequest Start( Query_function  *query_fn,
+                    Free_function   *free_fn,
+                    Cancel_function *cancel_fn,
                     void *extra_state );
 };
 
 class Win  {
-		
+
   protected:
     MPI_Win the_real_win;
 
@@ -1854,10 +1869,10 @@ class Win  {
     {
         MPIX_CALL( MPI_Win_get_name( (MPI_Win) the_real_win, v2, &v3 ));
     }
+    typedef void Errhandler_function(Win &, int *, ... );
+    typedef Errhandler_function Errhandler_fn;
 
-    typedef void Errhandler_fn(Win &, int *, ... );
-
-    static Errhandler Create_errhandler( Errhandler_fn * );
+    static Errhandler Create_errhandler( Errhandler_function * );
 
     typedef int Copy_attr_function(const Win& oldwin, int win_keyval, void* extra_state, void* attribute_val_in, void* attribute_val_out, bool& flag); 
     typedef int Delete_attr_function(Win& win, int win_keyval, void* attribute_val, void* extra_state); 
@@ -1882,7 +1897,7 @@ typedef int MPI_File;
 #endif
 
 class File  {
-		
+
   protected:
     MPI_File the_real_file;
 
@@ -2232,10 +2247,10 @@ class File  {
         MPIX_CALL( MPI_File_get_atomicity( (MPI_File) the_real_file, &v2 ));
         return v2!= 0;
     }
+    typedef void Errhandler_function(File &, int *, ... );
+    typedef Errhandler_function Errhandler_fn;
 
-    typedef void Errhandler_fn(File &, int *, ... );
-
-    static Errhandler Create_errhandler( Errhandler_fn * );
+    static Errhandler Create_errhandler( Errhandler_function * );
 
 #endif
 };

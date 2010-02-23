@@ -26,7 +26,7 @@ INCLUDES = -I../include -I${srcdir}/../include
 .SUFFIXES:
 .SUFFIXES: .o .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
@@ -35,7 +35,7 @@ INCLUDES = -I../include -I${srcdir}/../include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -62,8 +62,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
-	-@rm -f *.o ${srcdir}/*.o testconnect singjoin testconnectserial dimsbalanced
-	-@rm -f testconnect.exe singjoin.exe testconnectserial.exe dimsbalanced.exe
+	-@rm -f *.o ${srcdir}/*.o testconnect singjoin spawntest_child testconnectserial dimsbalanced spawntest_master
+	-@rm -f testconnect.exe singjoin.exe spawntest_child.exe testconnectserial.exe dimsbalanced.exe spawntest_master.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -81,19 +81,26 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: singjoin testconnect testconnectserial dimsbalanced
+all-redirect: singjoin testconnect testconnectserial dimsbalanced\
+	 spawntest_master spawntest_child
 
 coverage: 
 testconnect: testconnect.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o testconnect testconnect.o  ${LIBS}
 singjoin: singjoin.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o singjoin singjoin.o  ${LIBS}
+spawntest_child: spawntest_child.o   
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o spawntest_child spawntest_child.o  \
+	${LIBS} 
 testconnectserial: testconnectserial.o tchandlers.o tcutil.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o testconnectserial \
 	testconnectserial.o tchandlers.o tcutil.o  -lm ${LIBS} 
 dimsbalanced: dimsbalanced.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o dimsbalanced dimsbalanced.o  \
 	${LIBS} 
+spawntest_master: spawntest_master.o   
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o spawntest_master \
+	spawntest_master.o  ${LIBS} 
 # --------------------------------------------------------------------------
 htmldoc:
 mandoc:
@@ -103,13 +110,9 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  singjoin.c testconnect.c testconnectserial.c tchandlers.c \
-	tcutil.c dimsbalanced.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
+	tcutil.c dimsbalanced.c spawntest_master.c spawntest_child.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 

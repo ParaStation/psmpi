@@ -602,8 +602,6 @@ ac_unique_file="configure.in"
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 LIBTOOL
-ETAGSADD
-ETAGS
 INSTALL_PROGRAM
 INSTALL_DATA
 INSTALL
@@ -1833,34 +1831,36 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-if test -f $CONFIG_AUX_DIR/install-sh ; then ac_aux_dir=$CONFIG_AUX_DIR
-else
 ac_aux_dir=
-# We force the test to use the absolute path to ensure that the install
-# program can be used if we cd to a different directory before using
-# install.
 for ac_dir in ../../../confdb "$srcdir"/../../../confdb; do
-  if test -f $ac_dir/install-sh; then
+  if test -f "$ac_dir/install-sh"; then
     ac_aux_dir=$ac_dir
-    abs_ac_aux_dir=`(cd $ac_aux_dir && pwd)`
-    ac_install_sh="$abs_ac_aux_dir/install-sh -c"
+    ac_install_sh="$ac_aux_dir/install-sh -c"
     break
-  elif test -f $ac_dir/install.sh; then
+  elif test -f "$ac_dir/install.sh"; then
     ac_aux_dir=$ac_dir
-    abs_ac_aux_dir=`(cd $ac_aux_dir && pwd)`
-    ac_install_sh="$abs_ac_aux_dir/install.sh -c"
+    ac_install_sh="$ac_aux_dir/install.sh -c"
+    break
+  elif test -f "$ac_dir/shtool"; then
+    ac_aux_dir=$ac_dir
+    ac_install_sh="$ac_aux_dir/shtool install -c"
     break
   fi
 done
-fi
 if test -z "$ac_aux_dir"; then
-  { { $as_echo "$as_me:$LINENO: error: can not find install-sh or install.sh in ../../../confdb \"$srcdir\"/../../../confdb" >&5
-$as_echo "$as_me: error: can not find install-sh or install.sh in ../../../confdb \"$srcdir\"/../../../confdb" >&2;}
+  { { $as_echo "$as_me:$LINENO: error: cannot find install-sh or install.sh in ../../../confdb \"$srcdir\"/../../../confdb" >&5
+$as_echo "$as_me: error: cannot find install-sh or install.sh in ../../../confdb \"$srcdir\"/../../../confdb" >&2;}
    { (exit 1); exit 1; }; }
 fi
-ac_config_guess=$ac_aux_dir/config.guess
-ac_config_sub=$ac_aux_dir/config.sub
-ac_configure=$ac_aux_dir/configure # This should be Cygnus configure.
+
+# These three variables are undocumented and unsupported,
+# and are intended to be withdrawn in a future Autoconf release.
+# They can cause serious problems if a builder's source tree is in a directory
+# whose full name contains unusual characters.
+ac_config_guess="$SHELL $ac_aux_dir/config.guess"  # Please don't use this var.
+ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
+ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
+
 
 
 
@@ -2175,6 +2175,7 @@ fi
 
 
 
+
 { $as_echo "$as_me:$LINENO: checking for virtual path format" >&5
 $as_echo_n "checking for virtual path format... " >&6; }
 if test "${pac_cv_prog_make_vpath+set}" = set; then
@@ -2225,6 +2226,7 @@ if test "$pac_cv_prog_make_vpath" = "VPATH" ; then
 elif test "$pac_cv_prog_make_vpath" = ".PATH" ; then
     VPATH='.PATH: . ${srcdir}'
 fi
+
 
 
 
@@ -2325,51 +2327,6 @@ INSTALL="/usr/bin/install -c"
 INSTALL_PROGRAM="${INSTALL}"
 INSTALL_DATA="${INSTALL} -m 644"
 
-
-
-
-for ac_prog in etags
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_ETAGS+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ETAGS"; then
-  ac_cv_prog_ETAGS="$ETAGS" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_ETAGS="$ac_prog"
-    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-ETAGS=$ac_cv_prog_ETAGS
-if test -n "$ETAGS"; then
-  { $as_echo "$as_me:$LINENO: result: $ETAGS" >&5
-$as_echo "$ETAGS" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$ETAGS" && break
-done
-test -n "$ETAGS" || ETAGS="true"
 
 
 

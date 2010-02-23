@@ -21,9 +21,9 @@ INCLUDES = -I../../../include -I${master_top_srcdir}/src/include
 
 ${srcdir}/smpdu_sock_conf.h  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /opt/local/bin/autoheader -I ../../../../confdb && \
-	\
-	/opt/local/bin/autoconf -I ../../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../../confdb && \
+	autoconf -I \
+	../../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -45,7 +45,7 @@ apply:
 	$(ACTION) $(ACTION_INPUT)
 	for dir in @smpd_sock_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} apply ; ) ; done
+		(cd $$dir && ${MAKE} apply ) ; done
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
@@ -54,13 +54,13 @@ clean:
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	for dir in @smpd_sock_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} clean ; ) ; done
+		(cd $$dir && ${MAKE} clean ) ; done
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	for dir in @smpd_sock_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
-		(cd $$dir && ${MAKE} distclean ; ) ; done
+		(cd $$dir && ${MAKE} distclean ) ; done
 	-@rm -f Makefile localdefs config.status config.log config.cache *conf.cache config.system
 	-@rm -rf autom4te*.cache
 	-@rm -f smpdu_sock_conf.h
@@ -71,7 +71,7 @@ distclean-xxx:
 maintainer-clean:  distclean-xxx remove-genmakefiles
 	for dir in @smpd_sock_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} maintainer-clean ; ) ; done
+		(cd $$dir && ${MAKE} maintainer-clean ) ; done
 	-rm -f smpdu_sock_conf.h.in 
 remove-makefile:
 	rm -f Makefile
@@ -86,20 +86,20 @@ all-redirect:
 coverage: 
 	for dir in @smpd_sock_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} coverage ; ) ; done
+		(cd $$dir && ${MAKE} coverage ) ; done
 # --------------------------------------------------------------------------
 htmldoc:
 	for dir in @smpd_sock_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} htmldoc ; ) ; done
+		(cd $$dir && ${MAKE} htmldoc ) ; done
 mandoc:
 	for dir in @smpd_sock_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} mandoc ; ) ; done
+		(cd $$dir && ${MAKE} mandoc ) ; done
 latexdoc:
 	for dir in @smpd_sock_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} latexdoc ; ) ; done
+		(cd $$dir && ${MAKE} latexdoc ) ; done
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -108,17 +108,13 @@ latexdoc:
 dependencies:
 	for dir in @smpd_sock_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} dependencies ; ) ; done
+		if [ "$$dir" = "iocp" ] ; then continue ; fi ;\
+		(cd $$dir && ${MAKE} dependencies ) ; done
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
-	for dir in @smpd_sock_name@ - ; do \
-		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} TAGS ; ) ; done
 # --------------------------------------------------------------------------
 
 FORCE_TARGET:

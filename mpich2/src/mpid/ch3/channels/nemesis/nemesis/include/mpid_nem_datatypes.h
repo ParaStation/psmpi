@@ -60,9 +60,6 @@
    | -------------------- |
    ------------------------
 
-   There's also a ckpt packet in addition to the mpich2 pkt, but we
-   can ignore this for this discussion.
-
    For optimization, we want the cell to start at a cacheline boundary
    and the cell length to be a multiple of cacheline size.  This will
    avoid false sharing.  We also want payload to start at an 8-byte
@@ -158,22 +155,10 @@ typedef struct MPID_nem_pkt_mpich2
     char payload[MPID_NEM_MPICH2_DATA_LEN];
 } MPID_nem_pkt_mpich2_t;
 
-#ifdef ENABLED_CHECKPOINTING
-/* checkpoint marker */
-typedef struct MPID_nem_pkt_ckpt
-{
-    MPID_NEM_PKT_HEADER_FIELDS;
-    unsigned short wave;
-} MPID_nem_pkt_ckpt_t;
-#endif
-
 typedef union
 {
     MPID_nem_pkt_header_t      header;
     MPID_nem_pkt_mpich2_t      mpich2;
-#ifdef ENABLED_CHECKPOINTING
-    MPID_nem_pkt_ckpt_t        ckpt;
-#endif
 } MPID_nem_pkt_t;
 
 /* Nemesis cells which are to be used in shared memory need to use
@@ -200,7 +185,7 @@ MPID_nem_cell_rel_ptr_t;
 typedef struct MPID_nem_cell
 {
     MPID_nem_cell_rel_ptr_t next;
-#if MPID_NEM_CELL_HEAD_LEN != SIZEOF_VOID_P
+#if (MPID_NEM_CELL_HEAD_LEN > SIZEOF_OPA_PTR_T)
     char padding[MPID_NEM_CELL_HEAD_LEN - sizeof(MPID_nem_cell_rel_ptr_t)];
 #endif
     volatile MPID_nem_pkt_t pkt;
@@ -210,7 +195,7 @@ typedef MPID_nem_cell_t *MPID_nem_cell_ptr_t;
 typedef struct MPID_nem_abs_cell
 {
     struct MPID_nem_abs_cell *next;
-#if MPID_NEM_CELL_HEAD_LEN != SIZEOF_VOID_P
+#if (MPID_NEM_CELL_HEAD_LEN > SIZEOF_VOID_P)
     char padding[MPID_NEM_CELL_HEAD_LEN - sizeof(struct MPID_nem_abs_cell*)];
 #endif
     volatile MPID_nem_pkt_t pkt;
@@ -237,11 +222,11 @@ typedef struct MPID_nem_queue
 {
     MPID_nem_cell_rel_ptr_t head;
     MPID_nem_cell_rel_ptr_t tail;
-#if MPID_NEM_CACHE_LINE_LEN != (2 * SIZEOF_VOID_P)
+#if (MPID_NEM_CACHE_LINE_LEN > (2 * SIZEOF_OPA_PTR_T))
     char padding1[MPID_NEM_CACHE_LINE_LEN - 2 * sizeof(MPID_nem_cell_rel_ptr_t)];
 #endif
     MPID_nem_cell_rel_ptr_t my_head;
-#if MPID_NEM_CACHE_LINE_LEN != SIZEOF_VOID_P
+#if (MPID_NEM_CACHE_LINE_LEN > SIZEOF_OPA_PTR_T)
     char padding2[MPID_NEM_CACHE_LINE_LEN - sizeof(MPID_nem_cell_rel_ptr_t)];
 #endif
 #if !defined(MPID_NEM_USE_LOCK_FREE_QUEUES)

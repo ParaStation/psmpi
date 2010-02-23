@@ -1697,6 +1697,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\mpi\init\async.c"
+				>
+			</File>
+			<File
 				RelativePath="src\mpi\attr\attr_delete.c"
 				>
 			</File>
@@ -2134,6 +2138,22 @@
 			</File>
 			<File
 				RelativePath="src\mpi\topo\dims_create.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpi\topo\dist_gr_create.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpi\topo\dist_gr_create_adj.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpi\topo\dist_gr_neighb.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpi\topo\dist_gr_neighb_count.c"
 				>
 			</File>
 			<File
@@ -3705,6 +3725,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\mpi\coll\op_commutative.c"
+				>
+			</File>
+			<File
 				RelativePath="src\mpi\coll\op_create.c"
 				>
 			</File>
@@ -4073,7 +4097,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\mpi\coll\red_scat_block.c"
+				>
+			</File>
+			<File
 				RelativePath="src\mpi\coll\reduce.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpi\coll\reduce_local.c"
 				>
 			</File>
 			<File

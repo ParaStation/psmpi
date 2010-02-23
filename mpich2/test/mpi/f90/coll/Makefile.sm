@@ -10,6 +10,7 @@ alltoallwf90_SOURCES  = alltoallwf90.f90
 inplacef90_SOURCES  = inplacef90.f90
 allredint8f90_SOURCES  = allredint8f90.f90
 allredopttf90_SOURCES = allredopttf90.f90
+reducelocalf90_SOURCES  = reducelocalf90.f90
 
 testing:
 	../../runtests -srcdir=$(srcdir) -tests=testlist \

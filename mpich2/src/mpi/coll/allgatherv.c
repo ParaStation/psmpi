@@ -694,8 +694,6 @@ int MPIR_Allgatherv (
 
         MPIU_Free((char*)tmp_buf + recvtype_true_lb);
     }
-
-#ifdef USE_PIPE_COLLECTIVES
     else {
 	/* long message or medium-size message and non-power-of-two
 	 * no. of processes. Use ring algorithm. */
@@ -806,49 +804,6 @@ int MPIR_Allgatherv (
             }
         }
     }
-#else /* This case is retained as its more tested; we should eventually discard it */
-    else {  /* long message or medium-size message and non-power-of-two
-             * no. of processes. Use ring algorithm. */
-        int jnext;
-
-        if (sendbuf != MPI_IN_PLACE) {
-            /* First, load the "local" version in the recvbuf. */
-            mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype, 
-                              ((char *)recvbuf + displs[rank]*recvtype_extent),
-                                       recvcounts[rank], recvtype);
-	    /* --BEGIN ERROR HANDLING-- */
-            if (mpi_errno)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		return mpi_errno;
-	    }
-	    /* --END ERROR HANDLING-- */
-        }
-
-        left  = (comm_size + rank - 1) % comm_size;
-        right = (rank + 1) % comm_size;
-  
-        j     = rank;
-        jnext = left;
-        for (i=1; i<comm_size; i++) {
-            mpi_errno = MPIC_Sendrecv(((char *)recvbuf+displs[j]*recvtype_extent),
-                                      recvcounts[j], recvtype, right,
-                                      MPIR_ALLGATHERV_TAG, 
-                                 ((char *)recvbuf + displs[jnext]*recvtype_extent),
-                                      recvcounts[jnext], recvtype, left, 
-                                      MPIR_ALLGATHERV_TAG, comm, &status );
-	    /* --BEGIN ERROR HANDLING-- */
-            if (mpi_errno)
-	    {
-		mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		return mpi_errno;
-	    }
-	    /* --END ERROR HANDLING-- */
-            j	    = jnext;
-            jnext = (comm_size + jnext - 1) % comm_size;
-        }
-    }
-#endif /* USE_PIPE_COLLECTIVES */
 
   /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
@@ -1020,6 +975,7 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     static const char FCNAME[] = "MPI_Allgatherv";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
+    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ALLGATHERV);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -1106,7 +1062,6 @@ int MPI_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     }
     else
     {
-	MPIU_THREADPRIV_DECL;
 	MPIU_THREADPRIV_GET;
 
 	MPIR_Nest_incr();

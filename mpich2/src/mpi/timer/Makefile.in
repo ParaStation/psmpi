@@ -34,14 +34,14 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -52,7 +52,7 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -117,13 +117,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 
 .libstamp0 ../../../lib/lib${MPILIBNAME}.a: wtime.o wtick.o mpidtime.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${MPILIBNAME}.a ; \
@@ -131,7 +131,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
 .libstamp1 ../../../lib/lib${MPILIBNAME}.la: wtime.lo wtick.lo mpidtime.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -141,13 +141,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 
 # --------------------------------------------------------------------------
 .libstamp2: _wtime.o _wtick.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${PMPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${PMPILIBNAME}.a ; \
@@ -155,7 +155,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@${RANLIB} ../../../lib/lib${PMPILIBNAME}.a
 	date > .libstamp2
 .libstamp3: _wtime.lo _wtick.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $? ; \
@@ -163,28 +163,28 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _wtime.o: wtime.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/wtime.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wtime.c -o _wtime.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wtime.c -o _wtime.o
 _wtime.lo: wtime.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/wtime.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/wtime.c -o _wtime.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/wtime.c -o _wtime.lo
 _wtick.o: wtick.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/wtick.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wtick.c -o _wtick.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/wtick.c -o _wtick.o
 _wtick.lo: wtick.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/wtick.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/wtick.c -o _wtick.lo ; \
@@ -208,18 +208,48 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/wtime.d: $(srcdir)/wtime.c
-	$(MAKE_DEPEND_C) -MT '_wtime.o wtime.o' $(srcdir)/wtime.c >$(DEPS_DIR)/wtime.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C wtime.c > $(DEPS_DIR)/wtime.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_wtime.o wtime.o wtime.lo _wtime.lo' $(srcdir)/wtime.c >$(DEPS_DIR)/wtime.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_wtime.o wtime.o wtime.lo _wtime.lo' $(srcdir)/wtime.c >$(DEPS_DIR)/wtime.d
 $(DEPS_DIR)/wtick.d: $(srcdir)/wtick.c
-	$(MAKE_DEPEND_C) -MT '_wtick.o wtick.o' $(srcdir)/wtick.c >$(DEPS_DIR)/wtick.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C wtick.c > $(DEPS_DIR)/wtick.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_wtick.o wtick.o wtick.lo _wtick.lo' $(srcdir)/wtick.c >$(DEPS_DIR)/wtick.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_wtick.o wtick.o wtick.lo _wtick.lo' $(srcdir)/wtick.c >$(DEPS_DIR)/wtick.d
 $(DEPS_DIR)/mpidtime.d: $(srcdir)/mpidtime.c
-	$(MAKE_DEPEND_C) -MT '_mpidtime.o mpidtime.o' $(srcdir)/mpidtime.c >$(DEPS_DIR)/mpidtime.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidtime.c > $(DEPS_DIR)/mpidtime.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_mpidtime.o mpidtime.o mpidtime.lo _mpidtime.lo' $(srcdir)/mpidtime.c >$(DEPS_DIR)/mpidtime.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_mpidtime.o mpidtime.o mpidtime.lo _mpidtime.lo' $(srcdir)/mpidtime.c >$(DEPS_DIR)/mpidtime.d
 $(DEPS_DIR)/timestamp: ${mpi_sources} mpidtime.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_wtime.o wtime.o' $(srcdir)/wtime.c >$(DEPS_DIR)/wtime.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C wtime.c > $(DEPS_DIR)/wtime.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_wtime.o wtime.o wtime.lo _wtime.lo' $(srcdir)/wtime.c >$(DEPS_DIR)/wtime.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_wtime.o wtime.o wtime.lo _wtime.lo' $(srcdir)/wtime.c >$(DEPS_DIR)/wtime.d
 	echo "include $(DEPS_DIR)/wtime.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_wtick.o wtick.o' $(srcdir)/wtick.c >$(DEPS_DIR)/wtick.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C wtick.c > $(DEPS_DIR)/wtick.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_wtick.o wtick.o wtick.lo _wtick.lo' $(srcdir)/wtick.c >$(DEPS_DIR)/wtick.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_wtick.o wtick.o wtick.lo _wtick.lo' $(srcdir)/wtick.c >$(DEPS_DIR)/wtick.d
 	echo "include $(DEPS_DIR)/wtick.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_mpidtime.o mpidtime.o' $(srcdir)/mpidtime.c >$(DEPS_DIR)/mpidtime.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidtime.c > $(DEPS_DIR)/mpidtime.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_mpidtime.o mpidtime.o mpidtime.lo _mpidtime.lo' $(srcdir)/mpidtime.c >$(DEPS_DIR)/mpidtime.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_mpidtime.o mpidtime.o mpidtime.lo _mpidtime.lo' $(srcdir)/mpidtime.c >$(DEPS_DIR)/mpidtime.d
 	echo "include $(DEPS_DIR)/mpidtime.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -228,12 +258,8 @@ include $(DEPS_DIR)/alldeps
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  wtime.c wtick.c mpidtime.c
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 #

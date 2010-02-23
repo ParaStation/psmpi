@@ -7,9 +7,6 @@ all: all-redirect
 
 SHELL           = @SHELL@
 master_top_srcdir  = @master_top_srcdir@
-bindir          = @bindir@
-exec_prefix     = @exec_prefix@
-prefix          = @prefix@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -29,7 +26,7 @@ INCLUDES = -I../include -I${srcdir}/../include
 .SUFFIXES:
 .SUFFIXES: .o .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
@@ -38,7 +35,7 @@ INCLUDES = -I../include -I${srcdir}/../include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -65,8 +62,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
-	-@rm -f *.o ${srcdir}/*.o typename unusual-noncontigs blockindexed-zero-count simple-size-extent typecommit transpose-pack slice-pack-external contig-zero-count contents zeroblks typelb indexed-misc gaddress struct-zero-count tresized2 darray-pack simple-resized localpack simple-pack blockindexed-misc zeroparms simple-commit pairtype-size-extent get-elements-pairtype struct-no-real-types struct-empty-el unpack slice-pack simple-pack-external contigstruct lots-of-types hindexed-zeros pairtype-pack struct-derived-zeros struct-ezhov typefree tfree struct-pack subarray-pack getpartelm tmatchsize tresized triangular-pack lbub sizedtypes
-	-@rm -f typename.exe unusual-noncontigs.exe blockindexed-zero-count.exe simple-size-extent.exe typecommit.exe transpose-pack.exe slice-pack-external.exe contig-zero-count.exe contents.exe zeroblks.exe typelb.exe indexed-misc.exe gaddress.exe struct-zero-count.exe tresized2.exe darray-pack.exe simple-resized.exe localpack.exe simple-pack.exe blockindexed-misc.exe zeroparms.exe simple-commit.exe pairtype-size-extent.exe get-elements-pairtype.exe struct-no-real-types.exe struct-empty-el.exe unpack.exe slice-pack.exe simple-pack-external.exe contigstruct.exe lots-of-types.exe hindexed-zeros.exe pairtype-pack.exe struct-derived-zeros.exe struct-ezhov.exe typefree.exe tfree.exe struct-pack.exe subarray-pack.exe getpartelm.exe tmatchsize.exe tresized.exe triangular-pack.exe lbub.exe sizedtypes.exe
+	-@rm -f *.o ${srcdir}/*.o typename unusual-noncontigs blockindexed-zero-count simple-size-extent typecommit transpose-pack slice-pack-external contig-zero-count contents zeroblks typelb indexed-misc gaddress struct-zero-count tresized2 darray-pack subarray simple-resized localpack simple-pack blockindexed-misc zeroparms simple-commit pairtype-size-extent get-elements-pairtype struct-no-real-types struct-empty-el unpack slice-pack simple-pack-external contigstruct lots-of-types hindexed-zeros pairtype-pack struct-derived-zeros struct-ezhov typefree tfree struct-pack subarray-pack getpartelm tmatchsize tresized triangular-pack lbub sizedtypes
+	-@rm -f typename.exe unusual-noncontigs.exe blockindexed-zero-count.exe simple-size-extent.exe typecommit.exe transpose-pack.exe slice-pack-external.exe contig-zero-count.exe contents.exe zeroblks.exe typelb.exe indexed-misc.exe gaddress.exe struct-zero-count.exe tresized2.exe darray-pack.exe subarray.exe simple-resized.exe localpack.exe simple-pack.exe blockindexed-misc.exe zeroparms.exe simple-commit.exe pairtype-size-extent.exe get-elements-pairtype.exe struct-no-real-types.exe struct-empty-el.exe unpack.exe slice-pack.exe simple-pack-external.exe contigstruct.exe lots-of-types.exe hindexed-zeros.exe pairtype-pack.exe struct-derived-zeros.exe struct-ezhov.exe typefree.exe tfree.exe struct-pack.exe subarray-pack.exe getpartelm.exe tmatchsize.exe tresized.exe triangular-pack.exe lbub.exe sizedtypes.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -89,7 +86,7 @@ all-redirect: typecommit typename typefree contents struct-pack\
 	 simple-commit simple-commit simple-size-extent slice-pack\
 	 struct-no-real-types slice-pack-external simple-pack\
 	 contig-zero-count lots-of-types simple-pack-external darray-pack\
-	 subarray-pack blockindexed-misc indexed-misc hindexed-zeros\
+	 subarray-pack subarray blockindexed-misc indexed-misc hindexed-zeros\
 	 blockindexed-zero-count struct-zero-count transpose-pack\
 	 unusual-noncontigs pairtype-pack struct-ezhov pairtype-size-extent\
 	 struct-derived-zeros localpack lbub unpack zeroparms gaddress\
@@ -143,6 +140,8 @@ tresized2: tresized2.o
 darray-pack: darray-pack.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o darray-pack darray-pack.o  \
 	../util/mtest.o ${LIBS} 
+subarray: subarray.o   
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o subarray subarray.o  ${LIBS}
 simple-resized: simple-resized.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o simple-resized simple-resized.o  \
 	${LIBS} 
@@ -239,18 +238,14 @@ SOURCES         =  typecommit.c typename.c typefree.c contents.c \
 	simple-size-extent.c slice-pack.c struct-no-real-types.c \
 	slice-pack-external.c simple-pack.c contig-zero-count.c \
 	lots-of-types.c simple-pack-external.c darray-pack.c subarray-pack.c \
-	blockindexed-misc.c indexed-misc.c hindexed-zeros.c \
+	subarray.c blockindexed-misc.c indexed-misc.c hindexed-zeros.c \
 	blockindexed-zero-count.c struct-zero-count.c transpose-pack.c \
 	unusual-noncontigs.c pairtype-pack.c struct-ezhov.c \
 	pairtype-size-extent.c struct-derived-zeros.c localpack.c lbub.c \
 	unpack.c zeroparms.c gaddress.c getpartelm.c tresized.c tmatchsize.c \
 	tresized2.c tfree.c typelb.c sizedtypes.c contigstruct.c zeroblks.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 
@@ -305,7 +300,7 @@ TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 # A special testing target to simplify running just the datatype tests
 testing:
 	../runtests -srcdir=$(srcdir) -tests=testlist \
-		   -mpiexec=$(bindir)/mpiexec \
+		   -mpiexec=@MPIEXEC@ \
 		   -xmlfile=summary.xml
 
 clean-local:

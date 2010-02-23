@@ -21,9 +21,9 @@ VPATH = .:@srcdir@
 ${srcdir}/include/mpidi_ch3i_sctp_conf.h  ${srcdir}/configure: \
 	${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /opt/local/bin/autoheader -I ../../../../../confdb && \
-	\
-	/opt/local/bin/autoconf -I ../../../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../../../confdb && \
+	autoconf -I \
+	../../../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -43,24 +43,24 @@ Makefile: ${srcdir}/Makefile.in
 # --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
-	(cd src && $(MAKE) apply )
+	(cd src && ${MAKE} apply )
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
 	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
-	(cd src && $(MAKE) clean )
+	(cd src && ${MAKE} clean )
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
-	if [ -s src/Makefile ] ; then (cd src && $(MAKE) distclean ) ; fi
+	if [ -s src/Makefile ] ; then (cd src && ${MAKE} distclean ) ; fi
 	-@rm -f Makefile src/Makefile localdefs config.status config.log config.cache *conf.cache config.system
 	-@rm -rf autom4te*.cache
 	-@rm -f include/mpidi_ch3i_sctp_conf.h
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
 maintainer-clean:  maintainer-clean-local distclean-xxx remove-genmakefiles
-	(cd src && $(MAKE) maintainer-clean )
+	(cd src && ${MAKE} maintainer-clean )
 	-rm -f include/mpidi_ch3i_sctp_conf.h.in 
 remove-makefile:
 	rm -f Makefile
@@ -70,29 +70,26 @@ all-redirect:
 	@(cd src && ${MAKE} all )
 
 coverage: 
-	(cd src && $(MAKE) coverage )
+	(cd src && ${MAKE} coverage )
 # --------------------------------------------------------------------------
 htmldoc:
-	(cd src && $(MAKE) htmldoc )
+	(cd src && ${MAKE} htmldoc )
 mandoc:
-	(cd src && $(MAKE) mandoc )
+	(cd src && ${MAKE} mandoc )
 latexdoc:
-	(cd src && $(MAKE) latexdoc )
+	(cd src && ${MAKE} latexdoc )
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Dependencies
 dependencies:
-	(cd src && $(MAKE) dependencies )
+	(cd src && ${MAKE} dependencies )
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
-	(cd src && $(MAKE) TAGS )
 # --------------------------------------------------------------------------
 
 distclean-local:

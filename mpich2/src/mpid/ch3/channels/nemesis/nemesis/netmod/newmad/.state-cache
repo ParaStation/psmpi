@@ -1,26 +1,17 @@
 <dir>
 <file name="newmad_probe.c" info="1238080585"/>
-<file name="newmad_finalize.c" info="1238427461"/>
-<file name="newmad_poll.c" info="1242092309"/>
-<file name="newmad_cancel.c" info="1238080585"/>
-<file name="newmad_test.c" info="1236293058"/>
 <file name="newmad_send.c" info="1244842249"/>
-<file name="newmad_init.c" info="1246271642"/>
-<file name="newmad_impl.h" info="1245422823"/>
+<file name="newmad_init.c" info="1256635127"/>
+<file name="newmad_impl.h" info="1256635127"/>
+<file name="newmad_finalize.c" info="1256635127"/>
+<file name="newmad_poll.c" info="1256635127"/>
+<file name="newmad_cancel.c" info="1238080585"/>
+<file name="newmad_alloc.c" info="1256635847"/>
+<file name="newmad_test.c" info="1236293058"/>
 <file name="newmad_register.c" info="1236293058"/>
 </dir>
 <data>
 <fileinfo name="newmad_probe.c">
-</fileinfo>
-<fileinfo name="newmad_finalize.c">
-</fileinfo>
-<fileinfo name="newmad_poll.c">
-MPID_STATE_MPID_NEM_NEWMAD_DIRECTRECV MPID_nem_newmad_directRecv
-MPID_STATE_MPID_NEM_NEWMAD_PROCESS_RDTYPE MPID_nem_newmad_process_rdtype
-</fileinfo>
-<fileinfo name="newmad_cancel.c">
-</fileinfo>
-<fileinfo name="newmad_test.c">
 </fileinfo>
 <fileinfo name="newmad_send.c">
 MPID_STATE_MPID_NEM_NEWMAD_ISENDCONTIG MPID_nem_newmad_iSendContig
@@ -33,6 +24,18 @@ MPID_STATE_MPID_NEM_NEWMAD_PROCESS_SDTYPE MPID_nem_newmad_process_sdtype
 <fileinfo name="newmad_init.c">
 </fileinfo>
 <fileinfo name="newmad_impl.h">
+</fileinfo>
+<fileinfo name="newmad_finalize.c">
+</fileinfo>
+<fileinfo name="newmad_poll.c">
+MPID_STATE_MPID_NEM_NEWMAD_DIRECTRECV MPID_nem_newmad_directRecv
+MPID_STATE_MPID_NEM_NEWMAD_PROCESS_RDTYPE MPID_nem_newmad_process_rdtype
+</fileinfo>
+<fileinfo name="newmad_cancel.c">
+</fileinfo>
+<fileinfo name="newmad_alloc.c">
+</fileinfo>
+<fileinfo name="newmad_test.c">
 </fileinfo>
 <fileinfo name="newmad_register.c">
 </fileinfo>

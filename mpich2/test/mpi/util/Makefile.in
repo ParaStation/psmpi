@@ -10,7 +10,6 @@ master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
-top_srcdir      = @top_srcdir@
 DEFS            = @DEFS@ -I. -I${srcdir}
 CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
@@ -22,13 +21,12 @@ C_LINK         = $(CC)
 LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
-INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include \
-	 -I${srcdir}/../include
+INCLUDES = -I${srcdir}/../include -I../include
 
 .SUFFIXES:
 .SUFFIXES: .o .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
@@ -37,7 +35,7 @@ INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include \
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -98,12 +96,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  mtestcheck.c mtest.c
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 mtest.o: mtest.c
 all-local: mtest.o

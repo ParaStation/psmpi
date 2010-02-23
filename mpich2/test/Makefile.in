@@ -37,7 +37,7 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	for dir in mpi mpid util basic commands ; do \
-		(cd $$dir && ${MAKE} apply ; ) ; done
+		(cd $$dir && ${MAKE} apply ) ; done
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
@@ -45,19 +45,19 @@ clean:
 	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	for dir in mpi mpid util basic commands ; do \
-		(cd $$dir && ${MAKE} clean ; ) ; done
+		(cd $$dir && ${MAKE} clean ) ; done
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
 	for dir in mpi mpid util basic commands ; do \
 		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
-		(cd $$dir && ${MAKE} distclean ; ) ; done
+		(cd $$dir && ${MAKE} distclean ) ; done
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
 maintainer-clean:  distclean-xxx remove-genmakefiles
 	for dir in mpi mpid util basic commands ; do \
-		(cd $$dir && ${MAKE} maintainer-clean ; ) ; done
+		(cd $$dir && ${MAKE} maintainer-clean ) ; done
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
@@ -71,27 +71,26 @@ all-redirect:
 
 coverage: 
 	for dir in mpi mpid util basic commands ; do \
-		(cd $$dir && ${MAKE} coverage ; ) ; done
+		(cd $$dir && ${MAKE} coverage ) ; done
 # --------------------------------------------------------------------------
 htmldoc:
 	for dir in mpi mpid util basic commands ; do \
-		(cd $$dir && ${MAKE} htmldoc ; ) ; done
+		(cd $$dir && ${MAKE} htmldoc ) ; done
 mandoc:
 	for dir in mpi mpid util basic commands ; do \
-		(cd $$dir && ${MAKE} mandoc ; ) ; done
+		(cd $$dir && ${MAKE} mandoc ) ; done
 latexdoc:
 	for dir in mpi mpid util basic commands ; do \
-		(cd $$dir && ${MAKE} latexdoc ; ) ; done
+		(cd $$dir && ${MAKE} latexdoc ) ; done
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
+# Dummy target
+dependencies:
+
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
-	for dir in mpi mpid util basic commands ; do \
-		(cd $$dir && ${MAKE} TAGS ; ) ; done
 # --------------------------------------------------------------------------
 distclean-local:
 	rm -f runtests

@@ -30,7 +30,7 @@ VPATH = .:@srcdir@
 .SUFFIXES:
 .SUFFIXES: .o .c .f90 .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
@@ -39,14 +39,14 @@ VPATH = .:@srcdir@
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f90.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  F90             $<" ; \
 	else \
 	  echo $(F90_COMPILE) -c $< ; \
@@ -111,12 +111,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  baseenvf90.f90 checksizes.c
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 # This Makefile.sm generated automatically by f77tof90
 # from test/mpi/f77/init/Makefile.sm.  DO NOT EDIT

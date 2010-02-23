@@ -31,7 +31,7 @@ c2f2c_CFLAGSADD = -I../../include
 .SUFFIXES:
 .SUFFIXES: .o .c .f90 .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
@@ -40,14 +40,14 @@ c2f2c_CFLAGSADD = -I../../include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f90.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  F90             $<" ; \
 	else \
 	  echo $(F90_COMPILE) -c $< ; \
@@ -122,12 +122,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 SOURCES         =  allocmemf90.f90 c2f2cf90.f90 c2f902c.c ctypesinf90.f90 \
 	ctypesfromc.c c2f90mult.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 # This Makefile.sm generated automatically by f77tof90
 # from test/mpi/f77/ext/Makefile.sm.  DO NOT EDIT

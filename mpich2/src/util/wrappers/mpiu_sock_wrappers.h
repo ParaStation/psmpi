@@ -25,6 +25,9 @@
 #include "mpiutil.h"
 
 #ifdef USE_NT_SOCK
+
+    #pragma warning( disable : 4127 ) /* To disable warnings for FD_* macros */
+
     typedef SOCKET MPIU_SOCKW_Sockfd_t;
     typedef int socklen_t;
     typedef u_short in_port_t;
@@ -963,12 +966,13 @@ static inline int MPIU_SOCKW_Waitset_sock_hnd_set_user_ptr(
         : 0                                                         \
     )
 
+    #pragma warning( default : 4127 )
 #else
     typedef int MPIU_SOCKW_Sockfd_t;
 #   define MPIU_SOCKW_SOCKFD_INVALID    -1
 #   define MPIU_SOCKW_EINTR EINTR
 
-#endif
+#endif /* USE_NT_SOCK */
 
 #undef FUNCNAME
 #undef FCNAME

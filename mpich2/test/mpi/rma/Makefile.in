@@ -7,9 +7,6 @@ all: all-redirect
 
 SHELL           = @SHELL@
 master_top_srcdir  = @master_top_srcdir@
-bindir          = @bindir@
-exec_prefix     = @exec_prefix@
-prefix          = @prefix@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -30,7 +27,7 @@ INCLUDES = -I../include -I${top_srcdir}/include
 .SUFFIXES:
 .SUFFIXES: .o .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
@@ -39,7 +36,7 @@ INCLUDES = -I../include -I${top_srcdir}/include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -208,12 +205,8 @@ SOURCES         =  allocmem.c ircpi.c test1.c test2.c test3.c test4.c test5.c \
 	fetchandadd_am.c fetchandadd_tree_am.c accfence2_am.c test1_dt.c \
 	attrorderwin.c wincall.c fkeyvalwin.c baseattrwin.c nullpscw.c \
 	mixedsync.c selfrma.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 # LIBS includes -lmpich and other libraries (e.g., -lpmpich if
 # weak symbols are not supported)
@@ -231,7 +224,7 @@ TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 # A special testing target to simplify running just the rma tests
 testing:
 	../runtests -srcdir=$(srcdir) -tests=testlist \
-		   -mpiexec=$(bindir)/mpiexec \
+		   -mpiexec=@MPIEXEC@ \
 		   -xmlfile=summary.xml
 
 FORCE_TARGET:

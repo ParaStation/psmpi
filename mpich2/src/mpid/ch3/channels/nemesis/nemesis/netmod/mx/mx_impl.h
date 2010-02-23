@@ -17,7 +17,7 @@
 int MPID_nem_mx_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_queue_ptr_t proc_free_queue, 
 		      MPID_nem_cell_ptr_t proc_elements,int num_proc_elements, 
 		      MPID_nem_cell_ptr_t module_elements, int num_module_elements,
-		      MPID_nem_queue_ptr_t *module_free_queue, int ckpt_restart,
+		      MPID_nem_queue_ptr_t *module_free_queue,
 		      MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_max_sz_p);
 int MPID_nem_mx_finalize (void);
 int MPID_nem_mx_ckpt_shutdown (void);
@@ -99,6 +99,32 @@ typedef struct
 
 /* accessor macro to private fields in REQ */
 #define REQ_FIELD(reqp, field) (((MPID_nem_mx_req_area *)((reqp)->ch.netmod_area.padding))->field)
+
+/* The begining of this structure is the same as MPID_Request */
+struct MPID_nem_mx_internal_req 
+{
+   MPIU_OBJECT_HEADER; /* adds (unused) handle and ref_count fields */
+   MPID_Request_kind_t    kind;       /* used   */
+   MPIDI_CH3_PktGeneric_t pending_pkt;
+   MPIDI_VC_t            *vc;
+   void                  *tmpbuf;
+   MPIDI_msg_sz_t         tmpbuf_sz;
+   struct  MPID_nem_mx_internal_req *next;
+} ;
+
+typedef struct MPID_nem_mx_internal_req MPID_nem_mx_internal_req_t;
+
+typedef union 
+{
+   MPID_nem_mx_internal_req_t nem_mx_req;
+   MPID_Request               mpi_req; 
+}
+MPID_nem_mx_unified_req_t ;
+
+int MPID_nem_mx_internal_req_queue_init(void);
+int MPID_nem_mx_internal_req_queue_destroy(void);
+int MPID_nem_mx_internal_req_dequeue(MPID_nem_mx_internal_req_t **req);
+int MPID_nem_mx_internal_req_enqueue(MPID_nem_mx_internal_req_t *req);
 
 #if CH3_RANK_BITS == 16
 #ifdef USE_CTXT_AS_MARK

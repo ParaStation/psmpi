@@ -726,6 +726,7 @@ enable_option_checking
 enable_dependency_tracking
 enable_assert
 with_atomic_primitives
+enable_strict_fairness_checks
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1365,6 +1366,11 @@ Optional Features:
   --disable-dependency-tracking  speeds up one-time build
   --enable-dependency-tracking   do not reject slow dependency extractors
   --disable-assert        turn off assertions
+  --enable-strict-fairness-checks
+                          Enable stricter checks of the "fairness" of atomic
+                          operations in the test suite (default is no). A
+                          value of 'yes' will remove the calls to
+                          pthread_yield() from these test routines.
 
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
@@ -1378,7 +1384,10 @@ Optional Packages:
                           back to lock-based emulation if none are available.
                           Note that using locks to implement atomic primitives
                           will have a substantial impact on performance and is
-                          intended for testing only.
+                          intended for testing only. A value of 'unsafe' will
+                          use a non-atomic version of the primitives for
+                          performance in single-threaded code and
+                          meta-testing.
 
 Some influential environment variables:
   CC          C compiler command
@@ -4619,6 +4628,348 @@ _ACEOF
 fi
 
 
+
+for ac_func in pthread_yield
+do
+as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+{ $as_echo "$as_me:$LINENO: checking for $ac_func" >&5
+$as_echo_n "checking for $ac_func... " >&6; }
+if { as_var=$as_ac_var; eval "test \"\${$as_var+set}\" = set"; }; then
+  $as_echo_n "(cached) " >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* Define $ac_func to an innocuous variant, in case <limits.h> declares $ac_func.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define $ac_func innocuous_$ac_func
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char $ac_func (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef $ac_func
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char $ac_func ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined __stub_$ac_func || defined __stub___$ac_func
+choke me
+#endif
+
+int
+main ()
+{
+return $ac_func ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  eval "$as_ac_var=yes"
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	eval "$as_ac_var=no"
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+ac_res=`eval 'as_val=${'$as_ac_var'}
+		 $as_echo "$as_val"'`
+	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+as_val=`eval 'as_val=${'$as_ac_var'}
+		 $as_echo "$as_val"'`
+   if test "x$as_val" = x""yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+else
+  if test "${ac_cv_header_sched_h+set}" = set; then
+  { $as_echo "$as_me:$LINENO: checking for sched.h" >&5
+$as_echo_n "checking for sched.h... " >&6; }
+if test "${ac_cv_header_sched_h+set}" = set; then
+  $as_echo_n "(cached) " >&6
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_header_sched_h" >&5
+$as_echo "$ac_cv_header_sched_h" >&6; }
+else
+  # Is the header compilable?
+{ $as_echo "$as_me:$LINENO: checking sched.h usability" >&5
+$as_echo_n "checking sched.h usability... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <sched.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+$as_echo "$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ $as_echo "$as_me:$LINENO: checking sched.h presence" >&5
+$as_echo_n "checking sched.h presence... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <sched.h>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+$as_echo "$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { $as_echo "$as_me:$LINENO: WARNING: sched.h: accepted by the compiler, rejected by the preprocessor!" >&5
+$as_echo "$as_me: WARNING: sched.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: sched.h: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: sched.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { $as_echo "$as_me:$LINENO: WARNING: sched.h: present but cannot be compiled" >&5
+$as_echo "$as_me: WARNING: sched.h: present but cannot be compiled" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: sched.h:     check for missing prerequisite headers?" >&5
+$as_echo "$as_me: WARNING: sched.h:     check for missing prerequisite headers?" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: sched.h: see the Autoconf documentation" >&5
+$as_echo "$as_me: WARNING: sched.h: see the Autoconf documentation" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: sched.h:     section \"Present But Cannot Be Compiled\"" >&5
+$as_echo "$as_me: WARNING: sched.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: sched.h: proceeding with the preprocessor's result" >&5
+$as_echo "$as_me: WARNING: sched.h: proceeding with the preprocessor's result" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: sched.h: in the future, the compiler will take precedence" >&5
+$as_echo "$as_me: WARNING: sched.h: in the future, the compiler will take precedence" >&2;}
+    ( cat <<\_ASBOX
+## ----------------------------------------------------------------- ##
+## Report this to https://trac.mcs.anl.gov/projects/openpa/newticket ##
+## ----------------------------------------------------------------- ##
+_ASBOX
+     ) | sed "s/^/$as_me: WARNING:     /" >&2
+    ;;
+esac
+{ $as_echo "$as_me:$LINENO: checking for sched.h" >&5
+$as_echo_n "checking for sched.h... " >&6; }
+if test "${ac_cv_header_sched_h+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_cv_header_sched_h=$ac_header_preproc
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_header_sched_h" >&5
+$as_echo "$ac_cv_header_sched_h" >&6; }
+
+fi
+if test "x$ac_cv_header_sched_h" = x""yes; then
+
+for ac_func in sched_yield
+do
+as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+{ $as_echo "$as_me:$LINENO: checking for $ac_func" >&5
+$as_echo_n "checking for $ac_func... " >&6; }
+if { as_var=$as_ac_var; eval "test \"\${$as_var+set}\" = set"; }; then
+  $as_echo_n "(cached) " >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* Define $ac_func to an innocuous variant, in case <limits.h> declares $ac_func.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define $ac_func innocuous_$ac_func
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char $ac_func (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef $ac_func
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char $ac_func ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined __stub_$ac_func || defined __stub___$ac_func
+choke me
+#endif
+
+int
+main ()
+{
+return $ac_func ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  eval "$as_ac_var=yes"
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	eval "$as_ac_var=no"
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+ac_res=`eval 'as_val=${'$as_ac_var'}
+		 $as_echo "$as_val"'`
+	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+as_val=`eval 'as_val=${'$as_ac_var'}
+		 $as_echo "$as_val"'`
+   if test "x$as_val" = x""yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+
+fi
+
+
+
+fi
+done
+
+
 if test "$ac_cv_lib_pthread_pthread_create" = yes; then
 { $as_echo "$as_me:$LINENO: checking if 100 threads can be run at once" >&5
 $as_echo_n "checking if 100 threads can be run at once... " >&6; }
@@ -4647,10 +4998,10 @@ main ()
 {
 
     int i;
-    pthread_t threads[100];
+    pthread_t threads[99];
     pthread_mutex_init(&mutexus_maximus, NULL);
     pthread_mutex_lock(&mutexus_maximus);
-    for(i=0; i<100; i++)
+    for(i=0; i<99; i++)
         if(pthread_create(&threads[i], NULL, thread_func, NULL)) {
             pthread_mutex_unlock(&mutexus_maximus);
             return 1;
@@ -4686,6 +5037,90 @@ $as_echo "$ac_try_echo") >&5
   (exit $ac_status); }; }; then
   { $as_echo "$as_me:$LINENO: result: yes" >&5
 $as_echo "yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define MAX_NTHREADS 100
+_ACEOF
+
+else
+  $as_echo "$as_me: program exited with status $ac_status" >&5
+$as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+( exit $ac_status )
+{ $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+    { $as_echo "$as_me:$LINENO: checking if 10 threads can be run at once" >&5
+$as_echo_n "checking if 10 threads can be run at once... " >&6; }
+    if test "$cross_compiling" = yes; then
+  { $as_echo "$as_me:$LINENO: result: N/A" >&5
+$as_echo "N/A" >&6; }
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+        #include <stddef.h>
+        #include <pthread.h>
+        pthread_mutex_t mutexus_maximus;
+        void *thread_func(void *udata) {
+            pthread_mutex_lock(&mutexus_maximus);
+            pthread_mutex_unlock(&mutexus_maximus);
+            return NULL;
+        }
+
+int
+main ()
+{
+
+        int i;
+        pthread_t threads[9];
+        pthread_mutex_init(&mutexus_maximus, NULL);
+        pthread_mutex_lock(&mutexus_maximus);
+        for(i=0; i<9; i++)
+            if(pthread_create(&threads[i], NULL, thread_func, NULL)) {
+                pthread_mutex_unlock(&mutexus_maximus);
+                return 1;
+            }
+        pthread_mutex_unlock(&mutexus_maximus);
+        return 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define MAX_NTHREADS 10
+_ACEOF
+
 else
   $as_echo "$as_me: program exited with status $ac_status" >&5
 $as_echo "$as_me: failed program was:" >&5
@@ -4696,8 +5131,14 @@ sed 's/^/| /' conftest.$ac_ext >&5
 $as_echo "no" >&6; }
 
 cat >>confdefs.h <<\_ACEOF
-#define LIMIT_THREADS 1
+#define MAX_NTHREADS 4
 _ACEOF
+
+fi
+rm -rf conftest.dSYM
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+fi
+
 
 fi
 rm -rf conftest.dSYM
@@ -5599,7 +6040,9 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
 
 # Check whether --with-atomic-primitives was given.
 if test "${with_atomic_primitives+set}" = set; then
-  withval=$with_atomic_primitives; if test "$with_atomic_primitives" = "yes" ; then with_atomic_primitives=auto; fi
+  withval=$with_atomic_primitives; if test "$with_atomic_primitives" = "yes"; then
+  with_atomic_primitives=auto
+fi
 
 else
   with_atomic_primitives=auto
@@ -5608,7 +6051,10 @@ fi
 
 
 
+# is set to yes by the macro below if any test ever succeeds
 non_emulated_primitives_available=no
+# is set to yes in OPA_TRY_PRIMITIVE_HEADER when a primitive
+# matching $with_atomic_primitives is checked
 checked_specified_primitive=no
 
 
@@ -5617,8 +6063,13 @@ checked_specified_primitive=no
 
 
 
+using_emulated_primitives=no
+using_unsafe_primitives=no
+
 if test "$with_atomic_primitives" = "no" ; then
     using_emulated_primitives=yes
+elif test "$with_atomic_primitives" = "unsafe" ; then
+    using_unsafe_primitives=yes
 else
     if test "$compiler_rejects_bogus_asm" = "yes"  ; then
         # if we're cross compiling, don't try the gcc_intel_32_64
@@ -6747,6 +7198,53 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
+
+if test "$using_unsafe_primitives" = "yes" ; then
+    { $as_echo "$as_me:$LINENO: WARNING:
+===================================================
+Using *UNSAFE*, *NON-ATOMIC* primitive operations.
+Use this for only for testing or for performance
+reasons in non-concurrent code.
+
+Consider yourself warned!
+===================================================" >&5
+$as_echo "$as_me: WARNING:
+===================================================
+Using *UNSAFE*, *NON-ATOMIC* primitive operations.
+Use this for only for testing or for performance
+reasons in non-concurrent code.
+
+Consider yourself warned!
+===================================================" >&2;}
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_UNSAFE_PRIMITIVES 1
+_ACEOF
+
+fi
+
+{ $as_echo "$as_me:$LINENO: checking whether to enable strict fairness checks" >&5
+$as_echo_n "checking whether to enable strict fairness checks... " >&6; }
+# Check whether --enable-strict-fairness-checks was given.
+if test "${enable_strict_fairness_checks+set}" = set; then
+  enableval=$enable_strict_fairness_checks; strict_fairness_checks=$enableval
+else
+  strict_fairness_checks=no
+fi
+
+if test "${strict_fairness_checks}" = "yes"; then
+    { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_STRICT_FAIRNESS_CHECKS 1
+_ACEOF
+
+else
+    { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
 
 ac_config_files="$ac_config_files Makefile src/Makefile test/Makefile"
 

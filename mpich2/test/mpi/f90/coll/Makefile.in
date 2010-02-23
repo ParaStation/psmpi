@@ -26,7 +26,7 @@ VPATH = .:@srcdir@
 .SUFFIXES:
 .SUFFIXES: .o .f90 .txt 
 .f90.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  F90             $<" ; \
 	else \
 	  echo $(F90_COMPILE) -c $< ; \
@@ -55,8 +55,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o inplacef90 allredopttf90 alltoallwf90 exscanf90 allredint8f90 uallreducef90
-	-@rm -f inplacef90.exe allredopttf90.exe alltoallwf90.exe exscanf90.exe allredint8f90.exe uallreducef90.exe
+	-@rm -f *.o ${srcdir}/*.o inplacef90 allredopttf90 reducelocalf90 alltoallwf90 exscanf90 allredint8f90 uallreducef90
+	-@rm -f inplacef90.exe allredopttf90.exe reducelocalf90.exe alltoallwf90.exe exscanf90.exe allredint8f90.exe uallreducef90.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -75,7 +75,7 @@ remove-makefile:
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
 all-redirect: uallreducef90 exscanf90 alltoallwf90 inplacef90 allredint8f90\
-	 allredopttf90
+	 allredopttf90 reducelocalf90
 
 coverage: 
 inplacef90: inplacef90.o   @MPILIBLOC@ ../util/mtestf90.o
@@ -84,6 +84,9 @@ inplacef90: inplacef90.o   @MPILIBLOC@ ../util/mtestf90.o
 allredopttf90: allredopttf90.o   @MPILIBLOC@ ../util/mtestf90.o
 	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o allredopttf90 allredopttf90.o  \
 	${LIBS} 
+reducelocalf90: reducelocalf90.o   @MPILIBLOC@ ../util/mtestf90.o
+	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o reducelocalf90 \
+	reducelocalf90.o  ${LIBS} 
 alltoallwf90: alltoallwf90.o   @MPILIBLOC@ ../util/mtestf90.o
 	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o alltoallwf90 alltoallwf90.o  \
 	${LIBS} 
@@ -104,13 +107,9 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  uallreducef90.f90 exscanf90.f90 alltoallwf90.f90 \
-	inplacef90.f90 allredint8f90.f90 allredopttf90.f90 
-ETAGS           = @ETAGS@ @ETAGSADD@
+	inplacef90.f90 allredint8f90.f90 allredopttf90.f90 reducelocalf90.f90 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 # This Makefile.sm generated automatically by f77tof90
 # from test/mpi/f77/coll/Makefile.sm.  DO NOT EDIT

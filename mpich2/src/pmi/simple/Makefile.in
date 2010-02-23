@@ -31,14 +31,14 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -49,7 +49,7 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -58,9 +58,9 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 
 ${srcdir}/pmiconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /opt/local/bin/autoheader -I ../../../confdb && \
-	\
-	/opt/local/bin/autoconf -I ../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../confdb && \
+	autoconf -I \
+	../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -106,13 +106,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 
 .libstamp0 ../../../lib/lib${MPILIBNAME}.a: simple_pmiutil.o simple_pmi.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${MPILIBNAME}.a ; \
@@ -120,7 +120,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
 .libstamp1 ../../../lib/lib${MPILIBNAME}.la: simple_pmiutil.lo simple_pmi.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -144,14 +144,34 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/simple_pmiutil.d: $(srcdir)/simple_pmiutil.c
-	$(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil.c >$(DEPS_DIR)/simple_pmiutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C simple_pmiutil.c > $(DEPS_DIR)/simple_pmiutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil.c >$(DEPS_DIR)/simple_pmiutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil.c >$(DEPS_DIR)/simple_pmiutil.d
 $(DEPS_DIR)/simple_pmi.d: $(srcdir)/simple_pmi.c
-	$(MAKE_DEPEND_C)  $(srcdir)/simple_pmi.c >$(DEPS_DIR)/simple_pmi.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C simple_pmi.c > $(DEPS_DIR)/simple_pmi.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/simple_pmi.c >$(DEPS_DIR)/simple_pmi.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/simple_pmi.c >$(DEPS_DIR)/simple_pmi.d
 $(DEPS_DIR)/timestamp: simple_pmiutil.c simple_pmi.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil.c >$(DEPS_DIR)/simple_pmiutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C simple_pmiutil.c > $(DEPS_DIR)/simple_pmiutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil.c >$(DEPS_DIR)/simple_pmiutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil.c >$(DEPS_DIR)/simple_pmiutil.d
 	echo "include $(DEPS_DIR)/simple_pmiutil.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/simple_pmi.c >$(DEPS_DIR)/simple_pmi.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C simple_pmi.c > $(DEPS_DIR)/simple_pmi.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/simple_pmi.c >$(DEPS_DIR)/simple_pmi.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/simple_pmi.c >$(DEPS_DIR)/simple_pmi.d
 	echo "include $(DEPS_DIR)/simple_pmi.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -160,12 +180,8 @@ include $(DEPS_DIR)/alldeps
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  simple_pmiutil.c simple_pmi.c
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 distclean-local:

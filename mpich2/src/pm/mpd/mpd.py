@@ -80,6 +80,13 @@ from  mpdlib      import  mpd_set_my_id, mpd_check_python_version, mpd_sockpair,
                           MPDStreamHandler, MPDRing, MPDParmDB
 from  mpdman      import  MPDMan
 
+# fix for ticket #753 where the set() builtin isn't available in python2.3
+try:
+    set
+except NameError:
+    from sets import Set as set
+
+
 try:
     import pwd
     pwd_module_available = 1
@@ -189,7 +196,7 @@ class MPD(object):
         if vinfo:
             print "mpd: your python version must be >= 2.2 ; current version is:", vinfo
             sys.exit(-1)
-        os.close(0)
+        sys.stdin.close()
         if self.parmdb['MPD_ECHO_PORT_FLAG']:    # do this before becoming a daemon
             # print self.parmdb['MPD_LISTEN_PORT']
             print "mpd_port=%d" % self.parmdb['MPD_LISTEN_PORT']
@@ -857,7 +864,7 @@ class MPD(object):
         # we only handle two cases for now:
         # 1. block regular
         # 2. round-robin regular
-        # we do handle a "remainder node" that might not be full
+        # we do handle "remainder nodes" that might not be full
         delta = -1
         max_ranks_per_node = 0
         for node_id in node_to_ranks.keys():
@@ -880,6 +887,31 @@ class MPD(object):
                         mpd_print(1, "irregular case B detected")
                         return ''
                 last_rank = rank
+
+        # another check (case caught in ticket #905) for layouts like {0:A,1:A,2:B,3:B,4:B}
+        if len(node_to_ranks.keys()) > 1:
+            first_size = len(node_to_ranks[0])
+            last_size  = len(node_to_ranks[len(node_to_ranks.keys())-1])
+            if (last_size > first_size):
+                mpd_print(1, "irregular case C1 detected")
+                return ''
+            in_remainder = False
+            node_ids = node_to_ranks.keys()
+            node_ids.sort()
+            for node_id in node_ids:
+                node_size = len(node_to_ranks[node_id])
+                if not in_remainder:
+                    if node_size == first_size:
+                        pass # OK
+                    elif node_size == last_size:
+                        in_remainder = True
+                    else:
+                        mpd_print(1, "irregular case C2 detected")
+                        return ''
+                else: # in_remainder
+                    if node_size != last_size:
+                        mpd_print(1, "irregular case C3 detected")
+                        return ''
 
         num_nodes = len(node_to_ranks.keys())
         if delta == 1:

@@ -4,8 +4,8 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifndef OPA_ATOMICS_BY_LOCK_H_INCLUDED
-#define OPA_ATOMICS_BY_LOCK_H_INCLUDED
+#ifndef OPA_BY_LOCK_H_INCLUDED
+#define OPA_BY_LOCK_H_INCLUDED
 
 /* FIXME For now we rely on pthreads for our IPC locks.  This is fairly
    portable, although it is obviously not 100% portable.  Some day when we
@@ -32,6 +32,9 @@ extern pthread_mutex_t *OPA_emulation_lock;
 
 typedef struct { volatile int v;  } OPA_int_t;
 typedef struct { int * volatile v; } OPA_ptr_t;
+
+#define OPA_INT_T_INITIALIZER(val_) { (val_) }
+#define OPA_PTR_T_INITIALIZER(val_) { (val_) }
 
 /*
     Emulated atomic primitives

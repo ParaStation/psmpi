@@ -74,10 +74,22 @@
    static _opa_inline void *OPA_LL_ptr(OPA_ptr_t *ptr);
    static _opa_inline int OPA_SC_ptr(OPA_ptr_t *ptr, void *val);
 
+
+   Additionally, the following initializer macros must be defined:
+
+   #define OPA_INT_T_INITIALIZER(val_) ...
+   #define OPA_PTR_T_INITIALIZER(val_) ...
+
+   They should be useable as C89 static initializers like so:
+
+   struct { int x; OPA_int_t y; OPA_ptr_t z; } foo = { 35, OPA_INT_T_INITIALIZER(1), OPA_PTR_T_INITIALIZER(NULL) };
 */
 
 /* Include the appropriate header for the architecture */
-#if   defined(OPA_HAVE_GCC_AND_POWERPC_ASM)
+#if defined(OPA_USE_UNSAFE_PRIMITIVES)
+/* comes first to permit user overrides in the style of NDEBUG */
+#include "primitives/opa_unsafe.h"
+#elif   defined(OPA_HAVE_GCC_AND_POWERPC_ASM)
 #include "primitives/opa_gcc_ppc.h"
 #elif defined(OPA_HAVE_GCC_X86_32_64)
 #include "primitives/opa_gcc_intel_32_64.h"
@@ -114,8 +126,8 @@
 
     Inputs:
       shm_lock - A pointer to an allocated piece of shared memory that can hold
-                 a pthread_mutex_t.  This is not portable to non-pthreads
-                 systems at this time.
+                 a mutex (e.g., pthread_mutex_t).  This is not portable to
+                 non-pthreads systems at this time.
       isLeader - This boolean value should be set to true for exactly one
                  thread/process of the group that calls this function.
 */
@@ -123,7 +135,8 @@
    are hopelessly broken and OPA no longer lives inside of MPICH2. */
 #if defined(OPA_HAVE_PTHREAD_H)
 #  include <pthread.h>
-int OPA_Interprocess_lock_init(pthread_mutex_t *shm_lock, int isLeader);
+typedef pthread_mutex_t OPA_emulation_ipl_t;
+int OPA_Interprocess_lock_init(OPA_emulation_ipl_t *shm_lock, int isLeader);
 #endif
 
 

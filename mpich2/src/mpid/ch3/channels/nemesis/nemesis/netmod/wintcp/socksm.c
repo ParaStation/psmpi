@@ -41,9 +41,17 @@ sockconn_t MPID_nem_newtcp_module_g_lstn_sc;
    unused */
 static MPID_nem_newtcp_module_vc_area *dummy_vc_area ATTRIBUTE((unused, used)) = NULL;
 
-#define MAX_SKIP_POLLS_INACTIVE (512) /* something bigger */
+#define MIN_SKIP_POLLS_INACTIVE (512)
+#define SKIP_POLLS_INC_CNT  (512)
+#define MAX_SKIP_POLLS_INACTIVE (2048)
+#define SKIP_POLLS_INC(cnt) (                               \
+    (cnt >= MAX_SKIP_POLLS_INACTIVE)                        \
+    ? (cnt = MIN_SKIP_POLLS_INACTIVE)                       \
+    : (cnt += SKIP_POLLS_INC_CNT)                           \
+)
+
 #define MAX_SKIP_POLLS_ACTIVE (128)   /* something smaller */
-static int MPID_nem_tcp_skip_polls = MAX_SKIP_POLLS_INACTIVE;
+static int MPID_nem_tcp_skip_polls = MIN_SKIP_POLLS_INACTIVE;
 
 /* Debug function to dump the sockconn table.  This is intended to be
    called from a debugger.  The 'unused' attribute keeps the compiler
@@ -225,7 +233,9 @@ static int expand_sc_tbl (void)
 
     for (i = 0; i < g_sc_tbl_capacity; ++i)
     {
+        /*
         sockconn_t *dbg_sc = g_sc_tbl[i].vc ? VC_FIELD(g_sc_tbl[i].vc, sc) : (sockconn_t*)(-1);
+        */
 
         /* The state is only valid if the FD is valid.  The VC field is only
            valid if the state is valid and COMMRDY. */
@@ -852,7 +862,6 @@ int MPID_nem_newtcp_module_connect (struct MPIDI_VC *const vc)
     if (((MPIDI_CH3I_VC *)vc->channel_private)->state == MPID_NEM_NEWTCP_MODULE_VC_STATE_DISCONNECTED) {
         struct sockaddr_in *sock_addr;
         struct in_addr addr;
-        int rc = 0;
 
         MPIU_Assert(VC_FIELD(vc, sc) == NULL);
         mpi_errno = find_free_entry(&index);
@@ -1028,8 +1037,6 @@ fn_fail:
 static int cleanup_sc(sockconn_t *sc)
 {
     int mpi_errno = MPI_SUCCESS;
-    int rc;
-    struct pollfd *plfd = NULL;
     freenode_t *node;
     MPIU_CHKPMEM_DECL(1);
     if (sc == NULL)
@@ -1530,6 +1537,8 @@ static int MPID_nem_newtcp_module_recv_handler (MPIU_SOCKW_Waitset_sock_hnd_t fd
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_RECV_HANDLER);
 
+    MPIU_UNREFERENCED_ARG(fd_ws_hnd);
+
     if (((MPIDI_CH3I_VC *)sc->vc->channel_private)->recv_active == NULL)
     {
         /* receive a new message */
@@ -1678,6 +1687,8 @@ static int state_d_quiescent_handler(MPIU_SOCKW_Waitset_sock_hnd_t fd_ws_hnd, so
 
     MPIDI_FUNC_ENTER(MPID_STATE_STATE_D_QUIESCENT_HANDLER);
 
+    MPIU_UNREFERENCED_ARG(fd_ws_hnd);
+
     mpi_errno = cleanup_sc(sc);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
@@ -1794,14 +1805,16 @@ Evaluate the need for it by testing and then do it, if needed.
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_nem_newtcp_module_connpoll(int in_blocking_poll)
 {
-    int mpi_errno = MPI_SUCCESS, n, i;
+    int mpi_errno = MPI_SUCCESS;
     static int num_skipped_polls = 0;
 
     /* To improve shared memory performance, we don't call the poll()
      * systemcall every time. The MPID_nem_tcp_skip_polls value is
      * changed depending on whether we have any active connections. */
-    if (in_blocking_poll && num_skipped_polls++ < MPID_nem_tcp_skip_polls)
+    if (in_blocking_poll && num_skipped_polls++ < MPID_nem_tcp_skip_polls){
         goto fn_exit;
+    }
+    SKIP_POLLS_INC(MPID_nem_tcp_skip_polls);
     num_skipped_polls = 0;
 
     /* num_polled is needed b/c the call to it_sc->handler() can change the
@@ -1877,6 +1890,9 @@ int MPID_nem_newtcp_module_state_listening_handler(MPIU_SOCKW_Waitset_sock_hnd_t
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_NEWTCP_MODULE_STATE_LISTENING_HANDLER);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_NEWTCP_MODULE_STATE_LISTENING_HANDLER);
+
+    MPIU_UNREFERENCED_ARG(unused_1);
+    MPIU_UNREFERENCED_ARG(unused_2);
 
     while (1) {
         l_sc = &g_sc_tbl[0];  /* N3 Important */

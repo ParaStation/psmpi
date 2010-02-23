@@ -599,7 +599,6 @@ PACKAGE_STRING=
 PACKAGE_BUGREPORT=
 
 ac_unique_file="configure.in"
-enable_option_checking=no
 # Factoring default headers for most tests.
 ac_includes_default="\
 #include <stdio.h>
@@ -636,14 +635,13 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
+enable_option_checking=no
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 EXTRA_LIBS
-ETAGSADD
-ETAGS
 MAKE_DEPEND_C
-master_top_builddir
 master_top_srcdir
+master_top_builddir
 SHLIB_EXT
 ENABLE_SHLIB
 LIBTOOL
@@ -654,6 +652,9 @@ RANLIB
 AR
 MPID_THREAD_DISTCLEAN
 MPID_THREAD_SOURCES
+ch3subsystems
+subdirs
+ftb_dir
 EGREP
 GREP
 CPP
@@ -664,8 +665,6 @@ CPPFLAGS
 LDFLAGS
 CFLAGS
 CC
-ch3subsystems
-subdirs
 SET_MAKE
 SET_CFLAGS
 VPATH
@@ -713,6 +712,10 @@ ac_subst_files='MPID_THREAD_TYPEDEFS
 MPID_THREAD_FUNCS'
 ac_user_opts='
 enable_option_checking
+enable_ftb
+with_ftb
+with_ftb_include
+with_ftb_lib
 with_ch3_rank_bits
 '
       ac_precious_vars='build_alias
@@ -1340,9 +1343,20 @@ if test -n "$ac_init_help"; then
 
   cat <<\_ACEOF
 
+Optional Features:
+  --disable-option-checking  ignore unrecognized --enable/--with options
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-ftb            Enable FTB support (default is no)
+
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --with-ftb=path         specify path where ftb include directory and lib
+                          directory can be found
+  --with-ftb-include=path specify path where ftb include directory can be
+                          found
+  --with-ftb-lib=path     specify path where ftb lib directory can be found
 --with-ch3-rank-bits=16/32     Number of bits allocated to the rank field (16 or 32)
 
 Some influential environment variables:
@@ -1894,34 +1908,36 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-if test -f $CONFIG_AUX_DIR/install-sh ; then ac_aux_dir=$CONFIG_AUX_DIR
-else
 ac_aux_dir=
-# We force the test to use the absolute path to ensure that the install
-# program can be used if we cd to a different directory before using
-# install.
 for ac_dir in ../../../confdb "$srcdir"/../../../confdb; do
-  if test -f $ac_dir/install-sh; then
+  if test -f "$ac_dir/install-sh"; then
     ac_aux_dir=$ac_dir
-    abs_ac_aux_dir=`(cd $ac_aux_dir && pwd)`
-    ac_install_sh="$abs_ac_aux_dir/install-sh -c"
+    ac_install_sh="$ac_aux_dir/install-sh -c"
     break
-  elif test -f $ac_dir/install.sh; then
+  elif test -f "$ac_dir/install.sh"; then
     ac_aux_dir=$ac_dir
-    abs_ac_aux_dir=`(cd $ac_aux_dir && pwd)`
-    ac_install_sh="$abs_ac_aux_dir/install.sh -c"
+    ac_install_sh="$ac_aux_dir/install.sh -c"
+    break
+  elif test -f "$ac_dir/shtool"; then
+    ac_aux_dir=$ac_dir
+    ac_install_sh="$ac_aux_dir/shtool install -c"
     break
   fi
 done
-fi
 if test -z "$ac_aux_dir"; then
-  { { $as_echo "$as_me:$LINENO: error: can not find install-sh or install.sh in ../../../confdb \"$srcdir\"/../../../confdb" >&5
-$as_echo "$as_me: error: can not find install-sh or install.sh in ../../../confdb \"$srcdir\"/../../../confdb" >&2;}
+  { { $as_echo "$as_me:$LINENO: error: cannot find install-sh or install.sh in ../../../confdb \"$srcdir\"/../../../confdb" >&5
+$as_echo "$as_me: error: cannot find install-sh or install.sh in ../../../confdb \"$srcdir\"/../../../confdb" >&2;}
    { (exit 1); exit 1; }; }
 fi
-ac_config_guess=$ac_aux_dir/config.guess
-ac_config_sub=$ac_aux_dir/config.sub
-ac_configure=$ac_aux_dir/configure # This should be Cygnus configure.
+
+# These three variables are undocumented and unsupported,
+# and are intended to be withdrawn in a future Autoconf release.
+# They can cause serious problems if a builder's source tree is in a directory
+# whose full name contains unusual characters.
+ac_config_guess="$SHELL $ac_aux_dir/config.guess"  # Please don't use this var.
+ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
+ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
+
 
 
 
@@ -2200,6 +2216,7 @@ fi
 
 
 
+
 { $as_echo "$as_me:$LINENO: checking for virtual path format" >&5
 $as_echo_n "checking for virtual path format... " >&6; }
 if test "${pac_cv_prog_make_vpath+set}" = set; then
@@ -2250,6 +2267,7 @@ if test "$pac_cv_prog_make_vpath" = "VPATH" ; then
 elif test "$pac_cv_prog_make_vpath" = ".PATH" ; then
     VPATH='.PATH: . ${srcdir}'
 fi
+
 
 
 
@@ -2324,66 +2342,11 @@ else
 fi
 
 
-# Some channels will make use of common utility routines (in ch3/src/util)
-# For modularity, the channel can specify these here
-# FIXME: Some utility routines are specified at the top level (devsubsystem)
-# even though their scope is really ch3 in practice.  We haven't resolved
-# the best way to handle these systems
-# Note that the "setup_<channelname>" script must also set
-#   needs_sock=yes
-# if util/sock is used, and
-#   needs_shm=yes
-# if util/shm is used.
-if test -s $srcdir/channels/$channel_name/setup_$channel_name ; then
-    # Typically, this will set ch3subsystems.  For now,
-    # we use this configure to create the configuration file
-    # for those subsystems.  Eventually, they may have their
-    # own configure
-    . $srcdir/channels/$channel_name/setup_$channel_name
-    if test "$needs_sock" = yes ; then
+# ----------------------------------------------------------------------------
+# include ftb functionality
+# ----------------------------------------------------------------------------
 
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_UTIL_SOCK 1
-_ACEOF
-
-	CPPFLAGS="${CPPFLAGS} -I${master_top_srcdir}/src/mpid/ch3/util/sock"
-
-
-subdirs="$subdirs util/sock"
-
-    fi
-    if test "$needs_shm" = yes ; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_UTIL_SHM 1
-_ACEOF
-
-	#CPPFLAGS="${CPPFLAGS} -I${master_top_srcdir}/src/mpid/ch3/util/shm"
-    fi
-fi
-
-
-
-# Check whether --with-ch3-rank-bits was given.
-if test "${with_ch3_rank_bits+set}" = set; then
-  withval=$with_ch3_rank_bits;  rankbits=$withval
-else
-   rankbits=16
-fi
-
-{ $as_echo "$as_me:$LINENO: result: $rankbits" >&5
-$as_echo "$rankbits" >&6; }
-if test "$rankbits" != "16" -a "$rankbits" != "32" ; then
-   { { $as_echo "$as_me:$LINENO: error: Only 16 or 32-bit ranks are supported" >&5
-$as_echo "$as_me: error: Only 16 or 32-bit ranks are supported" >&2;}
-   { (exit 1); exit 1; }; }
-fi
-
-cat >>confdefs.h <<_ACEOF
-#define CH3_RANK_BITS $rankbits
-_ACEOF
-
-
+ftb_dir=
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
@@ -3940,6 +3903,336 @@ fi
 done
 
 
+# Check whether --enable-ftb was given.
+if test "${enable_ftb+set}" = set; then
+  enableval=$enable_ftb;
+cat >>confdefs.h <<\_ACEOF
+#define ENABLE_FTB 1
+_ACEOF
+
+  ftb_dir=ftb
+
+
+# Check whether --with-ftb was given.
+if test "${with_ftb+set}" = set; then
+  withval=$with_ftb; if test "${with_ftb}" != "yes" -a "${with_ftb}" != "no" ; then
+            LDFLAGS="$LDFLAGS -L${with_ftb}/lib64 -L${with_ftb}/lib"
+    	    CPPFLAGS="$CPPFLAGS -I${with_ftb}/include"
+        fi
+fi
+
+
+# Check whether --with-ftb-include was given.
+if test "${with_ftb_include+set}" = set; then
+  withval=$with_ftb_include; if test "${with_ftb_include}" != "yes" -a "${with_ftb_include}" != "no" ; then
+    	    CPPFLAGS="$CPPFLAGS -I${with_ftb_include}/include"
+        fi
+fi
+
+
+# Check whether --with-ftb-lib was given.
+if test "${with_ftb_lib+set}" = set; then
+  withval=$with_ftb_lib; if test "${with_ftb_lib}" != "yes" -a "${with_ftb_lib}" != "no" ; then
+            LDFLAGS="$LDFLAGS -L${with_ftb_lib}/lib64 -L${with_ftb_lib}/lib"
+        fi
+fi
+
+
+
+
+    failure=no
+    if test "${ac_cv_header_libftb_h+set}" = set; then
+  { $as_echo "$as_me:$LINENO: checking for libftb.h" >&5
+$as_echo_n "checking for libftb.h... " >&6; }
+if test "${ac_cv_header_libftb_h+set}" = set; then
+  $as_echo_n "(cached) " >&6
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_header_libftb_h" >&5
+$as_echo "$ac_cv_header_libftb_h" >&6; }
+else
+  # Is the header compilable?
+{ $as_echo "$as_me:$LINENO: checking libftb.h usability" >&5
+$as_echo_n "checking libftb.h usability... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <libftb.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+$as_echo "$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ $as_echo "$as_me:$LINENO: checking libftb.h presence" >&5
+$as_echo_n "checking libftb.h presence... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <libftb.h>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+$as_echo "$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h: accepted by the compiler, rejected by the preprocessor!" >&5
+$as_echo "$as_me: WARNING: libftb.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: libftb.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h: present but cannot be compiled" >&5
+$as_echo "$as_me: WARNING: libftb.h: present but cannot be compiled" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h:     check for missing prerequisite headers?" >&5
+$as_echo "$as_me: WARNING: libftb.h:     check for missing prerequisite headers?" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h: see the Autoconf documentation" >&5
+$as_echo "$as_me: WARNING: libftb.h: see the Autoconf documentation" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h:     section \"Present But Cannot Be Compiled\"" >&5
+$as_echo "$as_me: WARNING: libftb.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h: proceeding with the preprocessor's result" >&5
+$as_echo "$as_me: WARNING: libftb.h: proceeding with the preprocessor's result" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h: in the future, the compiler will take precedence" >&5
+$as_echo "$as_me: WARNING: libftb.h: in the future, the compiler will take precedence" >&2;}
+
+    ;;
+esac
+{ $as_echo "$as_me:$LINENO: checking for libftb.h" >&5
+$as_echo_n "checking for libftb.h... " >&6; }
+if test "${ac_cv_header_libftb_h+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_cv_header_libftb_h=$ac_header_preproc
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_header_libftb_h" >&5
+$as_echo "$ac_cv_header_libftb_h" >&6; }
+
+fi
+if test "x$ac_cv_header_libftb_h" = x""yes; then
+  :
+else
+  failure=yes
+fi
+
+
+
+{ $as_echo "$as_me:$LINENO: checking for FTB_Connect in -lftb" >&5
+$as_echo_n "checking for FTB_Connect in -lftb... " >&6; }
+if test "${ac_cv_lib_ftb_FTB_Connect+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lftb  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char FTB_Connect ();
+int
+main ()
+{
+return FTB_Connect ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  ac_cv_lib_ftb_FTB_Connect=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_ftb_FTB_Connect=no
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_ftb_FTB_Connect" >&5
+$as_echo "$ac_cv_lib_ftb_FTB_Connect" >&6; }
+if test "x$ac_cv_lib_ftb_FTB_Connect" = x""yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBFTB 1
+_ACEOF
+
+  LIBS="-lftb $LIBS"
+
+else
+  failure=yes
+fi
+
+    if test "$failure" = "no" ; then
+       success=yes
+    else
+       success=no
+    fi
+
+	if test "$success" = "no" ; then
+	   { { $as_echo "$as_me:$LINENO: error: 'libftb.h or libftb library not found. Did you specify --with-ftb= or --with-ftb-include= or --with-ftb-lib=?'" >&5
+$as_echo "$as_me: error: 'libftb.h or libftb library not found. Did you specify --with-ftb= or --with-ftb-include= or --with-ftb-lib=?'" >&2;}
+   { (exit 1); exit 1; }; }
+	fi
+
+
+fi
+
+
+export LDFLAGS
+export LIBS
+export CFLAGS
+export CPPFLAGS
+
+# Some channels will make use of common utility routines (in ch3/src/util)
+# For modularity, the channel can specify these here
+# FIXME: Some utility routines are specified at the top level (devsubsystem)
+# even though their scope is really ch3 in practice.  We haven't resolved
+# the best way to handle these systems
+# Note that the "setup_<channelname>" script must also set
+#   needs_sock=yes
+# if util/sock is used, and
+#   needs_shm=yes
+# if util/shm is used.
+if test -s $srcdir/channels/$channel_name/setup_$channel_name ; then
+    # Typically, this will set ch3subsystems.  For now,
+    # we use this configure to create the configuration file
+    # for those subsystems.  Eventually, they may have their
+    # own configure
+    . $srcdir/channels/$channel_name/setup_$channel_name
+    if test "$needs_sock" = yes ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_UTIL_SOCK 1
+_ACEOF
+
+	CPPFLAGS="${CPPFLAGS} -I${master_top_srcdir}/src/mpid/ch3/util/sock"
+
+
+subdirs="$subdirs util/sock"
+
+    fi
+    if test "$needs_shm" = yes ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_UTIL_SHM 1
+_ACEOF
+
+	#CPPFLAGS="${CPPFLAGS} -I${master_top_srcdir}/src/mpid/ch3/util/shm"
+    fi
+fi
+
+
+
+# Check whether --with-ch3-rank-bits was given.
+if test "${with_ch3_rank_bits+set}" = set; then
+  withval=$with_ch3_rank_bits;  rankbits=$withval
+else
+   rankbits=16
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $rankbits" >&5
+$as_echo "$rankbits" >&6; }
+if test "$rankbits" != "16" -a "$rankbits" != "32" ; then
+   { { $as_echo "$as_me:$LINENO: error: Only 16 or 32-bit ranks are supported" >&5
+$as_echo "$as_me: error: Only 16 or 32-bit ranks are supported" >&2;}
+   { (exit 1); exit 1; }; }
+fi
+
+cat >>confdefs.h <<_ACEOF
+#define CH3_RANK_BITS $rankbits
+_ACEOF
+
+
 
 
 
@@ -4653,93 +4946,6 @@ _ACEOF
 
 fi
 done
-
-{ $as_echo "$as_me:$LINENO: checking for library containing uuid_generate" >&5
-$as_echo_n "checking for library containing uuid_generate... " >&6; }
-if test "${ac_cv_search_uuid_generate+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  ac_func_search_save_LIBS=$LIBS
-cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-/* Override any GCC internal prototype to avoid an error.
-   Use char because int might match the return type of a GCC
-   builtin and then its argument prototype would still apply.  */
-#ifdef __cplusplus
-extern "C"
-#endif
-char uuid_generate ();
-int
-main ()
-{
-return uuid_generate ();
-  ;
-  return 0;
-}
-_ACEOF
-for ac_lib in '' uuid; do
-  if test -z "$ac_lib"; then
-    ac_res="none required"
-  else
-    ac_res=-l$ac_lib
-    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
-  fi
-  rm -f conftest.$ac_objext conftest$ac_exeext
-if { (ac_try="$ac_link"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_link") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest$ac_exeext && {
-	 test "$cross_compiling" = yes ||
-	 $as_test_x conftest$ac_exeext
-       }; then
-  ac_cv_search_uuid_generate=$ac_res
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-
-fi
-
-rm -rf conftest.dSYM
-rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
-      conftest$ac_exeext
-  if test "${ac_cv_search_uuid_generate+set}" = set; then
-  break
-fi
-done
-if test "${ac_cv_search_uuid_generate+set}" = set; then
-  :
-else
-  ac_cv_search_uuid_generate=no
-fi
-rm conftest.$ac_ext
-LIBS=$ac_func_search_save_LIBS
-fi
-{ $as_echo "$as_me:$LINENO: result: $ac_cv_search_uuid_generate" >&5
-$as_echo "$ac_cv_search_uuid_generate" >&6; }
-ac_res=$ac_cv_search_uuid_generate
-if test "$ac_res" != no; then
-  test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-
-fi
 
 
 { $as_echo "$as_me:$LINENO: checking whether CPP accepts variable length argument lists" >&5
@@ -7006,6 +7212,13 @@ ac_config_commands="$ac_config_commands default-1"
 		{ $as_echo "$as_me:$LINENO: WARNING: libtool selected for shared library support but LIBTOOL is not defined" >&5
 $as_echo "$as_me: WARNING: libtool selected for shared library support but LIBTOOL is not defined" >&2;}
             fi
+	    # Libtool needs master_top_builddir
+	    if test "X$master_top_builddir" = "X" ; then
+	        { { $as_echo "$as_me:$LINENO: error: Libtool requires master_top_builddir - check configure.in sources" >&5
+$as_echo "$as_me: error: Libtool requires master_top_builddir - check configure.in sources" >&2;}
+   { (exit 1); exit 1; }; }
+	    fi
+
 	fi
 
 
@@ -7013,53 +7226,6 @@ $as_echo "$as_me: WARNING: libtool selected for shared library support but LIBTO
 
 export master_top_builddir
 
-for ac_prog in etags
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_ETAGS+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ETAGS"; then
-  ac_cv_prog_ETAGS="$ETAGS" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_ETAGS="$ac_prog"
-    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-ETAGS=$ac_cv_prog_ETAGS
-if test -n "$ETAGS"; then
-  { $as_echo "$as_me:$LINENO: result: $ETAGS" >&5
-$as_echo "$ETAGS" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$ETAGS" && break
-done
-test -n "$ETAGS" || ETAGS="true"
-
-
-
-export ETAGS
-export ETAGSADD
 
 
 
@@ -7085,6 +7251,14 @@ export SHLIB_EXT
 export ENABLE_SHLIB
 export LIBTOOL
 
+# TERRIBLE HACK: For some reason, anything added to LIBS by this
+# configure is lost in the subconfigure.  So we save it in another
+# variable then restore it in the subconfigure.  Note that this
+# doesn't happen with LDFLAGS!
+# FIXME: Figure out what's going on.
+export MY_EXPORTED_LIBS="$LIBS"
+
+# FIXME shouldn't put var in _SUBDIRS
 subdirs="$subdirs channels/${channel_name}"
 
 
@@ -7096,7 +7270,7 @@ CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
 
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile util/Makefile util/shm/Makefile util/shmbase/Makefile channels/Makefile localdefs $MPID_THREAD_OUTPUT_FILES"
+ac_config_files="$ac_config_files Makefile src/Makefile util/Makefile util/shm/Makefile util/shmbase/Makefile channels/Makefile util/ftb/Makefile localdefs $MPID_THREAD_OUTPUT_FILES"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -7711,6 +7885,7 @@ do
     "util/shm/Makefile") CONFIG_FILES="$CONFIG_FILES util/shm/Makefile" ;;
     "util/shmbase/Makefile") CONFIG_FILES="$CONFIG_FILES util/shmbase/Makefile" ;;
     "channels/Makefile") CONFIG_FILES="$CONFIG_FILES channels/Makefile" ;;
+    "util/ftb/Makefile") CONFIG_FILES="$CONFIG_FILES util/ftb/Makefile" ;;
     "localdefs") CONFIG_FILES="$CONFIG_FILES localdefs" ;;
     "$MPID_THREAD_OUTPUT_FILES") CONFIG_FILES="$CONFIG_FILES $MPID_THREAD_OUTPUT_FILES" ;;
 

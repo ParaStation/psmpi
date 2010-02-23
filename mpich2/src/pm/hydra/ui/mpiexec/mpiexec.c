@@ -12,7 +12,7 @@
 #include "uiu.h"
 #include "demux.h"
 
-HYD_Handle HYD_handle = { 0 };
+struct HYD_handle HYD_handle = { {0} };
 
 static void usage(void)
 {
@@ -88,6 +88,13 @@ static void usage(void)
     printf("    -bindlib                         process-to-core binding library (plpa)\n");
 
     printf("\n");
+    printf("  Checkpoint/Restart options:\n");
+    printf("    -ckpoint-interval                checkpoint interval\n");
+    printf("    -ckpoint-prefix                  checkpoint file prefix\n");
+    printf("    -ckpointlib                      checkpointing library (blcr)\n");
+    printf("    -ckpoint-restart                 restart a checkpointed application\n");
+
+    printf("\n");
     printf("  Other Hydra options:\n");
     printf("    -verbose                         verbose mode\n");
     printf("    -info                            build information\n");
@@ -98,14 +105,18 @@ static void usage(void)
 
 int main(int argc, char **argv)
 {
-    struct HYD_Partition *partition;
-    struct HYD_Partition_exec *exec;
-    int exit_status = 0, timeout, i, process_id, proc_count;
-    HYD_Status status = HYD_SUCCESS;
+    struct HYD_proxy *proxy;
+    struct HYD_proxy_exec *exec;
+    struct HYD_exec_info *exec_info;
+    int exit_status = 0, timeout, i, process_id, proc_count, num_cores;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
-    status = HYD_UII_mpx_get_parameters(argv);
+    status = HYDU_dbg_init("mpiexec");
+    HYDU_ERR_POP(status, "unable to initialization debugging\n");
+
+    status = HYD_uii_mpx_get_parameters(argv);
     if (status == HYD_GRACEFUL_ABORT) {
         exit(0);
     }
@@ -114,86 +125,104 @@ int main(int argc, char **argv)
         goto fn_fail;
     }
 
-    status = HYD_RMKI_init(HYD_handle.rmk);
+    status = HYD_rmki_init(HYD_handle.rmk);
     HYDU_ERR_POP(status, "unable to initialize RMK\n");
 
-    if (HYD_handle.host_file == NULL) {
-        /* User did not provide any host file. Query the RMK. We pass
-         * a zero node count, so the RMK will give us all the nodes it
-         * already has and won't try to allocate any more. */
-        status = HYD_RMKI_query_node_list(0, &HYD_handle.partition_list);
+    if (HYD_handle.proxy_list == NULL) {
+        /* Proxy list is not created yet. The user might not have
+         * provided the host file. Query the RMK. We pass a zero core
+         * count, so the RMK will give us all the nodes it already has
+         * and won't try to allocate any more. */
+        num_cores = 0;
+        status = HYD_rmki_query_node_list(&num_cores, &HYD_handle.proxy_list);
         HYDU_ERR_POP(status, "unable to query the RMK for a node list\n");
 
         /* We don't have an allocation capability yet, but when we do,
          * we should try it here. */
 
-        if (HYD_handle.partition_list == NULL) {
+        if (HYD_handle.proxy_list == NULL) {
             /* The RMK didn't give us anything back; use localhost */
-            HYD_handle.host_file = HYDU_strdup("HYDRA_USE_LOCALHOST");
+            status = HYDU_add_to_proxy_list((char *) "localhost", 1, &HYD_handle.proxy_list);
+            HYDU_ERR_POP(status, "unable to initialize proxy\n");
+            HYD_handle.global_core_count += 1;
+        }
+        else {
+            /* The RMK returned a node list */
+            HYD_handle.global_core_count += num_cores;
         }
     }
 
-    if (HYD_handle.host_file) {
-        /* Use the user specified host file */
-        status = HYDU_create_node_list_from_file(HYD_handle.host_file, &HYD_handle.partition_list);
-        HYDU_ERR_POP(status, "unable to create host list\n");
+    /* If the number of processes is not given, we allocate all the
+     * available nodes to each executable */
+    for (exec_info = HYD_handle.exec_info_list; exec_info; exec_info = exec_info->next) {
+        if (exec_info->process_count == 0) {
+            if (num_cores == 0)
+                exec_info->process_count = 1;
+            else
+                exec_info->process_count = num_cores;
+
+            /* If we didn't get anything from the user, take whatever
+             * the RMK gave */
+            HYD_handle.global_process_count += exec_info->process_count;
+        }
     }
 
-    /* Consolidate the environment list that we need to propagate */
-    status = HYD_UIU_create_env_list();
-    HYDU_ERR_POP(status, "unable to create env list\n");
-
-    status = HYD_UIU_merge_exec_info_to_partition();
-    HYDU_ERR_POP(status, "unable to merge exec info\n");
-
-    if (HYD_handle.debug)
-        HYD_UIU_print_params();
-
-    /* Figure out what the active partitions are: in RUNTIME and
-     * PERSISTENT modes, only partitions which have an executable are
+    /* Figure out what the active proxys are: in RUNTIME and
+     * PERSISTENT modes, only proxys which have an executable are
      * active. In BOOT, BOOT_FOREGROUND and SHUTDOWN modes, all
-     * partitions are active. */
-    if (HYD_handle.launch_mode == HYD_LAUNCH_RUNTIME ||
-        HYD_handle.launch_mode == HYD_LAUNCH_PERSISTENT) {
-        for (partition = HYD_handle.partition_list; partition && partition->exec_list;
-             partition = partition->next)
-            partition->base->active = 1;
+     * proxys are active. */
+    if (HYD_handle.user_global.launch_mode == HYD_LAUNCH_RUNTIME ||
+        HYD_handle.user_global.launch_mode == HYD_LAUNCH_PERSISTENT) {
+        for (proxy = HYD_handle.proxy_list;
+             proxy && (proxy->start_pid <= HYD_handle.global_process_count);
+             proxy = proxy->next)
+            proxy->active = 1;
     }
     else {
-        for (partition = HYD_handle.partition_list; partition; partition = partition->next)
-            partition->base->active = 1;
+        for (proxy = HYD_handle.proxy_list; proxy; proxy = proxy->next)
+            proxy->active = 1;
     }
 
-    HYDU_time_set(&HYD_handle.start, NULL); /* NULL implies right now */
+    status = HYD_uiu_merge_exec_info_to_proxy();
+    HYDU_ERR_POP(status, "unable to merge exec info\n");
+
+    if (HYD_handle.user_global.debug)
+        HYD_uiu_print_params();
+
+    HYDU_time_set(&HYD_handle.start, NULL);     /* NULL implies right now */
     if (getenv("MPIEXEC_TIMEOUT"))
         timeout = atoi(getenv("MPIEXEC_TIMEOUT"));
     else
         timeout = -1;   /* Set a negative timeout */
     HYDU_time_set(&HYD_handle.timeout, &timeout);
-    HYDU_Debug(HYD_handle.debug, "Timeout set to %d (-1 means infinite)\n", timeout);
+    if (HYD_handle.user_global.debug)
+        HYDU_dump(stdout, "Timeout set to %d (-1 means infinite)\n", timeout);
 
     if (HYD_handle.print_rank_map) {
-        FORALL_ACTIVE_PARTITIONS(partition, HYD_handle.partition_list) {
-            HYDU_Dump("[%s] ", partition->base->name);
+        FORALL_ACTIVE_PROXIES(proxy, HYD_handle.proxy_list) {
+            HYDU_dump_noprefix(stdout, "(%s:", proxy->hostname);
 
             process_id = 0;
-            for (exec = partition->exec_list; exec; exec = exec->next) {
+            for (exec = proxy->exec_list; exec; exec = exec->next) {
                 for (i = 0; i < exec->proc_count; i++) {
-                    HYDU_Dump("%d", HYDU_local_to_global_id(process_id++,
-                                                            partition->partition_core_count,
-                                                            partition->segment_list,
-                                                            HYD_handle.global_core_count));
-                    if (i < exec->proc_count - 1)
-                        HYDU_Dump(",");
+                    HYDU_dump_noprefix(stdout, "%d",
+                                       HYDU_local_to_global_id(process_id++,
+                                                               proxy->start_pid,
+                                                               proxy->proxy_core_count,
+                                                               HYD_handle.global_core_count));
+                    if (i < exec->proc_count - 1 || exec->next)
+                        HYDU_dump_noprefix(stdout, ",");
                 }
             }
-            HYDU_Dump("\n");
+            HYDU_dump_noprefix(stdout, ")\n");
         }
-        HYDU_Dump("\n");
     }
 
+    FORALL_ACTIVE_PROXIES(proxy, HYD_handle.proxy_list)
+    HYDU_MALLOC(proxy->exit_status, int *, proxy->proxy_process_count * sizeof(int), status);
+
     /* Launch the processes */
-    status = HYD_PMCI_launch_procs();
+    status = HYD_pmci_launch_procs();
     HYDU_ERR_POP(status, "process manager returned error launching processes\n");
 
     /* During shutdown, no processes are launched, so there is nothing
@@ -204,13 +233,13 @@ int main(int argc, char **argv)
      * instead of assuming this. For example, it is possible to have a
      * PM implementation that launches separate "new" proxies on a
      * different port and kills the original proxies using them. */
-    if (HYD_handle.launch_mode == HYD_LAUNCH_SHUTDOWN) {
+    if (HYD_handle.user_global.launch_mode == HYD_LAUNCH_SHUTDOWN) {
         /* Call finalize functions for lower layers to cleanup their resources */
-        status = HYD_PMCI_finalize();
+        status = HYD_pmci_finalize();
         HYDU_ERR_POP(status, "process manager error on finalize\n");
 
         /* Free the mpiexec params */
-        HYD_UIU_free_params();
+        HYD_uiu_free_params();
 
         exit_status = 0;
         goto fn_exit;
@@ -223,59 +252,60 @@ int main(int argc, char **argv)
     HYD_handle.stdin_buf_count = 0;
     HYD_handle.stdin_buf_offset = 0;
 
-    FORALL_ACTIVE_PARTITIONS(partition, HYD_handle.partition_list) {
-        if (partition->base->out != -1) {
-            status = HYD_DMX_register_fd(1, &partition->base->out, HYD_STDOUT, NULL,
-                                         HYD_UII_mpx_stdout_cb);
+    FORALL_ACTIVE_PROXIES(proxy, HYD_handle.proxy_list) {
+        if (proxy->out != -1) {
+            status = HYDT_dmx_register_fd(1, &proxy->out, HYD_STDOUT, NULL,
+                                          HYD_uii_mpx_stdout_cb);
             HYDU_ERR_POP(status, "demux returned error registering fd\n");
         }
 
-        if (partition->base->err != -1) {
-            status = HYD_DMX_register_fd(1, &partition->base->err, HYD_STDOUT, NULL,
-                                         HYD_UII_mpx_stderr_cb);
+        if (proxy->err != -1) {
+            status = HYDT_dmx_register_fd(1, &proxy->err, HYD_STDOUT, NULL,
+                                          HYD_uii_mpx_stderr_cb);
             HYDU_ERR_POP(status, "demux returned error registering fd\n");
         }
 
-        if (partition->base->in != -1) {
-            status = HYD_DMX_register_fd(1, &partition->base->in, HYD_STDIN, NULL,
-                                         HYD_UII_mpx_stdin_cb);
+        if (proxy->in != -1) {
+            status =
+                HYDT_dmx_register_fd(1, &proxy->in, HYD_STDIN, NULL, HYD_uii_mpx_stdin_cb);
             HYDU_ERR_POP(status, "demux returned error registering fd\n");
         }
     }
 
     /* Wait for their completion */
-    status = HYD_PMCI_wait_for_completion();
+    status = HYD_pmci_wait_for_completion();
     HYDU_ERR_POP(status, "process manager error waiting for completion\n");
 
     /* Check for the exit status for all the processes */
     if (HYD_handle.print_all_exitcodes)
-        HYDU_Dump("Exit codes: ");
+        HYDU_dump(stdout, "Exit codes: ");
     exit_status = 0;
-    FORALL_ACTIVE_PARTITIONS(partition, HYD_handle.partition_list) {
+    FORALL_ACTIVE_PROXIES(proxy, HYD_handle.proxy_list) {
         proc_count = 0;
-        for (exec = partition->exec_list; exec; exec = exec->next)
+        for (exec = proxy->exec_list; exec; exec = exec->next)
             proc_count += exec->proc_count;
         for (i = 0; i < proc_count; i++) {
             if (HYD_handle.print_all_exitcodes) {
-                HYDU_Dump("[%d]", HYDU_local_to_global_id(i, partition->partition_core_count,
-                                                          partition->segment_list,
-                                                          HYD_handle.global_core_count));
-                HYDU_Dump("%d", WEXITSTATUS(partition->exit_status[i]));
+                HYDU_dump_noprefix(stdout, "[%d]",
+                                   HYDU_local_to_global_id(i, proxy->start_pid,
+                                                           proxy->proxy_core_count,
+                                                           HYD_handle.global_core_count));
+                HYDU_dump_noprefix(stdout, "%d", WEXITSTATUS(proxy->exit_status[i]));
                 if (i < proc_count - 1)
-                    HYDU_Dump(",");
+                    HYDU_dump_noprefix(stdout, ",");
             }
-            exit_status |= partition->exit_status[i];
+            exit_status |= proxy->exit_status[i];
         }
     }
     if (HYD_handle.print_all_exitcodes)
-        HYDU_Dump("\n");
+        HYDU_dump_noprefix(stdout, "\n");
 
     /* Call finalize functions for lower layers to cleanup their resources */
-    status = HYD_PMCI_finalize();
+    status = HYD_pmci_finalize();
     HYDU_ERR_POP(status, "process manager error on finalize\n");
 
     /* Free the mpiexec params */
-    HYD_UIU_free_params();
+    HYD_uiu_free_params();
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -285,8 +315,13 @@ int main(int argc, char **argv)
         return -1;
     else {
         if (WIFSIGNALED(exit_status))
-            printf("%s\n", strsignal(exit_status));
-        return (WEXITSTATUS(exit_status));
+            printf("%s (signal %d)\n", strsignal(WTERMSIG(exit_status)),
+                   WTERMSIG(exit_status));
+        else if (WIFEXITED(exit_status))
+            return (WEXITSTATUS(exit_status));
+        else if (WIFSTOPPED(exit_status))
+            return (WSTOPSIG(exit_status));
+        return exit_status;
     }
 
   fn_fail:

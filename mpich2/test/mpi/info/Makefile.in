@@ -7,9 +7,6 @@ all: all-redirect
 
 SHELL           = @SHELL@
 master_top_srcdir  = @master_top_srcdir@
-bindir          = @bindir@
-exec_prefix     = @exec_prefix@
-prefix          = @prefix@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -29,7 +26,7 @@ INCLUDES = -I../include -I${srcdir}/../include
 .SUFFIXES:
 .SUFFIXES: .o .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
@@ -38,7 +35,7 @@ INCLUDES = -I../include -I${srcdir}/../include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -111,19 +108,15 @@ latexdoc:
 # --------------------------------------------------------------------------
 SOURCES         =  infodup.c infodel.c infovallen.c infoorder.c infomany.c \
 	infomany2.c infotest.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 
 # A special testing target to simplify running just the info tests
 testing:
 	../runtests -srcdir=$(srcdir) -tests=testlist \
-		   -mpiexec=$(bindir)/mpiexec \
+		   -mpiexec=@MPIEXEC@ \
 		   -xmlfile=summary.xml
 
 ../util/mtest.o:

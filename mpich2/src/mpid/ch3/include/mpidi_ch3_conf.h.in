@@ -15,6 +15,9 @@
 /* Define the number of CH3_RANK_BITS */
 #undef CH3_RANK_BITS
 
+/* Define if FTB is enabled */
+#undef ENABLE_FTB
+
 /* Define to 1 if you have the <arpa/inet.h> header file. */
 #undef HAVE_ARPA_INET_H
 
@@ -38,6 +41,9 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `ftb' library (-lftb). */
+#undef HAVE_LIBFTB
 
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H

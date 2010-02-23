@@ -12,7 +12,7 @@ Nondestructive test for the completion of a Request
 int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 </PRE>
 <H2>Input Parameter</H2>
-<DL><DT><B>request </B> <DD> request (handle)
+<DL><DT><B>request </B> <DD> request (handle).  May be <TT>MPI_REQUEST_NULL</TT>.
 </DL>
 <P>
 <H2>Output Parameters</H2>

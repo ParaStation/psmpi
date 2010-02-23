@@ -340,8 +340,9 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                 MPIU_Assert(MPIDI_Request_get_type(sreq) != MPIDI_REQUEST_TYPE_GET_RESP);
                 MPIDI_CH3U_Request_complete(sreq);
 
-                MPIDI_CH3I_SendQ_dequeue(CH3_NORMAL_QUEUE);
+                /* MT - clear the current active send before dequeuing/destroying the current request */
                 MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = NULL;
+                MPIDI_CH3I_SendQ_dequeue(CH3_NORMAL_QUEUE);
                 MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
             }
             else
@@ -466,7 +467,7 @@ void MPIDI_CH3I_Progress_wakeup(void)
 int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_Request *rreq;
+    MPID_Request *rreq = NULL;
     int complete;
     MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_HANDLE_PKT);

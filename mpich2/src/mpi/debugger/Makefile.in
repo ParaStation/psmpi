@@ -10,6 +10,9 @@ AR              = @AR@
 RANLIB          = @RANLIB@
 LIBTOOL         = @LIBTOOL@
 CREATESHLIB     = @CREATESHLIB@
+ABIVERSION      = @ABIVERSION@
+LIBS            = @LIBS@
+LDFLAGS         = @LDFLAGS@
 C_LINK_SHL      = @C_LINK_SHL@
 INSTALL         = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -27,7 +30,6 @@ exec_prefix     = @exec_prefix@
 prefix          = @prefix@
 DEFS            = @DEFS@ -I. -I${srcdir}
 CPPFLAGS        = @CPPFLAGS@
-LIBS            = @LIBS@
 MAKE            = @MAKE@
 MPILIBNAME      = @MPILIBNAME@
 PMPILIBNAME     = @PMPILIBNAME@
@@ -49,14 +51,14 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -67,7 +69,7 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -136,13 +138,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 
 .libstamp0 ../../../lib/lib${MPILIBNAME}.a: dbginit.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${MPILIBNAME}.a ; \
@@ -150,7 +152,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
 .libstamp1 ../../../lib/lib${MPILIBNAME}.la: dbginit.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -158,7 +160,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 libtvmpich2.la: dll_mpich2.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr libtvmpich2.la $?" ; \
 	else \
 	  echo ${AR} cr libtvmpich2.la $? ; \
@@ -184,7 +186,7 @@ latexdoc: ${mpi_sources}
 # Install target
 install:  FORCE_TARGET 
 	if [ ! -d ${DESTDIR}${libdir} ] ; then $(MKDIR_P) ${DESTDIR}${libdir} ; fi
-	if [ -s libtvmpich2.@SHLIB_EXT@ ] ; then $(CREATESHLIB) --mode=install libtvmpich2.@SHLIB_EXT@ ${DESTDIR}${libdir}/libtvmpich2.@SHLIB_EXT@ ; fi
+	if [ -s libtvmpich2.@SHLIB_EXT@ ] ; then $(CREATESHLIB) -version-info $(ABIVERSION) --mode=install libtvmpich2.@SHLIB_EXT@ ${DESTDIR}${libdir}/libtvmpich2.@SHLIB_EXT@ ; fi
 
 install-strip:
 	$(MAKE) INSTALL_STRIP_FLAG=-s install
@@ -199,18 +201,48 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/dbginit.d: $(srcdir)/dbginit.c
-	$(MAKE_DEPEND_C) -MT '_dbginit.o dbginit.o' $(srcdir)/dbginit.c >$(DEPS_DIR)/dbginit.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dbginit.c > $(DEPS_DIR)/dbginit.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dbginit.o dbginit.o dbginit.lo _dbginit.lo' $(srcdir)/dbginit.c >$(DEPS_DIR)/dbginit.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dbginit.o dbginit.o dbginit.lo _dbginit.lo' $(srcdir)/dbginit.c >$(DEPS_DIR)/dbginit.d
 $(DEPS_DIR)/timestamp: dbginit.c qdemo.c tvtest.c dll_mpich2.c dbgstub.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_dbginit.o dbginit.o' $(srcdir)/dbginit.c >$(DEPS_DIR)/dbginit.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dbginit.c > $(DEPS_DIR)/dbginit.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dbginit.o dbginit.o dbginit.lo _dbginit.lo' $(srcdir)/dbginit.c >$(DEPS_DIR)/dbginit.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dbginit.o dbginit.o dbginit.lo _dbginit.lo' $(srcdir)/dbginit.c >$(DEPS_DIR)/dbginit.d
 	echo "include $(DEPS_DIR)/dbginit.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_qdemo.o qdemo.o' $(srcdir)/qdemo.c >$(DEPS_DIR)/qdemo.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C qdemo.c > $(DEPS_DIR)/qdemo.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_qdemo.o qdemo.o qdemo.lo _qdemo.lo' $(srcdir)/qdemo.c >$(DEPS_DIR)/qdemo.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_qdemo.o qdemo.o qdemo.lo _qdemo.lo' $(srcdir)/qdemo.c >$(DEPS_DIR)/qdemo.d
 	echo "include $(DEPS_DIR)/qdemo.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_tvtest.o tvtest.o' $(srcdir)/tvtest.c >$(DEPS_DIR)/tvtest.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C tvtest.c > $(DEPS_DIR)/tvtest.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_tvtest.o tvtest.o tvtest.lo _tvtest.lo' $(srcdir)/tvtest.c >$(DEPS_DIR)/tvtest.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_tvtest.o tvtest.o tvtest.lo _tvtest.lo' $(srcdir)/tvtest.c >$(DEPS_DIR)/tvtest.d
 	echo "include $(DEPS_DIR)/tvtest.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_dll_mpich2.o dll_mpich2.o' $(srcdir)/dll_mpich2.c >$(DEPS_DIR)/dll_mpich2.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dll_mpich2.c > $(DEPS_DIR)/dll_mpich2.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dll_mpich2.o dll_mpich2.o dll_mpich2.lo _dll_mpich2.lo' $(srcdir)/dll_mpich2.c >$(DEPS_DIR)/dll_mpich2.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dll_mpich2.o dll_mpich2.o dll_mpich2.lo _dll_mpich2.lo' $(srcdir)/dll_mpich2.c >$(DEPS_DIR)/dll_mpich2.d
 	echo "include $(DEPS_DIR)/dll_mpich2.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_dbgstub.o dbgstub.o' $(srcdir)/dbgstub.c >$(DEPS_DIR)/dbgstub.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dbgstub.c > $(DEPS_DIR)/dbgstub.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dbgstub.o dbgstub.o dbgstub.lo _dbgstub.lo' $(srcdir)/dbgstub.c >$(DEPS_DIR)/dbgstub.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dbgstub.o dbgstub.o dbgstub.lo _dbgstub.lo' $(srcdir)/dbgstub.c >$(DEPS_DIR)/dbgstub.d
 	echo "include $(DEPS_DIR)/dbgstub.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -220,12 +252,8 @@ include $(DEPS_DIR)/alldeps
 # --------------------------------------------------------------------------
 SOURCES         =  tvtest.c dll_mpich2.c dbgstub.c qdemo.c dbginit.c \
 	dll_mpich2.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 # All of these routines are internal
 

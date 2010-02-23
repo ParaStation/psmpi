@@ -61,7 +61,9 @@ void MTest_Init_thread( int *argc, char ***argv, int required, int *provided )
 
     MPI_Initialized( &flag );
     if (!flag) {
-#if MPI_VERSION >= 2
+	/* Permit an MPI that claims only MPI 1 but includes the 
+	   MPI_Init_thread routine (e.g., IBM MPI) */
+#if MPI_VERSION >= 2 || defined(HAVE_MPI_INIT_THREAD)
 	MPI_Init_thread( argc, argv, required, provided );
 #else
 	MPI_Init( argc, argv );
@@ -100,6 +102,7 @@ void MTest_Init_thread( int *argc, char ***argv, int required, int *provided )
 void MTest_Init( int *argc, char ***argv )
 {
     int provided;
+    
     MTest_Init_thread( argc, argv, MPI_THREAD_SINGLE, &provided );
 }
 
@@ -1014,7 +1017,7 @@ int MTestGetIntracommGeneral( MPI_Comm *comm, int min_size, int allowSmaller )
 	    if (merr) MTestPrintError( merr );
 	    merr = MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 	    if (merr) MTestPrintError( merr );
-	    merr = MPI_Comm_split( MPI_COMM_WORLD, (rank < size/2), 
+	    merr = MPI_Comm_split( MPI_COMM_WORLD, ((rank < size/2) ? 1 : MPI_UNDEFINED),
 				   size-rank, comm );
 	    if (merr) MTestPrintError( merr );
 	    intraCommName = "Rank reverse of half of MPI_COMM_WORLD";
@@ -1055,8 +1058,6 @@ int MTestGetIntracommGeneral( MPI_Comm *comm, int min_size, int allowSmaller )
 	    else {
 		/* Act like default */
 		*comm = MPI_COMM_NULL;
-		isBasic = 1;
-		intraCommName = "MPI_COMM_NULL";
 		intraCommIdx = -1;
 	    }
 	}
@@ -1065,8 +1066,6 @@ int MTestGetIntracommGeneral( MPI_Comm *comm, int min_size, int allowSmaller )
 	    /* Other ideas: dup of self, cart comm, graph comm */
 	default:
 	    *comm = MPI_COMM_NULL;
-	    isBasic = 1;
-	    intraCommName = "MPI_COMM_NULL";
 	    intraCommIdx = -1;
 	    break;
 	}
@@ -1074,22 +1073,30 @@ int MTestGetIntracommGeneral( MPI_Comm *comm, int min_size, int allowSmaller )
 	if (*comm != MPI_COMM_NULL) {
 	    merr = MPI_Comm_size( *comm, &size );
 	    if (merr) MTestPrintError( merr );
-	    if (size >= min_size) 
+	    if (size >= min_size)
 		done = 1;
-	    else {
-		/* Try again */
-		if (!isBasic) {
-		    merr = MPI_Comm_free( comm );
-		    if (merr) MTestPrintError( merr );
-		}
-		intraCommIdx++;
-	    }
 	}
-	else
-	    done = 1;
+        else {
+            intraCommName = "MPI_COMM_NULL";
+            isBasic = 1;
+            done = 1;
+        }
+
+        /* we are only done if all processes are done */
+        MPI_Allreduce(MPI_IN_PLACE, &done, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
+
+        /* Advance the comm index whether we are done or not, otherwise we could
+         * spin forever trying to allocate a too-small communicator over and
+         * over again. */
+        intraCommIdx++;
+
+        if (!done && !isBasic && *comm != MPI_COMM_NULL) {
+            /* avoid leaking communicators */
+            merr = MPI_Comm_free(comm);
+            if (merr) MTestPrintError(merr);
+        }
     }
 
-    intraCommIdx++;
     return intraCommIdx;
 }
 
@@ -1115,13 +1122,18 @@ int MTestGetIntercomm( MPI_Comm *comm, int *isLeftGroup, int min_size )
 {
     int size, rank, remsize, merr;
     int done=0;
-    MPI_Comm mcomm;
+    MPI_Comm mcomm  = MPI_COMM_NULL;
+    MPI_Comm mcomm2 = MPI_COMM_NULL;
     int rleader;
 
     /* The while loop allows us to skip communicators that are too small.
        MPI_COMM_NULL is always considered large enough.  The size is
        the sum of the sizes of the local and remote groups */
     while (!done) {
+        *comm = MPI_COMM_NULL;
+        *isLeftGroup = 0;
+        interCommName = "MPI_COMM_NULL";
+
 	switch (interCommIdx) {
 	case 0:
 	    /* Split comm world in half */
@@ -1147,8 +1159,6 @@ int MTestGetIntercomm( MPI_Comm *comm, int *isLeftGroup, int min_size )
 		*isLeftGroup = rank < size/2;
 		merr = MPI_Intercomm_create( mcomm, 0, MPI_COMM_WORLD, rleader,
 					     12345, comm );
-		if (merr) MTestPrintError( merr );
-		merr = MPI_Comm_free( &mcomm );
 		if (merr) MTestPrintError( merr );
 		interCommName = "Intercomm by splitting MPI_COMM_WORLD";
 	    }
@@ -1180,11 +1190,9 @@ int MTestGetIntercomm( MPI_Comm *comm, int *isLeftGroup, int min_size )
 		merr = MPI_Intercomm_create( mcomm, 0, MPI_COMM_WORLD, 
 					     rleader, 12346, comm );
 		if (merr) MTestPrintError( merr );
-		merr = MPI_Comm_free( &mcomm );
-		if (merr) MTestPrintError( merr );
 		interCommName = "Intercomm by splitting MPI_COMM_WORLD into 1, rest";
 	    }
-	    else 
+	    else
 		*comm = MPI_COMM_NULL;
 	    break;
 
@@ -1212,8 +1220,6 @@ int MTestGetIntercomm( MPI_Comm *comm, int *isLeftGroup, int min_size )
 		*isLeftGroup = rank < 2;
 		merr = MPI_Intercomm_create( mcomm, 0, MPI_COMM_WORLD, 
 					     rleader, 12347, comm );
-		if (merr) MTestPrintError( merr );
-		merr = MPI_Comm_free( &mcomm );
 		if (merr) MTestPrintError( merr );
 		interCommName = "Intercomm by splitting MPI_COMM_WORLD into 2, rest";
 	    }
@@ -1246,14 +1252,13 @@ int MTestGetIntercomm( MPI_Comm *comm, int *isLeftGroup, int min_size )
 		merr = MPI_Intercomm_create( mcomm, 0, MPI_COMM_WORLD, rleader,
 					     12345, comm );
 		if (merr) MTestPrintError( merr );
+                /* avoid leaking after assignment below */
 		merr = MPI_Comm_free( &mcomm );
 		if (merr) MTestPrintError( merr );
 
 		/* now dup, some bugs only occur for dup's of intercomms */
 		mcomm = *comm;
 		merr = MPI_Comm_dup(mcomm, comm);
-		if (merr) MTestPrintError( merr );
-		merr = MPI_Comm_free( &mcomm );
 		if (merr) MTestPrintError( merr );
 		interCommName = "Intercomm by splitting MPI_COMM_WORLD then dup'ing";
 	    }
@@ -1286,6 +1291,7 @@ int MTestGetIntercomm( MPI_Comm *comm, int *isLeftGroup, int min_size )
 		merr = MPI_Intercomm_create( mcomm, 0, MPI_COMM_WORLD, rleader,
 					     12345, comm );
 		if (merr) MTestPrintError( merr );
+                /* avoid leaking after assignment below */
 		merr = MPI_Comm_free( &mcomm );
 		if (merr) MTestPrintError( merr );
 
@@ -1296,20 +1302,109 @@ int MTestGetIntercomm( MPI_Comm *comm, int *isLeftGroup, int min_size )
 		/* this split is effectively a dup but tests the split code paths */
 		merr = MPI_Comm_split(mcomm, 0, rank, comm);
 		if (merr) MTestPrintError( merr );
-		merr = MPI_Comm_free( &mcomm );
-		if (merr) MTestPrintError( merr );
 		interCommName = "Intercomm by splitting MPI_COMM_WORLD then then splitting again";
 	    }
-	    else 
+	    else
 		*comm = MPI_COMM_NULL;
 	    break;
 
+	case 5:
+            /* split comm world in half discarding rank 0 on the "left"
+             * communicator, then form them into an intercommunicator */
+	    merr = MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+	    if (merr) MTestPrintError( merr );
+	    merr = MPI_Comm_size( MPI_COMM_WORLD, &size );
+	    if (merr) MTestPrintError( merr );
+	    if (size >= 4) {
+                int color = (rank < size/2 ? 0 : 1);
+                if (rank == 0)
+                    color = MPI_UNDEFINED;
+
+		merr = MPI_Comm_split( MPI_COMM_WORLD, color, rank, &mcomm );
+		if (merr) MTestPrintError( merr );
+
+		if (rank == 1) {
+		    rleader = size/2;
+		}
+		else if (rank == (size/2)) {
+		    rleader = 1;
+		}
+		else {
+		    /* Remote leader is signficant only for the processes
+		       designated local leaders */
+		    rleader = -1;
+		}
+		*isLeftGroup = rank < size/2;
+                if (rank != 0) { /* 0's mcomm is MPI_COMM_NULL */
+                    merr = MPI_Intercomm_create( mcomm, 0, MPI_COMM_WORLD, rleader, 12345, comm );
+                    if (merr) MTestPrintError( merr );
+                }
+                interCommName = "Intercomm by splitting MPI_COMM_WORLD (discarding rank 0 in the left group) then MPI_Intercomm_create'ing";
+            }
+            else {
+                *comm = MPI_COMM_NULL;
+            }
+            break;
+
+        case 6:
+            /* Split comm world in half then form them into an
+             * intercommunicator.  Then discard rank 0 from each group of the
+             * intercomm via MPI_Comm_create. */
+	    merr = MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+	    if (merr) MTestPrintError( merr );
+	    merr = MPI_Comm_size( MPI_COMM_WORLD, &size );
+	    if (merr) MTestPrintError( merr );
+	    if (size >= 4) {
+                MPI_Group oldgroup, newgroup;
+                int ranks[1];
+                int color = (rank < size/2 ? 0 : 1);
+
+		merr = MPI_Comm_split( MPI_COMM_WORLD, color, rank, &mcomm );
+		if (merr) MTestPrintError( merr );
+
+		if (rank == 0) {
+		    rleader = size/2;
+		}
+		else if (rank == (size/2)) {
+		    rleader = 0;
+		}
+		else {
+		    /* Remote leader is signficant only for the processes
+		       designated local leaders */
+		    rleader = -1;
+		}
+		*isLeftGroup = rank < size/2;
+                merr = MPI_Intercomm_create( mcomm, 0, MPI_COMM_WORLD, rleader, 12345, &mcomm2 );
+                if (merr) MTestPrintError( merr );
+
+                /* We have an intercomm between the two halves of comm world. Now create
+                 * a new intercomm that removes rank 0 on each side. */
+                merr = MPI_Comm_group(mcomm2, &oldgroup);
+                if (merr) MTestPrintError( merr );
+                ranks[0] = 0;
+                merr = MPI_Group_excl(oldgroup, 1, ranks, &newgroup);
+                if (merr) MTestPrintError( merr );
+                merr = MPI_Comm_create(mcomm2, newgroup, comm);
+                if (merr) MTestPrintError( merr );
+
+                merr = MPI_Group_free(&oldgroup);
+                if (merr) MTestPrintError( merr );
+                merr = MPI_Group_free(&newgroup);
+                if (merr) MTestPrintError( merr );
+
+                interCommName = "Intercomm by splitting MPI_COMM_WORLD then discarding 0 ranks with MPI_Comm_create";
+            }
+            else {
+                *comm = MPI_COMM_NULL;
+            }
+            break;
+
 	default:
 	    *comm = MPI_COMM_NULL;
-	    interCommName = "MPI_COMM_NULL";
 	    interCommIdx = -1;
 	    break;
 	}
+
 	if (*comm != MPI_COMM_NULL) {
 	    merr = MPI_Comm_size( *comm, &size );
 	    if (merr) MTestPrintError( merr );
@@ -1317,11 +1412,36 @@ int MTestGetIntercomm( MPI_Comm *comm, int *isLeftGroup, int min_size )
 	    if (merr) MTestPrintError( merr );
 	    if (size + remsize >= min_size) done = 1;
 	}
-	else
+	else {
+	    interCommName = "MPI_COMM_NULL";
 	    done = 1;
+        }
+
+        /* we are only done if all processes are done */
+        MPI_Allreduce(MPI_IN_PLACE, &done, 1, MPI_INT, MPI_LAND, MPI_COMM_WORLD);
+
+        /* Advance the comm index whether we are done or not, otherwise we could
+         * spin forever trying to allocate a too-small communicator over and
+         * over again. */
+        interCommIdx++;
+
+        if (!done && *comm != MPI_COMM_NULL) {
+            /* avoid leaking communicators */
+            merr = MPI_Comm_free(comm);
+            if (merr) MTestPrintError(merr);
+        }
+
+        /* cleanup for common temp objects */
+        if (mcomm != MPI_COMM_NULL) {
+            merr = MPI_Comm_free(&mcomm);
+            if (merr) MTestPrintError( merr );
+        }
+        if (mcomm2 != MPI_COMM_NULL) {
+            merr = MPI_Comm_free(&mcomm2);
+            if (merr) MTestPrintError( merr );
+        }
     }
 
-    interCommIdx++;
     return interCommIdx;
 }
 /* Return the name of an intercommunicator */

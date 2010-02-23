@@ -11,72 +11,74 @@
 #include "hydra_utils.h"
 #include "pmi_common.h"
 
-struct HYD_PMCD_pmi_proxy_params {
-    /* Proxy details */
+struct HYD_pmcd_pmip {
+    struct HYD_user_global user_global;
+
     struct {
+        int global_core_count;
+
+        /* PMI */
+        char *pmi_port_str;
+    } system_global;            /* Global system parameters */
+
+    struct {
+        /* Upstream server contact information */
         char *server_name;
         int server_port;
-        HYD_Launch_mode_t launch_mode;
-        int partition_id;
-        char *bootstrap;
-        char *bootstrap_exec;
-        int enablex;
-        int debug;
-    } proxy;
 
-    char *wdir;
-    char *pmi_port_str;
-    HYD_Binding_t binding;
-    HYD_Bindlib_t bindlib;
-    char *user_bind_map;
-
-    HYD_Env_t *system_env;
-    HYD_Env_t *user_env;
-    HYD_Env_t *inherited_env;
-    HYD_Env_prop_t genv_prop;
-
-    int global_core_count;
-    int partition_core_count;
-    int exec_proc_count;
-
-    int procs_are_launched;
-
-    /* Process segmentation information for this partition */
-    struct HYD_Partition_segment *segment_list;
-    struct HYD_Partition_exec *exec_list;
-
-    struct {
         int out;
         int err;
         int in;
         int control;
     } upstream;
 
-    int *pid;
-    int *out;
-    int *err;
-    int *exit_status;
-    int in;
+    /* Currently our downstream only consists of actual MPI
+     * processes */
+    struct {
+        int *out;
+        int *err;
+        int in;
 
-    int stdin_buf_offset;
-    int stdin_buf_count;
-    char stdin_tmp_buf[HYD_TMPBUF_SIZE];
+        int *pid;
+        int *exit_status;
+    } downstream;
+
+    /* Proxy details */
+    struct {
+        int id;
+        char *hostname;
+
+        int proxy_core_count;
+        int proxy_process_count;
+
+        /* Flag to tell whether the processes are launched */
+        int procs_are_launched;
+
+        /* stdin related variables */
+        int stdin_buf_offset;
+        int stdin_buf_count;
+        char stdin_tmp_buf[HYD_TMPBUF_SIZE];
+    } local;
+
+    /* Process segmentation information for this proxy */
+    int start_pid;
+    struct HYD_proxy_exec *exec_list;
 };
 
-extern struct HYD_PMCD_pmi_proxy_params HYD_PMCD_pmi_proxy_params;
+extern struct HYD_pmcd_pmip HYD_pmcd_pmip;
 
 /* utils */
-HYD_Status HYD_PMCD_pmi_proxy_get_params(char **t_argv);
-HYD_Status HYD_PMCD_pmi_proxy_cleanup_params(void);
-HYD_Status HYD_PMCD_pmi_proxy_procinfo(int fd);
-HYD_Status HYD_PMCD_pmi_proxy_launch_procs(void);
-void HYD_PMCD_pmi_proxy_killjob(void);
+HYD_status HYD_pmcd_pmi_proxy_get_params(char **t_argv);
+HYD_status HYD_pmcd_pmi_proxy_cleanup_params(void);
+HYD_status HYD_pmcd_pmi_proxy_procinfo(int fd);
+HYD_status HYD_pmcd_pmi_proxy_launch_procs(void);
+void HYD_pmcd_pmi_proxy_killjob(void);
 
 /* callback */
-HYD_Status HYD_PMCD_pmi_proxy_control_connect_cb(int fd, HYD_Event_t events, void *userp);
-HYD_Status HYD_PMCD_pmi_proxy_control_cmd_cb(int fd, HYD_Event_t events, void *userp);
-HYD_Status HYD_PMCD_pmi_proxy_stdout_cb(int fd, HYD_Event_t events, void *userp);
-HYD_Status HYD_PMCD_pmi_proxy_stderr_cb(int fd, HYD_Event_t events, void *userp);
-HYD_Status HYD_PMCD_pmi_proxy_stdin_cb(int fd, HYD_Event_t events, void *userp);
+HYD_status HYD_pmcd_pmi_proxy_control_connect_cb(int fd, HYD_event_t events, void *userp);
+HYD_status HYD_pmcd_pmi_proxy_control_cmd_cb(int fd, HYD_event_t events, void *userp);
+HYD_status HYD_pmcd_pmi_proxy_stdout_cb(int fd, HYD_event_t events, void *userp);
+HYD_status HYD_pmcd_pmi_proxy_stderr_cb(int fd, HYD_event_t events, void *userp);
+HYD_status HYD_pmcd_pmi_proxy_stdin_cb(int fd, HYD_event_t events, void *userp);
 
 #endif /* PMI_PROXY_H_INCLUDED */

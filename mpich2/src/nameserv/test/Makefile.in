@@ -31,14 +31,14 @@ INCLUDES = -I${master_top_srcdir}/src/mpi/spawn
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -49,7 +49,7 @@ INCLUDES = -I${master_top_srcdir}/src/mpi/spawn
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -116,7 +116,12 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/timestamp: testnd.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/testnd.c >$(DEPS_DIR)/testnd.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C testnd.c > $(DEPS_DIR)/testnd.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/testnd.c >$(DEPS_DIR)/testnd.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/testnd.c >$(DEPS_DIR)/testnd.d
 	echo "include $(DEPS_DIR)/testnd.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -125,12 +130,8 @@ include $(DEPS_DIR)/alldeps
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  testnd.c
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 FORCE_TARGET:

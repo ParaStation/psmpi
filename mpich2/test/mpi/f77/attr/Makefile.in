@@ -28,7 +28,7 @@ F77HEADERS = attraints.h
 .SUFFIXES:
 .SUFFIXES: .o .f .txt 
 .f.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  FC              $<" ; \
 	else \
 	  echo $(F77_COMPILE) -c $< ; \
@@ -106,12 +106,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 SOURCES         =  baseattrf.f baseattr2f.f commattrf.f commattr2f.f \
 	commattr3f.f typeattrf.f typeattr2f.f typeattr3f.f 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 

@@ -35,14 +35,14 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -53,7 +53,7 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -118,13 +118,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 
 .libstamp0 ../../../lib/lib${MPILIBNAME}.a: getpname.o pcontrol.o version.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${MPILIBNAME}.a ; \
@@ -133,7 +133,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
 .libstamp1 ../../../lib/lib${MPILIBNAME}.la: getpname.lo pcontrol.lo \
 	version.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -143,13 +143,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 
 # --------------------------------------------------------------------------
 .libstamp2: _getpname.o _pcontrol.o _version.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${PMPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${PMPILIBNAME}.a ; \
@@ -157,7 +157,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@${RANLIB} ../../../lib/lib${PMPILIBNAME}.a
 	date > .libstamp2
 .libstamp3: _getpname.lo _pcontrol.lo _version.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $? ; \
@@ -165,42 +165,42 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _getpname.o: getpname.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/getpname.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/getpname.c -o _getpname.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/getpname.c -o _getpname.o
 _getpname.lo: getpname.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/getpname.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/getpname.c -o _getpname.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/getpname.c -o _getpname.lo
 _pcontrol.o: pcontrol.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/pcontrol.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pcontrol.c -o _pcontrol.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pcontrol.c -o _pcontrol.o
 _pcontrol.lo: pcontrol.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/pcontrol.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pcontrol.c -o _pcontrol.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pcontrol.c -o _pcontrol.lo
 _version.o: version.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/version.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/version.c -o _version.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/version.c -o _version.o
 _version.lo: version.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/version.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/version.c -o _version.lo ; \
@@ -224,18 +224,48 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/getpname.d: $(srcdir)/getpname.c
-	$(MAKE_DEPEND_C) -MT '_getpname.o getpname.o' $(srcdir)/getpname.c >$(DEPS_DIR)/getpname.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C getpname.c > $(DEPS_DIR)/getpname.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_getpname.o getpname.o getpname.lo _getpname.lo' $(srcdir)/getpname.c >$(DEPS_DIR)/getpname.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_getpname.o getpname.o getpname.lo _getpname.lo' $(srcdir)/getpname.c >$(DEPS_DIR)/getpname.d
 $(DEPS_DIR)/pcontrol.d: $(srcdir)/pcontrol.c
-	$(MAKE_DEPEND_C) -MT '_pcontrol.o pcontrol.o' $(srcdir)/pcontrol.c >$(DEPS_DIR)/pcontrol.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C pcontrol.c > $(DEPS_DIR)/pcontrol.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_pcontrol.o pcontrol.o pcontrol.lo _pcontrol.lo' $(srcdir)/pcontrol.c >$(DEPS_DIR)/pcontrol.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_pcontrol.o pcontrol.o pcontrol.lo _pcontrol.lo' $(srcdir)/pcontrol.c >$(DEPS_DIR)/pcontrol.d
 $(DEPS_DIR)/version.d: $(srcdir)/version.c
-	$(MAKE_DEPEND_C) -MT '_version.o version.o' $(srcdir)/version.c >$(DEPS_DIR)/version.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C version.c > $(DEPS_DIR)/version.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_version.o version.o version.lo _version.lo' $(srcdir)/version.c >$(DEPS_DIR)/version.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_version.o version.o version.lo _version.lo' $(srcdir)/version.c >$(DEPS_DIR)/version.d
 $(DEPS_DIR)/timestamp: ${mpi_sources} Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_getpname.o getpname.o' $(srcdir)/getpname.c >$(DEPS_DIR)/getpname.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C getpname.c > $(DEPS_DIR)/getpname.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_getpname.o getpname.o getpname.lo _getpname.lo' $(srcdir)/getpname.c >$(DEPS_DIR)/getpname.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_getpname.o getpname.o getpname.lo _getpname.lo' $(srcdir)/getpname.c >$(DEPS_DIR)/getpname.d
 	echo "include $(DEPS_DIR)/getpname.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_pcontrol.o pcontrol.o' $(srcdir)/pcontrol.c >$(DEPS_DIR)/pcontrol.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C pcontrol.c > $(DEPS_DIR)/pcontrol.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_pcontrol.o pcontrol.o pcontrol.lo _pcontrol.lo' $(srcdir)/pcontrol.c >$(DEPS_DIR)/pcontrol.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_pcontrol.o pcontrol.o pcontrol.lo _pcontrol.lo' $(srcdir)/pcontrol.c >$(DEPS_DIR)/pcontrol.d
 	echo "include $(DEPS_DIR)/pcontrol.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_version.o version.o' $(srcdir)/version.c >$(DEPS_DIR)/version.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C version.c > $(DEPS_DIR)/version.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_version.o version.o version.lo _version.lo' $(srcdir)/version.c >$(DEPS_DIR)/version.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_version.o version.o version.lo _version.lo' $(srcdir)/version.c >$(DEPS_DIR)/version.d
 	echo "include $(DEPS_DIR)/version.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -244,12 +274,8 @@ include $(DEPS_DIR)/alldeps
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  getpname.c pcontrol.c version.c
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 #
 

@@ -60,6 +60,7 @@ int MPI_Type_create_hvector(int count,
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *new_dtp;
     int ints[2];
+    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_HVECTOR);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -78,8 +79,11 @@ int MPI_Type_create_hvector(int count,
 	    MPIR_ERRTEST_DATATYPE(oldtype, "datatype", mpi_errno);
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-            MPID_Datatype_get_ptr(oldtype, datatype_ptr);
-	    MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+            if (HANDLE_GET_KIND(oldtype) != HANDLE_KIND_BUILTIN) {
+                MPID_Datatype_get_ptr(oldtype, datatype_ptr);
+                MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+            }
+            MPIR_ERRTEST_ARGNULL(newtype, "newtype", mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
@@ -101,7 +105,7 @@ int MPI_Type_create_hvector(int count,
     MPID_Datatype_get_ptr(*newtype, new_dtp);
     mpi_errno = MPID_Datatype_set_contents(new_dtp,
 				           MPI_COMBINER_HVECTOR,
-				           3, /* ints (count, blocklength) */
+				           2, /* ints (count, blocklength) */
 				           1, /* aints */
 				           1, /* types */
 				           ints,

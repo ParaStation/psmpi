@@ -12,10 +12,10 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ADDRESS( void*, MPI_Aint*, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_get_address__( void*, MPI_Aint*, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_get_address( void*, MPI_Aint*, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address__( void*, MPI_Aint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address( void*, MPI_Aint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak MPI_GET_ADDRESS = PMPI_GET_ADDRESS
@@ -44,19 +44,19 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint*, MPI_Fint
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ADDRESS( void*, MPI_Aint*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * );
 
 #pragma weak MPI_GET_ADDRESS = PMPI_GET_ADDRESS
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_get_address__( void*, MPI_Aint*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address__( void*, MPI_Aint *, MPI_Fint * );
 
 #pragma weak mpi_get_address__ = pmpi_get_address__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_get_address( void*, MPI_Aint*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address( void*, MPI_Aint *, MPI_Fint * );
 
 #pragma weak mpi_get_address = pmpi_get_address
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint *, MPI_Fint * );
 
 #pragma weak mpi_get_address_ = pmpi_get_address_
 #endif
@@ -90,10 +90,10 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint*, MPI_Fint
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ADDRESS( void*, MPI_Aint*, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_get_address__( void*, MPI_Aint*, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_get_address( void*, MPI_Aint*, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address__( void*, MPI_Aint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address( void*, MPI_Aint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak mpi_get_address__ = MPI_GET_ADDRESS
@@ -120,16 +120,16 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint*, MPI_Fint
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPI_GET_ADDRESS( void*, MPI_Aint*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address__( void*, MPI_Aint*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address__( void*, MPI_Aint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address_( void*, MPI_Aint*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address_( void*, MPI_Aint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address( void*, MPI_Aint*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address( void*, MPI_Aint *, MPI_Fint * );
 
 #endif
 
@@ -189,7 +189,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address( void*, MPI_Aint*, MPI_Fint
 #include "mpierrs.h"
 #include <stdio.h>
 #include "mpierror.h"
-FORT_DLL_SPEC void FORT_CALL mpi_get_address_ ( void*v1, MPI_Aint*v2, MPI_Fint *ierr ){
+FORT_DLL_SPEC void FORT_CALL mpi_get_address_ ( void*v1, MPI_Aint *v2, MPI_Fint *ierr ){
     MPI_Aint a;
     *ierr = MPI_Get_address( v1, &a );
 

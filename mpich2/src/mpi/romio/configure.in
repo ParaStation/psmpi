@@ -721,12 +721,29 @@ AC_C_INLINE
 # Header files
 # Find the CPP before the header check
 AC_PROG_CPP
-AC_CHECK_HEADERS(unistd.h fcntl.h malloc.h stddef.h)
+AC_CHECK_HEADERS([unistd.h fcntl.h malloc.h stddef.h sys/types.h])
 #
-CROSS_SIZEOF_INT=${CROSS_SIZEOF_INT:-0}
-CROSS_SIZEOF_VOID_P=${CROSS_SIZEOF_VOID_P:-0}
-AC_CHECK_SIZEOF(int,$CROSS_SIZEOF_INT)
-AC_CHECK_SIZEOF(void *,$CROSS_SIZEOF_VOID_P)
+
+# When compiling ROMIO on Darwin with _POSIX_C_SOURCE defined (such as when
+# using --enable-strict in MPICH2), sys/types.h does not define u_short and
+# friends unless _DARWIN_C_SOURCE is also defined (see compat(5) on a Darwin
+# box).  This would normally be fine, except sys/stat.h defines struct stat to
+# use u_long, so strict compiles fail.  One option is to also compile with
+# _DARWIN_C_SOURCE, but this disables much of the strictness that is intended
+# by _POSIX_C_SOURCE.  Instead we just define our own types if they are not
+# provided by the system.  This isn't quite as safe as typedef'ing the
+# replacement types, but it will apply to later configure tests, which is
+# important.
+AC_CHECK_TYPE([u_char],[],[AC_DEFINE_UNQUOTED([u_char],[unsigned char],[Define to "unsigned char" if sys/types.h does not define.])])
+AC_CHECK_TYPE([u_short],[],[AC_DEFINE_UNQUOTED([u_short],[unsigned short],[Define to "unsigned short" if sys/types.h does not define.])])
+AC_CHECK_TYPE([u_int],[],[AC_DEFINE_UNQUOTED([u_int],[unsigned int],[Define to "unsigned int" if sys/types.h does not define.])])
+AC_CHECK_TYPE([u_long],[],[AC_DEFINE_UNQUOTED([u_long],[unsigned long],[Define to "unsigned long" if sys/types.h does not define.])])
+
+# must come _after_ the above checks for u_char/u_short/u_int/u_long
+AC_CHECK_HEADERS([sys/attr.h])
+
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(void *)
 AC_CACHE_CHECK([for int large enough for pointers],
 pac_cv_int_hold_pointer,[
 if test "$ac_cv_sizeof_int" = "0" -o \
@@ -743,14 +760,10 @@ if test "$pac_cv_int_hold_pointer" != yes ; then
     dnl Switch to a conforming name (start with HAVE or USE)
     AC_DEFINE(HAVE_INT_LT_POINTER,1,[Define if int smaller than pointer])
 fi
-#
-dnl The original ROMIO configure used a set of complex tests here; this
-dnl is a partial reworking using the autoconf2 sizeof macros, and allowing
-dnl for the standardized CROSS_xxx varaibles for cross-compilation environments
+
 # LL is the printf-style format name for output of a MPI_Offset.
 # We have to match this to the type that we use for MPI_Offset.
-CROSS_SIZEOF_LONG_LONG=${CROSS_SIZEOF_LONG_LONG:-0}
-AC_CHECK_SIZEOF(long long,$CROSS_SIZEOF_LONG_LONG)
+AC_CHECK_SIZEOF(long long)
 if test "$ac_cv_sizeof_long_long" != 0 ; then
     if test "$ac_cv_sizeof_long_long" = "8" ; then
        AC_DEFINE(HAVE_LONG_LONG_64,1,[Define if long long is 64 bits])
@@ -2054,7 +2067,7 @@ AC_CHECK_HEADERS(unistd.h,
 echo "setting SYSDEP_INC to $SYSDEP_INC"
 AC_SUBST(SYSDEP_INC)
 
-PAC_C_RESTRICT
+AC_C_RESTRICT
 PAC_C_GNU_ATTRIBUTE
 
 echo "setting CC to $CC"

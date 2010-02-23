@@ -46,16 +46,19 @@ mpi_sources = sendf.c recvf.c get_countf.c bsendf.c ssendf.c rsendf.c \
 	packesizef.c reqgetstatf.c typedarrayf.c typechindf.c typechvecf.c \
 	typecindbf.c typecresizef.c typecstructf.c typecsubarrf.c \
 	typegetextentf.c typegtextf.c unpackextf.c wincreerrf.c wingeterrf.c \
-	winseterrf.c file_openf.c file_closef.c file_deletef.c file_set_sizef.c \
-	file_preallocatef.c file_get_sizef.c file_get_groupf.c \
-	file_get_amodef.c file_set_infof.c file_get_infof.c file_set_viewf.c \
-	file_get_viewf.c file_read_atf.c file_read_at_allf.c file_write_atf.c \
-	file_write_at_allf.c file_iread_atf.c file_iwrite_atf.c file_readf.c \
-	file_read_allf.c file_writef.c file_write_allf.c file_ireadf.c \
-	file_iwritef.c file_seekf.c file_get_positionf.c \
-	file_get_byte_offsetf.c file_read_sharedf.c file_write_sharedf.c \
-	file_iread_sharedf.c file_iwrite_sharedf.c file_read_orderedf.c \
-	file_write_orderedf.c file_seek_sharedf.c file_get_position_sharedf.c \
+	winseterrf.c reduce_localf.c op_commutativef.c reduce_scatter_blockf.c \
+	dist_graph_create_adjacentf.c dist_graph_createf.c \
+	dist_graph_neighbors_countf.c dist_graph_neighborsf.c file_openf.c \
+	file_closef.c file_deletef.c file_set_sizef.c file_preallocatef.c \
+	file_get_sizef.c file_get_groupf.c file_get_amodef.c file_set_infof.c \
+	file_get_infof.c file_set_viewf.c file_get_viewf.c file_read_atf.c \
+	file_read_at_allf.c file_write_atf.c file_write_at_allf.c \
+	file_iread_atf.c file_iwrite_atf.c file_readf.c file_read_allf.c \
+	file_writef.c file_write_allf.c file_ireadf.c file_iwritef.c \
+	file_seekf.c file_get_positionf.c file_get_byte_offsetf.c \
+	file_read_sharedf.c file_write_sharedf.c file_iread_sharedf.c \
+	file_iwrite_sharedf.c file_read_orderedf.c file_write_orderedf.c \
+	file_seek_sharedf.c file_get_position_sharedf.c \
 	file_read_at_all_beginf.c file_read_at_all_endf.c \
 	file_write_at_all_beginf.c file_write_at_all_endf.c \
 	file_read_all_beginf.c file_read_all_endf.c file_write_all_beginf.c \
@@ -122,6 +125,9 @@ wrap_objs = _wsendf.o _wrecvf.o _wget_countf.o _wbsendf.o _wssendf.o _wrsendf.o 
 	_wtypechindf.o _wtypechvecf.o _wtypecindbf.o _wtypecresizef.o \
 	_wtypecstructf.o _wtypecsubarrf.o _wtypegetextentf.o _wtypegtextf.o \
 	_wunpackextf.o _wwincreerrf.o _wwingeterrf.o _wwinseterrf.o \
+	_wreduce_localf.o _wop_commutativef.o _wreduce_scatter_blockf.o \
+	_wdist_graph_create_adjacentf.o _wdist_graph_createf.o \
+	_wdist_graph_neighbors_countf.o _wdist_graph_neighborsf.o \
 	_wfile_openf.o _wfile_closef.o _wfile_deletef.o _wfile_set_sizef.o \
 	_wfile_preallocatef.o _wfile_get_sizef.o _wfile_get_groupf.o \
 	_wfile_get_amodef.o _wfile_set_infof.o _wfile_get_infof.o \
@@ -221,29 +227,33 @@ maintainerclean-local:
 	typedarrayf.c typechindf.c typechvecf.c typecindbf.c typecresizef.c \
 	typecstructf.c typecsubarrf.c typegetextentf.c typegtextf.c \
 	unpackextf.c 
-	rm -f wincreerrf.c wingeterrf.c winseterrf.c file_openf.c file_closef.c \
-	file_deletef.c file_set_sizef.c file_preallocatef.c file_get_sizef.c \
-	file_get_groupf.c file_get_amodef.c file_set_infof.c file_get_infof.c \
-	file_set_viewf.c file_get_viewf.c file_read_atf.c file_read_at_allf.c \
-	file_write_atf.c file_write_at_allf.c file_iread_atf.c 
-	rm -f file_iwrite_atf.c file_readf.c file_read_allf.c file_writef.c \
+	rm -f wincreerrf.c wingeterrf.c winseterrf.c reduce_localf.c op_commutativef.c \
+	reduce_scatter_blockf.c dist_graph_create_adjacentf.c \
+	dist_graph_createf.c dist_graph_neighbors_countf.c \
+	dist_graph_neighborsf.c file_openf.c file_closef.c file_deletef.c \
+	file_set_sizef.c file_preallocatef.c file_get_sizef.c file_get_groupf.c \
+	file_get_amodef.c file_set_infof.c file_get_infof.c 
+	rm -f file_set_viewf.c file_get_viewf.c file_read_atf.c file_read_at_allf.c \
+	file_write_atf.c file_write_at_allf.c file_iread_atf.c \
+	file_iwrite_atf.c file_readf.c file_read_allf.c file_writef.c \
 	file_write_allf.c file_ireadf.c file_iwritef.c file_seekf.c \
 	file_get_positionf.c file_get_byte_offsetf.c file_read_sharedf.c \
-	file_write_sharedf.c file_iread_sharedf.c file_iwrite_sharedf.c \
-	file_read_orderedf.c file_write_orderedf.c file_seek_sharedf.c \
-	file_get_position_sharedf.c file_read_at_all_beginf.c \
-	file_read_at_all_endf.c 
-	rm -f file_write_at_all_beginf.c file_write_at_all_endf.c \
+	file_write_sharedf.c file_iread_sharedf.c 
+	rm -f file_iwrite_sharedf.c file_read_orderedf.c file_write_orderedf.c \
+	file_seek_sharedf.c file_get_position_sharedf.c \
+	file_read_at_all_beginf.c file_read_at_all_endf.c \
+	file_write_at_all_beginf.c file_write_at_all_endf.c \
 	file_read_all_beginf.c file_read_all_endf.c file_write_all_beginf.c \
 	file_write_all_endf.c file_read_ordered_beginf.c \
 	file_read_ordered_endf.c file_write_ordered_beginf.c \
 	file_write_ordered_endf.c file_get_type_extentf.c register_datarepf.c \
-	file_set_atomicityf.c file_get_atomicityf.c file_syncf.c initf.c \
-	initthreadf.c pcontrolf.c addressf.c getaddressf.c 
-	rm -f wtimef.c wtickf.c keyval_createf.c dup_fnf.c null_del_fnf.c \
-	null_copy_fnf.c dup_comm_fnf.c null_comm_del_fnf.c null_comm_copy_fnf.c \
-	dup_win_fnf.c null_win_del_fnf.c null_win_copy_fnf.c dup_type_fnf.c \
-	null_type_del_fnf.c null_type_copy_fnf.c statusf2c.c statusc2f.c 
+	file_set_atomicityf.c 
+	rm -f file_get_atomicityf.c file_syncf.c initf.c initthreadf.c pcontrolf.c \
+	addressf.c getaddressf.c wtimef.c wtickf.c keyval_createf.c dup_fnf.c \
+	null_del_fnf.c null_copy_fnf.c dup_comm_fnf.c null_comm_del_fnf.c \
+	null_comm_copy_fnf.c dup_win_fnf.c null_win_del_fnf.c \
+	null_win_copy_fnf.c dup_type_fnf.c 
+	rm -f null_type_del_fnf.c null_type_copy_fnf.c statusf2c.c statusc2f.c 
 	rm -f Makefile.sm
 _wsendf.o: sendf.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
@@ -3575,6 +3585,111 @@ _wwinseterrf.lo: winseterrf.c
 	fi
 	@$(C_COMPILE_SHL) -o _swwinseterrf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/winseterrf.c
 	@mv -f _swwinseterrf.o _wwinseterrf.lo
+_wreduce_localf.o: reduce_localf.c
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC             -o _wreduce_localf.o -c -D... $(srcdir)/reduce_localf.c" ; \
+	else \
+	  echo "$(C_COMPILE) -o _wreduce_localf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/reduce_localf.c" ; \
+	fi
+	@$(C_COMPILE) -o _wreduce_localf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/reduce_localf.c
+_wreduce_localf.lo: reduce_localf.c
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC             -o _swreduce_localf.o -c -D... $(srcdir)/reduce_localf.c" ; \
+	else \
+	  echo "$(C_COMPILE_SHL) -o _swreduce_localf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/reduce_localf.c" ; \
+	fi
+	@$(C_COMPILE_SHL) -o _swreduce_localf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/reduce_localf.c
+	@mv -f _swreduce_localf.o _wreduce_localf.lo
+_wop_commutativef.o: op_commutativef.c
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC             -o _wop_commutativef.o -c -D... $(srcdir)/op_commutativef.c" ; \
+	else \
+	  echo "$(C_COMPILE) -o _wop_commutativef.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/op_commutativef.c" ; \
+	fi
+	@$(C_COMPILE) -o _wop_commutativef.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/op_commutativef.c
+_wop_commutativef.lo: op_commutativef.c
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC             -o _swop_commutativef.o -c -D... $(srcdir)/op_commutativef.c" ; \
+	else \
+	  echo "$(C_COMPILE_SHL) -o _swop_commutativef.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/op_commutativef.c" ; \
+	fi
+	@$(C_COMPILE_SHL) -o _swop_commutativef.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/op_commutativef.c
+	@mv -f _swop_commutativef.o _wop_commutativef.lo
+_wreduce_scatter_blockf.o: reduce_scatter_blockf.c
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC             -o _wreduce_scatter_blockf.o -c -D... $(srcdir)/reduce_scatter_blockf.c" ; \
+	else \
+	  echo "$(C_COMPILE) -o _wreduce_scatter_blockf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/reduce_scatter_blockf.c" ; \
+	fi
+	@$(C_COMPILE) -o _wreduce_scatter_blockf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/reduce_scatter_blockf.c
+_wreduce_scatter_blockf.lo: reduce_scatter_blockf.c
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC             -o _swreduce_scatter_blockf.o -c -D... $(srcdir)/reduce_scatter_blockf.c" ; \
+	else \
+	  echo "$(C_COMPILE_SHL) -o _swreduce_scatter_blockf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/reduce_scatter_blockf.c" ; \
+	fi
+	@$(C_COMPILE_SHL) -o _swreduce_scatter_blockf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/reduce_scatter_blockf.c
+	@mv -f _swreduce_scatter_blockf.o _wreduce_scatter_blockf.lo
+_wdist_graph_create_adjacentf.o: dist_graph_create_adjacentf.c
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC             -o _wdist_graph_create_adjacentf.o -c -D... $(srcdir)/dist_graph_create_adjacentf.c" ; \
+	else \
+	  echo "$(C_COMPILE) -o _wdist_graph_create_adjacentf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_create_adjacentf.c" ; \
+	fi
+	@$(C_COMPILE) -o _wdist_graph_create_adjacentf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_create_adjacentf.c
+_wdist_graph_create_adjacentf.lo: dist_graph_create_adjacentf.c
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC             -o _swdist_graph_create_adjacentf.o -c -D... $(srcdir)/dist_graph_create_adjacentf.c" ; \
+	else \
+	  echo "$(C_COMPILE_SHL) -o _swdist_graph_create_adjacentf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_create_adjacentf.c" ; \
+	fi
+	@$(C_COMPILE_SHL) -o _swdist_graph_create_adjacentf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_create_adjacentf.c
+	@mv -f _swdist_graph_create_adjacentf.o _wdist_graph_create_adjacentf.lo
+_wdist_graph_createf.o: dist_graph_createf.c
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC             -o _wdist_graph_createf.o -c -D... $(srcdir)/dist_graph_createf.c" ; \
+	else \
+	  echo "$(C_COMPILE) -o _wdist_graph_createf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_createf.c" ; \
+	fi
+	@$(C_COMPILE) -o _wdist_graph_createf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_createf.c
+_wdist_graph_createf.lo: dist_graph_createf.c
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC             -o _swdist_graph_createf.o -c -D... $(srcdir)/dist_graph_createf.c" ; \
+	else \
+	  echo "$(C_COMPILE_SHL) -o _swdist_graph_createf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_createf.c" ; \
+	fi
+	@$(C_COMPILE_SHL) -o _swdist_graph_createf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_createf.c
+	@mv -f _swdist_graph_createf.o _wdist_graph_createf.lo
+_wdist_graph_neighbors_countf.o: dist_graph_neighbors_countf.c
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC             -o _wdist_graph_neighbors_countf.o -c -D... $(srcdir)/dist_graph_neighbors_countf.c" ; \
+	else \
+	  echo "$(C_COMPILE) -o _wdist_graph_neighbors_countf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_neighbors_countf.c" ; \
+	fi
+	@$(C_COMPILE) -o _wdist_graph_neighbors_countf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_neighbors_countf.c
+_wdist_graph_neighbors_countf.lo: dist_graph_neighbors_countf.c
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC             -o _swdist_graph_neighbors_countf.o -c -D... $(srcdir)/dist_graph_neighbors_countf.c" ; \
+	else \
+	  echo "$(C_COMPILE_SHL) -o _swdist_graph_neighbors_countf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_neighbors_countf.c" ; \
+	fi
+	@$(C_COMPILE_SHL) -o _swdist_graph_neighbors_countf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_neighbors_countf.c
+	@mv -f _swdist_graph_neighbors_countf.o _wdist_graph_neighbors_countf.lo
+_wdist_graph_neighborsf.o: dist_graph_neighborsf.c
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC             -o _wdist_graph_neighborsf.o -c -D... $(srcdir)/dist_graph_neighborsf.c" ; \
+	else \
+	  echo "$(C_COMPILE) -o _wdist_graph_neighborsf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_neighborsf.c" ; \
+	fi
+	@$(C_COMPILE) -o _wdist_graph_neighborsf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_neighborsf.c
+_wdist_graph_neighborsf.lo: dist_graph_neighborsf.c
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC             -o _swdist_graph_neighborsf.o -c -D... $(srcdir)/dist_graph_neighborsf.c" ; \
+	else \
+	  echo "$(C_COMPILE_SHL) -o _swdist_graph_neighborsf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_neighborsf.c" ; \
+	fi
+	@$(C_COMPILE_SHL) -o _swdist_graph_neighborsf.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/dist_graph_neighborsf.c
+	@mv -f _swdist_graph_neighborsf.o _wdist_graph_neighborsf.lo
 _wfile_openf.o: file_openf.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
 	  echo "  CC             -o _wfile_openf.o -c -D... $(srcdir)/file_openf.c" ; \

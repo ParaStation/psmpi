@@ -9,26 +9,26 @@
 #include "mpiexec.h"
 #include "demux.h"
 
-static HYD_Status close_fd(int fd)
+static HYD_status close_fd(int fd)
 {
-    struct HYD_Partition *partition;
-    HYD_Status status = HYD_SUCCESS;
+    struct HYD_proxy *proxy;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
     /* Deregister the FD with the demux engine and close it. */
-    status = HYD_DMX_deregister_fd(fd);
+    status = HYDT_dmx_deregister_fd(fd);
     HYDU_ERR_SETANDJUMP1(status, status, "error deregistering fd %d\n", fd);
     close(fd);
 
     /* Find the FD in the HYD_handle and remove it. */
-    FORALL_ACTIVE_PARTITIONS(partition, HYD_handle.partition_list) {
-        if (partition->base->out == fd) {
-            partition->base->out = -1;
+    FORALL_ACTIVE_PROXIES(proxy, HYD_handle.proxy_list) {
+        if (proxy->out == fd) {
+            proxy->out = -1;
             goto fn_exit;
         }
-        if (partition->base->err == fd) {
-            partition->base->err = -1;
+        if (proxy->err == fd) {
+            proxy->err = -1;
             goto fn_exit;
         }
     }
@@ -42,10 +42,10 @@ static HYD_Status close_fd(int fd)
 }
 
 
-HYD_Status HYD_UII_mpx_stdout_cb(int fd, HYD_Event_t events, void *userp)
+HYD_status HYD_uii_mpx_stdout_cb(int fd, HYD_event_t events, void *userp)
 {
     int closed;
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
@@ -69,10 +69,10 @@ HYD_Status HYD_UII_mpx_stdout_cb(int fd, HYD_Event_t events, void *userp)
     goto fn_exit;
 }
 
-HYD_Status HYD_UII_mpx_stderr_cb(int fd, HYD_Event_t events, void *userp)
+HYD_status HYD_uii_mpx_stderr_cb(int fd, HYD_event_t events, void *userp)
 {
     int closed;
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
@@ -97,15 +97,16 @@ HYD_Status HYD_UII_mpx_stderr_cb(int fd, HYD_Event_t events, void *userp)
 }
 
 
-HYD_Status HYD_UII_mpx_stdin_cb(int fd, HYD_Event_t events, void *userp)
+HYD_status HYD_uii_mpx_stdin_cb(int fd, HYD_event_t events, void *userp)
 {
     int closed;
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
     status = HYDU_sock_stdin_cb(fd, events, 0, HYD_handle.stdin_tmp_buf,
-                                &HYD_handle.stdin_buf_count, &HYD_handle.stdin_buf_offset, &closed);
+                                &HYD_handle.stdin_buf_count, &HYD_handle.stdin_buf_offset,
+                                &closed);
     HYDU_ERR_POP(status, "stdin callback error\n");
 
     if (closed) {

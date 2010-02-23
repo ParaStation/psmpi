@@ -25,14 +25,14 @@ VPATH = .:@srcdir@
 .SUFFIXES:
 .SUFFIXES: .o .lo .f90 .txt 
 .f90.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  F90             $<" ; \
 	else \
 	  echo $(F90_COMPILE) -c $< ; \
 	fi
 	@$(F90_COMPILE) -c $<
 .f90.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  F90             $<" ; \
 	else \
 	  echo $(F90_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -63,8 +63,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o sizeof
-	-@rm -f sizeof.exe
+	-@rm -f *.o ${srcdir}/*.o sizeof2
+	-@rm -f sizeof2.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -82,11 +82,11 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: sizeof
+all-redirect: sizeof2
 
 coverage: 
-sizeof: sizeof.o   
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o sizeof sizeof.o  ${LIBS}
+sizeof2: sizeof2.o   
+	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o sizeof2 sizeof2.o  ${LIBS}
 # --------------------------------------------------------------------------
 htmldoc:
 mandoc:
@@ -95,13 +95,9 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  sizeof.f90
-ETAGS           = @ETAGS@ @ETAGSADD@
+SOURCES         =  sizeof2.f90
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 FORCE_TARGET:

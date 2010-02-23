@@ -135,6 +135,11 @@ dnl PAC_PROG_C_BROKEN_COMMON
 AC_CHECK_PROG(AR, ar, ar, ;)
 AC_PROG_RANLIB
 
+AC_PROG_CC_C_O
+# set CC_DOES_C_O to the value of \${ac_cv_prog_cc_${ac_cc}_c_o}
+eval CC_DOES_C_O=\${ac_cv_prog_cc_${ac_cc}_c_o}
+AC_SUBST(CC_DOES_C_O)
+
 dnl  We need to check that this has worked.  The autoconf macro is broken
 AC_PROG_CPP
 if test "$CPP" = "/lib/cpp" -a ! -x /lib/cpp ; then
@@ -174,7 +179,7 @@ fi
 AC_HEADER_STDC
 AC_C_CONST
 
-AC_CHECK_SIZEOF( void *, $CROSS_SIZEOF_VOID_P )
+AC_CHECK_SIZEOF(void *)
 AC_MSG_CHECKING(for long pointer)
 if test "$ac_cv_sizeof_void_p" -gt 4 ; then
     AC_DEFINE( POINTER_64_BITS, 1, [Define if pointers are 64 bits] )

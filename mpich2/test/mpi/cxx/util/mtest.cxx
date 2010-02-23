@@ -418,13 +418,14 @@ int MTestCheckRecv( MPI::Status &status, MTestDatatype *recvtype )
     int count;
     int errs = 0;
 
-    if (status != MPI_STATUS_IGNORE) {
-	count = status.Get_count( recvtype->datatype );
-	
-	/* Check count against expected count */
-	if (count != recvtype->count) {
-	    errs ++;
-	}
+    /* Note that status may not be MPI_STATUS_IGNORE; C++ doesn't include 
+       MPI_STATUS_IGNORE, instead using different function prototypes that
+       do not include the status argument */
+    count = status.Get_count( recvtype->datatype );
+    
+    /* Check count against expected count */
+    if (count != recvtype->count) {
+	errs ++;
     }
 
     /* Check received data */
@@ -592,6 +593,10 @@ int MTestGetIntercomm( MPI::Intercomm &comm, int &isLeftGroup, int min_size )
        MPI::COMM_NULL is always considered large enough.  The size is
        the sum of the sizes of the local and remote groups */
     while (!done) {
+	comm          = MPI::COMM_NULL;
+	isLeftGroup   = 0;
+	interCommName = "MPI_COMM_NULL";
+
 	switch (interCommIdx) {
 	case 0:
 	    /* Split comm world in half */
@@ -685,7 +690,14 @@ int MTestGetIntercomm( MPI::Intercomm &comm, int &isLeftGroup, int min_size )
 	    done = true;
     }
 
+    /* we are only done if all processes are done */
+    MPI::COMM_WORLD.Allreduce(MPI_IN_PLACE, &done, 1, MPI::INT, MPI::LAND);
+
     interCommIdx++;
+
+    if (!done && comm != MPI::COMM_NULL) {
+	comm.Free();
+    }
     return interCommIdx;
 }
 /* Return the name of an intercommunicator */

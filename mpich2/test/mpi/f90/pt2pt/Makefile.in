@@ -27,7 +27,7 @@ F90INCLUDES = -I.
 .SUFFIXES:
 .SUFFIXES: .o .f90 .txt 
 .f90.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  F90             $<" ; \
 	else \
 	  echo $(F90_COMPILE) -c $< ; \
@@ -92,12 +92,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  statusesf90.f90 greqf90.f90
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 # This Makefile.sm generated automatically by f77tof90
 # from test/mpi/f77/pt2pt/Makefile.sm.  DO NOT EDIT

@@ -51,6 +51,7 @@ darray-pack_SOURCES = darray-pack.c
 darray-pack_LDADD = ../util/mtest.o
 
 subarray-pack_SOURCES = subarray-pack.c
+subarray_SOURCES = subarray.c
 
 blockindexed-misc_SOURCES = blockindexed-misc.c
 
@@ -119,7 +120,7 @@ zeroblks_LDADD = ../util/mtest.o
 # A special testing target to simplify running just the datatype tests
 testing:
 	../runtests -srcdir=$(srcdir) -tests=testlist \
-		   -mpiexec=$(bindir)/mpiexec \
+		   -mpiexec=@MPIEXEC@ \
 		   -xmlfile=summary.xml
 
 clean-local:

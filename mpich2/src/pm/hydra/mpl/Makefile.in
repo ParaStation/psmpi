@@ -41,12 +41,11 @@ POST_UNINSTALL = :
 subdir = .
 DIST_COMMON = $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(top_srcdir)/configure \
-	$(top_srcdir)/include/mplconf.h.in confdb/README \
-	confdb/config.guess confdb/config.sub confdb/depcomp \
-	confdb/install-sh confdb/missing
+	$(top_srcdir)/include/config.h.in confdb/config.guess \
+	confdb/config.sub confdb/depcomp confdb/install-sh \
+	confdb/ltmain.sh confdb/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
-	$(top_srcdir)/confdb/aclocal_cc.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cc.m4 \
 	$(top_srcdir)/confdb/aclocal_subcfg.m4 \
 	$(top_srcdir)/confdb/ax_prefix_config_h.m4 \
 	$(top_srcdir)/configure.in
@@ -55,12 +54,18 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
  configure.lineno config.status.lineno
 mkinstalldirs = $(install_sh) -d
-CONFIG_HEADER = $(top_builddir)/include/mplconf.h
+CONFIG_HEADER = $(top_builddir)/include/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 LIBRARIES = $(noinst_LIBRARIES)
 AR = ar
 ARFLAGS = cru
+AM_V_AR = $(am__v_AR_$(V))
+am__v_AR_ = $(am__v_AR_$(AM_DEFAULT_VERBOSITY))
+am__v_AR_0 = @echo "  AR    " $@;
+AM_V_at = $(am__v_at_$(V))
+am__v_at_ = $(am__v_at_$(AM_DEFAULT_VERBOSITY))
+am__v_at_0 = @
 libmpl_a_AR = $(AR) $(ARFLAGS)
 libmpl_a_LIBADD =
 am_libmpl_a_OBJECTS = mplstr.$(OBJEXT)
@@ -69,10 +74,22 @@ DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include
 depcomp = $(SHELL) $(top_srcdir)/confdb/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
+AM_V_lt = $(am__v_lt_$(V))
+am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
+am__v_lt_0 = --silent
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_$(V))
+am__v_CC_ = $(am__v_CC_$(AM_DEFAULT_VERBOSITY))
+am__v_CC_0 = @echo "  CC    " $@;
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_$(V))
+am__v_CCLD_ = $(am__v_CCLD_$(AM_DEFAULT_VERBOSITY))
+am__v_CCLD_0 = @echo "  CCLD  " $@;
+AM_V_GEN = $(am__v_GEN_$(V))
+am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
+am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(libmpl_a_SOURCES)
 DIST_SOURCES = $(libmpl_a_SOURCES)
 ETAGS = etags
@@ -90,6 +107,7 @@ distuninstallcheck_listfiles = find . -type f -print
 distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
@@ -175,9 +193,9 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 ACLOCAL_AMFLAGS = -I confdb
-AM_CPPFLAGS = -I$(top_srcdir)/include
+AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
 noinst_LIBRARIES = libmpl.a
-libmpl_a_SOURCES = src/string/mplstr.c
+libmpl_a_SOURCES = src/mplstr.c
 all: all-am
 
 .SUFFIXES:
@@ -217,29 +235,29 @@ $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	$(am__cd) $(srcdir) && $(ACLOCAL) $(ACLOCAL_AMFLAGS)
 $(am__aclocal_m4_deps):
 
-include/mplconf.h: include/stamp-h1
+include/config.h: include/stamp-h1
 	@if test ! -f $@; then \
 	  rm -f include/stamp-h1; \
 	  $(MAKE) $(AM_MAKEFLAGS) include/stamp-h1; \
 	else :; fi
 
-include/stamp-h1: $(top_srcdir)/include/mplconf.h.in $(top_builddir)/config.status
+include/stamp-h1: $(top_srcdir)/include/config.h.in $(top_builddir)/config.status
 	@rm -f include/stamp-h1
-	cd $(top_builddir) && $(SHELL) ./config.status include/mplconf.h
-$(top_srcdir)/include/mplconf.h.in:  $(am__configure_deps) 
+	cd $(top_builddir) && $(SHELL) ./config.status include/config.h
+$(top_srcdir)/include/config.h.in:  $(am__configure_deps) 
 	($(am__cd) $(top_srcdir) && $(AUTOHEADER))
 	rm -f include/stamp-h1
 	touch $@
 
 distclean-hdr:
-	-rm -f include/mplconf.h include/stamp-h1
+	-rm -f include/config.h include/stamp-h1
 
 clean-noinstLIBRARIES:
 	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
 libmpl.a: $(libmpl_a_OBJECTS) $(libmpl_a_DEPENDENCIES) 
-	-rm -f libmpl.a
-	$(libmpl_a_AR) libmpl.a $(libmpl_a_OBJECTS) $(libmpl_a_LIBADD)
-	$(RANLIB) libmpl.a
+	$(AM_V_at)-rm -f libmpl.a
+	$(AM_V_AR)$(libmpl_a_AR) libmpl.a $(libmpl_a_OBJECTS) $(libmpl_a_LIBADD)
+	$(AM_V_at)$(RANLIB) libmpl.a
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -250,32 +268,36 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mplstr.Po@am__quote@
 
 .c.o:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
 
-mplstr.o: src/string/mplstr.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mplstr.o -MD -MP -MF $(DEPDIR)/mplstr.Tpo -c -o mplstr.o `test -f 'src/string/mplstr.c' || echo '$(srcdir)/'`src/string/mplstr.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mplstr.Tpo $(DEPDIR)/mplstr.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/string/mplstr.c' object='mplstr.o' libtool=no @AMDEPBACKSLASH@
+mplstr.o: src/mplstr.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mplstr.o -MD -MP -MF $(DEPDIR)/mplstr.Tpo -c -o mplstr.o `test -f 'src/mplstr.c' || echo '$(srcdir)/'`src/mplstr.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mplstr.Tpo $(DEPDIR)/mplstr.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/mplstr.c' object='mplstr.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mplstr.o `test -f 'src/string/mplstr.c' || echo '$(srcdir)/'`src/string/mplstr.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mplstr.o `test -f 'src/mplstr.c' || echo '$(srcdir)/'`src/mplstr.c
 
-mplstr.obj: src/string/mplstr.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mplstr.obj -MD -MP -MF $(DEPDIR)/mplstr.Tpo -c -o mplstr.obj `if test -f 'src/string/mplstr.c'; then $(CYGPATH_W) 'src/string/mplstr.c'; else $(CYGPATH_W) '$(srcdir)/src/string/mplstr.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/mplstr.Tpo $(DEPDIR)/mplstr.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/string/mplstr.c' object='mplstr.obj' libtool=no @AMDEPBACKSLASH@
+mplstr.obj: src/mplstr.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mplstr.obj -MD -MP -MF $(DEPDIR)/mplstr.Tpo -c -o mplstr.obj `if test -f 'src/mplstr.c'; then $(CYGPATH_W) 'src/mplstr.c'; else $(CYGPATH_W) '$(srcdir)/src/mplstr.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mplstr.Tpo $(DEPDIR)/mplstr.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='src/mplstr.c' object='mplstr.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mplstr.obj `if test -f 'src/string/mplstr.c'; then $(CYGPATH_W) 'src/string/mplstr.c'; else $(CYGPATH_W) '$(srcdir)/src/string/mplstr.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mplstr.obj `if test -f 'src/mplstr.c'; then $(CYGPATH_W) 'src/mplstr.c'; else $(CYGPATH_W) '$(srcdir)/src/mplstr.c'; fi`
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \

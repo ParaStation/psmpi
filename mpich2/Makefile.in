@@ -8,6 +8,9 @@ all: all-redirect
 SHELL           = @SHELL@
 LIBTOOL         = @LIBTOOL@
 CREATESHLIB     = @CREATESHLIB@
+ABIVERSION      = @ABIVERSION@
+LIBS            = @LIBS@
+LDFLAGS         = @LDFLAGS@
 C_LINK_SHL      = @C_LINK_SHL@
 INSTALL         = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -33,7 +36,6 @@ PMPILIBNAME     = @PMPILIBNAME@
 
 VPATH = .:@srcdir@
 DOCTEXT         = @DOCTEXT@
-VERSION = @VERSION@
 MPICXXLIBNAME = @MPICXXLIBNAME@
 MPIFLIBNAME   = @MPIFLIBNAME@
 MPIFWRAPNAME  = @FWRAPNAME@
@@ -44,9 +46,8 @@ MPIFWRAPNAME  = @FWRAPNAME@
 ${srcdir}/src/include/mpichconf.h  ${srcdir}/configure: \
 	${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /opt/local/bin/autoheader -I ./confdb && \
-	\
-	/opt/local/bin/autoconf -I ./confdb ) 
+	(cd ${srcdir} && autoheader -I ./confdb && \
+	autoconf -I ./confdb )
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -66,7 +67,7 @@ apply:
 	$(ACTION) $(ACTION_INPUT)
 	for dir in @EXTERNAL_SRC_DIRS@ src examples - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} apply ; ) ; done
+		(cd $$dir && ${MAKE} apply ) ; done
 clean:  clean-preamble
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
@@ -76,13 +77,13 @@ clean:  clean-preamble
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	for dir in @EXTERNAL_SRC_DIRS@ src examples - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} clean ; ) ; done
+		(cd $$dir && ${MAKE} clean ) ; done
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
 	for dir in @EXTERNAL_SRC_DIRS@ src examples - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
-		(cd $$dir && ${MAKE} distclean ; ) ; done
+		(cd $$dir && ${MAKE} distclean ) ; done
 	-@rm -f Makefile mpich2-doxygen src/pmi/${pmi_name}/Makefile examples/f77/Makefile examples/f90/Makefile examples/cxx/Makefile doc/refman/Makefile doc/installguide/Makefile doc/userguide/Makefile doc/logging/Makefile doc/design/Makefile doc/smpd/Makefile doc/windev/Makefile config.status config.log config.cache *conf.cache config.system
 	-@rm -rf autom4te*.cache
 	-@rm -f src/include/mpichconf.h
@@ -92,7 +93,7 @@ distclean-xxx:
 maintainer-clean:  distclean-xxx remove-genmakefiles
 	for dir in @EXTERNAL_SRC_DIRS@ src examples - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} maintainer-clean ; ) ; done
+		(cd $$dir && ${MAKE} maintainer-clean ) ; done
 	-rm -f src/include/mpichconf.h.in 
 remove-makefile:
 	rm -f Makefile
@@ -131,20 +132,20 @@ CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 # Build the shared library from the shared object files
 lib/lib${MPILIBNAME}.@SHLIB_EXT@: lib/lib${MPILIBNAME}.la
-	(cd lib && $(CREATESHLIB) --mode=link -version-info "@ABIVERSION@" -o lib${MPILIBNAME}.la  -rpath $(libdir) )
+	(cd lib && $(CREATESHLIB) --mode=link -version-info "@ABIVERSION@" -o lib${MPILIBNAME}.la  -rpath $(libdir)  -ldflags "$(LDFLAGS)" $(LIBS))
 	if [ -n "@NO_WEAK_SYM@" -a \
 		"${MPILIBNAME}" != "${PMPILIBNAME}" ] ; then \
 	(cd lib && $(CREATESHLIB) --mode=link -version-info "@ABIVERSION@" -o lib${PMPILIBNAME}.la  -rpath $(libdir) );\
 	fi
 # Build the shared library from the shared object files
 lib/libf${MPILIBNAME}.@SHLIB_EXT@: lib/libf${MPILIBNAME}.la
-	(cd lib && $(CREATESHLIB) --mode=link -version-info "@ABIVERSION@" -o libf${MPILIBNAME}.la  -rpath $(libdir) -L. -l$(MPILIBNAME))
+	(cd lib && $(CREATESHLIB) --mode=link -version-info "@ABIVERSION@" -o libf${MPILIBNAME}.la  -rpath $(libdir) -L. -l$(MPILIBNAME) -ldflags "$(LDFLAGS)" $(LIBS))
 # Build the shared library from the shared object files
 lib/lib${MPILIBNAME}f90.@SHLIB_EXT@: lib/lib${MPILIBNAME}f90.la
-	(cd lib && $(CREATESHLIB) --mode=link -version-info "@ABIVERSION@" -o lib${MPILIBNAME}f90.la  -rpath $(libdir) )
+	(cd lib && $(CREATESHLIB) --mode=link -version-info "@ABIVERSION@" -o lib${MPILIBNAME}f90.la  -rpath $(libdir)  -ldflags "$(LDFLAGS)" $(LIBS))
 # Build the shared library from the shared object files
 lib/lib${MPICXXLIBNAME}.@SHLIB_EXT@: lib/lib${MPICXXLIBNAME}.la
-	(cd lib && $(CREATESHLIB) --mode=link -version-info "@ABIVERSION@" -o lib${MPICXXLIBNAME}.la  -rpath $(libdir) )
+	(cd lib && $(CREATESHLIB) --mode=link -version-info "@ABIVERSION@" -o lib${MPICXXLIBNAME}.la  -rpath $(libdir)  -ldflags "$(LDFLAGS)" $(LIBS))
 
 # --------------------------------------------------------------------------
 .libstamp0: 
@@ -153,7 +154,7 @@ lib/lib${MPICXXLIBNAME}.@SHLIB_EXT@: lib/lib${MPICXXLIBNAME}.la
 coverage: 
 	for dir in @EXTERNAL_SRC_DIRS@ src examples - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} coverage ; ) ; done
+		(cd $$dir && ${MAKE} coverage ) ; done
 # --------------------------------------------------------------------------
 mandoc: 
 	if [ ! -d ${DESTDIR}man ] ; then mkdir ${DESTDIR}man ; fi
@@ -161,30 +162,30 @@ mandoc:
 	if [ ! -d ${DESTDIR}man/man3 ] ; then mkdir ${DESTDIR}man/man3 ; fi
 	for dir in @EXTERNAL_SRC_DIRS@ src examples - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} mandoc ; ) ; done
+		(cd $$dir && ${MAKE} mandoc ) ; done
 	for dir in doc - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} mandoc ; ) ; done
+		(cd $$dir && ${MAKE} mandoc ) ; done
 htmldoc: 
 	if [ ! -d ${DESTDIR}www ] ; then mkdir ${DESTDIR}www ; fi
 	if [ ! -d ${DESTDIR}www/www1 ] ; then mkdir ${DESTDIR}www/www1 ; fi
 	if [ ! -d ${DESTDIR}www/www3 ] ; then mkdir ${DESTDIR}www/www3 ; fi
 	for dir in @EXTERNAL_SRC_DIRS@ src examples - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} htmldoc ; ) ; done
+		(cd $$dir && ${MAKE} htmldoc ) ; done
 	for dir in doc - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} htmldoc ; ) ; done
+		(cd $$dir && ${MAKE} htmldoc ) ; done
 	${MAKE} htmldoc-local
 latexdoc: 
 	if [ ! -d ${DESTDIR}doc ] ; then mkdir ${DESTDIR}doc ; fi
 	if [ ! -d ${DESTDIR}doc/refman ] ; then mkdir ${DESTDIR}doc/refman ; fi
 	for dir in @EXTERNAL_SRC_DIRS@ src examples - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} latexdoc ; ) ; done
+		(cd $$dir && ${MAKE} latexdoc ) ; done
 	for dir in doc - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} latexdoc ; ) ; done
+		(cd $$dir && ${MAKE} latexdoc ) ; done
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Install target
@@ -254,16 +255,15 @@ install:  install-preamble FORCE_TARGET
 	if [ -s lib/lib${PMPILIBNAME}.a ] ; then $(INSTALL_DATA) lib/lib${PMPILIBNAME}.a ${DESTDIR}${libdir}/lib${PMPILIBNAME}.a ; fi
 	if [ -s lib/libf${MPILIBNAME}.a ] ; then $(INSTALL_DATA) lib/libf${MPILIBNAME}.a ${DESTDIR}${libdir}/libf${MPILIBNAME}.a ; fi
 	if [ -s lib/lib${MPILIBNAME}f90.a ] ; then $(INSTALL_DATA) lib/lib${MPILIBNAME}f90.a ${DESTDIR}${libdir}/lib${MPILIBNAME}f90.a ; fi
-	if [ -s lib/lib${MPILIBNAME}.@SHLIB_EXT@ ] ; then $(CREATESHLIB) --mode=install lib/lib${MPILIBNAME}.@SHLIB_EXT@ ${DESTDIR}${libdir}/lib${MPILIBNAME}.@SHLIB_EXT@ ; fi
-	if [ -s lib/lib${PMPILIBNAME}.@SHLIB_EXT@ ] ; then $(CREATESHLIB) --mode=install lib/lib${PMPILIBNAME}.@SHLIB_EXT@ ${DESTDIR}${libdir}/lib${PMPILIBNAME}.@SHLIB_EXT@ ; fi
-	if [ -s lib/libf${MPILIBNAME}.@SHLIB_EXT@ ] ; then $(CREATESHLIB) --mode=install lib/libf${MPILIBNAME}.@SHLIB_EXT@ ${DESTDIR}${libdir}/libf${MPILIBNAME}.@SHLIB_EXT@ ; fi
-	if [ -s lib/lib${MPILIBNAME}f90.@SHLIB_EXT@ ] ; then $(CREATESHLIB) --mode=install lib/lib${MPILIBNAME}f90.@SHLIB_EXT@ ${DESTDIR}${libdir}/lib${MPILIBNAME}f90.@SHLIB_EXT@ ; fi
-	if [ -s lib/lib${MPICXXLIBNAME}.@SHLIB_EXT@ ] ; then $(CREATESHLIB) --mode=install lib/lib${MPICXXLIBNAME}.@SHLIB_EXT@ ${DESTDIR}${libdir}/lib${MPICXXLIBNAME}.@SHLIB_EXT@ ; fi
+	if [ -s lib/lib${MPILIBNAME}.@SHLIB_EXT@ ] ; then $(CREATESHLIB) -version-info $(ABIVERSION) --mode=install lib/lib${MPILIBNAME}.@SHLIB_EXT@ ${DESTDIR}${libdir}/lib${MPILIBNAME}.@SHLIB_EXT@ ; fi
+	if [ -s lib/lib${PMPILIBNAME}.@SHLIB_EXT@ ] ; then $(CREATESHLIB) -version-info $(ABIVERSION) --mode=install lib/lib${PMPILIBNAME}.@SHLIB_EXT@ ${DESTDIR}${libdir}/lib${PMPILIBNAME}.@SHLIB_EXT@ ; fi
+	if [ -s lib/libf${MPILIBNAME}.@SHLIB_EXT@ ] ; then $(CREATESHLIB) -version-info $(ABIVERSION) --mode=install lib/libf${MPILIBNAME}.@SHLIB_EXT@ ${DESTDIR}${libdir}/libf${MPILIBNAME}.@SHLIB_EXT@ ; fi
+	if [ -s lib/lib${MPILIBNAME}f90.@SHLIB_EXT@ ] ; then $(CREATESHLIB) -version-info $(ABIVERSION) --mode=install lib/lib${MPILIBNAME}f90.@SHLIB_EXT@ ${DESTDIR}${libdir}/lib${MPILIBNAME}f90.@SHLIB_EXT@ ; fi
+	if [ -s lib/lib${MPICXXLIBNAME}.@SHLIB_EXT@ ] ; then $(CREATESHLIB) -version-info $(ABIVERSION) --mode=install lib/lib${MPICXXLIBNAME}.@SHLIB_EXT@ ${DESTDIR}${libdir}/lib${MPICXXLIBNAME}.@SHLIB_EXT@ ; fi
 	if [ -s $(srcdir)/doc/userguide/user.pdf ] ; then $(INSTALL_DATA) $(srcdir)/doc/userguide/user.pdf ${DESTDIR}${docdir}/user.pdf ; fi
 	if [ -s $(srcdir)/doc/installguide/install.pdf ] ; then $(INSTALL_DATA) $(srcdir)/doc/installguide/install.pdf ${DESTDIR}${docdir}/install.pdf ; fi
 	if [ -s $(srcdir)/doc/smpd/smpd_pmi.pdf ] ; then $(INSTALL_DATA) $(srcdir)/doc/smpd/smpd_pmi.pdf ${DESTDIR}${docdir}/smpd_pmi.pdf ; fi
 	if [ -s $(srcdir)/doc/logging/logging.pdf ] ; then $(INSTALL_DATA) $(srcdir)/doc/logging/logging.pdf ${DESTDIR}${docdir}/logging.pdf ; fi
-	(cd src/util/thread && $(MAKE) INSTALL_STRIP_FLAG=$(INSTALL_STRIP_FLAG) install)
 	(cd src/env && $(MAKE) INSTALL_STRIP_FLAG=$(INSTALL_STRIP_FLAG) install)
 	(cd src/packaging/pkgconfig && $(MAKE) INSTALL_STRIP_FLAG=$(INSTALL_STRIP_FLAG) install)
 	(cd src/packaging/envmods && $(MAKE) INSTALL_STRIP_FLAG=$(INSTALL_STRIP_FLAG) install)
@@ -298,31 +298,26 @@ uninstall:
 	-rm -f ${DESTDIR}${docdir}/install.pdf
 	-rm -f ${DESTDIR}${docdir}/smpd_pmi.pdf
 	-rm -f ${DESTDIR}${docdir}/logging.pdf
-	for dir in src/util/thread src/env src/packaging/pkgconfig src/packaging/envmods @bindings_dirs@ @other_install_dirs@ - ; do \
+	for dir in src/env src/packaging/pkgconfig src/packaging/envmods @bindings_dirs@ @other_install_dirs@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} uninstall ; ) ; done
+		(cd $$dir && ${MAKE} uninstall ) ; done
 installcheck: 
-	for dir in src/util/thread src/env src/packaging/pkgconfig src/packaging/envmods @bindings_dirs@ @other_install_dirs@ - ; do \
+	for dir in src/env src/packaging/pkgconfig src/packaging/envmods @bindings_dirs@ @other_install_dirs@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} installcheck ; ) ; done
+		(cd $$dir && ${MAKE} installcheck ) ; done
 	${MAKE} installcheck-postamble
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Dependencies
 dependencies:
-	for dir in @EXTERNAL_SRC_DIRS@ src examples - ; do \
+	for dir in @EXTERNAL_SRC_DIRS@ src examples test - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} dependencies ; ) ; done
+		(cd $$dir && ${MAKE} dependencies ) ; done
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
-	for dir in @EXTERNAL_SRC_DIRS@ src examples - ; do \
-		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} TAGS ; ) ; done
 # --------------------------------------------------------------------------
 # -*- Mode: makefile; -*-
 # Do not include test in the basic build.  
@@ -379,11 +374,13 @@ cleanlibs:
 	rm -f lib/lib${MPICXXLIBNAME}.@SHLIB_EXT@* 
 	rm -f lib/libf${MPILIBNAME}.@SHLIB_EXT@* 
 	rm -f lib/lib${MPILIBNAME}f90.@SHLIB_EXT@* 
+	rm -f lib/lib${MPILIBNAME}f90.*.@SHLIB_EXT@* 
 	rm -f lib/lib${MPILIBNAME}.*.@SHLIB_EXT@* 
 	rm -f lib/lib${PMPILIBNAME}.*.@SHLIB_EXT@*
 	rm -f lib/lib${MPICXXLIBNAME}.*.@SHLIB_EXT@* 
 	rm -f lib/libf${MPILIBNAME}.*.@SHLIB_EXT@* 
 	rm -f lib/lib${MPILIBNAME}.la* lib/lib${PMPILIBNAME}.la*
+	rm -f lib/lib${MPILIBNAME}f90.la*
 	rm -f lib/lib${MPICXXLIBNAME}.la* 
 	rm -f lib/libf${MPILIBNAME}.la* 
 
@@ -412,19 +409,13 @@ distclean-local:
 	-@rm -f bin/mpich2version
 	-@cd test && $(MAKE) distclean
 
-# Version < 1 is pre MPI-1 release.
-# Version >= 2 contains MPI-2
-# Version between 1 and 2 contains all of MPI1 and parts of MPI-2
-# Version is now set in the Configure file so that we can easily include the
-# version on the configure output and to match the common practice of
-# current autoconfs
 # With PACKAGE set, all mpich2 and mpe2 documentation
 # will go to docdir=$datarootdir/doc/$PACKAGE,
 # and mpe2's exaamples_*/ and logfiles/ go to $datadir/$PACKAGE.
 # Unsetting PACKAGE enables docdir=$datarootdir/doc and mpe2 data in $datadir
 # User can do "make install PACKAGE=mpich2-xxx" enables
 # docdir=$datarootdir/doc/mpich2-xxx and mpe2 data in $datadir/mpich2-xxx.
-# PACKAGE = mpich2-$(VERSION)
+# PACKAGE = mpich2-@MPICH2_VERSION@
 
 # We skip the mpid/mm directories because mm is no longer active
 # mpe2 is an outside project and is tested against the default

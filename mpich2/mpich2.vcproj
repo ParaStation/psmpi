@@ -160,7 +160,7 @@
 				AssemblerListingLocation=".\$(ConfigurationName)/"
 				ObjectFile=".\$(ConfigurationName)/"
 				ProgramDataBaseFileName=".\$(ConfigurationName)/"
-				BrowseInformation="1"
+				BrowseInformation="0"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				CompileAs="0"
@@ -359,7 +359,7 @@
 				AssemblerListingLocation=".\$(ConfigurationName)/"
 				ObjectFile=".\$(ConfigurationName)/"
 				ProgramDataBaseFileName=".\$(ConfigurationName)/"
-				BrowseInformation="1"
+				BrowseInformation="0"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				CompileAs="0"
@@ -563,7 +563,7 @@
 				AssemblerListingLocation=".\$(ConfigurationName)/"
 				ObjectFile=".\$(ConfigurationName)/"
 				ProgramDataBaseFileName=".\$(ConfigurationName)/"
-				BrowseInformation="1"
+				BrowseInformation="0"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				CompileAs="0"
@@ -589,7 +589,7 @@
 				AdditionalLibraryDirectories="lib"
 				IgnoreDefaultLibraryNames="libc.lib"
 				ModuleDefinitionFile=".\mpich2.def"
-				GenerateDebugInformation="true"
+				GenerateDebugInformation="false"
 				ProgramDatabaseFile=".\$(ConfigurationName)/mpich2.pdb"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
@@ -668,7 +668,7 @@
 				AssemblerListingLocation=".\$(ConfigurationName)/"
 				ObjectFile=".\$(ConfigurationName)/"
 				ProgramDataBaseFileName=".\$(ConfigurationName)/"
-				BrowseInformation="1"
+				BrowseInformation="0"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				CompileAs="0"
@@ -1478,7 +1478,7 @@
 				AssemblerListingLocation=".\$(ConfigurationName)/"
 				ObjectFile=".\$(ConfigurationName)/"
 				ProgramDataBaseFileName=".\$(ConfigurationName)/"
-				BrowseInformation="1"
+				BrowseInformation="0"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				CompileAs="0"
@@ -1576,7 +1576,7 @@
 				AssemblerListingLocation=".\$(ConfigurationName)/"
 				ObjectFile=".\$(ConfigurationName)/"
 				ProgramDataBaseFileName=".\$(ConfigurationName)/"
-				BrowseInformation="1"
+				BrowseInformation="0"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				CompileAs="0"
@@ -2277,7 +2277,7 @@
 				AssemblerListingLocation=".\$(ConfigurationName)/"
 				ObjectFile=".\$(ConfigurationName)/"
 				ProgramDataBaseFileName=".\$(ConfigurationName)/"
-				BrowseInformation="1"
+				BrowseInformation="0"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				CompileAs="0"
@@ -2383,7 +2383,7 @@
 				AssemblerListingLocation=".\$(ConfigurationName)/"
 				ObjectFile=".\$(ConfigurationName)/"
 				ProgramDataBaseFileName=".\$(ConfigurationName)/"
-				BrowseInformation="1"
+				BrowseInformation="0"
 				WarningLevel="4"
 				SuppressStartupBanner="true"
 				CompileAs="0"
@@ -4562,6 +4562,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\mpi\init\async.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\mpi\attr\attr_delete.c"
 				>
 			</File>
@@ -4843,6 +4847,22 @@
 			</File>
 			<File
 				RelativePath=".\src\mpi\topo\dims_create.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpi\topo\dist_gr_create.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpi\topo\dist_gr_create_adj.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpi\topo\dist_gr_neighb.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpi\topo\dist_gr_neighb_count.c"
 				>
 			</File>
 			<File
@@ -5878,10 +5898,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\util\thread\mpe_thread_win.c"
-				>
-			</File>
-			<File
 				RelativePath=".\mpich2.def"
 				>
 			</File>
@@ -5995,6 +6011,14 @@
 			</File>
 			<File
 				RelativePath=".\src\mpi\romio\mpi-io\mpiu_greq.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\util\thread\mpiu_thread.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpi\coll\op_commutative.c"
 				>
 			</File>
 			<File
@@ -7436,7 +7460,15 @@
 				>
 			</File>
 			<File
+				RelativePath=".\src\mpi\coll\red_scat_block.c"
+				>
+			</File>
+			<File
 				RelativePath=".\src\mpi\coll\reduce.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpi\coll\reduce_local.c"
 				>
 			</File>
 			<File

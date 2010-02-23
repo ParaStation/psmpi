@@ -13,8 +13,8 @@
 
 /* Preallocated group objects */
 MPID_Group MPID_Group_builtin[MPID_GROUP_N_BUILTIN] = {
-    { MPI_GROUP_EMPTY, 1, 0, MPI_UNDEFINED, -1, 0, } };
-MPID_Group MPID_Group_direct[MPID_GROUP_PREALLOC] = { {0} };
+    { MPIU_OBJECT_HEADER_INITIALIZER(MPI_GROUP_EMPTY, 1), 0, MPI_UNDEFINED, -1, 0, } };
+MPID_Group MPID_Group_direct[MPID_GROUP_PREALLOC] = { { MPIU_OBJECT_HEADER_INITIALIZER(0,0) } };
 MPIU_Object_alloc_t MPID_Group_mem = { 0, 0, 0, 0, MPID_GROUP, 
 				      sizeof(MPID_Group), MPID_Group_direct,
 				       MPID_GROUP_PREALLOC};
@@ -356,7 +356,10 @@ int MPIR_GroupCheckVCRSubset( MPID_Group *group_ptr, int vsize, MPID_VCR *vcr,
     int g1_idx, g2_idx, l1_pid, l2_pid, i;
     MPID_Group_pmap_t *vmap=0;
     MPIU_CHKLMEM_DECL(1);
-    
+
+    MPIU_Assert(group_ptr != NULL);
+    MPIU_Assert(vcr != NULL);
+
     MPIU_CHKLMEM_MALLOC(vmap,MPID_Group_pmap_t*,
 			vsize*sizeof(MPID_Group_pmap_t),mpi_errno, "" );
     /* Initialize the vmap */

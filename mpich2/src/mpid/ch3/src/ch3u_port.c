@@ -254,12 +254,12 @@ static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr,
 
     /* We use the second half of the context ID bits for dynamic
      * processes. This assumes that the context ID mask array is made
-     * up of unsigned ints. */
+     * up of uint32_t's. */
     /* FIXME: This code is still broken for the following case:
      * If the same process opens connections to the multiple
      * processes, this context ID might get out of sync.
      */
-    tmp_comm->context_id     = (MPIR_MAX_CONTEXT_MASK * MPIR_CONTEXT_INT_BITS) + context_id_offset;
+    tmp_comm->context_id     = MPID_CONTEXT_SET_FIELD(DYNAMIC_PROC, context_id_offset, 1);
     tmp_comm->recvcontext_id = tmp_comm->context_id;
 
     /* FIXME - we probably need a unique context_id. */
@@ -575,7 +575,8 @@ static int ExtractLocalPGInfo( MPID_Comm *comm_p,
     pg_list->pg_id = MPIU_Strdup(comm_p->vcr[0]->pg->id);
     pg_list->index = cur_index++;
     pg_list->next = NULL;
-    MPIU_Assert( comm_p->vcr[0]->pg->ref_count);
+    /* XXX DJG FIXME-MT should we be checking this?  the add/release macros already check this */
+    MPIU_Assert( MPIU_Object_get_ref(comm_p->vcr[0]->pg));
     mpi_errno = MPIDI_PG_To_string(comm_p->vcr[0]->pg, &pg_list->str, 
 				   &pg_list->lenStr );
     if (mpi_errno != MPI_SUCCESS) {
@@ -590,7 +591,8 @@ static int ExtractLocalPGInfo( MPID_Comm *comm_p,
 	pg_trailer = pg_list;
 	while (pg_iter != NULL) {
 	    /* Check to ensure pg is (probably) valid */
-	    MPIU_Assert(comm_p->vcr[i]->pg->ref_count != 0);
+            /* XXX DJG FIXME-MT should we be checking this?  the add/release macros already check this */
+	    MPIU_Assert(MPIU_Object_get_ref(comm_p->vcr[i]->pg) != 0);
 	    if (MPIDI_PG_Id_compare(comm_p->vcr[i]->pg->id, pg_iter->pg_id)) {
 		local_translation[i].pg_index = pg_iter->index;
 		local_translation[i].pg_rank  = comm_p->vcr[i]->pg_rank;

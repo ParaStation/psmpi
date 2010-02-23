@@ -55,73 +55,68 @@ dnl that complain about poor code are in effect.
 dnl
 dnl Because this is a long script, we have ensured that you can pass a 
 dnl variable containing the option name as the first argument.
+dnl
+dnl gcc 4.2.4 on 32-bit does not complain about the -Wno-type-limits option 
+dnl even though it doesn't support it.  However, when another warning is 
+dnl triggered, it gives an error that the option is not recognized.  So we 
+dnl need to test with a conftest file that will generate warnings
 dnl D*/
 AC_DEFUN([PAC_C_CHECK_COMPILER_OPTION],[
 AC_MSG_CHECKING([whether C compiler accepts option $1])
-save_CFLAGS="$CFLAGS"
+pccco_save_CFLAGS="$CFLAGS"
 CFLAGS="$1 $CFLAGS"
 rm -f conftest.out
+pac_success=no
+# conftest3.c has an invalid prototype to ensure we generate warnings
+echo 'int main(){}' > conftest3.c
 echo 'int foo(void);int foo(void){return 0;}' > conftest2.c
 echo 'int main(void);int main(void){return 0;}' > conftest.c
-if ${CC-cc} $save_CFLAGS $CPPFLAGS -o conftest conftest.c $LDFLAGS >conftest.bas 2>&1 ; then
+if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest3.c $LDFLAGS >/dev/null 2>&1 &&
+   ${CC-cc} $pccco_save_CFLAGS $CPPFLAGS -o conftest conftest.c $LDFLAGS >conftest.bas 2>&1 ; then
    if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest.c $LDFLAGS >conftest.out 2>&1 ; then
       if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
          AC_MSG_RESULT(yes)
          AC_MSG_CHECKING([whether routines compiled with $1 can be linked with ones compiled without $1])       
          rm -f conftest.out
          rm -f conftest.bas
-         if ${CC-cc} -c $save_CFLAGS $CPPFLAGS conftest2.c >conftest2.out 2>&1 ; then
+         if ${CC-cc} -c $pccco_save_CFLAGS $CPPFLAGS conftest2.c >conftest2.out 2>&1 ; then
             if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest2.o conftest.c $LDFLAGS >conftest.bas 2>&1 ; then
                if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest2.o conftest.c $LDFLAGS >conftest.out 2>&1 ; then
                   if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
-	             AC_MSG_RESULT(yes)	  
-		     CFLAGS="$save_CFLAGS"
-                     ifelse($2,,COPTIONS="$COPTIONS $1",$2)
-                  elif test -s conftest.out ; then
-	             cat conftest.out >&AC_FD_CC
-	             AC_MSG_RESULT(no)
-                     CFLAGS="$save_CFLAGS"
-	             $3
+		     pac_success=yes
                   else
-                     AC_MSG_RESULT(no)
-                     CFLAGS="$save_CFLAGS"
-	             $3
+		     :
                   fi  
                else
-	          if test -s conftest.out ; then
-	             cat conftest.out >&AC_FD_CC
-	          fi
-                  AC_MSG_RESULT(no)
-                  CFLAGS="$save_CFLAGS"
-                  $3
+                  :
                fi
 	    else
                # Could not link with the option!
-               AC_MSG_RESULT(no)
+	       :
             fi
          else
             if test -s conftest2.out ; then
                cat conftest2.out >&AC_FD_CC
             fi
-	    AC_MSG_RESULT(no)
-            CFLAGS="$save_CFLAGS"
-	    $3
          fi
       else
-         cat conftest.out >&AC_FD_CC
-         AC_MSG_RESULT(no)
-         $3
-         CFLAGS="$save_CFLAGS"         
+         :
       fi
    else
-      AC_MSG_RESULT(no)
-      $3
-      if test -s conftest.out ; then cat conftest.out >&AC_FD_CC ; fi    
-      CFLAGS="$save_CFLAGS"
+       :
    fi
 else
     # Could not compile without the option!
-    AC_MSG_RESULT(no)
+    :
+fi
+CFLAGS="$pccco_save_CFLAGS"
+if test "$pac_success" = yes ; then
+   AC_MSG_RESULT(yes)	  
+   ifelse($2,,COPTIONS="$COPTIONS $1",$2)
+else
+   AC_MSG_RESULT(no)
+   if test -s conftest.out ; then cat conftest.out >&AC_FD_CC ; fi    
+   $3
 fi
 # This is needed for Mac OSX 10.5
 rm -rf conftest.dSYM
@@ -156,7 +151,7 @@ AC_DEFUN([PAC_C_OPTIMIZATION],[
 	for copt in "-fomit-frame-pointer" "-finline-functions" \
 		 "-funroll-loops" ; do
 	    PAC_C_CHECK_COMPILER_OPTION($copt,found_opt=yes,found_opt=no)
-	    if test $found_opt = "yes" ; then
+	    if test "$found_opt" = "yes" ; then
 	        ifelse($1,,COPTIONS="$COPTIONS $copt",$1)
 	        # no break because we're trying to add them all
 	    fi
@@ -165,582 +160,7 @@ AC_DEFUN([PAC_C_OPTIMIZATION],[
     fi
 
 ])
-dnl
-dnl/*D
-dnl PAC_C_DEPENDS - Determine how to use the C compiler to generate 
-dnl dependency information
-dnl
-dnl Synopsis:
-dnl PAC_C_DEPENDS
-dnl
-dnl Output Effects:
-dnl Sets the following shell variables and call AC_SUBST for them:
-dnl+ C_DEPEND_OPT - Compiler options needed to create dependencies
-dnl. C_DEPEND_OUT - Shell redirection for dependency file (may be empty)
-dnl. C_DEPEND_PREFIX - Empty (null) or true; this is used to handle
-dnl  systems that do not provide dependency information
-dnl- C_DEPEND_MV - Command to move created dependency file
-dnl Also creates a Depends file in the top directory (!).
-dnl
-dnl In addition, the variable 'C_DEPEND_DIR' must be set to indicate the
-dnl directory in which the dependency files should live.  
-dnl
-dnl Notes:
-dnl A typical Make rule that exploits this macro is
-dnl.vb
-dnl #
-dnl # Dependency processing
-dnl .SUFFIXES: .dep
-dnl DEP_SOURCES = ${SOURCES:%.c=.dep/%.dep}
-dnl C_DEPEND_DIR = .dep
-dnl Depends: ${DEP_SOURCES}
-dnl         @-rm -f Depends
-dnl         cat .dep/*.dep >Depends
-dnl .dep/%.dep:%.c
-dnl	    @if [ ! -d .dep ] ; then mkdir .dep ; fi
-dnl         @@C_DEPEND_PREFIX@ ${C_COMPILE} @C_DEPEND_OPT@ $< @C_DEPEND_OUT@
-dnl         @@C_DEPEND_MV@
-dnl
-dnl depends-clean:
-dnl         @-rm -f *.dep ${srcdir}/*.dep Depends ${srcdir}/Depends
-dnl         @-touch Depends
-dnl.ve
-dnl
-dnl For each file 'foo.c', this creates a file 'foo.dep' and creates a file
-dnl 'Depends' that contains all of the '*.dep' files.
-dnl
-dnl For your convenience, the autoconf variable 'C_DO_DEPENDS' names a file 
-dnl that may contain this code (you must have `dependsrule` or 
-dnl `dependsrule.in` in the same directory as the other auxillery configure 
-dnl scripts (set with dnl 'AC_CONFIG_AUX_DIR').  If you use `dependsrule.in`,
-dnl you must have `dependsrule` in 'AC_OUTPUT' before this `Makefile`.
-dnl 
-dnl D*/
-dnl 
-dnl Eventually, we can add an option to the C_DEPEND_MV to strip system
-dnl includes, such as /usr/xxxx and /opt/xxxx
-dnl
-AC_DEFUN([PAC_C_DEPENDS],[
-AC_SUBST(C_DEPEND_OPT)AM_IGNORE(C_DEPEND_OPT)
-AC_SUBST(C_DEPEND_OUT)AM_IGNORE(C_DEPEND_OUT)
-AC_SUBST(C_DEPEND_MV)AM_IGNORE(C_DEPEND_MV)
-AC_SUBST(C_DEPEND_PREFIX)AM_IGNORE(C_DEPEND_PREFIX)
-AC_SUBST_FILE(C_DO_DEPENDS) 
-dnl set the value of the variable to a 
-dnl file that contains the dependency code, such as
-dnl ${top_srcdir}/maint/dependrule 
-if test -n "$ac_cv_c_depend_opt" ; then
-    AC_MSG_RESULT([Option $ac_cv_c_depend_opt creates dependencies (cached)])
-    C_DEPEND_OUT="$ac_cv_c_depend_out"
-    C_DEPEND_MV="$ac_cv_c_depend_mv"
-    C_DEPEND_OPT="$ac_cv_c_depend_opt"
-    C_DEPEND_PREFIX="$ac_cv_c_depend_prefix"
-    C_DO_DEPENDS="$ac_cv_c_do_depends"
-else
-   # Determine the values
-# This is needed for Mac OSX 10.5
-rm -rf conftest.dSYM
-rm -f conftest*
-dnl
-dnl Some systems (/usr/ucb/cc on Solaris) do not generate a dependency for
-dnl an include that doesn't begin in column 1
-dnl
-cat >conftest.c <<EOF
-    #include "confdefs.h"
-    int f(void) { return 0; }
-EOF
-dnl -xM1 is Solaris C compiler (no /usr/include files)
-dnl -MM is gcc (no /usr/include files)
-dnl -MMD is gcc to .d
-dnl .u is xlC (AIX) output
-for copt in "-xM1" "-c -xM1" "-xM" "-c -xM" "-MM" "-M" "-c -M"; do
-    AC_MSG_CHECKING([whether $copt option generates dependencies])
-    rm -f conftest.o conftest.u conftest.d conftest.err conftest.out
-    dnl also need to check that error output is empty
-    if $CC $CFLAGS $copt conftest.c >conftest.out 2>conftest.err && \
-	test ! -s conftest.err ; then
-        dnl Check for dependency info in conftest.out
-        if test -s conftest.u ; then 
-	    C_DEPEND_OUT=""
-	    C_DEPEND_MV='mv $[*].u ${C_DEPEND_DIR}/$[*].dep'
-            pac_dep_file=conftest.u 
-        elif test -s conftest.d ; then
-	    C_DEPEND_OUT=""
-	    C_DEPEND_MV='mv $[*].d ${C_DEPEND_DIR}/$[*].dep'
-            pac_dep_file=conftest.d 
-        else
-	    dnl C_DEPEND_OUT='>${C_DEPEND_DIR}/$[*].dep'
-	    dnl This for is needed for VPATH.  Perhaps the others should match.
-	    C_DEPEND_OUT='>$@'
-	    C_DEPEND_MV=:
-            pac_dep_file=conftest.out
-        fi
-        if grep 'confdefs.h' $pac_dep_file >/dev/null 2>&1 ; then
-            AC_MSG_RESULT(yes)
-	    C_DEPEND_OPT="$copt"
-	    AC_MSG_CHECKING([whether .o file created with dependency file])
-	    if test -s conftest.o ; then
-	        AC_MSG_RESULT(yes)
-	    else
-                AC_MSG_RESULT(no)
-		echo "Output of $copt option was" >&AC_FD_CC
-		cat $pac_dep_file >&AC_FD_CC
-            fi
-	    break
-        else
-	    AC_MSG_RESULT(no)
-        fi
-    else
-	echo "Error in compiling program with flags $copt" >&AC_FD_CC
-	cat conftest.out >&AC_FD_CC
-	if test -s conftest.err ; then cat conftest.err >&AC_FD_CC ; fi
-	AC_MSG_RESULT(no)
-    fi
-    copt=""
-done
-    if test -f $CONFIG_AUX_DIR/dependsrule -o \
-	    -f $CONFIG_AUX_DIR/dependsrule.in; then
-	C_DO_DEPENDS="$CONFIG_AUX_DIR/dependsrule"
-    else 
-	C_DO_DEPENDS="/dev/null"
-    fi
-    if test "X$copt" = "X" ; then
-        C_DEPEND_PREFIX="true"
-    else
-        C_DEPEND_PREFIX=""
-    fi
-    ac_cv_c_depend_out="$C_DEPEND_OUT"
-    ac_cv_c_depend_mv="$C_DEPEND_MV"
-    ac_cv_c_depend_opt="$C_DEPEND_OPT"
-    ac_cv_c_depend_prefix="$C_DEPEND_PREFIX"
-    ac_cv_c_do_depends="$C_DO_DEPENDS"
-fi
-])
-dnl
-dnl/*D 
-dnl PAC_C_PROTOTYPES - Check that the compiler accepts ANSI prototypes.  
-dnl
-dnl Synopsis:
-dnl PAC_C_PROTOTYPES([action if true],[action if false])
-dnl
-dnl D*/
-AC_DEFUN([PAC_C_PROTOTYPES],[
-AC_CACHE_CHECK([whether $CC supports function prototypes],
-pac_cv_c_prototypes,[
-AC_TRY_COMPILE([int f(double a){return 0;}],[return 0];,
-pac_cv_c_prototypes="yes",pac_cv_c_prototypes="no")])
-if test "$pac_cv_c_prototypes" = "yes" ; then
-    ifelse([$1],,:,[$1])
-else
-    ifelse([$2],,:,[$2])
-fi
-])dnl
-dnl
-dnl/*D
-dnl PAC_FUNC_SEMCTL - Check for semctl and its argument types
-dnl
-dnl Synopsis:
-dnl PAC_FUNC_SEMCTL
-dnl
-dnl Output Effects:
-dnl Sets 'HAVE_SEMCTL' if semctl is available.
-dnl Sets 'HAVE_UNION_SEMUN' if 'union semun' is available.
-dnl Sets 'SEMCTL_NEEDS_SEMUN' if a 'union semun' type must be passed as the
-dnl fourth argument to 'semctl'.
-dnl D*/ 
-dnl Check for semctl and arguments
-AC_DEFUN([PAC_FUNC_SEMCTL],[
-AC_CHECK_FUNC(semctl)
-if test "$ac_cv_func_semctl" = "yes" ; then
-    AC_CACHE_CHECK([for union semun],
-    pac_cv_type_union_semun,[
-    AC_TRY_COMPILE([#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/sem.h>],[union semun arg;arg.val=0;],
-    pac_cv_type_union_semun="yes",pac_cv_type_union_semun="no")])
-    if test "$pac_cv_type_union_semun" = "yes" ; then
-        AC_DEFINE(HAVE_UNION_SEMUN,1,[Has union semun])
-        #
-        # See if we can use an int in semctl or if we need the union
-        AC_CACHE_CHECK([whether semctl needs union semun],
-        pac_cv_func_semctl_needs_semun,[
-        AC_TRY_COMPILE([#include <sys/types.h>
-#include <sys/ipc.h>
-#include <sys/sem.h>],[
-int arg = 0; semctl( 1, 1, SETVAL, arg );],
-        pac_cv_func_semctl_needs_semun="yes",
-        pac_cv_func_semctl_needs_semun="no")
-        ])
-        if test "$pac_cv_func_semctl_needs_semun" = "yes" ; then
-            AC_DEFINE(SEMCTL_NEEDS_SEMUN,1,[Needs an explicit definition of semun])
-        fi
-    fi
-fi
-])
-dnl
-dnl/*D
-dnl PAC_C_VOLATILE - Check if C supports volatile
-dnl
-dnl Synopsis:
-dnl PAC_C_VOLATILE
-dnl
-dnl Output Effect:
-dnl Defines 'volatile' as empty if volatile is not available.
-dnl
-dnl D*/
-AC_DEFUN([PAC_C_VOLATILE],[
-AC_CACHE_CHECK([for volatile],
-pac_cv_c_volatile,[
-AC_TRY_COMPILE(,[volatile int a;],pac_cv_c_volatile="yes",
-pac_cv_c_volatile="no")])
-if test "$pac_cv_c_volatile" = "no" ; then
-    AC_DEFINE(volatile,,[if C does not support volatile])
-fi
-])dnl
-dnl
-dnl/*D
-dnl PAC_C_INLINE - Check if C supports inline
-dnl
-dnl Synopsis:
-dnl PAC_C_INLINE
-dnl
-dnl Output Effect:
-dnl Defines 'inline' as empty if inline is not available.
-dnl
-dnl D*/
-AC_DEFUN([PAC_C_INLINE],[
-AC_CACHE_CHECK([for inline],
-pac_cv_c_inline,[
-AC_TRY_COMPILE([inline int a( int b ){return b+1;}],[int a;],
-pac_cv_c_inline="yes",pac_cv_c_inline="no")])
-if test "$pac_cv_c_inline" = "no" ; then
-    AC_DEFINE(inline,,[if C does not support inline])
-fi
-])dnl
-dnl
-dnl/*D
-dnl PAC_C_CONST - Check if C supports const 
-dnl
-dnl Synopsis:
-dnl PAC_C_CONST
-dnl
-dnl Output Effect:
-dnl AC_MSG_ERROR if const is not supported.
-dnl
-dnl D*/
-dnl AC_DEFUN(PAC_C_CONST,[
-dnl AC_CACHE_CHECK([for support of const in C],
-dnl pac_cv_c_const,[
-dnl AC_LANG_PUSH(C)
-dnl AC_TRY_COMPILE(,[const int a = 1; int b; b = a;],
-dnl pac_cv_c_const="yes", pac_cv_c_const="no")])
-dnl if test "$pac_cv_c_const" = "no" ; then
-dnl     AC_MSG_ERROR([C does not support const! Abort...])
-dnl fi
-dnl AC_LANG_POP(C)
-dnl ])dnl
-AC_DEFUN([PAC_C_CONST],
-[AC_CACHE_CHECK([for an ANSI C-conforming const], pac_cv_c_const,
-[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],
-[[/* FIXME: Include the comments suggested by Paul. */
-#ifndef __cplusplus
-  /* Ultrix mips cc rejects this.  */
-  typedef int charset[2];
-  const charset cs = {0,0};
-  /* SunOS 4.1.1 cc rejects this.  */
-  char const *const *pcpcc;
-  char **ppc;
-  /* NEC SVR4.0.2 mips cc rejects this.  */
-  struct point {int x, y;};
-  static struct point const zero = {0,0};
-  /* AIX XL C 1.02.0.0 rejects this.
-     It does not let you subtract one const X* pointer from another in
-     an arm of an if-expression whose if-part is not a constant
-     expression */
-  const char *g = "string";
-  pcpcc = &g + (g ? g-g : 0);
-  /* HPUX 7.0 cc rejects these. */
-  ++pcpcc;
-  ppc = (char**) pcpcc;
-  pcpcc = (char const *const *) ppc;
-  { /* SCO 3.2v4 cc rejects this.  */
-    char const *s = 0 ? (char *) 0 : (char const *) 0;
-    if (s) return 0;
-  }
-  { /* Someone thinks the Sun supposedly-ANSI compiler will reject this.  */
-    int x[] = {25, 17};
-    const int *foo = &x[0];
-    ++foo;
-  }
-  { /* Sun SC1.0 ANSI compiler rejects this -- but not the above. */
-    typedef const int *iptr;
-    iptr p = 0;
-    ++p;
-  }
-  { /* AIX XL C 1.02.0.0 rejects this saying
-       "k.c", line 2.27: 1506-025 (S) Operand must be a modifiable lvalue. */
-    struct s { int j; const int *ap[3]; };
-    struct s a;
-    struct s *b = &a;
-    b->j = 5; 
-  }
-  { /* ULTRIX-32 V3.1 (Rev 9) vcc rejects this */
-    const int foo = 10;
-    if (!foo) return 0;
-  }
-  return !cs[0] && !zero.x;
-#endif
-]])],
-                   [pac_cv_c_const=yes],
-                   [pac_cv_c_const=no])])
-if test $pac_cv_c_const = no; then
-  AC_DEFINE(const,,
-            [Define to empty if `const' does not conform to ANSI C.])
-fi
-])dnl
-dnl
-dnl/*D
-dnl PAC_C_CPP_CONCAT - Check whether the C compiler accepts ISO CPP string
-dnl   concatenation
-dnl
-dnl Synopsis:
-dnl PAC_C_CPP_CONCAT([true-action],[false-action])
-dnl
-dnl Output Effects:
-dnl Invokes the true or false action
-dnl
-dnl D*/
-AC_DEFUN([PAC_C_CPP_CONCAT],[
-pac_pound="#"
-AC_CACHE_CHECK([whether the compiler $CC accepts $ac_pound$ac_pound for concatenation in cpp],
-pac_cv_c_cpp_concat,[
-AC_TRY_COMPILE([
-#define concat(a,b) a##b],[int concat(a,b);return ab;],
-pac_cv_cpp_concat="yes",pac_cv_cpp_concat="no")])
-if test $pac_cv_c_cpp_concat = "yes" ; then
-    ifelse([$1],,:,[$1])
-else
-    ifelse([$2],,:,[$2])
-fi
-])dnl
-dnl
-dnl/*D
-dnl PAC_FUNC_GETTIMEOFDAY - Check whether gettimeofday takes 1 or 2 arguments
-dnl
-dnl Synopsis
-dnl  PAC_IS_GETTIMEOFDAY_OK(ok_action,failure_action)
-dnl
-dnl Notes:
-dnl One version of Solaris accepted only one argument.
-dnl
-dnl D*/
-AC_DEFUN([PAC_FUNC_GETTIMEOFDAY],[
-AC_CACHE_CHECK([whether gettimeofday takes 2 arguments],
-pac_cv_func_gettimeofday,[
-AC_TRY_COMPILE([#include <sys/time.h>],[struct timeval tp;
-gettimeofday(&tp,(void*)0);return 0;],pac_cv_func_gettimeofday="yes",
-pac_cv_func_gettimeofday="no")
-])
-if test "$pac_cv_func_gettimeofday" = "yes" ; then
-     ifelse($1,,:,$1)
-else
-     ifelse($2,,:,$2)
-fi
-])
-dnl
-dnl/*D
-dnl PAC_C_RESTRICT - Check if C supports restrict
-dnl
-dnl Synopsis:
-dnl PAC_C_RESTRICT
-dnl
-dnl Output Effect:
-dnl Defines 'restrict' if some version of restrict is supported; otherwise
-dnl defines 'restrict' as empty.  This allows you to include 'restrict' in 
-dnl declarations in the same way that 'AC_C_CONST' allows you to use 'const'
-dnl in declarations even when the C compiler does not support 'const'
-dnl
-dnl Note that some compilers accept restrict only with additional options.
-dnl DEC/Compaq/HP Alpha Unix (Tru64 etc.) -accept restrict_keyword
-dnl
-dnl D*/
-AC_DEFUN([PAC_C_RESTRICT],[
-AC_CACHE_CHECK([for restrict],
-pac_cv_c_restrict,[
-AC_TRY_COMPILE(,[int * restrict a;],pac_cv_c_restrict="restrict",
-pac_cv_c_restrict="no")
-if test "$pac_cv_c_restrict" = "no" ; then
-   AC_TRY_COMPILE(,[int * _Restrict a;],pac_cv_c_restrict="_Restrict",
-   pac_cv_c_restrict="no")
-fi
-if test "$pac_cv_c_restrict" = "no" ; then
-   AC_TRY_COMPILE(,[int * __restrict a;],pac_cv_c_restrict="__restrict",
-   pac_cv_c_restrict="no")
-fi
-])
-if test "$pac_cv_c_restrict" = "no" ; then
-  restrict_val=""
-elif test "$pac_cv_c_restrict" != "restrict" ; then
-  restrict_val=$pac_cv_c_restrict
-fi
-if test "$restrict_val" != "restrict" ; then 
-  AC_DEFINE_UNQUOTED(restrict,$restrict_val,[if C does not support restrict])
-fi
-])dnl
-dnl
-dnl/*D
-dnl PAC_HEADER_STDARG - Check whether standard args are defined and whether
-dnl they are old style or new style
-dnl
-dnl Synopsis:
-dnl PAC_HEADER_STDARG(action if works, action if oldstyle, action if fails)
-dnl
-dnl Output Effects:
-dnl Defines HAVE_STDARG_H if the header exists.
-dnl defines 
-dnl
-dnl Notes:
-dnl It isn't enough to check for stdarg.  Even gcc doesn't get it right;
-dnl on some systems, the gcc version of stdio.h loads stdarg.h `with the wrong
-dnl options` (causing it to choose the `old style` 'va_start' etc).
-dnl
-dnl The original test tried the two-arg version first; the old-style
-dnl va_start took only a single arg.
-dnl This turns out to be VERY tricky, because some compilers (e.g., Solaris) 
-dnl are quite happy to accept the *wrong* number of arguments to a macro!
-dnl Instead, we try to find a clean compile version, using our special
-dnl PAC_C_TRY_COMPILE_CLEAN command.
-dnl
-dnl D*/
-AC_DEFUN([PAC_HEADER_STDARG],[
-AC_CHECK_HEADER(stdarg.h)
-dnl Sets ac_cv_header_stdarg_h
-if test "$ac_cv_header_stdarg_h" = "yes" ; then
-    dnl results are yes,oldstyle,no.
-    AC_CACHE_CHECK([whether stdarg is oldstyle],
-    pac_cv_header_stdarg_oldstyle,[
-PAC_C_TRY_COMPILE_CLEAN([#include <stdio.h>
-#include <stdarg.h>],
-[int func( int a, ... ){
-int b;
-va_list ap;
-va_start( ap );
-b = va_arg(ap, int);
-printf( "%d-%d\n", a, b );
-va_end(ap);
-fflush(stdout);
-return 0;
-}
-int main() { func( 1, 2 ); return 0;}],pac_check_compile)
-case "$pac_check_compile" in 
-    0)  pac_cv_header_stdarg_oldstyle="yes"
-	;;
-    1)  pac_cv_header_stdarg_oldstyle="may be newstyle"
-	;;
-    2)  pac_cv_header_stdarg_oldstyle="no"   # compile failed
-	;;
-esac
-])
-if test "$pac_cv_header_stdarg_oldstyle" = "yes" ; then
-    ifelse($2,,:,[$2])
-else
-    AC_CACHE_CHECK([whether stdarg works],
-    pac_cv_header_stdarg_works,[
-    PAC_C_TRY_COMPILE_CLEAN([
-#include <stdio.h>
-#include <stdarg.h>],[
-int func( int a, ... ){
-int b;
-va_list ap;
-va_start( ap, a );
-b = va_arg(ap, int);
-printf( "%d-%d\n", a, b );
-va_end(ap);
-fflush(stdout);
-return 0;
-}
-int main() { func( 1, 2 ); return 0;}],pac_check_compile)
-case "$pac_check_compile" in 
-    0)  pac_cv_header_stdarg_works="yes"
-	;;
-    1)  pac_cv_header_stdarg_works="yes with warnings"
-	;;
-    2)  pac_cv_header_stdarg_works="no"
-	;;
-esac
-])
-fi   # test on oldstyle
-if test "$pac_cv_header_stdarg_works" = "no" ; then
-    ifelse($3,,:,[$3])
-else
-    ifelse($1,,:,[$1])
-fi
-else 
-    ifelse($3,,:,[$3])
-fi  # test on header
-])
-dnl/*D
-dnl PAC_C_TRY_COMPILE_CLEAN - Try to compile a program, separating success
-dnl with no warnings from success with warnings.
-dnl
-dnl Synopsis:
-dnl PAC_C_TRY_COMPILE_CLEAN(header,program,flagvar)
-dnl
-dnl Output Effect:
-dnl The 'flagvar' is set to 0 (clean), 1 (dirty but success ok), or 2
-dnl (failed).
-dnl
-dnl D*/
-AC_DEFUN([PAC_C_TRY_COMPILE_CLEAN],[
-$3=2
-dnl Get the compiler output to test against
-if test -z "$pac_TRY_COMPLILE_CLEAN" ; then
-    # This is needed for Mac OSX 10.5
-    rm -rf conftest.dSYM
-    rm -f conftest*
-    echo 'int try(void);int try(void){return 0;}' > conftest.c
-    if ${CC-cc} $CFLAGS -c conftest.c >conftest.bas 2>&1 ; then
-	if test -s conftest.bas ; then 
-	    pac_TRY_COMPILE_CLEAN_OUT=`cat conftest.bas`
-        fi
-        pac_TRY_COMPILE_CLEAN=1
-    else
-	AC_MSG_WARN([Could not compile simple test program!])
-	if test -s conftest.bas ; then 	cat conftest.bas >> config.log ; fi
-    fi
-fi
-dnl
-dnl Create the program that we need to test with
-# This is needed for Mac OSX 10.5
-rm -rf conftest.dSYM
-rm -f conftest*
-cat >conftest.c <<EOF
-#include "confdefs.h"
-[$1]
-[$2]
-EOF
-dnl
-dnl Compile it and test
-if ${CC-cc} $CFLAGS -c conftest.c >conftest.bas 2>&1 ; then
-    dnl Success.  Is the output the same?
-    if test "$pac_TRY_COMPILE_CLEAN_OUT" = "`cat conftest.bas`" ; then
-	$3=0
-    else
-        cat conftest.c >>config.log
-	if test -s conftest.bas ; then 	cat conftest.bas >> config.log ; fi
-        $3=1
-    fi
-else
-    dnl Failure.  Set flag to 2
-    cat conftest.c >>config.log
-    if test -s conftest.bas ; then cat conftest.bas >> config.log ; fi
-    $3=2
-fi
-# This is needed for Mac OSX 10.5
-rm -rf conftest.dSYM
-rm -f conftest*
-])
-dnl
+
 dnl/*D
 dnl PAC_PROG_C_UNALIGNED_DOUBLES - Check that the C compiler allows unaligned
 dnl doubles
@@ -787,7 +207,7 @@ ifelse($3,,,if test "X$pac_cv_prog_c_unaligned_doubles" = "unknown" ; then
 $3
 fi)
 ])
-dnl
+
 dnl/*D 
 dnl PAC_PROG_C_WEAK_SYMBOLS - Test whether C supports weak alias symbols.
 dnl
@@ -964,7 +384,7 @@ if test "$notbroken" = "no" ; then
 correctly set error code when a fatal error occurs])
 fi
 ])
-dnl
+
 dnl/*D 
 dnl PAC_PROG_C_MULTIPLE_WEAK_SYMBOLS - Test whether C and the
 dnl linker allow multiple weak symbols.
@@ -1018,44 +438,6 @@ else
     ifelse([$2],,:,[$2])
 fi
 ])
-dnl
-dnl/*D
-dnl PAC_FUNC_CRYPT - Check that the function crypt is defined
-dnl
-dnl Synopsis:
-dnl PAC_FUNC_CRYPT
-dnl
-dnl Output Effects:
-dnl 
-dnl In Solaris, the crypt function is not defined in unistd unless 
-dnl _XOPEN_SOURCE is defines and _XOPEN_VERSION is 4 or greater.
-dnl We test by looking for a missing crypt by defining our own
-dnl incompatible one and trying to compile it.
-dnl Defines NEED_CRYPT_PROTOTYPE if no prototype is found.
-dnl D*/
-AC_DEFUN([PAC_FUNC_CRYPT],[
-AC_CACHE_CHECK([whether crypt defined in unistd.h],
-pac_cv_func_crypt_defined,[
-AC_TRY_COMPILE([
-#include <unistd.h>
-double crypt(double a){return a;}],[return 0];,
-pac_cv_func_crypt_defined="no",pac_cv_func_crypt_defined="yes")])
-if test "$pac_cv_func_crypt_defined" = "no" ; then
-    # check to see if defining _XOPEN_SOURCE helps
-    AC_CACHE_CHECK([whether crypt defined in unistd with _XOPEN_SOURCE],
-pac_cv_func_crypt_xopen,[
-    AC_TRY_COMPILE([
-#define _XOPEN_SOURCE    
-#include <unistd.h>
-double crypt(double a){return a;}],[return 0];,
-pac_cv_func_crypt_xopen="no",pac_cv_func_crypt_xopen="yes")])
-fi
-if test "$pac_cv_func_crypt_xopen" = "yes" ; then
-    AC_DEFINE(_XOPEN_SOURCE,1,[if xopen needed for crypt])
-elif test "$pac_cv_func_crypt_defined" = "no" ; then
-    AC_DEFINE(NEED_CRYPT_PROTOTYPE,1,[if a prototype for crypt is needed])
-fi
-])dnl
 
 dnl Use the value of enable-strict to update CFLAGS
 dnl pac_cc_strict_flags contains the strict flags.
@@ -1085,27 +467,31 @@ if test "$enable_strict_done" != "yes" ; then
     #   -Wno-sign-compare -- read() and write() return bytes read/written
     #       as a signed value, but we often compare this to size_t (or
     #	    msg_sz_t) variables.
+    #   -Wno-format-zero-length -- this warning is irritating and useless, since
+    #                              a zero-length format string is very well defined
+    #   -Wno-type-limits -- There are places where we compare an unsigned to 
+    #	    a constant that happens to be zero e.g., if x is unsigned and 
+    #	    MIN_VAL is zero, we'd like to do "MPIU_Assert(x >= MIN_VAL);".
+    #       Note this option is not supported by gcc 4.2.  This needs to be added 
+    #	    after most other warning flags, so that we catch a gcc bug on 32-bit 
+    #	    that doesn't give a warning that this is unsupported, unless another
+    #	    warning is triggered, and then if gives an error.
     # These were removed to reduce warnings:
     #   -Wcast-qual -- Sometimes we need to cast "volatile char*" to 
     #	    "char*", e.g., for memcpy.
     #   -Wpadded -- We catch struct padding with asserts when we need to
     #   -Wredundant-decls -- Having redundant declarations is benign and the 
     #	    code already has some.
-    #   -Wno-format-zero-length -- this warning is irritating and useless, since
-    #                              a zero-length format string is very well defined
-    #
-    # This was removed because it doesn't seem to reliably detected by gcc as an
-    # invalid option (see ticket #729):
-    #   -Wno-type-limits -- There are places where we compare an unsigned to 
-    #	    a constant that happens to be zero e.g., if x is unsigned and 
-    #	    MIN_VAL is zero, we'd like to do "MPIU_Assert(x >= MIN_VAL);".
-    #       Note this option is not supported by gcc 4.2.
-
+    #   -Waggregate-return -- This seems to be a performance-related warning
+    #       aggregate return values are legal in ANSI C, but they may be returned
+    #	    in memory rather than through a register.  We do use aggregate return
+    #	    values, but they are structs of a single basic type (used to enforce
+    #	    type checking for relative vs. absolute ptrs), and with optimization
+    #	    the aggregate value is converted to a scalar.
     # the embedded newlines in this string are safe because we evaluate each
     # argument in the for-loop below and append them to the CFLAGS with a space
     # as the separator instead
     pac_common_strict_flags="
-        -O2
         -Wall
         -Wextra
         -Wno-missing-field-initializers
@@ -1126,7 +512,6 @@ if test "$enable_strict_done" != "yes" ; then
         -Wcast-align
         -Wwrite-strings
         -Wno-sign-compare
-        -Waggregate-return
         -Wold-style-definition
         -Wno-multichar
         -Wno-deprecated-declarations
@@ -1137,18 +522,24 @@ if test "$enable_strict_done" != "yes" ; then
         -Wvariadic-macros
         -std=c89
         -Wno-format-zero-length
+	-Wno-type-limits
     "
     pac_cc_strict_flags=""
     case "$1" in 
         yes|all|posix)
 		enable_strict_done="yes"
-		pac_cc_strict_flags="$pac_common_strict_flags -D_POSIX_C_SOURCE=199506L"
+		pac_cc_strict_flags="-O2 $pac_common_strict_flags -D_POSIX_C_SOURCE=199506L"
         ;;
 
         noposix)
 		enable_strict_done="yes"
-		pac_cc_strict_flags="$pac_common_strict_flags"
+		pac_cc_strict_flags="-O2 $pac_common_strict_flags"
         ;;
+
+	noopt)
+		enable_strict_done="yes"
+		pac_cc_strict_flags="$pac_common_strict_flags -D_POSIX_C_SOURCE=199506L"
+	;;
         
         no)
 		# Accept and ignore this value
@@ -1166,10 +557,13 @@ if test "$enable_strict_done" != "yes" ; then
     # See if the above options work with the compiler
     accepted_flags=""
     for flag in $pac_cc_strict_flags ; do
-    	save_CFLAGS=$CFLAGS
+        # the save_CFLAGS variable must be namespaced, otherwise they
+        # may not actually be saved if an invoked macro also uses
+        # save_CFLAGS
+        pcs_save_CFLAGS=$CFLAGS
 	CFLAGS="$CFLAGS $accepted_flags"
 	PAC_C_CHECK_COMPILER_OPTION($flag,accepted_flags="$accepted_flags $flag",)
-	CFLAGS=$save_CFLAGS
+        CFLAGS=$pcs_save_CFLAGS
     done
     pac_cc_strict_flags=$accepted_flags
 fi
@@ -1187,374 +581,12 @@ dnl
 dnl D*/
 AC_DEFUN([PAC_ARG_STRICT],[
 AC_ARG_ENABLE(strict,
-[--enable-strict  - Turn on strict compilation testing when using gcc])
+[--enable-strict  - Turn on strict compilation testing])
 PAC_CC_STRICT($enable_strict)
 CFLAGS="$CFLAGS $pac_cc_strict_flags"
 export CFLAGS
 ])
 
-dnl/*D
-dnl PAC_ARG_CC_G - Add debugging flags for the C compiler
-dnl
-dnl Synopsis:
-dnl PAC_ARG_CC_G
-dnl
-dnl Output Effect:
-dnl Adds '-g' to 'COPTIONS' and exports 'COPTIONS'.  Sets and exports the 
-dnl variable 'enable_g_simple' so that subsidiary 'configure's will not
-dnl add another '-g'.
-dnl
-dnl Notes:
-dnl '--enable-g' should be used for all internal debugging modes if possible.
-dnl Use the 'enable_val' that 'enable_g' is set to to pass particular values,
-dnl and ignore any values that are not recognized (some other 'configure' 
-dnl may have used them.  Of course, if you need extra values, you must
-dnl add code to extract values from 'enable_g'.
-dnl
-dnl For example, to look for a particular keyword, you could use
-dnl.vb
-dnl SaveIFS="$IFS"
-dnl IFS=","
-dnl for key in $enable_g ; do
-dnl     case $key in 
-dnl         mem) # add code for memory debugging 
-dnl         ;;
-dnl         *)   # ignore all other values
-dnl         ;;
-dnl     esac
-dnl done
-dnl IFS="$SaveIFS"
-dnl.ve
-dnl
-dnl D*/
-AC_DEFUN([PAC_ARG_CC_G],[
-AC_ARG_ENABLE(g,
-[--enable-g  - Turn on debugging of the package (typically adds -g to COPTIONS)])
-export COPTIONS
-export enable_g_simple
-if test -n "$enable_g" -a "$enable_g" != "no" -a \
-   "$enable_g_simple" != "done" ; then
-    enable_g_simple="done"
-    if test "$enable_g" = "g" -o "$enable_g" = "yes" ; then
-        COPTIONS="$COPTIONS -g"
-    fi
-fi
-])
-dnl
-dnl Simple version for both options
-dnl
-AC_DEFUN([PAC_ARG_CC_COMMON],[
-PAC_ARG_CC_G
-PAC_ARG_STRICT
-])
-dnl
-dnl Eventually, this can be used instead of the funky Fortran stuff to 
-dnl access the command line from a C routine.
-dnl #
-dnl # Under IRIX (some version) __Argc and __Argv gave the argc,argv values
-dnl #Under linux, __libc_argv and __libc_argc
-dnl AC_MSG_CHECKING([for alternative argc,argv names])
-dnl AC_TRY_LINK([
-dnl extern int __Argc; extern char **__Argv;],[return __Argc;],
-dnl alt_argv="__Argv")
-dnl if test -z "$alt_argv" ; then
-dnl    AC_TRY_LINK([
-dnl extern int __libc_argc; extern char **__libc_argv;],[return __lib_argc;],
-dnl alt_argv="__lib_argv")
-dnl fi
-dnl if test -z "$alt_argv" ; then
-dnl   AC_MSG_RESULT(none found)) 
-dnl else 
-dnl   AC_MSG_RESULT($alt_argv) 
-dnl fi
-dnl 
-dnl
-dnl Check whether we need -fno-common to correctly compile the source code.
-dnl This is necessary if global variables are defined without values in
-dnl gcc.  Here is the test
-dnl conftest1.c:
-dnl extern int a; int a;
-dnl conftest2.c:
-dnl extern int a; int main(int argc; char *argv[] ){ return a; }
-dnl Make a library out of conftest1.c and try to link with it.
-dnl If that fails, recompile it with -fno-common and see if that works.
-dnl If so, add -fno-common to CFLAGS
-dnl An alternative is to use, on some systems, ranlib -c to force 
-dnl the system to find common symbols.
-dnl
-AC_DEFUN([PAC_PROG_C_BROKEN_COMMON],[
-AC_CACHE_CHECK([whether global variables handled properly],
-ac_cv_prog_cc_globals_work,[
-AC_REQUIRE([AC_PROG_RANLIB])
-ac_cv_prog_cc_globals_work=no
-rm -f libconftest.a
-echo 'extern int a; int a;' > conftest1.c
-echo 'extern int a; int main( ){ return a; }' > conftest2.c
-if ${CC-cc} $CFLAGS -c conftest1.c >conftest.out 2>&1 ; then
-    if ${AR-ar} cr libconftest.a conftest1.o >/dev/null 2>&1 ; then
-        if ${RANLIB-:} libconftest.a >/dev/null 2>&1 ; then
-            if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a >>conftest.out 2>&1 ; then
-		# Success!  C works
-		ac_cv_prog_cc_globals_work=yes
-	    else
-		echo "Error linking program with uninitialized global" >&AC_FD_CC
-	        echo "Programs were:" >&AC_FD_CC
-		echo "conftest1.c:" >&AC_FD_CC
-                cat conftest1.c >&AC_FD_CC
-		echo "conftest2.c:" >&AC_FD_CC
-		cat conftest2.c >&AC_FD_CC
-		echo "and link line was:" >&AC_FD_CC
-		echo "${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a" >&AC_FD_CC
-		echo "with output:" >&AC_FD_CC
-		cat conftest.out >&AC_FD_CC
-
-	        # Failure!  Do we need -fno-common?
-	        ${CC-cc} $CFLAGS -fno-common -c conftest1.c >> conftest.out 2>&1
-		rm -f libconftest.a
-		${AR-ar} cr libconftest.a conftest1.o
-	        ${RANLIB-:} libconftest.a
-	        if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a >> conftest.out 2>&1 ; then
-		    ac_cv_prog_cc_globals_work="needs -fno-common"
-		    CFLAGS="$CFLAGS -fno-common"
-                elif test -n "$RANLIB" ; then 
-		    # Try again, with ranlib changed to ranlib -c
-                    # (send output to /dev/null incase this ranlib
-                    # doesn't know -c)
-		    ${RANLIB} -c libconftest.a >/dev/null 2>&1
-		    if ${CC-cc} $CFLAGS -o conftest conftest2.c $LDFLAGS libconftest.a >> conftest.out 2>&1 ; then
-			RANLIB="$RANLIB -c"
-	 	    #else
-		    #	# That didn't work
-		    #	:
-		    fi
-	        #else 
-		#    :
-		fi
-	    fi
-        fi
-    fi
-fi
-# This is needed for Mac OSX 10.5
-rm -rf conftest.dSYM
-rm -f conftest* libconftest*])
-if test "$ac_cv_prog_cc_globals_work" = no ; then
-    AC_MSG_WARN([Common symbols not supported on this system!])
-fi
-])
-dnl
-dnl
-dnl Return the structure alignment in pac_cv_c_struct_align
-dnl Possible values include
-dnl	packed - no padding or alignment, any item may begin on any byte
-dnl	largest - extent of a structure is a multiple of the largest item; 
-dnl               items are aligned with their size 
-dnl	four - structs padded to a multiple of four
-dnl     two  - like four, but to a multiple of two
-dnl     eight - If objects containing 8-byte items are padded to a multiple
-dnl             of eight
-dnl     largestor4 - like largest, except that for items of size > 4, align 
-dnl                  on 4-byte boundaries.  E.g., align on the 
-dnl                  min(4,max(size of items)).
-dnl     largestorword - (should be named largestorqword, with qword meaning 
-dnl                     quad-word): Like largestor4, but with a special case 
-dnl                     for 16-byte items (this is the 16-byte aligned 
-dnl                     quad-word-load special case).
-dnl
-dnl In addition, a "Could not determine alignment" and a 
-dnl "Multiple cases:" return is possible.  
-dnl
-AC_DEFUN([PAC_C_STRUCT_ALIGNMENT],[
-AC_CACHE_CHECK([for C struct alignment],pac_cv_c_struct_align,[
-AC_TRY_RUN([
-#include <stdio.h>
-#ifdef DEBUG_STRUCT_ALIGNMENT
-#define DBG(a,b,c) printf( "type %s, size = %d, extent = %d\n", a, b, c )
-#define CHECK(cond,flag) if (cond) { flag = 0; \
-    printf( "Setting %s to false because of %s\n", #flag, #cond ); }
-#else
-#define DBG(a,b,c)
-#define CHECK(cond,flag) if (cond) { flag = 0; }
-#endif
-
-int main( int argc, char *argv[] )
-{
-    FILE *cf;
-    int is_packed  = 1;
-    int is_two     = 1;
-    int is_four    = 1;
-    int is_eight   = 1;
-    int is_largest = 1;
-    int is_largestorword = 1;
-    int is_largestor4 = 1;
-    int numCases;
-
-    /* We've seen PowerPC systems where the alignment may
-       be largest for some items but not for double + int */
-    struct { char a; int b; } char_int;
-    struct { short a; int b; } short_int;
-    struct { char a; short b; } char_short;
-    struct { char a; long b; } char_long;
-    struct { char a; float b; } char_float;
-    struct { char a; double b; } char_double;
-    struct { char a; int b; char c; } char_int_char;
-    struct { char a; short b; char c; } char_short_char;
-#ifdef HAVE_LONG_DOUBLE
-    struct { char a; long double b; } char_long_double;
-#endif
-    int size, extent;
-
-    size = sizeof(char) + sizeof(int);
-    extent = sizeof(char_int);
-    if (size != extent) is_packed = 0;
-    CHECK((extent % sizeof(int)) != 0, is_largest); 
-    CHECK((extent % sizeof(int)) != 0, is_largestor4); 
-    CHECK((extent % sizeof(int)) != 0, is_largestorword); 
-    if ( (extent % 2) != 0) is_two = 0;
-    if ( (extent % 4) != 0) is_four = 0;
-    if (sizeof(int) == 8 && (extent % 8) != 0) is_eight = 0;
-    DBG("char_int",size,extent);
-
-    size = sizeof(short) + sizeof(int);
-    extent = sizeof(short_int);
-    if (size != extent) is_packed = 0;
-    CHECK((extent % sizeof(int)) != 0, is_largest); 
-    CHECK((extent % sizeof(int)) != 0, is_largestor4); 
-    CHECK((extent % sizeof(int)) != 0, is_largestorword); 
-    if ( (extent % 2) != 0) is_two = 0;
-    if ( (size == 6) && (extent == 8) ) is_two = 0;
-    if ( (extent % 4) != 0) is_four = 0;
-    if (sizeof(int) == 8 && (extent % 8) != 0) is_eight = 0;
-    DBG("short_int",size,extent);
-
-    size = sizeof(char) + sizeof(short);
-    extent = sizeof(char_short);
-    if (size != extent) is_packed = 0;
-    CHECK((extent % sizeof(short)) != 0,is_largest);
-    CHECK((extent % sizeof(short)) != 0,is_largestor4);
-    CHECK((extent % sizeof(short)) != 0,is_largestorword);
-    if ( (extent % 2) != 0) is_two = 0;
-    if (sizeof(short) == 4 && (extent % 4) != 0) is_four = 0;
-    if (sizeof(short) == 8 && (extent % 8) != 0) is_eight = 0;
-    DBG("char_short",size,extent);
-
-    size = sizeof(char) + sizeof(long);
-    extent = sizeof(char_long);
-    if (size != extent) is_packed = 0;
-    CHECK((extent % sizeof(long)) != 0,is_largest);
-    CHECK((extent % 4) != 0,is_largestor4);
-    CHECK((extent % sizeof(long)) != 0,is_largestorword);
-    if ( (extent % 2) != 0) is_two = 0;
-    if ( (extent % 4) != 0) is_four = 0;
-    if (sizeof(long) == 8 && (extent % 8) != 0) is_eight = 0;
-    DBG("char_long",size,extent);
-
-    size = sizeof(char) + sizeof(float);
-    extent = sizeof(char_float);
-    if (size != extent) is_packed = 0;
-    CHECK((extent % sizeof(float)) != 0,is_largest);
-    CHECK((extent % sizeof(float)) != 0,is_largestor4);
-    CHECK((extent % sizeof(float)) != 0,is_largestorword);
-    if ( (extent % 2) != 0) is_two = 0;
-    if ( (extent % 4) != 0) is_four = 0;
-    if (sizeof(float) == 8 && (extent % 8) != 0) is_eight = 0;
-    DBG("char_float",size,extent);
-
-    size = sizeof(char) + sizeof(double);
-    extent = sizeof(char_double);
-    if (size != extent) is_packed = 0;
-    CHECK((extent % sizeof(double)) != 0,is_largest);
-    CHECK((extent % 4) != 0,is_largestor4);
-    CHECK((extent % sizeof(int)) != 0,is_largestorword);
-    if ( (extent % 2) != 0) is_two = 0;
-    if ( (extent % 4) != 0) is_four = 0;
-    if (sizeof(double) == 8 && (extent % 8) != 0) is_eight = 0;
-    DBG("char_double",size,extent);
-
-#ifdef HAVE_LONG_DOUBLE
-    size = sizeof(char) + sizeof(long double);
-    extent = sizeof(char_long_double);
-    if (size != extent) is_packed = 0;
-    CHECK((extent % sizeof(long double)) != 0,is_largest);
-    CHECK((extent % 4) != 0,is_largestor4);
-    CHECK((extent % 16) == 0,is_largestor4);
-    CHECK((extent % sizeof(long double)) != 0,is_largestorword);
-    /* This case only applies to largestorword if long doubles are 16 bytes */
-    if (sizeof(long double) != 16) is_largestorword = 0;
-    if ( (extent % 2) != 0) is_two = 0;
-    if ( (extent % 4) != 0) is_four = 0;
-    if (sizeof(long double) >= 8 && (extent % 8) != 0) is_eight = 0;
-    DBG("char_long-double",size,extent);
-#else
-    /* The special case of largestorword only applies if long double 
-       available */
-    is_largestorword=0;
-#endif
-
-    /* char int char helps separate largest from 4/8 aligned */
-    size = sizeof(char) + sizeof(int) + sizeof(char);
-    extent = sizeof(char_int_char);
-    if (size != extent) is_packed = 0;
-    CHECK((extent % sizeof(int)) != 0,is_largest);
-    CHECK((extent % sizeof(int)) != 0,is_largestor4);
-    CHECK((extent % sizeof(int)) != 0,is_largestorword);
-    if ( (extent % 2) != 0) is_two = 0;
-    if ( (extent % 4) != 0) is_four = 0;
-    if (sizeof(int) == 8 && (extent % 8) != 0) is_eight = 0;
-    DBG("char_int_char",size,extent);
-
-    /* char short char helps separate largest from 4/8 aligned */
-    size = sizeof(char) + sizeof(short) + sizeof(char);
-    extent = sizeof(char_short_char);
-    if (size != extent) is_packed = 0;
-    CHECK((extent % sizeof(short)) != 0,is_largest);
-    CHECK((extent % sizeof(short)) != 0,is_largestor4);
-    CHECK((extent % sizeof(short)) != 0,is_largestorword);
-    if ( (extent % 2) != 0) is_two = 0;
-    if (sizeof(short) == 4 && (extent % 4) != 0) is_four = 0;
-    CHECK((extent == 6) && (size == 4),is_four);
-    if (sizeof(short) == 8 && (extent % 8) != 0) is_eight = 0;
-    DBG("char_short_char",size,extent);
-
-    /* If aligned mod 8, it will be aligned mod 4 */
-    if (is_eight) { is_four = 0; is_two = 0; }
-
-    if (is_four) is_two = 0;
-
-    /* largest superceeds eight */
-    if (is_largest) is_eight = 0;
-
-    /* Tabulate the results */
-    cf = fopen( "ctest.out", "w" );
-    numCases = is_packed + is_largest + is_largestorword + is_largestor4 +
-	is_two + is_four + is_eight;
-    if (numCases == 0) {
-	fprintf( cf, "Could not determine alignment\n" );
-    }
-    else {
-	if (numCases != 1) {
-	    fprintf( cf, "Multiple cases:\n" );
-	}
-	if (is_packed) fprintf( cf, "packed\n" );
-	if (is_largest) fprintf( cf, "largest\n" );
-	if (is_largestorword) fprintf( cf, "largestorword\n" );
-	if (is_largestor4) fprintf( cf, "largestor4\n" );
-	if (is_two) fprintf( cf, "two\n" );
-	if (is_four) fprintf( cf, "four\n" );
-	if (is_eight) fprintf( cf, "eight\n" );
-    }
-    fclose( cf );
-    return 0;
-}],
-pac_cv_c_struct_align=`cat ctest.out`
-,pac_cv_c_struct_align="unknown",pac_cv_c_struct_align="$CROSS_ALIGN_STRUCT")
-rm -f ctest.out
-])
-if test -z "$pac_cv_c_struct_align" ; then
-    pac_cv_c_struct_align="unknown"
-fi
-])
-dnl
-dnl
 dnl Return the integer structure alignment in pac_cv_c_max_integer_align
 dnl Possible values include
 dnl	packed
@@ -1682,8 +714,7 @@ if test -z "$pac_cv_c_max_integer_align" ; then
     pac_cv_c_max_integer_align="unknown"
 fi
 ])
-dnl
-dnl
+
 dnl Return the floating point structure alignment in
 dnl pac_cv_c_max_fp_align.
 dnl
@@ -1798,8 +829,7 @@ if test -z "$pac_cv_c_max_fp_align" ; then
     pac_cv_c_max_fp_align="unknown"
 fi
 ])
-dnl
-dnl
+
 dnl Return the floating point structure alignment in
 dnl pac_cv_c_max_double_fp_align.
 dnl
@@ -1954,7 +984,7 @@ if test -z "$pac_cv_c_max_longdouble_fp_align" ; then
     pac_cv_c_max_longdouble_fp_align="unknown"
 fi
 ])
-dnl
+
 dnl Other tests assume that there is potentially a maximum alignment
 dnl and that if there is no maximum alignment, or a type is smaller than
 dnl that value, then we align on the size of the value, with the exception
@@ -2016,8 +1046,7 @@ if test -z "$pac_cv_c_double_alignment_exception" ; then
     pac_cv_c_double_alignment_exception="unknown"
 fi
 ])
-dnl
-dnl
+
 dnl Test for odd struct alignment rule that only applies max.
 dnl padding when double value is at front of type.
 dnl Puts result in pac_cv_c_double_pos_align.
@@ -2060,8 +1089,7 @@ if test -z "$pac_cv_c_double_pos_align" ; then
     pac_cv_c_double_pos_align="unknown"
 fi
 ])
-dnl
-dnl
+
 dnl Test for odd struct alignment rule that only applies max.
 dnl padding when long long int value is at front of type.
 dnl Puts result in pac_cv_c_llint_pos_align.
@@ -2107,8 +1135,6 @@ if test -z "$pac_cv_c_llint_pos_align" ; then
 fi
 ])
 
-dnl
-dnl
 dnl/*D
 dnl PAC_FUNC_NEEDS_DECL - Set NEEDS_<funcname>_DECL if a declaration is needed
 dnl
@@ -2146,78 +1172,8 @@ changequote([, ])dnl
     AC_DEFINE_UNQUOTED(PAC_FUNC_NAME,1,[Define if $2 needs a declaration])
 undefine([PAC_FUNC_NAME])
 fi
-])dnl
-dnl
-dnl /*D
-dnl PAC_CHECK_SIZEOF_DERIVED - Get the size of a user-defined type,
-dnl such as a struct
-dnl
-dnl PAC_CHECK_SIZEOF_DERIVED(shortname,definition,defaultsize)
-dnl Like AC_CHECK_SIZEOF, but handles arbitrary types.
-dnl Unlike AC_CHECK_SIZEOF, does not define SIZEOF_xxx (because
-dnl autoheader can''t handle this case)
-dnl D*/
-AC_DEFUN([PAC_CHECK_SIZEOF_DERIVED],[
-changequote(<<,>>)dnl
-define(<<AC_TYPE_NAME>>,translit(sizeof_$1,[a-z *], [A-Z_P]))dnl
-define(<<AC_CV_NAME>>,translit(pac_cv_sizeof_$1,[ *], [_p]))dnl
-changequote([,])dnl
-rm -f conftestval
-AC_MSG_CHECKING([for size of $1])
-AC_CACHE_VAL(AC_CV_NAME,
-[AC_TRY_RUN([#include <stdio.h>
-main()
-{
-  $2 a;
-  FILE *f=fopen("conftestval", "w");
-  if (!f) exit(1);
-  fprintf(f, "%d\n", sizeof(a));
-  exit(0);
-}],AC_CV_NAME=`cat conftestval`,AC_CV_NAME=0,ifelse([$3],,,AC_CV_NAME=$3))])
-AC_MSG_RESULT($AC_CV_NAME)
-dnl AC_DEFINE_UNQUOTED(AC_TYPE_NAME,$AC_CV_NAME)
-undefine([AC_TYPE_NAME])undefine([AC_CV_NAME])
-])
-dnl
-dnl /*D
-dnl PAC_CHECK_SIZEOF_2TYPES - Get the size of a pair of types
-dnl
-dnl PAC_CHECK_SIZEOF_2TYPES(shortname,type1,type2,defaultsize)
-dnl Like AC_CHECK_SIZEOF, but handles pairs of types.
-dnl Unlike AC_CHECK_SIZEOF, does not define SIZEOF_xxx (because
-dnl autoheader can''t handle this case)
-dnl D*/
-AC_DEFUN([PAC_CHECK_SIZEOF_2TYPES],[
-changequote(<<,>>)dnl
-define(<<AC_TYPE_NAME>>,translit(sizeof_$1,[a-z *], [A-Z_P]))dnl
-define(<<AC_CV_NAME>>,translit(pac_cv_sizeof_$1,[ *], [_p]))dnl
-changequote([,])dnl
-rm -f conftestval
-AC_MSG_CHECKING([for size of $1])
-AC_CACHE_VAL(AC_CV_NAME,
-[AC_TRY_RUN([#include <stdio.h>
-main()
-{
-  $2 a;
-  $3 b;
-  FILE *f=fopen("conftestval", "w");
-  if (!f) return 1; /* avoid exit */
-  fprintf(f, "%d\n", (int)(sizeof(a) + sizeof(b)));
-  return 0;
-}],AC_CV_NAME=`cat conftestval`,AC_CV_NAME=0,ifelse([$4],,,AC_CV_NAME=$4))])
-if test "X$AC_CV_NAME" = "X" ; then
-    # We have a problem.  The test returned a zero status, but no output,
-    # or we're cross-compiling (or think we are) and have no value for 
-    # this object
-    :
-fi
-rm -f conftestval
-AC_MSG_RESULT($AC_CV_NAME)
-dnl AC_DEFINE_UNQUOTED(AC_TYPE_NAME,$AC_CV_NAME)
-undefine([AC_TYPE_NAME])undefine([AC_CV_NAME])
 ])
 
-dnl
 dnl PAC_C_GNU_ATTRIBUTE - See if the GCC __attribute__ specifier is allow.
 dnl Use the following
 dnl #ifndef HAVE_GCC_ATTRIBUTE
@@ -2430,4 +1386,170 @@ if test "$pac_cv_have__function__" = "yes" ; then
     AC_DEFINE(HAVE__FUNCTION__,,[define if the compiler defines __FUNCTION__])
 fi
 
+])
+
+
+dnl Check structure alignment
+AC_DEFUN([PAC_STRUCT_ALIGNMENT],[
+	# Initialize alignment checks
+	is_packed=1
+	is_two=1
+	is_four=1
+	is_eight=1
+	is_largest=1
+
+	# See if long double exists
+	AC_TRY_COMPILE(,[long double a;],have_long_double=yes,have_long_double=no)
+
+	# Get sizes of regular types
+	AC_CHECK_SIZEOF(char)
+	AC_CHECK_SIZEOF(int)
+	AC_CHECK_SIZEOF(short)
+	AC_CHECK_SIZEOF(long)
+	AC_CHECK_SIZEOF(float)
+	AC_CHECK_SIZEOF(double)
+	AC_CHECK_SIZEOF(long double)
+
+	# char_int comparison
+	AC_CHECK_SIZEOF(char_int, 0, [typedef struct { char a; int b; } char_int; ])
+	size=`expr $ac_cv_sizeof_char + $ac_cv_sizeof_int`
+	extent=$ac_cv_sizeof_char_int
+	if test "$size" != "$extent" ; then is_packed=0 ; fi
+	if test "`expr $extent % $ac_cv_sizeof_int`" != "0" ; then is_largest=0 ; fi
+	if test "`expr $extent % 2`" != "0" ; then is_two=0 ; fi
+	if test "`expr $extent % 4`" != "0" ; then is_four=0 ; fi
+	if test "$ac_cv_sizeof_int" = "8" -a "`expr $extent % 8`" != "0" ; then
+	   is_eight=0
+	fi
+
+	# char_short comparison
+	AC_CHECK_SIZEOF(char_short, 0, [typedef struct { char a; short b; } char_short; ])
+	size=`expr $ac_cv_sizeof_char + $ac_cv_sizeof_short`
+	extent=$ac_cv_sizeof_char_short
+	if test "$size" != "$extent" ; then is_packed=0 ; fi
+	if test "`expr $extent % $ac_cv_sizeof_short`" != "0" ; then is_largest=0 ; fi
+	if test "`expr $extent % 2`" != "0" ; then is_two=0 ; fi
+	if test "$ac_cv_sizeof_short" = "4" -a "`expr $extent % 4`" != "0" ; then
+	   is_four=0
+	fi
+	if test "$ac_cv_sizeof_short" = "8" -a "`expr $extent % 8`" != "0" ; then
+	   is_eight=0
+	fi
+
+	# char_long comparison
+	AC_CHECK_SIZEOF(char_long, 0, [typedef struct { char a; long b; } char_long; ])
+	size=`expr $ac_cv_sizeof_char + $ac_cv_sizeof_long`
+	extent=$ac_cv_sizeof_char_long
+	if test "$size" != "$extent" ; then is_packed=0 ; fi
+	if test "`expr $extent % $ac_cv_sizeof_long`" != "0" ; then is_largest=0 ; fi
+	if test "`expr $extent % 2`" != "0" ; then is_two=0 ; fi
+	if test "`expr $extent % 4`" != "0" ; then is_four=0 ; fi
+	if test "$ac_cv_sizeof_long" = "8" -a "`expr $extent % 8`" != "0" ; then
+	   is_eight=0
+	fi
+
+	# char_float comparison
+	AC_CHECK_SIZEOF(char_float, 0, [typedef struct { char a; float b; } char_float; ])
+	size=`expr $ac_cv_sizeof_char + $ac_cv_sizeof_float`
+	extent=$ac_cv_sizeof_char_float
+	if test "$size" != "$extent" ; then is_packed=0 ; fi
+	if test "`expr $extent % $ac_cv_sizeof_float`" != "0" ; then is_largest=0 ; fi
+	if test "`expr $extent % 2`" != "0" ; then is_two=0 ; fi
+	if test "`expr $extent % 4`" != "0" ; then is_four=0 ; fi
+	if test "$ac_cv_sizeof_float" = "8" -a "`expr $extent % 8`" != "0" ; then
+	   is_eight=0
+	fi
+
+	# char_double comparison
+	AC_CHECK_SIZEOF(char_double, 0, [typedef struct { char a; double b; } char_double; ])
+	size=`expr $ac_cv_sizeof_char + $ac_cv_sizeof_double`
+	extent=$ac_cv_sizeof_char_double
+	if test "$size" != "$extent" ; then is_packed=0 ; fi
+	if test "`expr $extent % $ac_cv_sizeof_double`" != "0" ; then is_largest=0 ; fi
+	if test "`expr $extent % 2`" != "0" ; then is_two=0 ; fi
+	if test "`expr $extent % 4`" != "0" ; then is_four=0 ; fi
+	if test "$ac_cv_sizeof_double" = "8" -a "`expr $extent % 8`" != "0" ; then
+	   is_eight=0
+	fi
+
+	# char_long_double comparison
+	if test "$have_long_double" = "yes"; then
+	AC_CHECK_SIZEOF(char_long_double, 0, [
+				       typedef struct {
+				       	       char a;
+					       long double b;
+				       } char_long_double;
+				       ])
+	size=`expr $ac_cv_sizeof_char + $ac_cv_sizeof_long_double`
+	extent=$ac_cv_sizeof_char_long_double
+	if test "$size" != "$extent" ; then is_packed=0 ; fi
+	if test "`expr $extent % $ac_cv_sizeof_long_double`" != "0" ; then is_largest=0 ; fi
+	if test "`expr $extent % 2`" != "0" ; then is_two=0 ; fi
+	if test "`expr $extent % 4`" != "0" ; then is_four=0 ; fi
+	if test "$ac_cv_sizeof_long_double" = "8" -a "`expr $extent % 8`" != "0" ; then
+	   is_eight=0
+	fi
+	fi
+
+	# char_int_char comparison
+	AC_CHECK_SIZEOF(char_int_char, 0, [
+				       typedef struct {
+				       	       char a;
+					       int b;
+					       char c;
+				       } char_int_char;
+				       ])
+	size=`expr $ac_cv_sizeof_char + $ac_cv_sizeof_int + $ac_cv_sizeof_char`
+	extent=$ac_cv_sizeof_char_int_char
+	if test "$size" != "$extent" ; then is_packed=0 ; fi
+	if test "`expr $extent % $ac_cv_sizeof_int`" != "0" ; then is_largest=0 ; fi
+	if test "`expr $extent % 2`" != "0" ; then is_two=0 ; fi
+	if test "`expr $extent % 4`" != "0" ; then is_four=0 ; fi
+	if test "$ac_cv_sizeof_int" = "8" -a "`expr $extent % 8`" != "0" ; then
+	   is_eight=0
+	fi
+
+	# char_short_char comparison
+	AC_CHECK_SIZEOF(char_short_char, 0, [
+				       typedef struct {
+				       	       char a;
+					       short b;
+					       char c;
+				       } char_short_char;
+				       ])
+	size=`expr $ac_cv_sizeof_char + $ac_cv_sizeof_short + $ac_cv_sizeof_char`
+	extent=$ac_cv_sizeof_char_short_char
+	if test "$size" != "$extent" ; then is_packed=0 ; fi
+	if test "`expr $extent % $ac_cv_sizeof_short`" != "0" ; then is_largest=0 ; fi
+	if test "`expr $extent % 2`" != "0" ; then is_two=0 ; fi
+	if test "$ac_cv_sizeof_short" = "4" -a "`expr $extent % 4`" != "0" ; then
+	   is_four=0
+	fi
+	if test "$ac_cv_sizeof_short" = "8" -a "`expr $extent % 8`" != "0" ; then
+	   is_eight=0
+	fi
+
+	# If aligned mod 8, it will be aligned mod 4
+	if test $is_eight = 1 ; then is_four=0 ; is_two=0 ; fi
+	if test $is_four = 1 ; then is_two=0 ; fi
+
+	# Largest supersedes 8
+	if test $is_largest = 1 ; then is_eight=0 ; fi
+
+	# Find the alignment
+	if test "`expr $is_packed + $is_largest + $is_two + $is_four + $is_eight`" = "0" ; then
+	   pac_cv_struct_alignment="unknown"
+	elif test "`expr $is_packed + $is_largest + $is_two + $is_four + $is_eight`" != "1" ; then
+	   pac_cv_struct_alignment="unknown"
+	elif test $is_packed = 1 ; then
+	   pac_cv_struct_alignment="packed"
+	elif test $is_largest = 1 ; then
+	   pac_cv_struct_alignment="largest"
+	elif test $is_two = 1 ; then
+	   pac_cv_struct_alignment="two"
+	elif test $is_four = 1 ; then
+	   pac_cv_struct_alignment="four"
+	elif test $is_eight = 1 ; then
+	   pac_cv_struct_alignment="eight"
+	fi
 ])

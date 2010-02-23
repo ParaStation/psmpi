@@ -76,16 +76,12 @@ dependencies:
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(abs_builddir)/mpi.h mpiimpl.h mpiatomic.h \
 	$(abs_builddir)/mpichtimer.h mpierror.h mpierrs.h mpihandlemem.h \
 	mpimem.h mpistates.h mpisysstates.h mpitimerimpl.h mpitypedefs.h \
 	mpiutil.h nmpi.h mpiallstates.h mpiimplthread.h mpiiov.h \
 	mpiu_monitors.h $(abs_builddir)/mpichtimer.h 
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 # This Makefile supports the TAGS target
 

@@ -436,7 +436,8 @@ int MPIDI_CH3_ReqHandler_UnpackUEBufComplete( MPIDI_VC_t *vc ATTRIBUTE((unused))
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQHANDLER_UNPACKUEBUFCOMPLETE);
     
-    MPIDI_Request_recv_pending(rreq, &recv_pending);
+    MPIDI_Request_decr_pending(rreq);
+    MPIDI_Request_check_pending(rreq, &recv_pending);
     if (!recv_pending)
     { 
 	if (rreq->dev.recv_data_sz > 0)
@@ -693,7 +694,7 @@ static int do_accumulate_op(MPID_Request *rreq)
             return mpi_errno;
         }
 	/* --END ERROR HANDLING-- */
-        
+
         MPID_Segment_pack_vector(segp, first, &last, dloop_vec, &vec_len);
         
         type = dtp->eltype;

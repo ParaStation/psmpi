@@ -55,11 +55,6 @@
 
 #define HYDRA_MAX_PATH 4096
 
-#if defined MANUAL_EXTERN_ENVIRON
-extern char **environ;
-#endif /* MANUAL_EXTERN_ENVIRON */
-
-
 /* sockets required headers */
 #include <poll.h>
 #include <fcntl.h>
@@ -71,103 +66,14 @@ extern char **environ;
 #include <sys/socket.h>
 #endif
 
-#if defined(HAVE_PUTENV) && defined(NEEDS_PUTENV_DECL)
-extern int putenv(char *string);
-#endif
-
-#if defined(NEEDS_GETHOSTNAME_DECL)
-int gethostname(char *name, size_t len);
-#endif
-
 #define HYD_DEFAULT_PROXY_PORT 9899
 
 #define HYD_STDOUT  (1)
 #define HYD_STDIN   (2)
 
-typedef unsigned short HYD_Event_t;
-
 #define HYD_TMPBUF_SIZE (64 * 1024)
 #define HYD_TMP_STRLEN  1024
 #define HYD_NUM_TMP_STRINGS 200
-
-
-/* Status information */
-typedef enum {
-    HYD_SUCCESS = 0,
-    HYD_GRACEFUL_ABORT,
-    HYD_NO_MEM,
-    HYD_SOCK_ERROR,
-    HYD_INVALID_PARAM,
-    HYD_INTERNAL_ERROR
-} HYD_Status;
-
-
-/* Proxy type */
-typedef enum {
-    HYD_LAUNCH_UNSET,
-    HYD_LAUNCH_RUNTIME,
-
-    /* For persistent proxies */
-    HYD_LAUNCH_BOOT,
-    HYD_LAUNCH_BOOT_FOREGROUND,
-    HYD_LAUNCH_SHUTDOWN,
-    HYD_LAUNCH_PERSISTENT
-} HYD_Launch_mode_t;
-
-
-/* Environment information */
-typedef struct HYD_Env {
-    char *env_name;
-    char *env_value;
-    struct HYD_Env *next;
-} HYD_Env_t;
-
-typedef enum HYD_Env_overwrite {
-    HYD_ENV_OVERWRITE_TRUE,
-    HYD_ENV_OVERWRITE_FALSE
-} HYD_Env_overwrite_t;
-
-typedef enum {
-    HYD_ENV_PROP_UNSET,
-    HYD_ENV_PROP_ALL,
-    HYD_ENV_PROP_NONE,
-    HYD_ENV_PROP_LIST
-} HYD_Env_prop_t;
-
-typedef enum {
-    HYD_BIND_UNSET,
-    HYD_BIND_NONE,
-    HYD_BIND_RR,
-    HYD_BIND_BUDDY,
-    HYD_BIND_PACK,
-    HYD_BIND_USER
-} HYD_Binding_t;
-
-typedef enum {
-    HYD_BINDLIB_UNSET,
-    HYD_BINDLIB_PLPA
-} HYD_Bindlib_t;
-
-/* List of contiguous segments of processes on a partition */
-struct HYD_Partition_segment {
-    int start_pid;
-    int proc_count;
-    char **mapping;
-    struct HYD_Partition_segment *next;
-};
-
-/* Executables on a partition */
-struct HYD_Partition_exec {
-    char *exec[HYD_NUM_TMP_STRINGS];
-    int proc_count;
-    HYD_Env_prop_t prop;
-    HYD_Env_t *user_env;
-
-    int pgid;                   /* All executables with the same PGID belong to the same
-                                 * job. */
-
-    struct HYD_Partition_exec *next;
-};
 
 #if !defined HAVE_PTHREAD_H
 #error "pthread.h needed"
@@ -185,59 +91,144 @@ struct HYD_Partition_exec {
 #endif
 #endif
 
-#define FORALL_ACTIVE_PARTITIONS(partition, partition_list)    \
-    for ((partition) = (partition_list); (partition) && (partition)->base->active; \
-         (partition) = (partition)->next)
+#define PROXY_IS_ACTIVE(proxy, total_procs) \
+    ((proxy)->segment_list->start_pid <= (total_procs))
 
-#define FORALL_PARTITIONS(partition, partition_list)    \
-    for ((partition) = (partition_list); (partition); (partition) = (partition)->next)
+#define FORALL_ACTIVE_PROXIES(proxy, proxy_list)    \
+    for ((proxy) = (proxy_list); (proxy) && (proxy)->active; (proxy) = (proxy)->next)
 
-struct HYD_Partition_base {
-    char *name;
-    char **exec_args;       /* Full argument list */
+#define FORALL_PROXIES(proxy, proxy_list)    \
+    for ((proxy) = (proxy_list); (proxy); (proxy) = (proxy)->next)
 
-    int partition_id;
+#if defined MANUAL_EXTERN_ENVIRON
+extern char **environ;
+#endif /* MANUAL_EXTERN_ENVIRON */
+
+/* Status information */
+typedef enum {
+    HYD_SUCCESS = 0,
+    HYD_GRACEFUL_ABORT,
+    HYD_NO_MEM,
+    HYD_SOCK_ERROR,
+    HYD_INVALID_PARAM,
+    HYD_INTERNAL_ERROR
+} HYD_status;
+
+/* Proxy type */
+typedef enum {
+    HYD_LAUNCH_UNSET,
+    HYD_LAUNCH_RUNTIME,
+
+    /* For persistent proxies */
+    HYD_LAUNCH_BOOT,
+    HYD_LAUNCH_BOOT_FOREGROUND,
+    HYD_LAUNCH_SHUTDOWN,
+    HYD_LAUNCH_PERSISTENT
+} HYD_launch_mode_t;
+
+#if defined(HAVE_PUTENV) && defined(NEEDS_PUTENV_DECL)
+extern int putenv(char *string);
+#endif
+
+#if defined(NEEDS_GETHOSTNAME_DECL)
+int gethostname(char *name, size_t len);
+#endif
+
+typedef unsigned short HYD_event_t;
+
+/* Environment information */
+typedef struct HYD_env {
+    char *env_name;
+    char *env_value;
+    struct HYD_env *next;
+} HYD_env_t;
+
+typedef enum HYD_env_overwrite {
+    HYD_ENV_OVERWRITE_TRUE,
+    HYD_ENV_OVERWRITE_FALSE
+} HYD_env_overwrite_t;
+
+typedef enum {
+    HYD_ENV_PROP_UNSET,
+    HYD_ENV_PROP_ALL,
+    HYD_ENV_PROP_NONE,
+    HYD_ENV_PROP_LIST
+} HYD_env_prop_t;
+
+struct HYD_env_global {
+    HYD_env_t *system;
+    HYD_env_t *user;
+    HYD_env_t *inherited;
+    char *prop;
+};
+
+/* Executables on a proxy */
+struct HYD_proxy_exec {
+    char *exec[HYD_NUM_TMP_STRINGS];
+    int proc_count;
+    HYD_env_t *user_env;
+    char *env_prop;
+
+    struct HYD_proxy_exec *next;
+};
+
+/* Proxy information */
+struct HYD_proxy {
+    char *hostname;
+    char **exec_launch_info;
+
+    int proxy_id;
     int active;
 
     int pid;
-    int in;                     /* stdin is only valid for partition_id 0 */
+    int in;                     /* stdin is only valid for proxy_id 0 */
     int out;
     int err;
 
-    struct HYD_Partition_base *next;    /* Unused */
-};
+    int start_pid;
+    int proxy_core_count;
+    int proxy_process_count;
 
-/* Partition information */
-struct HYD_Partition {
-    struct HYD_Partition_base *base;
+    struct HYD_proxy_exec *exec_list;
 
-    char *user_bind_map;
-    int partition_core_count;
-
-    /* Segment list will contain one-pass of the hosts file */
-    struct HYD_Partition_segment *segment_list;
-    struct HYD_Partition_exec *exec_list;
-
-    /* Spawn information: each partition can have one or more
-     * proxies. For the time being, we only support one proxy per
-     * partition, but this can be easily extended later. We will also
-     * need to give different ports for the proxies to listen on in
-     * that case. */
     int *exit_status;
     int control_fd;
 
-    struct HYD_Partition *next;
+    struct HYD_proxy *next;
 };
 
-struct HYD_Exec_info {
-    int exec_proc_count;
+struct HYD_exec_info {
+    int process_count;
     char *exec[HYD_NUM_TMP_STRINGS];
 
     /* Local environment */
-    HYD_Env_t *user_env;
-    HYD_Env_prop_t prop;
+    HYD_env_t *user_env;
+    char *env_prop;
 
-    struct HYD_Exec_info *next;
+    struct HYD_exec_info *next;
+};
+
+/* Global user parameters */
+struct HYD_user_global {
+    /* Bootstrap server */
+    char *bootstrap;
+    char *bootstrap_exec;
+
+    /* Process binding */
+    char *binding;
+    char *bindlib;
+
+    /* Checkpoint restart */
+    char *ckpointlib;
+    char *ckpoint_prefix;
+    int ckpoint_restart;
+
+    /* Other random parameters */
+    int enablex;
+    int debug;
+    char *wdir;
+    HYD_launch_mode_t launch_mode;
+    struct HYD_env_global global_env;
 };
 
 #endif /* HYDRA_BASE_H_INCLUDED */

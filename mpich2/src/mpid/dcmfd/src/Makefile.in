@@ -42,7 +42,7 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	for dir in impl misc pt2pt persistent onesided comm coll ; do \
-		(cd $$dir && ${MAKE} apply ; ) ; done
+		(cd $$dir && ${MAKE} apply ) ; done
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
@@ -51,17 +51,17 @@ clean:
 	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	for dir in impl misc pt2pt persistent onesided comm coll ; do \
-		(cd $$dir && ${MAKE} clean ; ) ; done
+		(cd $$dir && ${MAKE} clean ) ; done
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	for dir in impl misc pt2pt persistent onesided comm coll ; do \
 		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
-		(cd $$dir && ${MAKE} distclean ; ) ; done
+		(cd $$dir && ${MAKE} distclean ) ; done
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
 maintainer-clean:  distclean-xxx remove-genmakefiles
 	for dir in impl misc pt2pt persistent onesided comm coll ; do \
-		(cd $$dir && ${MAKE} maintainer-clean ; ) ; done
+		(cd $$dir && ${MAKE} maintainer-clean ) ; done
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
@@ -81,13 +81,13 @@ all-local: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a
 	fi
 
 .libstamp0 ../../../../lib/lib${MPILIBNAME}.a: 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../../lib/lib${MPILIBNAME}.a ; \
@@ -95,7 +95,7 @@ all-local: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a
 	@${RANLIB} ../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
 .libstamp1 ../../../../lib/lib${MPILIBNAME}.la: 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -106,17 +106,17 @@ coverage:
 	-@for file in  ; do \
 		gcov -b -f $$file ; done
 	for dir in impl misc pt2pt persistent onesided comm coll ; do \
-		(cd $$dir && ${MAKE} coverage ; ) ; done
+		(cd $$dir && ${MAKE} coverage ) ; done
 # --------------------------------------------------------------------------
 htmldoc:
 	for dir in impl misc pt2pt persistent onesided comm coll ; do \
-		(cd $$dir && ${MAKE} htmldoc ; ) ; done
+		(cd $$dir && ${MAKE} htmldoc ) ; done
 mandoc:
 	for dir in impl misc pt2pt persistent onesided comm coll ; do \
-		(cd $$dir && ${MAKE} mandoc ; ) ; done
+		(cd $$dir && ${MAKE} mandoc ) ; done
 latexdoc:
 	for dir in impl misc pt2pt persistent onesided comm coll ; do \
-		(cd $$dir && ${MAKE} latexdoc ; ) ; done
+		(cd $$dir && ${MAKE} latexdoc ) ; done
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -127,7 +127,7 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 	for dir in impl misc pt2pt persistent onesided comm coll ; do \
-		(cd $$dir && ${MAKE} dependencies ; ) ; done
+		(cd $$dir && ${MAKE} dependencies ) ; done
 $(DEPS_DIR)/timestamp:  Makefile
 	rm -f $(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
@@ -138,10 +138,6 @@ include $(DEPS_DIR)/alldeps
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
-	for dir in impl misc pt2pt persistent onesided comm coll ; do \
-		(cd $$dir && ${MAKE} TAGS ; ) ; done
 # --------------------------------------------------------------------------
 
 FORCE_TARGET:

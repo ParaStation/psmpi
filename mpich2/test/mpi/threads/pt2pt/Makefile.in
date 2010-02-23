@@ -29,7 +29,7 @@ INCLUDES = -I../../include -I${srcdir}/../../include
 .SUFFIXES:
 .SUFFIXES: .o .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
@@ -38,7 +38,7 @@ INCLUDES = -I../../include -I${srcdir}/../../include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -114,7 +114,8 @@ threaded_sr: threaded_sr.o  \
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o threaded_sr threaded_sr.o  \
 	-lpthread  ${LIBS} 
 threads: threads.o   @MPILIBLOC@ ../../util/mtest.o ../util/mtestthread.o
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o threads threads.o  ${LIBS}
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o threads threads.o  \
+	../util/mtestthread.o ${LIBS} 
 sendselfth: sendselfth.o  \
 	 @MPILIBLOC@ ../../util/mtest.o ../util/mtestthread.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o sendselfth sendselfth.o  ${LIBS}
@@ -129,12 +130,8 @@ latexdoc:
 SOURCES         =  threads.c threaded_sr.c alltoall.c sendselfth.c \
 	greq_wait.c greq_test.c multisend.c multisend2.c multisend3.c \
 	multisend4.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 # Use extra programs to list programs that should not be built by default.

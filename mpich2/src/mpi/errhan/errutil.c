@@ -112,11 +112,12 @@ static int checkForUserErrcode( int errcode );
 #endif
 
 /* Preallocated errorhandler objects */
-MPID_Errhandler MPID_Errhandler_builtin[3] = 
-          { { MPI_ERRORS_ARE_FATAL, 0},
-	    { MPI_ERRORS_RETURN, 0},
-	    { MPIR_ERRORS_THROW_EXCEPTIONS, 0 } }; 
-MPID_Errhandler MPID_Errhandler_direct[MPID_ERRHANDLER_PREALLOC] = { {0} };
+MPID_Errhandler MPID_Errhandler_builtin[3] = {
+        { MPIU_OBJECT_HEADER_INITIALIZER(MPI_ERRORS_ARE_FATAL, 0), },
+        { MPIU_OBJECT_HEADER_INITIALIZER(MPI_ERRORS_RETURN, 0), },
+        { MPIU_OBJECT_HEADER_INITIALIZER(MPIR_ERRORS_THROW_EXCEPTIONS, 0) },
+    };
+MPID_Errhandler MPID_Errhandler_direct[MPID_ERRHANDLER_PREALLOC] = { { MPIU_OBJECT_HEADER_INITIALIZER(0,0) } };
 MPIU_Object_alloc_t MPID_Errhandler_mem = { 0, 0, 0, 0, MPID_ERRHANDLER, 
 					    sizeof(MPID_Errhandler), 
 					    MPID_Errhandler_direct,
@@ -233,7 +234,8 @@ int MPIR_Err_is_fatal(int errcode)
 
 /*
  * This is the routine that is invoked by most MPI routines to 
- * report an error 
+ * report an error.  It is legitimate to pass NULL for comm_ptr in order to get
+ * the default (MPI_COMM_WORLD) error handling.
  */
 int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[], 
 			  int errcode )
@@ -248,7 +250,9 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
     
     /* First, check the nesting level */
     if (MPIR_Nest_value()) return errcode;
-    
+
+    MPIU_DBG_MSG_FMT(ERRHAND, TERSE, (MPIU_DBG_FDEST, "MPIR_Err_return_comm(comm_ptr=%p, fcname=%s, errcode=%d)", comm_ptr, fcname, errcode));
+
     if (!comm_ptr || comm_ptr->errhandler == NULL) {
 	/* Try to replace with the default handler, which is the one on 
 	   MPI_COMM_WORLD.  This gives us correct behavior for the
@@ -330,6 +334,8 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
 
     /* First, check the nesting level */
     if (MPIR_Nest_value()) return errcode;
+
+    MPIU_DBG_MSG_FMT(ERRHAND, TERSE, (MPIU_DBG_FDEST, "MPIR_Err_return_win(win_ptr=%p, fcname=%s, errcode=%d)", win_ptr, fcname, errcode));
 
     if (MPIR_Err_is_fatal(errcode) ||
 	win_ptr == NULL || win_ptr->errhandler == NULL || 
@@ -1018,9 +1024,6 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig,
 		break;
 	    case MPI_ROOT:
 		MPIU_Strncpy(str, "MPI_ROOT", maxlen);
-		break;
-	    case MPI_UNDEFINED_RANK:
-		MPIU_Strncpy(str, "MPI_UNDEFINED_RANK", maxlen);
 		break;
 	    default:
 		MPIU_Snprintf(str, maxlen, "%d", i);

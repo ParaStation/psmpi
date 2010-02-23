@@ -9,69 +9,43 @@
 #include "bsci.h"
 #include "demux.h"
 #include "pmi_handle.h"
-#include "pmi_handle_v2.h"
 
-/* TODO: abort, create_kvs, destroy_kvs, getbyidx, spawn */
-static struct HYD_PMCD_pmi_handle_fns pmi_v2_handle_fns_foo[] = {
-    {"fullinit", HYD_PMCD_pmi_handle_v2_fullinit},
-    {"job-getid", HYD_PMCD_pmi_handle_v2_job_getid},
-    {"info-putnodeattr", HYD_PMCD_pmi_handle_v2_info_putnodeattr},
-    {"info-getnodeattr", HYD_PMCD_pmi_handle_v2_info_getnodeattr},
-    {"info-getjobattr", HYD_PMCD_pmi_handle_v2_info_getjobattr},
-    {"kvs-put", HYD_PMCD_pmi_handle_v2_kvs_put},
-    {"kvs-get", HYD_PMCD_pmi_handle_v2_kvs_get},
-    {"kvs-fence", HYD_PMCD_pmi_handle_v2_kvs_fence},
-    {"finalize", HYD_PMCD_pmi_handle_v2_finalize},
-    {"\0", NULL}
-};
-
-static struct HYD_PMCD_pmi_handle pmi_v2_foo = { PMI_V2_DELIM, pmi_v2_handle_fns_foo };
-
-struct HYD_PMCD_pmi_handle *HYD_PMCD_pmi_v2 = &pmi_v2_foo;
+static HYD_status fn_fullinit(int fd, char *args[]);
+static HYD_status fn_job_getid(int fd, char *args[]);
+static HYD_status fn_info_putnodeattr(int fd, char *args[]);
+static HYD_status fn_info_getnodeattr(int fd, char *args[]);
+static HYD_status fn_info_getjobattr(int fd, char *args[]);
+static HYD_status fn_kvs_put(int fd, char *args[]);
+static HYD_status fn_kvs_get(int fd, char *args[]);
+static HYD_status fn_kvs_fence(int fd, char *args[]);
+static HYD_status fn_finalize(int fd, char *args[]);
 
 struct token {
     char *key;
     char *val;
 };
 
-static struct attr_reqs {
-    int fd;
-    char *thrid;
-    char **req;
-    enum req_type {
-        GET_NODE_ATTR,
+static struct reqs {
+    enum type {
+        NODE_ATTR_GET,
         KVS_GET
     } type;
-    struct attr_reqs *next;
-} *outstanding_attr_reqs = NULL;
 
-static void print_attr_reqs(void)
-{
-    int i;
-    struct attr_reqs *areq;
+    int fd;
+    char *thrid;
+    char **args;
 
-    dprintf("Outstanding reqs: ");
-    for (areq = outstanding_attr_reqs; areq; areq = areq->next) {
-        dprintf("%d:%d(", areq->fd, areq->type);
-        for (i = 0; areq->req[i]; i++) {
-            dprintf("%s", areq->req[i]);
-            if (areq->req[i + 1]) {
-                dprintf(",");
-            }
-        }
-        dprintf(") ");
-    }
-    dprintf("\n");
-}
+    struct reqs *next;
+} *pending_reqs = NULL;
 
-static HYD_Status send_command(int fd, char *cmd)
+static HYD_status send_command(int fd, char *cmd)
 {
     char cmdlen[7];
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
-    HYDU_snprintf(cmdlen, 7, "%6d", strlen(cmd));
+    HYDU_snprintf(cmdlen, 7, "%6u", (unsigned) strlen(cmd));
     status = HYDU_sock_write(fd, cmdlen, 6);
     HYDU_ERR_POP(status, "error writing PMI line\n");
 
@@ -86,12 +60,11 @@ static HYD_Status send_command(int fd, char *cmd)
     goto fn_exit;
 }
 
-
-static HYD_Status args_to_tokens(char *args[], struct token **tokens, int *count)
+static HYD_status args_to_tokens(char *args[], struct token **tokens, int *count)
 {
     int i;
     char *arg;
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     for (i = 0; args[i]; i++);
     *count = i;
@@ -110,93 +83,6 @@ static HYD_Status args_to_tokens(char *args[], struct token **tokens, int *count
     goto fn_exit;
 }
 
-static int progress_nest_count = 0;
-static int req_complete = 0;
-
-static void free_attr_req(struct attr_reqs *areq)
-{
-    HYDU_free_strlist(areq->req);
-    HYDU_FREE(areq);
-}
-
-static HYD_Status queue_outstanding_req(int fd, enum req_type req_type, char *args[])
-{
-    struct attr_reqs *attr_req, *a;
-    HYD_Status status = HYD_SUCCESS;
-
-    HYDU_MALLOC(attr_req, struct attr_reqs *, sizeof(struct attr_reqs), status);
-    attr_req->fd = fd;
-    attr_req->type = req_type;
-    attr_req->next = NULL;
-
-    status = HYDU_strdup_list(args, &attr_req->req);
-    HYDU_ERR_POP(status, "unable to dup args\n");
-
-    if (outstanding_attr_reqs == NULL)
-        outstanding_attr_reqs = attr_req;
-    else {
-        a = outstanding_attr_reqs;
-        while (a->next)
-            a = a->next;
-        a->next = attr_req;
-    }
-    print_attr_reqs();
-
-  fn_exit:
-    return status;
-
-  fn_fail:
-    goto fn_exit;
-}
-
-static HYD_Status poke_progress(void)
-{
-    struct attr_reqs *areq, *tmp;
-    HYD_Status status = HYD_SUCCESS;
-
-    progress_nest_count++;
-
-    if (outstanding_attr_reqs == NULL)
-        goto fn_exit;
-
-    for (areq = outstanding_attr_reqs; areq;) {
-        req_complete = 0;
-
-        if (areq->type == GET_NODE_ATTR) {
-            status = HYD_PMCD_pmi_handle_v2_info_getnodeattr(areq->fd, areq->req);
-            HYDU_ERR_POP(status, "getnodeattr returned error\n");
-        }
-        else if (areq->type == KVS_GET) {
-            status = HYD_PMCD_pmi_handle_v2_kvs_get(areq->fd, areq->req);
-            HYDU_ERR_POP(status, "kvs_get returned error\n");
-        }
-
-        tmp = areq->next;
-        if (req_complete) {
-            if (areq == outstanding_attr_reqs) {
-                outstanding_attr_reqs = areq->next;
-            }
-            else {
-                for (tmp = outstanding_attr_reqs; tmp->next != areq; tmp = tmp->next);
-                tmp->next = areq->next;
-            }
-            tmp = areq->next;
-            free_attr_req(areq);
-        }
-
-        areq = tmp;
-        print_attr_reqs();
-    }
-
-  fn_exit:
-    progress_nest_count--;
-    return status;
-
-  fn_fail:
-    goto fn_exit;
-}
-
-
 static char *find_token_keyval(struct token *tokens, int count, const char *key)
 {
     int i;
@@ -209,15 +95,107 @@ static char *find_token_keyval(struct token *tokens, int count, const char *key)
     return NULL;
 }
 
+static int req_complete = 0;
 
-HYD_Status HYD_PMCD_pmi_handle_v2_fullinit(int fd, char *args[])
+static void free_req(struct reqs *req)
+{
+    HYDU_free_strlist(req->args);
+    HYDU_FREE(req);
+}
+
+static HYD_status queue_req(int fd, enum type type, char *args[])
+{
+    struct reqs *req, *tmp;
+    HYD_status status = HYD_SUCCESS;
+
+    HYDU_MALLOC(req, struct reqs *, sizeof(struct reqs), status);
+    req->fd = fd;
+    req->type = type;
+    req->next = NULL;
+
+    status = HYDU_strdup_list(args, &req->args);
+    HYDU_ERR_POP(status, "unable to dup args\n");
+
+    if (pending_reqs == NULL)
+        pending_reqs = req;
+    else {
+        for (tmp = pending_reqs; tmp->next; tmp = tmp->next);
+        tmp->next = req;
+    }
+
+  fn_exit:
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
+static struct reqs *dequeue_req_head(void)
+{
+    struct reqs *req = pending_reqs;
+
+    if (pending_reqs) {
+        pending_reqs = pending_reqs->next;
+        req->next = NULL;
+    }
+
+    return req;
+}
+
+static HYD_status poke_progress(void)
+{
+    struct reqs *req;
+    int i, count;
+    HYD_status status = HYD_SUCCESS;
+
+    for (count = 0, req = pending_reqs; req; req = req->next)
+        count++;
+
+    for (i = 0; i < count; i++) {
+        req = dequeue_req_head();
+
+        req_complete = 0;
+        if (req->type == NODE_ATTR_GET) {
+            status = fn_info_getnodeattr(req->fd, req->args);
+            HYDU_ERR_POP(status, "getnodeattr returned error\n");
+        }
+        else if (req->type == KVS_GET) {
+            status = fn_kvs_get(req->fd, req->args);
+            HYDU_ERR_POP(status, "kvs_get returned error\n");
+        }
+
+        free_req(req);
+    }
+
+  fn_exit:
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
+static void print_req_list(void) ATTRIBUTE((unused));
+static void print_req_list(void)
+{
+    struct reqs *req;
+
+    if (pending_reqs)
+        HYDU_dump_noprefix(stdout, "(");
+    for (req = pending_reqs; req; req = req->next)
+        HYDU_dump_noprefix(stdout, "%s ",
+                           (req->type == NODE_ATTR_GET) ? "NODE_ATTR_GET" : "KVS_GET");
+    if (pending_reqs)
+        HYDU_dump_noprefix(stdout, ")\n");
+}
+
+static HYD_status fn_fullinit(int fd, char *args[])
 {
     int id, rank, i;
     char *tmp[HYD_NUM_TMP_STRINGS], *cmd, *rank_str;
-    HYD_PMCD_pmi_pg_t *run;
+    HYD_pmcd_pmi_pg_t *run;
     struct token *tokens;
     int token_count;
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
@@ -232,7 +210,7 @@ HYD_Status HYD_PMCD_pmi_handle_v2_fullinit(int fd, char *args[])
     i = 0;
     tmp[i++] = HYDU_strdup("cmd=fullinit-response;pmi-version=2;pmi-subversion=0;rank=");
 
-    status = HYD_PMCD_pmi_id_to_rank(id, &rank);
+    status = HYD_pmcd_pmi_id_to_rank(id, &rank);
     HYDU_ERR_POP(status, "unable to convert ID to rank\n");
     tmp[i++] = HYDU_int_to_str(rank);
 
@@ -257,7 +235,7 @@ HYD_Status HYD_PMCD_pmi_handle_v2_fullinit(int fd, char *args[])
         run = run->next;
 
     /* Add the process to the last PG */
-    status = HYD_PMCD_pmi_add_process_to_pg(run, fd, rank);
+    status = HYD_pmcd_pmi_add_process_to_pg(run, fd, rank);
     HYDU_ERR_POP(status, "unable to add process to pg\n");
 
   fn_exit:
@@ -268,15 +246,14 @@ HYD_Status HYD_PMCD_pmi_handle_v2_fullinit(int fd, char *args[])
     goto fn_exit;
 }
 
-
-HYD_Status HYD_PMCD_pmi_handle_v2_job_getid(int fd, char *args[])
+static HYD_status fn_job_getid(int fd, char *args[])
 {
     char *tmp[HYD_NUM_TMP_STRINGS], *cmd, *thrid;
     int i;
-    HYD_PMCD_pmi_process_t *process;
+    HYD_pmcd_pmi_process_t *process;
     struct token *tokens;
     int token_count;
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
@@ -286,7 +263,7 @@ HYD_Status HYD_PMCD_pmi_handle_v2_job_getid(int fd, char *args[])
     thrid = find_token_keyval(tokens, token_count, "thrid");
 
     /* Find the group id corresponding to this fd */
-    process = HYD_PMCD_pmi_find_process(fd);
+    process = HYD_pmcd_pmi_find_process(fd);
     if (process == NULL)        /* We didn't find the process */
         HYDU_ERR_SETANDJUMP1(status, HYD_INTERNAL_ERROR,
                              "unable to find process structure for fd %d\n", fd);
@@ -321,16 +298,15 @@ HYD_Status HYD_PMCD_pmi_handle_v2_job_getid(int fd, char *args[])
     goto fn_exit;
 }
 
-
-HYD_Status HYD_PMCD_pmi_handle_v2_info_putnodeattr(int fd, char *args[])
+static HYD_status fn_info_putnodeattr(int fd, char *args[])
 {
-    char *tmp[HYD_NUM_TMP_STRINGS], *cmd, *key_pair_str;
+    char *tmp[HYD_NUM_TMP_STRINGS], *cmd;
     char *key, *val, *thrid;
     int i, ret;
-    HYD_PMCD_pmi_process_t *process;
+    HYD_pmcd_pmi_process_t *process;
     struct token *tokens;
     int token_count;
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
@@ -347,12 +323,12 @@ HYD_Status HYD_PMCD_pmi_handle_v2_info_putnodeattr(int fd, char *args[])
     thrid = find_token_keyval(tokens, token_count, "thrid");
 
     /* Find the group id corresponding to this fd */
-    process = HYD_PMCD_pmi_find_process(fd);
+    process = HYD_pmcd_pmi_find_process(fd);
     if (process == NULL)        /* We didn't find the process */
         HYDU_ERR_SETANDJUMP1(status, HYD_INTERNAL_ERROR,
                              "unable to find process structure for fd %d\n", fd);
 
-    status = HYD_PMCD_pmi_add_kvs(key, val, process->node->kvs, &key_pair_str, &ret);
+    status = HYD_pmcd_pmi_add_kvs(key, val, process->node->kvs, &ret);
     HYDU_ERR_POP(status, "unable to put data into kvs\n");
 
     i = 0;
@@ -389,17 +365,16 @@ HYD_Status HYD_PMCD_pmi_handle_v2_info_putnodeattr(int fd, char *args[])
     goto fn_exit;
 }
 
-
-HYD_Status HYD_PMCD_pmi_handle_v2_info_getnodeattr(int fd, char *args[])
+static HYD_status fn_info_getnodeattr(int fd, char *args[])
 {
     int i, found;
-    HYD_PMCD_pmi_process_t *process;
-    HYD_PMCD_pmi_kvs_pair_t *run;
+    HYD_pmcd_pmi_process_t *process;
+    HYD_pmcd_pmi_kvs_pair_t *run;
     char *key, *waitval, *thrid;
     char *tmp[HYD_NUM_TMP_STRINGS] = { 0 }, *cmd;
     struct token *tokens;
     int token_count;
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
@@ -413,7 +388,7 @@ HYD_Status HYD_PMCD_pmi_handle_v2_info_getnodeattr(int fd, char *args[])
     thrid = find_token_keyval(tokens, token_count, "thrid");
 
     /* Find the group id corresponding to this fd */
-    process = HYD_PMCD_pmi_find_process(fd);
+    process = HYD_pmcd_pmi_find_process(fd);
     if (process == NULL)        /* We didn't find the process */
         HYDU_ERR_SETANDJUMP1(status, HYD_INTERNAL_ERROR,
                              "unable to find process structure for fd %d\n", fd);
@@ -426,38 +401,7 @@ HYD_Status HYD_PMCD_pmi_handle_v2_info_getnodeattr(int fd, char *args[])
         }
     }
 
-    if (!found) {       /* We need to decide whether to return not found or queue up */
-        /* If we are already nested, get out of here */
-        if (progress_nest_count)
-            goto fn_exit;
-
-        if (waitval && !strcmp(waitval, "TRUE")) {
-            /* queue up */
-            status = queue_outstanding_req(fd, GET_NODE_ATTR, args);
-            HYDU_ERR_POP(status, "unable to queue outstanding request\n");
-        }
-        else {
-            /* Tell the client that we can't find the attribute */
-            i = 0;
-            tmp[i++] = HYDU_strdup("cmd=info-getnodeattr-response;");
-            if (thrid) {
-                tmp[i++] = HYDU_strdup("thrid=");
-                tmp[i++] = HYDU_strdup(thrid);
-                tmp[i++] = HYDU_strdup(";");
-            }
-            tmp[i++] = HYDU_strdup("found=FALSE;rc=0;");
-            tmp[i++] = NULL;
-
-            status = HYDU_str_alloc_and_join(tmp, &cmd);
-            HYDU_ERR_POP(status, "unable to join strings\n");
-            HYDU_free_strlist(tmp);
-
-            status = send_command(fd, cmd);
-            HYDU_ERR_POP(status, "send command failed\n");
-            HYDU_FREE(cmd);
-        }
-    }
-    else {      /* We found the attribute */
+    if (found) {        /* We found the attribute */
         i = 0;
         tmp[i++] = HYDU_strdup("cmd=info-getnodeattr-response;");
         if (thrid) {
@@ -477,10 +421,42 @@ HYD_Status HYD_PMCD_pmi_handle_v2_info_getnodeattr(int fd, char *args[])
         status = send_command(fd, cmd);
         HYDU_ERR_POP(status, "send command failed\n");
         HYDU_FREE(cmd);
-
-        if (progress_nest_count)
-            req_complete = 1;
     }
+    else if (waitval && !strcmp(waitval, "TRUE")) {
+        /* The client wants to wait for a response; queue up the request */
+        status = queue_req(fd, NODE_ATTR_GET, args);
+        HYDU_ERR_POP(status, "unable to queue request\n");
+
+        goto fn_exit;
+    }
+    else {
+        /* Tell the client that we can't find the attribute */
+        i = 0;
+        tmp[i++] = HYDU_strdup("cmd=info-getnodeattr-response;");
+        if (thrid) {
+            tmp[i++] = HYDU_strdup("thrid=");
+            tmp[i++] = HYDU_strdup(thrid);
+            tmp[i++] = HYDU_strdup(";");
+        }
+        tmp[i++] = HYDU_strdup("found=FALSE;rc=0;");
+        tmp[i++] = NULL;
+
+        status = HYDU_str_alloc_and_join(tmp, &cmd);
+        HYDU_ERR_POP(status, "unable to join strings\n");
+        HYDU_free_strlist(tmp);
+
+        status = send_command(fd, cmd);
+        HYDU_ERR_POP(status, "send command failed\n");
+        HYDU_FREE(cmd);
+    }
+
+    /* Mark the global completion variable, in case the progress
+     * engine is monitoring. */
+    /* FIXME: This should be an output parameter. We need to change
+     * the structure of the PMI function table to be able to take
+     * additional arguments, and not just the ones passed on the
+     * wire. */
+    req_complete = 1;
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -490,17 +466,17 @@ HYD_Status HYD_PMCD_pmi_handle_v2_info_getnodeattr(int fd, char *args[])
     goto fn_exit;
 }
 
-
-HYD_Status HYD_PMCD_pmi_handle_v2_info_getjobattr(int fd, char *args[])
+static HYD_status fn_info_getjobattr(int fd, char *args[])
 {
     int i, ret;
-    HYD_PMCD_pmi_process_t *process;
-    HYD_PMCD_pmi_kvs_pair_t *run;
-    char *key, *thrid;
-    char *tmp[HYD_NUM_TMP_STRINGS], *cmd, *node_list, *key_pair_str;
+    HYD_pmcd_pmi_process_t *process;
+    HYD_pmcd_pmi_kvs_pair_t *run;
+    const char *key;
+    char *thrid;
+    char *tmp[HYD_NUM_TMP_STRINGS], *cmd, *node_list;
     struct token *tokens;
     int token_count, found;
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
@@ -513,14 +489,10 @@ HYD_Status HYD_PMCD_pmi_handle_v2_info_getjobattr(int fd, char *args[])
     thrid = find_token_keyval(tokens, token_count, "thrid");
 
     /* Find the group id corresponding to this fd */
-    process = HYD_PMCD_pmi_find_process(fd);
+    process = HYD_pmcd_pmi_find_process(fd);
     if (process == NULL)        /* We didn't find the process */
         HYDU_ERR_SETANDJUMP1(status, HYD_INTERNAL_ERROR,
                              "unable to find process structure for fd %d\n", fd);
-
-    /* If no format is specified, use the default values */
-    if (strcmp(key, "process-mapping") == 0)
-        key = "process-mapping-vector";
 
     /* Try to find the key */
     found = 0;
@@ -534,29 +506,17 @@ HYD_Status HYD_PMCD_pmi_handle_v2_info_getjobattr(int fd, char *args[])
     if (found == 0) {
         /* Didn't find the job attribute; see if we know how to
          * generate it */
-        if (strcmp(key, "process-mapping-vector") == 0) {
+        if (strcmp(key, "PMI_process_mapping") == 0) {
             /* Create a vector format */
-            status = HYD_PMCD_pmi_process_mapping(process, HYD_PMCD_pmi_vector, &node_list);
+            status = HYD_pmcd_pmi_process_mapping(process, HYD_pmcd_pmi_vector, &node_list);
             HYDU_ERR_POP(status, "Unable to get process mapping information\n");
 
             if (strlen(node_list) > MAXVALLEN)
                 HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
                                     "key value larger than maximum allowed\n");
 
-            status = HYD_PMCD_pmi_add_kvs("process-mapping-vector", node_list,
-                                          process->node->pg->kvs, &key_pair_str, &ret);
-            HYDU_ERR_POP(status, "unable to add process_mapping to KVS\n");
-        }
-        else if (strcmp(key, "process-mapping-explicit") == 0) {
-            status = HYD_PMCD_pmi_process_mapping(process, HYD_PMCD_pmi_explicit, &node_list);
-            HYDU_ERR_POP(status, "Unable to get process mapping information\n");
-
-            if (strlen(node_list) > MAXVALLEN)
-                HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
-                                    "key value larger than maximum allowed\n");
-
-            status = HYD_PMCD_pmi_add_kvs("process-mapping-explicit", node_list,
-                                          process->node->pg->kvs, &key_pair_str, &ret);
+            status = HYD_pmcd_pmi_add_kvs("PMI_process_mapping", node_list,
+                                          process->node->pg->kvs, &ret);
             HYDU_ERR_POP(status, "unable to add process_mapping to KVS\n");
         }
 
@@ -605,16 +565,15 @@ HYD_Status HYD_PMCD_pmi_handle_v2_info_getjobattr(int fd, char *args[])
     goto fn_exit;
 }
 
-
-HYD_Status HYD_PMCD_pmi_handle_v2_kvs_put(int fd, char *args[])
+static HYD_status fn_kvs_put(int fd, char *args[])
 {
-    char *tmp[HYD_NUM_TMP_STRINGS], *cmd, *key_pair_str;
+    char *tmp[HYD_NUM_TMP_STRINGS], *cmd;
     char *key, *val, *thrid;
     int i, ret;
-    HYD_PMCD_pmi_process_t *process;
+    HYD_pmcd_pmi_process_t *process;
     struct token *tokens;
     int token_count;
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
@@ -631,12 +590,12 @@ HYD_Status HYD_PMCD_pmi_handle_v2_kvs_put(int fd, char *args[])
     thrid = find_token_keyval(tokens, token_count, "thrid");
 
     /* Find the group id corresponding to this fd */
-    process = HYD_PMCD_pmi_find_process(fd);
+    process = HYD_pmcd_pmi_find_process(fd);
     if (process == NULL)        /* We didn't find the process */
         HYDU_ERR_SETANDJUMP1(status, HYD_INTERNAL_ERROR,
                              "unable to find process structure for fd %d\n", fd);
 
-    status = HYD_PMCD_pmi_add_kvs(key, val, process->node->pg->kvs, &key_pair_str, &ret);
+    status = HYD_pmcd_pmi_add_kvs(key, val, process->node->pg->kvs, &ret);
     HYDU_ERR_POP(status, "unable to put data into kvs\n");
 
     i = 0;
@@ -673,18 +632,17 @@ HYD_Status HYD_PMCD_pmi_handle_v2_kvs_put(int fd, char *args[])
     goto fn_exit;
 }
 
-
-HYD_Status HYD_PMCD_pmi_handle_v2_kvs_get(int fd, char *args[])
+static HYD_status fn_kvs_get(int fd, char *args[])
 {
-    int i, found;
-    HYD_PMCD_pmi_process_t *process, *prun;
-    HYD_PMCD_pmi_node_t *node;
-    HYD_PMCD_pmi_kvs_pair_t *run;
+    int i, found, barrier, process_count;
+    HYD_pmcd_pmi_process_t *process, *prun;
+    HYD_pmcd_pmi_node_t *node;
+    HYD_pmcd_pmi_kvs_pair_t *run;
     char *key, *thrid;
     char *tmp[HYD_NUM_TMP_STRINGS], *cmd;
     struct token *tokens;
-    int token_count, consistent_epoch;
-    HYD_Status status = HYD_SUCCESS;
+    int token_count;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
@@ -697,7 +655,7 @@ HYD_Status HYD_PMCD_pmi_handle_v2_kvs_get(int fd, char *args[])
     thrid = find_token_keyval(tokens, token_count, "thrid");
 
     /* Find the group id corresponding to this fd */
-    process = HYD_PMCD_pmi_find_process(fd);
+    process = HYD_pmcd_pmi_find_process(fd);
     if (process == NULL)        /* We didn't find the process */
         HYDU_ERR_SETANDJUMP1(status, HYD_INTERNAL_ERROR,
                              "unable to find process structure for fd %d\n", fd);
@@ -711,25 +669,24 @@ HYD_Status HYD_PMCD_pmi_handle_v2_kvs_get(int fd, char *args[])
     }
 
     if (!found) {
-        /* If we are already nested, get out of here */
-        if (progress_nest_count)
-            goto fn_exit;
-
-        consistent_epoch = 1;
+        barrier = 1;
+        process_count = 0;
         for (node = process->node->pg->node_list; node; node = node->next) {
             for (prun = node->process_list; prun; prun = prun->next) {
-                if (prun->epoch != process->epoch) {
-                    /* The epochs are not consistent */
-                    consistent_epoch = 0;
+                process_count++;
+                if (prun->epoch < process->epoch) {
+                    barrier = 0;
                     break;
                 }
             }
+            if (!barrier)
+                break;
         }
 
-        if (consistent_epoch == 0) {
-            /* queue up */
-            status = queue_outstanding_req(fd, KVS_GET, args);
-            HYDU_ERR_POP(status, "unable to queue outstanding request\n");
+        if (!barrier || process_count < HYD_pg_list->num_procs) {
+            /* We haven't reached a barrier yet; queue up request */
+            status = queue_req(fd, KVS_GET, args);
+            HYDU_ERR_POP(status, "unable to queue request\n");
 
             /* We are done */
             goto fn_exit;
@@ -762,6 +719,7 @@ HYD_Status HYD_PMCD_pmi_handle_v2_kvs_get(int fd, char *args[])
     HYDU_ERR_POP(status, "send command failed\n");
 
     HYDU_FREE(cmd);
+    req_complete = 1;
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -771,14 +729,13 @@ HYD_Status HYD_PMCD_pmi_handle_v2_kvs_get(int fd, char *args[])
     goto fn_exit;
 }
 
-
-HYD_Status HYD_PMCD_pmi_handle_v2_kvs_fence(int fd, char *args[])
+static HYD_status fn_kvs_fence(int fd, char *args[])
 {
-    HYD_PMCD_pmi_process_t *process;
+    HYD_pmcd_pmi_process_t *process;
     char *tmp[HYD_NUM_TMP_STRINGS], *cmd, *thrid;
     struct token *tokens;
     int token_count, i;
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
@@ -788,14 +745,12 @@ HYD_Status HYD_PMCD_pmi_handle_v2_kvs_fence(int fd, char *args[])
     thrid = find_token_keyval(tokens, token_count, "thrid");
 
     /* Find the group id corresponding to this fd */
-    process = HYD_PMCD_pmi_find_process(fd);
+    process = HYD_pmcd_pmi_find_process(fd);
     if (process == NULL)        /* We didn't find the process */
         HYDU_ERR_SETANDJUMP1(status, HYD_INTERNAL_ERROR,
                              "unable to find process structure for fd %d\n", fd);
 
     process->epoch++;   /* We have reached the next epoch */
-
-    process->node->pg->barrier_count++;
 
     i = 0;
     tmp[i++] = HYDU_strdup("cmd=kvs-fence-response;");
@@ -821,21 +776,19 @@ HYD_Status HYD_PMCD_pmi_handle_v2_kvs_fence(int fd, char *args[])
 
   fn_exit:
     HYDU_FUNC_EXIT();
-    dprintf("[%d] out of fence\n", fd);
     return status;
 
   fn_fail:
     goto fn_exit;
 }
 
-
-HYD_Status HYD_PMCD_pmi_handle_v2_finalize(int fd, char *args[])
+static HYD_status fn_finalize(int fd, char *args[])
 {
     char *thrid;
     char *tmp[HYD_NUM_TMP_STRINGS], *cmd;
     struct token *tokens;
     int token_count, i;
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
@@ -863,7 +816,7 @@ HYD_Status HYD_PMCD_pmi_handle_v2_finalize(int fd, char *args[])
     HYDU_FREE(cmd);
 
     if (status == HYD_SUCCESS) {
-        status = HYD_DMX_deregister_fd(fd);
+        status = HYDT_dmx_deregister_fd(fd);
         HYDU_ERR_POP(status, "unable to register fd\n");
         close(fd);
     }
@@ -875,3 +828,19 @@ HYD_Status HYD_PMCD_pmi_handle_v2_finalize(int fd, char *args[])
   fn_fail:
     goto fn_exit;
 }
+
+/* TODO: abort, create_kvs, destroy_kvs, getbyidx, spawn */
+static struct HYD_pmcd_pmi_handle_fns pmi_v2_handle_fns_foo[] = {
+    {"fullinit", fn_fullinit},
+    {"job-getid", fn_job_getid},
+    {"info-putnodeattr", fn_info_putnodeattr},
+    {"info-getnodeattr", fn_info_getnodeattr},
+    {"info-getjobattr", fn_info_getjobattr},
+    {"kvs-put", fn_kvs_put},
+    {"kvs-get", fn_kvs_get},
+    {"kvs-fence", fn_kvs_fence},
+    {"finalize", fn_finalize},
+    {"\0", NULL}
+};
+
+struct HYD_pmcd_pmi_handle HYD_pmcd_pmi_v2 = { PMI_V2_DELIM, pmi_v2_handle_fns_foo };

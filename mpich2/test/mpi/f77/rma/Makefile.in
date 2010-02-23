@@ -34,7 +34,7 @@ F77HEADERS = addsize.h
 .SUFFIXES:
 .SUFFIXES: .o .c .f .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
@@ -43,14 +43,14 @@ F77HEADERS = addsize.h
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  FC              $<" ; \
 	else \
 	  echo $(F77_COMPILE) -c $< ; \
@@ -149,12 +149,8 @@ latexdoc:
 SOURCES         =  winscale1f.f winscale2f.f winfencef.f wingetf.f winerrf.f \
 	winnamef.f wingroupf.f winaccf.f c2f2cwin.c c2f2cwinf.f \
 	baseattrwinf.f winattrf.f winattr2f.f 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 

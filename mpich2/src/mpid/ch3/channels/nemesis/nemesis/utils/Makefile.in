@@ -37,27 +37,27 @@ Makefile: ${srcdir}/Makefile.in
 # --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
-	(cd monitor && $(MAKE) apply )
-	(cd replacements && $(MAKE) apply )
+	(cd monitor && ${MAKE} apply )
+	(cd replacements && ${MAKE} apply )
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
 	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
-	(cd monitor && $(MAKE) clean )
-	(cd replacements && $(MAKE) clean )
+	(cd monitor && ${MAKE} clean )
+	(cd replacements && ${MAKE} clean )
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
-	if [ -s monitor/Makefile ] ; then (cd monitor && $(MAKE) distclean ) ; fi
-	if [ -s replacements/Makefile ] ; then (cd replacements && $(MAKE) distclean ) ; fi
+	if [ -s monitor/Makefile ] ; then (cd monitor && ${MAKE} distclean ) ; fi
+	if [ -s replacements/Makefile ] ; then (cd replacements && ${MAKE} distclean ) ; fi
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
 maintainer-clean:  distclean-xxx remove-genmakefiles
-	(cd monitor && $(MAKE) maintainer-clean )
-	(cd replacements && $(MAKE) maintainer-clean )
+	(cd monitor && ${MAKE} maintainer-clean )
+	(cd replacements && ${MAKE} maintainer-clean )
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
@@ -67,35 +67,31 @@ all-redirect:
 	@(cd replacements && ${MAKE} all )
 
 coverage: 
-	(cd monitor && $(MAKE) coverage )
-	(cd replacements && $(MAKE) coverage )
+	(cd monitor && ${MAKE} coverage )
+	(cd replacements && ${MAKE} coverage )
 # --------------------------------------------------------------------------
 htmldoc:
-	(cd monitor && $(MAKE) htmldoc )
-	(cd replacements && $(MAKE) htmldoc )
+	(cd monitor && ${MAKE} htmldoc )
+	(cd replacements && ${MAKE} htmldoc )
 mandoc:
-	(cd monitor && $(MAKE) mandoc )
-	(cd replacements && $(MAKE) mandoc )
+	(cd monitor && ${MAKE} mandoc )
+	(cd replacements && ${MAKE} mandoc )
 latexdoc:
-	(cd monitor && $(MAKE) latexdoc )
-	(cd replacements && $(MAKE) latexdoc )
+	(cd monitor && ${MAKE} latexdoc )
+	(cd replacements && ${MAKE} latexdoc )
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Dependencies
 dependencies:
-	(cd monitor && $(MAKE) dependencies )
-	(cd replacements && $(MAKE) dependencies )
+	(cd monitor && ${MAKE} dependencies )
+	(cd replacements && ${MAKE} dependencies )
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
-	(cd monitor && $(MAKE) TAGS )
-	(cd replacements && $(MAKE) TAGS )
 # --------------------------------------------------------------------------
 
 FORCE_TARGET:

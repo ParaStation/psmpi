@@ -38,7 +38,11 @@ MPIU_Object_alloc_t MPID_Attr_mem = { 0, 0, 0, 0, MPID_ATTR,
 /* Provides a way to trap all attribute allocations when debugging leaks. */
 MPID_Attribute *MPID_Attr_alloc(void)
 {
-    return (MPID_Attribute *)MPIU_Handle_obj_alloc(&MPID_Attr_mem);
+    MPID_Attribute *attr = (MPID_Attribute *)MPIU_Handle_obj_alloc(&MPID_Attr_mem);
+    /* attributes don't have refcount semantics, but let's keep valgrind and
+     * the debug logging pacified */
+    MPIU_Object_set_ref(attr, 0);
+    return attr;
 }
 
 void MPID_Attr_free(MPID_Attribute *attr_ptr)
@@ -83,7 +87,7 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
                 handle,
                 attr_p->keyval->handle,
                 attr_p->attrType,
-                attr_p->value,
+                (void *)attr_p->value,
                 attr_p->keyval->extra_state
                 );
     /* --BEGIN ERROR HANDLING-- */
@@ -137,7 +141,7 @@ int MPIR_Call_attr_copy( int handle, MPID_Attribute *attr_p, void** value_copy, 
                 attr_p->keyval->handle,
                 attr_p->keyval->extra_state,
                 attr_p->attrType,
-                attr_p->value,
+                (void *)attr_p->value,
                 value_copy,
                 flag
                 );
@@ -206,7 +210,7 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 
         new_p->attrType         = p->attrType;
         new_p->pre_sentinal     = 0;
-        new_p->value            = new_value;
+        new_p->value            = (MPID_AttrVal_t)new_value;
         new_p->post_sentinal    = 0;
         new_p->next             = 0;
 

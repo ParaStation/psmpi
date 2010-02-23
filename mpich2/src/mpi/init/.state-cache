@@ -1,14 +1,15 @@
 <dir>
 <file name="ismain.c" info="1226006997"/>
 <file name="finalized.c" info="1226006997"/>
-<file name="init.c" info="1234651300"/>
-<file name="finalize.c" info="1245363173"/>
+<file name="init.c" info="1257378344"/>
+<file name="finalize.c" info="1257378344"/>
 <file name="initinfo.c" info="1226006997"/>
 <file name="querythread.c" info="1226006997"/>
-<file name="initthread.c" info="1245701948"/>
-<file name="mpi_init.h" info="1194043819"/>
-<file name="abort.c" info="1239994645"/>
+<file name="initthread.c" info="1257378344"/>
+<file name="mpi_init.h" info="1257378344"/>
+<file name="abort.c" info="1253199486"/>
 <file name="initialized.c" info="1226006997"/>
+<file name="async.c" info="1257708064"/>
 </dir>
 <data>
 <fileinfo name="ismain.c">
@@ -38,5 +39,9 @@ MPID_STATE_MPI_ABORT MPI_Abort
 </fileinfo>
 <fileinfo name="initialized.c">
 MPID_STATE_MPI_INITIALIZED MPI_Initialized
+</fileinfo>
+<fileinfo name="async.c">
+MPID_STATE_MPIR_INIT_ASYNC_THREAD MPIR_Init_async_thread
+MPID_STATE_MPIR_FINALIZE_ASYNC_THREAD MPIR_Finalize_async_thread
 </fileinfo>
 </data>

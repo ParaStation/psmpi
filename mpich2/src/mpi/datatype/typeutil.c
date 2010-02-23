@@ -33,6 +33,10 @@ static int MPIR_DatatypeAttrFinalizeCallback(void *dummy );
    (character string, set with MPI_Type_set_name) associated with a
    predefined name, then the structures must be allocated.
 */
+/* FIXME does the order of this list need to correspond to anything in
+   particular?  There are several lists of predefined types sprinkled throughout
+   the codebase and it's unclear which (if any) of them must match exactly.
+   [goodell@ 2009-03-17] */
 static MPI_Datatype mpi_dtypes[] = {
     MPI_CHAR,
     MPI_UNSIGNED_CHAR,
@@ -54,7 +58,26 @@ static MPI_Datatype mpi_dtypes[] = {
     MPI_LB,
     MPI_UB,
     MPI_2INT,
-/* Fortran types */
+
+    /* C99 types */
+    MPI_INT8_T,
+    MPI_INT16_T,
+    MPI_INT32_T,
+    MPI_INT64_T,
+    MPI_UINT8_T,
+    MPI_UINT16_T,
+    MPI_UINT32_T,
+    MPI_UINT64_T,
+    MPI_C_BOOL,
+    MPI_C_FLOAT_COMPLEX,
+    MPI_C_DOUBLE_COMPLEX,
+    MPI_C_LONG_DOUBLE_COMPLEX,
+
+    /* address/offset types */
+    MPI_AINT,
+    MPI_OFFSET,
+
+    /* Fortran types */
     MPI_COMPLEX,
     MPI_DOUBLE_COMPLEX,
     MPI_LOGICAL,
@@ -68,9 +91,9 @@ static MPI_Datatype mpi_dtypes[] = {
     MPI_2DOUBLE_PRECISION,
     MPI_CHARACTER,
 #ifdef HAVE_FORTRAN_BINDING
-/* Size-specific types; these are in section 10.2.4 (Extended Fortran Support)
-   as well as optional in MPI-1
-*/
+    /* Size-specific types; these are in section 10.2.4 (Extended Fortran Support)
+       as well as optional in MPI-1
+    */
     MPI_REAL4,
     MPI_REAL8,
     MPI_REAL16,
@@ -116,53 +139,39 @@ static MPI_Datatype mpi_pairtypes[] = {
 int MPIR_Datatype_init(void)
 {
     int i;
-    MPIU_Handle_common *ptr;
+    MPID_Datatype *ptr;
 
     MPIU_Assert(MPID_Datatype_mem.initialized == 0);
     MPIU_Assert(MPID_DATATYPE_PREALLOC >= 5);
 
-#if 0
-    /* initialize also gets us our first pointer */
-    ptr = MPIU_Handle_direct_init(MPID_Datatype_mem.direct,
-				  MPID_Datatype_mem.direct_size,
-				  MPID_Datatype_mem.size,
-				  MPID_Datatype_mem.kind);
+    for (i=0; mpi_pairtypes[i] != (MPI_Datatype) -1; ++i) {
+        /* types based on 'long long' and 'long double', may be disabled at
+           configure time, and their values set to MPI_DATATYPE_NULL.  skip any
+           such types. */
+        if (mpi_pairtypes[i] == MPI_DATATYPE_NULL) continue;
+        /* XXX: this allocation strategy isn't right if one or more of the
+           pairtypes is MPI_DATATYPE_NULL.  in fact, the assert below will
+           fail if any type other than the las in the list is equal to
+           MPI_DATATYPE_NULL.  obviously, this should be fixed, but I need
+           to talk to Rob R. first. -- BRT */
+        /* XXX DJG it does work, but only because MPI_LONG_DOUBLE_INT is the
+         * only one that is ever optional and it comes last */
 
-    MPID_Datatype_mem.initialized = 1;
-    MPID_Datatype_mem.avail = ptr->next;
-#else
-    ptr = MPIU_Handle_obj_alloc_unsafe( &MPID_Datatype_mem );
-#endif
-    MPIU_Assert((void *) ptr == (void *) (MPID_Datatype_direct + HANDLE_INDEX(mpi_pairtypes[0])));
-    MPID_Type_create_pairtype(mpi_pairtypes[0], (MPID_Datatype *) ptr);
+        /* we use the _unsafe version because we are still in MPI_Init, before
+         * multiple threads are permitted and possibly before support for
+         * critical sections is entirely setup */
+        ptr = (MPID_Datatype *)MPIU_Handle_obj_alloc_unsafe( &MPID_Datatype_mem );
 
-    for (i=1; mpi_pairtypes[i] != (MPI_Datatype) -1; i++) {
-	/* types based on 'long long' and 'long double', may be disabled at
-	   configure time, and their values set to MPI_DATATYPE_NULL.  skip any
-	   such types. */
-	if (mpi_pairtypes[i] == MPI_DATATYPE_NULL) continue;
+        MPIU_Assert(ptr);
+        MPIU_Assert(ptr->handle == mpi_pairtypes[i]);
+        /* this is a redundant alternative to the previous statement */
+        MPIU_Assert((void *) ptr == (void *) (MPID_Datatype_direct + HANDLE_INDEX(mpi_pairtypes[i])));
 
-	/* XXX: this allocation strategy isn't right if one or more of the
-	   pairtypes is MPI_DATATYPE_NULL.  in fact, the assert below will
-	   fail if any type other than the las in the list is equal to
-	   MPI_DATATYPE_NULL.  obviously, this should be fixed, but I need
-	   to talk to Rob R. first. -- BRT */
-	ptr = MPID_Datatype_mem.avail;
-	MPID_Datatype_mem.avail = ptr->next;
-	ptr->next = 0;
-
-	MPIU_Assert(ptr);
-	MPIU_Assert((void *) ptr ==
-		    (void *) (MPID_Datatype_direct + HANDLE_INDEX(mpi_pairtypes[i])));
-
-	MPID_Type_create_pairtype(mpi_pairtypes[i], (MPID_Datatype *) ptr);
+        MPID_Type_create_pairtype(mpi_pairtypes[i], (MPID_Datatype *) ptr);
     }
 
-#if 0
-    MPIU_Handle_obj_alloc_complete(&MPID_Datatype_mem, 1);
-#endif
-    MPIR_Add_finalize(MPIR_Datatype_finalize, 0, 
-		      MPIR_FINALIZE_CALLBACK_PRIO-1);
+    MPIR_Add_finalize(MPIR_Datatype_finalize, 0,
+                      MPIR_FINALIZE_CALLBACK_PRIO-1);
 
     return MPI_SUCCESS;
 }

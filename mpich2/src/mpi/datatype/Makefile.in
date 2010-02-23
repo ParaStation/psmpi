@@ -49,14 +49,14 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -67,7 +67,7 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -142,13 +142,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	type_create_hvector.o pack_external.o pack_external_size.o \
 	unpack_external.o type_create_indexed_block.o type_create_resized.o \
 	type_create_darray.o type_create_subarray.o typeutil.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${MPILIBNAME}.a ; \
@@ -167,7 +167,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	unpack_external.lo type_create_indexed_block.lo \
 	type_create_resized.lo type_create_darray.lo type_create_subarray.lo \
 	typeutil.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -186,13 +186,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	_type_create_hindexed.o _type_create_hvector.o _pack_external.o \
 	_pack_external_size.o _unpack_external.o _type_create_indexed_block.o \
 	_type_create_resized.o _type_create_darray.o _type_create_subarray.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${PMPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${PMPILIBNAME}.a ; \
@@ -211,7 +211,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	_unpack_external.lo _type_create_indexed_block.lo \
 	_type_create_resized.lo _type_create_darray.lo \
 	_type_create_subarray.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $? ; \
@@ -219,532 +219,532 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _address.o: address.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/address.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/address.c -o _address.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/address.c -o _address.o
 _address.lo: address.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/address.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/address.c -o _address.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/address.c -o _address.lo
 _get_address.o: get_address.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/get_address.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_address.c -o _get_address.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_address.c -o _get_address.o
 _get_address.lo: get_address.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/get_address.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_address.c -o _get_address.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_address.c -o _get_address.lo
 _get_count.o: get_count.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/get_count.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_count.c -o _get_count.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_count.c -o _get_count.o
 _get_count.lo: get_count.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/get_count.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_count.c -o _get_count.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_count.c -o _get_count.lo
 _get_elements.o: get_elements.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/get_elements.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_elements.c -o _get_elements.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_elements.c -o _get_elements.o
 _get_elements.lo: get_elements.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/get_elements.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_elements.c -o _get_elements.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_elements.c -o _get_elements.lo
 _pack.o: pack.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/pack.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack.c -o _pack.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack.c -o _pack.o
 _pack.lo: pack.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/pack.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack.c -o _pack.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack.c -o _pack.lo
 _unpack.o: unpack.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/unpack.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack.c -o _unpack.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack.c -o _unpack.o
 _unpack.lo: unpack.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/unpack.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack.c -o _unpack.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack.c -o _unpack.lo
 _pack_size.o: pack_size.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/pack_size.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_size.c -o _pack_size.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_size.c -o _pack_size.o
 _pack_size.lo: pack_size.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/pack_size.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_size.c -o _pack_size.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_size.c -o _pack_size.lo
 _status_set_elements.o: status_set_elements.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/status_set_elements.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/status_set_elements.c -o _status_set_elements.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/status_set_elements.c -o _status_set_elements.o
 _status_set_elements.lo: status_set_elements.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/status_set_elements.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/status_set_elements.c -o _status_set_elements.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/status_set_elements.c -o _status_set_elements.lo
 _type_get_name.o: type_get_name.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_get_name.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_name.c -o _type_get_name.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_name.c -o _type_get_name.o
 _type_get_name.lo: type_get_name.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_get_name.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_name.c -o _type_get_name.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_name.c -o _type_get_name.lo
 _type_set_name.o: type_set_name.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_set_name.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_set_name.c -o _type_set_name.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_set_name.c -o _type_set_name.o
 _type_set_name.lo: type_set_name.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_set_name.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_set_name.c -o _type_set_name.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_set_name.c -o _type_set_name.lo
 _type_size.o: type_size.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_size.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_size.c -o _type_size.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_size.c -o _type_size.o
 _type_size.lo: type_size.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_size.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_size.c -o _type_size.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_size.c -o _type_size.lo
 _type_extent.o: type_extent.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_extent.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_extent.c -o _type_extent.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_extent.c -o _type_extent.o
 _type_extent.lo: type_extent.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_extent.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_extent.c -o _type_extent.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_extent.c -o _type_extent.lo
 _type_vector.o: type_vector.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_vector.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_vector.c -o _type_vector.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_vector.c -o _type_vector.o
 _type_vector.lo: type_vector.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_vector.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_vector.c -o _type_vector.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_vector.c -o _type_vector.lo
 _type_commit.o: type_commit.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_commit.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_commit.c -o _type_commit.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_commit.c -o _type_commit.o
 _type_commit.lo: type_commit.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_commit.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_commit.c -o _type_commit.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_commit.c -o _type_commit.lo
 _type_indexed.o: type_indexed.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_indexed.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_indexed.c -o _type_indexed.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_indexed.c -o _type_indexed.o
 _type_indexed.lo: type_indexed.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_indexed.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_indexed.c -o _type_indexed.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_indexed.c -o _type_indexed.lo
 _type_hindexed.o: type_hindexed.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_hindexed.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hindexed.c -o _type_hindexed.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hindexed.c -o _type_hindexed.o
 _type_hindexed.lo: type_hindexed.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_hindexed.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hindexed.c -o _type_hindexed.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hindexed.c -o _type_hindexed.lo
 _type_struct.o: type_struct.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_struct.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_struct.c -o _type_struct.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_struct.c -o _type_struct.o
 _type_struct.lo: type_struct.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_struct.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_struct.c -o _type_struct.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_struct.c -o _type_struct.lo
 _type_contiguous.o: type_contiguous.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_contiguous.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_contiguous.c -o _type_contiguous.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_contiguous.c -o _type_contiguous.o
 _type_contiguous.lo: type_contiguous.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_contiguous.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_contiguous.c -o _type_contiguous.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_contiguous.c -o _type_contiguous.lo
 _type_free.o: type_free.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_free.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_free.c -o _type_free.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_free.c -o _type_free.o
 _type_free.lo: type_free.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_free.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_free.c -o _type_free.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_free.c -o _type_free.lo
 _type_hvector.o: type_hvector.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_hvector.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hvector.c -o _type_hvector.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hvector.c -o _type_hvector.o
 _type_hvector.lo: type_hvector.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_hvector.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hvector.c -o _type_hvector.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hvector.c -o _type_hvector.lo
 _type_dup.o: type_dup.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_dup.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_dup.c -o _type_dup.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_dup.c -o _type_dup.o
 _type_dup.lo: type_dup.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_dup.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_dup.c -o _type_dup.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_dup.c -o _type_dup.lo
 _type_get_envelope.o: type_get_envelope.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_get_envelope.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_envelope.c -o _type_get_envelope.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_envelope.c -o _type_get_envelope.o
 _type_get_envelope.lo: type_get_envelope.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_get_envelope.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_envelope.c -o _type_get_envelope.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_envelope.c -o _type_get_envelope.lo
 _type_get_contents.o: type_get_contents.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_get_contents.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_contents.c -o _type_get_contents.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_contents.c -o _type_get_contents.o
 _type_get_contents.lo: type_get_contents.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_get_contents.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_contents.c -o _type_get_contents.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_contents.c -o _type_get_contents.lo
 _type_ub.o: type_ub.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_ub.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_ub.c -o _type_ub.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_ub.c -o _type_ub.o
 _type_ub.lo: type_ub.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_ub.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_ub.c -o _type_ub.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_ub.c -o _type_ub.lo
 _type_lb.o: type_lb.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_lb.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_lb.c -o _type_lb.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_lb.c -o _type_lb.o
 _type_lb.lo: type_lb.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_lb.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_lb.c -o _type_lb.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_lb.c -o _type_lb.lo
 _type_get_extent.o: type_get_extent.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_get_extent.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_extent.c -o _type_get_extent.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_extent.c -o _type_get_extent.o
 _type_get_extent.lo: type_get_extent.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_get_extent.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_extent.c -o _type_get_extent.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_extent.c -o _type_get_extent.lo
 _type_get_true_extent.o: type_get_true_extent.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_get_true_extent.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_true_extent.c -o _type_get_true_extent.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_true_extent.c -o _type_get_true_extent.o
 _type_get_true_extent.lo: type_get_true_extent.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_get_true_extent.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_true_extent.c -o _type_get_true_extent.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_true_extent.c -o _type_get_true_extent.lo
 _type_match_size.o: type_match_size.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_match_size.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_match_size.c -o _type_match_size.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_match_size.c -o _type_match_size.o
 _type_match_size.lo: type_match_size.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_match_size.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_match_size.c -o _type_match_size.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_match_size.c -o _type_match_size.lo
 _type_create_struct.o: type_create_struct.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_create_struct.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_struct.c -o _type_create_struct.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_struct.c -o _type_create_struct.o
 _type_create_struct.lo: type_create_struct.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_create_struct.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_struct.c -o _type_create_struct.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_struct.c -o _type_create_struct.lo
 _type_create_hindexed.o: type_create_hindexed.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_create_hindexed.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hindexed.c -o _type_create_hindexed.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hindexed.c -o _type_create_hindexed.o
 _type_create_hindexed.lo: type_create_hindexed.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_create_hindexed.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hindexed.c -o _type_create_hindexed.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hindexed.c -o _type_create_hindexed.lo
 _type_create_hvector.o: type_create_hvector.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_create_hvector.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hvector.c -o _type_create_hvector.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hvector.c -o _type_create_hvector.o
 _type_create_hvector.lo: type_create_hvector.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_create_hvector.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hvector.c -o _type_create_hvector.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hvector.c -o _type_create_hvector.lo
 _pack_external.o: pack_external.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/pack_external.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external.c -o _pack_external.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external.c -o _pack_external.o
 _pack_external.lo: pack_external.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/pack_external.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external.c -o _pack_external.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external.c -o _pack_external.lo
 _pack_external_size.o: pack_external_size.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/pack_external_size.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external_size.c -o _pack_external_size.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external_size.c -o _pack_external_size.o
 _pack_external_size.lo: pack_external_size.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/pack_external_size.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external_size.c -o _pack_external_size.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external_size.c -o _pack_external_size.lo
 _unpack_external.o: unpack_external.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/unpack_external.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack_external.c -o _unpack_external.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack_external.c -o _unpack_external.o
 _unpack_external.lo: unpack_external.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/unpack_external.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack_external.c -o _unpack_external.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack_external.c -o _unpack_external.lo
 _type_create_indexed_block.o: type_create_indexed_block.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_create_indexed_block.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_indexed_block.c -o _type_create_indexed_block.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_indexed_block.c -o _type_create_indexed_block.o
 _type_create_indexed_block.lo: type_create_indexed_block.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_create_indexed_block.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_indexed_block.c -o _type_create_indexed_block.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_indexed_block.c -o _type_create_indexed_block.lo
 _type_create_resized.o: type_create_resized.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_create_resized.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_resized.c -o _type_create_resized.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_resized.c -o _type_create_resized.o
 _type_create_resized.lo: type_create_resized.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_create_resized.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_resized.c -o _type_create_resized.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_resized.c -o _type_create_resized.lo
 _type_create_darray.o: type_create_darray.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_create_darray.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_darray.c -o _type_create_darray.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_darray.c -o _type_create_darray.o
 _type_create_darray.lo: type_create_darray.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_create_darray.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_darray.c -o _type_create_darray.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_darray.c -o _type_create_darray.lo
 _type_create_subarray.o: type_create_subarray.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/type_create_subarray.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_subarray.c -o _type_create_subarray.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_subarray.c -o _type_create_subarray.o
 _type_create_subarray.lo: type_create_subarray.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/type_create_subarray.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_subarray.c -o _type_create_subarray.lo ; \
@@ -768,162 +768,552 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/address.d: $(srcdir)/address.c
-	$(MAKE_DEPEND_C) -MT '_address.o address.o' $(srcdir)/address.c >$(DEPS_DIR)/address.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C address.c > $(DEPS_DIR)/address.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_address.o address.o address.lo _address.lo' $(srcdir)/address.c >$(DEPS_DIR)/address.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_address.o address.o address.lo _address.lo' $(srcdir)/address.c >$(DEPS_DIR)/address.d
 $(DEPS_DIR)/get_address.d: $(srcdir)/get_address.c
-	$(MAKE_DEPEND_C) -MT '_get_address.o get_address.o' $(srcdir)/get_address.c >$(DEPS_DIR)/get_address.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C get_address.c > $(DEPS_DIR)/get_address.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_get_address.o get_address.o get_address.lo _get_address.lo' $(srcdir)/get_address.c >$(DEPS_DIR)/get_address.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_get_address.o get_address.o get_address.lo _get_address.lo' $(srcdir)/get_address.c >$(DEPS_DIR)/get_address.d
 $(DEPS_DIR)/get_count.d: $(srcdir)/get_count.c
-	$(MAKE_DEPEND_C) -MT '_get_count.o get_count.o' $(srcdir)/get_count.c >$(DEPS_DIR)/get_count.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C get_count.c > $(DEPS_DIR)/get_count.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_get_count.o get_count.o get_count.lo _get_count.lo' $(srcdir)/get_count.c >$(DEPS_DIR)/get_count.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_get_count.o get_count.o get_count.lo _get_count.lo' $(srcdir)/get_count.c >$(DEPS_DIR)/get_count.d
 $(DEPS_DIR)/get_elements.d: $(srcdir)/get_elements.c
-	$(MAKE_DEPEND_C) -MT '_get_elements.o get_elements.o' $(srcdir)/get_elements.c >$(DEPS_DIR)/get_elements.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C get_elements.c > $(DEPS_DIR)/get_elements.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_get_elements.o get_elements.o get_elements.lo _get_elements.lo' $(srcdir)/get_elements.c >$(DEPS_DIR)/get_elements.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_get_elements.o get_elements.o get_elements.lo _get_elements.lo' $(srcdir)/get_elements.c >$(DEPS_DIR)/get_elements.d
 $(DEPS_DIR)/pack.d: $(srcdir)/pack.c
-	$(MAKE_DEPEND_C) -MT '_pack.o pack.o' $(srcdir)/pack.c >$(DEPS_DIR)/pack.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C pack.c > $(DEPS_DIR)/pack.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_pack.o pack.o pack.lo _pack.lo' $(srcdir)/pack.c >$(DEPS_DIR)/pack.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_pack.o pack.o pack.lo _pack.lo' $(srcdir)/pack.c >$(DEPS_DIR)/pack.d
 $(DEPS_DIR)/unpack.d: $(srcdir)/unpack.c
-	$(MAKE_DEPEND_C) -MT '_unpack.o unpack.o' $(srcdir)/unpack.c >$(DEPS_DIR)/unpack.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C unpack.c > $(DEPS_DIR)/unpack.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_unpack.o unpack.o unpack.lo _unpack.lo' $(srcdir)/unpack.c >$(DEPS_DIR)/unpack.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_unpack.o unpack.o unpack.lo _unpack.lo' $(srcdir)/unpack.c >$(DEPS_DIR)/unpack.d
 $(DEPS_DIR)/pack_size.d: $(srcdir)/pack_size.c
-	$(MAKE_DEPEND_C) -MT '_pack_size.o pack_size.o' $(srcdir)/pack_size.c >$(DEPS_DIR)/pack_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C pack_size.c > $(DEPS_DIR)/pack_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_pack_size.o pack_size.o pack_size.lo _pack_size.lo' $(srcdir)/pack_size.c >$(DEPS_DIR)/pack_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_pack_size.o pack_size.o pack_size.lo _pack_size.lo' $(srcdir)/pack_size.c >$(DEPS_DIR)/pack_size.d
 $(DEPS_DIR)/status_set_elements.d: $(srcdir)/status_set_elements.c
-	$(MAKE_DEPEND_C) -MT '_status_set_elements.o status_set_elements.o' $(srcdir)/status_set_elements.c >$(DEPS_DIR)/status_set_elements.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C status_set_elements.c > $(DEPS_DIR)/status_set_elements.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_status_set_elements.o status_set_elements.o status_set_elements.lo _status_set_elements.lo' $(srcdir)/status_set_elements.c >$(DEPS_DIR)/status_set_elements.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_status_set_elements.o status_set_elements.o status_set_elements.lo _status_set_elements.lo' $(srcdir)/status_set_elements.c >$(DEPS_DIR)/status_set_elements.d
 $(DEPS_DIR)/type_get_name.d: $(srcdir)/type_get_name.c
-	$(MAKE_DEPEND_C) -MT '_type_get_name.o type_get_name.o' $(srcdir)/type_get_name.c >$(DEPS_DIR)/type_get_name.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_get_name.c > $(DEPS_DIR)/type_get_name.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_get_name.o type_get_name.o type_get_name.lo _type_get_name.lo' $(srcdir)/type_get_name.c >$(DEPS_DIR)/type_get_name.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_get_name.o type_get_name.o type_get_name.lo _type_get_name.lo' $(srcdir)/type_get_name.c >$(DEPS_DIR)/type_get_name.d
 $(DEPS_DIR)/type_set_name.d: $(srcdir)/type_set_name.c
-	$(MAKE_DEPEND_C) -MT '_type_set_name.o type_set_name.o' $(srcdir)/type_set_name.c >$(DEPS_DIR)/type_set_name.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_set_name.c > $(DEPS_DIR)/type_set_name.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_set_name.o type_set_name.o type_set_name.lo _type_set_name.lo' $(srcdir)/type_set_name.c >$(DEPS_DIR)/type_set_name.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_set_name.o type_set_name.o type_set_name.lo _type_set_name.lo' $(srcdir)/type_set_name.c >$(DEPS_DIR)/type_set_name.d
 $(DEPS_DIR)/type_size.d: $(srcdir)/type_size.c
-	$(MAKE_DEPEND_C) -MT '_type_size.o type_size.o' $(srcdir)/type_size.c >$(DEPS_DIR)/type_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_size.c > $(DEPS_DIR)/type_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_size.o type_size.o type_size.lo _type_size.lo' $(srcdir)/type_size.c >$(DEPS_DIR)/type_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_size.o type_size.o type_size.lo _type_size.lo' $(srcdir)/type_size.c >$(DEPS_DIR)/type_size.d
 $(DEPS_DIR)/type_extent.d: $(srcdir)/type_extent.c
-	$(MAKE_DEPEND_C) -MT '_type_extent.o type_extent.o' $(srcdir)/type_extent.c >$(DEPS_DIR)/type_extent.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_extent.c > $(DEPS_DIR)/type_extent.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_extent.o type_extent.o type_extent.lo _type_extent.lo' $(srcdir)/type_extent.c >$(DEPS_DIR)/type_extent.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_extent.o type_extent.o type_extent.lo _type_extent.lo' $(srcdir)/type_extent.c >$(DEPS_DIR)/type_extent.d
 $(DEPS_DIR)/type_vector.d: $(srcdir)/type_vector.c
-	$(MAKE_DEPEND_C) -MT '_type_vector.o type_vector.o' $(srcdir)/type_vector.c >$(DEPS_DIR)/type_vector.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_vector.c > $(DEPS_DIR)/type_vector.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_vector.o type_vector.o type_vector.lo _type_vector.lo' $(srcdir)/type_vector.c >$(DEPS_DIR)/type_vector.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_vector.o type_vector.o type_vector.lo _type_vector.lo' $(srcdir)/type_vector.c >$(DEPS_DIR)/type_vector.d
 $(DEPS_DIR)/type_commit.d: $(srcdir)/type_commit.c
-	$(MAKE_DEPEND_C) -MT '_type_commit.o type_commit.o' $(srcdir)/type_commit.c >$(DEPS_DIR)/type_commit.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_commit.c > $(DEPS_DIR)/type_commit.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_commit.o type_commit.o type_commit.lo _type_commit.lo' $(srcdir)/type_commit.c >$(DEPS_DIR)/type_commit.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_commit.o type_commit.o type_commit.lo _type_commit.lo' $(srcdir)/type_commit.c >$(DEPS_DIR)/type_commit.d
 $(DEPS_DIR)/type_indexed.d: $(srcdir)/type_indexed.c
-	$(MAKE_DEPEND_C) -MT '_type_indexed.o type_indexed.o' $(srcdir)/type_indexed.c >$(DEPS_DIR)/type_indexed.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_indexed.c > $(DEPS_DIR)/type_indexed.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_indexed.o type_indexed.o type_indexed.lo _type_indexed.lo' $(srcdir)/type_indexed.c >$(DEPS_DIR)/type_indexed.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_indexed.o type_indexed.o type_indexed.lo _type_indexed.lo' $(srcdir)/type_indexed.c >$(DEPS_DIR)/type_indexed.d
 $(DEPS_DIR)/type_hindexed.d: $(srcdir)/type_hindexed.c
-	$(MAKE_DEPEND_C) -MT '_type_hindexed.o type_hindexed.o' $(srcdir)/type_hindexed.c >$(DEPS_DIR)/type_hindexed.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_hindexed.c > $(DEPS_DIR)/type_hindexed.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_hindexed.o type_hindexed.o type_hindexed.lo _type_hindexed.lo' $(srcdir)/type_hindexed.c >$(DEPS_DIR)/type_hindexed.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_hindexed.o type_hindexed.o type_hindexed.lo _type_hindexed.lo' $(srcdir)/type_hindexed.c >$(DEPS_DIR)/type_hindexed.d
 $(DEPS_DIR)/type_struct.d: $(srcdir)/type_struct.c
-	$(MAKE_DEPEND_C) -MT '_type_struct.o type_struct.o' $(srcdir)/type_struct.c >$(DEPS_DIR)/type_struct.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_struct.c > $(DEPS_DIR)/type_struct.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_struct.o type_struct.o type_struct.lo _type_struct.lo' $(srcdir)/type_struct.c >$(DEPS_DIR)/type_struct.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_struct.o type_struct.o type_struct.lo _type_struct.lo' $(srcdir)/type_struct.c >$(DEPS_DIR)/type_struct.d
 $(DEPS_DIR)/type_contiguous.d: $(srcdir)/type_contiguous.c
-	$(MAKE_DEPEND_C) -MT '_type_contiguous.o type_contiguous.o' $(srcdir)/type_contiguous.c >$(DEPS_DIR)/type_contiguous.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_contiguous.c > $(DEPS_DIR)/type_contiguous.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_contiguous.o type_contiguous.o type_contiguous.lo _type_contiguous.lo' $(srcdir)/type_contiguous.c >$(DEPS_DIR)/type_contiguous.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_contiguous.o type_contiguous.o type_contiguous.lo _type_contiguous.lo' $(srcdir)/type_contiguous.c >$(DEPS_DIR)/type_contiguous.d
 $(DEPS_DIR)/type_free.d: $(srcdir)/type_free.c
-	$(MAKE_DEPEND_C) -MT '_type_free.o type_free.o' $(srcdir)/type_free.c >$(DEPS_DIR)/type_free.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_free.c > $(DEPS_DIR)/type_free.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_free.o type_free.o type_free.lo _type_free.lo' $(srcdir)/type_free.c >$(DEPS_DIR)/type_free.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_free.o type_free.o type_free.lo _type_free.lo' $(srcdir)/type_free.c >$(DEPS_DIR)/type_free.d
 $(DEPS_DIR)/type_hvector.d: $(srcdir)/type_hvector.c
-	$(MAKE_DEPEND_C) -MT '_type_hvector.o type_hvector.o' $(srcdir)/type_hvector.c >$(DEPS_DIR)/type_hvector.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_hvector.c > $(DEPS_DIR)/type_hvector.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_hvector.o type_hvector.o type_hvector.lo _type_hvector.lo' $(srcdir)/type_hvector.c >$(DEPS_DIR)/type_hvector.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_hvector.o type_hvector.o type_hvector.lo _type_hvector.lo' $(srcdir)/type_hvector.c >$(DEPS_DIR)/type_hvector.d
 $(DEPS_DIR)/type_dup.d: $(srcdir)/type_dup.c
-	$(MAKE_DEPEND_C) -MT '_type_dup.o type_dup.o' $(srcdir)/type_dup.c >$(DEPS_DIR)/type_dup.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_dup.c > $(DEPS_DIR)/type_dup.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_dup.o type_dup.o type_dup.lo _type_dup.lo' $(srcdir)/type_dup.c >$(DEPS_DIR)/type_dup.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_dup.o type_dup.o type_dup.lo _type_dup.lo' $(srcdir)/type_dup.c >$(DEPS_DIR)/type_dup.d
 $(DEPS_DIR)/type_get_envelope.d: $(srcdir)/type_get_envelope.c
-	$(MAKE_DEPEND_C) -MT '_type_get_envelope.o type_get_envelope.o' $(srcdir)/type_get_envelope.c >$(DEPS_DIR)/type_get_envelope.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_get_envelope.c > $(DEPS_DIR)/type_get_envelope.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_get_envelope.o type_get_envelope.o type_get_envelope.lo _type_get_envelope.lo' $(srcdir)/type_get_envelope.c >$(DEPS_DIR)/type_get_envelope.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_get_envelope.o type_get_envelope.o type_get_envelope.lo _type_get_envelope.lo' $(srcdir)/type_get_envelope.c >$(DEPS_DIR)/type_get_envelope.d
 $(DEPS_DIR)/type_get_contents.d: $(srcdir)/type_get_contents.c
-	$(MAKE_DEPEND_C) -MT '_type_get_contents.o type_get_contents.o' $(srcdir)/type_get_contents.c >$(DEPS_DIR)/type_get_contents.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_get_contents.c > $(DEPS_DIR)/type_get_contents.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_get_contents.o type_get_contents.o type_get_contents.lo _type_get_contents.lo' $(srcdir)/type_get_contents.c >$(DEPS_DIR)/type_get_contents.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_get_contents.o type_get_contents.o type_get_contents.lo _type_get_contents.lo' $(srcdir)/type_get_contents.c >$(DEPS_DIR)/type_get_contents.d
 $(DEPS_DIR)/type_ub.d: $(srcdir)/type_ub.c
-	$(MAKE_DEPEND_C) -MT '_type_ub.o type_ub.o' $(srcdir)/type_ub.c >$(DEPS_DIR)/type_ub.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_ub.c > $(DEPS_DIR)/type_ub.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_ub.o type_ub.o type_ub.lo _type_ub.lo' $(srcdir)/type_ub.c >$(DEPS_DIR)/type_ub.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_ub.o type_ub.o type_ub.lo _type_ub.lo' $(srcdir)/type_ub.c >$(DEPS_DIR)/type_ub.d
 $(DEPS_DIR)/type_lb.d: $(srcdir)/type_lb.c
-	$(MAKE_DEPEND_C) -MT '_type_lb.o type_lb.o' $(srcdir)/type_lb.c >$(DEPS_DIR)/type_lb.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_lb.c > $(DEPS_DIR)/type_lb.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_lb.o type_lb.o type_lb.lo _type_lb.lo' $(srcdir)/type_lb.c >$(DEPS_DIR)/type_lb.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_lb.o type_lb.o type_lb.lo _type_lb.lo' $(srcdir)/type_lb.c >$(DEPS_DIR)/type_lb.d
 $(DEPS_DIR)/type_get_extent.d: $(srcdir)/type_get_extent.c
-	$(MAKE_DEPEND_C) -MT '_type_get_extent.o type_get_extent.o' $(srcdir)/type_get_extent.c >$(DEPS_DIR)/type_get_extent.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_get_extent.c > $(DEPS_DIR)/type_get_extent.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_get_extent.o type_get_extent.o type_get_extent.lo _type_get_extent.lo' $(srcdir)/type_get_extent.c >$(DEPS_DIR)/type_get_extent.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_get_extent.o type_get_extent.o type_get_extent.lo _type_get_extent.lo' $(srcdir)/type_get_extent.c >$(DEPS_DIR)/type_get_extent.d
 $(DEPS_DIR)/type_get_true_extent.d: $(srcdir)/type_get_true_extent.c
-	$(MAKE_DEPEND_C) -MT '_type_get_true_extent.o type_get_true_extent.o' $(srcdir)/type_get_true_extent.c >$(DEPS_DIR)/type_get_true_extent.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_get_true_extent.c > $(DEPS_DIR)/type_get_true_extent.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_get_true_extent.o type_get_true_extent.o type_get_true_extent.lo _type_get_true_extent.lo' $(srcdir)/type_get_true_extent.c >$(DEPS_DIR)/type_get_true_extent.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_get_true_extent.o type_get_true_extent.o type_get_true_extent.lo _type_get_true_extent.lo' $(srcdir)/type_get_true_extent.c >$(DEPS_DIR)/type_get_true_extent.d
 $(DEPS_DIR)/type_match_size.d: $(srcdir)/type_match_size.c
-	$(MAKE_DEPEND_C) -MT '_type_match_size.o type_match_size.o' $(srcdir)/type_match_size.c >$(DEPS_DIR)/type_match_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_match_size.c > $(DEPS_DIR)/type_match_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_match_size.o type_match_size.o type_match_size.lo _type_match_size.lo' $(srcdir)/type_match_size.c >$(DEPS_DIR)/type_match_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_match_size.o type_match_size.o type_match_size.lo _type_match_size.lo' $(srcdir)/type_match_size.c >$(DEPS_DIR)/type_match_size.d
 $(DEPS_DIR)/type_create_struct.d: $(srcdir)/type_create_struct.c
-	$(MAKE_DEPEND_C) -MT '_type_create_struct.o type_create_struct.o' $(srcdir)/type_create_struct.c >$(DEPS_DIR)/type_create_struct.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_create_struct.c > $(DEPS_DIR)/type_create_struct.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_create_struct.o type_create_struct.o type_create_struct.lo _type_create_struct.lo' $(srcdir)/type_create_struct.c >$(DEPS_DIR)/type_create_struct.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_create_struct.o type_create_struct.o type_create_struct.lo _type_create_struct.lo' $(srcdir)/type_create_struct.c >$(DEPS_DIR)/type_create_struct.d
 $(DEPS_DIR)/type_create_hindexed.d: $(srcdir)/type_create_hindexed.c
-	$(MAKE_DEPEND_C) -MT '_type_create_hindexed.o type_create_hindexed.o' $(srcdir)/type_create_hindexed.c >$(DEPS_DIR)/type_create_hindexed.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_create_hindexed.c > $(DEPS_DIR)/type_create_hindexed.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_create_hindexed.o type_create_hindexed.o type_create_hindexed.lo _type_create_hindexed.lo' $(srcdir)/type_create_hindexed.c >$(DEPS_DIR)/type_create_hindexed.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_create_hindexed.o type_create_hindexed.o type_create_hindexed.lo _type_create_hindexed.lo' $(srcdir)/type_create_hindexed.c >$(DEPS_DIR)/type_create_hindexed.d
 $(DEPS_DIR)/type_create_hvector.d: $(srcdir)/type_create_hvector.c
-	$(MAKE_DEPEND_C) -MT '_type_create_hvector.o type_create_hvector.o' $(srcdir)/type_create_hvector.c >$(DEPS_DIR)/type_create_hvector.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_create_hvector.c > $(DEPS_DIR)/type_create_hvector.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_create_hvector.o type_create_hvector.o type_create_hvector.lo _type_create_hvector.lo' $(srcdir)/type_create_hvector.c >$(DEPS_DIR)/type_create_hvector.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_create_hvector.o type_create_hvector.o type_create_hvector.lo _type_create_hvector.lo' $(srcdir)/type_create_hvector.c >$(DEPS_DIR)/type_create_hvector.d
 $(DEPS_DIR)/pack_external.d: $(srcdir)/pack_external.c
-	$(MAKE_DEPEND_C) -MT '_pack_external.o pack_external.o' $(srcdir)/pack_external.c >$(DEPS_DIR)/pack_external.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C pack_external.c > $(DEPS_DIR)/pack_external.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_pack_external.o pack_external.o pack_external.lo _pack_external.lo' $(srcdir)/pack_external.c >$(DEPS_DIR)/pack_external.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_pack_external.o pack_external.o pack_external.lo _pack_external.lo' $(srcdir)/pack_external.c >$(DEPS_DIR)/pack_external.d
 $(DEPS_DIR)/pack_external_size.d: $(srcdir)/pack_external_size.c
-	$(MAKE_DEPEND_C) -MT '_pack_external_size.o pack_external_size.o' $(srcdir)/pack_external_size.c >$(DEPS_DIR)/pack_external_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C pack_external_size.c > $(DEPS_DIR)/pack_external_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_pack_external_size.o pack_external_size.o pack_external_size.lo _pack_external_size.lo' $(srcdir)/pack_external_size.c >$(DEPS_DIR)/pack_external_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_pack_external_size.o pack_external_size.o pack_external_size.lo _pack_external_size.lo' $(srcdir)/pack_external_size.c >$(DEPS_DIR)/pack_external_size.d
 $(DEPS_DIR)/unpack_external.d: $(srcdir)/unpack_external.c
-	$(MAKE_DEPEND_C) -MT '_unpack_external.o unpack_external.o' $(srcdir)/unpack_external.c >$(DEPS_DIR)/unpack_external.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C unpack_external.c > $(DEPS_DIR)/unpack_external.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_unpack_external.o unpack_external.o unpack_external.lo _unpack_external.lo' $(srcdir)/unpack_external.c >$(DEPS_DIR)/unpack_external.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_unpack_external.o unpack_external.o unpack_external.lo _unpack_external.lo' $(srcdir)/unpack_external.c >$(DEPS_DIR)/unpack_external.d
 $(DEPS_DIR)/type_create_indexed_block.d: $(srcdir)/type_create_indexed_block.c
-	$(MAKE_DEPEND_C) -MT '_type_create_indexed_block.o type_create_indexed_block.o' $(srcdir)/type_create_indexed_block.c >$(DEPS_DIR)/type_create_indexed_block.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_create_indexed_block.c > $(DEPS_DIR)/type_create_indexed_block.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_create_indexed_block.o type_create_indexed_block.o type_create_indexed_block.lo _type_create_indexed_block.lo' $(srcdir)/type_create_indexed_block.c >$(DEPS_DIR)/type_create_indexed_block.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_create_indexed_block.o type_create_indexed_block.o type_create_indexed_block.lo _type_create_indexed_block.lo' $(srcdir)/type_create_indexed_block.c >$(DEPS_DIR)/type_create_indexed_block.d
 $(DEPS_DIR)/type_create_resized.d: $(srcdir)/type_create_resized.c
-	$(MAKE_DEPEND_C) -MT '_type_create_resized.o type_create_resized.o' $(srcdir)/type_create_resized.c >$(DEPS_DIR)/type_create_resized.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_create_resized.c > $(DEPS_DIR)/type_create_resized.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_create_resized.o type_create_resized.o type_create_resized.lo _type_create_resized.lo' $(srcdir)/type_create_resized.c >$(DEPS_DIR)/type_create_resized.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_create_resized.o type_create_resized.o type_create_resized.lo _type_create_resized.lo' $(srcdir)/type_create_resized.c >$(DEPS_DIR)/type_create_resized.d
 $(DEPS_DIR)/type_create_darray.d: $(srcdir)/type_create_darray.c
-	$(MAKE_DEPEND_C) -MT '_type_create_darray.o type_create_darray.o' $(srcdir)/type_create_darray.c >$(DEPS_DIR)/type_create_darray.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_create_darray.c > $(DEPS_DIR)/type_create_darray.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_create_darray.o type_create_darray.o type_create_darray.lo _type_create_darray.lo' $(srcdir)/type_create_darray.c >$(DEPS_DIR)/type_create_darray.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_create_darray.o type_create_darray.o type_create_darray.lo _type_create_darray.lo' $(srcdir)/type_create_darray.c >$(DEPS_DIR)/type_create_darray.d
 $(DEPS_DIR)/type_create_subarray.d: $(srcdir)/type_create_subarray.c
-	$(MAKE_DEPEND_C) -MT '_type_create_subarray.o type_create_subarray.o' $(srcdir)/type_create_subarray.c >$(DEPS_DIR)/type_create_subarray.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_create_subarray.c > $(DEPS_DIR)/type_create_subarray.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_create_subarray.o type_create_subarray.o type_create_subarray.lo _type_create_subarray.lo' $(srcdir)/type_create_subarray.c >$(DEPS_DIR)/type_create_subarray.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_create_subarray.o type_create_subarray.o type_create_subarray.lo _type_create_subarray.lo' $(srcdir)/type_create_subarray.c >$(DEPS_DIR)/type_create_subarray.d
 $(DEPS_DIR)/typeutil.d: $(srcdir)/typeutil.c
-	$(MAKE_DEPEND_C) -MT '_typeutil.o typeutil.o' $(srcdir)/typeutil.c >$(DEPS_DIR)/typeutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C typeutil.c > $(DEPS_DIR)/typeutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_typeutil.o typeutil.o typeutil.lo _typeutil.lo' $(srcdir)/typeutil.c >$(DEPS_DIR)/typeutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_typeutil.o typeutil.o typeutil.lo _typeutil.lo' $(srcdir)/typeutil.c >$(DEPS_DIR)/typeutil.d
 $(DEPS_DIR)/timestamp: $(mpi_sources) typeutil.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_address.o address.o' $(srcdir)/address.c >$(DEPS_DIR)/address.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C address.c > $(DEPS_DIR)/address.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_address.o address.o address.lo _address.lo' $(srcdir)/address.c >$(DEPS_DIR)/address.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_address.o address.o address.lo _address.lo' $(srcdir)/address.c >$(DEPS_DIR)/address.d
 	echo "include $(DEPS_DIR)/address.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_get_address.o get_address.o' $(srcdir)/get_address.c >$(DEPS_DIR)/get_address.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C get_address.c > $(DEPS_DIR)/get_address.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_get_address.o get_address.o get_address.lo _get_address.lo' $(srcdir)/get_address.c >$(DEPS_DIR)/get_address.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_get_address.o get_address.o get_address.lo _get_address.lo' $(srcdir)/get_address.c >$(DEPS_DIR)/get_address.d
 	echo "include $(DEPS_DIR)/get_address.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_get_count.o get_count.o' $(srcdir)/get_count.c >$(DEPS_DIR)/get_count.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C get_count.c > $(DEPS_DIR)/get_count.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_get_count.o get_count.o get_count.lo _get_count.lo' $(srcdir)/get_count.c >$(DEPS_DIR)/get_count.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_get_count.o get_count.o get_count.lo _get_count.lo' $(srcdir)/get_count.c >$(DEPS_DIR)/get_count.d
 	echo "include $(DEPS_DIR)/get_count.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_get_elements.o get_elements.o' $(srcdir)/get_elements.c >$(DEPS_DIR)/get_elements.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C get_elements.c > $(DEPS_DIR)/get_elements.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_get_elements.o get_elements.o get_elements.lo _get_elements.lo' $(srcdir)/get_elements.c >$(DEPS_DIR)/get_elements.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_get_elements.o get_elements.o get_elements.lo _get_elements.lo' $(srcdir)/get_elements.c >$(DEPS_DIR)/get_elements.d
 	echo "include $(DEPS_DIR)/get_elements.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_pack.o pack.o' $(srcdir)/pack.c >$(DEPS_DIR)/pack.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C pack.c > $(DEPS_DIR)/pack.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_pack.o pack.o pack.lo _pack.lo' $(srcdir)/pack.c >$(DEPS_DIR)/pack.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_pack.o pack.o pack.lo _pack.lo' $(srcdir)/pack.c >$(DEPS_DIR)/pack.d
 	echo "include $(DEPS_DIR)/pack.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_unpack.o unpack.o' $(srcdir)/unpack.c >$(DEPS_DIR)/unpack.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C unpack.c > $(DEPS_DIR)/unpack.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_unpack.o unpack.o unpack.lo _unpack.lo' $(srcdir)/unpack.c >$(DEPS_DIR)/unpack.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_unpack.o unpack.o unpack.lo _unpack.lo' $(srcdir)/unpack.c >$(DEPS_DIR)/unpack.d
 	echo "include $(DEPS_DIR)/unpack.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_pack_size.o pack_size.o' $(srcdir)/pack_size.c >$(DEPS_DIR)/pack_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C pack_size.c > $(DEPS_DIR)/pack_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_pack_size.o pack_size.o pack_size.lo _pack_size.lo' $(srcdir)/pack_size.c >$(DEPS_DIR)/pack_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_pack_size.o pack_size.o pack_size.lo _pack_size.lo' $(srcdir)/pack_size.c >$(DEPS_DIR)/pack_size.d
 	echo "include $(DEPS_DIR)/pack_size.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_status_set_elements.o status_set_elements.o' $(srcdir)/status_set_elements.c >$(DEPS_DIR)/status_set_elements.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C status_set_elements.c > $(DEPS_DIR)/status_set_elements.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_status_set_elements.o status_set_elements.o status_set_elements.lo _status_set_elements.lo' $(srcdir)/status_set_elements.c >$(DEPS_DIR)/status_set_elements.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_status_set_elements.o status_set_elements.o status_set_elements.lo _status_set_elements.lo' $(srcdir)/status_set_elements.c >$(DEPS_DIR)/status_set_elements.d
 	echo "include $(DEPS_DIR)/status_set_elements.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_get_name.o type_get_name.o' $(srcdir)/type_get_name.c >$(DEPS_DIR)/type_get_name.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_get_name.c > $(DEPS_DIR)/type_get_name.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_get_name.o type_get_name.o type_get_name.lo _type_get_name.lo' $(srcdir)/type_get_name.c >$(DEPS_DIR)/type_get_name.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_get_name.o type_get_name.o type_get_name.lo _type_get_name.lo' $(srcdir)/type_get_name.c >$(DEPS_DIR)/type_get_name.d
 	echo "include $(DEPS_DIR)/type_get_name.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_set_name.o type_set_name.o' $(srcdir)/type_set_name.c >$(DEPS_DIR)/type_set_name.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_set_name.c > $(DEPS_DIR)/type_set_name.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_set_name.o type_set_name.o type_set_name.lo _type_set_name.lo' $(srcdir)/type_set_name.c >$(DEPS_DIR)/type_set_name.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_set_name.o type_set_name.o type_set_name.lo _type_set_name.lo' $(srcdir)/type_set_name.c >$(DEPS_DIR)/type_set_name.d
 	echo "include $(DEPS_DIR)/type_set_name.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_size.o type_size.o' $(srcdir)/type_size.c >$(DEPS_DIR)/type_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_size.c > $(DEPS_DIR)/type_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_size.o type_size.o type_size.lo _type_size.lo' $(srcdir)/type_size.c >$(DEPS_DIR)/type_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_size.o type_size.o type_size.lo _type_size.lo' $(srcdir)/type_size.c >$(DEPS_DIR)/type_size.d
 	echo "include $(DEPS_DIR)/type_size.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_extent.o type_extent.o' $(srcdir)/type_extent.c >$(DEPS_DIR)/type_extent.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_extent.c > $(DEPS_DIR)/type_extent.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_extent.o type_extent.o type_extent.lo _type_extent.lo' $(srcdir)/type_extent.c >$(DEPS_DIR)/type_extent.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_extent.o type_extent.o type_extent.lo _type_extent.lo' $(srcdir)/type_extent.c >$(DEPS_DIR)/type_extent.d
 	echo "include $(DEPS_DIR)/type_extent.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_vector.o type_vector.o' $(srcdir)/type_vector.c >$(DEPS_DIR)/type_vector.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_vector.c > $(DEPS_DIR)/type_vector.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_vector.o type_vector.o type_vector.lo _type_vector.lo' $(srcdir)/type_vector.c >$(DEPS_DIR)/type_vector.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_vector.o type_vector.o type_vector.lo _type_vector.lo' $(srcdir)/type_vector.c >$(DEPS_DIR)/type_vector.d
 	echo "include $(DEPS_DIR)/type_vector.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_commit.o type_commit.o' $(srcdir)/type_commit.c >$(DEPS_DIR)/type_commit.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_commit.c > $(DEPS_DIR)/type_commit.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_commit.o type_commit.o type_commit.lo _type_commit.lo' $(srcdir)/type_commit.c >$(DEPS_DIR)/type_commit.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_commit.o type_commit.o type_commit.lo _type_commit.lo' $(srcdir)/type_commit.c >$(DEPS_DIR)/type_commit.d
 	echo "include $(DEPS_DIR)/type_commit.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_indexed.o type_indexed.o' $(srcdir)/type_indexed.c >$(DEPS_DIR)/type_indexed.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_indexed.c > $(DEPS_DIR)/type_indexed.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_indexed.o type_indexed.o type_indexed.lo _type_indexed.lo' $(srcdir)/type_indexed.c >$(DEPS_DIR)/type_indexed.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_indexed.o type_indexed.o type_indexed.lo _type_indexed.lo' $(srcdir)/type_indexed.c >$(DEPS_DIR)/type_indexed.d
 	echo "include $(DEPS_DIR)/type_indexed.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_hindexed.o type_hindexed.o' $(srcdir)/type_hindexed.c >$(DEPS_DIR)/type_hindexed.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_hindexed.c > $(DEPS_DIR)/type_hindexed.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_hindexed.o type_hindexed.o type_hindexed.lo _type_hindexed.lo' $(srcdir)/type_hindexed.c >$(DEPS_DIR)/type_hindexed.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_hindexed.o type_hindexed.o type_hindexed.lo _type_hindexed.lo' $(srcdir)/type_hindexed.c >$(DEPS_DIR)/type_hindexed.d
 	echo "include $(DEPS_DIR)/type_hindexed.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_struct.o type_struct.o' $(srcdir)/type_struct.c >$(DEPS_DIR)/type_struct.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_struct.c > $(DEPS_DIR)/type_struct.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_struct.o type_struct.o type_struct.lo _type_struct.lo' $(srcdir)/type_struct.c >$(DEPS_DIR)/type_struct.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_struct.o type_struct.o type_struct.lo _type_struct.lo' $(srcdir)/type_struct.c >$(DEPS_DIR)/type_struct.d
 	echo "include $(DEPS_DIR)/type_struct.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_contiguous.o type_contiguous.o' $(srcdir)/type_contiguous.c >$(DEPS_DIR)/type_contiguous.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_contiguous.c > $(DEPS_DIR)/type_contiguous.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_contiguous.o type_contiguous.o type_contiguous.lo _type_contiguous.lo' $(srcdir)/type_contiguous.c >$(DEPS_DIR)/type_contiguous.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_contiguous.o type_contiguous.o type_contiguous.lo _type_contiguous.lo' $(srcdir)/type_contiguous.c >$(DEPS_DIR)/type_contiguous.d
 	echo "include $(DEPS_DIR)/type_contiguous.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_free.o type_free.o' $(srcdir)/type_free.c >$(DEPS_DIR)/type_free.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_free.c > $(DEPS_DIR)/type_free.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_free.o type_free.o type_free.lo _type_free.lo' $(srcdir)/type_free.c >$(DEPS_DIR)/type_free.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_free.o type_free.o type_free.lo _type_free.lo' $(srcdir)/type_free.c >$(DEPS_DIR)/type_free.d
 	echo "include $(DEPS_DIR)/type_free.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_hvector.o type_hvector.o' $(srcdir)/type_hvector.c >$(DEPS_DIR)/type_hvector.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_hvector.c > $(DEPS_DIR)/type_hvector.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_hvector.o type_hvector.o type_hvector.lo _type_hvector.lo' $(srcdir)/type_hvector.c >$(DEPS_DIR)/type_hvector.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_hvector.o type_hvector.o type_hvector.lo _type_hvector.lo' $(srcdir)/type_hvector.c >$(DEPS_DIR)/type_hvector.d
 	echo "include $(DEPS_DIR)/type_hvector.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_dup.o type_dup.o' $(srcdir)/type_dup.c >$(DEPS_DIR)/type_dup.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_dup.c > $(DEPS_DIR)/type_dup.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_dup.o type_dup.o type_dup.lo _type_dup.lo' $(srcdir)/type_dup.c >$(DEPS_DIR)/type_dup.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_dup.o type_dup.o type_dup.lo _type_dup.lo' $(srcdir)/type_dup.c >$(DEPS_DIR)/type_dup.d
 	echo "include $(DEPS_DIR)/type_dup.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_get_envelope.o type_get_envelope.o' $(srcdir)/type_get_envelope.c >$(DEPS_DIR)/type_get_envelope.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_get_envelope.c > $(DEPS_DIR)/type_get_envelope.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_get_envelope.o type_get_envelope.o type_get_envelope.lo _type_get_envelope.lo' $(srcdir)/type_get_envelope.c >$(DEPS_DIR)/type_get_envelope.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_get_envelope.o type_get_envelope.o type_get_envelope.lo _type_get_envelope.lo' $(srcdir)/type_get_envelope.c >$(DEPS_DIR)/type_get_envelope.d
 	echo "include $(DEPS_DIR)/type_get_envelope.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_get_contents.o type_get_contents.o' $(srcdir)/type_get_contents.c >$(DEPS_DIR)/type_get_contents.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_get_contents.c > $(DEPS_DIR)/type_get_contents.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_get_contents.o type_get_contents.o type_get_contents.lo _type_get_contents.lo' $(srcdir)/type_get_contents.c >$(DEPS_DIR)/type_get_contents.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_get_contents.o type_get_contents.o type_get_contents.lo _type_get_contents.lo' $(srcdir)/type_get_contents.c >$(DEPS_DIR)/type_get_contents.d
 	echo "include $(DEPS_DIR)/type_get_contents.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_ub.o type_ub.o' $(srcdir)/type_ub.c >$(DEPS_DIR)/type_ub.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_ub.c > $(DEPS_DIR)/type_ub.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_ub.o type_ub.o type_ub.lo _type_ub.lo' $(srcdir)/type_ub.c >$(DEPS_DIR)/type_ub.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_ub.o type_ub.o type_ub.lo _type_ub.lo' $(srcdir)/type_ub.c >$(DEPS_DIR)/type_ub.d
 	echo "include $(DEPS_DIR)/type_ub.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_lb.o type_lb.o' $(srcdir)/type_lb.c >$(DEPS_DIR)/type_lb.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_lb.c > $(DEPS_DIR)/type_lb.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_lb.o type_lb.o type_lb.lo _type_lb.lo' $(srcdir)/type_lb.c >$(DEPS_DIR)/type_lb.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_lb.o type_lb.o type_lb.lo _type_lb.lo' $(srcdir)/type_lb.c >$(DEPS_DIR)/type_lb.d
 	echo "include $(DEPS_DIR)/type_lb.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_get_extent.o type_get_extent.o' $(srcdir)/type_get_extent.c >$(DEPS_DIR)/type_get_extent.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_get_extent.c > $(DEPS_DIR)/type_get_extent.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_get_extent.o type_get_extent.o type_get_extent.lo _type_get_extent.lo' $(srcdir)/type_get_extent.c >$(DEPS_DIR)/type_get_extent.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_get_extent.o type_get_extent.o type_get_extent.lo _type_get_extent.lo' $(srcdir)/type_get_extent.c >$(DEPS_DIR)/type_get_extent.d
 	echo "include $(DEPS_DIR)/type_get_extent.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_get_true_extent.o type_get_true_extent.o' $(srcdir)/type_get_true_extent.c >$(DEPS_DIR)/type_get_true_extent.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_get_true_extent.c > $(DEPS_DIR)/type_get_true_extent.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_get_true_extent.o type_get_true_extent.o type_get_true_extent.lo _type_get_true_extent.lo' $(srcdir)/type_get_true_extent.c >$(DEPS_DIR)/type_get_true_extent.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_get_true_extent.o type_get_true_extent.o type_get_true_extent.lo _type_get_true_extent.lo' $(srcdir)/type_get_true_extent.c >$(DEPS_DIR)/type_get_true_extent.d
 	echo "include $(DEPS_DIR)/type_get_true_extent.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_match_size.o type_match_size.o' $(srcdir)/type_match_size.c >$(DEPS_DIR)/type_match_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_match_size.c > $(DEPS_DIR)/type_match_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_match_size.o type_match_size.o type_match_size.lo _type_match_size.lo' $(srcdir)/type_match_size.c >$(DEPS_DIR)/type_match_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_match_size.o type_match_size.o type_match_size.lo _type_match_size.lo' $(srcdir)/type_match_size.c >$(DEPS_DIR)/type_match_size.d
 	echo "include $(DEPS_DIR)/type_match_size.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_create_struct.o type_create_struct.o' $(srcdir)/type_create_struct.c >$(DEPS_DIR)/type_create_struct.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_create_struct.c > $(DEPS_DIR)/type_create_struct.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_create_struct.o type_create_struct.o type_create_struct.lo _type_create_struct.lo' $(srcdir)/type_create_struct.c >$(DEPS_DIR)/type_create_struct.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_create_struct.o type_create_struct.o type_create_struct.lo _type_create_struct.lo' $(srcdir)/type_create_struct.c >$(DEPS_DIR)/type_create_struct.d
 	echo "include $(DEPS_DIR)/type_create_struct.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_create_hindexed.o type_create_hindexed.o' $(srcdir)/type_create_hindexed.c >$(DEPS_DIR)/type_create_hindexed.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_create_hindexed.c > $(DEPS_DIR)/type_create_hindexed.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_create_hindexed.o type_create_hindexed.o type_create_hindexed.lo _type_create_hindexed.lo' $(srcdir)/type_create_hindexed.c >$(DEPS_DIR)/type_create_hindexed.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_create_hindexed.o type_create_hindexed.o type_create_hindexed.lo _type_create_hindexed.lo' $(srcdir)/type_create_hindexed.c >$(DEPS_DIR)/type_create_hindexed.d
 	echo "include $(DEPS_DIR)/type_create_hindexed.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_create_hvector.o type_create_hvector.o' $(srcdir)/type_create_hvector.c >$(DEPS_DIR)/type_create_hvector.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_create_hvector.c > $(DEPS_DIR)/type_create_hvector.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_create_hvector.o type_create_hvector.o type_create_hvector.lo _type_create_hvector.lo' $(srcdir)/type_create_hvector.c >$(DEPS_DIR)/type_create_hvector.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_create_hvector.o type_create_hvector.o type_create_hvector.lo _type_create_hvector.lo' $(srcdir)/type_create_hvector.c >$(DEPS_DIR)/type_create_hvector.d
 	echo "include $(DEPS_DIR)/type_create_hvector.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_pack_external.o pack_external.o' $(srcdir)/pack_external.c >$(DEPS_DIR)/pack_external.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C pack_external.c > $(DEPS_DIR)/pack_external.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_pack_external.o pack_external.o pack_external.lo _pack_external.lo' $(srcdir)/pack_external.c >$(DEPS_DIR)/pack_external.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_pack_external.o pack_external.o pack_external.lo _pack_external.lo' $(srcdir)/pack_external.c >$(DEPS_DIR)/pack_external.d
 	echo "include $(DEPS_DIR)/pack_external.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_pack_external_size.o pack_external_size.o' $(srcdir)/pack_external_size.c >$(DEPS_DIR)/pack_external_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C pack_external_size.c > $(DEPS_DIR)/pack_external_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_pack_external_size.o pack_external_size.o pack_external_size.lo _pack_external_size.lo' $(srcdir)/pack_external_size.c >$(DEPS_DIR)/pack_external_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_pack_external_size.o pack_external_size.o pack_external_size.lo _pack_external_size.lo' $(srcdir)/pack_external_size.c >$(DEPS_DIR)/pack_external_size.d
 	echo "include $(DEPS_DIR)/pack_external_size.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_unpack_external.o unpack_external.o' $(srcdir)/unpack_external.c >$(DEPS_DIR)/unpack_external.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C unpack_external.c > $(DEPS_DIR)/unpack_external.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_unpack_external.o unpack_external.o unpack_external.lo _unpack_external.lo' $(srcdir)/unpack_external.c >$(DEPS_DIR)/unpack_external.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_unpack_external.o unpack_external.o unpack_external.lo _unpack_external.lo' $(srcdir)/unpack_external.c >$(DEPS_DIR)/unpack_external.d
 	echo "include $(DEPS_DIR)/unpack_external.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_create_indexed_block.o type_create_indexed_block.o' $(srcdir)/type_create_indexed_block.c >$(DEPS_DIR)/type_create_indexed_block.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_create_indexed_block.c > $(DEPS_DIR)/type_create_indexed_block.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_create_indexed_block.o type_create_indexed_block.o type_create_indexed_block.lo _type_create_indexed_block.lo' $(srcdir)/type_create_indexed_block.c >$(DEPS_DIR)/type_create_indexed_block.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_create_indexed_block.o type_create_indexed_block.o type_create_indexed_block.lo _type_create_indexed_block.lo' $(srcdir)/type_create_indexed_block.c >$(DEPS_DIR)/type_create_indexed_block.d
 	echo "include $(DEPS_DIR)/type_create_indexed_block.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_create_resized.o type_create_resized.o' $(srcdir)/type_create_resized.c >$(DEPS_DIR)/type_create_resized.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_create_resized.c > $(DEPS_DIR)/type_create_resized.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_create_resized.o type_create_resized.o type_create_resized.lo _type_create_resized.lo' $(srcdir)/type_create_resized.c >$(DEPS_DIR)/type_create_resized.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_create_resized.o type_create_resized.o type_create_resized.lo _type_create_resized.lo' $(srcdir)/type_create_resized.c >$(DEPS_DIR)/type_create_resized.d
 	echo "include $(DEPS_DIR)/type_create_resized.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_create_darray.o type_create_darray.o' $(srcdir)/type_create_darray.c >$(DEPS_DIR)/type_create_darray.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_create_darray.c > $(DEPS_DIR)/type_create_darray.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_create_darray.o type_create_darray.o type_create_darray.lo _type_create_darray.lo' $(srcdir)/type_create_darray.c >$(DEPS_DIR)/type_create_darray.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_create_darray.o type_create_darray.o type_create_darray.lo _type_create_darray.lo' $(srcdir)/type_create_darray.c >$(DEPS_DIR)/type_create_darray.d
 	echo "include $(DEPS_DIR)/type_create_darray.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_type_create_subarray.o type_create_subarray.o' $(srcdir)/type_create_subarray.c >$(DEPS_DIR)/type_create_subarray.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C type_create_subarray.c > $(DEPS_DIR)/type_create_subarray.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_type_create_subarray.o type_create_subarray.o type_create_subarray.lo _type_create_subarray.lo' $(srcdir)/type_create_subarray.c >$(DEPS_DIR)/type_create_subarray.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_type_create_subarray.o type_create_subarray.o type_create_subarray.lo _type_create_subarray.lo' $(srcdir)/type_create_subarray.c >$(DEPS_DIR)/type_create_subarray.d
 	echo "include $(DEPS_DIR)/type_create_subarray.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_typeutil.o typeutil.o' $(srcdir)/typeutil.c >$(DEPS_DIR)/typeutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C typeutil.c > $(DEPS_DIR)/typeutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_typeutil.o typeutil.o typeutil.lo _typeutil.lo' $(srcdir)/typeutil.c >$(DEPS_DIR)/typeutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_typeutil.o typeutil.o typeutil.lo _typeutil.lo' $(srcdir)/typeutil.c >$(DEPS_DIR)/typeutil.d
 	echo "include $(DEPS_DIR)/typeutil.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -942,12 +1332,8 @@ SOURCES         =  address.c get_address.c get_count.c get_elements.c pack.c \
 	pack_external_size.c unpack_external.c type_create_indexed_block.c \
 	type_create_resized.c type_create_darray.c type_create_subarray.c \
 	typeutil.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 #

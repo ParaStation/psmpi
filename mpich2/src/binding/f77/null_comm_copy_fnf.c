@@ -15,10 +15,10 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_NULL_COPY_FN( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn__( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn_( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_NULL_COPY_FN( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn__( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn_( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak MPI_COMM_NULL_COPY_FN = PMPI_COMM_NULL_COPY_FN
@@ -47,19 +47,19 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn_( MPI_Fint*, MPI_Fint*
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_NULL_COPY_FN( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_NULL_COPY_FN( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
 
 #pragma weak MPI_COMM_NULL_COPY_FN = PMPI_COMM_NULL_COPY_FN
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn__( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn__( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
 
 #pragma weak mpi_comm_null_copy_fn__ = pmpi_comm_null_copy_fn__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
 
 #pragma weak mpi_comm_null_copy_fn = pmpi_comm_null_copy_fn
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn_( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn_( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
 
 #pragma weak mpi_comm_null_copy_fn_ = pmpi_comm_null_copy_fn_
 #endif
@@ -93,10 +93,10 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn_( MPI_Fint*, MPI_Fint*
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_NULL_COPY_FN( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn__( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn_( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_NULL_COPY_FN( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn__( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn_( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak mpi_comm_null_copy_fn__ = MPI_COMM_NULL_COPY_FN
@@ -123,16 +123,16 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn_( MPI_Fint*, MPI_Fint*
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_NULL_COPY_FN( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_NULL_COPY_FN( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_null_copy_fn__( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_null_copy_fn__( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_null_copy_fn_( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_null_copy_fn_( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_null_copy_fn( MPI_Fint*, MPI_Fint*, void*, void*, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_null_copy_fn( MPI_Fint*, MPI_Fint*, MPI_Aint *, MPI_Aint *, MPI_Aint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
@@ -189,7 +189,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_null_copy_fn( MPI_Fint*, MPI_Fint*
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn_ ( MPI_Fint*v1, MPI_Fint*v2, void*v3, void*v4, void*v5, MPI_Fint *v6, MPI_Fint *ierr ){
+FORT_DLL_SPEC void FORT_CALL mpi_comm_null_copy_fn_ ( MPI_Fint*v1, MPI_Fint*v2, MPI_Aint *v3, MPI_Aint *v4, MPI_Aint *v5, MPI_Fint *v6, MPI_Fint *ierr ){
         *ierr = MPI_SUCCESS;
         *v6 = MPIR_TO_FLOG(0);
 }

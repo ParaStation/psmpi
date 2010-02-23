@@ -17,10 +17,10 @@ static int exists(char *filename)
     return 1;
 }
 
-HYD_Status HYDU_find_in_path(const char *execname, char **path)
+HYD_status HYDU_find_in_path(const char *execname, char **path)
 {
     char *user_path = NULL, *tmp[HYD_NUM_TMP_STRINGS], *path_loc = NULL, *test_loc;
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
@@ -72,11 +72,11 @@ HYD_Status HYDU_find_in_path(const char *execname, char **path)
     goto fn_exit;
 }
 
-HYD_Status HYDU_get_base_path(const char *execname, char *wdir, char **path)
+HYD_status HYDU_get_base_path(const char *execname, char *wdir, char **path)
 {
     char *loc, *post;
     char *tmp[HYD_NUM_TMP_STRINGS];
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
@@ -120,7 +120,7 @@ HYD_Status HYDU_get_base_path(const char *execname, char *wdir, char **path)
 char *HYDU_getcwd(void)
 {
     char *pwdval, *cwdval, *retval = NULL;
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 #if defined HAVE_STAT
     struct stat spwd, scwd;
 #endif /* HAVE_STAT */
@@ -146,9 +146,59 @@ char *HYDU_getcwd(void)
         retval = cwdval;
     }
 
-fn_exit:
+  fn_exit:
     return retval;
 
-fn_fail:
+  fn_fail:
+    goto fn_exit;
+}
+
+
+HYD_status HYDU_parse_hostfile(char *hostfile,
+                               HYD_status(*process_token) (char *token, int newline))
+{
+    char line[HYD_TMP_STRLEN], **tokens;
+    FILE *fp;
+    int i;
+    HYD_status status = HYD_SUCCESS;
+
+    HYDU_FUNC_ENTER();
+
+    if ((fp = fopen(hostfile, "r")) == NULL)
+        HYDU_ERR_SETANDJUMP1(status, HYD_INTERNAL_ERROR,
+                             "unable to open host file: %s\n", hostfile);
+
+    while (fgets(line, HYD_TMP_STRLEN, fp)) {
+        char *linep = NULL;
+
+        linep = line;
+
+        strtok(linep, "#");
+        while (isspace(*linep))
+            linep++;
+
+        /* Ignore blank lines & comments */
+        if ((*linep == '#') || (*linep == '\0'))
+            continue;
+
+        tokens = HYDU_str_to_strlist(linep);
+        if (!tokens)
+            HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
+                                "Unable to convert host file entry to strlist\n");
+
+        for (i = 0; tokens[i]; i++) {
+            status = process_token(tokens[i], !i);
+            HYDU_ERR_POP(status, "unable to process token\n");
+        }
+    }
+
+    fclose(fp);
+
+
+  fn_exit:
+    HYDU_FUNC_EXIT();
+    return status;
+
+  fn_fail:
     goto fn_exit;
 }

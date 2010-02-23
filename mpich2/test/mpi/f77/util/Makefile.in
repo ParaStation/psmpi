@@ -20,7 +20,7 @@ VPATH = .:@srcdir@
 .SUFFIXES:
 .SUFFIXES: .o .f .txt 
 .f.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  FC              $<" ; \
 	else \
 	  echo $(F77_COMPILE) -c $< ; \
@@ -78,8 +78,6 @@ latexdoc:
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
 # --------------------------------------------------------------------------
 mtestf.o: $(srcdir)/mtestf.f
 all-local: mtestf.o

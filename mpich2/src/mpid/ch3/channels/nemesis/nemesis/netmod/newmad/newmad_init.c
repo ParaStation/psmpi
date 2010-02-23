@@ -12,7 +12,6 @@
 MPID_nem_netmod_funcs_t MPIDI_nem_newmad_funcs = {
     MPID_nem_newmad_init,
     MPID_nem_newmad_finalize,
-    MPID_nem_newmad_ckpt_shutdown,
     MPID_nem_newmad_poll,
     MPID_nem_newmad_send,
     MPID_nem_newmad_get_business_card,
@@ -135,7 +134,9 @@ static int init_mad( MPIDI_PG_t *pg_p )
     int   mpi_errno = MPI_SUCCESS;
     char *dummy_argv[1] = {NULL};
     int   dummy_argc    = 1;
-    
+
+    MPID_nem_newmad_internal_req_queue_init();
+   
     ret = nm_core_init(&dummy_argc,dummy_argv, &mpid_nem_newmad_pcore);
     if (ret != NM_ESUCCESS){
         fprintf(stdout,"nm_core_init returned err = %d\n", ret);
@@ -176,7 +177,7 @@ static int init_mad( MPIDI_PG_t *pg_p )
 #endif /* TCP */                                                                                                                         
 #endif  
     
-   nm_ns_init(mpid_nem_newmad_pcore);
+   nm_sr_init(mpid_nem_newmad_pcore);
    
    init_reqs = (MPID_nem_newmad_init_req_t *)MPIU_Malloc(MPID_nem_mem_region.num_procs*sizeof(MPID_nem_newmad_init_req_t));
    for (index = 0; index < MPID_nem_mem_region.num_procs ; index ++)
@@ -211,8 +212,6 @@ static int init_mad( MPIDI_PG_t *pg_p )
        num_proc_elements -- number of process' queue elements
        module_elements -- pointer to queue elements to be used by this module
        num_module_elements -- number of queue elements for this module
-       ckpt_restart -- true if this is a restart from a checkpoint.  In a restart, the network needs to be brought up again, but
-                       we want to keep things like sequence numbers.
    OUT
        free_queue -- pointer to the free queue for this module.  The process will return elements to
                      this queue
@@ -227,7 +226,7 @@ MPID_nem_newmad_init (MPID_nem_queue_ptr_t proc_recv_queue,
 		      MPID_nem_queue_ptr_t proc_free_queue, 
 		      MPID_nem_cell_ptr_t proc_elements, int num_proc_elements,
 		      MPID_nem_cell_ptr_t module_elements, int num_module_elements, 
-		      MPID_nem_queue_ptr_t *module_free_queue, int ckpt_restart,
+		      MPID_nem_queue_ptr_t *module_free_queue,
 		      MPIDI_PG_t *pg_p, int pg_rank,
 		      char **bc_val_p, int *val_max_sz_p)
 {   
@@ -459,6 +458,7 @@ int MPID_nem_newmad_post_init(void)
    MPIDI_PG_t *pg_p;
    int         index;
 
+   nm_core_disable_progression(mpid_nem_newmad_pcore);
    pg_p = MPIDI_Process.my_pg;
    for (index = 0; index < pg_p->size ; index++)
    {
@@ -489,14 +489,13 @@ int MPID_nem_newmad_post_init(void)
 	 }
       }
    }
+   nm_core_enable_progression(mpid_nem_newmad_pcore);
    
    while((num_recv_req > 0) || (num_send_req > 0))
      nm_schedule(mpid_nem_newmad_pcore);
    MPIU_Free(init_reqs);
    
    nm_sr_monitor(mpid_nem_newmad_pcore, NM_SR_EVENT_RECV_UNEXPECTED,&MPID_nem_newmad_get_adi_msg);
-   nm_sr_monitor(mpid_nem_newmad_pcore, NM_SR_EVENT_RECV_COMPLETED, &MPID_nem_newmad_get_rreq);
-   nm_sr_monitor(mpid_nem_newmad_pcore, NM_SR_EVENT_SEND_COMPLETED, &MPID_nem_newmad_handle_sreq);
    
    return 0;
 }

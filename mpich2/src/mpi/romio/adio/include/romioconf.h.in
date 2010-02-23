@@ -141,6 +141,9 @@
 /* Define if sys/aio.h exists and can be compiled */
 #undef HAVE_SYS_AIO_H
 
+/* Define to 1 if you have the <sys/attr.h> header file. */
+#undef HAVE_SYS_ATTR_H
+
 /* Define to 1 if you have the <sys/mount.h> header file. */
 #undef HAVE_SYS_MOUNT_H
 
@@ -348,5 +351,27 @@
 #undef inline
 #endif
 
-/* if C does not support restrict */
+/* Define to the equivalent of the C99 'restrict' keyword, or to
+   nothing if this is not supported.  Do not define if restrict is
+   supported directly.  */
 #undef restrict
+/* Work around a bug in Sun C++: it does not support _Restrict, even
+   though the corresponding Sun C compiler does, which causes
+   "#define restrict _Restrict" in the previous line.  Perhaps some future
+   version of Sun C++ will work with _Restrict; if so, it'll probably
+   define __RESTRICT, just as Sun C does.  */
+#if defined __SUNPRO_CC && !defined __RESTRICT
+# define _Restrict
+#endif
+
+/* Define to "unsigned char" if sys/types.h does not define. */
+#undef u_char
+
+/* Define to "unsigned int" if sys/types.h does not define. */
+#undef u_int
+
+/* Define to "unsigned long" if sys/types.h does not define. */
+#undef u_long
+
+/* Define to "unsigned short" if sys/types.h does not define. */
+#undef u_short

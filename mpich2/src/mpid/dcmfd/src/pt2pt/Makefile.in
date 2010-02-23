@@ -30,14 +30,14 @@ INCLUDES = -I${master_top_srcdir}/src/include -I${top_builddir}/src/include
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -48,7 +48,7 @@ INCLUDES = -I${master_top_srcdir}/src/include -I${top_builddir}/src/include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -102,13 +102,13 @@ all-local: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	mpid_cancel_send.o mpidi_callback.o mpidi_callback_rzv.o \
 	mpidi_callback_short.o mpidi_callback_ssm.o mpidi_control.o \
 	mpidi_startmessage.o mpidi_rendezvous.o mpidi_done.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../../../lib/lib${MPILIBNAME}.a ; \
@@ -122,7 +122,7 @@ all-local: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	mpidi_callback_rzv.lo mpidi_callback_short.lo mpidi_callback_ssm.lo \
 	mpidi_control.lo mpidi_startmessage.lo mpidi_rendezvous.lo \
 	mpidi_done.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -154,45 +154,145 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/mpidi_isend_self.d: $(srcdir)/mpidi_isend_self.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_isend_self.c >$(DEPS_DIR)/mpidi_isend_self.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_isend_self.c > $(DEPS_DIR)/mpidi_isend_self.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_isend_self.c >$(DEPS_DIR)/mpidi_isend_self.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_isend_self.c >$(DEPS_DIR)/mpidi_isend_self.d
 $(DEPS_DIR)/mpid_irecv.d: $(srcdir)/mpid_irecv.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_irecv.c >$(DEPS_DIR)/mpid_irecv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_irecv.c > $(DEPS_DIR)/mpid_irecv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_irecv.c >$(DEPS_DIR)/mpid_irecv.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_irecv.c >$(DEPS_DIR)/mpid_irecv.d
 $(DEPS_DIR)/mpidi_irecv.d: $(srcdir)/mpidi_irecv.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_irecv.c >$(DEPS_DIR)/mpidi_irecv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_irecv.c > $(DEPS_DIR)/mpidi_irecv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_irecv.c >$(DEPS_DIR)/mpidi_irecv.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_irecv.c >$(DEPS_DIR)/mpidi_irecv.d
 $(DEPS_DIR)/mpid_irsend.d: $(srcdir)/mpid_irsend.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_irsend.c >$(DEPS_DIR)/mpid_irsend.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_irsend.c > $(DEPS_DIR)/mpid_irsend.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_irsend.c >$(DEPS_DIR)/mpid_irsend.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_irsend.c >$(DEPS_DIR)/mpid_irsend.d
 $(DEPS_DIR)/mpid_isend.d: $(srcdir)/mpid_isend.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_isend.c >$(DEPS_DIR)/mpid_isend.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_isend.c > $(DEPS_DIR)/mpid_isend.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_isend.c >$(DEPS_DIR)/mpid_isend.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_isend.c >$(DEPS_DIR)/mpid_isend.d
 $(DEPS_DIR)/mpid_issend.d: $(srcdir)/mpid_issend.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_issend.c >$(DEPS_DIR)/mpid_issend.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_issend.c > $(DEPS_DIR)/mpid_issend.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_issend.c >$(DEPS_DIR)/mpid_issend.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_issend.c >$(DEPS_DIR)/mpid_issend.d
 $(DEPS_DIR)/mpid_recv.d: $(srcdir)/mpid_recv.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_recv.c >$(DEPS_DIR)/mpid_recv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_recv.c > $(DEPS_DIR)/mpid_recv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_recv.c >$(DEPS_DIR)/mpid_recv.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_recv.c >$(DEPS_DIR)/mpid_recv.d
 $(DEPS_DIR)/mpid_rsend.d: $(srcdir)/mpid_rsend.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_rsend.c >$(DEPS_DIR)/mpid_rsend.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_rsend.c > $(DEPS_DIR)/mpid_rsend.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_rsend.c >$(DEPS_DIR)/mpid_rsend.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_rsend.c >$(DEPS_DIR)/mpid_rsend.d
 $(DEPS_DIR)/mpid_send.d: $(srcdir)/mpid_send.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_send.c >$(DEPS_DIR)/mpid_send.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_send.c > $(DEPS_DIR)/mpid_send.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_send.c >$(DEPS_DIR)/mpid_send.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_send.c >$(DEPS_DIR)/mpid_send.d
 $(DEPS_DIR)/mpid_ssend.d: $(srcdir)/mpid_ssend.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_ssend.c >$(DEPS_DIR)/mpid_ssend.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_ssend.c > $(DEPS_DIR)/mpid_ssend.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_ssend.c >$(DEPS_DIR)/mpid_ssend.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_ssend.c >$(DEPS_DIR)/mpid_ssend.d
 $(DEPS_DIR)/mpid_cancel_recv.d: $(srcdir)/mpid_cancel_recv.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_recv.c >$(DEPS_DIR)/mpid_cancel_recv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_cancel_recv.c > $(DEPS_DIR)/mpid_cancel_recv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_recv.c >$(DEPS_DIR)/mpid_cancel_recv.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_recv.c >$(DEPS_DIR)/mpid_cancel_recv.d
 $(DEPS_DIR)/mpid_cancel_send.d: $(srcdir)/mpid_cancel_send.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_send.c >$(DEPS_DIR)/mpid_cancel_send.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_cancel_send.c > $(DEPS_DIR)/mpid_cancel_send.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_send.c >$(DEPS_DIR)/mpid_cancel_send.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_send.c >$(DEPS_DIR)/mpid_cancel_send.d
 $(DEPS_DIR)/mpidi_callback.d: $(srcdir)/mpidi_callback.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback.c >$(DEPS_DIR)/mpidi_callback.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_callback.c > $(DEPS_DIR)/mpidi_callback.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback.c >$(DEPS_DIR)/mpidi_callback.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback.c >$(DEPS_DIR)/mpidi_callback.d
 $(DEPS_DIR)/mpidi_callback_rzv.d: $(srcdir)/mpidi_callback_rzv.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_rzv.c >$(DEPS_DIR)/mpidi_callback_rzv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_callback_rzv.c > $(DEPS_DIR)/mpidi_callback_rzv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_rzv.c >$(DEPS_DIR)/mpidi_callback_rzv.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_rzv.c >$(DEPS_DIR)/mpidi_callback_rzv.d
 $(DEPS_DIR)/mpidi_callback_short.d: $(srcdir)/mpidi_callback_short.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_short.c >$(DEPS_DIR)/mpidi_callback_short.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_callback_short.c > $(DEPS_DIR)/mpidi_callback_short.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_short.c >$(DEPS_DIR)/mpidi_callback_short.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_short.c >$(DEPS_DIR)/mpidi_callback_short.d
 $(DEPS_DIR)/mpidi_callback_ssm.d: $(srcdir)/mpidi_callback_ssm.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_ssm.c >$(DEPS_DIR)/mpidi_callback_ssm.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_callback_ssm.c > $(DEPS_DIR)/mpidi_callback_ssm.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_ssm.c >$(DEPS_DIR)/mpidi_callback_ssm.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_ssm.c >$(DEPS_DIR)/mpidi_callback_ssm.d
 $(DEPS_DIR)/mpidi_control.d: $(srcdir)/mpidi_control.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_control.c >$(DEPS_DIR)/mpidi_control.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_control.c > $(DEPS_DIR)/mpidi_control.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_control.c >$(DEPS_DIR)/mpidi_control.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_control.c >$(DEPS_DIR)/mpidi_control.d
 $(DEPS_DIR)/mpidi_startmessage.d: $(srcdir)/mpidi_startmessage.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_startmessage.c >$(DEPS_DIR)/mpidi_startmessage.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_startmessage.c > $(DEPS_DIR)/mpidi_startmessage.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_startmessage.c >$(DEPS_DIR)/mpidi_startmessage.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_startmessage.c >$(DEPS_DIR)/mpidi_startmessage.d
 $(DEPS_DIR)/mpidi_rendezvous.d: $(srcdir)/mpidi_rendezvous.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_rendezvous.c >$(DEPS_DIR)/mpidi_rendezvous.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_rendezvous.c > $(DEPS_DIR)/mpidi_rendezvous.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_rendezvous.c >$(DEPS_DIR)/mpidi_rendezvous.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_rendezvous.c >$(DEPS_DIR)/mpidi_rendezvous.d
 $(DEPS_DIR)/mpidi_done.d: $(srcdir)/mpidi_done.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_done.c >$(DEPS_DIR)/mpidi_done.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_done.c > $(DEPS_DIR)/mpidi_done.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_done.c >$(DEPS_DIR)/mpidi_done.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_done.c >$(DEPS_DIR)/mpidi_done.d
 $(DEPS_DIR)/timestamp: mpidi_isend_self.c      			mpid_irecv.c            			mpidi_irecv.c           \
 				mpid_irsend.c           			mpid_isend.c            \
 				mpid_issend.c           			mpid_recv.c             			mpid_rsend.c \
@@ -203,45 +303,145 @@ $(DEPS_DIR)/timestamp: mpidi_isend_self.c      			mpid_irecv.c            			mpi
 				mpidi_control.c         			mpidi_startmessage.c    \
 				mpidi_rendezvous.c      			mpidi_done.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_isend_self.c >$(DEPS_DIR)/mpidi_isend_self.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_isend_self.c > $(DEPS_DIR)/mpidi_isend_self.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_isend_self.c >$(DEPS_DIR)/mpidi_isend_self.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_isend_self.c >$(DEPS_DIR)/mpidi_isend_self.d
 	echo "include $(DEPS_DIR)/mpidi_isend_self.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_irecv.c >$(DEPS_DIR)/mpid_irecv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_irecv.c > $(DEPS_DIR)/mpid_irecv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_irecv.c >$(DEPS_DIR)/mpid_irecv.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_irecv.c >$(DEPS_DIR)/mpid_irecv.d
 	echo "include $(DEPS_DIR)/mpid_irecv.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_irecv.c >$(DEPS_DIR)/mpidi_irecv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_irecv.c > $(DEPS_DIR)/mpidi_irecv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_irecv.c >$(DEPS_DIR)/mpidi_irecv.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_irecv.c >$(DEPS_DIR)/mpidi_irecv.d
 	echo "include $(DEPS_DIR)/mpidi_irecv.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_irsend.c >$(DEPS_DIR)/mpid_irsend.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_irsend.c > $(DEPS_DIR)/mpid_irsend.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_irsend.c >$(DEPS_DIR)/mpid_irsend.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_irsend.c >$(DEPS_DIR)/mpid_irsend.d
 	echo "include $(DEPS_DIR)/mpid_irsend.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_isend.c >$(DEPS_DIR)/mpid_isend.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_isend.c > $(DEPS_DIR)/mpid_isend.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_isend.c >$(DEPS_DIR)/mpid_isend.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_isend.c >$(DEPS_DIR)/mpid_isend.d
 	echo "include $(DEPS_DIR)/mpid_isend.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_issend.c >$(DEPS_DIR)/mpid_issend.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_issend.c > $(DEPS_DIR)/mpid_issend.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_issend.c >$(DEPS_DIR)/mpid_issend.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_issend.c >$(DEPS_DIR)/mpid_issend.d
 	echo "include $(DEPS_DIR)/mpid_issend.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_recv.c >$(DEPS_DIR)/mpid_recv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_recv.c > $(DEPS_DIR)/mpid_recv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_recv.c >$(DEPS_DIR)/mpid_recv.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_recv.c >$(DEPS_DIR)/mpid_recv.d
 	echo "include $(DEPS_DIR)/mpid_recv.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_rsend.c >$(DEPS_DIR)/mpid_rsend.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_rsend.c > $(DEPS_DIR)/mpid_rsend.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_rsend.c >$(DEPS_DIR)/mpid_rsend.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_rsend.c >$(DEPS_DIR)/mpid_rsend.d
 	echo "include $(DEPS_DIR)/mpid_rsend.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_send.c >$(DEPS_DIR)/mpid_send.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_send.c > $(DEPS_DIR)/mpid_send.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_send.c >$(DEPS_DIR)/mpid_send.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_send.c >$(DEPS_DIR)/mpid_send.d
 	echo "include $(DEPS_DIR)/mpid_send.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_ssend.c >$(DEPS_DIR)/mpid_ssend.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_ssend.c > $(DEPS_DIR)/mpid_ssend.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_ssend.c >$(DEPS_DIR)/mpid_ssend.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_ssend.c >$(DEPS_DIR)/mpid_ssend.d
 	echo "include $(DEPS_DIR)/mpid_ssend.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_recv.c >$(DEPS_DIR)/mpid_cancel_recv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_cancel_recv.c > $(DEPS_DIR)/mpid_cancel_recv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_recv.c >$(DEPS_DIR)/mpid_cancel_recv.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_recv.c >$(DEPS_DIR)/mpid_cancel_recv.d
 	echo "include $(DEPS_DIR)/mpid_cancel_recv.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_send.c >$(DEPS_DIR)/mpid_cancel_send.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_cancel_send.c > $(DEPS_DIR)/mpid_cancel_send.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_send.c >$(DEPS_DIR)/mpid_cancel_send.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_send.c >$(DEPS_DIR)/mpid_cancel_send.d
 	echo "include $(DEPS_DIR)/mpid_cancel_send.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback.c >$(DEPS_DIR)/mpidi_callback.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_callback.c > $(DEPS_DIR)/mpidi_callback.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback.c >$(DEPS_DIR)/mpidi_callback.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback.c >$(DEPS_DIR)/mpidi_callback.d
 	echo "include $(DEPS_DIR)/mpidi_callback.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_rzv.c >$(DEPS_DIR)/mpidi_callback_rzv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_callback_rzv.c > $(DEPS_DIR)/mpidi_callback_rzv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_rzv.c >$(DEPS_DIR)/mpidi_callback_rzv.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_rzv.c >$(DEPS_DIR)/mpidi_callback_rzv.d
 	echo "include $(DEPS_DIR)/mpidi_callback_rzv.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_short.c >$(DEPS_DIR)/mpidi_callback_short.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_callback_short.c > $(DEPS_DIR)/mpidi_callback_short.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_short.c >$(DEPS_DIR)/mpidi_callback_short.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_short.c >$(DEPS_DIR)/mpidi_callback_short.d
 	echo "include $(DEPS_DIR)/mpidi_callback_short.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_ssm.c >$(DEPS_DIR)/mpidi_callback_ssm.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_callback_ssm.c > $(DEPS_DIR)/mpidi_callback_ssm.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_ssm.c >$(DEPS_DIR)/mpidi_callback_ssm.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_callback_ssm.c >$(DEPS_DIR)/mpidi_callback_ssm.d
 	echo "include $(DEPS_DIR)/mpidi_callback_ssm.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_control.c >$(DEPS_DIR)/mpidi_control.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_control.c > $(DEPS_DIR)/mpidi_control.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_control.c >$(DEPS_DIR)/mpidi_control.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_control.c >$(DEPS_DIR)/mpidi_control.d
 	echo "include $(DEPS_DIR)/mpidi_control.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_startmessage.c >$(DEPS_DIR)/mpidi_startmessage.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_startmessage.c > $(DEPS_DIR)/mpidi_startmessage.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_startmessage.c >$(DEPS_DIR)/mpidi_startmessage.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_startmessage.c >$(DEPS_DIR)/mpidi_startmessage.d
 	echo "include $(DEPS_DIR)/mpidi_startmessage.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_rendezvous.c >$(DEPS_DIR)/mpidi_rendezvous.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_rendezvous.c > $(DEPS_DIR)/mpidi_rendezvous.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_rendezvous.c >$(DEPS_DIR)/mpidi_rendezvous.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_rendezvous.c >$(DEPS_DIR)/mpidi_rendezvous.d
 	echo "include $(DEPS_DIR)/mpidi_rendezvous.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpidi_done.c >$(DEPS_DIR)/mpidi_done.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpidi_done.c > $(DEPS_DIR)/mpidi_done.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_done.c >$(DEPS_DIR)/mpidi_done.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_done.c >$(DEPS_DIR)/mpidi_done.d
 	echo "include $(DEPS_DIR)/mpidi_done.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -255,12 +455,8 @@ SOURCES         =  mpidi_isend_self.c mpid_irecv.c mpidi_irecv.c \
 	mpidi_callback.c mpidi_callback_rzv.c mpidi_callback_short.c \
 	mpidi_callback_ssm.c mpidi_control.c mpidi_startmessage.c \
 	mpidi_rendezvous.c mpidi_done.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 FORCE_TARGET:

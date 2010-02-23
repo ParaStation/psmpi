@@ -29,14 +29,14 @@ INCLUDES = -I.. -I$(srcdir)/..
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -47,7 +47,7 @@ INCLUDES = -I.. -I$(srcdir)/..
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -123,13 +123,33 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/timestamp: servtest.c argstest.c servtest2.c forktest.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/servtest.c >$(DEPS_DIR)/servtest.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C servtest.c > $(DEPS_DIR)/servtest.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/servtest.c >$(DEPS_DIR)/servtest.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/servtest.c >$(DEPS_DIR)/servtest.d
 	echo "include $(DEPS_DIR)/servtest.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/argstest.c >$(DEPS_DIR)/argstest.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C argstest.c > $(DEPS_DIR)/argstest.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/argstest.c >$(DEPS_DIR)/argstest.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/argstest.c >$(DEPS_DIR)/argstest.d
 	echo "include $(DEPS_DIR)/argstest.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/servtest2.c >$(DEPS_DIR)/servtest2.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C servtest2.c > $(DEPS_DIR)/servtest2.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/servtest2.c >$(DEPS_DIR)/servtest2.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/servtest2.c >$(DEPS_DIR)/servtest2.d
 	echo "include $(DEPS_DIR)/servtest2.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/forktest.c >$(DEPS_DIR)/forktest.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C forktest.c > $(DEPS_DIR)/forktest.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/forktest.c >$(DEPS_DIR)/forktest.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/forktest.c >$(DEPS_DIR)/forktest.d
 	echo "include $(DEPS_DIR)/forktest.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -138,12 +158,8 @@ include $(DEPS_DIR)/alldeps
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  argstest.c forktest.c servtest.c servtest2.c
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 

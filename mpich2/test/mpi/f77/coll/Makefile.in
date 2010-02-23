@@ -26,7 +26,7 @@ VPATH = .:@srcdir@
 .SUFFIXES:
 .SUFFIXES: .o .f .txt 
 .f.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  FC              $<" ; \
 	else \
 	  echo $(F77_COMPILE) -c $< ; \
@@ -55,8 +55,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o inplacef allredint8f allredopttf uallreducef exscanf alltoallwf
-	-@rm -f inplacef.exe allredint8f.exe allredopttf.exe uallreducef.exe exscanf.exe alltoallwf.exe
+	-@rm -f *.o ${srcdir}/*.o inplacef allredint8f allredopttf reducelocalf uallreducef exscanf alltoallwf
+	-@rm -f inplacef.exe allredint8f.exe allredopttf.exe reducelocalf.exe uallreducef.exe exscanf.exe alltoallwf.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -74,7 +74,8 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: uallreducef exscanf alltoallwf inplacef allredint8f allredopttf
+all-redirect: uallreducef exscanf alltoallwf inplacef allredint8f allredopttf\
+	 reducelocalf
 
 coverage: 
 inplacef: inplacef.o   @MPILIBLOC@ ../util/mtestf.o
@@ -84,6 +85,9 @@ allredint8f: allredint8f.o   @MPILIBLOC@ ../util/mtestf.o
 	${LIBS} 
 allredopttf: allredopttf.o   @MPILIBLOC@ ../util/mtestf.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o allredopttf allredopttf.o  \
+	${LIBS} 
+reducelocalf: reducelocalf.o   @MPILIBLOC@ ../util/mtestf.o
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o reducelocalf reducelocalf.o  \
 	${LIBS} 
 uallreducef: uallreducef.o   @MPILIBLOC@ ../util/mtestf.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o uallreducef uallreducef.o  \
@@ -101,13 +105,9 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  uallreducef.f exscanf.f alltoallwf.f inplacef.f \
-	allredint8f.f allredopttf.f 
-ETAGS           = @ETAGS@ @ETAGSADD@
+	allredint8f.f allredopttf.f reducelocalf.f 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 

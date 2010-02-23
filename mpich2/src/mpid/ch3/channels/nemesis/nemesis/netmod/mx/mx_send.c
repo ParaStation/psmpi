@@ -46,7 +46,7 @@ int MPID_nem_mx_iSendContig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, MPIDI
 	mx_iov[1].segment_length  = data_sz;
 	num_seg += 1;
     }
-    
+   
     ret = mx_isend(MPID_nem_mx_local_endpoint,mx_iov,num_seg,VC_FIELD(vc,remote_endpoint_addr),match_info,(void*)sreq,&mx_request);
     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_isend", "**mx_isend %s", mx_strerror (ret));
     MPID_nem_mx_pending_send_req++;
@@ -105,7 +105,7 @@ int MPID_nem_mx_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz
 	mx_iov[1].segment_length  = data_sz;
 	num_seg += 1;
     }	    
-    
+   
     ret = mx_isend(MPID_nem_mx_local_endpoint,mx_iov,num_seg,VC_FIELD(vc,remote_endpoint_addr),match_info,(void *)sreq,&mx_request);
     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_isend", "**mx_isend %s", mx_strerror (ret));
     MPID_nem_mx_pending_send_req++;
@@ -183,7 +183,7 @@ int MPID_nem_mx_SendNoncontig(MPIDI_VC_t *vc, MPID_Request *sreq, void *header, 
 	    num_seg++;
 	}
     }
-
+   
     MPIU_Assert(num_seg <= MX_MAX_SEGMENTS);    
     ret = mx_isend(MPID_nem_mx_local_endpoint,mx_iov,num_seg,VC_FIELD(vc,remote_endpoint_addr),match_info,(void *)sreq,&mx_request);
     MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_isend", "**mx_isend %s", mx_strerror (ret));
@@ -378,6 +378,7 @@ int  MPID_nem_mx_directSsend(MPIDI_VC_t *vc, const void * buf, int count, MPI_Da
     MPID_nem_mx_pending_send_req++;
 
  fn_exit:
+   *request = sreq;
    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_MX_DIRECTSSEND);
    return mpi_errno;
  fn_fail:
@@ -409,8 +410,17 @@ int MPID_nem_mx_process_sdtype(MPID_Request **sreq_p,  MPI_Datatype datatype,  M
     sreq->dev.segment_first = 0;
     sreq->dev.segment_size = data_sz;
     last = sreq->dev.segment_size;
-    iov = MPIU_Malloc(iov_num_ub*sizeof(MPID_IOV));
-    
+   
+    /*
+    MPID_Segment_count_contig_blocks(sreq->dev.segment_ptr ,first,&last,&n_iov);
+    MPIU_Assert(n_iov > 0);
+    */
+
+    if(n_iov <= 0)
+    {	
+       n_iov = count * dt_ptr->n_elements;
+    }   
+    iov = MPIU_Malloc(n_iov*sizeof(MPID_IOV));    
     MPID_Segment_pack_vector(sreq->dev.segment_ptr, sreq->dev.segment_first, &last, iov, &n_iov);
     MPIU_Assert(last == sreq->dev.segment_size);    
     

@@ -21,9 +21,9 @@ VPATH = .:@srcdir@
 ${srcdir}/include/mpidi_ch3_conf.h  ${srcdir}/configure: \
 	${srcdir}/configure.in  ../common/thread/mpid_thread.m4 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /opt/local/bin/autoheader -I ../../../confdb && \
-	\
-	/opt/local/bin/autoconf -I ../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../confdb && \
+	autoconf -I \
+	../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -35,7 +35,7 @@ ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
 	"-autoconf=-I ROOTDIR/confdb" \
 	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
 	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile src/Makefile util/Makefile util/shm/Makefile util/shmbase/Makefile channels/Makefile localdefs config.status config.log config.cache *conf.cache config.system" \
+	-distcleanfiles="Makefile src/Makefile util/Makefile util/shm/Makefile util/shmbase/Makefile channels/Makefile util/ftb/Makefile localdefs config.status config.log config.cache *conf.cache config.system" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
 Makefile: ${srcdir}/Makefile.in
@@ -44,7 +44,7 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	for dir in channels src util ; do \
-		(cd $$dir && ${MAKE} apply ; ) ; done
+		(cd $$dir && ${MAKE} apply ) ; done
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
@@ -52,20 +52,20 @@ clean:
 	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	for dir in channels src util ; do \
-		(cd $$dir && ${MAKE} clean ; ) ; done
+		(cd $$dir && ${MAKE} clean ) ; done
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
 	for dir in channels src util ; do \
 		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
-		(cd $$dir && ${MAKE} distclean ; ) ; done
-	-@rm -f Makefile src/Makefile util/Makefile util/shm/Makefile util/shmbase/Makefile channels/Makefile localdefs config.status config.log config.cache *conf.cache config.system
+		(cd $$dir && ${MAKE} distclean ) ; done
+	-@rm -f Makefile src/Makefile util/Makefile util/shm/Makefile util/shmbase/Makefile channels/Makefile util/ftb/Makefile localdefs config.status config.log config.cache *conf.cache config.system
 	-@rm -rf autom4te*.cache
 	-@rm -f include/mpidi_ch3_conf.h
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
 maintainer-clean:  maintainer-clean-local distclean-xxx remove-genmakefiles
 	for dir in channels src util ; do \
-		(cd $$dir && ${MAKE} maintainer-clean ; ) ; done
+		(cd $$dir && ${MAKE} maintainer-clean ) ; done
 	-rm -f include/mpidi_ch3_conf.h.in 
 remove-makefile:
 	rm -f Makefile
@@ -78,17 +78,17 @@ all-redirect:
 
 coverage: 
 	for dir in channels src util ; do \
-		(cd $$dir && ${MAKE} coverage ; ) ; done
+		(cd $$dir && ${MAKE} coverage ) ; done
 # --------------------------------------------------------------------------
 htmldoc:
 	for dir in channels src util ; do \
-		(cd $$dir && ${MAKE} htmldoc ; ) ; done
+		(cd $$dir && ${MAKE} htmldoc ) ; done
 mandoc:
 	for dir in channels src util ; do \
-		(cd $$dir && ${MAKE} mandoc ; ) ; done
+		(cd $$dir && ${MAKE} mandoc ) ; done
 latexdoc:
 	for dir in channels src util ; do \
-		(cd $$dir && ${MAKE} latexdoc ; ) ; done
+		(cd $$dir && ${MAKE} latexdoc ) ; done
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -96,16 +96,12 @@ latexdoc:
 # Dependencies
 dependencies:
 	for dir in channels src util ; do \
-		(cd $$dir && ${MAKE} dependencies ; ) ; done
+		(cd $$dir && ${MAKE} dependencies ) ; done
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
-	for dir in channels src util ; do \
-		(cd $$dir && ${MAKE} TAGS ; ) ; done
 # --------------------------------------------------------------------------
 
 distclean-local:

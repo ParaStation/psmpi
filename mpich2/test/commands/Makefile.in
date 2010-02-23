@@ -115,12 +115,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 SOURCES         =  stdiotest.c stdintest.c stdintest2.c checkenv1.c rtest.c \
 	rtestf.f rtestx.cxx testout.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 

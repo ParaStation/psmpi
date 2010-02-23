@@ -29,7 +29,7 @@ INCLUDES = -I../../include -I${srcdir}/../../include
 .SUFFIXES:
 .SUFFIXES: .o .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
@@ -38,7 +38,7 @@ INCLUDES = -I../../include -I${srcdir}/../../include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -65,8 +65,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o ctxdup
-	-@rm -f ctxdup.exe
+	-@rm -f *.o ${srcdir}/*.o dup_leak_test ctxdup
+	-@rm -f dup_leak_test.exe ctxdup.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -84,9 +84,13 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: ctxdup
+all-redirect: ctxdup dup_leak_test
 
 coverage: 
+dup_leak_test: dup_leak_test.o  \
+	 @MPILIBLOC@ ../../util/mtest.o ../util/mtestthread.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o dup_leak_test dup_leak_test.o  \
+	${LIBS} 
 ctxdup: ctxdup.o   @MPILIBLOC@ ../../util/mtest.o ../util/mtestthread.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o ctxdup ctxdup.o  -lpthread  \
 	${LIBS} 
@@ -98,13 +102,9 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  ctxdup.c
-ETAGS           = @ETAGS@ @ETAGSADD@
+SOURCES         =  ctxdup.c dup_leak_test.c
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 # Use extra programs to list programs that should not be built by default.

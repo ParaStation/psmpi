@@ -7,9 +7,6 @@ all: all-redirect
 
 SHELL           = @SHELL@
 master_top_srcdir  = @master_top_srcdir@
-bindir          = @bindir@
-exec_prefix     = @exec_prefix@
-prefix          = @prefix@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -29,7 +26,7 @@ INCLUDES = -I../include -I${srcdir}/../include
 .SUFFIXES:
 .SUFFIXES: .o .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
@@ -38,7 +35,7 @@ INCLUDES = -I../include -I${srcdir}/../include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -65,8 +62,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
-	-@rm -f *.o ${srcdir}/*.o baseattrcomm attric attrerr baseattr2 keyval_double_free attrend fkeyvaltype attrordertype attr2type attrt attrerrtype attrerrcomm fkeyvalcomm attrorder fkeyval attrordercomm
-	-@rm -f baseattrcomm.exe attric.exe attrerr.exe baseattr2.exe keyval_double_free.exe attrend.exe fkeyvaltype.exe attrordertype.exe attr2type.exe attrt.exe attrerrtype.exe attrerrcomm.exe fkeyvalcomm.exe attrorder.exe fkeyval.exe attrordercomm.exe
+	-@rm -f *.o ${srcdir}/*.o baseattrcomm attric attrerr baseattr2 keyval_double_free attrend fkeyvaltype attrend2 attrordertype attr2type attrt attrerrtype attrerrcomm fkeyvalcomm attrorder fkeyval attrordercomm
+	-@rm -f baseattrcomm.exe attric.exe attrerr.exe baseattr2.exe keyval_double_free.exe attrend.exe fkeyvaltype.exe attrend2.exe attrordertype.exe attr2type.exe attrt.exe attrerrtype.exe attrerrcomm.exe fkeyvalcomm.exe attrorder.exe fkeyval.exe attrordercomm.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -84,9 +81,9 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: attrt attrend attric attrerr attrerrcomm attrerrtype attr2type\
-	 attrorder attrordercomm attrordertype baseattr2 baseattrcomm fkeyval\
-	 fkeyvalcomm fkeyvaltype keyval_double_free
+all-redirect: attrt attrend attrend2 attric attrerr attrerrcomm attrerrtype\
+	 attr2type attrorder attrordercomm attrordertype baseattr2\
+	 baseattrcomm fkeyval fkeyvalcomm fkeyvaltype keyval_double_free
 
 coverage: 
 baseattrcomm: baseattrcomm.o   @MPILIBLOC@ ../util/mtest.o
@@ -105,6 +102,8 @@ attrend: attrend.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o attrend attrend.o  ${LIBS}
 fkeyvaltype: fkeyvaltype.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o fkeyvaltype fkeyvaltype.o  ${LIBS}
+attrend2: attrend2.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o attrend2 attrend2.o  ${LIBS}
 attrordertype: attrordertype.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o attrordertype attrordertype.o  \
 	${LIBS} 
@@ -133,16 +132,12 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  attrt.c attrend.c attric.c attrerr.c attrerrcomm.c \
-	attrerrtype.c attr2type.c attrorder.c attrordercomm.c attrordertype.c \
-	baseattr2.c baseattrcomm.c fkeyval.c fkeyvalcomm.c fkeyvaltype.c \
-	keyval_double_free.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
+SOURCES         =  attrt.c attrend.c attrend2.c attric.c attrerr.c \
+	attrerrcomm.c attrerrtype.c attr2type.c attrorder.c attrordercomm.c \
+	attrordertype.c baseattr2.c baseattrcomm.c fkeyval.c fkeyvalcomm.c \
+	fkeyvaltype.c keyval_double_free.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 
@@ -150,7 +145,7 @@ TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 	(cd ../util && $(MAKE) mtest.o)
 testing:
 	../runtests -srcdir=$(srcdir) -tests=testlist \
-			-mpiexec=$(bindir)/mpiexec \
+			-mpiexec=@MPIEXEC@ \
 		   	-xmlfile=summary.xml
 clean-local:
 	-rm -f summary.xml

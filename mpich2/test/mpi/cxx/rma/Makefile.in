@@ -26,7 +26,7 @@ INCLUDES = -I../../include -I${srcdir}/../../include
 .SUFFIXES:
 .SUFFIXES: .o .cxx .txt 
 .cxx.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CXX             $<" ; \
 	else \
 	  echo $(CXX_COMPILE) -c $< ; \
@@ -104,12 +104,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 SOURCES         =  winnamex.cxx getgroupx.cxx winfencex.cxx winscale1x.cxx \
 	winscale2x.cxx fkeyvalwinx.cxx 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 

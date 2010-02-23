@@ -594,7 +594,8 @@ fi
 rm -rf conftest.dSYM
 rm -f conftest*
 ])
-dnl
+
+
 dnl/*D
 dnl PAC_PROG_F77_CMDARGS - Determine how to access the command line from
 dnl Fortran 77
@@ -977,6 +978,8 @@ AC_SUBST(FXX_MODULE)
 AC_SUBST(F77_GETARG_FFLAGS)
 AC_SUBST(F77_GETARG_LDFLAGS)
 ])
+
+
 dnl/*D
 dnl PAC_PROG_F77_LIBRARY_DIR_FLAG - Determine the flag used to indicate
 dnl the directories to find libraries in
@@ -1041,6 +1044,7 @@ dnl Build library
     fi
 fi
 ])
+
 dnl/*D 
 dnl PAC_PROG_F77_HAS_INCDIR - Check whether Fortran accepts -Idir flag
 dnl
@@ -1090,7 +1094,7 @@ if test "X$pac_cv_prog_f77_has_incdir" != "Xnone" ; then
     F77_INCDIR="$pac_cv_prog_f77_has_incdir"
 fi
 ])
-dnl
+
 dnl/*D
 dnl PAC_PROG_F77_ALLOWS_UNUSED_EXTERNALS - Check whether the Fortran compiler
 dnl allows unused and undefined functions to be listed in an external 
@@ -1138,6 +1142,8 @@ else
    ifelse([$2],,:,[$2])
 fi
 ])
+
+
 dnl /*D 
 dnl PAC_PROG_F77_HAS_POINTER - Determine if Fortran allows pointer type
 dnl
@@ -1164,7 +1170,8 @@ else
     ifelse([$2],,:,[$2])
 fi
 ])
-dnl
+
+
 dnl pac_prog_f77_run_proc_from_c( c main program, fortran routine, 
 dnl                               action-if-works, action-if-fails, 
 dnl                               cross-action )
@@ -1206,7 +1213,8 @@ fi
 rm -rf conftest.dSYM
 rm -f conftest*
 ])
-dnl
+
+
 dnl PAC_PROG_F77_IN_C_LIBS
 dnl
 dnl Find the essential libraries that are needed to use the C linker to 
@@ -1311,7 +1319,7 @@ else
     AC_MSG_RESULT($F77_IN_C_LIBS)
 fi
 ])
-dnl
+
 dnl Test to see if we should use C or Fortran to link programs whose
 dnl main program is in Fortran.  We may find that neither work because 
 dnl we need special libraries in each case.
@@ -1365,7 +1373,7 @@ else
 fi
 AC_LANG_RESTORE
 ])
-dnl
+
 dnl Check to see if a C program can be linked when using the libraries
 dnl needed by C programs
 dnl
@@ -1401,78 +1409,7 @@ if test "$runs" = "no" ; then
     FLIBS="$pac_ldirs $pac_other $keep_libs"
 fi
 ])
-dnl
-dnl Check to see if Fortran supports the new-style character declarations.
-dnl Some compilers issue warnings for the old-style, so we may want to 
-dnl use the new form if it is available.
-dnl
-AC_DEFUN([PAC_PROG_F77_NEW_CHAR_DECL],[
-AC_CACHE_CHECK([whether Fortran supports new-style character declarations],
-pac_cv_prog_f77_new_char_decl,[
-AC_LANG_SAVE
-AC_LANG_FORTRAN77
-AC_COMPILE_IFLESE([AC_LANG_PROGRAM(,[        character (len=10) s])],
-    pac_cv_prog_f77_new_char_decl="yes",
-    pac_cv_prog_f77_new_char_decl="no")
-AC_LANG_RESTORE
-])
-if test "$pac_cv_prog_f77_new_char_decl" = "yes" ; then
-    ifelse([$1],,:,$1)
-else
-    ifelse([$2],,:,$2)
-fi
-])dnl
 
-AC_DEFUN([PAC_PROG_F77_CHAR_PARM],[
-#
-# We need to check on how character variables are passed.  If they 
-# are *not* passed at the end of the list, we need to know that NOW!
-case $pac_cv_prog_f77_name_mangle in 
-    mixed|lower)
-    sub1=sub
-    sub2=conffoo
-    ;;
-    upper)
-    sub1=SUB
-    sub2=CONFFOO
-    ;;
-    *)
-    sub1=sub_
-    sub2=conffoo_
-    ;;
-esac
-
-cat > conftest.c <<EOF
-#include <stdio.h>
-int loc = -1;
-void $sub1( char *a, int b, int c )
-{
-    if (b == 10) {
-    loc = 2;
-    }
-    if (c == 10) {
-    loc = 3;
-    }
-}
-int main( int argc, char **argv )
-{
-    int a, b, c;
-    $sub2();
-    printf( "%d\n", loc );
-}
-EOF
-cat > conftest1.f <<EOF
-        subroutine conffoo()
-        character a*10
-        a = "Foo"
-	call sub( a, 20 )
-        end
-EOF
-# This is needed for Mac OSX 10.5
-rm -rf conftest.dSYM
-rm conftest*
-])
-dnl
 dnl Test for extra libraries needed when linking C routines that use
 dnl stdio with Fortran.  This test was created for OSX, which 
 dnl sometimes requires -lSystemStubs.  If another library is needed,
@@ -1539,7 +1476,7 @@ if test "$pac_cv_prog_f77_and_c_stdio_libs" != none -a \
     F77_OTHER_LIBS="$F77_OTHER_LIBS $pac_cv_prog_f77_and_c_stdio_libs"    
 fi
 ])
-dnl
+
 dnl Check that the FLIBS determined by AC_F77_LIBRARY_LDFLAGS is valid.
 dnl That macro (at least as of autoconf 2.59) attempted to parse the output
 dnl of the compiler when asked to be verbose; in the case of the Fujitsu
@@ -1588,10 +1525,8 @@ rm -rf conftest.dSYM
 rm -f conftest*
 AC_LANG_RESTORE
 ])
-dnl
-dnl
-dnl
-dnl
+
+
 AC_DEFUN([PAC_PROG_F77_OBJ_LINKS_WITH_C],[
 AC_MSG_CHECKING([whether Fortran 77 and C objects are compatible])
 dnl

@@ -55,11 +55,10 @@ int MPID_nem_newtcp_module_get_vc_from_conninfo (char *pg_id, int pg_rank, struc
 #define FUNCNAME set_sockopts
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_newtcp_module_set_sockopts (int fd)
+int MPID_nem_newtcp_module_set_sockopts (MPIU_SOCKW_Sockfd_t fd)
 {
     int mpi_errno = MPI_SUCCESS;
-    int option, flags;
-    int ret;
+    int option;
     socklen_t len;
 
     /* I heard you have to read the options after setting them in some implementations */
@@ -82,12 +81,6 @@ int MPID_nem_newtcp_module_set_sockopts (int fd)
     mpi_errno = MPIU_SOCKW_Sock_setopt(fd, SOL_SOCKET, SO_SNDBUF, &option, len);
     if(mpi_errno != MPI_SUCCESS) MPIU_ERR_POP(mpi_errno);
     
-    option = 1;
-    len = sizeof(int);
-
-    mpi_errno = MPIU_SOCKW_Sock_setopt(fd, SOL_SOCKET, SO_REUSEADDR, &option, len);
-    if(mpi_errno != MPI_SUCCESS) MPIU_ERR_POP(mpi_errno);
-
     option = 1;
     mpi_errno = MPIU_SOCKW_Sock_cntrl_nb(fd, option);
     if(mpi_errno != MPI_SUCCESS) MPIU_ERR_POP(mpi_errno);

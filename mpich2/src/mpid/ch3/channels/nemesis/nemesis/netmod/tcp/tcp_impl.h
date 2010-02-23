@@ -41,12 +41,11 @@ typedef struct
     int sc_ref_count;
 } MPID_nem_tcp_vc_area;
 
-/* accessor macro to private fields in VC */
-#define VC_FIELD(vc, field) (((MPID_nem_tcp_vc_area *)((MPIDI_CH3I_VC *)(vc)->channel_private)->netmod_area.padding)->field)
+/* macro for tcp private in VC */
+#define VC_TCP(vc) ((MPID_nem_tcp_vc_area *)((MPIDI_CH3I_VC *)(vc)->channel_private)->netmod_area.padding)
 
-#define ASSIGN_SC_TO_VC(vc_, sc_) \
-    do { \
-        VC_FIELD((vc_), sc) = (sc_); \
+#define ASSIGN_SC_TO_VC(vc_tcp_, sc_) do {      \
+        (vc_tcp_)->sc = (sc_);                  \
     } while (0)
 
 /* functions */
@@ -54,11 +53,10 @@ int MPID_nem_tcp_init (MPID_nem_queue_ptr_t proc_recv_queue,
                                  MPID_nem_queue_ptr_t proc_free_queue, 
                                  MPID_nem_cell_ptr_t proc_elements,   int num_proc_elements,
                                  MPID_nem_cell_ptr_t module_elements, int num_module_elements, 
-                                 MPID_nem_queue_ptr_t *module_free_queue, int ckpt_restart,
+                                 MPID_nem_queue_ptr_t *module_free_queue,
                                  MPIDI_PG_t *pg_p, int pg_rank,
                                  char **bc_val_p, int *val_max_sz_p);
 int MPID_nem_tcp_finalize (void);
-int MPID_nem_tcp_ckpt_shutdown (void);
 int MPID_nem_tcp_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen);
 int MPID_nem_tcp_get_business_card (int my_rank, char **bc_val_p, int *val_max_sz_p);
 int MPID_nem_tcp_connect_to_root (const char *business_card, MPIDI_VC_t *new_vc);
@@ -135,8 +133,8 @@ int MPID_nem_tcp_socksm_init(void);
 /* VC list macros */
 #define VC_L_EMPTY(q) GENERIC_L_EMPTY (q)
 #define VC_L_HEAD(q) GENERIC_L_HEAD (q)
-#define SET_PLFD(ep)   MPID_nem_tcp_plfd_tbl[VC_FIELD(ep, sc)->index].events |= POLLOUT
-#define UNSET_PLFD(ep) MPID_nem_tcp_plfd_tbl[VC_FIELD(ep, sc)->index].events &= ~POLLOUT
+#define SET_PLFD(vc_tcp)   MPID_nem_tcp_plfd_tbl[(vc_tcp)->sc->index].events |= POLLOUT
+#define UNSET_PLFD(vc_tcp) MPID_nem_tcp_plfd_tbl[(vc_tcp)->sc->index].events &= ~POLLOUT
 
 /* stack macros */
 #define S_EMPTY(s) GENERIC_S_EMPTY (s)
@@ -159,5 +157,25 @@ typedef struct MPIDU_Sock_ifaddr_t {
     unsigned char ifaddr[16];
 } MPIDU_Sock_ifaddr_t;
 int MPIDI_GetIPInterface( MPIDU_Sock_ifaddr_t *ifaddr, int *found );
+
+/* Keys for business cards */
+#define MPIDI_CH3I_PORT_KEY "port"
+#define MPIDI_CH3I_HOST_DESCRIPTION_KEY "description"
+#define MPIDI_CH3I_IFNAME_KEY "ifname"
+
+/* convenience macro for publishing FTB communication error events */
+#define MPIDU_FTB_COMMERR(event_name, vc) do {                                                          \
+        int ret_ = -1;                                                                                  \
+        char bc_[1024] = ""; /* FIXME: How do we find the max length of a bc? */                             \
+        char ifname_[1024] = "";                                                                        \
+                                                                                                        \
+        if (vc)                                                                                         \
+            ret_ = vc->pg->getConnInfo((vc)->pg_rank, bc_, sizeof(bc_), (vc)->pg);                      \
+        if (!ret_)                                                                                      \
+            ret_ = MPIU_Str_get_string_arg(bc_, MPIDI_CH3I_IFNAME_KEY, ifname_, sizeof(ifname_));       \
+        MPIDU_Ftb_publish((event_name), ifname_);                                                       \
+    } while(0)
+
+
 
 #endif /* TCP_IMPL_H */

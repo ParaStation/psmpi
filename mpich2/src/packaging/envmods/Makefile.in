@@ -89,8 +89,6 @@ dependencies:
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
 # --------------------------------------------------------------------------
 # Commented out the installation of mpich2.module till Deji has a
 # complete solution how mpich2.module could be used with modules.

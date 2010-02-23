@@ -641,6 +641,7 @@ MAKE_DEPEND_C
 ETAGSADD
 ETAGS
 master_top_srcdir
+master_top_builddir
 SHLIB_EXT
 ENABLE_SHLIB
 LIBTOOL
@@ -1887,34 +1888,36 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
   fi
 
 
-if test -f $CONFIG_AUX_DIR/install-sh ; then ac_aux_dir=$CONFIG_AUX_DIR
-else
 ac_aux_dir=
-# We force the test to use the absolute path to ensure that the install
-# program can be used if we cd to a different directory before using
-# install.
 for ac_dir in ../../../../confdb "$srcdir"/../../../../confdb; do
-  if test -f $ac_dir/install-sh; then
+  if test -f "$ac_dir/install-sh"; then
     ac_aux_dir=$ac_dir
-    abs_ac_aux_dir=`(cd $ac_aux_dir && pwd)`
-    ac_install_sh="$abs_ac_aux_dir/install-sh -c"
+    ac_install_sh="$ac_aux_dir/install-sh -c"
     break
-  elif test -f $ac_dir/install.sh; then
+  elif test -f "$ac_dir/install.sh"; then
     ac_aux_dir=$ac_dir
-    abs_ac_aux_dir=`(cd $ac_aux_dir && pwd)`
-    ac_install_sh="$abs_ac_aux_dir/install.sh -c"
+    ac_install_sh="$ac_aux_dir/install.sh -c"
+    break
+  elif test -f "$ac_dir/shtool"; then
+    ac_aux_dir=$ac_dir
+    ac_install_sh="$ac_aux_dir/shtool install -c"
     break
   fi
 done
-fi
 if test -z "$ac_aux_dir"; then
-  { { $as_echo "$as_me:$LINENO: error: can not find install-sh or install.sh in ../../../../confdb \"$srcdir\"/../../../../confdb" >&5
-$as_echo "$as_me: error: can not find install-sh or install.sh in ../../../../confdb \"$srcdir\"/../../../../confdb" >&2;}
+  { { $as_echo "$as_me:$LINENO: error: cannot find install-sh or install.sh in ../../../../confdb \"$srcdir\"/../../../../confdb" >&5
+$as_echo "$as_me: error: cannot find install-sh or install.sh in ../../../../confdb \"$srcdir\"/../../../../confdb" >&2;}
    { (exit 1); exit 1; }; }
 fi
-ac_config_guess=$ac_aux_dir/config.guess
-ac_config_sub=$ac_aux_dir/config.sub
-ac_configure=$ac_aux_dir/configure # This should be Cygnus configure.
+
+# These three variables are undocumented and unsupported,
+# and are intended to be withdrawn in a future Autoconf release.
+# They can cause serious problems if a builder's source tree is in a directory
+# whose full name contains unusual characters.
+ac_config_guess="$SHELL $ac_aux_dir/config.guess"  # Please don't use this var.
+ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
+ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
+
 
 
 ac_config_headers="$ac_config_headers mpid_locksconf.h"
@@ -2138,6 +2141,7 @@ fi
 
 
 
+
 { $as_echo "$as_me:$LINENO: checking for virtual path format" >&5
 $as_echo_n "checking for virtual path format... " >&6; }
 if test "${pac_cv_prog_make_vpath+set}" = set; then
@@ -2188,6 +2192,7 @@ if test "$pac_cv_prog_make_vpath" = "VPATH" ; then
 elif test "$pac_cv_prog_make_vpath" = ".PATH" ; then
     VPATH='.PATH: . ${srcdir}'
 fi
+
 
 
 
@@ -4639,6 +4644,13 @@ CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
 		{ $as_echo "$as_me:$LINENO: WARNING: libtool selected for shared library support but LIBTOOL is not defined" >&5
 $as_echo "$as_me: WARNING: libtool selected for shared library support but LIBTOOL is not defined" >&2;}
             fi
+	    # Libtool needs master_top_builddir
+	    if test "X$master_top_builddir" = "X" ; then
+	        { { $as_echo "$as_me:$LINENO: error: Libtool requires master_top_builddir - check configure.in sources" >&5
+$as_echo "$as_me: error: Libtool requires master_top_builddir - check configure.in sources" >&2;}
+   { (exit 1); exit 1; }; }
+	    fi
+
 	fi
 
 

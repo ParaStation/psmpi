@@ -32,20 +32,20 @@ DOCTEXT         = @DOCTEXT@
 mpi_sources = allreduce.c barrier.c op_create.c op_free.c \
  bcast.c alltoall.c alltoallv.c reduce.c scatter.c \
  gather.c scatterv.c gatherv.c scan.c exscan.c allgather.c allgatherv.c \
- red_scat.c alltoallw.c 
+ red_scat.c alltoallw.c reduce_local.c op_commutative.c red_scat_block.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include -I${top_srcdir}/src/mpi/datatype
 
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -56,7 +56,7 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include -I${top_srcdir}/src/mpi/d
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -123,16 +123,17 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 .libstamp0 ../../../lib/lib${MPILIBNAME}.a: allreduce.o barrier.o op_create.o \
 	op_free.o bcast.o alltoall.o alltoallv.o reduce.o scatter.o gather.o \
 	scatterv.o gatherv.o scan.o exscan.o allgather.o allgatherv.o \
-	red_scat.o alltoallw.o helper_fns.o opsum.o opmax.o opmin.o opband.o \
+	red_scat.o alltoallw.o reduce_local.o op_commutative.o \
+	red_scat_block.o helper_fns.o opsum.o opmax.o opmin.o opband.o \
 	opbor.o opbxor.o opland.o oplor.o oplxor.o opprod.o opminloc.o \
 	opmaxloc.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${MPILIBNAME}.a ; \
@@ -142,10 +143,11 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 .libstamp1 ../../../lib/lib${MPILIBNAME}.la: allreduce.lo barrier.lo \
 	op_create.lo op_free.lo bcast.lo alltoall.lo alltoallv.lo reduce.lo \
 	scatter.lo gather.lo scatterv.lo gatherv.lo scan.lo exscan.lo \
-	allgather.lo allgatherv.lo red_scat.lo alltoallw.lo helper_fns.lo \
-	opsum.lo opmax.lo opmin.lo opband.lo opbor.lo opbxor.lo opland.lo \
-	oplor.lo oplxor.lo opprod.lo opminloc.lo opmaxloc.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	allgather.lo allgatherv.lo red_scat.lo alltoallw.lo reduce_local.lo \
+	op_commutative.lo red_scat_block.lo helper_fns.lo opsum.lo opmax.lo \
+	opmin.lo opband.lo opbor.lo opbxor.lo opland.lo oplor.lo oplxor.lo \
+	opprod.lo opminloc.lo opmaxloc.lo 
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -156,14 +158,15 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 # --------------------------------------------------------------------------
 .libstamp2: _allreduce.o _barrier.o _op_create.o _op_free.o _bcast.o _alltoall.o \
 	_alltoallv.o _reduce.o _scatter.o _gather.o _scatterv.o _gatherv.o \
-	_scan.o _exscan.o _allgather.o _allgatherv.o _red_scat.o _alltoallw.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	_scan.o _exscan.o _allgather.o _allgatherv.o _red_scat.o _alltoallw.o \
+	_reduce_local.o _op_commutative.o _red_scat_block.o 
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${PMPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${PMPILIBNAME}.a ; \
@@ -173,8 +176,9 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 .libstamp3: _allreduce.lo _barrier.lo _op_create.lo _op_free.lo _bcast.lo _alltoall.lo \
 	_alltoallv.lo _reduce.lo _scatter.lo _gather.lo _scatterv.lo \
 	_gatherv.lo _scan.lo _exscan.lo _allgather.lo _allgatherv.lo \
-	_red_scat.lo _alltoallw.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	_red_scat.lo _alltoallw.lo _reduce_local.lo _op_commutative.lo \
+	_red_scat_block.lo 
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $? ; \
@@ -182,257 +186,299 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _allreduce.o: allreduce.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/allreduce.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allreduce.c -o _allreduce.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allreduce.c -o _allreduce.o
 _allreduce.lo: allreduce.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/allreduce.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allreduce.c -o _allreduce.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allreduce.c -o _allreduce.lo
 _barrier.o: barrier.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/barrier.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/barrier.c -o _barrier.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/barrier.c -o _barrier.o
 _barrier.lo: barrier.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/barrier.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/barrier.c -o _barrier.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/barrier.c -o _barrier.lo
 _op_create.o: op_create.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/op_create.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_create.c -o _op_create.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_create.c -o _op_create.o
 _op_create.lo: op_create.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/op_create.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/op_create.c -o _op_create.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/op_create.c -o _op_create.lo
 _op_free.o: op_free.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/op_free.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_free.c -o _op_free.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_free.c -o _op_free.o
 _op_free.lo: op_free.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/op_free.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/op_free.c -o _op_free.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/op_free.c -o _op_free.lo
 _bcast.o: bcast.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/bcast.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bcast.c -o _bcast.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bcast.c -o _bcast.o
 _bcast.lo: bcast.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/bcast.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/bcast.c -o _bcast.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/bcast.c -o _bcast.lo
 _alltoall.o: alltoall.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/alltoall.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoall.c -o _alltoall.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoall.c -o _alltoall.o
 _alltoall.lo: alltoall.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/alltoall.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoall.c -o _alltoall.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoall.c -o _alltoall.lo
 _alltoallv.o: alltoallv.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/alltoallv.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallv.c -o _alltoallv.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallv.c -o _alltoallv.o
 _alltoallv.lo: alltoallv.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/alltoallv.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallv.c -o _alltoallv.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallv.c -o _alltoallv.lo
 _reduce.o: reduce.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/reduce.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/reduce.c -o _reduce.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/reduce.c -o _reduce.o
 _reduce.lo: reduce.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/reduce.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/reduce.c -o _reduce.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/reduce.c -o _reduce.lo
 _scatter.o: scatter.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/scatter.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scatter.c -o _scatter.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scatter.c -o _scatter.o
 _scatter.lo: scatter.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/scatter.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scatter.c -o _scatter.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scatter.c -o _scatter.lo
 _gather.o: gather.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/gather.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/gather.c -o _gather.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/gather.c -o _gather.o
 _gather.lo: gather.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/gather.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/gather.c -o _gather.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/gather.c -o _gather.lo
 _scatterv.o: scatterv.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/scatterv.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scatterv.c -o _scatterv.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scatterv.c -o _scatterv.o
 _scatterv.lo: scatterv.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/scatterv.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scatterv.c -o _scatterv.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scatterv.c -o _scatterv.lo
 _gatherv.o: gatherv.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/gatherv.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/gatherv.c -o _gatherv.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/gatherv.c -o _gatherv.o
 _gatherv.lo: gatherv.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/gatherv.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/gatherv.c -o _gatherv.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/gatherv.c -o _gatherv.lo
 _scan.o: scan.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/scan.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scan.c -o _scan.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scan.c -o _scan.o
 _scan.lo: scan.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/scan.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scan.c -o _scan.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scan.c -o _scan.lo
 _exscan.o: exscan.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/exscan.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/exscan.c -o _exscan.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/exscan.c -o _exscan.o
 _exscan.lo: exscan.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/exscan.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/exscan.c -o _exscan.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/exscan.c -o _exscan.lo
 _allgather.o: allgather.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/allgather.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allgather.c -o _allgather.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allgather.c -o _allgather.o
 _allgather.lo: allgather.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/allgather.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allgather.c -o _allgather.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allgather.c -o _allgather.lo
 _allgatherv.o: allgatherv.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/allgatherv.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allgatherv.c -o _allgatherv.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allgatherv.c -o _allgatherv.o
 _allgatherv.lo: allgatherv.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/allgatherv.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allgatherv.c -o _allgatherv.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allgatherv.c -o _allgatherv.lo
 _red_scat.o: red_scat.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/red_scat.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/red_scat.c -o _red_scat.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/red_scat.c -o _red_scat.o
 _red_scat.lo: red_scat.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/red_scat.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/red_scat.c -o _red_scat.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/red_scat.c -o _red_scat.lo
 _alltoallw.o: alltoallw.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/alltoallw.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallw.c -o _alltoallw.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallw.c -o _alltoallw.o
 _alltoallw.lo: alltoallw.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/alltoallw.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallw.c -o _alltoallw.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallw.c -o _alltoallw.lo
+_reduce_local.o: reduce_local.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "  CC             -D<profiling> ${srcdir}/reduce_local.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/reduce_local.c -o _reduce_local.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/reduce_local.c -o _reduce_local.o
+_reduce_local.lo: reduce_local.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/reduce_local.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/reduce_local.c -o _reduce_local.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/reduce_local.c -o _reduce_local.lo
+_op_commutative.o: op_commutative.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "  CC             -D<profiling> ${srcdir}/op_commutative.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_commutative.c -o _op_commutative.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_commutative.c -o _op_commutative.o
+_op_commutative.lo: op_commutative.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/op_commutative.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/op_commutative.c -o _op_commutative.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/op_commutative.c -o _op_commutative.lo
+_red_scat_block.o: red_scat_block.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "  CC             -D<profiling> ${srcdir}/red_scat_block.c" ; \
+	else \
+	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/red_scat_block.c -o _red_scat_block.o ; \
+	fi
+	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/red_scat_block.c -o _red_scat_block.o
+_red_scat_block.lo: red_scat_block.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/red_scat_block.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/red_scat_block.c -o _red_scat_block.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/red_scat_block.c -o _red_scat_block.lo
 # --------------------------------------------------------------------------
 coverage: 
 	-@for file in $(mpi_sources)  helper_fns.c opsum.c opmax.c opmin.c opband.c \
@@ -453,132 +499,484 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/allreduce.d: $(srcdir)/allreduce.c
-	$(MAKE_DEPEND_C) -MT '_allreduce.o allreduce.o' $(srcdir)/allreduce.c >$(DEPS_DIR)/allreduce.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C allreduce.c > $(DEPS_DIR)/allreduce.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_allreduce.o allreduce.o allreduce.lo _allreduce.lo' $(srcdir)/allreduce.c >$(DEPS_DIR)/allreduce.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_allreduce.o allreduce.o allreduce.lo _allreduce.lo' $(srcdir)/allreduce.c >$(DEPS_DIR)/allreduce.d
 $(DEPS_DIR)/barrier.d: $(srcdir)/barrier.c
-	$(MAKE_DEPEND_C) -MT '_barrier.o barrier.o' $(srcdir)/barrier.c >$(DEPS_DIR)/barrier.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C barrier.c > $(DEPS_DIR)/barrier.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_barrier.o barrier.o barrier.lo _barrier.lo' $(srcdir)/barrier.c >$(DEPS_DIR)/barrier.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_barrier.o barrier.o barrier.lo _barrier.lo' $(srcdir)/barrier.c >$(DEPS_DIR)/barrier.d
 $(DEPS_DIR)/op_create.d: $(srcdir)/op_create.c
-	$(MAKE_DEPEND_C) -MT '_op_create.o op_create.o' $(srcdir)/op_create.c >$(DEPS_DIR)/op_create.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C op_create.c > $(DEPS_DIR)/op_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_op_create.o op_create.o op_create.lo _op_create.lo' $(srcdir)/op_create.c >$(DEPS_DIR)/op_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_op_create.o op_create.o op_create.lo _op_create.lo' $(srcdir)/op_create.c >$(DEPS_DIR)/op_create.d
 $(DEPS_DIR)/op_free.d: $(srcdir)/op_free.c
-	$(MAKE_DEPEND_C) -MT '_op_free.o op_free.o' $(srcdir)/op_free.c >$(DEPS_DIR)/op_free.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C op_free.c > $(DEPS_DIR)/op_free.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_op_free.o op_free.o op_free.lo _op_free.lo' $(srcdir)/op_free.c >$(DEPS_DIR)/op_free.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_op_free.o op_free.o op_free.lo _op_free.lo' $(srcdir)/op_free.c >$(DEPS_DIR)/op_free.d
 $(DEPS_DIR)/bcast.d: $(srcdir)/bcast.c
-	$(MAKE_DEPEND_C) -MT '_bcast.o bcast.o' $(srcdir)/bcast.c >$(DEPS_DIR)/bcast.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C bcast.c > $(DEPS_DIR)/bcast.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_bcast.o bcast.o bcast.lo _bcast.lo' $(srcdir)/bcast.c >$(DEPS_DIR)/bcast.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_bcast.o bcast.o bcast.lo _bcast.lo' $(srcdir)/bcast.c >$(DEPS_DIR)/bcast.d
 $(DEPS_DIR)/alltoall.d: $(srcdir)/alltoall.c
-	$(MAKE_DEPEND_C) -MT '_alltoall.o alltoall.o' $(srcdir)/alltoall.c >$(DEPS_DIR)/alltoall.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C alltoall.c > $(DEPS_DIR)/alltoall.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_alltoall.o alltoall.o alltoall.lo _alltoall.lo' $(srcdir)/alltoall.c >$(DEPS_DIR)/alltoall.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_alltoall.o alltoall.o alltoall.lo _alltoall.lo' $(srcdir)/alltoall.c >$(DEPS_DIR)/alltoall.d
 $(DEPS_DIR)/alltoallv.d: $(srcdir)/alltoallv.c
-	$(MAKE_DEPEND_C) -MT '_alltoallv.o alltoallv.o' $(srcdir)/alltoallv.c >$(DEPS_DIR)/alltoallv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C alltoallv.c > $(DEPS_DIR)/alltoallv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_alltoallv.o alltoallv.o alltoallv.lo _alltoallv.lo' $(srcdir)/alltoallv.c >$(DEPS_DIR)/alltoallv.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_alltoallv.o alltoallv.o alltoallv.lo _alltoallv.lo' $(srcdir)/alltoallv.c >$(DEPS_DIR)/alltoallv.d
 $(DEPS_DIR)/reduce.d: $(srcdir)/reduce.c
-	$(MAKE_DEPEND_C) -MT '_reduce.o reduce.o' $(srcdir)/reduce.c >$(DEPS_DIR)/reduce.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C reduce.c > $(DEPS_DIR)/reduce.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_reduce.o reduce.o reduce.lo _reduce.lo' $(srcdir)/reduce.c >$(DEPS_DIR)/reduce.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_reduce.o reduce.o reduce.lo _reduce.lo' $(srcdir)/reduce.c >$(DEPS_DIR)/reduce.d
 $(DEPS_DIR)/scatter.d: $(srcdir)/scatter.c
-	$(MAKE_DEPEND_C) -MT '_scatter.o scatter.o' $(srcdir)/scatter.c >$(DEPS_DIR)/scatter.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C scatter.c > $(DEPS_DIR)/scatter.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_scatter.o scatter.o scatter.lo _scatter.lo' $(srcdir)/scatter.c >$(DEPS_DIR)/scatter.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_scatter.o scatter.o scatter.lo _scatter.lo' $(srcdir)/scatter.c >$(DEPS_DIR)/scatter.d
 $(DEPS_DIR)/gather.d: $(srcdir)/gather.c
-	$(MAKE_DEPEND_C) -MT '_gather.o gather.o' $(srcdir)/gather.c >$(DEPS_DIR)/gather.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C gather.c > $(DEPS_DIR)/gather.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_gather.o gather.o gather.lo _gather.lo' $(srcdir)/gather.c >$(DEPS_DIR)/gather.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_gather.o gather.o gather.lo _gather.lo' $(srcdir)/gather.c >$(DEPS_DIR)/gather.d
 $(DEPS_DIR)/scatterv.d: $(srcdir)/scatterv.c
-	$(MAKE_DEPEND_C) -MT '_scatterv.o scatterv.o' $(srcdir)/scatterv.c >$(DEPS_DIR)/scatterv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C scatterv.c > $(DEPS_DIR)/scatterv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_scatterv.o scatterv.o scatterv.lo _scatterv.lo' $(srcdir)/scatterv.c >$(DEPS_DIR)/scatterv.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_scatterv.o scatterv.o scatterv.lo _scatterv.lo' $(srcdir)/scatterv.c >$(DEPS_DIR)/scatterv.d
 $(DEPS_DIR)/gatherv.d: $(srcdir)/gatherv.c
-	$(MAKE_DEPEND_C) -MT '_gatherv.o gatherv.o' $(srcdir)/gatherv.c >$(DEPS_DIR)/gatherv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C gatherv.c > $(DEPS_DIR)/gatherv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_gatherv.o gatherv.o gatherv.lo _gatherv.lo' $(srcdir)/gatherv.c >$(DEPS_DIR)/gatherv.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_gatherv.o gatherv.o gatherv.lo _gatherv.lo' $(srcdir)/gatherv.c >$(DEPS_DIR)/gatherv.d
 $(DEPS_DIR)/scan.d: $(srcdir)/scan.c
-	$(MAKE_DEPEND_C) -MT '_scan.o scan.o' $(srcdir)/scan.c >$(DEPS_DIR)/scan.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C scan.c > $(DEPS_DIR)/scan.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_scan.o scan.o scan.lo _scan.lo' $(srcdir)/scan.c >$(DEPS_DIR)/scan.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_scan.o scan.o scan.lo _scan.lo' $(srcdir)/scan.c >$(DEPS_DIR)/scan.d
 $(DEPS_DIR)/exscan.d: $(srcdir)/exscan.c
-	$(MAKE_DEPEND_C) -MT '_exscan.o exscan.o' $(srcdir)/exscan.c >$(DEPS_DIR)/exscan.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C exscan.c > $(DEPS_DIR)/exscan.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_exscan.o exscan.o exscan.lo _exscan.lo' $(srcdir)/exscan.c >$(DEPS_DIR)/exscan.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_exscan.o exscan.o exscan.lo _exscan.lo' $(srcdir)/exscan.c >$(DEPS_DIR)/exscan.d
 $(DEPS_DIR)/allgather.d: $(srcdir)/allgather.c
-	$(MAKE_DEPEND_C) -MT '_allgather.o allgather.o' $(srcdir)/allgather.c >$(DEPS_DIR)/allgather.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C allgather.c > $(DEPS_DIR)/allgather.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_allgather.o allgather.o allgather.lo _allgather.lo' $(srcdir)/allgather.c >$(DEPS_DIR)/allgather.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_allgather.o allgather.o allgather.lo _allgather.lo' $(srcdir)/allgather.c >$(DEPS_DIR)/allgather.d
 $(DEPS_DIR)/allgatherv.d: $(srcdir)/allgatherv.c
-	$(MAKE_DEPEND_C) -MT '_allgatherv.o allgatherv.o' $(srcdir)/allgatherv.c >$(DEPS_DIR)/allgatherv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C allgatherv.c > $(DEPS_DIR)/allgatherv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_allgatherv.o allgatherv.o allgatherv.lo _allgatherv.lo' $(srcdir)/allgatherv.c >$(DEPS_DIR)/allgatherv.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_allgatherv.o allgatherv.o allgatherv.lo _allgatherv.lo' $(srcdir)/allgatherv.c >$(DEPS_DIR)/allgatherv.d
 $(DEPS_DIR)/red_scat.d: $(srcdir)/red_scat.c
-	$(MAKE_DEPEND_C) -MT '_red_scat.o red_scat.o' $(srcdir)/red_scat.c >$(DEPS_DIR)/red_scat.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C red_scat.c > $(DEPS_DIR)/red_scat.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_red_scat.o red_scat.o red_scat.lo _red_scat.lo' $(srcdir)/red_scat.c >$(DEPS_DIR)/red_scat.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_red_scat.o red_scat.o red_scat.lo _red_scat.lo' $(srcdir)/red_scat.c >$(DEPS_DIR)/red_scat.d
 $(DEPS_DIR)/alltoallw.d: $(srcdir)/alltoallw.c
-	$(MAKE_DEPEND_C) -MT '_alltoallw.o alltoallw.o' $(srcdir)/alltoallw.c >$(DEPS_DIR)/alltoallw.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C alltoallw.c > $(DEPS_DIR)/alltoallw.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_alltoallw.o alltoallw.o alltoallw.lo _alltoallw.lo' $(srcdir)/alltoallw.c >$(DEPS_DIR)/alltoallw.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_alltoallw.o alltoallw.o alltoallw.lo _alltoallw.lo' $(srcdir)/alltoallw.c >$(DEPS_DIR)/alltoallw.d
+$(DEPS_DIR)/reduce_local.d: $(srcdir)/reduce_local.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C reduce_local.c > $(DEPS_DIR)/reduce_local.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_reduce_local.o reduce_local.o reduce_local.lo _reduce_local.lo' $(srcdir)/reduce_local.c >$(DEPS_DIR)/reduce_local.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_reduce_local.o reduce_local.o reduce_local.lo _reduce_local.lo' $(srcdir)/reduce_local.c >$(DEPS_DIR)/reduce_local.d
+$(DEPS_DIR)/op_commutative.d: $(srcdir)/op_commutative.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C op_commutative.c > $(DEPS_DIR)/op_commutative.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_op_commutative.o op_commutative.o op_commutative.lo _op_commutative.lo' $(srcdir)/op_commutative.c >$(DEPS_DIR)/op_commutative.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_op_commutative.o op_commutative.o op_commutative.lo _op_commutative.lo' $(srcdir)/op_commutative.c >$(DEPS_DIR)/op_commutative.d
+$(DEPS_DIR)/red_scat_block.d: $(srcdir)/red_scat_block.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C red_scat_block.c > $(DEPS_DIR)/red_scat_block.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_red_scat_block.o red_scat_block.o red_scat_block.lo _red_scat_block.lo' $(srcdir)/red_scat_block.c >$(DEPS_DIR)/red_scat_block.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_red_scat_block.o red_scat_block.o red_scat_block.lo _red_scat_block.lo' $(srcdir)/red_scat_block.c >$(DEPS_DIR)/red_scat_block.d
 $(DEPS_DIR)/helper_fns.d: $(srcdir)/helper_fns.c
-	$(MAKE_DEPEND_C) -MT '_helper_fns.o helper_fns.o' $(srcdir)/helper_fns.c >$(DEPS_DIR)/helper_fns.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C helper_fns.c > $(DEPS_DIR)/helper_fns.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_helper_fns.o helper_fns.o helper_fns.lo _helper_fns.lo' $(srcdir)/helper_fns.c >$(DEPS_DIR)/helper_fns.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_helper_fns.o helper_fns.o helper_fns.lo _helper_fns.lo' $(srcdir)/helper_fns.c >$(DEPS_DIR)/helper_fns.d
 $(DEPS_DIR)/opsum.d: $(srcdir)/opsum.c
-	$(MAKE_DEPEND_C) -MT '_opsum.o opsum.o' $(srcdir)/opsum.c >$(DEPS_DIR)/opsum.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opsum.c > $(DEPS_DIR)/opsum.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opsum.o opsum.o opsum.lo _opsum.lo' $(srcdir)/opsum.c >$(DEPS_DIR)/opsum.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opsum.o opsum.o opsum.lo _opsum.lo' $(srcdir)/opsum.c >$(DEPS_DIR)/opsum.d
 $(DEPS_DIR)/opmax.d: $(srcdir)/opmax.c
-	$(MAKE_DEPEND_C) -MT '_opmax.o opmax.o' $(srcdir)/opmax.c >$(DEPS_DIR)/opmax.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opmax.c > $(DEPS_DIR)/opmax.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opmax.o opmax.o opmax.lo _opmax.lo' $(srcdir)/opmax.c >$(DEPS_DIR)/opmax.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opmax.o opmax.o opmax.lo _opmax.lo' $(srcdir)/opmax.c >$(DEPS_DIR)/opmax.d
 $(DEPS_DIR)/opmin.d: $(srcdir)/opmin.c
-	$(MAKE_DEPEND_C) -MT '_opmin.o opmin.o' $(srcdir)/opmin.c >$(DEPS_DIR)/opmin.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opmin.c > $(DEPS_DIR)/opmin.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opmin.o opmin.o opmin.lo _opmin.lo' $(srcdir)/opmin.c >$(DEPS_DIR)/opmin.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opmin.o opmin.o opmin.lo _opmin.lo' $(srcdir)/opmin.c >$(DEPS_DIR)/opmin.d
 $(DEPS_DIR)/opband.d: $(srcdir)/opband.c
-	$(MAKE_DEPEND_C) -MT '_opband.o opband.o' $(srcdir)/opband.c >$(DEPS_DIR)/opband.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opband.c > $(DEPS_DIR)/opband.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opband.o opband.o opband.lo _opband.lo' $(srcdir)/opband.c >$(DEPS_DIR)/opband.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opband.o opband.o opband.lo _opband.lo' $(srcdir)/opband.c >$(DEPS_DIR)/opband.d
 $(DEPS_DIR)/opbor.d: $(srcdir)/opbor.c
-	$(MAKE_DEPEND_C) -MT '_opbor.o opbor.o' $(srcdir)/opbor.c >$(DEPS_DIR)/opbor.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opbor.c > $(DEPS_DIR)/opbor.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opbor.o opbor.o opbor.lo _opbor.lo' $(srcdir)/opbor.c >$(DEPS_DIR)/opbor.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opbor.o opbor.o opbor.lo _opbor.lo' $(srcdir)/opbor.c >$(DEPS_DIR)/opbor.d
 $(DEPS_DIR)/opbxor.d: $(srcdir)/opbxor.c
-	$(MAKE_DEPEND_C) -MT '_opbxor.o opbxor.o' $(srcdir)/opbxor.c >$(DEPS_DIR)/opbxor.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opbxor.c > $(DEPS_DIR)/opbxor.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opbxor.o opbxor.o opbxor.lo _opbxor.lo' $(srcdir)/opbxor.c >$(DEPS_DIR)/opbxor.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opbxor.o opbxor.o opbxor.lo _opbxor.lo' $(srcdir)/opbxor.c >$(DEPS_DIR)/opbxor.d
 $(DEPS_DIR)/opland.d: $(srcdir)/opland.c
-	$(MAKE_DEPEND_C) -MT '_opland.o opland.o' $(srcdir)/opland.c >$(DEPS_DIR)/opland.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opland.c > $(DEPS_DIR)/opland.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opland.o opland.o opland.lo _opland.lo' $(srcdir)/opland.c >$(DEPS_DIR)/opland.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opland.o opland.o opland.lo _opland.lo' $(srcdir)/opland.c >$(DEPS_DIR)/opland.d
 $(DEPS_DIR)/oplor.d: $(srcdir)/oplor.c
-	$(MAKE_DEPEND_C) -MT '_oplor.o oplor.o' $(srcdir)/oplor.c >$(DEPS_DIR)/oplor.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C oplor.c > $(DEPS_DIR)/oplor.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_oplor.o oplor.o oplor.lo _oplor.lo' $(srcdir)/oplor.c >$(DEPS_DIR)/oplor.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_oplor.o oplor.o oplor.lo _oplor.lo' $(srcdir)/oplor.c >$(DEPS_DIR)/oplor.d
 $(DEPS_DIR)/oplxor.d: $(srcdir)/oplxor.c
-	$(MAKE_DEPEND_C) -MT '_oplxor.o oplxor.o' $(srcdir)/oplxor.c >$(DEPS_DIR)/oplxor.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C oplxor.c > $(DEPS_DIR)/oplxor.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_oplxor.o oplxor.o oplxor.lo _oplxor.lo' $(srcdir)/oplxor.c >$(DEPS_DIR)/oplxor.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_oplxor.o oplxor.o oplxor.lo _oplxor.lo' $(srcdir)/oplxor.c >$(DEPS_DIR)/oplxor.d
 $(DEPS_DIR)/opprod.d: $(srcdir)/opprod.c
-	$(MAKE_DEPEND_C) -MT '_opprod.o opprod.o' $(srcdir)/opprod.c >$(DEPS_DIR)/opprod.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opprod.c > $(DEPS_DIR)/opprod.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opprod.o opprod.o opprod.lo _opprod.lo' $(srcdir)/opprod.c >$(DEPS_DIR)/opprod.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opprod.o opprod.o opprod.lo _opprod.lo' $(srcdir)/opprod.c >$(DEPS_DIR)/opprod.d
 $(DEPS_DIR)/opminloc.d: $(srcdir)/opminloc.c
-	$(MAKE_DEPEND_C) -MT '_opminloc.o opminloc.o' $(srcdir)/opminloc.c >$(DEPS_DIR)/opminloc.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opminloc.c > $(DEPS_DIR)/opminloc.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opminloc.o opminloc.o opminloc.lo _opminloc.lo' $(srcdir)/opminloc.c >$(DEPS_DIR)/opminloc.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opminloc.o opminloc.o opminloc.lo _opminloc.lo' $(srcdir)/opminloc.c >$(DEPS_DIR)/opminloc.d
 $(DEPS_DIR)/opmaxloc.d: $(srcdir)/opmaxloc.c
-	$(MAKE_DEPEND_C) -MT '_opmaxloc.o opmaxloc.o' $(srcdir)/opmaxloc.c >$(DEPS_DIR)/opmaxloc.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opmaxloc.c > $(DEPS_DIR)/opmaxloc.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opmaxloc.o opmaxloc.o opmaxloc.lo _opmaxloc.lo' $(srcdir)/opmaxloc.c >$(DEPS_DIR)/opmaxloc.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opmaxloc.o opmaxloc.o opmaxloc.lo _opmaxloc.lo' $(srcdir)/opmaxloc.c >$(DEPS_DIR)/opmaxloc.d
 $(DEPS_DIR)/timestamp: $(mpi_sources)  helper_fns.c opsum.c opmax.c opmin.c opband.c opbor.c \
 	opbxor.c  opland.c oplor.c oplxor.c opprod.c opminloc.c opmaxloc.c \
 	Makefile 
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_allreduce.o allreduce.o' $(srcdir)/allreduce.c >$(DEPS_DIR)/allreduce.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C allreduce.c > $(DEPS_DIR)/allreduce.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_allreduce.o allreduce.o allreduce.lo _allreduce.lo' $(srcdir)/allreduce.c >$(DEPS_DIR)/allreduce.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_allreduce.o allreduce.o allreduce.lo _allreduce.lo' $(srcdir)/allreduce.c >$(DEPS_DIR)/allreduce.d
 	echo "include $(DEPS_DIR)/allreduce.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_barrier.o barrier.o' $(srcdir)/barrier.c >$(DEPS_DIR)/barrier.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C barrier.c > $(DEPS_DIR)/barrier.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_barrier.o barrier.o barrier.lo _barrier.lo' $(srcdir)/barrier.c >$(DEPS_DIR)/barrier.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_barrier.o barrier.o barrier.lo _barrier.lo' $(srcdir)/barrier.c >$(DEPS_DIR)/barrier.d
 	echo "include $(DEPS_DIR)/barrier.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_op_create.o op_create.o' $(srcdir)/op_create.c >$(DEPS_DIR)/op_create.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C op_create.c > $(DEPS_DIR)/op_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_op_create.o op_create.o op_create.lo _op_create.lo' $(srcdir)/op_create.c >$(DEPS_DIR)/op_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_op_create.o op_create.o op_create.lo _op_create.lo' $(srcdir)/op_create.c >$(DEPS_DIR)/op_create.d
 	echo "include $(DEPS_DIR)/op_create.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_op_free.o op_free.o' $(srcdir)/op_free.c >$(DEPS_DIR)/op_free.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C op_free.c > $(DEPS_DIR)/op_free.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_op_free.o op_free.o op_free.lo _op_free.lo' $(srcdir)/op_free.c >$(DEPS_DIR)/op_free.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_op_free.o op_free.o op_free.lo _op_free.lo' $(srcdir)/op_free.c >$(DEPS_DIR)/op_free.d
 	echo "include $(DEPS_DIR)/op_free.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_bcast.o bcast.o' $(srcdir)/bcast.c >$(DEPS_DIR)/bcast.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C bcast.c > $(DEPS_DIR)/bcast.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_bcast.o bcast.o bcast.lo _bcast.lo' $(srcdir)/bcast.c >$(DEPS_DIR)/bcast.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_bcast.o bcast.o bcast.lo _bcast.lo' $(srcdir)/bcast.c >$(DEPS_DIR)/bcast.d
 	echo "include $(DEPS_DIR)/bcast.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_alltoall.o alltoall.o' $(srcdir)/alltoall.c >$(DEPS_DIR)/alltoall.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C alltoall.c > $(DEPS_DIR)/alltoall.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_alltoall.o alltoall.o alltoall.lo _alltoall.lo' $(srcdir)/alltoall.c >$(DEPS_DIR)/alltoall.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_alltoall.o alltoall.o alltoall.lo _alltoall.lo' $(srcdir)/alltoall.c >$(DEPS_DIR)/alltoall.d
 	echo "include $(DEPS_DIR)/alltoall.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_alltoallv.o alltoallv.o' $(srcdir)/alltoallv.c >$(DEPS_DIR)/alltoallv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C alltoallv.c > $(DEPS_DIR)/alltoallv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_alltoallv.o alltoallv.o alltoallv.lo _alltoallv.lo' $(srcdir)/alltoallv.c >$(DEPS_DIR)/alltoallv.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_alltoallv.o alltoallv.o alltoallv.lo _alltoallv.lo' $(srcdir)/alltoallv.c >$(DEPS_DIR)/alltoallv.d
 	echo "include $(DEPS_DIR)/alltoallv.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_reduce.o reduce.o' $(srcdir)/reduce.c >$(DEPS_DIR)/reduce.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C reduce.c > $(DEPS_DIR)/reduce.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_reduce.o reduce.o reduce.lo _reduce.lo' $(srcdir)/reduce.c >$(DEPS_DIR)/reduce.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_reduce.o reduce.o reduce.lo _reduce.lo' $(srcdir)/reduce.c >$(DEPS_DIR)/reduce.d
 	echo "include $(DEPS_DIR)/reduce.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_scatter.o scatter.o' $(srcdir)/scatter.c >$(DEPS_DIR)/scatter.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C scatter.c > $(DEPS_DIR)/scatter.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_scatter.o scatter.o scatter.lo _scatter.lo' $(srcdir)/scatter.c >$(DEPS_DIR)/scatter.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_scatter.o scatter.o scatter.lo _scatter.lo' $(srcdir)/scatter.c >$(DEPS_DIR)/scatter.d
 	echo "include $(DEPS_DIR)/scatter.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_gather.o gather.o' $(srcdir)/gather.c >$(DEPS_DIR)/gather.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C gather.c > $(DEPS_DIR)/gather.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_gather.o gather.o gather.lo _gather.lo' $(srcdir)/gather.c >$(DEPS_DIR)/gather.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_gather.o gather.o gather.lo _gather.lo' $(srcdir)/gather.c >$(DEPS_DIR)/gather.d
 	echo "include $(DEPS_DIR)/gather.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_scatterv.o scatterv.o' $(srcdir)/scatterv.c >$(DEPS_DIR)/scatterv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C scatterv.c > $(DEPS_DIR)/scatterv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_scatterv.o scatterv.o scatterv.lo _scatterv.lo' $(srcdir)/scatterv.c >$(DEPS_DIR)/scatterv.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_scatterv.o scatterv.o scatterv.lo _scatterv.lo' $(srcdir)/scatterv.c >$(DEPS_DIR)/scatterv.d
 	echo "include $(DEPS_DIR)/scatterv.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_gatherv.o gatherv.o' $(srcdir)/gatherv.c >$(DEPS_DIR)/gatherv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C gatherv.c > $(DEPS_DIR)/gatherv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_gatherv.o gatherv.o gatherv.lo _gatherv.lo' $(srcdir)/gatherv.c >$(DEPS_DIR)/gatherv.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_gatherv.o gatherv.o gatherv.lo _gatherv.lo' $(srcdir)/gatherv.c >$(DEPS_DIR)/gatherv.d
 	echo "include $(DEPS_DIR)/gatherv.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_scan.o scan.o' $(srcdir)/scan.c >$(DEPS_DIR)/scan.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C scan.c > $(DEPS_DIR)/scan.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_scan.o scan.o scan.lo _scan.lo' $(srcdir)/scan.c >$(DEPS_DIR)/scan.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_scan.o scan.o scan.lo _scan.lo' $(srcdir)/scan.c >$(DEPS_DIR)/scan.d
 	echo "include $(DEPS_DIR)/scan.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_exscan.o exscan.o' $(srcdir)/exscan.c >$(DEPS_DIR)/exscan.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C exscan.c > $(DEPS_DIR)/exscan.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_exscan.o exscan.o exscan.lo _exscan.lo' $(srcdir)/exscan.c >$(DEPS_DIR)/exscan.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_exscan.o exscan.o exscan.lo _exscan.lo' $(srcdir)/exscan.c >$(DEPS_DIR)/exscan.d
 	echo "include $(DEPS_DIR)/exscan.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_allgather.o allgather.o' $(srcdir)/allgather.c >$(DEPS_DIR)/allgather.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C allgather.c > $(DEPS_DIR)/allgather.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_allgather.o allgather.o allgather.lo _allgather.lo' $(srcdir)/allgather.c >$(DEPS_DIR)/allgather.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_allgather.o allgather.o allgather.lo _allgather.lo' $(srcdir)/allgather.c >$(DEPS_DIR)/allgather.d
 	echo "include $(DEPS_DIR)/allgather.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_allgatherv.o allgatherv.o' $(srcdir)/allgatherv.c >$(DEPS_DIR)/allgatherv.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C allgatherv.c > $(DEPS_DIR)/allgatherv.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_allgatherv.o allgatherv.o allgatherv.lo _allgatherv.lo' $(srcdir)/allgatherv.c >$(DEPS_DIR)/allgatherv.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_allgatherv.o allgatherv.o allgatherv.lo _allgatherv.lo' $(srcdir)/allgatherv.c >$(DEPS_DIR)/allgatherv.d
 	echo "include $(DEPS_DIR)/allgatherv.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_red_scat.o red_scat.o' $(srcdir)/red_scat.c >$(DEPS_DIR)/red_scat.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C red_scat.c > $(DEPS_DIR)/red_scat.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_red_scat.o red_scat.o red_scat.lo _red_scat.lo' $(srcdir)/red_scat.c >$(DEPS_DIR)/red_scat.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_red_scat.o red_scat.o red_scat.lo _red_scat.lo' $(srcdir)/red_scat.c >$(DEPS_DIR)/red_scat.d
 	echo "include $(DEPS_DIR)/red_scat.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_alltoallw.o alltoallw.o' $(srcdir)/alltoallw.c >$(DEPS_DIR)/alltoallw.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C alltoallw.c > $(DEPS_DIR)/alltoallw.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_alltoallw.o alltoallw.o alltoallw.lo _alltoallw.lo' $(srcdir)/alltoallw.c >$(DEPS_DIR)/alltoallw.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_alltoallw.o alltoallw.o alltoallw.lo _alltoallw.lo' $(srcdir)/alltoallw.c >$(DEPS_DIR)/alltoallw.d
 	echo "include $(DEPS_DIR)/alltoallw.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_helper_fns.o helper_fns.o' $(srcdir)/helper_fns.c >$(DEPS_DIR)/helper_fns.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C reduce_local.c > $(DEPS_DIR)/reduce_local.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_reduce_local.o reduce_local.o reduce_local.lo _reduce_local.lo' $(srcdir)/reduce_local.c >$(DEPS_DIR)/reduce_local.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_reduce_local.o reduce_local.o reduce_local.lo _reduce_local.lo' $(srcdir)/reduce_local.c >$(DEPS_DIR)/reduce_local.d
+	echo "include $(DEPS_DIR)/reduce_local.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C op_commutative.c > $(DEPS_DIR)/op_commutative.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_op_commutative.o op_commutative.o op_commutative.lo _op_commutative.lo' $(srcdir)/op_commutative.c >$(DEPS_DIR)/op_commutative.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_op_commutative.o op_commutative.o op_commutative.lo _op_commutative.lo' $(srcdir)/op_commutative.c >$(DEPS_DIR)/op_commutative.d
+	echo "include $(DEPS_DIR)/op_commutative.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C red_scat_block.c > $(DEPS_DIR)/red_scat_block.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_red_scat_block.o red_scat_block.o red_scat_block.lo _red_scat_block.lo' $(srcdir)/red_scat_block.c >$(DEPS_DIR)/red_scat_block.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_red_scat_block.o red_scat_block.o red_scat_block.lo _red_scat_block.lo' $(srcdir)/red_scat_block.c >$(DEPS_DIR)/red_scat_block.d
+	echo "include $(DEPS_DIR)/red_scat_block.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C helper_fns.c > $(DEPS_DIR)/helper_fns.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_helper_fns.o helper_fns.o helper_fns.lo _helper_fns.lo' $(srcdir)/helper_fns.c >$(DEPS_DIR)/helper_fns.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_helper_fns.o helper_fns.o helper_fns.lo _helper_fns.lo' $(srcdir)/helper_fns.c >$(DEPS_DIR)/helper_fns.d
 	echo "include $(DEPS_DIR)/helper_fns.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_opsum.o opsum.o' $(srcdir)/opsum.c >$(DEPS_DIR)/opsum.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opsum.c > $(DEPS_DIR)/opsum.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opsum.o opsum.o opsum.lo _opsum.lo' $(srcdir)/opsum.c >$(DEPS_DIR)/opsum.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opsum.o opsum.o opsum.lo _opsum.lo' $(srcdir)/opsum.c >$(DEPS_DIR)/opsum.d
 	echo "include $(DEPS_DIR)/opsum.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_opmax.o opmax.o' $(srcdir)/opmax.c >$(DEPS_DIR)/opmax.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opmax.c > $(DEPS_DIR)/opmax.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opmax.o opmax.o opmax.lo _opmax.lo' $(srcdir)/opmax.c >$(DEPS_DIR)/opmax.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opmax.o opmax.o opmax.lo _opmax.lo' $(srcdir)/opmax.c >$(DEPS_DIR)/opmax.d
 	echo "include $(DEPS_DIR)/opmax.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_opmin.o opmin.o' $(srcdir)/opmin.c >$(DEPS_DIR)/opmin.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opmin.c > $(DEPS_DIR)/opmin.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opmin.o opmin.o opmin.lo _opmin.lo' $(srcdir)/opmin.c >$(DEPS_DIR)/opmin.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opmin.o opmin.o opmin.lo _opmin.lo' $(srcdir)/opmin.c >$(DEPS_DIR)/opmin.d
 	echo "include $(DEPS_DIR)/opmin.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_opband.o opband.o' $(srcdir)/opband.c >$(DEPS_DIR)/opband.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opband.c > $(DEPS_DIR)/opband.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opband.o opband.o opband.lo _opband.lo' $(srcdir)/opband.c >$(DEPS_DIR)/opband.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opband.o opband.o opband.lo _opband.lo' $(srcdir)/opband.c >$(DEPS_DIR)/opband.d
 	echo "include $(DEPS_DIR)/opband.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_opbor.o opbor.o' $(srcdir)/opbor.c >$(DEPS_DIR)/opbor.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opbor.c > $(DEPS_DIR)/opbor.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opbor.o opbor.o opbor.lo _opbor.lo' $(srcdir)/opbor.c >$(DEPS_DIR)/opbor.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opbor.o opbor.o opbor.lo _opbor.lo' $(srcdir)/opbor.c >$(DEPS_DIR)/opbor.d
 	echo "include $(DEPS_DIR)/opbor.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_opbxor.o opbxor.o' $(srcdir)/opbxor.c >$(DEPS_DIR)/opbxor.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opbxor.c > $(DEPS_DIR)/opbxor.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opbxor.o opbxor.o opbxor.lo _opbxor.lo' $(srcdir)/opbxor.c >$(DEPS_DIR)/opbxor.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opbxor.o opbxor.o opbxor.lo _opbxor.lo' $(srcdir)/opbxor.c >$(DEPS_DIR)/opbxor.d
 	echo "include $(DEPS_DIR)/opbxor.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_opland.o opland.o' $(srcdir)/opland.c >$(DEPS_DIR)/opland.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opland.c > $(DEPS_DIR)/opland.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opland.o opland.o opland.lo _opland.lo' $(srcdir)/opland.c >$(DEPS_DIR)/opland.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opland.o opland.o opland.lo _opland.lo' $(srcdir)/opland.c >$(DEPS_DIR)/opland.d
 	echo "include $(DEPS_DIR)/opland.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_oplor.o oplor.o' $(srcdir)/oplor.c >$(DEPS_DIR)/oplor.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C oplor.c > $(DEPS_DIR)/oplor.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_oplor.o oplor.o oplor.lo _oplor.lo' $(srcdir)/oplor.c >$(DEPS_DIR)/oplor.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_oplor.o oplor.o oplor.lo _oplor.lo' $(srcdir)/oplor.c >$(DEPS_DIR)/oplor.d
 	echo "include $(DEPS_DIR)/oplor.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_oplxor.o oplxor.o' $(srcdir)/oplxor.c >$(DEPS_DIR)/oplxor.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C oplxor.c > $(DEPS_DIR)/oplxor.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_oplxor.o oplxor.o oplxor.lo _oplxor.lo' $(srcdir)/oplxor.c >$(DEPS_DIR)/oplxor.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_oplxor.o oplxor.o oplxor.lo _oplxor.lo' $(srcdir)/oplxor.c >$(DEPS_DIR)/oplxor.d
 	echo "include $(DEPS_DIR)/oplxor.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_opprod.o opprod.o' $(srcdir)/opprod.c >$(DEPS_DIR)/opprod.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opprod.c > $(DEPS_DIR)/opprod.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opprod.o opprod.o opprod.lo _opprod.lo' $(srcdir)/opprod.c >$(DEPS_DIR)/opprod.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opprod.o opprod.o opprod.lo _opprod.lo' $(srcdir)/opprod.c >$(DEPS_DIR)/opprod.d
 	echo "include $(DEPS_DIR)/opprod.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_opminloc.o opminloc.o' $(srcdir)/opminloc.c >$(DEPS_DIR)/opminloc.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opminloc.c > $(DEPS_DIR)/opminloc.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opminloc.o opminloc.o opminloc.lo _opminloc.lo' $(srcdir)/opminloc.c >$(DEPS_DIR)/opminloc.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opminloc.o opminloc.o opminloc.lo _opminloc.lo' $(srcdir)/opminloc.c >$(DEPS_DIR)/opminloc.d
 	echo "include $(DEPS_DIR)/opminloc.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_opmaxloc.o opmaxloc.o' $(srcdir)/opmaxloc.c >$(DEPS_DIR)/opmaxloc.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C opmaxloc.c > $(DEPS_DIR)/opmaxloc.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_opmaxloc.o opmaxloc.o opmaxloc.lo _opmaxloc.lo' $(srcdir)/opmaxloc.c >$(DEPS_DIR)/opmaxloc.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_opmaxloc.o opmaxloc.o opmaxloc.lo _opmaxloc.lo' $(srcdir)/opmaxloc.c >$(DEPS_DIR)/opmaxloc.d
 	echo "include $(DEPS_DIR)/opmaxloc.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -589,14 +987,11 @@ include $(DEPS_DIR)/alldeps
 SOURCES         =  allreduce.c barrier.c op_create.c op_free.c bcast.c \
 	alltoall.c alltoallv.c reduce.c scatter.c gather.c scatterv.c \
 	gatherv.c scan.c exscan.c allgather.c allgatherv.c red_scat.c \
-	alltoallw.c helper_fns.c opsum.c opmax.c opmin.c opband.c opbor.c \
-	opbxor.c opland.c oplor.c oplxor.c opprod.c opminloc.c opmaxloc.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
+	alltoallw.c reduce_local.c op_commutative.c red_scat_block.c \
+	helper_fns.c opsum.c opmax.c opmin.c opband.c opbor.c opbxor.c \
+	opland.c oplor.c oplxor.c opprod.c opminloc.c opmaxloc.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 # mpi_sources includes only the routines that are MPI function entry points
 # The code for the MPI operations (e.g., MPI_SUM) is not included in 

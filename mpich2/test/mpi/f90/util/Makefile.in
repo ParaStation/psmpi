@@ -20,7 +20,7 @@ VPATH = .:@srcdir@
 .SUFFIXES:
 .SUFFIXES: .o .f90 .txt 
 .f90.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  F90             $<" ; \
 	else \
 	  echo $(F90_COMPILE) -c $< ; \
@@ -78,8 +78,6 @@ latexdoc:
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
 # --------------------------------------------------------------------------
 # This Makefile.sm generated automatically by f77tof90
 # from test/mpi/f77/util/Makefile.sm.  DO NOT EDIT

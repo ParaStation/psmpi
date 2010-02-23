@@ -248,10 +248,17 @@ if [ -n "$1" -a -n "$2" ] ; then
         # & set it as the original PWD before "cd $1"
         set $1 $2 ${3:-"$MODE"} `pwd`
         cd $1
+        # Install everything but *.in file(that includes mpecc.in/Makefile.in)
         for file in * ; do
-            if [ -f $file ] ; then
-                InstallFile $file $2/$file $3
-            fi
+            case "$file" in
+                *.in)
+                    ;;
+                *)
+                    if [ -f $file ] ; then
+                        InstallFile $file $2/$file $3
+                    fi
+                    ;;
+            esac
         done
         for dir in * ; do
             if [ -d $dir \
@@ -476,14 +483,14 @@ fi
 # Install utility programs
 if [ -n "$binbuild_dir" ] ; then
     if [ -d $binbuild_dir ] ; then
-         echo "Installing $pkgname utility programs to $DESTDIR$bindir"
-         InstallDirRecur $binbuild_dir $bindir $XMODE
-         if [ -s $binbuild_dir/mpecc -a -x $binbuild_dir/mpecc ] ; then
-             FixInstallFile $binbuild_dir/mpecc $bindir/mpecc $XMODE
-         fi
-         if [ -s $binbuild_dir/mpefc -a -x $binbuild_dir/mpefc ] ; then
-             FixInstallFile $binbuild_dir/mpefc $bindir/mpefc $XMODE
-         fi
+        echo "Installing $pkgname utility programs to $DESTDIR$bindir"
+        InstallDirRecur $binbuild_dir $bindir $XMODE
+        if [ -s $binbuild_dir/mpecc -a -x $binbuild_dir/mpecc ] ; then
+            FixInstallFile $binbuild_dir/mpecc $bindir/mpecc $XMODE
+        fi
+        if [ -s $binbuild_dir/mpefc -a -x $binbuild_dir/mpefc ] ; then
+            FixInstallFile $binbuild_dir/mpefc $bindir/mpefc $XMODE
+        fi
     fi
 fi
 

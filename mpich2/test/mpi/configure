@@ -637,8 +637,6 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-ETAGSADD
-ETAGS
 MPI_SOURCE
 MPILIBNAME
 MPIEXEC
@@ -1974,34 +1972,36 @@ ac_config_headers="$ac_config_headers include/mpitestconf.h"
 # 1.1: Initial version that is independent of MPICH2  11/08
 VERSION=1.1
 
-if test -f $CONFIG_AUX_DIR/install-sh ; then ac_aux_dir=$CONFIG_AUX_DIR
-else
 ac_aux_dir=
-# We force the test to use the absolute path to ensure that the install
-# program can be used if we cd to a different directory before using
-# install.
 for ac_dir in ../../confdb "$srcdir"/../../confdb; do
-  if test -f $ac_dir/install-sh; then
+  if test -f "$ac_dir/install-sh"; then
     ac_aux_dir=$ac_dir
-    abs_ac_aux_dir=`(cd $ac_aux_dir && pwd)`
-    ac_install_sh="$abs_ac_aux_dir/install-sh -c"
+    ac_install_sh="$ac_aux_dir/install-sh -c"
     break
-  elif test -f $ac_dir/install.sh; then
+  elif test -f "$ac_dir/install.sh"; then
     ac_aux_dir=$ac_dir
-    abs_ac_aux_dir=`(cd $ac_aux_dir && pwd)`
-    ac_install_sh="$abs_ac_aux_dir/install.sh -c"
+    ac_install_sh="$ac_aux_dir/install.sh -c"
+    break
+  elif test -f "$ac_dir/shtool"; then
+    ac_aux_dir=$ac_dir
+    ac_install_sh="$ac_aux_dir/shtool install -c"
     break
   fi
 done
-fi
 if test -z "$ac_aux_dir"; then
-  { { $as_echo "$as_me:$LINENO: error: can not find install-sh or install.sh in ../../confdb \"$srcdir\"/../../confdb" >&5
-$as_echo "$as_me: error: can not find install-sh or install.sh in ../../confdb \"$srcdir\"/../../confdb" >&2;}
+  { { $as_echo "$as_me:$LINENO: error: cannot find install-sh or install.sh in ../../confdb \"$srcdir\"/../../confdb" >&5
+$as_echo "$as_me: error: cannot find install-sh or install.sh in ../../confdb \"$srcdir\"/../../confdb" >&2;}
    { (exit 1); exit 1; }; }
 fi
-ac_config_guess=$ac_aux_dir/config.guess
-ac_config_sub=$ac_aux_dir/config.sub
-ac_configure=$ac_aux_dir/configure # This should be Cygnus configure.
+
+# These three variables are undocumented and unsupported,
+# and are intended to be withdrawn in a future Autoconf release.
+# They can cause serious problems if a builder's source tree is in a directory
+# whose full name contains unusual characters.
+ac_config_guess="$SHELL $ac_aux_dir/config.guess"  # Please don't use this var.
+ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
+ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
+
 
 echo "RUNNING CONFIGURE FOR MPI TESTS"
 #
@@ -2385,6 +2385,7 @@ fi
 
 
 
+
 { $as_echo "$as_me:$LINENO: checking for virtual path format" >&5
 $as_echo_n "checking for virtual path format... " >&6; }
 if test "${pac_cv_prog_make_vpath+set}" = set; then
@@ -2435,6 +2436,7 @@ if test "$pac_cv_prog_make_vpath" = "VPATH" ; then
 elif test "$pac_cv_prog_make_vpath" = ".PATH" ; then
     VPATH='.PATH: . ${srcdir}'
 fi
+
 
 
 
@@ -3932,7 +3934,7 @@ $as_echo "unknown!" >&6; }
     rm -f conftest*
 fi
 # Provide some information about the compiler.
-echo "$as_me:3935:" \
+echo "$as_me:3937:" \
      "checking for Fortran 90 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4806,24 +4808,31 @@ _ACEOF
 
 fi
 
-
-{ $as_echo "$as_me:$LINENO: checking for restrict" >&5
-$as_echo_n "checking for restrict... " >&6; }
-if test "${pac_cv_c_restrict+set}" = set; then
+{ $as_echo "$as_me:$LINENO: checking for C/C++ restrict keyword" >&5
+$as_echo_n "checking for C/C++ restrict keyword... " >&6; }
+if test "${ac_cv_c_restrict+set}" = set; then
   $as_echo_n "(cached) " >&6
 else
-
-cat >conftest.$ac_ext <<_ACEOF
+  ac_cv_c_restrict=no
+   # The order here caters to the fact that C++ does not require restrict.
+   for ac_kw in __restrict __restrict__ _Restrict restrict; do
+     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-
+typedef int * int_ptr;
+	int foo (int_ptr $ac_kw ip) {
+	return ip[0];
+       }
 int
 main ()
 {
-int * restrict a;
+int s[1];
+	int * $ac_kw t = s;
+	t[0] = 0;
+	return foo(t)
   ;
   return 0;
 }
@@ -4846,119 +4855,34 @@ $as_echo "$ac_try_echo") >&5
 	 test -z "$ac_c_werror_flag" ||
 	 test ! -s conftest.err
        } && test -s conftest.$ac_objext; then
-  pac_cv_c_restrict="restrict"
+  ac_cv_c_restrict=$ac_kw
 else
   $as_echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-	pac_cv_c_restrict="no"
+
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-if test "$pac_cv_c_restrict" = "no" ; then
-   cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
+     test "$ac_cv_c_restrict" != no && break
+   done
+
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_c_restrict" >&5
+$as_echo "$ac_cv_c_restrict" >&6; }
+
+
+ case $ac_cv_c_restrict in
+   restrict) ;;
+   no) cat >>confdefs.h <<\_ACEOF
+#define restrict /**/
 _ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-int
-main ()
-{
-int * _Restrict a;
-  ;
-  return 0;
-}
+ ;;
+   *)  cat >>confdefs.h <<_ACEOF
+#define restrict $ac_cv_c_restrict
 _ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  pac_cv_c_restrict="_Restrict"
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	pac_cv_c_restrict="no"
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-if test "$pac_cv_c_restrict" = "no" ; then
-   cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-int
-main ()
-{
-int * __restrict a;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  pac_cv_c_restrict="__restrict"
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	pac_cv_c_restrict="no"
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-fi
-{ $as_echo "$as_me:$LINENO: result: $pac_cv_c_restrict" >&5
-$as_echo "$pac_cv_c_restrict" >&6; }
-if test "$pac_cv_c_restrict" = "no" ; then
-  restrict_val=""
-elif test "$pac_cv_c_restrict" != "restrict" ; then
-  restrict_val=$pac_cv_c_restrict
-fi
-if test "$restrict_val" != "restrict" ; then
-
-cat >>confdefs.h <<_ACEOF
-#define restrict $restrict_val
-_ACEOF
-
-fi
+ ;;
+ esac
 
 
 # General headers
@@ -5988,6 +5912,109 @@ _ACEOF
 fi
 done
 
+    if test "$FROM_MPICH2" != yes ; then
+
+for ac_func in MPI_Init_thread
+do
+as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
+{ $as_echo "$as_me:$LINENO: checking for $ac_func" >&5
+$as_echo_n "checking for $ac_func... " >&6; }
+if { as_var=$as_ac_var; eval "test \"\${$as_var+set}\" = set"; }; then
+  $as_echo_n "(cached) " >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+/* Define $ac_func to an innocuous variant, in case <limits.h> declares $ac_func.
+   For example, HP-UX 11i <limits.h> declares gettimeofday.  */
+#define $ac_func innocuous_$ac_func
+
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char $ac_func (); below.
+    Prefer <limits.h> to <assert.h> if __STDC__ is defined, since
+    <limits.h> exists even on freestanding compilers.  */
+
+#ifdef __STDC__
+# include <limits.h>
+#else
+# include <assert.h>
+#endif
+
+#undef $ac_func
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char $ac_func ();
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined __stub_$ac_func || defined __stub___$ac_func
+choke me
+#endif
+
+int
+main ()
+{
+return $ac_func ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  eval "$as_ac_var=yes"
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	eval "$as_ac_var=no"
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+ac_res=`eval 'as_val=${'$as_ac_var'}
+		 $as_echo "$as_val"'`
+	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+as_val=`eval 'as_val=${'$as_ac_var'}
+		 $as_echo "$as_val"'`
+   if test "x$as_val" = x""yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_func" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+done
+
+    fi
 fi
 
 
@@ -6187,6 +6214,11 @@ if test "$buildingF77" = "yes" ; then
         # in dealing with running programs containing MPI headers (e.g.,
         # the IBM MPI changes the main entry point so that MPI
 	# programs cannot be run on the host node)
+	# Make sure we are using the local C compiler (if the local
+	# machine is different that the system that MPICC is for, then
+	# set the cross-compilation feature)
+	CCsave="$CC"
+	CC="$BASECC"
         # The cast to long int works around a bug in the HP C Compiler
 # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
 # declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
@@ -6546,6 +6578,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+	CC="$CCsave"
 	MPI_SIZEOF_AINT=$ac_cv_sizeof_void_p
     fi
     if test -z "$MPI_SIZEOF_OFFSET" ; then
@@ -8377,7 +8410,7 @@ $as_echo "unknown!" >&6; }
     rm -f conftest*
 fi
 # Provide some information about the compiler.
-echo "$as_me:8380:" \
+echo "$as_me:8413:" \
      "checking for Fortran 90 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -8794,7 +8827,7 @@ $as_echo "unknown!" >&6; }
     rm -f conftest*
 fi
 # Provide some information about the compiler.
-echo "$as_me:8797:" \
+echo "$as_me:8830:" \
      "checking for Fortran 90 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -10128,6 +10161,12 @@ fi
 # specify this - MPI_Aint must be large enough to hold an address-sized
 # integer, but it can be larger.  To get clean compilation in some places,
 # we need a pointer-sized integer.  The following code looks for one.
+
+# Make sure we are using the local C compiler (if the local
+# machine is different that the system that MPICC is for, then
+# set the cross-compilation feature)
+CCsave="$CC"
+CC="$BASECC"
 # The cast to long int works around a bug in the HP C Compiler
 # version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
 # declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
@@ -11923,6 +11962,7 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
+CC="$CCsave"
 POINTERINT=MPI_Aint
 { $as_echo "$as_me:$LINENO: checking for C integer type of address size" >&5
 $as_echo_n "checking for C integer type of address size... " >&6; }
@@ -12001,54 +12041,6 @@ fi
 if test -z "$MPILIBNAME" ; then MPILIBNAME=mpich ; fi
 
 
-
-for ac_prog in etags
-do
-  # Extract the first word of "$ac_prog", so it can be a program name with args.
-set dummy $ac_prog; ac_word=$2
-{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_ETAGS+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ETAGS"; then
-  ac_cv_prog_ETAGS="$ETAGS" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_ETAGS="$ac_prog"
-    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-ETAGS=$ac_cv_prog_ETAGS
-if test -n "$ETAGS"; then
-  { $as_echo "$as_me:$LINENO: result: $ETAGS" >&5
-$as_echo "$ETAGS" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  test -n "$ETAGS" && break
-done
-test -n "$ETAGS" || ETAGS="true"
-
-
-
-export ETAGS
-export ETAGSADD
 
 ac_config_commands="$ac_config_commands default-1"
 

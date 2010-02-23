@@ -34,7 +34,7 @@ F90HEADERS = addsize.h
 .SUFFIXES:
 .SUFFIXES: .o .c .f90 .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
@@ -43,14 +43,14 @@ F90HEADERS = addsize.h
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f90.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  F90             $<" ; \
 	else \
 	  echo $(F90_COMPILE) -c $< ; \
@@ -151,12 +151,8 @@ SOURCES         =  winscale1f90.f90 winscale2f90.f90 winfencef90.f90 \
 	wingetf90.f90 winerrf90.f90 winnamef90.f90 wingroupf90.f90 \
 	winaccf90.f90 c2f2cwinf90.f90 c2f902cwin.c baseattrwinf90.f90 \
 	winattrf90.f90 winattr2f90.f90 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 # This Makefile.sm generated automatically by f77tof90
 # from test/mpi/f77/rma/Makefile.sm.  DO NOT EDIT

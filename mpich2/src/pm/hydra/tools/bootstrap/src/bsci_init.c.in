@@ -1,0 +1,62 @@
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/*
+ *  (C) 2008 by Argonne National Laboratory.
+ *      See COPYRIGHT in top-level directory.
+ */
+
+#include "hydra_utils.h"
+#include "bsci.h"
+#include "bscu.h"
+
+struct HYDT_bsci_fns HYDT_bsci_fns = { 0 };
+const char *HYDT_bsci_comp_array[] = { @hydra_bss_name_array@ };
+HYD_status(*HYDT_bsci_comp_init[])(void) = { @hydra_bss_init_array@ };
+struct HYDT_bsci_info HYDT_bsci_info = { 0 };
+
+HYD_status HYDT_bsci_init(char *bootstrap, char *bootstrap_exec, int enablex, int debug)
+{
+    int i;
+    HYD_status status = HYD_SUCCESS;
+
+    HYDU_FUNC_ENTER();
+
+    for (i = 0; HYDT_bsci_comp_array[i]; i++) {
+        if (!strcmp(bootstrap, HYDT_bsci_comp_array[i])) {
+            status = (*HYDT_bsci_comp_init[i])();
+            HYDU_ERR_POP(status, "bootstrap device returned error initializing\n");
+            break;
+        }
+    }
+
+    /* Set the appropriate info */
+    HYDT_bsci_info.bootstrap_exec = bootstrap_exec;
+    HYDT_bsci_info.enablex = enablex;
+    HYDT_bsci_info.debug = debug;
+
+    if (HYDT_bsci_comp_array[i] == NULL)
+        HYDU_ERR_SETANDJUMP1(status, HYD_INTERNAL_ERROR,
+                             "unrecognized bootstrap server: %s\n", bootstrap);
+
+    /* This function is mandatory */
+    if (HYDT_bsci_fns.launch_procs == NULL)
+        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
+                            "mandatory bootstrap launch function undefined\n");
+
+    if (HYDT_bsci_fns.finalize == NULL)
+        HYDT_bsci_fns.finalize = HYDT_bscu_finalize;
+    if (HYDT_bsci_fns.wait_for_completion == NULL)
+        HYDT_bsci_fns.wait_for_completion = HYDT_bscu_wait_for_completion;
+    if (HYDT_bsci_fns.query_node_list == NULL)
+        HYDT_bsci_fns.query_node_list = HYDT_bscu_query_node_list;
+    if (HYDT_bsci_fns.query_usize == NULL)
+        HYDT_bsci_fns.query_usize = HYDT_bscu_query_usize;
+    if (HYDT_bsci_fns.query_proxy_id == NULL)
+        HYDT_bsci_fns.query_proxy_id = HYDT_bscu_query_proxy_id;
+
+  fn_exit:
+    HYDU_FUNC_EXIT();
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}

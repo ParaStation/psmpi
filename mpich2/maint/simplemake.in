@@ -413,8 +413,8 @@ $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 %install_methods = ( 'LIB'     => '$(INSTALL_DATA)',
 		     'BIN'     => '$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)',
 		     'SCRIPT'  => '$(INSTALL_SCRIPT)',
-		     'SHLIB'   => '$(CREATESHLIB) --mode=install',
-		     'DLLLIB'  => '$(CREATESHLIB) --mode=install',
+		     'SHLIB'   => '$(CREATESHLIB) -version-info $(ABIVERSION) --mode=install',
+		     'DLLLIB'  => '$(CREATESHLIB) -version-info $(ABIVERSION) --mode=install',
 		     'INCLUDE' => '$(INSTALL_DATA)',
 		     'MAN'     => '$(INSTALL_DATA)',
 		     'HTML'    => '$(INSTALL_DATA)',
@@ -809,6 +809,23 @@ sub ReadMfile {
 	    &SaveSrcNames( $libsource );
 	    # We need to include .lo as a necessary suffix.
         }
+	elsif (/^ALTCOMPILE_([\$\(\)\{\}\w_]+)_SOURCES\s*=\s*(.*)$/) {
+	    # Provide a hook to specify the name of an alternate
+	    # compiler to use for some special files.
+	    # For example, if you want to use pgcc or xlc for most of
+	    # the MPICH build, but need to use gcc for some asm (inline
+	    # assembler) support.
+	    # FIXME: NOT YET IMPLEMENTED
+	    my $altCompiler = $1;
+	    my $altSources = $2;
+	    # We use two hashes: one by compiler, list all sources to
+	    # be compiled with that compiler, and one by individual 
+	    # source files.
+	    $altCompile{$altCompiler} .= "$altSources ";
+	    foreach my $source (split(/\s+/, $altSources)) {
+		$altCompileSources{$source} = $altCompiler;
+	    }
+	}
         elsif (/^lib([@\${}\(\)\w-]*)_so_EXPORTS\s*=\s*(.*)$/) {
             $libname = "$1";
             $libexports = $2;
@@ -1266,14 +1283,19 @@ sub DefaultVariables {
 	    # libtool to provide the shared library.
 	    printMakeVariable( FD, "LIBTOOL", "\@LIBTOOL\@" );
 	    printMakeVariable( FD, "CREATESHLIB", "\@CREATESHLIB\@" );
+	    printMakeVariable( FD, "ABIVERSION", "\@ABIVERSION\@" );
+	    printMakeVariable( FD, "LIBS", "\@LIBS\@" );
+	    printMakeVariable( FD, "LDFLAGS", "\@LDFLAGS\@" );
 	    print FD "$shlibdefs{'c'}$newline";
 	}
 	elsif ($found_sharedlib) {
-	    # No install target, but a shared library is begin built
+	    # No install target, but a shared library is being built
 	    # Add the definition of libtool incase we're using
 	    # libtool to provide the shared library.
 	    printMakeVariable( FD, "LIBTOOL", "\@LIBTOOL\@" );
 	    printMakeVariable( FD, "CREATESHLIB", "\@CREATESHLIB\@" );
+	    printMakeVariable( FD, "LIBS", "\@LIBS\@" );
+	    printMakeVariable( FD, "LDFLAGS", "\@LDFLAGS\@" );
 	    print FD "$shlibdefs{'c'}$newline";
 	    printMakeVariable( FD, "MKDIR_P", "\@MKDIR_P\@" );
 	}
@@ -1915,6 +1937,8 @@ sub ClearVars {
     $ldadd_all = "";
     %pgm_depadd = ();
     $depadd_all = "";
+    %altCompile = ();
+    %altCompileSources = ();
 
     $gSubdirSMVarsSeen = "";
 
@@ -2212,6 +2236,8 @@ sub RecursiveOp {
     my $target = $_[0];
     my $subdirname = $_[1];
     my $checkForMakefile = $_[2];
+    my $addDirs = $_[3];
+    my $skipDirs = $_[4];
     my $forThreashold = 3;
 
     if (!defined($checkForMakefile) || $checkForMakefile eq "") {
@@ -2223,6 +2249,25 @@ sub RecursiveOp {
     }
     else {
 	@dirs = (@extra_dirs, @subdirs);
+    }
+    if (defined($addDirs) && $addDirs ne "") {
+	foreach $dir (split(/\s+/,$addDirs)) {
+	    $dirs[$#dirs+1] = $dir;
+	}
+    }
+
+    # If notDirs is defined, then remove all matches from the @dirs array
+    if (defined($notDirs) && $notDirs ne "") {
+	my %skipHash = ();
+	foreach $dir (split(/\s+/,$notDirs)) {
+	    $skipHash{$dir} = 1;
+	}
+	my @newdirs = ();
+	foreach $dir (@dirs) {
+	    if (defined($skipHash{$dir})) { next; }
+	    $newdirs[$#newdirs + 1] = $dir;
+	}
+	@dir = @newdirs;
     }
 
     # Entries that are shell or autoconf variables have unknown count.
@@ -2252,31 +2297,31 @@ sub RecursiveOp {
 	# if not, we don't need the -
 	if ($subdirs_has_autoconf) {
 	    # Add a - incase there is a problem
-          print FD " - ; do \\$newline";
-	  print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ; \\$newline";
-	  if ($checkForMakefile) {
-	      print FD "\t\tif [ ! -s \$\$dir/Makefile ] ; then continue ; fi ;\\$newline";
-	  }
-	  print FD "\t\t(cd \$\$dir && \${MAKE} $target ; ) ; done$newline";
+	    print FD " - ; do \\$newline";
+	    print FD "\t\tif [ \"\$\$dir\" = \"-\" ] ; then break ; fi ; \\$newline";
         }	
 	else {
-          print FD " ; do \\$newline";
-	  if ($checkForMakefile) {
-	      print FD "\t\tif [ ! -s \$\$dir/Makefile ] ; then continue ; fi ;\\$newline";
-	  }
-	  print FD "\t\t(cd \$\$dir && \${MAKE} $target ; ) ; " .
-	    "done$newline";
-        }
+	    print FD " ; do \\$newline";
+	}
+	if ($checkForMakefile) {
+	    print FD "\t\tif [ ! -s \$\$dir/Makefile ] ; then continue ; fi ;\\$newline";
+	}
+	if (defined($notDirs) && $notDirs ne "" && $dirlistHasVariable) {
+	    foreach $ndir (split(/\s+/,$notDirs)) {
+		print FD "\t\tif [ \"\$\$dir\" = \"$ndir\" ] ; then continue ; fi ;\\$newline";
+	    }
+	}
+	print FD "\t\t(cd \$\$dir && \${MAKE} $target ) ; done$newline";
     }
     elsif ($#dirs >= 0) {
 	foreach $dir (@dirs) {
 	    # Skip . and any empty names
 	    if ($dir ne "." && $dir =~ /\S/) {
 		if ($checkForMakefile) {
-		    print FD "\tif [ -s $dir/Makefile ] ; then (cd $dir && \$(MAKE) $target ) ; fi$newline";
+		    print FD "\tif [ -s $dir/Makefile ] ; then (cd $dir && \${MAKE} $target ) ; fi$newline";
 		}
 		else {
-		    print FD "\t(cd $dir && \$(MAKE) $target )$newline";
+		    print FD "\t(cd $dir && \${MAKE} $target )$newline";
 		}
 	    }
 	}
@@ -2784,6 +2829,11 @@ sub TargetClean {
     # Add clean of local libraries
     foreach $lib (keys(%extra_libs)) {
 	print FD "\t-${quietLine}rm -f $lib$newline";
+	if ($do_sharedlibs && !defined($libNotShared{$lib})) {
+	    my $libshared = $lib;
+	    $libshared =~ s/\.a/.la/;
+	    print FD "\t-${quietLine}rm -f $libshared$newline";
+	}
     }
 
     # Remove any local files last (in case this file is one of them)
@@ -2908,7 +2958,7 @@ sub TargetDistclean {
 
 #
 # LibraryBuild ( libname, libloc, libfiles, lib extension, member extension )
-# Not quite right.  Need to include the update command as well as ways
+# FIXME: Not quite right.  Need to include the update command as well as ways
 # to handle the "special extensions", both for the library (e.g., .a vs. .la)
 # and members (e.g., .o vs .lo)
 sub LibraryBuild {
@@ -2923,7 +2973,8 @@ sub LibraryBuild {
     }
     # Handle any variables in the lib line
     if (!defined($sourcefiles)) { 
-	print STDERR "Warning: no source files in library $libname in LibraryBuild\n" ; }
+	print STDERR "Warning: no source files in library $libname in LibraryBuild\n";
+    }
     $sourcefiles = &ExpandMakeVars($sourcefiles);
     foreach $sourcefile (split(/\s+/,$sourcefiles)) {
 	$ext = "";
@@ -2979,6 +3030,8 @@ sub TargetLibraries {
 	if (!defined($libraries{$lib})) { next; }
 
 	my $sourcefiles = &ExpandMakeVars($libraries{$lib});
+
+	&BuildSpecialObjs( $sourcefiles, "o" );
 
 	&LibraryTimestampPrefix( $lib, $libloc );
 	&LibraryBuild( $lib, $libloc, $sourcefiles, "a", "o" );
@@ -3051,6 +3104,38 @@ sub LibraryTimestampClean {
 	    print FD ".libstamp$i ";
 	}
 	print FD "\n";
+    }
+}
+
+#
+# This routine provides targets for object files that require special
+# rules (such as the altcompiler)
+sub BuildSpecialObjs
+{
+    my ($sourcefiles,$memext) = @_;
+    # Handle the special case of different compiler required 
+    # for compiling some files
+    # EXPERIMENTAL
+    if (%altCompileSources) {
+	foreach $sourcefile (split(/\s+/,$sourcefiles)) {
+	    if (defined($altCompileSources{$sourcefile})) {
+		if ($sourcefile =~ /(.*)\.([^\.]*)/) {
+		    $obj = "$1.$memext";
+		    $ext = $2;
+		}
+		else {
+		    # Don't warn about autoconf variables (see below)
+		    if (! ($sourcefile =~ /^\@/) ) { 
+			print STDERR "Sourcefile is $sourcefile\n";
+		    }
+		}
+		my $altcompiler = $altCompileSources{$sourcefile};
+		&print_make_line( FD, "$obj: \$(srcdir)/$sourcefile" );
+		&print_make_endline( FD );
+		&print_make_line( FD, "\t$altcompiler -c \$(srcdir)/$sourcefile" );
+		&print_make_endline( FD );
+	    }
+	}
     }
 }
 # --------------------------------------------------------------------------
@@ -3246,6 +3331,8 @@ sub TargetSharedLibraries {
 	}
 	$libloc = &GetLibLoc( $lib );
 	$sourcefiles = &ExpandMakeVars($$libraries{$lib});
+	#&BuildSpecialObjs( $sourcefiles, "lo" );
+
 	&LibraryTimestampPrefix( $lib.".la", $libloc );
 	&LibraryBuild( $lib, $libloc, $sourcefiles, "la", "lo" );
 	# no ranlib step here because we can't "link" the shared library
@@ -3319,7 +3406,7 @@ library, or new library name)\n" if $debug;
     if (!defined($usertargets{"$libdir/$newlibname"})) {
 	print FD "# Build the shared library from the shared object files\n";
 	print FD "$libdir/$newlibname: $libdir/$libname
-\t(cd $libdir && \$(CREATESHLIB) --mode=link -version-info \"\@ABIVERSION\@\" -o $libname $exports -rpath \$(libdir) $otherlibs)\n";
+\t(cd $libdir && \$(CREATESHLIB) --mode=link -version-info \"\@ABIVERSION\@\" -o $libname $exports -rpath \$(libdir) $otherlibs -ldflags \"\$(LDFLAGS)\" \$(LIBS))\n";
     }
     # If there is a profiling library, we need to build it
     # now, as part of this target, to handle the case where the
@@ -3508,15 +3595,6 @@ sub TargetTags {
 	}
     }
 
-    if ($has_headers || $has_sources) {
-	# Make it eaiser to change the tags program options.
-	# For example, this adds .i as a known "C" language file
-	printMakeVariable( FD, "ETAGS", "\@ETAGS\@ \@ETAGSADD\@" );
-	# The value of ETAGS was "etags --langmap=c:+.i" but
-	# some Linux systems have a very old version of etags
-	# that does not support --langmap.
-    }
-
     # Add a synonym for tags.
     if ($foundDerivedHeader) {
 	printMakeVariable( FD, "HEADERFILES", $headerFiles );
@@ -3530,49 +3608,6 @@ sub TargetTags {
     else {
 	printMakeVariable( FD, "SOURCEFILES", '$(SOURCES)' );
     }
-    print FD "tags: TAGS$newline"; 
-    # By adding "Makefile" to TAGS, we ensure that the TAGS target
-    # will be rebuilt anytime the package is reconfigured.  We
-    # could also make TAGS always rebuild, to catch any source changes.
-    print FD "TAGS: Makefile";
-    # Only generate a local etags call if there are local sources
-    # This target is designed for VPATH builds to build a TAGS file in
-    if ($has_headers || $has_sources) {
-        if ($local_tags) {
-	    print FD '${HEADERFILES} ${SOURCEFILES}
-	here=`pwd`;\
-	(cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES};)
-';
-        }
-        elsif ($root_tags) {
-	    print FD "\${HEADERFILES} \${SOURCEFILES}$newline";
-	    if (defined($rootdirpath)) {
-		$rpath = $rootdirpath;
-		$rpath =~ s/\/$//;
-	    }
-	    else {
-		# Use current directory
-		# Question: in this case, should we leave out the tags 
-		# target?
-		$rpath = ".";
-	    }
-	    # For vpath builds, make the root path point to the
-	    # VPATH root.
-	    
-	    print FD "\there=\`cd $rpath && pwd\` ; cd \${srcdir} && \$(ETAGS) -o \$\$here/TAGS --append \${HEADERFILES} \${SOURCEFILES}$newline";
-        }
-        else {
-	    print FD "$newline";
-        }
-    }
-    else {
-	print FD "$newline";
-    }
-    # Tags on only the subdirs (really the source subdirs) and any
-    # additional tags dirs
-    @tmp_tags_dirs = (@subdirs,@tags_dirs);
-    &RecursiveOp( "TAGS", "tmp_tags_dirs" );
-    $#tmp_tags_dirs = -1;
 }
 #
 # The generation of documentation (e.g., manual pages) is handled 
@@ -4286,7 +4321,19 @@ sub TargetDependenciesDynamic {
     else {
 	print FD "dependencies:$newline";
     }
-    &RecursiveOp( "dependencies" );
+    # We want to process other_dirs but not notsimplemake_subdirs
+    # in this application of recursiveop
+    $otherDirs = "";
+    if (defined($smmakevars{'OTHER_DIRS'})) { 
+	$otherDirs = $smmakevars{'OTHER_DIRS'};
+    }
+    $notDirs = "";
+    if (%notSimplemakeDirs) {
+	foreach my $key (keys(%notSimplemakeDirs)) {
+	    $notDirs .= "$key ";
+	}
+    }
+    &RecursiveOp( "dependencies", "", "", $otherDirs, $notDirs );
 
     # First, generate the targets to maintain the individual files.
     # This makes it easy to update the dependency contents without
@@ -4315,7 +4362,11 @@ sub TargetDependenciesDynamic {
 		$ext =~ s/^.*\.//g;
 		$sourcebasename = $sourcefile;
 		$sourcebasename =~ s/\.\w*$//;
-		my $targetOpts = "-MT \'_$sourcebasename.o $sourcebasename.o\'";
+		$objfiles = "_$sourcebasename.o $sourcebasename.o";
+		if ($do_sharedlibs || $found_sharedlib) {
+		    $objfiles .= " $sourcebasename.lo _$sourcebasename.lo";
+		}
+		my $targetOpts = "-MT \'$objfiles\'";
 		if (!$found_profilelib) {
 		    $targetOpts = "";
 		}
@@ -4332,7 +4383,7 @@ in the build directory\n";
 			$srcdirloc = '';
 		    }
 		    print FD "\$(DEPS_DIR)/$sourcebasename.d: $srcdirloc$sourcefile$newline";
-		    print FD "\t\$(MAKE_DEPEND_C) $targetOpts $srcdirloc$sourcefile >\$(DEPS_DIR)/$sourcebasename.d$newline";
+		    &PrintVerboseOptionCommand( "\$(MAKE_DEPEND_C) $targetOpts $srcdirloc$sourcefile >\$(DEPS_DIR)/$sourcebasename.d", "-", "MAKE_DEPEND_C $sourcefile > \$(DEPS_DIR)/$sourcebasename.d" );
 		}
 	    }
 	}
@@ -4372,11 +4423,15 @@ in the build directory\n";
 		    if (! -s $sourcefile) {
 			$srcdirloc = '';
 		    }
-		    $targetOpts = "-MT \'_$sourcebasename.o $sourcebasename.o\'";
+		    $objfiles = "_$sourcebasename.o $sourcebasename.o";
+		    if ($do_sharedlibs || $found_sharedlib) {
+			$objfiles .= " $sourcebasename.lo _$sourcebasename.lo";
+		    }
+		    $targetOpts = "-MT \'$objfiles\'";
 		    if (!$found_profilelib) {
 			$targetOpts = "";
 		    }
-		    print FD "\t\$(MAKE_DEPEND_C) $targetOpts $srcdirloc$sourcefile >\$(DEPS_DIR)/$sourcebasename.d$newline";
+		    &PrintVerboseOptionCommand( "\$(MAKE_DEPEND_C) $targetOpts $srcdirloc$sourcefile >\$(DEPS_DIR)/$sourcebasename.d", "-", "MAKE_DEPEND_C $sourcefile > \$(DEPS_DIR)/$sourcebasename.d" );
 		    print FD "\techo \"$makeInclude \$(DEPS_DIR)/$sourcebasename.d\" >>\$(DEPS_DIR)/newalldeps$newline";
 		}
 	    }
@@ -4397,11 +4452,15 @@ in the build directory\n";
 		    if (! -s $sourcefile) {
 			$srcdirloc = '';
 		    }
-		    $targetOpts = "-MT \'_$sourcebasename.o $sourcebasename.o\'";
+		    $objfiles = "_$sourcebasename.o $sourcebasename.o";
+		    if ($do_sharedlibs || $found_sharedlib) {
+			$objfiles .= " $sourcebasename.lo _$sourcebasename.lo";
+		    }
+		    $targetOpts = "-MT \'$objfiles\'";
 		    if (!$found_profilelib) {
 			$targetOpts = "";
 		    }
-		    print FD "\t\$(MAKE_DEPEND_C) $targetOpts $srcdirloc$sourcefile >\$(DEPS_DIR)/$sourcebasename.d$newline";
+		    &PrintVerboseOptionCommand( "\$(MAKE_DEPEND_C) $targetOpts $srcdirloc$sourcefile >\$(DEPS_DIR)/$sourcebasename.d", "-", "MAKE_DEPEND_C $sourcefile > \$(DEPS_DIR)/$sourcebasename.d" );
 		    print FD "\techo \"$makeInclude \$(DEPS_DIR)/$sourcebasename.d\" >>\$(DEPS_DIR)/newalldeps$newline";
 		}
 	    }
@@ -5106,7 +5165,7 @@ sub PrintVerboseOptionCommand {
     my $escaped_rule = $cmd;
     $escaped_rule =~ s/$newline(\t+)\@*/ ; \\$newline$1echo /g;
 
-    print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
+    print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" -a \"x\$(V)\" != \"x1\" ] ; then \\$newline";
     print FD "\t  echo \"$echocmd\" ; \\$newline";
     print FD "\telse \\$newline";
     print FD "\t  echo $escaped_rule ; \\$newline";

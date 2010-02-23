@@ -25,7 +25,7 @@ INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../../include \
 .SUFFIXES:
 .SUFFIXES: .o .cxx .txt 
 .cxx.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CXX             $<" ; \
 	else \
 	  echo $(CXX_COMPILE) -c $< ; \
@@ -85,8 +85,6 @@ latexdoc:
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
 # --------------------------------------------------------------------------
 mtest.o: mtest.cxx
 all-local: mtest.o

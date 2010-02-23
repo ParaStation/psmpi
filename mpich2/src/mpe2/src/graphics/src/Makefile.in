@@ -28,6 +28,7 @@ MPE_BUILD_FORTRAN2C  = @MPE_BUILD_FORTRAN2C@
 MPE_LIBDIR           = @libbuild_dir@
 LIB_PATH             = @X_LIB@ $(MPI_LIBS)
 LDFLAGS              = @LDFLAGS@
+CC_DOES_C_O          = @CC_DOES_C_O@
 
 ### End User configurable options ###
 
@@ -78,12 +79,20 @@ MPE_SHLWOBJECTS  = $(MPE_WOBJECTS:.@OBJEXT@=.lo)
 .SUFFIXES: .c .@OBJEXT@ .p@OBJEXT@ .n@OBJEXT@ .lo .a @EXEEXT@
 
 .c.p@OBJEXT@:
-	$(MPI_CC) $(MPICC_FLAGS) -c $<
-	$(MV) $*.@OBJEXT@ $*.p@OBJEXT@
+	@if [ "$(CC_DOES_C_O)" = "yes" ]; then \
+	     cmd="$(MPI_CC) $(MPICC_FLAGS) -o $@ -c $<" ; \
+	 else \
+	     cmd="$(MPI_CC) $(MPICC_FLAGS) -c $< ; $(MV) $*.@OBJEXT@ $*.p@OBJEXT@" ; \
+	 fi ; \
+	 echo "$${cmd}" ; $${cmd}
 
 .c.n@OBJEXT@:
-	$(CC) $(CC_FLAGS) -DMPE_NOMPI -c $<
-	$(MV) $*.@OBJEXT@ $*.n@OBJEXT@
+	@if [ "$(CC_DOES_C_O)" = "yes" ]; then \
+	     cmd="$(CC) $(CC_FLAGS) -DMPE_NOMPI -o $@ -c $<" ; \
+	 else \
+	     cmd="$(CC) $(CC_FLAGS) -DMPE_NOMPI -c $< ; $(MV) $*.@OBJEXT@ $*.n@OBJEXT@" ; \
+	 fi ; \
+	 echo "$${cmd}" ; $${cmd}
 
 # Allow compilers that do not allow -o for renaming object files
 .c.lo:
@@ -98,10 +107,10 @@ default_all: default
 profile_all: 
 
 #
-default:
-	 $(MAKE) ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a 
-	 $(MAKE) ${libbuild_dir}/lib$(PROF_LIBNAME).a 
-	 $(MAKE) ${libbuild_dir}/lib$(ANIM_LIBNAME).a
+default: $(MPE_N_COBJECTS) $(MPE_P_COBJECTS) $(MPE_P_XOBJECTS)
+	 $(MAKE) $(MAKEOPTS) ${libbuild_dir}/lib$(PROF_LIBNAME)_nompi.a 
+	 $(MAKE) $(MAKEOPTS) ${libbuild_dir}/lib$(PROF_LIBNAME).a 
+	 $(MAKE) $(MAKEOPTS) ${libbuild_dir}/lib$(ANIM_LIBNAME).a
 
 #
 # It is tempting here to use ... libmpe.a($(MPE_OBJECTS)) as the dependency,
@@ -118,7 +127,7 @@ default:
 ${libbuild_dir}/lib$(PROF_LIBNAME).a: $(MPE_P_COBJECTS)
 	$(AR) $(ARFLAGS) $@ $(MPE_P_COBJECTS)
 	@if [ "$(MPE_BUILD_FORTRAN2C)" = "yes" ] ; then \
-	     $(MAKE) $(MPE_P_WOBJECTS) ; \
+	     $(MAKE) $(MAKEOPTS) $(MPE_P_WOBJECTS) ; \
 	     $(AR) $(ARFLAGS) $@ $(MPE_P_WOBJECTS) ; \
 	 fi
 	$(RANLIB) $@

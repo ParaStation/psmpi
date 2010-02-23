@@ -47,14 +47,14 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -65,7 +65,7 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -137,13 +137,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	file_create_errhandler.o file_get_errhandler.o file_set_errhandler.o \
 	file_call_errhandler.o win_create_errhandler.o win_call_errhandler.o \
 	win_get_errhandler.o win_set_errhandler.o errutil.o dynerrutil.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${MPILIBNAME}.a ; \
@@ -159,7 +159,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	file_set_errhandler.lo file_call_errhandler.lo \
 	win_create_errhandler.lo win_call_errhandler.lo win_get_errhandler.lo \
 	win_set_errhandler.lo errutil.lo dynerrutil.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -176,13 +176,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	_file_set_errhandler.o _file_call_errhandler.o \
 	_win_create_errhandler.o _win_call_errhandler.o _win_get_errhandler.o \
 	_win_set_errhandler.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${PMPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${PMPILIBNAME}.a ; \
@@ -197,7 +197,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	_file_get_errhandler.lo _file_set_errhandler.lo \
 	_file_call_errhandler.lo _win_create_errhandler.lo \
 	_win_call_errhandler.lo _win_get_errhandler.lo _win_set_errhandler.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $? ; \
@@ -205,294 +205,294 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _add_error_code.o: add_error_code.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/add_error_code.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_code.c -o _add_error_code.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_code.c -o _add_error_code.o
 _add_error_code.lo: add_error_code.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/add_error_code.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_code.c -o _add_error_code.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_code.c -o _add_error_code.lo
 _add_error_class.o: add_error_class.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/add_error_class.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_class.c -o _add_error_class.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_class.c -o _add_error_class.o
 _add_error_class.lo: add_error_class.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/add_error_class.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_class.c -o _add_error_class.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_class.c -o _add_error_class.lo
 _add_error_string.o: add_error_string.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/add_error_string.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_string.c -o _add_error_string.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_string.c -o _add_error_string.o
 _add_error_string.lo: add_error_string.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/add_error_string.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_string.c -o _add_error_string.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_string.c -o _add_error_string.lo
 _comm_call_errhandler.o: comm_call_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_call_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_call_errhandler.c -o _comm_call_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_call_errhandler.c -o _comm_call_errhandler.o
 _comm_call_errhandler.lo: comm_call_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_call_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_call_errhandler.c -o _comm_call_errhandler.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_call_errhandler.c -o _comm_call_errhandler.lo
 _comm_create_errhandler.o: comm_create_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_create_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_create_errhandler.c -o _comm_create_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_create_errhandler.c -o _comm_create_errhandler.o
 _comm_create_errhandler.lo: comm_create_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_create_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_create_errhandler.c -o _comm_create_errhandler.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_create_errhandler.c -o _comm_create_errhandler.lo
 _comm_get_errhandler.o: comm_get_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_get_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_errhandler.c -o _comm_get_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_errhandler.c -o _comm_get_errhandler.o
 _comm_get_errhandler.lo: comm_get_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_get_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_errhandler.c -o _comm_get_errhandler.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_errhandler.c -o _comm_get_errhandler.lo
 _comm_set_errhandler.o: comm_set_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/comm_set_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_errhandler.c -o _comm_set_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_errhandler.c -o _comm_set_errhandler.o
 _comm_set_errhandler.lo: comm_set_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/comm_set_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_errhandler.c -o _comm_set_errhandler.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_errhandler.c -o _comm_set_errhandler.lo
 _errhandler_create.o: errhandler_create.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/errhandler_create.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_create.c -o _errhandler_create.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_create.c -o _errhandler_create.o
 _errhandler_create.lo: errhandler_create.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/errhandler_create.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_create.c -o _errhandler_create.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_create.c -o _errhandler_create.lo
 _errhandler_free.o: errhandler_free.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/errhandler_free.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_free.c -o _errhandler_free.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_free.c -o _errhandler_free.o
 _errhandler_free.lo: errhandler_free.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/errhandler_free.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_free.c -o _errhandler_free.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_free.c -o _errhandler_free.lo
 _errhandler_get.o: errhandler_get.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/errhandler_get.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_get.c -o _errhandler_get.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_get.c -o _errhandler_get.o
 _errhandler_get.lo: errhandler_get.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/errhandler_get.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_get.c -o _errhandler_get.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_get.c -o _errhandler_get.lo
 _errhandler_set.o: errhandler_set.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/errhandler_set.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_set.c -o _errhandler_set.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_set.c -o _errhandler_set.o
 _errhandler_set.lo: errhandler_set.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/errhandler_set.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_set.c -o _errhandler_set.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_set.c -o _errhandler_set.lo
 _error_class.o: error_class.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/error_class.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/error_class.c -o _error_class.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/error_class.c -o _error_class.o
 _error_class.lo: error_class.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/error_class.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/error_class.c -o _error_class.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/error_class.c -o _error_class.lo
 _error_string.o: error_string.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/error_string.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/error_string.c -o _error_string.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/error_string.c -o _error_string.o
 _error_string.lo: error_string.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/error_string.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/error_string.c -o _error_string.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/error_string.c -o _error_string.lo
 _file_create_errhandler.o: file_create_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/file_create_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_create_errhandler.c -o _file_create_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_create_errhandler.c -o _file_create_errhandler.o
 _file_create_errhandler.lo: file_create_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/file_create_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_create_errhandler.c -o _file_create_errhandler.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_create_errhandler.c -o _file_create_errhandler.lo
 _file_get_errhandler.o: file_get_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/file_get_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_errhandler.c -o _file_get_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_errhandler.c -o _file_get_errhandler.o
 _file_get_errhandler.lo: file_get_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/file_get_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_errhandler.c -o _file_get_errhandler.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_errhandler.c -o _file_get_errhandler.lo
 _file_set_errhandler.o: file_set_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/file_set_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_errhandler.c -o _file_set_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_errhandler.c -o _file_set_errhandler.o
 _file_set_errhandler.lo: file_set_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/file_set_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_errhandler.c -o _file_set_errhandler.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_errhandler.c -o _file_set_errhandler.lo
 _file_call_errhandler.o: file_call_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/file_call_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_call_errhandler.c -o _file_call_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_call_errhandler.c -o _file_call_errhandler.o
 _file_call_errhandler.lo: file_call_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/file_call_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_call_errhandler.c -o _file_call_errhandler.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_call_errhandler.c -o _file_call_errhandler.lo
 _win_create_errhandler.o: win_create_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_create_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_create_errhandler.c -o _win_create_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_create_errhandler.c -o _win_create_errhandler.o
 _win_create_errhandler.lo: win_create_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_create_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_create_errhandler.c -o _win_create_errhandler.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_create_errhandler.c -o _win_create_errhandler.lo
 _win_call_errhandler.o: win_call_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_call_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_call_errhandler.c -o _win_call_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_call_errhandler.c -o _win_call_errhandler.o
 _win_call_errhandler.lo: win_call_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_call_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_call_errhandler.c -o _win_call_errhandler.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_call_errhandler.c -o _win_call_errhandler.lo
 _win_get_errhandler.o: win_get_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_get_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_errhandler.c -o _win_get_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_errhandler.c -o _win_get_errhandler.o
 _win_get_errhandler.lo: win_get_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_get_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_errhandler.c -o _win_get_errhandler.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_errhandler.c -o _win_get_errhandler.lo
 _win_set_errhandler.o: win_set_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_set_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_errhandler.c -o _win_set_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_errhandler.c -o _win_set_errhandler.o
 _win_set_errhandler.lo: win_set_errhandler.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_set_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_errhandler.c -o _win_set_errhandler.lo ; \
@@ -516,98 +516,328 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/add_error_code.d: $(srcdir)/add_error_code.c
-	$(MAKE_DEPEND_C) -MT '_add_error_code.o add_error_code.o' $(srcdir)/add_error_code.c >$(DEPS_DIR)/add_error_code.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C add_error_code.c > $(DEPS_DIR)/add_error_code.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_add_error_code.o add_error_code.o add_error_code.lo _add_error_code.lo' $(srcdir)/add_error_code.c >$(DEPS_DIR)/add_error_code.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_add_error_code.o add_error_code.o add_error_code.lo _add_error_code.lo' $(srcdir)/add_error_code.c >$(DEPS_DIR)/add_error_code.d
 $(DEPS_DIR)/add_error_class.d: $(srcdir)/add_error_class.c
-	$(MAKE_DEPEND_C) -MT '_add_error_class.o add_error_class.o' $(srcdir)/add_error_class.c >$(DEPS_DIR)/add_error_class.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C add_error_class.c > $(DEPS_DIR)/add_error_class.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_add_error_class.o add_error_class.o add_error_class.lo _add_error_class.lo' $(srcdir)/add_error_class.c >$(DEPS_DIR)/add_error_class.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_add_error_class.o add_error_class.o add_error_class.lo _add_error_class.lo' $(srcdir)/add_error_class.c >$(DEPS_DIR)/add_error_class.d
 $(DEPS_DIR)/add_error_string.d: $(srcdir)/add_error_string.c
-	$(MAKE_DEPEND_C) -MT '_add_error_string.o add_error_string.o' $(srcdir)/add_error_string.c >$(DEPS_DIR)/add_error_string.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C add_error_string.c > $(DEPS_DIR)/add_error_string.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_add_error_string.o add_error_string.o add_error_string.lo _add_error_string.lo' $(srcdir)/add_error_string.c >$(DEPS_DIR)/add_error_string.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_add_error_string.o add_error_string.o add_error_string.lo _add_error_string.lo' $(srcdir)/add_error_string.c >$(DEPS_DIR)/add_error_string.d
 $(DEPS_DIR)/comm_call_errhandler.d: $(srcdir)/comm_call_errhandler.c
-	$(MAKE_DEPEND_C) -MT '_comm_call_errhandler.o comm_call_errhandler.o' $(srcdir)/comm_call_errhandler.c >$(DEPS_DIR)/comm_call_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_call_errhandler.c > $(DEPS_DIR)/comm_call_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_call_errhandler.o comm_call_errhandler.o comm_call_errhandler.lo _comm_call_errhandler.lo' $(srcdir)/comm_call_errhandler.c >$(DEPS_DIR)/comm_call_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_call_errhandler.o comm_call_errhandler.o comm_call_errhandler.lo _comm_call_errhandler.lo' $(srcdir)/comm_call_errhandler.c >$(DEPS_DIR)/comm_call_errhandler.d
 $(DEPS_DIR)/comm_create_errhandler.d: $(srcdir)/comm_create_errhandler.c
-	$(MAKE_DEPEND_C) -MT '_comm_create_errhandler.o comm_create_errhandler.o' $(srcdir)/comm_create_errhandler.c >$(DEPS_DIR)/comm_create_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_create_errhandler.c > $(DEPS_DIR)/comm_create_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_create_errhandler.o comm_create_errhandler.o comm_create_errhandler.lo _comm_create_errhandler.lo' $(srcdir)/comm_create_errhandler.c >$(DEPS_DIR)/comm_create_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_create_errhandler.o comm_create_errhandler.o comm_create_errhandler.lo _comm_create_errhandler.lo' $(srcdir)/comm_create_errhandler.c >$(DEPS_DIR)/comm_create_errhandler.d
 $(DEPS_DIR)/comm_get_errhandler.d: $(srcdir)/comm_get_errhandler.c
-	$(MAKE_DEPEND_C) -MT '_comm_get_errhandler.o comm_get_errhandler.o' $(srcdir)/comm_get_errhandler.c >$(DEPS_DIR)/comm_get_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_get_errhandler.c > $(DEPS_DIR)/comm_get_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_get_errhandler.o comm_get_errhandler.o comm_get_errhandler.lo _comm_get_errhandler.lo' $(srcdir)/comm_get_errhandler.c >$(DEPS_DIR)/comm_get_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_get_errhandler.o comm_get_errhandler.o comm_get_errhandler.lo _comm_get_errhandler.lo' $(srcdir)/comm_get_errhandler.c >$(DEPS_DIR)/comm_get_errhandler.d
 $(DEPS_DIR)/comm_set_errhandler.d: $(srcdir)/comm_set_errhandler.c
-	$(MAKE_DEPEND_C) -MT '_comm_set_errhandler.o comm_set_errhandler.o' $(srcdir)/comm_set_errhandler.c >$(DEPS_DIR)/comm_set_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_set_errhandler.c > $(DEPS_DIR)/comm_set_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_set_errhandler.o comm_set_errhandler.o comm_set_errhandler.lo _comm_set_errhandler.lo' $(srcdir)/comm_set_errhandler.c >$(DEPS_DIR)/comm_set_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_set_errhandler.o comm_set_errhandler.o comm_set_errhandler.lo _comm_set_errhandler.lo' $(srcdir)/comm_set_errhandler.c >$(DEPS_DIR)/comm_set_errhandler.d
 $(DEPS_DIR)/errhandler_create.d: $(srcdir)/errhandler_create.c
-	$(MAKE_DEPEND_C) -MT '_errhandler_create.o errhandler_create.o' $(srcdir)/errhandler_create.c >$(DEPS_DIR)/errhandler_create.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C errhandler_create.c > $(DEPS_DIR)/errhandler_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_errhandler_create.o errhandler_create.o errhandler_create.lo _errhandler_create.lo' $(srcdir)/errhandler_create.c >$(DEPS_DIR)/errhandler_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_errhandler_create.o errhandler_create.o errhandler_create.lo _errhandler_create.lo' $(srcdir)/errhandler_create.c >$(DEPS_DIR)/errhandler_create.d
 $(DEPS_DIR)/errhandler_free.d: $(srcdir)/errhandler_free.c
-	$(MAKE_DEPEND_C) -MT '_errhandler_free.o errhandler_free.o' $(srcdir)/errhandler_free.c >$(DEPS_DIR)/errhandler_free.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C errhandler_free.c > $(DEPS_DIR)/errhandler_free.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_errhandler_free.o errhandler_free.o errhandler_free.lo _errhandler_free.lo' $(srcdir)/errhandler_free.c >$(DEPS_DIR)/errhandler_free.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_errhandler_free.o errhandler_free.o errhandler_free.lo _errhandler_free.lo' $(srcdir)/errhandler_free.c >$(DEPS_DIR)/errhandler_free.d
 $(DEPS_DIR)/errhandler_get.d: $(srcdir)/errhandler_get.c
-	$(MAKE_DEPEND_C) -MT '_errhandler_get.o errhandler_get.o' $(srcdir)/errhandler_get.c >$(DEPS_DIR)/errhandler_get.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C errhandler_get.c > $(DEPS_DIR)/errhandler_get.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_errhandler_get.o errhandler_get.o errhandler_get.lo _errhandler_get.lo' $(srcdir)/errhandler_get.c >$(DEPS_DIR)/errhandler_get.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_errhandler_get.o errhandler_get.o errhandler_get.lo _errhandler_get.lo' $(srcdir)/errhandler_get.c >$(DEPS_DIR)/errhandler_get.d
 $(DEPS_DIR)/errhandler_set.d: $(srcdir)/errhandler_set.c
-	$(MAKE_DEPEND_C) -MT '_errhandler_set.o errhandler_set.o' $(srcdir)/errhandler_set.c >$(DEPS_DIR)/errhandler_set.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C errhandler_set.c > $(DEPS_DIR)/errhandler_set.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_errhandler_set.o errhandler_set.o errhandler_set.lo _errhandler_set.lo' $(srcdir)/errhandler_set.c >$(DEPS_DIR)/errhandler_set.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_errhandler_set.o errhandler_set.o errhandler_set.lo _errhandler_set.lo' $(srcdir)/errhandler_set.c >$(DEPS_DIR)/errhandler_set.d
 $(DEPS_DIR)/error_class.d: $(srcdir)/error_class.c
-	$(MAKE_DEPEND_C) -MT '_error_class.o error_class.o' $(srcdir)/error_class.c >$(DEPS_DIR)/error_class.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C error_class.c > $(DEPS_DIR)/error_class.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_error_class.o error_class.o error_class.lo _error_class.lo' $(srcdir)/error_class.c >$(DEPS_DIR)/error_class.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_error_class.o error_class.o error_class.lo _error_class.lo' $(srcdir)/error_class.c >$(DEPS_DIR)/error_class.d
 $(DEPS_DIR)/error_string.d: $(srcdir)/error_string.c
-	$(MAKE_DEPEND_C) -MT '_error_string.o error_string.o' $(srcdir)/error_string.c >$(DEPS_DIR)/error_string.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C error_string.c > $(DEPS_DIR)/error_string.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_error_string.o error_string.o error_string.lo _error_string.lo' $(srcdir)/error_string.c >$(DEPS_DIR)/error_string.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_error_string.o error_string.o error_string.lo _error_string.lo' $(srcdir)/error_string.c >$(DEPS_DIR)/error_string.d
 $(DEPS_DIR)/file_create_errhandler.d: $(srcdir)/file_create_errhandler.c
-	$(MAKE_DEPEND_C) -MT '_file_create_errhandler.o file_create_errhandler.o' $(srcdir)/file_create_errhandler.c >$(DEPS_DIR)/file_create_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C file_create_errhandler.c > $(DEPS_DIR)/file_create_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_file_create_errhandler.o file_create_errhandler.o file_create_errhandler.lo _file_create_errhandler.lo' $(srcdir)/file_create_errhandler.c >$(DEPS_DIR)/file_create_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_file_create_errhandler.o file_create_errhandler.o file_create_errhandler.lo _file_create_errhandler.lo' $(srcdir)/file_create_errhandler.c >$(DEPS_DIR)/file_create_errhandler.d
 $(DEPS_DIR)/file_get_errhandler.d: $(srcdir)/file_get_errhandler.c
-	$(MAKE_DEPEND_C) -MT '_file_get_errhandler.o file_get_errhandler.o' $(srcdir)/file_get_errhandler.c >$(DEPS_DIR)/file_get_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C file_get_errhandler.c > $(DEPS_DIR)/file_get_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_file_get_errhandler.o file_get_errhandler.o file_get_errhandler.lo _file_get_errhandler.lo' $(srcdir)/file_get_errhandler.c >$(DEPS_DIR)/file_get_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_file_get_errhandler.o file_get_errhandler.o file_get_errhandler.lo _file_get_errhandler.lo' $(srcdir)/file_get_errhandler.c >$(DEPS_DIR)/file_get_errhandler.d
 $(DEPS_DIR)/file_set_errhandler.d: $(srcdir)/file_set_errhandler.c
-	$(MAKE_DEPEND_C) -MT '_file_set_errhandler.o file_set_errhandler.o' $(srcdir)/file_set_errhandler.c >$(DEPS_DIR)/file_set_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C file_set_errhandler.c > $(DEPS_DIR)/file_set_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_file_set_errhandler.o file_set_errhandler.o file_set_errhandler.lo _file_set_errhandler.lo' $(srcdir)/file_set_errhandler.c >$(DEPS_DIR)/file_set_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_file_set_errhandler.o file_set_errhandler.o file_set_errhandler.lo _file_set_errhandler.lo' $(srcdir)/file_set_errhandler.c >$(DEPS_DIR)/file_set_errhandler.d
 $(DEPS_DIR)/file_call_errhandler.d: $(srcdir)/file_call_errhandler.c
-	$(MAKE_DEPEND_C) -MT '_file_call_errhandler.o file_call_errhandler.o' $(srcdir)/file_call_errhandler.c >$(DEPS_DIR)/file_call_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C file_call_errhandler.c > $(DEPS_DIR)/file_call_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_file_call_errhandler.o file_call_errhandler.o file_call_errhandler.lo _file_call_errhandler.lo' $(srcdir)/file_call_errhandler.c >$(DEPS_DIR)/file_call_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_file_call_errhandler.o file_call_errhandler.o file_call_errhandler.lo _file_call_errhandler.lo' $(srcdir)/file_call_errhandler.c >$(DEPS_DIR)/file_call_errhandler.d
 $(DEPS_DIR)/win_create_errhandler.d: $(srcdir)/win_create_errhandler.c
-	$(MAKE_DEPEND_C) -MT '_win_create_errhandler.o win_create_errhandler.o' $(srcdir)/win_create_errhandler.c >$(DEPS_DIR)/win_create_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_create_errhandler.c > $(DEPS_DIR)/win_create_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_create_errhandler.o win_create_errhandler.o win_create_errhandler.lo _win_create_errhandler.lo' $(srcdir)/win_create_errhandler.c >$(DEPS_DIR)/win_create_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_create_errhandler.o win_create_errhandler.o win_create_errhandler.lo _win_create_errhandler.lo' $(srcdir)/win_create_errhandler.c >$(DEPS_DIR)/win_create_errhandler.d
 $(DEPS_DIR)/win_call_errhandler.d: $(srcdir)/win_call_errhandler.c
-	$(MAKE_DEPEND_C) -MT '_win_call_errhandler.o win_call_errhandler.o' $(srcdir)/win_call_errhandler.c >$(DEPS_DIR)/win_call_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_call_errhandler.c > $(DEPS_DIR)/win_call_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_call_errhandler.o win_call_errhandler.o win_call_errhandler.lo _win_call_errhandler.lo' $(srcdir)/win_call_errhandler.c >$(DEPS_DIR)/win_call_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_call_errhandler.o win_call_errhandler.o win_call_errhandler.lo _win_call_errhandler.lo' $(srcdir)/win_call_errhandler.c >$(DEPS_DIR)/win_call_errhandler.d
 $(DEPS_DIR)/win_get_errhandler.d: $(srcdir)/win_get_errhandler.c
-	$(MAKE_DEPEND_C) -MT '_win_get_errhandler.o win_get_errhandler.o' $(srcdir)/win_get_errhandler.c >$(DEPS_DIR)/win_get_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_get_errhandler.c > $(DEPS_DIR)/win_get_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_get_errhandler.o win_get_errhandler.o win_get_errhandler.lo _win_get_errhandler.lo' $(srcdir)/win_get_errhandler.c >$(DEPS_DIR)/win_get_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_get_errhandler.o win_get_errhandler.o win_get_errhandler.lo _win_get_errhandler.lo' $(srcdir)/win_get_errhandler.c >$(DEPS_DIR)/win_get_errhandler.d
 $(DEPS_DIR)/win_set_errhandler.d: $(srcdir)/win_set_errhandler.c
-	$(MAKE_DEPEND_C) -MT '_win_set_errhandler.o win_set_errhandler.o' $(srcdir)/win_set_errhandler.c >$(DEPS_DIR)/win_set_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_set_errhandler.c > $(DEPS_DIR)/win_set_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_set_errhandler.o win_set_errhandler.o win_set_errhandler.lo _win_set_errhandler.lo' $(srcdir)/win_set_errhandler.c >$(DEPS_DIR)/win_set_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_set_errhandler.o win_set_errhandler.o win_set_errhandler.lo _win_set_errhandler.lo' $(srcdir)/win_set_errhandler.c >$(DEPS_DIR)/win_set_errhandler.d
 $(DEPS_DIR)/errutil.d: $(srcdir)/errutil.c
-	$(MAKE_DEPEND_C) -MT '_errutil.o errutil.o' $(srcdir)/errutil.c >$(DEPS_DIR)/errutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C errutil.c > $(DEPS_DIR)/errutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_errutil.o errutil.o errutil.lo _errutil.lo' $(srcdir)/errutil.c >$(DEPS_DIR)/errutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_errutil.o errutil.o errutil.lo _errutil.lo' $(srcdir)/errutil.c >$(DEPS_DIR)/errutil.d
 $(DEPS_DIR)/dynerrutil.d: $(srcdir)/dynerrutil.c
-	$(MAKE_DEPEND_C) -MT '_dynerrutil.o dynerrutil.o' $(srcdir)/dynerrutil.c >$(DEPS_DIR)/dynerrutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dynerrutil.c > $(DEPS_DIR)/dynerrutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dynerrutil.o dynerrutil.o dynerrutil.lo _dynerrutil.lo' $(srcdir)/dynerrutil.c >$(DEPS_DIR)/dynerrutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dynerrutil.o dynerrutil.o dynerrutil.lo _dynerrutil.lo' $(srcdir)/dynerrutil.c >$(DEPS_DIR)/dynerrutil.d
 $(DEPS_DIR)/timestamp: ${mpi_sources} errutil.c dynerrutil.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_add_error_code.o add_error_code.o' $(srcdir)/add_error_code.c >$(DEPS_DIR)/add_error_code.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C add_error_code.c > $(DEPS_DIR)/add_error_code.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_add_error_code.o add_error_code.o add_error_code.lo _add_error_code.lo' $(srcdir)/add_error_code.c >$(DEPS_DIR)/add_error_code.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_add_error_code.o add_error_code.o add_error_code.lo _add_error_code.lo' $(srcdir)/add_error_code.c >$(DEPS_DIR)/add_error_code.d
 	echo "include $(DEPS_DIR)/add_error_code.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_add_error_class.o add_error_class.o' $(srcdir)/add_error_class.c >$(DEPS_DIR)/add_error_class.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C add_error_class.c > $(DEPS_DIR)/add_error_class.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_add_error_class.o add_error_class.o add_error_class.lo _add_error_class.lo' $(srcdir)/add_error_class.c >$(DEPS_DIR)/add_error_class.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_add_error_class.o add_error_class.o add_error_class.lo _add_error_class.lo' $(srcdir)/add_error_class.c >$(DEPS_DIR)/add_error_class.d
 	echo "include $(DEPS_DIR)/add_error_class.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_add_error_string.o add_error_string.o' $(srcdir)/add_error_string.c >$(DEPS_DIR)/add_error_string.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C add_error_string.c > $(DEPS_DIR)/add_error_string.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_add_error_string.o add_error_string.o add_error_string.lo _add_error_string.lo' $(srcdir)/add_error_string.c >$(DEPS_DIR)/add_error_string.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_add_error_string.o add_error_string.o add_error_string.lo _add_error_string.lo' $(srcdir)/add_error_string.c >$(DEPS_DIR)/add_error_string.d
 	echo "include $(DEPS_DIR)/add_error_string.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_call_errhandler.o comm_call_errhandler.o' $(srcdir)/comm_call_errhandler.c >$(DEPS_DIR)/comm_call_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_call_errhandler.c > $(DEPS_DIR)/comm_call_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_call_errhandler.o comm_call_errhandler.o comm_call_errhandler.lo _comm_call_errhandler.lo' $(srcdir)/comm_call_errhandler.c >$(DEPS_DIR)/comm_call_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_call_errhandler.o comm_call_errhandler.o comm_call_errhandler.lo _comm_call_errhandler.lo' $(srcdir)/comm_call_errhandler.c >$(DEPS_DIR)/comm_call_errhandler.d
 	echo "include $(DEPS_DIR)/comm_call_errhandler.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_create_errhandler.o comm_create_errhandler.o' $(srcdir)/comm_create_errhandler.c >$(DEPS_DIR)/comm_create_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_create_errhandler.c > $(DEPS_DIR)/comm_create_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_create_errhandler.o comm_create_errhandler.o comm_create_errhandler.lo _comm_create_errhandler.lo' $(srcdir)/comm_create_errhandler.c >$(DEPS_DIR)/comm_create_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_create_errhandler.o comm_create_errhandler.o comm_create_errhandler.lo _comm_create_errhandler.lo' $(srcdir)/comm_create_errhandler.c >$(DEPS_DIR)/comm_create_errhandler.d
 	echo "include $(DEPS_DIR)/comm_create_errhandler.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_get_errhandler.o comm_get_errhandler.o' $(srcdir)/comm_get_errhandler.c >$(DEPS_DIR)/comm_get_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_get_errhandler.c > $(DEPS_DIR)/comm_get_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_get_errhandler.o comm_get_errhandler.o comm_get_errhandler.lo _comm_get_errhandler.lo' $(srcdir)/comm_get_errhandler.c >$(DEPS_DIR)/comm_get_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_get_errhandler.o comm_get_errhandler.o comm_get_errhandler.lo _comm_get_errhandler.lo' $(srcdir)/comm_get_errhandler.c >$(DEPS_DIR)/comm_get_errhandler.d
 	echo "include $(DEPS_DIR)/comm_get_errhandler.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_comm_set_errhandler.o comm_set_errhandler.o' $(srcdir)/comm_set_errhandler.c >$(DEPS_DIR)/comm_set_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C comm_set_errhandler.c > $(DEPS_DIR)/comm_set_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_comm_set_errhandler.o comm_set_errhandler.o comm_set_errhandler.lo _comm_set_errhandler.lo' $(srcdir)/comm_set_errhandler.c >$(DEPS_DIR)/comm_set_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_comm_set_errhandler.o comm_set_errhandler.o comm_set_errhandler.lo _comm_set_errhandler.lo' $(srcdir)/comm_set_errhandler.c >$(DEPS_DIR)/comm_set_errhandler.d
 	echo "include $(DEPS_DIR)/comm_set_errhandler.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_errhandler_create.o errhandler_create.o' $(srcdir)/errhandler_create.c >$(DEPS_DIR)/errhandler_create.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C errhandler_create.c > $(DEPS_DIR)/errhandler_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_errhandler_create.o errhandler_create.o errhandler_create.lo _errhandler_create.lo' $(srcdir)/errhandler_create.c >$(DEPS_DIR)/errhandler_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_errhandler_create.o errhandler_create.o errhandler_create.lo _errhandler_create.lo' $(srcdir)/errhandler_create.c >$(DEPS_DIR)/errhandler_create.d
 	echo "include $(DEPS_DIR)/errhandler_create.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_errhandler_free.o errhandler_free.o' $(srcdir)/errhandler_free.c >$(DEPS_DIR)/errhandler_free.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C errhandler_free.c > $(DEPS_DIR)/errhandler_free.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_errhandler_free.o errhandler_free.o errhandler_free.lo _errhandler_free.lo' $(srcdir)/errhandler_free.c >$(DEPS_DIR)/errhandler_free.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_errhandler_free.o errhandler_free.o errhandler_free.lo _errhandler_free.lo' $(srcdir)/errhandler_free.c >$(DEPS_DIR)/errhandler_free.d
 	echo "include $(DEPS_DIR)/errhandler_free.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_errhandler_get.o errhandler_get.o' $(srcdir)/errhandler_get.c >$(DEPS_DIR)/errhandler_get.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C errhandler_get.c > $(DEPS_DIR)/errhandler_get.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_errhandler_get.o errhandler_get.o errhandler_get.lo _errhandler_get.lo' $(srcdir)/errhandler_get.c >$(DEPS_DIR)/errhandler_get.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_errhandler_get.o errhandler_get.o errhandler_get.lo _errhandler_get.lo' $(srcdir)/errhandler_get.c >$(DEPS_DIR)/errhandler_get.d
 	echo "include $(DEPS_DIR)/errhandler_get.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_errhandler_set.o errhandler_set.o' $(srcdir)/errhandler_set.c >$(DEPS_DIR)/errhandler_set.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C errhandler_set.c > $(DEPS_DIR)/errhandler_set.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_errhandler_set.o errhandler_set.o errhandler_set.lo _errhandler_set.lo' $(srcdir)/errhandler_set.c >$(DEPS_DIR)/errhandler_set.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_errhandler_set.o errhandler_set.o errhandler_set.lo _errhandler_set.lo' $(srcdir)/errhandler_set.c >$(DEPS_DIR)/errhandler_set.d
 	echo "include $(DEPS_DIR)/errhandler_set.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_error_class.o error_class.o' $(srcdir)/error_class.c >$(DEPS_DIR)/error_class.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C error_class.c > $(DEPS_DIR)/error_class.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_error_class.o error_class.o error_class.lo _error_class.lo' $(srcdir)/error_class.c >$(DEPS_DIR)/error_class.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_error_class.o error_class.o error_class.lo _error_class.lo' $(srcdir)/error_class.c >$(DEPS_DIR)/error_class.d
 	echo "include $(DEPS_DIR)/error_class.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_error_string.o error_string.o' $(srcdir)/error_string.c >$(DEPS_DIR)/error_string.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C error_string.c > $(DEPS_DIR)/error_string.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_error_string.o error_string.o error_string.lo _error_string.lo' $(srcdir)/error_string.c >$(DEPS_DIR)/error_string.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_error_string.o error_string.o error_string.lo _error_string.lo' $(srcdir)/error_string.c >$(DEPS_DIR)/error_string.d
 	echo "include $(DEPS_DIR)/error_string.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_file_create_errhandler.o file_create_errhandler.o' $(srcdir)/file_create_errhandler.c >$(DEPS_DIR)/file_create_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C file_create_errhandler.c > $(DEPS_DIR)/file_create_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_file_create_errhandler.o file_create_errhandler.o file_create_errhandler.lo _file_create_errhandler.lo' $(srcdir)/file_create_errhandler.c >$(DEPS_DIR)/file_create_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_file_create_errhandler.o file_create_errhandler.o file_create_errhandler.lo _file_create_errhandler.lo' $(srcdir)/file_create_errhandler.c >$(DEPS_DIR)/file_create_errhandler.d
 	echo "include $(DEPS_DIR)/file_create_errhandler.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_file_get_errhandler.o file_get_errhandler.o' $(srcdir)/file_get_errhandler.c >$(DEPS_DIR)/file_get_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C file_get_errhandler.c > $(DEPS_DIR)/file_get_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_file_get_errhandler.o file_get_errhandler.o file_get_errhandler.lo _file_get_errhandler.lo' $(srcdir)/file_get_errhandler.c >$(DEPS_DIR)/file_get_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_file_get_errhandler.o file_get_errhandler.o file_get_errhandler.lo _file_get_errhandler.lo' $(srcdir)/file_get_errhandler.c >$(DEPS_DIR)/file_get_errhandler.d
 	echo "include $(DEPS_DIR)/file_get_errhandler.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_file_set_errhandler.o file_set_errhandler.o' $(srcdir)/file_set_errhandler.c >$(DEPS_DIR)/file_set_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C file_set_errhandler.c > $(DEPS_DIR)/file_set_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_file_set_errhandler.o file_set_errhandler.o file_set_errhandler.lo _file_set_errhandler.lo' $(srcdir)/file_set_errhandler.c >$(DEPS_DIR)/file_set_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_file_set_errhandler.o file_set_errhandler.o file_set_errhandler.lo _file_set_errhandler.lo' $(srcdir)/file_set_errhandler.c >$(DEPS_DIR)/file_set_errhandler.d
 	echo "include $(DEPS_DIR)/file_set_errhandler.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_file_call_errhandler.o file_call_errhandler.o' $(srcdir)/file_call_errhandler.c >$(DEPS_DIR)/file_call_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C file_call_errhandler.c > $(DEPS_DIR)/file_call_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_file_call_errhandler.o file_call_errhandler.o file_call_errhandler.lo _file_call_errhandler.lo' $(srcdir)/file_call_errhandler.c >$(DEPS_DIR)/file_call_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_file_call_errhandler.o file_call_errhandler.o file_call_errhandler.lo _file_call_errhandler.lo' $(srcdir)/file_call_errhandler.c >$(DEPS_DIR)/file_call_errhandler.d
 	echo "include $(DEPS_DIR)/file_call_errhandler.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_create_errhandler.o win_create_errhandler.o' $(srcdir)/win_create_errhandler.c >$(DEPS_DIR)/win_create_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_create_errhandler.c > $(DEPS_DIR)/win_create_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_create_errhandler.o win_create_errhandler.o win_create_errhandler.lo _win_create_errhandler.lo' $(srcdir)/win_create_errhandler.c >$(DEPS_DIR)/win_create_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_create_errhandler.o win_create_errhandler.o win_create_errhandler.lo _win_create_errhandler.lo' $(srcdir)/win_create_errhandler.c >$(DEPS_DIR)/win_create_errhandler.d
 	echo "include $(DEPS_DIR)/win_create_errhandler.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_call_errhandler.o win_call_errhandler.o' $(srcdir)/win_call_errhandler.c >$(DEPS_DIR)/win_call_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_call_errhandler.c > $(DEPS_DIR)/win_call_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_call_errhandler.o win_call_errhandler.o win_call_errhandler.lo _win_call_errhandler.lo' $(srcdir)/win_call_errhandler.c >$(DEPS_DIR)/win_call_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_call_errhandler.o win_call_errhandler.o win_call_errhandler.lo _win_call_errhandler.lo' $(srcdir)/win_call_errhandler.c >$(DEPS_DIR)/win_call_errhandler.d
 	echo "include $(DEPS_DIR)/win_call_errhandler.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_get_errhandler.o win_get_errhandler.o' $(srcdir)/win_get_errhandler.c >$(DEPS_DIR)/win_get_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_get_errhandler.c > $(DEPS_DIR)/win_get_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_get_errhandler.o win_get_errhandler.o win_get_errhandler.lo _win_get_errhandler.lo' $(srcdir)/win_get_errhandler.c >$(DEPS_DIR)/win_get_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_get_errhandler.o win_get_errhandler.o win_get_errhandler.lo _win_get_errhandler.lo' $(srcdir)/win_get_errhandler.c >$(DEPS_DIR)/win_get_errhandler.d
 	echo "include $(DEPS_DIR)/win_get_errhandler.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_set_errhandler.o win_set_errhandler.o' $(srcdir)/win_set_errhandler.c >$(DEPS_DIR)/win_set_errhandler.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_set_errhandler.c > $(DEPS_DIR)/win_set_errhandler.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_set_errhandler.o win_set_errhandler.o win_set_errhandler.lo _win_set_errhandler.lo' $(srcdir)/win_set_errhandler.c >$(DEPS_DIR)/win_set_errhandler.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_set_errhandler.o win_set_errhandler.o win_set_errhandler.lo _win_set_errhandler.lo' $(srcdir)/win_set_errhandler.c >$(DEPS_DIR)/win_set_errhandler.d
 	echo "include $(DEPS_DIR)/win_set_errhandler.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_errutil.o errutil.o' $(srcdir)/errutil.c >$(DEPS_DIR)/errutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C errutil.c > $(DEPS_DIR)/errutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_errutil.o errutil.o errutil.lo _errutil.lo' $(srcdir)/errutil.c >$(DEPS_DIR)/errutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_errutil.o errutil.o errutil.lo _errutil.lo' $(srcdir)/errutil.c >$(DEPS_DIR)/errutil.d
 	echo "include $(DEPS_DIR)/errutil.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_dynerrutil.o dynerrutil.o' $(srcdir)/dynerrutil.c >$(DEPS_DIR)/dynerrutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C dynerrutil.c > $(DEPS_DIR)/dynerrutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_dynerrutil.o dynerrutil.o dynerrutil.lo _dynerrutil.lo' $(srcdir)/dynerrutil.c >$(DEPS_DIR)/dynerrutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_dynerrutil.o dynerrutil.o dynerrutil.lo _dynerrutil.lo' $(srcdir)/dynerrutil.c >$(DEPS_DIR)/dynerrutil.d
 	echo "include $(DEPS_DIR)/dynerrutil.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -622,12 +852,8 @@ SOURCES         =  add_error_code.c add_error_class.c add_error_string.c \
 	file_create_errhandler.c file_get_errhandler.c file_set_errhandler.c \
 	file_call_errhandler.c win_create_errhandler.c win_call_errhandler.c \
 	win_get_errhandler.c win_set_errhandler.c errutil.c dynerrutil.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 #
 

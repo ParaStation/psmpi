@@ -1,4 +1,4 @@
-.TH MPI_Request_get_status 3 "11/2/2007" " " "MPI"
+.TH MPI_Request_get_status 3 "9/15/2009" " " "MPI"
 .SH NAME
 MPI_Request_get_status \-  Nondestructive test for the completion of a Request 
 .SH SYNOPSIS
@@ -9,7 +9,10 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 .PD 0
 .TP
 .B request 
-- request (handle)
+- request (handle).  May be 
+.I MPI_REQUEST_NULL
+\&.
+
 .PD 1
 
 .SH OUTPUT PARAMETERS

@@ -12,8 +12,14 @@
 /* Define to 1 if you have the `alloca' function. */
 #undef HAVE_ALLOCA
 
+/* Define if blcr is available */
+#undef HAVE_BLCR
+
 /* define if the compiler defines __FUNC__ */
 #undef HAVE_CAP__FUNC__
+
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
 
 /* Define if environ extern is available */
 #undef HAVE_EXTERN_ENVIRON
@@ -27,8 +33,14 @@
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
+/* Define if hwloc is available */
+#undef HAVE_HWLOC
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `cr' library (-lcr). */
+#undef HAVE_LIBCR
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -132,11 +144,29 @@
 /* Definition of enabled bootstrap servers */
 #undef HYDRA_BSS_NAMES
 
+/* C compiler */
+#undef HYDRA_CC
+
+/* Definition of enabled checkpointing libraries */
+#undef HYDRA_CKPOINTLIB_NAMES
+
+/* Configure arguments */
+#undef HYDRA_CONFIGURE_ARGS_CLEAN
+
 /* Definition of enabled communication systems */
 #undef HYDRA_CSS_NAMES
 
+/* C++ compiler */
+#undef HYDRA_CXX
+
+/* Default binding library */
+#undef HYDRA_DEFAULT_BINDLIB
+
 /* Default bootstrap server */
 #undef HYDRA_DEFAULT_BSS
+
+/* Default checkpointing library */
+#undef HYDRA_DEFAULT_CKPOINTLIB
 
 /* Default communication sub-system */
 #undef HYDRA_DEFAULT_CSS
@@ -144,8 +174,21 @@
 /* Default resource management kernel */
 #undef HYDRA_DEFAULT_RMK
 
+/* Fortran 77 compiler */
+#undef HYDRA_F77
+
+/* Fortran 90 compiler */
+#undef HYDRA_F90
+
 /* Enabled resource management kernels */
 #undef HYDRA_RMK_NAMES
+
+/* Hydra version information */
+#undef HYDRA_VERSION
+
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
 
 /* Define if environ decl needed */
 #undef MANUAL_EXTERN_ENVIRON

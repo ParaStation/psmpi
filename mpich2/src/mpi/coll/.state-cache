@@ -1,45 +1,51 @@
 <dir>
-<file name="reduce.c" info="1242155570"/>
-<file name="opland.c" info="1237587847"/>
-<file name="scatterv.c" info="1247766168"/>
-<file name="allgather.c" info="1236885498"/>
-<file name="bcast.c" info="1232740540"/>
+<file name="reduce.c" info="1256153135"/>
+<file name="reduce_local.c" info="1258232832"/>
+<file name="scatterv.c" info="1253199486"/>
+<file name="opland.c" info="1253809855"/>
+<file name="allgather.c" info="1253199486"/>
+<file name="bcast.c" info="1253199486"/>
 <file name="opmax.c" info="1237517247"/>
-<file name="alltoall.c" info="1241738040"/>
+<file name="alltoall.c" info="1253199486"/>
 <file name="opmaxloc.c" info="1246559348"/>
-<file name="alltoallv.c" info="1241738040"/>
-<file name="opsum.c" info="1237517247"/>
+<file name="red_scat_block.c" info="1258232832"/>
+<file name="alltoallv.c" info="1253669684"/>
+<file name="opsum.c" info="1249512208"/>
 <file name="opmin.c" info="1237517247"/>
 <file name="opminloc.c" info="1246559348"/>
-<file name="oplor.c" info="1237587847"/>
-<file name="alltoallw.c" info="1241738040"/>
-<file name="gatherv.c" info="1244415545"/>
+<file name="oplor.c" info="1253809855"/>
+<file name="alltoallw.c" info="1253669684"/>
+<file name="gatherv.c" info="1253199486"/>
 <file name="opbxor.c" info="1237517247"/>
 <file name="opband.c" info="1237517247"/>
-<file name="op_create.c" info="1222104961"/>
-<file name="barrier.c" info="1242137990"/>
-<file name="opprod.c" info="1237517247"/>
-<file name="scatter.c" info="1222104961"/>
-<file name="scan.c" info="1234707957"/>
+<file name="op_create.c" info="1253199486"/>
+<file name="barrier.c" info="1253199486"/>
+<file name="opprod.c" info="1249512208"/>
+<file name="scatter.c" info="1253199486"/>
+<file name="op_commutative.c" info="1258232832"/>
+<file name="scan.c" info="1253199486"/>
 <file name="opbor.c" info="1237517247"/>
-<file name="gather.c" info="1222104961"/>
-<file name="allgatherv.c" info="1236897137"/>
-<file name="exscan.c" info="1222104961"/>
-<file name="oplxor.c" info="1237587847"/>
-<file name="allreduce.c" info="1233779123"/>
-<file name="red_scat.c" info="1234998316"/>
-<file name="oputil.h" info="1237780626"/>
-<file name="op_free.c" info="1222104961"/>
-<file name="helper_fns.c" info="1244842249"/>
+<file name="gather.c" info="1257787947"/>
+<file name="allgatherv.c" info="1257257940"/>
+<file name="exscan.c" info="1253199486"/>
+<file name="oplxor.c" info="1253809855"/>
+<file name="allreduce.c" info="1253199486"/>
+<file name="red_scat.c" info="1253199486"/>
+<file name="oputil.h" info="1250016561"/>
+<file name="op_free.c" info="1253199486"/>
+<file name="helper_fns.c" info="1253219565"/>
 </dir>
 <data>
 <fileinfo name="reduce.c">
 MPID_STATE_MPI_REDUCE MPI_Reduce
 </fileinfo>
-<fileinfo name="opland.c">
+<fileinfo name="reduce_local.c">
+MPID_STATE_MPI_REDUCE_LOCAL MPI_Reduce_local
 </fileinfo>
 <fileinfo name="scatterv.c">
 MPID_STATE_MPI_SCATTERV MPI_Scatterv
+</fileinfo>
+<fileinfo name="opland.c">
 </fileinfo>
 <fileinfo name="allgather.c">
 MPID_STATE_MPI_ALLGATHER MPI_Allgather
@@ -55,6 +61,9 @@ MPID_STATE_MPI_BCAST MPI_Bcast
 MPID_STATE_MPI_ALLTOALL MPI_Alltoall
 </fileinfo>
 <fileinfo name="opmaxloc.c">
+</fileinfo>
+<fileinfo name="red_scat_block.c">
+MPID_STATE_MPI_REDUCE_SCATTER_BLOCK MPI_Reduce_scatter_block
 </fileinfo>
 <fileinfo name="alltoallv.c">
 MPID_STATE_MPI_ALLTOALLV MPI_Alltoallv
@@ -88,6 +97,9 @@ MPID_STATE_MPI_BARRIER MPI_Barrier
 <fileinfo name="scatter.c">
 MPID_STATE_MPI_SCATTER MPI_Scatter
 </fileinfo>
+<fileinfo name="op_commutative.c">
+MPID_STATE_MPI_OP_COMMUTATIVE MPI_Op_commutative
+</fileinfo>
 <fileinfo name="scan.c">
 MPID_STATE_MPI_SCAN MPI_Scan
 </fileinfo>
@@ -120,6 +132,7 @@ MPID_STATE_MPIC_SEND MPIC_Send
 MPID_STATE_MPIC_RECV MPIC_Recv
 MPID_STATE_MPIC_SSEND MPIC_Ssend
 MPID_STATE_MPIC_SENDRECV MPIC_Sendrecv
+MPID_STATE_MPIC_SENDRECV_REPLACE MPIC_Sendrecv_replace
 MPID_STATE_MPIR_LOCALCOPY MPIR_Localcopy
 MPID_STATE_MPIC_ISEND MPIC_Isend
 MPID_STATE_MPIC_IRECV MPIC_Irecv

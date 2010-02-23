@@ -1,4 +1,3 @@
-              
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
  *  (C) 2006 by Argonne National Laboratory.
@@ -52,12 +51,7 @@ static mpid_nem_mx_hash_t *mpid_nem_mx_connreqs ATTRIBUTE((unused, used))= NULL;
 static int MPID_nem_mx_handle_sreq(MPID_Request *sreq);
 static int MPID_nem_mx_handle_rreq(MPID_Request *rreq, mx_status_t status);
 
-/* For a very mysterious reason the MPID_nem_handle_pkt routine can NOT be called        */
-/* from inside the MX callback: I suspect that when the RecvQ is manipulated (through    */
-/* the pkt_handler func) it is somehow corrupted. This results in having a SEND req as   */
-/* head of the  Posted RecvQ !!                                                          */ 
-/* Edit : handling the packet in the callback when the data is present or latter doesn't */
-/* impact latency much so that's OK.                                                     */
+/* This routine cannot manipulate MPI message queues or request queues */
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_mx_get_adi_msg
 #undef FCNAME
@@ -73,7 +67,6 @@ mx_unexp_handler_action_t MPID_nem_mx_get_adi_msg(void *context, mx_endpoint_add
   int16_t type;	    
   NEM_MX_MATCH_GET_TYPE(match_info,type);    
 #endif
-
 
 #ifdef ONDEMAND
   mx_get_endpoint_addr_context(source,(void **)(&vc));	    
@@ -93,7 +86,6 @@ mx_unexp_handler_action_t MPID_nem_mx_get_adi_msg(void *context, mx_endpoint_add
       int           pg_rank;
       char          pg_id[MPID_NEM_MAX_NETMOD_STRING_LEN];
       MPIDI_PG_t   *pg;
-      /*mx_request_t *mx_request = MPIU_Malloc(sizeof(mx_request_t)); */
       mx_request_t  mx_request;
       mx_status_t   status;
       
@@ -152,10 +144,10 @@ if(type == NEM_MX_DIRECT_TYPE)
     if (type == NEM_MX_INTRA_TYPE)
 #endif
     {
-      MPID_Request  *rreq;
-      mx_request_t  mx_request;
-      mx_segment_t  iov;
-      mx_return_t   ret;			    
+      MPID_nem_mx_internal_req_t *rreq;
+      mx_request_t                mx_request;
+      mx_segment_t                iov;
+      mx_return_t                 ret;			    
       
 #ifdef ONDEMAND
       if (VC_FIELD(vc, remote_connected) == 0)
@@ -201,24 +193,23 @@ if(type == NEM_MX_DIRECT_TYPE)
 	return MX_RECV_FINISHED;		
       }
 #endif
-      rreq = MPID_Request_create();
-      MPIU_Assert (rreq != NULL);
-      MPIU_Object_set_ref (rreq, 1);
+
+      MPID_nem_mx_internal_req_dequeue(&rreq);
       rreq->kind = MPID_REQUEST_RECV;	
       mx_get_endpoint_addr_context(source,(void **)(&vc));	    
-      rreq->ch.vc = vc;
-      
+      rreq->vc = vc;
+
       if(length <=  sizeof(MPIDI_CH3_PktGeneric_t)) {
-	iov.segment_ptr = (char*)&(rreq->dev.pending_pkt);
+	iov.segment_ptr = (char*)&(rreq->pending_pkt);
       }
       else{
-	rreq->dev.tmpbuf = MPIU_Malloc(length);
-	MPIU_Assert(rreq->dev.tmpbuf);
-	rreq->dev.tmpbuf_sz = length;		    
-	iov.segment_ptr = (char*)(rreq->dev.tmpbuf);
+	rreq->tmpbuf = MPIU_Malloc(length);
+	MPIU_Assert(rreq->tmpbuf);
+	rreq->tmpbuf_sz = length;		    
+	iov.segment_ptr = (char*)(rreq->tmpbuf);
       }
       iov.segment_length = length;
-      
+
       ret = mx_irecv(MPID_nem_mx_local_endpoint,&iov,1,match_info,NEM_MX_MATCH_FULL_MASK,(void *)rreq,&mx_request);
       MPIU_Assert(ret == MX_SUCCESS);
       
@@ -295,7 +286,12 @@ int MPID_nem_mx_directRecv(MPIDI_VC_t *vc, MPID_Request *rreq)
       ret = mx_irecv(MPID_nem_mx_local_endpoint,mx_iov,num_seg,match_info,match_mask,(void *)rreq, &(REQ_FIELD(rreq,mx_request)));
       MPIU_ERR_CHKANDJUMP1 (ret != MX_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**mx_irecv", "**mx_irecv %s", mx_strerror (ret));
   }
-  
+  else
+  {
+    /* Fixme : this might not work in the case of multiple netmods */ 
+    memset((&(REQ_FIELD(rreq,mx_request))),0,sizeof(mx_request_t));
+  }
+   
  fn_exit:
   MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_MX_DIRECTRECV);
   return mpi_errno;
@@ -322,29 +318,35 @@ MPID_nem_mx_poll(int in_blocking_poll)
    MPIU_Assert(ret == MX_SUCCESS);
    if ((ret == MX_SUCCESS) && (result > 0))
    {
-     MPID_Request *req = (MPID_Request *)(status.context);
-     if ((req->kind == MPID_REQUEST_SEND) || (req->kind == MPID_PREQUEST_SEND))
+     MPID_nem_mx_unified_req_t *myreq = (MPID_nem_mx_unified_req_t *)(status.context);
+     MPID_Request              *req   = &(myreq->mpi_req);
+     MPID_Request_kind_t        kind  = req->kind;
+
+     if ((kind == MPID_REQUEST_SEND) || (kind == MPID_PREQUEST_SEND))
      {	   
        MPID_nem_mx_handle_sreq(req);
      }
-     else if (req->kind == MPID_REQUEST_RECV)	       
+     else if (kind == MPID_REQUEST_RECV)	       
      {
+       MPID_nem_mx_internal_req_t *adi_req = &(myreq->nem_mx_req);
        MPIU_Assert(status.code != MX_STATUS_TRUNCATED);	       	
        if (status.msg_length <= sizeof(MPIDI_CH3_PktGeneric_t))
        {
-	 MPID_nem_handle_pkt(req->ch.vc,(char *)&(req->dev.pending_pkt),(MPIDI_msg_sz_t)(status.msg_length));
+	 MPID_nem_handle_pkt(adi_req->vc,(char *)&(adi_req->pending_pkt),(MPIDI_msg_sz_t)(status.msg_length));
        }
        else
        {
-	 MPID_nem_handle_pkt(req->ch.vc,(char *)(req->dev.tmpbuf),(MPIDI_msg_sz_t)(req->dev.tmpbuf_sz));
-	 MPIU_Free(req->dev.tmpbuf);
+	 MPID_nem_handle_pkt(adi_req->vc,(char *)(adi_req->tmpbuf),(MPIDI_msg_sz_t)(adi_req->tmpbuf_sz));
+	 MPIU_Free(adi_req->tmpbuf);
        }
-       MPIDI_CH3_Request_destroy(req);
+       mx_disable_progression(MPID_nem_mx_local_endpoint);
+       MPID_nem_mx_internal_req_enqueue(adi_req);
+       mx_reenable_progression(MPID_nem_mx_local_endpoint);
      }
      else
      {
          /* Error : unknown REQ type */
-         MPIU_ERR_CHKANDJUMP1(TRUE, mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "unknown REQ type");
+         MPIU_ERR_CHKINTERNAL(TRUE, mpi_errno, "unknown REQ type");
      }
    }
    
@@ -353,18 +355,20 @@ MPID_nem_mx_poll(int in_blocking_poll)
    MPIU_Assert(ret == MX_SUCCESS);
    if ((ret == MX_SUCCESS) && (result > 0))
    {
-     MPID_Request *req = (MPID_Request *)(status.context);
+     MPID_nem_mx_unified_req_t *myreq = (MPID_nem_mx_unified_req_t *)(status.context);
+     MPID_Request              *req   = &(myreq->mpi_req);
+     MPID_Request_kind_t        kind  = req->kind;
      
-     if ((req->kind == MPID_REQUEST_SEND) || (req->kind == MPID_PREQUEST_SEND))
+     if ((kind == MPID_REQUEST_SEND) || (kind == MPID_PREQUEST_SEND))
      {	   
        MPIU_Assert(MPIDI_Request_get_type(req) != MPIDI_REQUEST_TYPE_GET_RESP);		   
-       MPID_nem_mx_handle_sreq(req);
+       mpi_errno = MPID_nem_mx_handle_sreq(req);
+       if (mpi_errno) MPIU_ERR_POP(mpi_errno);
      }
-     else if ((req->kind == MPID_REQUEST_RECV) || (req->kind == MPID_PREQUEST_RECV))
+     else if ((kind == MPID_REQUEST_RECV) || (kind == MPID_PREQUEST_RECV))
      {
        int found = FALSE;
        mx_request_t *mx_request = NULL;
-       MPIU_Assert(status.code != MX_STATUS_TRUNCATED);	       	
        MPIU_Assert(MPIDI_Request_get_type(req) != MPIDI_REQUEST_TYPE_GET_RESP);		   
        MPIU_THREAD_CS_ENTER(MSGQUEUE,req);	   	 
        MPID_NEM_MX_GET_REQ_FROM_HASH(req,mx_request);
@@ -375,14 +379,15 @@ MPID_nem_mx_poll(int in_blocking_poll)
        }
        found = MPIDI_CH3U_Recvq_DP(req);
        if(found){
-	 MPID_nem_mx_handle_rreq(req, status);
+	 mpi_errno = MPID_nem_mx_handle_rreq(req, status);
+	  if (mpi_errno) MPIU_ERR_POP(mpi_errno);
        }
        MPIU_THREAD_CS_EXIT(MSGQUEUE,req);
      }
      else
      {
          /* Error : unknown REQ type */
-         MPIU_ERR_CHKANDJUMP1(TRUE, mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "unknown REQ type");
+         MPIU_ERR_CHKINTERNAL(TRUE, mpi_errno, "unknown REQ type");
      }
    }   
  fn_exit:
@@ -409,29 +414,36 @@ MPID_nem_mx_poll(int in_blocking_progress)
    MPIU_Assert(ret == MX_SUCCESS);
    if ((ret == MX_SUCCESS) && (result > 0))
    {
-     MPIR_Context_id_t ctxt;
-     MPID_Request     *req = (MPID_Request *)(status.context);
+     MPID_nem_mx_unified_req_t *myreq = (MPID_nem_mx_unified_req_t *)(status.context);
+     MPID_Request              *req   = &(myreq->mpi_req);
+     MPID_Request_kind_t        kind  = req->kind;
+     MPIR_Context_id_t          ctxt;
+
      NEM_MX_MATCH_GET_CTXT(status.match_info, ctxt);
      
      if(ctxt == NEM_MX_INTRA_CTXT)     
      { 
-       if ((req->kind == MPID_REQUEST_SEND) || (req->kind == MPID_PREQUEST_SEND))
-       {	   
+       if ((kind == MPID_REQUEST_SEND) || (kind == MPID_PREQUEST_SEND))
+       {
+	 
 	 MPID_nem_mx_handle_sreq(req);
        }
-       else if (req->kind == MPID_REQUEST_RECV)	       
-       {
+       else if (kind == MPID_REQUEST_RECV)	       
+      {
+      	 MPID_nem_mx_internal_req_t *adi_req = &(myreq->nem_mx_req);
 	 MPIU_Assert(status.code != MX_STATUS_TRUNCATED);	       	
 	 if (status.msg_length <= sizeof(MPIDI_CH3_PktGeneric_t))
 	 {
-	   MPID_nem_handle_pkt(req->ch.vc,(char *)&(req->dev.pending_pkt),(MPIDI_msg_sz_t)(status.msg_length));
+	   MPID_nem_handle_pkt(adi_req->vc,(char *)&(adi_req->pending_pkt),(MPIDI_msg_sz_t)(status.msg_length));
 	 }
 	 else
 	 {
-	   MPID_nem_handle_pkt(req->ch.vc,(char *)(req->dev.tmpbuf),(MPIDI_msg_sz_t)(req->dev.tmpbuf_sz));
-	   MPIU_Free(req->dev.tmpbuf);
+	   MPID_nem_handle_pkt(adi_req->vc,(char *)(adi_req->tmpbuf),(MPIDI_msg_sz_t)(adi_req->tmpbuf_sz));
+	   MPIU_Free(adi_req->tmpbuf);
 	 }
-	 MPIDI_CH3_Request_destroy(req);
+	 mx_disable_progression(MPID_nem_mx_local_endpoint);
+	 MPID_nem_mx_internal_req_enqueue(adi_req);
+	 mx_reenable_progression(MPID_nem_mx_local_endpoint);
        }
        else
        {
@@ -440,16 +452,16 @@ MPID_nem_mx_poll(int in_blocking_progress)
      }
      else
      {
-       if ((req->kind == MPID_REQUEST_SEND) || (req->kind == MPID_PREQUEST_SEND))
+       if ((kind == MPID_REQUEST_SEND) || (kind == MPID_PREQUEST_SEND))
        {	   
 	 MPIU_Assert(MPIDI_Request_get_type(req) != MPIDI_REQUEST_TYPE_GET_RESP);		   
-	 MPID_nem_mx_handle_sreq(req);
+	 mpi_errno = MPID_nem_mx_handle_sreq(req);
+	 if (mpi_errno) MPIU_ERR_POP(mpi_errno);
        }
-       else if ((req->kind == MPID_REQUEST_RECV) || (req->kind == MPID_PREQUEST_RECV))
+       else if ((kind == MPID_REQUEST_RECV) || (kind == MPID_PREQUEST_RECV))
        {
 	 int found = FALSE;
 	 mx_request_t *mx_request = NULL;
-	 MPIU_Assert(status.code != MX_STATUS_TRUNCATED);	       	
 	 MPIU_Assert(MPIDI_Request_get_type(req) != MPIDI_REQUEST_TYPE_GET_RESP);		   
 	 MPIU_THREAD_CS_ENTER(MSGQUEUE,req);	   	 
 	 MPID_NEM_MX_GET_REQ_FROM_HASH(req,mx_request);
@@ -460,7 +472,8 @@ MPID_nem_mx_poll(int in_blocking_progress)
 	 }
 	 found = MPIDI_CH3U_Recvq_DP(req);
 	 if(found){
-	   MPID_nem_mx_handle_rreq(req, status);
+	   mpi_errno = MPID_nem_mx_handle_rreq(req, status);
+	   if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	 }
 	 MPIU_THREAD_CS_EXIT(MSGQUEUE,req);
        }
@@ -500,10 +513,11 @@ MPID_nem_mx_handle_sreq(MPID_Request *req)
       int complete   = 0;
       mpi_errno = reqFn(vc, req, &complete);
       if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-      if(complete)
-      {		   
-	MPIDI_CH3U_Request_complete(req);
-	MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
+      if(!complete)
+      {	
+	 /* FIXME */
+	 /* GM: enqueue the not complete sreq somewhere and test it again later */
+	 MPIU_Assert(complete == TRUE);
       }
     }
     MPID_nem_mx_pending_send_req--;
@@ -538,7 +552,7 @@ MPID_nem_mx_handle_rreq(MPID_Request *req, mx_status_t status)
   MPIDI_Datatype_get_info(req->dev.user_count, req->dev.datatype, dt_contig, userbuf_sz, dt_ptr, dt_true_lb);
   /*fprintf(stdout," ===> userbuf_size is %i, msg_length is %i, xfer_length is %i\n",userbuf_sz,status.msg_length,status.xfer_length); */
   
-  if (status.xfer_length <=  userbuf_sz) {
+  if (status.msg_length <=  userbuf_sz) {
     data_sz = req->dev.recv_data_sz;
   }
   else
@@ -603,6 +617,7 @@ MPID_nem_mx_handle_rreq(MPID_Request *req, mx_status_t status)
     fprintf(stdout,"[%i]=== Connected 2  on recv  with %i ... %p \n", MPID_nem_mem_region.rank,vc->lpid,vc);
   }
 #endif
+   
   MPIDI_CH3U_Handle_recv_req(vc, req, &complete);
   MPIU_Assert(complete == TRUE);	       	    
  fn_exit:
@@ -677,8 +692,9 @@ int MPID_nem_mx_anysource_matched(MPID_Request *rreq)
   mx_request_t *mx_request = NULL;
   mx_return_t ret;
   uint32_t    result;
-  int matched = FALSE;
-
+  int matched   = FALSE;
+  int mpi_errno = MPI_SUCCESS;
+   
   MPID_NEM_MX_GET_REQ_FROM_HASH(rreq,mx_request);
   if(mx_request != NULL)
   {
@@ -693,7 +709,8 @@ int MPID_nem_mx_anysource_matched(MPID_Request *rreq)
 	  ret = mx_test(MPID_nem_mx_local_endpoint,mx_request,&status,&result);
 	}while((result == 0) && (ret == MX_SUCCESS));
 	MPIU_Assert(ret == MX_SUCCESS);
-	MPID_nem_mx_handle_rreq(rreq, status);
+	mpi_errno = MPID_nem_mx_handle_rreq(rreq, status);
+	/* FIXME : how can we report MPI_ERR_TRUNC in this case?*/ 
 	matched = TRUE;
       }
       else
@@ -735,7 +752,18 @@ c");
   rreq->dev.segment_first = 0;
   rreq->dev.segment_size = data_sz;
   last = rreq->dev.segment_size;
-  iov = MPIU_Malloc(iov_num_ub*sizeof(MPID_IOV));
+  
+  /* 
+  MPID_Segment_count_contig_blocks(sreq->dev.segment_ptr ,first,&last,&n_iov);
+  MPIU_Assert(n_iov > 0);
+  */
+
+  if(n_iov <= 0)
+  {
+     n_iov = rreq->dev.user_count * dt_ptr->n_elements;
+  } 
+   
+  iov = MPIU_Malloc(n_iov*sizeof(MPID_IOV));
   MPID_Segment_unpack_vector(rreq->dev.segment_ptr, rreq->dev.segment_first, &last, iov, &n_iov);
   MPIU_Assert(last == rreq->dev.segment_size);
   

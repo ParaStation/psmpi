@@ -69,8 +69,6 @@ latexdoc:
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
 # --------------------------------------------------------------------------
 
 # A special testing target to simplify testing just the F77 code

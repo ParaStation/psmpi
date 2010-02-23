@@ -1,4 +1,4 @@
-#! /opt/local/bin/perl -w
+#! /usr/bin/perl -w
 # -*- Mode: perl; -*-
 # 
 # This script is a replacement for several scripts that process source

@@ -39,14 +39,14 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -57,7 +57,7 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -126,13 +126,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	group_intersection.o group_range_excl.o group_range_incl.o \
 	group_rank.o group_size.o group_translate_ranks.o group_union.o \
 	grouputil.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${MPILIBNAME}.a ; \
@@ -144,7 +144,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	group_intersection.lo group_range_excl.lo group_range_incl.lo \
 	group_rank.lo group_size.lo group_translate_ranks.lo group_union.lo \
 	grouputil.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -157,13 +157,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	_group_incl.o _group_intersection.o _group_range_excl.o \
 	_group_range_incl.o _group_rank.o _group_size.o \
 	_group_translate_ranks.o _group_union.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${PMPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${PMPILIBNAME}.a ; \
@@ -174,7 +174,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	_group_incl.lo _group_intersection.lo _group_range_excl.lo \
 	_group_range_incl.lo _group_rank.lo _group_size.lo \
 	_group_translate_ranks.lo _group_union.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $? ; \
@@ -182,168 +182,168 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _group_compare.o: group_compare.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/group_compare.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_compare.c -o _group_compare.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_compare.c -o _group_compare.o
 _group_compare.lo: group_compare.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/group_compare.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_compare.c -o _group_compare.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_compare.c -o _group_compare.lo
 _group_difference.o: group_difference.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/group_difference.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_difference.c -o _group_difference.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_difference.c -o _group_difference.o
 _group_difference.lo: group_difference.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/group_difference.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_difference.c -o _group_difference.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_difference.c -o _group_difference.lo
 _group_excl.o: group_excl.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/group_excl.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_excl.c -o _group_excl.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_excl.c -o _group_excl.o
 _group_excl.lo: group_excl.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/group_excl.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_excl.c -o _group_excl.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_excl.c -o _group_excl.lo
 _group_free.o: group_free.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/group_free.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_free.c -o _group_free.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_free.c -o _group_free.o
 _group_free.lo: group_free.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/group_free.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_free.c -o _group_free.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_free.c -o _group_free.lo
 _group_incl.o: group_incl.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/group_incl.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_incl.c -o _group_incl.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_incl.c -o _group_incl.o
 _group_incl.lo: group_incl.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/group_incl.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_incl.c -o _group_incl.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_incl.c -o _group_incl.lo
 _group_intersection.o: group_intersection.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/group_intersection.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_intersection.c -o _group_intersection.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_intersection.c -o _group_intersection.o
 _group_intersection.lo: group_intersection.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/group_intersection.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_intersection.c -o _group_intersection.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_intersection.c -o _group_intersection.lo
 _group_range_excl.o: group_range_excl.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/group_range_excl.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_range_excl.c -o _group_range_excl.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_range_excl.c -o _group_range_excl.o
 _group_range_excl.lo: group_range_excl.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/group_range_excl.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_range_excl.c -o _group_range_excl.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_range_excl.c -o _group_range_excl.lo
 _group_range_incl.o: group_range_incl.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/group_range_incl.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_range_incl.c -o _group_range_incl.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_range_incl.c -o _group_range_incl.o
 _group_range_incl.lo: group_range_incl.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/group_range_incl.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_range_incl.c -o _group_range_incl.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_range_incl.c -o _group_range_incl.lo
 _group_rank.o: group_rank.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/group_rank.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_rank.c -o _group_rank.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_rank.c -o _group_rank.o
 _group_rank.lo: group_rank.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/group_rank.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_rank.c -o _group_rank.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_rank.c -o _group_rank.lo
 _group_size.o: group_size.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/group_size.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_size.c -o _group_size.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_size.c -o _group_size.o
 _group_size.lo: group_size.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/group_size.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_size.c -o _group_size.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_size.c -o _group_size.lo
 _group_translate_ranks.o: group_translate_ranks.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/group_translate_ranks.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_translate_ranks.c -o _group_translate_ranks.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_translate_ranks.c -o _group_translate_ranks.o
 _group_translate_ranks.lo: group_translate_ranks.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/group_translate_ranks.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_translate_ranks.c -o _group_translate_ranks.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_translate_ranks.c -o _group_translate_ranks.lo
 _group_union.o: group_union.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/group_union.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_union.c -o _group_union.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/group_union.c -o _group_union.o
 _group_union.lo: group_union.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/group_union.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/group_union.c -o _group_union.lo ; \
@@ -367,58 +367,188 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/group_compare.d: $(srcdir)/group_compare.c
-	$(MAKE_DEPEND_C) -MT '_group_compare.o group_compare.o' $(srcdir)/group_compare.c >$(DEPS_DIR)/group_compare.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_compare.c > $(DEPS_DIR)/group_compare.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_compare.o group_compare.o group_compare.lo _group_compare.lo' $(srcdir)/group_compare.c >$(DEPS_DIR)/group_compare.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_compare.o group_compare.o group_compare.lo _group_compare.lo' $(srcdir)/group_compare.c >$(DEPS_DIR)/group_compare.d
 $(DEPS_DIR)/group_difference.d: $(srcdir)/group_difference.c
-	$(MAKE_DEPEND_C) -MT '_group_difference.o group_difference.o' $(srcdir)/group_difference.c >$(DEPS_DIR)/group_difference.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_difference.c > $(DEPS_DIR)/group_difference.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_difference.o group_difference.o group_difference.lo _group_difference.lo' $(srcdir)/group_difference.c >$(DEPS_DIR)/group_difference.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_difference.o group_difference.o group_difference.lo _group_difference.lo' $(srcdir)/group_difference.c >$(DEPS_DIR)/group_difference.d
 $(DEPS_DIR)/group_excl.d: $(srcdir)/group_excl.c
-	$(MAKE_DEPEND_C) -MT '_group_excl.o group_excl.o' $(srcdir)/group_excl.c >$(DEPS_DIR)/group_excl.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_excl.c > $(DEPS_DIR)/group_excl.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_excl.o group_excl.o group_excl.lo _group_excl.lo' $(srcdir)/group_excl.c >$(DEPS_DIR)/group_excl.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_excl.o group_excl.o group_excl.lo _group_excl.lo' $(srcdir)/group_excl.c >$(DEPS_DIR)/group_excl.d
 $(DEPS_DIR)/group_free.d: $(srcdir)/group_free.c
-	$(MAKE_DEPEND_C) -MT '_group_free.o group_free.o' $(srcdir)/group_free.c >$(DEPS_DIR)/group_free.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_free.c > $(DEPS_DIR)/group_free.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_free.o group_free.o group_free.lo _group_free.lo' $(srcdir)/group_free.c >$(DEPS_DIR)/group_free.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_free.o group_free.o group_free.lo _group_free.lo' $(srcdir)/group_free.c >$(DEPS_DIR)/group_free.d
 $(DEPS_DIR)/group_incl.d: $(srcdir)/group_incl.c
-	$(MAKE_DEPEND_C) -MT '_group_incl.o group_incl.o' $(srcdir)/group_incl.c >$(DEPS_DIR)/group_incl.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_incl.c > $(DEPS_DIR)/group_incl.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_incl.o group_incl.o group_incl.lo _group_incl.lo' $(srcdir)/group_incl.c >$(DEPS_DIR)/group_incl.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_incl.o group_incl.o group_incl.lo _group_incl.lo' $(srcdir)/group_incl.c >$(DEPS_DIR)/group_incl.d
 $(DEPS_DIR)/group_intersection.d: $(srcdir)/group_intersection.c
-	$(MAKE_DEPEND_C) -MT '_group_intersection.o group_intersection.o' $(srcdir)/group_intersection.c >$(DEPS_DIR)/group_intersection.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_intersection.c > $(DEPS_DIR)/group_intersection.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_intersection.o group_intersection.o group_intersection.lo _group_intersection.lo' $(srcdir)/group_intersection.c >$(DEPS_DIR)/group_intersection.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_intersection.o group_intersection.o group_intersection.lo _group_intersection.lo' $(srcdir)/group_intersection.c >$(DEPS_DIR)/group_intersection.d
 $(DEPS_DIR)/group_range_excl.d: $(srcdir)/group_range_excl.c
-	$(MAKE_DEPEND_C) -MT '_group_range_excl.o group_range_excl.o' $(srcdir)/group_range_excl.c >$(DEPS_DIR)/group_range_excl.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_range_excl.c > $(DEPS_DIR)/group_range_excl.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_range_excl.o group_range_excl.o group_range_excl.lo _group_range_excl.lo' $(srcdir)/group_range_excl.c >$(DEPS_DIR)/group_range_excl.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_range_excl.o group_range_excl.o group_range_excl.lo _group_range_excl.lo' $(srcdir)/group_range_excl.c >$(DEPS_DIR)/group_range_excl.d
 $(DEPS_DIR)/group_range_incl.d: $(srcdir)/group_range_incl.c
-	$(MAKE_DEPEND_C) -MT '_group_range_incl.o group_range_incl.o' $(srcdir)/group_range_incl.c >$(DEPS_DIR)/group_range_incl.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_range_incl.c > $(DEPS_DIR)/group_range_incl.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_range_incl.o group_range_incl.o group_range_incl.lo _group_range_incl.lo' $(srcdir)/group_range_incl.c >$(DEPS_DIR)/group_range_incl.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_range_incl.o group_range_incl.o group_range_incl.lo _group_range_incl.lo' $(srcdir)/group_range_incl.c >$(DEPS_DIR)/group_range_incl.d
 $(DEPS_DIR)/group_rank.d: $(srcdir)/group_rank.c
-	$(MAKE_DEPEND_C) -MT '_group_rank.o group_rank.o' $(srcdir)/group_rank.c >$(DEPS_DIR)/group_rank.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_rank.c > $(DEPS_DIR)/group_rank.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_rank.o group_rank.o group_rank.lo _group_rank.lo' $(srcdir)/group_rank.c >$(DEPS_DIR)/group_rank.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_rank.o group_rank.o group_rank.lo _group_rank.lo' $(srcdir)/group_rank.c >$(DEPS_DIR)/group_rank.d
 $(DEPS_DIR)/group_size.d: $(srcdir)/group_size.c
-	$(MAKE_DEPEND_C) -MT '_group_size.o group_size.o' $(srcdir)/group_size.c >$(DEPS_DIR)/group_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_size.c > $(DEPS_DIR)/group_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_size.o group_size.o group_size.lo _group_size.lo' $(srcdir)/group_size.c >$(DEPS_DIR)/group_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_size.o group_size.o group_size.lo _group_size.lo' $(srcdir)/group_size.c >$(DEPS_DIR)/group_size.d
 $(DEPS_DIR)/group_translate_ranks.d: $(srcdir)/group_translate_ranks.c
-	$(MAKE_DEPEND_C) -MT '_group_translate_ranks.o group_translate_ranks.o' $(srcdir)/group_translate_ranks.c >$(DEPS_DIR)/group_translate_ranks.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_translate_ranks.c > $(DEPS_DIR)/group_translate_ranks.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_translate_ranks.o group_translate_ranks.o group_translate_ranks.lo _group_translate_ranks.lo' $(srcdir)/group_translate_ranks.c >$(DEPS_DIR)/group_translate_ranks.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_translate_ranks.o group_translate_ranks.o group_translate_ranks.lo _group_translate_ranks.lo' $(srcdir)/group_translate_ranks.c >$(DEPS_DIR)/group_translate_ranks.d
 $(DEPS_DIR)/group_union.d: $(srcdir)/group_union.c
-	$(MAKE_DEPEND_C) -MT '_group_union.o group_union.o' $(srcdir)/group_union.c >$(DEPS_DIR)/group_union.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_union.c > $(DEPS_DIR)/group_union.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_union.o group_union.o group_union.lo _group_union.lo' $(srcdir)/group_union.c >$(DEPS_DIR)/group_union.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_union.o group_union.o group_union.lo _group_union.lo' $(srcdir)/group_union.c >$(DEPS_DIR)/group_union.d
 $(DEPS_DIR)/grouputil.d: $(srcdir)/grouputil.c
-	$(MAKE_DEPEND_C) -MT '_grouputil.o grouputil.o' $(srcdir)/grouputil.c >$(DEPS_DIR)/grouputil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C grouputil.c > $(DEPS_DIR)/grouputil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_grouputil.o grouputil.o grouputil.lo _grouputil.lo' $(srcdir)/grouputil.c >$(DEPS_DIR)/grouputil.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_grouputil.o grouputil.o grouputil.lo _grouputil.lo' $(srcdir)/grouputil.c >$(DEPS_DIR)/grouputil.d
 $(DEPS_DIR)/timestamp: ${mpi_sources} grouputil.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_group_compare.o group_compare.o' $(srcdir)/group_compare.c >$(DEPS_DIR)/group_compare.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_compare.c > $(DEPS_DIR)/group_compare.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_compare.o group_compare.o group_compare.lo _group_compare.lo' $(srcdir)/group_compare.c >$(DEPS_DIR)/group_compare.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_compare.o group_compare.o group_compare.lo _group_compare.lo' $(srcdir)/group_compare.c >$(DEPS_DIR)/group_compare.d
 	echo "include $(DEPS_DIR)/group_compare.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_group_difference.o group_difference.o' $(srcdir)/group_difference.c >$(DEPS_DIR)/group_difference.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_difference.c > $(DEPS_DIR)/group_difference.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_difference.o group_difference.o group_difference.lo _group_difference.lo' $(srcdir)/group_difference.c >$(DEPS_DIR)/group_difference.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_difference.o group_difference.o group_difference.lo _group_difference.lo' $(srcdir)/group_difference.c >$(DEPS_DIR)/group_difference.d
 	echo "include $(DEPS_DIR)/group_difference.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_group_excl.o group_excl.o' $(srcdir)/group_excl.c >$(DEPS_DIR)/group_excl.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_excl.c > $(DEPS_DIR)/group_excl.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_excl.o group_excl.o group_excl.lo _group_excl.lo' $(srcdir)/group_excl.c >$(DEPS_DIR)/group_excl.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_excl.o group_excl.o group_excl.lo _group_excl.lo' $(srcdir)/group_excl.c >$(DEPS_DIR)/group_excl.d
 	echo "include $(DEPS_DIR)/group_excl.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_group_free.o group_free.o' $(srcdir)/group_free.c >$(DEPS_DIR)/group_free.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_free.c > $(DEPS_DIR)/group_free.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_free.o group_free.o group_free.lo _group_free.lo' $(srcdir)/group_free.c >$(DEPS_DIR)/group_free.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_free.o group_free.o group_free.lo _group_free.lo' $(srcdir)/group_free.c >$(DEPS_DIR)/group_free.d
 	echo "include $(DEPS_DIR)/group_free.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_group_incl.o group_incl.o' $(srcdir)/group_incl.c >$(DEPS_DIR)/group_incl.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_incl.c > $(DEPS_DIR)/group_incl.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_incl.o group_incl.o group_incl.lo _group_incl.lo' $(srcdir)/group_incl.c >$(DEPS_DIR)/group_incl.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_incl.o group_incl.o group_incl.lo _group_incl.lo' $(srcdir)/group_incl.c >$(DEPS_DIR)/group_incl.d
 	echo "include $(DEPS_DIR)/group_incl.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_group_intersection.o group_intersection.o' $(srcdir)/group_intersection.c >$(DEPS_DIR)/group_intersection.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_intersection.c > $(DEPS_DIR)/group_intersection.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_intersection.o group_intersection.o group_intersection.lo _group_intersection.lo' $(srcdir)/group_intersection.c >$(DEPS_DIR)/group_intersection.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_intersection.o group_intersection.o group_intersection.lo _group_intersection.lo' $(srcdir)/group_intersection.c >$(DEPS_DIR)/group_intersection.d
 	echo "include $(DEPS_DIR)/group_intersection.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_group_range_excl.o group_range_excl.o' $(srcdir)/group_range_excl.c >$(DEPS_DIR)/group_range_excl.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_range_excl.c > $(DEPS_DIR)/group_range_excl.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_range_excl.o group_range_excl.o group_range_excl.lo _group_range_excl.lo' $(srcdir)/group_range_excl.c >$(DEPS_DIR)/group_range_excl.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_range_excl.o group_range_excl.o group_range_excl.lo _group_range_excl.lo' $(srcdir)/group_range_excl.c >$(DEPS_DIR)/group_range_excl.d
 	echo "include $(DEPS_DIR)/group_range_excl.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_group_range_incl.o group_range_incl.o' $(srcdir)/group_range_incl.c >$(DEPS_DIR)/group_range_incl.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_range_incl.c > $(DEPS_DIR)/group_range_incl.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_range_incl.o group_range_incl.o group_range_incl.lo _group_range_incl.lo' $(srcdir)/group_range_incl.c >$(DEPS_DIR)/group_range_incl.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_range_incl.o group_range_incl.o group_range_incl.lo _group_range_incl.lo' $(srcdir)/group_range_incl.c >$(DEPS_DIR)/group_range_incl.d
 	echo "include $(DEPS_DIR)/group_range_incl.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_group_rank.o group_rank.o' $(srcdir)/group_rank.c >$(DEPS_DIR)/group_rank.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_rank.c > $(DEPS_DIR)/group_rank.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_rank.o group_rank.o group_rank.lo _group_rank.lo' $(srcdir)/group_rank.c >$(DEPS_DIR)/group_rank.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_rank.o group_rank.o group_rank.lo _group_rank.lo' $(srcdir)/group_rank.c >$(DEPS_DIR)/group_rank.d
 	echo "include $(DEPS_DIR)/group_rank.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_group_size.o group_size.o' $(srcdir)/group_size.c >$(DEPS_DIR)/group_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_size.c > $(DEPS_DIR)/group_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_size.o group_size.o group_size.lo _group_size.lo' $(srcdir)/group_size.c >$(DEPS_DIR)/group_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_size.o group_size.o group_size.lo _group_size.lo' $(srcdir)/group_size.c >$(DEPS_DIR)/group_size.d
 	echo "include $(DEPS_DIR)/group_size.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_group_translate_ranks.o group_translate_ranks.o' $(srcdir)/group_translate_ranks.c >$(DEPS_DIR)/group_translate_ranks.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_translate_ranks.c > $(DEPS_DIR)/group_translate_ranks.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_translate_ranks.o group_translate_ranks.o group_translate_ranks.lo _group_translate_ranks.lo' $(srcdir)/group_translate_ranks.c >$(DEPS_DIR)/group_translate_ranks.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_translate_ranks.o group_translate_ranks.o group_translate_ranks.lo _group_translate_ranks.lo' $(srcdir)/group_translate_ranks.c >$(DEPS_DIR)/group_translate_ranks.d
 	echo "include $(DEPS_DIR)/group_translate_ranks.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_group_union.o group_union.o' $(srcdir)/group_union.c >$(DEPS_DIR)/group_union.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C group_union.c > $(DEPS_DIR)/group_union.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_group_union.o group_union.o group_union.lo _group_union.lo' $(srcdir)/group_union.c >$(DEPS_DIR)/group_union.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_group_union.o group_union.o group_union.lo _group_union.lo' $(srcdir)/group_union.c >$(DEPS_DIR)/group_union.d
 	echo "include $(DEPS_DIR)/group_union.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_grouputil.o grouputil.o' $(srcdir)/grouputil.c >$(DEPS_DIR)/grouputil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C grouputil.c > $(DEPS_DIR)/grouputil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_grouputil.o grouputil.o grouputil.lo _grouputil.lo' $(srcdir)/grouputil.c >$(DEPS_DIR)/grouputil.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_grouputil.o grouputil.o grouputil.lo _grouputil.lo' $(srcdir)/grouputil.c >$(DEPS_DIR)/grouputil.d
 	echo "include $(DEPS_DIR)/grouputil.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -430,12 +560,8 @@ SOURCES         =  group_compare.c group_difference.c group_excl.c \
 	group_free.c group_incl.c group_intersection.c group_range_excl.c \
 	group_range_incl.c group_rank.c group_size.c group_translate_ranks.c \
 	group_union.c grouputil.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 

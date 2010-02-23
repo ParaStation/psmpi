@@ -38,14 +38,14 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .man .html .latex .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -56,7 +56,7 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -125,13 +125,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	win_free.o win_get_group.o win_get_name.o win_lock.o win_post.o \
 	win_set_name.o win_start.o win_unlock.o win_wait.o win_test.o \
 	winutil.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${MPILIBNAME}.a ; \
@@ -143,7 +143,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	win_free.lo win_get_group.lo win_get_name.lo win_lock.lo win_post.lo \
 	win_set_name.lo win_start.lo win_unlock.lo win_wait.lo win_test.lo \
 	winutil.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -156,13 +156,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	_win_create.o _win_fence.o _win_free.o _win_get_group.o \
 	_win_get_name.o _win_lock.o _win_post.o _win_set_name.o _win_start.o \
 	_win_unlock.o _win_wait.o _win_test.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${PMPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../lib/lib${PMPILIBNAME}.a ; \
@@ -173,7 +173,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	_win_create.lo _win_fence.lo _win_free.lo _win_get_group.lo \
 	_win_get_name.lo _win_lock.lo _win_post.lo _win_set_name.lo \
 	_win_start.lo _win_unlock.lo _win_wait.lo _win_test.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $? ; \
@@ -181,252 +181,252 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _accumulate.o: accumulate.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/accumulate.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/accumulate.c -o _accumulate.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/accumulate.c -o _accumulate.o
 _accumulate.lo: accumulate.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/accumulate.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/accumulate.c -o _accumulate.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/accumulate.c -o _accumulate.lo
 _alloc_mem.o: alloc_mem.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/alloc_mem.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alloc_mem.c -o _alloc_mem.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alloc_mem.c -o _alloc_mem.o
 _alloc_mem.lo: alloc_mem.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/alloc_mem.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alloc_mem.c -o _alloc_mem.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alloc_mem.c -o _alloc_mem.lo
 _free_mem.o: free_mem.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/free_mem.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/free_mem.c -o _free_mem.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/free_mem.c -o _free_mem.o
 _free_mem.lo: free_mem.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/free_mem.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/free_mem.c -o _free_mem.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/free_mem.c -o _free_mem.lo
 _get.o: get.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/get.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get.c -o _get.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get.c -o _get.o
 _get.lo: get.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/get.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get.c -o _get.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get.c -o _get.lo
 _put.o: put.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/put.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/put.c -o _put.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/put.c -o _put.o
 _put.lo: put.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/put.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/put.c -o _put.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/put.c -o _put.lo
 _win_complete.o: win_complete.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_complete.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_complete.c -o _win_complete.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_complete.c -o _win_complete.o
 _win_complete.lo: win_complete.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_complete.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_complete.c -o _win_complete.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_complete.c -o _win_complete.lo
 _win_create.o: win_create.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_create.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_create.c -o _win_create.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_create.c -o _win_create.o
 _win_create.lo: win_create.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_create.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_create.c -o _win_create.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_create.c -o _win_create.lo
 _win_fence.o: win_fence.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_fence.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_fence.c -o _win_fence.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_fence.c -o _win_fence.o
 _win_fence.lo: win_fence.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_fence.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_fence.c -o _win_fence.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_fence.c -o _win_fence.lo
 _win_free.o: win_free.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_free.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_free.c -o _win_free.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_free.c -o _win_free.o
 _win_free.lo: win_free.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_free.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_free.c -o _win_free.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_free.c -o _win_free.lo
 _win_get_group.o: win_get_group.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_get_group.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_group.c -o _win_get_group.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_group.c -o _win_get_group.o
 _win_get_group.lo: win_get_group.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_get_group.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_group.c -o _win_get_group.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_group.c -o _win_get_group.lo
 _win_get_name.o: win_get_name.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_get_name.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_name.c -o _win_get_name.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_name.c -o _win_get_name.o
 _win_get_name.lo: win_get_name.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_get_name.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_name.c -o _win_get_name.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_name.c -o _win_get_name.lo
 _win_lock.o: win_lock.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_lock.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_lock.c -o _win_lock.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_lock.c -o _win_lock.o
 _win_lock.lo: win_lock.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_lock.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_lock.c -o _win_lock.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_lock.c -o _win_lock.lo
 _win_post.o: win_post.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_post.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_post.c -o _win_post.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_post.c -o _win_post.o
 _win_post.lo: win_post.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_post.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_post.c -o _win_post.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_post.c -o _win_post.lo
 _win_set_name.o: win_set_name.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_set_name.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_name.c -o _win_set_name.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_name.c -o _win_set_name.o
 _win_set_name.lo: win_set_name.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_set_name.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_name.c -o _win_set_name.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_name.c -o _win_set_name.lo
 _win_start.o: win_start.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_start.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_start.c -o _win_start.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_start.c -o _win_start.o
 _win_start.lo: win_start.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_start.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_start.c -o _win_start.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_start.c -o _win_start.lo
 _win_unlock.o: win_unlock.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_unlock.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_unlock.c -o _win_unlock.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_unlock.c -o _win_unlock.o
 _win_unlock.lo: win_unlock.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_unlock.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_unlock.c -o _win_unlock.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_unlock.c -o _win_unlock.lo
 _win_wait.o: win_wait.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_wait.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_wait.c -o _win_wait.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_wait.c -o _win_wait.o
 _win_wait.lo: win_wait.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_wait.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_wait.c -o _win_wait.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_wait.c -o _win_wait.lo
 _win_test.o: win_test.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC             -D<profiling> ${srcdir}/win_test.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_test.c -o _win_test.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_test.c -o _win_test.o
 _win_test.lo: win_test.c
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo " CC           -D<profiling> $(srcdir)/win_test.c" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_test.c -o _win_test.lo ; \
@@ -450,82 +450,272 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/accumulate.d: $(srcdir)/accumulate.c
-	$(MAKE_DEPEND_C) -MT '_accumulate.o accumulate.o' $(srcdir)/accumulate.c >$(DEPS_DIR)/accumulate.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C accumulate.c > $(DEPS_DIR)/accumulate.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_accumulate.o accumulate.o accumulate.lo _accumulate.lo' $(srcdir)/accumulate.c >$(DEPS_DIR)/accumulate.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_accumulate.o accumulate.o accumulate.lo _accumulate.lo' $(srcdir)/accumulate.c >$(DEPS_DIR)/accumulate.d
 $(DEPS_DIR)/alloc_mem.d: $(srcdir)/alloc_mem.c
-	$(MAKE_DEPEND_C) -MT '_alloc_mem.o alloc_mem.o' $(srcdir)/alloc_mem.c >$(DEPS_DIR)/alloc_mem.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C alloc_mem.c > $(DEPS_DIR)/alloc_mem.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_alloc_mem.o alloc_mem.o alloc_mem.lo _alloc_mem.lo' $(srcdir)/alloc_mem.c >$(DEPS_DIR)/alloc_mem.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_alloc_mem.o alloc_mem.o alloc_mem.lo _alloc_mem.lo' $(srcdir)/alloc_mem.c >$(DEPS_DIR)/alloc_mem.d
 $(DEPS_DIR)/free_mem.d: $(srcdir)/free_mem.c
-	$(MAKE_DEPEND_C) -MT '_free_mem.o free_mem.o' $(srcdir)/free_mem.c >$(DEPS_DIR)/free_mem.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C free_mem.c > $(DEPS_DIR)/free_mem.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_free_mem.o free_mem.o free_mem.lo _free_mem.lo' $(srcdir)/free_mem.c >$(DEPS_DIR)/free_mem.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_free_mem.o free_mem.o free_mem.lo _free_mem.lo' $(srcdir)/free_mem.c >$(DEPS_DIR)/free_mem.d
 $(DEPS_DIR)/get.d: $(srcdir)/get.c
-	$(MAKE_DEPEND_C) -MT '_get.o get.o' $(srcdir)/get.c >$(DEPS_DIR)/get.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C get.c > $(DEPS_DIR)/get.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_get.o get.o get.lo _get.lo' $(srcdir)/get.c >$(DEPS_DIR)/get.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_get.o get.o get.lo _get.lo' $(srcdir)/get.c >$(DEPS_DIR)/get.d
 $(DEPS_DIR)/put.d: $(srcdir)/put.c
-	$(MAKE_DEPEND_C) -MT '_put.o put.o' $(srcdir)/put.c >$(DEPS_DIR)/put.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C put.c > $(DEPS_DIR)/put.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_put.o put.o put.lo _put.lo' $(srcdir)/put.c >$(DEPS_DIR)/put.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_put.o put.o put.lo _put.lo' $(srcdir)/put.c >$(DEPS_DIR)/put.d
 $(DEPS_DIR)/win_complete.d: $(srcdir)/win_complete.c
-	$(MAKE_DEPEND_C) -MT '_win_complete.o win_complete.o' $(srcdir)/win_complete.c >$(DEPS_DIR)/win_complete.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_complete.c > $(DEPS_DIR)/win_complete.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_complete.o win_complete.o win_complete.lo _win_complete.lo' $(srcdir)/win_complete.c >$(DEPS_DIR)/win_complete.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_complete.o win_complete.o win_complete.lo _win_complete.lo' $(srcdir)/win_complete.c >$(DEPS_DIR)/win_complete.d
 $(DEPS_DIR)/win_create.d: $(srcdir)/win_create.c
-	$(MAKE_DEPEND_C) -MT '_win_create.o win_create.o' $(srcdir)/win_create.c >$(DEPS_DIR)/win_create.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_create.c > $(DEPS_DIR)/win_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_create.o win_create.o win_create.lo _win_create.lo' $(srcdir)/win_create.c >$(DEPS_DIR)/win_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_create.o win_create.o win_create.lo _win_create.lo' $(srcdir)/win_create.c >$(DEPS_DIR)/win_create.d
 $(DEPS_DIR)/win_fence.d: $(srcdir)/win_fence.c
-	$(MAKE_DEPEND_C) -MT '_win_fence.o win_fence.o' $(srcdir)/win_fence.c >$(DEPS_DIR)/win_fence.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_fence.c > $(DEPS_DIR)/win_fence.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_fence.o win_fence.o win_fence.lo _win_fence.lo' $(srcdir)/win_fence.c >$(DEPS_DIR)/win_fence.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_fence.o win_fence.o win_fence.lo _win_fence.lo' $(srcdir)/win_fence.c >$(DEPS_DIR)/win_fence.d
 $(DEPS_DIR)/win_free.d: $(srcdir)/win_free.c
-	$(MAKE_DEPEND_C) -MT '_win_free.o win_free.o' $(srcdir)/win_free.c >$(DEPS_DIR)/win_free.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_free.c > $(DEPS_DIR)/win_free.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_free.o win_free.o win_free.lo _win_free.lo' $(srcdir)/win_free.c >$(DEPS_DIR)/win_free.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_free.o win_free.o win_free.lo _win_free.lo' $(srcdir)/win_free.c >$(DEPS_DIR)/win_free.d
 $(DEPS_DIR)/win_get_group.d: $(srcdir)/win_get_group.c
-	$(MAKE_DEPEND_C) -MT '_win_get_group.o win_get_group.o' $(srcdir)/win_get_group.c >$(DEPS_DIR)/win_get_group.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_get_group.c > $(DEPS_DIR)/win_get_group.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_get_group.o win_get_group.o win_get_group.lo _win_get_group.lo' $(srcdir)/win_get_group.c >$(DEPS_DIR)/win_get_group.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_get_group.o win_get_group.o win_get_group.lo _win_get_group.lo' $(srcdir)/win_get_group.c >$(DEPS_DIR)/win_get_group.d
 $(DEPS_DIR)/win_get_name.d: $(srcdir)/win_get_name.c
-	$(MAKE_DEPEND_C) -MT '_win_get_name.o win_get_name.o' $(srcdir)/win_get_name.c >$(DEPS_DIR)/win_get_name.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_get_name.c > $(DEPS_DIR)/win_get_name.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_get_name.o win_get_name.o win_get_name.lo _win_get_name.lo' $(srcdir)/win_get_name.c >$(DEPS_DIR)/win_get_name.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_get_name.o win_get_name.o win_get_name.lo _win_get_name.lo' $(srcdir)/win_get_name.c >$(DEPS_DIR)/win_get_name.d
 $(DEPS_DIR)/win_lock.d: $(srcdir)/win_lock.c
-	$(MAKE_DEPEND_C) -MT '_win_lock.o win_lock.o' $(srcdir)/win_lock.c >$(DEPS_DIR)/win_lock.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_lock.c > $(DEPS_DIR)/win_lock.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_lock.o win_lock.o win_lock.lo _win_lock.lo' $(srcdir)/win_lock.c >$(DEPS_DIR)/win_lock.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_lock.o win_lock.o win_lock.lo _win_lock.lo' $(srcdir)/win_lock.c >$(DEPS_DIR)/win_lock.d
 $(DEPS_DIR)/win_post.d: $(srcdir)/win_post.c
-	$(MAKE_DEPEND_C) -MT '_win_post.o win_post.o' $(srcdir)/win_post.c >$(DEPS_DIR)/win_post.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_post.c > $(DEPS_DIR)/win_post.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_post.o win_post.o win_post.lo _win_post.lo' $(srcdir)/win_post.c >$(DEPS_DIR)/win_post.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_post.o win_post.o win_post.lo _win_post.lo' $(srcdir)/win_post.c >$(DEPS_DIR)/win_post.d
 $(DEPS_DIR)/win_set_name.d: $(srcdir)/win_set_name.c
-	$(MAKE_DEPEND_C) -MT '_win_set_name.o win_set_name.o' $(srcdir)/win_set_name.c >$(DEPS_DIR)/win_set_name.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_set_name.c > $(DEPS_DIR)/win_set_name.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_set_name.o win_set_name.o win_set_name.lo _win_set_name.lo' $(srcdir)/win_set_name.c >$(DEPS_DIR)/win_set_name.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_set_name.o win_set_name.o win_set_name.lo _win_set_name.lo' $(srcdir)/win_set_name.c >$(DEPS_DIR)/win_set_name.d
 $(DEPS_DIR)/win_start.d: $(srcdir)/win_start.c
-	$(MAKE_DEPEND_C) -MT '_win_start.o win_start.o' $(srcdir)/win_start.c >$(DEPS_DIR)/win_start.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_start.c > $(DEPS_DIR)/win_start.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_start.o win_start.o win_start.lo _win_start.lo' $(srcdir)/win_start.c >$(DEPS_DIR)/win_start.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_start.o win_start.o win_start.lo _win_start.lo' $(srcdir)/win_start.c >$(DEPS_DIR)/win_start.d
 $(DEPS_DIR)/win_unlock.d: $(srcdir)/win_unlock.c
-	$(MAKE_DEPEND_C) -MT '_win_unlock.o win_unlock.o' $(srcdir)/win_unlock.c >$(DEPS_DIR)/win_unlock.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_unlock.c > $(DEPS_DIR)/win_unlock.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_unlock.o win_unlock.o win_unlock.lo _win_unlock.lo' $(srcdir)/win_unlock.c >$(DEPS_DIR)/win_unlock.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_unlock.o win_unlock.o win_unlock.lo _win_unlock.lo' $(srcdir)/win_unlock.c >$(DEPS_DIR)/win_unlock.d
 $(DEPS_DIR)/win_wait.d: $(srcdir)/win_wait.c
-	$(MAKE_DEPEND_C) -MT '_win_wait.o win_wait.o' $(srcdir)/win_wait.c >$(DEPS_DIR)/win_wait.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_wait.c > $(DEPS_DIR)/win_wait.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_wait.o win_wait.o win_wait.lo _win_wait.lo' $(srcdir)/win_wait.c >$(DEPS_DIR)/win_wait.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_wait.o win_wait.o win_wait.lo _win_wait.lo' $(srcdir)/win_wait.c >$(DEPS_DIR)/win_wait.d
 $(DEPS_DIR)/win_test.d: $(srcdir)/win_test.c
-	$(MAKE_DEPEND_C) -MT '_win_test.o win_test.o' $(srcdir)/win_test.c >$(DEPS_DIR)/win_test.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_test.c > $(DEPS_DIR)/win_test.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_test.o win_test.o win_test.lo _win_test.lo' $(srcdir)/win_test.c >$(DEPS_DIR)/win_test.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_test.o win_test.o win_test.lo _win_test.lo' $(srcdir)/win_test.c >$(DEPS_DIR)/win_test.d
 $(DEPS_DIR)/winutil.d: $(srcdir)/winutil.c
-	$(MAKE_DEPEND_C) -MT '_winutil.o winutil.o' $(srcdir)/winutil.c >$(DEPS_DIR)/winutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C winutil.c > $(DEPS_DIR)/winutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_winutil.o winutil.o winutil.lo _winutil.lo' $(srcdir)/winutil.c >$(DEPS_DIR)/winutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_winutil.o winutil.o winutil.lo _winutil.lo' $(srcdir)/winutil.c >$(DEPS_DIR)/winutil.d
 $(DEPS_DIR)/timestamp: $(mpi_sources) winutil.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_accumulate.o accumulate.o' $(srcdir)/accumulate.c >$(DEPS_DIR)/accumulate.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C accumulate.c > $(DEPS_DIR)/accumulate.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_accumulate.o accumulate.o accumulate.lo _accumulate.lo' $(srcdir)/accumulate.c >$(DEPS_DIR)/accumulate.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_accumulate.o accumulate.o accumulate.lo _accumulate.lo' $(srcdir)/accumulate.c >$(DEPS_DIR)/accumulate.d
 	echo "include $(DEPS_DIR)/accumulate.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_alloc_mem.o alloc_mem.o' $(srcdir)/alloc_mem.c >$(DEPS_DIR)/alloc_mem.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C alloc_mem.c > $(DEPS_DIR)/alloc_mem.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_alloc_mem.o alloc_mem.o alloc_mem.lo _alloc_mem.lo' $(srcdir)/alloc_mem.c >$(DEPS_DIR)/alloc_mem.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_alloc_mem.o alloc_mem.o alloc_mem.lo _alloc_mem.lo' $(srcdir)/alloc_mem.c >$(DEPS_DIR)/alloc_mem.d
 	echo "include $(DEPS_DIR)/alloc_mem.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_free_mem.o free_mem.o' $(srcdir)/free_mem.c >$(DEPS_DIR)/free_mem.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C free_mem.c > $(DEPS_DIR)/free_mem.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_free_mem.o free_mem.o free_mem.lo _free_mem.lo' $(srcdir)/free_mem.c >$(DEPS_DIR)/free_mem.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_free_mem.o free_mem.o free_mem.lo _free_mem.lo' $(srcdir)/free_mem.c >$(DEPS_DIR)/free_mem.d
 	echo "include $(DEPS_DIR)/free_mem.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_get.o get.o' $(srcdir)/get.c >$(DEPS_DIR)/get.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C get.c > $(DEPS_DIR)/get.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_get.o get.o get.lo _get.lo' $(srcdir)/get.c >$(DEPS_DIR)/get.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_get.o get.o get.lo _get.lo' $(srcdir)/get.c >$(DEPS_DIR)/get.d
 	echo "include $(DEPS_DIR)/get.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_put.o put.o' $(srcdir)/put.c >$(DEPS_DIR)/put.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C put.c > $(DEPS_DIR)/put.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_put.o put.o put.lo _put.lo' $(srcdir)/put.c >$(DEPS_DIR)/put.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_put.o put.o put.lo _put.lo' $(srcdir)/put.c >$(DEPS_DIR)/put.d
 	echo "include $(DEPS_DIR)/put.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_complete.o win_complete.o' $(srcdir)/win_complete.c >$(DEPS_DIR)/win_complete.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_complete.c > $(DEPS_DIR)/win_complete.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_complete.o win_complete.o win_complete.lo _win_complete.lo' $(srcdir)/win_complete.c >$(DEPS_DIR)/win_complete.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_complete.o win_complete.o win_complete.lo _win_complete.lo' $(srcdir)/win_complete.c >$(DEPS_DIR)/win_complete.d
 	echo "include $(DEPS_DIR)/win_complete.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_create.o win_create.o' $(srcdir)/win_create.c >$(DEPS_DIR)/win_create.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_create.c > $(DEPS_DIR)/win_create.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_create.o win_create.o win_create.lo _win_create.lo' $(srcdir)/win_create.c >$(DEPS_DIR)/win_create.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_create.o win_create.o win_create.lo _win_create.lo' $(srcdir)/win_create.c >$(DEPS_DIR)/win_create.d
 	echo "include $(DEPS_DIR)/win_create.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_fence.o win_fence.o' $(srcdir)/win_fence.c >$(DEPS_DIR)/win_fence.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_fence.c > $(DEPS_DIR)/win_fence.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_fence.o win_fence.o win_fence.lo _win_fence.lo' $(srcdir)/win_fence.c >$(DEPS_DIR)/win_fence.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_fence.o win_fence.o win_fence.lo _win_fence.lo' $(srcdir)/win_fence.c >$(DEPS_DIR)/win_fence.d
 	echo "include $(DEPS_DIR)/win_fence.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_free.o win_free.o' $(srcdir)/win_free.c >$(DEPS_DIR)/win_free.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_free.c > $(DEPS_DIR)/win_free.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_free.o win_free.o win_free.lo _win_free.lo' $(srcdir)/win_free.c >$(DEPS_DIR)/win_free.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_free.o win_free.o win_free.lo _win_free.lo' $(srcdir)/win_free.c >$(DEPS_DIR)/win_free.d
 	echo "include $(DEPS_DIR)/win_free.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_get_group.o win_get_group.o' $(srcdir)/win_get_group.c >$(DEPS_DIR)/win_get_group.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_get_group.c > $(DEPS_DIR)/win_get_group.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_get_group.o win_get_group.o win_get_group.lo _win_get_group.lo' $(srcdir)/win_get_group.c >$(DEPS_DIR)/win_get_group.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_get_group.o win_get_group.o win_get_group.lo _win_get_group.lo' $(srcdir)/win_get_group.c >$(DEPS_DIR)/win_get_group.d
 	echo "include $(DEPS_DIR)/win_get_group.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_get_name.o win_get_name.o' $(srcdir)/win_get_name.c >$(DEPS_DIR)/win_get_name.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_get_name.c > $(DEPS_DIR)/win_get_name.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_get_name.o win_get_name.o win_get_name.lo _win_get_name.lo' $(srcdir)/win_get_name.c >$(DEPS_DIR)/win_get_name.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_get_name.o win_get_name.o win_get_name.lo _win_get_name.lo' $(srcdir)/win_get_name.c >$(DEPS_DIR)/win_get_name.d
 	echo "include $(DEPS_DIR)/win_get_name.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_lock.o win_lock.o' $(srcdir)/win_lock.c >$(DEPS_DIR)/win_lock.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_lock.c > $(DEPS_DIR)/win_lock.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_lock.o win_lock.o win_lock.lo _win_lock.lo' $(srcdir)/win_lock.c >$(DEPS_DIR)/win_lock.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_lock.o win_lock.o win_lock.lo _win_lock.lo' $(srcdir)/win_lock.c >$(DEPS_DIR)/win_lock.d
 	echo "include $(DEPS_DIR)/win_lock.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_post.o win_post.o' $(srcdir)/win_post.c >$(DEPS_DIR)/win_post.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_post.c > $(DEPS_DIR)/win_post.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_post.o win_post.o win_post.lo _win_post.lo' $(srcdir)/win_post.c >$(DEPS_DIR)/win_post.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_post.o win_post.o win_post.lo _win_post.lo' $(srcdir)/win_post.c >$(DEPS_DIR)/win_post.d
 	echo "include $(DEPS_DIR)/win_post.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_set_name.o win_set_name.o' $(srcdir)/win_set_name.c >$(DEPS_DIR)/win_set_name.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_set_name.c > $(DEPS_DIR)/win_set_name.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_set_name.o win_set_name.o win_set_name.lo _win_set_name.lo' $(srcdir)/win_set_name.c >$(DEPS_DIR)/win_set_name.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_set_name.o win_set_name.o win_set_name.lo _win_set_name.lo' $(srcdir)/win_set_name.c >$(DEPS_DIR)/win_set_name.d
 	echo "include $(DEPS_DIR)/win_set_name.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_start.o win_start.o' $(srcdir)/win_start.c >$(DEPS_DIR)/win_start.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_start.c > $(DEPS_DIR)/win_start.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_start.o win_start.o win_start.lo _win_start.lo' $(srcdir)/win_start.c >$(DEPS_DIR)/win_start.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_start.o win_start.o win_start.lo _win_start.lo' $(srcdir)/win_start.c >$(DEPS_DIR)/win_start.d
 	echo "include $(DEPS_DIR)/win_start.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_unlock.o win_unlock.o' $(srcdir)/win_unlock.c >$(DEPS_DIR)/win_unlock.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_unlock.c > $(DEPS_DIR)/win_unlock.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_unlock.o win_unlock.o win_unlock.lo _win_unlock.lo' $(srcdir)/win_unlock.c >$(DEPS_DIR)/win_unlock.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_unlock.o win_unlock.o win_unlock.lo _win_unlock.lo' $(srcdir)/win_unlock.c >$(DEPS_DIR)/win_unlock.d
 	echo "include $(DEPS_DIR)/win_unlock.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_wait.o win_wait.o' $(srcdir)/win_wait.c >$(DEPS_DIR)/win_wait.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_wait.c > $(DEPS_DIR)/win_wait.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_wait.o win_wait.o win_wait.lo _win_wait.lo' $(srcdir)/win_wait.c >$(DEPS_DIR)/win_wait.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_wait.o win_wait.o win_wait.lo _win_wait.lo' $(srcdir)/win_wait.c >$(DEPS_DIR)/win_wait.d
 	echo "include $(DEPS_DIR)/win_wait.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_win_test.o win_test.o' $(srcdir)/win_test.c >$(DEPS_DIR)/win_test.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C win_test.c > $(DEPS_DIR)/win_test.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_win_test.o win_test.o win_test.lo _win_test.lo' $(srcdir)/win_test.c >$(DEPS_DIR)/win_test.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_win_test.o win_test.o win_test.lo _win_test.lo' $(srcdir)/win_test.c >$(DEPS_DIR)/win_test.d
 	echo "include $(DEPS_DIR)/win_test.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C) -MT '_winutil.o winutil.o' $(srcdir)/winutil.c >$(DEPS_DIR)/winutil.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C winutil.c > $(DEPS_DIR)/winutil.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C) -MT '_winutil.o winutil.o winutil.lo _winutil.lo' $(srcdir)/winutil.c >$(DEPS_DIR)/winutil.d ; \
+	fi
+	@$(MAKE_DEPEND_C) -MT '_winutil.o winutil.o winutil.lo _winutil.lo' $(srcdir)/winutil.c >$(DEPS_DIR)/winutil.d
 	echo "include $(DEPS_DIR)/winutil.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -537,12 +727,8 @@ SOURCES         =  accumulate.c alloc_mem.c free_mem.c get.c put.c \
 	win_complete.c win_create.c win_fence.c win_free.c win_get_group.c \
 	win_get_name.c win_lock.c win_post.c win_set_name.c win_start.c \
 	win_unlock.c win_wait.c win_test.c winutil.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 #
 

@@ -32,14 +32,14 @@ INCLUDES = -I${srcdir} -I${top_builddir}/src/include -I${master_top_srcdir}/src/
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -50,7 +50,7 @@ INCLUDES = -I${srcdir} -I${top_builddir}/src/include -I${master_top_srcdir}/src/
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -76,7 +76,7 @@ Makefile: ${srcdir}/Makefile.in
 # --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
-	(cd dataloop && $(MAKE) apply )
+	(cd dataloop && ${MAKE} apply )
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
@@ -84,16 +84,16 @@ clean:
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
 	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
-	(cd dataloop && $(MAKE) clean )
+	(cd dataloop && ${MAKE} clean )
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
-	if [ -s dataloop/Makefile ] ; then (cd dataloop && $(MAKE) distclean ) ; fi
+	if [ -s dataloop/Makefile ] ; then (cd dataloop && ${MAKE} distclean ) ; fi
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
 maintainer-clean:  distclean-xxx remove-genmakefiles
-	(cd dataloop && $(MAKE) maintainer-clean )
+	(cd dataloop && ${MAKE} maintainer-clean )
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
@@ -115,13 +115,13 @@ all-local: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a
 	mpid_type_get_envelope.o mpid_datatype_free.o \
 	mpid_datatype_contents.o mpid_type_get_contents.o \
 	mpid_type_create_pairtype.o mpid_contents_support.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../../lib/lib${MPILIBNAME}.a ; \
@@ -137,7 +137,7 @@ all-local: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a
 	mpid_type_get_envelope.lo mpid_datatype_free.lo \
 	mpid_datatype_contents.lo mpid_type_get_contents.lo \
 	mpid_type_create_pairtype.lo mpid_contents_support.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -155,14 +155,14 @@ coverage:
 		mpid_datatype_contents.c 	mpid_type_get_contents.c \
 		mpid_type_create_pairtype.c 	mpid_contents_support.c  ; do \
 		gcov -b -f $$file ; done
-	(cd dataloop && $(MAKE) coverage )
+	(cd dataloop && ${MAKE} coverage )
 # --------------------------------------------------------------------------
 htmldoc:
-	(cd dataloop && $(MAKE) htmldoc )
+	(cd dataloop && ${MAKE} htmldoc )
 mandoc:
-	(cd dataloop && $(MAKE) mandoc )
+	(cd dataloop && ${MAKE} mandoc )
 latexdoc:
-	(cd dataloop && $(MAKE) latexdoc )
+	(cd dataloop && ${MAKE} latexdoc )
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -172,49 +172,154 @@ DEPS_DIR = .deps
 MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
-	(cd dataloop && $(MAKE) dependencies )
+	(cd dataloop && ${MAKE} dependencies )
 $(DEPS_DIR)/mpid_type_debug.d: $(srcdir)/mpid_type_debug.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_debug.c >$(DEPS_DIR)/mpid_type_debug.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_debug.c > $(DEPS_DIR)/mpid_type_debug.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_debug.c >$(DEPS_DIR)/mpid_type_debug.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_debug.c >$(DEPS_DIR)/mpid_type_debug.d
 $(DEPS_DIR)/mpid_segment.d: $(srcdir)/mpid_segment.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_segment.c >$(DEPS_DIR)/mpid_segment.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_segment.c > $(DEPS_DIR)/mpid_segment.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_segment.c >$(DEPS_DIR)/mpid_segment.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_segment.c >$(DEPS_DIR)/mpid_segment.d
 $(DEPS_DIR)/mpid_ext32_segment.d: $(srcdir)/mpid_ext32_segment.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_ext32_segment.c >$(DEPS_DIR)/mpid_ext32_segment.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_ext32_segment.c > $(DEPS_DIR)/mpid_ext32_segment.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_ext32_segment.c >$(DEPS_DIR)/mpid_ext32_segment.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_ext32_segment.c >$(DEPS_DIR)/mpid_ext32_segment.d
 $(DEPS_DIR)/mpid_ext32_datatype.d: $(srcdir)/mpid_ext32_datatype.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_ext32_datatype.c >$(DEPS_DIR)/mpid_ext32_datatype.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_ext32_datatype.c > $(DEPS_DIR)/mpid_ext32_datatype.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_ext32_datatype.c >$(DEPS_DIR)/mpid_ext32_datatype.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_ext32_datatype.c >$(DEPS_DIR)/mpid_ext32_datatype.d
 $(DEPS_DIR)/mpid_type_dup.d: $(srcdir)/mpid_type_dup.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_dup.c >$(DEPS_DIR)/mpid_type_dup.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_dup.c > $(DEPS_DIR)/mpid_type_dup.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_dup.c >$(DEPS_DIR)/mpid_type_dup.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_dup.c >$(DEPS_DIR)/mpid_type_dup.d
 $(DEPS_DIR)/mpir_type_get_contig_blocks.d: $(srcdir)/mpir_type_get_contig_blocks.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpir_type_get_contig_blocks.c >$(DEPS_DIR)/mpir_type_get_contig_blocks.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpir_type_get_contig_blocks.c > $(DEPS_DIR)/mpir_type_get_contig_blocks.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpir_type_get_contig_blocks.c >$(DEPS_DIR)/mpir_type_get_contig_blocks.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpir_type_get_contig_blocks.c >$(DEPS_DIR)/mpir_type_get_contig_blocks.d
 $(DEPS_DIR)/mpir_type_flatten.d: $(srcdir)/mpir_type_flatten.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpir_type_flatten.c >$(DEPS_DIR)/mpir_type_flatten.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpir_type_flatten.c > $(DEPS_DIR)/mpir_type_flatten.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpir_type_flatten.c >$(DEPS_DIR)/mpir_type_flatten.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpir_type_flatten.c >$(DEPS_DIR)/mpir_type_flatten.d
 $(DEPS_DIR)/mpid_type_commit.d: $(srcdir)/mpid_type_commit.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_commit.c >$(DEPS_DIR)/mpid_type_commit.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_commit.c > $(DEPS_DIR)/mpid_type_commit.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_commit.c >$(DEPS_DIR)/mpid_type_commit.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_commit.c >$(DEPS_DIR)/mpid_type_commit.d
 $(DEPS_DIR)/mpid_type_zerolen.d: $(srcdir)/mpid_type_zerolen.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_zerolen.c >$(DEPS_DIR)/mpid_type_zerolen.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_zerolen.c > $(DEPS_DIR)/mpid_type_zerolen.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_zerolen.c >$(DEPS_DIR)/mpid_type_zerolen.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_zerolen.c >$(DEPS_DIR)/mpid_type_zerolen.d
 $(DEPS_DIR)/mpid_type_vector.d: $(srcdir)/mpid_type_vector.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_vector.c >$(DEPS_DIR)/mpid_type_vector.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_vector.c > $(DEPS_DIR)/mpid_type_vector.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_vector.c >$(DEPS_DIR)/mpid_type_vector.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_vector.c >$(DEPS_DIR)/mpid_type_vector.d
 $(DEPS_DIR)/mpid_type_contiguous.d: $(srcdir)/mpid_type_contiguous.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_contiguous.c >$(DEPS_DIR)/mpid_type_contiguous.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_contiguous.c > $(DEPS_DIR)/mpid_type_contiguous.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_contiguous.c >$(DEPS_DIR)/mpid_type_contiguous.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_contiguous.c >$(DEPS_DIR)/mpid_type_contiguous.d
 $(DEPS_DIR)/mpid_type_create_resized.d: $(srcdir)/mpid_type_create_resized.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_create_resized.c >$(DEPS_DIR)/mpid_type_create_resized.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_create_resized.c > $(DEPS_DIR)/mpid_type_create_resized.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_create_resized.c >$(DEPS_DIR)/mpid_type_create_resized.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_create_resized.c >$(DEPS_DIR)/mpid_type_create_resized.d
 $(DEPS_DIR)/mpid_type_blockindexed.d: $(srcdir)/mpid_type_blockindexed.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_blockindexed.c >$(DEPS_DIR)/mpid_type_blockindexed.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_blockindexed.c > $(DEPS_DIR)/mpid_type_blockindexed.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_blockindexed.c >$(DEPS_DIR)/mpid_type_blockindexed.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_blockindexed.c >$(DEPS_DIR)/mpid_type_blockindexed.d
 $(DEPS_DIR)/mpid_type_indexed.d: $(srcdir)/mpid_type_indexed.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_indexed.c >$(DEPS_DIR)/mpid_type_indexed.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_indexed.c > $(DEPS_DIR)/mpid_type_indexed.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_indexed.c >$(DEPS_DIR)/mpid_type_indexed.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_indexed.c >$(DEPS_DIR)/mpid_type_indexed.d
 $(DEPS_DIR)/mpid_type_struct.d: $(srcdir)/mpid_type_struct.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_struct.c >$(DEPS_DIR)/mpid_type_struct.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_struct.c > $(DEPS_DIR)/mpid_type_struct.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_struct.c >$(DEPS_DIR)/mpid_type_struct.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_struct.c >$(DEPS_DIR)/mpid_type_struct.d
 $(DEPS_DIR)/mpid_type_get_envelope.d: $(srcdir)/mpid_type_get_envelope.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_get_envelope.c >$(DEPS_DIR)/mpid_type_get_envelope.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_get_envelope.c > $(DEPS_DIR)/mpid_type_get_envelope.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_get_envelope.c >$(DEPS_DIR)/mpid_type_get_envelope.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_get_envelope.c >$(DEPS_DIR)/mpid_type_get_envelope.d
 $(DEPS_DIR)/mpid_datatype_free.d: $(srcdir)/mpid_datatype_free.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_datatype_free.c >$(DEPS_DIR)/mpid_datatype_free.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_datatype_free.c > $(DEPS_DIR)/mpid_datatype_free.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_datatype_free.c >$(DEPS_DIR)/mpid_datatype_free.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_datatype_free.c >$(DEPS_DIR)/mpid_datatype_free.d
 $(DEPS_DIR)/mpid_datatype_contents.d: $(srcdir)/mpid_datatype_contents.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_datatype_contents.c >$(DEPS_DIR)/mpid_datatype_contents.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_datatype_contents.c > $(DEPS_DIR)/mpid_datatype_contents.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_datatype_contents.c >$(DEPS_DIR)/mpid_datatype_contents.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_datatype_contents.c >$(DEPS_DIR)/mpid_datatype_contents.d
 $(DEPS_DIR)/mpid_type_get_contents.d: $(srcdir)/mpid_type_get_contents.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_get_contents.c >$(DEPS_DIR)/mpid_type_get_contents.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_get_contents.c > $(DEPS_DIR)/mpid_type_get_contents.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_get_contents.c >$(DEPS_DIR)/mpid_type_get_contents.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_get_contents.c >$(DEPS_DIR)/mpid_type_get_contents.d
 $(DEPS_DIR)/mpid_type_create_pairtype.d: $(srcdir)/mpid_type_create_pairtype.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_create_pairtype.c >$(DEPS_DIR)/mpid_type_create_pairtype.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_create_pairtype.c > $(DEPS_DIR)/mpid_type_create_pairtype.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_create_pairtype.c >$(DEPS_DIR)/mpid_type_create_pairtype.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_create_pairtype.c >$(DEPS_DIR)/mpid_type_create_pairtype.d
 $(DEPS_DIR)/mpid_contents_support.d: $(srcdir)/mpid_contents_support.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_contents_support.c >$(DEPS_DIR)/mpid_contents_support.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_contents_support.c > $(DEPS_DIR)/mpid_contents_support.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_contents_support.c >$(DEPS_DIR)/mpid_contents_support.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_contents_support.c >$(DEPS_DIR)/mpid_contents_support.d
 $(DEPS_DIR)/timestamp: mpid_type_debug.c 	mpid_segment.c 	mpid_ext32_segment.c \
 		mpid_ext32_datatype.c 	mpid_type_dup.c \
 		mpir_type_get_contig_blocks.c 	mpir_type_flatten.c \
@@ -225,47 +330,152 @@ $(DEPS_DIR)/timestamp: mpid_type_debug.c 	mpid_segment.c 	mpid_ext32_segment.c \
 		mpid_datatype_contents.c 	mpid_type_get_contents.c \
 		mpid_type_create_pairtype.c 	mpid_contents_support.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_debug.c >$(DEPS_DIR)/mpid_type_debug.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_debug.c > $(DEPS_DIR)/mpid_type_debug.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_debug.c >$(DEPS_DIR)/mpid_type_debug.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_debug.c >$(DEPS_DIR)/mpid_type_debug.d
 	echo "include $(DEPS_DIR)/mpid_type_debug.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_segment.c >$(DEPS_DIR)/mpid_segment.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_segment.c > $(DEPS_DIR)/mpid_segment.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_segment.c >$(DEPS_DIR)/mpid_segment.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_segment.c >$(DEPS_DIR)/mpid_segment.d
 	echo "include $(DEPS_DIR)/mpid_segment.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_ext32_segment.c >$(DEPS_DIR)/mpid_ext32_segment.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_ext32_segment.c > $(DEPS_DIR)/mpid_ext32_segment.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_ext32_segment.c >$(DEPS_DIR)/mpid_ext32_segment.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_ext32_segment.c >$(DEPS_DIR)/mpid_ext32_segment.d
 	echo "include $(DEPS_DIR)/mpid_ext32_segment.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_ext32_datatype.c >$(DEPS_DIR)/mpid_ext32_datatype.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_ext32_datatype.c > $(DEPS_DIR)/mpid_ext32_datatype.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_ext32_datatype.c >$(DEPS_DIR)/mpid_ext32_datatype.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_ext32_datatype.c >$(DEPS_DIR)/mpid_ext32_datatype.d
 	echo "include $(DEPS_DIR)/mpid_ext32_datatype.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_dup.c >$(DEPS_DIR)/mpid_type_dup.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_dup.c > $(DEPS_DIR)/mpid_type_dup.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_dup.c >$(DEPS_DIR)/mpid_type_dup.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_dup.c >$(DEPS_DIR)/mpid_type_dup.d
 	echo "include $(DEPS_DIR)/mpid_type_dup.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpir_type_get_contig_blocks.c >$(DEPS_DIR)/mpir_type_get_contig_blocks.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpir_type_get_contig_blocks.c > $(DEPS_DIR)/mpir_type_get_contig_blocks.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpir_type_get_contig_blocks.c >$(DEPS_DIR)/mpir_type_get_contig_blocks.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpir_type_get_contig_blocks.c >$(DEPS_DIR)/mpir_type_get_contig_blocks.d
 	echo "include $(DEPS_DIR)/mpir_type_get_contig_blocks.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpir_type_flatten.c >$(DEPS_DIR)/mpir_type_flatten.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpir_type_flatten.c > $(DEPS_DIR)/mpir_type_flatten.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpir_type_flatten.c >$(DEPS_DIR)/mpir_type_flatten.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpir_type_flatten.c >$(DEPS_DIR)/mpir_type_flatten.d
 	echo "include $(DEPS_DIR)/mpir_type_flatten.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_commit.c >$(DEPS_DIR)/mpid_type_commit.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_commit.c > $(DEPS_DIR)/mpid_type_commit.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_commit.c >$(DEPS_DIR)/mpid_type_commit.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_commit.c >$(DEPS_DIR)/mpid_type_commit.d
 	echo "include $(DEPS_DIR)/mpid_type_commit.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_zerolen.c >$(DEPS_DIR)/mpid_type_zerolen.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_zerolen.c > $(DEPS_DIR)/mpid_type_zerolen.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_zerolen.c >$(DEPS_DIR)/mpid_type_zerolen.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_zerolen.c >$(DEPS_DIR)/mpid_type_zerolen.d
 	echo "include $(DEPS_DIR)/mpid_type_zerolen.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_vector.c >$(DEPS_DIR)/mpid_type_vector.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_vector.c > $(DEPS_DIR)/mpid_type_vector.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_vector.c >$(DEPS_DIR)/mpid_type_vector.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_vector.c >$(DEPS_DIR)/mpid_type_vector.d
 	echo "include $(DEPS_DIR)/mpid_type_vector.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_contiguous.c >$(DEPS_DIR)/mpid_type_contiguous.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_contiguous.c > $(DEPS_DIR)/mpid_type_contiguous.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_contiguous.c >$(DEPS_DIR)/mpid_type_contiguous.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_contiguous.c >$(DEPS_DIR)/mpid_type_contiguous.d
 	echo "include $(DEPS_DIR)/mpid_type_contiguous.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_create_resized.c >$(DEPS_DIR)/mpid_type_create_resized.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_create_resized.c > $(DEPS_DIR)/mpid_type_create_resized.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_create_resized.c >$(DEPS_DIR)/mpid_type_create_resized.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_create_resized.c >$(DEPS_DIR)/mpid_type_create_resized.d
 	echo "include $(DEPS_DIR)/mpid_type_create_resized.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_blockindexed.c >$(DEPS_DIR)/mpid_type_blockindexed.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_blockindexed.c > $(DEPS_DIR)/mpid_type_blockindexed.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_blockindexed.c >$(DEPS_DIR)/mpid_type_blockindexed.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_blockindexed.c >$(DEPS_DIR)/mpid_type_blockindexed.d
 	echo "include $(DEPS_DIR)/mpid_type_blockindexed.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_indexed.c >$(DEPS_DIR)/mpid_type_indexed.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_indexed.c > $(DEPS_DIR)/mpid_type_indexed.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_indexed.c >$(DEPS_DIR)/mpid_type_indexed.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_indexed.c >$(DEPS_DIR)/mpid_type_indexed.d
 	echo "include $(DEPS_DIR)/mpid_type_indexed.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_struct.c >$(DEPS_DIR)/mpid_type_struct.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_struct.c > $(DEPS_DIR)/mpid_type_struct.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_struct.c >$(DEPS_DIR)/mpid_type_struct.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_struct.c >$(DEPS_DIR)/mpid_type_struct.d
 	echo "include $(DEPS_DIR)/mpid_type_struct.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_get_envelope.c >$(DEPS_DIR)/mpid_type_get_envelope.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_get_envelope.c > $(DEPS_DIR)/mpid_type_get_envelope.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_get_envelope.c >$(DEPS_DIR)/mpid_type_get_envelope.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_get_envelope.c >$(DEPS_DIR)/mpid_type_get_envelope.d
 	echo "include $(DEPS_DIR)/mpid_type_get_envelope.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_datatype_free.c >$(DEPS_DIR)/mpid_datatype_free.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_datatype_free.c > $(DEPS_DIR)/mpid_datatype_free.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_datatype_free.c >$(DEPS_DIR)/mpid_datatype_free.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_datatype_free.c >$(DEPS_DIR)/mpid_datatype_free.d
 	echo "include $(DEPS_DIR)/mpid_datatype_free.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_datatype_contents.c >$(DEPS_DIR)/mpid_datatype_contents.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_datatype_contents.c > $(DEPS_DIR)/mpid_datatype_contents.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_datatype_contents.c >$(DEPS_DIR)/mpid_datatype_contents.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_datatype_contents.c >$(DEPS_DIR)/mpid_datatype_contents.d
 	echo "include $(DEPS_DIR)/mpid_datatype_contents.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_get_contents.c >$(DEPS_DIR)/mpid_type_get_contents.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_get_contents.c > $(DEPS_DIR)/mpid_type_get_contents.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_get_contents.c >$(DEPS_DIR)/mpid_type_get_contents.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_get_contents.c >$(DEPS_DIR)/mpid_type_get_contents.d
 	echo "include $(DEPS_DIR)/mpid_type_get_contents.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_create_pairtype.c >$(DEPS_DIR)/mpid_type_create_pairtype.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_type_create_pairtype.c > $(DEPS_DIR)/mpid_type_create_pairtype.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_type_create_pairtype.c >$(DEPS_DIR)/mpid_type_create_pairtype.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_type_create_pairtype.c >$(DEPS_DIR)/mpid_type_create_pairtype.d
 	echo "include $(DEPS_DIR)/mpid_type_create_pairtype.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_contents_support.c >$(DEPS_DIR)/mpid_contents_support.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_contents_support.c > $(DEPS_DIR)/mpid_contents_support.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_contents_support.c >$(DEPS_DIR)/mpid_contents_support.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_contents_support.c >$(DEPS_DIR)/mpid_contents_support.d
 	echo "include $(DEPS_DIR)/mpid_contents_support.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -281,13 +491,8 @@ SOURCES         =  mpid_type_debug.c mpid_segment.c mpid_ext32_segment.c \
 	mpid_type_get_envelope.c mpid_datatype_free.c \
 	mpid_datatype_contents.c mpid_type_get_contents.c \
 	mpid_type_create_pairtype.c mpid_contents_support.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
-	(cd dataloop && $(MAKE) TAGS )
 # --------------------------------------------------------------------------
 
 FORCE_TARGET:

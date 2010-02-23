@@ -30,14 +30,14 @@ INCLUDES = -I${master_top_srcdir}/src/include -I${top_builddir}/src/include
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -48,7 +48,7 @@ INCLUDES = -I${master_top_srcdir}/src/include -I${top_builddir}/src/include
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -101,13 +101,13 @@ all-local: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	mpid_get_universe_size.o mpid_probe.o mpid_iprobe.o mpid_progress.o \
 	mpid_alloc_mem.o mpid_free_mem.o mpid_getpname.o mpid_vc.o \
 	mpid_time.o mpix.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../../../lib/lib${MPILIBNAME}.a ; \
@@ -119,7 +119,7 @@ all-local: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	mpid_get_universe_size.lo mpid_probe.lo mpid_iprobe.lo \
 	mpid_progress.lo mpid_alloc_mem.lo mpid_free_mem.lo mpid_getpname.lo \
 	mpid_vc.lo mpid_time.lo mpix.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -147,66 +147,206 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/mpid_abort.d: $(srcdir)/mpid_abort.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_abort.c >$(DEPS_DIR)/mpid_abort.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_abort.c > $(DEPS_DIR)/mpid_abort.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_abort.c >$(DEPS_DIR)/mpid_abort.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_abort.c >$(DEPS_DIR)/mpid_abort.d
 $(DEPS_DIR)/mpid_comm_spawn.d: $(srcdir)/mpid_comm_spawn.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_comm_spawn.c >$(DEPS_DIR)/mpid_comm_spawn.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_comm_spawn.c > $(DEPS_DIR)/mpid_comm_spawn.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_comm_spawn.c >$(DEPS_DIR)/mpid_comm_spawn.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_comm_spawn.c >$(DEPS_DIR)/mpid_comm_spawn.d
 $(DEPS_DIR)/mpid_init.d: $(srcdir)/mpid_init.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_init.c >$(DEPS_DIR)/mpid_init.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_init.c > $(DEPS_DIR)/mpid_init.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_init.c >$(DEPS_DIR)/mpid_init.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_init.c >$(DEPS_DIR)/mpid_init.d
 $(DEPS_DIR)/mpid_finalize.d: $(srcdir)/mpid_finalize.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_finalize.c >$(DEPS_DIR)/mpid_finalize.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_finalize.c > $(DEPS_DIR)/mpid_finalize.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_finalize.c >$(DEPS_DIR)/mpid_finalize.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_finalize.c >$(DEPS_DIR)/mpid_finalize.d
 $(DEPS_DIR)/mpid_get_universe_size.d: $(srcdir)/mpid_get_universe_size.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_get_universe_size.c >$(DEPS_DIR)/mpid_get_universe_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_get_universe_size.c > $(DEPS_DIR)/mpid_get_universe_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_get_universe_size.c >$(DEPS_DIR)/mpid_get_universe_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_get_universe_size.c >$(DEPS_DIR)/mpid_get_universe_size.d
 $(DEPS_DIR)/mpid_probe.d: $(srcdir)/mpid_probe.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_probe.c >$(DEPS_DIR)/mpid_probe.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_probe.c > $(DEPS_DIR)/mpid_probe.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_probe.c >$(DEPS_DIR)/mpid_probe.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_probe.c >$(DEPS_DIR)/mpid_probe.d
 $(DEPS_DIR)/mpid_iprobe.d: $(srcdir)/mpid_iprobe.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_iprobe.c >$(DEPS_DIR)/mpid_iprobe.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_iprobe.c > $(DEPS_DIR)/mpid_iprobe.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_iprobe.c >$(DEPS_DIR)/mpid_iprobe.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_iprobe.c >$(DEPS_DIR)/mpid_iprobe.d
 $(DEPS_DIR)/mpid_progress.d: $(srcdir)/mpid_progress.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_progress.c >$(DEPS_DIR)/mpid_progress.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_progress.c > $(DEPS_DIR)/mpid_progress.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_progress.c >$(DEPS_DIR)/mpid_progress.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_progress.c >$(DEPS_DIR)/mpid_progress.d
 $(DEPS_DIR)/mpid_alloc_mem.d: $(srcdir)/mpid_alloc_mem.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_alloc_mem.c >$(DEPS_DIR)/mpid_alloc_mem.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_alloc_mem.c > $(DEPS_DIR)/mpid_alloc_mem.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_alloc_mem.c >$(DEPS_DIR)/mpid_alloc_mem.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_alloc_mem.c >$(DEPS_DIR)/mpid_alloc_mem.d
 $(DEPS_DIR)/mpid_free_mem.d: $(srcdir)/mpid_free_mem.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_free_mem.c >$(DEPS_DIR)/mpid_free_mem.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_free_mem.c > $(DEPS_DIR)/mpid_free_mem.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_free_mem.c >$(DEPS_DIR)/mpid_free_mem.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_free_mem.c >$(DEPS_DIR)/mpid_free_mem.d
 $(DEPS_DIR)/mpid_getpname.d: $(srcdir)/mpid_getpname.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_getpname.c >$(DEPS_DIR)/mpid_getpname.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_getpname.c > $(DEPS_DIR)/mpid_getpname.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_getpname.c >$(DEPS_DIR)/mpid_getpname.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_getpname.c >$(DEPS_DIR)/mpid_getpname.d
 $(DEPS_DIR)/mpid_vc.d: $(srcdir)/mpid_vc.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_vc.c >$(DEPS_DIR)/mpid_vc.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_vc.c > $(DEPS_DIR)/mpid_vc.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_vc.c >$(DEPS_DIR)/mpid_vc.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_vc.c >$(DEPS_DIR)/mpid_vc.d
 $(DEPS_DIR)/mpid_time.d: $(srcdir)/mpid_time.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_time.c >$(DEPS_DIR)/mpid_time.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_time.c > $(DEPS_DIR)/mpid_time.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_time.c >$(DEPS_DIR)/mpid_time.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_time.c >$(DEPS_DIR)/mpid_time.d
 $(DEPS_DIR)/mpix.d: $(srcdir)/mpix.c
-	$(MAKE_DEPEND_C)  $(srcdir)/mpix.c >$(DEPS_DIR)/mpix.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpix.c > $(DEPS_DIR)/mpix.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpix.c >$(DEPS_DIR)/mpix.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpix.c >$(DEPS_DIR)/mpix.d
 $(DEPS_DIR)/timestamp: mpid_abort.c 			     mpid_comm_spawn.c 			     mpid_init.c 			     \
 	mpid_finalize.c 			     mpid_get_universe_size.c 			     mpid_probe.c \
 				     mpid_iprobe.c 			     mpid_progress.c 			     \
 	mpid_alloc_mem.c 			     mpid_free_mem.c 			     mpid_getpname.c 			  \
 	   mpid_vc.c 			     mpid_time.c 			     mpix.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_abort.c >$(DEPS_DIR)/mpid_abort.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_abort.c > $(DEPS_DIR)/mpid_abort.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_abort.c >$(DEPS_DIR)/mpid_abort.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_abort.c >$(DEPS_DIR)/mpid_abort.d
 	echo "include $(DEPS_DIR)/mpid_abort.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_comm_spawn.c >$(DEPS_DIR)/mpid_comm_spawn.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_comm_spawn.c > $(DEPS_DIR)/mpid_comm_spawn.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_comm_spawn.c >$(DEPS_DIR)/mpid_comm_spawn.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_comm_spawn.c >$(DEPS_DIR)/mpid_comm_spawn.d
 	echo "include $(DEPS_DIR)/mpid_comm_spawn.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_init.c >$(DEPS_DIR)/mpid_init.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_init.c > $(DEPS_DIR)/mpid_init.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_init.c >$(DEPS_DIR)/mpid_init.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_init.c >$(DEPS_DIR)/mpid_init.d
 	echo "include $(DEPS_DIR)/mpid_init.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_finalize.c >$(DEPS_DIR)/mpid_finalize.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_finalize.c > $(DEPS_DIR)/mpid_finalize.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_finalize.c >$(DEPS_DIR)/mpid_finalize.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_finalize.c >$(DEPS_DIR)/mpid_finalize.d
 	echo "include $(DEPS_DIR)/mpid_finalize.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_get_universe_size.c >$(DEPS_DIR)/mpid_get_universe_size.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_get_universe_size.c > $(DEPS_DIR)/mpid_get_universe_size.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_get_universe_size.c >$(DEPS_DIR)/mpid_get_universe_size.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_get_universe_size.c >$(DEPS_DIR)/mpid_get_universe_size.d
 	echo "include $(DEPS_DIR)/mpid_get_universe_size.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_probe.c >$(DEPS_DIR)/mpid_probe.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_probe.c > $(DEPS_DIR)/mpid_probe.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_probe.c >$(DEPS_DIR)/mpid_probe.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_probe.c >$(DEPS_DIR)/mpid_probe.d
 	echo "include $(DEPS_DIR)/mpid_probe.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_iprobe.c >$(DEPS_DIR)/mpid_iprobe.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_iprobe.c > $(DEPS_DIR)/mpid_iprobe.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_iprobe.c >$(DEPS_DIR)/mpid_iprobe.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_iprobe.c >$(DEPS_DIR)/mpid_iprobe.d
 	echo "include $(DEPS_DIR)/mpid_iprobe.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_progress.c >$(DEPS_DIR)/mpid_progress.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_progress.c > $(DEPS_DIR)/mpid_progress.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_progress.c >$(DEPS_DIR)/mpid_progress.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_progress.c >$(DEPS_DIR)/mpid_progress.d
 	echo "include $(DEPS_DIR)/mpid_progress.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_alloc_mem.c >$(DEPS_DIR)/mpid_alloc_mem.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_alloc_mem.c > $(DEPS_DIR)/mpid_alloc_mem.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_alloc_mem.c >$(DEPS_DIR)/mpid_alloc_mem.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_alloc_mem.c >$(DEPS_DIR)/mpid_alloc_mem.d
 	echo "include $(DEPS_DIR)/mpid_alloc_mem.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_free_mem.c >$(DEPS_DIR)/mpid_free_mem.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_free_mem.c > $(DEPS_DIR)/mpid_free_mem.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_free_mem.c >$(DEPS_DIR)/mpid_free_mem.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_free_mem.c >$(DEPS_DIR)/mpid_free_mem.d
 	echo "include $(DEPS_DIR)/mpid_free_mem.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_getpname.c >$(DEPS_DIR)/mpid_getpname.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_getpname.c > $(DEPS_DIR)/mpid_getpname.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_getpname.c >$(DEPS_DIR)/mpid_getpname.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_getpname.c >$(DEPS_DIR)/mpid_getpname.d
 	echo "include $(DEPS_DIR)/mpid_getpname.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_vc.c >$(DEPS_DIR)/mpid_vc.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_vc.c > $(DEPS_DIR)/mpid_vc.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_vc.c >$(DEPS_DIR)/mpid_vc.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_vc.c >$(DEPS_DIR)/mpid_vc.d
 	echo "include $(DEPS_DIR)/mpid_vc.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpid_time.c >$(DEPS_DIR)/mpid_time.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpid_time.c > $(DEPS_DIR)/mpid_time.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_time.c >$(DEPS_DIR)/mpid_time.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_time.c >$(DEPS_DIR)/mpid_time.d
 	echo "include $(DEPS_DIR)/mpid_time.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/mpix.c >$(DEPS_DIR)/mpix.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpix.c > $(DEPS_DIR)/mpix.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpix.c >$(DEPS_DIR)/mpix.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpix.c >$(DEPS_DIR)/mpix.d
 	echo "include $(DEPS_DIR)/mpix.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -218,12 +358,8 @@ SOURCES         =  mpid_abort.c mpid_comm_spawn.c mpid_init.c mpid_finalize.c \
 	mpid_get_universe_size.c mpid_probe.c mpid_iprobe.c mpid_progress.c \
 	mpid_alloc_mem.c mpid_free_mem.c mpid_getpname.c mpid_vc.c \
 	mpid_time.c mpix.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 FORCE_TARGET:

@@ -9,6 +9,8 @@
    platforms (e.g., a big-endian machine communicating with a
    little-endian machine).
 
+ * ch3:nemesis:mx does not support dynamic processes at this time.
+
  * ch3:ssm and ch3:shm do not support thread safety.
 
  * ch3:shm does not support dynamic processes (e.g., MPI_Comm_spawn).

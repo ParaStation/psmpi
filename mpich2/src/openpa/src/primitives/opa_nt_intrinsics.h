@@ -17,6 +17,9 @@
 typedef struct { volatile long v;  } OPA_int_t;
 typedef struct { void * volatile v; } OPA_ptr_t;
 
+#define OPA_INT_T_INITIALIZER(val_) { (val_) }
+#define OPA_PTR_T_INITIALIZER(val_) { (val_) }
+
 static _opa_inline int OPA_load_int(OPA_int_t *ptr)
 {
     return ((int)ptr->v);
@@ -65,12 +68,12 @@ static _opa_inline int OPA_fetch_and_add_int(OPA_int_t *ptr, int val)
 static _opa_inline void *OPA_cas_ptr(OPA_ptr_t *ptr, void *oldv, void *newv)
 {
 #if (OPA_SIZEOF_VOID_P == 4)
-    return ((LONG_PTR) _InterlockedCompareExchange((LONG volatile *)&(ptr->v),
+    return ((void *)(LONG_PTR) _InterlockedCompareExchange((LONG volatile *)&(ptr->v),
                                                    (LONG)(LONG_PTR)newv,
                                                    (LONG)(LONG_PTR)oldv)
            );
 #elif (OPA_SIZEOF_VOID_P == 8)
-    return ((LONG_PTR)_InterlockedCompareExchange64((INT64 volatile *)&(ptr->v),
+    return ((void *)(LONG_PTR)_InterlockedCompareExchange64((INT64 volatile *)&(ptr->v),
                                                     (INT64)(LONG_PTR)newv,
                                                     (INT64)(LONG_PTR)oldv)
            );
@@ -82,9 +85,11 @@ static _opa_inline void *OPA_cas_ptr(OPA_ptr_t *ptr, void *oldv, void *newv)
 static _opa_inline void *OPA_swap_ptr(OPA_ptr_t *ptr, void *val)
 {
 #if (OPA_SIZEOF_VOID_P == 4)
-    return _InterlockedExchange(&(ptr->v), val);
+    return (void *)(LONG_PTR )_InterlockedExchange((LONG volatile *)&(ptr->v),
+                                                    (LONG)(LONG_PTR)val);
 #elif (OPA_SIZEOF_VOID_P == 8)
-    return _InterlockedExchange64(&(ptr->v), val);
+    return (void *)(LONG_PTR)_InterlockedExchange64((LONG volatile *)&(ptr->v),
+                                                     (INT64)(LONG_PTR)val);
 #else
 #error  "OPA_SIZEOF_VOID_P not valid"
 #endif

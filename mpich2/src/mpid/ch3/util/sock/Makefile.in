@@ -31,14 +31,14 @@ socksources =  ch3u_init_sock.c ch3u_connect_sock.c ch3u_getinterfaces.c
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .txt 
 .c.o:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
 .c.lo:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
@@ -49,7 +49,7 @@ socksources =  ch3u_init_sock.c ch3u_connect_sock.c ch3u_getinterfaces.c
 .c.txt:
 	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
 	else \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
@@ -58,9 +58,9 @@ socksources =  ch3u_init_sock.c ch3u_connect_sock.c ch3u_getinterfaces.c
 
 ${srcdir}/ch3usockconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /opt/local/bin/autoheader -I ../../../../../confdb && \
-	\
-	/opt/local/bin/autoconf -I ../../../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../../../confdb && \
+	autoconf -I \
+	../../../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -90,6 +90,7 @@ clean:
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f libmpich-sockutil.a
+	-@rm -f libmpich-sockutil.la
 	-@rm -f Makefile config.status config.log config.cache *conf.cache config.system
 	-@rm -rf autom4te*.cache
 	-@rm -f ch3usockconf.h
@@ -109,13 +110,13 @@ all-redirect: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 
 libmpich-sockutil.a: ch3u_init_sock.o ch3u_connect_sock.o \
 	ch3u_getinterfaces.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr libmpich-sockutil.a $?" ; \
 	else \
 	  echo ${AR} cr libmpich-sockutil.a $? ; \
 	fi
 	@${AR} cr libmpich-sockutil.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          libmpich-sockutil.a" ; \
 	else \
 	  echo ${RANLIB} libmpich-sockutil.a ; \
@@ -123,13 +124,13 @@ libmpich-sockutil.a: ch3u_init_sock.o ch3u_connect_sock.o \
 	@${RANLIB} libmpich-sockutil.a
 .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a: ch3u_init_sock.o \
 	ch3u_connect_sock.o ch3u_getinterfaces.o 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../../../lib/lib${MPILIBNAME}.a $?
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
 	  echo ${RANLIB} ../../../../../lib/lib${MPILIBNAME}.a ; \
@@ -138,7 +139,7 @@ libmpich-sockutil.a: ch3u_init_sock.o ch3u_connect_sock.o \
 	date > .libstamp0
 libmpich-sockutil.la: ch3u_init_sock.lo ch3u_connect_sock.lo \
 	ch3u_getinterfaces.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr libmpich-sockutil.la $?" ; \
 	else \
 	  echo ${AR} cr libmpich-sockutil.la $? ; \
@@ -146,7 +147,7 @@ libmpich-sockutil.la: ch3u_init_sock.lo ch3u_connect_sock.lo \
 	@${AR} cr libmpich-sockutil.la $?
 .libstamp1 ../../../../../lib/lib${MPILIBNAME}.la: ch3u_init_sock.lo \
 	ch3u_connect_sock.lo ch3u_getinterfaces.lo 
-	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
 	  echo ${AR} cr ../../../../../lib/lib${MPILIBNAME}.la $? ; \
@@ -172,18 +173,48 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/ch3u_init_sock.d: $(srcdir)/ch3u_init_sock.c
-	$(MAKE_DEPEND_C)  $(srcdir)/ch3u_init_sock.c >$(DEPS_DIR)/ch3u_init_sock.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C ch3u_init_sock.c > $(DEPS_DIR)/ch3u_init_sock.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_init_sock.c >$(DEPS_DIR)/ch3u_init_sock.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_init_sock.c >$(DEPS_DIR)/ch3u_init_sock.d
 $(DEPS_DIR)/ch3u_connect_sock.d: $(srcdir)/ch3u_connect_sock.c
-	$(MAKE_DEPEND_C)  $(srcdir)/ch3u_connect_sock.c >$(DEPS_DIR)/ch3u_connect_sock.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C ch3u_connect_sock.c > $(DEPS_DIR)/ch3u_connect_sock.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_connect_sock.c >$(DEPS_DIR)/ch3u_connect_sock.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_connect_sock.c >$(DEPS_DIR)/ch3u_connect_sock.d
 $(DEPS_DIR)/ch3u_getinterfaces.d: $(srcdir)/ch3u_getinterfaces.c
-	$(MAKE_DEPEND_C)  $(srcdir)/ch3u_getinterfaces.c >$(DEPS_DIR)/ch3u_getinterfaces.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C ch3u_getinterfaces.c > $(DEPS_DIR)/ch3u_getinterfaces.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_getinterfaces.c >$(DEPS_DIR)/ch3u_getinterfaces.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_getinterfaces.c >$(DEPS_DIR)/ch3u_getinterfaces.d
 $(DEPS_DIR)/timestamp: ${socksources} ${socksources} Makefile
 	rm -f $(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/ch3u_init_sock.c >$(DEPS_DIR)/ch3u_init_sock.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C ch3u_init_sock.c > $(DEPS_DIR)/ch3u_init_sock.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_init_sock.c >$(DEPS_DIR)/ch3u_init_sock.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_init_sock.c >$(DEPS_DIR)/ch3u_init_sock.d
 	echo "include $(DEPS_DIR)/ch3u_init_sock.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/ch3u_connect_sock.c >$(DEPS_DIR)/ch3u_connect_sock.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C ch3u_connect_sock.c > $(DEPS_DIR)/ch3u_connect_sock.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_connect_sock.c >$(DEPS_DIR)/ch3u_connect_sock.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_connect_sock.c >$(DEPS_DIR)/ch3u_connect_sock.d
 	echo "include $(DEPS_DIR)/ch3u_connect_sock.d" >>$(DEPS_DIR)/newalldeps
-	$(MAKE_DEPEND_C)  $(srcdir)/ch3u_getinterfaces.c >$(DEPS_DIR)/ch3u_getinterfaces.d
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C ch3u_getinterfaces.c > $(DEPS_DIR)/ch3u_getinterfaces.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_getinterfaces.c >$(DEPS_DIR)/ch3u_getinterfaces.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_getinterfaces.c >$(DEPS_DIR)/ch3u_getinterfaces.d
 	echo "include $(DEPS_DIR)/ch3u_getinterfaces.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
@@ -193,12 +224,8 @@ include $(DEPS_DIR)/alldeps
 # --------------------------------------------------------------------------
 SOURCES         =  ch3u_init_sock.c ch3u_connect_sock.c ch3u_getinterfaces.c \
 	ch3u_init_sock.c ch3u_connect_sock.c ch3u_getinterfaces.c 
-ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
-	here=`cd ../../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 # Create a local library as an option

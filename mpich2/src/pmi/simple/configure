@@ -641,8 +641,8 @@ PMI_LIBS
 ETAGSADD
 ETAGS
 MAKE_DEPEND_C
-master_top_builddir
 master_top_srcdir
+master_top_builddir
 SHLIB_EXT
 ENABLE_SHLIB
 LIBTOOL
@@ -2146,6 +2146,7 @@ fi
 
 
 
+
 { $as_echo "$as_me:$LINENO: checking for virtual path format" >&5
 $as_echo_n "checking for virtual path format... " >&6; }
 if test "${pac_cv_prog_make_vpath+set}" = set; then
@@ -2196,6 +2197,7 @@ if test "$pac_cv_prog_make_vpath" = "VPATH" ; then
 elif test "$pac_cv_prog_make_vpath" = ".PATH" ; then
     VPATH='.PATH: . ${srcdir}'
 fi
+
 
 
 
@@ -4974,6 +4976,13 @@ fi
 		{ $as_echo "$as_me:$LINENO: WARNING: libtool selected for shared library support but LIBTOOL is not defined" >&5
 $as_echo "$as_me: WARNING: libtool selected for shared library support but LIBTOOL is not defined" >&2;}
             fi
+	    # Libtool needs master_top_builddir
+	    if test "X$master_top_builddir" = "X" ; then
+	        { { $as_echo "$as_me:$LINENO: error: Libtool requires master_top_builddir - check configure.in sources" >&5
+$as_echo "$as_me: error: Libtool requires master_top_builddir - check configure.in sources" >&2;}
+   { (exit 1); exit 1; }; }
+	    fi
+
 	fi
 
 

@@ -19,6 +19,9 @@ extern "C" {
 
 #include "mpichconf.h"
 
+/* ensure that we weren't included out of order */
+#include "mpibase.h"
+
 /* ------------------------------------------------------------------------- */
 /* mpimem.h */
 /* ------------------------------------------------------------------------- */
@@ -308,13 +311,13 @@ extern char *strdup( const char * );
 #define MPIU_CHKLMEM_FREEALL()
 #define MPIU_CHKLMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,stmt_) \
 {pointer_ = (type_)alloca(nbytes_); \
-if (!(pointer_)) { \
+    if (!(pointer_) && (nbytes > 0)) {	   \
     MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
     stmt_;\
 }}
 #else
 #define MPIU_CHKLMEM_DECL(n_) \
- void *(mpiu_chklmem_stk_[n_]);\
+ void *(mpiu_chklmem_stk_[n_]) = {0};\
  int mpiu_chklmem_stk_sp_=0;\
  MPIU_AssertDeclValue(const int mpiu_chklmem_stk_sz_,n_)
 
@@ -323,7 +326,7 @@ if (!(pointer_)) { \
 if (pointer_) { \
     MPIU_Assert(mpiu_chklmem_stk_sp_<mpiu_chklmem_stk_sz_);\
     mpiu_chklmem_stk_[mpiu_chklmem_stk_sp_++] = pointer_;\
-} else {\
+ } else if (nbytes_ > 0) {				 \
     MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
     stmt_;\
 }}
@@ -350,7 +353,7 @@ if (pointer_) { \
 if (pointer_) { \
     MPIU_Assert(mpiu_chklbigmem_stk_sp_<mpiu_chklbigmem_stk_sz_);\
     mpiu_chklbigmem_stk_[mpiu_chklbigmem_stk_sp_++] = pointer_;\
-} else {\
+ } else if (nbytes_ > 0) {				       \
     MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
     stmt_;\
 }}
@@ -373,7 +376,7 @@ if (pointer_) { \
 if (pointer_) { \
     MPIU_Assert(mpiu_chkpmem_stk_sp_<mpiu_chkpmem_stk_sz_);\
     mpiu_chkpmem_stk_[mpiu_chkpmem_stk_sp_++] = pointer_;\
-} else {\
+ } else if (nbytes_ > 0) {				 \
     MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
     stmt_;\
 }}
@@ -393,10 +396,29 @@ if (pointer_) { \
 /* A special version for routines that only allocate one item */
 #define MPIU_CHKPMEM_MALLOC1(pointer_,type_,nbytes_,rc_,name_,stmt_) \
 {pointer_ = (type_)MPIU_Malloc(nbytes_); \
-if (!(pointer_)) { \
+    if (!(pointer_) && (nbytes_ > 0)) {	   \
     MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
     stmt_;\
 }}
+
+/* Provides a easy way to use realloc safely and avoid the temptation to use
+ * realloc unsafely (direct ptr assignment).  Zero-size reallocs returning NULL
+ * are handled and are not considered an error. */
+#define MPIU_REALLOC_OR_FREE_AND_JUMP(ptr_,size_,rc_) do { \
+    void *realloc_tmp_ = MPIU_Realloc((ptr_), (size_)); \
+    if ((size_) && !realloc_tmp_) { \
+        MPIU_Free(ptr_); \
+        MPIU_ERR_SETANDJUMP2(rc_,MPIU_CHKMEM_ISFATAL,"**nomem2","**nomem2 %d %s",(size_),MPIU_QUOTE(ptr_)); \
+    } \
+    (ptr_) = realloc_tmp_; \
+} while (0)
+/* this version does not free ptr_ */
+#define MPIU_REALLOC_ORJUMP(ptr_,size_,rc_) do { \
+    void *realloc_tmp_ = MPIU_Realloc((ptr_), (size_)); \
+    if (size_) \
+        MPIU_ERR_CHKANDJUMP2(!realloc_tmp_,rc_,MPIU_CHKMEM_ISFATAL,"**nomem2","**nomem2 %d %s",(size_),MPIU_QUOTE(ptr_)); \
+    (ptr_) = realloc_tmp_; \
+} while (0)
 
 /* Define attribute as empty if it has no definition */
 #ifndef ATTRIBUTE
@@ -430,6 +452,39 @@ int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
    More formally: This function sets basename to the character just after the last '/' in path.
 */
 void MPIU_Basename(char *path, char **basename);
+
+/* May be used to perform sanity and range checking on memcpy and mempcy-like
+   function calls.  This macro will bail out much like an MPIU_Assert if any of
+   the checks fail. */
+#if (!defined(NDEBUG) && defined(HAVE_ERROR_CHECKING))
+
+#ifndef TRUE
+#define TRUE 1
+#endif
+#ifndef FALSE
+#define FALSE 0
+#endif
+
+#define MPIU_MEM_CHECK_MEMCPY(dst_,src_,len_)                                                                   \
+    do {                                                                                                        \
+        if (len_) {                                                                                              \
+            MPIU_Assert((dst_) != NULL);                                                                        \
+            MPIU_Assert((src_) != NULL);                                                                        \
+            MPIU_VG_CHECK_MEM_IS_ADDRESSABLE((dst_),(len_));                                                    \
+            MPIU_VG_CHECK_MEM_IS_ADDRESSABLE((src_),(len_));                                                    \
+            if (((char *)(dst_) >= (char *)(src_) && ((char *)(dst_) < ((char *)(src_) + (len_)))) ||           \
+                ((char *)(src_) >= (char *)(dst_) && ((char *)(src_) < ((char *)(dst_) + (len_)))))             \
+            {                                                                                                   \
+                MPIU_Assert_fmt_msg(FALSE,("memcpy argument memory ranges overlap, dst_=%p src_=%p len_=%ld\n", \
+                                           (dst_), (src_), (long)(len_)));                                      \
+            }                                                                                                   \
+        }                                                                                                       \
+    } while (0)
+#else
+#define MPIU_MEM_CHECK_MEMCPY(dst_,src_,len_) do {} while(0)
+#endif
+
+#include "mpiu_valgrind.h"
 
 /* ------------------------------------------------------------------------- */
 /* end of mpimem.h */

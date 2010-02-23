@@ -50,11 +50,20 @@
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
 
+/* Define to 1 if you have the `pthread_yield' function. */
+#undef HAVE_PTHREAD_YIELD
+
+/* Define to 1 if you have the `sched_yield' function. */
+#undef HAVE_SCHED_YIELD
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
+
+/* Define if strict checking of atomic operation fairness is desired */
+#undef HAVE_STRICT_FAIRNESS_CHECKS
 
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
@@ -74,8 +83,8 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* define to 1 to skip tests with 100 threads */
-#undef LIMIT_THREADS
+/* define to the maximum number of simultaneous threads */
+#undef MAX_NTHREADS
 
 /* Define to 1 if assertions should be disabled. */
 #undef NDEBUG
@@ -109,6 +118,9 @@
 
 /* define to 1 to force using lock-based atomic primitives */
 #undef USE_LOCK_BASED_PRIMITIVES
+
+/* define to 1 if unsafe (non-atomic) primitives should be used */
+#undef USE_UNSAFE_PRIMITIVES
 
 /* Version number of package */
 #undef VERSION

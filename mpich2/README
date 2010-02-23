@@ -1,14 +1,19 @@
-			MPICH2 Release 1.1.1
+			MPICH2 Release 1.2.1
 
 MPICH2 is a high-performance and widely portable implementation of the
-MPI-2.1 standard from the Argonne National Laboratory. This release
-has all MPI 2.1 functions and features required by the standard with
+MPI-2.2 standard from the Argonne National Laboratory. This release
+has all MPI 2.2 functions and features required by the standard with
 the exception of support for the "external32" portable I/O format and
 user-defined data representations for I/O.
 
 The distribution has been tested by us on a variety of machines in our
-own environments. If you have problems, please report them to
-mpich2-maint@mcs.anl.gov.
+environments as well as our partner institutes. If you have problems
+with the installation or usage of MPICH2, please send an email to
+mpich-discuss@mcs.anl.gov (you need to subscribe to this list
+(https://lists.mcs.anl.gov/mailman/listinfo/mpich-discuss) before
+sending an email). If you have found a bug in MPICH2, we request that
+you report it at our bug tracking system:
+(https://trac.mcs.anl.gov/projects/mpich2/newticket).
 
 This README file should contain enough information to get you started
 with MPICH2. More extensive installation and user guides can be found
@@ -29,10 +34,11 @@ V.    Alternate Process Managers
 VI.   VPATH Builds
 VII.  Shared Libraries
 VIII. Other Features
-IX.   Developer Builds
-X.    Building ROMIO into MPICH2
-XI.   Testing the MPICH2 installation
-XII.  Installing MPICH2 on windows
+IX.   Environment Variables
+X.    Developer Builds
+XI.   Building ROMIO into MPICH2
+XII.  Testing the MPICH2 installation
+XIII. Installing MPICH2 on windows
 
 
 -------------------------------------------------------------------------
@@ -46,7 +52,7 @@ shared memory), MPD process management) of MPICH2 up and running.
 
 1.  You will need the following prerequisites.
 
-    - This tar file mpich2-1.1.1.tar.gz
+    - This tar file mpich2-1.2.1.tar.gz
 
     - A C compiler (gcc is sufficient)
 
@@ -77,14 +83,14 @@ shared memory), MPD process management) of MPICH2 up and running.
 
 2.  Unpack the tar file and go to the top level directory:
 
-      tar xzf mpich2-1.1.1.tar.gz
-      cd mpich2-1.1.1
+      tar xzf mpich2-1.2.1.tar.gz
+      cd mpich2-1.2.1
 
     If your tar doesn't accept the z option, use
 
-      gunzip mpich2-1.1.1.tar.gz
-      tar xf mpich2-1.1.1.tar
-      cd mpich2-1.1.1
+      gunzip mpich2-1.2.1.tar.gz
+      tar xf mpich2-1.2.1.tar
+      cd mpich2-1.2.1
 
 3.  Choose an installation directory (the default is /usr/local/bin),
     /home/you/mpich2-install which is assumed to non-existent or empty.
@@ -109,8 +115,8 @@ shared memory), MPD process management) of MPICH2 up and running.
     generated configure command and is useful for diagnosis if something
     goes wrong.  Other configure options are described below.  You might
     also prefer to do a VPATH build (see below).  Check the c.txt file
-    to make sure everything went will.  Problems should be self-explanatory,
-    but if not, sent c.txt to mpich2-maint@mcs.anl.gov.
+    to make sure everything went well.  Problems should be self-explanatory,
+    but if not, please attach c.txt to your bug report.
 
 5.  Build MPICH2:
 
@@ -124,11 +130,15 @@ shared memory), MPD process management) of MPICH2 up and running.
 
     This step should succeed if there were no problems with the
     preceding step.  Check file m.txt. If there were problems,
-    do a "make clean" and then run make again with VERBOSE=1 
-      make VERBOSE=1 |& tee m.txt       (for csh and tcsh)
+    do a "make clean" and then run make again with V=1
+
+      make V=1 |& tee m.txt       (for csh and tcsh)
+
       OR
-      make VERBOSE=1 2>&1 | tee m.txt   (for bash and sh)
-    and than send m.txt and c.txt to mpich2-maint@mcs.anl.gov.
+
+      make V=1 2>&1 | tee m.txt   (for bash and sh)
+
+    and then attach m.txt and c.txt to your bug report.
 
 6.  Install the MPICH2 commands:
 
@@ -185,7 +195,7 @@ shared memory), MPD process management) of MPICH2 up and running.
     is a ring of daemons on the machines where you will run your MPI
     programs.  In the next few steps, you will get his ring up and
     tested.  More details on interacting with MPD can be found in the
-    README file in mpich2-1.1.1/src/pm/mpd, such as how to list
+    README file in mpich2-1.2.1/src/pm/mpd, such as how to list
     running jobs, kill, suspend, or otherwise signal them, and how to
     debug programs with "mpiexec -gdb".
 
@@ -268,7 +278,7 @@ shared memory), MPD process management) of MPICH2 up and running.
 
     to see which machines are in the ring so far.  More details on
     mpdboot and other options for starting the mpd's are in
-    mpich2-1.1.1/src/pm/mpd/README.
+    mpich2-1.2.1/src/pm/mpd/README.
 
  !! ***************************
     If you are still having problems getting the mpd ring established,
@@ -310,7 +320,7 @@ shared memory), MPD process management) of MPICH2 up and running.
 14. Now we will run an MPI job, using the mpiexec command as specified
     in the MPI-2 standard.  There are some examples in the install
     directory, which you have already put in your path, as well as in
-    the directory mpich2-1.1.1/examples.  One of them is the classic
+    the directory mpich2-1.2.1/examples.  One of them is the classic
     cpi example, which computes the value of pi by numerical
     integration in parallel.
 
@@ -538,7 +548,8 @@ If the MX libraries are shared libraries, they need to be in the
 shared library search path. This can be done by adding the path to
 /etc/ld.so.conf, or by setting the LD_LIBRARY_PATH variable in your
 .bashrc (or .tcshrc) file.  It's also possible to set the shared
-library search path in the binary. If you're using gcc, you can do this by adding
+library search path in the binary. If you're using gcc, you can do
+this by adding
 
   LD_LIBRARY_PATH=/path/to/lib
 
@@ -548,6 +559,12 @@ library search path in the binary. If you're using gcc, you can do this by addin
 
 ... as arguments to configure.
 
+By default, MX allows for only eight endpoints per node causing
+ch3:nemesis:mx to give initialization errors with greater than 8
+processes on the same node (this is an MX error and not an inherent
+limitation in the MPICH2/Nemesis design). If needed, this can be set
+to a higher number when MX is loaded. We recommend the user to contact
+help@myri.com for details on how to do this.
 
 Shared-memory optimizations are enabled by default to improve
 performance for multi-processor/multi-core platforms. They can be
@@ -717,21 +734,21 @@ V. Alternate Process Managers
 mpd
 ---
 MPD is the default process manager.  Its setup and use have been
-described above.  The file mpich2-1.1.1/src/pm/mpd/README has more 
+described above.  The file mpich2-1.2.1/src/pm/mpd/README has more 
 information about interactive commands for managing the ring of MPDs.
 
 hydra
 -----
 Hydra is a new process management framework that uses existing daemons
 on nodes (e.g., ssh, pbs, slurm, sge) to start MPI processes. The file
-mpich2-1.1.1/src/pm/hydra/README has mode information about Hydra.
+mpich2-1.2.1/src/pm/hydra/README has mode information about Hydra.
 
 smpd
 ---- 
 SMPD is a process management system for both Microsoft Windows and UNIX.
 SMPD is capable of starting a job where some processes are running on
 Windows and others are running on a variant of UNIX.  For more
-information, please see mpich2-1.1.1/src/pm/smpd/README.
+information, please see mpich2-1.2.1/src/pm/smpd/README.
 
 gforker
 -------
@@ -901,8 +918,72 @@ Compilation options for development:
 
 -------------------------------------------------------------------------
 
-IX. Developer Builds
-====================
+IX. Environment Variables
+=========================
+
+MPICH2 provides several environment variables that have different
+purposes.
+
+Generic Environment Variables
+-----------------------------
+
+  MPICH_NO_LOCAL - Disable shared-memory communication. With this
+         option, even communication within a node will use the network
+         stack.
+
+               ************************************
+
+  MPICH_INTERFACE_HOSTNAME - Network interface to use for
+         communication. By default MPICH2 picks the network interface
+         representing the hostname (gotten by gethostbyname). Consider
+         the following example:
+
+% /sbin/ifconfig
+
+eth0      Link encap:Ethernet  HWaddr 00:14:5E:57:C4:FA
+          inet addr:192.148.3.182  Bcast:192.148.248.255  Mask:255.255.255.0
+          inet6 addr: fe80::214:5eff:fe57:c4fa/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:989925894 errors:0 dropped:7186 overruns:0 frame:0
+          TX packets:1480277023 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:441568994866 (411.2 GiB)  TX bytes:1864173370054 (1.6 TiB)
+          Interrupt:185 Memory:e2000000-e2012100
+
+myri0     Link encap:Ethernet  HWaddr 00:14:5E:57:C4:F8
+          inet addr:10.21.3.182  Bcast:10.21.255.255  Mask:255.255.0.0
+          inet6 addr: fe80::214:5eff:fe57:c4f8/64 Scope:Link
+          UP BROADCAST RUNNING MULTICAST  MTU:1500  Metric:1
+          RX packets:3068986439 errors:0 dropped:7841 overruns:0 frame:0
+          TX packets:2288060450 errors:0 dropped:0 overruns:0 carrier:0
+          collisions:0 txqueuelen:1000
+          RX bytes:3598751494497 (3.2 TiB)  TX bytes:1744058613150 (1.5 TiB)
+          Interrupt:185 Memory:e4000000-e4012100
+
+In the above case the 192.148.x.x IP series refers to the standard
+Ethernet (or Gigabit Ethernet) network, AND the 10.21.x.x series
+refers to Myrinet.
+
+To run over the Myrinet network use:
+
+% mpiexec -np 1 -env MPICH_INTERFACE_HOSTNAME 10.21.3.182 ./foo
+
+               ************************************
+
+  MPICH_INTERFACE_HOSTNAME_R%d - Network interface to use for rank %d.
+
+               ************************************
+
+  MPICH_PORT_RANGE - Port range to use for MPICH2 internal TCP
+         connections. This is useful when some of the host ports are
+         blocked by a firewall. For example, setting MPICH_PORT_RANGE
+         to "2000:3000" will ensure that MPICH2 will internally only
+         uses ports between 2000 and 3000.
+
+-------------------------------------------------------------------------
+
+X. Developer Builds
+===================
 For MPICH2 developers who want to directly work on the svn, there are
 a few additional steps involved (people using the release tarballs do
 not have to follow these steps). Details about these steps can be
@@ -911,8 +992,8 @@ http://wiki.mcs.anl.gov/mpich2/index.php/Getting_And_Building_MPICH2
 
 -------------------------------------------------------------------------
 
-X. Building ROMIO into MPICH2
-=============================
+XI. Building ROMIO into MPICH2
+==============================
 By default, ROMIO, an implementation of the I/O portion of MPI-2 will
 be built as a part of MPICH2. The file systems to be built can be
 speicified by passing them in a '+'-delimited list to the
@@ -928,8 +1009,8 @@ build support for PVFS automatically.
 
 -------------------------------------------------------------------------
 
-XI. Testing the MPICH2 installation
-===================================
+XII. Testing the MPICH2 installation
+====================================
 To test MPICH2, use the following options after installing mpich2.
 These will assume that mpich2 is installed into /usr/local/mpich2.
 
@@ -941,8 +1022,8 @@ The results summary will be placed in test/summary.xml
 
 -------------------------------------------------------------------------
 
-XII. Installing MPICH2 on Windows
-=================================
+XIII. Installing MPICH2 on Windows
+==================================
 
 Here are the instructions for setting up MPICH2 on a Windows machine:
 

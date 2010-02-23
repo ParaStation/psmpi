@@ -28,6 +28,8 @@ char *MPIU_DBG_parent_str = "?";
 #include "pmi.h"
 #endif
 
+int MPIDI_Use_pmi2_api = 0;
+
 static int InitPG( int *argc_p, char ***argv_p,
 		   int *has_args, int *has_env, int *has_parent, 
 		   int *pg_rank_p, MPIDI_PG_t **pg_p );
@@ -57,7 +59,18 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
 
     /* FIXME: This is a good place to check for environment variables
        and command line options that may control the device */
-
+    MPIDI_Use_pmi2_api = FALSE;
+#ifdef USE_PMI2_API
+    MPIDI_Use_pmi2_api = TRUE;
+#else
+    {
+        int ret, val;
+        ret = MPIU_GetEnvBool("MPICH_USE_PMI2_API", &val);
+        if (ret == 1 && val)
+            MPIDI_Use_pmi2_api = TRUE;
+    }
+#endif
+    
 #if 1
     /* This is a sanity check because we define a generic packet size
      */
@@ -107,6 +120,10 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
     mpi_errno = MPIDI_Populate_vc_node_ids(pg, pg_rank);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
+    /* Initialize FTB after PMI init */
+    mpi_errno = MPIDU_Ftb_init();
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    
     /*
      * Let the channel perform any necessary initialization
      * The channel init should assume that PMI_Init has been called and that
@@ -348,9 +365,9 @@ static int InitPG( int *argc, char ***argv,
 	 */
 
 #ifdef USE_PMI2_API
-        mpi_errno = PMI_Init(has_parent, &pg_size, &pg_rank, &appnum);
+        mpi_errno = PMI2_Init(has_parent, &pg_size, &pg_rank, &appnum);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-#else        
+#else
 	pmi_errno = PMI_Init(has_parent);
 	if (pmi_errno != PMI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER, "**pmi_init",
@@ -389,7 +406,7 @@ static int InitPG( int *argc, char ***argv,
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**nomem");
 	}
 
-        mpi_errno = PMI_Job_GetId(pg_id, MAX_JOBID_LEN);
+        mpi_errno = PMI2_Job_GetId(pg_id, MAX_JOBID_LEN);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         
 
@@ -493,7 +510,7 @@ int MPIDI_CH3I_BCInit( char **bc_val_p, int *val_max_sz_p )
     int pmi_errno;
     int mpi_errno = MPI_SUCCESS;
 #ifdef USE_PMI2_API
-    *val_max_sz_p = PMI_MAX_VALLEN;
+    *val_max_sz_p = PMI2_MAX_VALLEN;
 #else
     pmi_errno = PMI_KVS_Get_value_length_max(val_max_sz_p);
     if (pmi_errno != PMI_SUCCESS)

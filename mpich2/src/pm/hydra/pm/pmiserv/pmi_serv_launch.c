@@ -17,9 +17,9 @@ static char *proxy_port_str = NULL;
 
 static void *launch_helper(void *args)
 {
-    struct HYD_Partition *partition = (struct HYD_Partition *) args;
-    enum HYD_PMCD_pmi_proxy_cmds cmd;
-    HYD_Status status = HYD_SUCCESS;
+    struct HYD_proxy *proxy = (struct HYD_proxy *) args;
+    enum HYD_pmcd_pmi_proxy_cmds cmd;
+    HYD_status status = HYD_SUCCESS;
 
     /*
      * Here are the steps we will follow:
@@ -52,40 +52,35 @@ static void *launch_helper(void *args)
      *    work.
      */
 
-    status = HYDU_sock_connect(partition->base->name, HYD_handle.proxy_port,
-                               &partition->control_fd);
+    status = HYDU_sock_connect(proxy->hostname, HYD_handle.proxy_port, &proxy->control_fd);
     HYDU_ERR_POP(status, "unable to connect to proxy\n");
 
-    status = HYD_PMCD_pmi_send_exec_info(partition);
+    status = HYD_pmcd_pmi_send_exec_info(proxy);
     HYDU_ERR_POP(status, "error sending executable info\n");
 
     /* Create an stdout socket */
-    status = HYDU_sock_connect(partition->base->name, HYD_handle.proxy_port,
-                               &partition->base->out);
+    status = HYDU_sock_connect(proxy->hostname, HYD_handle.proxy_port, &proxy->out);
     HYDU_ERR_POP(status, "unable to connect to proxy\n");
 
     cmd = USE_AS_STDOUT;
-    status = HYDU_sock_write(partition->base->out, &cmd, sizeof(enum HYD_PMCD_pmi_proxy_cmds));
+    status = HYDU_sock_write(proxy->out, &cmd, sizeof(enum HYD_pmcd_pmi_proxy_cmds));
     HYDU_ERR_POP(status, "unable to write data to proxy\n");
 
     /* Create an stderr socket */
-    status = HYDU_sock_connect(partition->base->name, HYD_handle.proxy_port,
-                               &partition->base->err);
+    status = HYDU_sock_connect(proxy->hostname, HYD_handle.proxy_port, &proxy->err);
     HYDU_ERR_POP(status, "unable to connect to proxy\n");
 
     cmd = USE_AS_STDERR;
-    status = HYDU_sock_write(partition->base->err, &cmd, sizeof(enum HYD_PMCD_pmi_proxy_cmds));
+    status = HYDU_sock_write(proxy->err, &cmd, sizeof(enum HYD_pmcd_pmi_proxy_cmds));
     HYDU_ERR_POP(status, "unable to write data to proxy\n");
 
     /* If rank 0 is here, create an stdin socket */
-    if (partition->base->partition_id == 0) {
-        status = HYDU_sock_connect(partition->base->name, HYD_handle.proxy_port,
-                                   &partition->base->in);
+    if (proxy->proxy_id == 0) {
+        status = HYDU_sock_connect(proxy->hostname, HYD_handle.proxy_port, &proxy->in);
         HYDU_ERR_POP(status, "unable to connect to proxy\n");
 
         cmd = USE_AS_STDIN;
-        status = HYDU_sock_write(partition->base->in, &cmd,
-                                 sizeof(enum HYD_PMCD_pmi_proxy_cmds));
+        status = HYDU_sock_write(proxy->in, &cmd, sizeof(enum HYD_pmcd_pmi_proxy_cmds));
         HYDU_ERR_POP(status, "unable to write data to proxy\n");
     }
 
@@ -96,15 +91,15 @@ static void *launch_helper(void *args)
     goto fn_exit;
 }
 
-static HYD_Status
-create_and_listen_portstr(HYD_Status(*callback) (int fd, HYD_Event_t events, void *userp),
+static HYD_status
+create_and_listen_portstr(HYD_status(*callback) (int fd, HYD_event_t events, void *userp),
                           char **port_str)
 {
     int listenfd;
     char *port_range, *sport;
     uint16_t port;
     char hostname[MAX_HOSTNAME_LEN];
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     /* Check if the user wants us to use a port within a certain
      * range. */
@@ -120,7 +115,7 @@ create_and_listen_portstr(HYD_Status(*callback) (int fd, HYD_Event_t events, voi
     HYDU_ERR_POP(status, "unable to listen on port\n");
 
     /* Register the listening socket with the demux engine */
-    status = HYD_DMX_register_fd(1, &listenfd, HYD_STDOUT, NULL, callback);
+    status = HYDT_dmx_register_fd(1, &listenfd, HYD_STDOUT, NULL, callback);
     HYDU_ERR_POP(status, "unable to register fd\n");
 
     /* Create a port string for MPI processes to use to connect to */
@@ -141,11 +136,11 @@ create_and_listen_portstr(HYD_Status(*callback) (int fd, HYD_Event_t events, voi
     goto fn_exit;
 }
 
-static HYD_Status fill_in_proxy_args(HYD_Launch_mode_t mode, char **proxy_args)
+static HYD_status fill_in_proxy_args(HYD_launch_mode_t mode, char **proxy_args)
 {
     int i, arg;
     char *path_str[HYD_NUM_TMP_STRINGS];
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     if (mode != HYD_LAUNCH_RUNTIME && mode != HYD_LAUNCH_BOOT &&
         mode != HYD_LAUNCH_BOOT_FOREGROUND)
@@ -169,20 +164,20 @@ static HYD_Status fill_in_proxy_args(HYD_Launch_mode_t mode, char **proxy_args)
     else
         proxy_args[arg++] = HYDU_int_to_str(HYD_handle.proxy_port);
 
-    if (HYD_handle.debug)
+    if (HYD_handle.user_global.debug)
         proxy_args[arg++] = HYDU_strdup("--debug");
 
-    if (HYD_handle.enablex != -1) {
+    if (HYD_handle.user_global.enablex != -1) {
         proxy_args[arg++] = HYDU_strdup("--enable-x");
-        proxy_args[arg++] = HYDU_int_to_str(HYD_handle.enablex);
+        proxy_args[arg++] = HYDU_int_to_str(HYD_handle.user_global.enablex);
     }
 
     proxy_args[arg++] = HYDU_strdup("--bootstrap");
-    proxy_args[arg++] = HYDU_strdup(HYD_handle.bootstrap);
+    proxy_args[arg++] = HYDU_strdup(HYD_handle.user_global.bootstrap);
 
-    if (HYD_handle.bootstrap_exec) {
+    if (HYD_handle.user_global.bootstrap_exec) {
         proxy_args[arg++] = HYDU_strdup("--bootstrap-exec");
-        proxy_args[arg++] = HYDU_strdup(HYD_handle.bootstrap_exec);
+        proxy_args[arg++] = HYDU_strdup(HYD_handle.user_global.bootstrap_exec);
     }
 
     proxy_args[arg++] = NULL;
@@ -194,142 +189,163 @@ static HYD_Status fill_in_proxy_args(HYD_Launch_mode_t mode, char **proxy_args)
     goto fn_exit;
 }
 
-static HYD_Status fill_in_exec_args(void)
+static HYD_status fill_in_exec_launch_info(void)
 {
     int i, arg, process_id;
     int inherited_env_count, user_env_count, system_env_count;
-    int segment_count, exec_count, total_args;
+    int exec_count, total_args;
     static int proxy_count = 0;
-    HYD_Env_t *env;
-    struct HYD_Partition *partition;
-    struct HYD_Partition_exec *exec;
-    struct HYD_Partition_segment *segment;
-    HYD_Status status = HYD_SUCCESS;
+    HYD_env_t *env;
+    struct HYD_proxy *proxy;
+    struct HYD_proxy_exec *exec;
+    HYD_status status = HYD_SUCCESS;
 
     /* Create the arguments list for each proxy */
     process_id = 0;
-    FORALL_ACTIVE_PARTITIONS(partition, HYD_handle.partition_list) {
-        for (inherited_env_count = 0, env = HYD_handle.inherited_env; env;
+    FORALL_ACTIVE_PROXIES(proxy, HYD_handle.proxy_list) {
+        for (inherited_env_count = 0, env = HYD_handle.user_global.global_env.inherited; env;
              env = env->next, inherited_env_count++);
-        for (user_env_count = 0, env = HYD_handle.user_env; env;
+        for (user_env_count = 0, env = HYD_handle.user_global.global_env.user; env;
              env = env->next, user_env_count++);
-        for (system_env_count = 0, env = HYD_handle.system_env; env;
+        for (system_env_count = 0, env = HYD_handle.user_global.global_env.system; env;
              env = env->next, system_env_count++);
 
-        for (segment_count = 0, segment = partition->segment_list; segment;
-             segment = segment->next)
-            segment_count++;
-
-        for (exec_count = 0, exec = partition->exec_list; exec; exec = exec->next)
+        for (exec_count = 0, exec = proxy->exec_list; exec; exec = exec->next)
             exec_count++;
 
-        total_args = HYD_NUM_TMP_STRINGS; /* For the basic arguments */
+        total_args = HYD_NUM_TMP_STRINGS;       /* For the basic arguments */
 
         /* Environments */
         total_args += inherited_env_count;
         total_args += user_env_count;
         total_args += system_env_count;
 
-        /* For each segment add a few strings */
-        total_args += (segment_count * HYD_NUM_TMP_STRINGS);
-
         /* For each exec add a few strings */
         total_args += (exec_count * HYD_NUM_TMP_STRINGS);
 
-        HYDU_MALLOC(partition->base->exec_args, char **, total_args * sizeof(char *),
-                    status);
+        /* Add a few strings for the remaining arguments */
+        total_args += HYD_NUM_TMP_STRINGS;
+
+        HYDU_MALLOC(proxy->exec_launch_info, char **, total_args * sizeof(char *), status);
 
         arg = 0;
-        partition->base->exec_args[arg++] = HYDU_strdup("--global-core-count");
-        partition->base->exec_args[arg++] = HYDU_int_to_str(HYD_handle.global_core_count);
+        proxy->exec_launch_info[arg++] = HYDU_strdup("--version");
+        proxy->exec_launch_info[arg++] = HYDU_strdup(HYDRA_VERSION);
 
-        partition->base->exec_args[arg++] = HYDU_strdup("--wdir");
-        partition->base->exec_args[arg++] = HYDU_strdup(HYD_handle.wdir);
+        proxy->exec_launch_info[arg++] = HYDU_strdup("--hostname");
+        proxy->exec_launch_info[arg++] = HYDU_strdup(proxy->hostname);
 
-        partition->base->exec_args[arg++] = HYDU_strdup("--pmi-port-str");
+        proxy->exec_launch_info[arg++] = HYDU_strdup("--global-core-count");
+        proxy->exec_launch_info[arg++] = HYDU_int_to_str(HYD_handle.global_core_count);
+
+        proxy->exec_launch_info[arg++] = HYDU_strdup("--wdir");
+        proxy->exec_launch_info[arg++] = HYDU_strdup(HYD_handle.user_global.wdir);
+
+        proxy->exec_launch_info[arg++] = HYDU_strdup("--pmi-port-str");
         if (HYD_handle.pm_env)
-            partition->base->exec_args[arg++] = HYDU_strdup(pmi_port_str);
+            proxy->exec_launch_info[arg++] = HYDU_strdup(pmi_port_str);
         else
-            partition->base->exec_args[arg++] = HYDU_strdup("HYDRA_NULL");
+            proxy->exec_launch_info[arg++] = HYDU_strdup("HYDRA_NULL");
 
-        partition->base->exec_args[arg++] = HYDU_strdup("--binding");
-        partition->base->exec_args[arg++] = HYDU_int_to_str(HYD_handle.binding);
-        if (HYD_handle.user_bind_map)
-            partition->base->exec_args[arg++] = HYDU_strdup(HYD_handle.user_bind_map);
-        else if (partition->user_bind_map)
-            partition->base->exec_args[arg++] = HYDU_strdup(partition->user_bind_map);
+        proxy->exec_launch_info[arg++] = HYDU_strdup("--binding");
+        if (HYD_handle.user_global.binding)
+            proxy->exec_launch_info[arg++] = HYDU_strdup(HYD_handle.user_global.binding);
         else
-            partition->base->exec_args[arg++] = HYDU_strdup("HYDRA_NULL");
+            proxy->exec_launch_info[arg++] = HYDU_strdup("HYDRA_NULL");
 
-        partition->base->exec_args[arg++] = HYDU_strdup("--bindlib");
-        partition->base->exec_args[arg++] = HYDU_int_to_str(HYD_handle.bindlib);
+        proxy->exec_launch_info[arg++] = HYDU_strdup("--bindlib");
+        proxy->exec_launch_info[arg++] = HYDU_strdup(HYD_handle.user_global.bindlib);
 
-        partition->base->exec_args[arg++] = HYDU_strdup("--inherited-env");
-        for (i = 0, env = HYD_handle.inherited_env; env; env = env->next, i++);
-        partition->base->exec_args[arg++] = HYDU_int_to_str(i);
-        partition->base->exec_args[arg++] = NULL;
-        HYDU_list_append_env_to_str(HYD_handle.inherited_env, partition->base->exec_args);
+        proxy->exec_launch_info[arg++] = HYDU_strdup("--ckpointlib");
+        proxy->exec_launch_info[arg++] = HYDU_strdup(HYD_handle.user_global.ckpointlib);
 
-        arg = HYDU_strlist_lastidx(partition->base->exec_args);
-        partition->base->exec_args[arg++] = HYDU_strdup("--user-env");
-        for (i = 0, env = HYD_handle.user_env; env; env = env->next, i++);
-        partition->base->exec_args[arg++] = HYDU_int_to_str(i);
-        partition->base->exec_args[arg++] = NULL;
-        HYDU_list_append_env_to_str(HYD_handle.user_env, partition->base->exec_args);
+        proxy->exec_launch_info[arg++] = HYDU_strdup("--ckpoint-prefix");
+        if (HYD_handle.user_global.ckpoint_prefix)
+            proxy->exec_launch_info[arg++] =
+                HYDU_strdup(HYD_handle.user_global.ckpoint_prefix);
+        else
+            proxy->exec_launch_info[arg++] = HYDU_strdup("HYDRA_NULL");
 
-        arg = HYDU_strlist_lastidx(partition->base->exec_args);
-        partition->base->exec_args[arg++] = HYDU_strdup("--system-env");
-        for (i = 0, env = HYD_handle.system_env; env; env = env->next, i++);
-        partition->base->exec_args[arg++] = HYDU_int_to_str(i);
-        partition->base->exec_args[arg++] = NULL;
-        HYDU_list_append_env_to_str(HYD_handle.system_env, partition->base->exec_args);
+        if (HYD_handle.user_global.ckpoint_restart)
+            proxy->exec_launch_info[arg++] = HYDU_strdup("--ckpoint-restart");
 
-        arg = HYDU_strlist_lastidx(partition->base->exec_args);
-        partition->base->exec_args[arg++] = HYDU_strdup("--genv-prop");
-        partition->base->exec_args[arg++] = HYDU_int_to_str(HYD_handle.prop);
-        partition->base->exec_args[arg++] = NULL;
+        proxy->exec_launch_info[arg++] = HYDU_strdup("--global-inherited-env");
+        for (i = 0, env = HYD_handle.user_global.global_env.inherited; env;
+             env = env->next, i++);
+        proxy->exec_launch_info[arg++] = HYDU_int_to_str(i);
 
-        /* Pass the segment information */
-        for (segment = partition->segment_list; segment; segment = segment->next) {
-            arg = HYDU_strlist_lastidx(partition->base->exec_args);
-            partition->base->exec_args[arg++] = HYDU_strdup("--segment");
-
-            partition->base->exec_args[arg++] = HYDU_strdup("--segment-start-pid");
-            partition->base->exec_args[arg++] = HYDU_int_to_str(segment->start_pid);
-
-            partition->base->exec_args[arg++] = HYDU_strdup("--segment-proc-count");
-            partition->base->exec_args[arg++] = HYDU_int_to_str(segment->proc_count);
-            partition->base->exec_args[arg++] = NULL;
+        for (env = HYD_handle.user_global.global_env.inherited; env; env = env->next) {
+            status = HYDU_env_to_str(env, &proxy->exec_launch_info[arg++]);
+            HYDU_ERR_POP(status, "error converting env to string\n");
         }
+        proxy->exec_launch_info[arg++] = NULL;
+
+        arg = HYDU_strlist_lastidx(proxy->exec_launch_info);
+        proxy->exec_launch_info[arg++] = HYDU_strdup("--global-user-env");
+        for (i = 0, env = HYD_handle.user_global.global_env.user; env; env = env->next, i++);
+        proxy->exec_launch_info[arg++] = HYDU_int_to_str(i);
+
+        for (env = HYD_handle.user_global.global_env.user; env; env = env->next) {
+            status = HYDU_env_to_str(env, &proxy->exec_launch_info[arg++]);
+            HYDU_ERR_POP(status, "error converting env to string\n");
+        }
+        proxy->exec_launch_info[arg++] = NULL;
+
+        arg = HYDU_strlist_lastidx(proxy->exec_launch_info);
+        proxy->exec_launch_info[arg++] = HYDU_strdup("--global-system-env");
+        for (i = 0, env = HYD_handle.user_global.global_env.system; env; env = env->next, i++);
+        proxy->exec_launch_info[arg++] = HYDU_int_to_str(i);
+
+        for (env = HYD_handle.user_global.global_env.system; env; env = env->next) {
+            status = HYDU_env_to_str(env, &proxy->exec_launch_info[arg++]);
+            HYDU_ERR_POP(status, "error converting env to string\n");
+        }
+        proxy->exec_launch_info[arg++] = NULL;
+
+        arg = HYDU_strlist_lastidx(proxy->exec_launch_info);
+        proxy->exec_launch_info[arg++] = HYDU_strdup("--genv-prop");
+        proxy->exec_launch_info[arg++] = HYDU_strdup(HYD_handle.user_global.global_env.prop);
+
+        proxy->exec_launch_info[arg++] = HYDU_strdup("--start-pid");
+        proxy->exec_launch_info[arg++] = HYDU_int_to_str(proxy->start_pid);
+
+        proxy->exec_launch_info[arg++] = HYDU_strdup("--proxy-core-count");
+        proxy->exec_launch_info[arg++] = HYDU_int_to_str(proxy->proxy_core_count);
+        proxy->exec_launch_info[arg++] = NULL;
 
         /* Now pass the local executable information */
-        for (exec = partition->exec_list; exec; exec = exec->next) {
-            arg = HYDU_strlist_lastidx(partition->base->exec_args);
-            partition->base->exec_args[arg++] = HYDU_strdup("--exec");
+        for (exec = proxy->exec_list; exec; exec = exec->next) {
+            arg = HYDU_strlist_lastidx(proxy->exec_launch_info);
+            proxy->exec_launch_info[arg++] = HYDU_strdup("--exec");
 
-            partition->base->exec_args[arg++] = HYDU_strdup("--exec-proc-count");
-            partition->base->exec_args[arg++] = HYDU_int_to_str(exec->proc_count);
+            proxy->exec_launch_info[arg++] = HYDU_strdup("--exec-proc-count");
+            proxy->exec_launch_info[arg++] = HYDU_int_to_str(exec->proc_count);
 
-            partition->base->exec_args[arg++] = HYDU_strdup("--exec-local-env");
+            proxy->exec_launch_info[arg++] = HYDU_strdup("--exec-local-env");
             for (i = 0, env = exec->user_env; env; env = env->next, i++);
-            partition->base->exec_args[arg++] = HYDU_int_to_str(i);
-            partition->base->exec_args[arg++] = NULL;
-            HYDU_list_append_env_to_str(exec->user_env, partition->base->exec_args);
+            proxy->exec_launch_info[arg++] = HYDU_int_to_str(i);
 
-            arg = HYDU_strlist_lastidx(partition->base->exec_args);
-            partition->base->exec_args[arg++] = HYDU_strdup("--exec-env-prop");
-            partition->base->exec_args[arg++] = HYDU_int_to_str(exec->prop);
-            partition->base->exec_args[arg++] = NULL;
+            for (env = exec->user_env; env; env = env->next) {
+                status = HYDU_env_to_str(env, &proxy->exec_launch_info[arg++]);
+                HYDU_ERR_POP(status, "error converting env to string\n");
+            }
+            proxy->exec_launch_info[arg++] = NULL;
 
-            HYDU_list_append_strlist(exec->exec, partition->base->exec_args);
+            arg = HYDU_strlist_lastidx(proxy->exec_launch_info);
+            proxy->exec_launch_info[arg++] = HYDU_strdup("--exec-env-prop");
+            proxy->exec_launch_info[arg++] = exec->env_prop ? HYDU_strdup(exec->env_prop) :
+                HYDU_strdup("HYDRA_NULL");
+            proxy->exec_launch_info[arg++] = NULL;
+
+            HYDU_list_append_strlist(exec->exec, proxy->exec_launch_info);
 
             process_id += exec->proc_count;
         }
 
-        if (HYD_handle.debug) {
-            printf("Arguments being passed to proxy %d:\n", proxy_count++);
-            HYDU_print_strlist(partition->base->exec_args);
-            printf("\n");
+        if (HYD_handle.user_global.debug) {
+            HYDU_dump_noprefix(stdout, "Arguments being passed to proxy %d:\n", proxy_count++);
+            HYDU_print_strlist(proxy->exec_launch_info);
+            HYDU_dump_noprefix(stdout, "\n");
         }
     }
 
@@ -340,103 +356,105 @@ static HYD_Status fill_in_exec_args(void)
     goto fn_exit;
 }
 
-HYD_Status HYD_PMCI_launch_procs(void)
+HYD_status HYD_pmci_launch_procs(void)
 {
-    struct HYD_Partition *partition;
-    enum HYD_PMCD_pmi_proxy_cmds cmd;
+    struct HYD_proxy *proxy;
+    enum HYD_pmcd_pmi_proxy_cmds cmd;
     int fd, len, id;
 #if defined HAVE_THREAD_SUPPORT
-    struct HYD_Thread_context *thread_context = NULL;
+    struct HYD_thread_context *thread_context = NULL;
 #endif /* HAVE_THREAD_SUPPORT */
     char *proxy_args[HYD_NUM_TMP_STRINGS] = { NULL };
-    HYD_Status status = HYD_SUCCESS;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
-    status = HYDU_set_common_signals(HYD_PMCD_pmi_serv_signal_cb);
+    status = HYDU_set_common_signals(HYD_pmcd_pmi_serv_signal_cb);
     HYDU_ERR_POP(status, "unable to set signal\n");
 
     /* Initialize PMI */
-    status = create_and_listen_portstr(HYD_PMCD_pmi_connect_cb, &pmi_port_str);
+    status = create_and_listen_portstr(HYD_pmcd_pmi_connect_cb, &pmi_port_str);
     HYDU_ERR_POP(status, "unable to create PMI port\n");
-    HYDU_Debug(HYD_handle.debug, "Got a PMI port string of %s\n", pmi_port_str);
+    if (HYD_handle.user_global.debug)
+        HYDU_dump(stdout, "Got a PMI port string of %s\n", pmi_port_str);
 
-    status = HYD_PMCD_pmi_init();
+    status = HYD_pmcd_pmi_init();
     HYDU_ERR_POP(status, "unable to create process group\n");
 
-    if (HYD_handle.launch_mode == HYD_LAUNCH_RUNTIME) {
-        status = create_and_listen_portstr(HYD_PMCD_pmi_serv_control_connect_cb,
+    if (HYD_handle.user_global.launch_mode == HYD_LAUNCH_RUNTIME) {
+        status = create_and_listen_portstr(HYD_pmcd_pmi_serv_control_connect_cb,
                                            &proxy_port_str);
         HYDU_ERR_POP(status, "unable to create PMI port\n");
-        HYDU_Debug(HYD_handle.debug, "Got a proxy port string of %s\n", proxy_port_str);
+        if (HYD_handle.user_global.debug)
+            HYDU_dump(stdout, "Got a proxy port string of %s\n", proxy_port_str);
 
-        status = fill_in_proxy_args(HYD_handle.launch_mode, proxy_args);
+        status = fill_in_proxy_args(HYD_handle.user_global.launch_mode, proxy_args);
         HYDU_ERR_POP(status, "unable to fill in proxy arguments\n");
 
-        status = fill_in_exec_args();
+        status = fill_in_exec_launch_info();
         HYDU_ERR_POP(status, "unable to fill in executable arguments\n");
 
-        status = HYD_BSCI_launch_procs(proxy_args, "--partition-id", HYD_handle.partition_list);
+        status = HYDT_bsci_launch_procs(proxy_args, "--proxy-id", HYD_handle.proxy_list);
         HYDU_ERR_POP(status, "bootstrap server cannot launch processes\n");
     }
-    else if (HYD_handle.launch_mode == HYD_LAUNCH_BOOT ||
-             HYD_handle.launch_mode == HYD_LAUNCH_BOOT_FOREGROUND) {
-        status = fill_in_proxy_args(HYD_handle.launch_mode, proxy_args);
+    else if (HYD_handle.user_global.launch_mode == HYD_LAUNCH_BOOT ||
+             HYD_handle.user_global.launch_mode == HYD_LAUNCH_BOOT_FOREGROUND) {
+        status = fill_in_proxy_args(HYD_handle.user_global.launch_mode, proxy_args);
         HYDU_ERR_POP(status, "unable to fill in proxy arguments\n");
 
-        status = HYD_BSCI_launch_procs(proxy_args, "--partition-id", HYD_handle.partition_list);
+        status = HYDT_bsci_launch_procs(proxy_args, "--proxy-id", HYD_handle.proxy_list);
         HYDU_ERR_POP(status, "bootstrap server cannot launch processes\n");
     }
-    else if (HYD_handle.launch_mode == HYD_LAUNCH_SHUTDOWN) {
-        FORALL_ACTIVE_PARTITIONS(partition, HYD_handle.partition_list) {
-            status = HYDU_sock_connect(partition->base->name, HYD_handle.proxy_port, &fd);
+    else if (HYD_handle.user_global.launch_mode == HYD_LAUNCH_SHUTDOWN) {
+        FORALL_ACTIVE_PROXIES(proxy, HYD_handle.proxy_list) {
+            status = HYDU_sock_connect(proxy->hostname, HYD_handle.proxy_port, &fd);
             if (status != HYD_SUCCESS) {
                 /* Don't abort. Try to shutdown as many proxies as possible */
-                HYDU_Error_printf("Unable to connect to proxy at %s\n", partition->base->name);
+                HYDU_error_printf("Unable to connect to proxy at %s\n", proxy->hostname);
                 continue;
             }
 
             cmd = PROXY_SHUTDOWN;
-            status = HYDU_sock_write(fd, &cmd, sizeof(enum HYD_PMCD_pmi_proxy_cmds));
+            status = HYDU_sock_write(fd, &cmd, sizeof(enum HYD_pmcd_pmi_proxy_cmds));
             HYDU_ERR_POP(status, "unable to write data to proxy\n");
 
             close(fd);
         }
     }
-    else if (HYD_handle.launch_mode == HYD_LAUNCH_PERSISTENT) {
-        status = fill_in_exec_args();
+    else if (HYD_handle.user_global.launch_mode == HYD_LAUNCH_PERSISTENT) {
+        status = fill_in_exec_launch_info();
         HYDU_ERR_POP(status, "unable to fill in proxy arguments\n");
 
         len = 0;
-        FORALL_ACTIVE_PARTITIONS(partition, HYD_handle.partition_list)
+        FORALL_ACTIVE_PROXIES(proxy, HYD_handle.proxy_list)
             len++;
 
 #if defined HAVE_THREAD_SUPPORT
-        HYDU_CALLOC(thread_context, struct HYD_Thread_context *, len,
-                    sizeof(struct HYD_Thread_context), status);
+        HYDU_CALLOC(thread_context, struct HYD_thread_context *, len,
+                    sizeof(struct HYD_thread_context), status);
         if (!thread_context)
             HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
                                 "Unable to allocate memory for thread context\n");
 #endif /* HAVE_THREAD_SUPPORT */
 
         id = 0;
-        FORALL_ACTIVE_PARTITIONS(partition, HYD_handle.partition_list) {
+        FORALL_ACTIVE_PROXIES(proxy, HYD_handle.proxy_list) {
 #if defined HAVE_THREAD_SUPPORT
-            HYDU_create_thread(launch_helper, (void *) partition, &thread_context[id]);
+            HYDU_create_thread(launch_helper, (void *) proxy, &thread_context[id]);
 #else
-            launch_helper(partition);
+            launch_helper(proxy);
 #endif /* HAVE_THREAD_SUPPORT */
             id++;
         }
 
         id = 0;
-        FORALL_ACTIVE_PARTITIONS(partition, HYD_handle.partition_list) {
+        FORALL_ACTIVE_PROXIES(proxy, HYD_handle.proxy_list) {
 #if defined HAVE_THREAD_SUPPORT
             HYDU_join_thread(thread_context[id]);
 #endif /* HAVE_THREAD_SUPPORT */
 
-            status = HYD_DMX_register_fd(1, &partition->control_fd, HYD_STDOUT, partition,
-                                         HYD_PMCD_pmi_serv_control_cb);
+            status = HYDT_dmx_register_fd(1, &proxy->control_fd, HYD_STDOUT, proxy,
+                                          HYD_pmcd_pmi_serv_control_cb);
             HYDU_ERR_POP(status, "unable to register control fd\n");
 
             id++;
@@ -461,33 +479,40 @@ HYD_Status HYD_PMCI_launch_procs(void)
 }
 
 
-HYD_Status HYD_PMCI_wait_for_completion(void)
+HYD_status HYD_pmci_wait_for_completion(void)
 {
-    struct HYD_Partition *partition;
-    int sockets_open, all_procs_exited;
-    HYD_Status status = HYD_SUCCESS;
+    struct HYD_proxy *proxy;
+    int sockets_open, all_procs_exited, infinite = -1;
+    HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
-    if ((HYD_handle.launch_mode == HYD_LAUNCH_BOOT) || (HYD_handle.launch_mode == HYD_LAUNCH_SHUTDOWN)) {
+    if ((HYD_handle.user_global.launch_mode == HYD_LAUNCH_BOOT) ||
+        (HYD_handle.user_global.launch_mode == HYD_LAUNCH_SHUTDOWN)) {
         status = HYD_SUCCESS;
     }
     else {
         while (1) {
             /* Wait for some event to occur */
-            status = HYD_DMX_wait_for_event(HYDU_time_left(HYD_handle.start, HYD_handle.timeout));
+            status =
+                HYDT_dmx_wait_for_event(HYDU_time_left(HYD_handle.start, HYD_handle.timeout));
             HYDU_ERR_POP(status, "error waiting for event\n");
 
-            /* If the timeout expired, raise a SIGINT and kill all the
-             * processes */
-            if (HYDU_time_left(HYD_handle.start, HYD_handle.timeout) == 0)
-                raise(SIGINT);
+            /* timeout expired */
+            if (HYDU_time_left(HYD_handle.start, HYD_handle.timeout) == 0) {
+                status = HYD_pmcd_pmi_serv_cleanup();
+                HYDU_ERR_POP(status, "cleanup of processes failed\n");
+
+                /* Reset timer to infinite */
+                HYDU_time_set(&HYD_handle.timeout, &infinite);
+                continue;
+            }
 
             /* Check to see if there's any open read socket left; if
              * there are, we will just wait for more events. */
             sockets_open = 0;
-            FORALL_ACTIVE_PARTITIONS(partition, HYD_handle.partition_list) {
-                if (partition->base->out != -1 || partition->base->err != -1) {
+            FORALL_ACTIVE_PROXIES(proxy, HYD_handle.proxy_list) {
+                if (proxy->out != -1 || proxy->err != -1) {
                     sockets_open++;
                     break;
                 }
@@ -502,8 +527,8 @@ HYD_Status HYD_PMCI_wait_for_completion(void)
         do {
             /* Check if the exit status has already arrived */
             all_procs_exited = 1;
-            FORALL_ACTIVE_PARTITIONS(partition, HYD_handle.partition_list) {
-                if (partition->exit_status == NULL) {
+            FORALL_ACTIVE_PROXIES(proxy, HYD_handle.proxy_list) {
+                if (proxy->exit_status == NULL) {
                     all_procs_exited = 0;
                     break;
                 }
@@ -513,10 +538,14 @@ HYD_Status HYD_PMCI_wait_for_completion(void)
                 break;
 
             /* If not, wait for some event to occur */
-            status = HYD_DMX_wait_for_event(HYDU_time_left(HYD_handle.start, HYD_handle.timeout));
+            status =
+                HYDT_dmx_wait_for_event(HYDU_time_left(HYD_handle.start, HYD_handle.timeout));
             HYDU_ERR_POP(status, "error waiting for event\n");
         } while (1);
     }
+
+    status = HYDT_bsci_wait_for_completion(HYD_handle.proxy_list);
+    HYDU_ERR_POP(status, "bootstrap server returned error waiting for completion\n");
 
   fn_exit:
     HYDU_FUNC_EXIT();

@@ -1348,7 +1348,7 @@ Optional Features:
  using ptrace.  Disabled by default
 --enable-newsession - Create a new process group session if standard in is
                       not connected to a terminal
---enable-strict  - Turn on strict compilation testing when using gcc
+--enable-strict  - Turn on strict compilation testing
 
 Some influential environment variables:
   CC          C compiler command
@@ -1915,34 +1915,36 @@ ac_config_headers="$ac_config_headers remshellconf.h"
 
 
 
-if test -f $CONFIG_AUX_DIR/install-sh ; then ac_aux_dir=$CONFIG_AUX_DIR
-else
 ac_aux_dir=
-# We force the test to use the absolute path to ensure that the install
-# program can be used if we cd to a different directory before using
-# install.
 for ac_dir in ../../../confdb "$srcdir"/../../../confdb; do
-  if test -f $ac_dir/install-sh; then
+  if test -f "$ac_dir/install-sh"; then
     ac_aux_dir=$ac_dir
-    abs_ac_aux_dir=`(cd $ac_aux_dir && pwd)`
-    ac_install_sh="$abs_ac_aux_dir/install-sh -c"
+    ac_install_sh="$ac_aux_dir/install-sh -c"
     break
-  elif test -f $ac_dir/install.sh; then
+  elif test -f "$ac_dir/install.sh"; then
     ac_aux_dir=$ac_dir
-    abs_ac_aux_dir=`(cd $ac_aux_dir && pwd)`
-    ac_install_sh="$abs_ac_aux_dir/install.sh -c"
+    ac_install_sh="$ac_aux_dir/install.sh -c"
+    break
+  elif test -f "$ac_dir/shtool"; then
+    ac_aux_dir=$ac_dir
+    ac_install_sh="$ac_aux_dir/shtool install -c"
     break
   fi
 done
-fi
 if test -z "$ac_aux_dir"; then
-  { { $as_echo "$as_me:$LINENO: error: can not find install-sh or install.sh in ../../../confdb \"$srcdir\"/../../../confdb" >&5
-$as_echo "$as_me: error: can not find install-sh or install.sh in ../../../confdb \"$srcdir\"/../../../confdb" >&2;}
+  { { $as_echo "$as_me:$LINENO: error: cannot find install-sh or install.sh in ../../../confdb \"$srcdir\"/../../../confdb" >&5
+$as_echo "$as_me: error: cannot find install-sh or install.sh in ../../../confdb \"$srcdir\"/../../../confdb" >&2;}
    { (exit 1); exit 1; }; }
 fi
-ac_config_guess=$ac_aux_dir/config.guess
-ac_config_sub=$ac_aux_dir/config.sub
-ac_configure=$ac_aux_dir/configure # This should be Cygnus configure.
+
+# These three variables are undocumented and unsupported,
+# and are intended to be withdrawn in a future Autoconf release.
+# They can cause serious problems if a builder's source tree is in a directory
+# whose full name contains unusual characters.
+ac_config_guess="$SHELL $ac_aux_dir/config.guess"  # Please don't use this var.
+ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
+ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
+
 
 echo "RUNNING CONFIGURE FOR THE REMSHELL PM"
 
@@ -2998,27 +3000,31 @@ if test "$enable_strict_done" != "yes" ; then
     #   -Wno-sign-compare -- read() and write() return bytes read/written
     #       as a signed value, but we often compare this to size_t (or
     #	    msg_sz_t) variables.
+    #   -Wno-format-zero-length -- this warning is irritating and useless, since
+    #                              a zero-length format string is very well defined
+    #   -Wno-type-limits -- There are places where we compare an unsigned to
+    #	    a constant that happens to be zero e.g., if x is unsigned and
+    #	    MIN_VAL is zero, we'd like to do "MPIU_Assert(x >= MIN_VAL);".
+    #       Note this option is not supported by gcc 4.2.  This needs to be added
+    #	    after most other warning flags, so that we catch a gcc bug on 32-bit
+    #	    that doesn't give a warning that this is unsupported, unless another
+    #	    warning is triggered, and then if gives an error.
     # These were removed to reduce warnings:
     #   -Wcast-qual -- Sometimes we need to cast "volatile char*" to
     #	    "char*", e.g., for memcpy.
     #   -Wpadded -- We catch struct padding with asserts when we need to
     #   -Wredundant-decls -- Having redundant declarations is benign and the
     #	    code already has some.
-    #   -Wno-format-zero-length -- this warning is irritating and useless, since
-    #                              a zero-length format string is very well defined
-    #
-    # This was removed because it doesn't seem to reliably detected by gcc as an
-    # invalid option (see ticket #729):
-    #   -Wno-type-limits -- There are places where we compare an unsigned to
-    #	    a constant that happens to be zero e.g., if x is unsigned and
-    #	    MIN_VAL is zero, we'd like to do "MPIU_Assert(x >= MIN_VAL);".
-    #       Note this option is not supported by gcc 4.2.
-
+    #   -Waggregate-return -- This seems to be a performance-related warning
+    #       aggregate return values are legal in ANSI C, but they may be returned
+    #	    in memory rather than through a register.  We do use aggregate return
+    #	    values, but they are structs of a single basic type (used to enforce
+    #	    type checking for relative vs. absolute ptrs), and with optimization
+    #	    the aggregate value is converted to a scalar.
     # the embedded newlines in this string are safe because we evaluate each
     # argument in the for-loop below and append them to the CFLAGS with a space
     # as the separator instead
     pac_common_strict_flags="
-        -O2
         -Wall
         -Wextra
         -Wno-missing-field-initializers
@@ -3039,7 +3045,6 @@ if test "$enable_strict_done" != "yes" ; then
         -Wcast-align
         -Wwrite-strings
         -Wno-sign-compare
-        -Waggregate-return
         -Wold-style-definition
         -Wno-multichar
         -Wno-deprecated-declarations
@@ -3050,18 +3055,24 @@ if test "$enable_strict_done" != "yes" ; then
         -Wvariadic-macros
         -std=c89
         -Wno-format-zero-length
+	-Wno-type-limits
     "
     pac_cc_strict_flags=""
     case "$enable_strict" in
         yes|all|posix)
 		enable_strict_done="yes"
-		pac_cc_strict_flags="$pac_common_strict_flags -D_POSIX_C_SOURCE=199506L"
+		pac_cc_strict_flags="-O2 $pac_common_strict_flags -D_POSIX_C_SOURCE=199506L"
         ;;
 
         noposix)
 		enable_strict_done="yes"
-		pac_cc_strict_flags="$pac_common_strict_flags"
+		pac_cc_strict_flags="-O2 $pac_common_strict_flags"
         ;;
+
+	noopt)
+		enable_strict_done="yes"
+		pac_cc_strict_flags="$pac_common_strict_flags -D_POSIX_C_SOURCE=199506L"
+	;;
 
         no)
 		# Accept and ignore this value
@@ -3091,9 +3102,13 @@ $as_echo_n "checking whether C compiler accepts option $flag... " >&6; }
 pccco_save_CFLAGS="$CFLAGS"
 CFLAGS="$flag $CFLAGS"
 rm -f conftest.out
+pac_success=no
+# conftest3.c has an invalid prototype to ensure we generate warnings
+echo 'int main(){}' > conftest3.c
 echo 'int foo(void);int foo(void){return 0;}' > conftest2.c
 echo 'int main(void);int main(void){return 0;}' > conftest.c
-if ${CC-cc} $pccco_save_CFLAGS $CPPFLAGS -o conftest conftest.c $LDFLAGS >conftest.bas 2>&1 ; then
+if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest3.c $LDFLAGS >/dev/null 2>&1 &&
+   ${CC-cc} $pccco_save_CFLAGS $CPPFLAGS -o conftest conftest.c $LDFLAGS >conftest.bas 2>&1 ; then
    if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest.c $LDFLAGS >conftest.out 2>&1 ; then
       if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
          { $as_echo "$as_me:$LINENO: result: yes" >&5
@@ -3106,63 +3121,42 @@ $as_echo_n "checking whether routines compiled with $flag can be linked with one
             if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest2.o conftest.c $LDFLAGS >conftest.bas 2>&1 ; then
                if ${CC-cc} $CFLAGS $CPPFLAGS -o conftest conftest2.o conftest.c $LDFLAGS >conftest.out 2>&1 ; then
                   if diff -b conftest.out conftest.bas >/dev/null 2>&1 ; then
-	             { $as_echo "$as_me:$LINENO: result: yes" >&5
-$as_echo "yes" >&6; }
-                     CFLAGS="$pccco_save_CFLAGS"
-                     accepted_flags="$accepted_flags $flag"
-                  elif test -s conftest.out ; then
-	             cat conftest.out >&5
-	             { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-                     CFLAGS="$pccco_save_CFLAGS"
-
+		     pac_success=yes
                   else
-                     { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-                     CFLAGS="$pccco_save_CFLAGS"
-
+		     :
                   fi
                else
-	          if test -s conftest.out ; then
-	             cat conftest.out >&5
-	          fi
-                  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-                  CFLAGS="$pccco_save_CFLAGS"
-
+                  :
                fi
 	    else
                # Could not link with the option!
-               { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
+	       :
             fi
          else
             if test -s conftest2.out ; then
                cat conftest2.out >&5
             fi
-	    { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-            CFLAGS="$pccco_save_CFLAGS"
-
          fi
       else
-         cat conftest.out >&5
-         { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-
-         CFLAGS="$pccco_save_CFLAGS"
+         :
       fi
    else
-      { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-
-      if test -s conftest.out ; then cat conftest.out >&5 ; fi
-      CFLAGS="$pccco_save_CFLAGS"
+       :
    fi
 else
     # Could not compile without the option!
-    { $as_echo "$as_me:$LINENO: result: no" >&5
+    :
+fi
+CFLAGS="$pccco_save_CFLAGS"
+if test "$pac_success" = yes ; then
+   { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+   accepted_flags="$accepted_flags $flag"
+else
+   { $as_echo "$as_me:$LINENO: result: no" >&5
 $as_echo "no" >&6; }
+   if test -s conftest.out ; then cat conftest.out >&5 ; fi
+
 fi
 # This is needed for Mac OSX 10.5
 rm -rf conftest.dSYM
@@ -3458,6 +3452,7 @@ fi
 
 
 
+
 { $as_echo "$as_me:$LINENO: checking for virtual path format" >&5
 $as_echo_n "checking for virtual path format... " >&6; }
 if test "${pac_cv_prog_make_vpath+set}" = set; then
@@ -3508,6 +3503,7 @@ if test "$pac_cv_prog_make_vpath" = "VPATH" ; then
 elif test "$pac_cv_prog_make_vpath" = ".PATH" ; then
     VPATH='.PATH: . ${srcdir}'
 fi
+
 
 
 
@@ -3704,14 +3700,12 @@ _ACEOF
 
 fi
 
-
-{ $as_echo "$as_me:$LINENO: checking for volatile" >&5
-$as_echo_n "checking for volatile... " >&6; }
-if test "${pac_cv_c_volatile+set}" = set; then
+{ $as_echo "$as_me:$LINENO: checking for working volatile" >&5
+$as_echo_n "checking for working volatile... " >&6; }
+if test "${ac_cv_c_volatile+set}" = set; then
   $as_echo_n "(cached) " >&6
 else
-
-cat >conftest.$ac_ext <<_ACEOF
+  cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
@@ -3721,7 +3715,10 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-volatile int a;
+
+volatile int x;
+int * volatile y = (int *) 0;
+return !x && !y;
   ;
   return 0;
 }
@@ -3744,19 +3741,19 @@ $as_echo "$ac_try_echo") >&5
 	 test -z "$ac_c_werror_flag" ||
 	 test ! -s conftest.err
        } && test -s conftest.$ac_objext; then
-  pac_cv_c_volatile="yes"
+  ac_cv_c_volatile=yes
 else
   $as_echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-	pac_cv_c_volatile="no"
+	ac_cv_c_volatile=no
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
-{ $as_echo "$as_me:$LINENO: result: $pac_cv_c_volatile" >&5
-$as_echo "$pac_cv_c_volatile" >&6; }
-if test "$pac_cv_c_volatile" = "no" ; then
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_c_volatile" >&5
+$as_echo "$ac_cv_c_volatile" >&6; }
+if test $ac_cv_c_volatile = no; then
 
 cat >>confdefs.h <<\_ACEOF
 #define volatile /**/
@@ -3764,24 +3761,31 @@ _ACEOF
 
 fi
 
-
-{ $as_echo "$as_me:$LINENO: checking for restrict" >&5
-$as_echo_n "checking for restrict... " >&6; }
-if test "${pac_cv_c_restrict+set}" = set; then
+{ $as_echo "$as_me:$LINENO: checking for C/C++ restrict keyword" >&5
+$as_echo_n "checking for C/C++ restrict keyword... " >&6; }
+if test "${ac_cv_c_restrict+set}" = set; then
   $as_echo_n "(cached) " >&6
 else
-
-cat >conftest.$ac_ext <<_ACEOF
+  ac_cv_c_restrict=no
+   # The order here caters to the fact that C++ does not require restrict.
+   for ac_kw in __restrict __restrict__ _Restrict restrict; do
+     cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-
+typedef int * int_ptr;
+	int foo (int_ptr $ac_kw ip) {
+	return ip[0];
+       }
 int
 main ()
 {
-int * restrict a;
+int s[1];
+	int * $ac_kw t = s;
+	t[0] = 0;
+	return foo(t)
   ;
   return 0;
 }
@@ -3804,119 +3808,34 @@ $as_echo "$ac_try_echo") >&5
 	 test -z "$ac_c_werror_flag" ||
 	 test ! -s conftest.err
        } && test -s conftest.$ac_objext; then
-  pac_cv_c_restrict="restrict"
+  ac_cv_c_restrict=$ac_kw
 else
   $as_echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
 
-	pac_cv_c_restrict="no"
+
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-if test "$pac_cv_c_restrict" = "no" ; then
-   cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
+     test "$ac_cv_c_restrict" != no && break
+   done
+
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_c_restrict" >&5
+$as_echo "$ac_cv_c_restrict" >&6; }
+
+
+ case $ac_cv_c_restrict in
+   restrict) ;;
+   no) cat >>confdefs.h <<\_ACEOF
+#define restrict /**/
 _ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-int
-main ()
-{
-int * _Restrict a;
-  ;
-  return 0;
-}
+ ;;
+   *)  cat >>confdefs.h <<_ACEOF
+#define restrict $ac_cv_c_restrict
 _ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  pac_cv_c_restrict="_Restrict"
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	pac_cv_c_restrict="no"
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-if test "$pac_cv_c_restrict" = "no" ; then
-   cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-int
-main ()
-{
-int * __restrict a;
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext
-if { (ac_try="$ac_compile"
-case "(($ac_try" in
-  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
-  *) ac_try_echo=$ac_try;;
-esac
-eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
-$as_echo "$ac_try_echo") >&5
-  (eval "$ac_compile") 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && {
-	 test -z "$ac_c_werror_flag" ||
-	 test ! -s conftest.err
-       } && test -s conftest.$ac_objext; then
-  pac_cv_c_restrict="__restrict"
-else
-  $as_echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-	pac_cv_c_restrict="no"
-fi
-
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-fi
-{ $as_echo "$as_me:$LINENO: result: $pac_cv_c_restrict" >&5
-$as_echo "$pac_cv_c_restrict" >&6; }
-if test "$pac_cv_c_restrict" = "no" ; then
-  restrict_val=""
-elif test "$pac_cv_c_restrict" != "restrict" ; then
-  restrict_val=$pac_cv_c_restrict
-fi
-if test "$restrict_val" != "restrict" ; then
-
-cat >>confdefs.h <<_ACEOF
-#define restrict $restrict_val
-_ACEOF
-
-fi
+ ;;
+ esac
 
 { $as_echo "$as_me:$LINENO: checking for inline" >&5
 $as_echo_n "checking for inline... " >&6; }

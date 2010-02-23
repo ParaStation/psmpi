@@ -8,6 +8,9 @@ all: all-redirect
 SHELL           = @SHELL@
 LIBTOOL         = @LIBTOOL@
 CREATESHLIB     = @CREATESHLIB@
+ABIVERSION      = @ABIVERSION@
+LIBS            = @LIBS@
+LDFLAGS         = @LDFLAGS@
 C_LINK_SHL      = @C_LINK_SHL@
 INSTALL         = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -32,9 +35,9 @@ VPATH = .:@srcdir@
 ${srcdir}/include/mpidi_ch3i_ssm_conf.h  ${srcdir}/configure: \
 	${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /opt/local/bin/autoheader -I ../../../../../confdb && \
-	\
-	/opt/local/bin/autoconf -I ../../../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../../../confdb && \
+	autoconf -I \
+	../../../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -55,7 +58,7 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	for dir in ../../../common/sock ../../../common/locks src ; do \
-		(cd $$dir && ${MAKE} apply ; ) ; done
+		(cd $$dir && ${MAKE} apply ) ; done
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
@@ -63,12 +66,12 @@ clean:
 	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	for dir in ../../../common/sock ../../../common/locks src ; do \
-		(cd $$dir && ${MAKE} clean ; ) ; done
+		(cd $$dir && ${MAKE} clean ) ; done
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
 	for dir in ../../../common/sock ../../../common/locks src ; do \
 		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
-		(cd $$dir && ${MAKE} distclean ; ) ; done
+		(cd $$dir && ${MAKE} distclean ) ; done
 	-@rm -f Makefile src/Makefile localdefs config.status config.log config.cache *conf.cache config.system
 	-@rm -rf autom4te*.cache
 	-@rm -f include/mpidi_ch3i_ssm_conf.h
@@ -76,7 +79,7 @@ distclean-xxx:
 	-@rm -f TAGS
 maintainer-clean:  maintainer-clean-local distclean-xxx remove-genmakefiles
 	for dir in ../../../common/sock ../../../common/locks src ; do \
-		(cd $$dir && ${MAKE} maintainer-clean ; ) ; done
+		(cd $$dir && ${MAKE} maintainer-clean ) ; done
 	-rm -f include/mpidi_ch3i_ssm_conf.h.in 
 remove-makefile:
 	rm -f Makefile
@@ -98,26 +101,26 @@ CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 # Build the shared library from the shared object files
 ./libmpich2-ch3-ssm.@SHLIB_EXT@: ./libmpich2-ch3-ssm.la
-	(cd . && $(CREATESHLIB) --mode=link -version-info "@ABIVERSION@" -o libmpich2-ch3-ssm.la  -rpath $(libdir) )
+	(cd . && $(CREATESHLIB) --mode=link -version-info "@ABIVERSION@" -o libmpich2-ch3-ssm.la  -rpath $(libdir)  -ldflags "$(LDFLAGS)" $(LIBS))
 coverage: 
 	for dir in ../../../common/sock ../../../common/locks src ; do \
-		(cd $$dir && ${MAKE} coverage ; ) ; done
+		(cd $$dir && ${MAKE} coverage ) ; done
 # --------------------------------------------------------------------------
 htmldoc:
 	for dir in ../../../common/sock ../../../common/locks src ; do \
-		(cd $$dir && ${MAKE} htmldoc ; ) ; done
+		(cd $$dir && ${MAKE} htmldoc ) ; done
 mandoc:
 	for dir in ../../../common/sock ../../../common/locks src ; do \
-		(cd $$dir && ${MAKE} mandoc ; ) ; done
+		(cd $$dir && ${MAKE} mandoc ) ; done
 latexdoc:
 	for dir in ../../../common/sock ../../../common/locks src ; do \
-		(cd $$dir && ${MAKE} latexdoc ; ) ; done
+		(cd $$dir && ${MAKE} latexdoc ) ; done
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Install target
 install:  FORCE_TARGET 
 	if [ ! -d ${DESTDIR}${libdir} ] ; then $(MKDIR_P) ${DESTDIR}${libdir} ; fi
-	if [ -s libmpich2-ch3-ssm.@SHLIB_EXT@ ] ; then $(CREATESHLIB) --mode=install libmpich2-ch3-ssm.@SHLIB_EXT@ ${DESTDIR}${libdir}/libmpich2-ch3-ssm.@SHLIB_EXT@ ; fi
+	if [ -s libmpich2-ch3-ssm.@SHLIB_EXT@ ] ; then $(CREATESHLIB) -version-info $(ABIVERSION) --mode=install libmpich2-ch3-ssm.@SHLIB_EXT@ ${DESTDIR}${libdir}/libmpich2-ch3-ssm.@SHLIB_EXT@ ; fi
 
 install-strip:
 	$(MAKE) INSTALL_STRIP_FLAG=-s install
@@ -129,15 +132,12 @@ installcheck:
 # Dependencies
 dependencies:
 	for dir in ../../../common/sock ../../../common/locks src ; do \
-		(cd $$dir && ${MAKE} dependencies ; ) ; done
+		(cd $$dir && ${MAKE} dependencies ) ; done
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
-tags: TAGS
-TAGS: Makefile
-	(cd src && $(MAKE) TAGS )
 # --------------------------------------------------------------------------
 
 distclean-local:
