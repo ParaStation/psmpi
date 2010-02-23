@@ -6,22 +6,45 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
+DEFS            = @DEFS@ -I. -I${srcdir}
+INCLUDES        = 
+CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
+CC              = @CC@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
+C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
+C_LINK         = $(CC)
 FC              = @FC@
 FFLAGS          = @FFLAGS@
 F77_COMPILE     = $(FC) $(FFLAGS) $(F77INCLUDES)
 F77_LINK       = $(FC)
-LDFLAGS     =  @LDFLAGS@ ../util/mtestf.o 
+LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
 
 .SUFFIXES:
-.SUFFIXES: .o .f .txt 
+.SUFFIXES: .o .c .f .txt 
+.c.o:
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -c $< ; \
+	fi
+	@$(C_COMPILE) -c $<
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
+.c:
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
+	fi
+	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f.o:
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
 	  echo "  FC              $<" ; \
@@ -52,8 +75,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o baseenvf
-	-@rm -f baseenvf.exe
+	-@rm -f *.o ${srcdir}/*.o baseenvf checksizes
+	-@rm -f baseenvf.exe checksizes.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -71,11 +94,14 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: baseenvf
+all-redirect: baseenvf checksizes
 
 coverage: 
 baseenvf: baseenvf.o   @MPILIBLOC@ ../util/mtestf.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o baseenvf baseenvf.o  ${LIBS}
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o baseenvf baseenvf.o  \
+	../util/mtestf.o  ${LIBS} 
+checksizes: checksizes.o   @MPILIBLOC@ ../util/mtestf.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o checksizes checksizes.o   ${LIBS}
 # --------------------------------------------------------------------------
 htmldoc:
 mandoc:
@@ -84,12 +110,7 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  baseenvf.f
+SOURCES         =  baseenvf.f checksizes.c
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
@@ -98,6 +119,10 @@ TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
+# Checksizes is created by configure, and is a C program that tests that 
+# configure has correctly computed the sizes of MPI_Aint and MPI_Offset
+# for Fortran.  This is not run by default but can be used to check
+# that configure found the correct values.
 
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)

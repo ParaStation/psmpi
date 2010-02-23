@@ -6,7 +6,10 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
+bindir          = @bindir@
+exec_prefix     = @exec_prefix@
+prefix          = @prefix@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -16,7 +19,7 @@ CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 LDFLAGS     =  @LDFLAGS@ ../../util/mtest.o
@@ -62,9 +65,9 @@ Makefile: ${srcdir}/Makefile.in
 # --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
-clean: 
-	-@rm -f *.o ${srcdir}/*.o userdup manysplit cfree
-	-@rm -f userdup.exe manysplit.exe cfree.exe
+clean:  clean-local
+	-@rm -f *.o ${srcdir}/*.o userdup ccreate1 manysplit cfree
+	-@rm -f userdup.exe ccreate1.exe manysplit.exe cfree.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -82,11 +85,13 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: cfree manysplit userdup
+all-redirect: cfree ccreate1 manysplit userdup
 
 coverage: 
 userdup: userdup.o   @MPILIBLOC@ ../../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o userdup userdup.o  ${LIBS}
+ccreate1: ccreate1.o   @MPILIBLOC@ ../../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o ccreate1 ccreate1.o  ${LIBS}
 manysplit: manysplit.o   @MPILIBLOC@ ../../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o manysplit manysplit.o  ${LIBS}
 cfree: cfree.o   @MPILIBLOC@ ../../util/mtest.o
@@ -99,12 +104,7 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  cfree.c manysplit.c userdup.c
+SOURCES         =  cfree.c ccreate1.c manysplit.c userdup.c
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
@@ -117,6 +117,13 @@ TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 ../../util/mtest.o:
 	(cd ../../util && $(MAKE) mtest.o )
 
+# A special testing target to simplify running just the pt2pt tests
+testing:
+	../../runtests -srcdir=$(srcdir) -tests=testlist \
+		   -mpiexec=$(bindir)/mpiexec \
+		   -xmlfile=summary.xml
+clean-local:
+	-rm -f summary.xml
 
 FORCE_TARGET:
 

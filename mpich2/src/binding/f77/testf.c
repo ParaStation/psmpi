@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_TEST( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_test__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_test( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_test_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_test_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_TEST = PMPI_TEST
+#pragma weak mpi_test__ = PMPI_TEST
+#pragma weak mpi_test_ = PMPI_TEST
+#pragma weak mpi_test = PMPI_TEST
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_TEST = pmpi_test__
 #pragma weak mpi_test__ = pmpi_test__
 #pragma weak mpi_test_ = pmpi_test__
 #pragma weak mpi_test = pmpi_test__
-#pragma weak pmpi_test_ = pmpi_test__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_TEST = pmpi_test_
+#pragma weak mpi_test__ = pmpi_test_
+#pragma weak mpi_test_ = pmpi_test_
+#pragma weak mpi_test = pmpi_test_
+#else
+#pragma weak MPI_TEST = pmpi_test
+#pragma weak mpi_test__ = pmpi_test
+#pragma weak mpi_test_ = pmpi_test
+#pragma weak mpi_test = pmpi_test
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_test_( MPI_Fint *, MPI_Fint *, MPI_Fint 
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_TEST( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_test__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_test( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_test_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_test__ = MPI_TEST
+#pragma weak mpi_test_ = MPI_TEST
+#pragma weak mpi_test = MPI_TEST
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_TEST = mpi_test__
 #pragma weak mpi_test_ = mpi_test__
 #pragma weak mpi_test = mpi_test__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_TEST = mpi_test_
+#pragma weak mpi_test__ = mpi_test_
+#pragma weak mpi_test = mpi_test_
+#else
+#pragma weak MPI_TEST = mpi_test
+#pragma weak mpi_test__ = mpi_test
+#pragma weak mpi_test_ = mpi_test
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_TEST( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_test__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_test_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_test( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_test__ = PMPI_TEST
+#pragma weak pmpi_test_ = PMPI_TEST
+#pragma weak pmpi_test = PMPI_TEST
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_TEST = pmpi_test__
+#pragma weak pmpi_test_ = pmpi_test__
+#pragma weak pmpi_test = pmpi_test__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_TEST = pmpi_test_
+#pragma weak pmpi_test__ = pmpi_test_
+#pragma weak pmpi_test = pmpi_test_
+#else
+#pragma weak PMPI_TEST = pmpi_test
+#pragma weak pmpi_test__ = pmpi_test
+#pragma weak pmpi_test_ = pmpi_test
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_test_ PMPI_TEST
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_test_( MPI_Fint *, MPI_Fint *, MPI_Fint 
 #define mpi_test_ pmpi_test
 #else
 #define mpi_test_ pmpi_test_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,
@@ -122,7 +189,9 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_test_( MPI_Fint *, MPI_Fint *, MPI_Fint 
 FORT_DLL_SPEC void FORT_CALL mpi_test_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *ierr ){
     int l2;
 
+#ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
+#endif
 
     if (v3 == MPI_F_STATUS_IGNORE) { v3 = (MPI_Fint*)MPI_STATUS_IGNORE; }
     *ierr = MPI_Test( (MPI_Request *)(v1), &l2, (MPI_Status *)v3 );

@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
 AR              = @AR@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
@@ -22,7 +21,7 @@ MPILIBNAME      = @MPILIBNAME@
 PMPILIBNAME     = @PMPILIBNAME@
 
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 LIBTOOL         = @LIBTOOL@
 CC_SHL          = @CC_SHL@
@@ -113,12 +112,12 @@ remove-genmakefiles:
 	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
-	    ${MAKE} .libstamp2 ; \
+	    ${MAKE} .libstamp2 || exit 1; \
 	fi
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
-	    ${MAKE} .libstamp1 ; \
+	    ${MAKE} .libstamp1 || exit 1; \
 	    if [ -n "@NO_WEAK_SYM@" ] ; then \
-	        ${MAKE} .libstamp3 ; \
+	        ${MAKE} .libstamp3 || exit 1; \
 	    fi ; \
 	fi
 
@@ -132,7 +131,12 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
-	${RANLIB} ../../../lib/lib${MPILIBNAME}.a
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
+	else \
+	  echo ${RANLIB} ../../../lib/lib${MPILIBNAME}.a ; \
+	fi
+	@${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
 .libstamp1 ../../../lib/lib${MPILIBNAME}.la: comm_disconnect.lo \
 	comm_get_parent.lo comm_join.lo comm_spawn.lo comm_spawn_multiple.lo \
@@ -171,118 +175,178 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?; \
+	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _comm_disconnect.o: comm_disconnect.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/comm_disconnect.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/comm_disconnect.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_disconnect.c -o _comm_disconnect.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_disconnect.c -o _comm_disconnect.o
 _comm_disconnect.lo: comm_disconnect.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_disconnect.c -o _comm_disconnect.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/comm_disconnect.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_disconnect.c -o _comm_disconnect.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_disconnect.c -o _comm_disconnect.lo
 _comm_get_parent.o: comm_get_parent.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/comm_get_parent.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/comm_get_parent.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_parent.c -o _comm_get_parent.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_parent.c -o _comm_get_parent.o
 _comm_get_parent.lo: comm_get_parent.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_parent.c -o _comm_get_parent.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/comm_get_parent.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_parent.c -o _comm_get_parent.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_parent.c -o _comm_get_parent.lo
 _comm_join.o: comm_join.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/comm_join.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/comm_join.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_join.c -o _comm_join.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_join.c -o _comm_join.o
 _comm_join.lo: comm_join.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_join.c -o _comm_join.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/comm_join.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_join.c -o _comm_join.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_join.c -o _comm_join.lo
 _comm_spawn.o: comm_spawn.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/comm_spawn.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/comm_spawn.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_spawn.c -o _comm_spawn.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_spawn.c -o _comm_spawn.o
 _comm_spawn.lo: comm_spawn.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_spawn.c -o _comm_spawn.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/comm_spawn.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_spawn.c -o _comm_spawn.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_spawn.c -o _comm_spawn.lo
 _comm_spawn_multiple.o: comm_spawn_multiple.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/comm_spawn_multiple.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/comm_spawn_multiple.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_spawn_multiple.c -o _comm_spawn_multiple.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_spawn_multiple.c -o _comm_spawn_multiple.o
 _comm_spawn_multiple.lo: comm_spawn_multiple.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_spawn_multiple.c -o _comm_spawn_multiple.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/comm_spawn_multiple.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_spawn_multiple.c -o _comm_spawn_multiple.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_spawn_multiple.c -o _comm_spawn_multiple.lo
 _lookup_name.o: lookup_name.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/lookup_name.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/lookup_name.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/lookup_name.c -o _lookup_name.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/lookup_name.c -o _lookup_name.o
 _lookup_name.lo: lookup_name.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/lookup_name.c -o _lookup_name.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/lookup_name.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/lookup_name.c -o _lookup_name.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/lookup_name.c -o _lookup_name.lo
 _publish_name.o: publish_name.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/publish_name.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/publish_name.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/publish_name.c -o _publish_name.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/publish_name.c -o _publish_name.o
 _publish_name.lo: publish_name.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/publish_name.c -o _publish_name.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/publish_name.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/publish_name.c -o _publish_name.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/publish_name.c -o _publish_name.lo
 _unpublish_name.o: unpublish_name.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/unpublish_name.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/unpublish_name.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpublish_name.c -o _unpublish_name.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpublish_name.c -o _unpublish_name.o
 _unpublish_name.lo: unpublish_name.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpublish_name.c -o _unpublish_name.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/unpublish_name.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpublish_name.c -o _unpublish_name.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpublish_name.c -o _unpublish_name.lo
 _open_port.o: open_port.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/open_port.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/open_port.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/open_port.c -o _open_port.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/open_port.c -o _open_port.o
 _open_port.lo: open_port.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/open_port.c -o _open_port.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/open_port.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/open_port.c -o _open_port.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/open_port.c -o _open_port.lo
 _close_port.o: close_port.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/close_port.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/close_port.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/close_port.c -o _close_port.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/close_port.c -o _close_port.o
 _close_port.lo: close_port.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/close_port.c -o _close_port.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/close_port.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/close_port.c -o _close_port.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/close_port.c -o _close_port.lo
 _comm_connect.o: comm_connect.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/comm_connect.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/comm_connect.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_connect.c -o _comm_connect.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_connect.c -o _comm_connect.o
 _comm_connect.lo: comm_connect.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_connect.c -o _comm_connect.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/comm_connect.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_connect.c -o _comm_connect.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_connect.c -o _comm_connect.lo
 _comm_accept.o: comm_accept.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/comm_accept.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/comm_accept.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_accept.c -o _comm_accept.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_accept.c -o _comm_accept.o
 _comm_accept.lo: comm_accept.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_accept.c -o _comm_accept.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/comm_accept.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_accept.c -o _comm_accept.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_accept.c -o _comm_accept.lo
 # --------------------------------------------------------------------------
 coverage: 
 	-@for file in $(mpi_sources)  ; do \

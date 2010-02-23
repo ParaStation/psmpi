@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC double FORT_CALL MPI_WTIME(void);
 extern FORT_DLL_SPEC double FORT_CALL mpi_wtime__(void);
 extern FORT_DLL_SPEC double FORT_CALL mpi_wtime(void);
 extern FORT_DLL_SPEC double FORT_CALL mpi_wtime_(void);
-extern FORT_DLL_SPEC double FORT_CALL pmpi_wtime_(void);
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_WTIME = PMPI_WTIME
+#pragma weak mpi_wtime__ = PMPI_WTIME
+#pragma weak mpi_wtime_ = PMPI_WTIME
+#pragma weak mpi_wtime = PMPI_WTIME
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_WTIME = pmpi_wtime__
 #pragma weak mpi_wtime__ = pmpi_wtime__
 #pragma weak mpi_wtime_ = pmpi_wtime__
 #pragma weak mpi_wtime = pmpi_wtime__
-#pragma weak pmpi_wtime_ = pmpi_wtime__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_WTIME = pmpi_wtime_
+#pragma weak mpi_wtime__ = pmpi_wtime_
+#pragma weak mpi_wtime_ = pmpi_wtime_
+#pragma weak mpi_wtime = pmpi_wtime_
+#else
+#pragma weak MPI_WTIME = pmpi_wtime
+#pragma weak mpi_wtime__ = pmpi_wtime
+#pragma weak mpi_wtime_ = pmpi_wtime
+#pragma weak mpi_wtime = pmpi_wtime
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC double FORT_CALL mpi_wtime_(void);
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC double FORT_CALL MPI_WTIME(void);
 extern FORT_DLL_SPEC double FORT_CALL mpi_wtime__(void);
 extern FORT_DLL_SPEC double FORT_CALL mpi_wtime(void);
 extern FORT_DLL_SPEC double FORT_CALL mpi_wtime_(void);
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_wtime__ = MPI_WTIME
+#pragma weak mpi_wtime_ = MPI_WTIME
+#pragma weak mpi_wtime = MPI_WTIME
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_WTIME = mpi_wtime__
 #pragma weak mpi_wtime_ = mpi_wtime__
 #pragma weak mpi_wtime = mpi_wtime__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_WTIME = mpi_wtime_
+#pragma weak mpi_wtime__ = mpi_wtime_
+#pragma weak mpi_wtime = mpi_wtime_
+#else
+#pragma weak MPI_WTIME = mpi_wtime
+#pragma weak mpi_wtime__ = mpi_wtime
+#pragma weak mpi_wtime_ = mpi_wtime
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC double FORT_CALL PMPI_WTIME(void);
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC double FORT_CALL pmpi_wtime__(void);
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC double FORT_CALL pmpi_wtime_(void);
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC double FORT_CALL pmpi_wtime(void);
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_wtime__ = PMPI_WTIME
+#pragma weak pmpi_wtime_ = PMPI_WTIME
+#pragma weak pmpi_wtime = PMPI_WTIME
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_WTIME = pmpi_wtime__
+#pragma weak pmpi_wtime_ = pmpi_wtime__
+#pragma weak pmpi_wtime = pmpi_wtime__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_WTIME = pmpi_wtime_
+#pragma weak pmpi_wtime__ = pmpi_wtime_
+#pragma weak pmpi_wtime = pmpi_wtime_
+#else
+#pragma weak PMPI_WTIME = pmpi_wtime
+#pragma weak pmpi_wtime__ = pmpi_wtime
+#pragma weak pmpi_wtime_ = pmpi_wtime
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_wtime_ PMPI_WTIME
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC double FORT_CALL mpi_wtime_(void);
 #define mpi_wtime_ pmpi_wtime
 #else
 #define mpi_wtime_ pmpi_wtime_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

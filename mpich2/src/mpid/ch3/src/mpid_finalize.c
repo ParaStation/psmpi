@@ -11,8 +11,6 @@
    rather than direct routine calls.
  */
 
-#include "pmi.h"
-
 #undef FUNCNAME
 #define FUNCNAME MPID_Finalize
 #undef FCNAME
@@ -92,29 +90,16 @@ int MPID_Finalize(void)
     mpi_errno = NMPI_Barrier(MPIR_ICOMM_WORLD); 
     MPIR_Nest_decr();
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+
+    mpi_errno = MPIR_Comm_release(MPIR_Process.icomm_world, 0);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 #endif
 
-    mpi_errno = MPID_VCRT_Release(MPIR_Process.comm_self->vcrt,0);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
+    mpi_errno = MPIR_Comm_release(MPIR_Process.comm_self, 0);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-#ifdef MPID_NEEDS_ICOMM_WORLD
-    MPID_Dev_comm_destroy_hook(MPIR_Process.icomm_world);
-
-    mpi_errno = MPID_VCRT_Release(MPIR_Process.icomm_world->vcrt,0);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-    MPID_Dev_comm_destroy_hook(MPIR_Process.icomm_world);
-#endif
-
-    MPID_Dev_comm_destroy_hook(MPIR_Process.comm_world);
-
-    mpi_errno = MPID_VCRT_Release(MPIR_Process.comm_world->vcrt,0);
-    if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_POP(mpi_errno);
-    }
+    mpi_errno = MPIR_Comm_release(MPIR_Process.comm_world, 0);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     /* Re-enabling the close step because many tests are failing
      * without it, particularly under gforker */
@@ -155,7 +140,7 @@ int MPID_Finalize(void)
 	    p = pNext;
 	}
     }
-
+    
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
     return mpi_errno;

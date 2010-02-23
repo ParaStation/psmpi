@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SET_NAME( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_set_name__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_set_name( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_set_name_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_set_name_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_COMM_SET_NAME = PMPI_COMM_SET_NAME
+#pragma weak mpi_comm_set_name__ = PMPI_COMM_SET_NAME
+#pragma weak mpi_comm_set_name_ = PMPI_COMM_SET_NAME
+#pragma weak mpi_comm_set_name = PMPI_COMM_SET_NAME
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_COMM_SET_NAME = pmpi_comm_set_name__
 #pragma weak mpi_comm_set_name__ = pmpi_comm_set_name__
 #pragma weak mpi_comm_set_name_ = pmpi_comm_set_name__
 #pragma weak mpi_comm_set_name = pmpi_comm_set_name__
-#pragma weak pmpi_comm_set_name_ = pmpi_comm_set_name__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_COMM_SET_NAME = pmpi_comm_set_name_
+#pragma weak mpi_comm_set_name__ = pmpi_comm_set_name_
+#pragma weak mpi_comm_set_name_ = pmpi_comm_set_name_
+#pragma weak mpi_comm_set_name = pmpi_comm_set_name_
+#else
+#pragma weak MPI_COMM_SET_NAME = pmpi_comm_set_name
+#pragma weak mpi_comm_set_name__ = pmpi_comm_set_name
+#pragma weak mpi_comm_set_name_ = pmpi_comm_set_name
+#pragma weak mpi_comm_set_name = pmpi_comm_set_name
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_set_name_( MPI_Fint *, char * FORT_
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SET_NAME( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_set_name__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_set_name( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_set_name_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_comm_set_name__ = MPI_COMM_SET_NAME
+#pragma weak mpi_comm_set_name_ = MPI_COMM_SET_NAME
+#pragma weak mpi_comm_set_name = MPI_COMM_SET_NAME
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_COMM_SET_NAME = mpi_comm_set_name__
 #pragma weak mpi_comm_set_name_ = mpi_comm_set_name__
 #pragma weak mpi_comm_set_name = mpi_comm_set_name__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_COMM_SET_NAME = mpi_comm_set_name_
+#pragma weak mpi_comm_set_name__ = mpi_comm_set_name_
+#pragma weak mpi_comm_set_name = mpi_comm_set_name_
+#else
+#pragma weak MPI_COMM_SET_NAME = mpi_comm_set_name
+#pragma weak mpi_comm_set_name__ = mpi_comm_set_name
+#pragma weak mpi_comm_set_name_ = mpi_comm_set_name
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_SET_NAME( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_set_name__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_set_name_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_set_name( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_comm_set_name__ = PMPI_COMM_SET_NAME
+#pragma weak pmpi_comm_set_name_ = PMPI_COMM_SET_NAME
+#pragma weak pmpi_comm_set_name = PMPI_COMM_SET_NAME
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_COMM_SET_NAME = pmpi_comm_set_name__
+#pragma weak pmpi_comm_set_name_ = pmpi_comm_set_name__
+#pragma weak pmpi_comm_set_name = pmpi_comm_set_name__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_COMM_SET_NAME = pmpi_comm_set_name_
+#pragma weak pmpi_comm_set_name__ = pmpi_comm_set_name_
+#pragma weak pmpi_comm_set_name = pmpi_comm_set_name_
+#else
+#pragma weak PMPI_COMM_SET_NAME = pmpi_comm_set_name
+#pragma weak pmpi_comm_set_name__ = pmpi_comm_set_name
+#pragma weak pmpi_comm_set_name_ = pmpi_comm_set_name
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_comm_set_name_ PMPI_COMM_SET_NAME
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_set_name_( MPI_Fint *, char * FORT_
 #define mpi_comm_set_name_ pmpi_comm_set_name
 #else
 #define mpi_comm_set_name_ pmpi_comm_set_name_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

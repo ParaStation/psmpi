@@ -6,7 +6,7 @@
 </HEAD>
 <BODY BGCOLOR="FFFFFF">
 <A NAME="MPI_Type_create_subarray"><H1>MPI_Type_create_subarray</H1></A>
-Create a datatype for a subarray of a regular,  multidimensional array 
+Create a datatype for a subarray of a regular, multidimensional array 
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Type_create_subarray(int ndims,
@@ -19,24 +19,24 @@ int MPI_Type_create_subarray(int ndims,
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>ndims </B><DD>number of array dimensions (positive integer) 
+<DT><B>ndims </B><DD>number of array dimensions (positive integer)
 
 <DT><B>array_of_sizes </B><DD>number of elements of type oldtype in each dimension of the
-full array (array of positive integers) 
+full array (array of positive integers)
 
 <DT><B>array_of_subsizes </B><DD>number of elements of type oldtype in each dimension of
-the subarray (array of positive integers) 
+the subarray (array of positive integers)
 
 <DT><B>array_of_starts </B><DD>starting coordinates of the subarray in each dimension
-(array of nonnegative integers) 
+(array of nonnegative integers)
 
-<DT><B>order </B><DD>array storage order flag (state) 
+<DT><B>order </B><DD>array storage order flag (state)
 
-<DT><B>oldtype </B><DD>array element datatype (handle) 
+<DT><B>oldtype </B><DD>array element datatype (handle)
 </DL>
 <P>
 <H2>Output Parameter</H2>
-<DL><DT><B>newtype </B> <DD> new datatype (handle) 
+<DL><DT><B>newtype </B> <DD> new datatype (handle)
 </DL>
 <P>
 <H2>Thread and Interrupt Safety</H2>

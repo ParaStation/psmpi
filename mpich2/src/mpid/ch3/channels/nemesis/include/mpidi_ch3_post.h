@@ -16,9 +16,10 @@
 #else
 #define MPIDI_CH3_Progress_start(progress_state_)                                       \
 {                                                                                       \
+    MPIU_THREAD_CS_ENTER(MPIDCOMM,);                                                    \
     (progress_state_)->ch.completion_count = MPIDI_CH3I_progress_completion_count;      \
 }
-#define MPIDI_CH3_Progress_end(progress_state_)
+#define MPIDI_CH3_Progress_end(progress_state_) MPIU_THREAD_CS_EXIT(MPIDCOMM,)
 #endif
 
 enum {
@@ -31,14 +32,13 @@ enum {
 
 
 int MPIDI_CH3I_Progress(MPID_Progress_state *progress_state, int blocking);
-MPID_Request *MPIDI_CH3_Progress_poke_with_matching(int,int,MPID_Comm *comm,int,int *,void *,int, MPI_Datatype, MPI_Status *);
-MPID_Request *MPIDI_CH3_Progress_ipoke_with_matching(int,int,MPID_Comm *comm,int,int *,void *,int, MPI_Datatype, MPI_Status *);
 #define MPIDI_CH3_Progress_test() MPIDI_CH3I_Progress(NULL, FALSE)
 #define MPIDI_CH3_Progress_wait(progress_state) MPIDI_CH3I_Progress(progress_state, TRUE)
 #define MPIDI_CH3_Progress_poke() MPIDI_CH3I_Progress(NULL, FALSE)
 
-int MPIDI_CH3I_Posted_recv_enqueued (MPID_Request *rreq);
-int MPIDI_CH3I_Posted_recv_dequeued (MPID_Request *rreq);
+void MPIDI_CH3I_Posted_recv_enqueued(MPID_Request *rreq);
+/* returns non-zero when req has been matched by channel */
+int  MPIDI_CH3I_Posted_recv_dequeued(MPID_Request *rreq);
 
 /*
  * Enable optional functionality
@@ -56,5 +56,8 @@ int MPIDI_CH3I_comm_destroy (MPID_Comm *new_comm);
 int MPID_nem_lmt_RndvSend(MPID_Request **sreq_p, const void * buf, int count, MPI_Datatype datatype, int dt_contig,
                           MPIDI_msg_sz_t data_sz, MPI_Aint dt_true_lb, int rank, int tag, MPID_Comm * comm, int context_offset);
 int MPID_nem_lmt_RndvRecv(struct MPIDI_VC *vc, MPID_Request *rreq);
+
+
+int MPIDI_CH3I_Register_anysource_notification(void (*enqueue_fn)(MPID_Request *rreq), int (*dequeue_fn)(MPID_Request *rreq));
 
 #endif /* !defined(MPICH_MPIDI_CH3_POST_H_INCLUDED) */

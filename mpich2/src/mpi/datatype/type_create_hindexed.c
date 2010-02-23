@@ -29,18 +29,18 @@
 #define FUNCNAME MPI_Type_create_hindexed
 
 /*@
-   MPI_Type_create_hindexed - Create a datatype for an indexed datatype with 
+   MPI_Type_create_hindexed - Create a datatype for an indexed datatype with
    displacements in bytes
 
    Input Parameters:
-+ count - number of blocks --- also number of entries in 
-  displacements and blocklengths (integer) 
-. blocklengths - number of elements in each block (array of nonnegative integers) 
-. displacements - byte displacement of each block (array of integer) 
-- oldtype - old datatype (handle) 
++ count - number of blocks --- also number of entries in
+  displacements and blocklengths (integer)
+. blocklengths - number of elements in each block (array of nonnegative integers)
+. displacements - byte displacement of each block (array of address integers)
+- oldtype - old datatype (handle)
 
    Output Parameter:
-. newtype - new datatype (handle) 
+. newtype - new datatype (handle)
 
 .N ThreadSafe
 
@@ -65,15 +65,15 @@ int MPI_Type_create_hindexed(int count,
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_HINDEXED);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
-    
-    MPIU_THREAD_SINGLE_CS_ENTER("datatype");
+
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_HINDEXED);
 
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    int i;
+	    int j;
 	    MPID_Datatype *datatype_ptr = NULL;
 
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
@@ -82,16 +82,16 @@ int MPI_Type_create_hindexed(int count,
 		MPIR_ERRTEST_ARGNULL(displacements, "indices", mpi_errno);
 	    }
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-	    
+
 	    MPIR_ERRTEST_DATATYPE(oldtype, "datatype", mpi_errno);
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-	    
+
 	    if (HANDLE_GET_KIND(oldtype) != HANDLE_KIND_BUILTIN) {
-		MPID_Datatype_get_ptr( oldtype, datatype_ptr );
-		MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+		MPID_Datatype_get_ptr(oldtype, datatype_ptr);
+		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 	    }
-	    for (i=0; i < count; i++) {
-		MPIR_ERRTEST_ARGNEG(blocklengths[i], "blocklen", mpi_errno);
+	    for (j=0; j < count; j++) {
+		MPIR_ERRTEST_ARGNEG(blocklengths[j], "blocklen", mpi_errno);
 	    }
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
@@ -100,7 +100,7 @@ int MPI_Type_create_hindexed(int count,
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ... */
-    
+
     mpi_errno = MPID_Type_indexed(count,
 				  blocklengths,
 				  displacements,
@@ -129,13 +129,13 @@ int MPI_Type_create_hindexed(int count,
 				           &oldtype);
 
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-    
+
     /* ... end of body of routine ... */
 
   fn_exit:
     MPIU_CHKLMEM_FREEALL();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_CREATE_HINDEXED);
-    MPIU_THREAD_SINGLE_CS_EXIT("datatype");
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
   fn_fail:
@@ -147,7 +147,7 @@ int MPI_Type_create_hindexed(int count,
 	    "**mpi_type_create_hindexed %d %p %p %D %p", count, blocklengths, displacements, oldtype, newtype);
     }
 #   endif
-    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
+    mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

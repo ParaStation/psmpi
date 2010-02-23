@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_ALLREDUCE( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_allreduce__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_allreduce( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_allreduce_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_allreduce_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_ALLREDUCE = PMPI_ALLREDUCE
+#pragma weak mpi_allreduce__ = PMPI_ALLREDUCE
+#pragma weak mpi_allreduce_ = PMPI_ALLREDUCE
+#pragma weak mpi_allreduce = PMPI_ALLREDUCE
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_ALLREDUCE = pmpi_allreduce__
 #pragma weak mpi_allreduce__ = pmpi_allreduce__
 #pragma weak mpi_allreduce_ = pmpi_allreduce__
 #pragma weak mpi_allreduce = pmpi_allreduce__
-#pragma weak pmpi_allreduce_ = pmpi_allreduce__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_ALLREDUCE = pmpi_allreduce_
+#pragma weak mpi_allreduce__ = pmpi_allreduce_
+#pragma weak mpi_allreduce_ = pmpi_allreduce_
+#pragma weak mpi_allreduce = pmpi_allreduce_
+#else
+#pragma weak MPI_ALLREDUCE = pmpi_allreduce
+#pragma weak mpi_allreduce__ = pmpi_allreduce
+#pragma weak mpi_allreduce_ = pmpi_allreduce
+#pragma weak mpi_allreduce = pmpi_allreduce
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_allreduce_( void*, void*, MPI_Fint *, MP
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_ALLREDUCE( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_allreduce__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_allreduce( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_allreduce_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_allreduce__ = MPI_ALLREDUCE
+#pragma weak mpi_allreduce_ = MPI_ALLREDUCE
+#pragma weak mpi_allreduce = MPI_ALLREDUCE
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_ALLREDUCE = mpi_allreduce__
 #pragma weak mpi_allreduce_ = mpi_allreduce__
 #pragma weak mpi_allreduce = mpi_allreduce__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_ALLREDUCE = mpi_allreduce_
+#pragma weak mpi_allreduce__ = mpi_allreduce_
+#pragma weak mpi_allreduce = mpi_allreduce_
+#else
+#pragma weak MPI_ALLREDUCE = mpi_allreduce
+#pragma weak mpi_allreduce__ = mpi_allreduce
+#pragma weak mpi_allreduce_ = mpi_allreduce
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_ALLREDUCE( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_allreduce__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_allreduce_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_allreduce( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_allreduce__ = PMPI_ALLREDUCE
+#pragma weak pmpi_allreduce_ = PMPI_ALLREDUCE
+#pragma weak pmpi_allreduce = PMPI_ALLREDUCE
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_ALLREDUCE = pmpi_allreduce__
+#pragma weak pmpi_allreduce_ = pmpi_allreduce__
+#pragma weak pmpi_allreduce = pmpi_allreduce__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_ALLREDUCE = pmpi_allreduce_
+#pragma weak pmpi_allreduce__ = pmpi_allreduce_
+#pragma weak pmpi_allreduce = pmpi_allreduce_
+#else
+#pragma weak PMPI_ALLREDUCE = pmpi_allreduce
+#pragma weak pmpi_allreduce__ = pmpi_allreduce
+#pragma weak pmpi_allreduce_ = pmpi_allreduce
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_allreduce_ PMPI_ALLREDUCE
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_allreduce_( void*, void*, MPI_Fint *, MP
 #define mpi_allreduce_ pmpi_allreduce
 #else
 #define mpi_allreduce_ pmpi_allreduce_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,
@@ -121,7 +188,9 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_allreduce_( void*, void*, MPI_Fint *, MP
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_allreduce_ ( void*v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *ierr ){
 
+#ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
+#endif
     if (v1 == MPIR_F_MPI_IN_PLACE) v1 = MPI_IN_PLACE;
     *ierr = MPI_Allreduce( v1, v2, *v3, (MPI_Datatype)(*v4), *v5, (MPI_Comm)(*v6) );
 }

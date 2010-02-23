@@ -2,7 +2,8 @@
 # from test/mpi/f77/ext/Makefile.sm.  DO NOT EDIT
 # We don't use a general LDADD for mtestf90.o because c2fmult is a C-only
 # program
-DEPADD = @MPILIBLOC@ ../util/mtestf90.o
+INCLUDES = -I../../include -I${srcdir}/../../include
+DEPADD = @MPILIBLOC@ ../util/mtestf90.o ../../util/mtest.o
 smvar_do_sharedlibs = 0
 
 # allocmemf is an "extra" program because it requires a Fortran extension
@@ -13,11 +14,22 @@ allocmemf90_LDADD = ../util/mtestf90.o
 c2f2cf90_SOURCES = c2f2cf90.f90 c2f902c.c
 c2f2cf90_LDADD = ../util/mtestf90.o 
 c2f2c_CFLAGSADD = -I../../include
-
+ctypesinf90_SOURCES = ctypesinf90.f90 ctypesfromc.c
+ctypesinf90_LDADD = ../util/mtestf90.o
 c2f90mult_SOURCES = c2f90mult.c
+c2fmult_LDADD = ../../util/mtest.o
+
+# need to add this to get it to appear in ../../f90/ext/Makefile.sm
+c2f90mult_LDADD = ../../util/mtest.o
 
 ../util/mtestf90.o: 
 	(cd ../util && $(MAKE) mtestf90.o)
+
+../util/mtest.o:
+	(cd ../../util && $(MAKE))
 c2f902c.c: $(srcdir)/../../f90/ext/c2f902c.c
 	cp $(srcdir)/../../f90/ext/c2f902c.c c2f902c.c
+ctypesfromc.c: $(srcdir)/../../f77/ext/ctypesfromc.c
+	cp $(srcdir)/../../f77/ext/ctypesfromc.c ctypesfromc.c
+
 

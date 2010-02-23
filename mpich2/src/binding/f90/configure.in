@@ -64,8 +64,8 @@ AC_SUBST(master_top_builddir)
 
 # Get the C compiler (needed for type_create_f90_xxx functions)
 PAC_PROG_CC
-dnl Set CFLAGS for enable strict if necessary
-PAC_CC_STRICT
+
+PAC_ARG_STRICT
 AC_C_CONST
 
 # Find a Fortran 90 compiler.  Sets F90

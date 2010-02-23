@@ -45,7 +45,7 @@ int MPI_File_write_ordered_begin(MPI_File mpi_fh, void *buf, int count,
     ADIO_Offset shared_fp;
     ADIO_File fh;
 
-    MPIU_THREAD_SINGLE_CS_ENTER("io");
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
@@ -71,6 +71,7 @@ int MPI_File_write_ordered_begin(MPI_File mpi_fh, void *buf, int count,
     /* --BEGIN ERROR HANDLING-- */
     MPIO_CHECK_INTEGRAL_ETYPE(fh, count, datatype_size, myname, error_code);
     MPIO_CHECK_FS_SUPPORTS_SHARED(fh, myname, error_code);
+    MPIO_CHECK_COUNT_SIZE(fh, count, datatype_size, myname, error_code);
     /* --END ERROR HANDLING-- */
 
     ADIOI_TEST_DEFERRED(fh, myname, &error_code);
@@ -110,7 +111,7 @@ int MPI_File_write_ordered_begin(MPI_File mpi_fh, void *buf, int count,
 
 fn_exit:
     MPIR_Nest_decr();
-    MPIU_THREAD_SINGLE_CS_EXIT("io");
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
 
     /* FIXME: Check for error code from WriteStridedColl? */
     return error_code;

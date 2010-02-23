@@ -88,7 +88,7 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_SINGLE_CS_ENTER("pt2pt");
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_WAITALL);
 
     /* Check the arguments */
@@ -109,7 +109,8 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
 
 	    for (i = 0; i < count; i++)
 	    {
-		MPIR_ERRTEST_REQUEST_OR_NULL(array_of_requests[i], mpi_errno);
+		MPIR_ERRTEST_ARRAYREQUEST_OR_NULL(array_of_requests[i], 
+						  i, mpi_errno);
 	    }
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
@@ -163,9 +164,9 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
     {
 	goto fn_exit;
     }
-    
-    MPID_Progress_start(&progress_state);
 
+    /* Grequest_waitall may run the progress engine - thus, we don't 
+       invoke progress_start until after running Grequest_waitall */
     /* first, complete any generalized requests */
     if (n_greqs)
     {
@@ -173,6 +174,8 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
         if (mpi_errno != MPI_SUCCESS) goto fn_fail;
     }
     
+    MPID_Progress_start(&progress_state);
+
     for (i = 0; i < count; i++)
     {
         if (request_ptrs[i] == NULL)
@@ -247,7 +250,7 @@ int MPI_Waitall(int count, MPI_Request array_of_requests[],
     }
 
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITALL);
-    MPIU_THREAD_SINGLE_CS_EXIT("pt2pt");
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
  fn_fail:

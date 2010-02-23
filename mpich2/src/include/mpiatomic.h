@@ -9,9 +9,9 @@
 
 #include <stddef.h>
 #include <string.h>
-#include "mpidu_atomic_primitives.h"
-#include "mpidu_mem_barriers.h"
-#include "mpidu_queue.h"
+#include "opa_primitives.h"
+#include "opa_queue.h"
+#include "mpiimpl.h"
 
 /*
     Shared Memory Operation Abstractions
@@ -40,12 +40,12 @@
 #define FUNCNAME MPIDU_Ref_add
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline void MPIDU_Ref_add(volatile int *ptr)
+static inline void MPIDU_Ref_add(OPA_int_t *ptr)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_REF_ADD);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_REF_ADD);
-    MPIDU_Atomic_incr(ptr);
+    OPA_incr_int(ptr);
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_REF_ADD);
 }
 
@@ -55,7 +55,7 @@ static inline void MPIDU_Ref_add(volatile int *ptr)
 #define FUNCNAME MPIDU_Ref_release_and_test
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline int MPIDU_Ref_release_and_test(volatile int *ptr)
+static inline int MPIDU_Ref_release_and_test(OPA_int_t *ptr)
 {
     int retval;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_REF_RELEASE_AND_TEST);
@@ -63,36 +63,29 @@ static inline int MPIDU_Ref_release_and_test(volatile int *ptr)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_REF_RELEASE_AND_TEST);
 
 #if defined(ATOMIC_DECR_AND_TEST_IS_EMULATED) && !defined(ATOMIC_FETCH_AND_DECR_IS_EMULATED)
-    int prev;
-    prev = MPIDU_Atomic_fetch_and_decr(ptr);
-    retval = (1 == prev);
-    goto fn_exit;
+    {
+        int prev;
+        prev = OPA_fetch_and_decr_int(ptr);
+        retval = (1 == prev);
+        goto fn_exit;
+    }
 #elif defined(ATOMIC_DECR_AND_TEST_IS_EMULATED) && !defined(ATOMIC_CAS_INT_IS_EMULATED)
-    int oldv, newv;
-    do {
-        oldv = *ptr;
-        newv = oldv - 1;
-    } while (oldv != MPIDU_Atomic_cas_int(ptr, oldv, newv));
-    retval = (0 == newv);
-    goto fn_exit;
-
-    /* sketch of an LL/SC impl
-#elif defined(ATOMIC_DECR_AND_TEST_IS_EMULATED) && defined(ATOMIC_LL_SC_SUPPORTED)
-    int val;
-    do {
-        val = LL(ptr);
-        --val;
-    } while (!SC(ptr, val));
-    retval = (0 == val);
-    goto fn_exit;
-    */
+    {
+        int oldv, newv;
+        do {
+            oldv = OPA_load_int(ptr);
+            newv = oldv - 1;
+        } while (oldv != OPA_cas_int(ptr, oldv, newv));
+        retval = (0 == newv);
+        goto fn_exit;
+    }
 #else
-    retval = MPIDU_Atomic_decr_and_test(ptr);
+    retval = OPA_decr_and_test_int(ptr);
     goto fn_exit;
 #endif
 
 fn_exit:
-    MPIU_Assert(*ptr >= 0); /* help find add/release mismatches */
+    MPIU_Assert(OPA_load_int(ptr) >= 0); /* help find add/release mismatches */
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_REF_RELEASE_AND_TEST);
     return retval;
 }
@@ -103,20 +96,19 @@ fn_exit:
 
    This section provides a set of routines for asserting ownership over an
    object.  It does so specifically by associating an owner ID with the object.
-   
+
    Since this abstraction is not so different from a plain old mutex that has
    try_acquire() functionality, it might make sense to refactor it in the future
    into a general purpose mutex instead. */
 
 #define MPIDU_OWNER_ID_NONE -1
 #define MPIDU_OWNER_ID_ANY  -2
-typedef int MPIDU_Owner_id;
 
 /* This struct should be treated opaquely by any clients of the MPIDU_Owner_*
    functions.  In the future it could change to a different implementation or
    multiple implementations. */
 typedef struct MPIDU_Owner_info {
-    volatile MPIDU_Owner_id id;
+    OPA_int_t id;
     /* allow clients to pad to cache-line, don't pad here */
 } MPIDU_Owner_info;
 
@@ -141,7 +133,7 @@ typedef enum MPIDU_Owner_result {
 #define FUNCNAME MPIDU_Owner_init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static inline void MPIDU_Owner_init(volatile MPIDU_Owner_info *info)
+static inline void MPIDU_Owner_init(MPIDU_Owner_info *info)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_OWNER_INIT);
 
@@ -149,7 +141,7 @@ static inline void MPIDU_Owner_init(volatile MPIDU_Owner_info *info)
 
     /* It's OK if multiple processes call this on the same bit of shared_info
        because of the restriction given in the comment above. */
-    info->id = MPIDU_OWNER_ID_NONE;
+    OPA_store_int(&info->id, MPIDU_OWNER_ID_NONE);
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_OWNER_INIT);
 }
@@ -160,14 +152,14 @@ static inline void MPIDU_Owner_init(volatile MPIDU_Owner_info *info)
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static inline
-MPIDU_Owner_result MPIDU_Owner_try_acquire(volatile MPIDU_Owner_info *info,
-                                           MPIDU_Owner_id my_id,
-                                           MPIDU_Owner_id *after_owner)
+MPIDU_Owner_result MPIDU_Owner_try_acquire(MPIDU_Owner_info *info,
+                                           int my_id,
+                                           int *after_owner)
 {
     /* A pthread_mutex_trylock version of this would be an excellent alternative
        implementation for fairly broad portability. */
     MPIDU_Owner_result retval;
-    MPIDU_Owner_id prev_id;
+    int prev_id;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_OWNER_TRY_ACQUIRE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_OWNER_TRY_ACQUIRE);
@@ -175,7 +167,7 @@ MPIDU_Owner_result MPIDU_Owner_try_acquire(volatile MPIDU_Owner_info *info,
     MPIU_DBG_MSG_D(ALL, VERBOSE, "... my_id=%d", my_id);
     MPIU_DBG_MSG_P(ALL, VERBOSE, "... &info->id=%p", &info->id);
 
-    prev_id = MPIDU_Atomic_cas_int(&info->id, MPIDU_OWNER_ID_NONE, my_id);
+    prev_id = OPA_cas_int_int(&info->id, MPIDU_OWNER_ID_NONE, my_id);
     if (after_owner) *after_owner = my_id;
 
     if (my_id == prev_id) {
@@ -202,12 +194,12 @@ MPIDU_Owner_result MPIDU_Owner_try_acquire(volatile MPIDU_Owner_info *info,
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 /* 'after_owner' is an OUT value */
 static inline
-MPIDU_Owner_result MPIDU_Owner_release(volatile MPIDU_Owner_info *info,
-                                       MPIDU_Owner_id my_id,
-                                       MPIDU_Owner_id *after_owner)
+MPIDU_Owner_result MPIDU_Owner_release(MPIDU_Owner_info *info,
+                                       int my_id,
+                                       int *after_owner)
 {
     MPIDU_Owner_result retval;
-    MPIDU_Owner_id prev_id;
+    int prev_id;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_OWNER_RELEASE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_OWNER_RELEASE);
@@ -217,7 +209,7 @@ MPIDU_Owner_result MPIDU_Owner_release(volatile MPIDU_Owner_info *info,
     if (after_owner) *after_owner = MPIDU_OWNER_ID_NONE;
 
     if (MPIDU_OWNER_ID_ANY == my_id) {
-        prev_id = MPIDU_Atomic_swap_int(&info->id, MPIDU_OWNER_ID_NONE);
+        prev_id = OPA_swap_int(&info->id, MPIDU_OWNER_ID_NONE);
         if (MPIDU_OWNER_ID_NONE == prev_id) {
             retval = MPIDU_OWNERSHIP_ALREADY_RELEASED;
         }
@@ -226,7 +218,7 @@ MPIDU_Owner_result MPIDU_Owner_release(volatile MPIDU_Owner_info *info,
         }
     }
     else {
-        prev_id = MPIDU_Atomic_cas_int(&info->id, my_id, MPIDU_OWNER_ID_NONE);
+        prev_id = OPA_cas_int(&info->id, my_id, MPIDU_OWNER_ID_NONE);
 
         if (my_id == prev_id) {
             retval = MPIDU_OWNERSHIP_RELEASED;
@@ -254,9 +246,9 @@ MPIDU_Owner_result MPIDU_Owner_release(volatile MPIDU_Owner_info *info,
 /* Has the potential for misuse, but this routine is useful for laying down
    assertions about ownership in the middle of algorithms. */
 static inline
-MPIDU_Owner_id MPIDU_Owner_peek(volatile MPIDU_Owner_info *info)
+int MPIDU_Owner_peek(MPIDU_Owner_info *info)
 {
-    return info->id;
+    return OPA_load_int(&info->id);
 }
 
 
@@ -280,16 +272,14 @@ MPIDU_Owner_id MPIDU_Owner_peek(volatile MPIDU_Owner_info *info)
 */
 
 
-typedef struct MPIDU_Alloc_pool_entry {
-    int id;
-} MPIDU_Alloc_pool_entry;
+typedef OPA_int_t MPIDU_Alloc_pool_entry;
 
 /* `buf' points not to the beginning of the user-specified buffer, but rather to
    the first element of "free" storage.  That is, immediately after the array of
    MPIDU_Alloc_pool_entry.  See the ascii art comment near _create_pool for a
    visual description of the layout. */
 typedef struct MPIDU_Alloc_pool {
-    volatile MPIDU_Alloc_pool_entry *entries;
+    MPIDU_Alloc_pool_entry *entries;
     volatile void *buf;
     size_t elt_size;
     int count;
@@ -324,7 +314,7 @@ volatile void * MPIDU_Alloc_by_id(MPIDU_Alloc_pool *pool, int id)
     ptr = pool->buf;
 
     for (i = 0; i < pool->count; ++i) {
-        prev = MPIDU_Atomic_cas_int(&pool->entries[i].id, MPIDU_ALLOC_NULL_ID, id);
+        prev = OPA_cas_int(&pool->entries[i], MPIDU_ALLOC_NULL_ID, id);
         if (MPIDU_ALLOC_NULL_ID == prev || id == prev) {
             retval = &ptr[i*pool->elt_size];
             goto fn_exit;
@@ -452,7 +442,7 @@ int MPIDU_Alloc_create_pool(volatile void *buf,
     (*pool)->buf = ptr;
 
     for (i = 0; i < (*pool)->count; ++i) {
-        (*pool)->entries[i].id = MPIDU_ALLOC_NULL_ID;
+        OPA_store_int(&(*pool)->entries[i], MPIDU_ALLOC_NULL_ID);
         if (initializer != NULL) {
             mpi_errno = (*initializer)(&ptr[i*(*pool)->elt_size]);
             if (mpi_errno) MPIU_ERR_POP (mpi_errno);
@@ -469,13 +459,13 @@ fn_fail:
 /* ================================================================
    A thread-safe, IPC-safe, shared memory barrier implementation.
    ================================================================
-  
+
    The current implementation isn't super efficient, but it should work just
    fine for small numbers of processors on several architectures.  Please note,
    this provides a barrier that works ONLY FOR SHARED MEMORY.  That is, you will
    need to setup your own message-based barrier (that may optionally use this
    interface for local synchronization) for remote nodes.
-   
+
    There are actually two barrier interfaces right now with corresponding
    implementations.  The first is a simple barrier (MPIDU_Shm_barrier_simple),
    with the semantics that you would expect from a barrier routine.  All
@@ -511,10 +501,10 @@ fn_fail:
    the very least. */
 #define MPIDU_SHM_BARRIER_CACHELINE_PADDING 128
 typedef struct {
-    volatile int num_waiting;
-    char _padding[MPIDU_SHM_BARRIER_CACHELINE_PADDING - sizeof(int)];
-    volatile int sig;
-    volatile int sig_boss;
+    OPA_int_t num_waiting;
+    char _padding[MPIDU_SHM_BARRIER_CACHELINE_PADDING - sizeof(OPA_int_t)];
+    OPA_int_t sig;
+    OPA_int_t sig_boss;
 } MPIDU_Shm_barrier_t;
 
 /* Pass in a sizeof(MPIDU_Shm_barrier_t) sized chunk of memory that is shared
@@ -531,10 +521,10 @@ int MPIDU_Shm_barrier_init(MPIDU_Shm_barrier_t *barrier)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_SHM_BARRIER_INIT);
 
-    barrier->num_waiting = 0;
-    barrier->sig = 0;
-    barrier->sig_boss = 0;
-    MPIDU_Shm_write_barrier();
+    OPA_store_int(&barrier->num_waiting, 0);
+    OPA_store_int(&barrier->sig, 0);
+    OPA_store_int(&barrier->sig_boss, 0);
+    OPA_write_barrier();
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_SHM_BARRIER_INIT);
     return mpi_errno;
@@ -567,21 +557,21 @@ int MPIDU_Shm_barrier_simple(MPIDU_Shm_barrier_t *barrier, int num_processes, in
     /* not strictly needed, but not checking it is a bug waiting to happen */
     MPIU_Assert(rank < num_processes);
 
-    cur_sig = barrier->sig;
+    cur_sig = OPA_load_int(&barrier->sig);
 
-    prev_waiting = MPIDU_Atomic_fetch_and_incr(&barrier->num_waiting);
+    prev_waiting = OPA_fetch_and_incr_int(&barrier->num_waiting);
 
     if ((num_processes - 1) == prev_waiting) {
         /* we are the last one to enter the barrier, so we are responsible for
            releasing everyone from it */
-        barrier->num_waiting = 0;
-        MPIDU_Shm_write_barrier();
-        ++(barrier->sig); /* must come last to avoid race */
+        OPA_store_int(&barrier->num_waiting, 0);
+        OPA_write_barrier();
+        OPA_store_int(&barrier->sig, cur_sig + 1); /* must come last to avoid race */
     }
     else {
         /* wait for the last arriving process to release us from the barrier */
-        while (barrier->sig == cur_sig) {
-            MPIDU_Atomic_busy_wait();
+        while (OPA_load_int(&barrier->sig) == cur_sig) {
+            OPA_busy_wait();
         }
     }
 
@@ -613,23 +603,23 @@ int MPIDU_Shm_barrier_enter(MPIDU_Shm_barrier_t *barrier,
     if (1 == num_processes) goto fn_exit; /* trivial barrier */
 
     if (rank == boss_rank) {
-        while (0 == barrier->sig_boss)
-            MPIDU_Atomic_busy_wait();
+        while (0 == OPA_load_int(&barrier->sig_boss))
+            OPA_busy_wait_int();
     }
     else {
-        cur_sig = barrier->sig;
-        MPIDU_Shm_read_barrier();
+        cur_sig = OPA_load_int(&barrier->sig);
+        OPA_read_barrier();
 
-        prev = MPIDU_Atomic_fetch_and_incr(&barrier->num_waiting);
+        prev = OPA_fetch_and_incr_int(&barrier->num_waiting);
         /* -2 because it's the value before we added 1 and we're not waiting for the boss */
         if ((num_processes - 2) == prev) {
-            MPIDU_Shm_write_barrier();
-            barrier->sig_boss = 1;
+            OPA_write_barrier();
+            OPA_store_int(&barrier->sig_boss, 1);
         }
 
         /* wait to be released by the boss */
-        while (barrier->sig == cur_sig)
-            MPIDU_Atomic_busy_wait();
+        while (OPA_load_int(&barrier->sig) == cur_sig)
+            OPA_busy_wait();
     }
 
 fn_exit:
@@ -657,10 +647,10 @@ int MPIDU_Shm_barrier_release(MPIDU_Shm_barrier_t *barrier,
 
     /* makes this safe to use outside of a conditional */
     if (rank == boss_rank) {
-        barrier->sig_boss = 0;
-        barrier->num_waiting = 0;
-        MPIDU_Shm_write_barrier();
-        ++(barrier->sig);
+        OPA_store_int(&barrier->sig_boss, 0);
+        OPA_store_int(&barrier->num_waiting, 0);
+        OPA_write_barrier();
+        OPA_incr_int(&barrier->sig);
     }
 
 fn_exit:

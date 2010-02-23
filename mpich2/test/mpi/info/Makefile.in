@@ -6,7 +6,10 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
+bindir          = @bindir@
+exec_prefix     = @exec_prefix@
+prefix          = @prefix@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -15,7 +18,7 @@ CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 LDFLAGS     =  @LDFLAGS@ ../util/mtest.o 
@@ -106,11 +109,6 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
 SOURCES         =  infodup.c infodel.c infovallen.c infoorder.c infomany.c \
 	infomany2.c infotest.c 
 ETAGS           = @ETAGS@ @ETAGSADD@
@@ -121,6 +119,12 @@ TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 	here=`cd ../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
+
+# A special testing target to simplify running just the info tests
+testing:
+	../runtests -srcdir=$(srcdir) -tests=testlist \
+		   -mpiexec=$(bindir)/mpiexec \
+		   -xmlfile=summary.xml
 
 ../util/mtest.o:
 	(cd ../util && $(MAKE) mtest.o)

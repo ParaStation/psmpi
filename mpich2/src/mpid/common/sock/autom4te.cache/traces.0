@@ -258,7 +258,7 @@ m4trace:configure.in:86: -1- AC_SUBST([ETAGSADD])
 m4trace:configure.in:86: -1- AC_SUBST_TRACE([ETAGSADD])
 m4trace:configure.in:86: -1- m4_pattern_allow([^ETAGSADD$])
 m4trace:configure.in:95: -1- AC_CONFIG_SUBDIRS([${sock_name}])
-m4trace:configure.in:95: -1- _m4_warn([syntax], [AC_CONFIG_SUBDIRS: you should use literals], [/sandbox/chan/autoconf/autoconf-2.62/lib/autoconf/status.m4:1092: AC_CONFIG_SUBDIRS is expanded from...
+m4trace:configure.in:95: -1- _m4_warn([syntax], [AC_CONFIG_SUBDIRS: you should use literals], [../../lib/autoconf/status.m4:1093: AC_CONFIG_SUBDIRS is expanded from...
 configure.in:95: the top level])
 m4trace:configure.in:95: -1- AC_SUBST([subdirs], ["$subdirs m4_normalize([${sock_name}])"])
 m4trace:configure.in:95: -1- AC_SUBST_TRACE([subdirs])

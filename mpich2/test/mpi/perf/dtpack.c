@@ -69,9 +69,12 @@ double noise(double *list, int count)
 /* Here are the tests */
 
 /* Test packing a vector of individual doubles */
+/* We don't use restrict in the function args because assignments between
+   restrict pointers is not valid in C and some compilers, such as the 
+   IBM xlc compilers, flag that use as an error.*/
 int TestVecPackDouble( int n, int stride, 
 		       double *avgTimeUser, double *avgTimeMPI,
-		       double * restrict dest, const double * restrict src )
+		       double *dest, const double *src )
 {
 	double *restrict d_dest;
 	const double *restrict d_src;
@@ -131,9 +134,10 @@ int TestVecPackDouble( int n, int stride,
 		*avgTimeMPI = 0;
 		if (verbose)
 			printf("Too much noise; discarding measurement\n");
-		return 0;
 	}
-	*avgTimeMPI = mean(t, NTRIALS) / N_REPS;
+	else {
+	    *avgTimeMPI = mean(t, NTRIALS) / N_REPS;
+	}
 
 	MPI_Type_free( &vectype );
 
@@ -141,9 +145,10 @@ int TestVecPackDouble( int n, int stride,
 }
 
 /* Test unpacking a vector of individual doubles */
+/* See above for why restrict is not used in the function args */
 int TestVecUnPackDouble( int n, int stride, 
 		       double *avgTimeUser, double *avgTimeMPI,
-		       double * restrict dest, const double * restrict src )
+		       double *dest, const double *src )
 {
 	double *restrict d_dest;
 	const double *restrict d_src;
@@ -203,9 +208,10 @@ int TestVecUnPackDouble( int n, int stride,
 		*avgTimeMPI = 0;
 		if (verbose)
 			printf("Too much noise; discarding measurement\n");
-		return 0;
 	}
-	*avgTimeMPI = mean(t, NTRIALS) / N_REPS;
+	else {
+	    *avgTimeMPI = mean(t, NTRIALS) / N_REPS;
+	}
 
 	MPI_Type_free( &vectype );
 
@@ -213,9 +219,10 @@ int TestVecUnPackDouble( int n, int stride,
 }
 
 /* Test packing a vector of 2-individual doubles */
+/* See above for why restrict is not used in the function args */
 int TestVecPack2Double( int n, int stride, 
 			double *avgTimeUser, double *avgTimeMPI,
-			double * restrict dest, const double * restrict src )
+			double *dest, const double *src )
 {
 	double *restrict d_dest;
 	const double *restrict d_src;
@@ -276,10 +283,10 @@ int TestVecPack2Double( int n, int stride,
 		*avgTimeMPI = 0;
 		if (verbose)
 			printf("Too much noise; discarding measurement\n");
-		return 0;
 	}
-	*avgTimeMPI = mean(t, NTRIALS) / N_REPS;
-
+	else {
+	    *avgTimeMPI = mean(t, NTRIALS) / N_REPS;
+	}
 	MPI_Type_free( &vectype );
 
 	return 0;
@@ -290,9 +297,10 @@ int TestVecPack2Double( int n, int stride,
    will recognize and simplify this (e.g., in MPI_Type_commit); if so,
    let us know and we'll add a version that is not as regular 
 */
+/* See above for why restrict is not used in the function args */
 int TestIndexPackDouble( int n, int stride, 
 			 double *avgTimeUser, double *avgTimeMPI,
-			 double * restrict dest, const double * restrict src )
+			 double *dest, const double *src )
 {
 	double *restrict d_dest;
 	const double *restrict d_src;
@@ -357,10 +365,10 @@ int TestIndexPackDouble( int n, int stride,
 		*avgTimeMPI = 0;
 		if (verbose)
 			printf("Too much noise; discarding measurement\n");
-		return 0;
 	}
-	*avgTimeMPI = mean(t, NTRIALS) / N_REPS;
-
+	else {
+	    *avgTimeMPI = mean(t, NTRIALS) / N_REPS;
+	}
 	MPI_Type_free( &indextype );
 
 	return 0;

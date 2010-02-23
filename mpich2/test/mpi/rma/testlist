@@ -1,6 +1,7 @@
 winname 2
 allocmem 2
 putfence1 4
+putfidx 4
 getfence1 4
 accfence1 4
 accfence2 4
@@ -31,6 +32,7 @@ test5_am 2
 fetchandadd_am 7
 fetchandadd_tree_am 7
 accfence2_am 4
+test1_dt 2 timeLimit=30
 nullpscw 7
 attrorderwin 1
 wincall 2
@@ -38,4 +40,5 @@ baseattrwin 1
 fkeyvalwin 1
 selfrma 1
 mixedsync 4
+epochtest 4
 locknull 2

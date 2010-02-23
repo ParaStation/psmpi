@@ -6,17 +6,19 @@ srcdir      = @srcdir@
 CC_SHL      = @CC_SHL@
 SHLIBNAME   = @SHLIBNAME@
 
-INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I../../include -I${srcdir}/../../../../include -I../../../../include
-CFLAGS      = @CPPFLAGS@ @CFLAGS@ $(INCLUDE_DIR)
+INCLUDES    = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I../../include -I${srcdir}/../../../../include -I../../../../include
+CFLAGS      = @CPPFLAGS@ @CFLAGS@ $(INCLUDES)
 
 top_builddir  = @master_topbuild_dir@
 LIBTOOL       = @LIBTOOL@
-C_COMPILE_SHL = $(CC_SHL) @CFLAGS@ $(INCLUDE_DIR)
+C_COMPILE_SHL = $(CC_SHL) @CFLAGS@ $(INCLUDES)
 
 @VPATH@
 
 AD_LUSTRE_OBJECTS = ad_lustre.o ad_lustre_open.o \
-      ad_lustre_rwcontig.o ad_lustre_hints.o 
+      ad_lustre_rwcontig.o ad_lustre_wrcoll.o ad_lustre_wrstr.o  \
+      ad_lustre_hints.o ad_lustre_aggregate.o
+
 
 default: $(LIBNAME)
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
@@ -28,7 +30,7 @@ default: $(LIBNAME)
 .c.o:
 	$(CC) $(CFLAGS) -c $<
 .c.lo:
-	$(C_COMPILE_SHL) -c $< -o _s$*.o
+	$(C_COMPILE_SHL) $(CFLAGS) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
 
 $(LIBNAME): $(AD_LUSTRE_OBJECTS)

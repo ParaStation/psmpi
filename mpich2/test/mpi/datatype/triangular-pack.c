@@ -6,8 +6,8 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
 #include "mpi.h"
+#include "mpitest.h"
 
 int main(int argc, char *argv[]);
 
@@ -37,7 +37,7 @@ int main(int argc, char *argv[])
     }
 	
     /* Initialize MPI */
-    MPI_Init(&argc, &argv);
+    MTest_Init( &argc, &argv );
   
     parse_args(argc, argv);
 
@@ -80,13 +80,7 @@ int main(int argc, char *argv[])
 	}
     }
 
-    /* print message and exit */
-    if (errs) {
-	fprintf(stderr, "Found %d errors\n", errs);
-    }
-    else {
-	printf(" No Errors\n");
-    }
+    MTest_Finalize( errs );
     MPI_Finalize();
     return 0;
 }

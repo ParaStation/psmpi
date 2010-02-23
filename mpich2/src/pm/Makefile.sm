@@ -7,7 +7,7 @@ SUBDIRS = @pm_name@ @other_pm_names@ .
 # directories
 smvarSubdir_commonmake=MPILIBNAME      = @MPILIBNAME@
 OTHER_DIRS = util
-NOTSIMPLEMAKE_SUBDIRS = mpd
+NOTSIMPLEMAKE_SUBDIRS = mpd hydra
 
 # We need to handle the case where the process manager is external to 
 # MPICH2

@@ -23,6 +23,9 @@ using namespace std;
 static int dbgflag = 0;         /* Flag used for debugging */
 static int wrank = -1;          /* World rank */
 static int verbose = 0;         /* Message level (0 is none) */
+
+static void MTestRMACleanup( void );
+
 /* 
  * Initialize and Finalize MTest
  */
@@ -95,6 +98,9 @@ void MTest_Finalize( int errs )
 	}
 	cout.flush();
     }
+
+    // Clean up any persistent objects that we allocated
+    MTestRMACleanup();
 }
 
 /*
@@ -412,7 +418,7 @@ int MTestCheckRecv( MPI::Status &status, MTestDatatype *recvtype )
     int count;
     int errs = 0;
 
-    if (status) {
+    if (status != MPI_STATUS_IGNORE) {
 	count = status.Get_count( recvtype->datatype );
 	
 	/* Check count against expected count */
@@ -514,10 +520,10 @@ int MTestGetIntracommGeneral( MPI::Intracomm &comm, int min_size,
 	    
 	    if (allowSmaller && newsize >= min_size) {
 		rank = MPI::COMM_WORLD.Get_rank();
-		*comm = MPI::COMM_WORLD.Split( rank < newsize, rank );
+		comm = MPI::COMM_WORLD.Split( rank < newsize, rank );
 		if (rank >= newsize) {
 		    comm.Free();
-		    *comm = MPI::COMM_NULL;
+		    comm = MPI::COMM_NULL;
 		}
 	    }
 	    else {
@@ -880,4 +886,12 @@ void MTestFreeWin( MPI::Win &win )
     }
     win.Free();
 }
+static void MTestRMACleanup( void )
+{
+    if (mem_keyval != MPI::KEYVAL_INVALID) {
+	MPI::Win::Free_keyval( mem_keyval );
+    }
+}
+#else 
+static void MTestRMACleanup( void ) {}
 #endif

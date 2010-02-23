@@ -42,6 +42,14 @@ AC_ARG_WITH(assert-level,
 AC_SUBST(ASSERT_LEVEL)
 AC_DEFINE_UNQUOTED([ASSERT_LEVEL], $ASSERT_LEVEL, [Which messager is being used])
 
+USE_COLL=ccmi
+AC_ARG_WITH(opt-coll,
+  AS_HELP_STRING([--with-opt-coll={none ccmi}],[which optimized collectives to use (default: ccmi)]),
+  [ USE_COLL=$withval ])
+if test "$USE_COLL" = "ccmi" ; then
+    AC_DEFINE_UNQUOTED([USE_CCMI_COLL], 1, [Define to use CCMI collectives])
+fi
+
 
 #
 # bring in the default implementation of the MPID_Thread package
@@ -52,6 +60,14 @@ builtin(include,../common/thread/mpid_thread.m4)
 
 PAC_PROG_MAKE
 
+if echo $CFLAGS | grep -q -- -Wall
+then
+    CFLAGS="$CFLAGS -Werror"
+fi
+if echo $CFLAGS | grep -q -- -qflag
+then
+    CFLAGS="$CFLAGS -qhalt=w"
+fi
 AC_SUBST(AR)
 AC_SUBST(RANLIB)
 AC_SUBST(MPILIBNAME)
@@ -83,7 +99,7 @@ AC_SUBST(LIBTOOL)
 dnl Place holder macro for finalization
 PAC_SUBCONFIG_FINALIZE()
 
-FILE=`cd $srcdir && find -name Makefile.in | perl -pe 's,^\./,,;s/\.in$//'`
+FILE=$(cd $srcdir && find -name Makefile.in | perl -pe 's,^\./,,;s/\.in$//;s/\n/ /g;')
 AC_OUTPUT(
 localdefs
 $MPID_THREAD_OUTPUT_FILES

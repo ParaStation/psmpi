@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_CART_RANK( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_cart_rank__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_cart_rank( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_cart_rank_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_rank_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_CART_RANK = PMPI_CART_RANK
+#pragma weak mpi_cart_rank__ = PMPI_CART_RANK
+#pragma weak mpi_cart_rank_ = PMPI_CART_RANK
+#pragma weak mpi_cart_rank = PMPI_CART_RANK
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_CART_RANK = pmpi_cart_rank__
 #pragma weak mpi_cart_rank__ = pmpi_cart_rank__
 #pragma weak mpi_cart_rank_ = pmpi_cart_rank__
 #pragma weak mpi_cart_rank = pmpi_cart_rank__
-#pragma weak pmpi_cart_rank_ = pmpi_cart_rank__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_CART_RANK = pmpi_cart_rank_
+#pragma weak mpi_cart_rank__ = pmpi_cart_rank_
+#pragma weak mpi_cart_rank_ = pmpi_cart_rank_
+#pragma weak mpi_cart_rank = pmpi_cart_rank_
+#else
+#pragma weak MPI_CART_RANK = pmpi_cart_rank
+#pragma weak mpi_cart_rank__ = pmpi_cart_rank
+#pragma weak mpi_cart_rank_ = pmpi_cart_rank
+#pragma weak mpi_cart_rank = pmpi_cart_rank
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_cart_rank_( MPI_Fint *, MPI_Fint *, MPI_
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_CART_RANK( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_cart_rank__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_cart_rank( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_cart_rank_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_cart_rank__ = MPI_CART_RANK
+#pragma weak mpi_cart_rank_ = MPI_CART_RANK
+#pragma weak mpi_cart_rank = MPI_CART_RANK
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_CART_RANK = mpi_cart_rank__
 #pragma weak mpi_cart_rank_ = mpi_cart_rank__
 #pragma weak mpi_cart_rank = mpi_cart_rank__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_CART_RANK = mpi_cart_rank_
+#pragma weak mpi_cart_rank__ = mpi_cart_rank_
+#pragma weak mpi_cart_rank = mpi_cart_rank_
+#else
+#pragma weak MPI_CART_RANK = mpi_cart_rank
+#pragma weak mpi_cart_rank__ = mpi_cart_rank
+#pragma weak mpi_cart_rank_ = mpi_cart_rank
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_CART_RANK( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_rank__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_rank_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_rank( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_cart_rank__ = PMPI_CART_RANK
+#pragma weak pmpi_cart_rank_ = PMPI_CART_RANK
+#pragma weak pmpi_cart_rank = PMPI_CART_RANK
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_CART_RANK = pmpi_cart_rank__
+#pragma weak pmpi_cart_rank_ = pmpi_cart_rank__
+#pragma weak pmpi_cart_rank = pmpi_cart_rank__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_CART_RANK = pmpi_cart_rank_
+#pragma weak pmpi_cart_rank__ = pmpi_cart_rank_
+#pragma weak pmpi_cart_rank = pmpi_cart_rank_
+#else
+#pragma weak PMPI_CART_RANK = pmpi_cart_rank
+#pragma weak pmpi_cart_rank__ = pmpi_cart_rank
+#pragma weak pmpi_cart_rank_ = pmpi_cart_rank
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_cart_rank_ PMPI_CART_RANK
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_cart_rank_( MPI_Fint *, MPI_Fint *, MPI_
 #define mpi_cart_rank_ pmpi_cart_rank
 #else
 #define mpi_cart_rank_ pmpi_cart_rank_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

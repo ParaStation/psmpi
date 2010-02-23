@@ -179,6 +179,8 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req)
  * by the segment contained in the request structure.
  * If the density of IOV is not sufficient, pack the data into a send/receive 
  * buffer and point the IOV at the buffer.
+ *
+ * Expects sreq->dev.OnFinal to be initialized (even if it's NULL).
  */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Request_load_send_iov
@@ -192,6 +194,7 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq,
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_SEND_IOV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_REQUEST_LOAD_SEND_IOV);
+    MPIU_Assert(sreq->dev.segment_ptr != NULL);
     last = sreq->dev.segment_size;
     MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
      "pre-pv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
@@ -242,7 +245,7 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq,
 
 	iov_data_copied = 0;
 	for (i = 0; i < *iov_n; i++) {
-	    memcpy((char*) sreq->dev.tmpbuf + iov_data_copied, 
+	    MPIU_Memcpy((char*) sreq->dev.tmpbuf + iov_data_copied, 
 		   iov[i].MPID_IOV_BUF, iov[i].MPID_IOV_LEN);
 	    iov_data_copied += iov[i].MPID_IOV_LEN;
 	}
@@ -355,10 +358,10 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	MPIU_Assert(last > 0);
 	MPID_Segment_unpack_vector(rreq->dev.segment_ptr, 
 				   rreq->dev.segment_first,
-				   &last, rreq->dev.iov, &rreq->dev.iov_count);
+				   &last, &rreq->dev.iov[rreq->dev.iov_offset], &rreq->dev.iov_count);
 	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
-   "post-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d",
-			  rreq->dev.segment_first, last, rreq->dev.iov_count));
+   "post-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d, iov_offset=%d",
+			  rreq->dev.segment_first, last, rreq->dev.iov_count, rreq->dev.iov_offset));
 	MPIU_Assert(rreq->dev.iov_count >= 0 && rreq->dev.iov_count <= 
 		    MPID_IOV_LIMIT);
 
@@ -602,7 +605,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 	       would last = unpack?  If not we should return an error 
 	       (unless configured with --enable-fast) */
 	    MPIDI_FUNC_ENTER(MPID_STATE_MEMCPY);
-	    memcpy((char *)rreq->dev.user_buf + dt_true_lb, rreq->dev.tmpbuf,
+	    MPIU_Memcpy((char *)rreq->dev.user_buf + dt_true_lb, rreq->dev.tmpbuf,
 		   unpack_sz);
 	    MPIDI_FUNC_EXIT(MPID_STATE_MEMCPY);
 	}

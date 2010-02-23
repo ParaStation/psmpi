@@ -9,6 +9,7 @@
 
 #include "mpidi_ch3_conf.h"
 #include "mpidimpl.h"
+#include "mpiu_os_wrappers.h"
 #include "mpidu_process_locks.h"
 
 #if defined(HAVE_ASSERT_H)
@@ -58,7 +59,6 @@ extern struct MPID_Request *MPIDI_CH3I_active_send[CH3_NUM_QUEUES];
 
 #define MPIDI_CH3I_SendQ_empty(queue) (MPIDI_CH3I_sendq_head[queue] == NULL)
 
-
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 
@@ -71,16 +71,21 @@ int MPID_nem_lmt_shm_handle_cookie(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV c
 int MPID_nem_lmt_shm_done_send(MPIDI_VC_t *vc, MPID_Request *req);
 int MPID_nem_lmt_shm_done_recv(MPIDI_VC_t *vc, MPID_Request *req);
 
+int MPID_nem_lmt_dma_initiate_lmt(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *rts_pkt, MPID_Request *req);
+int MPID_nem_lmt_dma_start_recv(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV s_cookie);
+int MPID_nem_lmt_dma_start_send(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV r_cookie);
+int MPID_nem_lmt_dma_handle_cookie(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV cookie);
+int MPID_nem_lmt_dma_done_send(MPIDI_VC_t *vc, MPID_Request *req);
+int MPID_nem_lmt_dma_done_recv(MPIDI_VC_t *vc, MPID_Request *req);
+
+int MPID_nem_lmt_vmsplice_initiate_lmt(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *rts_pkt, MPID_Request *req);
+int MPID_nem_lmt_vmsplice_start_recv(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV s_cookie);
+int MPID_nem_lmt_vmsplice_start_send(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV r_cookie);
+int MPID_nem_lmt_vmsplice_handle_cookie(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV cookie);
+int MPID_nem_lmt_vmsplice_done_send(MPIDI_VC_t *vc, MPID_Request *req);
+int MPID_nem_lmt_vmsplice_done_recv(MPIDI_VC_t *vc, MPID_Request *req);
+
 int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen);
-
-/* #define BYPASS_PROGRESS */
-
-/* short MPIDI_CH3I_Listener_get_port(void); */
-/* int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *); */
-/* int MPIDI_CH3I_VC_post_read(MPIDI_VC_t *, MPID_Request *); */
-/* int MPIDI_CH3I_VC_post_write(MPIDI_VC_t *, MPID_Request *); */
-/* int MPIDI_CH3I_sock_errno_to_mpi_errno(char * fcname, int sock_errno); */
-/* int MPIDI_CH3I_Get_business_card(char *value, int length); */
 
 struct MPIDI_VC;
 struct MPID_Request;
@@ -100,8 +105,6 @@ typedef struct MPIDI_CH3I_VC
     MPID_nem_fbox_mpich2_t *fbox_in;
     MPID_nem_queue_ptr_t recv_queue;
     MPID_nem_queue_ptr_t free_queue;
-
-    int node_id;
 
     /* temp buffer to store partially received header */
     MPIDI_msg_sz_t pending_pkt_len;
@@ -133,8 +136,9 @@ typedef struct MPIDI_CH3I_VC
     int (* lmt_done_recv)(struct MPIDI_VC *vc, struct MPID_Request *req);
 
     /* LMT shared memory copy-buffer ptr */
-    volatile struct MPID_nem_copy_buf *lmt_copy_buf;
-    char *lmt_copy_buf_handle;
+    struct MPID_nem_copy_buf *lmt_copy_buf;
+    MPIU_SHMW_Hnd_t lmt_copy_buf_handle;
+    MPIU_SHMW_Hnd_t lmt_recv_copy_buf_handle;
     int lmt_buf_num;
     MPIDI_msg_sz_t lmt_surfeit;
     struct {struct MPID_nem_lmt_shm_wait_element *head, *tail;} lmt_queue;

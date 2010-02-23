@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_BSEND( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_bsend__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_bsend( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_bsend_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_bsend_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_BSEND = PMPI_BSEND
+#pragma weak mpi_bsend__ = PMPI_BSEND
+#pragma weak mpi_bsend_ = PMPI_BSEND
+#pragma weak mpi_bsend = PMPI_BSEND
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_BSEND = pmpi_bsend__
 #pragma weak mpi_bsend__ = pmpi_bsend__
 #pragma weak mpi_bsend_ = pmpi_bsend__
 #pragma weak mpi_bsend = pmpi_bsend__
-#pragma weak pmpi_bsend_ = pmpi_bsend__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_BSEND = pmpi_bsend_
+#pragma weak mpi_bsend__ = pmpi_bsend_
+#pragma weak mpi_bsend_ = pmpi_bsend_
+#pragma weak mpi_bsend = pmpi_bsend_
+#else
+#pragma weak MPI_BSEND = pmpi_bsend
+#pragma weak mpi_bsend__ = pmpi_bsend
+#pragma weak mpi_bsend_ = pmpi_bsend
+#pragma weak mpi_bsend = pmpi_bsend
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_bsend_( void*, MPI_Fint *, MPI_Fint *, M
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_BSEND( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_bsend__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_bsend( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_bsend_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_bsend__ = MPI_BSEND
+#pragma weak mpi_bsend_ = MPI_BSEND
+#pragma weak mpi_bsend = MPI_BSEND
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_BSEND = mpi_bsend__
 #pragma weak mpi_bsend_ = mpi_bsend__
 #pragma weak mpi_bsend = mpi_bsend__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_BSEND = mpi_bsend_
+#pragma weak mpi_bsend__ = mpi_bsend_
+#pragma weak mpi_bsend = mpi_bsend_
+#else
+#pragma weak MPI_BSEND = mpi_bsend
+#pragma weak mpi_bsend__ = mpi_bsend
+#pragma weak mpi_bsend_ = mpi_bsend
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_BSEND( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_bsend__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_bsend_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_bsend( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_bsend__ = PMPI_BSEND
+#pragma weak pmpi_bsend_ = PMPI_BSEND
+#pragma weak pmpi_bsend = PMPI_BSEND
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_BSEND = pmpi_bsend__
+#pragma weak pmpi_bsend_ = pmpi_bsend__
+#pragma weak pmpi_bsend = pmpi_bsend__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_BSEND = pmpi_bsend_
+#pragma weak pmpi_bsend__ = pmpi_bsend_
+#pragma weak pmpi_bsend = pmpi_bsend_
+#else
+#pragma weak PMPI_BSEND = pmpi_bsend
+#pragma weak pmpi_bsend__ = pmpi_bsend
+#pragma weak pmpi_bsend_ = pmpi_bsend
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_bsend_ PMPI_BSEND
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_bsend_( void*, MPI_Fint *, MPI_Fint *, M
 #define mpi_bsend_ pmpi_bsend
 #else
 #define mpi_bsend_ pmpi_bsend_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

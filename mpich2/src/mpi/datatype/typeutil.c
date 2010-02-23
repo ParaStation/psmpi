@@ -22,7 +22,8 @@ MPIU_Object_alloc_t MPID_Datatype_mem = { 0, 0, 0, 0, MPID_DATATYPE,
 			      sizeof(MPID_Datatype), MPID_Datatype_direct,
 					  MPID_DATATYPE_PREALLOC};
 
-static int MPIR_Datatype_finalize(void *dummy);
+static int MPIR_Datatype_finalize(void *dummy );
+static int MPIR_DatatypeAttrFinalizeCallback(void *dummy );
 
 /* Call this routine to associate a MPID_Datatype with each predefined 
    datatype.  We do this with lazy initialization because many MPI 
@@ -120,6 +121,7 @@ int MPIR_Datatype_init(void)
     MPIU_Assert(MPID_Datatype_mem.initialized == 0);
     MPIU_Assert(MPID_DATATYPE_PREALLOC >= 5);
 
+#if 0
     /* initialize also gets us our first pointer */
     ptr = MPIU_Handle_direct_init(MPID_Datatype_mem.direct,
 				  MPID_Datatype_mem.direct_size,
@@ -128,7 +130,9 @@ int MPIR_Datatype_init(void)
 
     MPID_Datatype_mem.initialized = 1;
     MPID_Datatype_mem.avail = ptr->next;
-
+#else
+    ptr = MPIU_Handle_obj_alloc_unsafe( &MPID_Datatype_mem );
+#endif
     MPIU_Assert((void *) ptr == (void *) (MPID_Datatype_direct + HANDLE_INDEX(mpi_pairtypes[0])));
     MPID_Type_create_pairtype(mpi_pairtypes[0], (MPID_Datatype *) ptr);
 
@@ -154,15 +158,16 @@ int MPIR_Datatype_init(void)
 	MPID_Type_create_pairtype(mpi_pairtypes[i], (MPID_Datatype *) ptr);
     }
 
+#if 0
     MPIU_Handle_obj_alloc_complete(&MPID_Datatype_mem, 1);
-
+#endif
     MPIR_Add_finalize(MPIR_Datatype_finalize, 0, 
 		      MPIR_FINALIZE_CALLBACK_PRIO-1);
 
     return MPI_SUCCESS;
 }
 
-static int MPIR_Datatype_finalize(void *dummy)
+static int MPIR_Datatype_finalize(void *dummy ATTRIBUTE((unused)) )
 {
     int i;
     MPID_Datatype *dptr;
@@ -240,7 +245,7 @@ int MPIR_Datatype_builtin_fillin(void)
 	    dptr->contents     = NULL; /* should never get referenced? */
 	}
 	/* --BEGIN ERROR HANDLING-- */
-	if (d != -1 && mpi_dtypes[i] != -1) {
+ 	if (d != -1 && i < sizeof(mpi_dtypes)/sizeof(*mpi_dtypes) && mpi_dtypes[i] != -1) { 
 	    /* We did not hit the end-of-list */
 	    /*MPIU_Internal_error_printf( "Did not initialize all of the predefined datatypes (only did first %d)\n", i-1 );*/
 	    MPIU_Snprintf(error_msg, 1024,
@@ -268,5 +273,35 @@ void MPIR_Datatype_iscontig(MPI_Datatype datatype, int *flag)
     else  {
         MPID_Datatype_get_ptr(datatype, datatype_ptr);
         *flag = datatype_ptr->is_contig;
+    }
+}
+
+/* If an attribute is added to a predefined type, we free the attributes 
+   in Finalize */
+static int MPIR_DatatypeAttrFinalizeCallback(void *dummy ATTRIBUTE((unused)) )
+{
+    MPID_Datatype *dtype;
+    int i, mpi_errno=MPI_SUCCESS;
+
+    for (i=0; i<MPID_DATATYPE_N_BUILTIN; i++) {
+	dtype = &MPID_Datatype_builtin[i];
+	if (dtype && MPIR_Process.attr_free && dtype->attributes) {
+	    mpi_errno = MPIR_Process.attr_free( dtype->handle, 
+						&dtype->attributes );
+	    /* During finalize, we ignore error returns from the free */
+	}
+    }
+    return mpi_errno;
+}
+
+void MPIR_DatatypeAttrFinalize( void )
+{
+    static int called=0;
+
+    /* FIXME: This needs to be make thread safe */
+    if (!called) {
+	called = 1;
+	MPIR_Add_finalize(MPIR_DatatypeAttrFinalizeCallback, 0, 
+			  MPIR_FINALIZE_CALLBACK_PRIO-1);
     }
 }

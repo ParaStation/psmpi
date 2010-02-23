@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id: mpichtimer.h.in,v 1.4 2007/07/26 21:08:57 buntinas Exp $
- *
+/*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -188,11 +187,16 @@ double MPID_Wtick( void );
   'MPI_Finalize' this routine should register a handler with 'MPI_Finalize'
   (see the MPICH Design Document).
   
+  Return Values:
+  0 on success.  -1 on Failure.  1 means that the timer may not be used
+  until after MPID_Init completes.  This allows the device to set up the
+  timer (first needed for Blue Gene support).
+
   Module:
   Timer
 
   @*/
-void MPID_Wtime_init(void);
+int MPID_Wtime_init(void);
 
 /* Inlined timers.  Note that any definition of one of the functions
    prototyped above in terms of a macro will simply cause the compiler
@@ -212,15 +216,15 @@ void MPID_Wtime_init(void);
    */
 
 #if MPICH_TIMER_KIND == USE_GETHRTIME 
-#define MPID_Wtime_init()
+#define MPID_Wtime_init() 0
 #define MPIDM_Wtime_todouble MPID_Wtime_todouble
 
 #elif MPICH_TIMER_KIND == USE_CLOCK_GETTIME
-#define MPID_Wtime_init()
+#define MPID_Wtime_init() 0
 #define MPIDM_Wtime_todouble MPID_Wtime_todouble
 
 #elif MPICH_TIMER_KIND == USE_GETTIMEOFDAY
-#define MPID_Wtime_init()
+#define MPID_Wtime_init() 0
 #define MPIDM_Wtime_todouble MPID_Wtime_todouble
 
 #elif MPICH_TIMER_KIND == USE_LINUX86_CYCLE
@@ -231,8 +235,15 @@ void MPID_Wtime_init(void);
    the rdtscp instruction which is synchronizing, we use this when we
    can. */
 #ifdef LINUX86_CYCLE_RDTSCP
-#define MPID_Wtime(var_ptr) __asm__ __volatile__("rdtscp; shl $32, %%rdx; or %%rdx, %%rax" : "=a" (*var_ptr) : : "ecx", "rdx")
-#elif defined(LINUX86_CYCLE_CPUID_RDTSC)
+#define MPID_Wtime(var_ptr) \
+    __asm__ __volatile__("push %%rbx ; cpuid ; rdtsc ; pop %%rbx ; shl $32, %%rdx; or %%rdx, %%rax" : "=a" (*var_ptr) : : "ecx", "rdx")
+#elif defined(LINUX86_CYCLE_CPUID_RDTSC64)
+/* Here we have to save the rbx register for when the compiler is
+   generating position independent code (e.g., when it's generating
+   shared libraries) */
+#define MPID_Wtime(var_ptr)                                                                     \
+     __asm__ __volatile__("push %%rbx ; cpuid ; rdtsc ; pop %%rbx" : "=A" (*var_ptr) : : "ecx")
+#elif defined(LINUX86_CYCLE_CPUID_RDTSC32)
 /* Here we have to save the ebx register for when the compiler is
    generating position independent code (e.g., when it's generating
    shared libraries) */
@@ -261,7 +272,7 @@ extern double MPID_Seconds_per_tick;
 #define MPIDM_Wtime_todouble(t, d) *d = (double)*t * MPID_Seconds_per_tick
 
 #elif MPICH_TIMER_KIND == USE_LINUXALPHA_CYCLE
-#define MPID_Wtime_init()
+#define MPID_Wtime_init() 0
 #define MPIDM_Wtime_todouble MPID_Wtime_todouble
 
 #elif MPICH_TIMER_KIND == USE_QUERYPERFORMANCECOUNTER

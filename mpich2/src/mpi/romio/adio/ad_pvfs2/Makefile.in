@@ -6,12 +6,13 @@ srcdir      = @srcdir@
 CC_SHL      = @CC_SHL@
 SHLIBNAME   = @SHLIBNAME@
 
-INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I../../include  -I${srcdir}/../../../../include -I../../../../include
-CFLAGS      = @CPPFLAGS@ @CFLAGS@ $(INCLUDE_DIR)
+INCLUDES    = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I../../include  -I${srcdir}/../../../../include -I../../../../include
+CFLAGS      = @CPPFLAGS@ @CFLAGS@ $(INCLUDES)
 
 top_builddir  = @master_topbuild_dir@
 LIBTOOL       = @LIBTOOL@
-C_COMPILE_SHL = $(CC_SHL)
+C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
+C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 
 @VPATH@
 
@@ -19,7 +20,9 @@ AD_PVFS2_OBJECTS = ad_pvfs2_close.o ad_pvfs2_read.o \
       ad_pvfs2_open.o ad_pvfs2_write.o \
       ad_pvfs2_fcntl.o \
       ad_pvfs2_flush.o ad_pvfs2_resize.o ad_pvfs2_hints.o \
-      ad_pvfs2_delete.o ad_pvfs2.o ad_pvfs2_common.o ad_pvfs2_aio.o
+      ad_pvfs2_delete.o ad_pvfs2.o ad_pvfs2_common.o ad_pvfs2_aio.o \
+      ad_pvfs2_read_list_classic.o  ad_pvfs2_io_list.o ad_pvfs2_io_dtype.o \
+      ad_pvfs2_write_list_classic.o ad_pvfs2_features.o
 
 default: $(LIBNAME)
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
@@ -29,9 +32,20 @@ default: $(LIBNAME)
 .SUFFIXES: $(SUFFIXES) .p .lo
 
 .c.o:
-	$(CC) $(CFLAGS) -c $<
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	    echo "  CC              $<" ; \
+	else \
+	    echo $(C_COMPILE) -c $< ; \
+	fi
+	@$(C_COMPILE) -c $<
 .c.lo:
-	$(C_COMPILE_SHL) $(CFLAGS) -c $< -o _s$*.o
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	    echo "  CC              $<" ; \
+	else \
+	    echo $(C_COMPILE_SHL) -c $< -o _s$*.o ; \
+	    echo mv -f _s$*.o $*.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
 
 

@@ -55,14 +55,22 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	goto fn_exit;
     }
     
+    MPIDI_Comm_get_vc_set_active(comm, rank, &vc);
+
+#ifdef ENABLE_COMM_OVERRIDES
+    if (vc->comm_ops && vc->comm_ops->irsend)
+    {
+	mpi_errno = vc->comm_ops->irsend( vc, buf, count, datatype, rank, tag, comm, context_offset, &sreq);
+	goto fn_exit;
+    }
+#endif
+    
     MPIDI_Datatype_get_info(count, datatype, dt_contig, data_sz, dt_ptr, dt_true_lb);
 
-    MPIDI_Comm_get_vc(comm, rank, &vc);
-    
     MPIDI_Pkt_init(ready_pkt, MPIDI_CH3_PKT_READY_SEND);
-    ready_pkt->match.rank = comm->rank;
-    ready_pkt->match.tag = tag;
-    ready_pkt->match.context_id = comm->context_id + context_offset;
+    ready_pkt->match.parts.rank = comm->rank;
+    ready_pkt->match.parts.tag = tag;
+    ready_pkt->match.parts.context_id = comm->context_id + context_offset;
     ready_pkt->sender_req_id = MPI_REQUEST_NULL;
     ready_pkt->data_sz = data_sz;
 
@@ -76,7 +84,9 @@ int MPID_Irsend(const void * buf, int count, MPI_Datatype datatype, int rank, in
 	MPIDI_Pkt_set_seqnum(ready_pkt, seqnum);
 	MPIDI_Request_set_seqnum(sreq, seqnum);
 	
+	MPIU_THREAD_CS_ENTER(CH3COMM,vc);
 	mpi_errno = MPIU_CALL(MPIDI_CH3,iSend(vc, sreq, ready_pkt, sizeof(*ready_pkt)));
+	MPIU_THREAD_CS_EXIT(CH3COMM,vc);
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
 	{

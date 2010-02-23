@@ -1,4 +1,7 @@
-#! /usr/bin/perl -w
+#! /usr/bin/env perl
+
+use warnings;
+
 # binding.sub provides the routines for reading the prototype file
 # and extracting the function definitions.
 require "binding.sub";
@@ -292,6 +295,13 @@ foreach $routine (keys(%mpi_routines)) {
 
 # Add special routines (e.g., the ones with unusual arguments)
 
+#
+# Some Fortran 90 compilers permit REAL*8; for some systems, this is
+# preferable to DOUBLE PRECISION (in cases where the user is permitted
+# to change the size of these basic types(!)).  This script must produce
+# a standard-conforming file.  The top-level configure (in mpich2/configure)
+# will replace DOUBLE PRECISION with REAL*8 if the Fortran compiler 
+# supports REAL*8.
 print MPIBASEFD "
         SUBROUTINE MPI_INIT(ierror)
         INTEGER ierror
@@ -636,8 +646,8 @@ profilelib_\${MPILIBNAME} = p\${MPILIBNAME}\
 INCLUDES = -I../../include -I\${master_top_srcdir}/src/include\n";
 
 # Add the MPI module objects to the f90 library
+#lib\${MPILIBNAME}f90_a_NOSHARED
 print MAKEFD "\
-lib\${MPILIBNAME}f90_a_NOSHARED
 lib\${MPILIBNAME}f90_a_SOURCES = mpi.o mpi_constants.o mpi_sizeofs.o mpi_base.o\n";
 
 print MAKEFD "all-preamble: \$(MPIMOD).\$(MOD)\n";
@@ -697,12 +707,16 @@ mpifnoext.h: ../f77/mpif.h
 		-e '/DOUBLE PRECISION/d' \\
 		-e '/MPI_WTICK/d' ../f77/mpif.h > mpifnoext.h
 ";
+
+# We include a copy of the shared library sources if they exist
 print MAKEFD "
 # To ensure that f90 can be used before a make-install step, we copy
 # the library to the build directory (just like we do with the module files)
 all-postamble:
 	if [ -s lib\${MPILIBNAME}f90.a ] ; then \\
 	   cp -p lib\${MPILIBNAME}f90.a ../../../lib ; fi
+	if [ -s lib\${MPILIBNAME}f90.la ] ; then \\
+	   cp -p lib\${MPILIBNAME}f90.la ../../../lib ; fi
 ";
 
 print MAKEFD "clean-local:\n";

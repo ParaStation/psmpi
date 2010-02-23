@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_START( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_win_start__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_win_start( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_win_start_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_win_start_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_WIN_START = PMPI_WIN_START
+#pragma weak mpi_win_start__ = PMPI_WIN_START
+#pragma weak mpi_win_start_ = PMPI_WIN_START
+#pragma weak mpi_win_start = PMPI_WIN_START
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_WIN_START = pmpi_win_start__
 #pragma weak mpi_win_start__ = pmpi_win_start__
 #pragma weak mpi_win_start_ = pmpi_win_start__
 #pragma weak mpi_win_start = pmpi_win_start__
-#pragma weak pmpi_win_start_ = pmpi_win_start__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_WIN_START = pmpi_win_start_
+#pragma weak mpi_win_start__ = pmpi_win_start_
+#pragma weak mpi_win_start_ = pmpi_win_start_
+#pragma weak mpi_win_start = pmpi_win_start_
+#else
+#pragma weak MPI_WIN_START = pmpi_win_start
+#pragma weak mpi_win_start__ = pmpi_win_start
+#pragma weak mpi_win_start_ = pmpi_win_start
+#pragma weak mpi_win_start = pmpi_win_start
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_win_start_( MPI_Fint *, MPI_Fint *, MPI_
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_START( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_win_start__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_win_start( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_win_start_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_win_start__ = MPI_WIN_START
+#pragma weak mpi_win_start_ = MPI_WIN_START
+#pragma weak mpi_win_start = MPI_WIN_START
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_WIN_START = mpi_win_start__
 #pragma weak mpi_win_start_ = mpi_win_start__
 #pragma weak mpi_win_start = mpi_win_start__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_WIN_START = mpi_win_start_
+#pragma weak mpi_win_start__ = mpi_win_start_
+#pragma weak mpi_win_start = mpi_win_start_
+#else
+#pragma weak MPI_WIN_START = mpi_win_start
+#pragma weak mpi_win_start__ = mpi_win_start
+#pragma weak mpi_win_start_ = mpi_win_start
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_START( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_start__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_start_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_start( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_win_start__ = PMPI_WIN_START
+#pragma weak pmpi_win_start_ = PMPI_WIN_START
+#pragma weak pmpi_win_start = PMPI_WIN_START
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_WIN_START = pmpi_win_start__
+#pragma weak pmpi_win_start_ = pmpi_win_start__
+#pragma weak pmpi_win_start = pmpi_win_start__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_WIN_START = pmpi_win_start_
+#pragma weak pmpi_win_start__ = pmpi_win_start_
+#pragma weak pmpi_win_start = pmpi_win_start_
+#else
+#pragma weak PMPI_WIN_START = pmpi_win_start
+#pragma weak pmpi_win_start__ = pmpi_win_start
+#pragma weak pmpi_win_start_ = pmpi_win_start
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_win_start_ PMPI_WIN_START
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_win_start_( MPI_Fint *, MPI_Fint *, MPI_
 #define mpi_win_start_ pmpi_win_start
 #else
 #define mpi_win_start_ pmpi_win_start_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

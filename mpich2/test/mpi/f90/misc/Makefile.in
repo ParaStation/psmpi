@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -17,7 +17,7 @@ F90FLAGS        = @F90FLAGS@
 F90_COMPILE     = $(F90) $(F90FLAGS) $(F90INCLUDES)
 F90_LINK       = $(F90)
 F90_SHL          = @F90_SHL@
-F90_COMPILE_SHL = $(F90_SHL) $(F90FLAGS)
+F90_COMPILE_SHL = $(F90_SHL) $(F90FLAGS) $(F90INCLUDES)
 LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
@@ -93,11 +93,6 @@ mandoc:
 latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  sizeof.f90

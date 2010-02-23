@@ -49,7 +49,7 @@ static int SetupNewIntercomm( MPID_Comm *comm_ptr, int remote_comm_size,
 			      MPIDI_PG_t **remote_pg, 
 			      MPID_Comm *intercomm );
 static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, 
-					  MPIDI_VC_t *vc_ptr, int is_low_group);
+					  MPIDI_VC_t *vc_ptr, int is_low_group, int context_id_offset);
 /* ------------------------------------------------------------------------- */
 /*
  * Structure of this file and the connect/accept algorithm:
@@ -120,6 +120,7 @@ static int MPIDI_Create_inter_root_communicator_connect(const char *port_name,
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *tmp_comm;
     MPIDI_VC_t *connect_vc = NULL;
+    int port_name_tag;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_CONNECT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CREATE_INTER_ROOT_COMMUNICATOR_CONNECT);
@@ -133,7 +134,13 @@ static int MPIDI_Create_inter_root_communicator_connect(const char *port_name,
 	MPIU_ERR_POP(mpi_errno);
     }
 
-    mpi_errno = MPIDI_CH3I_Initialize_tmp_comm(&tmp_comm, connect_vc, 1);
+    /* extract the tag from the port_name */
+    mpi_errno = MPIDI_GetTagFromPort( port_name, &port_name_tag);
+    if (mpi_errno != MPIU_STR_SUCCESS) {
+	MPIU_ERR_POP(mpi_errno);
+    }
+
+    mpi_errno = MPIDI_CH3I_Initialize_tmp_comm(&tmp_comm, connect_vc, 1, port_name_tag);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -201,7 +208,7 @@ static int MPIDI_Create_inter_root_communicator_accept(const char *port_name,
     }
     MPID_Progress_end(&progress_state);
 
-    mpi_errno = MPIDI_CH3I_Initialize_tmp_comm(&tmp_comm, new_vc, 0);
+    mpi_errno = MPIDI_CH3I_Initialize_tmp_comm(&tmp_comm, new_vc, 0, port_name_tag);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -228,7 +235,7 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr, 
-					  MPIDI_VC_t *vc_ptr, int is_low_group)
+					  MPIDI_VC_t *vc_ptr, int is_low_group, int context_id_offset)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *tmp_comm, *commself_ptr;
@@ -245,17 +252,17 @@ static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr,
     }
     /* fill in all the fields of tmp_comm. */
 
-    /* FIXME: Should we allocate a new context id each time ? If
-       so, how do we make sure that each process in this tmp_comm
-       has the same context id? 
-       We can make sure by sending the context id using non-MPI
-       communication (e.g., with the initial connection packet)
-       before switching to MPI communication.
-    */
-    tmp_comm->context_id     = 4095;  
+    /* We use the second half of the context ID bits for dynamic
+     * processes. This assumes that the context ID mask array is made
+     * up of unsigned ints. */
+    /* FIXME: This code is still broken for the following case:
+     * If the same process opens connections to the multiple
+     * processes, this context ID might get out of sync.
+     */
+    tmp_comm->context_id     = (MPIR_MAX_CONTEXT_MASK * MPIR_CONTEXT_INT_BITS) + context_id_offset;
     tmp_comm->recvcontext_id = tmp_comm->context_id;
 
-        /* FIXME - we probably need a unique context_id. */
+    /* FIXME - we probably need a unique context_id. */
     tmp_comm->remote_size = 1;
 
     /* Fill in new intercomm */
@@ -349,14 +356,14 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
 
     /* Create the new intercommunicator here. We need to send the
        context id to the other side. */
+    /* FIXME: If we fail to connect, someone needs to free this newcomm */
     mpi_errno = MPIR_Comm_create(newcomm);
     if (mpi_errno) {
 	MPIU_ERR_POP(mpi_errno);
     }
-    (*newcomm)->recvcontext_id = MPIR_Get_contextid( comm_ptr );
-    if ((*newcomm)->recvcontext_id == 0) {
-	MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**toomanycomm" );
-    }
+    mpi_errno = MPIR_Get_contextid( comm_ptr, &(*newcomm)->recvcontext_id );
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    /* FIXME why is this commented out? */
     /* (*newcomm)->context_id = (*newcomm)->recvcontext_id; */
 
     rank = comm_ptr->rank;
@@ -910,10 +917,9 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
-    (*newcomm)->recvcontext_id = MPIR_Get_contextid( comm_ptr );
-    if ((*newcomm)->recvcontext_id == 0) {
-	MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**toomanycomm" );
-    }
+    mpi_errno = MPIR_Get_contextid( comm_ptr, &(*newcomm)->recvcontext_id );
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    /* FIXME why is this commented out? */
     /*    (*newcomm)->context_id = (*newcomm)->recvcontext_id; */
     
     rank = comm_ptr->rank;
@@ -1183,9 +1189,11 @@ static int FreeNewVC( MPIDI_VC_t *new_vc )
 
     /* FIXME: remove this ifdef - method on connection? */
 #ifdef MPIDI_CH3_HAS_CONN_ACCEPT_HOOK
+    /* FIXME should this be an MPIU_CALL macro? */
     mpi_errno = MPIDI_CH3_Cleanup_after_connection( new_vc );
 #endif
 
+    MPIU_CALL(MPIDI_CH3,VC_Destroy(new_vc));
     MPIU_Free(new_vc);
 
  fn_fail:

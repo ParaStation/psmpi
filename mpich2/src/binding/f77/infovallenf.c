@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_INFO_GET_VALUELEN( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_get_valuelen__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_get_valuelen( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_get_valuelen_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint * FORT_END_LEN_DECL );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_info_get_valuelen_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint * FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_INFO_GET_VALUELEN = PMPI_INFO_GET_VALUELEN
+#pragma weak mpi_info_get_valuelen__ = PMPI_INFO_GET_VALUELEN
+#pragma weak mpi_info_get_valuelen_ = PMPI_INFO_GET_VALUELEN
+#pragma weak mpi_info_get_valuelen = PMPI_INFO_GET_VALUELEN
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_INFO_GET_VALUELEN = pmpi_info_get_valuelen__
 #pragma weak mpi_info_get_valuelen__ = pmpi_info_get_valuelen__
 #pragma weak mpi_info_get_valuelen_ = pmpi_info_get_valuelen__
 #pragma weak mpi_info_get_valuelen = pmpi_info_get_valuelen__
-#pragma weak pmpi_info_get_valuelen_ = pmpi_info_get_valuelen__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_INFO_GET_VALUELEN = pmpi_info_get_valuelen_
+#pragma weak mpi_info_get_valuelen__ = pmpi_info_get_valuelen_
+#pragma weak mpi_info_get_valuelen_ = pmpi_info_get_valuelen_
+#pragma weak mpi_info_get_valuelen = pmpi_info_get_valuelen_
+#else
+#pragma weak MPI_INFO_GET_VALUELEN = pmpi_info_get_valuelen
+#pragma weak mpi_info_get_valuelen__ = pmpi_info_get_valuelen
+#pragma weak mpi_info_get_valuelen_ = pmpi_info_get_valuelen
+#pragma weak mpi_info_get_valuelen = pmpi_info_get_valuelen
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_info_get_valuelen_( MPI_Fint *, char * F
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_INFO_GET_VALUELEN( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_get_valuelen__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_get_valuelen( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_get_valuelen_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint * FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_info_get_valuelen__ = MPI_INFO_GET_VALUELEN
+#pragma weak mpi_info_get_valuelen_ = MPI_INFO_GET_VALUELEN
+#pragma weak mpi_info_get_valuelen = MPI_INFO_GET_VALUELEN
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_INFO_GET_VALUELEN = mpi_info_get_valuelen__
 #pragma weak mpi_info_get_valuelen_ = mpi_info_get_valuelen__
 #pragma weak mpi_info_get_valuelen = mpi_info_get_valuelen__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_INFO_GET_VALUELEN = mpi_info_get_valuelen_
+#pragma weak mpi_info_get_valuelen__ = mpi_info_get_valuelen_
+#pragma weak mpi_info_get_valuelen = mpi_info_get_valuelen_
+#else
+#pragma weak MPI_INFO_GET_VALUELEN = mpi_info_get_valuelen
+#pragma weak mpi_info_get_valuelen__ = mpi_info_get_valuelen
+#pragma weak mpi_info_get_valuelen_ = mpi_info_get_valuelen
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_INFO_GET_VALUELEN( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_get_valuelen__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_get_valuelen_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_get_valuelen( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint * FORT_END_LEN_DECL );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_info_get_valuelen__ = PMPI_INFO_GET_VALUELEN
+#pragma weak pmpi_info_get_valuelen_ = PMPI_INFO_GET_VALUELEN
+#pragma weak pmpi_info_get_valuelen = PMPI_INFO_GET_VALUELEN
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_INFO_GET_VALUELEN = pmpi_info_get_valuelen__
+#pragma weak pmpi_info_get_valuelen_ = pmpi_info_get_valuelen__
+#pragma weak pmpi_info_get_valuelen = pmpi_info_get_valuelen__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_INFO_GET_VALUELEN = pmpi_info_get_valuelen_
+#pragma weak pmpi_info_get_valuelen__ = pmpi_info_get_valuelen_
+#pragma weak pmpi_info_get_valuelen = pmpi_info_get_valuelen_
+#else
+#pragma weak PMPI_INFO_GET_VALUELEN = pmpi_info_get_valuelen
+#pragma weak pmpi_info_get_valuelen__ = pmpi_info_get_valuelen
+#pragma weak pmpi_info_get_valuelen_ = pmpi_info_get_valuelen
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_info_get_valuelen_ PMPI_INFO_GET_VALUELEN
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_info_get_valuelen_( MPI_Fint *, char * F
 #define mpi_info_get_valuelen_ pmpi_info_get_valuelen
 #else
 #define mpi_info_get_valuelen_ pmpi_info_get_valuelen_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

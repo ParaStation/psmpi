@@ -77,11 +77,23 @@
 /* Define to 1 if you have the <assert.h> header file. */
 #undef HAVE_ASSERT_H
 
+/* Define to 1 if you have the `bindprocessor' function. */
+#undef HAVE_BINDPROCESSOR
+
+/* define if the compiler defines __FUNC__ */
+#undef HAVE_CAP__FUNC__
+
 /* Define to 1 if you have the `clock_getres' function. */
 #undef HAVE_CLOCK_GETRES
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
+
+/* Define if CPU_SET and CPU_ZERO defined */
+#undef HAVE_CPU_SET_MACROS
+
+/* Define if cpu_set_t is defined in sched.h */
+#undef HAVE_CPU_SET_T
 
 /* Define if C++ is supported */
 #undef HAVE_CXX_BINDING
@@ -124,6 +136,9 @@
 /* Define if F90 type routines available */
 #undef HAVE_F90_TYPE_ROUTINES
 
+/* Define to 1 if you have the `fdopen' function. */
+#undef HAVE_FDOPEN
+
 /* Define if Fortran integer are the same size as C ints */
 #undef HAVE_FINT_IS_INT
 
@@ -145,6 +160,9 @@
 /* Define to 1 if you have the `gethrtime' function. */
 #undef HAVE_GETHRTIME
 
+/* Define to 1 if you have the `getpid' function. */
+#undef HAVE_GETPID
+
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
@@ -156,6 +174,9 @@
 
 /* Define if int64_t is supported by the C compiler */
 #undef HAVE_INT64_T
+
+/* Define if int8_t is supported by the C compiler */
+#undef HAVE_INT8_T
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -196,12 +217,22 @@
    */
 #undef HAVE_MAX_STRUCT_ALIGNMENT
 
+/* Define to 1 if you have the <memcheck.h> header file. */
+#undef HAVE_MEMCHECK_H
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `mkstemp' function. */
+#undef HAVE_MKSTEMP
 
 /* Define so that we can test whether the mpichconf.h file has been included
    */
 #undef HAVE_MPICHCONF
+
+/* Define if the Fortran init code for MPI works from C programs without
+   special libraries */
+#undef HAVE_MPI_F_INIT_WORKS_WITH_C
 
 /* Define if multiple weak symbols may be defined */
 #undef HAVE_MULTIPLE_PRAGMA_WEAK
@@ -217,6 +248,9 @@
 
 /* Define if the Fortran types are not available in C */
 #undef HAVE_NO_FORTRAN_MPI_TYPES_IN_C
+
+/* Define is the OSX thread affinity policy macros defined */
+#undef HAVE_OSX_THREAD_AFFINITY
 
 /* Cray style weak pragma */
 #undef HAVE_PRAGMA_CRI_DUP
@@ -236,8 +270,17 @@
 /* Define to 1 if you have the <pthread.h> header file. */
 #undef HAVE_PTHREAD_H
 
+/* Define if PTHREAD_MUTEX_RECURSIVE is available in pthread.h */
+#undef HAVE_PTHREAD_MUTEX_RECURSIVE
+
+/* Define if PTHREAD_MUTEX_RECURSIVE_NP is available in pthread.h */
+#undef HAVE_PTHREAD_MUTEX_RECURSIVE_NP
+
 /* Define to 1 if you have the `pthread_yield' function. */
 #undef HAVE_PTHREAD_YIELD
+
+/* Define to 1 if you have the `putenv' function. */
+#undef HAVE_PUTENV
 
 /* Define if ROMIO is enabled */
 #undef HAVE_ROMIO
@@ -245,6 +288,12 @@
 /* Define if MPI supports MPI_THREAD_MULTIPLE with a runtime check for thread
    level */
 #undef HAVE_RUNTIME_THREADCHECK
+
+/* Define to 1 if you have the `sched_getaffinity' function. */
+#undef HAVE_SCHED_GETAFFINITY
+
+/* Define to 1 if you have the `sched_setaffinity' function. */
+#undef HAVE_SCHED_SETAFFINITY
 
 /* Define to 1 if you have the `sched_yield' function. */
 #undef HAVE_SCHED_YIELD
@@ -288,8 +337,14 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
+/* Define to 1 if you have the `strncasecmp' function. */
+#undef HAVE_STRNCASECMP
+
 /* Define if sys/bitypes.h exists */
 #undef HAVE_SYS_BITYPES_H
+
+/* Define to 1 if you have the <sys/param.h> header file. */
+#undef HAVE_SYS_PARAM_H
 
 /* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H
@@ -309,6 +364,9 @@
 /* Define to 1 if you have the <thread.h> header file. */
 #undef HAVE_THREAD_H
 
+/* Define to 1 if you have the `thread_policy_set' function. */
+#undef HAVE_THREAD_POLICY_SET
+
 /* Define to 1 if you have the `thr_yield' function. */
 #undef HAVE_THR_YIELD
 
@@ -318,11 +376,32 @@
 /* Define to 1 if you have the `tsearch' function. */
 #undef HAVE_TSEARCH
 
+/* Define if uint16_t is supported by the C compiler */
+#undef HAVE_UINT16_T
+
+/* Define if uint32_t is supported by the C compiler */
+#undef HAVE_UINT32_T
+
+/* Define if uint64_t is supported by the C compiler */
+#undef HAVE_UINT64_T
+
+/* Define if uint8_t is supported by the C compiler */
+#undef HAVE_UINT8_T
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
 /* Define to 1 if you have the `usleep' function. */
 #undef HAVE_USLEEP
+
+/* Define to 1 if you have the <valgrind.h> header file. */
+#undef HAVE_VALGRIND_H
+
+/* Define to 1 if you have the <valgrind/memcheck.h> header file. */
+#undef HAVE_VALGRIND_MEMCHECK_H
+
+/* Define to 1 if you have the <valgrind/valgrind.h> header file. */
+#undef HAVE_VALGRIND_VALGRIND_H
 
 /* Define if we have va_copy */
 #undef HAVE_VA_COPY
@@ -336,11 +415,20 @@
 /* Define to 1 if you have the `yield' function. */
 #undef HAVE_YIELD
 
+/* define if the compiler defines __FUNCTION__ */
+#undef HAVE__FUNCTION__
+
+/* define if the compiler defines __func__ */
+#undef HAVE__FUNC__
+
 /* Define if we have __va_copy */
 #undef HAVE___VA_COPY
 
 /* Define which x86 cycle counter to use */
-#undef LINUX86_CYCLE_CPUID_RDTSC
+#undef LINUX86_CYCLE_CPUID_RDTSC32
+
+/* Define which x86 cycle counter to use */
+#undef LINUX86_CYCLE_CPUID_RDTSC64
 
 /* Define which x86 cycle counter to use */
 #undef LINUX86_CYCLE_RDTSC
@@ -354,6 +442,9 @@
 /* Define to perform a fine-grain nesting level check on exit */
 #undef MPICH_DEBUG_FINE_GRAIN_NESTING
 
+/* Define to enable checking of handles still allocated at MPI_Finalize */
+#undef MPICH_DEBUG_HANDLEALLOC
+
 /* Define to enable handle checking */
 #undef MPICH_DEBUG_HANDLES
 
@@ -366,6 +457,9 @@
 
 /* Define to enable mutex debugging */
 #undef MPICH_DEBUG_MUTEX
+
+/* Define to check nesting in mutexes */
+#undef MPICH_DEBUG_MUTEXNESTING
 
 /* Define to check nesting level on exit */
 #undef MPICH_DEBUG_NESTING
@@ -403,7 +497,7 @@
 /* C type to use for MPI_INTEGER8 */
 #undef MPIR_INTEGER8_CTYPE
 
-/* MPIR_PINT is a pointer-sized integer */
+/* MPIR_Pint is a pointer-sized integer */
 #undef MPIR_Pint
 
 /* C type to use for MPI_REAL16 */
@@ -415,14 +509,35 @@
 /* C type to use for MPI_REAL8 */
 #undef MPIR_REAL8_CTYPE
 
-/* MPIR_PUINT is an unsigned pointer-sized integer */
+/* MPIR_Upint is an unsigned pointer-sized integer */
 #undef MPIR_Upint
+
+/* Method used to allocate MPI object handles */
+#undef MPIU_HANDLE_ALLOCATION_METHOD
+
+/* Define to enable timing mutexes */
+#undef MPIU_MUTEX_WAIT_TIME
 
 /* Set to a type that can express the size of the entire address space */
 #undef MPIU_SIZE_T
 
+/* Method used to implement atomic updates and access */
+#undef MPIU_THREAD_GRANULARITY
+
+/* Method used to implement refcount updates */
+#undef MPIU_THREAD_REFCOUNT
+
+/* Define if fdopen needs a declaration */
+#undef NEEDS_FDOPEN_DECL
+
+/* Define if mkstemp needs a declaration */
+#undef NEEDS_MKSTEMP_DECL
+
 /* define if pointers must be aligned on pointer boundaries */
 #undef NEEDS_POINTER_ALIGNMENT_ADJUST
+
+/* Define if putenv needs a declaration */
+#undef NEEDS_PUTENV_DECL
 
 /* Define if snprintf needs a declaration */
 #undef NEEDS_SNPRINTF_DECL
@@ -450,6 +565,10 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* Define to an expression that will result in an error checking mutex type.
+   */
+#undef PTHREAD_MUTEX_ERRORCHECK_VALUE
 
 /* The size of `bool', as computed by sizeof. */
 #undef SIZEOF_BOOL
@@ -495,6 +614,9 @@
 
 /* The size of `long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
+
+/* The size of `MPIR_Bsend_data_t', as computed by sizeof. */
+#undef SIZEOF_MPIR_BSEND_DATA_T
 
 /* The size of `short', as computed by sizeof. */
 #undef SIZEOF_SHORT
@@ -568,6 +690,15 @@
 /* Define if the NMPI names should use MPI instead of PMPI */
 #undef USE_MPI_FOR_NMPI
 
+/* define to enable pipelined collectives */
+#undef USE_PIPE_COLLECTIVES
+
+/* Define if PMI2 API must be used */
+#undef USE_PMI2_API
+
+/* define to enable SMP/multi-core aware collectives */
+#undef USE_SMP_COLLECTIVES
+
 /* Multi-threaded implementation selected at compile time */
 #undef USE_THREAD_IMPL
 
@@ -581,11 +712,15 @@
 #undef USE_WEAK_SYMBOLS
 
 /* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
-   significant byte first (like Motorola and SPARC, unlike Intel and VAX). */
-#if defined __BIG_ENDIAN__
-# define WORDS_BIGENDIAN 1
-#elif ! defined __LITTLE_ENDIAN__
-# undef WORDS_BIGENDIAN
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
 #endif
 
 /* Define if words are little endian */

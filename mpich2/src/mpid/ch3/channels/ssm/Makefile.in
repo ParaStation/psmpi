@@ -6,14 +6,15 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
 LIBTOOL         = @LIBTOOL@
 CREATESHLIB     = @CREATESHLIB@
 C_LINK_SHL      = @C_LINK_SHL@
 INSTALL         = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_SCRIPT  = @INSTALL_SCRIPT@
 INSTALL_DATA    = @INSTALL_DATA@
 MKDIR_P         = @MKDIR_P@
+master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -31,10 +32,9 @@ VPATH = .:@srcdir@
 ${srcdir}/include/mpidi_ch3i_ssm_conf.h  ${srcdir}/configure: \
 	${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /homes/chan/autoconf/2.62/bin/autoheader -I \
-	../../../../../confdb && \
-	/homes/chan/autoconf/2.62/bin/autoconf -I \
-	../../../../../confdb ) 
+	(cd ${srcdir} && /opt/local/bin/autoheader -I ../../../../../confdb && \
+	\
+	/opt/local/bin/autoconf -I ../../../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -94,7 +94,7 @@ all-redirect:
 	fi
 
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 # Build the shared library from the shared object files
 ./libmpich2-ch3-ssm.@SHLIB_EXT@: ./libmpich2-ch3-ssm.la

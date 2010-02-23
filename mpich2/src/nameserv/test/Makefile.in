@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
 master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
@@ -19,7 +18,7 @@ MPILIBNAME      = @MPILIBNAME@
 PMPILIBNAME     = @PMPILIBNAME@
 
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 CC_SHL          = @CC_SHL@
@@ -111,7 +110,17 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Dependencies
-dependencies:
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+$(DEPS_DIR)/timestamp: testnd.c Makefile
+	rm -f $(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/testnd.c >$(DEPS_DIR)/testnd.d
+	echo "include $(DEPS_DIR)/testnd.d" >>$(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------

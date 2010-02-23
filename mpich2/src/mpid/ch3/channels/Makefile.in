@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -57,7 +57,7 @@ distclean-xxx:
 		(cd $$dir && ${MAKE} distclean ; ) ; done
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
-	-@for dir in  shm sock ssm gasnet sshm nemesis sctp dllchan ; do \
+	-@for dir in  shm sock ssm nemesis sctp dllchan  ; do \
 	    if [ -s $$dir/Makefile ] ; then \
 	      (cd $$dir && ${MAKE} distclean ;) ; fi ; \
 	done

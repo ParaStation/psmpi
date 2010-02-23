@@ -7,13 +7,18 @@
 #if !defined(MPICH_MPIDI_CH3_PRE_H_INCLUDED)
 #define MPICH_MPIDI_CH3_PRE_H_INCLUDED
 #include "mpid_nem_pre.h"
-#include <netinet/in.h>
+
+#if defined(HAVE_NETINET_IN_H)
+    #include <netinet/in.h>
+#elif defined(HAVE_WINSOCK2_H)
+    #include <winsock2.h>
+    #include <windows.h>
+#endif
 
 /*#define MPID_USE_SEQUENCE_NUMBERS*/
 /*#define HAVE_CH3_PRE_INIT*/
 /* #define MPIDI_CH3_HAS_NO_DYNAMIC_PROCESS */
 #define MPIDI_DEV_IMPLEMENTS_KVS
-
     
 typedef enum MPIDI_CH3I_VC_state
 {
@@ -24,25 +29,31 @@ typedef enum MPIDI_CH3I_VC_state
 }
 MPIDI_CH3I_VC_state_t;
 
-/* size of private data area in vc for network modules */
+/* size of private data area in vc and req for network modules */
 #define MPID_NEM_VC_NETMOD_AREA_LEN 128
-
+#define MPID_NEM_REQ_NETMOD_AREA_LEN 64
 
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)
  */
-#define MPIDI_CH3_REQUEST_DECL                                                                                                  \
-    struct MPIDI_CH3I_Request                                                                                                   \
-    {                                                                                                                           \
-        struct MPIDI_VC     *vc;                                                                                                \
-        int                  noncontig;                                                                                         \
-        MPIDI_msg_sz_t       header_sz;                                                                                         \
-                                                                                                                                \
-        MPI_Request          lmt_req_id;     /* request id of remote side */                                                    \
-        struct MPID_Request *lmt_req;        /* pointer to original send/recv request */                                        \
-        MPIDI_msg_sz_t       lmt_data_sz;    /* data size to be transferred, after checking for truncation */                   \
-        MPID_IOV             lmt_tmp_cookie; /* temporary storage for received cookie */                                        \
+#define MPIDI_CH3_REQUEST_DECL                                                                                  \
+    struct MPIDI_CH3I_Request                                                                                   \
+    {                                                                                                           \
+        struct MPIDI_VC     *vc;                                                                                \
+        int                  noncontig;                                                                         \
+        MPIDI_msg_sz_t       header_sz;                                                                         \
+                                                                                                                \
+        MPI_Request          lmt_req_id;     /* request id of remote side */                                    \
+        struct MPID_Request *lmt_req;        /* pointer to original send/recv request */                        \
+        MPIDI_msg_sz_t       lmt_data_sz;    /* data size to be transferred, after checking for truncation */   \
+        MPID_IOV             lmt_tmp_cookie; /* temporary storage for received cookie */                        \
+                                                                                                                \
+        struct                                                                                                  \
+        {                                                                                                       \
+            char padding[MPID_NEM_REQ_NETMOD_AREA_LEN];                                                         \
+        } netmod_area;                                                                                          \
     } ch;
+
 
 #if 0
 #define DUMP_REQUEST(req) do {							\
@@ -65,17 +76,23 @@ MPIDI_CH3I_VC_state_t;
 #define DUMP_REQUEST(req) do { } while (0)
 #endif
 
-#define MPIDI_POSTED_RECV_ENQUEUE_HOOK(x) MPIDI_CH3I_Posted_recv_enqueued(x)
-#define MPIDI_POSTED_RECV_DEQUEUE_HOOK(x) MPIDI_CH3I_Posted_recv_dequeued(x)
+
+#define MPIDI_POSTED_RECV_ENQUEUE_HOOK(req) MPIDI_CH3I_Posted_recv_enqueued(req)
+#define MPIDI_POSTED_RECV_DEQUEUE_HOOK(req) MPIDI_CH3I_Posted_recv_dequeued(req)
+
 
 typedef struct MPIDI_CH3I_comm
 {
+    /* FIXME we should really use the copy of these values that is stored in the
+       MPID_Comm structure */
     int local_size;      /* number of local procs in this comm */
     int local_rank;      /* my rank among local procs in this comm */
     int *local_ranks;    /* list of ranks of procs local to this node */
     int external_size;   /* number of procs in external set */
     int external_rank;   /* my rank among external set, or -1 if I'm not in external set */
     int *external_ranks; /* list of ranks of procs in external set */
+    int *intranode_table;
+    int *internode_table;
     struct MPID_nem_barrier_vars *barrier_vars; /* shared memory variables used in barrier */
 }
 MPIDI_CH3I_comm_t;
@@ -87,6 +104,7 @@ MPIDI_CH3I_comm_t;
         _mpi_errno = MPIDI_CH3I_comm_create (comm_);    \
         if (_mpi_errno) MPIU_ERR_POP (_mpi_errno);      \
     } while(0)
+
 
 #define MPID_Dev_comm_destroy_hook(comm_) do {          \
         int _mpi_errno;                                 \

@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_ALLGATHER( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_allgather__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_allgather( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_allgather_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_allgather_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_ALLGATHER = PMPI_ALLGATHER
+#pragma weak mpi_allgather__ = PMPI_ALLGATHER
+#pragma weak mpi_allgather_ = PMPI_ALLGATHER
+#pragma weak mpi_allgather = PMPI_ALLGATHER
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_ALLGATHER = pmpi_allgather__
 #pragma weak mpi_allgather__ = pmpi_allgather__
 #pragma weak mpi_allgather_ = pmpi_allgather__
 #pragma weak mpi_allgather = pmpi_allgather__
-#pragma weak pmpi_allgather_ = pmpi_allgather__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_ALLGATHER = pmpi_allgather_
+#pragma weak mpi_allgather__ = pmpi_allgather_
+#pragma weak mpi_allgather_ = pmpi_allgather_
+#pragma weak mpi_allgather = pmpi_allgather_
+#else
+#pragma weak MPI_ALLGATHER = pmpi_allgather
+#pragma weak mpi_allgather__ = pmpi_allgather
+#pragma weak mpi_allgather_ = pmpi_allgather
+#pragma weak mpi_allgather = pmpi_allgather
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_allgather_( void*, MPI_Fint *, MPI_Fint 
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_ALLGATHER( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_allgather__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_allgather( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_allgather_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_allgather__ = MPI_ALLGATHER
+#pragma weak mpi_allgather_ = MPI_ALLGATHER
+#pragma weak mpi_allgather = MPI_ALLGATHER
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_ALLGATHER = mpi_allgather__
 #pragma weak mpi_allgather_ = mpi_allgather__
 #pragma weak mpi_allgather = mpi_allgather__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_ALLGATHER = mpi_allgather_
+#pragma weak mpi_allgather__ = mpi_allgather_
+#pragma weak mpi_allgather = mpi_allgather_
+#else
+#pragma weak MPI_ALLGATHER = mpi_allgather
+#pragma weak mpi_allgather__ = mpi_allgather
+#pragma weak mpi_allgather_ = mpi_allgather
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_ALLGATHER( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_allgather__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_allgather_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_allgather( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_allgather__ = PMPI_ALLGATHER
+#pragma weak pmpi_allgather_ = PMPI_ALLGATHER
+#pragma weak pmpi_allgather = PMPI_ALLGATHER
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_ALLGATHER = pmpi_allgather__
+#pragma weak pmpi_allgather_ = pmpi_allgather__
+#pragma weak pmpi_allgather = pmpi_allgather__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_ALLGATHER = pmpi_allgather_
+#pragma weak pmpi_allgather__ = pmpi_allgather_
+#pragma weak pmpi_allgather = pmpi_allgather_
+#else
+#pragma weak PMPI_ALLGATHER = pmpi_allgather
+#pragma weak pmpi_allgather__ = pmpi_allgather
+#pragma weak pmpi_allgather_ = pmpi_allgather
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_allgather_ PMPI_ALLGATHER
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_allgather_( void*, MPI_Fint *, MPI_Fint 
 #define mpi_allgather_ pmpi_allgather
 #else
 #define mpi_allgather_ pmpi_allgather_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,
@@ -121,7 +188,9 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_allgather_( void*, MPI_Fint *, MPI_Fint 
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_allgather_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, void*v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *ierr ){
 
+#ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
+#endif
     if (v1 == MPIR_F_MPI_IN_PLACE) v1 = MPI_IN_PLACE;
     *ierr = MPI_Allgather( v1, *v2, (MPI_Datatype)(*v3), v4, *v5, (MPI_Datatype)(*v6), (MPI_Comm)(*v7) );
 }

@@ -24,12 +24,23 @@
  * 
  */
 
+static void MTestRMACleanup( void );
+
 /* Here is where we could put the includes and definitions to enable
    memory testing */
 
 static int dbgflag = 0;         /* Flag used for debugging */
 static int wrank = -1;          /* World rank */
 static int verbose = 0;         /* Message level (0 is none) */
+
+/* Provide backward portability to MPI 1 */
+#ifndef MPI_VERSION
+#define MPI_VERSION 1
+#endif
+#if MPI_VERSION < 2
+#define MPI_THREAD_SINGLE 0
+#endif
+
 /* 
  * Initialize and Finalize MTest
  */
@@ -43,14 +54,19 @@ static int verbose = 0;         /* Message level (0 is none) */
   verbose output.  This is used by the routine 'MTestPrintfMsg'
 
 */
-void MTest_Init( int *argc, char ***argv )
+void MTest_Init_thread( int *argc, char ***argv, int required, int *provided )
 {
     int flag;
     char *envval = 0;
 
     MPI_Initialized( &flag );
     if (!flag) {
+#if MPI_VERSION >= 2
+	MPI_Init_thread( argc, argv, required, provided );
+#else
 	MPI_Init( argc, argv );
+	*provided = -1;
+#endif
     }
     /* Check for debugging control */
     if (getenv( "MPITEST_DEBUG" )) {
@@ -81,6 +97,11 @@ void MTest_Init( int *argc, char ***argv )
 	}
     }
 }
+void MTest_Init( int *argc, char ***argv )
+{
+    int provided;
+    MTest_Init_thread( argc, argv, MPI_THREAD_SINGLE, &provided );
+}
 
 /*
   Finalize MTest.  errs is the number of errors on the calling process; 
@@ -107,6 +128,9 @@ void MTest_Finalize( int errs )
 	}
 	fflush( stdout );
     }
+
+    /* Clean up any persistent objects that we allocated */
+    MTestRMACleanup();
 }
 
 /*
@@ -593,19 +617,12 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	recvtype->isBasic  = 1;
 	break;
     case 2:
-	sendtype->datatype = MPI_INT;
-	sendtype->isBasic  = 1;
-	recvtype->datatype = MPI_BYTE;
-	recvtype->isBasic  = 1;
-	recvtype->count    *= sizeof(int);
-	break;
-    case 3:
 	sendtype->datatype = MPI_FLOAT_INT;
 	sendtype->isBasic  = 1;
 	recvtype->datatype = MPI_FLOAT_INT;
 	recvtype->isBasic  = 1;
 	break;
-    case 4:
+    case 3:
 	merr = MPI_Type_dup( MPI_INT, &sendtype->datatype );
 	if (merr) MTestPrintError( merr );
 	merr = MPI_Type_set_name( sendtype->datatype, "dup of MPI_INT" );
@@ -617,7 +634,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	/* dup'ed types are already committed if the original type 
 	   was committed (MPI-2, section 8.8) */
 	break;
-    case 5:
+    case 4:
 	/* vector send type and contiguous receive type */
 	/* These sizes are in bytes (see the VectorInit code) */
  	sendtype->stride   = 3 * sizeof(int);
@@ -642,7 +659,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	recvtype->CheckBuf = MTestTypeContigCheckbuf;
 	break;
 
-    case 6:
+    case 5:
 	/* Indexed send using many small blocks and contig receive */
 	sendtype->blksize  = sizeof(int);
 	sendtype->nelm     = recvtype->count;
@@ -681,7 +698,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	recvtype->CheckBuf = MTestTypeContigCheckbuf;
 	break;
 
-    case 7:
+    case 6:
 	/* Indexed send using 2 large blocks and contig receive */
 	sendtype->blksize  = sizeof(int);
 	sendtype->nelm     = 2;
@@ -691,10 +708,12 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	if (!sendtype->displs || !sendtype->index) {
 	    MTestError( "Out of memory in type init\n" );
 	}
+	/* index -> block size */
 	sendtype->index[0]   = (recvtype->count + 1) / 2;
 	sendtype->displs[0]  = 0;
-	sendtype->index[1]   = (recvtype->count + 1) / 2;
-	sendtype->displs[1]  = sendtype->index[0] + 1;
+	sendtype->index[1]   = recvtype->count - sendtype->index[0];
+	sendtype->displs[1]  = sendtype->index[0] + 1; 
+	/* There is a deliberate gap here */
 
 	merr = MPI_Type_indexed( sendtype->nelm,
 				 sendtype->index, sendtype->displs, 
@@ -717,7 +736,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	recvtype->CheckBuf = MTestTypeContigCheckbuf;
 	break;
 
-    case 8:
+    case 7:
 	/* Indexed receive using many small blocks and contig send */
 	recvtype->blksize  = sizeof(int);
 	recvtype->nelm     = recvtype->count;
@@ -731,6 +750,7 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	   size to over 256k in some cases, as the MPICH2 code as of
 	   10/1/06 used large internal buffers for packing non-contiguous
 	   messages */
+	/* Note that there are gaps in the indexed type */
 	for (i=0; i<recvtype->nelm; i++) {
 	    recvtype->index[i]   = 4;
 	    recvtype->displs[i]  = 5*i;
@@ -756,6 +776,16 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	sendtype->CheckBuf = 0;
 	break;
 
+#ifndef USE_STRICT_MPI
+	/* MPI_BYTE may only be used with MPI_BYTE in strict MPI */
+    case 8:
+	sendtype->datatype = MPI_INT;
+	sendtype->isBasic  = 1;
+	recvtype->datatype = MPI_BYTE;
+	recvtype->isBasic  = 1;
+	recvtype->count    *= sizeof(int);
+	break;
+#endif
 #if 0
     case 9:
 	/* vector recv type and contiguous send type */
@@ -847,6 +877,13 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	fflush( stderr );
 	
     }
+    else if (verbose && datatype_index > 0) {
+	printf( "Get new datatypes: send = %s, recv = %s\n", 
+		MTestGetDatatypeName( sendtype ), 
+		MTestGetDatatypeName( recvtype ) );
+	fflush( stdout );
+    }
+
     return datatype_index;
 }
 
@@ -1256,7 +1293,8 @@ int MTestGetIntercomm( MPI_Comm *comm, int *isLeftGroup, int min_size )
 		mcomm = *comm;
 		rank = MPI_Comm_rank(mcomm, &rank);
 		if (merr) MTestPrintError( merr );
-		merr = MPI_Comm_split(mcomm, rank, 0, comm);
+		/* this split is effectively a dup but tests the split code paths */
+		merr = MPI_Comm_split(mcomm, 0, rank, comm);
 		if (merr) MTestPrintError( merr );
 		merr = MPI_Comm_free( &mcomm );
 		if (merr) MTestPrintError( merr );
@@ -1499,4 +1537,12 @@ void MTestFreeWin( MPI_Win *win )
     merr = MPI_Win_free(win);
     if (merr) MTestPrintError( merr );
 }
+static void MTestRMACleanup( void )
+{
+    if (mem_keyval != MPI_KEYVAL_INVALID) {
+	MPI_Win_free_keyval( &mem_keyval );
+    }
+}
+#else 
+static void MTestRMACleanup( void ) {}
 #endif

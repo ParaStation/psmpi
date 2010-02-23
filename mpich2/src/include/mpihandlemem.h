@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id: mpihandlemem.h,v 1.10 2007/07/11 16:06:37 robl Exp $
- *
+/*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -136,9 +135,11 @@ typedef struct MPIU_Object_alloc_t {
     int                direct_size;     /* Size of direct block */
 } MPIU_Object_alloc_t;
 extern void *MPIU_Handle_obj_alloc(MPIU_Object_alloc_t *);
-extern void MPIU_Handle_obj_alloc_complete(MPIU_Object_alloc_t *, int init);
+extern void *MPIU_Handle_obj_alloc_unsafe(MPIU_Object_alloc_t *);
+extern void MPIU_Handle_obj_alloc_complete(MPIU_Object_alloc_t *, int);
 extern void MPIU_Handle_obj_free( MPIU_Object_alloc_t *, void * );
 void *MPIU_Handle_get_ptr_indirect( int, MPIU_Object_alloc_t * );
 extern void *MPIU_Handle_direct_init(void *direct, int direct_size, 
 				     int obj_size, int handle_type);
+int MPIU_Handle_obj_outstanding(const MPIU_Object_alloc_t *objmem);
 #endif

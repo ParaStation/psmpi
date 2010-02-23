@@ -6,7 +6,7 @@
 </HEAD>
 <BODY BGCOLOR="FFFFFF">
 <A NAME="MPI_Type_create_resized"><H1>MPI_Type_create_resized</H1></A>
-Create a datatype with a new lower bound and  extent from an existing datatype 
+Create a datatype with a new lower bound and extent from an existing datatype 
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Type_create_resized(MPI_Datatype oldtype,
@@ -16,15 +16,15 @@ int MPI_Type_create_resized(MPI_Datatype oldtype,
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>oldtype </B><DD>input datatype (handle) 
+<DT><B>oldtype </B><DD>input datatype (handle)
 
-<DT><B>lb </B><DD>new lower bound of datatype (integer) 
+<DT><B>lb </B><DD>new lower bound of datatype (address integer)
 
-<DT><B>extent </B><DD>new extent of datatype (integer) 
+<DT><B>extent </B><DD>new extent of datatype (address integer)
 </DL>
 <P>
 <H2>Output Parameter</H2>
-<DL><DT><B>newtype </B> <DD> output datatype (handle) 
+<DL><DT><B>newtype </B> <DD> output datatype (handle)
 </DL>
 <P>
 <H2>Thread and Interrupt Safety</H2>

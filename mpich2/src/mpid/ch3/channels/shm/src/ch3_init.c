@@ -23,6 +23,7 @@ char MPIDI_CH3_ABIVersion[] = "1.1";
 int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 {
     int mpi_errno = MPI_SUCCESS;
+    int pmi_errno;
     MPIDI_VC_t * vc;
     int pg_size;
     int p;
@@ -36,6 +37,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
     int shm_block;
     char local_host[100];
     MPIDI_CH3I_PG *pgch = (MPIDI_CH3I_PG*)pg->channel_private;
+    MPIU_CHKLMEM_DECL(2);
 
 #if 1
     if (sizeof(MPIDI_CH3I_PG) > MPIDI_CH3_PG_SIZE * sizeof(int32_t) ) {
@@ -89,7 +91,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 	MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)pg->vct[p].channel_private;
 	/* FIXME: the vc's must be set to active for the close protocol to 
 	   work in the shm channel */
-	pg->vct[p].state = MPIDI_VC_STATE_ACTIVE;
+        MPIDI_CHANGE_VC_STATE(&(pg->vct[p]), ACTIVE);
 	/* FIXME: Should the malloc be within the init? */
 	MPIDI_CH3_VC_Init( &pg->vct[p] );
 	/* FIXME: Need to free this request when the vc is removed */
@@ -105,7 +107,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
     }
     
     /* save my vc_ptr for easy access */
-    /* MPIDI_PG_Get_vcr(pg, pg_rank, &MPIDI_CH3I_Process.vc); */
+    /* MPIDI_PG_Get_vc_set_activer(pg, pg_rank, &MPIDI_CH3I_Process.vc); */
     /* FIXME: Figure out whether this is a common feature of process 
        groups (and thus make it part of the general PG_Init) or 
        something else.  Avoid a "get" routine because of the danger in
@@ -121,32 +123,15 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
     }
 
     /* Allocate space for pmi keys and values */
-    mpi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
-    if (mpi_errno != PMI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", mpi_errno);
-	return mpi_errno;
-    }
+    pmi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
+    MPIU_ERR_CHKANDJUMP1(pmi_errno, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %d", pmi_errno);
     key_max_sz++;
-    key = MPIU_Malloc(key_max_sz);
-    if (key == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	return mpi_errno;
-    }
-    mpi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
-    if (mpi_errno != PMI_SUCCESS)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", "**fail %d", mpi_errno);
-	return mpi_errno;
-    }
+    MPIU_CHKLMEM_MALLOC(key, char *, key_max_sz, mpi_errno, "key");
+
+    pmi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
+    MPIU_ERR_CHKANDJUMP1(pmi_errno, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %d", pmi_errno);
     val_max_sz++;
-    val = MPIU_Malloc(val_max_sz);
-    if (val == NULL)
-    {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
-	return mpi_errno;
-    }
+    MPIU_CHKLMEM_MALLOC(val, char *, val_max_sz, mpi_errno, "val");
 
     /* initialize the shared memory */
     shm_block = sizeof(MPIDI_CH3I_SHM_Queue_t) * pg_size; 
@@ -167,10 +152,10 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
 		return mpi_errno;
 	    }
-	    mpi_errno = PMI_KVS_Put(kvsname, key, val);
-	    if (mpi_errno != 0)
+	    pmi_errno = PMI_KVS_Put(kvsname, key, val);
+	    if (pmi_errno != 0)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", pmi_errno);
 		return mpi_errno;
 	    }
 
@@ -181,23 +166,23 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 		return mpi_errno;
 	    }
 	    MPID_Get_processor_name( val, val_max_sz, 0 );
-	    mpi_errno = PMI_KVS_Put(kvsname, key, val);
-	    if (mpi_errno != 0)
+	    pmi_errno = PMI_KVS_Put(kvsname, key, val);
+	    if (pmi_errno != 0)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", mpi_errno);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", pmi_errno);
 		return mpi_errno;
 	    }
 
-	    mpi_errno = PMI_KVS_Commit(kvsname);
-	    if (mpi_errno != 0)
+	    pmi_errno = PMI_KVS_Commit(kvsname);
+	    if (pmi_errno != 0)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", mpi_errno);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", pmi_errno);
 		return mpi_errno;
 	    }
-	    mpi_errno = PMI_Barrier();
-	    if (mpi_errno != 0)
+	    pmi_errno = PMI_Barrier();
+	    if (pmi_errno != 0)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 		return mpi_errno;
 	    }
 	}
@@ -209,16 +194,16 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
 		return mpi_errno;
 	    }
-	    mpi_errno = PMI_Barrier();
-	    if (mpi_errno != 0)
+	    pmi_errno = PMI_Barrier();
+	    if (pmi_errno != 0)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 		return mpi_errno;
 	    }
-	    mpi_errno = PMI_KVS_Get(kvsname, key, val, val_max_sz);
-	    if (mpi_errno != 0)
+	    pmi_errno = PMI_KVS_Get(kvsname, key, val, val_max_sz);
+	    if (pmi_errno != 0)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", pmi_errno);
 		return mpi_errno;
 	    }
 	    if (MPIU_Strncpy(shmemkey, val, val_max_sz))
@@ -232,10 +217,10 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**strncpy", 0);
 		return mpi_errno;
 	    }
-	    mpi_errno = PMI_KVS_Get(kvsname, key, val, val_max_sz);
-	    if (mpi_errno != 0)
+	    pmi_errno = PMI_KVS_Get(kvsname, key, val, val_max_sz);
+	    if (pmi_errno != 0)
 	    {
-		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", mpi_errno);
+		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", pmi_errno);
 		return mpi_errno;
 	    }
 	    MPID_Get_processor_name( local_host, sizeof(local_host), NULL );
@@ -280,7 +265,7 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
     for (i=0; i<pg_size; i++)
     {
 	MPIDI_CH3I_VC *vcch;
-	/* MPIDI_PG_Get_vcr(pg, i, &vc); */
+	/* MPIDI_PG_Get_vc_set_activer(pg, i, &vc); */
 	/* FIXME: Move this code to the general init pg for shared
 	   memory */
 	vc = &pg->vct[i];
@@ -350,16 +335,16 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
 #endif
 #endif
 
-    mpi_errno = PMI_KVS_Commit(kvsname);
-    if (mpi_errno != 0)
+    pmi_errno = PMI_KVS_Commit(kvsname);
+    if (pmi_errno != 0)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", mpi_errno);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", pmi_errno);
 	return mpi_errno;
     }
-    mpi_errno = PMI_Barrier();
-    if (mpi_errno != 0)
+    pmi_errno = PMI_Barrier();
+    if (pmi_errno != 0)
     {
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", mpi_errno);
+	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME, __LINE__, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 	return mpi_errno;
     }
 #ifdef USE_POSIX_SHM
@@ -383,14 +368,8 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t * pg, int pg_rank )
     }
 #endif
 
-    if (val != NULL)
-    { 
-	MPIU_Free(val);
-    }
-    if (key != NULL)
-    { 
-	MPIU_Free(key);
-    }
+ fn_fail:
+    MPIU_CHKLMEM_FREEALL();
     
     return mpi_errno;
 }

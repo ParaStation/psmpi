@@ -14,6 +14,13 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	      MPID_Comm * comm, int context_offset,
 	      MPI_Status * status, MPID_Request ** request)
 {
+    /* FIXME: in the common case, we want to simply complete the message
+       and make as few updates as possible.
+       Note in addition that this routine is used only by MPI_Recv (a
+       blocking routine; the intent of the interface (which returns 
+       a request) was to simplify the handling of the case where the
+       message was not found in the unexpected queue. */
+
     int mpi_errno = MPI_SUCCESS;
     MPID_Request * rreq;
     int found;
@@ -32,33 +39,14 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	goto fn_exit;
     }
 
-    rreq = MPIDI_CH3U_Recvq_FDU_or_AEP(
-	rank, tag, comm->recvcontext_id + context_offset, &found);
+    MPIU_THREAD_CS_ENTER(MSGQUEUE,);
+    rreq = MPIDI_CH3U_Recvq_FDU_or_AEP(rank, tag, 
+				       comm->recvcontext_id + context_offset,
+                                       comm, buf, count, datatype, &found);
     if (rreq == NULL) {
+	MPIU_THREAD_CS_EXIT(MSGQUEUE,);
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_NO_MEM, "**nomem");
     }
-
-    /* FIXME: in the common case, we want to simply complete the message
-       and make as few updates as possible.
-       Note in addition that this routine is used only by MPI_Recv (a
-       blocking routine; the intent of the interface (which returns 
-       a request) was to simplify the handling of the case where the
-       message was not found in the unexpected queue. */
-    /* FIXME: why do we add the ref count to comm?  The routine that
-       calls this is required to complete before returning, so
-       no valid user program can free the communicator while we
-       are within this routine, and no change to the ref count should 
-       be needed.  Ditto for remembering the datatype and user buffer
-       statistics (no request should need to be returned by
-       this routine if the message is already available) 
-       The reason appears to be that the delete-request code will
-       reduce the reference count on the comm in the request.
-    */
-    rreq->comm		 = comm;
-    MPIR_Comm_add_ref(comm);
-    rreq->dev.user_buf	 = buf;
-    rreq->dev.user_count = count;
-    rreq->dev.datatype	 = datatype;
 
     if (found)
     {
@@ -67,6 +55,9 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	/* Message was found in the unexepected queue */
 	MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"request found in unexpected queue");
 
+	/* Release the message queue - we've removed this request from 
+	   the queue already */
+	MPIU_THREAD_CS_EXIT(MSGQUEUE,);
 	if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG)
 	{
 	    int recv_pending;
@@ -76,7 +67,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 
 	    if (MPIDI_Request_get_sync_send_flag(rreq))
 	    {
-		MPIDI_Comm_get_vc(comm, rreq->dev.match.rank, &vc);
+		MPIDI_Comm_get_vc_set_active(comm, rreq->dev.match.parts.rank, &vc);
 		mpi_errno = MPIDI_CH3_EagerSyncAck( vc, rreq );
 		if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	    }
@@ -117,7 +108,7 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	}
 	else if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_RNDV_MSG)
 	{
-	    MPIDI_Comm_get_vc(comm, rreq->dev.match.rank, &vc);
+	    MPIDI_Comm_get_vc_set_active(comm, rreq->dev.match.parts.rank, &vc);
 	    mpi_errno = vc->rndvRecv_fn( vc, rreq );
 	    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
@@ -164,6 +155,10 @@ int MPID_Recv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	}
 
 	rreq->dev.recv_pending_count = 1;
+	/* We must wait until here to exit the msgqueue critical section
+	   on this request (we needed to set the recv_pending_count
+	   and the datatype pointer) */
+	MPIU_THREAD_CS_EXIT(MSGQUEUE,rreq);
     }
 
   fn_exit:

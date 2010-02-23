@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id: mpiutil.h,v 1.8 2007/06/02 19:46:50 gropp Exp $
- *
+/*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -47,18 +46,21 @@ int MPID_Abort( struct MPID_Comm *comm, int mpi_errno, int exit_code, const char
  */
 #if (!defined(NDEBUG) && defined(HAVE_ERROR_CHECKING))
 #   define MPIU_AssertDecl(a_) a_
+#   define MPIU_AssertDeclValue(_a,_b) _a = _b
 #   define MPIU_Assert(a_)						\
     {									\
 	if (!(a_))							\
 	{								\
 	    MPIU_Internal_error_printf("Assertion failed in file %s at line %d: %s\n", __FILE__, __LINE__, MPIU_QUOTE(a_));	\
+            MPIU_DBG_MSG_FMT(ALL, TERSE, (MPIU_DBG_FDEST, "Assertion failed in file %s at line %d: %s\n", __FILE__, __LINE__, MPIU_QUOTE(a_)));	\
             MPID_Abort(NULL, MPI_SUCCESS, 1, NULL);			\
 	}								\
     }
 #else
 #   define MPIU_Assert(a_)
 /* Empty decls not allowed in C */
-#   define MPIU_AssertDecl(a_) a_
+#   define MPIU_AssertDecl(a_) a_ 
+#   define MPIU_AssertDeclValue(_a,_b) _a ATTRIBUTE((unused))
 #endif
 
 /*
@@ -75,8 +77,63 @@ int MPID_Abort( struct MPID_Comm *comm, int mpi_errno, int exit_code, const char
     if (!(a_))							\
     {								\
         MPIU_Internal_error_printf("Assertion failed in file %s at line %d: %s\n", __FILE__, __LINE__, MPIU_QUOTE(a_));	\
+        MPIU_DBG_MSG_FMT(ALL, TERSE, (MPIU_DBG_FDEST, "Assertion failed in file %s at line %d: %s\n", __FILE__, __LINE__, MPIU_QUOTE(a_)));	\
         MPID_Abort(NULL, MPI_SUCCESS, 1, NULL);			\
     }								\
 }
+
+/*
+ * Ensure an MPI_Aint value fits into a signed int.
+ * Useful for detecting overflow when MPI_Aint is larger than an int.
+ *
+ * \param[in]  aint  Variable of type MPI_Aint
+ */
+#define MPID_Ensure_Aint_fits_in_int(aint) \
+  MPIU_Assert((aint) == (MPI_Aint)(int)(aint));
+
+/*
+ * Ensure an MPI_Aint value fits into an unsigned int.
+ * Useful for detecting overflow when MPI_Aint is larger than an 
+ * unsigned int.
+ *
+ * \param[in]  aint  Variable of type MPI_Aint
+ */
+#define MPID_Ensure_Aint_fits_in_uint(aint) \
+  MPIU_Assert((aint) == (MPI_Aint)(unsigned int)(aint));
+
+/*
+ * Ensure an MPI_Aint value fits into a pointer.
+ * Useful for detecting overflow when MPI_Aint is larger than a pointer.
+ *
+ * \param[in]  aint  Variable of type MPI_Aint
+ */
+#define MPID_Ensure_Aint_fits_in_pointer(aint) \
+  MPIU_Assert((aint) == (MPI_Aint)(MPIR_Upint) MPI_AINT_CAST_TO_VOID_PTR(aint));
+
+/*
+ * Basic utility macros
+ */
+#define MPIU_QUOTE(A) MPIU_QUOTE2(A)
+#define MPIU_QUOTE2(A) #A
+
+/* This macro is used to silence warnings from the Mac OS X linker when
+ * an object file "has no symbols".  The unused attribute prevents a
+ * warning about the unused dummy variable while the used attribute
+ * prevents the compiler from discarding the symbol altogether.  This
+ * macro should be used at the top of any file that might not define any
+ * other variables or functions (perhaps due to conditional compilation
+ * via the preprocessor).  A semicolon is expected after each invocation
+ * of this macro. */
+#define MPIU_SUPPRESS_OSX_HAS_NO_SYMBOLS_WARNING \
+    static int MPIU_UNIQUE_SYMBOL_NAME(dummy) ATTRIBUTE((unused,used)) = 0
+
+/* we jump through a couple of extra macro hoops to append the line
+ * number to the variable name in order to reduce the chance of a name
+ * collision with headers that might be included in the translation
+ * unit */
+#define MPIU_UNIQUE_SYMBOL_NAME(prefix_) MPIU_UNIQUE_IMPL1_(prefix_##_unique_L,__LINE__)
+#define MPIU_UNIQUE_IMPL1_(prefix_,line_) MPIU_UNIQUE_IMPL2_(prefix_,line_)
+#define MPIU_UNIQUE_IMPL2_(prefix_,line_) MPIU_UNIQUE_IMPL3_(prefix_,line_)
+#define MPIU_UNIQUE_IMPL3_(prefix_,line_) prefix_##line_
 
 #endif /* !defined(MPIUTIL_H_INCLUDED) */

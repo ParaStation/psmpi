@@ -7,11 +7,11 @@
                       '0',
                       1,
                       [
-                        '/homes/chan/autoconf/2.62/share/autoconf',
+                        '/opt/local/share/autoconf',
                         '../../../confdb'
                       ],
                       [
-                        '/homes/chan/autoconf/2.62/share/autoconf/autoconf/autoconf.m4f',
+                        '/opt/local/share/autoconf/autoconf/autoconf.m4f',
                         '../../../confdb/aclocal.m4',
                         'configure.in'
                       ],

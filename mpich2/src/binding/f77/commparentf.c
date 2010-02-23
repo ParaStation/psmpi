@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_GET_PARENT( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_get_parent__( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_get_parent( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_get_parent_( MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_get_parent_( MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_COMM_GET_PARENT = PMPI_COMM_GET_PARENT
+#pragma weak mpi_comm_get_parent__ = PMPI_COMM_GET_PARENT
+#pragma weak mpi_comm_get_parent_ = PMPI_COMM_GET_PARENT
+#pragma weak mpi_comm_get_parent = PMPI_COMM_GET_PARENT
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_COMM_GET_PARENT = pmpi_comm_get_parent__
 #pragma weak mpi_comm_get_parent__ = pmpi_comm_get_parent__
 #pragma weak mpi_comm_get_parent_ = pmpi_comm_get_parent__
 #pragma weak mpi_comm_get_parent = pmpi_comm_get_parent__
-#pragma weak pmpi_comm_get_parent_ = pmpi_comm_get_parent__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_COMM_GET_PARENT = pmpi_comm_get_parent_
+#pragma weak mpi_comm_get_parent__ = pmpi_comm_get_parent_
+#pragma weak mpi_comm_get_parent_ = pmpi_comm_get_parent_
+#pragma weak mpi_comm_get_parent = pmpi_comm_get_parent_
+#else
+#pragma weak MPI_COMM_GET_PARENT = pmpi_comm_get_parent
+#pragma weak mpi_comm_get_parent__ = pmpi_comm_get_parent
+#pragma weak mpi_comm_get_parent_ = pmpi_comm_get_parent
+#pragma weak mpi_comm_get_parent = pmpi_comm_get_parent
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_get_parent_( MPI_Fint *, MPI_Fint *
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_GET_PARENT( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_get_parent__( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_get_parent( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_get_parent_( MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_comm_get_parent__ = MPI_COMM_GET_PARENT
+#pragma weak mpi_comm_get_parent_ = MPI_COMM_GET_PARENT
+#pragma weak mpi_comm_get_parent = MPI_COMM_GET_PARENT
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_COMM_GET_PARENT = mpi_comm_get_parent__
 #pragma weak mpi_comm_get_parent_ = mpi_comm_get_parent__
 #pragma weak mpi_comm_get_parent = mpi_comm_get_parent__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_COMM_GET_PARENT = mpi_comm_get_parent_
+#pragma weak mpi_comm_get_parent__ = mpi_comm_get_parent_
+#pragma weak mpi_comm_get_parent = mpi_comm_get_parent_
+#else
+#pragma weak MPI_COMM_GET_PARENT = mpi_comm_get_parent
+#pragma weak mpi_comm_get_parent__ = mpi_comm_get_parent
+#pragma weak mpi_comm_get_parent_ = mpi_comm_get_parent
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_GET_PARENT( MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_get_parent__( MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_get_parent_( MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_get_parent( MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_comm_get_parent__ = PMPI_COMM_GET_PARENT
+#pragma weak pmpi_comm_get_parent_ = PMPI_COMM_GET_PARENT
+#pragma weak pmpi_comm_get_parent = PMPI_COMM_GET_PARENT
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_COMM_GET_PARENT = pmpi_comm_get_parent__
+#pragma weak pmpi_comm_get_parent_ = pmpi_comm_get_parent__
+#pragma weak pmpi_comm_get_parent = pmpi_comm_get_parent__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_COMM_GET_PARENT = pmpi_comm_get_parent_
+#pragma weak pmpi_comm_get_parent__ = pmpi_comm_get_parent_
+#pragma weak pmpi_comm_get_parent = pmpi_comm_get_parent_
+#else
+#pragma weak PMPI_COMM_GET_PARENT = pmpi_comm_get_parent
+#pragma weak pmpi_comm_get_parent__ = pmpi_comm_get_parent
+#pragma weak pmpi_comm_get_parent_ = pmpi_comm_get_parent
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_comm_get_parent_ PMPI_COMM_GET_PARENT
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_get_parent_( MPI_Fint *, MPI_Fint *
 #define mpi_comm_get_parent_ pmpi_comm_get_parent
 #else
 #define mpi_comm_get_parent_ pmpi_comm_get_parent_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

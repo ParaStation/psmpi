@@ -12,6 +12,12 @@ my $version = "";
 my $pack = "";
 my $root = $ENV{PWD};
 
+# This path is the default for the MCS home directory mounts.  Pass
+# --with-autoconf='' and --with-automake='' options to this script to
+# use whatever is in your path.
+my $with_autoconf = "/homes/balaji/projects/autotools/install/bin";
+my $with_automake = "/homes/balaji/projects/autotools/install/bin";
+
 my $logfile = "release.log";
 
 sub usage
@@ -25,9 +31,25 @@ sub check_package
     my $pack = shift;
 
     print "===> Checking for package $pack... ";
-    if (`which $pack` eq "") {
-	print "not found\n";
-	exit;
+    if ($with_autoconf and ($pack eq "autoconf")) {
+        # the user specified a dir where autoconf can be found
+        if (not -x "$with_autoconf/$pack") {
+            print "not found\n";
+            exit;
+        }
+    }
+    if ($with_automake and ($pack eq "automake")) {
+        # the user specified a dir where automake can be found
+        if (not -x "$with_automake/$pack") {
+            print "not found\n";
+            exit;
+        }
+    }
+    else {
+        if (`which $pack` eq "") {
+            print "not found\n";
+            exit;
+        }
     }
     print "done\n";
 }
@@ -36,9 +58,8 @@ sub run_cmd
 {
     my $cmd = shift;
 
-    # FIXME: Allow for verbose output; just have to remove the
-    # redirection to /dev/null
-    system("$cmd 2>&1 | tee -a $root/$logfile > /dev/null");
+    # FIXME: Allow for verbose output
+    system("$cmd >> $root/$logfile 2>&1");
     if ($?) {
         die "unable to execute ($cmd), \$?=$?.  Stopped";
     }
@@ -77,21 +98,26 @@ sub create_mpich2
     # Remove packages that are not being released
     debug("===> Removing packages that are not being released... ");
     chdir("${root}/mpich2-${version}");
-    run_cmd("rm -rf src/mpid/globus doc/notes src/pm/mpd/Zeroconf.py src/mpid/ch3/channels/gasnet src/mpid/ch3/channels/sshm src/pmi/simple2");
+    run_cmd("rm -rf src/mpid/globus doc/notes src/pm/mpd/Zeroconf.py src/pmi/pmi2");
 
-    chdir("${root}/mpich2-${version}/src/mpid/ch3/channels/nemesis/nemesis/net_mod");
-    my @nem_modules = qw(elan mx newgm newtcp sctp ib psm);
-    run_cmd("rm -rf ".join(' ', map({$_ . "_module/*"} @nem_modules)));
+    chdir("${root}/mpich2-${version}/src/mpid/ch3/channels/nemesis/nemesis/netmod");
+    my @nem_modules = qw(elan ib psm);
+    run_cmd("rm -rf ".join(' ', map({$_ . "/*"} @nem_modules)));
     for my $module (@nem_modules) {
 	# system to avoid problems with shell redirect in run_cmd
-	system(qq(echo "# Stub Makefile" > ${module}_module/Makefile.sm));
+	system(qq(echo "# Stub Makefile" > ${module}/Makefile.sm));
     }
     debug("done\n");
 
     # Create configure
     debug("===> Creating configure in the main package... ");
     chdir("${root}/mpich2-${version}");
-    run_cmd("./maint/updatefiles --with-autoconf=/homes/chan/autoconf/2.62/bin");
+    {
+        my $cmd = "./maint/updatefiles";
+        $cmd .= " --with-autoconf=$with_autoconf" if $with_autoconf;
+        $cmd .= " --with-automake=$with_automake" if $with_automake;
+        run_cmd($cmd);
+    }
     debug("done\n");
 
     # Remove unnecessary files
@@ -108,7 +134,12 @@ sub create_mpich2
 
     debug("===> Configuring and making the secondary package... ");
     chdir("${root}/mpich2-${version}-tmp");
-    run_cmd("./maint/updatefiles --with-autoconf=/homes/chan/autoconf/2.62/bin");
+    {
+        my $cmd = "./maint/updatefiles";
+        $cmd .= " --with-autoconf=$with_autoconf" if $with_autoconf;
+        $cmd .= " --with-automake=$with_automake" if $with_automake;
+        run_cmd($cmd);
+    }
     run_cmd("./configure --without-mpe --disable-f90 --disable-f77 --disable-cxx");
     run_cmd("(make mandoc && make htmldoc && make latexdoc)");
     debug("done\n");
@@ -181,7 +212,12 @@ sub create_mpe
 
     debug("===> Creating configure... ");
     chdir("${root}/mpe2");
-    run_cmd("./maint/updatefiles --with-autoconf=/homes/chan/autoconf/2.62/bin");
+    {
+        my $cmd = "./maint/updatefiles";
+        $cmd .= " --with-autoconf=$with_autoconf" if $with_autoconf;
+        $cmd .= " --with-automake=$with_automake" if $with_automake;
+        run_cmd($cmd);
+    }
     debug("done\n");
 
     debug("===> Creating MPE docs... ");
@@ -201,6 +237,8 @@ sub create_mpe
 GetOptions(
     "source=s" => \$source,
     "package:s"  => \$pack,
+    "with-autoconf" => \$with_autoconf,
+    "with-automake" => \$with_automake,
     "help"     => \&usage,
 ) or die "unable to parse options, stopped";
 
@@ -222,6 +260,7 @@ check_package("doctext");
 check_package("svn");
 check_package("latex");
 check_package("autoconf");
+check_package("automake");
 debug "\n";
 
 my $current_ver = `svn cat ${source}/maint/Version`;

@@ -166,7 +166,43 @@ void MPIR_Nest_decr_export( void )
     MPIU_THREADPRIV_GET;
     MPIU_THREADPRIV_FIELD(nest_count) = MPIU_THREADPRIV_FIELD(nest_count) - 1;
 }
+#ifdef MPICH_DEBUG_NESTING
+void MPIR_Nest_incr_export_dbg( const char *srcfile, int srcline )
+{
+    MPIU_THREADPRIV_DECL;
+    MPIU_THREADPRIV_GET;
 
+    if (MPIU_THREADPRIV_FIELD(nest_count) >= MPICH_MAX_NESTINFO) { 
+	MPIU_Internal_error_printf("nest stack exceeded at %s:%d\n",
+				   srcfile, srcline );
+    }
+    else {
+	MPIU_Strncpy(MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].file,srcfile, MPICH_MAX_NESTFILENAME);
+	MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].line=srcline;
+    }
+     MPIU_THREADPRIV_FIELD(nest_count)++; 
+}
+void MPIR_Nest_decr_export_dbg( const char *srcfile, int srcline )
+{
+    MPIU_THREADPRIV_DECL;
+    MPIU_THREADPRIV_GET;
+
+    if (MPIU_THREADPRIV_FIELD(nest_count) >= 0) {
+	MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].line=-srcline;}
+     MPIU_THREADPRIV_FIELD(nest_count)--;
+     if (MPIU_THREADPRIV_FIELD(nest_count) < MPICH_MAX_NESTINFO && 
+	 strcmp(MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].file,srcfile) != 0) {
+         MPIU_Msg_printf( "Decremented nest count in file %s:%d but incremented in different file (%s:%d)\n", 
+                          srcfile, srcline,
+                          MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].file, \
+                          MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].line);\
+     }
+     else if (MPIU_THREADPRIV_FIELD(nest_count) < 0) {
+	 MPIU_Msg_printf("Decremented nest count in file %s:%d is negative\n", 
+			 srcfile,srcline);
+     }
+}
+#endif
 /* ------------------------------------------------------------------------- */
 /* These routines are called on error exit from most top-level MPI routines
    to invoke the appropriate error handler.  Also included is the routine
@@ -917,6 +953,7 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig,
     MPI_Errhandler E;
     char *s;
     int t, i, d, mpi_errno=MPI_SUCCESS;
+    long long ll;
     void *p;
 
     fmt = MPIU_Strdup(fmt_orig);
@@ -937,7 +974,7 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig,
 	}
 	if (len)
 	{
-	    memcpy(str, begin, len);
+	    MPIU_Memcpy(str, begin, len);
 	    str += len;
 	    maxlen -= len;
 	}
@@ -957,6 +994,18 @@ static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig,
 	    d = va_arg(list, int);
 	    MPIU_Snprintf(str, maxlen, "%d", d);
 	    break;
+	case (int)'L':
+	    ll = va_arg(list, long long);
+	    MPIU_Snprintf(str, maxlen, "%lld", ll);
+	    break;
+        case (int)'x':
+            d = va_arg(list, int);
+            MPIU_Snprintf(str, maxlen, "%x", d);
+            break;
+        case (int)'X':
+            ll = va_arg(list, long long);
+            MPIU_Snprintf(str, maxlen, "%llx", ll);
+            break;
 	case (int)'i':
 	    i = va_arg(list, int);
 	    switch (i)
@@ -1238,6 +1287,8 @@ static MPIR_Err_msg_t ErrorRing[MAX_ERROR_RING];
 static volatile unsigned int error_ring_loc     = 0;
 static volatile unsigned int max_error_ring_loc = 0;
 
+/* FIXME: This needs to be made consistent with the different thread levels, 
+   since in the "global" thread level, an extra thread mutex is not required. */
 #if defined(MPID_REQUIRES_THREAD_SAFETY)
 /* if the device requires internal MPICH routines to be thread safe, the
    MPIU_THREAD_CHECK macros are not appropriate */
@@ -2012,8 +2063,9 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen )
     return;
 }
 
+/* FIXME: Remove the bogus fn argument from all uses of this routine */
 static int ErrGetInstanceString( int errorcode, char *msg, int num_remaining, 
-				 MPIR_Err_get_class_string_func_t fn )
+				 MPIR_Err_get_class_string_func_t fn ATTRIBUTE((unused)) )
 {
     int len;
 

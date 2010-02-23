@@ -1,6 +1,6 @@
-.TH MPI_Type_create_struct 3 "11/2/2007" " " "MPI"
+.TH MPI_Type_create_struct 3 "7/2/2009" " " "MPI"
 .SH NAME
-MPI_Type_create_struct \-  Create an MPI datatype from a general set of  datatypes, displacements, and block sizes 
+MPI_Type_create_struct \-  Create an MPI datatype from a general set of datatypes, displacements, and block sizes 
 .SH SYNOPSIS
 .nf
 int MPI_Type_create_struct(int count,
@@ -13,31 +13,31 @@ int MPI_Type_create_struct(int count,
 .PD 0
 .TP
 .B count 
-- number of blocks (integer) --- also number of entries in arrays 
-array_of_types, array_of_displacements and array_of_blocklengths 
+- number of blocks (integer) --- also number of entries in arrays
+array_of_types, array_of_displacements and array_of_blocklengths
 .PD 1
 .PD 0
 .TP
 .B array_of_blocklength 
-- number of elements in each block (array of integer) 
+- number of elements in each block (array of integer)
 .PD 1
 .PD 0
 .TP
 .B array_of_displacements 
-- byte displacement of each block (array of integer) 
+- byte displacement of each block (array of address integer)
 .PD 1
 .PD 0
 .TP
 .B array_of_types 
-- type of elements in each block (array of handles to 
-datatype objects) 
+- type of elements in each block (array of handles to
+datatype objects)
 .PD 1
 
 .SH OUTPUT PARAMETER
 .PD 0
 .TP
 .B newtype 
-- new datatype (handle) 
+- new datatype (handle)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

@@ -1,4 +1,4 @@
-.TH MPI_Pack_external_size 3 "11/2/2007" " " "MPI"
+.TH MPI_Pack_external_size 3 "8/2/2008" " " "MPI"
 .SH NAME
 MPI_Pack_external_size \-  Returns the upper bound on the amount of space needed to pack a message using MPI_Pack_external. 
 .SH SYNOPSIS
@@ -12,24 +12,24 @@ int MPI_Pack_external_size(char *datarep,
 .PD 0
 .TP
 .B datarep 
-- data representation (string)  
+- data representation (string)
 .PD 1
 .PD 0
 .TP
 .B incount 
-- number of input data items (integer)  
+- number of input data items (integer)
 .PD 1
 .PD 0
 .TP
 .B datatype 
-- datatype of each input data item (handle)  
+- datatype of each input data item (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B size 
-- output buffer size, in bytes (integer)  
+- output buffer size, in bytes (address integer)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

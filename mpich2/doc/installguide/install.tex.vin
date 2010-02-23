@@ -202,14 +202,14 @@ the \texttt{configure} script in the source directory:
 \begin{verbatim}
     cd  /tmp/you/mpich2-%VERSION%
     /home/you/libraries/mpich2-%VERSION%/configure \
-            -prefix=/home/you/mpich2-install |& tee configure.log
+            -prefix=/home/you/mpich2-install |& tee c.txt
 \end{verbatim}
 where the \texttt{$\backslash$} means that this is really one line.  (On
-\texttt{sh} and its derivatives, use \verb+2>&1 | tee configure.log+
-instead of \verb+|& tee configure.log+).  Other configure options are
-described below.  Check the \texttt{configure.log} file to make sure
+\texttt{sh} and its derivatives, use \verb+2>&1 | tee c.txt+
+instead of \verb+|& tee c.txt+).  Other configure options are
+described below.  Check the \texttt{c.txt} file to make sure
 everything went well.  Problems should be self-explanatory, but if not,
-send \texttt{configure.log} to \texttt{mpich2-maint@mcs.anl.gov}.
+send \texttt{c.txt} to \texttt{mpich2-maint@mcs.anl.gov}.
 The file \texttt{config.log} is created by \texttt{configure} and
 contains a record of the tests that \texttt{configure} performed.  It
 is normal for some tests recorded in \texttt{config.log} to fail.  
@@ -217,17 +217,25 @@ is normal for some tests recorded in \texttt{config.log} to fail.
 \item
 Build MPICH2:
 \begin{verbatim}
-    make |& tee make.log
+    make |& tee m.txt       (for csh and tcsh)
+      OR
+    make 2>&1 | tee m.txt   (for bash and sh)
 \end{verbatim}
 This step should succeed if there were no problems with the preceding
-step.  Check \texttt{make.log}.  If there were problems, send
-\texttt{configure.log} and \texttt{make.log} to
+step.  Check file \texttt{m.txt}. If there were problems,
+do a \texttt{make clean} and then run make again with \texttt{VERBOSE=1}
+\begin{verbatim}
+    make VERBOSE=1 |& tee m.txt       (for csh and tcsh)
+      OR
+    make VERBOSE=1 2>&1 | tee m.txt   (for bash and sh)
+\end{verbatim}
+and then send \texttt{m.txt} and \texttt{c.txt} to 
 \texttt{mpich2-maint@mcs.anl.gov}.
 
 \item
 Install the MPICH2 commands:
 \begin{verbatim}
-    make install |& tee install.log
+    make install |& tee mi.txt
 \end{verbatim}
 This step collects all required executables and scripts in the \texttt{bin}
 subdirectory of the directory specified by the prefix argument to
@@ -235,8 +243,8 @@ configure.
 
 (For users who want an install directory structure compliant to
 GNU coding standards (i.e., documentation files go to
-\$\{datarootdir\}/doc/\$\{PACKAGE\}, architecture independent
-read-only files go to \$\{datadir\}/\$\{PACKAGE\}), replace
+\texttt{\$\{datarootdir\}/doc/\$\{PACKAGE\}}, architecture independent
+read-only files go to \texttt{\$\{datadir\}/\$\{PACKAGE\}}), replace
 \texttt{make install} by
 
 \begin{verbatim}
@@ -544,6 +552,21 @@ or
 This will cause the MPICH2 libraries to be built with -O3, and -O3 will
 not be included in the mpicc and other MPI wrapper script.
 
+There are certain compiler flags that should not be used with MPICH2's
+configure, e.g. gcc's -Werror which would confuse configure and cause
+certain configure tests to fail to detect the correct system features.
+To use -Werror in building MPICH2 libraries, you can pass the compiler
+flags during the make step through the Makefile variable,
+\texttt{MPICH2\_MAKE\_CFLAGS} as follows:
+
+\begin{verbatim}
+  make VERBOSE=1 MPICH2_MAKE_CFLAGS="-Wall -Werror"
+\end{verbatim}
+
+(assume CC is set to gcc).  The content of \texttt{MPICH2\_MAKE\_CFLAGS}
+is appended to the \texttt{CFLAGS} in almost all Makefiles.
+
+
 
 \subsection{Common Non-Default Configuration Options}
 \label{sec:non-default}
@@ -576,10 +599,10 @@ Section~\ref{configure-options}.  Here we comment on some of them.
 \item[\texttt{--enable-sharedlibs=solaris-cc}]for cc on Solaris
 \end{description}
 \item[--with-pm]Select the process manager.  The default is
-  \texttt{mpd}; also useful is \texttt{gforker}.  You can build with
-  both process managers by specifying
+  \texttt{mpd}; also useful are \texttt{gforker} and \texttt{hydra}.  You can build with
+  all three process managers by specifying
 \begin{verbatim}
-  --with-pm=mpd:gforker
+  --with-pm=mpd:gforker:hydra
 \end{verbatim}
 \item[--without-mpe]Configure MPICH2 without the MPE package of
   program development tools (including the Jumpshot performance viewer)
@@ -720,29 +743,27 @@ specified by providing the name of the method after a colon in the
 The supported methods include:
 
 \begin{description}
-\item[ch3:sock]This is the default communication method.  It uses sockets for
-  all communications between processes. It supports
-  \texttt{MPI\_THREAD\_MULTIPLE} and other levels of thread safety.
-\item[ch3:ssm]This method uses sockets between nodes and shared memory within
-a node.
-\item[ch3:shm]This method only uses shared memory and only works within a
-single SMP.  It does not support the MPI dynamic process routines such as
-\texttt{MPI\_Comm\_spawn}. 
-% \item[ch3:sshm]This method is a scalable version of a shared-memory method and
-% only works within a single SMP.
-\item[ch3:nemesis]This method is our new, high performance method.  It
-supports sockets, shared memory, and Myrinet-GM at present. It supports
-  \texttt{MPI\_THREAD\_MULTIPLE} and other levels of thread safety. It does not
-support the MPI dynamic process routines in this release, but will support
-them in a future release.
+\item[ch3:nemesis]This method is our new, high performance method. It
+  has been made the default communication channel starting the 1.1
+  release of MPICH2.  It uses shared-memory to send messages between
+  processes on the same node and the network for processes between
+  nodes.  Currently sockets and Myrinet-MX are supported networks.  It
+  supports \texttt{MPI\_THREAD\_MULTIPLE} and other levels of thread
+  safety.
+\item[ch3:sock]This method uses sockets for all communications between
+  processes. It supports \texttt{MPI\_THREAD\_MULTIPLE} and other
+  levels of thread safety.
+\item[ch3:ssm]This method uses sockets between nodes and shared memory
+  within a node.
+\item[ch3:shm]This method only uses shared memory and only works
+  within a single SMP.  It does not support the MPI dynamic process
+  routines such as \texttt{MPI\_Comm\_spawn}.
 \end{description}
 
-Most installations should use either the \texttt{ch3:ssm} or \texttt{ch3:sock}
-methods.  If you need multi-threaded MPI, you must use \texttt{ch3:sock} in
-this release.  If you have a cluster of SMPs and do not need a multi-threaded
-MPI, then select \texttt{ch3:ssm}.  If you are interested in trying out our
-highest-performance device, and need neither threads nor the dynamic process
-routines from MPI, then you can use \texttt{ch3:nemesis}.
+Most installations should use the default \texttt{ch3:nemesis} method
+for best performance. For platforms that are not supported by nemesis,
+the \texttt{ch3:sock} method is suggested.
+
 
 %
 % Add any configure options that are specific to each method here.  Also
@@ -768,6 +789,8 @@ Currently three process managers are distributed with MPICH2
 \item[gforker] This is a simple process manager that creates all
   processes on a single machine.  It is useful for both debugging and on
   shared memory multiprocessors.
+\item[hydra] This is a new process manager tha natively uses the
+existing daemons on the system such as ssh, slurm, pbs.
 \end{description}
 
 \subsection{mpd}
@@ -1078,6 +1101,15 @@ To configure with the \texttt{gforker} process manager, use
     configure --with-pm=gforker ...
 \end{verbatim}
 
+\subsection{hydra} \label{sec:hydra} \texttt{hydra} is a simple
+process manager that launches processes using the native daemons
+present on the system such as ssh, slurm, pbs, etc. To configure with
+the \texttt{hydra} process manager, use
+
+\begin{verbatim}
+    configure --with-pm=hydra ...
+\end{verbatim}
+
 \section{Testing}
 \label{sec:testing}
 Once MPICH2 has been installed, you can test it by running some of the example
@@ -1324,68 +1356,126 @@ Not all of these options may be fully supported yet.
 
 \begin{small}
 \begin{verbatim}
-Optional Features:
+  --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
 --enable-cache  - Turn on configure caching
 --enable-echo  - Turn on strong echoing. The default is enable=no.
---enable-strict - Turn on strict debugging with gcc
 --enable-coverage - Turn on coverage analysis using gcc and gcov
+--enable-dynamiclibs - Enable the use of dynamic libraries by the devices
+                       that support them
 --enable-error-checking=level - Control the amount of error checking.
-level may be
     no        - no error checking
     runtime   - error checking controllable at runtime through environment
                 variables
     all       - error checking always enabled
---enable-error-messages=level - Control the amount of detail in error
-  messages.  Level may be
+--enable-error-messages=level - Control the amount of detail in error messages.
     all       - Maximum amount of information
     generic   - Only generic messages (no information about the specific
                 instance)
     class     - One message per MPI error class
     none      - No messages
 --enable-timing=level - Control the amount of timing information
-collected by the MPICH implementation.  level may be
-    none    - Collect no data
+                        collected by the MPICH implementation.
+    none    - Collect no data (default)
     all     - Collect lots of data
     runtime - Runtime control of data collected
-The default is none.
---enable-g=option - Control the level of debugging support in the MPICH
-implementation.  option may be a list of common separated names including
+
+--enable-g=option - Control the level of debugging support in the
+                    MPICH implementation.  option is a list of comma
+                    separated names including
     none     - No debugging
-    mem      - Memory usage tracing
     handle   - Trace handle operations
-    dbg      - Add compiler -g flags
+    handlealloc - Trace hancle allocations
+    dbg      - Add compiler flag, -g, to CFLAGS, CXXFLAGS FFLAGS and F90FLAGS.
+    debug    - Synonym for dbg
     log      - Enable debug event logging
+    mem      - Memory usage tracing
     meminit  - Preinitialize memory associated structures and unions to
                eliminate access warnings from programs like valgrind
+    memarena - Check for overwrite errors in memory allocation arena
+    mutex    - Enable error checking on pthread mutexes
+    mutexnesting - Check for non-nesting of mutexes
+    nesting  - Check for proper nesting values
+    fine-grain-nesting - Perform a fine-grain nesting check on exit
     all      - All of the above choices
---enable-fast - pick the appropriate options for fast execution.  This
-                turns off error checking and timing collection
+--enable-fast=option - Control the level of fast execution in the
+                       MPICH implementation.  option is a list of
+                       comma separated names including
+    O<n>     - Appends default optimization flags, -O<n>, to all internal
+               compiler flags, i.e. MPICH2LIB_CFLAGS, MPICH2LIB_CXXFLAGS,
+               MPICH2LIB_FFLAGS, and MPICH2LIB_F90FLAGS.
+    defopt   - Default compiler optimization -O2 for all language bindings,
+               i.e. --enable-fast=O2, when neither --enable-fast
+               nor --disable-fast is specified.
+    nochkmsg - No error checking, i.e. --disable-error-checking
+    notiming - No timing collection, i.e. --disable-timing.
+    ndebug   - Appends -DNDEBUG to internal CFLAGS, i.e. MPICH2LIB_CFLAGS.
+    all|yes  - "defopt", "nochkmsg", "notiming" and "ndebug" are enabled
+               when --enable-fast is specified without any option.
+    none     - None of above options, i.e. --disable-fast.
+
+--enable-check-compiler-flags -- enable the checks for all compiler
+                                 options, xxxFLAGS, MPICH2_xxxFLAGS.
+                                 Default is on.
+
 --enable-f77 - Enable Fortran 77 bindings
 --enable-f90 - Enable Fortran 90 bindings
 --enable-cxx - Enable C++ bindings
 --enable-romio - Enable ROMIO MPI I/O implementation
 --enable-debuginfo - Enable support for debuggers
---enable-nmpi-as-mpi - Use MPI rather than PMPI routines for MPI routines,
- such as the collectives, that may be implemented in terms of other MPI
- routines
+--enable-smpcoll - Enable support for SMP/multi-core aware collectives
+--enable-pipecoll - Enable support for pipelined collectives
+--enable-nmpi-as-mpi - Use MPI rather than PMPI routines for MPI
+                       routines, such as the collectives, that may be
+                       implemented in terms of other MPI routines
+
 --enable-mpe - Build the MPE (MPI Parallel Environment) routines
 --enable-threads=level - Control the level of thread support in the
-MPICH implementation.  The following levels are supported.
-    single - No threads (MPI_THREAD_SINGLE)
-    funneled - Only the main thread calls MPI (MPI_THREAD_FUNNELED)
-    serialized - User serializes calls to MPI (MPI_THREAD_SERIALIZED)
+                         MPICH implementation.  The following levels
+                         are supported.
+    default         - Choose thread level at runtime based on parameters
+    		      passed to MPI_Init_thread (default)
+    single          - No threads (MPI_THREAD_SINGLE)
+    funneled        - Only the main thread calls MPI (MPI_THREAD_FUNNELED)
+    serialized      - User serializes calls to MPI (MPI_THREAD_SERIALIZED)
     multiple(:impl) - Fully multi-threaded (MPI_THREAD_MULTIPLE)
-The following implementations are supported.
-    global_mutex - a single global lock guards access to all MPI functions.
-The default implementation is global_mutex.
-For the ch3:sock channel, a separate build is no longer needed for thread-multiple.
-It is compiled by default and is selectable at run time with MPI_Init_thread.
-If MPI_Init_thread is not called, the default is funneled .
-For other channels, the --enable-threads option is not supported currently, and
-the default is funneled.
+      The following implementations are supported.
+          global_mutex - a single global lock guards access to all
+	                 MPI functions.
+      The default implementation is global_mutex.
+
+    For the ch3:sock and ch3:nemesis channels, a separate build is no
+    longer needed for thread-multiple.  It is compiled by default and
+    is selectable at run time with MPI_Init_thread.  If
+    MPI_Init_thread is not called, the default is funneled.  For
+    other channels, the --enable-threads option is not supported
+    currently, and the default is funneled.
+
+--enable-thread-cs=type - Choose the method used for critical
+                          sections and other atomic updates when
+                          multiple threads are present.  Values may
+                          be global (default), brief-global,
+                          per-object, lock-free
+
+--enable-refcount=type - Choose the method for ensuring atomic
+                         updates to the reference counts for MPI
+                         objects.  Values may be lock, lock-free,
+                         none.  The default depends on the thread-cs
+                         choice; for global it is none (because none
+                         is required), for brief-global and per-object
+                         it is lock, and for lock-free it is
+                         lock-free
+
+--enable-mutex-timing - calculate the time spent waiting on mutexes.
+--enable-handle-allocation=type - Choose the method used for
+                                  allocating MPI object handles.
+                                  Values may be 'tls' for thread-local
+                                  storage or 'mutex' for simple
+                                  locking.  'mutex' is the default.
+
 --enable-weak-symbols - Use weak symbols to implement PMPI routines (default)
+--enable-strict - Turn on strict debugging with gcc
 --enable-sharedlibs=kind - Enable shared libraries.  kind may be
     gcc     - Standard gcc and GNU ld options for creating shared libraries
     osx-gcc - Special options for gcc needed only on OS/X
@@ -1397,14 +1487,21 @@ Only gcc, osx-gcc, and solaris-cc are currently supported
 --enable-dependencies - Generate dependencies for sourcefiles.  This
             requires that the Makefile.in files are also created
             to support dependencies (see maint/updatefiles)
---enable-timer-type=name - Select the timer to use
-for MPI_Wtime and internal timestamps.  name may be one of
-    gethrtime - Solaris timer (Solaris systems only)
-    clock_gettime   - Posix timer (where available)
-    gettimeofday - Most Unix systems
-    linux86_cycle - Linux x86; returns cycle counts, not time in seconds
-    linuxalpha_cycle - Like linux86_cycle, but for Linux Alpha
-    gcc_ia64_cycle - IPF ar.itc timer
+--enable-alloca - Use alloca to allocate temporary memory if available
+--enable-timer-type=name - Select the timer to use for MPI_Wtime and
+                           internal timestamps.
+    gethrtime        - Solaris timer (Solaris systems only)
+    clock_gettime    - Posix timer (where available)
+    gettimeofday     - Most Unix systems
+    linux86_cycle    - Linux x86; returns cycle counts, not time in seconds*
+    linuxalpha_cycle - Like linux86_cycle, but for Linux Alpha*
+    gcc_ia64_cycle   - IPF ar.itc timer*
+    device - The timer is provided by the device
+
+    *Note that the cycle timers are intended to be used by MPICH2
+     developers for internal low-level timing.  Normal users should
+     not use these as they are not guaranteed to be accurate in
+     certain situations.
 
 --enable-base-cache - Enable the use of a simple cache for the subsidieary
                        configure scripts.
@@ -1412,38 +1509,43 @@ for MPI_Wtime and internal timestamps.  name may be one of
 Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+--with-aint-size - Override the size of MPI_AINT
 --with-device=name - Specify the communication device for MPICH.
 --with-pmi=name - Specify the pmi interface for MPICH.
---with-pm=name - Specify the process manager for MPICH.
-      Multiple process managers may be specified as long as they all use
-      the same pmi interface by separating them with colons.  The
-      mpiexec for the first named process manager will be installed.
-      Example: --with-pm=forker:mpd:remshell builds the three process
-      managers forker, mpd, and remshell; only the mpiexec from forker
-      is installed into the bin directory.
+--with-pm=name - Specify the process manager for MPICH.  Multiple
+                 process managers may be specified as long as they all
+                 use the same pmi interface by separating them with
+                 colons.  The mpiexec for the first named process
+                 manager will be installed.  Example:
+                 --with-pm=gforker:mpd:remshell builds the three
+                 process managers gforker, mpd, and remshell; only the
+                 mpiexec from gforker is installed into the bin
+                 directory.
+
 --with-logging=name - Specify the logging library for MPICH.
 --with-mpe - Build the MPE (MPI Parallel Environment) routines
---with-htmldir=dir - Specify the directory for html documentation
---with-docdir=dir - Specify the directory for documentation
 --with-cross=file - Specify the values of variables that configure cannot
-determine in a cross-compilation environment
+                    determine in a cross-compilation environment
+
 --with-namepublisher=name - Choose the system that will support
                              MPI_PUBLISH_NAME and MPI_LOOKUP_NAME.  Options
                              include
                                no (no service available)
                                mpd
-                               file:directory (optional directory)
+			       file:directory (optional directory)
 
---with-fwrapname=name  - Specify name of library containing Fortran interface
-routines
+--with-fwrapname=name - Specify name of library containing Fortran interface
+                        routines
+
 --with-thread-package=package - Thread package to use.  Supported thread
-packages include:
+                                packages include:
     posix or pthreads - POSIX threads
     solaris - Solaris threads (Solaris OS only)
     none - no threads
-If the option is not specified, the default package is ${MPE_THREAD_DEFAULT}.
-If the option is specified, but a package is not given, then the default
-is posix.
+
+    If the option is not specified, the default package is
+    ${MPE_THREAD_DEFAULT}.  If the option is specified, but a package
+    is not given, then the default is posix.
 \end{verbatim}
 \end{small}
 

@@ -141,12 +141,24 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		{
 		    int pollfds_active_elems = sock_set->poll_array_elems;
 		
+		    /* The abstraction here is a shared (blocking) resource that
+		       the threads must coordinate.  That means not holding 
+		       a lock across the blocking operation but also 
+		       ensuring that only one thread at a time attempts
+		       to use this resource.
+
+		       What isn't yet clear in this where the test is made
+		       to ensure that two threads don't call the poll operation,
+		       even in a nonblocking sense.		       
+		    */
 		    sock_set->pollfds_active = sock_set->pollfds;
 		    
 		    /* Release the lock so that other threads may make 
 		       progress while this thread waits for something to 
 		       do */
-		    MPIU_DBG_MSG(THREAD,TYPICAL,"Exit global critical section");
+		    MPIU_DBG_MSG(THREAD,TYPICAL,"Exit global critical section (sock_wait)");
+		    /* 		    MPIU_THREAD_CS_EXIT(MPIDCOMM,);
+				    MPIU_THREAD_CS_EXIT(ALLFUNC,); */
 		    MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);
 			    
 		    MPIDI_FUNC_ENTER(MPID_STATE_POLL);
@@ -156,7 +168,9 @@ int MPIDU_Sock_wait(struct MPIDU_Sock_set * sock_set, int millisecond_timeout,
 		    
 		    /* Reaquire the lock before processing any of the 
 		       information returned from poll */
-		    MPIU_DBG_MSG(THREAD,TYPICAL,"Enter global critical section");
+		    MPIU_DBG_MSG(THREAD,TYPICAL,"Enter global critical section (sock_wait)");
+		    /* 		    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+				    MPIU_THREAD_CS_ENTER(MPIDCOMM,); */
 		    MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);
 
 		    /*

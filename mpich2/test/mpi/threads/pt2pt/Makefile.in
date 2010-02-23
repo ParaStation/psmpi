@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -18,7 +18,7 @@ CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 LDFLAGS     =  @LDFLAGS@ ../../util/mtest.o
@@ -65,8 +65,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o alltoall greq_test greq_wait threaded_sr sendselfth
-	-@rm -f alltoall.exe greq_test.exe greq_wait.exe threaded_sr.exe sendselfth.exe
+	-@rm -f *.o ${srcdir}/*.o multisend2 alltoall multisend multisend4 multisend3 greq_test greq_wait threaded_sr threads sendselfth
+	-@rm -f multisend2.exe alltoall.exe multisend.exe multisend4.exe multisend3.exe greq_test.exe greq_wait.exe threaded_sr.exe threads.exe sendselfth.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -84,19 +84,39 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: threaded_sr alltoall sendselfth greq_wait greq_test
+all-redirect: threads threaded_sr alltoall sendselfth greq_wait greq_test\
+	 multisend multisend2 multisend3 multisend4
 
 coverage: 
-alltoall: alltoall.o   @MPILIBLOC@ ../../util/mtest.o
+multisend2: multisend2.o  \
+	 @MPILIBLOC@ ../../util/mtest.o ../util/mtestthread.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o multisend2 multisend2.o  \
+	../util/mtestthread.o ${LIBS} 
+alltoall: alltoall.o   @MPILIBLOC@ ../../util/mtest.o ../util/mtestthread.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o alltoall alltoall.o  ${LIBS}
-greq_test: greq_test.o   @MPILIBLOC@ ../../util/mtest.o
+multisend: multisend.o   @MPILIBLOC@ ../../util/mtest.o ../util/mtestthread.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o multisend multisend.o  \
+	../util/mtestthread.o ${LIBS} 
+multisend4: multisend4.o  \
+	 @MPILIBLOC@ ../../util/mtest.o ../util/mtestthread.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o multisend4 multisend4.o  \
+	../util/mtestthread.o ${LIBS} 
+multisend3: multisend3.o  \
+	 @MPILIBLOC@ ../../util/mtest.o ../util/mtestthread.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o multisend3 multisend3.o  \
+	../util/mtestthread.o ${LIBS} 
+greq_test: greq_test.o   @MPILIBLOC@ ../../util/mtest.o ../util/mtestthread.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o greq_test greq_test.o  ${LIBS}
-greq_wait: greq_wait.o   @MPILIBLOC@ ../../util/mtest.o
+greq_wait: greq_wait.o   @MPILIBLOC@ ../../util/mtest.o ../util/mtestthread.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o greq_wait greq_wait.o  ${LIBS}
-threaded_sr: threaded_sr.o   @MPILIBLOC@ ../../util/mtest.o
+threaded_sr: threaded_sr.o  \
+	 @MPILIBLOC@ ../../util/mtest.o ../util/mtestthread.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o threaded_sr threaded_sr.o  \
 	-lpthread  ${LIBS} 
-sendselfth: sendselfth.o   @MPILIBLOC@ ../../util/mtest.o
+threads: threads.o   @MPILIBLOC@ ../../util/mtest.o ../util/mtestthread.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o threads threads.o  ${LIBS}
+sendselfth: sendselfth.o  \
+	 @MPILIBLOC@ ../../util/mtest.o ../util/mtestthread.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o sendselfth sendselfth.o  ${LIBS}
 # --------------------------------------------------------------------------
 htmldoc:
@@ -106,13 +126,9 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  threaded_sr.c alltoall.c sendselfth.c greq_wait.c \
-	greq_test.c 
+SOURCES         =  threads.c threaded_sr.c alltoall.c sendselfth.c \
+	greq_wait.c greq_test.c multisend.c multisend2.c multisend3.c \
+	multisend4.c 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
@@ -126,10 +142,12 @@ TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 
 ../../util/mtest.o:
 	(cd ../../util && $(MAKE) mtest.o)
+../util/mtestthread.o:
+	(cd ../util && $(MAKE) mtestthread.o)
 
 # A special testing target to simplify running just the thread pt2pt tests
 testing:
-	../runtests -srcdir=$(srcdir) -tests=testlist \
+	../../runtests -srcdir=$(srcdir) -tests=testlist \
 		   -mpiexec=$(bindir)/mpiexec \
 		   -xmlfile=summary.xml
 

@@ -5,16 +5,16 @@ srcdir      = @srcdir@
 CC_SHL      = @CC_SHL@
 SHLIBNAME   = @SHLIBNAME@
 
-INCLUDE_DIR = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I../../include  -I${srcdir}/../../../../include -I../../../../include @CPPFLAGS@
-CFLAGS      = @CFLAGS@ $(INCLUDE_DIR) -DBGL_OPTIM_STEP1_2=1 -DBGL_OPTIM_STEP1_1=1
+INCLUDES = -I@MPI_INCLUDE_DIR@ -I${srcdir}/../include -I../include -I../../include  -I${srcdir}/../../../../include -I../../../../include @CPPFLAGS@
+CFLAGS      = @CFLAGS@ $(INCLUDES) -DBGL_OPTIM_STEP1_2=1 -DBGL_OPTIM_STEP1_1=1
 
-C_COMPILE_SHL = $(CC_SHL) @CFLAGS@ $(INCLUDE_DIR)
+C_COMPILE_SHL = $(CC_SHL) @CFLAGS@ $(INCLUDES)
 
 @VPATH@
 
 AD_BGL_OBJECTS = \
       ad_bgl_open.o ad_bgl_close.o \
-      ad_bgl_fcntl.o  \
+      ad_bgl_fcntl.o ad_bgl_flush.o \
       ad_bgl_read.o ad_bgl_write.o ad_bgl_getsh.o ad_bgl_setsh.o \
       ad_bgl.o ad_bgl_aggrs.o ad_bgl_pset.o ad_bgl_hints.o \
       ad_bgl_rdcoll.o ad_bgl_wrcoll.o ad_bgl_tuning.o

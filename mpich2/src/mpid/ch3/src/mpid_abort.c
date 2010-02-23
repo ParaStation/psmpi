@@ -8,7 +8,11 @@
 
 /* FIXME: Who uses/sets MPIDI_DEV_IMPLEMENTS_ABORT? */
 #ifdef MPIDI_DEV_IMPLEMENTS_ABORT
+#ifdef USE_PMI2_API
+#include "pmi2.h"
+#else
 #include "pmi.h"
+#endif
 static int MPIDI_CH3I_PMI_Abort(int exit_code, const char *error_msg);
 #endif
 
@@ -77,7 +81,7 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code,
     }
 
 #ifdef HAVE_DEBUGGER_SUPPORT
-    MPIR_DebuggerSetAborting( error_str );
+    MPIR_DebuggerSetAborting( error_msg );
 #endif
 
     /* FIXME: This should not use an ifelse chain. Either define the function
@@ -87,14 +91,15 @@ int MPID_Abort(MPID_Comm * comm, int mpi_errno, int exit_code,
 #elif defined(MPIDI_DEV_IMPLEMENTS_ABORT)
     MPIDI_CH3I_PMI_Abort(exit_code, error_msg);
 #else
-    MPIU_Error_printf("%s", error_msg);
+    MPIU_Error_printf("%s\n", error_msg);
     fflush(stderr);
 #endif
 
-    /* ch3_abort should not return but if it does, exit here */
+    /* ch3_abort should not return but if it does, exit here.  If it does,
+       add the function exit code before calling the final exit.  */
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_ABORT);
     MPIU_Exit(exit_code);
     
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_ABORT);
     return MPI_ERR_INTERN;
 }
 
@@ -116,7 +121,7 @@ static int MPIDI_CH3I_PMI_Abort(int exit_code, const char *error_msg)
      * where the stdout/stderr pipes from MPICH2 to the PM are
      * broken), but not all PMs might display respect the message
      * (this problem was noticed with SLURM). */
-    MPIU_Error_printf("%s", error_msg);
+    MPIU_Error_printf("%s\n", error_msg);
     fflush(stderr);
 
     /* FIXME: What is the scope for PMI_Abort?  Shouldn't it be one or more
@@ -124,7 +129,11 @@ static int MPIDI_CH3I_PMI_Abort(int exit_code, const char *error_msg)
        process groups of the communicator or only the current process?
        Should PMI_Abort have a parameter for which of these two cases to
        perform? */
+#ifdef USE_PMI2_API
+    PMI_Abort(TRUE, error_msg);
+#else    
     PMI_Abort(exit_code, error_msg);
+#endif
 
     /* if abort returns for some reason, exit here */
     exit(exit_code);

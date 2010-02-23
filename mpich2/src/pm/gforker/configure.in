@@ -85,8 +85,8 @@ AC_EXEEXT
 AC_OBJEXT
 dnl Find a C compiler (choose gcc first)
 AC_PROG_CC
-dnl Set CFLAGS for enable strict if necessary
-PAC_CC_STRICT
+
+PAC_ARG_STRICT
 AC_PROG_INSTALL
 PAC_PROG_CHECK_INSTALL_WORKS
 PAC_PROG_MKDIR_P

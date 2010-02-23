@@ -14,10 +14,7 @@
 #include <windows.h>
 #endif
 
-/* FIXME: This definition is wrong in two ways.  First, it violates
-   the naming convention for user-visible symbols; a valid user program
-   could reset this value by simply using the value in the user program.
-   Second and more serious, the build scheme for this file is broken,
+/* FIXME: The build scheme for this file is broken,
    and this definition illustrates the problem.  The issue is that some
    files include mpidu_process_locks.h with *different* definitions than
    are used to compile this file!  That shows up when this variable, 
@@ -27,7 +24,7 @@
    defined, but the configure in the mpid/common/locks directory will
    *never* define USE_BUSY_LOCKS */
 /* #ifdef USE_BUSY_LOCKS */
-int g_nLockSpinCount = 100;
+int MPIU_g_nLockSpinCount = 100;
 /* #endif */
 
 /* To make it easier to read the code, the implementation of all of the 
@@ -36,7 +33,7 @@ int g_nLockSpinCount = 100;
 
 
 /* FIXME: Why is this here? Is this a misnamed use-inline-locks? */
-#if !defined(USE_BUSY_LOCKS) && !defined(HAVE_MUTEX_INIT) && !defined(HAVE_SPARC_INLINE_PROCESS_LOCKS)
+#if !defined(USE_BUSY_LOCKS) && !defined(HAVE_SPARC_INLINE_PROCESS_LOCKS)
 
 #if !defined(USE_INLINE_LOCKS)
 
@@ -127,7 +124,7 @@ void MPIDU_Process_lock_init( MPIDU_Process_lock_t *lock )
     memset(lock, 0, sizeof(MPIDU_Process_lock_t));
     err = mutex_init(lock,USYNC_PROCESS,(void*)0);
     if ( err != 0 ) 
-        MPIU_Error_printf( "error in mutex_init: %s\n", err );
+        MPIU_Error_printf( "error in mutex_init: %s\n", strerror(err) );
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK_INIT);
 }
 
@@ -143,7 +140,7 @@ void MPIDU_Process_lock( MPIDU_Process_lock_t *lock )
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_PROCESS_LOCK);
     err = mutex_lock( lock );
     if ( err != 0 ) 
-        MPIU_Error_printf( "error in mutex_lock: %s\n", err );
+        MPIU_Error_printf( "error in mutex_lock: %s\n", strerror(err) );
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK);
 }
 
@@ -156,9 +153,9 @@ void MPIDU_Process_unlock( MPIDU_Process_lock_t *lock )
     int err;
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_PROCESS_UNLOCK);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_PROCESS_UNLOCK);
-    err = _mutex_unlock( lock );
+    err = mutex_unlock( lock );
     if ( err != 0 ) 
-        MPIU_Error_printf( "error in mutex_unlock: %s\n", err );
+        MPIU_Error_printf( "error in mutex_unlock: %s\n", strerror(err) );
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_UNLOCK);
 }
 
@@ -173,7 +170,7 @@ void MPIDU_Process_lock_free( MPIDU_Process_lock_t *lock )
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_PROCESS_LOCK_FREE);
     err = mutex_destroy( lock );
     if ( err != 0 ) 
-	MPIU_Error_printf( "error in mutex_destroy: %s\n", err );
+	MPIU_Error_printf( "error in mutex_destroy: %s\n", strerror(err) );
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDU_PROCESS_LOCK_FREE);
 }
 
@@ -188,7 +185,9 @@ void MPIDU_Process_lock_init( MPIDU_Process_lock_t *lock )
 {
     /* should be called by one process only */
     int err;
+#ifdef HAVE_PTHREAD_MUTEXATTR_INIT
     pthread_mutexattr_t attr;
+#endif
     MPIDI_STATE_DECL(MPID_STATE_MPIDU_PROCESS_LOCK_INIT);
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDU_PROCESS_LOCK_INIT);
 #ifdef HAVE_PTHREAD_MUTEXATTR_INIT

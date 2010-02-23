@@ -1,28 +1,28 @@
-.TH MPI_Type_get_true_extent 3 "11/2/2007" " " "MPI"
+.TH MPI_Type_get_true_extent 3 "8/2/2008" " " "MPI"
 .SH NAME
-MPI_Type_get_true_extent \-  Get the true lower bound and extent for a  datatype 
+MPI_Type_get_true_extent \-  Get the true lower bound and extent for a datatype 
 .SH SYNOPSIS
 .nf
-int MPI_Type_get_true_extent(MPI_Datatype datatype, MPI_Aint *true_lb, 
+int MPI_Type_get_true_extent(MPI_Datatype datatype, MPI_Aint *true_lb,
                            MPI_Aint *true_extent)
 .fi
 .SH INPUT PARAMETER
 .PD 0
 .TP
 .B datatype 
-- datatype to get information on (handle) 
+- datatype to get information on (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B true_lb 
-- true lower bound of datatype (integer) 
+- true lower bound of datatype (address integer)
 .PD 1
 .PD 0
 .TP
 .B true_extent 
-- true size of datatype (integer) 
+- true size of datatype (address integer)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

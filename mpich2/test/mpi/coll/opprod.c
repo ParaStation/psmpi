@@ -24,6 +24,7 @@ int main( int argc, char *argv[] )
     int rank, size, maxsize, result[6] = { 1, 1, 2, 6, 24, 120 };
     MPI_Comm      comm;
     char cinbuf[3], coutbuf[3];
+    signed char scinbuf[3], scoutbuf[3];
     unsigned char ucinbuf[3], ucoutbuf[3];
     d_complex dinbuf[3], doutbuf[3];
 
@@ -41,7 +42,9 @@ int main( int argc, char *argv[] )
        five (1! = 1, 2! = 2, 3! = 6, 4! = 24, 5! = 120), with n!
        stored in the array result[n] */
 
+#ifndef USE_STRICT_MPI
     /* char */
+    MTestPrintfMsg( 10, "Reduce of MPI_CHAR\n" );
     cinbuf[0] = (rank < maxsize && rank > 0) ? rank : 1;
     cinbuf[1] = 0;
     cinbuf[2] = (rank > 1);
@@ -65,8 +68,36 @@ int main( int argc, char *argv[] )
 	    fprintf( stderr, "char PROD(>) test failed\n" );
 	}
     }
+#endif /* USE_STRICT_MPI */
+
+    /* signed char */
+    MTestPrintfMsg( 10, "Reduce of MPI_SIGNED_CHAR\n" );
+    scinbuf[0] = (rank < maxsize && rank > 0) ? rank : 1;
+    scinbuf[1] = 0;
+    scinbuf[2] = (rank > 1);
+
+    scoutbuf[0] = 0;
+    scoutbuf[1] = 1;
+    scoutbuf[2] = 1;
+    MPI_Reduce( scinbuf, scoutbuf, 3, MPI_SIGNED_CHAR, MPI_PROD, 0, comm );
+    if (rank == 0) {
+	if (scoutbuf[0] != (signed char)result[maxsize-1]) {
+	    errs++;
+	    fprintf( stderr, "signed char PROD(rank) test failed (%d!=%d)\n",
+		     (int)scoutbuf[0], (int)result[maxsize]);
+	}
+	if (scoutbuf[1]) {
+	    errs++;
+	    fprintf( stderr, "signed char PROD(0) test failed\n" );
+	}
+	if (size > 1 && scoutbuf[2]) {
+	    errs++;
+	    fprintf( stderr, "signed char PROD(>) test failed\n" );
+	}
+    }
 
     /* unsigned char */
+    MTestPrintfMsg( 10, "Reduce of MPI_UNSIGNED_CHAR\n" );
     ucinbuf[0] = (rank < maxsize && rank > 0) ? rank : 1;
     ucinbuf[1] = 0;
     ucinbuf[2] = (rank > 0);
@@ -90,6 +121,8 @@ int main( int argc, char *argv[] )
 	}
     }
 
+#ifndef USE_STRICT_MPI
+    /* For some reason, complex is not allowed for sum and prod */
     if (MPI_DOUBLE_COMPLEX != MPI_DATATYPE_NULL) {
 	/* double complex; may be null if we do not have Fortran support */
 	dinbuf[0].r = (rank < maxsize && rank > 0) ? rank : 1;
@@ -131,6 +164,7 @@ int main( int argc, char *argv[] )
 	    }
 	}
     }
+#endif /* USE_STRICT_MPI */
 
 #ifdef HAVE_LONG_DOUBLE
     { long double ldinbuf[3], ldoutbuf[3];
@@ -160,7 +194,7 @@ int main( int argc, char *argv[] )
 	}
     }
     }
-#endif
+#endif /* HAVE_LONG_DOUBLE */
 
 #ifdef HAVE_LONG_LONG
     {
@@ -191,7 +225,7 @@ int main( int argc, char *argv[] )
 	}
     }
     }
-#endif
+#endif /* HAVE_LONG_LONG */
 
     MTest_Finalize( errs );
     MPI_Finalize();

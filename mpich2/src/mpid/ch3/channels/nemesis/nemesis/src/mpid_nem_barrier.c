@@ -5,6 +5,7 @@
  */
 
 #include "mpid_nem_impl.h"
+#include "mpiu_os_wrappers.h"
 
 static int sense;
 static int barrier_init = 0;
@@ -13,20 +14,23 @@ static int barrier_init = 0;
 #define FUNCNAME MPID_nem_barrier_init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_barrier_init (MPID_nem_barrier_t *barrier_region)
+int MPID_nem_barrier_init(MPID_nem_barrier_t *barrier_region, int init_values)
 {
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_BARRIER_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_BARRIER_INIT);
 
     MPID_nem_mem_region.barrier = barrier_region;
-    MPID_nem_mem_region.barrier->val = 0;
-    MPID_nem_mem_region.barrier->wait = 0;
+    if (init_values) {
+        OPA_store_int(&MPID_nem_mem_region.barrier->val, 0);
+        OPA_store_int(&MPID_nem_mem_region.barrier->wait, 0);
+        OPA_write_barrier();
+    }
     sense = 0;
     barrier_init = 1;
-    MPID_NEM_WRITE_BARRIER();
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_BARRIER_INIT);
+
     return MPI_SUCCESS;
 }
 
@@ -42,23 +46,27 @@ int MPID_nem_barrier (int num_processes, int rank)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_BARRIER);
 
+    if (num_processes == 1)
+        goto fn_exit;
+
     MPIU_ERR_CHKANDJUMP1 (!barrier_init, mpi_errno, MPI_ERR_INTERN, "**intern", "**intern %s", "barrier not initialized");
 
-    if (MPID_NEM_FETCH_AND_INC (&MPID_nem_mem_region.barrier->val) == MPID_nem_mem_region.num_local - 1)
+    if (OPA_fetch_and_incr_int(&MPID_nem_mem_region.barrier->val) == MPID_nem_mem_region.num_local - 1)
     {
-	MPID_nem_mem_region.barrier->val = 0;
-	MPID_nem_mem_region.barrier->wait = 1 - sense;
-	MPID_NEM_WRITE_BARRIER();
+	OPA_store_int(&MPID_nem_mem_region.barrier->val, 0);
+	OPA_store_int(&MPID_nem_mem_region.barrier->wait, 1 - sense);
+        OPA_write_barrier();
     }
     else
     {
 	/* wait */
-	while (MPID_nem_mem_region.barrier->wait == sense)
+	while (OPA_load_int(&MPID_nem_mem_region.barrier->wait) == sense)
             MPIDU_Yield(); /* skip */
     }
     sense = 1 - sense;
 
  fn_fail:
+ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_BARRIER);
     return mpi_errno;
 }

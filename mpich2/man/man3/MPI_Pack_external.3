@@ -1,4 +1,4 @@
-.TH MPI_Pack_external 3 "11/2/2007" " " "MPI"
+.TH MPI_Pack_external 3 "8/2/2008" " " "MPI"
 .SH NAME
 MPI_Pack_external \-  Packs a datatype into contiguous memory, using the external32 format 
 .SH SYNOPSIS
@@ -15,41 +15,41 @@ int MPI_Pack_external(char *datarep,
 .PD 0
 .TP
 .B datarep 
-- data representation (string)  
+- data representation (string)
 .PD 1
 .PD 0
 .TP
 .B inbuf 
-- input buffer start (choice)  
+- input buffer start (choice)
 .PD 1
 .PD 0
 .TP
 .B incount 
-- number of input data items (integer)  
+- number of input data items (integer)
 .PD 1
 .PD 0
 .TP
 .B datatype 
-- datatype of each input data item (handle)  
+- datatype of each input data item (handle)
 .PD 1
 .PD 0
 .TP
-.B outsize 
-- output buffer size, in bytes (integer)  
+.B outcount 
+- output buffer size, in bytes (address integer)
 .PD 1
 
 .SH OUTPUT PARAMETER
 .PD 0
 .TP
 .B outbuf 
-- output buffer start (choice)  
+- output buffer start (choice)
 .PD 1
 
 .SH INPUT/OUTPUT PARAMETER
 .PD 0
 .TP
 .B position 
-- current position in buffer, in bytes (integer)  
+- current position in buffer, in bytes (address integer)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

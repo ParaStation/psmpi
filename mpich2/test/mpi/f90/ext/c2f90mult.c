@@ -15,18 +15,17 @@
 */
 #include "mpi.h"
 #include <stdio.h>
+#include "mpitest.h"
 
 int main( int argc, char *argv[] )
 {
     MPI_Fint handleA, handleB;
     int      rc;
     int      errs = 0;
-    int      rank;
     int      buf[1];
     MPI_Request cRequest;
 
-    MPI_Init( &argc, &argv );
-    MPI_Comm_rank( MPI_COMM_WORLD, &rank );
+    MTest_Init( &argc, &argv );
 
     /* Request */
     rc = MPI_Irecv( buf, 1, MPI_INT, 0, 0, MPI_COMM_WORLD, &cRequest );
@@ -45,15 +44,7 @@ int main( int argc, char *argv[] )
     MPI_Cancel( &cRequest );
     MPI_Request_free( &cRequest );
 
-    if (rank == 0) {
-	if (errs) {
-	    fprintf(stderr, "Found %d errors\n", errs);
-	}
-	else {
-	    printf(" No Errors\n");
-	}
-    }
-    
+    MTest_Finalize( errs );
     MPI_Finalize();
     
     return 0;

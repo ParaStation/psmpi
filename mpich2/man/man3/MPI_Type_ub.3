@@ -1,4 +1,4 @@
-.TH MPI_Type_ub 3 "11/2/2007" " " "MPI"
+.TH MPI_Type_ub 3 "8/2/2008" " " "MPI"
 .SH NAME
 MPI_Type_ub \-  Returns the upper bound of a datatype 
 .SH SYNOPSIS
@@ -9,15 +9,15 @@ int MPI_Type_ub(MPI_Datatype datatype, MPI_Aint *displacement)
 .PD 0
 .TP
 .B datatype 
-- datatype (handle) 
+- datatype (handle)
 .PD 1
 
 .SH OUTPUT PARAMETER
 .PD 0
 .TP
 .B displacement 
-- displacement of upper bound from origin, 
-in bytes (integer) 
+- displacement of upper bound from origin,
+in bytes (address integer)
 .PD 1
 
 .SH DEPRECATED FUNCTION

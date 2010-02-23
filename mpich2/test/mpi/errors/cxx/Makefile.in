@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -83,13 +83,6 @@ latexdoc:
 	(cd errhan && $(MAKE) latexdoc )
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-	(cd io && $(MAKE) dependencies )
-	(cd errhan && $(MAKE) dependencies )
-# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)

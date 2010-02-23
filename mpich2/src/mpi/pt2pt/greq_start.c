@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id: greq_start.c,v 1.26 2007/07/15 14:43:53 gropp Exp $
- *
+/*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -106,7 +105,7 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_SINGLE_CS_ENTER("pt2pt");
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GREQUEST_START);
 
     /* Validate parameters if error checking is enabled */
@@ -153,7 +152,7 @@ int MPI_Grequest_start( MPI_Grequest_query_function *query_fn,
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GREQUEST_START);
-    MPIU_THREAD_SINGLE_CS_EXIT("pt2pt");
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
     
   fn_fail:

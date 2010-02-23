@@ -82,6 +82,9 @@
 /* assert function */
 #define DLOOP_Assert MPIU_Assert
 
+/* memory copy function */
+#define DLOOP_Memcpy MPIU_Memcpy
+
 /* Include dataloop_parts.h at the end to get the rest of the prototypes
  * and defines, in terms of the prefixes and types above.
  */
@@ -90,10 +93,12 @@
 
 /* These values are defined by DLOOP code.
  *
- * Note: DLOOP_DATALOOP_ALL_BYTES not currently used in MPICH2.
+ * Note: DLOOP_DATALOOP_ALL_BYTES is used only when the device
+ * defines MPID_NEEDS_DLOOP_ALL_BYTES.
  */
 #define MPID_DATALOOP_HETEROGENEOUS DLOOP_DATALOOP_HETEROGENEOUS
 #define MPID_DATALOOP_HOMOGENEOUS   DLOOP_DATALOOP_HOMOGENEOUS
+#define MPID_DATALOOP_ALL_BYTES     DLOOP_DATALOOP_ALL_BYTES
 
 #include <mpiimpl.h>
 

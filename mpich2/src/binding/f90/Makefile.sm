@@ -23,7 +23,6 @@ profilelib_${MPILIBNAME}_SOURCES = ${mpi_sources}
 profilelib_${MPILIBNAME} = p${MPILIBNAME}
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 
-lib${MPILIBNAME}f90_a_NOSHARED
 lib${MPILIBNAME}f90_a_SOURCES = mpi.o mpi_constants.o mpi_sizeofs.o mpi_base.o
 all-preamble: $(MPIMOD).$(MOD)
 
@@ -134,6 +133,8 @@ mpifnoext.h: ../f77/mpif.h
 all-postamble:
 	if [ -s lib${MPILIBNAME}f90.a ] ; then \
 	   cp -p lib${MPILIBNAME}f90.a ../../../lib ; fi
+	if [ -s lib${MPILIBNAME}f90.la ] ; then \
+	   cp -p lib${MPILIBNAME}f90.la ../../../lib ; fi
 clean-local:
 	rm -f *.$(MOD)
 	rm -f mpimod.pcl mpimod.pc

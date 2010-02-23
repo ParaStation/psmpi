@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#! /opt/local/bin/perl
 # -*- Mode: perl; -*-
 #
 # Set Defaults
@@ -16,16 +16,24 @@ $rootSrcDir = "";
 @commands = ( "cc", "pgcc", "gcc", "icc", "acc", 
               "rm", "mv", "cp", "ar", "ranlib", "perl", "for", 
 	      "/bin/rm", "/bin/mv", "/bin/cp",
-	      "if", "make", "gnumake", "[A-Za-z0-9_\/\.-]*\/mpicc",
+	      "if", "make", "gnumake", 
+	      "[A-Za-z0-9_\/\.-]*\/mpicc",
+	      "[A-Za-z0-9_\/\.-]*\/mpif77",
+	      "[A-Za-z0-9_\/\.-]*\/mpif90",
+	      "[A-Za-z0-9_\/\.-]*\/mpicxx",
 	      "cleaning", "sleep", "date", "g77", "f77", "f90", "f95", "pgCC",
 	      "pgf77", "pgf90", "CC", "g95", "g\\+\\+", "c\\+\\+",
 	      "acc\\+\\+", "xlc", "xlf", "xlC", "xlf90", "gfortran", 
-	      "ifort", "ifc", 
+	      "ifort", "ifc", "test",
 	      "true", "false", "/[A-Za-z0-9_\/\.-]*createshlib", 
 	      "/bin/sh\\s+[A-Za-z0-9_\/\.-]*libtool\\s+--mode=\\w+",
 	      "/bin/bash\\s+[A-Za-z0-9_\/\.-]*libtool\\s+--mode=\\w+",
 	      "/bin/sh\\s+[A-Za-z0-9_\/\.-]*libtool\\s+--finish",
 	      "/bin/bash\\s+[A-Za-z0-9_\/\.-]*libtool\\s+--finish",
+	      "libtool:\\s+compile:",
+	      "libtool:\\s+link:",
+	      "libtool:\\s+install:",
+	      "libtool:\\s+finish:",
 	      "[A-Za-z0-9_\/-]*\/icc",
 	      "[A-Za-z0-9_\/-]*\/install-sh",
 	      "/usr/bin/ar", "mkdir",
@@ -65,6 +73,7 @@ $rootSrcDir = "";
 # This next is a general version to handle all of these mistakes
 		'^PGC-W-0114-More than one type specified.*/usr/include<SEP>^PGC-W-0143-Useless typedef declaration \(no declarators present\).*/usr/include<SEP>2',
 		'copying python',
+		'LOOP WAS VECTORIZED',
 		);
 # In the past, we also needed
 # WARNING 84.*not used for resolving any symbol

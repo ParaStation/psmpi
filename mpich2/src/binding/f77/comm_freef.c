@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_FREE( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_free__( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_free( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_free_( MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_free_( MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_COMM_FREE = PMPI_COMM_FREE
+#pragma weak mpi_comm_free__ = PMPI_COMM_FREE
+#pragma weak mpi_comm_free_ = PMPI_COMM_FREE
+#pragma weak mpi_comm_free = PMPI_COMM_FREE
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_COMM_FREE = pmpi_comm_free__
 #pragma weak mpi_comm_free__ = pmpi_comm_free__
 #pragma weak mpi_comm_free_ = pmpi_comm_free__
 #pragma weak mpi_comm_free = pmpi_comm_free__
-#pragma weak pmpi_comm_free_ = pmpi_comm_free__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_COMM_FREE = pmpi_comm_free_
+#pragma weak mpi_comm_free__ = pmpi_comm_free_
+#pragma weak mpi_comm_free_ = pmpi_comm_free_
+#pragma weak mpi_comm_free = pmpi_comm_free_
+#else
+#pragma weak MPI_COMM_FREE = pmpi_comm_free
+#pragma weak mpi_comm_free__ = pmpi_comm_free
+#pragma weak mpi_comm_free_ = pmpi_comm_free
+#pragma weak mpi_comm_free = pmpi_comm_free
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_free_( MPI_Fint *, MPI_Fint * );
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_FREE( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_free__( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_free( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_free_( MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_comm_free__ = MPI_COMM_FREE
+#pragma weak mpi_comm_free_ = MPI_COMM_FREE
+#pragma weak mpi_comm_free = MPI_COMM_FREE
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_COMM_FREE = mpi_comm_free__
 #pragma weak mpi_comm_free_ = mpi_comm_free__
 #pragma weak mpi_comm_free = mpi_comm_free__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_COMM_FREE = mpi_comm_free_
+#pragma weak mpi_comm_free__ = mpi_comm_free_
+#pragma weak mpi_comm_free = mpi_comm_free_
+#else
+#pragma weak MPI_COMM_FREE = mpi_comm_free
+#pragma weak mpi_comm_free__ = mpi_comm_free
+#pragma weak mpi_comm_free_ = mpi_comm_free
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_FREE( MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_free__( MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_free_( MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_free( MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_comm_free__ = PMPI_COMM_FREE
+#pragma weak pmpi_comm_free_ = PMPI_COMM_FREE
+#pragma weak pmpi_comm_free = PMPI_COMM_FREE
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_COMM_FREE = pmpi_comm_free__
+#pragma weak pmpi_comm_free_ = pmpi_comm_free__
+#pragma weak pmpi_comm_free = pmpi_comm_free__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_COMM_FREE = pmpi_comm_free_
+#pragma weak pmpi_comm_free__ = pmpi_comm_free_
+#pragma weak pmpi_comm_free = pmpi_comm_free_
+#else
+#pragma weak PMPI_COMM_FREE = pmpi_comm_free
+#pragma weak pmpi_comm_free__ = pmpi_comm_free
+#pragma weak pmpi_comm_free_ = pmpi_comm_free
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_comm_free_ PMPI_COMM_FREE
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_free_( MPI_Fint *, MPI_Fint * );
 #define mpi_comm_free_ pmpi_comm_free
 #else
 #define mpi_comm_free_ pmpi_comm_free_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

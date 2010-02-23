@@ -1,6 +1,6 @@
-.TH MPI_Type_create_subarray 3 "11/2/2007" " " "MPI"
+.TH MPI_Type_create_subarray 3 "9/22/2008" " " "MPI"
 .SH NAME
-MPI_Type_create_subarray \-  Create a datatype for a subarray of a regular,  multidimensional array 
+MPI_Type_create_subarray \-  Create a datatype for a subarray of a regular, multidimensional array 
 .SH SYNOPSIS
 .nf
 int MPI_Type_create_subarray(int ndims,
@@ -15,42 +15,42 @@ int MPI_Type_create_subarray(int ndims,
 .PD 0
 .TP
 .B ndims 
-- number of array dimensions (positive integer) 
+- number of array dimensions (positive integer)
 .PD 1
 .PD 0
 .TP
 .B array_of_sizes 
 - number of elements of type oldtype in each dimension of the
-full array (array of positive integers) 
+full array (array of positive integers)
 .PD 1
 .PD 0
 .TP
 .B array_of_subsizes 
 - number of elements of type oldtype in each dimension of
-the subarray (array of positive integers) 
+the subarray (array of positive integers)
 .PD 1
 .PD 0
 .TP
 .B array_of_starts 
 - starting coordinates of the subarray in each dimension
-(array of nonnegative integers) 
+(array of nonnegative integers)
 .PD 1
 .PD 0
 .TP
 .B order 
-- array storage order flag (state) 
+- array storage order flag (state)
 .PD 1
 .PD 0
 .TP
 .B oldtype 
-- array element datatype (handle) 
+- array element datatype (handle)
 .PD 1
 
 .SH OUTPUT PARAMETER
 .PD 0
 .TP
 .B newtype 
-- new datatype (handle) 
+- new datatype (handle)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

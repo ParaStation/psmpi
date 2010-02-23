@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external__( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external_( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_pack_external_( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_PACK_EXTERNAL = PMPI_PACK_EXTERNAL
+#pragma weak mpi_pack_external__ = PMPI_PACK_EXTERNAL
+#pragma weak mpi_pack_external_ = PMPI_PACK_EXTERNAL
+#pragma weak mpi_pack_external = PMPI_PACK_EXTERNAL
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_PACK_EXTERNAL = pmpi_pack_external__
 #pragma weak mpi_pack_external__ = pmpi_pack_external__
 #pragma weak mpi_pack_external_ = pmpi_pack_external__
 #pragma weak mpi_pack_external = pmpi_pack_external__
-#pragma weak pmpi_pack_external_ = pmpi_pack_external__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_PACK_EXTERNAL = pmpi_pack_external_
+#pragma weak mpi_pack_external__ = pmpi_pack_external_
+#pragma weak mpi_pack_external_ = pmpi_pack_external_
+#pragma weak mpi_pack_external = pmpi_pack_external_
+#else
+#pragma weak MPI_PACK_EXTERNAL = pmpi_pack_external
+#pragma weak mpi_pack_external__ = pmpi_pack_external
+#pragma weak mpi_pack_external_ = pmpi_pack_external
+#pragma weak mpi_pack_external = pmpi_pack_external
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external_( char * FORT_MIXED_LEN_DE
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external__( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external_( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_pack_external__ = MPI_PACK_EXTERNAL
+#pragma weak mpi_pack_external_ = MPI_PACK_EXTERNAL
+#pragma weak mpi_pack_external = MPI_PACK_EXTERNAL
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_PACK_EXTERNAL = mpi_pack_external__
 #pragma weak mpi_pack_external_ = mpi_pack_external__
 #pragma weak mpi_pack_external = mpi_pack_external__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_PACK_EXTERNAL = mpi_pack_external_
+#pragma weak mpi_pack_external__ = mpi_pack_external_
+#pragma weak mpi_pack_external = mpi_pack_external_
+#else
+#pragma weak MPI_PACK_EXTERNAL = mpi_pack_external
+#pragma weak mpi_pack_external__ = mpi_pack_external
+#pragma weak mpi_pack_external_ = mpi_pack_external
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_pack_external__( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_pack_external_( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_pack_external( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_pack_external__ = PMPI_PACK_EXTERNAL
+#pragma weak pmpi_pack_external_ = PMPI_PACK_EXTERNAL
+#pragma weak pmpi_pack_external = PMPI_PACK_EXTERNAL
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_PACK_EXTERNAL = pmpi_pack_external__
+#pragma weak pmpi_pack_external_ = pmpi_pack_external__
+#pragma weak pmpi_pack_external = pmpi_pack_external__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_PACK_EXTERNAL = pmpi_pack_external_
+#pragma weak pmpi_pack_external__ = pmpi_pack_external_
+#pragma weak pmpi_pack_external = pmpi_pack_external_
+#else
+#pragma weak PMPI_PACK_EXTERNAL = pmpi_pack_external
+#pragma weak pmpi_pack_external__ = pmpi_pack_external
+#pragma weak pmpi_pack_external_ = pmpi_pack_external
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_pack_external_ PMPI_PACK_EXTERNAL
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external_( char * FORT_MIXED_LEN_DE
 #define mpi_pack_external_ pmpi_pack_external
 #else
 #define mpi_pack_external_ pmpi_pack_external_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

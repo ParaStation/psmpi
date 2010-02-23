@@ -1,22 +1,31 @@
 <dir>
-<file name="ad_lustre_fcntl.c" info="1216913249"/>
-<file name="ad_lustre_hints.c" info="1203618267"/>
-<file name="ad_lustre_open.c" info="1203618267"/>
-<file name="ad_lustre_rwcontig.c" info="1203462960"/>
-<file name="ad_lustre.h" info="1203462960"/>
-<file name="ad_lustre.c" info="1203462960"/>
+<file name="ad_lustre_fcntl.c" info="1215552457"/>
+<file name="ad_lustre_hints.c" info="1241819044"/>
+<file name="ad_lustre_rwcontig.c" info="1236958230"/>
+<file name="ad_lustre_wrstr.c" info="1236958230"/>
+<file name="ad_lustre_wrcoll.c" info="1246547967"/>
+<file name="ad_lustre.c" info="1240432540"/>
+<file name="ad_lustre_open.c" info="1236958230"/>
+<file name="ad_lustre.h" info="1236958230"/>
+<file name="ad_lustre_aggregate.c" info="1246547967"/>
 </dir>
 <data>
 <fileinfo name="ad_lustre_fcntl.c">
 </fileinfo>
 <fileinfo name="ad_lustre_hints.c">
 </fileinfo>
-<fileinfo name="ad_lustre_open.c">
-</fileinfo>
 <fileinfo name="ad_lustre_rwcontig.c">
+</fileinfo>
+<fileinfo name="ad_lustre_wrstr.c">
+</fileinfo>
+<fileinfo name="ad_lustre_wrcoll.c">
+</fileinfo>
+<fileinfo name="ad_lustre.c">
+</fileinfo>
+<fileinfo name="ad_lustre_open.c">
 </fileinfo>
 <fileinfo name="ad_lustre.h">
 </fileinfo>
-<fileinfo name="ad_lustre.c">
+<fileinfo name="ad_lustre_aggregate.c">
 </fileinfo>
 </data>

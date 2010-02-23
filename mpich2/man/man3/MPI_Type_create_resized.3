@@ -1,6 +1,6 @@
-.TH MPI_Type_create_resized 3 "11/2/2007" " " "MPI"
+.TH MPI_Type_create_resized 3 "9/22/2008" " " "MPI"
 .SH NAME
-MPI_Type_create_resized \-  Create a datatype with a new lower bound and  extent from an existing datatype 
+MPI_Type_create_resized \-  Create a datatype with a new lower bound and extent from an existing datatype 
 .SH SYNOPSIS
 .nf
 int MPI_Type_create_resized(MPI_Datatype oldtype,
@@ -12,24 +12,24 @@ int MPI_Type_create_resized(MPI_Datatype oldtype,
 .PD 0
 .TP
 .B oldtype 
-- input datatype (handle) 
+- input datatype (handle)
 .PD 1
 .PD 0
 .TP
 .B lb 
-- new lower bound of datatype (integer) 
+- new lower bound of datatype (address integer)
 .PD 1
 .PD 0
 .TP
 .B extent 
-- new extent of datatype (integer) 
+- new extent of datatype (address integer)
 .PD 1
 
 .SH OUTPUT PARAMETER
 .PD 0
 .TP
 .B newtype 
-- output datatype (handle) 
+- output datatype (handle)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

@@ -6,21 +6,21 @@
 </HEAD>
 <BODY BGCOLOR="FFFFFF">
 <A NAME="MPI_Type_get_true_extent"><H1>MPI_Type_get_true_extent</H1></A>
-Get the true lower bound and extent for a  datatype 
+Get the true lower bound and extent for a datatype 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Type_get_true_extent(MPI_Datatype datatype, MPI_Aint *true_lb, 
+int MPI_Type_get_true_extent(MPI_Datatype datatype, MPI_Aint *true_lb,
                            MPI_Aint *true_extent)
 </PRE>
 <H2>Input Parameter</H2>
-<DL><DT><B>datatype </B> <DD> datatype to get information on (handle) 
+<DL><DT><B>datatype </B> <DD> datatype to get information on (handle)
 </DL>
 <P>
 <H2>Output Parameters</H2>
 <DL>
-<DT><B>true_lb </B><DD>true lower bound of datatype (integer) 
+<DT><B>true_lb </B><DD>true lower bound of datatype (address integer)
 
-<DT><B>true_extent </B><DD>true size of datatype (integer) 
+<DT><B>true_extent </B><DD>true size of datatype (address integer)
 </DL>
 <P>
 <H2>Thread and Interrupt Safety</H2>

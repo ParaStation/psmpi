@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -18,7 +18,7 @@ CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 LDFLAGS     =  @LDFLAGS@ ../util/mtest.o
@@ -65,8 +65,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
-	-@rm -f *.o ${srcdir}/*.o baseattrcomm attric attrerr baseattr2 attrend fkeyvaltype attrordertype attr2type attrt attrerrtype attrerrcomm fkeyvalcomm attrorder fkeyval attrordercomm
-	-@rm -f baseattrcomm.exe attric.exe attrerr.exe baseattr2.exe attrend.exe fkeyvaltype.exe attrordertype.exe attr2type.exe attrt.exe attrerrtype.exe attrerrcomm.exe fkeyvalcomm.exe attrorder.exe fkeyval.exe attrordercomm.exe
+	-@rm -f *.o ${srcdir}/*.o baseattrcomm attric attrerr baseattr2 keyval_double_free attrend fkeyvaltype attrordertype attr2type attrt attrerrtype attrerrcomm fkeyvalcomm attrorder fkeyval attrordercomm
+	-@rm -f baseattrcomm.exe attric.exe attrerr.exe baseattr2.exe keyval_double_free.exe attrend.exe fkeyvaltype.exe attrordertype.exe attr2type.exe attrt.exe attrerrtype.exe attrerrcomm.exe fkeyvalcomm.exe attrorder.exe fkeyval.exe attrordercomm.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -86,7 +86,7 @@ remove-genmakefiles:
 	rm -f  Makefile.in Makefile
 all-redirect: attrt attrend attric attrerr attrerrcomm attrerrtype attr2type\
 	 attrorder attrordercomm attrordertype baseattr2 baseattrcomm fkeyval\
-	 fkeyvalcomm fkeyvaltype
+	 fkeyvalcomm fkeyvaltype keyval_double_free
 
 coverage: 
 baseattrcomm: baseattrcomm.o   @MPILIBLOC@ ../util/mtest.o
@@ -98,6 +98,9 @@ attrerr: attrerr.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o attrerr attrerr.o  ${LIBS}
 baseattr2: baseattr2.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o baseattr2 baseattr2.o  ${LIBS}
+keyval_double_free: keyval_double_free.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o keyval_double_free \
+	keyval_double_free.o  ${LIBS} 
 attrend: attrend.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o attrend attrend.o  ${LIBS}
 fkeyvaltype: fkeyvaltype.o   @MPILIBLOC@ ../util/mtest.o
@@ -130,14 +133,10 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
 SOURCES         =  attrt.c attrend.c attric.c attrerr.c attrerrcomm.c \
 	attrerrtype.c attr2type.c attrorder.c attrordercomm.c attrordertype.c \
-	baseattr2.c baseattrcomm.c fkeyval.c fkeyvalcomm.c fkeyvaltype.c 
+	baseattr2.c baseattrcomm.c fkeyval.c fkeyvalcomm.c fkeyvaltype.c \
+	keyval_double_free.c 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)

@@ -1,4 +1,4 @@
-.TH MPI_Type_get_name 3 "11/2/2007" " " "MPI"
+.TH MPI_Type_get_name 3 "3/20/2009" " " "MPI"
 .SH NAME
 MPI_Type_get_name \-  Get the print name for a datatype 
 .SH SYNOPSIS
@@ -9,20 +9,20 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
 .PD 0
 .TP
 .B type 
-- datatype whose name is to be returned (handle) 
+- datatype whose name is to be returned (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B type_name 
-- the name previously stored on the datatype, or a empty string 
-if no such name exists (string) 
+- the name previously stored on the datatype, or a empty string
+if no such name exists (string)
 .PD 1
 .PD 0
 .TP
 .B resultlen 
-- length of returned name (integer) 
+- length of returned name (integer)
 .PD 1
 
 

@@ -1,4 +1,4 @@
-.TH MPI_Type_create_darray 3 "11/2/2007" " " "MPI"
+.TH MPI_Type_create_darray 3 "9/22/2008" " " "MPI"
 .SH NAME
 MPI_Type_create_darray \-  Create a datatype representing a distributed array 
 .SH SYNOPSIS
@@ -18,54 +18,54 @@ int MPI_Type_create_darray(int size,
 .PD 0
 .TP
 .B size 
-- size of process group (positive integer) 
+- size of process group (positive integer)
 .PD 1
 .PD 0
 .TP
 .B rank 
-- rank in process group (nonnegative integer) 
+- rank in process group (nonnegative integer)
 .PD 1
 .PD 0
 .TP
 .B ndims 
-- number of array dimensions as well as process grid dimensions (positive integer) 
+- number of array dimensions as well as process grid dimensions (positive integer)
 .PD 1
 .PD 0
 .TP
 .B array_of_gsizes 
-- number of elements of type oldtype in each dimension of global array (array of positive integers) 
+- number of elements of type oldtype in each dimension of global array (array of positive integers)
 .PD 1
 .PD 0
 .TP
 .B array_of_distribs 
-- distribution of array in each dimension (array of state) 
+- distribution of array in each dimension (array of state)
 .PD 1
 .PD 0
 .TP
 .B array_of_dargs 
-- distribution argument in each dimension (array of positive integers) 
+- distribution argument in each dimension (array of positive integers)
 .PD 1
 .PD 0
 .TP
 .B array_of_psizes 
-- size of process grid in each dimension (array of positive integers) 
+- size of process grid in each dimension (array of positive integers)
 .PD 1
 .PD 0
 .TP
 .B order 
-- array storage order flag (state) 
+- array storage order flag (state)
 .PD 1
 .PD 0
 .TP
 .B oldtype 
-- old datatype (handle) 
+- old datatype (handle)
 .PD 1
 
 .SH OUTPUT PARAMETER
 .PD 0
 .TP
 .B newtype 
-- new datatype (handle) 
+- new datatype (handle)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

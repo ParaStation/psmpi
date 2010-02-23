@@ -373,6 +373,7 @@ class MPDMan(object):
                       'spawner_manpid' : int(os.environ['MPDMAN_SPAWNER_MANPID']),
                       'spawner_mpd' : os.environ['MPDMAN_SPAWNER_MPD'] }
         self.mpdSock.send_dict_msg(msgToSend)
+
         if not self.subproc:
             self.streamHandler.set_handler(self.fd_read_cli_stdout,
                                            self.handle_cli_stdout_input)
@@ -423,6 +424,24 @@ class MPDMan(object):
                 sys.exit(0)
             # rshipSock.close()
             self.waitPids.append(rshipPid)
+
+        if not self.spawned:
+            # receive the final process mapping from our MPD overlords
+            msg = self.mpdSock.recv_dict_msg(timeout=-1)
+
+            # a few defensive checks now to make sure that the various parts of the
+            # code are all on the same page
+            if not msg.has_key('cmd') or msg['cmd'] != 'process_mapping':
+                mpd_print(1,'expected cmd="process_mapping", got cmd="%s" instead' % (msg.get('cmd','**not_present**')))
+                sys.exit(-1)
+            if msg['jobid'] != self.jobid:
+                mpd_print(1,'expected jobid="%s", got jobid="%s" instead' % (self.jobid,msg['jobid']))
+                sys.exit(-1)
+            if not msg.has_key('process_mapping'):
+                mpd_print(1,'expected msg to contain a process_mapping key')
+                sys.exit(-1)
+            self.KVSs[self.default_kvsname]['process-mapping'] = msg['process_mapping']
+
 
         self.tvReady = 0
         self.pmiBarrierInRecvd = 0
@@ -593,7 +612,8 @@ class MPDMan(object):
                 kvsname = msg['kvsname']
                 if self.KVSs.has_key(kvsname)  and  self.KVSs[kvsname].has_key(key):
                     value = self.KVSs[kvsname][key]
-                    msgToSend = { 'cmd' : 'response_to_pmi_get', 'value' : value,
+                    msgToSend = { 'cmd' : 'response_to_pmi_get', 'key' : key,
+                                  'kvsname' : kvsname, 'value' : value,
                                   'to_rank' : msg['from_rank'] }
                     self.ring.rhsSock.send_dict_msg(msgToSend)
                 else:
@@ -614,6 +634,14 @@ class MPDMan(object):
                 msg['kvs'].update(self.KVSs[self.default_kvsname])
                 self.ring.rhsSock.send_dict_msg(msg)
         elif msg['cmd'] == 'response_to_pmi_get':
+            # [goodell@ 2009-05-05] The next few lines add caching in to the kvs
+            # gets to improve lookup performance and reduce MPI_Init times.
+            # Note that this doesn't handle consistency correctly if PMI is ever
+            # changed to permit overwriting keyvals.
+            if msg['kvsname'] not in self.KVSs.keys():
+                self.KVSs[msg['kvsname']] = dict()
+            self.KVSs[msg['kvsname']][msg['key']] = msg['value']
+
             if msg['to_rank'] == self.myRank:
                 if self.pmiSock:  # may have disappeared in early shutdown
                     pmiMsgToSend = 'cmd=get_result rc=0 value=%s\n' % (msg['value'])

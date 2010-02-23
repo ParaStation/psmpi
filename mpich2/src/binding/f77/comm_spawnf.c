@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN( char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn__( char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn( char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_( char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_( char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_COMM_SPAWN = PMPI_COMM_SPAWN
+#pragma weak mpi_comm_spawn__ = PMPI_COMM_SPAWN
+#pragma weak mpi_comm_spawn_ = PMPI_COMM_SPAWN
+#pragma weak mpi_comm_spawn = PMPI_COMM_SPAWN
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_COMM_SPAWN = pmpi_comm_spawn__
 #pragma weak mpi_comm_spawn__ = pmpi_comm_spawn__
 #pragma weak mpi_comm_spawn_ = pmpi_comm_spawn__
 #pragma weak mpi_comm_spawn = pmpi_comm_spawn__
-#pragma weak pmpi_comm_spawn_ = pmpi_comm_spawn__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_COMM_SPAWN = pmpi_comm_spawn_
+#pragma weak mpi_comm_spawn__ = pmpi_comm_spawn_
+#pragma weak mpi_comm_spawn_ = pmpi_comm_spawn_
+#pragma weak mpi_comm_spawn = pmpi_comm_spawn_
+#else
+#pragma weak MPI_COMM_SPAWN = pmpi_comm_spawn
+#pragma weak mpi_comm_spawn__ = pmpi_comm_spawn
+#pragma weak mpi_comm_spawn_ = pmpi_comm_spawn
+#pragma weak mpi_comm_spawn = pmpi_comm_spawn
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_( char * FORT_MIXED_LEN_DECL,
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN( char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn__( char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn( char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_( char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_comm_spawn__ = MPI_COMM_SPAWN
+#pragma weak mpi_comm_spawn_ = MPI_COMM_SPAWN
+#pragma weak mpi_comm_spawn = MPI_COMM_SPAWN
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_COMM_SPAWN = mpi_comm_spawn__
 #pragma weak mpi_comm_spawn_ = mpi_comm_spawn__
 #pragma weak mpi_comm_spawn = mpi_comm_spawn__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_COMM_SPAWN = mpi_comm_spawn_
+#pragma weak mpi_comm_spawn__ = mpi_comm_spawn_
+#pragma weak mpi_comm_spawn = mpi_comm_spawn_
+#else
+#pragma weak MPI_COMM_SPAWN = mpi_comm_spawn
+#pragma weak mpi_comm_spawn__ = mpi_comm_spawn
+#pragma weak mpi_comm_spawn_ = mpi_comm_spawn
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_SPAWN( char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn__( char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_( char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn( char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_comm_spawn__ = PMPI_COMM_SPAWN
+#pragma weak pmpi_comm_spawn_ = PMPI_COMM_SPAWN
+#pragma weak pmpi_comm_spawn = PMPI_COMM_SPAWN
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_COMM_SPAWN = pmpi_comm_spawn__
+#pragma weak pmpi_comm_spawn_ = pmpi_comm_spawn__
+#pragma weak pmpi_comm_spawn = pmpi_comm_spawn__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_COMM_SPAWN = pmpi_comm_spawn_
+#pragma weak pmpi_comm_spawn__ = pmpi_comm_spawn_
+#pragma weak pmpi_comm_spawn = pmpi_comm_spawn_
+#else
+#pragma weak PMPI_COMM_SPAWN = pmpi_comm_spawn
+#pragma weak pmpi_comm_spawn__ = pmpi_comm_spawn
+#pragma weak pmpi_comm_spawn_ = pmpi_comm_spawn
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_comm_spawn_ PMPI_COMM_SPAWN
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_( char * FORT_MIXED_LEN_DECL,
 #define mpi_comm_spawn_ pmpi_comm_spawn
 #else
 #define mpi_comm_spawn_ pmpi_comm_spawn_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,
@@ -134,7 +201,9 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_ ( char *v1 FORT_MIXED_LEN(d1), char
         p1[li] = 0; 
     }
 
+#ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
+#endif
 
     { int i;
       char *ptmp;

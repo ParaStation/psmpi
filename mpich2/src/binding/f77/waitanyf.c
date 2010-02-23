@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_WAITANY( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_waitany__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_waitany( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_waitany_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_waitany_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_WAITANY = PMPI_WAITANY
+#pragma weak mpi_waitany__ = PMPI_WAITANY
+#pragma weak mpi_waitany_ = PMPI_WAITANY
+#pragma weak mpi_waitany = PMPI_WAITANY
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_WAITANY = pmpi_waitany__
 #pragma weak mpi_waitany__ = pmpi_waitany__
 #pragma weak mpi_waitany_ = pmpi_waitany__
 #pragma weak mpi_waitany = pmpi_waitany__
-#pragma weak pmpi_waitany_ = pmpi_waitany__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_WAITANY = pmpi_waitany_
+#pragma weak mpi_waitany__ = pmpi_waitany_
+#pragma weak mpi_waitany_ = pmpi_waitany_
+#pragma weak mpi_waitany = pmpi_waitany_
+#else
+#pragma weak MPI_WAITANY = pmpi_waitany
+#pragma weak mpi_waitany__ = pmpi_waitany
+#pragma weak mpi_waitany_ = pmpi_waitany
+#pragma weak mpi_waitany = pmpi_waitany
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_waitany_( MPI_Fint *, MPI_Fint *, MPI_Fi
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_WAITANY( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_waitany__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_waitany( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_waitany_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_waitany__ = MPI_WAITANY
+#pragma weak mpi_waitany_ = MPI_WAITANY
+#pragma weak mpi_waitany = MPI_WAITANY
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_WAITANY = mpi_waitany__
 #pragma weak mpi_waitany_ = mpi_waitany__
 #pragma weak mpi_waitany = mpi_waitany__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_WAITANY = mpi_waitany_
+#pragma weak mpi_waitany__ = mpi_waitany_
+#pragma weak mpi_waitany = mpi_waitany_
+#else
+#pragma weak MPI_WAITANY = mpi_waitany
+#pragma weak mpi_waitany__ = mpi_waitany
+#pragma weak mpi_waitany_ = mpi_waitany
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WAITANY( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_waitany__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_waitany_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_waitany( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_waitany__ = PMPI_WAITANY
+#pragma weak pmpi_waitany_ = PMPI_WAITANY
+#pragma weak pmpi_waitany = PMPI_WAITANY
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_WAITANY = pmpi_waitany__
+#pragma weak pmpi_waitany_ = pmpi_waitany__
+#pragma weak pmpi_waitany = pmpi_waitany__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_WAITANY = pmpi_waitany_
+#pragma weak pmpi_waitany__ = pmpi_waitany_
+#pragma weak pmpi_waitany = pmpi_waitany_
+#else
+#pragma weak PMPI_WAITANY = pmpi_waitany
+#pragma weak pmpi_waitany__ = pmpi_waitany
+#pragma weak pmpi_waitany_ = pmpi_waitany
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_waitany_ PMPI_WAITANY
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_waitany_( MPI_Fint *, MPI_Fint *, MPI_Fi
 #define mpi_waitany_ pmpi_waitany
 #else
 #define mpi_waitany_ pmpi_waitany_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,
@@ -122,7 +189,9 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_waitany_( MPI_Fint *, MPI_Fint *, MPI_Fi
 FORT_DLL_SPEC void FORT_CALL mpi_waitany_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *ierr ){
     int l3;
 
+#ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
+#endif
 
     if (v4 == MPI_F_STATUS_IGNORE) { v4 = (MPI_Fint*)MPI_STATUS_IGNORE; }
     *ierr = MPI_Waitany( *v1, (MPI_Request *)(v2),  &l3, (MPI_Status *)v4 );

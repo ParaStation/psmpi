@@ -39,7 +39,7 @@ void ADIO_End(int *error_code)
     datarep = ADIOI_Datarep_head;
     while (datarep) {
         datarep_next = datarep->next;
-#ifdef MPICH2
+#ifdef HAVE_MPIU_FUNCS
         MPIU_Free(datarep->name);
 #else
         ADIOI_Free(datarep->name);
@@ -57,7 +57,7 @@ void ADIO_End(int *error_code)
 
 
 /* This is the delete callback function associated with
-   ADIO_Init_keyval when MPI_COMM_WORLD is freed */
+   ADIO_Init_keyval when MPI_COMM_SELF is freed */
 
 int ADIOI_End_call(MPI_Comm comm, int keyval, void *attribute_val, void
 		  *extra_state)
@@ -65,10 +65,10 @@ int ADIOI_End_call(MPI_Comm comm, int keyval, void *attribute_val, void
     int error_code;
 
     ADIOI_UNREFERENCED_ARG(comm);
-    ADIOI_UNREFERENCED_ARG(keyval);
     ADIOI_UNREFERENCED_ARG(attribute_val);
     ADIOI_UNREFERENCED_ARG(extra_state);
 
+    MPI_Keyval_free(&keyval);
     ADIO_End(&error_code);
     return error_code;
 }

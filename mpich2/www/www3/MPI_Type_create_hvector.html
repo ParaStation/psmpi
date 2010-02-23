@@ -17,17 +17,17 @@ int MPI_Type_create_hvector(int count,
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>count </B><DD>number of blocks (nonnegative integer) 
+<DT><B>count </B><DD>number of blocks (nonnegative integer)
 
-<DT><B>blocklength </B><DD>number of elements in each block (nonnegative integer) 
+<DT><B>blocklength </B><DD>number of elements in each block (nonnegative integer)
 
-<DT><B>stride </B><DD>number of bytes between start of each block (integer) 
+<DT><B>stride </B><DD>number of bytes between start of each block (address integer)
 
-<DT><B>oldtype </B><DD>old datatype (handle) 
+<DT><B>oldtype </B><DD>old datatype (handle)
 </DL>
 <P>
 <H2>Output Parameter</H2>
-<DL><DT><B>newtype </B> <DD> new datatype (handle) 
+<DL><DT><B>newtype </B> <DD> new datatype (handle)
 </DL>
 <P>
 <H2>Thread and Interrupt Safety</H2>

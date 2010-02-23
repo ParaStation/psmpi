@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_CANCEL( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_cancel__( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_cancel( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_cancel_( MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_cancel_( MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_CANCEL = PMPI_CANCEL
+#pragma weak mpi_cancel__ = PMPI_CANCEL
+#pragma weak mpi_cancel_ = PMPI_CANCEL
+#pragma weak mpi_cancel = PMPI_CANCEL
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_CANCEL = pmpi_cancel__
 #pragma weak mpi_cancel__ = pmpi_cancel__
 #pragma weak mpi_cancel_ = pmpi_cancel__
 #pragma weak mpi_cancel = pmpi_cancel__
-#pragma weak pmpi_cancel_ = pmpi_cancel__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_CANCEL = pmpi_cancel_
+#pragma weak mpi_cancel__ = pmpi_cancel_
+#pragma weak mpi_cancel_ = pmpi_cancel_
+#pragma weak mpi_cancel = pmpi_cancel_
+#else
+#pragma weak MPI_CANCEL = pmpi_cancel
+#pragma weak mpi_cancel__ = pmpi_cancel
+#pragma weak mpi_cancel_ = pmpi_cancel
+#pragma weak mpi_cancel = pmpi_cancel
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_cancel_( MPI_Fint *, MPI_Fint * );
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_CANCEL( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_cancel__( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_cancel( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_cancel_( MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_cancel__ = MPI_CANCEL
+#pragma weak mpi_cancel_ = MPI_CANCEL
+#pragma weak mpi_cancel = MPI_CANCEL
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_CANCEL = mpi_cancel__
 #pragma weak mpi_cancel_ = mpi_cancel__
 #pragma weak mpi_cancel = mpi_cancel__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_CANCEL = mpi_cancel_
+#pragma weak mpi_cancel__ = mpi_cancel_
+#pragma weak mpi_cancel = mpi_cancel_
+#else
+#pragma weak MPI_CANCEL = mpi_cancel
+#pragma weak mpi_cancel__ = mpi_cancel
+#pragma weak mpi_cancel_ = mpi_cancel
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_CANCEL( MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_cancel__( MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_cancel_( MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_cancel( MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_cancel__ = PMPI_CANCEL
+#pragma weak pmpi_cancel_ = PMPI_CANCEL
+#pragma weak pmpi_cancel = PMPI_CANCEL
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_CANCEL = pmpi_cancel__
+#pragma weak pmpi_cancel_ = pmpi_cancel__
+#pragma weak pmpi_cancel = pmpi_cancel__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_CANCEL = pmpi_cancel_
+#pragma weak pmpi_cancel__ = pmpi_cancel_
+#pragma weak pmpi_cancel = pmpi_cancel_
+#else
+#pragma weak PMPI_CANCEL = pmpi_cancel
+#pragma weak pmpi_cancel__ = pmpi_cancel
+#pragma weak pmpi_cancel_ = pmpi_cancel
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_cancel_ PMPI_CANCEL
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_cancel_( MPI_Fint *, MPI_Fint * );
 #define mpi_cancel_ pmpi_cancel
 #else
 #define mpi_cancel_ pmpi_cancel_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

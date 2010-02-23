@@ -1,21 +1,79 @@
 ===============================================================================
-                               Changes in 1.0.8
+                               Changes in 1.1.1
 ===============================================================================
 
-- Added support for MPI 2.1
+ # OVERALL: Improved support for Boost MPI.
 
-- Added support for MPI_Type_create_resized and
+ # PM/PMI: Significantly improved time taken by MPI_Init with Nemesis and MPD on
+   large numbers of processes.
+
+ # PM/PMI: Improved support for hybrid MPI-UPC program launching with
+   Hydra.
+
+ # PM/PMI: Improved support for process-core binding with Hydra.
+
+ # PM/PMI: Preliminary support for PMI-2. Currently supported only
+   with Hydra.
+
+ # Many other bug fixes, memory leak fixes and code cleanup. A full
+   list of changes is available using:
+
+  svn log -r4655:HEAD https://svn.mcs.anl.gov/repos/mpi/mpich2/tags/release/mpich2-1.1.1
+
+  ... or at the following link:
+
+  https://trac.mcs.anl.gov/projects/mpich2/log/mpich2/tags/release/mpich2-1.1.1?action=follow_copy&rev=HEAD&stop_rev=4655&mode=follow_copy
+
+
+===============================================================================
+                               Changes in 1.1
+===============================================================================
+
+- OVERALL: Added MPI 2.1 support.
+
+- OVERALL: Nemesis is now the default configuration channel with a
+  completely new TCP communication module.
+
+- OVERALL: Windows support for nemesis.
+
+- OVERALL: Added a new Myrinet MX network module for nemesis.
+
+- OVERALL: Initial support for shared-memory aware collective
+  communication operations.  Currently MPI_Bcast, MPI_Reduce, MPI_Allreduce,
+  and MPI_Scan.
+
+- OVERALL: Improved handling of MPI Attributes.
+
+- OVERALL: Support for BlueGene/P through the DCMF library (thanks to
+  IBM for the patch).
+
+- OVERALL: Experimental support for fine-grained multithreading
+
+- OVERALL: Added dynamic processes support for Nemesis.
+
+- OVERALL: Added automatic as well as statically runtime configurable
+  receive timeout variation for MPD (thanks to OSU for the patch).
+
+- OVERALL: Improved performance for MPI_Allgatherv, MPI_Gatherv, and MPI_Alltoall.
+
+- PM/PMI: Initial support for the new Hydra process management
+  framework (current support is for ssh, rsh, fork and a preliminary
+  version of slurm).
+
+- ROMIO: Added support for MPI_Type_create_resized and
   MPI_Type_create_indexed_block datatypes in ROMIO.
 
-- Many other bug fixes, memory leak fixes and code cleanup. A full
-list of changes is available using:
-  https://trac.mcs.anl.gov/projects/mpich2/log/mpich2/branches/release/MPICH2_1_0_8?rev=HEAD&stop_rev=887&mode=follow_copy
-    or
-  svn log -r887:HEAD https://svn.mcs.anl.gov/repos/mpi/mpich2/branches/release/MPICH2_1_0_8
+- ROMIO: Optimized Lustre ADIO driver (thanks to Weikuan Yu for
+  initial work and Sun for further improvements).
 
-- Autoconf-2.62 instead of 2.59 is used in this release.
-  The install directory structure is slightly modified to conform to
-  autoconf-2.62.
+- Many other bug fixes, memory leak fixes and code cleanup. A full
+  list of changes is available using:
+
+  svn log -r813:HEAD https://svn.mcs.anl.gov/repos/mpi/mpich2/tags/release/mpich2-1.1
+
+  ... or at the following link:
+
+  https://trac.mcs.anl.gov/projects/mpich2/log/mpich2/tags/release/mpich2-1.1?action=follow_copy&rev=HEAD&stop_rev=813&mode=follow_copy
 
 
 ===============================================================================

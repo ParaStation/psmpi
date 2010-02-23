@@ -31,6 +31,12 @@ usage:  mpdboot --totalnum=<n_to_start> [--file=<hostsfile>]  [--help] \
 --maxbranch indicates the maximum number of mpds to enter the ring under another;
   the default is 4
 """
+
+# workaround to suppress deprecated module warnings in python2.6
+# see https://trac.mcs.anl.gov/projects/mpich2/ticket/362 for tracking
+import warnings
+warnings.filterwarnings('ignore', '.*the popen2 module is deprecated.*', DeprecationWarning)
+
 from time import ctime
 __author__ = "Ralph Butler and Rusty Lusk"
 __date__ = ctime()
@@ -69,6 +75,10 @@ def mpdboot():
         shell = path.split(environ['SHELL'])[-1]
     except:
         shell = 'csh'
+    if environ.has_key('MPD_TMPDIR'):
+        tmpdir = environ['MPD_TMPDIR']
+    else:
+        tmpdir = ''
 
     argidx = 1    # skip arg 0
     while argidx < len(argv):
@@ -249,6 +259,8 @@ def mpdboot():
                 if cons == 'n':
                     cons = '-n'
                 mpdArgs = '%s %s %s %s %s ' % (cons,entryHost,entryPort,ifhn,ncpus)
+                if tmpdir:
+                    mpdArgs += ' --tmpdir=%s' % (tmpdir)
                 (mpdPID,mpdFD) = launch_one_mpd(idxToStart,currRoot,mpdArgs,hostsAndInfo)
                 hostsAndInfo[idxToStart]['pid'] = mpdPID
                 hostsSeen[hostsAndInfo[idxToStart]['host']] = 1

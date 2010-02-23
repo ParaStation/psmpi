@@ -1,17 +1,19 @@
 <dir>
-<file name="mpid_nem_mpich2_rma.c" info="1207189686"/>
-<file name="mpid_nem_ckpt.c" info="1207189686"/>
-<file name="mpid_nem_lmt.c" info="1224602380"/>
-<file name="mpid_nem_debug.c" info="1207189686"/>
-<file name="mpid_nem_alloc.c" info="1207189686"/>
-<file name="mpid_nem_mpich2.c" info="1220530266"/>
-<file name="mpid_nem_queue.c" info="1207189686"/>
-<file name="mpid_nem_network_poll.c" info="1207189686"/>
-<file name="mpid_nem_network.c" info="1207189686"/>
-<file name="mpid_nem_init.c" info="1215144991"/>
-<file name="mpid_nem_finalize.c" info="1207189686"/>
-<file name="mpid_nem_lmt_shm.c" info="1220464473"/>
-<file name="mpid_nem_barrier.c" info="1220464473"/>
+<file name="mpid_nem_mpich2_rma.c" info="1244842249"/>
+<file name="mpid_nem_ckpt.c" info="1242073746"/>
+<file name="mpid_nem_lmt.c" info="1246546681"/>
+<file name="mpid_nem_alloc.c" info="1246390913"/>
+<file name="mpid_nem_debug.c" info="1241209896"/>
+<file name="mpid_nem_mpich2.c" info="1244842249"/>
+<file name="mpid_nem_queue.c" info="1241759641"/>
+<file name="mpid_nem_network_poll.c" info="1242092309"/>
+<file name="mpid_nem_network.c" info="1242073746"/>
+<file name="mpid_nem_lmt_dma.c" info="1242239124"/>
+<file name="mpid_nem_init.c" info="1244583469"/>
+<file name="mpid_nem_finalize.c" info="1246390913"/>
+<file name="mpid_nem_lmt_vmsplice.c" info="1242239124"/>
+<file name="mpid_nem_lmt_shm.c" info="1246390913"/>
+<file name="mpid_nem_barrier.c" info="1242164554"/>
 </dir>
 <data>
 <fileinfo name="mpid_nem_mpich2_rma.c">
@@ -54,34 +56,36 @@ MPID_STATE_DO_CTS do_cts
 MPID_STATE_DO_SEND do_send
 MPID_STATE_DO_COOKIE do_cookie
 </fileinfo>
+<fileinfo name="mpid_nem_alloc.c">
+MPID_STATE_MPIDI_CH3I_SEG_ALLOC MPIDI_CH3I_Seg_alloc
+MPID_STATE_MPIDI_CH3I_SEG_COMMIT MPIDI_CH3I_Seg_commit
+MPID_STATE_MPIDI_CH3I_SEG_DESTROY MPIDI_CH3I_Seg_destroy
+MPID_STATE_CHECK_ALLOC check_alloc
+</fileinfo>
 <fileinfo name="mpid_nem_debug.c">
 MPID_STATE_MPID_NEM_DBG_DUMP_CELL MPID_nem_dbg_dump_cell
-</fileinfo>
-<fileinfo name="mpid_nem_alloc.c">
-MPID_STATE_MPID_NEM_SEG_CREATE MPID_nem_seg_create
-MPID_STATE_MPID_NEM_SEG_DESTROY MPID_nem_seg_destroy
-MPID_STATE_NEM_SEG_ALLOC MPID_nem_seg_alloc
-MPID_STATE_MPID_NEM_CHECK_ALLOC MPID_nem_check_alloc
-MPID_STATE_MPID_NEM_ALLOCATE_SHARED_MEMORY MPID_nem_allocate_shared_memory
-MPID_STATE_MPID_NEM_ATTACH_SHARED_MEMORY MPID_nem_attach_shared_memory
-MPID_STATE_MPID_NEM_REMOVE_SHARED_MEMORY MPID_nem_remove_shared_memory
-MPID_STATE_MPID_NEM_DETACH_SHARED_MEMORY MPID_nem_detach_shared_memory
 </fileinfo>
 <fileinfo name="mpid_nem_mpich2.c">
 MPID_STATE_MPID_NEM_MPICH2_INIT MPID_nem_mpich2_init
 MPID_STATE_MPID_NEM_SEND_IOV MPID_nem_send_iov
 </fileinfo>
 <fileinfo name="mpid_nem_queue.c">
-MPID_STATE_MPID_NEM_CELL_INIT MPID_nem_cell_init
 MPID_STATE_MPID_NEM_DUMP_CELL_MPICH MPID_nem_dump_cell_mpich
 MPID_STATE_MPID_NEM_DUMP_CELL_MPICH2__ MPID_nem_dump_cell_mpich2__
-MPID_STATE_MPID_NEM_QUEUE_INIT MPID_nem_queue_init
 </fileinfo>
 <fileinfo name="mpid_nem_network_poll.c">
-MPID_STATE_MPID_NEM_NETWORK_POLL MPID_nem_network_poll
 </fileinfo>
 <fileinfo name="mpid_nem_network.c">
-MPID_STATE_MPID_NEM_NET_INIT MPID_nem_net_init
+MPID_STATE_MPID_NEM_CHOOSE_NETMOD MPID_nem_choose_netmod
+</fileinfo>
+<fileinfo name="mpid_nem_lmt_dma.c">
+MPID_STATE_MPID_NEM_LMT_DMA_INITIATE_LMT MPID_nem_lmt_dma_initiate_lmt
+MPID_STATE_MPID_NEM_LMT_DMA_START_RECV MPID_nem_lmt_dma_start_recv
+MPID_STATE_MPID_NEM_LMT_DMA_DONE_SEND MPID_nem_lmt_dma_done_send
+MPID_STATE_MPID_NEM_LMT_DMA_HANDLE_COOKIE MPID_nem_lmt_dma_handle_cookie
+MPID_STATE_MPID_NEM_LMT_DMA_PROGRESS MPID_nem_lmt_dma_handle_cookie
+MPID_STATE_MPID_NEM_LMT_DMA_START_SEND MPID_nem_lmt_dma_start_send
+MPID_STATE_MPID_NEM_LMT_DMA_DONE_RECV MPID_nem_lmt_dma_done_recv
 </fileinfo>
 <fileinfo name="mpid_nem_init.c">
 MPID_STATE_MPID_NEM_VC_INIT MPID_nem_vc_init
@@ -91,6 +95,15 @@ MPID_STATE_MPID_NEM_VC_DESTROY MPID_nem_vc_destroy
 MPID_STATE_MPID_NEM_FINALIZE MPID_nem_finalize
 MPID_STATE_MPID_NEM_CKPT_SHUTDOWN MPID_nem_ckpt_shutdown
 MPID_STATE_MPID_NEM_VC_TERMINATE MPID_nem_finalize
+</fileinfo>
+<fileinfo name="mpid_nem_lmt_vmsplice.c">
+MPID_STATE_MPID_NEM_LMT_VMSPLICE_INITIATE_LMT MPID_nem_lmt_vmsplice_initiate_lmt
+MPID_STATE_MPID_NEM_LMT_VMSPLICE_START_RECV MPID_nem_lmt_vmsplice_start_recv
+MPID_STATE_MPID_NEM_LMT_VMSPLICE_PROGRESS MPID_nem_lmt_vmsplice_start_recv
+MPID_STATE_MPID_NEM_LMT_VMSPLICE_START_SEND MPID_nem_lmt_vmsplice_start_send
+MPID_STATE_MPID_NEM_LMT_VMSPLICE_DONE_RECV MPID_nem_lmt_vmsplice_done_recv
+MPID_STATE_MPID_NEM_LMT_VMSPLICE_DONE_SEND MPID_nem_lmt_vmsplice_done_send
+MPID_STATE_MPID_NEM_LMT_VMSPLICE_HANDLE_COOKIE MPID_nem_lmt_vmsplice_handle_cookie
 </fileinfo>
 <fileinfo name="mpid_nem_lmt_shm.c">
 MPID_STATE_MPID_NEM_LMT_SHM_INITIATE_LMT MPID_nem_lmt_shm_initiate_lmt

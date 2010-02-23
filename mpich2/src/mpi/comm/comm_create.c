@@ -56,8 +56,8 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
     static const char FCNAME[] = "MPI_Comm_create";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    int i, j, n, *mapping = 0, *remote_mapping = 0, remote_size = -1, 
-	new_context_id;
+    int i, j, n, *mapping = 0, *remote_mapping = 0, remote_size = -1;
+    MPIR_Context_id_t new_context_id;
     MPID_Comm *newcomm_ptr;
     MPID_Group *group_ptr;
     MPIU_CHKLMEM_DECL(3);
@@ -66,7 +66,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_SINGLE_CS_ENTER("comm");
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_CREATE);
     MPIU_THREADPRIV_GET;
 
@@ -125,13 +125,14 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	if (!comm_ptr->local_comm) {
 	    MPIR_Setup_intercomm_localcomm( comm_ptr );
 	}
-	new_context_id = MPIR_Get_contextid( comm_ptr->local_comm );
+        mpi_errno = MPIR_Get_contextid( comm_ptr->local_comm, &new_context_id );
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
     else {
-	new_context_id = MPIR_Get_contextid( comm_ptr );
+        mpi_errno = MPIR_Get_contextid( comm_ptr, &new_context_id );
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
-    MPIU_ERR_CHKANDJUMP(new_context_id == 0, mpi_errno, MPI_ERR_OTHER, 
-			"**toomanycomm" );
+    MPIU_Assert(new_context_id != 0);
 
     /* Make sure that the processes for this group are contained within
        the input communicator.  Also identify the mapping from the ranks of 
@@ -148,9 +149,13 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
        case is too messy, we'll add this in.
     */
     if (group_ptr->rank != MPI_UNDEFINED) {
-	MPID_VCR *vcr;
+	MPID_VCR *vcr, *mapping_vcr=0, *remote_mapping_vcr=0;
 	int      vcr_size;
+	int      subsetOfWorld = 0;
 
+	/* Default choice of mapping vcr */
+	mapping_vcr        = comm_ptr->local_vcr;
+	remote_mapping_vcr = comm_ptr->vcr;
 	n = group_ptr->size;
 	MPIU_CHKLMEM_MALLOC(mapping,int*,n*sizeof(int),mpi_errno,"mapping");
 	if (comm_ptr->comm_kind == MPID_INTERCOMM) {
@@ -162,36 +167,84 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	    vcr_size = comm_ptr->remote_size;
 	}
 	
-	for (i=0; i<n; i++) {
-	    /* Mapping[i] is the rank in the communicator of the process that
-	       is the ith element of the group */
-	    /* We use the appropriate vcr, depending on whether this is
-	       an intercomm (use the local vcr) or an intracomm (remote vcr) 
-	       Note that this is really the local mapping for intercomm
-	       and remote mapping for the intracomm */
-	    /* FIXME : BUBBLE SORT */
-	    /* FIXME : NEEDS COMM_WORLD SPECIALIZATION */
-	    mapping[i] = -1;
-	    for (j=0; j<vcr_size; j++) {
-		int comm_lpid;
-		MPID_VCR_Get_lpid( vcr[j], &comm_lpid );
-		if (comm_lpid == group_ptr->lrank_to_lpid[i].lpid) {
-		    mapping[i] = j;
+	/* Optimize for groups contained within MPI_COMM_WORLD. */
+	if (comm_ptr->comm_kind == MPID_INTRACOMM) {
+	    int wsize;
+	    subsetOfWorld = 1;
+	    wsize         = MPIR_Process.comm_world->local_size;
+	    MPIR_Group_setup_lpid_list( group_ptr );
+	    for (i=0; i<n; i++) {
+		int g_lpid = group_ptr->lrank_to_lpid[i].lpid;
+		
+		/* This Mapping is relative to comm world */
+		MPIU_DBG_MSG_FMT(COMM,VERBOSE,(MPIU_DBG_FDEST,
+			       "comm-create - mapping into world[%d] = %d\n",
+			       i, g_lpid ));
+		if (g_lpid < wsize) {
+		    mapping[i] = g_lpid;
+		}
+		else {
+		    subsetOfWorld = 0; 
 		    break;
 		}
 	    }
-	    MPIU_ERR_CHKANDJUMP1(mapping[i] == -1,mpi_errno,
-				 MPI_ERR_GROUP,
-				 "**groupnotincomm", "**groupnotincomm %d", i );
 	}
+	MPIU_DBG_MSG_D(COMM,VERBOSE,
+		       "Are we using the world subset %d\n", subsetOfWorld );
+	if (subsetOfWorld) {
+	    /* Override the vcr to be used with the mapping array. */
+	    mapping_vcr = MPIR_Process.comm_world->vcr;
+#           ifdef HAVE_ERROR_CHECKING
+	    {
+		MPID_BEGIN_ERROR_CHECKS;
+		{
+		    int idx;
+		    mpi_errno = MPIR_GroupCheckVCRSubset( group_ptr, 
+							  vcr_size, vcr, &idx );
+		    if (mpi_errno) goto fn_fail;
+		}
+		MPID_END_ERROR_CHECKS;
+	    }
+#           endif
+	}
+	else {
+	    for (i=0; i<n; i++) {
+		/* Mapping[i] is the rank in the communicator of the process 
+		   that is the ith element of the group */
+		/* We use the appropriate vcr, depending on whether this is
+		   an intercomm (use the local vcr) or an intracomm 
+		   (remote vcr) 
+		   Note that this is really the local mapping for intercomm
+		   and remote mapping for the intracomm */
+		/* FIXME : BUBBLE SORT */
+		mapping[i] = -1;
+		for (j=0; j<vcr_size; j++) {
+		    int comm_lpid;
+		    MPID_VCR_Get_lpid( vcr[j], &comm_lpid );
+		    if (comm_lpid == group_ptr->lrank_to_lpid[i].lpid) {
+			mapping[i] = j;
+			break;
+		    }
+		}
+		MPIU_ERR_CHKANDJUMP1(mapping[i] == -1,mpi_errno,
+				     MPI_ERR_GROUP,
+				 "**groupnotincomm", "**groupnotincomm %d", i );
+	    }
+	}
+
+	MPIU_DBG_MSG(COMM,VERBOSE,"End of group in comm check...");
+
 	if (comm_ptr->comm_kind == MPID_INTRACOMM) {
 	    /* If this is an intra comm, we've really determined the
 	       remote mapping */
-	    remote_mapping = mapping;
-	    remote_size    = n;
-	    mapping        = 0;
+	    MPIU_DBG_MSG(COMM,VERBOSE,"Swapping remote and local mapping" );
+	    remote_mapping     = mapping;
+	    remote_mapping_vcr = mapping_vcr;
+	    remote_size        = n;
+	    mapping            = 0;
+	    mapping_vcr        = 0;
 	}
-
+	
 	/* Get the new communicator structure and context id */
 	
 	mpi_errno = MPIR_Comm_create( &newcomm_ptr );
@@ -284,7 +337,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	    for (i=0; i<n; i++) {
 		/* For rank i in the new communicator, find the corresponding
 		   rank in the input communicator */
-		MPID_VCR_Dup( comm_ptr->local_vcr[mapping[i]], 
+		MPID_VCR_Dup( mapping_vcr[mapping[i]], 
 			      &newcomm_ptr->local_vcr[i] );
 		
 	    }
@@ -298,13 +351,18 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 	for (i=0; i<n; i++) {
 	    /* For rank i in the new communicator, find the corresponding
 	       rank in the input communicator */
-	    MPID_VCR_Dup( comm_ptr->vcr[remote_mapping[i]], 
+	    MPIU_DBG_MSG_FMT(COMM,VERBOSE,(MPIU_DBG_FDEST,
+			   "dupping %d into %d using %p\n",
+			   remote_mapping[i], i, remote_mapping_vcr ));
+	    MPID_VCR_Dup( remote_mapping_vcr[remote_mapping[i]], 
 			  &newcomm_ptr->vcr[i] );
 	}
 
 
 	/* Notify the device of this new communicator */
 	MPID_Dev_comm_create_hook( newcomm_ptr );
+        mpi_errno = MPIR_Comm_commit(newcomm_ptr);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	
 	*newcomm = newcomm_ptr->handle;
     }
@@ -337,7 +395,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
   fn_exit:
     MPIU_CHKLMEM_FREEALL();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CREATE);
-    MPIU_THREAD_SINGLE_CS_EXIT("comm");
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
   fn_fail:

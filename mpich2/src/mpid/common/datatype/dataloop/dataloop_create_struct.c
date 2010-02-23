@@ -194,7 +194,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
      * struct, treat it as an indexed type.
      *
      * notes:
-     * 
+     *
      * this will apply to a single type with an LB/UB, as those
      * are handled elsewhere.
      *
@@ -271,12 +271,12 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 	    old_loop_sz += tmp_loop_sz;
 	}
     }
-    
+
     /* general case below: 2 or more distinct types that are either
      * basics or derived, and for which we want to preserve the types
      * themselves.
      */
-    
+
     if (nr_basics > 0)
     {
 	/* basics introduce an extra level of depth, so if our new depth
@@ -347,7 +347,7 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 							     &dummy_sz,
 							     &dummy_depth,
 							     flag);
-	    
+
 	    /* --BEGIN ERROR HANDLING-- */
 	    if (err) {
 		/* TODO: FREE ALLOCATED RESOURCES */
@@ -371,7 +371,6 @@ int PREPEND_PREFIX(Dataloop_create_struct)(int count,
 	else
 	{
 	    DLOOP_Dataloop *old_loop_ptr;
-	    int old_loop_sz;
 	    DLOOP_Offset old_extent;
 
 	    DLOOP_Handle_get_loopptr_macro(oldtypes[i], old_loop_ptr, flag);
@@ -523,7 +522,7 @@ static int DLOOP_Dataloop_create_basic_all_bytes_struct(
 						  dlsz_p,
 						  dldepth_p,
 						  flag);
-    
+
     DLOOP_Free(tmp_blklens);
     DLOOP_Free(tmp_disps);
 
@@ -570,24 +569,46 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 	{
 	    nr_blks++;
 	}
-	else /* derived type; get a count of contig blocks */
-	{
-	    DLOOP_Count tmp_nr_blks;
+        else /* derived type; get a count of contig blocks */
+        {
+            DLOOP_Count tmp_nr_blks, sz;
 
-	    PREPEND_PREFIX(Segment_init)(NULL,
-					 (DLOOP_Count) blklens[i],
-					 oldtypes[i],
-					 segp,
-					 flag);
-	    bytes = SEGMENT_IGNORE_LAST;
+            DLOOP_Handle_get_size_macro(oldtypes[i], sz);
 
-	    PREPEND_PREFIX(Segment_count_contig_blocks)(segp,
-							0,
-							&bytes,
-							&tmp_nr_blks);
+            /* if the derived type has some data to contribute,
+             * add to flattened representation */
+            if (sz > 0) {
+                PREPEND_PREFIX(Segment_init)(NULL,
+                                             (DLOOP_Count) blklens[i],
+                                             oldtypes[i],
+                                             segp,
+                                             flag);
+                bytes = SEGMENT_IGNORE_LAST;
 
-	    nr_blks += tmp_nr_blks;
-	}
+                PREPEND_PREFIX(Segment_count_contig_blocks)(segp,
+                                                            0,
+                                                            &bytes,
+                                                            &tmp_nr_blks);
+
+                nr_blks += tmp_nr_blks;
+            }
+        }
+    }
+
+    /* it's possible for us to get to this point only to realize that
+     * there isn't any data in this type. in that case do what we always
+     * do: store a simple contig of zero ints and call it done.
+     */
+    if (nr_blks == 0) {
+	PREPEND_PREFIX(Segment_free)(segp);
+	err = PREPEND_PREFIX(Dataloop_create_contiguous)(0,
+							 MPI_INT,
+							 dlp_p,
+							 dlsz_p,
+							 dldepth_p,
+							 flag);
+	return err;
+
     }
 
     nr_blks += 2; /* safety measure */
@@ -595,6 +616,7 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
     tmp_blklens = (int *) DLOOP_Malloc(nr_blks * sizeof(int));
     /* --BEGIN ERROR HANDLING-- */
     if (!tmp_blklens) {
+	PREPEND_PREFIX(Segment_free)(segp);
 	return DLOOP_Dataloop_create_struct_memory_error();
     }
     /* --END ERROR HANDLING-- */
@@ -604,6 +626,7 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
     /* --BEGIN ERROR HANDLING-- */
     if (!tmp_disps) {
 	DLOOP_Free(tmp_blklens);
+	PREPEND_PREFIX(Segment_free)(segp);
 	return DLOOP_Dataloop_create_struct_memory_error();
     }
     /* --END ERROR HANDLING-- */
@@ -612,6 +635,12 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
     first_ind = 0;
     for (i=0; i < count; i++)
     {
+	int is_basic;
+	DLOOP_Count sz = -1;
+
+	is_basic = (DLOOP_Handle_hasloop_macro(oldtypes[i])) ? 0 : 1;
+	if (!is_basic) DLOOP_Handle_get_size_macro(oldtypes[i], sz);
+
 	/* we're going to use the segment code to flatten the type.
 	 * we put in our displacement as the buffer location, and use
 	 * the blocklength as the count value to get N contiguous copies
@@ -620,14 +649,17 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 	 * Note that we're going to get back values in bytes, so that will
 	 * be our new element type.
 	 */
-	if (oldtypes[i] != MPI_UB && oldtypes[i] != MPI_LB && blklens[i] != 0)
+	if (oldtypes[i] != MPI_UB &&
+	    oldtypes[i] != MPI_LB &&
+	    blklens[i] != 0 &&
+	    (is_basic || sz > 0))
 	{
-	    PREPEND_PREFIX(Segment_init)((char *) disps[i],
+	    PREPEND_PREFIX(Segment_init)((char *) MPI_AINT_CAST_TO_VOID_PTR disps[i],
 					 (DLOOP_Count) blklens[i],
 					 oldtypes[i],
 					 segp,
 					 0 /* homogeneous */);
-	    
+
 	    last_ind = nr_blks - first_ind;
 	    bytes = SEGMENT_IGNORE_LAST;
 	    PREPEND_PREFIX(Segment_mpi_flatten)(segp,
@@ -646,7 +678,7 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 	MPIU_DBG_OUT(DATATYPE,"--- start of flattened type ---");
         for (i=0; i < nr_blks; i++) {
 	MPIU_DBG_OUT_FMT(DATATYPE,(MPIU_DBG_FDEST,
-				   "a[%d] = (%d, %d)\n", i,
+				   "a[%d] = (%d, " MPI_AINT_FMT_DEC_SPEC ")\n", i,
 				   tmp_blklens[i], tmp_disps[i]));
 	}
 	MPIU_DBG_OUT(DATATYPE,"--- end of flattened type ---");
@@ -664,7 +696,7 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 						  dlsz_p,
 						  dldepth_p,
 						  flag);
-    
+
     DLOOP_Free(tmp_blklens);
     DLOOP_Free(tmp_disps);
 

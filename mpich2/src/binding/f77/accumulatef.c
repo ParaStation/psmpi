@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_ACCUMULATE( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_accumulate__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_accumulate( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_accumulate_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_accumulate_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_ACCUMULATE = PMPI_ACCUMULATE
+#pragma weak mpi_accumulate__ = PMPI_ACCUMULATE
+#pragma weak mpi_accumulate_ = PMPI_ACCUMULATE
+#pragma weak mpi_accumulate = PMPI_ACCUMULATE
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_ACCUMULATE = pmpi_accumulate__
 #pragma weak mpi_accumulate__ = pmpi_accumulate__
 #pragma weak mpi_accumulate_ = pmpi_accumulate__
 #pragma weak mpi_accumulate = pmpi_accumulate__
-#pragma weak pmpi_accumulate_ = pmpi_accumulate__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_ACCUMULATE = pmpi_accumulate_
+#pragma weak mpi_accumulate__ = pmpi_accumulate_
+#pragma weak mpi_accumulate_ = pmpi_accumulate_
+#pragma weak mpi_accumulate = pmpi_accumulate_
+#else
+#pragma weak MPI_ACCUMULATE = pmpi_accumulate
+#pragma weak mpi_accumulate__ = pmpi_accumulate
+#pragma weak mpi_accumulate_ = pmpi_accumulate
+#pragma weak mpi_accumulate = pmpi_accumulate
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_accumulate_( void*, MPI_Fint *, MPI_Fint
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_ACCUMULATE( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_accumulate__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_accumulate( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_accumulate_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_accumulate__ = MPI_ACCUMULATE
+#pragma weak mpi_accumulate_ = MPI_ACCUMULATE
+#pragma weak mpi_accumulate = MPI_ACCUMULATE
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_ACCUMULATE = mpi_accumulate__
 #pragma weak mpi_accumulate_ = mpi_accumulate__
 #pragma weak mpi_accumulate = mpi_accumulate__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_ACCUMULATE = mpi_accumulate_
+#pragma weak mpi_accumulate__ = mpi_accumulate_
+#pragma weak mpi_accumulate = mpi_accumulate_
+#else
+#pragma weak MPI_ACCUMULATE = mpi_accumulate
+#pragma weak mpi_accumulate__ = mpi_accumulate
+#pragma weak mpi_accumulate_ = mpi_accumulate
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_ACCUMULATE( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_accumulate__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_accumulate_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_accumulate( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_accumulate__ = PMPI_ACCUMULATE
+#pragma weak pmpi_accumulate_ = PMPI_ACCUMULATE
+#pragma weak pmpi_accumulate = PMPI_ACCUMULATE
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_ACCUMULATE = pmpi_accumulate__
+#pragma weak pmpi_accumulate_ = pmpi_accumulate__
+#pragma weak pmpi_accumulate = pmpi_accumulate__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_ACCUMULATE = pmpi_accumulate_
+#pragma weak pmpi_accumulate__ = pmpi_accumulate_
+#pragma weak pmpi_accumulate = pmpi_accumulate_
+#else
+#pragma weak PMPI_ACCUMULATE = pmpi_accumulate
+#pragma weak pmpi_accumulate__ = pmpi_accumulate
+#pragma weak pmpi_accumulate_ = pmpi_accumulate
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_accumulate_ PMPI_ACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_accumulate_( void*, MPI_Fint *, MPI_Fint
 #define mpi_accumulate_ pmpi_accumulate
 #else
 #define mpi_accumulate_ pmpi_accumulate_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

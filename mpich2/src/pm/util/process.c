@@ -40,6 +40,9 @@
 #ifdef NEEDS_STRSIGNAL_DECL
 extern char *strsignal(int);
 #endif
+#if defined( HAVE_PUTENV ) && defined( NEEDS_PUTENV_DECL )
+extern int putenv(char *string);
+#endif
 
 /* There is only one universe */
 ProcessUniverse pUniv;
@@ -109,6 +112,7 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
     int          nProcess = 0;
 
     app = pWorld->apps;
+
     while (app) {
 	/* Allocate process state if necessary */
 	if (!app->pState) {
@@ -231,7 +235,7 @@ int MPIE_ProcessGetExitStatus( int *signaled )
 #ifndef MAXPATHLEN
 #define MAXPATHLEN 1024
 #endif
-#define MAX_CLIENT_ARG 50
+#define MAX_CLIENT_ARG 258 /* handle exename + 256 args + null terminator */
 #define MAX_CLIENT_ENV 200
 /* MAXNAMELEN is used for sizing the char arrays used for 
  * defining environment variables */
@@ -251,8 +255,10 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
     char env_appnum[MAXNAMELEN];
     char env_universesize[MAXNAMELEN];
     char pathstring[MAXPATHLEN+10];
-    char *(client_env[MAX_CLIENT_ENV]);
-    char *(client_arg[MAX_CLIENT_ARG]);
+    /* We allocate these on the heap to help catch array overrun errors
+       such as those in ticket #719.  */
+    char **client_env = MPIU_Malloc(MAX_CLIENT_ENV * sizeof(char *));
+    char **client_arg = MPIU_Malloc(MAX_CLIENT_ARG * sizeof(char *));
 
     app = pState->app;
 
@@ -324,6 +330,11 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
     }
 
     DBG_PRINTF( ( "Setup command-line args\n" ) );
+    if ((app->nArgs + 2) > MAX_CLIENT_ARG) { /* +1 for exename, +1 for null */
+        MPIU_Error_printf("Too many command-line arguments: requested=%d maximum=%d\n",
+                          app->nArgs, MAX_CLIENT_ARG - 2);
+        exit(1);
+    }
     /* Set up the command-line arguments */
     client_arg[0] = (char *)app->exename;
     for (j=0; j<app->nArgs; j++) {
@@ -355,6 +366,8 @@ int MPIE_ExecProgram( ProcessState *pState, char *envp[] )
 					app->exename );
 	exit( 1 );
     }
+
+    /* we should never get here */
     return 0;
 }
 
@@ -447,7 +460,7 @@ void MPIE_ProcessSetExitStatus( ProcessState *pState, int prog_stat )
  * Because signals are not queued, this handler processes all completed
  * processes.  
  *
- * We must perform the wait in the handler because if we do not, we loose 
+ * We must perform the wait in the handler because if we do not, we lose 
  * the exit status information (it is no longer available after the
  * signal handler exits).
  */
@@ -1008,3 +1021,74 @@ int MPIE_SetupSingleton( ProcessUniverse *pUniv )
 
     return 0;
 }
+
+/* There are still problems with this (see the portable process affinity project
+ * that the OpenMPI folks have done for some of the reasons why) */
+#if defined(HAVE_SCHED_SETAFFINITY) && defined(HAVE_CPU_SET_T) && \
+    defined(HAVE_CPU_SET_MACROS) && 0
+/* FIXME: This is an ugly hack to ensure that the macros to manipulate the
+ * cpu_set_t are defined - without these, you can't use the affinity routines
+ */
+#ifdef NEED___USE_GNU_FOR_CPU_SET
+#define __USE_GNU
+#endif
+#include <sched.h>
+/*
+ * Set the processor affinity for the calling process.  Normally, this will
+ * be used in the "postfork" routine provided by the process manager, before
+ * the user's application is exec'ed.
+ *
+ * To work with multithreaded applications, the process can set the 
+ * affinity set to contain "size" processors, starting with the one 
+ * numbered "rank".  
+ *
+ * More complex affinity sets may be necessary, so we may want to 
+ * provide a second, more general routine (perhaps taking a cpu set mask).
+ */
+int MPIE_SetProcessorAffinity( int rank, int size )
+{
+    cpu_set_t cpuset;
+    int       i, err;
+
+    CPU_ZERO(&cpuset);
+    for (i=0; i<size; i++) {
+	CPU_SET((rank+i),&cpuset);
+    }
+    err = sched_setaffinity( 0, sizeof(cpu_set_t), &cpuset );
+    if (err < 0) {
+	/* Can check errno here for reasons */
+	return 1;
+    }
+
+    return 0;
+}
+#elif defined(HAVE_BINDPROCESSOR) && 0
+/* AIX processor affinity */
+#include <sys/processor.h>
+int MPIE_SetProcessorAffinity( int rank, int size )
+{
+    int pid;
+    pid = getpid();
+
+    err = bindprocessor( BINDPROCESS, pid, rank );
+    /* Use BINDTHREAD instead of BINDPROCESS to bind threads to processors -
+       in which case, the pid is a thread id */
+    /* FIXME: How do we bind the threads when we don't have direct access to 
+       them? */
+    if (err < 0) {
+	return 1;
+    }
+    return 0;
+}
+#elif defined(HAVE_OSX_THREAD_AFFINITY) && 0
+/* OSX only has affinity policies, and they don't fit this model well */
+int MPIE_SetProcessorAffinity( int rank, int size )
+{
+    return 1;
+}
+#else
+int MPIE_SetProcessorAffinity( int rank, int size )
+{
+    return 1;
+}
+#endif

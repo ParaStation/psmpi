@@ -10,7 +10,9 @@ $abs_mpich2srcdir = "@abs_mpich2srcdir@";
 $includedir = ".";
 $skipAction = 0;
 $makefilebase = "Makefile.base";
-$ranliblib    = 1;
+$ranliblib    = 1;   # only set to 0 on systems where ar 
+                     # computes a symbol table index.  Also see RANLIBNEEDED
+                     # environment variable
 $useinclude = 0;     # set to 1 to make the Makefiles refer to a single
                      # base makefile.
 $include_list = "";
@@ -29,6 +31,8 @@ $do_dependencies = "dynamic"; # set to no, static, or dynamic to attempt
                               # to generate dependency information 
 			      # use "ignore" to produce a target (for
 			      # recursive ops) but no actions
+$dependenciesDummy = "no";    # set to yes to create a dummy target for
+                              # dependencies
 $makeInclude = "include";     # set to the include command to use.
                               # This is more robust if it ignores missing files
                               # (e.g., the gnumake "-include")
@@ -66,7 +70,6 @@ else {
 if (defined($ENV{"CHECKTARGETS"})) {
     $gCheckForTargets = 1;
 }
-
 $autoconf_args = ""; # Extra arguments for autoconf
 $acincdir_arg = "-l";
 
@@ -141,6 +144,16 @@ else {
     $Sleep = $SleepSlow;
 }
 
+# Check environment variable to see if ranlib is needed.
+if (defined($ENV{"RANLIBNEEDED"})) {
+    my $val = $ENV{"RANLIBNEEDED"};
+    if ($val eq "YES" || $val eq "yes" || $val == 1) {
+	$ranliblib = 1;
+    }
+    elsif ($val eq "NO" || $val eq "no" || $val == 0) {
+	$ranliblib = 0;
+    }
+}
 
 #
 # Output File end-of-line character
@@ -237,7 +250,7 @@ $quiet = 0;
 # Definitions for each extension (these are the defs needed for each ext->o
 # extension)
 %extdef = ( 'c:o'   => 'CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)',
 	    'f:o'   => 'FC              = @FC@
 FFLAGS          = @FFLAGS@
@@ -260,9 +273,9 @@ F90_COMPILE     = $(F90) $(F90FLAGS) $(F90INCLUDES)',
 	    'c:lo'   => 'CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)',
 	    'f:lo'   => 'FC_SHL          = @FC_SHL@
-F77_COMPILE_SHL = $(FC_SHL) $(FFLAGS)',
+F77_COMPILE_SHL = $(FC_SHL) $(FFLAGS) $(F77INCLUDES)',
 	    'f90:lo'   => 'F90_SHL          = @F90_SHL@
-F90_COMPILE_SHL = $(F90_SHL) $(F90FLAGS)',
+F90_COMPILE_SHL = $(F90_SHL) $(F90FLAGS) $(F90INCLUDES)',
 	    'cxx:lo' => 'CXX_SHL         = @CXX_SHL@
 CXX_COMPILE_SHL = $(CXX_SHL) $(DEFS) $(INCLUDES) $(CXXFLAGS) $(CPPFLAGS)',
 	    'cpp:lo' => 'CXX_SHL         = @CXX_SHL@
@@ -340,6 +353,7 @@ $docdir_name =               "docdir          = \@docdir\@";
 # datarootdir is new in autoconf 2.60, and is needed for other
 # dirs like mandir (much as prefix and execprefix are also needed)
 $datarootdir_name =          "datarootdir     = \@datarootdir\@";
+$datadir_name =              "datadir         = \@datadir\@";
 $sysconfdir_name =           "sysconfdir      = \@sysconfdir\@";
 $pkgconfigdir_name =         "pkgconfigdir    = \@libdir\@/pkgconfig";
 $builddir_name =             "builddir        = \@builddir\@";
@@ -360,14 +374,15 @@ $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 	     'includedir' => $includedir_name,
 	     'master_top_srcdir' => $master_topsrcdir_name,
 	     'top_builddir' => $top_builddir_name,
-	     'builddir'   => $builddir_name,
+	     'builddir'     => $builddir_name,
 	     'abs_builddir' => $abs_builddir_name,
-	     'mandir'     => $mandir_name,
-	     'datarootdir' => $datarootdir_name,
-	     'htmldir'    => $htmldir_name,
-	     'docdir'     => $docdir_name,
-	     'sysconfdir' => $sysconfdir_name,
+	     'mandir'       => $mandir_name,
+	     'datarootdir'  => $datarootdir_name,
+	     'htmldir'      => $htmldir_name,
+	     'docdir'       => $docdir_name,
+	     'sysconfdir'   => $sysconfdir_name,
 	     'pkgconfigdir' => $pkgconfigdir_name,
+	     'datadir'      => $datadir_name,
 	    );
 
 #InstallDirFromKind maps XXX from install_XXX into the GNU name
@@ -375,11 +390,13 @@ $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 		 'SHLIB' => 'libdir',    # SHLIB also signals library to build
 		 'DLLLIB' => 'libdir',   # DLLLIB also signals library to build
 		 'BIN' => 'bindir',
+		 'SCRIPT' => 'bindir', 
 		 'INCLUDE' => 'includedir', 
 		 'MAN' => 'mandir',
 		 'HTML' => 'htmldir',
 		 'DOC' => 'docdir',
 		 'ETC' => 'sysconfdir',
+		 'DATADIR' => 'datadir',
 		 'PKGCONFIG' => 'pkgconfigdir',
 		);
 # We add the -p switch to install for the libraries because libraries
@@ -395,6 +412,7 @@ $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 # CREATESHLIB is a special script for shared libraries
 %install_methods = ( 'LIB'     => '$(INSTALL_DATA)',
 		     'BIN'     => '$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)',
+		     'SCRIPT'  => '$(INSTALL_SCRIPT)',
 		     'SHLIB'   => '$(CREATESHLIB) --mode=install',
 		     'DLLLIB'  => '$(CREATESHLIB) --mode=install',
 		     'INCLUDE' => '$(INSTALL_DATA)',
@@ -402,6 +420,8 @@ $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 		     'HTML'    => '$(INSTALL_DATA)',
 		     'DOC'     => '$(INSTALL_DATA)',
 		     'ETC'     => '$(INSTALL_DATA)',
+		     'DATADIR' => '$(INSTALL_DATA)',
+		     'PKGCONFIG' => '$(INSTALL_DATA)',
 		    );
 %uninstall_methods = ( 'SHLIB'   => '$(CREATESHLIB) --mode=uninstall',
                        'DLLLIB'  => '$(CREATESHLIB) --mode=uninstall',
@@ -417,6 +437,7 @@ $top_builddir_name =         "top_builddir    = \@master_top_builddir\@";
 		   'sysconfdir'  => 'prefix',
 		   'exec_prefix' => 'prefix',
 		   'pkgconfigdir'=> 'libdir exec_prefix prefix',
+		   'datadir'     => 'prefix',
 		  );
 # etc.
 #
@@ -653,7 +674,7 @@ if ($do_dependencies eq "static") {
 sub ReadMfile {
     my $Mfile = $_[0];
     my $linecount = 0;
-    open (MFILE,"<$Mfile" ) || die "Could not open $Mfile\n";
+    open (MFILE,"<$Mfile" ) || die "Could not open $Mfile in $curdir\n";
     &ClearVars;
     while (<MFILE>) {
 	$linecount++;
@@ -1058,6 +1079,14 @@ sub ReadMfile {
 	}
     $origline = "";
     }
+
+    # For the simplemake maint target, see if smdir references 
+    # any of the autoconf directories (so that we'll include the 
+    # appropriate lines in the Makefile.in header)
+    if ($maint_targets && $smdir && $smdir ne "") {
+	&LookForAutoconfDirs( $smdir );
+    }
+
 }
 
 sub WriteMfile {
@@ -1180,6 +1209,11 @@ sub WriteMfile {
 	    &TargetDependenciesDynamic;
 	}
     }
+    elsif ($dependenciesDummy eq "yes") {
+	print FD "# Dummy target$newline";
+	print FD "dependencies:$newline$newline";
+    }
+
 
     # Tags
     print FD $makeBlockSep;
@@ -1219,8 +1253,6 @@ sub DefaultVariables {
     # execute commands with.
     printMakeVariable( FD, "SHELL", "\@SHELL\@" );
 
-    printMakeVariable( FD, "VERBOSE", "1" );
-
     # Library definitions
     if (scalar(%libraries)) {
 	# Add ar, ranlib definitions if there are any library targets.
@@ -1250,6 +1282,7 @@ sub DefaultVariables {
     if (scalar(%install_files) || scalar(%optinstall_files)) { 
 	print FD "INSTALL         = \@INSTALL\@$newline";
 	print FD "INSTALL_PROGRAM = \@INSTALL_PROGRAM\@$newline";
+        print FD "INSTALL_SCRIPT  = \@INSTALL_SCRIPT\@$newline";
 	print FD "INSTALL_DATA    = \@INSTALL_DATA\@$newline";
 	printMakeVariable( FD, "MKDIR_P", "\@MKDIR_P\@" );
     }
@@ -1279,6 +1312,9 @@ sub DefaultVariables {
     foreach $dir (keys(%install_files),keys(%optinstall_files)) {
 	# Handle the derived dirs for the install directories
 	$dir = $InstallDirFromKind{$dir};
+	if (!defined($required_dirs{$dir})) {
+	    print STDERR "Warning: No entry $dir in required_dirs\n"; 
+	}
 	foreach $rdir (split(/\s+/,$required_dirs{$dir})) {
 	    if (!defined($dir_added{$rdir})) {
 		print FD "$dirdefs{$rdir}$newline";
@@ -1290,6 +1326,9 @@ sub DefaultVariables {
 	$dir = $InstallDirFromKind{$dir};
 	if (!defined($dir_added{$dir})) {
 	    #$resultdir = $dirdefs{$dir};
+	    if (!defined($dirdefs{$dir})) {
+		print STDERR "Warning: no entry $dir in dirdefs\n";
+	    }
 	    print FD "$dirdefs{$dir}$newline";
 	    $dir_added{$dir} = 1;
 	}
@@ -1466,12 +1505,8 @@ sub DefaultRules {
 	    $extkey = "$ext:o";
 	    # COMMAND PRINTING
 	    if (defined($extstring{$extkey})) {
-		print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
-		print FD "\t  echo \"$extstring{$extkey}\" ; \\$newline";
-		print FD "\telse \\$newline";
-		print FD "\t  echo $extrules_with_profile{$extkey} ; \\$newline";
-		print FD "\tfi$newline";
-		print FD "\t\@$extrules_with_profile{$extkey}$newline";
+		&PrintVerboseOptionCommand( "$extrules_with_profile{$extkey}",
+					    "-", "$extstring{$extkey}" );
 	    }
 	    else {
 		print FD "\t$extrules_with_profile{$extkey}$newline";
@@ -1482,12 +1517,8 @@ sub DefaultRules {
 	    if (defined($extrules{$extkey})) {
 		# COMMAND PRINTING
 		if (defined($extstring{$extkey})) {
-		    print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
-		    print FD "\t  echo \"$extstring{$extkey}\" ; \\$newline";
-		    print FD "\telse \\$newline";
-		    print FD "\t  echo $extrules{$extkey} ; \\$newline";
-		    print FD "\tfi$newline";
-		    print FD "\t\@$extrules{$extkey}$newline";
+		    &PrintVerboseOptionCommand( "$extrules{$extkey}", "-",
+						"$extstring{$extkey}" );
 		}
 		else {
 		    print FD "\t$extrules{$extkey}$newline";
@@ -1507,12 +1538,8 @@ sub DefaultRules {
 		    # as well as remove any @ prefixes
 		    my $escaped_rule = $extrules{$extkey};
 		    $escaped_rule =~ s/$newline(\t+)\@*/ ; \\$newline$1echo /g;
-		    print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
-		    print FD "\t  echo \"$extstring{$extkey}\" ; \\$newline";
-		    print FD "\telse \\$newline";
-		    print FD "\t  echo $escaped_rule ; \\$newline";
-		    print FD "\tfi$newline";
-		    print FD "\t\@$extrules{$extkey}$newline";
+		    &PrintVerboseOptionCommand( "$extrules{$extkey}", "-",
+						"$extstring{$extkey}" );
 		}
 		else {
 		    print FD "\t$extrules{$extkey}$newline";
@@ -1543,12 +1570,8 @@ sub DefaultRules {
 	    print FD ".$extkey$newline";
 	    # COMMAND PRINTING
 	    if (defined($extstring{$extkey})) {
-		print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
-		print FD "\t  echo \"$extstring{$extkey}\" ; \\$newline";
-		print FD "\telse \\$newline";
-		print FD "\t  echo $extrules{$extkey} ; \\$newline";
-		print FD "\tfi$newline";
-		print FD "\t\@$extrules{$extkey}$newline";
+		&PrintVerboseOptionCommand( "$extrules{$extkey}", "-", 
+					    "$extstring{$extkey}" );
 	    }
 	    else {
 		print FD "\t$extrules{$extkey}$newline";
@@ -1728,6 +1751,7 @@ sub DefaultRules {
     # ToDo: we could control the subdirectories over which the recursion
     # is applied.
     &RecursiveOp( "apply" );
+    &TargetPostamble( "apply" );
     
     # Clean targets
     &TargetClean;
@@ -1809,14 +1833,36 @@ sub SaveSrcNames {
 sub FindPgmSrcType {
     $pgm = $_[0];
     $pgmsrc = $_[1];
+    # Also keep track of the types seen
+    my %exttypes;
+    my $firstext = "";
     foreach $file (split(/\s+/,$pgmsrc)) {
 	($name,$ext) = split('\.',$file);
 	if ($name eq $pgm) {
 	    $pgmlinktypes{$ext} = 1;
 	    return $ext;
 	}
+	else {
+	    $exttypes{$ext} = 1;
+	    if ($firstext eq "") { $firstext = $ext; }
+	}
     }
-    return "c";
+    if (defined($exttypes{"c"})) {
+	$pgmlinktypes{"c"} = 1;
+	return "c";
+    }
+    elsif (defined($exttypes{"cxx"})) {
+	$pgmlinktypes{"cxx"} = 1;
+	return "cxx";
+    }
+    elsif (defined($exttypes{"f90"})) {
+	$pgmlinktypes{"f90"} = 1;
+	return "f90";
+    }
+    else {
+	$pgmlinktypes{$firstext} = 1;
+	return $firstext;
+    }
 }
 
 sub ClearVars {
@@ -2507,7 +2553,7 @@ sub TargetAll {
 #		my $libloc = &GetLibLoc( $lib );
 #		my $fullname = "${libloc}lib$proflib.a";
 #		print FD "\t    \${MAKE} $fullname ; \\\n";
-		print FD "\t    \${MAKE} $libstamp ; \\\n";
+		print FD "\t    \${MAKE} $libstamp || exit 1; \\\n";
 	    }
 	    print FD "\tfi";
 	}
@@ -2571,7 +2617,7 @@ sub TargetAllCommandsForSharedLibs {
 	    if (defined($libnum{$libbase})) {
 		$libstamp = ".libstamp" . $libnum{$libbase};
 	    }
-	    print FD "\t    \${MAKE} $libstamp ; \\\n";
+	    print FD "\t    \${MAKE} $libstamp || exit 1; \\\n";
 	}
 	if ($found_profilelib) {
 	    print FD "\t    if [ -n \"\@NO_WEAK_SYM\@\" ] ; then \\\n";
@@ -2580,7 +2626,7 @@ sub TargetAllCommandsForSharedLibs {
 		my $libloc = &GetLibLoc( $lib );
 		my $fullname = "${libloc}lib$proflib.la";
 		my $libstamp = ".libstamp" . $libnum{$proflib.".la"};
-		print FD "\t        \${MAKE} $libstamp ; \\\n";
+		print FD "\t        \${MAKE} $libstamp || exit 1; \\\n";
 #		print FD "\t        \${MAKE} $fullname ; \\\n";
 	    }
 	    print FD "\t    fi ; \\\n";
@@ -2603,7 +2649,7 @@ sub TargetAllCommandsForDLLLibs {
 	    if (defined($libnum{$libbase})) {
 		$libstamp = ".libstamp" . $libnum{$libbase};
 	    }
-	    print FD "\t    \${MAKE} $libstamp ; \\\n";
+	    print FD "\t    \${MAKE} $libstamp || exit 1; \\\n";
 	}
 	print FD "\tfi\n";
     }
@@ -2716,6 +2762,7 @@ sub TargetClean {
 
     # Finally, execute make clean in any subdirs
     &RecursiveOp( "clean" );
+    &TargetPostamble( "clean" );
 
     # --------------------------------------------
     # distclean target
@@ -2725,6 +2772,8 @@ sub TargetClean {
 	print FD " distclean-local";
     }
     print FD " distclean-xxx remove-makefile";
+    &TargetPostamble( "distclean" );
+
     print FD "$newline";
     
     print FD "distclean-xxx:$newline";
@@ -2798,6 +2847,7 @@ sub TargetClean {
 	    print FD " maintainer-clean-local";
 	}
 	print FD " distclean-xxx remove-genmakefiles";
+	&TargetPostamble( "maintainer-clean" );
 	print FD "$newline";
 
 	# For any extensions, handle the clean actions
@@ -2907,12 +2957,7 @@ sub LibraryBuild {
 	    &print_make_line( FD, "${libloc}lib$libname.$libext($obj): $obj" );
 	    &print_make_endline( FD );
 	    # COMMAND PRINTING
-	    print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
-	    print FD "\t  echo \"  AR cr ${libloc}lib$libname.$libext \$?\" ; \\$newline";
-	    print FD "\telse \\$newline";
-	    print FD "\t  echo \${AR} cr ${libloc}lib$libname.$libext \$? ; \\$newline";
-	    print FD "\tfi$newline";
-	    print FD "\t\${AR} cr ${libloc}lib$libname.$libext \$?$newline";
+	    &PrintVerboseOptionCommand( "\${AR} cr ${libloc}lib$libname.$libext \$?", "  AR" );
 	}
 	else {
 	    if ($ext ne "h") {
@@ -2923,12 +2968,8 @@ sub LibraryBuild {
     &SMInvokeAction( "OutputLibDependencies", $lib, $libloc, $memext );
     if (!$dolib_member) {
         &print_make_endline( FD );
-	print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
-	print FD "\t  echo \"  AR cr ${libloc}lib$libname.$libext \$?\" ; \\$newline";
-	print FD "\telse \\$newline";
-	print FD "\t  echo \${AR} cr ${libloc}lib$libname.$libext \$? ; \\$newline";
-	print FD "\tfi$newline";
-        print FD "\t\@\${AR} cr ${libloc}lib$libname.$libext \$?$newline";
+	&PrintVerboseOptionCommand( "\${AR} cr ${libloc}lib$libname.$libext \$?",
+				    "  AR" );
     }
 }
 
@@ -2943,8 +2984,10 @@ sub TargetLibraries {
 	&LibraryBuild( $lib, $libloc, $sourcefiles, "a", "o" );
 	# Add any additional actions for this library.
 	&SMInvokeAction( "OutputLib", $lib, $libloc );
-        if ($ranliblib) { 
-	    print FD "\t\${RANLIB} ${libloc}lib$lib.a$newline"; 
+        if ($ranliblib) {
+	    # COMMAND PRINTING
+	    &PrintVerboseOptionCommand( "\${RANLIB} ${libloc}lib$lib.a", "-",
+					"  RANLIB          lib$lib.a" );
 	}
 	# To handle timestamp problems with recursive makes, add a delay
 	&LibraryTimestampFix( $lib, $libloc )
@@ -3058,20 +3101,12 @@ sub TargetProfileLibraries {
 	if ($found_source_files) {
 	    # Add these files as objects to the archive
 	    # COMMAND PRINTING
-	    print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
-	    print FD "\t  echo \"  AR cr ${libloc}lib$proflib_name.a \$?\" ; \\$newline";
-	    print FD "\telse \\$newline";
-	    print FD "\t  echo \${AR} cr ${libloc}lib$proflib_name.a \$? ; \\$newline";
-	    print FD "\tfi$newline";
-	    print FD "\t\@\${AR} cr ${libloc}lib$proflib_name.a \$?$newline";
+	    &PrintVerboseOptionCommand( "\${AR} cr ${libloc}lib$proflib_name.a \$?",
+					"  AR" );
 	    if ($ranliblib) { 
 		# COMMAND PRINTING
-		print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
-		print FD "\t  echo \"  RANLIB          lib$proflib_name.a\" ; \\$newline";
-		print FD "\telse \\$newline";
-		print FD "\t  echo \${RANLIB} ${libloc}lib$proflib_name.a ; \\$newline"; 
-		print FD "\tfi$newline";
-		print FD "\t\@\${RANLIB} ${libloc}lib$proflib_name.a$newline"; 
+		&PrintVerboseOptionCommand( "\${RANLIB} ${libloc}lib$proflib_name.a", 
+					    "-", "  RANLIB          lib$proflib_name.a" );
 	    }
 	    # To handle timestamp problems with recursive makes, 
 	    # add a delay
@@ -3108,12 +3143,8 @@ sub TargetProfileLibraries {
 	    if ($found_source_files) {
 		# Add these files as objects to the archive
 		# COMMAND PRINTING
-		print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
-		print FD "\t  echo \"  AR cr ${libloc}lib$proflib_name.la \$?\" ; \\$newline";
-		print FD "\telse \\$newline";
-		print FD "\t  echo \${AR} cr ${libloc}lib$proflib_name.la \$?; \\$newline";
-		print FD "\tfi$newline";
-		print FD "\t\@\${AR} cr ${libloc}lib$proflib_name.la \$?$newline";
+		&PrintVerboseOptionCommand( "\${AR} cr ${libloc}lib$proflib_name.la \$?",
+					    "  AR" );
 		# To handle timestamp problems with recursive makes, 
 		# add a delay
 		&LibraryTimestampFix( $proflib_name.".la", $libloc );
@@ -3137,16 +3168,11 @@ sub TargetProfileLibraries {
 	    # so we explicitly list the source file
 	    print FD "$obj: $sourcefile$newline";
 	    # COMMAND PRINTING
-	    print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
-	    print FD "\t  echo \"  CC              \${srcdir}/$sourcefile\" ; \\$newline";
-	    print FD "\telse \\$newline";
-	    print FD "\t  echo \$(C_COMPILE) -c \@PROFILE_DEF_MPI\@ \$(srcdir)/$sourcefile -o $obj ; \\$newline";
-	    print FD "\tfi$newline";
-	    print FD "\t\@\$(C_COMPILE) -c \@PROFILE_DEF_MPI\@ \$(srcdir)/$sourcefile -o $obj$newline";
+	    &PrintVerboseOptionCommand( "\$(C_COMPILE) -c \@PROFILE_DEF_MPI\@ \$(srcdir)/$sourcefile -o $obj", "-", "  CC             -D<profiling> \${srcdir}/$sourcefile" );
 	    if ($do_sharedlibs) {
 		$obj =~ s/\.o/.lo/;
 	        print FD "$obj: $sourcefile$newline";
-	        print FD "\t\$(C_COMPILE_SHL) -c \@PROFILE_DEF_MPI\@ \$(srcdir)/$sourcefile -o $obj$newline";
+	        &PrintVerboseOptionCommand( "\$(C_COMPILE_SHL) -c \@PROFILE_DEF_MPI\@ \$(srcdir)/$sourcefile -o $obj", "-", " CC           -D<profiling> \$(srcdir)/$sourcefile" );
 	    }
         }
     } # foreach lib
@@ -3995,6 +4021,7 @@ sub TargetInstall {
 	    print FD "\t(cd $extradir && \$(MAKE) INSTALL_STRIP_FLAG=\$(INSTALL_STRIP_FLAG) install)$newline";
 	}
     }
+    &TargetPostamble( "install" );
     print FD "$newline";
 
     # Install documentation
@@ -4052,6 +4079,7 @@ sub TargetInstall {
     if ($#install_subdirs >= 0) {
 	&RecursiveOp( "uninstall", "install_subdirs" );
     }
+    &TargetPostamble( "uninstall" );
 
     # also add the recursive installcheck target
     &TargetInit( "installcheck" );
@@ -4231,9 +4259,10 @@ sub TargetDependenciesDynamic {
 
     # First, are there any sources?
     # a hash in a scalar context is 0 if empty and nonzero otherwise
-    if (scalar(%libraries)) {
+    if (scalar(%libraries) || scalar(%programs)) {
 	$has_sources = 1;
     }
+    
     
     # Some makes will accept sinclude instead of -include
     # -include is gnumake for "include if file exists, ignore otherwise"
@@ -4241,7 +4270,7 @@ sub TargetDependenciesDynamic {
 
     print FD $makeBlockSep;
     print FD "# Dependencies$newline";
-    # This definition follows the cone for COMPILE_C
+    # This definition follows the one for COMPILE_C
     if ($has_sources) {
 	# By setting DEPS_DIR to just ., you can use -MMD to update the
 	# dependencies with gcc
@@ -4311,8 +4340,14 @@ in the build directory\n";
 
     if ($has_sources) {
 	print FD "\$(DEPS_DIR)/timestamp: ";
+	# FIXME: Create a single list of source files (remove duplicates)
 	foreach $lib (keys(%libraries)) {
 	    $sourcefiles = $libraries{$lib};
+	    PrintMakeLongline( FD, "$sourcefiles ", "append" );
+	}
+	foreach $pgm (keys(%programs)) {
+	    print "Adding sources for $pgm to deps\n" if $debug;
+	    $sourcefiles = $programs{$pgm};
 	    PrintMakeLongline( FD, "$sourcefiles ", "append" );
 	}
 	# Add Makefile as a dependency, since changes in the Makefile
@@ -4346,11 +4381,38 @@ in the build directory\n";
 		}
 	    }
 	}
+
+	# Programs
+	foreach $pgm (keys(%programs)) {
+	    foreach $sourcefile (split(/\s+/,$programs{$pgm})) {
+		if (defined($sawFile{$sourcefile})) { next; }
+		print "Adding deps command for program source $sourcefile\n" if $debug;
+		$sawFile{$sourcefile} = 1;
+		my $srcdirloc = '$(srcdir)/';
+		$ext = $sourcefile;
+		$ext =~ s/^.*\.//g;
+		$sourcebasename = $sourcefile;
+		$sourcebasename =~ s/\.\w*$//;
+		if ($ext eq "c") {
+		    if (! -s $sourcefile) {
+			$srcdirloc = '';
+		    }
+		    $targetOpts = "-MT \'_$sourcebasename.o $sourcebasename.o\'";
+		    if (!$found_profilelib) {
+			$targetOpts = "";
+		    }
+		    print FD "\t\$(MAKE_DEPEND_C) $targetOpts $srcdirloc$sourcefile >\$(DEPS_DIR)/$sourcebasename.d$newline";
+		    print FD "\techo \"$makeInclude \$(DEPS_DIR)/$sourcebasename.d\" >>\$(DEPS_DIR)/newalldeps$newline";
+		}
+	    }
+	}
+
 	print FD "\tif [ -s \$(DEPS_DIR)/newalldeps ] ; then mv -f \$(DEPS_DIR)/newalldeps \$(DEPS_DIR)/alldeps ; fi$newline";
 	print FD "\tdate >\$(DEPS_DIR)/timestamp$newline";
 
 	print FD "$makeInclude \$(DEPS_DIR)/alldeps$newline";
     }
+    
     print FD "# End of Dependencies$newline";
     print FD $makeBlockSep;
 }
@@ -4476,7 +4538,7 @@ sub ReadAutoconf {
 			$autoconf_files_by_dir_orig{$lcurdir} .= " $file";
 		    }
 		}
-		elsif ($file =~ /^\$(\w*)/) {
+		elsif ($file =~ /^\$[\{\(]?(\w*)[\}\)]?/) {
 		    # Another special case.  The name is actually
 		    # a shell variable.  This is too hard for us right now,
 		    # so generate a warning and do NOT add it to the list
@@ -4780,6 +4842,7 @@ sub TargetGcov {
 	print FD "\t\tgcov -b -f \$\$file ; done$newline";
     }
     &RecursiveOp( "coverage" );
+    &TargetPostamble( "coverage" );
 }
 # 
 # ----------------------------------------------------------------------------
@@ -5001,4 +5064,52 @@ sub SMInvokeAction {
 	    &$function ( @_ );
 	}
     }
+}
+
+#
+# Print a command with a VERBOSE option.  The format is
+#   PrintVerboseOptionCommand( cmd, altprefix, echocmd )
+# altprefix and echocmd are optional.
+# If echocmd is provided, this is echoed (rather than the actual command)
+# Otherwise, if altprefix is provided, the first token (up to the first
+# space) in cmd is replaced with altprefix.
+# Examples:
+#  &PrintVerboseOptionCommand( "cc -c \$<", "CC" )
+# will run 
+#  cc -c $<
+# but will echo
+#  CC -c $<
+# (this is a typical Linux build output, and is intended to be interpreted
+# as 
+#  $(CC) -c $< 
+#
+# Note that empty arguments are not properly handled in Perl (they are ignored,
+# so a,,b looks like a,b to Perl!), so "-" may be used as an empty altprefix
+sub PrintVerboseOptionCommand {
+    my $cmd       = $_[0];
+    my $altprefix = $_[1];
+    my $echocmd   = $_[2];
+
+    if (defined($altprefix) && $altprefix ne "" && $altprefix ne "-") {
+	my $cmdline = $cmd;
+	$cmdline =~ /[\S]+(\s.*)/;
+	$cmdline = $1;
+	if (defined($echocmd) && $echocmd ne "") {
+	    print STDERR "Invalid to define both altprefix ($altprefix) and echocmd ($echocmd)\n";
+	}
+	$echocmd = $altprefix . $cmdline;
+    }
+    elsif ($echocmd eq "") {
+	$echocmd = $cmd;
+    }
+
+    my $escaped_rule = $cmd;
+    $escaped_rule =~ s/$newline(\t+)\@*/ ; \\$newline$1echo /g;
+
+    print FD "\t\@if [ \"x\$(VERBOSE)\" != \"x1\" ] ; then \\$newline";
+    print FD "\t  echo \"$echocmd\" ; \\$newline";
+    print FD "\telse \\$newline";
+    print FD "\t  echo $escaped_rule ; \\$newline";
+    print FD "\tfi$newline";
+    print FD "\t\@$cmd$newline";
 }

@@ -5,8 +5,16 @@
  */
 
 #include "mpid_nem_impl.h"
+#ifdef USE_PMI2_API
+#include "pmi2.h"
+#else
+#include "pmi.h"
+#endif
+
 #include <stdlib.h>
-#include <unistd.h>
+#ifdef HAVE_UNISTD_H
+    #include <unistd.h>
+#endif
 #include <errno.h>
 
 #if defined (HAVE_SYSV_SHARED_MEM)
@@ -14,551 +22,503 @@
 #include <sys/shm.h>
 #endif
 
+#if defined( HAVE_MKSTEMP ) && defined( NEEDS_MKSTEMP_DECL )
+extern int mkstemp(char *t);
+#endif
+
+static int check_alloc(int num_local, int local_rank);
+
+typedef struct alloc_elem
+{
+    struct alloc_elem *next;
+    void **ptr_p;
+    size_t len;
+} alloc_elem_t;
+
+static struct { alloc_elem_t *head, *tail; } allocq = {0};
+
+#define ALLOCQ_HEAD() GENERIC_Q_HEAD(allocq)
+#define ALLOCQ_EMPTY() GENERIC_Q_EMPTY(allocq)
+#define ALLOCQ_ENQUEUE(ep) GENERIC_Q_ENQUEUE(&allocq, ep, next)
+#define ALLOCQ_DEQUEUE(epp) GENERIC_Q_DEQUEUE(&allocq, epp, next)
+
+#define ROUND_UP_8(x) (((x) + (size_t)7) & ~(size_t)7) /* rounds up to multiple of 8 */
+
+static size_t segment_len = 0;
+
+typedef struct asym_check_region 
+{
+    void *base_ptr;
+    OPA_int_t is_asym;
+} asym_check_region;
+
+static asym_check_region* asym_check_region_p = NULL;
+
+/* MPIDI_CH3I_Seg_alloc(len, ptr_p)
+
+   This function is used to allow the caller to reserve a len sized
+   region in the shared memory segment.  Once the shared memory
+   segment is actually allocated, when MPIDI_CH3I_Seg_commit() is
+   called, the pointer *ptr_p will be set to point to the reserved
+   region in the shared memory segment.
+
+   Note that no shared memory is actually allocated by this function,
+   and the *ptr_p pointer will be valid only after
+   MPIDI_CH3I_Seg_commit() is called.
+*/
 #undef FUNCNAME
-#define FUNCNAME MPID_nem_seg_create
+#define FUNCNAME MPIDI_CH3I_Seg_alloc
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_seg_create(MPID_nem_seg_ptr_t memory, int size, int num_local, int local_rank, MPIDI_PG_t *pg_p)
+int MPIDI_CH3I_Seg_alloc(size_t len, void **ptr_p)
+{
+    int mpi_errno = MPI_SUCCESS;
+    alloc_elem_t *ep;
+    MPIU_CHKPMEM_DECL(1);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SEG_ALLOC);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SEG_ALLOC);
+
+    /* round up to multiple of 8 to ensure the start of the next
+       region is 64-bit aligned. */
+    len = ROUND_UP_8(len);
+
+    MPIU_Assert(len);
+    MPIU_Assert(ptr_p);
+
+    MPIU_CHKPMEM_MALLOC(ep, alloc_elem_t *, sizeof(alloc_elem_t), mpi_errno, "el");
+    
+    ep->ptr_p = ptr_p;
+    ep->len = len;
+
+    ALLOCQ_ENQUEUE(ep);
+
+    segment_len += len;
+    
+ fn_exit:
+    MPIU_CHKPMEM_COMMIT();
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SEG_ALLOC);
+    return mpi_errno;
+ fn_fail:
+    MPIU_CHKPMEM_REAP();
+    goto fn_exit;
+}
+
+/* MPIDI_CH3I_Seg_commit(memory, num_local, local_rank)
+
+   This function allocates a shared memory segment large enough to
+   hold all of the regions previously requested by calls to
+   MPIDI_CH3I_Seg_alloc().  For each request, this function sets the
+   associated pointer to point to the reserved region in the allocated
+   shared memory segment.
+
+   If there is only one process local to this node, then a shared
+   memory region is not allocated.  Instead, memory is allocated from
+   the heap.
+
+   At least one call to MPIDI_CH3I_Seg_alloc() must be made before
+   calling MPIDI_CH3I_Seg_commit().
+ */
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Seg_commit
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Seg_commit(MPID_nem_seg_ptr_t memory, int num_local, int local_rank)
 {
     int mpi_errno = MPI_SUCCESS;
     int pmi_errno;
-    char key[MPID_NEM_MAX_KEY_VAL_LEN];
-    char val[MPID_NEM_MAX_KEY_VAL_LEN];
+#ifdef OPA_USE_LOCK_BASED_PRIMITIVES
+    int ret;
+    int ipc_lock_offset;
+    pthread_mutex_t *ipc_lock;
+#endif
+    int key_max_sz;
+    int val_max_sz;
+    char *key;
+    char *val;
     char *kvs_name;
-    char *handle = 0;
+    char *serialized_hnd = NULL;
+    void *current_addr;
+    void *start_addr;
+    size_t size_left;
     MPIU_CHKPMEM_DECL (1);
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_SEG_CREATE);
+    MPIU_CHKLMEM_DECL (2);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SEG_COMMIT);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_SEG_CREATE);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SEG_COMMIT);
 
+    /* MPIDI_CH3I_Seg_alloc() needs to have been called before this function */
+    MPIU_Assert(!ALLOCQ_EMPTY());
+    MPIU_Assert(segment_len > 0);
+
+    /* allocate an area to check if the segment was allocated symmetrically */
+    mpi_errno = MPIDI_CH3I_Seg_alloc(sizeof(asym_check_region), (void **)&asym_check_region_p);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    mpi_errno = MPIU_SHMW_Hnd_init(&(memory->hnd));
+    if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
+
+    /* Shared memory barrier variables are in the front of the shared
+       memory region.  We do this here explicitly, rather than use the
+       Seg_alloc() function because we need to use the barrier inside
+       this function, before we've assigned the variables to their
+       regions.  To do this, we add extra space to the segment_len,
+       initialize the variables as soon as the shared memory region is
+       allocated/attached, then before we do the assignments of the
+       pointers provided in Seg_alloc(), we make sure to skip the
+       region containing the barrier vars. */
+    
+    /* add space for local barrier region.  Use a whole cacheline. */
+    MPIU_Assert(MPID_NEM_CACHE_LINE_LEN >= sizeof(MPID_nem_barrier_t));
+    segment_len += MPID_NEM_CACHE_LINE_LEN;
+
+#ifdef OPA_USE_LOCK_BASED_PRIMITIVES
+    /* We have a similar bootstrapping problem when using OpenPA in
+     * lock-based emulation mode.  We use OPA_* functions during the
+     * check_alloc function but we were previously initializing OpenPA
+     * after return from this function.  So we put the emulation lock
+     * right after the barrier var space. */
+
+    /* offset from memory->base_addr to the start of ipc_lock */
+    ipc_lock_offset = MPID_NEM_CACHE_LINE_LEN;
+
+    MPIU_Assert(ipc_lock_offset >= sizeof(pthread_mutex_t));
+    segment_len += MPID_NEM_CACHE_LINE_LEN;
+#endif
+
+    memory->segment_len = segment_len;
+
+#ifdef USE_PMI2_API
     /* if there is only one process on this processor, don't use shared memory */
     if (num_local == 1)
     {
         char *addr;
 
-        MPIU_CHKPMEM_MALLOC (addr, char *, size + MPID_NEM_CACHE_LINE_LEN, mpi_errno, "segment");
+        MPIU_CHKPMEM_MALLOC (addr, char *, segment_len + MPID_NEM_CACHE_LINE_LEN, mpi_errno, "segment");
 
         memory->base_addr = addr;
-        memory->max_size     = size;
-        memory->current_addr = (char *)(((MPI_Aint)addr + (MPI_Aint)MPID_NEM_CACHE_LINE_LEN-1) & (~((MPI_Aint)MPID_NEM_CACHE_LINE_LEN-1)));
-        memory->max_addr     = (char *)(memory->current_addr) + memory->max_size;
-        memory->size_left    = memory->max_size;
-        memory->symmetrical  = 0 ;
+        current_addr = (char *)(((MPIR_Upint)addr + (MPIR_Upint)MPID_NEM_CACHE_LINE_LEN-1) & (~((MPIR_Upint)MPID_NEM_CACHE_LINE_LEN-1)));
+        memory->symmetrical = 0;
 
-        /* we still need to calls to barrier */
-	pmi_errno = PMI_Barrier();
-        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
-	pmi_errno = PMI_Barrier();
-        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
+        /* must come before barrier_init since we use OPA in that function */
+#ifdef OPA_USE_LOCK_BASED_PRIMITIVES
+        ipc_lock = (pthread_mutex_t *)((char *)memory->base_addr + ipc_lock_offset);
+        ret = OPA_Interprocess_lock_init(ipc_lock, TRUE/*isLeader*/);
+        MPIU_ERR_CHKANDJUMP1(ret != 0, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %d", ret);
+#endif
 
-        MPIU_CHKPMEM_COMMIT();
-        goto fn_exit;
+        mpi_errno = MPID_nem_barrier_init((MPID_nem_barrier_t *)memory->base_addr, TRUE);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
+    else {
 
-    mpi_errno = MPIDI_PG_GetConnKVSname (&kvs_name);
-    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+        if (local_rank == 0) {
+            mpi_errno = MPIU_SHMW_Seg_create_and_attach(memory->hnd, memory->segment_len, &(memory->base_addr), 0);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-    memory->max_size = size;
+            /* post name of shared file */
+            MPIU_Assert (MPID_nem_mem_region.local_procs[0] == MPID_nem_mem_region.rank);
 
-    if (local_rank == 0)
+            mpi_errno = MPIU_SHMW_Hnd_get_serialized_by_ref(memory->hnd, &serialized_hnd);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+            /* must come before barrier_init since we use OPA in that function */
+#ifdef OPA_USE_LOCK_BASED_PRIMITIVES
+            ipc_lock = (pthread_mutex_t *)((char *)memory->base_addr + ipc_lock_offset);
+            ret = OPA_Interprocess_lock_init(ipc_lock, local_rank == 0);
+            MPIU_ERR_CHKANDJUMP1(ret != 0, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %d", ret);
+#endif
+
+            mpi_errno = MPID_nem_barrier_init((MPID_nem_barrier_t *)memory->base_addr, TRUE);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+            /* The opa and nem barrier initializations must come before we (the
+             * leader) put the sharedFilename attribute.  Since this is a
+             * serializing operation with our peers on the local node this
+             * ensures that these initializations have occurred before any peer
+             * attempts to use the resources. */
+            mpi_errno = PMI_Info_PutNodeAttr("sharedFilename", serialized_hnd);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        } else {
+            int found = FALSE;
+
+            /* Allocate space for pmi key and val */
+            MPIU_CHKLMEM_MALLOC(val, char *, PMI_MAX_VALLEN, mpi_errno, "val");
+
+            /* get name of shared file */
+            mpi_errno = PMI_Info_GetNodeAttr("sharedFilename", val, PMI_MAX_VALLEN, &found, TRUE);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            MPIU_ERR_CHKANDJUMP1(!found, mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "nodeattr not found");
+
+            mpi_errno = MPIU_SHMW_Hnd_deserialize(memory->hnd, val, strlen(val));
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+            mpi_errno = MPIU_SHMW_Seg_attach(memory->hnd, memory->segment_len, (char **)&memory->base_addr, 0);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+            /* must come before barrier_init since we use OPA in that function */
+#ifdef OPA_USE_LOCK_BASED_PRIMITIVES
+            ipc_lock = (pthread_mutex_t *)((char *)memory->base_addr + ipc_lock_offset);
+            ret = OPA_Interprocess_lock_init(ipc_lock, local_rank == 0);
+            MPIU_ERR_CHKANDJUMP1(ret != 0, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %d", ret);
+
+            /* Right now we rely on the assumption that OPA_Interprocess_lock_init only
+             * needs to be called by the leader and the current process before use by the
+             * current process.  That is, we don't assume that this collective call is
+             * synchronizing and we don't assume that it requires total external
+             * synchronization.  In PMIv2 we don't have a PMI_Barrier operation so we need
+             * this behavior. */
+#endif
+
+            mpi_errno = MPID_nem_barrier_init((MPID_nem_barrier_t *)memory->base_addr, FALSE);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        }
+
+        mpi_errno = MPID_nem_barrier(num_local, local_rank);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+        if (local_rank == 0) {
+            mpi_errno = MPIU_SHMW_Seg_remove(memory->hnd);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        }
+        current_addr = memory->base_addr;
+        memory->symmetrical = 0 ;
+    }
+#else /* we are using PMIv1 */
+    /* if there is only one process on this processor, don't use shared memory */
+    if (num_local == 1)
     {
-        mpi_errno = MPID_nem_allocate_shared_memory (&memory->base_addr, memory->max_size, &handle);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-	
-	/* post name of shared file */
-	MPIU_Assert (MPID_nem_mem_region.local_procs[0] == MPID_nem_mem_region.rank);
-	MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "sharedFilename[%i]", MPID_nem_mem_region.rank);
+        char *addr;
 
-	pmi_errno = PMI_KVS_Put (kvs_name, key, handle);
-        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", pmi_errno);
+        MPIU_CHKPMEM_MALLOC (addr, char *, segment_len + MPID_NEM_CACHE_LINE_LEN, mpi_errno, "segment");
 
-        pmi_errno = PMI_KVS_Commit (kvs_name);
-        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", pmi_errno);
+        memory->base_addr = addr;
+        current_addr = (char *)(((MPIR_Upint)addr + (MPIR_Upint)MPID_NEM_CACHE_LINE_LEN-1) & (~((MPIR_Upint)MPID_NEM_CACHE_LINE_LEN-1)));
+        memory->symmetrical = 0 ;
 
-	pmi_errno = PMI_Barrier();
-        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
-    }
-    else
-    {
+        /* we still need to call barrier */
 	pmi_errno = PMI_Barrier();
         MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
 
-	/* get name of shared file */
-	MPIU_Snprintf (key, MPID_NEM_MAX_KEY_VAL_LEN, "sharedFilename[%i]", MPID_nem_mem_region.local_procs[0]);
-	pmi_errno = PMI_KVS_Get (kvs_name, key, val, MPID_NEM_MAX_KEY_VAL_LEN);
-        MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", pmi_errno);
-
-        handle = val;
-
-	mpi_errno = MPID_nem_attach_shared_memory (&memory->base_addr, memory->max_size, handle);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+        /* must come before barrier_init since we use OPA in that function */
+#ifdef OPA_USE_LOCK_BASED_PRIMITIVES
+        ipc_lock = (pthread_mutex_t *)((char *)memory->base_addr + ipc_lock_offset);
+        ret = OPA_Interprocess_lock_init(ipc_lock, TRUE/*isLeader*/);
+        MPIU_ERR_CHKANDJUMP1(ret != 0, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %d", ret);
+#endif
+        mpi_errno = MPID_nem_barrier_init((MPID_nem_barrier_t *)memory->base_addr, TRUE);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
+    else{
+        /* Allocate space for pmi key and val */
+        pmi_errno = PMI_KVS_Get_key_length_max(&key_max_sz);
+        MPIU_ERR_CHKANDJUMP1(pmi_errno, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %d", pmi_errno);
+        MPIU_CHKLMEM_MALLOC(key, char *, key_max_sz, mpi_errno, "key");
 
-    pmi_errno = PMI_Barrier();
-    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
+        pmi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
+        MPIU_ERR_CHKANDJUMP1(pmi_errno, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %d", pmi_errno);
+        MPIU_CHKLMEM_MALLOC(val, char *, val_max_sz, mpi_errno, "val");
 
-    if (local_rank == 0)
+        mpi_errno = MPIDI_PG_GetConnKVSname (&kvs_name);
+        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+        if (local_rank == 0){
+            mpi_errno = MPIU_SHMW_Seg_create_and_attach(memory->hnd, memory->segment_len, &(memory->base_addr), 0);
+            if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
+
+            /* post name of shared file */
+            MPIU_Assert (MPID_nem_mem_region.local_procs[0] == MPID_nem_mem_region.rank);
+            MPIU_Snprintf (key, key_max_sz, "sharedFilename[%i]", MPID_nem_mem_region.rank);
+
+            mpi_errno = MPIU_SHMW_Hnd_get_serialized_by_ref(memory->hnd, &serialized_hnd);
+            if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
+
+            pmi_errno = PMI_KVS_Put (kvs_name, key, serialized_hnd);
+            MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_put", "**pmi_kvs_put %d", pmi_errno);
+
+            pmi_errno = PMI_KVS_Commit (kvs_name);
+            MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_commit", "**pmi_kvs_commit %d", pmi_errno);
+
+            /* must come before barrier_init since we use OPA in that function */
+#ifdef OPA_USE_LOCK_BASED_PRIMITIVES
+            ipc_lock = (pthread_mutex_t *)((char *)memory->base_addr + ipc_lock_offset);
+            ret = OPA_Interprocess_lock_init(ipc_lock, local_rank == 0);
+            MPIU_ERR_CHKANDJUMP1(ret != 0, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %d", ret);
+#endif
+
+            mpi_errno = MPID_nem_barrier_init((MPID_nem_barrier_t *)memory->base_addr, TRUE);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+            pmi_errno = PMI_Barrier();
+            MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
+        }
+        else
+        {
+            pmi_errno = PMI_Barrier();
+            MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
+
+            /* get name of shared file */
+            MPIU_Snprintf (key, key_max_sz, "sharedFilename[%i]", MPID_nem_mem_region.local_procs[0]);
+            pmi_errno = PMI_KVS_Get (kvs_name, key, val, val_max_sz);
+            MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_kvs_get", "**pmi_kvs_get %d", pmi_errno);
+
+            mpi_errno = MPIU_SHMW_Hnd_deserialize(memory->hnd, val, strlen(val));
+            if(mpi_errno != MPI_SUCCESS) MPIU_ERR_POP(mpi_errno);
+
+            mpi_errno = MPIU_SHMW_Seg_attach(memory->hnd, memory->segment_len, (char **)&memory->base_addr, 0);
+            if (mpi_errno) MPIU_ERR_POP (mpi_errno);
+
+            /* must come before barrier_init since we use OPA in that function */
+#ifdef OPA_USE_LOCK_BASED_PRIMITIVES
+            ipc_lock = (pthread_mutex_t *)((char *)memory->base_addr + ipc_lock_offset);
+            ret = OPA_Interprocess_lock_init(ipc_lock, local_rank == 0);
+            MPIU_ERR_CHKANDJUMP1(ret != 0, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %d", ret);
+#endif
+
+            mpi_errno = MPID_nem_barrier_init((MPID_nem_barrier_t *)memory->base_addr, FALSE);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        }
+
+        mpi_errno = MPID_nem_barrier(num_local, local_rank);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    
+        if (local_rank == 0)
+        {
+            mpi_errno = MPIU_SHMW_Seg_remove(memory->hnd);
+            if (mpi_errno != MPI_SUCCESS) MPIU_ERR_POP (mpi_errno);
+        }
+        current_addr = memory->base_addr;
+        memory->symmetrical = 0 ;
+    }
+#endif
+    /* assign sections of the shared memory segment to their pointers */
+
+    start_addr = current_addr;
+    size_left = segment_len;
+
+    /* reserve room for shared mem barrier (We used a whole cacheline) */
+    current_addr = (char *)current_addr + MPID_NEM_CACHE_LINE_LEN;
+    MPIU_Assert(size_left >= MPID_NEM_CACHE_LINE_LEN);
+    size_left -= MPID_NEM_CACHE_LINE_LEN;
+
+#ifdef OPA_USE_LOCK_BASED_PRIMITIVES
+    /* reserve room for the opa emulation lock */
+    current_addr = (char *)current_addr + MPID_NEM_CACHE_LINE_LEN;
+    MPIU_Assert(size_left >= MPID_NEM_CACHE_LINE_LEN);
+    size_left -= MPID_NEM_CACHE_LINE_LEN;
+#endif
+
+    do
     {
-        mpi_errno = MPID_nem_remove_shared_memory (handle);
-        if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-        MPIU_Free (handle);
+        alloc_elem_t *ep;
+
+        ALLOCQ_DEQUEUE(&ep);
+
+        *(ep->ptr_p) = current_addr;
+        MPIU_Assert(size_left >= ep->len);
+        size_left -= ep->len;
+        current_addr = (char *)current_addr + ep->len;
+
+        MPIU_Free(ep);
+
+        MPIU_Assert((char *)current_addr <= (char *)start_addr + segment_len);
     }
+    while (!ALLOCQ_EMPTY());
 
-    memory->current_addr = memory->base_addr;
-    memory->max_addr     = (char *)(memory->base_addr) + memory->max_size;
-    memory->size_left    = memory->max_size;
-    memory->symmetrical  = 0 ;
-
+    mpi_errno = check_alloc(num_local, local_rank);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    
+    MPIU_CHKPMEM_COMMIT();
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_SEG_CREATE);
+    MPIU_CHKLMEM_FREEALL();
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SEG_COMMIT);
     return mpi_errno;
  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
-    if (handle)
-        MPID_nem_remove_shared_memory (handle);
+    MPIU_SHMW_Seg_remove(memory->hnd);
+    MPIU_SHMW_Hnd_finalize(&(memory->hnd));
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
 
+/* MPIDI_CH3I_Seg_destroy() free the shared memory segment */
 #undef FUNCNAME
-#define FUNCNAME MPID_nem_seg_destroy
+#define FUNCNAME MPIDI_CH3I_Seg_destroy
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_seg_destroy()
+int MPIDI_CH3I_Seg_destroy(void)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_SEG_DESTROY);
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_SEG_DESTROY);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_SEG_DESTROY);
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SEG_DESTROY);
 
     if (MPID_nem_mem_region.num_local == 1)
         MPIU_Free(MPID_nem_mem_region.memory.base_addr);
     else
     {
-        mpi_errno = MPID_nem_detach_shared_memory (MPID_nem_mem_region.memory.base_addr, MPID_nem_mem_region.memory.max_size);
+        mpi_errno = MPIU_SHMW_Seg_detach(MPID_nem_mem_region.memory.hnd, 
+                        &(MPID_nem_mem_region.memory.base_addr), MPID_nem_mem_region.memory.segment_len);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
     }
 
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_SEG_DESTROY);
+    MPIU_SHMW_Hnd_finalize(&(MPID_nem_mem_region.memory.hnd));
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_SEG_DESTROY);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
 }
 
-
-
+/* check_alloc() checks to see whether the shared memory segment is
+   allocated at the same virtual memory address at each process.
+*/
 #undef FUNCNAME
-#define FUNCNAME MPID_nem_seg_alloc
+#define FUNCNAME check_alloc
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_seg_alloc( MPID_nem_seg_ptr_t memory, MPID_nem_seg_info_ptr_t seg, int size)
+static int check_alloc(int num_local, int local_rank)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_STATE_DECL(MPID_STATE_NEM_SEG_ALLOC);
+    MPIDI_STATE_DECL(MPID_STATE_CHECK_ALLOC);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_NEM_SEG_ALLOC);
+    MPIDI_FUNC_ENTER(MPID_STATE_CHECK_ALLOC);
 
-    MPIU_Assert( memory->size_left >= size );
+    if (local_rank == 0) {
+        asym_check_region_p->base_ptr = MPID_nem_mem_region.memory.base_addr;
+        OPA_store_int(&asym_check_region_p->is_asym, 0);
+    }
 
-    seg->addr = memory->current_addr;
-    seg->size = size ;
+    mpi_errno = MPID_nem_barrier(num_local, local_rank);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-    memory->size_left    -= size;
-    memory->current_addr  = (char *)(memory->current_addr) + size;
+    if (asym_check_region_p->base_ptr != MPID_nem_mem_region.memory.base_addr)
+        OPA_store_int(&asym_check_region_p->is_asym, 1);
 
-    MPIU_Assert( (MPI_Aint)(memory->current_addr) <=  (MPI_Aint) (memory->max_addr) );
+    OPA_read_write_barrier();
 
-    MPIDI_FUNC_EXIT(MPID_STATE_NEM_SEG_ALLOC);
-    return mpi_errno;
-}
+    mpi_errno = MPID_nem_barrier(num_local, local_rank);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_check_alloc
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_nem_check_alloc (int num_processes)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int pmi_errno;
-    int rank    = MPID_nem_mem_region.local_rank;
-    int address = 0;
-    int base, found, index;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_CHECK_ALLOC);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_CHECK_ALLOC);
-
-    pmi_errno = PMI_Barrier();
-    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
-
-    address =  ((MPID_nem_addr_t)(MPID_nem_mem_region.memory.current_addr));
-    MPID_NEM_MEMCPY(&(((int*)(MPID_nem_mem_region.memory.current_addr))[rank]),
-	   &address,
-	   sizeof(MPID_nem_addr_t));
-
-    pmi_errno = PMI_Barrier();
-    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
-
-    base  = ((int *)MPID_nem_mem_region.memory.current_addr)[rank];
-    found = 1 ;
-    for (index = 0 ; index < num_processes ; index ++)
-      {
-	if (index != rank )
-	  {
-	    if( (base - (MPID_nem_addr_t)(((int *)(MPID_nem_mem_region.memory.current_addr))[index])) == 0)
-	      {
-		found++;
-	      }
-	  }
-      }
-    pmi_errno = PMI_Barrier();
-    MPIU_ERR_CHKANDJUMP1 (pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier", "**pmi_barrier %d", pmi_errno);
-
-    if (found == num_processes)
-      {
-	/*fprintf(stderr,"[%i] ===  Symmetrical Alloc ...  \n",rank);	 */
-	MPID_nem_mem_region.memory.symmetrical = 1;
-	MPID_nem_asymm_base_addr = NULL;
-      }	
-    else
-      {
-	/*fprintf(stderr,"[%i] ===  ASymmetrical Alloc !!!  \n",rank);	 */
+    if (OPA_load_int(&asym_check_region_p->is_asym))
+    {
 	MPID_nem_mem_region.memory.symmetrical = 0;
 	MPID_nem_asymm_base_addr = MPID_nem_mem_region.memory.base_addr;
 #ifdef MPID_NEM_SYMMETRIC_QUEUES
-        MPIU_ERR_SETFATALANDJUMP1 (mpi_errno, MPI_ERR_INTERN, "**intern", "**intern %s", "queues are not symmetrically allocated as expected");
+        MPIU_ERR_SETFATALANDJUMP1(mpi_errno, MPI_ERR_INTERN, "**intern", "**intern %s", "queues are not symmetrically allocated as expected");
 #endif
-      }
-
- fn_exit:
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_CHECK_ALLOC);
-    return mpi_errno;
- fn_fail:
-    goto fn_exit;
-}
-
-#if defined (HAVE_SYSV_SHARED_MEM)
-/* SYSV shared memory */
-
-/* FIXME: for sysv, when we have more than 8 procs, we exceed SHMMAX
-   when allocating a shared-memory region.  We need a way to handle
-   this, e.g., break it up into smaller chunks, but make them
-   contiguous. */
-/* MPID_nem_allocate_shared_memory allocates a shared mem region of size "length" and attaches to it.  "handle" points to a string
-   descriptor for the region to be passed in to MPID_nem_attach_shared_memory.  "handle" is dynamically allocated and should be
-   freed by the caller.*/
-#define MAX_INT_STR_LEN 12
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_allocate_shared_memory
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int
-MPID_nem_allocate_shared_memory (char **buf_p, const int length, char *handle[])
-{
-    int mpi_errno = MPI_SUCCESS;
-    int shmid;
-    static int key = 0;
-    void *buf;
-    struct shmid_ds ds;
-    MPIU_CHKPMEM_DECL(1);
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_ALLOCATE_SHARED_MEMORY);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_ALLOCATE_SHARED_MEMORY);
-
-    do
-    {
-        ++key;
-        shmid = shmget (key, length, IPC_CREAT | IPC_EXCL | S_IRWXU);
     }
-    while (shmid == -1 && errno == EEXIST);
-    MPIU_ERR_CHKANDJUMP2 (shmid == -1, mpi_errno, MPI_ERR_OTHER, "**alloc_shar_mem", "**alloc_shar_mem %s %s", "shmget", strerror (errno));
-
-    buf = 0;
-    buf = shmat (shmid, buf, 0);
-    MPIU_ERR_CHKANDJUMP2 ((MPI_Aint)buf == -1, mpi_errno, MPI_ERR_OTHER, "**alloc_shar_mem", "**alloc_shar_mem %s %s", "shmat", strerror (errno));
-
-    *buf_p = buf;
-
-    MPIU_CHKPMEM_MALLOC (*handle, char *, MAX_INT_STR_LEN, mpi_errno, "shared memory handle");
-    MPIU_Snprintf (*handle, MAX_INT_STR_LEN, "%d", shmid);
-
-    MPIU_CHKPMEM_COMMIT();
- fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_ALLOCATE_SHARED_MEMORY);
-    return mpi_errno;
- fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    shmctl (shmid, IPC_RMID, &ds);  /* try to remove region */
-    MPIU_CHKPMEM_REAP();
-    goto fn_exit;
-    /* --END ERROR HANDLING-- */
-}
-
-/* MPID_nem_attach_shared_memory attaches to shared memory previously allocated by MPID_nem_allocate_shared_memory */
-/* MPID_nem_attach_shared_memory (char **buf_p, const int length, const char const handle[]) triggers a warning */
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_attach_shared_memory
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int
-MPID_nem_attach_shared_memory (char **buf_p, const int length, const char handle[])
-{
-    int mpi_errno = MPI_SUCCESS;
-    void *buf;
-    int shmid;
-    struct shmid_ds ds;
-    char *endptr;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_ATTACH_SHARED_MEMORY);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_ATTACH_SHARED_MEMORY);
-
-    shmid = strtoll (handle, &endptr, 10);
-    MPIU_ERR_CHKANDJUMP2 (endptr == handle || *endptr != '\0', mpi_errno, MPI_ERR_OTHER, "**attach_shar_mem", "**attach_shar_mem %s %s", "strtoll", strerror (errno));
-
-    buf = 0;
-    buf = shmat (shmid, buf, 0);
-    MPIU_ERR_CHKANDJUMP2 ((MPI_Aint)buf == -1, mpi_errno, MPI_ERR_OTHER, "**attach_shar_mem", "**attach_shar_mem %s %s", "shmat", strerror (errno));
-
-    *buf_p = buf;
-
- fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_ATTACH_SHARED_MEMORY);
-    return mpi_errno;
- fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    shmctl (shmid, IPC_RMID, &ds); /* try to remove region */
-    goto fn_exit;
-    /* --END ERROR HANDLING-- */
-}
-
-/* MPID_nem_remove_shared_memory removes the OS descriptor associated with the handle.  Once all processes detatch from the region
-   the OS resource will be destroyed. */
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_remove_shared_memory
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int
-MPID_nem_remove_shared_memory (const char const handle[])
-{
-    int mpi_errno = MPI_SUCCESS;
-    int ret;
-    int shmid;
-    struct shmid_ds ds;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_REMOVE_SHARED_MEMORY);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_REMOVE_SHARED_MEMORY);
-
-    shmid = atoi (handle);
-
-    ret = shmctl (shmid, IPC_RMID, &ds);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**remove_shar_mem", "**remove_shar_mem %s %s", "shmctl", strerror (errno));
-
- fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_REMOVE_SHARED_MEMORY);
-    return mpi_errno;
- fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    shmctl (shmid, IPC_RMID, &ds); /* try to remove region */
-    goto fn_exit;
-    /* --END ERROR HANDLING-- */
-}
-
-/* MPID_nem_detach_shared_memory detaches the shared memory region from this process */
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_detach_shared_memory
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int
-MPID_nem_detach_shared_memory (const char *buf_p, const int length)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int ret;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_DETACH_SHARED_MEMORY);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_DETACH_SHARED_MEMORY);
-
-    ret = shmdt (buf_p);
-    /* I'm ignoring the return code here to work around an bug with
-       gm-1 when a sysv shared memory region is registered. -db */
-    /* MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**detach_shar_mem", "**detach_shar_mem %s %s", "shmdt", strerror (errno));*/
-
- fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_DETACH_SHARED_MEMORY);
-    return mpi_errno;
- fn_fail:
-    goto fn_exit;
-}
-
-#else /* HAVE_SYSV_SHARED_MEM */
-/* Using memory mapped files */
-
-#define MAX_INT_STR_LEN 12 /* chars needed to store largest integer including /0 */
-
-/* MPID_nem_allocate_shared_memory allocates a shared mem region of size "length" and attaches to it.  "handle" points to a string
-   descriptor for the region to be passed in to MPID_nem_attach_shared_memory.  "handle" is dynamically allocated and should be
-   freed by the caller.*/
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_allocate_shared_memory
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int
-MPID_nem_allocate_shared_memory (char **buf_p, const int length, char *handle[])
-{
-    int mpi_errno = MPI_SUCCESS;
-    int fd;
-    int ret;
-    const char dev_fname[] = "/dev/shm/nemesis_shar_tmpXXXXXX";
-    const char tmp_fname[] = "/tmp/nemesis_shar_tmpXXXXXX";
-    MPIU_CHKPMEM_DECL(2);
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_ALLOCATE_SHARED_MEMORY);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_ALLOCATE_SHARED_MEMORY);
-
-    /* create a file */
-    /* use /dev/shm if it's there, otherwise put file in /tmp */
-    MPIU_CHKPMEM_MALLOC (*handle, char *, sizeof (dev_fname), mpi_errno, "shared memory handle");
-    memcpy (*handle, dev_fname, sizeof (dev_fname));
-    fd = mkstemp (*handle);
-    if (fd == -1)
+    else
     {
-	/* creating in /dev/shm failed, fall back to /tmp.  If that doesn't work, give up. */
-	MPIU_Free (*handle);
-	MPIU_CHKPMEM_MALLOC (*handle, char *, sizeof (tmp_fname), mpi_errno, "shared memory handle");
-	memcpy (*handle, tmp_fname, sizeof (tmp_fname));
-	fd = mkstemp (*handle);
-	MPIU_ERR_CHKANDJUMP2 (fd == -1, mpi_errno, MPI_ERR_OTHER, "**alloc_shar_mem", "**alloc_shar_mem %s %s", "mkstmp", strerror (errno));
+	MPID_nem_mem_region.memory.symmetrical = 1;
+	MPID_nem_asymm_base_addr = NULL;
     }
-
-    /* set file to "length" bytes */
-    ret = lseek (fd, length-1, SEEK_SET);
-    MPIU_ERR_CHKANDSTMT2 (ret == -1, mpi_errno, MPI_ERR_OTHER, goto fn_close_fail, "**alloc_shar_mem", "**alloc_shar_mem %s %s", "lseek", strerror (errno));
-    do
-    {
-        ret = write (fd, "", 1);
-    }
-    while ((ret == -1 && errno == EINTR) || ret == 0);
-    MPIU_ERR_CHKANDSTMT2 (ret == -1, mpi_errno, MPI_ERR_OTHER, goto fn_close_fail, "**alloc_shar_mem", "**alloc_shar_mem %s %s", "lseek", strerror (errno));
-
-    /* mmap the file */
-    *buf_p = mmap (NULL, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    MPIU_ERR_CHKANDSTMT2 (*buf_p == MAP_FAILED, mpi_errno, MPI_ERR_OTHER, goto fn_close_fail, "**alloc_shar_mem", "**alloc_shar_mem %s %s", "mmap", strerror (errno));
-
-    /* close the file */
-    do
-    {
-        ret = close (fd);
-    }
-    while (ret == -1 && errno == EINTR);
-    MPIU_ERR_CHKANDSTMT2 (ret == -1, mpi_errno, MPI_ERR_OTHER, goto fn_close_fail, "**alloc_shar_mem", "**alloc_shar_mem %s %s", "close", strerror (errno));
-
-    MPIU_CHKPMEM_COMMIT();
+      
  fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_ALLOCATE_SHARED_MEMORY);
-    return mpi_errno;
- fn_close_fail:
-    close (fd);
-    unlink (*handle);
- fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    MPIU_CHKPMEM_REAP();
-    goto fn_exit;
-    /* --END ERROR HANDLING-- */
-}
-
-/* MPID_nem_attach_shared_memory attaches to shared memory previously allocated by MPID_nem_allocate_shared_memory */
-/* MPID_nem_attach_shared_memory (char **buf_p, const int length, const char const handle[]) make a warning */
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_attach_shared_memory
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int
-MPID_nem_attach_shared_memory (char **buf_p, const int length, const char handle[])
-{
-    int mpi_errno = MPI_SUCCESS;
-    int ret;
-    int fd;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_ATTACH_SHARED_MEMORY);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_ATTACH_SHARED_MEMORY);
-
-    fd = open (handle, O_RDWR);
-    MPIU_ERR_CHKANDJUMP2 (fd == -1, mpi_errno, MPI_ERR_OTHER,  "**attach_shar_mem", "**attach_shar_mem %s %s", "open", strerror (errno));
-
-     /* mmap the file */
-    *buf_p = mmap (NULL, length, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    MPIU_ERR_CHKANDSTMT2 (*buf_p == MAP_FAILED, mpi_errno, MPI_ERR_OTHER, goto fn_close_fail, "**attach_shar_mem", "**attach_shar_mem %s %s", "open", strerror (errno));
-
-    /* close the file */
-    do
-    {
-        ret = close (fd);
-    }
-    while (ret == -1 && errno == EINTR);
-    MPIU_ERR_CHKANDSTMT2 (ret == -1, mpi_errno, MPI_ERR_OTHER, goto fn_close_fail, "**attach_shar_mem", "**attach_shar_mem %s %s", "close", strerror (errno));
-
- fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_ATTACH_SHARED_MEMORY);
-    return mpi_errno;
- fn_close_fail:
-    close (fd);
- fn_fail:
-    /* --BEGIN ERROR HANDLING-- */
-    unlink (handle);
-    goto fn_exit;
-    /* --END ERROR HANDLING-- */
-}
-
-/* MPID_nem_remove_shared_memory removes the OS descriptor associated with the
-   handle.  Once all processes detatch from the region
-   the OS resource will be destroyed. */
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_remove_shared_memory
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int
-MPID_nem_remove_shared_memory (const char handle[])
-{
-    int mpi_errno = MPI_SUCCESS;
-    int ret;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_REMOVE_SHARED_MEMORY);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_REMOVE_SHARED_MEMORY);
-
-    ret = unlink (handle);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER,  "**remove_shar_mem", "**remove_shar_mem %s %s", "unlink", strerror (errno));
-
- fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_REMOVE_SHARED_MEMORY);
+    MPIDI_FUNC_EXIT(MPID_STATE_CHECK_ALLOC);
     return mpi_errno;
  fn_fail:
     goto fn_exit;
 }
 
-/* MPID_nem_detach_shared_memory detaches the shared memory region from this
-   process */
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_detach_shared_memory
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int
-MPID_nem_detach_shared_memory (const char *buf_p, const int length)
-{
-    int mpi_errno = MPI_SUCCESS;
-    int ret;
-    MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_DETACH_SHARED_MEMORY);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_DETACH_SHARED_MEMORY);
-
-    ret = munmap ((void *)buf_p, length);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER,  "**detach_shar_mem", "**detach_shar_mem %s %s", "munmap", strerror (errno));
-
- fn_exit:
-    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_DETACH_SHARED_MEMORY);
-    return mpi_errno;
- fn_fail:
-    goto fn_exit;
-}
-
-
-#endif /* HAVE_SYSV_SHARED_MEM */

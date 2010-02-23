@@ -1,4 +1,4 @@
-.TH MPI_Type_create_hvector 3 "11/2/2007" " " "MPI"
+.TH MPI_Type_create_hvector 3 "9/22/2008" " " "MPI"
 .SH NAME
 MPI_Type_create_hvector \-  Create a datatype with a constant stride given in bytes 
 .SH SYNOPSIS
@@ -13,29 +13,29 @@ int MPI_Type_create_hvector(int count,
 .PD 0
 .TP
 .B count 
-- number of blocks (nonnegative integer) 
+- number of blocks (nonnegative integer)
 .PD 1
 .PD 0
 .TP
 .B blocklength 
-- number of elements in each block (nonnegative integer) 
+- number of elements in each block (nonnegative integer)
 .PD 1
 .PD 0
 .TP
 .B stride 
-- number of bytes between start of each block (integer) 
+- number of bytes between start of each block (address integer)
 .PD 1
 .PD 0
 .TP
 .B oldtype 
-- old datatype (handle) 
+- old datatype (handle)
 .PD 1
 
 .SH OUTPUT PARAMETER
 .PD 0
 .TP
 .B newtype 
-- new datatype (handle) 
+- new datatype (handle)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

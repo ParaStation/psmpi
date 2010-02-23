@@ -6,17 +6,16 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 DEFS            = @DEFS@ -I. -I${srcdir}
-INCLUDES        = 
 CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 CC_SHL          = @CC_SHL@
@@ -24,6 +23,7 @@ C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
+INCLUDES = -I../../include -I${srcdir}/../../include
 
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .txt 
@@ -95,7 +95,7 @@ remove-genmakefiles:
 all-redirect: createf90types
 
 coverage: 
-createf90types: createf90types.o   
+createf90types: createf90types.o  ../../util/mtest.o 
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o createf90types createf90types.o  \
 	../../util/mtest.o ${LIBS} 
 # --------------------------------------------------------------------------
@@ -106,11 +106,6 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
 SOURCES         =  createf90types.c
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
@@ -119,6 +114,7 @@ tags: TAGS
 TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
+
 
 ../../util/mtest.o: 
 	(cd ../../util && $(MAKE) mtest.o)

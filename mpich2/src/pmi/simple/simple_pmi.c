@@ -299,7 +299,7 @@ int PMI_Get_appnum( int *appnum )
     return( PMI_SUCCESS );
 }
 
-int PMI_Barrier( )
+int PMI_Barrier( void )
 {
     int err = PMI_SUCCESS;
 
@@ -390,7 +390,7 @@ int PMI_Get_clique_ranks( int ranks[], int length )
 }
 
 /* Inform the process manager that we're in finalize */
-int PMI_Finalize( )
+int PMI_Finalize( void )
 {
     int err = PMI_SUCCESS;
 
@@ -746,8 +746,14 @@ int PMI_Spawn_multiple(int count,
             {
 		/* FIXME (protocol design flaw): command line arguments
 		   may contain both = and <space> (and even tab!).
-		   Also, command line args may be quite long, leading to 
-		   errors when PMIU_MAXLINE is exceeded */
+		*/
+		/* Note that part of this fixme was really a design error -
+		   because this uses the mcmd form, the data can be
+		   sent in multiple writelines.  This code now takes 
+		   advantage of that.  Note also that a correct parser 
+		   of the commands will permit any character other than a 
+		   new line in the argument, since the form is 
+		   argn=<any nonnewline><newline> */
                 rc = MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"arg%d=%s\n",
 				   i+1,argvs[spawncnt][i]);
 		if (rc < 0) {
@@ -758,6 +764,9 @@ int PMI_Spawn_multiple(int count,
 		    return PMI_FAIL;
 		}
                 argcnt++;
+		rc = PMIU_writeline( PMI_fd, buf );
+		buf[0] = 0;
+
             }
         }
         rc = MPIU_Snprintf(tempbuf,PMIU_MAXLINE,"argcnt=%d\n",argcnt);
@@ -880,52 +889,6 @@ int PMI_Spawn_multiple(int count,
     return( 0 );
 }
 
-int PMI_Args_to_keyval(int *argcp ATTRIBUTE((unused)), 
-		       char *((*argvp)[]) ATTRIBUTE((unused)), 
-		       PMI_keyval_t **keyvalp ATTRIBUTE((unused)), 
-		       int *size ATTRIBUTE((unused)) )
-{
-    return ( 0 );
-}
-
-int PMI_Parse_option(int num_args, char *args[], int *num_parsed, 
-		     PMI_keyval_t **keyvalp, int *size)
-{
-    if (num_args < 1)
-        return PMI_ERR_INVALID_NUM_ARGS;
-    if (args == NULL)
-        return PMI_ERR_INVALID_ARGS;
-    if (num_parsed == NULL)
-        return PMI_ERR_INVALID_NUM_PARSED;
-    if (keyvalp == NULL)
-        return PMI_ERR_INVALID_KEYVALP;
-    if (size == NULL)
-        return PMI_ERR_INVALID_SIZE;
-    *num_parsed = 0;
-    *keyvalp = NULL;
-    *size = 0;
-    return PMI_SUCCESS;
-}
-
-int PMI_Free_keyvals(PMI_keyval_t keyvalp[], int size)
-{
-    int i;
-    if (size < 0)
-        return PMI_ERR_INVALID_ARG;
-    if (keyvalp == NULL && size > 0)
-        return PMI_ERR_INVALID_ARG;
-    if (size == 0)
-        return PMI_SUCCESS;
-    /* free stuff */
-    for (i=0; i<size; i++)
-    {
-	MPIU_Free(keyvalp[i].key);
-	MPIU_Free(keyvalp[i].val);
-    }
-    MPIU_Free(keyvalp);
-    return PMI_SUCCESS;
-}
-
 /***************** Internal routines not part of PMI interface ***************/
 
 /* get a keyval pair by specific index */
@@ -1046,6 +1009,10 @@ static int GetResponse( const char request[], const char expectedCmd[],
     char recvbuf[PMIU_MAXLINE];
     char cmdName[PMIU_MAXLINE];
 
+    /* FIXME: This is an example of an incorrect fix - writeline can change
+       the second argument in some cases, and that will break the const'ness
+       of request.  Instead, writeline should take a const item and return
+       an error in the case in which it currently truncates the data. */
     err = PMIU_writeline( PMI_fd, (char *)request );
     if (err) {
 	return err;
@@ -1344,7 +1311,8 @@ static int PMII_singinit(void)
 {
     int pid, rc;
     int singinit_listen_sock, stdin_sock, stdout_sock, stderr_sock;
-    char *newargv[8], charpid[8], port_c[8];
+    const char *newargv[8];
+    char charpid[8], port_c[8];
     struct sockaddr_in sin;
     socklen_t len;
 
@@ -1378,7 +1346,7 @@ static int PMII_singinit(void)
 	MPIU_Snprintf(charpid, sizeof(charpid), "%d",getpid());
 	newargv[5] = charpid;
 	newargv[6] = NULL;
-	rc = execvp(newargv[0],newargv);
+	rc = execvp(newargv[0], (char **)newargv);
 	perror("PMII_singinit: execv failed");
 	PMIU_printf(1, "  This singleton init program attempted to access some feature\n");
 	PMIU_printf(1, "  for which process manager support was required, e.g. spawn or universe_size.\n");

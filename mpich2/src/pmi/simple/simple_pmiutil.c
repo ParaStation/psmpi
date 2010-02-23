@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id: simple_pmiutil.c,v 1.23 2007/02/15 19:43:43 gropp Exp $
- *
+/*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -65,7 +64,7 @@ void PMIU_SetServer( void )
 /* style: allow:fprintf:1 sig:0 */
 /* style: allow:vfprintf:1 sig:0 */
 /* This should be combined with the message routines */
-void PMIU_printf( int print_flag, char *fmt, ... )
+void PMIU_printf( int print_flag, const char *fmt, ... )
 {
     va_list ap;
     static FILE *logfile= 0;

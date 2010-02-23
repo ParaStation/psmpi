@@ -22,27 +22,27 @@ int MPI_Type_create_darray(int size,
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>size </B><DD>size of process group (positive integer) 
+<DT><B>size </B><DD>size of process group (positive integer)
 
-<DT><B>rank </B><DD>rank in process group (nonnegative integer) 
+<DT><B>rank </B><DD>rank in process group (nonnegative integer)
 
-<DT><B>ndims </B><DD>number of array dimensions as well as process grid dimensions (positive integer) 
+<DT><B>ndims </B><DD>number of array dimensions as well as process grid dimensions (positive integer)
 
-<DT><B>array_of_gsizes </B><DD>number of elements of type oldtype in each dimension of global array (array of positive integers) 
+<DT><B>array_of_gsizes </B><DD>number of elements of type oldtype in each dimension of global array (array of positive integers)
 
-<DT><B>array_of_distribs </B><DD>distribution of array in each dimension (array of state) 
+<DT><B>array_of_distribs </B><DD>distribution of array in each dimension (array of state)
 
-<DT><B>array_of_dargs </B><DD>distribution argument in each dimension (array of positive integers) 
+<DT><B>array_of_dargs </B><DD>distribution argument in each dimension (array of positive integers)
 
-<DT><B>array_of_psizes </B><DD>size of process grid in each dimension (array of positive integers) 
+<DT><B>array_of_psizes </B><DD>size of process grid in each dimension (array of positive integers)
 
-<DT><B>order </B><DD>array storage order flag (state) 
+<DT><B>order </B><DD>array storage order flag (state)
 
-<DT><B>oldtype </B><DD>old datatype (handle) 
+<DT><B>oldtype </B><DD>old datatype (handle)
 </DL>
 <P>
 <H2>Output Parameter</H2>
-<DL><DT><B>newtype </B> <DD> new datatype (handle) 
+<DL><DT><B>newtype </B> <DD> new datatype (handle)
 </DL>
 <P>
 <H2>Thread and Interrupt Safety</H2>

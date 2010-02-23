@@ -7,6 +7,10 @@
 
 #include "mpiimpl.h"
 
+#undef FUNCNAME
+#define FUNCNAME MPIR_Request_complete
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 /* Complete a request, saving the status data if necessary.
    "active" has meaning only if the request is a persistent request; this 
    allows the completion routines to indicate that a persistent request 
@@ -20,7 +24,6 @@
 int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr, 
 			  MPI_Status * status, int * active)
 {
-    static const char FCNAME[] = "MPIR_Request_complete";
     int mpi_errno = MPI_SUCCESS;
 
     *active = TRUE;
@@ -210,6 +213,10 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 }
 
 
+#undef FUNCNAME
+#define FUNCNAME MPIR_Request_get_error
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 /* FIXME: What is this routine for?
  *  
  * [BRT] it is used by testall, although looking at testall now, I think the
@@ -217,10 +224,10 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
  */
 int MPIR_Request_get_error(MPID_Request * request_ptr)
 {
-    static const char FCNAME[] = "MPIR_Request_get_error";
     int mpi_errno = MPI_SUCCESS;
     MPIU_THREADPRIV_DECL;
 
+    /* FIXME: Why do we need to get the thread-private storage here? */
     MPIU_THREADPRIV_GET;
 
     switch(request_ptr->kind)
@@ -276,8 +283,7 @@ int MPIR_Request_get_error(MPID_Request * request_ptr)
 	    /* The user error handler may make calls to MPI routines, so the 
 	       nesting counter must be incremented before the handler 
 	       is called */
-	    MPIU_THREADPRIV_DECL;
-	    MPIU_THREADPRIV_GET;
+	    /* Note that we've acquired the thread private storage above */
 	    MPIR_Nest_incr();
     
 	    switch (request_ptr->greq_lang)
@@ -352,9 +358,10 @@ void MPIR_Grequest_set_lang_f77( MPI_Request greq )
 
 #undef FUNCNAME
 #define FUNCNAME MPIR_Grequest_cancel
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIR_Grequest_cancel(MPID_Request * request_ptr, int complete)
 {
-    static const char * FCNAME = MPIU_QUOTE(FUNCNAME);
     int rc;
     int mpi_errno = MPI_SUCCESS;
     
@@ -401,9 +408,10 @@ int MPIR_Grequest_cancel(MPID_Request * request_ptr, int complete)
 
 #undef FUNCNAME
 #define FUNCNAME MPIR_Grequest_query
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIR_Grequest_query(MPID_Request * request_ptr)
 {
-    static const char * FCNAME = MPIU_QUOTE(FUNCNAME);
     int rc;
     int mpi_errno = MPI_SUCCESS;
     
@@ -448,9 +456,10 @@ int MPIR_Grequest_query(MPID_Request * request_ptr)
 
 #undef FUNCNAME
 #define FUNCNAME MPIR_Grequest_free
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIR_Grequest_free(MPID_Request * request_ptr)
 {
-    static const char * FCNAME = MPIU_QUOTE(FUNCNAME);
     int rc;
     int mpi_errno = MPI_SUCCESS;
     
@@ -567,9 +576,8 @@ fn_fail:
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPIR_Grequest_waitall(int count, MPID_Request * const * request_ptrs)
 {
-    MPIX_Grequest_wait_function *wait_fn = NULL;
     void ** state_ptrs;
-    int i, n_greq;
+    int i;
     int mpi_error = MPI_SUCCESS;
     MPID_Progress_state progress_state;
     MPIU_CHKLMEM_DECL(1);
@@ -586,6 +594,9 @@ int MPIR_Grequest_waitall(int count, MPID_Request * const * request_ptrs)
            Until a waitall_fn is added for greqs, we'll call wait on
            each greq individually. */
 #if 0
+    MPIX_Grequest_wait_function *wait_fn = NULL;
+    int n_greq;
+    MPIX_Grequest_class curr_class;
     /* loop over all requests, group greqs with the same class and
        call wait_fn on the groups.  (Only consecutive greqs with the
        same class are being grouped) */

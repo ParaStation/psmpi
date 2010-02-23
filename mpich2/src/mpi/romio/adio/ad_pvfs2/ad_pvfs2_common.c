@@ -42,6 +42,7 @@ int ADIOI_PVFS2_End_call(MPI_Comm comm, int keyval,
 {
     int error_code;
     ADIOI_PVFS2_End(&error_code);
+    MPI_Keyval_free(&keyval);
     return error_code;
 }
 
@@ -81,7 +82,7 @@ void ADIOI_PVFS2_Init(int *error_code )
 		      &ADIOI_PVFS2_Initialized, (void *)0); 
     /* just like romio does, we make a dummy attribute so we 
      * get cleaned up */
-    MPI_Attr_put(MPI_COMM_WORLD, ADIOI_PVFS2_Initialized, (void *)0);
+    MPI_Attr_put(MPI_COMM_SELF, ADIOI_PVFS2_Initialized, (void *)0);
 }
 
 void ADIOI_PVFS2_makeattribs(PVFS_sys_attr * attribs)

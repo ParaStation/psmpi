@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -20,7 +20,7 @@ CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 FC              = @FC@
@@ -128,7 +128,8 @@ writeallbef: writeallbef.o   @MPILIBLOC@ ../util/mtestf.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o writeallbef writeallbef.o  \
 	../util/mtestf.o ${LIBS} 
 miscfilef: miscfilef.o   @MPILIBLOC@ ../util/mtestf.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o miscfilef miscfilef.o  ${LIBS}
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o miscfilef miscfilef.o  \
+	../util/mtestf.o ${LIBS} 
 fileinfof: fileinfof.o   @MPILIBLOC@ ../util/mtestf.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o fileinfof fileinfof.o  \
 	../util/mtestf.o ${LIBS} 
@@ -171,11 +172,6 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
 SOURCES         =  iwriteatf.f iwritef.f iwriteshf.f writef.f writeatf.f \
 	writeallf.f writeatallf.f writeallbef.f writeordf.f writeordbef.f \
 	writeshf.f writeatallbef.f fileerrf.f fileinfof.f shpositionf.f \
@@ -188,6 +184,7 @@ tags: TAGS
 TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 	here=`cd ../../../.. && pwd` ; cd ${srcdir} && $(ETAGS) -o $$here/TAGS --append ${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
+
 
 
 

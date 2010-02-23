@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id: mpierrs.h,v 1.38 2007/01/03 16:43:26 gropp Exp $
- *
+/*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -168,13 +167,13 @@
 /* Tests for totally meaningless datatypes first, then for
  * MPI_DATATYPE_NULL as a separate case.
  */
-#define MPIR_ERRTEST_DATATYPE(datatype, name_, err)	       \
+#define MPIR_ERRTEST_DATATYPE(datatype, name_, err_)	       \
 {							       \
     if (HANDLE_GET_MPI_KIND(datatype) != MPID_DATATYPE ||      \
 	(HANDLE_GET_KIND(datatype) == HANDLE_KIND_INVALID &&   \
 	datatype != MPI_DATATYPE_NULL))			       \
     {							       \
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,          \
+	err_ = MPIR_Err_create_code(MPI_SUCCESS,               \
 					 MPIR_ERR_RECOVERABLE, \
 					 FCNAME, __LINE__,     \
 					 MPI_ERR_TYPE,         \
@@ -182,7 +181,7 @@
     }							       \
     if (datatype == MPI_DATATYPE_NULL)            	       \
     {							       \
-	mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,          \
+	err_ = MPIR_Err_create_code(MPI_SUCCESS,               \
 					 MPIR_ERR_RECOVERABLE, \
 					 FCNAME, __LINE__,     \
 					 MPI_ERR_TYPE,         \
@@ -305,7 +304,20 @@
         MPIR_ERRTEST_VALID_HANDLE((request_), MPID_REQUEST, (err_), MPI_ERR_REQUEST, "**request");	\
     }									\
 }
-
+/* This macro does *NOT* jump to fn_fail - all uses check mpi_errno */
+#define MPIR_ERRTEST_ARRAYREQUEST_OR_NULL(request_, i_, err_)		\
+{									\
+    if ((request_) != MPI_REQUEST_NULL)					\
+    {									\
+    if (HANDLE_GET_MPI_KIND(request_) != MPID_REQUEST) {                \
+        MPIU_ERR_SETANDSTMT2(err_,MPI_ERR_REQUEST,;,			\
+               "**request_invalid_kind","**request_invalid_kind %d %d", \
+               i_, HANDLE_GET_MPI_KIND(request_) );                     \
+    } else if (HANDLE_GET_KIND(request_) == HANDLE_KIND_INVALID) {      \
+        MPIU_ERR_SETANDSTMT1(err_,MPI_ERR_REQUEST,;,			\
+               "**request","**request %d", i_ );                        \
+    }}									\
+}
 #define MPIR_ERRTEST_ERRHANDLER(errhandler_,err_)			\
     if (errhandler_ == MPI_ERRHANDLER_NULL) {				\
         MPIU_ERR_SETANDSTMT(err_,MPI_ERR_ARG,;,"**errhandlernull");	\

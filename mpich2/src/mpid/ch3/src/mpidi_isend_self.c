@@ -35,9 +35,9 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     MPIDI_Request_set_type(sreq, type);
     MPIDI_Request_set_msg_type(sreq, MPIDI_REQUEST_SELF_MSG);
     
-    match.rank = rank;
-    match.tag = tag;
-    match.context_id = comm->context_id + context_offset;
+    match.parts.rank = rank;
+    match.parts.tag = tag;
+    match.parts.context_id = comm->context_id + context_offset;
     rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&match, &found);
     /* --BEGIN ERROR HANDLING-- */
     if (rreq == NULL)
@@ -50,7 +50,7 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     }
     /* --END ERROR HANDLING-- */
 
-    MPIDI_Comm_get_vc(comm, rank, &vc);
+    MPIDI_Comm_get_vc_set_active(comm, rank, &vc);
     MPIDI_VC_FAI_send_seqnum(vc, seqnum);
     MPIDI_Request_set_seqnum(sreq, seqnum);
     MPIDI_Request_set_seqnum(rreq, seqnum);
@@ -114,6 +114,9 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
 	}
 	    
 	MPIDI_Request_set_msg_type(rreq, MPIDI_REQUEST_SELF_MSG);
+
+        /* kick the progress engine in case another thread that is performing a
+           blocking recv or probe is waiting in the progress engine */
 	MPIDI_CH3_Progress_signal_completion();
     }
 

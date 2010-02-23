@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id: init.c,v 1.34 2007/08/03 21:02:32 buntinas Exp $
- *
+/*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -69,7 +68,14 @@ int MPI_Init( int *argc, char ***argv )
 {
     static const char FCNAME[] = "MPI_Init";
     int mpi_errno = MPI_SUCCESS;
+    int rc;
+    int threadLevel;
     MPID_MPI_INIT_STATE_DECL(MPID_STATE_MPI_INIT);
+
+    rc = MPID_Wtime_init();
+#ifdef USE_DBG_LOGGING
+    MPIU_DBG_PreInit( argc, argv, rc );
+#endif
 
     MPID_CS_INITIALIZE();
     /* FIXME: Can we get away without locking every time.  Now, we
@@ -84,7 +90,9 @@ int MPI_Init( int *argc, char ***argv )
        MPIU_THREAD_SINGLE_CS_ENTER/EXIT because
        MPIR_ThreadInfo.isThreaded hasn't been initialized yet.
     */
+#if MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL
     MPID_CS_ENTER();
+#endif
     
     MPID_MPI_INIT_FUNC_ENTER(MPID_STATE_MPI_INIT);
 #   ifdef HAVE_ERROR_CHECKING
@@ -102,14 +110,45 @@ int MPI_Init( int *argc, char ***argv )
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ... */
+
+#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+    /* If we support all thread levels, allow the use of an environment 
+       variable to set the default thread level */
+    {
+	const char *str = 0;
+	threadLevel = MPI_THREAD_SINGLE;
+	if (MPIU_GetEnvStr( "MPICH_THREADLEVEL_DEFAULT", &str )) {
+	    if (strcmp(str,"MULTIPLE") == 0 || strcmp(str,"multiple") == 0) {
+		threadLevel = MPI_THREAD_MULTIPLE;
+	    }
+	    else if (strcmp(str,"SERIALIZED") == 0 || strcmp(str,"serialized") == 0) {
+		threadLevel = MPI_THREAD_SERIALIZED;
+	    }
+	    else if (strcmp(str,"FUNNELED") == 0 || strcmp(str,"funneled") == 0) {
+		threadLevel = MPI_THREAD_FUNNELED;
+	    }
+	    else if (strcmp(str,"SINGLE") == 0 || strcmp(str,"single") == 0) {
+		threadLevel = MPI_THREAD_SINGLE;
+	    }
+	    else {
+		MPIU_Error_printf( "Unrecognized thread level %s\n", str );
+		exit(1);
+	    }
+	}
+    }
+#else 
+    threadLevel = MPI_THREAD_SINGLE;
+#endif
     
-    mpi_errno = MPIR_Init_thread( argc, argv, MPI_THREAD_SINGLE, (int *)0 );
+    mpi_errno = MPIR_Init_thread( argc, argv, threadLevel, (int *)0 );
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
     
     MPID_MPI_INIT_FUNC_EXIT(MPID_STATE_MPI_INIT);
+#if MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL
     MPID_CS_EXIT();
+#endif
     return mpi_errno;
     
   fn_fail:

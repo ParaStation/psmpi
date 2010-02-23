@@ -5,8 +5,8 @@
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#ifndef FORKERCONF_H_INCLUDED
-#define FORKERCONF_H_INCLUDED
+#ifndef MPITESTCONF_H_INCLUDED
+#define MPITESTCONF_H_INCLUDED
 
 
 /* Define if Fortran names are lowercase */
@@ -53,6 +53,12 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* Define if MPI_2DOUBE_COMPLEX is available */
+#undef HAVE_MPI_2DOUBLE_COMPLEX
+
+/* Define if MPI_INTEGER16 is available */
+#undef HAVE_MPI_INTEGER16
+
 /* Define if MPI-IO (really ROMIO) is included */
 #undef HAVE_MPI_IO
 
@@ -64,6 +70,21 @@
 
 /* define if the compiler implements namespace std */
 #undef HAVE_NAMESPACE_STD
+
+/* Define to 1 if you have the `pthread_barrier_init' function. */
+#undef HAVE_PTHREAD_BARRIER_INIT
+
+/* Define to 1 if you have the `pthread_barrier_wait' function. */
+#undef HAVE_PTHREAD_BARRIER_WAIT
+
+/* Define to 1 if you have the `pthread_create' function. */
+#undef HAVE_PTHREAD_CREATE
+
+/* Define to 1 if you have the <pthread.h> header file. */
+#undef HAVE_PTHREAD_H
+
+/* Define to 1 if you have the `pthread_yield' function. */
+#undef HAVE_PTHREAD_YIELD
 
 /* Define to 1 if you have the <stdarg.h> header file. */
 #undef HAVE_STDARG_H
@@ -89,6 +110,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define if MPI IO uses MPI_Request */
+#undef MPIO_USES_MPI_REQUEST
+
 /* Define to the address where bug reports for this package should be sent. */
 #undef PACKAGE_BUGREPORT
 
@@ -104,6 +128,21 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* POINTERINT_t is a pointer-sized integer */
+#undef POINTERINT_t
+
+/* The size of `int', as computed by sizeof. */
+#undef SIZEOF_INT
+
+/* The size of `long', as computed by sizeof. */
+#undef SIZEOF_LONG
+
+/* The size of `long long', as computed by sizeof. */
+#undef SIZEOF_LONG_LONG
+
+/* The size of `short', as computed by sizeof. */
+#undef SIZEOF_SHORT
+
 /* The size of `void *', as computed by sizeof. */
 #undef SIZEOF_VOID_P
 
@@ -112,6 +151,9 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* Define if only operations defined in MPI should be tested */
+#undef USE_STRICT_MPI
 
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const

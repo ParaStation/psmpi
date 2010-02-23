@@ -6,15 +6,21 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
+DEFS            = @DEFS@ -I. -I${srcdir}
+INCLUDES        = 
+CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
+CC              = @CC@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
+C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 F90              = @F90@
 F90FLAGS        = @F90FLAGS@
 F90_COMPILE     = $(F90) $(F90FLAGS) $(F90INCLUDES)
@@ -26,7 +32,23 @@ F90INCLUDES = -I.
 F90HEADERS = attraints.h
 
 .SUFFIXES:
-.SUFFIXES: .o .f90 .txt 
+.SUFFIXES: .o .c .f90 .txt 
+.c.o:
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -c $< ; \
+	fi
+	@$(C_COMPILE) -c $<
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
+.c:
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
+	fi
+	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f90.o:
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
 	  echo "  F90             $<" ; \
@@ -57,8 +79,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o commattr3f90 baseattrf90 commattrf90 baseattr2f90 typeattrf90 commattr2f90 typeattr3f90 typeattr2f90
-	-@rm -f commattr3f90.exe baseattrf90.exe commattrf90.exe baseattr2f90.exe typeattrf90.exe commattr2f90.exe typeattr3f90.exe typeattr2f90.exe
+	-@rm -f *.o ${srcdir}/*.o commattr3f90 baseattrf90 commattrf90 baseattr2f90 typeattrf90 fandcattrf90 commattr2f90 typeattr3f90 typeattr2f90
+	-@rm -f commattr3f90.exe baseattrf90.exe commattrf90.exe baseattr2f90.exe typeattrf90.exe fandcattrf90.exe commattr2f90.exe typeattr3f90.exe typeattr2f90.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -77,7 +99,7 @@ remove-makefile:
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
 all-redirect: baseattrf90 baseattr2f90 commattrf90 commattr2f90 commattr3f90\
-	 typeattrf90 typeattr2f90 typeattr3f90
+	 typeattrf90 typeattr2f90 typeattr3f90 fandcattrf90
 
 coverage: 
 commattr3f90: commattr3f90.o   @MPILIBLOC@ ../util/mtestf90.o
@@ -95,6 +117,9 @@ baseattr2f90: baseattr2f90.o   @MPILIBLOC@ ../util/mtestf90.o
 typeattrf90: typeattrf90.o   @MPILIBLOC@ ../util/mtestf90.o
 	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o typeattrf90 typeattrf90.o  \
 	${LIBS} 
+fandcattrf90: fandcattrf90.o fandcattrc.o   @MPILIBLOC@ ../util/mtestf90.o
+	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o fandcattrf90 fandcattrf90.o \
+	fandcattrc.o  ${LIBS} 
 commattr2f90: commattr2f90.o   @MPILIBLOC@ ../util/mtestf90.o
 	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o commattr2f90 commattr2f90.o  \
 	${LIBS} 
@@ -112,14 +137,9 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
 SOURCES         =  baseattrf90.f90 baseattr2f90.f90 commattrf90.f90 \
 	commattr2f90.f90 commattr3f90.f90 typeattrf90.f90 typeattr2f90.f90 \
-	typeattr3f90.f90 
+	typeattr3f90.f90 fandcattrf90.f90 fandcattrc.c 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)

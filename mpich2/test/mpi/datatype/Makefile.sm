@@ -2,10 +2,14 @@ LDADD =
 INCLUDES = -I../include -I${srcdir}/../include
 smvar_do_sharedlibs = 0
 
+typecommit_SOURCES = typecommit.c
+typecommit_LDADD = ../util/mtest.o
+
 typename_SOURCES = typename.c
+typename_LDADD = ../util/mtest.o
+
 typefree_SOURCES = typefree.c
 typefree_LDADD = ../util/mtest.o
-typename_LDADD = ../util/mtest.o
 
 contents_SOURCES = contents.c
 
@@ -16,6 +20,7 @@ struct-empty-el_SOURCES = struct-empty-el.c
 simple-resized_SOURCES = simple-resized.c
 
 triangular-pack_SOURCES = triangular-pack.c
+triangular-pack_LDADD = ../util/mtest.o
 
 get-elements-pairtype_SOURCES = get-elements-pairtype.c
 
@@ -28,6 +33,7 @@ simple-size-extent_SOURCES = simple-size-extent.c
 slice-pack_SOURCES = slice-pack.c
 
 struct-no-real-types_SOURCES = struct-no-real-types.c
+struct-no-real-types_LDADD = ../util/mtest.o
 
 slice-pack-external_SOURCES = slice-pack-external.c
 
@@ -39,8 +45,10 @@ lots-of-types_SOURCES = lots-of-types.c
 lots-of-types_LDADD = ../util/mtest.o 
 
 simple-pack-external_SOURCES = simple-pack-external.c
+simple-pack-external_LDADD = ../util/mtest.o
 
 darray-pack_SOURCES = darray-pack.c
+darray-pack_LDADD = ../util/mtest.o
 
 subarray-pack_SOURCES = subarray-pack.c
 
@@ -64,9 +72,13 @@ struct-ezhov_SOURCES = struct-ezhov.c
 
 pairtype-size-extent_SOURCES = pairtype-size-extent.c
 
+struct-derived-zeros_SOURCES = struct-derived-zeros.c
+struct-derived-zeros_LDADD = ../util/mtest.o
+
 localpack_SOURCES = localpack.c
 
 lbub_SOURCES = lbub.c
+lbub_LDADD = ../util/mtest.o
 
 unpack_SOURCES = unpack.c
 unpack_LDADD = ../util/mtest.o
@@ -89,6 +101,9 @@ tresized2_LDADD = ../util/mtest.o
 
 tfree_SOURCES = tfree.c
 tfree_LDADD = ../util/mtest.o 
+
+typelb_SOURCES = typelb.c
+#typelb_LDADD = ../util/mtest.o
 
 sizedtypes_SOURCES = sizedtypes.c
 sizedtypes_LDADD = ../util/mtest.o

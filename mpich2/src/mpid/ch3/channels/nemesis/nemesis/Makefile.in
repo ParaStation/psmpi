@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -28,7 +28,7 @@ ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
 	"-autoconf=-I ROOTDIR/confdb" \
 	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
 	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile src/Makefile nemesis/Makefile nemesis/src/Makefile nemesis/utils/Makefile nemesis/utils/replacements/Makefile nemesis/utils/monitor/Makefile nemesis/net_mod/Makefile nemesis/net_mod/elan_module/Makefile nemesis/net_mod/gm_module/Makefile nemesis/net_mod/mx_module/Makefile nemesis/net_mod/tcp_module/Makefile nemesis/net_mod/newtcp_module/Makefile nemesis/net_mod/sctp_module/Makefile nemesis/net_mod/ib_module/Makefile nemesis/net_mod/psm_module/Makefile nemesis/net_mod/none_module/Makefile localdefs config.status config.log config.cache *conf.cache config.system" \
+	-distcleanfiles="Makefile src/Makefile nemesis/Makefile nemesis/src/Makefile nemesis/utils/Makefile nemesis/utils/replacements/Makefile nemesis/utils/monitor/Makefile nemesis/netmod/Makefile nemesis/netmod/elan/Makefile nemesis/netmod/gm/Makefile nemesis/netmod/mx/Makefile nemesis/netmod/tcp/Makefile nemesis/netmod/ib/Makefile nemesis/netmod/psm/Makefile nemesis/netmod/newmad/Makefile nemesis/netmod/none/Makefile localdefs nemesis/include/mpid_nem_net_module_defs.h nemesis/src/mpid_nem_net_array.c config.status config.log config.cache *conf.cache config.system" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
 Makefile: ${srcdir}/Makefile.in
@@ -38,7 +38,7 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	(cd src && $(MAKE) apply )
-	(cd net_mod && $(MAKE) apply )
+	(cd netmod && $(MAKE) apply )
 	(cd utils && $(MAKE) apply )
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
@@ -47,12 +47,12 @@ clean:
 	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	(cd src && $(MAKE) clean )
-	(cd net_mod && $(MAKE) clean )
+	(cd netmod && $(MAKE) clean )
 	(cd utils && $(MAKE) clean )
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	if [ -s src/Makefile ] ; then (cd src && $(MAKE) distclean ) ; fi
-	if [ -s net_mod/Makefile ] ; then (cd net_mod && $(MAKE) distclean ) ; fi
+	if [ -s netmod/Makefile ] ; then (cd netmod && $(MAKE) distclean ) ; fi
 	if [ -s utils/Makefile ] ; then (cd utils && $(MAKE) distclean ) ; fi
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
@@ -60,7 +60,7 @@ distclean-xxx:
 	-@rm -f TAGS
 maintainer-clean:  distclean-xxx remove-genmakefiles
 	(cd src && $(MAKE) maintainer-clean )
-	(cd net_mod && $(MAKE) maintainer-clean )
+	(cd netmod && $(MAKE) maintainer-clean )
 	(cd utils && $(MAKE) maintainer-clean )
 remove-makefile:
 	rm -f Makefile
@@ -68,25 +68,25 @@ remove-genmakefiles:
 	rm -f  Makefile.in Makefile
 all-redirect:
 	@(cd src && ${MAKE} all )
-	@(cd net_mod && ${MAKE} all )
+	@(cd netmod && ${MAKE} all )
 	@(cd utils && ${MAKE} all )
 
 coverage: 
 	(cd src && $(MAKE) coverage )
-	(cd net_mod && $(MAKE) coverage )
+	(cd netmod && $(MAKE) coverage )
 	(cd utils && $(MAKE) coverage )
 # --------------------------------------------------------------------------
 htmldoc:
 	(cd src && $(MAKE) htmldoc )
-	(cd net_mod && $(MAKE) htmldoc )
+	(cd netmod && $(MAKE) htmldoc )
 	(cd utils && $(MAKE) htmldoc )
 mandoc:
 	(cd src && $(MAKE) mandoc )
-	(cd net_mod && $(MAKE) mandoc )
+	(cd netmod && $(MAKE) mandoc )
 	(cd utils && $(MAKE) mandoc )
 latexdoc:
 	(cd src && $(MAKE) latexdoc )
-	(cd net_mod && $(MAKE) latexdoc )
+	(cd netmod && $(MAKE) latexdoc )
 	(cd utils && $(MAKE) latexdoc )
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -95,7 +95,7 @@ latexdoc:
 # Dependencies
 dependencies:
 	(cd src && $(MAKE) dependencies )
-	(cd net_mod && $(MAKE) dependencies )
+	(cd netmod && $(MAKE) dependencies )
 	(cd utils && $(MAKE) dependencies )
 # End of Dependencies
 # --------------------------------------------------------------------------
@@ -105,7 +105,7 @@ SOURCEFILES     = $(SOURCES)
 tags: TAGS
 TAGS: Makefile
 	(cd src && $(MAKE) TAGS )
-	(cd net_mod && $(MAKE) TAGS )
+	(cd netmod && $(MAKE) TAGS )
 	(cd utils && $(MAKE) TAGS )
 # --------------------------------------------------------------------------
 

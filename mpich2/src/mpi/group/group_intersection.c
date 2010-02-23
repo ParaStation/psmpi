@@ -63,12 +63,12 @@ int MPI_Group_intersection(MPI_Group group1, MPI_Group group2, MPI_Group *newgro
     MPID_Group *group_ptr1 = NULL;
     MPID_Group *group_ptr2 = NULL;
     MPID_Group *new_group_ptr;
-    int size1, size2, i, k, g1_idx, g2_idx, l1_pid, l2_pid, nnew;
+    int size1, i, k, g1_idx, g2_idx, l1_pid, l2_pid, nnew;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_INTERSECTION);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_SINGLE_CS_ENTER("group");
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_GROUP_INTERSECTION);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -108,7 +108,6 @@ int MPI_Group_intersection(MPI_Group group1, MPI_Group group2, MPI_Group *newgro
     /* Return a group consisting of the members of group1 that are 
        in group2 */
     size1 = group_ptr1->size;
-    size2 = group_ptr2->size;
     /* Insure that the lpid lists are setup */
     MPIR_Group_setup_lpid_pairs( group_ptr1, group_ptr2 );
 
@@ -167,7 +166,7 @@ int MPI_Group_intersection(MPI_Group group1, MPI_Group group2, MPI_Group *newgro
     
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_GROUP_INTERSECTION);
-    MPIU_THREAD_SINGLE_CS_EXIT("group");
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
   fn_fail:

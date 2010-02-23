@@ -88,7 +88,7 @@ int MPI_Type_indexed(int count,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_SINGLE_CS_ENTER("datatype");
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_INDEXED);
 
     /* Validate parameters and objects (post conversion) */
@@ -96,7 +96,7 @@ int MPI_Type_indexed(int count,
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    int i;
+	    int j;
 	    MPID_Datatype *datatype_ptr = NULL;
 
 	    MPIR_ERRTEST_COUNT(count,mpi_errno);
@@ -111,8 +111,8 @@ int MPI_Type_indexed(int count,
 		    MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 		}
 		/* verify that all blocklengths are >= 0 */
-		for (i=0; i < count; i++) {
-		    MPIR_ERRTEST_ARGNEG(blocklens[i], "blocklen", mpi_errno);
+		for (j=0; j < count; j++) {
+		    MPIR_ERRTEST_ARGNEG(blocklens[j], "blocklen", mpi_errno);
 		}
 	    }
 	    MPIR_ERRTEST_ARGNULL(newtype, "newtype", mpi_errno);
@@ -161,7 +161,7 @@ int MPI_Type_indexed(int count,
   fn_exit:
     MPIU_CHKLMEM_FREEALL();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_INDEXED);
-    MPIU_THREAD_SINGLE_CS_EXIT("datatype");
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
   fn_fail:

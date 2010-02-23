@@ -6,9 +6,9 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
 INSTALL         = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_SCRIPT  = @INSTALL_SCRIPT@
 INSTALL_DATA    = @INSTALL_DATA@
 MKDIR_P         = @MKDIR_P@
 master_top_srcdir  = @master_top_srcdir@
@@ -24,7 +24,7 @@ LIBS            = @LIBS@
 MAKE            = @MAKE@
 MPILIBNAME      = @MPILIBNAME@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 CC_SHL          = @CC_SHL@
@@ -77,9 +77,9 @@ doc_sources = mpiexec.txt
 
 ${srcdir}/remshellconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /homes/chan/autoconf/2.62/bin/autoheader -I ../../../confdb \
-	&& \
-	/homes/chan/autoconf/2.62/bin/autoconf -I ../../../confdb ) 
+	(cd ${srcdir} && /opt/local/bin/autoheader -I ../../../confdb && \
+	\
+	/opt/local/bin/autoconf -I ../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -148,7 +148,17 @@ installcheck:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Dependencies
-dependencies:
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+$(DEPS_DIR)/timestamp: mpiexec.c  Makefile
+	rm -f $(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/mpiexec.c >$(DEPS_DIR)/mpiexec.d
+	echo "include $(DEPS_DIR)/mpiexec.d" >>$(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -173,6 +183,10 @@ mpich2-build-uninstall: uninstall
 
 # A special alternate installation target when using multiple process managers
 install-alt: mpiexec
+	@if [ ! -d $(DESTDIR)${bindir} ] ; then \
+	    echo "mkdir -p $(DESTDIR)${bindir} " ;\
+	    mkdir -p $(DESTDIR)${bindir} ;\
+	fi
 	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG) mpiexec $(DESTDIR)${bindir}/mpiexec.remshell
 
 

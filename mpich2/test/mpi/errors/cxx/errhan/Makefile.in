@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -80,22 +80,20 @@ all-redirect: errgetx errsetx throwtest
 
 coverage: 
 errsetx: errsetx.o   @MPILIBLOC@ 
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o errsetx errsetx.o  ${LIBS}
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o errsetx errsetx.o  \
+	../../../cxx/util/mtest.o ${LIBS} 
 errgetx: errgetx.o   @MPILIBLOC@ 
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o errgetx errgetx.o  ${LIBS}
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o errgetx errgetx.o  \
+	../../../cxx/util/mtest.o ${LIBS} 
 throwtest: throwtest.o   @MPILIBLOC@ 
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o throwtest throwtest.o  ${LIBS}
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o throwtest throwtest.o  \
+	../../../cxx/util/mtest.o ${LIBS} 
 # --------------------------------------------------------------------------
 htmldoc:
 mandoc:
 latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  errgetx.cxx errsetx.cxx throwtest.cxx

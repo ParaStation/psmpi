@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -20,9 +20,9 @@ VPATH = .:@srcdir@
 
 ${srcdir}/pmiconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /homes/chan/autoconf/2.62/bin/autoheader -I ../../../confdb \
-	&& \
-	/homes/chan/autoconf/2.62/bin/autoconf -I ../../../confdb ) 
+	(cd ${srcdir} && /opt/local/bin/autoheader -I ../../../confdb && \
+	\
+	/opt/local/bin/autoconf -I ../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm

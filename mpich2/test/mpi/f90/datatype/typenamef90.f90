@@ -13,7 +13,7 @@
 
       errs = 0
 
-      call MPI_Init(ierr)
+      call mtest_init( ierr )
 !
 ! Check each Fortran datatype, including the size-specific ones
 ! See the C version (typename.c) for the relevant MPI sections
@@ -81,12 +81,13 @@
            print *, "Expected MPI_2REAL but got "//name(1:namelen)
       endif
 
-      call MPI_Type_get_name( MPI_2DOUBLE_COMPLEX, name, namelen, ierr )
-      if (name(1:namelen) .ne. "MPI_2DOUBLE_COMPLEX") then
-           errs = errs + 1
-           print *, "Expected MPI_2DOUBLE_COMPLEX but got "// &
-      &          name(1:namelen)
-      endif
+! 2DOUBLE_COMPLEX isn't in MPI 2.1
+!      call MPI_Type_get_name( MPI_2DOUBLE_COMPLEX, name, namelen, ierr )
+!      if (name(1:namelen) .ne. "MPI_2DOUBLE_COMPLEX") then
+!           errs = errs + 1
+!           print *, "Expected MPI_2DOUBLE_COMPLEX but got "//
+!     &          name(1:namelen)
+!      endif
 
       call MPI_Type_get_name( MPI_CHARACTER, name, namelen, ierr )
       if (name(1:namelen) .ne. "MPI_CHARACTER") then
@@ -187,20 +188,17 @@
           endif
       endif
 
-      if (MPI_INTEGER16 .ne. MPI_DATATYPE_NULL) then
-          call MPI_Type_get_name( MPI_INTEGER16, name, namelen, ierr )
-          if (name(1:namelen) .ne. "MPI_INTEGER16") then
-               errs = errs + 1
-               print *, "Expected MPI_INTEGER16 but got "// &
-      &              name(1:namelen)
-          endif
-      endif
+! MPI_INTEGER16 is in MPI 2.1, but it is missing from most tables
+! Some MPI implementations may not provide it
+!      if (MPI_INTEGER16 .ne. MPI_DATATYPE_NULL) then
+!          call MPI_Type_get_name( MPI_INTEGER16, name, namelen, ierr )
+!          if (name(1:namelen) .ne. "MPI_INTEGER16") then
+!               errs = errs + 1
+!               print *, "Expected MPI_INTEGER16 but got "//
+!     &              name(1:namelen)
+!          endif
+!      endif
 
-      if (errs .gt. 0) then
-          print *, ' Found ', errs, ' errors'
-      else
-          print *, ' No Errors'
-      endif
-
+      call mtest_finalize( errs )
       call MPI_Finalize( ierr )
       end

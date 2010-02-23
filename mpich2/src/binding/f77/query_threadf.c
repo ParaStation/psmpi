@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_QUERY_THREAD( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_query_thread__( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_query_thread( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_query_thread_( MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_query_thread_( MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_QUERY_THREAD = PMPI_QUERY_THREAD
+#pragma weak mpi_query_thread__ = PMPI_QUERY_THREAD
+#pragma weak mpi_query_thread_ = PMPI_QUERY_THREAD
+#pragma weak mpi_query_thread = PMPI_QUERY_THREAD
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_QUERY_THREAD = pmpi_query_thread__
 #pragma weak mpi_query_thread__ = pmpi_query_thread__
 #pragma weak mpi_query_thread_ = pmpi_query_thread__
 #pragma weak mpi_query_thread = pmpi_query_thread__
-#pragma weak pmpi_query_thread_ = pmpi_query_thread__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_QUERY_THREAD = pmpi_query_thread_
+#pragma weak mpi_query_thread__ = pmpi_query_thread_
+#pragma weak mpi_query_thread_ = pmpi_query_thread_
+#pragma weak mpi_query_thread = pmpi_query_thread_
+#else
+#pragma weak MPI_QUERY_THREAD = pmpi_query_thread
+#pragma weak mpi_query_thread__ = pmpi_query_thread
+#pragma weak mpi_query_thread_ = pmpi_query_thread
+#pragma weak mpi_query_thread = pmpi_query_thread
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_query_thread_( MPI_Fint *, MPI_Fint * );
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_QUERY_THREAD( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_query_thread__( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_query_thread( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_query_thread_( MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_query_thread__ = MPI_QUERY_THREAD
+#pragma weak mpi_query_thread_ = MPI_QUERY_THREAD
+#pragma weak mpi_query_thread = MPI_QUERY_THREAD
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_QUERY_THREAD = mpi_query_thread__
 #pragma weak mpi_query_thread_ = mpi_query_thread__
 #pragma weak mpi_query_thread = mpi_query_thread__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_QUERY_THREAD = mpi_query_thread_
+#pragma weak mpi_query_thread__ = mpi_query_thread_
+#pragma weak mpi_query_thread = mpi_query_thread_
+#else
+#pragma weak MPI_QUERY_THREAD = mpi_query_thread
+#pragma weak mpi_query_thread__ = mpi_query_thread
+#pragma weak mpi_query_thread_ = mpi_query_thread
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_QUERY_THREAD( MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_query_thread__( MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_query_thread_( MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_query_thread( MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_query_thread__ = PMPI_QUERY_THREAD
+#pragma weak pmpi_query_thread_ = PMPI_QUERY_THREAD
+#pragma weak pmpi_query_thread = PMPI_QUERY_THREAD
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_QUERY_THREAD = pmpi_query_thread__
+#pragma weak pmpi_query_thread_ = pmpi_query_thread__
+#pragma weak pmpi_query_thread = pmpi_query_thread__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_QUERY_THREAD = pmpi_query_thread_
+#pragma weak pmpi_query_thread__ = pmpi_query_thread_
+#pragma weak pmpi_query_thread = pmpi_query_thread_
+#else
+#pragma weak PMPI_QUERY_THREAD = pmpi_query_thread
+#pragma weak pmpi_query_thread__ = pmpi_query_thread
+#pragma weak pmpi_query_thread_ = pmpi_query_thread
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_query_thread_ PMPI_QUERY_THREAD
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_query_thread_( MPI_Fint *, MPI_Fint * );
 #define mpi_query_thread_ pmpi_query_thread
 #else
 #define mpi_query_thread_ pmpi_query_thread_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

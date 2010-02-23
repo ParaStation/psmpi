@@ -32,15 +32,15 @@
     MPI_Unpack - Unpack a buffer according to a datatype into contiguous memory
 
 Input Parameters:
-+ inbuf - input buffer start (choice) 
-. insize - size of input buffer, in bytes (integer) 
-. position - current position in bytes (integer) 
-. outcount - number of items to be unpacked (integer) 
-. datatype - datatype of each output data item (handle) 
-- comm - communicator for packed message (handle) 
++ inbuf - input buffer start (choice)
+. insize - size of input buffer, in bytes (integer)
+. position - current position in bytes (integer)
+. outcount - number of items to be unpacked (integer)
+. datatype - datatype of each output data item (handle)
+- comm - communicator for packed message (handle)
 
 Output Parameter:
-. outbuf - output buffer start (choice) 
+. outbuf - output buffer start (choice)
 
 .N ThreadSafe
 
@@ -64,10 +64,13 @@ int MPI_Unpack(void *inbuf, int insize, int *position,
     MPI_Aint first, last;
     MPID_Comm *comm_ptr = NULL;
     MPID_Segment *segp;
+    int contig;
+    MPI_Aint dt_true_lb;
+    MPI_Aint data_sz;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_UNPACK);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
-    
+
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_UNPACK);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -81,10 +84,10 @@ int MPI_Unpack(void *inbuf, int insize, int *position,
         MPID_END_ERROR_CHECKS;
     }
 #   endif
-    
+
     /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr(comm, comm_ptr);
-    
+
     /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -98,13 +101,13 @@ int MPI_Unpack(void *inbuf, int insize, int *position,
 	    MPIR_ERRTEST_COUNT(outcount, mpi_errno);
 
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr(comm_ptr, mpi_errno);
 	    /* If comm_ptr is not valid, it will be reset to null */
 
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-	    
-	    if (datatype != MPI_DATATYPE_NULL && 
+
+	    if (datatype != MPI_DATATYPE_NULL &&
 		HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
 		MPID_Datatype *datatype_ptr = NULL;
 
@@ -122,7 +125,28 @@ int MPI_Unpack(void *inbuf, int insize, int *position,
     if (insize == 0) {
 	goto fn_exit;
     }
+
+    /* Handle contig case quickly */
+    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
+        contig     = TRUE;
+        dt_true_lb = 0;
+        data_sz    = outcount * MPID_Datatype_get_basic_size(datatype);
+    } else {
+        MPID_Datatype *dt_ptr;
+        MPID_Datatype_get_ptr(datatype, dt_ptr);
+	contig     = dt_ptr->is_contig;
+        dt_true_lb = dt_ptr->true_lb;
+        data_sz    = outcount * dt_ptr->size;
+    }
+
+    if (contig) {
+        MPIU_Memcpy((char *) outbuf + dt_true_lb, (char *)inbuf + *position, data_sz);
+        *position = (int)((MPI_Aint)*position + data_sz);
+        goto fn_exit;
+    }
     
+
+    /* non-contig case */
     segp = MPID_Segment_alloc();
     MPIU_ERR_CHKANDJUMP1((segp == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment_alloc");
     MPID_Segment_init(outbuf, outcount, datatype, segp, 0);
@@ -133,12 +157,19 @@ int MPI_Unpack(void *inbuf, int insize, int *position,
     first = 0;
     last  = SEGMENT_IGNORE_LAST;
 
+    /* Ensure that pointer increment fits in a pointer */
+    MPID_Ensure_Aint_fits_in_pointer((MPI_VOID_PTR_CAST_TO_MPI_AINT inbuf) +
+				     (MPI_Aint) *position);
+
     MPID_Segment_unpack(segp,
 			first,
 			&last,
 			(void *) ((char *) inbuf + *position));
 
-    *position += (int) last;
+    /* Ensure that calculation fits into an int datatype. */
+    MPID_Ensure_Aint_fits_in_int((MPI_Aint)*position + last);
+
+    *position = (int)((MPI_Aint)*position + last);
 
     MPID_Segment_free(segp);
 
@@ -154,11 +185,11 @@ int MPI_Unpack(void *inbuf, int insize, int *position,
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_unpack", 
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_unpack",
 	    "**mpi_unpack %p %d %p %p %d %D %C", inbuf, insize, position, outbuf, outcount, datatype, comm);
     }
 #   endif
-    mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

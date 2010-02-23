@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_ABORT( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_abort__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_abort( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_abort_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_abort_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_ABORT = PMPI_ABORT
+#pragma weak mpi_abort__ = PMPI_ABORT
+#pragma weak mpi_abort_ = PMPI_ABORT
+#pragma weak mpi_abort = PMPI_ABORT
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_ABORT = pmpi_abort__
 #pragma weak mpi_abort__ = pmpi_abort__
 #pragma weak mpi_abort_ = pmpi_abort__
 #pragma weak mpi_abort = pmpi_abort__
-#pragma weak pmpi_abort_ = pmpi_abort__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_ABORT = pmpi_abort_
+#pragma weak mpi_abort__ = pmpi_abort_
+#pragma weak mpi_abort_ = pmpi_abort_
+#pragma weak mpi_abort = pmpi_abort_
+#else
+#pragma weak MPI_ABORT = pmpi_abort
+#pragma weak mpi_abort__ = pmpi_abort
+#pragma weak mpi_abort_ = pmpi_abort
+#pragma weak mpi_abort = pmpi_abort
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_abort_( MPI_Fint *, MPI_Fint *, MPI_Fint
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_ABORT( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_abort__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_abort( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_abort_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_abort__ = MPI_ABORT
+#pragma weak mpi_abort_ = MPI_ABORT
+#pragma weak mpi_abort = MPI_ABORT
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_ABORT = mpi_abort__
 #pragma weak mpi_abort_ = mpi_abort__
 #pragma weak mpi_abort = mpi_abort__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_ABORT = mpi_abort_
+#pragma weak mpi_abort__ = mpi_abort_
+#pragma weak mpi_abort = mpi_abort_
+#else
+#pragma weak MPI_ABORT = mpi_abort
+#pragma weak mpi_abort__ = mpi_abort
+#pragma weak mpi_abort_ = mpi_abort
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_ABORT( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_abort__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_abort_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_abort( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_abort__ = PMPI_ABORT
+#pragma weak pmpi_abort_ = PMPI_ABORT
+#pragma weak pmpi_abort = PMPI_ABORT
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_ABORT = pmpi_abort__
+#pragma weak pmpi_abort_ = pmpi_abort__
+#pragma weak pmpi_abort = pmpi_abort__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_ABORT = pmpi_abort_
+#pragma weak pmpi_abort__ = pmpi_abort_
+#pragma weak pmpi_abort = pmpi_abort_
+#else
+#pragma weak PMPI_ABORT = pmpi_abort
+#pragma weak pmpi_abort__ = pmpi_abort
+#pragma weak pmpi_abort_ = pmpi_abort
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_abort_ PMPI_ABORT
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_abort_( MPI_Fint *, MPI_Fint *, MPI_Fint
 #define mpi_abort_ pmpi_abort
 #else
 #define mpi_abort_ pmpi_abort_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

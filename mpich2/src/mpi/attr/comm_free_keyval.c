@@ -59,7 +59,7 @@ int MPI_Comm_free_keyval(int *comm_keyval)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_SINGLE_CS_ENTER("attr");
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_FREE_KEYVAL);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -95,9 +95,12 @@ int MPI_Comm_free_keyval(int *comm_keyval)
 
     /* ... body of routine ...  */
     
-    MPIR_Keyval_release_ref( keyval_ptr, &in_use);
-    if (!in_use) {
-	MPIU_Handle_obj_free( &MPID_Keyval_mem, keyval_ptr );
+    if (!keyval_ptr->was_freed) {
+        keyval_ptr->was_freed = 1;
+        MPIR_Keyval_release_ref( keyval_ptr, &in_use);
+        if (!in_use) {
+            MPIU_Handle_obj_free( &MPID_Keyval_mem, keyval_ptr );
+        }
     }
     *comm_keyval = MPI_KEYVAL_INVALID;
 
@@ -107,7 +110,7 @@ int MPI_Comm_free_keyval(int *comm_keyval)
   fn_exit:
 #endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_FREE_KEYVAL);
-    MPIU_THREAD_SINGLE_CS_EXIT("attr");
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
     /* --BEGIN ERROR HANDLING-- */

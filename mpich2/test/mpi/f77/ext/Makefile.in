@@ -6,17 +6,16 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 DEFS            = @DEFS@ -I. -I${srcdir}
-INCLUDES        = 
 CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 FC              = @FC@
@@ -26,6 +25,7 @@ F77_LINK       = $(FC)
 LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
+INCLUDES = -I../../include -I${srcdir}/../../include
 c2f2c_CFLAGSADD = -I../../include
 
 .SUFFIXES:
@@ -76,8 +76,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o allocmemf c2fmult c2f2cf
-	-@rm -f allocmemf.exe c2fmult.exe c2f2cf.exe
+	-@rm -f *.o ${srcdir}/*.o ctypesinf allocmemf c2fmult c2f2cf
+	-@rm -f ctypesinf.exe allocmemf.exe c2fmult.exe c2f2cf.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -95,15 +95,20 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: c2f2cf c2fmult
+all-redirect: c2f2cf ctypesinf c2fmult
 
 coverage: 
-allocmemf: allocmemf.o   @MPILIBLOC@ ../util/mtestf.o
+ctypesinf: ctypesinf.o ctypesfromc.o  \
+	 @MPILIBLOC@ ../util/mtestf.o ../../util/mtest.o
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o ctypesinf ctypesinf.o \
+	ctypesfromc.o  ../util/mtestf.o ${LIBS} 
+allocmemf: allocmemf.o   @MPILIBLOC@ ../util/mtestf.o ../../util/mtest.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o allocmemf allocmemf.o  \
 	../util/mtestf.o ${LIBS} 
-c2fmult: c2fmult.o   @MPILIBLOC@ ../util/mtestf.o
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o c2fmult c2fmult.o  ${LIBS}
-c2f2cf: c2f2c.o c2f2cf.o   @MPILIBLOC@ ../util/mtestf.o
+c2fmult: c2fmult.o   @MPILIBLOC@ ../util/mtestf.o ../../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o c2fmult c2fmult.o  \
+	../../util/mtest.o ${LIBS} 
+c2f2cf: c2f2c.o c2f2cf.o   @MPILIBLOC@ ../util/mtestf.o ../../util/mtest.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o c2f2cf c2f2c.o c2f2cf.o  \
 	../util/mtestf.o  ${LIBS} 
 # --------------------------------------------------------------------------
@@ -114,12 +119,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  allocmemf.f c2f2c.c c2f2cf.f c2fmult.c
+SOURCES         =  allocmemf.f c2f2c.c c2f2cf.f ctypesinf.f ctypesfromc.c \
+	c2fmult.c 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
@@ -133,9 +134,13 @@ TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 # allocmemf is an "extra" program because it requires a Fortran extension
 
 
+# need to add this to get it to appear in ../../f90/ext/Makefile.sm
 
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)
+
+../util/mtest.o:
+	(cd ../../util && $(MAKE))
 
 FORCE_TARGET:
 

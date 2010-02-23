@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -57,8 +57,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o typem2f typesubf gaddressf typecntsf packef typenamef typesnamef
-	-@rm -f typem2f.exe typesubf.exe gaddressf.exe typecntsf.exe packef.exe typenamef.exe typesnamef.exe
+	-@rm -f *.o ${srcdir}/*.o typem2f typesubf gaddressf typecntsf allctypesf packef typenamef typesnamef
+	-@rm -f typem2f.exe typesubf.exe gaddressf.exe typecntsf.exe allctypesf.exe packef.exe typenamef.exe typesnamef.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -76,7 +76,8 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: typenamef typesnamef typecntsf typesubf typem2f gaddressf packef
+all-redirect: typenamef typesnamef typecntsf typesubf typem2f gaddressf packef\
+	 allctypesf
 
 coverage: 
 typem2f: typem2f.o   @MPILIBLOC@ ../util/mtestf.o
@@ -87,6 +88,8 @@ gaddressf: gaddressf.o   @MPILIBLOC@ ../util/mtestf.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o gaddressf gaddressf.o  ${LIBS}
 typecntsf: typecntsf.o   @MPILIBLOC@ ../util/mtestf.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o typecntsf typecntsf.o  ${LIBS}
+allctypesf: allctypesf.o   @MPILIBLOC@ ../util/mtestf.o
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o allctypesf allctypesf.o  ${LIBS}
 packef: packef.o   @MPILIBLOC@ ../util/mtestf.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o packef packef.o  ${LIBS}
 typenamef: typenamef.o   @MPILIBLOC@ ../util/mtestf.o
@@ -101,13 +104,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
 SOURCES         =  typenamef.f typesnamef.f typecntsf.f typesubf.f typem2f.f \
-	gaddressf.f packef.f 
+	gaddressf.f packef.f allctypesf.f 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)

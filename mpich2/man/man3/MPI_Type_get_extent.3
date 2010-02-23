@@ -1,4 +1,4 @@
-.TH MPI_Type_get_extent 3 "11/2/2007" " " "MPI"
+.TH MPI_Type_get_extent 3 "8/2/2008" " " "MPI"
 .SH NAME
 MPI_Type_get_extent \-  Get the lower bound and extent for a Datatype 
 .SH SYNOPSIS
@@ -9,19 +9,19 @@ int MPI_Type_get_extent(MPI_Datatype datatype, MPI_Aint *lb, MPI_Aint *extent)
 .PD 0
 .TP
 .B datatype 
-- datatype to get information on (handle) 
+- datatype to get information on (handle)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B lb 
-- lower bound of datatype (integer) 
+- lower bound of datatype (address integer)
 .PD 1
 .PD 0
 .TP
 .B extent 
-- extent of datatype (integer) 
+- extent of datatype (address integer)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

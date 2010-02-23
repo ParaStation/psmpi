@@ -33,8 +33,14 @@
 /* Define if long long is 64 bits */
 #undef HAVE_LONG_LONG_64
 
+/* Define to 1 if you have the `lseek64' function. */
+#undef HAVE_LSEEK64
+
 /* Define to 1 if you have the `lstat' function. */
 #undef HAVE_LSTAT
+
+/* Define to 1 if you have the <lustre/lustre_user.h> header file. */
+#undef HAVE_LUSTRE_LUSTRE_USER_H
 
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
@@ -44,6 +50,9 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define if MPICH2 memory tracing macros defined */
+#undef HAVE_MPIU_FUNCS
 
 /* Define if MPI combiners available */
 #undef HAVE_MPI_COMBINERS
@@ -156,6 +165,9 @@
 /* Define if weak symbols available */
 #undef HAVE_WEAK_SYMBOLS
 
+/* Define to 1 if you have the <zoidfs.h> header file. */
+#undef HAVE_ZOIDFS_H
+
 /* Define for HPUX */
 #undef HPUX
 
@@ -188,6 +200,9 @@
 
 /* Define if l_start and l_len data should be cast as int */
 #undef NEEDS_INT_CAST_WITH_FLOCK
+
+/* Define if lseek64 needs a declaration */
+#undef NEEDS_LSEEK64_DECL
 
 /* Define if lstat needs a declaration */
 #undef NEEDS_LSTAT_DECL
@@ -305,6 +320,9 @@
 
 /* Define for ROMIO with XFS */
 #undef ROMIO_XFS
+
+/* Define for ROMIO with ZoidFD */
+#undef ROMIO_ZOIDFS
 
 /* The size of `int', as computed by sizeof. */
 #undef SIZEOF_INT

@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -105,40 +105,47 @@ remove-genmakefiles:
 all-redirect: cpi
 
 coverage: 
-parent: parent.o   ../lib/lib${MPILIBNAME}.a
+parent: parent.o   ../lib/lib${MPILIBNAME}.a ../src/openpa/src/libopa.a
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o parent parent.o  ${LIBS}
-hellow: hellow.o   ../lib/lib${MPILIBNAME}.a
+hellow: hellow.o   ../lib/lib${MPILIBNAME}.a ../src/openpa/src/libopa.a
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o hellow hellow.o  ${LIBS}
-pmandel_spawn: pmandel_spawn.o   ../lib/lib${MPILIBNAME}.a
+pmandel_spawn: pmandel_spawn.o  \
+	 ../lib/lib${MPILIBNAME}.a ../src/openpa/src/libopa.a
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o pmandel_spawn pmandel_spawn.o  -lm \
 	${LIBS} 
-pmandel: pmandel.o   ../lib/lib${MPILIBNAME}.a
+pmandel: pmandel.o   ../lib/lib${MPILIBNAME}.a ../src/openpa/src/libopa.a
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o pmandel pmandel.o  -lm ${LIBS}
-icpi: icpi.o   ../lib/lib${MPILIBNAME}.a
+icpi: icpi.o   ../lib/lib${MPILIBNAME}.a ../src/openpa/src/libopa.a
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o icpi icpi.o  -lm ${LIBS}
-child: child.o   ../lib/lib${MPILIBNAME}.a
+child: child.o   ../lib/lib${MPILIBNAME}.a ../src/openpa/src/libopa.a
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o child child.o  ${LIBS}
-spawn_merge_child2: spawn_merge_child2.o   ../lib/lib${MPILIBNAME}.a
+spawn_merge_child2: spawn_merge_child2.o  \
+	 ../lib/lib${MPILIBNAME}.a ../src/openpa/src/libopa.a
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o spawn_merge_child2 \
 	spawn_merge_child2.o  ${LIBS} 
-cpi: cpi.o   ../lib/lib${MPILIBNAME}.a
+cpi: cpi.o   ../lib/lib${MPILIBNAME}.a ../src/openpa/src/libopa.a
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o cpi cpi.o  -lm ${LIBS}
-pmandel_fence: pmandel_fence.o   ../lib/lib${MPILIBNAME}.a
+pmandel_fence: pmandel_fence.o  \
+	 ../lib/lib${MPILIBNAME}.a ../src/openpa/src/libopa.a
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o pmandel_fence pmandel_fence.o  -lm \
 	${LIBS} 
-spawn_merge_parent: spawn_merge_parent.o   ../lib/lib${MPILIBNAME}.a
+spawn_merge_parent: spawn_merge_parent.o  \
+	 ../lib/lib${MPILIBNAME}.a ../src/openpa/src/libopa.a
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o spawn_merge_parent \
 	spawn_merge_parent.o  ${LIBS} 
-spawn_merge_child1: spawn_merge_child1.o   ../lib/lib${MPILIBNAME}.a
+spawn_merge_child1: spawn_merge_child1.o  \
+	 ../lib/lib${MPILIBNAME}.a ../src/openpa/src/libopa.a
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o spawn_merge_child1 \
 	spawn_merge_child1.o  ${LIBS} 
-pmandel_spaserv: pmandel_spaserv.o   ../lib/lib${MPILIBNAME}.a
+pmandel_spaserv: pmandel_spaserv.o  \
+	 ../lib/lib${MPILIBNAME}.a ../src/openpa/src/libopa.a
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o pmandel_spaserv pmandel_spaserv.o  \
 	-lm ${LIBS} 
-pmandel_service: pmandel_service.o   ../lib/lib${MPILIBNAME}.a
+pmandel_service: pmandel_service.o  \
+	 ../lib/lib${MPILIBNAME}.a ../src/openpa/src/libopa.a
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o pmandel_service pmandel_service.o  \
 	-lm ${LIBS} 
-srtest: srtest.o   ../lib/lib${MPILIBNAME}.a
+srtest: srtest.o   ../lib/lib${MPILIBNAME}.a ../src/openpa/src/libopa.a
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o srtest srtest.o  ${LIBS}
 # --------------------------------------------------------------------------
 htmldoc:
@@ -147,11 +154,9 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
+# Dummy target
 dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
+
 # --------------------------------------------------------------------------
 SOURCES         =  hellow.c srtest.c child.c parent.c cpi.c icpi.c pmandel.c \
 	pmandel_spawn.c pmandel_service.c pmandel_spaserv.c pmandel_fence.c \

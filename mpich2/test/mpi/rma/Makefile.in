@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -19,7 +19,7 @@ CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 LDFLAGS     =  @LDFLAGS@ ../util/mtest.o
@@ -66,8 +66,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o nullpscw selfrma transpose6 test4_am allocmem lockcontention fetchandadd_tree_am transpose7 mixedsync transpose2 attrorderwin test3 fetchandadd_tree accfence2_am test5_am test3_am transpose5 fetchandadd test1_am getgroup getfence1 test4 transpose4 locknull accfence1 transpose3 ircpi wintest test2 wincall baseattrwin fetchandadd_am putpscw1 accfence2 test1 test5 transpose1 fkeyvalwin contig_displ winname test2_am putfence1
-	-@rm -f nullpscw.exe selfrma.exe transpose6.exe test4_am.exe allocmem.exe lockcontention.exe fetchandadd_tree_am.exe transpose7.exe mixedsync.exe transpose2.exe attrorderwin.exe test3.exe fetchandadd_tree.exe accfence2_am.exe test5_am.exe test3_am.exe transpose5.exe fetchandadd.exe test1_am.exe getgroup.exe getfence1.exe test4.exe transpose4.exe locknull.exe accfence1.exe transpose3.exe ircpi.exe wintest.exe test2.exe wincall.exe baseattrwin.exe fetchandadd_am.exe putpscw1.exe accfence2.exe test1.exe test5.exe transpose1.exe fkeyvalwin.exe contig_displ.exe winname.exe test2_am.exe putfence1.exe
+	-@rm -f *.o ${srcdir}/*.o nullpscw selfrma transpose6 test4_am allocmem lockcontention fetchandadd_tree_am transpose7 mixedsync transpose2 attrorderwin test3 fetchandadd_tree accfence2_am test5_am test3_am transpose5 fetchandadd test1_dt test1_am getgroup getfence1 test4 transpose4 locknull accfence1 transpose3 ircpi wintest test2 putfidx wincall baseattrwin fetchandadd_am epochtest putpscw1 accfence2 test1 test5 transpose1 fkeyvalwin contig_displ winname test2_am putfence1
+	-@rm -f nullpscw.exe selfrma.exe transpose6.exe test4_am.exe allocmem.exe lockcontention.exe fetchandadd_tree_am.exe transpose7.exe mixedsync.exe transpose2.exe attrorderwin.exe test3.exe fetchandadd_tree.exe accfence2_am.exe test5_am.exe test3_am.exe transpose5.exe fetchandadd.exe test1_dt.exe test1_am.exe getgroup.exe getfence1.exe test4.exe transpose4.exe locknull.exe accfence1.exe transpose3.exe ircpi.exe wintest.exe test2.exe putfidx.exe wincall.exe baseattrwin.exe fetchandadd_am.exe epochtest.exe putpscw1.exe accfence2.exe test1.exe test5.exe transpose1.exe fkeyvalwin.exe contig_displ.exe winname.exe test2_am.exe putfence1.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -88,10 +88,10 @@ remove-genmakefiles:
 all-redirect: allocmem ircpi test1 test2 test3 test4 test5 lockcontention\
 	 locknull wintest transpose1 transpose2 transpose3 transpose4\
 	 transpose5 transpose6 transpose7 fetchandadd fetchandadd_tree winname\
-	 putfence1 getfence1 accfence1 accfence2 putpscw1 getgroup\
-	 contig_displ test1_am test2_am test3_am test4_am test5_am\
-	 fetchandadd_am fetchandadd_tree_am accfence2_am attrorderwin wincall\
-	 fkeyvalwin baseattrwin nullpscw mixedsync selfrma
+	 putfence1 putfidx epochtest getfence1 accfence1 accfence2 putpscw1\
+	 getgroup contig_displ test1_am test2_am test3_am test4_am test5_am\
+	 fetchandadd_am fetchandadd_tree_am accfence2_am test1_dt attrorderwin\
+	 wincall fkeyvalwin baseattrwin nullpscw mixedsync selfrma
 
 coverage: 
 nullpscw: nullpscw.o   @MPILIBLOC@ ../util/mtest.o
@@ -135,6 +135,8 @@ transpose5: transpose5.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o transpose5 transpose5.o  ${LIBS}
 fetchandadd: fetchandadd.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o fetchandadd fetchandadd.o  ${LIBS}
+test1_dt: test1_dt.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o test1_dt test1_dt.o  ${LIBS}
 test1_am: test1_am.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o test1_am test1_am.o  ${LIBS}
 getgroup: getgroup.o   @MPILIBLOC@ ../util/mtest.o
@@ -157,6 +159,8 @@ wintest: wintest.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o wintest wintest.o  ${LIBS}
 test2: test2.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o test2 test2.o  ${LIBS}
+putfidx: putfidx.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o putfidx putfidx.o  ${LIBS}
 wincall: wincall.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o wincall wincall.o  ${LIBS}
 baseattrwin: baseattrwin.o   @MPILIBLOC@ ../util/mtest.o
@@ -164,6 +168,8 @@ baseattrwin: baseattrwin.o   @MPILIBLOC@ ../util/mtest.o
 fetchandadd_am: fetchandadd_am.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o fetchandadd_am fetchandadd_am.o  \
 	${LIBS} 
+epochtest: epochtest.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o epochtest epochtest.o  ${LIBS}
 putpscw1: putpscw1.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o putpscw1 putpscw1.o  ${LIBS}
 accfence2: accfence2.o   @MPILIBLOC@ ../util/mtest.o
@@ -193,19 +199,15 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
 SOURCES         =  allocmem.c ircpi.c test1.c test2.c test3.c test4.c test5.c \
 	lockcontention.c locknull.c wintest.c transpose1.c transpose2.c \
 	transpose3.c transpose4.c transpose5.c transpose6.c transpose7.c \
-	fetchandadd.c fetchandadd_tree.c winname.c putfence1.c getfence1.c \
-	accfence1.c accfence2.c putpscw1.c getgroup.c contig_displ.c \
-	test1_am.c test2_am.c test3_am.c test4_am.c test5_am.c \
-	fetchandadd_am.c fetchandadd_tree_am.c accfence2_am.c attrorderwin.c \
-	wincall.c fkeyvalwin.c baseattrwin.c nullpscw.c mixedsync.c selfrma.c 
+	fetchandadd.c fetchandadd_tree.c winname.c putfence1.c putfidx.c \
+	epochtest.c getfence1.c accfence1.c accfence2.c putpscw1.c getgroup.c \
+	contig_displ.c test1_am.c test2_am.c test3_am.c test4_am.c test5_am.c \
+	fetchandadd_am.c fetchandadd_tree_am.c accfence2_am.c test1_dt.c \
+	attrorderwin.c wincall.c fkeyvalwin.c baseattrwin.c nullpscw.c \
+	mixedsync.c selfrma.c 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
@@ -216,6 +218,7 @@ TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 # LIBS includes -lmpich and other libraries (e.g., -lpmpich if
 # weak symbols are not supported)
 #
+
 
 
 

@@ -8,6 +8,12 @@
 This program is not to be executed from the command line.  It is 
 exec'd by mpdman to support mpigdb.
 """
+
+# workaround to suppress deprecated module warnings in python2.6
+# see https://trac.mcs.anl.gov/projects/mpich2/ticket/362 for tracking
+import warnings
+warnings.filterwarnings('ignore', '.*the popen2 module is deprecated.*', DeprecationWarning)
+
 from time import ctime
 __author__ = "Ralph Butler and Rusty Lusk"
 __date__ = ctime()
@@ -97,7 +103,7 @@ if __name__ == '__main__':    # so I can be imported by pydoc
         gdb_line = ''
         while not gdb_line.startswith('Breakpoint'):
             try:
-                (readyFDs,unused1,unused2) = select([gdb_sout_serr_fileno],[],[],3)
+                (readyFDs,unused1,unused2) = select([gdb_sout_serr_fileno],[],[],10)
             except error, data:
                 if data[0] == EINTR:    # interrupted by timeout for example
                     continue

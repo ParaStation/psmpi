@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -19,7 +19,7 @@ CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 LDFLAGS     =  @LDFLAGS@ ../util/mtest.o
@@ -66,8 +66,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
-	-@rm -f *.o ${srcdir}/*.o ctxsplit icsplit icm commname cmfree ic1 dupic probe-intercomm dup ctxalloc iccreate cmsplit icgroup
-	-@rm -f ctxsplit.exe icsplit.exe icm.exe commname.exe cmfree.exe ic1.exe dupic.exe probe-intercomm.exe dup.exe ctxalloc.exe iccreate.exe cmsplit.exe icgroup.exe
+	-@rm -f *.o ${srcdir}/*.o ctxsplit icsplit commcreate1 icm commname cmfree ic1 dupic probe-intercomm dup ctxalloc iccreate cmsplit icgroup
+	-@rm -f ctxsplit.exe icsplit.exe commcreate1.exe icm.exe commname.exe cmfree.exe ic1.exe dupic.exe probe-intercomm.exe dup.exe ctxalloc.exe iccreate.exe cmsplit.exe icgroup.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -85,14 +85,16 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: dup dupic ic1 commname ctxalloc ctxsplit icgroup icsplit\
-	 iccreate cmfree icm cmsplit probe-intercomm
+all-redirect: commcreate1 dup dupic ic1 commname ctxalloc ctxsplit icgroup\
+	 icsplit iccreate cmfree icm cmsplit probe-intercomm
 
 coverage: 
 ctxsplit: ctxsplit.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o ctxsplit ctxsplit.o  ${LIBS}
 icsplit: icsplit.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o icsplit icsplit.o  ${LIBS}
+commcreate1: commcreate1.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o commcreate1 commcreate1.o  ${LIBS}
 icm: icm.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o icm icm.o  ${LIBS}
 commname: commname.o   @MPILIBLOC@ ../util/mtest.o
@@ -124,13 +126,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  dup.c dupic.c ic1.c commname.c ctxalloc.c ctxsplit.c \
-	icgroup.c icsplit.c iccreate.c cmfree.c icm.c cmsplit.c \
+SOURCES         =  commcreate1.c dup.c dupic.c ic1.c commname.c ctxalloc.c \
+	ctxsplit.c icgroup.c icsplit.c iccreate.c cmfree.c icm.c cmsplit.c \
 	probe-intercomm.c 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)

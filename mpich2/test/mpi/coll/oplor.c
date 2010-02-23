@@ -22,6 +22,7 @@ int main( int argc, char *argv[] )
     int rank, size;
     MPI_Comm      comm;
     char cinbuf[3], coutbuf[3];
+    signed char scinbuf[3], scoutbuf[3];
     unsigned char ucinbuf[3], ucoutbuf[3];
     float finbuf[3], foutbuf[3];
     double dinbuf[3], doutbuf[3];
@@ -33,7 +34,9 @@ int main( int argc, char *argv[] )
     MPI_Comm_rank( comm, &rank );
     MPI_Comm_size( comm, &size );
 
+#ifndef USE_STRICT_MPI
     /* char */
+    MTestPrintfMsg( 10, "Reduce of MPI_CHAR\n" );
     cinbuf[0] = 1;
     cinbuf[1] = 0;
     cinbuf[2] = (rank > 0);
@@ -56,8 +59,35 @@ int main( int argc, char *argv[] )
 	    fprintf( stderr, "char OR(>) test failed\n" );
 	}
     }
+#endif /* USE_STRICT_MPI */
+
+    /* signed char */
+    MTestPrintfMsg( 10, "Reduce of MPI_SIGNED_CHAR\n" );
+    scinbuf[0] = 1;
+    scinbuf[1] = 0;
+    scinbuf[2] = (rank > 0);
+
+    scoutbuf[0] = 0;
+    scoutbuf[1] = 1;
+    scoutbuf[2] = 1;
+    MPI_Reduce( scinbuf, scoutbuf, 3, MPI_SIGNED_CHAR, MPI_LOR, 0, comm );
+    if (rank == 0) {
+	if (!scoutbuf[0]) {
+	    errs++;
+	    fprintf( stderr, "signed char OR(1) test failed\n" );
+	}
+	if (scoutbuf[1]) {
+	    errs++;
+	    fprintf( stderr, "signed char OR(0) test failed\n" );
+	}
+	if (!scoutbuf[2] && size > 1) {
+	    errs++;
+	    fprintf( stderr, "signed char OR(>) test failed\n" );
+	}
+    }
 
     /* unsigned char */
+    MTestPrintfMsg( 10, "Reduce of MPI_UNSIGNED_CHAR\n" );
     ucinbuf[0] = 1;
     ucinbuf[1] = 0;
     ucinbuf[2] = (rank > 0);
@@ -81,7 +111,9 @@ int main( int argc, char *argv[] )
 	}
     }
 
+#ifndef USE_STRICT_MPI
     /* float */
+    MTestPrintfMsg( 10, "Reduce of MPI_FLOAT\n" );
     finbuf[0] = 1;
     finbuf[1] = 0;
     finbuf[2] = (rank > 0);
@@ -106,6 +138,7 @@ int main( int argc, char *argv[] )
     }
 
     /* double */
+    MTestPrintfMsg( 10, "Reduce of MPI_DOUBLE\n" );
     dinbuf[0] = 1;
     dinbuf[1] = 0;
     dinbuf[2] = (rank > 0);
@@ -140,6 +173,7 @@ int main( int argc, char *argv[] )
     ldoutbuf[1] = 1;
     ldoutbuf[2] = 1;
     if (MPI_LONG_DOUBLE != MPI_DATATYPE_NULL) {
+	MTestPrintfMsg( 10, "Reduce of MPI_LONG_DOUBLE\n" );
 	MPI_Reduce( ldinbuf, ldoutbuf, 3, MPI_LONG_DOUBLE, MPI_LOR, 0, comm );
 	if (rank == 0) {
 	    if (!ldoutbuf[0]) {
@@ -157,7 +191,8 @@ int main( int argc, char *argv[] )
 	}
     }
     }
-#endif
+#endif /* HAVE_LONG_DOUBLE */
+#endif /* USE_STRICT_MPI */
 
 #ifdef HAVE_LONG_LONG
     {
@@ -171,6 +206,7 @@ int main( int argc, char *argv[] )
     lloutbuf[1] = 1;
     lloutbuf[2] = 1;
     if (MPI_LONG_LONG != MPI_DATATYPE_NULL) {
+	MTestPrintfMsg( 10, "Reduce of MPI_LONG_LONG\n" );
 	MPI_Reduce( llinbuf, lloutbuf, 3, MPI_LONG_LONG, MPI_LOR, 0, comm );
 	if (rank == 0) {
 	    if (!lloutbuf[0]) {
@@ -189,7 +225,6 @@ int main( int argc, char *argv[] )
     }
     }
 #endif
-
 
     MTest_Finalize( errs );
     MPI_Finalize();

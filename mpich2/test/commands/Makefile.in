@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -19,7 +19,7 @@ CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
@@ -34,7 +34,7 @@ FFLAGS          = @FFLAGS@
 F77_COMPILE     = $(FC) $(FFLAGS) $(F77INCLUDES)
 F77_LINK       = $(FC)
 FC_SHL          = @FC_SHL@
-F77_COMPILE_SHL = $(FC_SHL) $(FFLAGS)
+F77_COMPILE_SHL = $(FC_SHL) $(FFLAGS) $(F77INCLUDES)
 LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
@@ -111,11 +111,6 @@ mandoc:
 latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  stdiotest.c stdintest.c stdintest2.c checkenv1.c rtest.c \

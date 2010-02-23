@@ -64,6 +64,10 @@ if test "$HAVE_SPARC_INLINE_PROCESS_LOCKS" = "yes" ; then
 dnl     AC_MSG_ERROR([Use of inline process locks is not supported.  Please volunteer to fix this code])
 fi
 
+AC_C_INLINE
+AC_C_VOLATILE
+AC_C_CONST
+
 # Add the MPICH2 include flags to CPPFLAGS.  
 CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
 

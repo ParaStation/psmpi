@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_KEYVAL_CREATE( MPI_Copy_function, MPI_Delete_function, MPI_Fint *, void*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_keyval_create__( MPI_Copy_function, MPI_Delete_function, MPI_Fint *, void*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_keyval_create( MPI_Copy_function, MPI_Delete_function, MPI_Fint *, void*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_keyval_create_( MPI_Copy_function, MPI_Delete_function, MPI_Fint *, void*, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_keyval_create_( MPI_Copy_function, MPI_Delete_function, MPI_Fint *, void*, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_KEYVAL_CREATE = PMPI_KEYVAL_CREATE
+#pragma weak mpi_keyval_create__ = PMPI_KEYVAL_CREATE
+#pragma weak mpi_keyval_create_ = PMPI_KEYVAL_CREATE
+#pragma weak mpi_keyval_create = PMPI_KEYVAL_CREATE
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_KEYVAL_CREATE = pmpi_keyval_create__
 #pragma weak mpi_keyval_create__ = pmpi_keyval_create__
 #pragma weak mpi_keyval_create_ = pmpi_keyval_create__
 #pragma weak mpi_keyval_create = pmpi_keyval_create__
-#pragma weak pmpi_keyval_create_ = pmpi_keyval_create__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_KEYVAL_CREATE = pmpi_keyval_create_
+#pragma weak mpi_keyval_create__ = pmpi_keyval_create_
+#pragma weak mpi_keyval_create_ = pmpi_keyval_create_
+#pragma weak mpi_keyval_create = pmpi_keyval_create_
+#else
+#pragma weak MPI_KEYVAL_CREATE = pmpi_keyval_create
+#pragma weak mpi_keyval_create__ = pmpi_keyval_create
+#pragma weak mpi_keyval_create_ = pmpi_keyval_create
+#pragma weak mpi_keyval_create = pmpi_keyval_create
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_keyval_create_( MPI_Copy_function, MPI_D
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_KEYVAL_CREATE( MPI_Copy_function, MPI_Delete_function, MPI_Fint *, void*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_keyval_create__( MPI_Copy_function, MPI_Delete_function, MPI_Fint *, void*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_keyval_create( MPI_Copy_function, MPI_Delete_function, MPI_Fint *, void*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_keyval_create_( MPI_Copy_function, MPI_Delete_function, MPI_Fint *, void*, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_keyval_create__ = MPI_KEYVAL_CREATE
+#pragma weak mpi_keyval_create_ = MPI_KEYVAL_CREATE
+#pragma weak mpi_keyval_create = MPI_KEYVAL_CREATE
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_KEYVAL_CREATE = mpi_keyval_create__
 #pragma weak mpi_keyval_create_ = mpi_keyval_create__
 #pragma weak mpi_keyval_create = mpi_keyval_create__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_KEYVAL_CREATE = mpi_keyval_create_
+#pragma weak mpi_keyval_create__ = mpi_keyval_create_
+#pragma weak mpi_keyval_create = mpi_keyval_create_
+#else
+#pragma weak MPI_KEYVAL_CREATE = mpi_keyval_create
+#pragma weak mpi_keyval_create__ = mpi_keyval_create
+#pragma weak mpi_keyval_create_ = mpi_keyval_create
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_KEYVAL_CREATE( MPI_Copy_function, MPI_Delete_function, MPI_Fint *, void*, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_keyval_create__( MPI_Copy_function, MPI_Delete_function, MPI_Fint *, void*, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_keyval_create_( MPI_Copy_function, MPI_Delete_function, MPI_Fint *, void*, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_keyval_create( MPI_Copy_function, MPI_Delete_function, MPI_Fint *, void*, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_keyval_create__ = PMPI_KEYVAL_CREATE
+#pragma weak pmpi_keyval_create_ = PMPI_KEYVAL_CREATE
+#pragma weak pmpi_keyval_create = PMPI_KEYVAL_CREATE
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_KEYVAL_CREATE = pmpi_keyval_create__
+#pragma weak pmpi_keyval_create_ = pmpi_keyval_create__
+#pragma weak pmpi_keyval_create = pmpi_keyval_create__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_KEYVAL_CREATE = pmpi_keyval_create_
+#pragma weak pmpi_keyval_create__ = pmpi_keyval_create_
+#pragma weak pmpi_keyval_create = pmpi_keyval_create_
+#else
+#pragma weak PMPI_KEYVAL_CREATE = pmpi_keyval_create
+#pragma weak pmpi_keyval_create__ = pmpi_keyval_create
+#pragma weak pmpi_keyval_create_ = pmpi_keyval_create
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_keyval_create_ PMPI_KEYVAL_CREATE
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_keyval_create_( MPI_Copy_function, MPI_D
 #define mpi_keyval_create_ pmpi_keyval_create
 #else
 #define mpi_keyval_create_ pmpi_keyval_create_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,
@@ -124,9 +191,69 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_keyval_create_( MPI_Copy_function, MPI_D
 #undef MPI_Comm_create_keyval
 #define MPI_Comm_create_keyval PMPI_Comm_create_keyval
 #endif
+ 
+/* The F77 attr copy function prototype and calling convention */
+typedef void (FORT_CALL F77_CopyFunction) (MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *,MPI_Fint *, MPI_Fint *, MPI_Fint *);
+
+/* Helper proxy function to thunk the attr copy function call into F77 calling convention */
+static
+int
+MPIR_Comm_copy_attr_f77_proxy(
+    MPI_Comm_copy_attr_function* user_function,
+    MPI_Comm comm,
+    int keyval,
+    void* extra_state,
+    MPIR_AttrType value_type,
+    void* value,
+    void** new_value,
+    int* flag
+    )
+{
+    MPI_Fint ierr = 0;
+    MPI_Fint fhandle = (MPI_Fint)comm;
+    MPI_Fint fkeyval = (MPI_Fint)keyval;
+    MPI_Fint fvalue = (MPI_Fint) MPI_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Fint* fextra  = (MPI_Fint*)extra_state;
+    MPI_Fint fnew = 0;
+    MPI_Fint fflag = 0;
+
+    ((F77_CopyFunction*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
+
+    *flag = fflag;
+    *new_value = MPI_AINT_CAST_TO_VOID_PTR ((MPI_Aint) fnew);
+    return ierr;
+}
+
+
+/* The F77 attr delete function prototype and calling convention */
+typedef void (FORT_CALL F77_DeleteFunction) (MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *);
+
+/* Helper proxy function to thunk the attr delete function call into F77 calling convention */
+static
+int
+MPIR_Comm_delete_attr_f77_proxy(
+    MPI_Comm_delete_attr_function* user_function,
+    MPI_Comm comm,
+    int keyval,
+    MPIR_AttrType value_type,
+    void* value,
+    void* extra_state
+    )
+{
+    MPI_Fint ierr = 0;
+    MPI_Fint fhandle = (MPI_Fint)comm;
+    MPI_Fint fkeyval = (MPI_Fint)keyval;
+    MPI_Fint fvalue = (MPI_Fint) MPI_VOID_PTR_CAST_TO_MPI_AINT (value);
+    MPI_Fint* fextra  = (MPI_Fint*)extra_state;
+
+    ((F77_DeleteFunction*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
+    return ierr;
+}
+
+
 FORT_DLL_SPEC void FORT_CALL mpi_keyval_create_ ( MPI_Copy_function v1, MPI_Delete_function v2, MPI_Fint *v3, void*v4, MPI_Fint *ierr ){
         *ierr = MPI_Comm_create_keyval( v1, v2, v3, v4 );
         if (!*ierr) {
-            MPIR_Keyval_set_fortran( *v3 );
+            MPIR_Keyval_set_proxy(*v3, MPIR_Comm_copy_attr_f77_proxy, MPIR_Comm_delete_attr_f77_proxy);
         }
 }

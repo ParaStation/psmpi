@@ -22,6 +22,7 @@ int main( int argc, char *argv[] )
     int rank, size;
     MPI_Comm      comm;
     char cinbuf[3], coutbuf[3];
+    signed char scinbuf[3], scoutbuf[3];
     unsigned char ucinbuf[3], ucoutbuf[3];
 
     MTest_Init( &argc, &argv );
@@ -31,7 +32,9 @@ int main( int argc, char *argv[] )
     MPI_Comm_rank( comm, &rank );
     MPI_Comm_size( comm, &size );
 
+#ifndef USE_STRICT_MPI
     /* char */
+    MTestPrintfMsg( 10, "Reduce of MPI_CHAR\n" );
     cinbuf[0] = 1;
     cinbuf[1] = 0;
     cinbuf[2] = rank;
@@ -54,8 +57,35 @@ int main( int argc, char *argv[] )
 	    fprintf( stderr, "char MAX(>) test failed\n" );
 	}
     }
+#endif /* USE_STRICT_MPI */
+
+    /* signed char */
+    MTestPrintfMsg( 10, "Reduce of MPI_SIGNED_CHAR\n" );
+    scinbuf[0] = 1;
+    scinbuf[1] = 0;
+    scinbuf[2] = rank;
+
+    scoutbuf[0] = 0;
+    scoutbuf[1] = 1;
+    scoutbuf[2] = 1;
+    MPI_Reduce( scinbuf, scoutbuf, 3, MPI_SIGNED_CHAR, MPI_MAX, 0, comm );
+    if (rank == 0) {
+	if (scoutbuf[0] != 1) {
+	    errs++;
+	    fprintf( stderr, "signed char MAX(1) test failed\n" );
+	}
+	if (scoutbuf[1] != 0) {
+	    errs++;
+	    fprintf( stderr, "signed char MAX(0) test failed\n" );
+	}
+	if (size < 128 && scoutbuf[2] != size - 1) {
+	    errs++;
+	    fprintf( stderr, "signed char MAX(>) test failed\n" );
+	}
+    }
 
     /* unsigned char */
+    MTestPrintfMsg( 10, "Reduce of MPI_UNSIGNED_CHAR\n" );
     ucinbuf[0] = 1;
     ucinbuf[1] = 0;
     ucinbuf[2] = rank;
@@ -90,6 +120,7 @@ int main( int argc, char *argv[] )
     ldoutbuf[1] = 1;
     ldoutbuf[2] = 1;
     if (MPI_LONG_DOUBLE != MPI_DATATYPE_NULL) {
+	MTestPrintfMsg( 10, "Reduce of MPI_LONG_DOUBLE\n" );
 	MPI_Reduce( ldinbuf, ldoutbuf, 3, MPI_LONG_DOUBLE, MPI_MAX, 0, comm );
 	if (rank == 0) {
 	    if (ldoutbuf[0] != 1) {
@@ -107,7 +138,7 @@ int main( int argc, char *argv[] )
 	}
     }
     }
-#endif
+#endif /* HAVE_LONG_DOUBLE */
 
 #ifdef HAVE_LONG_LONG
     {
@@ -121,6 +152,7 @@ int main( int argc, char *argv[] )
     lloutbuf[1] = 1;
     lloutbuf[2] = 1;
     if (MPI_LONG_LONG != MPI_DATATYPE_NULL) {
+	MTestPrintfMsg( 10, "Reduce of MPI_LONG_LONG\n" );
 	MPI_Reduce( llinbuf, lloutbuf, 3, MPI_LONG_LONG, MPI_MAX, 0, comm );
 	if (rank == 0) {
 	    if (lloutbuf[0] != 1) {
@@ -138,7 +170,7 @@ int main( int argc, char *argv[] )
 	}
     }
     }
-#endif
+#endif /* HAVE_LONG_LONG */
 
     MTest_Finalize( errs );
     MPI_Finalize();

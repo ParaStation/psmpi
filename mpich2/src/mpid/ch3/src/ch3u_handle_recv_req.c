@@ -63,7 +63,8 @@ int MPIDI_CH3U_Handle_recv_req(MPIDI_VC_t * vc, MPID_Request * rreq,
  *    accessing the string.
  */
 /* ----------------------------------------------------------------------- */
-int MPIDI_CH3_ReqHandler_RecvComplete( MPIDI_VC_t *vc, MPID_Request *rreq, 
+int MPIDI_CH3_ReqHandler_RecvComplete( MPIDI_VC_t *vc ATTRIBUTE((unused)), 
+				       MPID_Request *rreq, 
 				       int *complete )
 {
     /* mark data transfer as complete and decrement CC */
@@ -138,12 +139,12 @@ int MPIDI_CH3_ReqHandler_PutAccumRespComplete( MPIDI_VC_t *vc,
 #define FUNCNAME MPIDI_CH3_ReqHandler_PutRespDerivedDTComplete
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_ReqHandler_PutRespDerivedDTComplete( MPIDI_VC_t *vc, 
+int MPIDI_CH3_ReqHandler_PutRespDerivedDTComplete( MPIDI_VC_t *vc ATTRIBUTE((unused)), 
 						   MPID_Request *rreq, 
 						   int *complete )
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_Datatype *new_dtp;
+    MPID_Datatype *new_dtp = NULL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQHANDLER_PUTRESPDERIVEDDTCOMPLETE);
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQHANDLER_PUTRESPDERIVEDDTCOMPLETE);
@@ -189,12 +190,12 @@ int MPIDI_CH3_ReqHandler_PutRespDerivedDTComplete( MPIDI_VC_t *vc,
 #define FUNCNAME MPIDI_CH3_ReqHandler_AccumRespDerivedDTComplete
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_ReqHandler_AccumRespDerivedDTComplete( MPIDI_VC_t *vc, 
+int MPIDI_CH3_ReqHandler_AccumRespDerivedDTComplete( MPIDI_VC_t *vc ATTRIBUTE((unused)), 
 						     MPID_Request *rreq, 
 						     int *complete )
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_Datatype *new_dtp;
+    MPID_Datatype *new_dtp = NULL;
     MPI_Aint true_lb, true_extent, extent;
     void *tmp_buf;
     MPIU_THREADPRIV_DECL;
@@ -273,12 +274,10 @@ int MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete( MPIDI_VC_t *vc,
 						   int *complete )
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_Datatype *new_dtp;
+    MPID_Datatype *new_dtp = NULL;
     MPIDI_CH3_Pkt_t upkt;
     MPIDI_CH3_Pkt_get_resp_t * get_resp_pkt = &upkt.get_resp;
-    MPID_IOV iov[MPID_IOV_LIMIT];
     MPID_Request * sreq;
-    int iov_n;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQHANDLER_GETRESPDERIVEDDTCOMPLETE);
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQHANDLER_GETRESPDERIVEDDTCOMPLETE);
@@ -289,9 +288,8 @@ int MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete( MPIDI_VC_t *vc,
     
     /* create request for sending data */
     sreq = MPID_Request_create();
-    if (sreq == NULL) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
-    }
+    MPIU_ERR_CHKANDJUMP(sreq == NULL, mpi_errno,MPI_ERR_OTHER,"**nomem");
+    
     sreq->kind = MPID_REQUEST_SEND;
     MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_GET_RESP);
     sreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_GetSendRespComplete;
@@ -304,10 +302,7 @@ int MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete( MPIDI_VC_t *vc,
     sreq->dev.source_win_handle = rreq->dev.source_win_handle;
     
     MPIDI_Pkt_init(get_resp_pkt, MPIDI_CH3_PKT_GET_RESP);
-    get_resp_pkt->request_handle = rreq->dev.request_handle;
-    
-    iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST) get_resp_pkt;
-    iov[0].MPID_IOV_LEN = sizeof(*get_resp_pkt);
+    get_resp_pkt->request_handle = rreq->dev.request_handle;    
     
     sreq->dev.segment_ptr = MPID_Segment_alloc( );
     MPIU_ERR_CHKANDJUMP1((sreq->dev.segment_ptr == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment_alloc");
@@ -318,25 +313,20 @@ int MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete( MPIDI_VC_t *vc,
 		      sreq->dev.segment_ptr, 0);
     sreq->dev.segment_first = 0;
     sreq->dev.segment_size = new_dtp->size * sreq->dev.user_count;
-    
-    iov_n = MPID_IOV_LIMIT - 1;
-    /* Note that the OnFinal handler was set above */
-    mpi_errno = MPIDI_CH3U_Request_load_send_iov(sreq, &iov[1], &iov_n);
-    if (mpi_errno == MPI_SUCCESS)
+
+    /* Because this is in a packet handler, it is already within a critical section */	
+    /* MPIU_THREAD_CS_ENTER(CH3COMM,vc); */
+    mpi_errno = vc->sendNoncontig_fn(vc, sreq, get_resp_pkt, sizeof(*get_resp_pkt));
+    /* MPIU_THREAD_CS_EXIT(CH3COMM,vc); */
+    /* --BEGIN ERROR HANDLING-- */
+    if (mpi_errno != MPI_SUCCESS)
     {
-	iov_n += 1;
-		
-	mpi_errno = MPIU_CALL(MPIDI_CH3,iSendv(vc, sreq, iov, iov_n));
-	/* --BEGIN ERROR HANDLING-- */
-	if (mpi_errno != MPI_SUCCESS)
-	{
-	    MPIU_Object_set_ref(sreq, 0);
-	    MPIDI_CH3_Request_destroy(sreq);
-	    sreq = NULL;
-	    MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|rmamsg");
-	}
-	/* --END ERROR HANDLING-- */
+        MPIU_Object_set_ref(sreq, 0);
+        MPIDI_CH3_Request_destroy(sreq);
+        sreq = NULL;
+        MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|rmamsg");
     }
+    /* --END ERROR HANDLING-- */
     
     /* mark receive data transfer as complete and decrement CC in receive 
        request */
@@ -437,7 +427,7 @@ int MPIDI_CH3_ReqHandler_SinglePutAccumComplete( MPIDI_VC_t *vc,
 #define FUNCNAME MPIDI_CH3_ReqHandler_UnpackUEBufComplete
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_ReqHandler_UnpackUEBufComplete( MPIDI_VC_t *vc, 
+int MPIDI_CH3_ReqHandler_UnpackUEBufComplete( MPIDI_VC_t *vc ATTRIBUTE((unused)), 
 					      MPID_Request *rreq, 
 					      int *complete )
 {
@@ -504,7 +494,7 @@ int MPIDI_CH3_ReqHandler_UnpackSRBufComplete( MPIDI_VC_t *vc,
 #define FUNCNAME MPIDI_CH3_ReqHandler_UnpackSRBufReloadIOV
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_ReqHandler_UnpackSRBufReloadIOV( MPIDI_VC_t *vc, 
+int MPIDI_CH3_ReqHandler_UnpackSRBufReloadIOV( MPIDI_VC_t *vc ATTRIBUTE((unused)), 
 					      MPID_Request *rreq, 
 					      int *complete )
 {
@@ -528,8 +518,8 @@ int MPIDI_CH3_ReqHandler_UnpackSRBufReloadIOV( MPIDI_VC_t *vc,
 #define FUNCNAME MPIDI_CH3_ReqHandler_ReloadIOV
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_ReqHandler_ReloadIOV( MPIDI_VC_t *vc, MPID_Request *rreq, 
-				    int *complete )
+int MPIDI_CH3_ReqHandler_ReloadIOV( MPIDI_VC_t *vc ATTRIBUTE((unused)), 
+				    MPID_Request *rreq, int *complete )
 {
     int mpi_errno = MPI_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQHANDLER_RELOADIOV);
@@ -565,7 +555,8 @@ static int create_derived_datatype(MPID_Request *req, MPID_Datatype **dtp)
     MPIDI_FUNC_ENTER(MPID_STATE_CREATE_DERIVED_DATATYPE);
 
     dtype_info = req->dev.dtype_info;
-    dataloop = req->dev.dataloop;
+    /* FIXME: What is this variable for (it is never referenced)? */
+    dataloop   = req->dev.dataloop;
 
     /* allocate new datatype object and handle */
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
@@ -583,7 +574,7 @@ static int create_derived_datatype(MPID_Request *req, MPID_Datatype **dtp)
     new_dtp->cache_id     = 0;
     new_dtp->name[0]      = 0;
     new_dtp->is_contig = dtype_info->is_contig;
-    new_dtp->n_contig_blocks = dtype_info->n_contig_blocks; 
+    new_dtp->max_contig_blocks = dtype_info->max_contig_blocks; 
     new_dtp->size = dtype_info->size;
     new_dtp->extent = dtype_info->extent;
     new_dtp->dataloop_size = dtype_info->dataloop_size;
@@ -690,7 +681,7 @@ static int do_accumulate_op(MPID_Request *rreq)
         last  = SEGMENT_IGNORE_LAST;
         
         MPID_Datatype_get_ptr(rreq->dev.datatype, dtp);
-        vec_len = dtp->n_contig_blocks * rreq->dev.user_count + 1; 
+        vec_len = dtp->max_contig_blocks * rreq->dev.user_count + 1; 
         /* +1 needed because Rob says so */
         dloop_vec = (DLOOP_VECTOR *)
             MPIU_Malloc(vec_len * sizeof(DLOOP_VECTOR));
@@ -934,8 +925,11 @@ int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t *vc, MPI_Win source_win_handle)
     MPIDI_Pkt_init(pt_rma_done_pkt, MPIDI_CH3_PKT_PT_RMA_DONE);
     pt_rma_done_pkt->source_win_handle = source_win_handle;
 
+    /* Because this is in a packet handler, it is already within a critical section */	
+    /* MPIU_THREAD_CS_ENTER(CH3COMM,vc); */
     mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsg(vc, pt_rma_done_pkt,
 					      sizeof(*pt_rma_done_pkt), &req));
+    /* MPIU_THREAD_CS_EXIT(CH3COMM,vc); */
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|rmamsg");
     }
@@ -1038,7 +1032,10 @@ static int do_simple_get(MPID_Win *win_ptr, MPIDI_Win_lock_queue *lock_queue)
     MPID_Datatype_get_size_macro(lock_queue->pt_single_op->datatype, type_size);
     iov[1].MPID_IOV_LEN = lock_queue->pt_single_op->count * type_size;
     
+    /* Because this is in a packet handler, it is already within a critical section */	
+    /* MPIU_THREAD_CS_ENTER(CH3COMM,vc); */
     mpi_errno = MPIU_CALL(MPIDI_CH3,iSendv(lock_queue->vc, req, iov, 2));
+    /* MPIU_THREAD_CS_EXIT(CH3COMM,vc); */
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {

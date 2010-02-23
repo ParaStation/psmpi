@@ -6,22 +6,45 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
+DEFS            = @DEFS@ -I. -I${srcdir}
+INCLUDES        = 
+CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
+CC              = @CC@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
+C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
+C_LINK         = $(CC)
 F90              = @F90@
 F90FLAGS        = @F90FLAGS@
 F90_COMPILE     = $(F90) $(F90FLAGS) $(F90INCLUDES)
 F90_LINK       = $(F90)
-LDFLAGS     =  @LDFLAGS@ ../util/mtestf90.o 
+LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
 
 .SUFFIXES:
-.SUFFIXES: .o .f90 .txt 
+.SUFFIXES: .o .c .f90 .txt 
+.c.o:
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -c $< ; \
+	fi
+	@$(C_COMPILE) -c $<
+.c.txt:
+	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
+.c:
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
+	fi
+	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f90.o:
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
 	  echo "  F90             $<" ; \
@@ -52,8 +75,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o baseenvf90
-	-@rm -f baseenvf90.exe
+	-@rm -f *.o ${srcdir}/*.o baseenvf90 checksizes
+	-@rm -f baseenvf90.exe checksizes.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -71,12 +94,14 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: baseenvf90
+all-redirect: baseenvf90 checksizes
 
 coverage: 
 baseenvf90: baseenvf90.o   @MPILIBLOC@ ../util/mtestf90.o
 	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o baseenvf90 baseenvf90.o  \
-	${LIBS} 
+	../util/mtestf90.o  ${LIBS} 
+checksizes: checksizes.o   @MPILIBLOC@ ../util/mtestf90.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o checksizes checksizes.o   ${LIBS}
 # --------------------------------------------------------------------------
 htmldoc:
 mandoc:
@@ -85,12 +110,7 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  baseenvf90.f90
+SOURCES         =  baseenvf90.f90 checksizes.c
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
@@ -101,6 +121,10 @@ TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 # This Makefile.sm generated automatically by f77tof90
 # from test/mpi/f77/init/Makefile.sm.  DO NOT EDIT
 
+# Checksizes is created by configure, and is a C program that tests that 
+# configure has correctly computed the sizes of MPI_Aint and MPI_Offset
+# for Fortran.  This is not run by default but can be used to check
+# that configure found the correct values.
 
 ../util/mtestf90.o: 
 	(cd ../util && $(MAKE) mtestf90.o)

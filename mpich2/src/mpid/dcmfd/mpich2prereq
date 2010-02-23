@@ -20,6 +20,7 @@ if test "$device_args" = "BGP" ; then
     MPID_MAX_THREAD_LEVEL=MPI_THREAD_MULTIPLE
     MPID_NO_PM=yes
     MPID_NO_PMI=yes
+    INSTALL_FROM_DEVICE=yes
 fi
 
 #Possible values

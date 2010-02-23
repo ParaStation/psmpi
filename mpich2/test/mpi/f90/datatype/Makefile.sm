@@ -14,6 +14,7 @@ typesubf90_SOURCES   = typesubf90.f90
 typem2f90_SOURCES    = typem2f90.f90
 gaddressf90_SOURCES  = gaddressf90.f90
 packef90_SOURCES     = packef90.f90
+allctypesf90_SOURCES  = allctypesf90.f90
 
 testing:
 	../../runtests -srcdir=$(srcdir) -tests=testlist \
@@ -24,4 +25,5 @@ testing:
 structf_SOURCES    = structf.f90
 indtype_SOURCES    = indtype.f90
 createf90_SOURCES  = createf90.f90
-sizeof_SOURCES     = sizeof.f90     
+sizeof_SOURCES     = sizeof.f90
+

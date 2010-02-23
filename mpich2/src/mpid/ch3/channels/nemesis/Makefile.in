@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -21,10 +21,9 @@ VPATH = .:@srcdir@
 ${srcdir}/include/mpidi_ch3i_nemesis_conf.h  ${srcdir}/configure: \
 	${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /homes/chan/autoconf/2.62/bin/autoheader -I \
-	../../../../../confdb && \
-	/homes/chan/autoconf/2.62/bin/autoconf -I \
-	../../../../../confdb ) 
+	(cd ${srcdir} && /opt/local/bin/autoheader -I ../../../../../confdb && \
+	\
+	/opt/local/bin/autoconf -I ../../../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -36,7 +35,7 @@ ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
 	"-autoconf=-I ROOTDIR/confdb" \
 	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
 	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile src/Makefile nemesis/Makefile nemesis/src/Makefile nemesis/utils/Makefile nemesis/utils/replacements/Makefile nemesis/utils/monitor/Makefile nemesis/net_mod/Makefile nemesis/net_mod/elan_module/Makefile nemesis/net_mod/gm_module/Makefile nemesis/net_mod/mx_module/Makefile nemesis/net_mod/tcp_module/Makefile nemesis/net_mod/newtcp_module/Makefile nemesis/net_mod/sctp_module/Makefile nemesis/net_mod/ib_module/Makefile nemesis/net_mod/psm_module/Makefile nemesis/net_mod/none_module/Makefile localdefs config.status config.log config.cache *conf.cache config.system" \
+	-distcleanfiles="Makefile src/Makefile nemesis/Makefile nemesis/src/Makefile nemesis/utils/Makefile nemesis/utils/replacements/Makefile nemesis/utils/monitor/Makefile nemesis/netmod/Makefile nemesis/netmod/elan/Makefile nemesis/netmod/gm/Makefile nemesis/netmod/mx/Makefile nemesis/netmod/tcp/Makefile nemesis/netmod/ib/Makefile nemesis/netmod/psm/Makefile nemesis/netmod/newmad/Makefile nemesis/netmod/none/Makefile localdefs nemesis/include/mpid_nem_net_module_defs.h nemesis/src/mpid_nem_net_array.c config.status config.log config.cache *conf.cache config.system" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
 Makefile: ${srcdir}/Makefile.in
@@ -58,7 +57,7 @@ distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
 	if [ -s nemesis/Makefile ] ; then (cd nemesis && $(MAKE) distclean ) ; fi
 	if [ -s src/Makefile ] ; then (cd src && $(MAKE) distclean ) ; fi
-	-@rm -f Makefile src/Makefile nemesis/Makefile nemesis/src/Makefile nemesis/utils/Makefile nemesis/utils/replacements/Makefile nemesis/utils/monitor/Makefile nemesis/net_mod/Makefile nemesis/net_mod/elan_module/Makefile nemesis/net_mod/gm_module/Makefile nemesis/net_mod/mx_module/Makefile nemesis/net_mod/tcp_module/Makefile nemesis/net_mod/newtcp_module/Makefile nemesis/net_mod/sctp_module/Makefile nemesis/net_mod/ib_module/Makefile nemesis/net_mod/psm_module/Makefile nemesis/net_mod/none_module/Makefile localdefs config.status config.log config.cache *conf.cache config.system
+	-@rm -f Makefile src/Makefile nemesis/Makefile nemesis/src/Makefile nemesis/utils/Makefile nemesis/utils/replacements/Makefile nemesis/utils/monitor/Makefile nemesis/netmod/Makefile nemesis/netmod/elan/Makefile nemesis/netmod/gm/Makefile nemesis/netmod/mx/Makefile nemesis/netmod/tcp/Makefile nemesis/netmod/ib/Makefile nemesis/netmod/psm/Makefile nemesis/netmod/newmad/Makefile nemesis/netmod/none/Makefile localdefs nemesis/include/mpid_nem_net_module_defs.h nemesis/src/mpid_nem_net_array.c config.status config.log config.cache *conf.cache config.system
 	-@rm -rf autom4te*.cache
 	-@rm -f include/mpidi_ch3i_nemesis_conf.h
 	-@rm -rf $(DEPS_DIR)

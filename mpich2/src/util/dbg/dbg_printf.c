@@ -12,7 +12,9 @@
  * MPIU_dump_dbg_memlog( stderr ) will print the contents of the file ring
  * to stderr.
  */
+
 #include "mpiimpl.h"
+
 #include <stdio.h>
 #ifdef HAVE_STDARG_H
 #include <stdarg.h>
@@ -22,6 +24,20 @@
 #endif
 #ifdef HAVE_STDLIB_H
 #include <stdlib.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#  include <unistd.h>
+#endif
+#ifdef HAVE_ERRNO_H
+#include <errno.h>
+#endif
+
+#if defined( HAVE_MKSTEMP ) && defined( NEEDS_MKSTEMP_DECL )
+extern int mkstemp(char *t);
+#endif
+
+#if defined( HAVE_FDOPEN ) && defined( NEEDS_FDOPEN_DECL )
+extern FILE *fdopen(int fd, const char *mode);
 #endif
 
 /* Temporary.  sig values will change */
@@ -50,8 +66,8 @@
 #define MPICH_DBG_MEMLOG_LINE_SIZE 256
 #endif
 
-MPIU_dbg_state_t MPIUI_dbg_state = MPIU_DBG_STATE_UNINIT;
-FILE * MPIUI_dbg_fp = NULL;
+MPIU_dbg_state_t MPIU_dbg_state = MPIU_DBG_STATE_UNINIT;
+FILE * MPIU_dbg_fp = NULL;
 static int dbg_memlog_num_lines = MPICH_DBG_MEMLOG_NUM_LINES;
 static int dbg_memlog_line_size = MPICH_DBG_MEMLOG_LINE_SIZE;
 static char **dbg_memlog = NULL;
@@ -65,23 +81,23 @@ int MPIU_dbg_init(int rank)
 {
     dbg_rank = rank;
 
-    if (MPIUI_dbg_state == MPIU_DBG_STATE_UNINIT)
+    if (MPIU_dbg_state == MPIU_DBG_STATE_UNINIT)
     {
 	dbg_init();
     }
 
     /* If file logging is enable, we need to open a file */
-    if (MPIUI_dbg_state & MPIU_DBG_STATE_FILE)
+    if (MPIU_dbg_state & MPIU_DBG_STATE_FILE)
     {
 	char fn[128];
 
 	/* Only open the file only once in case MPIU_dbg_init is called more 
 	   than once */
-	if (MPIUI_dbg_fp == NULL)
+	if (MPIU_dbg_fp == NULL)
 	{
 	    MPIU_Snprintf(fn, 128, "mpich2-dbg-%d.log", dbg_rank);
-	    MPIUI_dbg_fp = fopen(fn, "w");
-	    setvbuf(MPIUI_dbg_fp, NULL, _IONBF, 0);
+	    MPIU_dbg_fp = fopen(fn, "w");
+	    setvbuf(MPIU_dbg_fp, NULL, _IONBF, 0);
 	}
     }
     
@@ -92,7 +108,7 @@ static void dbg_init(void)
 {
     char * envstr;
     
-    MPIUI_dbg_state = MPIU_DBG_STATE_NONE;
+    MPIU_dbg_state = MPIU_DBG_STATE_NONE;
 
     /* FIXME: This should use MPIU_Param_get_string */
     envstr = getenv("MPICH_DBG_OUTPUT");
@@ -113,22 +129,22 @@ static void dbg_init(void)
      */
     if (strstr(envstr, "stdout"))
     {
-	MPIUI_dbg_state = (MPIU_dbg_state_t)( MPIU_DBG_STATE_STDOUT | 
-					      MPIUI_dbg_state );
+	MPIU_dbg_state = (MPIU_dbg_state_t)( MPIU_DBG_STATE_STDOUT |
+					      MPIU_dbg_state );
     }
     if (strstr(envstr, "memlog"))
     {
-	MPIUI_dbg_state = (MPIU_dbg_state_t)( MPIU_DBG_STATE_MEMLOG |
-					      MPIUI_dbg_state );
+	MPIU_dbg_state = (MPIU_dbg_state_t)( MPIU_DBG_STATE_MEMLOG |
+					      MPIU_dbg_state );
     }
     if (strstr(envstr, "file"))
     {
-	MPIUI_dbg_state = (MPIU_dbg_state_t) ( MPIU_DBG_STATE_FILE |
-					       MPIUI_dbg_state );
+	MPIU_dbg_state = (MPIU_dbg_state_t) ( MPIU_DBG_STATE_FILE |
+					       MPIU_dbg_state );
     }
 
     /* If memlog is enabled, the we need to allocate some memory for it */
-    if (MPIUI_dbg_state & MPIU_DBG_STATE_MEMLOG)
+    if (MPIU_dbg_state & MPIU_DBG_STATE_MEMLOG)
     {
 	dbg_memlog = MPIU_Malloc(dbg_memlog_num_lines * sizeof(char *) +
 				 dbg_memlog_num_lines * dbg_memlog_line_size);
@@ -144,7 +160,7 @@ static void dbg_init(void)
 	}
 	else
 	{
-	    MPIUI_dbg_state = (MPIU_dbg_state_t)( MPIUI_dbg_state & 
+	    MPIU_dbg_state = (MPIU_dbg_state_t)( MPIU_dbg_state &
 						  ~MPIU_DBG_STATE_MEMLOG );
 	}
     }
@@ -155,12 +171,12 @@ int MPIU_dbglog_printf(const char *str, ...)
     int n = 0;
     va_list list;
 
-    if (MPIUI_dbg_state == MPIU_DBG_STATE_UNINIT)
+    if (MPIU_dbg_state == MPIU_DBG_STATE_UNINIT)
     {
 	dbg_init();
     }
 
-    if (MPIUI_dbg_state & MPIU_DBG_STATE_MEMLOG)
+    if (MPIU_dbg_state & MPIU_DBG_STATE_MEMLOG)
     {
 	/* FIXME: put everything on one line until a \n is found */
 	
@@ -192,17 +208,17 @@ int MPIU_dbglog_printf(const char *str, ...)
 	}
     }
 
-    if (MPIUI_dbg_state & MPIU_DBG_STATE_STDOUT)
+    if (MPIU_dbg_state & MPIU_DBG_STATE_STDOUT)
     {
 	va_start(list, str);
 	n = vprintf(str, list);
 	va_end(list);
     }
 
-    if ((MPIUI_dbg_state & MPIU_DBG_STATE_FILE) && MPIUI_dbg_fp != NULL)
+    if ((MPIU_dbg_state & MPIU_DBG_STATE_FILE) && MPIU_dbg_fp != NULL)
     {
 	va_start(list, str);
-	n = vfprintf(MPIUI_dbg_fp, str, list);
+	n = vfprintf(MPIU_dbg_fp, str, list);
 	va_end(list);
     }
 
@@ -214,12 +230,12 @@ int MPIU_dbglog_vprintf(const char *str, va_list ap)
     int n = 0;
     va_list list;
 
-    if (MPIUI_dbg_state == MPIU_DBG_STATE_UNINIT)
+    if (MPIU_dbg_state == MPIU_DBG_STATE_UNINIT)
     {
 	dbg_init();
     }
 
-    if (MPIUI_dbg_state & MPIU_DBG_STATE_MEMLOG)
+    if (MPIU_dbg_state & MPIU_DBG_STATE_MEMLOG)
     {
 	va_copy(list,ap);
 	dbg_memlog[dbg_memlog_next][0] = '\0';
@@ -249,17 +265,17 @@ int MPIU_dbglog_vprintf(const char *str, va_list ap)
 	}
     }
 
-    if (MPIUI_dbg_state & MPIU_DBG_STATE_STDOUT)
+    if (MPIU_dbg_state & MPIU_DBG_STATE_STDOUT)
     {
 	va_copy(list, ap);
 	n = vprintf(str, list);
 	va_copy_end(list);
     }
 
-    if ((MPIUI_dbg_state & MPIU_DBG_STATE_FILE) && MPIUI_dbg_fp != NULL)
+    if ((MPIU_dbg_state & MPIU_DBG_STATE_FILE) && MPIU_dbg_fp != NULL)
     {
 	va_copy(list, ap);
-	n = vfprintf(MPIUI_dbg_fp, str, list);
+	n = vfprintf(MPIU_dbg_fp, str, list);
 	va_end(list);
     }
 
@@ -302,8 +318,7 @@ void MPIU_dump_dbg_memlog_to_file(const char *filename)
     }
 }
 
-void MPIU_dump_dbg_memlog(FILE * fp)
-{
+void MPIU_dump_dbg_memlog(FILE * fp){
     if (dbg_memlog_count != 0)
     {
 	int ent;
@@ -328,39 +343,75 @@ void MPIU_dump_dbg_memlog(FILE * fp)
 /* 
  * NEW ROUTINES FOR DEBUGGING
  */
+#ifndef MAXPATHLEN
+#define MAXPATHLEN 1024
+#endif
+
 int MPIU_DBG_ActiveClasses = 0;
 int MPIU_DBG_MaxLevel      = MPIU_DBG_TYPICAL;
-static int mpiu_dbg_initialized = 0;  /* 0, 1 (preinit), or 2 (init) */
-static FILE *MPIU_DBG_fp = 0;
-static char *filePattern = "-stdout-"; /* "log%d.log"; */
-/* 
-   We keep information on the state of the file.  
-   The issue is that sometimes we want to generate DBG output before we
-   know the rank (and world) of the process.
-
-   Thus, we have two values: whether the file has been opened, and if so,
-   if it was opened before or after the rank was available; and how the
-   file should be handled if I/O is performed before the rank is available.
-
-   Another option that could be considered is to store values that would
-   otherwise be written before the rank is available for opening the file.
-   Currently, this is not used to avoid allocating the necessary space.
- */
-typedef enum { MPIU_DBG_CLOSED, MPIU_DBG_PRERANK, MPIU_DBG_OPEN } FileState_t;
-static FileState_t filestate = MPIU_DBG_CLOSED;
-typedef enum { MPIU_DBG_REOPEN, MPIU_DBG_IGNORE_PRERANK, MPIU_DBG_OPENONCE }
-    FileOpenMode_t;
-static FileOpenMode_t filemode = MPIU_DBG_REOPEN;
-static char *defaultFilePattern = "dbg@W%w-@%d@T-%t@.log";
+static enum {MPIU_DBG_UNINIT, MPIU_DBG_PREINIT, MPIU_DBG_INITIALIZED}
+    mpiu_dbg_initialized = MPIU_DBG_UNINIT;
+static char filePatternBuf[MAXPATHLEN] = "";
+static const char *filePattern = "-stdout-"; /* "log%d.log"; */
+static const char *defaultFilePattern = "dbg@W%w-@%d@T-%t@.log";
+static char temp_filename[MAXPATHLEN] = "";
 static int worldNum  = 0;
 static int worldRank = -1;
 static int whichRank = -1;             /* all ranks */
+static int    resetTimeOrigin = 1;
 static double timeOrigin = 0.0;
 
 static int MPIU_DBG_Usage( const char *, const char * );
-static int MPIU_DBG_OpenFile( void );
+static int MPIU_DBG_OpenFile(FILE **dbg_fp);
 static int setDBGClass( const char * );
-static int SetDBGLevel( const char *, const char *([]) );
+static int SetDBGLevel( const char *, const char *(names[]) );
+static int MPIU_DBG_Get_filename(char *filename, int len);
+
+#ifdef MPICH_IS_THREADED
+static MPID_Thread_tls_t dbg_tls_key;
+#endif
+
+static FILE *static_dbg_fp = 0;
+
+static void dbg_init_tls(void)
+{
+#ifdef MPICH_IS_THREADED
+    MPID_Thread_tls_create(NULL, &dbg_tls_key, NULL);
+#endif
+}
+
+static FILE *get_fp(void)
+{
+#ifdef MPICH_IS_THREADED
+    /* if we're not initialized, use the static fp, since there should
+     * only be one thread in here until then */
+    if (mpiu_dbg_initialized == MPIU_DBG_INITIALIZED && MPIU_ISTHREADED()) {
+        FILE *fp;
+        MPID_Thread_tls_get(&dbg_tls_key, &fp);
+        return fp;
+    }
+    else
+        return static_dbg_fp;
+#else
+    return static_dbg_fp;
+#endif
+}
+
+static void set_fp(FILE *fp)
+{
+#ifdef MPICH_IS_THREADED
+    /* if we're not initialized, use the static fp, since there should
+     * only be one thread in here until then */
+    if (mpiu_dbg_initialized == MPIU_DBG_INITIALIZED && MPIU_ISTHREADED()) {
+        MPID_Thread_tls_set(&dbg_tls_key, (void *)fp);
+    }
+    else
+        static_dbg_fp = fp;
+#else
+    static_dbg_fp = fp;
+#endif
+}
+
 
 int MPIU_DBG_Outevent( const char *file, int line, int class, int kind, 
 		       const char *fmat, ... )
@@ -372,8 +423,18 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
     MPID_Time_t t;
     double  curtime;
     int threadID  = 0;
+    /* Note that pthread_self gives you an id that is the address of the 
+       thread's private data, which can be the same for all processes
+       in an executable.  Thus, the thread_id will not always serve as the 
+       way to separate threads in the output; that is, the thread id
+       is not necessarily unique (or unique with high probability) among 
+       processes. */
+    static int pid = -1;
+    FILE *dbg_fp = NULL;
 
-    if (!mpiu_dbg_initialized) return 0;
+    if (mpiu_dbg_initialized == MPIU_DBG_UNINIT) return 0;
+
+    dbg_fp = get_fp();
 
 #ifdef MPICH_IS_THREADED
     {
@@ -382,8 +443,13 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
 	threadID = (int)tid;
     }
 #endif
-    if (!MPIU_DBG_fp) {
-	MPIU_DBG_OpenFile();
+#if defined(HAVE_GETPID)
+    pid = (int)getpid();
+#endif /* HAVE_GETPID */
+
+    if (!dbg_fp) {
+	MPIU_DBG_OpenFile(&dbg_fp);
+        set_fp(dbg_fp);
     }
 
     MPID_Wtime( &t );
@@ -393,17 +459,19 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
     /* The kind values are used with the macros to simplify these cases */
     switch (kind) {
 	case 0:
-	    fprintf( MPIU_DBG_fp, "%d\t%d\t%d\t%d\t%f\t%s\t%d\t%s\n",
-		     worldNum, worldRank, threadID, class, curtime, 
-		     file, line, fmat );
+	    va_start(list,fmat);
+	    str = va_arg(list,char *);
+	    fprintf( dbg_fp, "%d\t%d\t%d[%d]\t%d\t%f\t%s\t%d\t%s\n",
+		     worldNum, worldRank, threadID, pid, class, curtime, 
+		     file, line, str );
 	    break;
 	case 1:
 	    va_start(list,fmat);
 	    str = va_arg(list,char *);
 	    MPIU_Snprintf( stmp, sizeof(stmp), fmat, str );
 	    va_end(list);
-	    fprintf( MPIU_DBG_fp, "%d\t%d\t%d\t%d\t%f\t%s\t%d\t%s\n",
-		     worldNum, worldRank, threadID, class, curtime, 
+	    fprintf( dbg_fp, "%d\t%d\t%d[%d]\t%d\t%f\t%s\t%d\t%s\n",
+		     worldNum, worldRank, threadID, pid, class, curtime, 
 		     file, line, stmp );
 	    break;
 	case 2: 
@@ -411,8 +479,8 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
 	    i = va_arg(list,int);
 	    MPIU_Snprintf( stmp, sizeof(stmp), fmat, i);
 	    va_end(list);
-	    fprintf( MPIU_DBG_fp, "%d\t%d\t%d\t%d\t%f\t%s\t%d\t%s\n",
-		     worldNum, worldRank, threadID, class, curtime, 
+	    fprintf( dbg_fp, "%d\t%d\t%d[%d]\t%d\t%f\t%s\t%d\t%s\n",
+		     worldNum, worldRank, threadID, pid, class, curtime, 
 		     file, line, stmp );
 	    break;
 	case 3: 
@@ -420,14 +488,14 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
 	    p = va_arg(list,void *);
 	    MPIU_Snprintf( stmp, sizeof(stmp), fmat, p);
 	    va_end(list);
-	    fprintf( MPIU_DBG_fp, "%d\t%d\t%d\t%d\t%f\t%s\t%d\t%s\n",
-		     worldNum, worldRank, threadID, class, curtime, 
+	    fprintf( dbg_fp, "%d\t%d\t%d[%d]\t%d\t%f\t%s\t%d\t%s\n",
+		     worldNum, worldRank, threadID, pid, class, curtime, 
 		     file, line, stmp );
 	    break;
         default:
 	    break;
     }
-    fflush(MPIU_DBG_fp);
+    fflush(dbg_fp);
     return 0;
 }
 
@@ -540,7 +608,8 @@ static int MPIU_DBG_ProcessArgs( int *argc_p, char ***argv_p )
 			    filePattern = defaultFilePattern;
 			}
 			else {
-			    filePattern = MPIU_Strdup( p );
+                            strncpy(filePatternBuf, p, sizeof(filePatternBuf));
+			    filePattern = filePatternBuf;
 			}
 		    }
 		}
@@ -595,7 +664,8 @@ static int MPIU_DBG_ProcessEnv( void )
 
     s = getenv( "MPICH_DBG_FILENAME" );
     if (s) {
-	filePattern = MPIU_Strdup( s );
+        strncpy(filePatternBuf, s, sizeof(filePatternBuf));
+        filePattern = filePatternBuf;
     }
 
     s = getenv( "MPICH_DBG_RANK" );
@@ -615,13 +685,15 @@ static int MPIU_DBG_ProcessEnv( void )
  * is not responsible for updating the environment and/or command-line
  * arguments. 
  */
-int MPIU_DBG_PreInit( int *argc_p, char ***argv_p )
+int MPIU_DBG_PreInit( int *argc_p, char ***argv_p, int wtimeNotReady )
 {
     MPID_Time_t t;
 
     /* if the DBG_MSG system was already initialized, say by the device, then
        return immediately */
-    if (mpiu_dbg_initialized != 0) return 0;
+    if (mpiu_dbg_initialized != MPIU_DBG_UNINIT) return MPI_SUCCESS;
+
+    dbg_init_tls();
 
     /* Check to see if any debugging was selected.  The order of these
        tests is important, as they allow general defaults to be set,
@@ -631,10 +703,13 @@ int MPIU_DBG_PreInit( int *argc_p, char ***argv_p )
 
     MPIU_DBG_ProcessArgs( argc_p, argv_p );
 
-    MPID_Wtime( &t );
-    MPID_Wtime_todouble( &t, &timeOrigin );
+    if (wtimeNotReady == 0) {
+	MPID_Wtime( &t );
+	MPID_Wtime_todouble( &t, &timeOrigin );
+	resetTimeOrigin = 0;
+    }
 
-    mpiu_dbg_initialized = 1;
+    mpiu_dbg_initialized = MPIU_DBG_PREINIT;
 
     return MPI_SUCCESS;
 }
@@ -642,12 +717,27 @@ int MPIU_DBG_PreInit( int *argc_p, char ***argv_p )
 int MPIU_DBG_Init( int *argc_p, char ***argv_p, int has_args, int has_env, 
 		   int wrank )
 {
+    int ret;
+    FILE *dbg_fp = NULL;
+
     /* if the DBG_MSG system was already initialized, say by the device, then
        return immediately.  Note that the device is then responsible
        for handling the file mode (e.g., reopen when the rank become 
        available) */
-    if (mpiu_dbg_initialized == 2) return 0;
+    if (mpiu_dbg_initialized == MPIU_DBG_INITIALIZED) return MPI_SUCCESS;
 
+    if (mpiu_dbg_initialized != MPIU_DBG_PREINIT)
+        dbg_init_tls();
+
+    dbg_fp = get_fp();
+
+    /* We may need to wait until the device is set up to initialize the timer */
+    if (resetTimeOrigin) {
+	MPID_Time_t t;
+	MPID_Wtime( &t );
+	MPID_Wtime_todouble( &t, &timeOrigin );
+	resetTimeOrigin = 0;
+    }
     /* Check to see if any debugging was selected.  The order of these
        tests is important, as they allow general defaults to be set,
        followed by more specific modifications. */
@@ -669,16 +759,33 @@ int MPIU_DBG_Init( int *argc_p, char ***argv_p, int has_args, int has_env,
 	MPIU_DBG_ActiveClasses = 0;
     }
 
-    /* If the file has already been opened and we need to reopen it,
-       do that now.  We only need to close the file, since 
-       OutEvent will reopen it as necessary */
-    if (filemode == MPIU_DBG_REOPEN && filestate == MPIU_DBG_PRERANK) {
-	fclose( MPIU_DBG_fp );
-	MPIU_DBG_fp = 0;
+    /* If the file has already been opened with a temp filename,
+       rename it. */
+    if (dbg_fp && dbg_fp != stdout && dbg_fp != stderr)
+    {
+        char filename[MAXPATHLEN] = "";
+        
+        MPIU_DBG_Get_filename(filename, MAXPATHLEN);
+        ret = rename(temp_filename, filename);
+        if (ret){
+            /* Retry renaming file after closing it */
+            fclose(dbg_fp);
+            ret = rename(temp_filename, filename);
+            if(ret){
+                MPIU_Error_printf("Could not rename temp log file to %s\n", filename );
+            }
+            else{
+                dbg_fp = fopen(filename, "a+");
+                set_fp(dbg_fp);
+                if(dbg_fp == NULL){
+                    MPIU_Error_printf("Error re-opening log file, %s\n", filename);
+                }
+            }
+        }
     }
 
-    mpiu_dbg_initialized = 2;
-    return 0;
+    mpiu_dbg_initialized = MPIU_DBG_INITIALIZED;
+    return MPI_SUCCESS;
 }
 
 /* Print the usage statement to stderr */
@@ -710,13 +817,83 @@ Environment variables\n\
 
     return 0;
 }
-#ifndef MAXPATHLEN
-#define MAXPATHLEN 1024
+
+#if defined (HAVE_MKSTEMP) && defined (HAVE_FDOPEN)
+/* creates a temporary file in the same directory the
+   user specified for the log file */
+#undef FUNCNAME
+#define FUNCNAME MPIU_DBG_Open_temp_file
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int MPIU_DBG_Open_temp_file(FILE **dbg_fp)
+{
+    int mpi_errno = MPI_SUCCESS;
+    const char temp_pattern[] = "templogXXXXXX";
+    int fd;
+    char *basename;
+    int ret;
+    
+    ret = MPIU_Strncpy(temp_filename, filePattern, MAXPATHLEN);
+    MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "logfile path too long");
+
+    MPIU_Basename(temp_filename, &basename);
+
+    /* make sure there's enough room in temp_filename to store temp_pattern */
+    MPIU_ERR_CHKANDJUMP1(basename - temp_filename > MAXPATHLEN - sizeof(temp_pattern), mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", "logfile path too long");
+
+    MPIU_Strncpy(basename, temp_pattern, sizeof(temp_pattern));
+    
+    fd = mkstemp(temp_filename);
+    MPIU_ERR_CHKANDJUMP1(fd == -1, mpi_errno, MPI_ERR_OTHER, "**mkstemp", "**mkstemp %s", strerror(errno));
+
+    *dbg_fp = fdopen(fd, "a+");
+    MPIU_ERR_CHKANDJUMP1(*dbg_fp == NULL, mpi_errno, MPI_ERR_OTHER, "**fdopen", "**fdopen %s", strerror(errno));
+    
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    MPIU_Error_printf( "Could not open log file %s\n", temp_filename );
+    goto fn_exit;
+}
+#else
+/* creates a temporary file in some directory, which may not be where
+   the user wants the log file.  When the file is renamed later, it
+   may require a copy.
+
+   Note that this is not safe: By the time we call fopen(), another
+   file with the same name may exist.  That file would get clobbered.
+*/
+#undef FUNCNAME
+#define FUNCNAME MPIU_DBG_Open_temp_file
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int MPIU_DBG_Open_temp_file(FILE **dbg_fp)
+{
+    int mpi_errno = MPI_SUCCESS;
+    const char temp_pattern[] = "templogXXXXXX";
+    int fd;
+    char *basename;
+    int ret;
+    char *cret;
+
+    cret = tmpnam(temp_filename);
+    MPIU_ERR_CHKANDJUMP1(cret == NULL, mpi_errno, MPI_ERR_OTHER, "**tmpnam", "**tmpnam %s", strerror(errno));
+
+    *dbg_fp = fopen(temp_filename, "w");
+    MPIU_ERR_CHKANDJUMP1(*dbg_fp == NULL, mpi_errno, MPI_ERR_OTHER, "**fopen", "**fopen %s", strerror(errno));    
+    
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    MPIU_Error_printf( "Could not open log file %s\n", temp_filename );
+    goto fn_exit;
+}
+
 #endif
 
 /* This routine can make no MPI calls, since it may be logging those
    calls. */
-static int MPIU_DBG_OpenFile( void )
+static int MPIU_DBG_Get_filename(char *filename, int len)
 {
     int withinMworld = 0,         /* True if within an @W...@ */
 	withinMthread = 0;        /* True if within an @T...@ */
@@ -729,6 +906,8 @@ static int MPIU_DBG_OpenFile( void )
     int nThread = 1;
 #endif
     static char worldNumAsChar[10] = "0";
+    char *pDest;
+    const char *p;
 
     /* FIXME: This is a hack to handle the common case of two worlds */
     if (MPIR_Process.comm_parent != NULL) {
@@ -736,115 +915,144 @@ static int MPIU_DBG_OpenFile( void )
 	worldNumAsChar[0] = '1';
 	worldNumAsChar[1] = '\0';
     }
-	
+
+    p     = filePattern;
+    pDest = filename;
+    *filename = 0;
+    while (*p && (pDest-filename) < len-1) {
+        /* There are two special cases that allow text to
+           be optionally included.  Those patterns are
+           @T...@ (only if multi-threaded) and
+           @W...@ (only if more than one MPI_COMM_WORLD) 
+           UNIMPLEMENTED/UNTESTED */
+        if (*p == '@') {
+            /* Escaped @? */
+            if (p[1] == '@') {
+                *pDest++ = *++p;
+                continue;
+            }
+            /* If within an @...@, terminate it */
+            if (withinMworld) {
+                withinMworld = 0;
+                p++;
+            }
+            else if (withinMthread) {
+                withinMthread = 0;
+                p++;
+            }
+            else {
+                /* Look for command */
+                p++;
+                if (*p == 'W') {
+                    p++;
+                    withinMworld = 1;
+                }
+                else if (*p == 'T') {
+                    p++;
+                    withinMthread = 1;
+                }
+                else {
+                    /* Unrecognized char */
+                    *pDest++ = *p++;
+                }
+            }
+        }
+        else if ( (withinMworld && nWorld == 1) ||
+                  (withinMthread && nThread == 1) ) {
+            /* Simply skip this character since we're not showing
+               this string */
+            p++;
+        }
+        else if (*p == '%') {
+            p++;
+            if (*p == 'd') {
+                char rankAsChar[20];
+                MPIU_Snprintf( rankAsChar, sizeof(rankAsChar), "%d", 
+                               worldRank );
+                *pDest = 0;
+                MPIU_Strnapp( filename, rankAsChar, len );
+                pDest += strlen(rankAsChar);
+            }
+            else if (*p == 't') {
+#ifdef MPICH_IS_THREADED
+                char threadIDAsChar[20];
+                MPE_Thread_id_t tid;
+                MPE_Thread_self(&tid);
+                threadID = (int)tid;
+
+                MPIU_Snprintf( threadIDAsChar, sizeof(threadIDAsChar), 
+                               "%d", threadID );
+                *pDest = 0;
+                MPIU_Strnapp( filename, threadIDAsChar, len );
+                pDest += strlen(threadIDAsChar);
+#else
+                *pDest++ = '0';
+#endif /* MPICH_IS_THREADED */
+            }
+            else if (*p == 'w') {
+                /* FIXME: Get world number */
+                /* *pDest++ = '0'; */
+                *pDest = 0;
+                MPIU_Strnapp( filename, worldNumAsChar, len );
+                pDest += strlen(worldNumAsChar);
+            }
+            else if (*p == 'p') {
+                /* Appends the pid of the proceess to the file name. */
+                char pidAsChar[20];
+#if defined(HAVE_GETPID)
+                pid_t pid = getpid();
+#else
+                int pid = -1;
+#endif /* HAVE_GETPID */
+                MPIU_Snprintf( pidAsChar, sizeof(pidAsChar), "%d", (int)pid );
+                *pDest = 0;
+                MPIU_Strnapp( filename, pidAsChar, len );
+                pDest += strlen(pidAsChar);
+            }
+            else {
+                *pDest++ = '%';
+                *pDest++ = *p;
+            }
+            p++;
+        }
+        else {
+            *pDest++ = *p++;
+        }
+    }
+    *pDest = 0;
+    
+    return 0;
+}
+
+/* This routine can make no MPI calls, since it may be logging those
+   calls. */
+static int MPIU_DBG_OpenFile(FILE **dbg_fp)
+{
     if (!filePattern || *filePattern == 0 ||
 	strcmp(filePattern, "-stdout-" ) == 0) {
-	filestate   = MPIU_DBG_OPEN;
-	MPIU_DBG_fp = stdout;
+	*dbg_fp = stdout;
     }
     else if (strcmp( filePattern, "-stderr-" ) == 0) {
-	filestate   = MPIU_DBG_OPEN;
-	MPIU_DBG_fp = stderr;
+	*dbg_fp = stderr;
     }
     else {
-	char filename[MAXPATHLEN], *pDest, *p;
-	p     = filePattern;
-	pDest = filename;
-	*filename = 0;
-	while (*p && (pDest-filename) < MAXPATHLEN) {
-	    /* There are two special cases that allow text to
-	       be optionally included.  Those patterns are
-	       @T...@ (only if multi-threaded) and
-	       @W...@ (only if more than one MPI_COMM_WORLD) 
-	       UNIMPLEMENTED/UNTESTED */
-	    if (*p == '@') {
-		/* Escaped @? */
-		if (p[1] == '@') {
-		    *pDest++ = *++p;
-		    continue;
-		}
-		/* If within an @...@, terminate it */
-		if (withinMworld) {
-		    withinMworld = 0;
-		    p++;
-		}
-		else if (withinMthread) {
-		    withinMthread = 0;
-		    p++;
-		}
-		else {
-		    /* Look for command */
-		    p++;
-		    if (*p == 'W') {
-			p++;
-			withinMworld = 1;
-		    }
-		    else if (*p == 'T') {
-			p++;
-			withinMthread = 1;
-		    }
-		    else {
-			/* Unrecognized char */
-			*pDest++ = *p++;
-		    }
-		}
-	    }
-	    else if ( (withinMworld && nWorld == 1) ||
-		      (withinMthread && nThread == 1) ) {
-		/* Simply skip this character since we're not showing
-		   this string */
-		p++;
-	    }
-	    else if (*p == '%') {
-		p++;
-		if (*p == 'd') {
-		    char rankAsChar[20];
-		    MPIU_Snprintf( rankAsChar, sizeof(rankAsChar), "%d", 
-				   worldRank );
-		    *pDest = 0;
-		    MPIU_Strnapp( filename, rankAsChar, MAXPATHLEN );
-		    pDest += strlen(rankAsChar);
-		}
-		else if (*p == 't') {
-#ifdef MPICH_IS_THREADED
-		    char threadIDAsChar[20];
-		    MPE_Thread_id_t tid;
-		    MPE_Thread_self(&tid);
-		    threadID = (int)tid;
+	char filename[MAXPATHLEN];
 
-		    MPIU_Snprintf( threadIDAsChar, sizeof(threadIDAsChar), 
-				   "%d", threadID );
-		    *pDest = 0;
-		    MPIU_Strnapp( filename, threadIDAsChar, MAXPATHLEN );
-		    pDest += strlen(threadIDAsChar);
-#else
-		    *pDest++ = '0';
-#endif
-		}
-		else if (*p == 'w') {
-		    /* FIXME: Get world number */
-		    /* *pDest++ = '0'; */
-		    *pDest = 0;
-		    MPIU_Strnapp( filename, worldNumAsChar, MAXPATHLEN );
-		    pDest += strlen(worldNumAsChar);
-		}
-		else {
-		    *pDest++ = '%';
-		    *pDest++ = *p;
-		}
-		p++;
-	    }
-	    else {
-		*pDest++ = *p++;
-	    }
-	}
-	*pDest = 0;
-	if (worldRank == -1) filestate = MPIU_DBG_PRERANK;
-	else                 filestate = MPIU_DBG_OPEN;
-	MPIU_DBG_fp = fopen( filename, "w" );
-	if (!MPIU_DBG_fp) {
-	    MPIU_Error_printf( "Could not open log file %s\n", filename );
-	}
+        /* if we're not at MPIU_DBG_INITIALIZED, we don't know our
+           rank yet, so we create a temp file, to be renamed later */
+        if (mpiu_dbg_initialized != MPIU_DBG_INITIALIZED) 
+        {
+            MPIU_DBG_Open_temp_file(dbg_fp);
+        }
+        else 
+        {
+            MPIU_DBG_Get_filename(filename, MAXPATHLEN);
+        
+            *dbg_fp = fopen( filename, "w" );
+            if (!*dbg_fp) {
+                MPIU_Error_printf( "Could not open log file %s\n", filename );
+            }
+        }
     }
     return 0;
 }

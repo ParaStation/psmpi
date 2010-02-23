@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_GET_TYPE_EXTENT( MPI_Fint *, MPI_Fint *, MPI_FAint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_type_extent__( MPI_Fint *, MPI_Fint *, MPI_FAint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_type_extent( MPI_Fint *, MPI_Fint *, MPI_FAint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_type_extent_( MPI_Fint *, MPI_Fint *, MPI_FAint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_type_extent_( MPI_Fint *, MPI_Fint *, MPI_FAint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_FILE_GET_TYPE_EXTENT = PMPI_FILE_GET_TYPE_EXTENT
+#pragma weak mpi_file_get_type_extent__ = PMPI_FILE_GET_TYPE_EXTENT
+#pragma weak mpi_file_get_type_extent_ = PMPI_FILE_GET_TYPE_EXTENT
+#pragma weak mpi_file_get_type_extent = PMPI_FILE_GET_TYPE_EXTENT
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_FILE_GET_TYPE_EXTENT = pmpi_file_get_type_extent__
 #pragma weak mpi_file_get_type_extent__ = pmpi_file_get_type_extent__
 #pragma weak mpi_file_get_type_extent_ = pmpi_file_get_type_extent__
 #pragma weak mpi_file_get_type_extent = pmpi_file_get_type_extent__
-#pragma weak pmpi_file_get_type_extent_ = pmpi_file_get_type_extent__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_FILE_GET_TYPE_EXTENT = pmpi_file_get_type_extent_
+#pragma weak mpi_file_get_type_extent__ = pmpi_file_get_type_extent_
+#pragma weak mpi_file_get_type_extent_ = pmpi_file_get_type_extent_
+#pragma weak mpi_file_get_type_extent = pmpi_file_get_type_extent_
+#else
+#pragma weak MPI_FILE_GET_TYPE_EXTENT = pmpi_file_get_type_extent
+#pragma weak mpi_file_get_type_extent__ = pmpi_file_get_type_extent
+#pragma weak mpi_file_get_type_extent_ = pmpi_file_get_type_extent
+#pragma weak mpi_file_get_type_extent = pmpi_file_get_type_extent
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_type_extent_( MPI_Fint *, MPI_F
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_GET_TYPE_EXTENT( MPI_Fint *, MPI_Fint *, MPI_FAint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_type_extent__( MPI_Fint *, MPI_Fint *, MPI_FAint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_type_extent( MPI_Fint *, MPI_Fint *, MPI_FAint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_type_extent_( MPI_Fint *, MPI_Fint *, MPI_FAint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_file_get_type_extent__ = MPI_FILE_GET_TYPE_EXTENT
+#pragma weak mpi_file_get_type_extent_ = MPI_FILE_GET_TYPE_EXTENT
+#pragma weak mpi_file_get_type_extent = MPI_FILE_GET_TYPE_EXTENT
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_FILE_GET_TYPE_EXTENT = mpi_file_get_type_extent__
 #pragma weak mpi_file_get_type_extent_ = mpi_file_get_type_extent__
 #pragma weak mpi_file_get_type_extent = mpi_file_get_type_extent__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_FILE_GET_TYPE_EXTENT = mpi_file_get_type_extent_
+#pragma weak mpi_file_get_type_extent__ = mpi_file_get_type_extent_
+#pragma weak mpi_file_get_type_extent = mpi_file_get_type_extent_
+#else
+#pragma weak MPI_FILE_GET_TYPE_EXTENT = mpi_file_get_type_extent
+#pragma weak mpi_file_get_type_extent__ = mpi_file_get_type_extent
+#pragma weak mpi_file_get_type_extent_ = mpi_file_get_type_extent
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_FILE_GET_TYPE_EXTENT( MPI_Fint *, MPI_Fint *, MPI_FAint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_type_extent__( MPI_Fint *, MPI_Fint *, MPI_FAint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_type_extent_( MPI_Fint *, MPI_Fint *, MPI_FAint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_type_extent( MPI_Fint *, MPI_Fint *, MPI_FAint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_file_get_type_extent__ = PMPI_FILE_GET_TYPE_EXTENT
+#pragma weak pmpi_file_get_type_extent_ = PMPI_FILE_GET_TYPE_EXTENT
+#pragma weak pmpi_file_get_type_extent = PMPI_FILE_GET_TYPE_EXTENT
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_FILE_GET_TYPE_EXTENT = pmpi_file_get_type_extent__
+#pragma weak pmpi_file_get_type_extent_ = pmpi_file_get_type_extent__
+#pragma weak pmpi_file_get_type_extent = pmpi_file_get_type_extent__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_FILE_GET_TYPE_EXTENT = pmpi_file_get_type_extent_
+#pragma weak pmpi_file_get_type_extent__ = pmpi_file_get_type_extent_
+#pragma weak pmpi_file_get_type_extent = pmpi_file_get_type_extent_
+#else
+#pragma weak PMPI_FILE_GET_TYPE_EXTENT = pmpi_file_get_type_extent
+#pragma weak pmpi_file_get_type_extent__ = pmpi_file_get_type_extent
+#pragma weak pmpi_file_get_type_extent_ = pmpi_file_get_type_extent
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_file_get_type_extent_ PMPI_FILE_GET_TYPE_EXTENT
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_type_extent_( MPI_Fint *, MPI_F
 #define mpi_file_get_type_extent_ pmpi_file_get_type_extent
 #else
 #define mpi_file_get_type_extent_ pmpi_file_get_type_extent_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

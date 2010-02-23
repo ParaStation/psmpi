@@ -77,7 +77,7 @@
 
        call mpi_comm_free( comm, ierr )
 !
-! Check error strings while here here...
+! Check error strings while here...
        call mpi_error_string( newerrclass, errstring, rlen, ierr )
        if (errstring(1:rlen) .ne. "New Class") then
           errs = errs + 1

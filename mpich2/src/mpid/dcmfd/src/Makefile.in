@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
 AR              = @AR@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
@@ -78,7 +77,7 @@ all-redirect:
 	@(cd coll && ${MAKE} all )
 all-local: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
-	    ${MAKE} .libstamp1 ; \
+	    ${MAKE} .libstamp1 || exit 1; \
 	fi
 
 .libstamp0 ../../../../lib/lib${MPILIBNAME}.a: 
@@ -88,7 +87,12 @@ all-local: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a
 	  echo ${AR} cr ../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../../lib/lib${MPILIBNAME}.a $?
-	${RANLIB} ../../../../lib/lib${MPILIBNAME}.a
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
+	else \
+	  echo ${RANLIB} ../../../../lib/lib${MPILIBNAME}.a ; \
+	fi
+	@${RANLIB} ../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
 .libstamp1 ../../../../lib/lib${MPILIBNAME}.la: 
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \

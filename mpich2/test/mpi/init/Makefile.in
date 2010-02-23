@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -18,7 +18,7 @@ CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 LDFLAGS     =  @LDFLAGS@ ../util/mtest.o
@@ -65,8 +65,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
-	-@rm -f *.o ${srcdir}/*.o exitst3 timeout exitst2 version finalized exitst1 initstat
-	-@rm -f exitst3.exe timeout.exe exitst2.exe version.exe finalized.exe exitst1.exe initstat.exe
+	-@rm -f *.o ${srcdir}/*.o exitst3 timeout exitst2 version attrself finalized exitst1 initstat
+	-@rm -f exitst3.exe timeout.exe exitst2.exe version.exe attrself.exe finalized.exe exitst1.exe initstat.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -84,7 +84,8 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: exitst1 exitst2 exitst3 initstat version timeout finalized
+all-redirect: attrself exitst1 exitst2 exitst3 initstat version timeout\
+	 finalized
 
 coverage: 
 exitst3: exitst3.o   @MPILIBLOC@ ../util/mtest.o
@@ -95,6 +96,8 @@ exitst2: exitst2.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o exitst2 exitst2.o  ${LIBS}
 version: version.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o version version.o  ${LIBS}
+attrself: attrself.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o attrself attrself.o  ${LIBS}
 finalized: finalized.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o finalized finalized.o  ${LIBS}
 exitst1: exitst1.o   @MPILIBLOC@ ../util/mtest.o
@@ -109,13 +112,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  exitst1.c exitst2.c exitst3.c initstat.c version.c \
-	timeout.c finalized.c 
+SOURCES         =  attrself.c exitst1.c exitst2.c exitst3.c initstat.c \
+	version.c timeout.c finalized.c 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)

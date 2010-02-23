@@ -194,7 +194,7 @@ int MPIR_Err_set_msg( int code, const char *msg_string )
 
   This routine should be run within a SINGLE_CS in the multithreaded case.
 */
-int MPIR_Err_add_class()
+int MPIR_Err_add_class(void)
 {
     int new_class;
 
@@ -306,7 +306,7 @@ const char *MPIR_Err_get_dynerr_string( int code )
 }
 
 
-static int MPIR_Dynerrcodes_finalize( void *p )
+static int MPIR_Dynerrcodes_finalize( void *p ATTRIBUTE((unused)) )
 {
     int i;
 

@@ -19,23 +19,23 @@ int MPI_Pack_external(char *datarep,
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>datarep </B><DD>data representation (string)  
+<DT><B>datarep </B><DD>data representation (string)
 
-<DT><B>inbuf </B><DD>input buffer start (choice)  
+<DT><B>inbuf </B><DD>input buffer start (choice)
 
-<DT><B>incount </B><DD>number of input data items (integer)  
+<DT><B>incount </B><DD>number of input data items (integer)
 
-<DT><B>datatype </B><DD>datatype of each input data item (handle)  
+<DT><B>datatype </B><DD>datatype of each input data item (handle)
 
-<DT><B>outsize </B><DD>output buffer size, in bytes (integer)  
+<DT><B>outcount </B><DD>output buffer size, in bytes (address integer)
 </DL>
 <P>
 <H2>Output Parameter</H2>
-<DL><DT><B>outbuf </B> <DD> output buffer start (choice)  
+<DL><DT><B>outbuf </B> <DD> output buffer start (choice)
 </DL>
 <P>
 <H2>Input/Output Parameter</H2>
-<DL><DT><B>position </B> <DD> current position in buffer, in bytes (integer)  
+<DL><DT><B>position </B> <DD> current position in buffer, in bytes (address integer)
 </DL>
 <P>
 <H2>Thread and Interrupt Safety</H2>

@@ -6,7 +6,7 @@
 </HEAD>
 <BODY BGCOLOR="FFFFFF">
 <A NAME="MPI_Type_create_hindexed"><H1>MPI_Type_create_hindexed</H1></A>
-Create a datatype for an indexed datatype with  displacements in bytes 
+Create a datatype for an indexed datatype with displacements in bytes 
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Type_create_hindexed(int count,
@@ -17,18 +17,18 @@ int MPI_Type_create_hindexed(int count,
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>count </B><DD>number of blocks --- also number of entries in 
-displacements and blocklengths (integer) 
+<DT><B>count </B><DD>number of blocks --- also number of entries in
+displacements and blocklengths (integer)
 
-<DT><B>blocklengths </B><DD>number of elements in each block (array of nonnegative integers) 
+<DT><B>blocklengths </B><DD>number of elements in each block (array of nonnegative integers)
 
-<DT><B>displacements </B><DD>byte displacement of each block (array of integer) 
+<DT><B>displacements </B><DD>byte displacement of each block (array of address integers)
 
-<DT><B>oldtype </B><DD>old datatype (handle) 
+<DT><B>oldtype </B><DD>old datatype (handle)
 </DL>
 <P>
 <H2>Output Parameter</H2>
-<DL><DT><B>newtype </B> <DD> new datatype (handle) 
+<DL><DT><B>newtype </B> <DD> new datatype (handle)
 </DL>
 <P>
 <H2>Thread and Interrupt Safety</H2>

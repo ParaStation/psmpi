@@ -32,7 +32,7 @@
 
 // MPICH_DONT_INCLUDE_STDIO_H is another escape hatch for us, just like
 // MPICH_IGNORE_CXX_SEEK.  If we encounter a wacky environment or user in the
-// wild that doesn't want our workaround and/or the stdio.h header, then we can
+// wild that does not want our workaround and/or the stdio.h header, then we can
 // offer them a way out.
 #ifndef MPICH_DONT_INCLUDE_STDIO_H
 // ensure that we have SEEK_* defined
@@ -1391,6 +1391,7 @@ class Comm  {
     {
         MPIX_CALL( MPI_Scatter( (void*)v1, v2, (MPI_Datatype)(v3.the_real_datatype), v4, v5, (MPI_Datatype)(v6.the_real_datatype), v7, (MPI_Comm) the_real_comm ));
     }
+    virtual void Call_errhandler( int v2 ) const;
     virtual void Gather( const void* v1, int v2, const Datatype &v3, void* v4, int v5, const Datatype &v6, int v7 ) const
     {
         MPIX_CALL( MPI_Gather( (void*)v1, v2, (MPI_Datatype)(v3.the_real_datatype), v4, v5, (MPI_Datatype)(v6.the_real_datatype), v7, (MPI_Comm) the_real_comm ));
@@ -1440,7 +1441,6 @@ class Comm  {
     void *attr_in, void *attr_out, bool &flag ) { flag = 1; 
     *(void **)attr_out = attr_in; return 0;} 
     static Errhandler Create_errhandler( Errhandler_fn * );
-    virtual void Call_errhandler( int errcode ) const;
 
 };
 
@@ -1823,6 +1823,7 @@ class Win  {
         MPIX_CALL( MPI_Win_create( (void *)v1, v2, v3, (MPI_Info)(v4.the_real_info), (MPI_Comm)(v5.the_real_comm), &(v6.the_real_win) ));
         return v6;
     }
+    virtual void Call_errhandler( int v2 ) const;
     static void Free_keyval( int &v1 ) 
     {
         MPIX_CALL( MPI_Win_free_keyval( &v1 ));
@@ -1857,7 +1858,6 @@ class Win  {
     typedef void Errhandler_fn(Win &, int *, ... );
 
     static Errhandler Create_errhandler( Errhandler_fn * );
-    virtual void Call_errhandler( int errcode ) const;
 
     typedef int Copy_attr_function(const Win& oldwin, int win_keyval, void* extra_state, void* attribute_val_in, void* attribute_val_out, bool& flag); 
     typedef int Delete_attr_function(Win& win, int win_keyval, void* attribute_val, void* extra_state); 
@@ -2045,6 +2045,7 @@ class File  {
     {
         MPIX_CALL( MPI_File_get_view( (MPI_File) the_real_file, &v2, (MPI_Datatype *)&(v3.the_real_datatype), (MPI_Datatype *)&(v4.the_real_datatype), v5 ));
     }
+    virtual void Call_errhandler( int v2 ) const;
     virtual void Write_all_begin( const void * v2, int v3, const Datatype &v4 ) 
     {
         MPIX_CALL( MPI_File_write_all_begin( (MPI_File) the_real_file, (void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype) ));
@@ -2235,7 +2236,6 @@ class File  {
     typedef void Errhandler_fn(File &, int *, ... );
 
     static Errhandler Create_errhandler( Errhandler_fn * );
-    virtual void Call_errhandler( int errcode ) const;
 
 #endif
 };

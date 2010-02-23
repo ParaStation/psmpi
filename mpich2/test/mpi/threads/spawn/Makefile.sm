@@ -7,12 +7,13 @@ smvar_do_sharedlibs = 0
 EXTRA_PROGRAMS       = 
 
 multispawn_SOURCES  = multispawn.c
+taskmaster_SOURCES  = taskmaster.c
 
 ../../util/mtest.o:
 	(cd ../../util && $(MAKE) mtest.o)
 
 # A special testing target to simplify running just the thread spawn tests
 testing:
-	../runtests -srcdir=$(srcdir) -tests=testlist \
+	../../runtests -srcdir=$(srcdir) -tests=testlist \
 		   -mpiexec=$(bindir)/mpiexec \
 		   -xmlfile=summary.xml

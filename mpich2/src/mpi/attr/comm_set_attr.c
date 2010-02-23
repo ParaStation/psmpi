@@ -24,57 +24,22 @@
 #undef MPI_Comm_set_attr
 #define MPI_Comm_set_attr PMPI_Comm_set_attr
 
-#endif
-
 #undef FUNCNAME
-#define FUNCNAME MPI_Comm_set_attr
-
-/*@
-   MPI_Comm_set_attr - Stores attribute value associated with a key
-
-Input Parameters:
-+ comm - communicator to which attribute will be attached (handle) 
-. keyval - key value, as returned by  'MPI_Comm_create_keyval' (integer) 
-- attribute_val - attribute value 
-
-Notes:
-Values of the permanent attributes 'MPI_TAG_UB', 'MPI_HOST', 'MPI_IO', 
-'MPI_WTIME_IS_GLOBAL', 'MPI_UNIVERSE_SIZE', 'MPI_LASTUSEDCODE', and 
-'MPI_APPNUM' may not be changed. 
-
-The type of the attribute value depends on whether C, C++, or Fortran
-is being used. 
-In C and C++, an attribute value is a pointer ('void *'); in Fortran, it is an 
-address-sized integer.
-
-If an attribute is already present, the delete function (specified when the
-corresponding keyval was created) will be called.
-
-.N ThreadSafe
-
-.N Fortran
-
-.N Errors
-.N MPI_SUCCESS
-.N MPI_ERR_COMM
-.N MPI_ERR_KEYVAL
-.N MPI_ERR_PERM_KEY
-
-.seealso MPI_Comm_create_keyval, MPI_Comm_delete_attr
-@*/
-int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
+#define FUNCNAME MPIR_CommSetAttr
+int MPIR_CommSetAttr( MPI_Comm comm, int comm_keyval, void *attribute_val, 
+		      MPIR_AttrType attrType )
 {
-    static const char FCNAME[] = "MPI_Comm_set_attr";
+    static const char FCNAME[] = "MPIR_CommSetAttr";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Keyval *keyval_ptr = NULL;
     MPID_Attribute *p, **old_p;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SET_ATTR);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPIR_COMM_SET_ATTR);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_SINGLE_CS_ENTER("attr");
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_SET_ATTR);
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPIR_COMM_SET_ATTR);
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -115,9 +80,10 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
     /* Look for attribute.  They are ordered by keyval handle.  This uses 
        a simple linear list algorithm because few applications use more than a 
        handful of attributes */
-    
+
+    /* printf( "Setting attr val to %x\n", attribute_val ); */
     old_p = &comm_ptr->attributes;
-    p = comm_ptr->attributes;
+    p     = comm_ptr->attributes;
     while (p) {
 	if (p->keyval->handle == keyval_ptr->handle) {
 	    /* If found, call the delete function before replacing the 
@@ -126,36 +92,42 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	    if (mpi_errno) {
 		goto fn_fail;
 	    }
-	    p->value = attribute_val;
+	    p->attrType = attrType;
+	    p->value    = attribute_val;
+	    /* printf( "Updating attr at %x\n", &p->value ); */
 	    /* Does not change the reference count on the keyval */
 	    break;
 	}
 	else if (p->keyval->handle > keyval_ptr->handle) {
-	    MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
+	    MPID_Attribute *new_p = MPID_Attr_alloc();
 	    MPIU_ERR_CHKANDJUMP(!new_p,mpi_errno,MPI_ERR_OTHER,"**nomem");
 	    new_p->keyval	 = keyval_ptr;
+	    new_p->attrType      = attrType;
 	    new_p->pre_sentinal	 = 0;
 	    new_p->value	 = attribute_val;
 	    new_p->post_sentinal = 0;
 	    new_p->next		 = p->next;
 	    MPIR_Keyval_add_ref( keyval_ptr );
 	    p->next		 = new_p;
+	    /* printf( "Adding attr at %x\n", &p->value ); */
 	    break;
 	}
 	old_p = &p->next;
 	p = p->next;
     }
     if (!p) {
-	MPID_Attribute *new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc( &MPID_Attr_mem );
+	MPID_Attribute *new_p = MPID_Attr_alloc();
 	MPIU_ERR_CHKANDJUMP(!new_p,mpi_errno,MPI_ERR_OTHER,"**nomem");
 	/* Did not find in list.  Add at end */
 	new_p->keyval	     = keyval_ptr;
+	new_p->attrType      = attrType;
 	new_p->pre_sentinal  = 0;
 	new_p->value	     = attribute_val;
 	new_p->post_sentinal = 0;
 	new_p->next	     = 0;
 	MPIR_Keyval_add_ref( keyval_ptr );
 	*old_p		     = new_p;
+	/* printf( "Creating attr at %x\n", &new_p->value ); */
     }
     
     /* Here is where we could add a hook for the device to detect attribute
@@ -166,8 +138,8 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
-    MPIU_THREAD_SINGLE_CS_EXIT("attr");
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPIR_COMM_SET_ATTR);
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
   fn_fail:
@@ -180,6 +152,72 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
+}
+#endif /* MPICH_MPI_FROM_PMPI */
+
+#undef FUNCNAME
+#define FUNCNAME MPI_Comm_set_attr
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+/*@
+   MPI_Comm_set_attr - Stores attribute value associated with a key
+
+Input Parameters:
++ comm - communicator to which attribute will be attached (handle) 
+. keyval - key value, as returned by  'MPI_Comm_create_keyval' (integer) 
+- attribute_val - attribute value 
+
+Notes:
+Values of the permanent attributes 'MPI_TAG_UB', 'MPI_HOST', 'MPI_IO', 
+'MPI_WTIME_IS_GLOBAL', 'MPI_UNIVERSE_SIZE', 'MPI_LASTUSEDCODE', and 
+'MPI_APPNUM' may not be changed. 
+
+The type of the attribute value depends on whether C, C++, or Fortran
+is being used. 
+In C and C++, an attribute value is a pointer ('void *'); in Fortran, it is an 
+address-sized integer.
+
+If an attribute is already present, the delete function (specified when the
+corresponding keyval was created) will be called.
+
+.N ThreadSafe
+
+.N Fortran
+
+.N Errors
+.N MPI_SUCCESS
+.N MPI_ERR_COMM
+.N MPI_ERR_KEYVAL
+.N MPI_ERR_PERM_KEY
+
+.seealso MPI_Comm_create_keyval, MPI_Comm_delete_attr
+@*/
+int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SET_ATTR);
+
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_SET_ATTR);
+    /* All error checking and thread critical sections are in the 
+       MPIR_CommSetAttr routine */
+    mpi_errno = MPIR_CommSetAttr( comm, comm_keyval, attribute_val, 
+				  MPIR_ATTR_PTR );
+    if (mpi_errno) goto fn_fail;
+ fn_exit:
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ATTR);
+    return mpi_errno;
+
+  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
+#   ifdef HAVE_ERROR_CHECKING
+    {
+	mpi_errno = MPIR_Err_create_code(
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_set_attr",
+	    "**mpi_comm_set_attr %C %d %p", comm, comm_keyval, attribute_val);
+    }
+#   endif
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

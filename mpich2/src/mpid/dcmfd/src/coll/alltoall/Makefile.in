@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
 AR              = @AR@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
@@ -19,7 +18,7 @@ CPPFLAGS        = @CPPFLAGS@
 MAKE            = @MAKE@
 MPILIBNAME      = @MPILIBNAME@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 LIBTOOL         = @LIBTOOL@
 CC_SHL          = @CC_SHL@
@@ -94,19 +93,26 @@ all-redirect:
 	${MAKE} all-local
 all-local: .libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
-	    ${MAKE} .libstamp1 ; \
+	    ${MAKE} .libstamp1 || exit 1; \
 	fi
 
-.libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a: mpido_alltoall.o 
+.libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a: mpido_alltoall.o \
+	star_alltoall.o alltoall_algorithms.o 
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
 	  echo "  AR cr ../../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
 	  echo ${AR} cr ../../../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../../../../lib/lib${MPILIBNAME}.a $?
-	${RANLIB} ../../../../../../lib/lib${MPILIBNAME}.a
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
+	else \
+	  echo ${RANLIB} ../../../../../../lib/lib${MPILIBNAME}.a ; \
+	fi
+	@${RANLIB} ../../../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../../../../lib/lib${MPILIBNAME}.la: mpido_alltoall.lo 
+.libstamp1 ../../../../../../lib/lib${MPILIBNAME}.la: mpido_alltoall.lo \
+	star_alltoall.lo alltoall_algorithms.lo 
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
 	  echo "  AR cr ../../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -115,7 +121,7 @@ all-local: .libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a
 	@${AR} cr ../../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 coverage: 
-	-@for file in mpido_alltoall.c ; do \
+	-@for file in mpido_alltoall.c star_alltoall.c alltoall_algorithms.c ; do \
 		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
 htmldoc:
@@ -132,17 +138,25 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 dependencies: $(DEPS_DIR)/timestamp
 $(DEPS_DIR)/mpido_alltoall.d: $(srcdir)/mpido_alltoall.c
 	$(MAKE_DEPEND_C)  $(srcdir)/mpido_alltoall.c >$(DEPS_DIR)/mpido_alltoall.d
-$(DEPS_DIR)/timestamp: mpido_alltoall.c Makefile
+$(DEPS_DIR)/star_alltoall.d: $(srcdir)/star_alltoall.c
+	$(MAKE_DEPEND_C)  $(srcdir)/star_alltoall.c >$(DEPS_DIR)/star_alltoall.d
+$(DEPS_DIR)/alltoall_algorithms.d: $(srcdir)/alltoall_algorithms.c
+	$(MAKE_DEPEND_C)  $(srcdir)/alltoall_algorithms.c >$(DEPS_DIR)/alltoall_algorithms.d
+$(DEPS_DIR)/timestamp: mpido_alltoall.c star_alltoall.c alltoall_algorithms.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
 	$(MAKE_DEPEND_C)  $(srcdir)/mpido_alltoall.c >$(DEPS_DIR)/mpido_alltoall.d
 	echo "include $(DEPS_DIR)/mpido_alltoall.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/star_alltoall.c >$(DEPS_DIR)/star_alltoall.d
+	echo "include $(DEPS_DIR)/star_alltoall.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/alltoall_algorithms.c >$(DEPS_DIR)/alltoall_algorithms.d
+	echo "include $(DEPS_DIR)/alltoall_algorithms.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
 include $(DEPS_DIR)/alldeps
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  mpido_alltoall.c
+SOURCES         =  mpido_alltoall.c star_alltoall.c alltoall_algorithms.c
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)

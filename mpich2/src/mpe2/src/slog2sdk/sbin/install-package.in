@@ -37,8 +37,8 @@ sysconfdir=@sysconfdir@
 datarootdir=@datarootdir@
 datadir=@datadir@
 docdir=@docdir@
-# Since autoconf < 2.60 does not set docdir,
-# check if it is set.  If not, set it accordingly.
+# Since autoconf < 2.60 does not set @docdir@ and @htmldir@,
+# If not set, docdir=@docdir@ remains, set them accordingly.
 if [ "$docdir" = "@docdir@" ] ; then
     docdir=${datadir}/doc/${PACKAGE}
 fi
@@ -386,8 +386,8 @@ if [ "$prefix_override" = 1 -o "$package_override" = 1 ] ; then
     datarootdir=@datarootdir@
     datadir=@datadir@
     docdir=@docdir@
-    # Since autoconf < 2.60 does not set docdir,
-    # check if it is set.  If not, set it accordingly.
+    # Since autoconf < 2.60 does not set @docdir@ and @htmldir@,
+    # If not set, docdir=@docdir@ remains, set them accordingly.
     if [ "$docdir" = "@docdir@" ] ; then
         docdir=${datadir}/doc/${PACKAGE}
     fi

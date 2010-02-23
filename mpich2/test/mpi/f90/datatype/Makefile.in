@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -57,8 +57,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o gaddressf90 typesubf90 structf typenamef90 createf90 typem2f90 sizeof packef90 indtype typesnamef90 typecntsf90
-	-@rm -f gaddressf90.exe typesubf90.exe structf.exe typenamef90.exe createf90.exe typem2f90.exe sizeof.exe packef90.exe indtype.exe typesnamef90.exe typecntsf90.exe
+	-@rm -f *.o ${srcdir}/*.o gaddressf90 typesubf90 structf typenamef90 createf90 typem2f90 sizeof packef90 indtype typesnamef90 allctypesf90 typecntsf90
+	-@rm -f gaddressf90.exe typesubf90.exe structf.exe typenamef90.exe createf90.exe typem2f90.exe sizeof.exe packef90.exe indtype.exe typesnamef90.exe allctypesf90.exe typecntsf90.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -77,7 +77,7 @@ remove-makefile:
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
 all-redirect: typenamef90 typesnamef90 typecntsf90 typesubf90 typem2f90\
-	 gaddressf90 packef90 structf indtype createf90 sizeof
+	 gaddressf90 packef90 allctypesf90 structf indtype createf90 sizeof
 
 coverage: 
 gaddressf90: gaddressf90.o   @MPILIBLOC@ ../util/mtestf90.o
@@ -104,6 +104,9 @@ indtype: indtype.o   @MPILIBLOC@ ../util/mtestf90.o
 typesnamef90: typesnamef90.o   @MPILIBLOC@ ../util/mtestf90.o
 	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o typesnamef90 typesnamef90.o  \
 	${LIBS} 
+allctypesf90: allctypesf90.o   @MPILIBLOC@ ../util/mtestf90.o
+	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o allctypesf90 allctypesf90.o  \
+	${LIBS} 
 typecntsf90: typecntsf90.o   @MPILIBLOC@ ../util/mtestf90.o
 	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o typecntsf90 typecntsf90.o  \
 	${LIBS} 
@@ -115,14 +118,9 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
 SOURCES         =  typenamef90.f90 typesnamef90.f90 typecntsf90.f90 \
-	typesubf90.f90 typem2f90.f90 gaddressf90.f90 packef90.f90 structf.f90 \
-	indtype.f90 createf90.f90 sizeof.f90 
+	typesubf90.f90 typem2f90.f90 gaddressf90.f90 packef90.f90 \
+	allctypesf90.f90 structf.f90 indtype.f90 createf90.f90 sizeof.f90 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
@@ -141,6 +139,7 @@ testing:
 		   	-xmlfile=summary.xml
 ../util/mtestf90.o: 
 	(cd ../util && $(MAKE) mtestf90.o)
+
 
 FORCE_TARGET:
 

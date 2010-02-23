@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_INCL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_group_incl__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_group_incl( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_group_incl_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_group_incl_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_GROUP_INCL = PMPI_GROUP_INCL
+#pragma weak mpi_group_incl__ = PMPI_GROUP_INCL
+#pragma weak mpi_group_incl_ = PMPI_GROUP_INCL
+#pragma weak mpi_group_incl = PMPI_GROUP_INCL
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_GROUP_INCL = pmpi_group_incl__
 #pragma weak mpi_group_incl__ = pmpi_group_incl__
 #pragma weak mpi_group_incl_ = pmpi_group_incl__
 #pragma weak mpi_group_incl = pmpi_group_incl__
-#pragma weak pmpi_group_incl_ = pmpi_group_incl__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_GROUP_INCL = pmpi_group_incl_
+#pragma weak mpi_group_incl__ = pmpi_group_incl_
+#pragma weak mpi_group_incl_ = pmpi_group_incl_
+#pragma weak mpi_group_incl = pmpi_group_incl_
+#else
+#pragma weak MPI_GROUP_INCL = pmpi_group_incl
+#pragma weak mpi_group_incl__ = pmpi_group_incl
+#pragma weak mpi_group_incl_ = pmpi_group_incl
+#pragma weak mpi_group_incl = pmpi_group_incl
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_group_incl_( MPI_Fint *, MPI_Fint *, MPI
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_INCL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_group_incl__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_group_incl( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_group_incl_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_group_incl__ = MPI_GROUP_INCL
+#pragma weak mpi_group_incl_ = MPI_GROUP_INCL
+#pragma weak mpi_group_incl = MPI_GROUP_INCL
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_GROUP_INCL = mpi_group_incl__
 #pragma weak mpi_group_incl_ = mpi_group_incl__
 #pragma weak mpi_group_incl = mpi_group_incl__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_GROUP_INCL = mpi_group_incl_
+#pragma weak mpi_group_incl__ = mpi_group_incl_
+#pragma weak mpi_group_incl = mpi_group_incl_
+#else
+#pragma weak MPI_GROUP_INCL = mpi_group_incl
+#pragma weak mpi_group_incl__ = mpi_group_incl
+#pragma weak mpi_group_incl_ = mpi_group_incl
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_GROUP_INCL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_incl__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_incl_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_incl( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_group_incl__ = PMPI_GROUP_INCL
+#pragma weak pmpi_group_incl_ = PMPI_GROUP_INCL
+#pragma weak pmpi_group_incl = PMPI_GROUP_INCL
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_GROUP_INCL = pmpi_group_incl__
+#pragma weak pmpi_group_incl_ = pmpi_group_incl__
+#pragma weak pmpi_group_incl = pmpi_group_incl__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_GROUP_INCL = pmpi_group_incl_
+#pragma weak pmpi_group_incl__ = pmpi_group_incl_
+#pragma weak pmpi_group_incl = pmpi_group_incl_
+#else
+#pragma weak PMPI_GROUP_INCL = pmpi_group_incl
+#pragma weak pmpi_group_incl__ = pmpi_group_incl
+#pragma weak pmpi_group_incl_ = pmpi_group_incl
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_group_incl_ PMPI_GROUP_INCL
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_group_incl_( MPI_Fint *, MPI_Fint *, MPI
 #define mpi_group_incl_ pmpi_group_incl
 #else
 #define mpi_group_incl_ pmpi_group_incl_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

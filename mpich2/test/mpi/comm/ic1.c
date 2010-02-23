@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id: ic1.c,v 1.2 2002/10/29 18:04:17 gropp Exp $
- *
+/*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -10,14 +9,15 @@
  */
 #include "mpi.h"
 #include <stdio.h>
+#include "mpitest.h"
 
 int main( int argc, char *argv[] )
 {
     MPI_Comm intercomm;
-    int      remote_rank, rank, size, errs = 0, toterr;
+    int      remote_rank, rank, size, errs = 0;
     volatile int trigger;
 
-    MPI_Init( &argc, &argv );
+    MTest_Init( &argc, &argv );
 
     trigger = 1;
 /*    while (trigger) ; */
@@ -56,16 +56,7 @@ int main( int argc, char *argv[] )
     /* The next test should create an intercomm with groups of different
        sizes FIXME */
 
-    MPI_Allreduce( &errs, &toterr, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD );
-    if (rank == 0) {
-	if (toterr == 0) {
-	    printf( " No Errors\n" );
-	}
-	else {
-	    printf (" Found %d errors\n", toterr );
-	}
-    }
-    
+    MTest_Finalize( errs );
     MPI_Finalize();
     
     return 0;

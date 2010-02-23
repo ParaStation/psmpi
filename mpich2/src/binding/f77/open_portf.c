@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_open_port__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_open_port( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_open_port_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_OPEN_PORT = PMPI_OPEN_PORT
+#pragma weak mpi_open_port__ = PMPI_OPEN_PORT
+#pragma weak mpi_open_port_ = PMPI_OPEN_PORT
+#pragma weak mpi_open_port = PMPI_OPEN_PORT
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_OPEN_PORT = pmpi_open_port__
 #pragma weak mpi_open_port__ = pmpi_open_port__
 #pragma weak mpi_open_port_ = pmpi_open_port__
 #pragma weak mpi_open_port = pmpi_open_port__
-#pragma weak pmpi_open_port_ = pmpi_open_port__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_OPEN_PORT = pmpi_open_port_
+#pragma weak mpi_open_port__ = pmpi_open_port_
+#pragma weak mpi_open_port_ = pmpi_open_port_
+#pragma weak mpi_open_port = pmpi_open_port_
+#else
+#pragma weak MPI_OPEN_PORT = pmpi_open_port
+#pragma weak mpi_open_port__ = pmpi_open_port
+#pragma weak mpi_open_port_ = pmpi_open_port
+#pragma weak mpi_open_port = pmpi_open_port
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_open_port_( MPI_Fint *, char * FORT_MIXE
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_open_port__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_open_port( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_open_port_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_open_port__ = MPI_OPEN_PORT
+#pragma weak mpi_open_port_ = MPI_OPEN_PORT
+#pragma weak mpi_open_port = MPI_OPEN_PORT
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_OPEN_PORT = mpi_open_port__
 #pragma weak mpi_open_port_ = mpi_open_port__
 #pragma weak mpi_open_port = mpi_open_port__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_OPEN_PORT = mpi_open_port_
+#pragma weak mpi_open_port__ = mpi_open_port_
+#pragma weak mpi_open_port = mpi_open_port_
+#else
+#pragma weak MPI_OPEN_PORT = mpi_open_port
+#pragma weak mpi_open_port__ = mpi_open_port
+#pragma weak mpi_open_port_ = mpi_open_port
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_open_port__ = PMPI_OPEN_PORT
+#pragma weak pmpi_open_port_ = PMPI_OPEN_PORT
+#pragma weak pmpi_open_port = PMPI_OPEN_PORT
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_OPEN_PORT = pmpi_open_port__
+#pragma weak pmpi_open_port_ = pmpi_open_port__
+#pragma weak pmpi_open_port = pmpi_open_port__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_OPEN_PORT = pmpi_open_port_
+#pragma weak pmpi_open_port__ = pmpi_open_port_
+#pragma weak pmpi_open_port = pmpi_open_port_
+#else
+#pragma weak PMPI_OPEN_PORT = pmpi_open_port
+#pragma weak pmpi_open_port__ = pmpi_open_port
+#pragma weak pmpi_open_port_ = pmpi_open_port
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_open_port_ PMPI_OPEN_PORT
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_open_port_( MPI_Fint *, char * FORT_MIXE
 #define mpi_open_port_ pmpi_open_port
 #else
 #define mpi_open_port_ pmpi_open_port_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

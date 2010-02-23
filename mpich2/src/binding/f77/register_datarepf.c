@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_REGISTER_DATAREP( char * FORT_MIXED_LEN_DECL, MPI_Datarep_conversion_function*, MPI_Datarep_conversion_function*, MPI_Datarep_extent_function*, void*, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_register_datarep__( char * FORT_MIXED_LEN_DECL, MPI_Datarep_conversion_function*, MPI_Datarep_conversion_function*, MPI_Datarep_extent_function*, void*, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_register_datarep( char * FORT_MIXED_LEN_DECL, MPI_Datarep_conversion_function*, MPI_Datarep_conversion_function*, MPI_Datarep_extent_function*, void*, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_register_datarep_( char * FORT_MIXED_LEN_DECL, MPI_Datarep_conversion_function*, MPI_Datarep_conversion_function*, MPI_Datarep_extent_function*, void*, MPI_Fint * FORT_END_LEN_DECL );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_register_datarep_( char * FORT_MIXED_LEN_DECL, MPI_Datarep_conversion_function*, MPI_Datarep_conversion_function*, MPI_Datarep_extent_function*, void*, MPI_Fint * FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_REGISTER_DATAREP = PMPI_REGISTER_DATAREP
+#pragma weak mpi_register_datarep__ = PMPI_REGISTER_DATAREP
+#pragma weak mpi_register_datarep_ = PMPI_REGISTER_DATAREP
+#pragma weak mpi_register_datarep = PMPI_REGISTER_DATAREP
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_REGISTER_DATAREP = pmpi_register_datarep__
 #pragma weak mpi_register_datarep__ = pmpi_register_datarep__
 #pragma weak mpi_register_datarep_ = pmpi_register_datarep__
 #pragma weak mpi_register_datarep = pmpi_register_datarep__
-#pragma weak pmpi_register_datarep_ = pmpi_register_datarep__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_REGISTER_DATAREP = pmpi_register_datarep_
+#pragma weak mpi_register_datarep__ = pmpi_register_datarep_
+#pragma weak mpi_register_datarep_ = pmpi_register_datarep_
+#pragma weak mpi_register_datarep = pmpi_register_datarep_
+#else
+#pragma weak MPI_REGISTER_DATAREP = pmpi_register_datarep
+#pragma weak mpi_register_datarep__ = pmpi_register_datarep
+#pragma weak mpi_register_datarep_ = pmpi_register_datarep
+#pragma weak mpi_register_datarep = pmpi_register_datarep
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_register_datarep_( char * FORT_MIXED_LEN
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_REGISTER_DATAREP( char * FORT_MIXED_LEN_DECL, MPI_Datarep_conversion_function*, MPI_Datarep_conversion_function*, MPI_Datarep_extent_function*, void*, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_register_datarep__( char * FORT_MIXED_LEN_DECL, MPI_Datarep_conversion_function*, MPI_Datarep_conversion_function*, MPI_Datarep_extent_function*, void*, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_register_datarep( char * FORT_MIXED_LEN_DECL, MPI_Datarep_conversion_function*, MPI_Datarep_conversion_function*, MPI_Datarep_extent_function*, void*, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_register_datarep_( char * FORT_MIXED_LEN_DECL, MPI_Datarep_conversion_function*, MPI_Datarep_conversion_function*, MPI_Datarep_extent_function*, void*, MPI_Fint * FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_register_datarep__ = MPI_REGISTER_DATAREP
+#pragma weak mpi_register_datarep_ = MPI_REGISTER_DATAREP
+#pragma weak mpi_register_datarep = MPI_REGISTER_DATAREP
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_REGISTER_DATAREP = mpi_register_datarep__
 #pragma weak mpi_register_datarep_ = mpi_register_datarep__
 #pragma weak mpi_register_datarep = mpi_register_datarep__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_REGISTER_DATAREP = mpi_register_datarep_
+#pragma weak mpi_register_datarep__ = mpi_register_datarep_
+#pragma weak mpi_register_datarep = mpi_register_datarep_
+#else
+#pragma weak MPI_REGISTER_DATAREP = mpi_register_datarep
+#pragma weak mpi_register_datarep__ = mpi_register_datarep
+#pragma weak mpi_register_datarep_ = mpi_register_datarep
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_REGISTER_DATAREP( char * FORT_MIXED_LEN_DECL, MPI_Datarep_conversion_function*, MPI_Datarep_conversion_function*, MPI_Datarep_extent_function*, void*, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_register_datarep__( char * FORT_MIXED_LEN_DECL, MPI_Datarep_conversion_function*, MPI_Datarep_conversion_function*, MPI_Datarep_extent_function*, void*, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_register_datarep_( char * FORT_MIXED_LEN_DECL, MPI_Datarep_conversion_function*, MPI_Datarep_conversion_function*, MPI_Datarep_extent_function*, void*, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_register_datarep( char * FORT_MIXED_LEN_DECL, MPI_Datarep_conversion_function*, MPI_Datarep_conversion_function*, MPI_Datarep_extent_function*, void*, MPI_Fint * FORT_END_LEN_DECL );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_register_datarep__ = PMPI_REGISTER_DATAREP
+#pragma weak pmpi_register_datarep_ = PMPI_REGISTER_DATAREP
+#pragma weak pmpi_register_datarep = PMPI_REGISTER_DATAREP
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_REGISTER_DATAREP = pmpi_register_datarep__
+#pragma weak pmpi_register_datarep_ = pmpi_register_datarep__
+#pragma weak pmpi_register_datarep = pmpi_register_datarep__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_REGISTER_DATAREP = pmpi_register_datarep_
+#pragma weak pmpi_register_datarep__ = pmpi_register_datarep_
+#pragma weak pmpi_register_datarep = pmpi_register_datarep_
+#else
+#pragma weak PMPI_REGISTER_DATAREP = pmpi_register_datarep
+#pragma weak pmpi_register_datarep__ = pmpi_register_datarep
+#pragma weak pmpi_register_datarep_ = pmpi_register_datarep
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_register_datarep_ PMPI_REGISTER_DATAREP
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_register_datarep_( char * FORT_MIXED_LEN
 #define mpi_register_datarep_ pmpi_register_datarep
 #else
 #define mpi_register_datarep_ pmpi_register_datarep_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,
@@ -120,6 +187,25 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_register_datarep_( char * FORT_MIXED_LEN
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 
+    /* There is a dummy routine, mpi_conversion_fn_null, that is available 
+       for use as the conversion function for MPI_Register_datarep.  
+       Like the attribute null functions, we provide multiple weak versions
+       of this if possible */
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null_ ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr );
+extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null__ ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr );
+extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr );
+extern FORT_DLL_SPEC int FORT_CALL MPI_CONVERSION_FN_NULL ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr );
+/* */
+#ifndef MPICH_MPI_FROM_PMPI
+#pragma weak mpi_conversion_fn_null__ = mpi_conversion_fn_null_
+#pragma weak mpi_conversion_fn_null   = mpi_conversion_fn_null_
+#pragma weak MPI_CONVERSION_FN_NULL   = mpi_conversion_fn_null_
+#endif /* MPICH_MPI_FROM_PMPI */
+
+#else
+   /* No weak symbols, so simply rename the one version to match the 
+      Fortran naming convention */
 #ifdef F77_NAME_UPPER
 #define mpi_conversion_fn_null_ MPI_CONVERSION_FN_NULL
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -127,18 +213,21 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_register_datarep_( char * FORT_MIXED_LEN
 #elif !defined(F77_NAME_LOWER_USCORE)
 #define mpi_conversion_fn_null_ mpi_conversion_fn_null
 /* Else leave name alone */
-#endif
+#endif /* Test on name mapping */
 
 /* Add the prototype so the routine knows what this is */
 extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null_ ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr );
 
 
+#endif /* Test on use multiple weak symbols */
 #ifndef MPICH_MPI_FROM_PMPI
+
 /* This isn't a callable function */
 FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null_ ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr ) {
     return 0;
 }
 #endif
+
 FORT_DLL_SPEC void FORT_CALL mpi_register_datarep_ ( char *v1 FORT_MIXED_LEN(d1), MPI_Datarep_conversion_function*v2, MPI_Datarep_conversion_function*v3, MPI_Datarep_extent_function*v4, void*v5, MPI_Fint *ierr FORT_END_LEN(d1) ){
 #ifdef MPI_MODE_RDONLY
     char *p1;

@@ -4,7 +4,19 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpiimpl.h"
+#include "mpichconf.h"
+#include "mpimem.h"
+#include "mpibase.h"
+
+#ifdef HAVE_STRING_H
+#include <string.h>
+#endif
+
+#include <stdio.h>
+#ifdef HAVE_STDARG_H
+    #include <stdarg.h>
+#endif
+
 #if defined(USE_GETTEXT)
 #include <libintl.h>
 #endif

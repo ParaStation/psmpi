@@ -161,12 +161,6 @@ m4trace:configure.in:29: -1- m4_pattern_allow([^SET_CFLAGS$])
 m4trace:configure.in:29: -1- AC_SUBST([SET_MAKE])
 m4trace:configure.in:29: -1- AC_SUBST_TRACE([SET_MAKE])
 m4trace:configure.in:29: -1- m4_pattern_allow([^SET_MAKE$])
-m4trace:configure.in:39: -1- _m4_warn([obsolete], [The macro `AC_TRY_CPP' is obsolete.
-You should run autoupdate.], [/sandbox/chan/autoconf/autoconf-2.62/lib/autoconf/general.m4:2398: AC_TRY_CPP is expanded from...
-/sandbox/chan/autoconf/autoconf-2.62/lib/m4sugar/m4sh.m4:508: AS_IF is expanded from...
-/sandbox/chan/autoconf/autoconf-2.62/lib/autoconf/general.m4:1973: AC_CACHE_VAL is expanded from...
-../../../confdb/aclocal_bugfix.m4:98: AC_CHECK_HEADER is expanded from...
-configure.in:39: the top level])
 m4trace:configure.in:39: -1- AC_SUBST([CC])
 m4trace:configure.in:39: -1- AC_SUBST_TRACE([CC])
 m4trace:configure.in:39: -1- m4_pattern_allow([^CC$])
@@ -212,24 +206,34 @@ m4trace:configure.in:39: -1- m4_pattern_allow([^CPPFLAGS$])
 m4trace:configure.in:39: -1- AC_SUBST([CPP])
 m4trace:configure.in:39: -1- AC_SUBST_TRACE([CPP])
 m4trace:configure.in:39: -1- m4_pattern_allow([^CPP$])
-m4trace:configure.in:39: -1- _m4_warn([obsolete], [The macro `AC_FD_CC' is obsolete.
-You should run autoupdate.], [/sandbox/chan/autoconf/autoconf-2.62/lib/autoconf/general.m4:371: AC_FD_CC is expanded from...
-/sandbox/chan/autoconf/autoconf-2.62/lib/m4sugar/m4sh.m4:508: AS_IF is expanded from...
-/sandbox/chan/autoconf/autoconf-2.62/lib/autoconf/general.m4:1973: AC_CACHE_VAL is expanded from...
-../../../confdb/aclocal_bugfix.m4:98: AC_CHECK_HEADER is expanded from...
-configure.in:39: the top level])
-m4trace:configure.in:39: -1- _m4_warn([obsolete], [The macro `AC_FD_CC' is obsolete.
-You should run autoupdate.], [/sandbox/chan/autoconf/autoconf-2.62/lib/autoconf/general.m4:371: AC_FD_CC is expanded from...
-/sandbox/chan/autoconf/autoconf-2.62/lib/m4sugar/m4sh.m4:508: AS_IF is expanded from...
-/sandbox/chan/autoconf/autoconf-2.62/lib/autoconf/general.m4:1973: AC_CACHE_VAL is expanded from...
-../../../confdb/aclocal_bugfix.m4:98: AC_CHECK_HEADER is expanded from...
-configure.in:39: the top level])
-m4trace:configure.in:39: -1- _m4_warn([obsolete], [The macro `AC_FD_CC' is obsolete.
-You should run autoupdate.], [/sandbox/chan/autoconf/autoconf-2.62/lib/autoconf/general.m4:371: AC_FD_CC is expanded from...
-/sandbox/chan/autoconf/autoconf-2.62/lib/m4sugar/m4sh.m4:508: AS_IF is expanded from...
-/sandbox/chan/autoconf/autoconf-2.62/lib/autoconf/general.m4:1973: AC_CACHE_VAL is expanded from...
-../../../confdb/aclocal_bugfix.m4:98: AC_CHECK_HEADER is expanded from...
-configure.in:39: the top level])
+m4trace:configure.in:39: -1- AC_SUBST([GREP])
+m4trace:configure.in:39: -1- AC_SUBST_TRACE([GREP])
+m4trace:configure.in:39: -1- m4_pattern_allow([^GREP$])
+m4trace:configure.in:39: -1- AC_SUBST([EGREP])
+m4trace:configure.in:39: -1- AC_SUBST_TRACE([EGREP])
+m4trace:configure.in:39: -1- m4_pattern_allow([^EGREP$])
+m4trace:configure.in:39: -1- AC_DEFINE_TRACE_LITERAL([STDC_HEADERS])
+m4trace:configure.in:39: -1- m4_pattern_allow([^STDC_HEADERS$])
+m4trace:configure.in:39: -1- AH_OUTPUT([STDC_HEADERS], [/* Define to 1 if you have the ANSI C header files. */
+#undef STDC_HEADERS])
+m4trace:configure.in:39: -1- AH_OUTPUT([HAVE_SYS_TYPES_H], [/* Define to 1 if you have the <sys/types.h> header file. */
+#undef HAVE_SYS_TYPES_H])
+m4trace:configure.in:39: -1- AH_OUTPUT([HAVE_SYS_STAT_H], [/* Define to 1 if you have the <sys/stat.h> header file. */
+#undef HAVE_SYS_STAT_H])
+m4trace:configure.in:39: -1- AH_OUTPUT([HAVE_STDLIB_H], [/* Define to 1 if you have the <stdlib.h> header file. */
+#undef HAVE_STDLIB_H])
+m4trace:configure.in:39: -1- AH_OUTPUT([HAVE_STRING_H], [/* Define to 1 if you have the <string.h> header file. */
+#undef HAVE_STRING_H])
+m4trace:configure.in:39: -1- AH_OUTPUT([HAVE_MEMORY_H], [/* Define to 1 if you have the <memory.h> header file. */
+#undef HAVE_MEMORY_H])
+m4trace:configure.in:39: -1- AH_OUTPUT([HAVE_STRINGS_H], [/* Define to 1 if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H])
+m4trace:configure.in:39: -1- AH_OUTPUT([HAVE_INTTYPES_H], [/* Define to 1 if you have the <inttypes.h> header file. */
+#undef HAVE_INTTYPES_H])
+m4trace:configure.in:39: -1- AH_OUTPUT([HAVE_STDINT_H], [/* Define to 1 if you have the <stdint.h> header file. */
+#undef HAVE_STDINT_H])
+m4trace:configure.in:39: -1- AH_OUTPUT([HAVE_UNISTD_H], [/* Define to 1 if you have the <unistd.h> header file. */
+#undef HAVE_UNISTD_H])
 m4trace:configure.in:42: -1- AH_OUTPUT([HAVE_LIBPMI], [/* Define to 1 if you have the `pmi\' library (-lpmi). */
 #undef HAVE_LIBPMI])
 m4trace:configure.in:42: -1- AC_DEFINE_TRACE_LITERAL([HAVE_LIBPMI])

@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_ERRHANDLER_SET( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_errhandler_set__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_errhandler_set( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_errhandler_set_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_errhandler_set_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_ERRHANDLER_SET = PMPI_ERRHANDLER_SET
+#pragma weak mpi_errhandler_set__ = PMPI_ERRHANDLER_SET
+#pragma weak mpi_errhandler_set_ = PMPI_ERRHANDLER_SET
+#pragma weak mpi_errhandler_set = PMPI_ERRHANDLER_SET
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_ERRHANDLER_SET = pmpi_errhandler_set__
 #pragma weak mpi_errhandler_set__ = pmpi_errhandler_set__
 #pragma weak mpi_errhandler_set_ = pmpi_errhandler_set__
 #pragma weak mpi_errhandler_set = pmpi_errhandler_set__
-#pragma weak pmpi_errhandler_set_ = pmpi_errhandler_set__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_ERRHANDLER_SET = pmpi_errhandler_set_
+#pragma weak mpi_errhandler_set__ = pmpi_errhandler_set_
+#pragma weak mpi_errhandler_set_ = pmpi_errhandler_set_
+#pragma weak mpi_errhandler_set = pmpi_errhandler_set_
+#else
+#pragma weak MPI_ERRHANDLER_SET = pmpi_errhandler_set
+#pragma weak mpi_errhandler_set__ = pmpi_errhandler_set
+#pragma weak mpi_errhandler_set_ = pmpi_errhandler_set
+#pragma weak mpi_errhandler_set = pmpi_errhandler_set
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_errhandler_set_( MPI_Fint *, MPI_Fint *,
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_ERRHANDLER_SET( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_errhandler_set__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_errhandler_set( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_errhandler_set_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_errhandler_set__ = MPI_ERRHANDLER_SET
+#pragma weak mpi_errhandler_set_ = MPI_ERRHANDLER_SET
+#pragma weak mpi_errhandler_set = MPI_ERRHANDLER_SET
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_ERRHANDLER_SET = mpi_errhandler_set__
 #pragma weak mpi_errhandler_set_ = mpi_errhandler_set__
 #pragma weak mpi_errhandler_set = mpi_errhandler_set__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_ERRHANDLER_SET = mpi_errhandler_set_
+#pragma weak mpi_errhandler_set__ = mpi_errhandler_set_
+#pragma weak mpi_errhandler_set = mpi_errhandler_set_
+#else
+#pragma weak MPI_ERRHANDLER_SET = mpi_errhandler_set
+#pragma weak mpi_errhandler_set__ = mpi_errhandler_set
+#pragma weak mpi_errhandler_set_ = mpi_errhandler_set
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_ERRHANDLER_SET( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_errhandler_set__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_errhandler_set_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_errhandler_set( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_errhandler_set__ = PMPI_ERRHANDLER_SET
+#pragma weak pmpi_errhandler_set_ = PMPI_ERRHANDLER_SET
+#pragma weak pmpi_errhandler_set = PMPI_ERRHANDLER_SET
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_ERRHANDLER_SET = pmpi_errhandler_set__
+#pragma weak pmpi_errhandler_set_ = pmpi_errhandler_set__
+#pragma weak pmpi_errhandler_set = pmpi_errhandler_set__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_ERRHANDLER_SET = pmpi_errhandler_set_
+#pragma weak pmpi_errhandler_set__ = pmpi_errhandler_set_
+#pragma weak pmpi_errhandler_set = pmpi_errhandler_set_
+#else
+#pragma weak PMPI_ERRHANDLER_SET = pmpi_errhandler_set
+#pragma weak pmpi_errhandler_set__ = pmpi_errhandler_set
+#pragma weak pmpi_errhandler_set_ = pmpi_errhandler_set
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_errhandler_set_ PMPI_ERRHANDLER_SET
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_errhandler_set_( MPI_Fint *, MPI_Fint *,
 #define mpi_errhandler_set_ pmpi_errhandler_set
 #else
 #define mpi_errhandler_set_ pmpi_errhandler_set_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

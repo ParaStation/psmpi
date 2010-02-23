@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_ALLOC_MEM( MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_alloc_mem__( MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_alloc_mem( MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_alloc_mem_( MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_alloc_mem_( MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_ALLOC_MEM = PMPI_ALLOC_MEM
+#pragma weak mpi_alloc_mem__ = PMPI_ALLOC_MEM
+#pragma weak mpi_alloc_mem_ = PMPI_ALLOC_MEM
+#pragma weak mpi_alloc_mem = PMPI_ALLOC_MEM
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_ALLOC_MEM = pmpi_alloc_mem__
 #pragma weak mpi_alloc_mem__ = pmpi_alloc_mem__
 #pragma weak mpi_alloc_mem_ = pmpi_alloc_mem__
 #pragma weak mpi_alloc_mem = pmpi_alloc_mem__
-#pragma weak pmpi_alloc_mem_ = pmpi_alloc_mem__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_ALLOC_MEM = pmpi_alloc_mem_
+#pragma weak mpi_alloc_mem__ = pmpi_alloc_mem_
+#pragma weak mpi_alloc_mem_ = pmpi_alloc_mem_
+#pragma weak mpi_alloc_mem = pmpi_alloc_mem_
+#else
+#pragma weak MPI_ALLOC_MEM = pmpi_alloc_mem
+#pragma weak mpi_alloc_mem__ = pmpi_alloc_mem
+#pragma weak mpi_alloc_mem_ = pmpi_alloc_mem
+#pragma weak mpi_alloc_mem = pmpi_alloc_mem
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_alloc_mem_( MPI_Aint *, MPI_Fint *, void
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_ALLOC_MEM( MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_alloc_mem__( MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_alloc_mem( MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_alloc_mem_( MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_alloc_mem__ = MPI_ALLOC_MEM
+#pragma weak mpi_alloc_mem_ = MPI_ALLOC_MEM
+#pragma weak mpi_alloc_mem = MPI_ALLOC_MEM
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_ALLOC_MEM = mpi_alloc_mem__
 #pragma weak mpi_alloc_mem_ = mpi_alloc_mem__
 #pragma weak mpi_alloc_mem = mpi_alloc_mem__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_ALLOC_MEM = mpi_alloc_mem_
+#pragma weak mpi_alloc_mem__ = mpi_alloc_mem_
+#pragma weak mpi_alloc_mem = mpi_alloc_mem_
+#else
+#pragma weak MPI_ALLOC_MEM = mpi_alloc_mem
+#pragma weak mpi_alloc_mem__ = mpi_alloc_mem
+#pragma weak mpi_alloc_mem_ = mpi_alloc_mem
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_ALLOC_MEM( MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_alloc_mem__( MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_alloc_mem_( MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_alloc_mem( MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_alloc_mem__ = PMPI_ALLOC_MEM
+#pragma weak pmpi_alloc_mem_ = PMPI_ALLOC_MEM
+#pragma weak pmpi_alloc_mem = PMPI_ALLOC_MEM
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_ALLOC_MEM = pmpi_alloc_mem__
+#pragma weak pmpi_alloc_mem_ = pmpi_alloc_mem__
+#pragma weak pmpi_alloc_mem = pmpi_alloc_mem__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_ALLOC_MEM = pmpi_alloc_mem_
+#pragma weak pmpi_alloc_mem__ = pmpi_alloc_mem_
+#pragma weak pmpi_alloc_mem = pmpi_alloc_mem_
+#else
+#pragma weak PMPI_ALLOC_MEM = pmpi_alloc_mem
+#pragma weak pmpi_alloc_mem__ = pmpi_alloc_mem
+#pragma weak pmpi_alloc_mem_ = pmpi_alloc_mem
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_alloc_mem_ PMPI_ALLOC_MEM
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_alloc_mem_( MPI_Aint *, MPI_Fint *, void
 #define mpi_alloc_mem_ pmpi_alloc_mem
 #else
 #define mpi_alloc_mem_ pmpi_alloc_mem_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

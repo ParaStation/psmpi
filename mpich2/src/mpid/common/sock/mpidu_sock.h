@@ -22,11 +22,12 @@ CPLUSPLUS_BEGIN
 /* config header file */
 #include "mpidu_sock_conf.h"
 /* Load just the utility definitions that we need */
+#include "mpichconf.h"
 #include "mpibase.h"
 #include "mpiutil.h"
 #include "mpitypedefs.h"
 
-/* implemenatation specific header file */    
+/* implementation specific header file */    
 #include "mpidu_socki.h"
 
 
@@ -1094,7 +1095,7 @@ The returned string is the generic error message for the supplied error code.
 Module:
 Utility-Sock
 @*/
-int MPIDU_Sock_get_error_class_string(int error, char *error_string, int length);
+int MPIDU_Sock_get_error_class_string(int error, char *error_string, size_t length);
 
 
 CPLUSPLUS_END

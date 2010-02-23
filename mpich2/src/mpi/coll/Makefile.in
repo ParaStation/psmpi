@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
 AR              = @AR@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
@@ -22,7 +21,7 @@ MPILIBNAME      = @MPILIBNAME@
 PMPILIBNAME     = @PMPILIBNAME@
 
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 LIBTOOL         = @LIBTOOL@
 CC_SHL          = @CC_SHL@
@@ -112,12 +111,12 @@ remove-genmakefiles:
 	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
-	    ${MAKE} .libstamp2 ; \
+	    ${MAKE} .libstamp2 || exit 1; \
 	fi
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
-	    ${MAKE} .libstamp1 ; \
+	    ${MAKE} .libstamp1 || exit 1; \
 	    if [ -n "@NO_WEAK_SYM@" ] ; then \
-	        ${MAKE} .libstamp3 ; \
+	        ${MAKE} .libstamp3 || exit 1; \
 	    fi ; \
 	fi
 
@@ -133,7 +132,12 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
-	${RANLIB} ../../../lib/lib${MPILIBNAME}.a
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
+	else \
+	  echo ${RANLIB} ../../../lib/lib${MPILIBNAME}.a ; \
+	fi
+	@${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
 .libstamp1 ../../../lib/lib${MPILIBNAME}.la: allreduce.lo barrier.lo \
 	op_create.lo op_free.lo bcast.lo alltoall.lo alltoallv.lo reduce.lo \
@@ -173,172 +177,262 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?; \
+	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _allreduce.o: allreduce.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/allreduce.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/allreduce.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allreduce.c -o _allreduce.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allreduce.c -o _allreduce.o
 _allreduce.lo: allreduce.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allreduce.c -o _allreduce.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/allreduce.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allreduce.c -o _allreduce.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allreduce.c -o _allreduce.lo
 _barrier.o: barrier.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/barrier.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/barrier.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/barrier.c -o _barrier.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/barrier.c -o _barrier.o
 _barrier.lo: barrier.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/barrier.c -o _barrier.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/barrier.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/barrier.c -o _barrier.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/barrier.c -o _barrier.lo
 _op_create.o: op_create.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/op_create.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/op_create.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_create.c -o _op_create.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_create.c -o _op_create.o
 _op_create.lo: op_create.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/op_create.c -o _op_create.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/op_create.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/op_create.c -o _op_create.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/op_create.c -o _op_create.lo
 _op_free.o: op_free.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/op_free.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/op_free.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_free.c -o _op_free.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/op_free.c -o _op_free.o
 _op_free.lo: op_free.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/op_free.c -o _op_free.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/op_free.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/op_free.c -o _op_free.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/op_free.c -o _op_free.lo
 _bcast.o: bcast.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/bcast.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/bcast.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bcast.c -o _bcast.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/bcast.c -o _bcast.o
 _bcast.lo: bcast.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/bcast.c -o _bcast.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/bcast.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/bcast.c -o _bcast.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/bcast.c -o _bcast.lo
 _alltoall.o: alltoall.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/alltoall.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/alltoall.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoall.c -o _alltoall.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoall.c -o _alltoall.o
 _alltoall.lo: alltoall.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoall.c -o _alltoall.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/alltoall.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoall.c -o _alltoall.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoall.c -o _alltoall.lo
 _alltoallv.o: alltoallv.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/alltoallv.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/alltoallv.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallv.c -o _alltoallv.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallv.c -o _alltoallv.o
 _alltoallv.lo: alltoallv.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallv.c -o _alltoallv.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/alltoallv.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallv.c -o _alltoallv.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallv.c -o _alltoallv.lo
 _reduce.o: reduce.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/reduce.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/reduce.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/reduce.c -o _reduce.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/reduce.c -o _reduce.o
 _reduce.lo: reduce.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/reduce.c -o _reduce.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/reduce.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/reduce.c -o _reduce.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/reduce.c -o _reduce.lo
 _scatter.o: scatter.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/scatter.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/scatter.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scatter.c -o _scatter.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scatter.c -o _scatter.o
 _scatter.lo: scatter.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scatter.c -o _scatter.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/scatter.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scatter.c -o _scatter.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scatter.c -o _scatter.lo
 _gather.o: gather.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/gather.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/gather.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/gather.c -o _gather.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/gather.c -o _gather.o
 _gather.lo: gather.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/gather.c -o _gather.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/gather.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/gather.c -o _gather.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/gather.c -o _gather.lo
 _scatterv.o: scatterv.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/scatterv.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/scatterv.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scatterv.c -o _scatterv.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scatterv.c -o _scatterv.o
 _scatterv.lo: scatterv.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scatterv.c -o _scatterv.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/scatterv.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scatterv.c -o _scatterv.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scatterv.c -o _scatterv.lo
 _gatherv.o: gatherv.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/gatherv.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/gatherv.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/gatherv.c -o _gatherv.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/gatherv.c -o _gatherv.o
 _gatherv.lo: gatherv.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/gatherv.c -o _gatherv.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/gatherv.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/gatherv.c -o _gatherv.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/gatherv.c -o _gatherv.lo
 _scan.o: scan.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/scan.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/scan.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scan.c -o _scan.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/scan.c -o _scan.o
 _scan.lo: scan.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scan.c -o _scan.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/scan.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scan.c -o _scan.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/scan.c -o _scan.lo
 _exscan.o: exscan.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/exscan.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/exscan.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/exscan.c -o _exscan.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/exscan.c -o _exscan.o
 _exscan.lo: exscan.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/exscan.c -o _exscan.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/exscan.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/exscan.c -o _exscan.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/exscan.c -o _exscan.lo
 _allgather.o: allgather.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/allgather.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/allgather.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allgather.c -o _allgather.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allgather.c -o _allgather.o
 _allgather.lo: allgather.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allgather.c -o _allgather.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/allgather.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allgather.c -o _allgather.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allgather.c -o _allgather.lo
 _allgatherv.o: allgatherv.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/allgatherv.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/allgatherv.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allgatherv.c -o _allgatherv.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/allgatherv.c -o _allgatherv.o
 _allgatherv.lo: allgatherv.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allgatherv.c -o _allgatherv.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/allgatherv.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allgatherv.c -o _allgatherv.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/allgatherv.c -o _allgatherv.lo
 _red_scat.o: red_scat.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/red_scat.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/red_scat.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/red_scat.c -o _red_scat.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/red_scat.c -o _red_scat.o
 _red_scat.lo: red_scat.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/red_scat.c -o _red_scat.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/red_scat.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/red_scat.c -o _red_scat.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/red_scat.c -o _red_scat.lo
 _alltoallw.o: alltoallw.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/alltoallw.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/alltoallw.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallw.c -o _alltoallw.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallw.c -o _alltoallw.o
 _alltoallw.lo: alltoallw.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallw.c -o _alltoallw.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/alltoallw.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallw.c -o _alltoallw.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/alltoallw.c -o _alltoallw.lo
 # --------------------------------------------------------------------------
 coverage: 
 	-@for file in $(mpi_sources)  helper_fns.c opsum.c opmax.c opmin.c opband.c \

@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -18,7 +18,7 @@ CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 LDFLAGS     =  @LDFLAGS@ ../../util/mtest.o
@@ -65,8 +65,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o multispawn
-	-@rm -f multispawn.exe
+	-@rm -f *.o ${srcdir}/*.o multispawn taskmaster
+	-@rm -f multispawn.exe taskmaster.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -84,11 +84,13 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: multispawn
+all-redirect: multispawn taskmaster
 
 coverage: 
 multispawn: multispawn.o   @MPILIBLOC@ ../../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o multispawn multispawn.o  ${LIBS}
+taskmaster: taskmaster.o   @MPILIBLOC@ ../../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o taskmaster taskmaster.o  ${LIBS}
 # --------------------------------------------------------------------------
 htmldoc:
 mandoc:
@@ -97,12 +99,7 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  multispawn.c
+SOURCES         =  multispawn.c taskmaster.c
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
@@ -119,7 +116,7 @@ TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 
 # A special testing target to simplify running just the thread spawn tests
 testing:
-	../runtests -srcdir=$(srcdir) -tests=testlist \
+	../../runtests -srcdir=$(srcdir) -tests=testlist \
 		   -mpiexec=$(bindir)/mpiexec \
 		   -xmlfile=summary.xml
 

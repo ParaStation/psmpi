@@ -13,7 +13,7 @@ C
 
       errs = 0
 
-      call MPI_Init(ierr)
+      call mtest_init( ierr )
 C
 C Check each Fortran datatype, including the size-specific ones
 C See the C version (typename.c) for the relevant MPI sections
@@ -81,12 +81,13 @@ C See the C version (typename.c) for the relevant MPI sections
            print *, "Expected MPI_2REAL but got "//name(1:namelen)
       endif
 
-      call MPI_Type_get_name( MPI_2DOUBLE_COMPLEX, name, namelen, ierr )
-      if (name(1:namelen) .ne. "MPI_2DOUBLE_COMPLEX") then
-           errs = errs + 1
-           print *, "Expected MPI_2DOUBLE_COMPLEX but got "//
-     &          name(1:namelen)
-      endif
+C 2DOUBLE_COMPLEX isn't in MPI 2.1
+C      call MPI_Type_get_name( MPI_2DOUBLE_COMPLEX, name, namelen, ierr )
+C      if (name(1:namelen) .ne. "MPI_2DOUBLE_COMPLEX") then
+C           errs = errs + 1
+C           print *, "Expected MPI_2DOUBLE_COMPLEX but got "//
+C     &          name(1:namelen)
+C      endif
 
       call MPI_Type_get_name( MPI_CHARACTER, name, namelen, ierr )
       if (name(1:namelen) .ne. "MPI_CHARACTER") then
@@ -187,20 +188,17 @@ C See the C version (typename.c) for the relevant MPI sections
           endif
       endif
 
-      if (MPI_INTEGER16 .ne. MPI_DATATYPE_NULL) then
-          call MPI_Type_get_name( MPI_INTEGER16, name, namelen, ierr )
-          if (name(1:namelen) .ne. "MPI_INTEGER16") then
-               errs = errs + 1
-               print *, "Expected MPI_INTEGER16 but got "//
-     &              name(1:namelen)
-          endif
-      endif
+C MPI_INTEGER16 is in MPI 2.1, but it is missing from most tables
+C Some MPI implementations may not provide it
+C      if (MPI_INTEGER16 .ne. MPI_DATATYPE_NULL) then
+C          call MPI_Type_get_name( MPI_INTEGER16, name, namelen, ierr )
+C          if (name(1:namelen) .ne. "MPI_INTEGER16") then
+C               errs = errs + 1
+C               print *, "Expected MPI_INTEGER16 but got "//
+C     &              name(1:namelen)
+C          endif
+C      endif
 
-      if (errs .gt. 0) then
-          print *, ' Found ', errs, ' errors'
-      else
-          print *, ' No Errors'
-      endif
-
+      call mtest_finalize( errs )
       call MPI_Finalize( ierr )
       end

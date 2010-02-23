@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -16,7 +16,7 @@ LIBS            = @LIBS@
 MAKE            = @MAKE@
 MPILIBNAME      = @MPILIBNAME@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 CC_SHL          = @CC_SHL@
@@ -117,7 +117,23 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Dependencies
-dependencies:
+DEPS_DIR = .deps
+MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
+
+dependencies: $(DEPS_DIR)/timestamp
+$(DEPS_DIR)/timestamp: servtest.c argstest.c servtest2.c forktest.c Makefile
+	rm -f $(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/servtest.c >$(DEPS_DIR)/servtest.d
+	echo "include $(DEPS_DIR)/servtest.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/argstest.c >$(DEPS_DIR)/argstest.d
+	echo "include $(DEPS_DIR)/argstest.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/servtest2.c >$(DEPS_DIR)/servtest2.d
+	echo "include $(DEPS_DIR)/servtest2.d" >>$(DEPS_DIR)/newalldeps
+	$(MAKE_DEPEND_C)  $(srcdir)/forktest.c >$(DEPS_DIR)/forktest.d
+	echo "include $(DEPS_DIR)/forktest.d" >>$(DEPS_DIR)/newalldeps
+	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
+	date >$(DEPS_DIR)/timestamp
+include $(DEPS_DIR)/alldeps
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------

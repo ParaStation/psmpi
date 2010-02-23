@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_DIFFERENCE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_group_difference__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_group_difference( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_group_difference_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_group_difference_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_GROUP_DIFFERENCE = PMPI_GROUP_DIFFERENCE
+#pragma weak mpi_group_difference__ = PMPI_GROUP_DIFFERENCE
+#pragma weak mpi_group_difference_ = PMPI_GROUP_DIFFERENCE
+#pragma weak mpi_group_difference = PMPI_GROUP_DIFFERENCE
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_GROUP_DIFFERENCE = pmpi_group_difference__
 #pragma weak mpi_group_difference__ = pmpi_group_difference__
 #pragma weak mpi_group_difference_ = pmpi_group_difference__
 #pragma weak mpi_group_difference = pmpi_group_difference__
-#pragma weak pmpi_group_difference_ = pmpi_group_difference__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_GROUP_DIFFERENCE = pmpi_group_difference_
+#pragma weak mpi_group_difference__ = pmpi_group_difference_
+#pragma weak mpi_group_difference_ = pmpi_group_difference_
+#pragma weak mpi_group_difference = pmpi_group_difference_
+#else
+#pragma weak MPI_GROUP_DIFFERENCE = pmpi_group_difference
+#pragma weak mpi_group_difference__ = pmpi_group_difference
+#pragma weak mpi_group_difference_ = pmpi_group_difference
+#pragma weak mpi_group_difference = pmpi_group_difference
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_group_difference_( MPI_Fint *, MPI_Fint 
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_DIFFERENCE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_group_difference__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_group_difference( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_group_difference_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_group_difference__ = MPI_GROUP_DIFFERENCE
+#pragma weak mpi_group_difference_ = MPI_GROUP_DIFFERENCE
+#pragma weak mpi_group_difference = MPI_GROUP_DIFFERENCE
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_GROUP_DIFFERENCE = mpi_group_difference__
 #pragma weak mpi_group_difference_ = mpi_group_difference__
 #pragma weak mpi_group_difference = mpi_group_difference__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_GROUP_DIFFERENCE = mpi_group_difference_
+#pragma weak mpi_group_difference__ = mpi_group_difference_
+#pragma weak mpi_group_difference = mpi_group_difference_
+#else
+#pragma weak MPI_GROUP_DIFFERENCE = mpi_group_difference
+#pragma weak mpi_group_difference__ = mpi_group_difference
+#pragma weak mpi_group_difference_ = mpi_group_difference
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_GROUP_DIFFERENCE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_difference__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_difference_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_difference( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_group_difference__ = PMPI_GROUP_DIFFERENCE
+#pragma weak pmpi_group_difference_ = PMPI_GROUP_DIFFERENCE
+#pragma weak pmpi_group_difference = PMPI_GROUP_DIFFERENCE
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_GROUP_DIFFERENCE = pmpi_group_difference__
+#pragma weak pmpi_group_difference_ = pmpi_group_difference__
+#pragma weak pmpi_group_difference = pmpi_group_difference__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_GROUP_DIFFERENCE = pmpi_group_difference_
+#pragma weak pmpi_group_difference__ = pmpi_group_difference_
+#pragma weak pmpi_group_difference = pmpi_group_difference_
+#else
+#pragma weak PMPI_GROUP_DIFFERENCE = pmpi_group_difference
+#pragma weak pmpi_group_difference__ = pmpi_group_difference
+#pragma weak pmpi_group_difference_ = pmpi_group_difference
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_group_difference_ PMPI_GROUP_DIFFERENCE
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_group_difference_( MPI_Fint *, MPI_Fint 
 #define mpi_group_difference_ pmpi_group_difference
 #else
 #define mpi_group_difference_ pmpi_group_difference_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

@@ -45,7 +45,7 @@ int MPI_File_read_ordered_begin(MPI_File mpi_fh, void *buf, int count,
     ADIO_File fh;
     static char myname[] = "MPI_FILE_READ_ORDERED_BEGIN";
 
-    MPIU_THREAD_SINGLE_CS_ENTER("io");
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
@@ -72,6 +72,7 @@ int MPI_File_read_ordered_begin(MPI_File mpi_fh, void *buf, int count,
     /* --BEGIN ERROR HANDLING-- */
     MPIO_CHECK_INTEGRAL_ETYPE(fh, count, datatype_size, myname, error_code);
     MPIO_CHECK_FS_SUPPORTS_SHARED(fh, myname, error_code);
+    MPIO_CHECK_COUNT_SIZE(fh, count, datatype_size, myname, error_code);
     /* --END ERROR HANDLING-- */
 
     ADIOI_TEST_DEFERRED(fh, myname, &error_code);
@@ -108,7 +109,7 @@ int MPI_File_read_ordered_begin(MPI_File mpi_fh, void *buf, int count,
 
 fn_exit:
     MPIR_Nest_decr();
-    MPIU_THREAD_SINGLE_CS_EXIT("io");
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
 
     return error_code;
 }

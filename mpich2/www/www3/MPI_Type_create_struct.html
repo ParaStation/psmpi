@@ -6,7 +6,7 @@
 </HEAD>
 <BODY BGCOLOR="FFFFFF">
 <A NAME="MPI_Type_create_struct"><H1>MPI_Type_create_struct</H1></A>
-Create an MPI datatype from a general set of  datatypes, displacements, and block sizes 
+Create an MPI datatype from a general set of datatypes, displacements, and block sizes 
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Type_create_struct(int count,
@@ -17,19 +17,19 @@ int MPI_Type_create_struct(int count,
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>count </B><DD>number of blocks (integer) --- also number of entries in arrays 
-array_of_types, array_of_displacements and array_of_blocklengths 
+<DT><B>count </B><DD>number of blocks (integer) --- also number of entries in arrays
+array_of_types, array_of_displacements and array_of_blocklengths
 
-<DT><B>array_of_blocklength </B><DD>number of elements in each block (array of integer) 
+<DT><B>array_of_blocklength </B><DD>number of elements in each block (array of integer)
 
-<DT><B>array_of_displacements </B><DD>byte displacement of each block (array of integer) 
+<DT><B>array_of_displacements </B><DD>byte displacement of each block (array of address integer)
 
-<DT><B>array_of_types </B><DD>type of elements in each block (array of handles to 
-datatype objects) 
+<DT><B>array_of_types </B><DD>type of elements in each block (array of handles to
+datatype objects)
 </DL>
 <P>
 <H2>Output Parameter</H2>
-<DL><DT><B>newtype </B> <DD> new datatype (handle) 
+<DL><DT><B>newtype </B> <DD> new datatype (handle)
 </DL>
 <P>
 <H2>Thread and Interrupt Safety</H2>

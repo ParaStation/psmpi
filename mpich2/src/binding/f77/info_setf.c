@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_INFO_SET( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_set__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_set( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_set_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_info_set_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_INFO_SET = PMPI_INFO_SET
+#pragma weak mpi_info_set__ = PMPI_INFO_SET
+#pragma weak mpi_info_set_ = PMPI_INFO_SET
+#pragma weak mpi_info_set = PMPI_INFO_SET
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_INFO_SET = pmpi_info_set__
 #pragma weak mpi_info_set__ = pmpi_info_set__
 #pragma weak mpi_info_set_ = pmpi_info_set__
 #pragma weak mpi_info_set = pmpi_info_set__
-#pragma weak pmpi_info_set_ = pmpi_info_set__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_INFO_SET = pmpi_info_set_
+#pragma weak mpi_info_set__ = pmpi_info_set_
+#pragma weak mpi_info_set_ = pmpi_info_set_
+#pragma weak mpi_info_set = pmpi_info_set_
+#else
+#pragma weak MPI_INFO_SET = pmpi_info_set
+#pragma weak mpi_info_set__ = pmpi_info_set
+#pragma weak mpi_info_set_ = pmpi_info_set
+#pragma weak mpi_info_set = pmpi_info_set
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_info_set_( MPI_Fint *, char * FORT_MIXED
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_INFO_SET( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_set__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_set( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_set_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_info_set__ = MPI_INFO_SET
+#pragma weak mpi_info_set_ = MPI_INFO_SET
+#pragma weak mpi_info_set = MPI_INFO_SET
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_INFO_SET = mpi_info_set__
 #pragma weak mpi_info_set_ = mpi_info_set__
 #pragma weak mpi_info_set = mpi_info_set__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_INFO_SET = mpi_info_set_
+#pragma weak mpi_info_set__ = mpi_info_set_
+#pragma weak mpi_info_set = mpi_info_set_
+#else
+#pragma weak MPI_INFO_SET = mpi_info_set
+#pragma weak mpi_info_set__ = mpi_info_set
+#pragma weak mpi_info_set_ = mpi_info_set
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_INFO_SET( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_set__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_set_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_set( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_info_set__ = PMPI_INFO_SET
+#pragma weak pmpi_info_set_ = PMPI_INFO_SET
+#pragma weak pmpi_info_set = PMPI_INFO_SET
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_INFO_SET = pmpi_info_set__
+#pragma weak pmpi_info_set_ = pmpi_info_set__
+#pragma weak pmpi_info_set = pmpi_info_set__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_INFO_SET = pmpi_info_set_
+#pragma weak pmpi_info_set__ = pmpi_info_set_
+#pragma weak pmpi_info_set = pmpi_info_set_
+#else
+#pragma weak PMPI_INFO_SET = pmpi_info_set
+#pragma weak pmpi_info_set__ = pmpi_info_set
+#pragma weak pmpi_info_set_ = pmpi_info_set
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_info_set_ PMPI_INFO_SET
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_info_set_( MPI_Fint *, char * FORT_MIXED
 #define mpi_info_set_ pmpi_info_set
 #else
 #define mpi_info_set_ pmpi_info_set_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

@@ -23,6 +23,12 @@
       integer value, ierr
       integer (kind=MPI_ADDRESS_KIND) extrastate, valin, valout, val
 
+      integer freefncall
+      common /fnccalls/ freefncall
+!
+!   For testing purposes, the following print can be used to check whether
+!   the free_fn is called
+!      print *, 'Free_fn called'
 !
       extrastate = extrastate - 1
 !   The value returned by the free function is the error code
@@ -60,8 +66,11 @@
        external query_fn, free_fn, cancel_fn
        integer (kind=MPI_ADDRESS_KIND) extrastate, valin, valout, val
 
+       integer freefncall
+       common /fnccalls/ freefncall
 
        errs = 0
+       freefncall = 0
        
        call MTest_Init( ierr )
 
@@ -86,9 +95,12 @@
 !       
        if (extrastate .ne. 0) then
           errs = errs + 1
-          print *, 'Free routine not called' // &
-      &         ', or not called with extra_data'
-          print *, 'extrastate = ', extrastate
+          if (freefncall .eq. 0) then
+              print *, 'Free routine not called'
+          else 
+              print *, 'Free routine did not update extra_data'
+              print *, 'extrastate = ', extrastate
+          endif
        endif
 !
        call MTest_Finalize( errs )

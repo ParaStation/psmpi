@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_INFO_DELETE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_delete__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_delete( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_delete_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_info_delete_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_INFO_DELETE = PMPI_INFO_DELETE
+#pragma weak mpi_info_delete__ = PMPI_INFO_DELETE
+#pragma weak mpi_info_delete_ = PMPI_INFO_DELETE
+#pragma weak mpi_info_delete = PMPI_INFO_DELETE
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_INFO_DELETE = pmpi_info_delete__
 #pragma weak mpi_info_delete__ = pmpi_info_delete__
 #pragma weak mpi_info_delete_ = pmpi_info_delete__
 #pragma weak mpi_info_delete = pmpi_info_delete__
-#pragma weak pmpi_info_delete_ = pmpi_info_delete__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_INFO_DELETE = pmpi_info_delete_
+#pragma weak mpi_info_delete__ = pmpi_info_delete_
+#pragma weak mpi_info_delete_ = pmpi_info_delete_
+#pragma weak mpi_info_delete = pmpi_info_delete_
+#else
+#pragma weak MPI_INFO_DELETE = pmpi_info_delete
+#pragma weak mpi_info_delete__ = pmpi_info_delete
+#pragma weak mpi_info_delete_ = pmpi_info_delete
+#pragma weak mpi_info_delete = pmpi_info_delete
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_info_delete_( MPI_Fint *, char * FORT_MI
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_INFO_DELETE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_delete__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_delete( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_delete_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_info_delete__ = MPI_INFO_DELETE
+#pragma weak mpi_info_delete_ = MPI_INFO_DELETE
+#pragma weak mpi_info_delete = MPI_INFO_DELETE
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_INFO_DELETE = mpi_info_delete__
 #pragma weak mpi_info_delete_ = mpi_info_delete__
 #pragma weak mpi_info_delete = mpi_info_delete__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_INFO_DELETE = mpi_info_delete_
+#pragma weak mpi_info_delete__ = mpi_info_delete_
+#pragma weak mpi_info_delete = mpi_info_delete_
+#else
+#pragma weak MPI_INFO_DELETE = mpi_info_delete
+#pragma weak mpi_info_delete__ = mpi_info_delete
+#pragma weak mpi_info_delete_ = mpi_info_delete
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_INFO_DELETE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_delete__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_delete_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_delete( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_info_delete__ = PMPI_INFO_DELETE
+#pragma weak pmpi_info_delete_ = PMPI_INFO_DELETE
+#pragma weak pmpi_info_delete = PMPI_INFO_DELETE
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_INFO_DELETE = pmpi_info_delete__
+#pragma weak pmpi_info_delete_ = pmpi_info_delete__
+#pragma weak pmpi_info_delete = pmpi_info_delete__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_INFO_DELETE = pmpi_info_delete_
+#pragma weak pmpi_info_delete__ = pmpi_info_delete_
+#pragma weak pmpi_info_delete = pmpi_info_delete_
+#else
+#pragma weak PMPI_INFO_DELETE = pmpi_info_delete
+#pragma weak pmpi_info_delete__ = pmpi_info_delete
+#pragma weak pmpi_info_delete_ = pmpi_info_delete
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_info_delete_ PMPI_INFO_DELETE
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_info_delete_( MPI_Fint *, char * FORT_MI
 #define mpi_info_delete_ pmpi_info_delete
 #else
 #define mpi_info_delete_ pmpi_info_delete_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

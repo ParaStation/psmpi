@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
 AR              = @AR@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
@@ -22,7 +21,7 @@ MPILIBNAME      = @MPILIBNAME@
 PMPILIBNAME     = @PMPILIBNAME@
 
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 LIBTOOL         = @LIBTOOL@
 CC_SHL          = @CC_SHL@
@@ -121,12 +120,12 @@ remove-genmakefiles:
 	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
-	    ${MAKE} .libstamp2 ; \
+	    ${MAKE} .libstamp2 || exit 1; \
 	fi
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
-	    ${MAKE} .libstamp1 ; \
+	    ${MAKE} .libstamp1 || exit 1; \
 	    if [ -n "@NO_WEAK_SYM@" ] ; then \
-	        ${MAKE} .libstamp3 ; \
+	        ${MAKE} .libstamp3 || exit 1; \
 	    fi ; \
 	fi
 
@@ -144,7 +143,12 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
-	${RANLIB} ../../../lib/lib${MPILIBNAME}.a
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
+	else \
+	  echo ${RANLIB} ../../../lib/lib${MPILIBNAME}.a ; \
+	fi
+	@${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
 .libstamp1 ../../../lib/lib${MPILIBNAME}.la: add_error_code.lo \
 	add_error_class.lo add_error_string.lo comm_call_errhandler.lo \
@@ -196,199 +200,304 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?; \
+	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _add_error_code.o: add_error_code.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/add_error_code.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/add_error_code.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_code.c -o _add_error_code.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_code.c -o _add_error_code.o
 _add_error_code.lo: add_error_code.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_code.c -o _add_error_code.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/add_error_code.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_code.c -o _add_error_code.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_code.c -o _add_error_code.lo
 _add_error_class.o: add_error_class.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/add_error_class.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/add_error_class.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_class.c -o _add_error_class.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_class.c -o _add_error_class.o
 _add_error_class.lo: add_error_class.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_class.c -o _add_error_class.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/add_error_class.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_class.c -o _add_error_class.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_class.c -o _add_error_class.lo
 _add_error_string.o: add_error_string.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/add_error_string.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/add_error_string.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_string.c -o _add_error_string.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_string.c -o _add_error_string.o
 _add_error_string.lo: add_error_string.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_string.c -o _add_error_string.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/add_error_string.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_string.c -o _add_error_string.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/add_error_string.c -o _add_error_string.lo
 _comm_call_errhandler.o: comm_call_errhandler.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/comm_call_errhandler.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/comm_call_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_call_errhandler.c -o _comm_call_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_call_errhandler.c -o _comm_call_errhandler.o
 _comm_call_errhandler.lo: comm_call_errhandler.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_call_errhandler.c -o _comm_call_errhandler.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/comm_call_errhandler.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_call_errhandler.c -o _comm_call_errhandler.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_call_errhandler.c -o _comm_call_errhandler.lo
 _comm_create_errhandler.o: comm_create_errhandler.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/comm_create_errhandler.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/comm_create_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_create_errhandler.c -o _comm_create_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_create_errhandler.c -o _comm_create_errhandler.o
 _comm_create_errhandler.lo: comm_create_errhandler.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_create_errhandler.c -o _comm_create_errhandler.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/comm_create_errhandler.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_create_errhandler.c -o _comm_create_errhandler.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_create_errhandler.c -o _comm_create_errhandler.lo
 _comm_get_errhandler.o: comm_get_errhandler.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/comm_get_errhandler.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/comm_get_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_errhandler.c -o _comm_get_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_errhandler.c -o _comm_get_errhandler.o
 _comm_get_errhandler.lo: comm_get_errhandler.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_errhandler.c -o _comm_get_errhandler.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/comm_get_errhandler.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_errhandler.c -o _comm_get_errhandler.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_get_errhandler.c -o _comm_get_errhandler.lo
 _comm_set_errhandler.o: comm_set_errhandler.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/comm_set_errhandler.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/comm_set_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_errhandler.c -o _comm_set_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_errhandler.c -o _comm_set_errhandler.o
 _comm_set_errhandler.lo: comm_set_errhandler.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_errhandler.c -o _comm_set_errhandler.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/comm_set_errhandler.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_errhandler.c -o _comm_set_errhandler.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_set_errhandler.c -o _comm_set_errhandler.lo
 _errhandler_create.o: errhandler_create.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/errhandler_create.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/errhandler_create.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_create.c -o _errhandler_create.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_create.c -o _errhandler_create.o
 _errhandler_create.lo: errhandler_create.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_create.c -o _errhandler_create.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/errhandler_create.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_create.c -o _errhandler_create.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_create.c -o _errhandler_create.lo
 _errhandler_free.o: errhandler_free.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/errhandler_free.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/errhandler_free.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_free.c -o _errhandler_free.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_free.c -o _errhandler_free.o
 _errhandler_free.lo: errhandler_free.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_free.c -o _errhandler_free.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/errhandler_free.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_free.c -o _errhandler_free.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_free.c -o _errhandler_free.lo
 _errhandler_get.o: errhandler_get.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/errhandler_get.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/errhandler_get.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_get.c -o _errhandler_get.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_get.c -o _errhandler_get.o
 _errhandler_get.lo: errhandler_get.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_get.c -o _errhandler_get.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/errhandler_get.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_get.c -o _errhandler_get.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_get.c -o _errhandler_get.lo
 _errhandler_set.o: errhandler_set.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/errhandler_set.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/errhandler_set.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_set.c -o _errhandler_set.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_set.c -o _errhandler_set.o
 _errhandler_set.lo: errhandler_set.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_set.c -o _errhandler_set.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/errhandler_set.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_set.c -o _errhandler_set.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/errhandler_set.c -o _errhandler_set.lo
 _error_class.o: error_class.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/error_class.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/error_class.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/error_class.c -o _error_class.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/error_class.c -o _error_class.o
 _error_class.lo: error_class.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/error_class.c -o _error_class.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/error_class.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/error_class.c -o _error_class.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/error_class.c -o _error_class.lo
 _error_string.o: error_string.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/error_string.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/error_string.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/error_string.c -o _error_string.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/error_string.c -o _error_string.o
 _error_string.lo: error_string.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/error_string.c -o _error_string.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/error_string.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/error_string.c -o _error_string.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/error_string.c -o _error_string.lo
 _file_create_errhandler.o: file_create_errhandler.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/file_create_errhandler.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/file_create_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_create_errhandler.c -o _file_create_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_create_errhandler.c -o _file_create_errhandler.o
 _file_create_errhandler.lo: file_create_errhandler.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_create_errhandler.c -o _file_create_errhandler.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/file_create_errhandler.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_create_errhandler.c -o _file_create_errhandler.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_create_errhandler.c -o _file_create_errhandler.lo
 _file_get_errhandler.o: file_get_errhandler.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/file_get_errhandler.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/file_get_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_errhandler.c -o _file_get_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_errhandler.c -o _file_get_errhandler.o
 _file_get_errhandler.lo: file_get_errhandler.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_errhandler.c -o _file_get_errhandler.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/file_get_errhandler.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_errhandler.c -o _file_get_errhandler.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_get_errhandler.c -o _file_get_errhandler.lo
 _file_set_errhandler.o: file_set_errhandler.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/file_set_errhandler.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/file_set_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_errhandler.c -o _file_set_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_errhandler.c -o _file_set_errhandler.o
 _file_set_errhandler.lo: file_set_errhandler.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_errhandler.c -o _file_set_errhandler.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/file_set_errhandler.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_errhandler.c -o _file_set_errhandler.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_set_errhandler.c -o _file_set_errhandler.lo
 _file_call_errhandler.o: file_call_errhandler.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/file_call_errhandler.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/file_call_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_call_errhandler.c -o _file_call_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/file_call_errhandler.c -o _file_call_errhandler.o
 _file_call_errhandler.lo: file_call_errhandler.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_call_errhandler.c -o _file_call_errhandler.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/file_call_errhandler.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_call_errhandler.c -o _file_call_errhandler.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/file_call_errhandler.c -o _file_call_errhandler.lo
 _win_create_errhandler.o: win_create_errhandler.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/win_create_errhandler.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/win_create_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_create_errhandler.c -o _win_create_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_create_errhandler.c -o _win_create_errhandler.o
 _win_create_errhandler.lo: win_create_errhandler.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_create_errhandler.c -o _win_create_errhandler.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/win_create_errhandler.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_create_errhandler.c -o _win_create_errhandler.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_create_errhandler.c -o _win_create_errhandler.lo
 _win_call_errhandler.o: win_call_errhandler.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/win_call_errhandler.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/win_call_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_call_errhandler.c -o _win_call_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_call_errhandler.c -o _win_call_errhandler.o
 _win_call_errhandler.lo: win_call_errhandler.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_call_errhandler.c -o _win_call_errhandler.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/win_call_errhandler.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_call_errhandler.c -o _win_call_errhandler.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_call_errhandler.c -o _win_call_errhandler.lo
 _win_get_errhandler.o: win_get_errhandler.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/win_get_errhandler.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/win_get_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_errhandler.c -o _win_get_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_errhandler.c -o _win_get_errhandler.o
 _win_get_errhandler.lo: win_get_errhandler.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_errhandler.c -o _win_get_errhandler.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/win_get_errhandler.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_errhandler.c -o _win_get_errhandler.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_get_errhandler.c -o _win_get_errhandler.lo
 _win_set_errhandler.o: win_set_errhandler.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/win_set_errhandler.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/win_set_errhandler.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_errhandler.c -o _win_set_errhandler.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_errhandler.c -o _win_set_errhandler.o
 _win_set_errhandler.lo: win_set_errhandler.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_errhandler.c -o _win_set_errhandler.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/win_set_errhandler.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_errhandler.c -o _win_set_errhandler.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/win_set_errhandler.c -o _win_set_errhandler.lo
 # --------------------------------------------------------------------------
 coverage: 
 	-@for file in ${mpi_sources} errutil.c dynerrutil.c ; do \

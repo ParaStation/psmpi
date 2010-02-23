@@ -6,7 +6,7 @@
 </HEAD>
 <BODY BGCOLOR="FFFFFF">
 <A NAME="MPI_Unpack_external"><H1>MPI_Unpack_external</H1></A>
-Unpack a buffer (packed with MPI_Pack_external)  according to a datatype into contiguous memory 
+Unpack a buffer (packed with MPI_Pack_external) according to a datatype into contiguous memory 
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Unpack_external(char *datarep,
@@ -19,23 +19,23 @@ int MPI_Unpack_external(char *datarep,
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>datarep </B><DD>data representation (string)  
+<DT><B>datarep </B><DD>data representation (string)
 
-<DT><B>inbuf </B><DD>input buffer start (choice)  
+<DT><B>inbuf </B><DD>input buffer start (choice)
 
-<DT><B>insize </B><DD>input buffer size, in bytes (integer)  
+<DT><B>insize </B><DD>input buffer size, in bytes (address integer)
 
-<DT><B>outcount </B><DD>number of output data items (integer)  
+<DT><B>outcount </B><DD>number of output data items (integer)
 
-<DT><B>datatype </B><DD>datatype of output data item (handle)  
+<DT><B>datatype </B><DD>datatype of output data item (handle)
 
 <P>
 <H2>Input/Output Parameter</H2>
-<DT><B>position </B><DD>current position in buffer, in bytes (integer)  
+<DT><B>position </B><DD>current position in buffer, in bytes (address integer)
 
 <P>
 <H2>Output Parameter</H2>
-<DT><B>outbuf </B><DD>output buffer start (choice)  
+<DT><B>outbuf </B><DD>output buffer start (choice)
 
 <P>
 <H2>Thread and Interrupt Safety</H2>

@@ -27,6 +27,8 @@ shpositionf90_LDADD     = ../util/mtestf90.o
 
 atomicityf90_SOURCES    = atomicityf90.f90
 miscfilef90_SOURCES     = miscfilef90.f90
+miscfilef90_LDADD     = ../util/mtestf90.o
+
 setviewcurf90_SOURCES   = setviewcurf90.f90
 setviewcurf90_LDADD     = ../util/mtestf90.o
 

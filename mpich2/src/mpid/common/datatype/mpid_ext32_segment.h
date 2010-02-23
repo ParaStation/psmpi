@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id: mpid_ext32_segment.h,v 1.13 2006/12/09 16:59:09 gropp Exp $
- *
+/*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -37,7 +36,7 @@
 #define uint64_t __int64
 #define uint32_t __int32
 #elif defined(MPIU_INT64_T)
-/* This is necessary with some compilers or compiler settings */
+/* FIXME: This is necessary with some compilers or compiler settings */
 #define uint64_t unsigned MPIU_INT64_T
 #endif
 

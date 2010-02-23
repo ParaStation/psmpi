@@ -99,7 +99,7 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_SINGLE_CS_ENTER("pt2pt");
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_WAITSOME);
 
     /* Check the arguments */
@@ -121,7 +121,8 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
 
 	    for (i = 0; i < incount; i++)
 	    {
-		MPIR_ERRTEST_REQUEST_OR_NULL(array_of_requests[i], mpi_errno);
+		MPIR_ERRTEST_ARRAYREQUEST_OR_NULL(array_of_requests[i], 
+						  i, mpi_errno);
 	    }
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
@@ -271,7 +272,7 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
     }
 
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITSOME);
-    MPIU_THREAD_SINGLE_CS_EXIT("pt2pt");
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
   fn_fail:

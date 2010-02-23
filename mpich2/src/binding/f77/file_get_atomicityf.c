@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_GET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_atomicity__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_atomicity( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_atomicity_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_atomicity_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_FILE_GET_ATOMICITY = PMPI_FILE_GET_ATOMICITY
+#pragma weak mpi_file_get_atomicity__ = PMPI_FILE_GET_ATOMICITY
+#pragma weak mpi_file_get_atomicity_ = PMPI_FILE_GET_ATOMICITY
+#pragma weak mpi_file_get_atomicity = PMPI_FILE_GET_ATOMICITY
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_FILE_GET_ATOMICITY = pmpi_file_get_atomicity__
 #pragma weak mpi_file_get_atomicity__ = pmpi_file_get_atomicity__
 #pragma weak mpi_file_get_atomicity_ = pmpi_file_get_atomicity__
 #pragma weak mpi_file_get_atomicity = pmpi_file_get_atomicity__
-#pragma weak pmpi_file_get_atomicity_ = pmpi_file_get_atomicity__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_FILE_GET_ATOMICITY = pmpi_file_get_atomicity_
+#pragma weak mpi_file_get_atomicity__ = pmpi_file_get_atomicity_
+#pragma weak mpi_file_get_atomicity_ = pmpi_file_get_atomicity_
+#pragma weak mpi_file_get_atomicity = pmpi_file_get_atomicity_
+#else
+#pragma weak MPI_FILE_GET_ATOMICITY = pmpi_file_get_atomicity
+#pragma weak mpi_file_get_atomicity__ = pmpi_file_get_atomicity
+#pragma weak mpi_file_get_atomicity_ = pmpi_file_get_atomicity
+#pragma weak mpi_file_get_atomicity = pmpi_file_get_atomicity
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_atomicity_( MPI_Fint *, MPI_Fin
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_GET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_atomicity__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_atomicity( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_atomicity_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_file_get_atomicity__ = MPI_FILE_GET_ATOMICITY
+#pragma weak mpi_file_get_atomicity_ = MPI_FILE_GET_ATOMICITY
+#pragma weak mpi_file_get_atomicity = MPI_FILE_GET_ATOMICITY
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_FILE_GET_ATOMICITY = mpi_file_get_atomicity__
 #pragma weak mpi_file_get_atomicity_ = mpi_file_get_atomicity__
 #pragma weak mpi_file_get_atomicity = mpi_file_get_atomicity__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_FILE_GET_ATOMICITY = mpi_file_get_atomicity_
+#pragma weak mpi_file_get_atomicity__ = mpi_file_get_atomicity_
+#pragma weak mpi_file_get_atomicity = mpi_file_get_atomicity_
+#else
+#pragma weak MPI_FILE_GET_ATOMICITY = mpi_file_get_atomicity
+#pragma weak mpi_file_get_atomicity__ = mpi_file_get_atomicity
+#pragma weak mpi_file_get_atomicity_ = mpi_file_get_atomicity
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_FILE_GET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_atomicity__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_atomicity_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_atomicity( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_file_get_atomicity__ = PMPI_FILE_GET_ATOMICITY
+#pragma weak pmpi_file_get_atomicity_ = PMPI_FILE_GET_ATOMICITY
+#pragma weak pmpi_file_get_atomicity = PMPI_FILE_GET_ATOMICITY
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_FILE_GET_ATOMICITY = pmpi_file_get_atomicity__
+#pragma weak pmpi_file_get_atomicity_ = pmpi_file_get_atomicity__
+#pragma weak pmpi_file_get_atomicity = pmpi_file_get_atomicity__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_FILE_GET_ATOMICITY = pmpi_file_get_atomicity_
+#pragma weak pmpi_file_get_atomicity__ = pmpi_file_get_atomicity_
+#pragma weak pmpi_file_get_atomicity = pmpi_file_get_atomicity_
+#else
+#pragma weak PMPI_FILE_GET_ATOMICITY = pmpi_file_get_atomicity
+#pragma weak pmpi_file_get_atomicity__ = pmpi_file_get_atomicity
+#pragma weak pmpi_file_get_atomicity_ = pmpi_file_get_atomicity
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_file_get_atomicity_ PMPI_FILE_GET_ATOMICITY
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_atomicity_( MPI_Fint *, MPI_Fin
 #define mpi_file_get_atomicity_ pmpi_file_get_atomicity
 #else
 #define mpi_file_get_atomicity_ pmpi_file_get_atomicity_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

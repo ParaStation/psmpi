@@ -1,11 +1,13 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id: param.c,v 1.16 2007/04/13 14:09:50 gropp Exp $
- *
+/*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpiimpl.h"
+#include "mpichconf.h"
+#include "mpimem.h"
+#include "mpibase.h"
+#include "mpiparam.h"
 #include "param.h"
 #ifdef HAVE_REGISTERED_PARAMS
 #include "defparams.h"
@@ -14,6 +16,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <ctype.h>
+
+
+#if defined( HAVE_PUTENV ) && defined( NEEDS_PUTENV_DECL )
+extern int putenv(char *string);
+#endif
 
 #ifndef isascii
 #define isascii(c) (((c)&~0x7f)==0)
@@ -401,4 +408,24 @@ int MPIU_GetEnvBool( const char *envName, int *val )
 	return -1;
     }
     return 0;
+}
+
+int MPIU_GetEnvStr( const char *envName, const char **val )
+{
+    const char *val_ptr;
+
+    val_ptr = getenv( envName );
+
+    if (val_ptr)
+    {
+        *val = val_ptr;
+        return 1;
+    }
+
+    return 0;
+}
+
+int MPIU_PutEnv( char *name_val )
+{
+    return putenv( name_val );
 }

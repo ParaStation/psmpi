@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -18,10 +18,10 @@ CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
-LDFLAGS     =  @LDFLAGS@ 
+LDFLAGS     =  @LDFLAGS@ ../util/mtest.o
 
 VPATH = .:@srcdir@
 INCLUDES = -I../include -I${srcdir}/../include
@@ -64,9 +64,9 @@ Makefile: ${srcdir}/Makefile.in
 # --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
-clean: 
-	-@rm -f *.o ${srcdir}/*.o non_zero_root dtpack sendrecvl twovec transp-datatype
-	-@rm -f non_zero_root.exe dtpack.exe sendrecvl.exe twovec.exe transp-datatype.exe
+clean:  clean-local
+	-@rm -f *.o ${srcdir}/*.o non_zero_root dtpack commcreatep timer sendrecvl allredtrace twovec transp-datatype
+	-@rm -f non_zero_root.exe dtpack.exe commcreatep.exe timer.exe sendrecvl.exe allredtrace.exe twovec.exe transp-datatype.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -84,19 +84,26 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: transp-datatype non_zero_root sendrecvl twovec dtpack
+all-redirect: transp-datatype non_zero_root sendrecvl twovec dtpack\
+	 allredtrace commcreatep timer
 
 coverage: 
-non_zero_root: non_zero_root.o   @MPILIBLOC@
+non_zero_root: non_zero_root.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o non_zero_root non_zero_root.o  \
 	${LIBS} 
-dtpack: dtpack.o   @MPILIBLOC@
+dtpack: dtpack.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o dtpack dtpack.o  ${LIBS}
-sendrecvl: sendrecvl.o   @MPILIBLOC@
+commcreatep: commcreatep.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o commcreatep commcreatep.o  ${LIBS}
+timer: timer.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o timer timer.o  ${LIBS}
+sendrecvl: sendrecvl.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o sendrecvl sendrecvl.o  ${LIBS}
-twovec: twovec.o   @MPILIBLOC@
+allredtrace: allredtrace.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o allredtrace allredtrace.o  ${LIBS}
+twovec: twovec.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o twovec twovec.o  ${LIBS}
-transp-datatype: transp-datatype.o   @MPILIBLOC@
+transp-datatype: transp-datatype.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o transp-datatype transp-datatype.o  \
 	${LIBS} 
 # --------------------------------------------------------------------------
@@ -107,13 +114,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
 SOURCES         =  transp-datatype.c non_zero_root.c sendrecvl.c twovec.c \
-	dtpack.c 
+	dtpack.c allredtrace.c commcreatep.c timer.c 
 ETAGS           = @ETAGS@ @ETAGSADD@
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
@@ -123,12 +125,17 @@ TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 
 
+../util/mtest.o:
+	(cd ../util && $(MAKE) mtest.o)
+
 # A special testing target to simplify running just the performance tests
 testing:
 	../runtests -srcdir=$(srcdir) -tests=testlist \
 		   -mpiexec=$(bindir)/mpiexec \
 		   -xmlfile=summary.xml
 
+clean-local:
+	-rm -f summary.xml
 
 FORCE_TARGET:
 

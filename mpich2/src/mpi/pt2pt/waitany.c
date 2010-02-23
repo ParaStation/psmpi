@@ -81,7 +81,7 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_SINGLE_CS_ENTER("pt2pt");
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_PT2PT_FUNC_ENTER(MPID_STATE_MPI_WAITANY);
 
     /* Check the arguments */
@@ -126,7 +126,8 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
 #ifdef HAVE_ERROR_CHECKING
                 MPID_BEGIN_ERROR_CHECKS;
                 {
-                    MPIR_ERRTEST_REQUEST_OR_NULL(array_of_requests[i], mpi_errno);
+                    MPIR_ERRTEST_ARRAYREQUEST_OR_NULL(array_of_requests[i], 
+						      i, mpi_errno);
                     if (mpi_errno != MPI_SUCCESS) goto fn_progress_end_fail;
                 }
                 MPID_END_ERROR_CHECKS;
@@ -213,7 +214,7 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
     }
 
     MPID_MPI_PT2PT_FUNC_EXIT(MPID_STATE_MPI_WAITANY);
-    MPIU_THREAD_SINGLE_CS_EXIT("pt2pt");
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
   fn_progress_end_fail:

@@ -12,6 +12,7 @@
 
 struct ADIOI_Fns_struct ADIO_PVFS2_operations = {
     ADIOI_PVFS2_Open, /* Open */
+    ADIOI_SCALEABLE_OpenColl, /* OpenColl */
     ADIOI_PVFS2_ReadContig, /* ReadContig */
     ADIOI_PVFS2_WriteContig, /* WriteContig */
     ADIOI_GEN_ReadStridedColl, /* ReadStridedColl */
@@ -33,6 +34,7 @@ struct ADIOI_Fns_struct ADIO_PVFS2_operations = {
     ADIOI_PVFS2_Flush, /* Flush */
     ADIOI_PVFS2_Resize, /* Resize */
     ADIOI_PVFS2_Delete, /* Delete */
+    ADIOI_PVFS2_Feature, 
 };
 
 /* 

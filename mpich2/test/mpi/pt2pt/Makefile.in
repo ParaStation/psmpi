@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -18,7 +18,7 @@ CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 LDFLAGS     =  @LDFLAGS@ ../util/mtest.o
@@ -65,8 +65,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
-	-@rm -f *.o ${srcdir}/*.o inactivereq bsend3 bsendfrag rcancel rqfreeb bsend4 bsendpending waitany-null cancelrecv isendself rqstatus sendrecv3 sendself probenull bsendalign greq1 eagerdt bsend5 bottom bsend2 probe-unexp pscancel bsend1 scancel icsend sendflood sendrecv1 waittestnull scancel2 pingping isendselfprobe sendrecv2 sendall
-	-@rm -f inactivereq.exe bsend3.exe bsendfrag.exe rcancel.exe rqfreeb.exe bsend4.exe bsendpending.exe waitany-null.exe cancelrecv.exe isendself.exe rqstatus.exe sendrecv3.exe sendself.exe probenull.exe bsendalign.exe greq1.exe eagerdt.exe bsend5.exe bottom.exe bsend2.exe probe-unexp.exe pscancel.exe bsend1.exe scancel.exe icsend.exe sendflood.exe sendrecv1.exe waittestnull.exe scancel2.exe pingping.exe isendselfprobe.exe sendrecv2.exe sendall.exe
+	-@rm -f *.o ${srcdir}/*.o inactivereq bsend3 bsendfrag rcancel rqfreeb bsend4 bsendpending waitany-null cancelrecv isendself rqstatus sendrecv3 sendself probenull bsendalign greq1 eagerdt bsend5 bottom anyall bsend2 probe-unexp pscancel bsend1 scancel icsend sendflood sendrecv1 waittestnull scancel2 pingping isendselfprobe sendrecv2 sendall
+	-@rm -f inactivereq.exe bsend3.exe bsendfrag.exe rcancel.exe rqfreeb.exe bsend4.exe bsendpending.exe waitany-null.exe cancelrecv.exe isendself.exe rqstatus.exe sendrecv3.exe sendself.exe probenull.exe bsendalign.exe greq1.exe eagerdt.exe bsend5.exe bottom.exe anyall.exe bsend2.exe probe-unexp.exe pscancel.exe bsend1.exe scancel.exe icsend.exe sendflood.exe sendrecv1.exe waittestnull.exe scancel2.exe pingping.exe isendselfprobe.exe sendrecv2.exe sendall.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -84,11 +84,11 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
-all-redirect: bottom bsend1 bsend2 bsend3 bsend4 bsend5 bsendalign cancelrecv\
-	 isendself sendself eagerdt isendselfprobe bsendfrag bsendpending\
-	 icsend rqstatus rqfreeb greq1 scancel scancel2 rcancel pscancel\
-	 sendflood sendrecv1 sendrecv2 sendrecv3 waitany-null pingping\
-	 probe-unexp probenull inactivereq waittestnull sendall
+all-redirect: anyall bottom bsend1 bsend2 bsend3 bsend4 bsend5 bsendalign\
+	 cancelrecv isendself sendself eagerdt isendselfprobe bsendfrag\
+	 bsendpending icsend rqstatus rqfreeb greq1 scancel scancel2 rcancel\
+	 pscancel sendflood sendrecv1 sendrecv2 sendrecv3 waitany-null\
+	 pingping probe-unexp probenull inactivereq waittestnull sendall
 
 coverage: 
 inactivereq: inactivereq.o   @MPILIBLOC@ ../util/mtest.o
@@ -131,6 +131,8 @@ bsend5: bsend5.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o bsend5 bsend5.o  ${LIBS}
 bottom: bottom.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o bottom bottom.o  ${LIBS}
+anyall: anyall.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o anyall anyall.o  ${LIBS}
 bsend2: bsend2.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o bsend2 bsend2.o  ${LIBS}
 probe-unexp: probe-unexp.o   @MPILIBLOC@ ../util/mtest.o
@@ -169,13 +171,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  bottom.c bsend1.c bsend2.c bsend3.c bsend4.c bsend5.c \
-	bsendalign.c cancelrecv.c isendself.c sendself.c eagerdt.c \
+SOURCES         =  anyall.c bottom.c bsend1.c bsend2.c bsend3.c bsend4.c \
+	bsend5.c bsendalign.c cancelrecv.c isendself.c sendself.c eagerdt.c \
 	isendselfprobe.c bsendfrag.c bsendpending.c icsend.c rqstatus.c \
 	rqfreeb.c greq1.c scancel.c scancel2.c rcancel.c pscancel.c \
 	sendflood.c sendrecv1.c sendrecv2.c sendrecv3.c waitany-null.c \

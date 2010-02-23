@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_IRECV( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_irecv__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_irecv( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_irecv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_irecv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_IRECV = PMPI_IRECV
+#pragma weak mpi_irecv__ = PMPI_IRECV
+#pragma weak mpi_irecv_ = PMPI_IRECV
+#pragma weak mpi_irecv = PMPI_IRECV
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_IRECV = pmpi_irecv__
 #pragma weak mpi_irecv__ = pmpi_irecv__
 #pragma weak mpi_irecv_ = pmpi_irecv__
 #pragma weak mpi_irecv = pmpi_irecv__
-#pragma weak pmpi_irecv_ = pmpi_irecv__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_IRECV = pmpi_irecv_
+#pragma weak mpi_irecv__ = pmpi_irecv_
+#pragma weak mpi_irecv_ = pmpi_irecv_
+#pragma weak mpi_irecv = pmpi_irecv_
+#else
+#pragma weak MPI_IRECV = pmpi_irecv
+#pragma weak mpi_irecv__ = pmpi_irecv
+#pragma weak mpi_irecv_ = pmpi_irecv
+#pragma weak mpi_irecv = pmpi_irecv
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_irecv_( void*, MPI_Fint *, MPI_Fint *, M
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_IRECV( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_irecv__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_irecv( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_irecv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_irecv__ = MPI_IRECV
+#pragma weak mpi_irecv_ = MPI_IRECV
+#pragma weak mpi_irecv = MPI_IRECV
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_IRECV = mpi_irecv__
 #pragma weak mpi_irecv_ = mpi_irecv__
 #pragma weak mpi_irecv = mpi_irecv__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_IRECV = mpi_irecv_
+#pragma weak mpi_irecv__ = mpi_irecv_
+#pragma weak mpi_irecv = mpi_irecv_
+#else
+#pragma weak MPI_IRECV = mpi_irecv
+#pragma weak mpi_irecv__ = mpi_irecv
+#pragma weak mpi_irecv_ = mpi_irecv
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IRECV( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_irecv__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_irecv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_irecv( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_irecv__ = PMPI_IRECV
+#pragma weak pmpi_irecv_ = PMPI_IRECV
+#pragma weak pmpi_irecv = PMPI_IRECV
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_IRECV = pmpi_irecv__
+#pragma weak pmpi_irecv_ = pmpi_irecv__
+#pragma weak pmpi_irecv = pmpi_irecv__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_IRECV = pmpi_irecv_
+#pragma weak pmpi_irecv__ = pmpi_irecv_
+#pragma weak pmpi_irecv = pmpi_irecv_
+#else
+#pragma weak PMPI_IRECV = pmpi_irecv
+#pragma weak pmpi_irecv__ = pmpi_irecv
+#pragma weak pmpi_irecv_ = pmpi_irecv
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_irecv_ PMPI_IRECV
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_irecv_( void*, MPI_Fint *, MPI_Fint *, M
 #define mpi_irecv_ pmpi_irecv
 #else
 #define mpi_irecv_ pmpi_irecv_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

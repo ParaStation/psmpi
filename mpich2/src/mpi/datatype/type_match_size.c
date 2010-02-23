@@ -76,7 +76,7 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_SINGLE_CS_ENTER("datatype");
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_MATCH_SIZE);
 
     MPIU_THREADPRIV_GET;
@@ -141,7 +141,7 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 	    int nComplexTypes = sizeof(complex_types) / sizeof(MPI_Datatype);
 	    tname = "MPI_TYPECLASS_COMPLEX";
 	    MPIR_Nest_incr();
-	    for (i=0; i<sizeof(complex_types)/sizeof(MPI_Datatype); i++) {
+	    for (i=0; i<nComplexTypes; i++) {
 		if (complex_types[i] == MPI_DATATYPE_NULL) { continue; }
 		NMPI_Type_size( complex_types[i], &tsize );
 		if (tsize == size) {
@@ -174,7 +174,7 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_TYPE_MATCH_SIZE);
-    MPIU_THREAD_SINGLE_CS_EXIT("datatype");
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
   fn_fail:

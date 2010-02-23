@@ -13,7 +13,7 @@
 
 /*@
   MPID_Type_vector - create a vector datatype
- 
+
   Input Parameters:
 + count - number of blocks in vector
 . blocklength - number of elements in each block
@@ -76,7 +76,7 @@ int MPID_Type_vector(int count,
     is_builtin = (HANDLE_GET_KIND(oldtype) == HANDLE_KIND_BUILTIN);
 
     if (is_builtin) {
-	el_sz   = MPID_Datatype_get_basic_size(oldtype);
+	el_sz   = (MPI_Aint) MPID_Datatype_get_basic_size(oldtype);
 	el_type = oldtype;
 
 	old_lb        = 0;
@@ -87,7 +87,8 @@ int MPID_Type_vector(int count,
 	old_extent    = el_sz;
 	old_is_contig = 1;
 
-	new_dtp->size           = count * blocklength * el_sz;
+	new_dtp->size           = (MPI_Aint) count *
+	                          (MPI_Aint) blocklength * el_sz;
 	new_dtp->has_sticky_lb  = 0;
 	new_dtp->has_sticky_ub  = 0;
 
@@ -96,7 +97,7 @@ int MPID_Type_vector(int count,
 	new_dtp->element_size = el_sz;
 	new_dtp->eltype       = el_type;
 
-	new_dtp->n_contig_blocks = count;
+	new_dtp->max_contig_blocks = count;
 
 	eff_stride = (strideinbytes) ? stride : (stride * el_sz);
     }
@@ -124,14 +125,14 @@ int MPID_Type_vector(int count,
 	new_dtp->element_size = el_sz;
 	new_dtp->eltype       = el_type;
 
-	new_dtp->n_contig_blocks = old_dtp->n_contig_blocks * count;
+	new_dtp->max_contig_blocks = old_dtp->max_contig_blocks * count * blocklength;
 
 	eff_stride = (strideinbytes) ? stride : (stride * old_dtp->extent);
     }
 
-    MPID_DATATYPE_VECTOR_LB_UB(count,
+    MPID_DATATYPE_VECTOR_LB_UB((MPI_Aint) count,
 			       eff_stride,
-			       blocklength,
+			       (MPI_Aint) blocklength,
 			       old_lb,
 			       old_ub,
 			       old_extent,
@@ -145,11 +146,12 @@ int MPID_Type_vector(int count,
      * size and extent of new type are equivalent, and stride is
      * equal to blocklength * size of old type.
      */
-    if (new_dtp->size == new_dtp->extent &&
-	eff_stride == blocklength * old_sz &&
+    if ((MPI_Aint)(new_dtp->size) == new_dtp->extent &&
+	eff_stride == (MPI_Aint) blocklength * old_sz &&
 	old_is_contig)
     {
 	new_dtp->is_contig = 1;
+        new_dtp->max_contig_blocks = 1;
     }
     else {
 	new_dtp->is_contig = 0;
@@ -157,7 +159,7 @@ int MPID_Type_vector(int count,
 
     *newtype = new_dtp->handle;
 
-    MPIU_DBG_MSG_P(DATATYPE,VERBOSE,"vector type %x created.", 
+    MPIU_DBG_MSG_P(DATATYPE,VERBOSE,"vector type %x created.",
 		   new_dtp->handle);
 
     return mpi_errno;

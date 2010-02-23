@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_GATHER( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_gather__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_gather( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_gather_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_gather_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_GATHER = PMPI_GATHER
+#pragma weak mpi_gather__ = PMPI_GATHER
+#pragma weak mpi_gather_ = PMPI_GATHER
+#pragma weak mpi_gather = PMPI_GATHER
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_GATHER = pmpi_gather__
 #pragma weak mpi_gather__ = pmpi_gather__
 #pragma weak mpi_gather_ = pmpi_gather__
 #pragma weak mpi_gather = pmpi_gather__
-#pragma weak pmpi_gather_ = pmpi_gather__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_GATHER = pmpi_gather_
+#pragma weak mpi_gather__ = pmpi_gather_
+#pragma weak mpi_gather_ = pmpi_gather_
+#pragma weak mpi_gather = pmpi_gather_
+#else
+#pragma weak MPI_GATHER = pmpi_gather
+#pragma weak mpi_gather__ = pmpi_gather
+#pragma weak mpi_gather_ = pmpi_gather
+#pragma weak mpi_gather = pmpi_gather
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_gather_( void*, MPI_Fint *, MPI_Fint *, 
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_GATHER( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_gather__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_gather( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_gather_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_gather__ = MPI_GATHER
+#pragma weak mpi_gather_ = MPI_GATHER
+#pragma weak mpi_gather = MPI_GATHER
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_GATHER = mpi_gather__
 #pragma weak mpi_gather_ = mpi_gather__
 #pragma weak mpi_gather = mpi_gather__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_GATHER = mpi_gather_
+#pragma weak mpi_gather__ = mpi_gather_
+#pragma weak mpi_gather = mpi_gather_
+#else
+#pragma weak MPI_GATHER = mpi_gather
+#pragma weak mpi_gather__ = mpi_gather
+#pragma weak mpi_gather_ = mpi_gather
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_GATHER( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_gather__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_gather_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_gather( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_gather__ = PMPI_GATHER
+#pragma weak pmpi_gather_ = PMPI_GATHER
+#pragma weak pmpi_gather = PMPI_GATHER
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_GATHER = pmpi_gather__
+#pragma weak pmpi_gather_ = pmpi_gather__
+#pragma weak pmpi_gather = pmpi_gather__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_GATHER = pmpi_gather_
+#pragma weak pmpi_gather__ = pmpi_gather_
+#pragma weak pmpi_gather = pmpi_gather_
+#else
+#pragma weak PMPI_GATHER = pmpi_gather
+#pragma weak pmpi_gather__ = pmpi_gather
+#pragma weak pmpi_gather_ = pmpi_gather
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_gather_ PMPI_GATHER
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_gather_( void*, MPI_Fint *, MPI_Fint *, 
 #define mpi_gather_ pmpi_gather
 #else
 #define mpi_gather_ pmpi_gather_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,
@@ -121,7 +188,9 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_gather_( void*, MPI_Fint *, MPI_Fint *, 
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_gather_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, void*v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *v8, MPI_Fint *ierr ){
 
+#ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
+#endif
     if (v1 == MPIR_F_MPI_IN_PLACE) v1 = MPI_IN_PLACE;
     *ierr = MPI_Gather( v1, *v2, (MPI_Datatype)(*v3), v4, *v5, (MPI_Datatype)(*v6), *v7, (MPI_Comm)(*v8) );
 }

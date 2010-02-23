@@ -11,18 +11,34 @@
 
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
-#if defined(HAVE_MULTIPLE_PRAGMA_WEAK) && defined(F77_NAME_LOWER_2USCORE)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main__( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_( MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main_( MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak MPI_IS_THREAD_MAIN = PMPI_IS_THREAD_MAIN
+#pragma weak mpi_is_thread_main__ = PMPI_IS_THREAD_MAIN
+#pragma weak mpi_is_thread_main_ = PMPI_IS_THREAD_MAIN
+#pragma weak mpi_is_thread_main = PMPI_IS_THREAD_MAIN
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_IS_THREAD_MAIN = pmpi_is_thread_main__
 #pragma weak mpi_is_thread_main__ = pmpi_is_thread_main__
 #pragma weak mpi_is_thread_main_ = pmpi_is_thread_main__
 #pragma weak mpi_is_thread_main = pmpi_is_thread_main__
-#pragma weak pmpi_is_thread_main_ = pmpi_is_thread_main__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_IS_THREAD_MAIN = pmpi_is_thread_main_
+#pragma weak mpi_is_thread_main__ = pmpi_is_thread_main_
+#pragma weak mpi_is_thread_main_ = pmpi_is_thread_main_
+#pragma weak mpi_is_thread_main = pmpi_is_thread_main_
+#else
+#pragma weak MPI_IS_THREAD_MAIN = pmpi_is_thread_main
+#pragma weak mpi_is_thread_main__ = pmpi_is_thread_main
+#pragma weak mpi_is_thread_main_ = pmpi_is_thread_main
+#pragma weak mpi_is_thread_main = pmpi_is_thread_main
+#endif
+
 
 
 #elif defined(HAVE_PRAGMA_WEAK)
@@ -72,20 +88,70 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_( MPI_Fint *, MPI_Fint * 
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYBMOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
 extern FORT_DLL_SPEC void FORT_CALL MPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main__( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_( MPI_Fint *, MPI_Fint * );
 
+#if defined(F77_NAME_UPPER)
+#pragma weak mpi_is_thread_main__ = MPI_IS_THREAD_MAIN
+#pragma weak mpi_is_thread_main_ = MPI_IS_THREAD_MAIN
+#pragma weak mpi_is_thread_main = MPI_IS_THREAD_MAIN
+#elif defined(F77_NAME_LOWER_2USCORE)
 #pragma weak MPI_IS_THREAD_MAIN = mpi_is_thread_main__
 #pragma weak mpi_is_thread_main_ = mpi_is_thread_main__
 #pragma weak mpi_is_thread_main = mpi_is_thread_main__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak MPI_IS_THREAD_MAIN = mpi_is_thread_main_
+#pragma weak mpi_is_thread_main__ = mpi_is_thread_main_
+#pragma weak mpi_is_thread_main = mpi_is_thread_main_
+#else
+#pragma weak MPI_IS_THREAD_MAIN = mpi_is_thread_main
+#pragma weak mpi_is_thread_main__ = mpi_is_thread_main
+#pragma weak mpi_is_thread_main_ = mpi_is_thread_main
+#endif
+
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
+#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+/* Define the weak versions of the PMPI routine*/
+#ifndef F77_NAME_UPPER
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_2USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main__( MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER_USCORE
+extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main_( MPI_Fint *, MPI_Fint * );
+#endif
+#ifndef F77_NAME_LOWER
+extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main( MPI_Fint *, MPI_Fint * );
+
+#endif
+
+#if defined(F77_NAME_UPPER)
+#pragma weak pmpi_is_thread_main__ = PMPI_IS_THREAD_MAIN
+#pragma weak pmpi_is_thread_main_ = PMPI_IS_THREAD_MAIN
+#pragma weak pmpi_is_thread_main = PMPI_IS_THREAD_MAIN
+#elif defined(F77_NAME_LOWER_2USCORE)
+#pragma weak PMPI_IS_THREAD_MAIN = pmpi_is_thread_main__
+#pragma weak pmpi_is_thread_main_ = pmpi_is_thread_main__
+#pragma weak pmpi_is_thread_main = pmpi_is_thread_main__
+#elif defined(F77_NAME_LOWER_USCORE)
+#pragma weak PMPI_IS_THREAD_MAIN = pmpi_is_thread_main_
+#pragma weak pmpi_is_thread_main__ = pmpi_is_thread_main_
+#pragma weak pmpi_is_thread_main = pmpi_is_thread_main_
+#else
+#pragma weak PMPI_IS_THREAD_MAIN = pmpi_is_thread_main
+#pragma weak pmpi_is_thread_main__ = pmpi_is_thread_main
+#pragma weak pmpi_is_thread_main_ = pmpi_is_thread_main
+#endif /* Test on name mapping */
+#endif /* Use multiple pragma weak */
+
 #ifdef F77_NAME_UPPER
 #define mpi_is_thread_main_ PMPI_IS_THREAD_MAIN
 #elif defined(F77_NAME_LOWER_2USCORE)
@@ -94,7 +160,8 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_( MPI_Fint *, MPI_Fint * 
 #define mpi_is_thread_main_ pmpi_is_thread_main
 #else
 #define mpi_is_thread_main_ pmpi_is_thread_main_
-#endif
+#endif /* Test on name mapping */
+
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings,

@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -20,7 +20,7 @@ CPPFLAGS        = @CPPFLAGS@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
 F90              = @F90@
@@ -126,18 +126,13 @@ fileinfof90: fileinfof90.o   @MPILIBLOC@ ../util/mtestf90.o
 	../util/mtestf90.o ${LIBS} 
 miscfilef90: miscfilef90.o   @MPILIBLOC@ ../util/mtestf90.o
 	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o miscfilef90 miscfilef90.o  \
-	${LIBS} 
+	../util/mtestf90.o ${LIBS} 
 # --------------------------------------------------------------------------
 htmldoc:
 mandoc:
 latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  fileerrf90.f90 fileinfof90.f90 shpositionf90.f90 \
@@ -152,6 +147,7 @@ TAGS: Makefile${HEADERFILES} ${SOURCEFILES}
 # --------------------------------------------------------------------------
 # This Makefile.sm generated automatically by f77tof90
 # from test/mpi/f77/io/Makefile.sm.  DO NOT EDIT
+
 
 
 

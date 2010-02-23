@@ -27,10 +27,6 @@ MPID_nem_cell_ptr_t MPID_nem_prefetched_cell = 0;
 
 unsigned short *MPID_nem_recv_seqno = 0;
 
-/* here we include the non-inlined versions of the files in mpid_nem_inline.h */
-#define MPID_NEM_DONT_INLINE_FUNCTIONS 1
-#include <mpid_nem_inline.h>
-
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_mpich2_init
 #undef FCNAME
@@ -91,7 +87,7 @@ MPID_nem_mpich2_init (int ckpt_restart)
 
     MPIU_CHKPMEM_COMMIT();
  fn_exit:
-    MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_MPICH2_INIT);
+    MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_MPICH2_INIT);
     return mpi_errno;
  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
@@ -152,7 +148,7 @@ int MPID_nem_send_iov(MPIDI_VC_t *vc, MPID_Request **sreq_ptr, MPID_IOV *iov, in
 
     iov_data_copied = 0;
     for (i = 0; i < data_n_iov; ++i) {
-        MPID_NEM_MEMCPY((char*) sreq->dev.tmpbuf + iov_data_copied, data_iov[i].MPID_IOV_BUF, data_iov[i].MPID_IOV_LEN);
+        MPIU_Memcpy((char*) sreq->dev.tmpbuf + iov_data_copied, data_iov[i].MPID_IOV_BUF, data_iov[i].MPID_IOV_LEN);
         iov_data_copied += data_iov[i].MPID_IOV_LEN;
     }
 
@@ -183,6 +179,7 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc, int *try_
 #ifdef ENABLED_CHECKPOINTING
     MPID_nem_cell_ptr_t el;
     int my_rank;
+    MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
 
     my_rank = MPID_nem_mem_region.rank;
 
@@ -205,18 +202,18 @@ MPID_nem_mpich2_send_ckpt_marker (unsigned short wave, MPIDI_VC_t *vc, int *try_
     el->pkt.ckpt.source  = my_rank;
     el->pkt.ckpt.dest    = vc->lpid;
     el->pkt.ckpt.datalen = sizeof(el->pkt.ckpt.wave); /* FIXME: we need a way to handle packet types w/ different sizes */
-    el->pkt.ckpt.seqno   = ((MPIDI_CH3I_VC *)vc->channel_private)->send_seqno++;
+    el->pkt.ckpt.seqno   = vc_ch->send_seqno++;
     el->pkt.ckpt.type    = MPID_NEM_PKT_CKPT;
     el->pkt.ckpt.wave    = wave;
 
-    if(MPID_NEM_IS_LOCAL (vc->lpid))
+    if(vc_ch->is_local)
     {
 	MPID_nem_queue_enqueue( MPID_nem_mem_region.RecvQ[vc->lpid], el);
 	/*MPID_nem_rel_dump_queue( MPID_nem_mem_region.RecvQ[vc->lpid] ); */
     }
     else
     {
-        MPID_nem_net_module_send (vc, el, el->pkt.ckpt.datalen);
+        MPID_nem_netmod_func->send (vc, el, el->pkt.ckpt.datalen);
     }
 
 

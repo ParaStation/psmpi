@@ -187,16 +187,22 @@ echo Building CH3+SOCK channel(multithreaded - profiled version)...
 devenv.com mpich2.sln /build ch3sockmtPRelease >> make.log
 if %errorlevel% NEQ 0 goto BUILDERROR
 echo .....................................................SUCCESS
+echo Building CH3+NEMESIS channel...
+devenv.com mpich2.sln /build ch3nemesisRelease >> make.log
+if %errorlevel% NEQ 0 goto BUILDERROR
+echo .....................................................SUCCESS
+echo Building CH3+NEMESIS channel (profiled version)...
+devenv.com mpich2.sln /build ch3nemesisPRelease >> make.log
+if %errorlevel% NEQ 0 goto BUILDERROR
+echo .....................................................SUCCESS
 echo Building C++ Interface ...
-devenv.com mpich2.sln /project cxx /build Debug >> make.log
+devenv.com mpich2.sln /project cxx /build Release >> make.log
 if %errorlevel% NEQ 0 goto BUILDERROR
 echo .....................................................SUCCESS
 echo Building RLOG tools ...
 devenv.com src\util\logging\rlog\rlogtools.sln /build Release >> make.log
 if %errorlevel% NEQ 0 goto BUILDERROR
 echo .....................................................SUCCESS
-devenv.com mpich2.sln /build fmpe >> make.log
-if %errorlevel% NEQ 0 goto BUILDERROR
 cd maint
 call makegcclibs.bat
 cd ..

@@ -12,14 +12,14 @@ Get the lower bound and extent for a Datatype
 int MPI_Type_get_extent(MPI_Datatype datatype, MPI_Aint *lb, MPI_Aint *extent)
 </PRE>
 <H2>Input Parameter</H2>
-<DL><DT><B>datatype </B> <DD> datatype to get information on (handle) 
+<DL><DT><B>datatype </B> <DD> datatype to get information on (handle)
 </DL>
 <P>
 <H2>Output Parameters</H2>
 <DL>
-<DT><B>lb </B><DD>lower bound of datatype (integer) 
+<DT><B>lb </B><DD>lower bound of datatype (address integer)
 
-<DT><B>extent </B><DD>extent of datatype (integer) 
+<DT><B>extent </B><DD>extent of datatype (address integer)
 </DL>
 <P>
 <H2>Thread and Interrupt Safety</H2>

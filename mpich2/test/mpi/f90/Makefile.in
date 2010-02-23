@@ -6,7 +6,7 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
+master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -98,13 +98,6 @@ latexdoc:
 		(cd $$dir && ${MAKE} latexdoc ; ) ; done
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-	for dir in util timer attr coll datatype pt2pt info comm rma spawn topo io ext init misc f90types ; do \
-		(cd $$dir && ${MAKE} dependencies ; ) ; done
-# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)

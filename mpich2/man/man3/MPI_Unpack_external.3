@@ -1,6 +1,6 @@
-.TH MPI_Unpack_external 3 "11/2/2007" " " "MPI"
+.TH MPI_Unpack_external 3 "8/2/2008" " " "MPI"
 .SH NAME
-MPI_Unpack_external \-  Unpack a buffer (packed with MPI_Pack_external)  according to a datatype into contiguous memory 
+MPI_Unpack_external \-  Unpack a buffer (packed with MPI_Pack_external) according to a datatype into contiguous memory 
 .SH SYNOPSIS
 .nf
 int MPI_Unpack_external(char *datarep,
@@ -15,41 +15,41 @@ int MPI_Unpack_external(char *datarep,
 .PD 0
 .TP
 .B datarep 
-- data representation (string)  
+- data representation (string)
 .PD 1
 .PD 0
 .TP
 .B inbuf 
-- input buffer start (choice)  
+- input buffer start (choice)
 .PD 1
 .PD 0
 .TP
 .B insize 
-- input buffer size, in bytes (integer)  
+- input buffer size, in bytes (address integer)
 .PD 1
 .PD 0
 .TP
 .B outcount 
-- number of output data items (integer)  
+- number of output data items (integer)
 .PD 1
 .PD 0
 .TP
 .B datatype 
-- datatype of output data item (handle)  
+- datatype of output data item (handle)
 .PD 1
 
 .SH INPUT/OUTPUT PARAMETER
 .PD 0
 .TP
 .B position 
-- current position in buffer, in bytes (integer)  
+- current position in buffer, in bytes (address integer)
 .PD 1
 
 .SH OUTPUT PARAMETER
 .PD 0
 .TP
 .B outbuf 
-- output buffer start (choice)  
+- output buffer start (choice)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY

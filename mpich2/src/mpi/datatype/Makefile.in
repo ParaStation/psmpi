@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
 AR              = @AR@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
@@ -22,7 +21,7 @@ MPILIBNAME      = @MPILIBNAME@
 PMPILIBNAME     = @PMPILIBNAME@
 
 CC              = @CC@
-CFLAGS          = @CFLAGS@
+CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 LIBTOOL         = @LIBTOOL@
 CC_SHL          = @CC_SHL@
@@ -123,12 +122,12 @@ remove-genmakefiles:
 	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
-	    ${MAKE} .libstamp2 ; \
+	    ${MAKE} .libstamp2 || exit 1; \
 	fi
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
-	    ${MAKE} .libstamp1 ; \
+	    ${MAKE} .libstamp1 || exit 1; \
 	    if [ -n "@NO_WEAK_SYM@" ] ; then \
-	        ${MAKE} .libstamp3 ; \
+	        ${MAKE} .libstamp3 || exit 1; \
 	    fi ; \
 	fi
 
@@ -149,7 +148,12 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
-	${RANLIB} ../../../lib/lib${MPILIBNAME}.a
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
+	else \
+	  echo ${RANLIB} ../../../lib/lib${MPILIBNAME}.a ; \
+	fi
+	@${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
 .libstamp1 ../../../lib/lib${MPILIBNAME}.la: address.lo get_address.lo \
 	get_count.lo get_elements.lo pack.lo unpack.lo pack_size.lo \
@@ -210,352 +214,542 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?; \
+	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _address.o: address.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/address.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/address.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/address.c -o _address.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/address.c -o _address.o
 _address.lo: address.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/address.c -o _address.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/address.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/address.c -o _address.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/address.c -o _address.lo
 _get_address.o: get_address.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/get_address.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/get_address.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_address.c -o _get_address.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_address.c -o _get_address.o
 _get_address.lo: get_address.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_address.c -o _get_address.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/get_address.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_address.c -o _get_address.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_address.c -o _get_address.lo
 _get_count.o: get_count.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/get_count.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/get_count.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_count.c -o _get_count.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_count.c -o _get_count.o
 _get_count.lo: get_count.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_count.c -o _get_count.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/get_count.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_count.c -o _get_count.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_count.c -o _get_count.lo
 _get_elements.o: get_elements.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/get_elements.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/get_elements.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_elements.c -o _get_elements.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/get_elements.c -o _get_elements.o
 _get_elements.lo: get_elements.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_elements.c -o _get_elements.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/get_elements.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_elements.c -o _get_elements.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/get_elements.c -o _get_elements.lo
 _pack.o: pack.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/pack.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/pack.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack.c -o _pack.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack.c -o _pack.o
 _pack.lo: pack.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack.c -o _pack.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/pack.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack.c -o _pack.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack.c -o _pack.lo
 _unpack.o: unpack.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/unpack.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/unpack.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack.c -o _unpack.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack.c -o _unpack.o
 _unpack.lo: unpack.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack.c -o _unpack.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/unpack.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack.c -o _unpack.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack.c -o _unpack.lo
 _pack_size.o: pack_size.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/pack_size.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/pack_size.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_size.c -o _pack_size.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_size.c -o _pack_size.o
 _pack_size.lo: pack_size.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_size.c -o _pack_size.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/pack_size.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_size.c -o _pack_size.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_size.c -o _pack_size.lo
 _status_set_elements.o: status_set_elements.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/status_set_elements.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/status_set_elements.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/status_set_elements.c -o _status_set_elements.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/status_set_elements.c -o _status_set_elements.o
 _status_set_elements.lo: status_set_elements.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/status_set_elements.c -o _status_set_elements.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/status_set_elements.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/status_set_elements.c -o _status_set_elements.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/status_set_elements.c -o _status_set_elements.lo
 _type_get_name.o: type_get_name.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_get_name.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_get_name.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_name.c -o _type_get_name.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_name.c -o _type_get_name.o
 _type_get_name.lo: type_get_name.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_name.c -o _type_get_name.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_get_name.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_name.c -o _type_get_name.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_name.c -o _type_get_name.lo
 _type_set_name.o: type_set_name.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_set_name.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_set_name.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_set_name.c -o _type_set_name.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_set_name.c -o _type_set_name.o
 _type_set_name.lo: type_set_name.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_set_name.c -o _type_set_name.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_set_name.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_set_name.c -o _type_set_name.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_set_name.c -o _type_set_name.lo
 _type_size.o: type_size.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_size.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_size.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_size.c -o _type_size.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_size.c -o _type_size.o
 _type_size.lo: type_size.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_size.c -o _type_size.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_size.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_size.c -o _type_size.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_size.c -o _type_size.lo
 _type_extent.o: type_extent.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_extent.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_extent.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_extent.c -o _type_extent.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_extent.c -o _type_extent.o
 _type_extent.lo: type_extent.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_extent.c -o _type_extent.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_extent.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_extent.c -o _type_extent.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_extent.c -o _type_extent.lo
 _type_vector.o: type_vector.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_vector.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_vector.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_vector.c -o _type_vector.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_vector.c -o _type_vector.o
 _type_vector.lo: type_vector.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_vector.c -o _type_vector.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_vector.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_vector.c -o _type_vector.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_vector.c -o _type_vector.lo
 _type_commit.o: type_commit.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_commit.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_commit.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_commit.c -o _type_commit.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_commit.c -o _type_commit.o
 _type_commit.lo: type_commit.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_commit.c -o _type_commit.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_commit.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_commit.c -o _type_commit.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_commit.c -o _type_commit.lo
 _type_indexed.o: type_indexed.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_indexed.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_indexed.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_indexed.c -o _type_indexed.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_indexed.c -o _type_indexed.o
 _type_indexed.lo: type_indexed.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_indexed.c -o _type_indexed.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_indexed.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_indexed.c -o _type_indexed.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_indexed.c -o _type_indexed.lo
 _type_hindexed.o: type_hindexed.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_hindexed.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_hindexed.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hindexed.c -o _type_hindexed.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hindexed.c -o _type_hindexed.o
 _type_hindexed.lo: type_hindexed.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hindexed.c -o _type_hindexed.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_hindexed.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hindexed.c -o _type_hindexed.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hindexed.c -o _type_hindexed.lo
 _type_struct.o: type_struct.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_struct.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_struct.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_struct.c -o _type_struct.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_struct.c -o _type_struct.o
 _type_struct.lo: type_struct.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_struct.c -o _type_struct.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_struct.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_struct.c -o _type_struct.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_struct.c -o _type_struct.lo
 _type_contiguous.o: type_contiguous.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_contiguous.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_contiguous.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_contiguous.c -o _type_contiguous.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_contiguous.c -o _type_contiguous.o
 _type_contiguous.lo: type_contiguous.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_contiguous.c -o _type_contiguous.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_contiguous.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_contiguous.c -o _type_contiguous.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_contiguous.c -o _type_contiguous.lo
 _type_free.o: type_free.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_free.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_free.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_free.c -o _type_free.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_free.c -o _type_free.o
 _type_free.lo: type_free.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_free.c -o _type_free.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_free.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_free.c -o _type_free.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_free.c -o _type_free.lo
 _type_hvector.o: type_hvector.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_hvector.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_hvector.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hvector.c -o _type_hvector.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hvector.c -o _type_hvector.o
 _type_hvector.lo: type_hvector.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hvector.c -o _type_hvector.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_hvector.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hvector.c -o _type_hvector.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_hvector.c -o _type_hvector.lo
 _type_dup.o: type_dup.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_dup.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_dup.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_dup.c -o _type_dup.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_dup.c -o _type_dup.o
 _type_dup.lo: type_dup.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_dup.c -o _type_dup.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_dup.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_dup.c -o _type_dup.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_dup.c -o _type_dup.lo
 _type_get_envelope.o: type_get_envelope.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_get_envelope.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_get_envelope.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_envelope.c -o _type_get_envelope.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_envelope.c -o _type_get_envelope.o
 _type_get_envelope.lo: type_get_envelope.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_envelope.c -o _type_get_envelope.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_get_envelope.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_envelope.c -o _type_get_envelope.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_envelope.c -o _type_get_envelope.lo
 _type_get_contents.o: type_get_contents.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_get_contents.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_get_contents.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_contents.c -o _type_get_contents.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_contents.c -o _type_get_contents.o
 _type_get_contents.lo: type_get_contents.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_contents.c -o _type_get_contents.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_get_contents.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_contents.c -o _type_get_contents.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_contents.c -o _type_get_contents.lo
 _type_ub.o: type_ub.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_ub.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_ub.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_ub.c -o _type_ub.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_ub.c -o _type_ub.o
 _type_ub.lo: type_ub.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_ub.c -o _type_ub.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_ub.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_ub.c -o _type_ub.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_ub.c -o _type_ub.lo
 _type_lb.o: type_lb.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_lb.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_lb.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_lb.c -o _type_lb.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_lb.c -o _type_lb.o
 _type_lb.lo: type_lb.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_lb.c -o _type_lb.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_lb.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_lb.c -o _type_lb.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_lb.c -o _type_lb.lo
 _type_get_extent.o: type_get_extent.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_get_extent.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_get_extent.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_extent.c -o _type_get_extent.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_extent.c -o _type_get_extent.o
 _type_get_extent.lo: type_get_extent.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_extent.c -o _type_get_extent.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_get_extent.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_extent.c -o _type_get_extent.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_extent.c -o _type_get_extent.lo
 _type_get_true_extent.o: type_get_true_extent.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_get_true_extent.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_get_true_extent.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_true_extent.c -o _type_get_true_extent.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_true_extent.c -o _type_get_true_extent.o
 _type_get_true_extent.lo: type_get_true_extent.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_true_extent.c -o _type_get_true_extent.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_get_true_extent.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_true_extent.c -o _type_get_true_extent.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_get_true_extent.c -o _type_get_true_extent.lo
 _type_match_size.o: type_match_size.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_match_size.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_match_size.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_match_size.c -o _type_match_size.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_match_size.c -o _type_match_size.o
 _type_match_size.lo: type_match_size.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_match_size.c -o _type_match_size.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_match_size.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_match_size.c -o _type_match_size.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_match_size.c -o _type_match_size.lo
 _type_create_struct.o: type_create_struct.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_create_struct.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_create_struct.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_struct.c -o _type_create_struct.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_struct.c -o _type_create_struct.o
 _type_create_struct.lo: type_create_struct.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_struct.c -o _type_create_struct.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_create_struct.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_struct.c -o _type_create_struct.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_struct.c -o _type_create_struct.lo
 _type_create_hindexed.o: type_create_hindexed.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_create_hindexed.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_create_hindexed.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hindexed.c -o _type_create_hindexed.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hindexed.c -o _type_create_hindexed.o
 _type_create_hindexed.lo: type_create_hindexed.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hindexed.c -o _type_create_hindexed.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_create_hindexed.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hindexed.c -o _type_create_hindexed.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hindexed.c -o _type_create_hindexed.lo
 _type_create_hvector.o: type_create_hvector.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_create_hvector.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_create_hvector.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hvector.c -o _type_create_hvector.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hvector.c -o _type_create_hvector.o
 _type_create_hvector.lo: type_create_hvector.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hvector.c -o _type_create_hvector.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_create_hvector.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hvector.c -o _type_create_hvector.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_hvector.c -o _type_create_hvector.lo
 _pack_external.o: pack_external.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/pack_external.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/pack_external.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external.c -o _pack_external.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external.c -o _pack_external.o
 _pack_external.lo: pack_external.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external.c -o _pack_external.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/pack_external.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external.c -o _pack_external.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external.c -o _pack_external.lo
 _pack_external_size.o: pack_external_size.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/pack_external_size.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/pack_external_size.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external_size.c -o _pack_external_size.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external_size.c -o _pack_external_size.o
 _pack_external_size.lo: pack_external_size.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external_size.c -o _pack_external_size.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/pack_external_size.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external_size.c -o _pack_external_size.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/pack_external_size.c -o _pack_external_size.lo
 _unpack_external.o: unpack_external.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/unpack_external.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/unpack_external.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack_external.c -o _unpack_external.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack_external.c -o _unpack_external.o
 _unpack_external.lo: unpack_external.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack_external.c -o _unpack_external.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/unpack_external.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack_external.c -o _unpack_external.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/unpack_external.c -o _unpack_external.lo
 _type_create_indexed_block.o: type_create_indexed_block.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_create_indexed_block.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_create_indexed_block.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_indexed_block.c -o _type_create_indexed_block.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_indexed_block.c -o _type_create_indexed_block.o
 _type_create_indexed_block.lo: type_create_indexed_block.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_indexed_block.c -o _type_create_indexed_block.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_create_indexed_block.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_indexed_block.c -o _type_create_indexed_block.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_indexed_block.c -o _type_create_indexed_block.lo
 _type_create_resized.o: type_create_resized.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_create_resized.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_create_resized.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_resized.c -o _type_create_resized.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_resized.c -o _type_create_resized.o
 _type_create_resized.lo: type_create_resized.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_resized.c -o _type_create_resized.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_create_resized.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_resized.c -o _type_create_resized.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_resized.c -o _type_create_resized.lo
 _type_create_darray.o: type_create_darray.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_create_darray.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_create_darray.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_darray.c -o _type_create_darray.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_darray.c -o _type_create_darray.o
 _type_create_darray.lo: type_create_darray.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_darray.c -o _type_create_darray.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_create_darray.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_darray.c -o _type_create_darray.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_darray.c -o _type_create_darray.lo
 _type_create_subarray.o: type_create_subarray.c
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \
-	  echo "  CC              ${srcdir}/type_create_subarray.c" ; \
+	  echo "  CC             -D<profiling> ${srcdir}/type_create_subarray.c" ; \
 	else \
 	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_subarray.c -o _type_create_subarray.o ; \
 	fi
 	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_subarray.c -o _type_create_subarray.o
 _type_create_subarray.lo: type_create_subarray.c
-	$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_subarray.c -o _type_create_subarray.lo
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo " CC           -D<profiling> $(srcdir)/type_create_subarray.c" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_subarray.c -o _type_create_subarray.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/type_create_subarray.c -o _type_create_subarray.lo
 # --------------------------------------------------------------------------
 coverage: 
 	-@for file in $(mpi_sources) typeutil.c ; do \

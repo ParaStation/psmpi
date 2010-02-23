@@ -6,6 +6,7 @@ simple-pack 1
 transpose-pack 1
 slice-pack 1
 struct-pack 1
+typecommit 1
 typename 1
 typefree 1
 zeroparms 1
@@ -14,6 +15,7 @@ tresized 2
 tresized2 2
 tmatchsize 1
 tfree 2
+typelb 1
 contigstruct 1
 struct-zero-count 1
 blockindexed-zero-count 1
@@ -21,6 +23,8 @@ blockindexed-misc 1
 indexed-misc 1
 subarray-pack 1
 darray-pack 1
+darray-pack 9
+# darray-pack 72
 pairtype-size-extent 1
 simple-commit 1
 simple-size-extent 1
@@ -35,3 +39,4 @@ get-elements-pairtype 1
 unpack 1
 struct-ezhov 1
 zeroblks 1
+struct-derived-zeros 1

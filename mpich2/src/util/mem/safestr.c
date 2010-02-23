@@ -1,11 +1,11 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id: safestr.c,v 1.18 2006/10/31 19:47:34 gropp Exp $
- *
+/*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "mpiimpl.h"
+#include "mpichconf.h"
+#include "mpimem.h"
 
 /* style: allow:sprintf:1 sig:0 */
 
@@ -282,11 +282,11 @@ int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
 
 	    case 'p':
 	    {
-		int val;
+		void *val;
 		char tmp[20];
 		char *t = tmp;
-		/* Get the argument, of integer type */
-		val = va_arg( list, int );
+		/* Get the argument, of pointer type */
+		val = va_arg( list, void * );
 		sprintf( tmp, "%p", val );
 		if (width > 0) {
 		    int tmplen = strlen(tmp);
@@ -328,3 +328,21 @@ int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
     return n;
 }
 #endif
+
+/* MPIU_Basename(path, basename)
+   This function finds the basename in a path (ala "man 1 basename").
+   *basename will point to an element in path.
+   More formally: This function sets basename to the character just after the last '/' in path.
+*/
+void MPIU_Basename(char *path, char **basename)
+{
+    char *c;
+
+    c = *basename = path;
+    while (*c)
+    {
+        if (*c == '/')
+            *basename = c+1;
+        ++c;
+    } 
+}

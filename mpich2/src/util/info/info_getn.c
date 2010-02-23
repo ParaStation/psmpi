@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  $Id: info_getn.c,v 1.16 2006/12/09 17:05:30 gropp Exp $
- *
+/*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -57,7 +56,7 @@ int MPI_Info_get_nkeys( MPI_Info info, int *nkeys )
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
-    MPIU_THREAD_SINGLE_CS_ENTER("info");
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INFO_GET_NKEYS);
     
     /* Validate parameters, especially handles needing to be converted */
@@ -109,7 +108,7 @@ int MPI_Info_get_nkeys( MPI_Info info, int *nkeys )
   fn_exit:
 #endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET_NKEYS);
-    MPIU_THREAD_SINGLE_CS_EXIT("info");
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
     
     /* --BEGIN ERROR HANDLING-- */

@@ -6,11 +6,11 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-VERBOSE         = 1
 AR              = @AR@
 RANLIB          = @RANLIB@
 INSTALL         = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
+INSTALL_SCRIPT  = @INSTALL_SCRIPT@
 INSTALL_DATA    = @INSTALL_DATA@
 MKDIR_P         = @MKDIR_P@
 master_top_srcdir  = @master_top_srcdir@
@@ -116,7 +116,7 @@ remove-genmakefiles:
 	rm -f  Makefile.in Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPICXXLIBNAME}.a
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
-	    ${MAKE} .libstamp1 ; \
+	    ${MAKE} .libstamp1 || exit 1; \
 	fi
 
 .libstamp0 ../../../lib/lib${MPICXXLIBNAME}.a: initcxx.o 
@@ -126,7 +126,12 @@ all-redirect: .libstamp0 ../../../lib/lib${MPICXXLIBNAME}.a
 	  echo ${AR} cr ../../../lib/lib${MPICXXLIBNAME}.a $? ; \
 	fi
 	@${AR} cr ../../../lib/lib${MPICXXLIBNAME}.a $?
-	${RANLIB} ../../../lib/lib${MPICXXLIBNAME}.a
+	@if [ "x$(VERBOSE)" != "x1" ] ; then \
+	  echo "  RANLIB          lib${MPICXXLIBNAME}.a" ; \
+	else \
+	  echo ${RANLIB} ../../../lib/lib${MPICXXLIBNAME}.a ; \
+	fi
+	@${RANLIB} ../../../lib/lib${MPICXXLIBNAME}.a
 	date > .libstamp0
 .libstamp1 ../../../lib/lib${MPICXXLIBNAME}.la: initcxx.lo 
 	@if [ "x$(VERBOSE)" != "x1" ] ; then \

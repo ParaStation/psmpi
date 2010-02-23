@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#! /opt/local/bin/perl -w
 # -*- Mode: perl; -*-
 #
 # This script extracts information from files produced by gcov showing what
@@ -99,7 +99,7 @@ for (@ARGV) {
 	# Create the coverage in default web pages for the device
 	# named as an argument (e.g., maint/getcoverage -webpages=ch3:sock)
 	my $device = $1;
-	my $weblocbase = "/sandbox/balaji/maint/mpich2-1.0.8/www/coverage";
+	my $weblocbase = "/Users/goodell/git/mpich2-1.1.1/www/coverage";
 	my $webloc     = $weblocbase . "/$device";
 	$annoteSrcDir = $webloc;
 	$annoteFiles  = 1;
