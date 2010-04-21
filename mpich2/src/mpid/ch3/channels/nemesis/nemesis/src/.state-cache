@@ -2,13 +2,13 @@
 <file name="mpid_nem_mpich2_rma.c" info="1244842249"/>
 <file name="mpid_nem_ckpt.c" info="1257000213"/>
 <file name="mpid_nem_lmt.c" info="1257000213"/>
-<file name="mpid_nem_debug.c" info="1256070930"/>
 <file name="mpid_nem_alloc.c" info="1257000213"/>
+<file name="mpid_nem_debug.c" info="1256070930"/>
 <file name="mpid_nem_mpich2.c" info="1252582256"/>
 <file name="mpid_nem_queue.c" info="1241759641"/>
 <file name="mpid_nem_network_poll.c" info="1242092309"/>
 <file name="mpid_nem_network.c" info="1242073746"/>
-<file name="mpid_nem_lmt_dma.c" info="1242239124"/>
+<file name="mpid_nem_lmt_dma.c" info="1265155636"/>
 <file name="mpid_nem_init.c" info="1252582256"/>
 <file name="mpid_nem_finalize.c" info="1252582256"/>
 <file name="mpid_nem_lmt_vmsplice.c" info="1257000213"/>
@@ -56,14 +56,14 @@ MPID_STATE_DO_CTS do_cts
 MPID_STATE_DO_SEND do_send
 MPID_STATE_DO_COOKIE do_cookie
 </fileinfo>
-<fileinfo name="mpid_nem_debug.c">
-MPID_STATE_MPID_NEM_DBG_DUMP_CELL MPID_nem_dbg_dump_cell
-</fileinfo>
 <fileinfo name="mpid_nem_alloc.c">
 MPID_STATE_MPIDI_CH3I_SEG_ALLOC MPIDI_CH3I_Seg_alloc
 MPID_STATE_MPIDI_CH3I_SEG_COMMIT MPIDI_CH3I_Seg_commit
 MPID_STATE_MPIDI_CH3I_SEG_DESTROY MPIDI_CH3I_Seg_destroy
 MPID_STATE_CHECK_ALLOC check_alloc
+</fileinfo>
+<fileinfo name="mpid_nem_debug.c">
+MPID_STATE_MPID_NEM_DBG_DUMP_CELL MPID_nem_dbg_dump_cell
 </fileinfo>
 <fileinfo name="mpid_nem_mpich2.c">
 MPID_STATE_MPID_NEM_MPICH2_INIT MPID_nem_mpich2_init

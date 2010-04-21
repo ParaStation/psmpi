@@ -3,4 +3,4 @@
  *  (C) 2005 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#define SMPD_VERSION "1.2.1"
+#define SMPD_VERSION "1.2.1p1"

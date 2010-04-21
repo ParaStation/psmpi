@@ -2,8 +2,8 @@
 <file name="ch3u_port.c" info="1256070930"/>
 <file name="mpid_comm_disconnect.c" info="1218146710"/>
 <file name="mpid_vc.c" info="1257207003"/>
-<file name="mpid_cancel_send.c" info="1241637926"/>
 <file name="ch3u_comm_spawn_multiple.c" info="1256056283"/>
+<file name="mpid_cancel_send.c" info="1241637926"/>
 <file name="mpid_recv.c" info="1248474264"/>
 <file name="ch3u_rma_sync.c" info="1254002669"/>
 <file name="mpid_irecv.c" info="1248474264"/>
@@ -68,11 +68,11 @@ MPID_STATE_MPIDI_CH3U_VC_FINISHPENDING MPIDI_CH3U_VC_FinishPending
 MPID_STATE_MPIDI_CH3U_COMM_FINISHPENDING MPIDI_CH3U_Comm_FinishPending
 MPID_STATE_PARSE_MAPPING parse_mapping
 </fileinfo>
-<fileinfo name="mpid_cancel_send.c">
-MPID_STATE_MPID_CANCEL_SEND MPID_Cancel_send
-</fileinfo>
 <fileinfo name="ch3u_comm_spawn_multiple.c">
 MPID_STATE_MPIDI_COMM_SPAWN_MULTIPLE MPIDI_Comm_spawn_multiple
+</fileinfo>
+<fileinfo name="mpid_cancel_send.c">
+MPID_STATE_MPID_CANCEL_SEND MPID_Cancel_send
 </fileinfo>
 <fileinfo name="mpid_recv.c">
 MPID_STATE_MPID_RECV MPID_Recv

@@ -33538,6 +33538,17 @@ _ACEOF
 
         fi
 
+        # If either complex or double complex have length 0, then mark
+        # c++ complex as unavailable
+        if test "$ac_cv_sizeof_Complex" != 0 -a \
+                "$ac_cv_sizeof_DoubleComplex" != 0 ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_CXX_COMPLEX 1
+_ACEOF
+
+        fi
+
         # Datatypes are given by
         # 0x4c00 <length in bytes> (1 byte) <unique num> (1 byte)
         # where the unique nums are
@@ -33592,16 +33603,6 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 
-    # If either complex or double complex have length 0, then mark
-    # c++ complex as unavailable
-    if test "$ac_cv_sizeof_Complex" != 0 -a \
-            "$ac_cv_sizeof_DoubleComplex" != 0 ; then
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_CXX_COMPLEX 1
-_ACEOF
-
-    fi
 fi
 
 # ----------------------------------------------------------------------------
@@ -42013,7 +42014,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
     else
         cat > conftest.$ac_ext <<EOF
 
-#line 42016 "configure"
+#line 42017 "configure"
 #include "confdefs.h"
 
 main(){return(0);}
@@ -42104,7 +42105,7 @@ ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
         else
             cat > conftest.$ac_ext <<EOF
 
-#line 42107 "configure"
+#line 42108 "configure"
 #include "confdefs.h"
 
 int main(){return(0);}

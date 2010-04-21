@@ -1,4 +1,4 @@
-			MPICH2 Release 1.2.1
+			MPICH2 Release 1.2.1p1
 
 MPICH2 is a high-performance and widely portable implementation of the
 MPI-2.2 standard from the Argonne National Laboratory. This release
@@ -52,7 +52,7 @@ shared memory), MPD process management) of MPICH2 up and running.
 
 1.  You will need the following prerequisites.
 
-    - This tar file mpich2-1.2.1.tar.gz
+    - This tar file mpich2-1.2.1p1.tar.gz
 
     - A C compiler (gcc is sufficient)
 
@@ -83,14 +83,14 @@ shared memory), MPD process management) of MPICH2 up and running.
 
 2.  Unpack the tar file and go to the top level directory:
 
-      tar xzf mpich2-1.2.1.tar.gz
-      cd mpich2-1.2.1
+      tar xzf mpich2-1.2.1p1.tar.gz
+      cd mpich2-1.2.1p1
 
     If your tar doesn't accept the z option, use
 
-      gunzip mpich2-1.2.1.tar.gz
-      tar xf mpich2-1.2.1.tar
-      cd mpich2-1.2.1
+      gunzip mpich2-1.2.1p1.tar.gz
+      tar xf mpich2-1.2.1p1.tar
+      cd mpich2-1.2.1p1
 
 3.  Choose an installation directory (the default is /usr/local/bin),
     /home/you/mpich2-install which is assumed to non-existent or empty.
@@ -195,7 +195,7 @@ shared memory), MPD process management) of MPICH2 up and running.
     is a ring of daemons on the machines where you will run your MPI
     programs.  In the next few steps, you will get his ring up and
     tested.  More details on interacting with MPD can be found in the
-    README file in mpich2-1.2.1/src/pm/mpd, such as how to list
+    README file in mpich2-1.2.1p1/src/pm/mpd, such as how to list
     running jobs, kill, suspend, or otherwise signal them, and how to
     debug programs with "mpiexec -gdb".
 
@@ -278,7 +278,7 @@ shared memory), MPD process management) of MPICH2 up and running.
 
     to see which machines are in the ring so far.  More details on
     mpdboot and other options for starting the mpd's are in
-    mpich2-1.2.1/src/pm/mpd/README.
+    mpich2-1.2.1p1/src/pm/mpd/README.
 
  !! ***************************
     If you are still having problems getting the mpd ring established,
@@ -320,7 +320,7 @@ shared memory), MPD process management) of MPICH2 up and running.
 14. Now we will run an MPI job, using the mpiexec command as specified
     in the MPI-2 standard.  There are some examples in the install
     directory, which you have already put in your path, as well as in
-    the directory mpich2-1.2.1/examples.  One of them is the classic
+    the directory mpich2-1.2.1p1/examples.  One of them is the classic
     cpi example, which computes the value of pi by numerical
     integration in parallel.
 
@@ -734,21 +734,21 @@ V. Alternate Process Managers
 mpd
 ---
 MPD is the default process manager.  Its setup and use have been
-described above.  The file mpich2-1.2.1/src/pm/mpd/README has more 
+described above.  The file mpich2-1.2.1p1/src/pm/mpd/README has more 
 information about interactive commands for managing the ring of MPDs.
 
 hydra
 -----
 Hydra is a new process management framework that uses existing daemons
 on nodes (e.g., ssh, pbs, slurm, sge) to start MPI processes. The file
-mpich2-1.2.1/src/pm/hydra/README has mode information about Hydra.
+mpich2-1.2.1p1/src/pm/hydra/README has mode information about Hydra.
 
 smpd
 ---- 
 SMPD is a process management system for both Microsoft Windows and UNIX.
 SMPD is capable of starting a job where some processes are running on
 Windows and others are running on a variant of UNIX.  For more
-information, please see mpich2-1.2.1/src/pm/smpd/README.
+information, please see mpich2-1.2.1p1/src/pm/smpd/README.
 
 gforker
 -------

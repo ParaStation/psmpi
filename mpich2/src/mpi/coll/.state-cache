@@ -1,8 +1,8 @@
 <dir>
 <file name="reduce.c" info="1256153135"/>
 <file name="reduce_local.c" info="1258232832"/>
-<file name="scatterv.c" info="1253199486"/>
 <file name="opland.c" info="1253809855"/>
+<file name="scatterv.c" info="1253199486"/>
 <file name="allgather.c" info="1253199486"/>
 <file name="bcast.c" info="1253199486"/>
 <file name="opmax.c" info="1237517247"/>
@@ -31,9 +31,9 @@
 <file name="oplxor.c" info="1253809855"/>
 <file name="allreduce.c" info="1253199486"/>
 <file name="red_scat.c" info="1253199486"/>
-<file name="oputil.h" info="1250016561"/>
-<file name="op_free.c" info="1253199486"/>
 <file name="helper_fns.c" info="1253219565"/>
+<file name="op_free.c" info="1253199486"/>
+<file name="oputil.h" info="1250016561"/>
 </dir>
 <data>
 <fileinfo name="reduce.c">
@@ -42,10 +42,10 @@ MPID_STATE_MPI_REDUCE MPI_Reduce
 <fileinfo name="reduce_local.c">
 MPID_STATE_MPI_REDUCE_LOCAL MPI_Reduce_local
 </fileinfo>
+<fileinfo name="opland.c">
+</fileinfo>
 <fileinfo name="scatterv.c">
 MPID_STATE_MPI_SCATTERV MPI_Scatterv
-</fileinfo>
-<fileinfo name="opland.c">
 </fileinfo>
 <fileinfo name="allgather.c">
 MPID_STATE_MPI_ALLGATHER MPI_Allgather
@@ -122,11 +122,6 @@ MPID_STATE_MPI_ALLREDUCE MPI_Allreduce
 <fileinfo name="red_scat.c">
 MPID_STATE_MPI_REDUCE_SCATTER MPI_Reduce_scatter
 </fileinfo>
-<fileinfo name="oputil.h">
-</fileinfo>
-<fileinfo name="op_free.c">
-MPID_STATE_MPI_OP_FREE MPI_Op_free
-</fileinfo>
 <fileinfo name="helper_fns.c">
 MPID_STATE_MPIC_SEND MPIC_Send
 MPID_STATE_MPIC_RECV MPIC_Recv
@@ -137,5 +132,10 @@ MPID_STATE_MPIR_LOCALCOPY MPIR_Localcopy
 MPID_STATE_MPIC_ISEND MPIC_Isend
 MPID_STATE_MPIC_IRECV MPIC_Irecv
 MPID_STATE_MPIC_WAIT MPIC_Wait
+</fileinfo>
+<fileinfo name="op_free.c">
+MPID_STATE_MPI_OP_FREE MPI_Op_free
+</fileinfo>
+<fileinfo name="oputil.h">
 </fileinfo>
 </data>

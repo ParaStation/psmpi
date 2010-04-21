@@ -58,9 +58,9 @@ socksources =  ch3u_init_sock.c ch3u_connect_sock.c ch3u_getinterfaces.c
 
 ${srcdir}/ch3usockconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && autoheader -I ../../../../../confdb && \
-	autoconf -I \
-	../../../../../confdb ) 
+	(cd ${srcdir} && /sw/bin/autoheader -I ../../../../../confdb && \
+	\
+	/sw/bin/autoconf -I ../../../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm

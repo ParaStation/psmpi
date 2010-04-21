@@ -115,7 +115,7 @@ doc_sources =
 
  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && autoconf -I ../../../confdb )
+	(cd ${srcdir} && /sw/bin/autoconf -I ../../../confdb )
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
