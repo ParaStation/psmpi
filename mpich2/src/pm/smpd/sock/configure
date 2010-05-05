@@ -599,10 +599,8 @@ PACKAGE_STRING=
 PACKAGE_BUGREPORT=
 
 ac_unique_file="configure.in"
-enable_option_checking=no
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-subdirs
 ETAGSADD
 ETAGS
 MAKE_DEPEND_C
@@ -614,6 +612,7 @@ LIBTOOL
 C_LINK_SHL
 CC_SHL
 MPILIBNAME
+AR_FLAGS
 RANLIB
 AR
 SET_MAKE
@@ -677,7 +676,7 @@ CFLAGS
 LDFLAGS
 LIBS
 CPPFLAGS'
-ac_subdirs_all='${smpd_sock_name}'
+
 
 # Initialize some variables set by options.
 ac_init_help=
@@ -1870,16 +1869,6 @@ ac_config_guess="$SHELL $ac_aux_dir/config.guess"  # Please don't use this var.
 ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
 ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
-
-
-
-# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
-  if test "$FROM_MPICH2" = "yes" ; then
-    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
-    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
-    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
-    F90FLAGS="$MPICH2_INTERNAL_F90FLAGS"
-  fi
 
 
 ac_config_headers="$ac_config_headers smpdu_sock_conf.h"
@@ -3384,6 +3373,7 @@ test -n "$RANLIB" || RANLIB="true"
 
 
 
+
 	if test "$ENABLE_SHLIB" = "libtool" ; then
 	    if test -z "$LIBTOOL" ; then
 		{ $as_echo "$as_me:$LINENO: WARNING: libtool selected for shared library support but LIBTOOL is not defined" >&5
@@ -3424,18 +3414,131 @@ export ETAGSADD
 
 export RANLIB
 export AR
-# FIXME: autoconf doesn't like variable names in the config_subdirs call.
 
 
-subdirs="$subdirs ${smpd_sock_name}"
+        { $as_echo "$as_me:$LINENO: ===== configuring ${smpd_sock_name} =====" >&5
+$as_echo "$as_me: ===== configuring ${smpd_sock_name} =====" >&6;}
 
 
-# Add the MPICH2 include flags to CPPFLAGS.  See the discussion above about
-# which include flags should start in MPICH2_INCLUDE_FLAGS and which in
-# CPPFLAGS
-CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
+# Build any intermediate directories
+for dir in ${smpd_sock_name} ; do
+    saveIFS="$IFS"
+    IFS="/"
+    tmp_curdir=""
+    for tmp_subdir in $dir ; do
+	tmp_curdir="${tmp_curdir}$tmp_subdir"
+	if test ! -d "$tmp_curdir" ; then mkdir "$tmp_curdir" ; fi
+        tmp_curdir="${tmp_curdir}/"
+    done
+    IFS="$saveIFS"
+done
 
+	pac_abs_srcdir=`(cd $srcdir && pwd)`
 
+	if test -f $pac_abs_srcdir/${smpd_sock_name}/setup ; then
+	   . $pac_abs_srcdir/${smpd_sock_name}/setup
+	fi
+
+        pac_subconfigure_file="$pac_abs_srcdir/${smpd_sock_name}/configure"
+	if test -x $pac_subconfigure_file ; then
+	   pac_subconfig_args=""
+	   prev_arg=""
+
+	   # Strip off the args we need to update
+	   for ac_arg in $ac_configure_args ; do
+
+	       # HACK: Though each argument in ac_configure_args is
+	       # quoted to account for spaces, when we get them, the
+	       # argument list is treated as a space separated list
+	       # and the quotes are treated as a part of the
+	       # argument. So, we explicitly look for the quotes and
+	       # recreate the arguments. If/when this is fixed by
+	       # autoconf, this hack can be deleted.
+	       end_char=`echo $ac_arg | sed -e 's/.*\(.\)$/\1/g'`
+
+	       # If the previous argument was incomplete, we append
+	       # this argument to that
+	       if test "$prev_arg" != "" -o "$end_char" != "'" ; then
+                  prev_arg="$prev_arg $ac_arg"
+	       fi
+
+	       # If the end character is a quote, we are at the end of
+	       # an argument.
+	       if test "$end_char" = "'" ; then
+                  # If the previous argument just got completed, set
+		  # the current argument to the entire argument value
+		  if test "$prev_arg" != "" ; then ac_arg="$prev_arg" ; fi
+		  prev_arg=
+	       else
+		  # If the previous argument hasn't completed yet,
+		  # just continue on to the next argument
+		  continue
+	       fi
+
+	       # Remove any quotes around the args (added by configure)
+	       ac_narg=`echo $ac_arg | sed -e "s/^'\(.*\)'$/\1/g"`
+
+	       case $ac_narg in
+                   CFLAGS=*)
+		       pac_subconfig_args="$pac_subconfig_args CFLAGS='$CFLAGS'"
+		       ;;
+		   CPPFLAGS=*)
+		       pac_subconfig_args="$pac_subconfig_args CPPFLAGS='$CPPFLAGS'"
+		       ;;
+		   CXXFLAGS=*)
+		       pac_subconfig_args="$pac_subconfig_args CXXFLAGS='$CXXFLAGS'"
+		       ;;
+		   FFLAGS=*)
+		       pac_subconfig_args="$pac_subconfig_args FFLAGS='$FFLAGS'"
+		       ;;
+		   F90FLAGS=*)
+		       pac_subconfig_args="$pac_subconfig_args F90FLAGS='$F90FLAGS'"
+		       ;;
+		   LDFLAGS=*)
+		       pac_subconfig_args="$pac_subconfig_args LDFLAGS='$LDFLAGS'"
+		       ;;
+		   LIBS=*)
+		       pac_subconfig_args="$pac_subconfig_args LIBS='$LIBS'"
+		       ;;
+		   *)
+		       # We store ac_arg instead of ac_narg to make
+		       # sure we retain the quotes as provided to us
+		       # by autoconf
+		       pac_subconfig_args="$pac_subconfig_args $ac_arg"
+		       ;;
+	       esac
+	   done
+
+	   echo "executing: $pac_subconfigure_file $pac_subconfig_args"
+	   if (cd ${smpd_sock_name} && eval $pac_subconfigure_file $pac_subconfig_args) ; then
+
+	      :
+	   else
+	      { { $as_echo "$as_me:$LINENO: error: ${smpd_sock_name} configure failed" >&5
+$as_echo "$as_me: error: ${smpd_sock_name} configure failed" >&2;}
+   { (exit 1); exit 1; }; }
+	      :
+	   fi
+        else
+           if test -e $pac_subconfigure_file ; then
+               { $as_echo "$as_me:$LINENO: WARNING: $pac_subconfigure_file exists but is not executable" >&5
+$as_echo "$as_me: WARNING: $pac_subconfigure_file exists but is not executable" >&2;}
+           else
+               { $as_echo "$as_me:$LINENO: WARNING: $pac_subconfigure_file does not exist" >&5
+$as_echo "$as_me: WARNING: $pac_subconfigure_file does not exist" >&2;}
+           fi
+	fi
+
+        { $as_echo "$as_me:$LINENO: ===== done with ${smpd_sock_name} configure =====" >&5
+$as_echo "$as_me: ===== done with ${smpd_sock_name} configure =====" >&6;}
+
+	# Check for any localdefs files.  These may be created, so we
+	# look in the local directory first.
+	if test -f ${smpd_sock_name}/localdefs ; then
+	   . ${smpd_sock_name}/localdefs
+	elif test -f $pac_abs_srcdir/${smpd_sock_name}/localdefs ; then
+	   . $pac_abs_srcdir/${smpd_sock_name}/localdefs
+	fi
 
 
 ac_config_files="$ac_config_files Makefile localdefs"
@@ -4673,193 +4776,6 @@ if test "$no_create" != yes; then
   # Use ||, not &&, to avoid exiting from the if with $? = 1, which
   # would make configure fail if this is the last instruction.
   $ac_cs_success || { (exit 1); exit 1; }
-fi
-
-#
-# CONFIG_SUBDIRS section.
-#
-if test "$no_recursion" != yes; then
-
-  # Remove --cache-file, --srcdir, and --disable-option-checking arguments
-  # so they do not pile up.
-  ac_sub_configure_args=
-  ac_prev=
-  eval "set x $ac_configure_args"
-  shift
-  for ac_arg
-  do
-    if test -n "$ac_prev"; then
-      ac_prev=
-      continue
-    fi
-    case $ac_arg in
-    -cache-file | --cache-file | --cache-fil | --cache-fi \
-    | --cache-f | --cache- | --cache | --cach | --cac | --ca | --c)
-      ac_prev=cache_file ;;
-    -cache-file=* | --cache-file=* | --cache-fil=* | --cache-fi=* \
-    | --cache-f=* | --cache-=* | --cache=* | --cach=* | --cac=* | --ca=* \
-    | --c=*)
-      ;;
-    --config-cache | -C)
-      ;;
-    -srcdir | --srcdir | --srcdi | --srcd | --src | --sr)
-      ac_prev=srcdir ;;
-    -srcdir=* | --srcdir=* | --srcdi=* | --srcd=* | --src=* | --sr=*)
-      ;;
-    -prefix | --prefix | --prefi | --pref | --pre | --pr | --p)
-      ac_prev=prefix ;;
-    -prefix=* | --prefix=* | --prefi=* | --pref=* | --pre=* | --pr=* | --p=*)
-      ;;
-    --disable-option-checking)
-      ;;
-    *)
-      case $ac_arg in
-      *\'*) ac_arg=`$as_echo "$ac_arg" | sed "s/'/'\\\\\\\\''/g"` ;;
-      esac
-      ac_sub_configure_args="$ac_sub_configure_args '$ac_arg'" ;;
-    esac
-  done
-
-  # Always prepend --prefix to ensure using the same prefix
-  # in subdir configurations.
-  ac_arg="--prefix=$prefix"
-  case $ac_arg in
-  *\'*) ac_arg=`$as_echo "$ac_arg" | sed "s/'/'\\\\\\\\''/g"` ;;
-  esac
-  ac_sub_configure_args="'$ac_arg' $ac_sub_configure_args"
-
-  # Pass --silent
-  if test "$silent" = yes; then
-    ac_sub_configure_args="--silent $ac_sub_configure_args"
-  fi
-
-  # Always prepend --disable-option-checking to silence warnings, since
-  # different subdirs can have different --enable and --with options.
-  ac_sub_configure_args="--disable-option-checking $ac_sub_configure_args"
-
-  ac_popdir=`pwd`
-  for ac_dir in : $subdirs; do test "x$ac_dir" = x: && continue
-
-    # Do not complain, so a configure script can configure whichever
-    # parts of a large source tree are present.
-    test -d "$srcdir/$ac_dir" || continue
-
-    ac_msg="=== configuring in $ac_dir (`pwd`/$ac_dir)"
-    $as_echo "$as_me:$LINENO: $ac_msg" >&5
-    $as_echo "$ac_msg" >&6
-    { as_dir="$ac_dir"
-  case $as_dir in #(
-  -*) as_dir=./$as_dir;;
-  esac
-  test -d "$as_dir" || { $as_mkdir_p && mkdir -p "$as_dir"; } || {
-    as_dirs=
-    while :; do
-      case $as_dir in #(
-      *\'*) as_qdir=`$as_echo "$as_dir" | sed "s/'/'\\\\\\\\''/g"`;; #'(
-      *) as_qdir=$as_dir;;
-      esac
-      as_dirs="'$as_qdir' $as_dirs"
-      as_dir=`$as_dirname -- "$as_dir" ||
-$as_expr X"$as_dir" : 'X\(.*[^/]\)//*[^/][^/]*/*$' \| \
-	 X"$as_dir" : 'X\(//\)[^/]' \| \
-	 X"$as_dir" : 'X\(//\)$' \| \
-	 X"$as_dir" : 'X\(/\)' \| . 2>/dev/null ||
-$as_echo X"$as_dir" |
-    sed '/^X\(.*[^/]\)\/\/*[^/][^/]*\/*$/{
-	    s//\1/
-	    q
-	  }
-	  /^X\(\/\/\)[^/].*/{
-	    s//\1/
-	    q
-	  }
-	  /^X\(\/\/\)$/{
-	    s//\1/
-	    q
-	  }
-	  /^X\(\/\).*/{
-	    s//\1/
-	    q
-	  }
-	  s/.*/./; q'`
-      test -d "$as_dir" && break
-    done
-    test -z "$as_dirs" || eval "mkdir $as_dirs"
-  } || test -d "$as_dir" || { { $as_echo "$as_me:$LINENO: error: cannot create directory $as_dir" >&5
-$as_echo "$as_me: error: cannot create directory $as_dir" >&2;}
-   { (exit 1); exit 1; }; }; }
-    ac_builddir=.
-
-case "$ac_dir" in
-.) ac_dir_suffix= ac_top_builddir_sub=. ac_top_build_prefix= ;;
-*)
-  ac_dir_suffix=/`$as_echo "$ac_dir" | sed 's|^\.[\\/]||'`
-  # A ".." for each directory in $ac_dir_suffix.
-  ac_top_builddir_sub=`$as_echo "$ac_dir_suffix" | sed 's|/[^\\/]*|/..|g;s|/||'`
-  case $ac_top_builddir_sub in
-  "") ac_top_builddir_sub=. ac_top_build_prefix= ;;
-  *)  ac_top_build_prefix=$ac_top_builddir_sub/ ;;
-  esac ;;
-esac
-ac_abs_top_builddir=$ac_pwd
-ac_abs_builddir=$ac_pwd$ac_dir_suffix
-# for backward compatibility:
-ac_top_builddir=$ac_top_build_prefix
-
-case $srcdir in
-  .)  # We are building in place.
-    ac_srcdir=.
-    ac_top_srcdir=$ac_top_builddir_sub
-    ac_abs_top_srcdir=$ac_pwd ;;
-  [\\/]* | ?:[\\/]* )  # Absolute name.
-    ac_srcdir=$srcdir$ac_dir_suffix;
-    ac_top_srcdir=$srcdir
-    ac_abs_top_srcdir=$srcdir ;;
-  *) # Relative name.
-    ac_srcdir=$ac_top_build_prefix$srcdir$ac_dir_suffix
-    ac_top_srcdir=$ac_top_build_prefix$srcdir
-    ac_abs_top_srcdir=$ac_pwd/$srcdir ;;
-esac
-ac_abs_srcdir=$ac_abs_top_srcdir$ac_dir_suffix
-
-
-    cd "$ac_dir"
-
-    # Check for guested configure; otherwise get Cygnus style configure.
-    if test -f "$ac_srcdir/configure.gnu"; then
-      ac_sub_configure=$ac_srcdir/configure.gnu
-    elif test -f "$ac_srcdir/configure"; then
-      ac_sub_configure=$ac_srcdir/configure
-    elif test -f "$ac_srcdir/configure.in"; then
-      # This should be Cygnus configure.
-      ac_sub_configure=$ac_aux_dir/configure
-    else
-      { $as_echo "$as_me:$LINENO: WARNING: no configuration information is in $ac_dir" >&5
-$as_echo "$as_me: WARNING: no configuration information is in $ac_dir" >&2;}
-      ac_sub_configure=
-    fi
-
-    # The recursion is here.
-    if test -n "$ac_sub_configure"; then
-      # Make the cache file name correct relative to the subdirectory.
-      case $cache_file in
-      [\\/]* | ?:[\\/]* ) ac_sub_cache_file=$cache_file ;;
-      *) # Relative name.
-	ac_sub_cache_file=$ac_top_build_prefix$cache_file ;;
-      esac
-
-      { $as_echo "$as_me:$LINENO: running $SHELL $ac_sub_configure $ac_sub_configure_args --cache-file=$ac_sub_cache_file --srcdir=$ac_srcdir" >&5
-$as_echo "$as_me: running $SHELL $ac_sub_configure $ac_sub_configure_args --cache-file=$ac_sub_cache_file --srcdir=$ac_srcdir" >&6;}
-      # The eval makes quoting arguments work.
-      eval "\$SHELL \"\$ac_sub_configure\" $ac_sub_configure_args \
-	   --cache-file=\"\$ac_sub_cache_file\" --srcdir=\"\$ac_srcdir\"" ||
-	{ { $as_echo "$as_me:$LINENO: error: $ac_sub_configure failed for $ac_dir" >&5
-$as_echo "$as_me: error: $ac_sub_configure failed for $ac_dir" >&2;}
-   { (exit 1); exit 1; }; }
-    fi
-
-    cd "$ac_popdir"
-  done
 fi
 if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
   { $as_echo "$as_me:$LINENO: WARNING: unrecognized options: $ac_unrecognized_opts" >&5

@@ -6,15 +6,6 @@ dnl config.guess
 dnl
 AC_CONFIG_AUX_DIR(../../../confdb)
 
-dnl The MPICH2 top-level configure adds a bunch of flags to the
-dnl user-defined CFLAGS by processing different configure command-line
-dnl arguments (--enable-g, --enable-default-optimization). These updated
-dnl flags are passed down as a separate flag. Here, we don't care about
-dnl the user-defined flags, but rather this updated flags, so we just
-dnl overwrite CFLAGS with them.
-PAC_SUBCONFIG_INIT()
-
-dnl
 dnl Definitions will be placed in this file rather than in the DEFS variable
 dnl
 AC_CONFIG_HEADER(include/mpidi_ch3_conf.h)
@@ -92,9 +83,7 @@ export CPPFLAGS
 # the best way to handle these systems
 # Note that the "setup_<channelname>" script must also set 
 #   needs_sock=yes
-# if util/sock is used, and
-#   needs_shm=yes
-# if util/shm is used.
+# if util/sock is used
 if test -s $srcdir/channels/$channel_name/setup_$channel_name ; then
     # Typically, this will set ch3subsystems.  For now,
     # we use this configure to create the configuration file
@@ -104,11 +93,7 @@ if test -s $srcdir/channels/$channel_name/setup_$channel_name ; then
     if test "$needs_sock" = yes ; then
         AC_DEFINE(HAVE_UTIL_SOCK,1,[Define if the channel needs util/sock])
 	CPPFLAGS="${CPPFLAGS} -I${master_top_srcdir}/src/mpid/ch3/util/sock"
-        AC_CONFIG_SUBDIRS(util/sock)
-    fi				   	
-    if test "$needs_shm" = yes ; then
-        AC_DEFINE(HAVE_UTIL_SHM,1,[Define if the channel needs util/shm])
-	#CPPFLAGS="${CPPFLAGS} -I${master_top_srcdir}/src/mpid/ch3/util/shm"
+	PAC_CONFIG_SUBDIR(util/sock,,AC_ERROR(util/sock configure failed))
     fi				   	
 fi
 AC_SUBST(ch3subsystems)
@@ -116,7 +101,6 @@ AC_SUBST(ch3subsystems)
 AC_ARG_WITH(ch3-rank-bits, [--with-ch3-rank-bits=16/32     Number of bits allocated to the rank field (16 or 32)],
 			   [ rankbits=$withval ],
 			   [ rankbits=16 ])
-AC_MSG_RESULT($rankbits)
 if test "$rankbits" != "16" -a "$rankbits" != "32" ; then
    AC_MSG_ERROR(Only 16 or 32-bit ranks are supported)
 fi
@@ -275,6 +259,7 @@ MPID_THREAD_SRCDIR="../common/thread"
 builtin(include,../common/thread/mpid_thread.m4)
 
 AC_SUBST(AR)
+AC_SUBST(AR_FLAGS)
 AC_SUBST(RANLIB)
 AC_SUBST(MPILIBNAME)
 AC_SUBST(CC)
@@ -303,25 +288,8 @@ export SHLIB_EXT
 export ENABLE_SHLIB
 export LIBTOOL
 
-# TERRIBLE HACK: For some reason, anything added to LIBS by this
-# configure is lost in the subconfigure.  So we save it in another
-# variable then restore it in the subconfigure.  Note that this
-# doesn't happen with LDFLAGS!
-# FIXME: Figure out what's going on.
-MY_EXPORTED_LIBS="$LIBS"
-export MY_EXPORTED_LIBS
+PAC_CONFIG_SUBDIR(channels/${channel_name},,AC_ERROR(channels/${channel_name} configure failed))
 
-# FIXME shouldn't put var in _SUBDIRS
-AC_CONFIG_SUBDIRS(channels/${channel_name})
-
-# Add the MPICH2 include flags to CPPFLAGS.  See the discussion above about
-# which include flags should start in MPICH2_INCLUDE_FLAGS and which in 
-# CPPFLAGS
-CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
-
-dnl Place holder macro for finalization
-PAC_SUBCONFIG_FINALIZE()
-
-AC_OUTPUT(Makefile src/Makefile util/Makefile util/shm/Makefile util/shmbase/Makefile channels/Makefile util/ftb/Makefile localdefs $MPID_THREAD_OUTPUT_FILES)
+AC_OUTPUT(Makefile src/Makefile util/Makefile channels/Makefile util/ftb/Makefile localdefs $MPID_THREAD_OUTPUT_FILES)
 
 PAC_SUBDIR_CACHE_CLEANUP

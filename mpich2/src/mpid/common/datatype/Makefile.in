@@ -7,6 +7,7 @@ all: all-redirect
 
 SHELL           = @SHELL@
 AR              = @AR@
+AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
@@ -67,7 +68,7 @@ ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
 	"-autoconf=-I ROOTDIR/confdb" \
 	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
 	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile config.status config.log config.cache *conf.cache config.system" \
+	-distcleanfiles="Makefile" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
 Makefile: ${srcdir}/Makefile.in
@@ -116,11 +117,11 @@ all-local: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a
 	mpid_datatype_contents.o mpid_type_get_contents.o \
 	mpid_type_create_pairtype.o mpid_contents_support.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../lib/lib${MPILIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../../lib/lib${MPILIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../../lib/lib${MPILIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
@@ -138,11 +139,11 @@ all-local: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a
 	mpid_datatype_contents.lo mpid_type_get_contents.lo \
 	mpid_type_create_pairtype.lo mpid_contents_support.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../lib/lib${MPILIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../../lib/lib${MPILIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../../lib/lib${MPILIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 coverage: 
 	-@for file in mpid_type_debug.c 	mpid_segment.c 	mpid_ext32_segment.c \
@@ -172,7 +173,7 @@ DEPS_DIR = .deps
 MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
-	(cd dataloop && ${MAKE} dependencies )
+	if [ -s dataloop/Makefile ] ; then (cd dataloop && ${MAKE} dependencies ) ; fi
 $(DEPS_DIR)/mpid_type_debug.d: $(srcdir)/mpid_type_debug.c
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "MAKE_DEPEND_C mpid_type_debug.c > $(DEPS_DIR)/mpid_type_debug.d" ; \

@@ -1,26 +1,29 @@
 ===============================================================================
-                               Changes in 1.2.1p1
+                               Changes in 1.3
 ===============================================================================
 
- # OVERALL: Fixes for several minor issues on PowerPC.
+ # OVERALL: Support for Asynchronous Communication Progress.
 
- # OVERALL: Fix for a bug where the knem LMT backend would attempt to use an
-   I/OAT device even if one was not present in the system
+ # OVERALL: The ssm and shm channels have been removed.
 
- # BUILD SYSTEM: Fix for a compile error when C++ complex types are not present.
+ # OVERALL: Checkpoint/restart support using BLCR
 
- # BUILD SYSTEM: Fix bash-ism in configure scripts that broke builds on Solaris.
+ # PM/PMI: Hydra is now the default process management framework
+   replacing MPD.
 
- # PM/PMI: Fix for a hang in mpdboot.
+ # PM/PMI: Added dynamic process support for Hydra.
+
+ # DEBUGGER: Improved support and bug fixes in the Totalview support.
 
  # Several other minor bug fixes, memory leak fixes, and code cleanup.
    A full list of changes is available using:
 
-     svn log -r 5824:HEAD https://svn.mcs.anl.gov/repos/mpi/mpich2/tags/release/mpich2-1.2.1p1
+     svn log -r5762:HEAD https://svn.mcs.anl.gov/repos/mpi/mpich2/tags/release/mpich2-1.3a2
 
      ... or at the following link:
 
-     https://trac.mcs.anl.gov/projects/mpich2/log/mpich2/tags/release/mpich2-1.2.1p1?action=follow_copy&rev=HEAD&stop_rev=5824&mode=follow_copy
+     https://trac.mcs.anl.gov/projects/mpich2/log/mpich2/tags/release/mpich2-1.3a2?action=follow_copy&rev=HEAD&stop_rev=5762&mode=follow_copy
+
 
 ===============================================================================
                                Changes in 1.2.1

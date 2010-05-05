@@ -21,9 +21,9 @@ VPATH = .:@srcdir@
 ${srcdir}/include/mpidi_ch3_conf.h  ${srcdir}/configure: \
 	${srcdir}/configure.in  ../common/thread/mpid_thread.m4 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /sw/bin/autoheader -I ../../../confdb && \
-	\
-	/sw/bin/autoconf -I ../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../confdb && \
+	autoconf -I \
+	../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -35,7 +35,7 @@ ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
 	"-autoconf=-I ROOTDIR/confdb" \
 	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
 	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile src/Makefile util/Makefile util/shm/Makefile util/shmbase/Makefile channels/Makefile util/ftb/Makefile localdefs config.status config.log config.cache *conf.cache config.system" \
+	-distcleanfiles="Makefile src/Makefile util/Makefile channels/Makefile util/ftb/Makefile localdefs config.status config.log config.cache *conf.cache config.system" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
 Makefile: ${srcdir}/Makefile.in
@@ -58,7 +58,7 @@ distclean-xxx:
 	for dir in channels src util ; do \
 		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} distclean ) ; done
-	-@rm -f Makefile src/Makefile util/Makefile util/shm/Makefile util/shmbase/Makefile channels/Makefile util/ftb/Makefile localdefs config.status config.log config.cache *conf.cache config.system
+	-@rm -f Makefile src/Makefile util/Makefile channels/Makefile util/ftb/Makefile localdefs config.status config.log config.cache *conf.cache config.system
 	-@rm -rf autom4te*.cache
 	-@rm -f include/mpidi_ch3_conf.h
 	-@rm -rf $(DEPS_DIR)
@@ -96,6 +96,7 @@ latexdoc:
 # Dependencies
 dependencies:
 	for dir in channels src util ; do \
+		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} dependencies ) ; done
 # End of Dependencies
 # --------------------------------------------------------------------------

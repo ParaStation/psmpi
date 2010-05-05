@@ -247,7 +247,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
 #endif
 
     /* We need this inorder to implement IS_THREAD_MAIN */
-#   if (MPICH_THREAD_LEVEL >= MPI_THREAD_SERIALIZED)
+#   if (MPICH_THREAD_LEVEL >= MPI_THREAD_SERIALIZED) && defined(MPICH_IS_THREADED)
     {
 	MPID_Thread_self(&MPIR_ThreadInfo.master_thread);
     }
@@ -444,7 +444,9 @@ int MPIR_Init_thread(int * argc, char ***argv, int required,
     if (mpi_errno != MPI_SUCCESS)
         MPIR_Process.initialized = MPICH_PRE_INIT;
     /* --END ERROR HANDLING-- */
-
+    /* FIXME: Does this need to come before the call to MPID_InitComplete?
+       For some debugger support, MPIR_WaitForDebugger may want to use
+       MPI communication routines to collect information for the debugger */
 #ifdef HAVE_DEBUGGER_SUPPORT
     MPIR_WaitForDebugger();
 #endif
@@ -554,26 +556,22 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 
     /* ... body of routine ... */
 
-#if defined USE_ASYNC_PROGRESS
     /* If the user requested for asynchronous progress, request for
      * THREAD_MULTIPLE. */
     rc = 0;
-    MPIU_GetEnvBool("MPICH_ASYNC_PROGRESS", &rc);
+    MPL_env2bool("MPICH_ASYNC_PROGRESS", &rc);
     if (rc)
         reqd = MPI_THREAD_MULTIPLE;
-#endif /* USE_ASYNC_PROGRESS */
 
     mpi_errno = MPIR_Init_thread( argc, argv, reqd, provided );
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-#if defined USE_ASYNC_PROGRESS
     if (rc && *provided == MPI_THREAD_MULTIPLE) {
         mpi_errno = MPIR_Init_async_thread();
         if (mpi_errno) goto fn_fail;
 
         MPIR_async_thread_initialized = 1;
     }
-#endif /* USE_ASYNC_PROGRESS */
 
     /* ... end of body of routine ... */
     

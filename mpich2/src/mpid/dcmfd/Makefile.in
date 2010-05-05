@@ -28,9 +28,9 @@ VPATH = .:@srcdir@
 ${srcdir}/include/mpid_config.h  ${srcdir}/configure: ${srcdir}/configure.in  \
 	../common/thread/mpid_thread.m4 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /sw/bin/autoheader -I ../../../confdb && \
-	\
-	/sw/bin/autoconf -I ../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../confdb && \
+	autoconf -I \
+	../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -104,7 +104,7 @@ installcheck:
 # --------------------------------------------------------------------------
 # Dependencies
 dependencies:
-	(cd src && ${MAKE} dependencies )
+	if [ -s src/Makefile ] ; then (cd src && ${MAKE} dependencies ) ; fi
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------

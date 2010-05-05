@@ -180,6 +180,7 @@ smpd_global_t smpd_process =
       SMPD_FALSE,       /* use_sspi                */
       SMPD_FALSE,       /* use_delegation          */
       SMPD_FALSE,       /* use_sspi_job_key        */
+      SMPD_FALSE,       /* use_ms_hpc              */
 #ifdef HAVE_WINDOWS_H
       NULL,             /* sec_fn                  */
 #endif
@@ -191,6 +192,7 @@ smpd_global_t smpd_process =
       "",               /* val                     */
       SMPD_FALSE,       /* do_console_returns      */
       "",               /* env_channel             */
+      "",               /* env_netmod              */
       "",               /* env_dll                 */
       "",               /* env_wrap_dll            */
       NULL,             /* delayed_spawn_queue     */
@@ -229,7 +231,13 @@ int smpd_post_abort_command(char *fmt, ...)
 	smpd_exit_fn(FCNAME);
 	return SMPD_FAIL;
     }
-    smpd_command_destination(0, &context);
+    result = smpd_command_destination(0, &context);
+    if(result != SMPD_SUCCESS){
+        smpd_err_printf("Unable to find destination for command...Aborting: %s\n", error_str);
+        smpd_exit_fn(FCNAME);
+        return SMPD_FAIL;
+    }
+
     if (context == NULL)
     {
 	if (smpd_process.left_context == NULL)
@@ -679,6 +687,7 @@ int smpd_init_context(smpd_context_t *context, smpd_context_type_t type, SMPDU_S
     context->session_header[0] = '\0';
     context->singleton_init_hostname[0] = '\0';
     context->singleton_init_kvsname[0] = '\0';
+    context->singleton_init_domainname[0] = '\0';
     context->singleton_init_pm_port = -1;
     context->smpd_pwd[0] = '\0';
 #ifdef HAVE_WINDOWS_H

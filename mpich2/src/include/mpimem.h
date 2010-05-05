@@ -18,6 +18,7 @@ extern "C" {
 #endif
 
 #include "mpichconf.h"
+#include "mpl.h"
 
 /* ensure that we weren't included out of order */
 #include "mpibase.h"
@@ -131,6 +132,20 @@ int MPIU_Str_get_string(char **str_ptr, char *val, int maxlen);
 
 /* ------------------------------------------------------------------------- */
 
+void MPIU_trinit(int);
+void *MPIU_trmalloc(unsigned int, int, const char []);
+void MPIU_trfree(void *, int, const char []);
+int MPIU_trvalid(const char []);
+void MPIU_trspace(int *, int *);
+void MPIU_trid(int);
+void MPIU_trlevel(int);
+void MPIU_trDebugLevel(int);
+void *MPIU_trcalloc(unsigned int, unsigned int, int, const char []);
+void *MPIU_trrealloc(void *, int, int, const char[]);
+void *MPIU_trstrdup(const char *, int, const char[]);
+void MPIU_TrSetMaxMem(int);
+void MPIU_trdump(FILE *, int);
+
 #ifdef USE_MEMORY_TRACING
 /*M
   MPIU_Malloc - Allocate memory
@@ -161,8 +176,8 @@ int MPIU_Str_get_string(char **str_ptr, char *val, int maxlen);
   Module:
   Utility
   M*/
-
 #define MPIU_Malloc(a)    MPIU_trmalloc((unsigned)(a),__LINE__,__FILE__)
+
 /*M
   MPIU_Calloc - Allocate memory that is initialized to zero.
 
@@ -236,30 +251,6 @@ int MPIU_Str_get_string(char **str_ptr, char *val, int maxlen);
 #undef strdup /* in case strdup is a macro */
 #define strdup(a)         'Error use MPIU_Strdup' :::
 
-/* FIXME: Note that some of these prototypes are for old functions in the 
-   src/util/mem/trmem.c package, and are no longer used.  Also, 
-   it may be preferable to use trmem.h instead of these definitions */
-void MPIU_trinit ( int );
-void *MPIU_trmalloc ( unsigned int, int, const char * );
-void MPIU_trfree ( void *, int, const char * );
-int MPIU_trvalid ( const char * );
-void MPIU_trspace ( int *, int * );
-void MPIU_trid ( int );
-void MPIU_trlevel ( int );
-void MPIU_trpush ( int );
-void MPIU_trpop (void);
-void MPIU_trDebugLevel ( int );
-void *MPIU_trstrdup( const char *, int, const char * );
-void *MPIU_trcalloc ( unsigned, unsigned, int, const char * );
-void *MPIU_trrealloc ( void *, int, int, const char * );
-void MPIU_TrSetMaxMem ( int );
-
-#ifndef MPIU_MEM_NOSTDIO
-void MPIU_trdump ( FILE *, int );
-void MPIU_trSummary ( FILE *, int );
-void MPIU_trdumpGrouped ( FILE *, int );
-#endif
-
 #else /* USE_MEMORY_TRACING */
 /* No memory tracing; just use native functions */
 #define MPIU_Malloc(a)    malloc((size_t)(a))
@@ -311,7 +302,7 @@ extern char *strdup( const char * );
 #define MPIU_CHKLMEM_FREEALL()
 #define MPIU_CHKLMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,stmt_) \
 {pointer_ = (type_)alloca(nbytes_); \
-    if (!(pointer_) && (nbytes > 0)) {	   \
+    if (!(pointer_) && (nbytes_ > 0)) {	   \
     MPIU_CHKMEM_SETERR(rc_,nbytes_,name_); \
     stmt_;\
 }}
@@ -434,17 +425,7 @@ if (pointer_) { \
 #   error "No function defined for case-insensitive strncmp"
 #endif
 
-/* Provide a fallback snprintf for systems that do not have one */
-#ifdef HAVE_SNPRINTF
-#define MPIU_Snprintf snprintf
-/* Sometimes systems don't provide prototypes for snprintf */
-#ifdef NEEDS_SNPRINTF_DECL
-extern int snprintf( char *, size_t, const char *, ... ) ATTRIBUTE((format(printf,3,4)));
-#endif
-#else
-int MPIU_Snprintf( char *str, size_t size, const char *format, ... ) 
-     ATTRIBUTE((format(printf,3,4)));
-#endif /* HAVE_SNPRINTF */
+#define MPIU_Snprintf MPL_snprintf
 
 /* MPIU_Basename(path, basename)
    This function finds the basename in a path (ala "man 1 basename").
@@ -453,9 +434,11 @@ int MPIU_Snprintf( char *str, size_t size, const char *format, ... )
 */
 void MPIU_Basename(char *path, char **basename);
 
-/* May be used to perform sanity and range checking on memcpy and mempcy-like
-   function calls.  This macro will bail out much like an MPIU_Assert if any of
-   the checks fail. */
+/* Evaluates to a boolean expression, true if the given byte ranges overlap,
+ * false otherwise.  That is, true iff [a_,a_+a_len_) overlaps with [b_,b_+b_len_) */
+#define MPIU_MEM_RANGES_OVERLAP(a_,a_len_,b_,b_len_) \
+    ( ((char *)(a_) >= (char *)(b_) && ((char *)(a_) < ((char *)(b_) + (b_len_)))) ||  \
+      ((char *)(b_) >= (char *)(a_) && ((char *)(b_) < ((char *)(a_) + (a_len_)))) )
 #if (!defined(NDEBUG) && defined(HAVE_ERROR_CHECKING))
 
 #ifndef TRUE
@@ -465,16 +448,17 @@ void MPIU_Basename(char *path, char **basename);
 #define FALSE 0
 #endif
 
+/* May be used to perform sanity and range checking on memcpy and mempcy-like
+   function calls.  This macro will bail out much like an MPIU_Assert if any of
+   the checks fail. */
 #define MPIU_MEM_CHECK_MEMCPY(dst_,src_,len_)                                                                   \
     do {                                                                                                        \
-        if (len_) {                                                                                              \
+        if (len_) {                                                                                             \
             MPIU_Assert((dst_) != NULL);                                                                        \
             MPIU_Assert((src_) != NULL);                                                                        \
-            MPIU_VG_CHECK_MEM_IS_ADDRESSABLE((dst_),(len_));                                                    \
-            MPIU_VG_CHECK_MEM_IS_ADDRESSABLE((src_),(len_));                                                    \
-            if (((char *)(dst_) >= (char *)(src_) && ((char *)(dst_) < ((char *)(src_) + (len_)))) ||           \
-                ((char *)(src_) >= (char *)(dst_) && ((char *)(src_) < ((char *)(dst_) + (len_)))))             \
-            {                                                                                                   \
+            MPL_VG_CHECK_MEM_IS_ADDRESSABLE((dst_),(len_));                                                     \
+            MPL_VG_CHECK_MEM_IS_ADDRESSABLE((src_),(len_));                                                     \
+            if (MPIU_MEM_RANGES_OVERLAP((dst_),(len_),(src_),(len_))) {                                          \
                 MPIU_Assert_fmt_msg(FALSE,("memcpy argument memory ranges overlap, dst_=%p src_=%p len_=%ld\n", \
                                            (dst_), (src_), (long)(len_)));                                      \
             }                                                                                                   \
@@ -484,7 +468,7 @@ void MPIU_Basename(char *path, char **basename);
 #define MPIU_MEM_CHECK_MEMCPY(dst_,src_,len_) do {} while(0)
 #endif
 
-#include "mpiu_valgrind.h"
+/* valgrind macros are now provided by MPL (via mpl.h included in mpiimpl.h) */
 
 /* ------------------------------------------------------------------------- */
 /* end of mpimem.h */

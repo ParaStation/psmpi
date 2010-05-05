@@ -7,6 +7,7 @@ all: all-redirect
 
 SHELL           = @SHELL@
 AR              = @AR@
+AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
@@ -104,11 +105,11 @@ all-local: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	mpid_win_create.o mpid_win_fence.o mpid_win_pscw.o mpid_win_lock.o \
 	mpid_put.o mpid_get.o mpid_accumulate.o mpid_misc.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../../lib/lib${MPILIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../../../lib/lib${MPILIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../../../lib/lib${MPILIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
@@ -121,11 +122,11 @@ all-local: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	mpid_win_lock.lo mpid_put.lo mpid_get.lo mpid_accumulate.lo \
 	mpid_misc.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../../lib/lib${MPILIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../../../lib/lib${MPILIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../../../lib/lib${MPILIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 coverage: 
 	-@for file in mpid_rma_common.c mpid_win_create.c mpid_win_fence.c \

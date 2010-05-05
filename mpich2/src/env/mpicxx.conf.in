@@ -12,17 +12,17 @@ exec_prefix=@exec_prefix@
 sysconfdir=@sysconfdir@
 includedir=@includedir@
 libdir=@libdir@
-#
+
 # Default settings for compiler, flags, and libraries.
 # Determined by a combination of environment variables and tests within
 # configure (e.g., determining whehter -lsocket is needee)
 CXX="@CXX@"
-WRAPPER_CXXFLAGS="@WRAPPER_CXXFLAGS@"
-WRAPPER_LDFLAGS="@WRAPPER_LDFLAGS@"
+CXXFLAGS="@WRAPPER_CXXFLAGS@"
+LDFLAGS="@WRAPPER_LDFLAGS@"
+LIBS="@WRAPPER_LIBS@"
 MPILIBNAME="@MPILIBNAME@"
 PMPILIBNAME="@PMPILIBNAME@"
 MPICXXLIBNAME="@MPICXXLIBNAME@"
-MPI_OTHERLIBS="@LIBS@"
 NEEDSPLIB="@NEEDSPLIB@"
 # MPICH2_VERSION is the version of the MPICH2 library that mpicc is intended for
 MPICH2_VERSION="@MPICH2_VERSION@"

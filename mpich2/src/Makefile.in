@@ -38,7 +38,7 @@ Makefile: ${srcdir}/Makefile.in
 # --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
-	for dir in mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
+	for dir in mpl mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} apply ) ; done
 clean: 
@@ -47,12 +47,12 @@ clean:
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
 	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
-	for dir in mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
+	for dir in mpl mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} clean ) ; done
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
-	for dir in mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
+	for dir in mpl mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} distclean ) ; done
@@ -62,7 +62,7 @@ distclean-xxx:
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
 maintainer-clean:  distclean-xxx remove-genmakefiles
-	for dir in mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
+	for dir in mpl mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} maintainer-clean ) ; done
 remove-makefile:
@@ -70,6 +70,7 @@ remove-makefile:
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
 all-redirect:
+	@(cd mpl && ${MAKE} all )
 	@(cd mpid && ${MAKE} all )
 	@(cd mpi && ${MAKE} all )
 	@(cd util && ${MAKE} all )
@@ -83,22 +84,23 @@ all-redirect:
 	done
 	@(cd pmi && ${MAKE} all )
 	@(cd pm && ${MAKE} all )
+	${MAKE} all-postamble
 
 coverage: 
-	for dir in mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
+	for dir in mpl mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} coverage ) ; done
 # --------------------------------------------------------------------------
 htmldoc:
-	for dir in mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
+	for dir in mpl mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} htmldoc ) ; done
 mandoc:
-	for dir in mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
+	for dir in mpl mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} mandoc ) ; done
 latexdoc:
-	for dir in mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
+	for dir in mpl mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} latexdoc ) ; done
 # --------------------------------------------------------------------------
@@ -107,9 +109,11 @@ latexdoc:
 # --------------------------------------------------------------------------
 # Dependencies
 dependencies:
-	for dir in mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
+	for dir in mpl mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
 		if [ "$$dir" = "mpe2" ] ; then continue ; fi ;\
+		if [ "$$dir" = "mpl" ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} dependencies ) ; done
 # End of Dependencies
 # --------------------------------------------------------------------------
@@ -121,6 +125,13 @@ SOURCEFILES     = $(SOURCES)
 # We need to invoke the distclean target in the include directory
 distclean-local:
 	(cd include && $(MAKE) distclean)
+all-postamble:
+	build_prefix=`cd .. && pwd` && \
+	for dir in mpl openpa ; do \
+	    (cd $$dir && ${MAKE} prefix=$$build_prefix exec_prefix=$$build_prefix \
+	    bindir=$$build_prefix/bin libdir=$$build_prefix/lib \
+	    includedir=$$build_prefix/include docdir=$$build_prefix/share/doc install) ; \
+	done
 
 FORCE_TARGET:
 

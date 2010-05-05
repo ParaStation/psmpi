@@ -6,83 +6,67 @@
 
 #include "hydra_utils.h"
 
-HYD_status HYDU_merge_proxy_segment(char *hostname, int start_pid, int core_count,
-                                    struct HYD_proxy **proxy_list)
-{
-    struct HYD_proxy *proxy;
-    HYD_status status = HYD_SUCCESS;
-
-    HYDU_FUNC_ENTER();
-
-    if (*proxy_list == NULL) {
-        status = HYDU_alloc_proxy(proxy_list);
-        HYDU_ERR_POP(status, "Unable to alloc proxy\n");
-        (*proxy_list)->hostname = HYDU_strdup(hostname);
-        (*proxy_list)->start_pid = start_pid;
-        (*proxy_list)->proxy_core_count = core_count;
-    }
-    else {
-        /* Run to the last proxy */
-        for (proxy = *proxy_list; proxy->next; proxy = proxy->next);
-
-        if (strcmp(proxy->hostname, hostname)) {        /* hostname doesn't match */
-            status = HYDU_alloc_proxy(&proxy->next);
-            HYDU_ERR_POP(status, "unable to alloc proxy\n");
-            proxy->next->hostname = HYDU_strdup(hostname);
-            proxy->next->start_pid = start_pid;
-            proxy = proxy->next;
-        }
-        proxy->proxy_core_count += core_count;
-    }
-
-  fn_exit:
-    HYDU_FUNC_EXIT();
-    return status;
-  fn_fail:
-    goto fn_exit;
-}
-
 int HYDU_local_to_global_id(int local_id, int start_pid, int core_count, int global_core_count)
 {
     return ((local_id / core_count) * global_core_count) + (local_id % core_count) + start_pid;
 }
 
-HYD_status HYDU_add_to_proxy_list(char *hostname, int num_procs,
-                                  struct HYD_proxy ** proxy_list)
+HYD_status HYDU_add_to_node_list(const char *hostname, int num_procs,
+                                 struct HYD_node ** node_list)
 {
-    static int pid = 0;
-    struct HYD_proxy *proxy;
+    struct HYD_node *node;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
-    if (*proxy_list == NULL) {
-        status = HYDU_alloc_proxy(proxy_list);
-        HYDU_ERR_POP(status, "unable to allocate proxy\n");
+    if (*node_list == NULL) {
+        status = HYDU_alloc_node(node_list);
+        HYDU_ERR_POP(status, "unable to allocate node\n");
 
-        (*proxy_list)->hostname = HYDU_strdup(hostname);
-
-        (*proxy_list)->start_pid = 0;
-        (*proxy_list)->proxy_core_count = num_procs;
+        (*node_list)->hostname = HYDU_strdup(hostname);
+        (*node_list)->core_count = num_procs;
     }
     else {
-        for (proxy = *proxy_list; proxy->next; proxy = proxy->next);
+        for (node = *node_list; node->next; node = node->next);
 
-        if (strcmp(proxy->hostname, hostname)) {
-            /* If the hostname does not match, create a new proxy */
-            status = HYDU_alloc_proxy(&proxy->next);
-            HYDU_ERR_POP(status, "unable to allocate proxy\n");
+        if (strcmp(node->hostname, hostname)) {
+            /* If the hostname does not match, create a new node */
+            status = HYDU_alloc_node(&node->next);
+            HYDU_ERR_POP(status, "unable to allocate node\n");
 
-            proxy = proxy->next;
-
-            proxy->hostname = HYDU_strdup(hostname);
-
-            proxy->start_pid = pid;
+            node = node->next;
+            node->hostname = HYDU_strdup(hostname);
         }
 
-        proxy->proxy_core_count += num_procs;
+        node->core_count += num_procs;
     }
-    pid += num_procs;
+
+  fn_exit:
+    HYDU_FUNC_EXIT();
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
+static char local_hostname[MAX_HOSTNAME_LEN] = { 0 };
+
+HYD_status HYDU_gethostname(char *hostname)
+{
+    HYD_status status = HYD_SUCCESS;
+
+    HYDU_FUNC_ENTER();
+
+    if (strcmp(local_hostname, "")) {
+        HYDU_snprintf(hostname, MAX_HOSTNAME_LEN, "%s", local_hostname);
+        goto fn_exit;
+    }
+
+    if (gethostname(hostname, MAX_HOSTNAME_LEN) < 0)
+        HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR,
+                            "gethostname error (hostname: %s; errno: %d)\n", hostname, errno);
+
+    HYDU_snprintf(local_hostname, MAX_HOSTNAME_LEN, "%s", hostname);
 
   fn_exit:
     HYDU_FUNC_EXIT();

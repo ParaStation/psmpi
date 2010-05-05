@@ -76,13 +76,18 @@ typedef MPIR_Rank_t MPID_Node_id_t;
    confirm that the size of comm_world is less than 2^15, and in an communicator
    create (that may make use of dynamically created processes) that the
    size of the communicator is within range.
+
+   If any part of the definition of this type is changed, those changes
+   must be reflected in the debugger interface in src/mpi/debugger/dll_mpich2.c
+   and dbgstub.c
 */
+typedef struct MPIDI_Message_match_parts {
+    int32_t tag;
+    MPIR_Rank_t rank;
+    MPIR_Context_id_t context_id;
+} MPIDI_Message_match_parts_t;
 typedef union {
-    struct {
-	int32_t tag;
-	MPIR_Rank_t rank;
-	MPIR_Context_id_t context_id;
-    } parts;
+    MPIDI_Message_match_parts_t parts;
     MPIR_Upint whole;
 } MPIDI_Message_match;
 #define MPIDI_TAG_UB (0x7fffffff)
@@ -212,7 +217,7 @@ typedef struct MPIDI_Request {
     struct MPID_Datatype * datatype_ptr;
 
     /* iov and iov_count define the data to be transferred/received.  
-       iov_offset points to the current head eleemnt in the IOV */
+       iov_offset points to the current head element in the IOV */
     MPID_IOV iov[MPID_IOV_LIMIT];
     int iov_count;
     int iov_offset;

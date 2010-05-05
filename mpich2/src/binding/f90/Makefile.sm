@@ -53,7 +53,7 @@ $(MPIMOD).$(MOD): $(MPICONSTMOD).$(MOD) $(MPISIZEOFMOD).$(MOD) \
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
 	else \
 	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        ln -sf $(srcdir)/mpi.f90 $(srcdir)/mpi.$(F90EXT) ; \
+	        ln -f -s $(srcdir)/mpi.f90 $(srcdir)/mpi.$(F90EXT) ; \
 	    fi ; \
 	    echo $(F90_COMPILE_MODS) -c $(srcdir)/mpi.$(F90EXT) ; \
 	    $(F90_COMPILE_MODS) -c $(srcdir)/mpi.$(F90EXT) ; \
@@ -71,7 +71,7 @@ $(MPICONSTMOD).$(MOD): $(srcdir)/mpi_constants.f90 mpifnoext.h
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
 	else \
 	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        ln -sf $(srcdir)/mpi_constants.f90 $(srcdir)/mpi_constants.$(F90EXT) ; \
+	        ln -f -s $(srcdir)/mpi_constants.f90 $(srcdir)/mpi_constants.$(F90EXT) ; \
 	    fi ; \
 	    echo $(F90_COMPILE_MODS) -c $(srcdir)/mpi_constants.$(F90EXT) ; \
 	    $(F90_COMPILE_MODS) -c $(srcdir)/mpi_constants.$(F90EXT) ; \
@@ -89,7 +89,7 @@ $(MPISIZEOFMOD).$(MOD): mpi_sizeofs.f90 mpifnoext.h
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
 	else \
 	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        ln -sf mpi_sizeofs.f90 mpi_sizeofs.$(F90EXT) ; \
+	        ln -f -s mpi_sizeofs.f90 mpi_sizeofs.$(F90EXT) ; \
 	    fi ; \
 	    echo $(F90_COMPILE_MODS) -c mpi_sizeofs.$(F90EXT) ; \
 	    $(F90_COMPILE_MODS) -c mpi_sizeofs.$(F90EXT) ; \
@@ -107,7 +107,7 @@ $(MPIBASEMOD).$(MOD): $(srcdir)/mpi_base.f90
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
 	else \
 	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        ln -sf $(srcdir)/mpi_base.f90 $(srcdir)/mpi_base.$(F90EXT) ; \
+	        ln -f -s $(srcdir)/mpi_base.f90 $(srcdir)/mpi_base.$(F90EXT) ; \
 	    fi ; \
 	    echo $(F90_COMPILE_MODS) -c $(srcdir)/mpi_base.$(F90EXT) ; \
 	    $(F90_COMPILE_MODS) -c $(srcdir)/mpi_base.$(F90EXT) ; \

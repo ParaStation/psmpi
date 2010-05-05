@@ -7,6 +7,7 @@ all: all-redirect
 
 SHELL           = @SHELL@
 AR              = @AR@
+AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
 INSTALL         = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -87,7 +88,7 @@ ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
 	"-autoconf=-I ROOTDIR/confdb" \
 	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
 	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile mpif.h setbotf.f" \
+	-distcleanfiles="Makefile mpif.h setbotf.f setbot.c" \
 	-smvar_doc_attop=0 \
 		Makefile.sm )
 Makefile: ${srcdir}/Makefile.in
@@ -121,11 +122,11 @@ all-redirect: .libstamp0 ../../../lib/lib${MPICXXLIBNAME}.a
 
 .libstamp0 ../../../lib/lib${MPICXXLIBNAME}.a: initcxx.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${MPICXXLIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPICXXLIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${MPICXXLIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${MPICXXLIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${MPICXXLIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${MPICXXLIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPICXXLIBNAME}.a" ; \
 	else \
@@ -135,11 +136,11 @@ all-redirect: .libstamp0 ../../../lib/lib${MPICXXLIBNAME}.a
 	date > .libstamp0
 .libstamp1 ../../../lib/lib${MPICXXLIBNAME}.la: initcxx.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${MPICXXLIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPICXXLIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${MPICXXLIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${MPICXXLIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${MPICXXLIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${MPICXXLIBNAME}.la $?
 	date > .libstamp1
 coverage: 
 	-@for file in ${mpi_sources}  ; do \

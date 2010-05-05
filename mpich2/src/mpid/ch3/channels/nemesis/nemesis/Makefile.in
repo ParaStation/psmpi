@@ -94,9 +94,9 @@ latexdoc:
 # --------------------------------------------------------------------------
 # Dependencies
 dependencies:
-	(cd src && ${MAKE} dependencies )
-	(cd netmod && ${MAKE} dependencies )
-	(cd utils && ${MAKE} dependencies )
+	if [ -s src/Makefile ] ; then (cd src && ${MAKE} dependencies ) ; fi
+	if [ -s netmod/Makefile ] ; then (cd netmod && ${MAKE} dependencies ) ; fi
+	if [ -s utils/Makefile ] ; then (cd utils && ${MAKE} dependencies ) ; fi
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------

@@ -1,16 +1,19 @@
 /* include/hydra_config.h.in.  Generated from configure.in by autoheader.  */
 
-/* Define if compiler supports __VA_ARGS__ */
-#undef COMPILER_ACCEPTS_VA_ARGS
-
-/* Define if debugging support is enabled */
-#undef ENABLE_DEBUG
+/* Define if profiling enabled */
+#undef ENABLE_PROFILING
 
 /* Define if warnings are enabled */
 #undef ENABLE_WARNINGS
 
+/* Define to 1 if you have the `alarm' function. */
+#undef HAVE_ALARM
+
 /* Define to 1 if you have the `alloca' function. */
 #undef HAVE_ALLOCA
+
+/* Define to 1 if you have the <arpa/inet.h> header file. */
+#undef HAVE_ARPA_INET_H
 
 /* Define if blcr is available */
 #undef HAVE_BLCR
@@ -21,8 +24,14 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
+/* Define if error checking is enabled */
+#undef HAVE_ERROR_CHECKING
+
 /* Define if environ extern is available */
 #undef HAVE_EXTERN_ENVIRON
+
+/* Define to 1 if you have the `fcntl' function. */
+#undef HAVE_FCNTL
 
 /* Define if GNU __attribute__ is supported */
 #undef HAVE_GCC_ATTRIBUTE
@@ -30,11 +39,17 @@
 /* Define to 1 if you have the `gethostname' function. */
 #undef HAVE_GETHOSTNAME
 
+/* Define to 1 if you have the `getifaddrs' function. */
+#undef HAVE_GETIFADDRS
+
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
 
 /* Define if hwloc is available */
 #undef HAVE_HWLOC
+
+/* Define to 1 if you have the <ifaddrs.h> header file. */
+#undef HAVE_IFADDRS_H
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -57,14 +72,14 @@
 /* Define if plpa is available */
 #undef HAVE_PLPA
 
-/* Define to 1 if you have the <pthread.h> header file. */
-#undef HAVE_PTHREAD_H
-
-/* Define to 1 if you have the `putenv' function. */
-#undef HAVE_PUTENV
+/* Define to 1 if you have the `poll' function. */
+#undef HAVE_POLL
 
 /* Define to 1 if you have the <sched.h> header file. */
 #undef HAVE_SCHED_H
+
+/* Define to 1 if you have the `select' function. */
+#undef HAVE_SELECT
 
 /* Define to 1 if you have the `sigaction' function. */
 #undef HAVE_SIGACTION
@@ -111,17 +126,20 @@
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
 
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
 /* Define to 1 if you have the <sys/un.h> header file. */
 #undef HAVE_SYS_UN_H
 
-/* Define thread support */
-#undef HAVE_THREAD_SUPPORT
-
 /* Define to 1 if you have the `time' function. */
 #undef HAVE_TIME
+
+/* Define to 1 if you have the <time.h> header file. */
+#undef HAVE_TIME_H
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
@@ -153,9 +171,6 @@
 /* Configure arguments */
 #undef HYDRA_CONFIGURE_ARGS_CLEAN
 
-/* Definition of enabled communication systems */
-#undef HYDRA_CSS_NAMES
-
 /* C++ compiler */
 #undef HYDRA_CXX
 
@@ -168,17 +183,23 @@
 /* Default checkpointing library */
 #undef HYDRA_DEFAULT_CKPOINTLIB
 
-/* Default communication sub-system */
-#undef HYDRA_DEFAULT_CSS
+/* Default demux engine */
+#undef HYDRA_DEFAULT_DEMUX
 
 /* Default resource management kernel */
 #undef HYDRA_DEFAULT_RMK
+
+/* Definition of enabled demux engines */
+#undef HYDRA_DEMUX_NAMES
 
 /* Fortran 77 compiler */
 #undef HYDRA_F77
 
 /* Fortran 90 compiler */
 #undef HYDRA_F90
+
+/* Hydra release date information */
+#undef HYDRA_RELEASE_DATE
 
 /* Enabled resource management kernels */
 #undef HYDRA_RMK_NAMES
@@ -198,9 +219,6 @@
 
 /* Define if _POSIX_SOURCE needed to get sigaction */
 #undef NEEDS_POSIX_FOR_SIGACTION
-
-/* Define if putenv needs a declaration */
-#undef NEEDS_PUTENV_DECL
 
 /* Define if strsignal needs a declaration */
 #undef NEEDS_STRSIGNAL_DECL
@@ -225,6 +243,9 @@
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
+
+/* Define if memory tracing is enabled */
+#undef USE_MEMORY_TRACING
 
 /* Define if sigaction should be used to set signals */
 #undef USE_SIGACTION

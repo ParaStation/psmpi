@@ -116,7 +116,15 @@
    
 */
 
-#define MPID_NEM_CELL_HEAD_LEN    8 /* We use this to keep elements 64-bit aligned */
+#if (SIZEOF_OPA_PTR_T > 8)
+#  if (SIZEOF_OPA_PTR_T > 16)
+#    error unexpected size for OPA_ptr_t
+#  endif
+#  define MPID_NEM_CELL_HEAD_LEN  16 /* We use this to keep elements 64-bit aligned */
+#else /* (SIZEOF_OPA_PTR_T <= 8) */
+#  define MPID_NEM_CELL_HEAD_LEN  8 /* We use this to keep elements 64-bit aligned */
+#endif
+
 #define MPID_NEM_CELL_PAYLOAD_LEN (MPID_NEM_CELL_LEN - MPID_NEM_CELL_HEAD_LEN)
 
 #define MPID_NEM_CALC_CELL_LEN(cellp) (MPID_NEM_CELL_HEAD_LEN + MPID_NEM_MPICH2_HEAD_LEN + MPID_NEM_CELL_DLEN (cell))
@@ -124,10 +132,8 @@
 #define MPID_NEM_ALIGNED(addr, bytes) ((((unsigned long)addr) & (((unsigned long)bytes)-1)) == 0)
 
 #define MPID_NEM_PKT_UNKNOWN     0
-#define MPID_NEM_PKT_CKPT        1
-#define MPID_NEM_PKT_CKPT_REPLAY 2
-#define MPID_NEM_PKT_MPICH2      3
-#define MPID_NEM_PKT_MPICH2_HEAD 4
+#define MPID_NEM_PKT_MPICH2      1
+#define MPID_NEM_PKT_MPICH2_HEAD 2
 
 #define MPID_NEM_FBOX_SOURCE(cell) (MPID_nem_mem_region.local_procs[(cell)->pkt.mpich2.source])
 #define MPID_NEM_CELL_SOURCE(cell) ((cell)->pkt.mpich2.source)

@@ -7,6 +7,7 @@ all: all-redirect
 
 SHELL           = @SHELL@
 AR              = @AR@
+AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
@@ -143,11 +144,11 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	unpack_external.o type_create_indexed_block.o type_create_resized.o \
 	type_create_darray.o type_create_subarray.o typeutil.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
@@ -168,11 +169,11 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	type_create_resized.lo type_create_darray.lo type_create_subarray.lo \
 	typeutil.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${MPILIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 
 # --------------------------------------------------------------------------

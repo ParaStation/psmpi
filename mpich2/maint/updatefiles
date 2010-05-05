@@ -42,8 +42,8 @@ MAKE=${MAKE-make}
 # require libtoolize 
 # externals are the directories for external packages that we have 
 # included into MPICH2
-externals="src/pm/hydra/tools/bind/hwloc/hwloc"
-ltdirs="src/pm/hydra"
+externals="src/pm/hydra/tools/bind/hwloc/hwloc src/pm/hydra/tools/bind/plpa/plpa"
+ltdirs="src/pm/hydra src/mpl"
 # amdirs are the directories that make use of autoreconf
 amdirs="src/openpa src/pm/hydra src/mpl"
 
@@ -52,10 +52,61 @@ amdirs="src/openpa src/pm/hydra src/mpl"
 AllSteps="geterrmsgs bindings f77 f77tof90 build_configure genstates makefiles smpdversion getparms"
 stepsCleared=no
 
+# Sanity check that any relative path svn:externals are present.  An SVN version
+# >=1.5 is needed to understand the relative path externals format.  Such
+# externals are used in particular for mpl in hydra and all non-root confdbs.
+#
+# Check for a particular file, not just the directory because several autotools
+# steps (such as libtoolize) will create the aux/macro dir.
+svn_externals_sanity_file="src/mpl/confdb/aclocal_subcfg.m4"
+if test "!" -e $svn_externals_sanity_file ; then
+    cat <<EOT
+
+ERROR: The file '$svn_externals_sanity_file'
+is not present, indicating that you do not have a complete source tree.
+This is usually caused by checking out MPICH2 with an SVN client version
+less than v1.5.  Please check your SVN client version (with
+"svn --version") and use a newer version if necessary to obtain MPICH2.
+
+If you do have a modern SVN client and believe that you have reached
+this error case for some other reason, please file a ticket at:
+
+  https://trac.mcs.anl.gov/projects/mpich2/newticket
+
+EOT
+    exit 1
+fi
+
+# Check for old settings of MPICH2_xxx_DIR - some of the autotools now in 
+# use require that *all* of the autotools are in the *same* directory
+oldSet=no
+if [ -n "$MPICH2_AUTOMAKE_DIR" ] ; then oldSet=yes ; fi
+if [ -n "$MPICH2_AUTOCONF_DIR" ] ; then oldSet=yes ; fi
+if [ -n "$MPICH2_LIBTOOL_DIR" ] ; then oldSet=yes ; fi
+if [ "$oldSet" = yes ] ; then
+    if [ -z "$MPICH2_AUTOTOOLS_DIR" ] ; then
+        cat <<EOF
+MPICH2 now prefers that all of the autotools reside in the same directory
+to minimize potential autotool failure.  (This is not a requirement of
+GNU autotools but a way to minimize some mysterious autotool failure in some
+environment.)  The environment variables
+    MPICH2_AUTOMAKE_DIR
+    MPICH2_AUTOCONF_DIR
+    MPICH2_LIBTOOL_DIR
+are no longer used or supported.  Instead, use
+    MPICH2_AUTOTOOLS_DIR
+EOF
+        exit 1
+    else 
+        cat <<EOF
+Old MPICH2_xxx_DIR environment variables are set.  You should unset them to
+avoid attempting to use them later to select a different location for 
+some of the autotools.
+EOF
+    fi
+fi
+
 # Extract defaults from the environment
-autoconfdir=$MPICH2_AUTOCONF_DIR
-automakedir=$MPICH2_AUTOMAKE_DIR
-libtooldir=$MPICH2_LIBTOOL_DIR
 autotoolsdir=$MPICH2_AUTOTOOLS_DIR
 
 # Extract the arguments intended for updatefiles.  Any others are
@@ -67,6 +118,9 @@ for arg in "$@" ; do
 	set -x
 	;;
 	
+    -noatdircheck|-no-atdir-check)
+        no_atdir_check=yes
+        ;;
     -do=*|--do=*)
     opt=`echo A$arg | sed -e 's/^A--*do=//'`
     # Handle some synonyms
@@ -121,16 +175,6 @@ for arg in "$@" ; do
     do_f77=no
     ;;
 
-    -with-autoconf=*|--with-autoconf=*)
-    # Select a location for a different autoconf
-    autoconfdir=`echo "A$arg" | sed -e 's/.*=//'`
-    ;;
-    -with-automake=*|--with-automake=*)
-    automakedir=`echo "A$arg" | sed -e 's/.*=//'`
-    ;;
-    -with-libtool=*|--with-libtool=*)
-    libtooldir=`echo "A$arg" | sed -e 's/.*=//'`
-    ;;
     -with-autotools=*|--with-autotools=*)
     autotoolsdir=`echo "A$arg" | sed -e 's/.*=//'`
     ;;
@@ -143,19 +187,17 @@ for arg in "$@" ; do
 
     -help|--help|-usage|--usage)
     cat <<EOF
-    updatefiles [ --with-autoconf=dir ] [ --with-automake=dir ] \\
-                [ --with-libtool=dir ] [ --with-autotools=dir ] \\
+    updatefiles [ --with-autotools=dir ] [ -noatdircheck | -no-atdir-check ] \\
                 [ --do=stepname ] [ args for simplemake ]
     Update the files in the MPICH2 build tree.  This file builds the 
     configure files, creates the Makefile.in files (using the simplemake
     program), extracts the error messages.
 
-    You can use --with-autoconf=dir to specify a directory that
-    contains an alternate autoconf and autoheader.  Similarly
-    --with-automake can be used to specify the location of automake
-    and aclocal and --with-libtool to specify the location of
-    libtoolize. If all the autotools are installed in the same
-    location, they can be specified by the --with-autotools option.
+    You can use --with-autotools=dir to specify a directory that
+    contains alternate autotools.
+
+    -noatdircheck or -no-atdir-check disables the check that enforces all
+    autotools being installed in the same directory.
 
     Use --do=stepname to update only a single step.  For example, 
     --do=build_configure only updates the configure scripts.  The available
@@ -172,28 +214,6 @@ EOF
     ;;
     esac
 done
-
-if [ -n "$autotoolsdir" ] ; then
-    if [ -n "$autoconfdir" -o -n "$automakedir" -o -n "$libtooldir" ] ; then
-        # Don't permit --with-autotools together with --with-autoconf,
-        # --with-automake or --with-libtool because which argument
-        # takes precedence is not obvious without immediate
-        # explanation.  --with-autotools is really only present to
-        # make life a little easier for those who preferred the old
-        # behavior where --with-autoconf was used to specify the
-        # location of both autoconf and automake.
-        cat <<EOT
-Error: --with-autotools was specified together with --with-autoconf,
---with-automake or --with-libtool.  --with-autotools is incompatible
-with the other options.  Please specify only one set or the other.
-EOT
-        exit 1
-    else
-        autoconfdir=$autotoolsdir
-        automakedir=$autotoolsdir
-	libtooldir=$autotoolsdir
-    fi
-fi
 
 # Reset the arguments.  Note that this doesn't handle arguments that contain
 # blanks.  I hope that we don't need those.
@@ -222,28 +242,39 @@ if [ "$st" = 2 ] ; then
     testNTfails=no
 fi
 rm -rf conftest
-#
+
 # Determine the autoconf to use.  If --with-autoconf was set, use 
 # autoconf and autoheader from that directory
 # This may also be needed for tools in the maint directory
-if [ -n "$autoconfdir" ] ; then
-    if [ -x $autoconfdir/autoconf -a -x $autoconfdir/autoheader ] ; then
-        autoconf=$autoconfdir/autoconf
-        autoheader=$autoconfdir/autoheader
-        autoreconf=$autoconfdir/autoreconf
-        autom4te=$autoconfdir/autom4te
+if [ -n "$autotoolsdir" ] ; then
+    if [ -x $autotoolsdir/autoconf -a -x $autotoolsdir/autoheader ] ; then
+        autoconf=$autotoolsdir/autoconf
+        autoheader=$autotoolsdir/autoheader
+        autoreconf=$autotoolsdir/autoreconf
+        automake=$autotoolsdir/automake
+        autom4te=$autotoolsdir/autom4te
+        aclocal=$autotoolsdir/aclocal
+        libtoolize=$autotoolsdir/libtoolize
+
 	# Simplemake looks in environment variables for the autoconf
 	# and autoheader to use
 	AUTOCONF=$autoconf
 	AUTOHEADER=$autoheader
         AUTORECONF=$autoreconf
-        AUTOM4TE=$autom4te
+        AUTOMAKE=$automake
+	AUTOM4TE=$autom4te
+        ACLOCAL=$aclocal
+        LIBTOOLIZE=$libtoolize
+
 	export AUTOCONF
 	export AUTOHEADER
         export AUTORECONF
         export AUTOM4TE
+        export AUTOMAKE
+        export ACLOCAL
+        export LIBTOOLIZE
     else
-        echo "Could not find executable autoconf and autoheader in $autoconfdir"
+        echo "Could not find executable autoconf and autoheader in $autotoolsdir"
 	exit 1
     fi
 else
@@ -251,39 +282,20 @@ else
     autoheader=${AUTOHEADER:-autoheader}
     autoreconf=${AUTORECONF:-autoreconf}
     autom4te=${AUTOM4TE:-autom4te}
-fi
-if [ -n "$automakedir" ] ; then
-    if [ -x "$automakedir/aclocal" -a -x "$automakedir/automake" ] ; then
-        # OpenPA uses autoreconf (and consequently aclocal and automake)
-        # but autoreconf uses whatever aclocal/automake is in your path,
-        # not the one from the same autoconf installation as the
-        # autoreconf you are invoking.  So we export ACLOCAL (etc...) so
-        # that it uses the right tools when specifying --with-automake.
-        automake=$automakedir/automake
-        aclocal=$automakedir/aclocal
-        AUTOMAKE=$automake
-        ACLOCAL=$aclocal
-        export AUTOMAKE
-        export ACLOCAL
-    else
-        echo "could not find executable aclocal and automake in $automakedir"
-        exit 1
-    fi
-else
     automake=${AUTOMAKE:-automake}
     aclocal=${ACLOCAL:-aclocal}
+    libtoolize=${LIBTOOLIZE:-libtoolize}
 fi
-if [ -n "$libtooldir" ] ; then
-    if [ -x "$libtooldir/libtoolize" ] ; then
-        libtoolize=$libtooldir/libtoolize
-        LIBTOOLIZE=$libtoolize
-        export LIBTOOLIZE
-    else
-        echo "could not find executable libtoolize in $libtooldir"
+
+autoconfdir=`which autoconf | sed -e 's_/[^/]*$__g'`
+automakedir=`which automake | sed -e 's_/[^/]*$__g'`
+libtooldir=`which libtool | sed -e 's_/[^/]*$__g'`
+
+if [ "$no_atdir_check" != "yes" ] ; then
+    if [ "$autoconfdir" != "$automakedir" -a "$autoconfdir" != "$libtooldir" ] ; then
+        echo "All autotools should be in the same directory"
         exit 1
     fi
-else
-    libtoolize=${LIBTOOLIZE:-libtoolize}
 fi
 
 #
@@ -306,8 +318,8 @@ fi
 acSubversion=-1
 acIncDirFlag=-I
 # Try to keep at least one version ahead of autoconf (e.g., if current is
-# 2.64, include a test for 2.65)
-for ver in 65 64 63 62 61 60 59 ; do
+# 2.65, include a test for 2.66)
+for ver in 66 65 64 63 62 61 60 59 ; do
     rm -f .tmp/configure.in .tmp/configure
     cat >.tmp/configure.in <<EOF
 AC_PREREQ(2.$ver)
@@ -345,9 +357,80 @@ EOF
 No autoconf in path or unable to determine the version of autoconf."
         acVersion="Unknown"
 fi
-rm -rf .tmp
-
 #
+# Add a test for LT_PREREQ(2.2.6); note that many systems do not even
+# define the LT_PREREQ test, so something like
+# m4_ifdef([LT_PREREQ],,[m4_fatal([LT_PREREQ not defined])])
+# is required.
+cat <<EOF >.tmp/configure.ac
+AC_PREREQ(2.63)
+AC_INIT(testver,1.0)
+AC_CONFIG_AUX_DIR([m4])
+AC_CONFIG_MACRO_DIR([m4])
+m4_ifdef([LT_PREREQ],,[m4_fatal([LT_PREREQ not defined])])
+LT_PREREQ(2.2.6)
+LT_INIT()
+AC_MSG_RESULT([A message])
+EOF
+cat <<EOF >.tmp/Makefile.am
+ACLOCAL_AMFLAGS = -I m4
+EOF
+libtoolVerOk=no
+echo "Checking that libtool version is acceptable..."
+# We have to do it this way because not all libtool versions accept 
+# a command line argument to provide the version number.
+if (cd .tmp && $libtoolize >/dev/null 2>&1 ) ; then
+    if (cd .tmp && $autoreconf -vif >/dev/null 2>&1 ) ; then
+        libtoolVerOk=yes
+    fi
+fi
+rm -rf .tmp
+if [ "$libtoolVerOk" != "yes" ] ; then
+    echo "Unable to build a configure that uses Libtool.  Libtool version 2.2.6"
+    echo "or later is required; for some libtool instances, the command"
+    echo "   libtool --version"
+    echo "will provide the version number."
+    exit 1
+fi
+
+# Add a test for "AM_INIT_AUTOMAKE([1.11])"; note that many systems do not even
+# define the AM_INIT_AUTOMAKE test, so something like
+# m4_ifdef([AM_INIT_AUTOMAKE],,[m4_fatal([AM_INIT_AUTOMAKE not defined])])
+# is required.
+if [ ! -d .tmp ] ; then
+    mkdir .tmp >/dev/null 2>&1
+    mkdir .tmp/m4 >/dev/null 2>&1
+fi
+cat <<EOF >.tmp/configure.ac
+AC_PREREQ(2.63)
+AC_INIT(testver,1.0)
+AC_CONFIG_AUX_DIR([m4])
+AC_CONFIG_MACRO_DIR([m4])
+m4_ifdef([AM_INIT_AUTOMAKE],,[m4_fatal([AM_INIT_AUTOMAKE not defined])])
+AM_INIT_AUTOMAKE([1.11 foreign])
+AC_MSG_RESULT([A message])
+AC_OUTPUT([Makefile])
+EOF
+cat <<EOF >.tmp/Makefile.am
+ACLOCAL_AMFLAGS = -I m4
+EOF
+automakeVerOk=no
+echo "Checking that automake version is acceptable..."
+# We have to do it this way because not all automake versions accept
+# a command line argument to provide the version number.
+if (cd .tmp && $autoreconf -vif >/dev/null 2>&1 ) ; then
+    automakeVerOk=yes
+fi
+rm -rf .tmp
+if [ "$automakeVerOk" != "yes" ] ; then
+    echo "Unable to build a configure that uses automake.  automake version 1.11"
+    echo "or later is required; for some automake instances, the command"
+    echo "   automake --version"
+    echo "will provide the version number."
+    exit 1
+fi
+
+
 # Create the bindings if necessary 
 if [ $do_bindings = "yes" ] ; then
     build_f77=no
@@ -373,6 +456,9 @@ if [ $do_bindings = "yes" ] ; then
     fi
     if [ $build_f90 = "yes" ] ; then
 	echo "Building Fortran 90 interface"
+	# Remove any copy of mpi_base.f90 (this is used to handle the
+	# Double precision vs. Real*8 option
+	rm -f src/binding/f90/mpi_base.f90.orig
 	( cd src/binding/f90 && chmod a+x ./buildiface && ./buildiface )
 	( cd src/binding/f90 && ../f77/buildiface -infile=cf90t.h -deffile=cf90tdefs)
     fi
@@ -884,13 +970,15 @@ if [ "$do_build_configure" = "yes" -o "$do_makefiles" = "yes" ] ; then
 
     for external in $externals ; do
        if [ -d "$external" -o -L "$external" ] ; then
-           echo "running third-party initialization"
+           echo "------------------------------------------------------------------------"
+           echo "running third-party initialization in $external"
            (cd $external && ./autogen.sh) || exit 1
        fi
     done
 
     for ltdir in $ltdirs ; do
 	if [ -d "$ltdir" -o -L "$ltdir" ] ; then
+            echo "------------------------------------------------------------------------"
 	    echo "running $libtoolize in $ltdir"
 	    (cd $ltdir && $libtoolize) || exit 1
 	fi
@@ -898,6 +986,7 @@ if [ "$do_build_configure" = "yes" -o "$do_makefiles" = "yes" ] ; then
 
     for amdir in $amdirs ; do
 	if [ -d "$amdir" -o -L "$amdir" ] ; then
+	    echo "------------------------------------------------------------------------"
 	    echo "running $autoreconf in $amdir"
 	    (cd $amdir && $autoreconf -vif) || exit 1
 	fi

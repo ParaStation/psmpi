@@ -396,8 +396,7 @@ int MPID_nem_mx_process_sdtype(MPID_Request **sreq_p,  MPI_Datatype datatype,  M
     MPID_IOV  *iov;
     MPIDI_msg_sz_t last;
     int num_entries = MX_MAX_SEGMENTS - first_free_slot;
-    int iov_num_ub  = count * dt_ptr->max_contig_blocks;
-    int n_iov       = iov_num_ub;
+    int n_iov       = 0;
     int mpi_errno   = MPI_SUCCESS;
     int index;
 
@@ -410,17 +409,11 @@ int MPID_nem_mx_process_sdtype(MPID_Request **sreq_p,  MPI_Datatype datatype,  M
     sreq->dev.segment_first = 0;
     sreq->dev.segment_size = data_sz;
     last = sreq->dev.segment_size;
-   
-    /*
-    MPID_Segment_count_contig_blocks(sreq->dev.segment_ptr ,first,&last,&n_iov);
+    
+    MPID_Segment_count_contig_blocks(sreq->dev.segment_ptr,sreq->dev.segment_first,&last,&n_iov);
     MPIU_Assert(n_iov > 0);
-    */
-
-    if(n_iov <= 0)
-    {	
-       n_iov = count * dt_ptr->n_elements;
-    }   
     iov = MPIU_Malloc(n_iov*sizeof(MPID_IOV));    
+    
     MPID_Segment_pack_vector(sreq->dev.segment_ptr, sreq->dev.segment_first, &last, iov, &n_iov);
     MPIU_Assert(last == sreq->dev.segment_size);    
     
@@ -543,14 +536,4 @@ MPID_nem_mx_send_conn_info (MPIDI_VC_t *vc)
    goto fn_exit;
 }
 
-#undef FUNCNAME
-#define FUNCNAME MPID_nem_mx_send
-#undef FCNAME
-#define FCNAME MPIDI_QUOTE(FUNCNAME)
-int 
-MPID_nem_mx_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen)
-{
-   int mpi_errno = MPI_SUCCESS;
-   return mpi_errno;
-}
 

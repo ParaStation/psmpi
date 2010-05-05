@@ -7,6 +7,7 @@ all: all-redirect
 
 SHELL           = @SHELL@
 AR              = @AR@
+AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
@@ -129,11 +130,11 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	dist_gr_create_adj.o dist_gr_create.o dist_gr_neighb_count.o \
 	dist_gr_neighb.o topoutil.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
@@ -148,11 +149,11 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	dist_gr_create_adj.lo dist_gr_create.lo dist_gr_neighb_count.lo \
 	dist_gr_neighb.lo topoutil.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${MPILIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 
 # --------------------------------------------------------------------------

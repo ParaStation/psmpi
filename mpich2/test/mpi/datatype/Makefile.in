@@ -62,8 +62,8 @@ Makefile: ${srcdir}/Makefile.in
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
-	-@rm -f *.o ${srcdir}/*.o typename unusual-noncontigs blockindexed-zero-count simple-size-extent typecommit transpose-pack slice-pack-external contig-zero-count contents zeroblks typelb indexed-misc gaddress struct-zero-count tresized2 darray-pack subarray simple-resized localpack simple-pack blockindexed-misc zeroparms simple-commit pairtype-size-extent get-elements-pairtype struct-no-real-types struct-empty-el unpack slice-pack simple-pack-external contigstruct lots-of-types hindexed-zeros pairtype-pack struct-derived-zeros struct-ezhov typefree tfree struct-pack subarray-pack getpartelm tmatchsize tresized triangular-pack lbub sizedtypes
-	-@rm -f typename.exe unusual-noncontigs.exe blockindexed-zero-count.exe simple-size-extent.exe typecommit.exe transpose-pack.exe slice-pack-external.exe contig-zero-count.exe contents.exe zeroblks.exe typelb.exe indexed-misc.exe gaddress.exe struct-zero-count.exe tresized2.exe darray-pack.exe subarray.exe simple-resized.exe localpack.exe simple-pack.exe blockindexed-misc.exe zeroparms.exe simple-commit.exe pairtype-size-extent.exe get-elements-pairtype.exe struct-no-real-types.exe struct-empty-el.exe unpack.exe slice-pack.exe simple-pack-external.exe contigstruct.exe lots-of-types.exe hindexed-zeros.exe pairtype-pack.exe struct-derived-zeros.exe struct-ezhov.exe typefree.exe tfree.exe struct-pack.exe subarray-pack.exe getpartelm.exe tmatchsize.exe tresized.exe triangular-pack.exe lbub.exe sizedtypes.exe
+	-@rm -f *.o ${srcdir}/*.o typename unusual-noncontigs blockindexed-zero-count simple-size-extent typecommit transpose-pack slice-pack-external contig-zero-count contents zeroblks typelb struct-verydeep indexed-misc gaddress struct-zero-count tresized2 darray-pack subarray simple-resized localpack simple-pack blockindexed-misc zeroparms simple-commit pairtype-size-extent get-elements-pairtype struct-no-real-types struct-empty-el unpack slice-pack simple-pack-external contigstruct lots-of-types hindexed-zeros pairtype-pack struct-derived-zeros struct-ezhov typefree tfree struct-pack subarray-pack getpartelm tmatchsize tresized triangular-pack lbub sizedtypes
+	-@rm -f typename.exe unusual-noncontigs.exe blockindexed-zero-count.exe simple-size-extent.exe typecommit.exe transpose-pack.exe slice-pack-external.exe contig-zero-count.exe contents.exe zeroblks.exe typelb.exe struct-verydeep.exe indexed-misc.exe gaddress.exe struct-zero-count.exe tresized2.exe darray-pack.exe subarray.exe simple-resized.exe localpack.exe simple-pack.exe blockindexed-misc.exe zeroparms.exe simple-commit.exe pairtype-size-extent.exe get-elements-pairtype.exe struct-no-real-types.exe struct-empty-el.exe unpack.exe slice-pack.exe simple-pack-external.exe contigstruct.exe lots-of-types.exe hindexed-zeros.exe pairtype-pack.exe struct-derived-zeros.exe struct-ezhov.exe typefree.exe tfree.exe struct-pack.exe subarray-pack.exe getpartelm.exe tmatchsize.exe tresized.exe triangular-pack.exe lbub.exe sizedtypes.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
@@ -88,10 +88,10 @@ all-redirect: typecommit typename typefree contents struct-pack\
 	 contig-zero-count lots-of-types simple-pack-external darray-pack\
 	 subarray-pack subarray blockindexed-misc indexed-misc hindexed-zeros\
 	 blockindexed-zero-count struct-zero-count transpose-pack\
-	 unusual-noncontigs pairtype-pack struct-ezhov pairtype-size-extent\
-	 struct-derived-zeros localpack lbub unpack zeroparms gaddress\
-	 getpartelm tresized tmatchsize tresized2 tfree typelb sizedtypes\
-	 contigstruct zeroblks
+	 unusual-noncontigs pairtype-pack struct-ezhov struct-verydeep\
+	 pairtype-size-extent struct-derived-zeros localpack lbub unpack\
+	 zeroparms gaddress getpartelm tresized tmatchsize tresized2 tfree\
+	 typelb sizedtypes contigstruct zeroblks
 
 coverage: 
 typename: typename.o   
@@ -125,6 +125,9 @@ zeroblks: zeroblks.o
 	../util/mtest.o ${LIBS} 
 typelb: typelb.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o typelb typelb.o  ${LIBS}
+struct-verydeep: struct-verydeep.o   
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o struct-verydeep struct-verydeep.o  \
+	${LIBS} 
 indexed-misc: indexed-misc.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o indexed-misc indexed-misc.o  \
 	${LIBS} 
@@ -240,13 +243,14 @@ SOURCES         =  typecommit.c typename.c typefree.c contents.c \
 	lots-of-types.c simple-pack-external.c darray-pack.c subarray-pack.c \
 	subarray.c blockindexed-misc.c indexed-misc.c hindexed-zeros.c \
 	blockindexed-zero-count.c struct-zero-count.c transpose-pack.c \
-	unusual-noncontigs.c pairtype-pack.c struct-ezhov.c \
+	unusual-noncontigs.c pairtype-pack.c struct-ezhov.c struct-verydeep.c \
 	pairtype-size-extent.c struct-derived-zeros.c localpack.c lbub.c \
 	unpack.c zeroparms.c gaddress.c getpartelm.c tresized.c tmatchsize.c \
 	tresized2.c tfree.c typelb.c sizedtypes.c contigstruct.c zeroblks.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
+
 
 
 

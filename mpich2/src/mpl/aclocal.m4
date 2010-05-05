@@ -977,5 +977,9 @@ AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
 m4_include([confdb/aclocal_cc.m4])
-m4_include([confdb/aclocal_subcfg.m4])
 m4_include([confdb/ax_prefix_config_h.m4])
+m4_include([confdb/libtool.m4])
+m4_include([confdb/ltoptions.m4])
+m4_include([confdb/ltsugar.m4])
+m4_include([confdb/ltversion.m4])
+m4_include([confdb/lt~obsolete.m4])

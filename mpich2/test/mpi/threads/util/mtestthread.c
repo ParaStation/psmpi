@@ -116,10 +116,6 @@ int MTest_Start_thread(MTEST_THREAD_RETURN_TYPE (*fn)(void *p),void *arg)
     if (!err) {
         nthreads++;
     }
-    else {
-        fprintf(stderr, "Failed to create thread calling func %p with arg %p\n", fn, arg);
-        MPI_Abort(MPI_COMM_WORLD, 1);
-    }
     pthread_attr_destroy(&attr);
     return err;
 }
@@ -177,6 +173,7 @@ static pthread_barrier_t barrier;
 static int bcount = -1;
 int MTest_thread_barrier_init( void )
 {
+    bcount = -1; /* must reset to force barrier re-creation */
     return MTest_thread_lock_create( &barrierLock );
 }
 int MTest_thread_barrier_free( void )
@@ -184,6 +181,11 @@ int MTest_thread_barrier_free( void )
     MTest_thread_lock_free( &barrierLock );
     return pthread_barrier_destroy( &barrier );
 }
+/* FIXME this barrier interface should be changed to more closely match the
+ * pthread interface.  Specifically, nt should not be a barrier-time
+ * parameter but an init-time parameter.  The double-checked locking below
+ * isn't valid according to pthreads, and it isn't guaranteed to be robust
+ * in the presence of aggressive CPU/compiler optimization. */
 int MTest_thread_barrier( int nt )
 {
     int err;

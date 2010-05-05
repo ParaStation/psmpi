@@ -7,6 +7,7 @@ all: all-redirect
 
 SHELL           = @SHELL@
 AR              = @AR@
+AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
@@ -59,9 +60,9 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
 
 ${srcdir}/pmutilconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /sw/bin/autoheader -I ../../../confdb && \
-	\
-	/sw/bin/autoconf -I ../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../confdb && \
+	autoconf -I \
+	../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -107,13 +108,14 @@ all-redirect: libmpiexec.a
 	fi
 
 libmpiexec.a: cmnargs.o process.o ioloop.o pmiserv.o labelout.o env.o \
-	newsession.o rm.o pmiport.o dbgiface.o 
+	newsession.o rm.o pmiport.o dbgiface.o safestr2.o simple_pmiutil2.o \
+	../../util/msgs/msgprint.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr libmpiexec.a $?" ; \
+	  echo "  AR ${AR_FLAGS} libmpiexec.a $?" ; \
 	else \
-	  echo ${AR} cr libmpiexec.a $? ; \
+	  echo ${AR} ${AR_FLAGS} libmpiexec.a $? ; \
 	fi
-	@${AR} cr libmpiexec.a $?
+	@${AR} ${AR_FLAGS} libmpiexec.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          libmpiexec.a" ; \
 	else \
@@ -121,16 +123,18 @@ libmpiexec.a: cmnargs.o process.o ioloop.o pmiserv.o labelout.o env.o \
 	fi
 	@${RANLIB} libmpiexec.a
 libmpiexec.la: cmnargs.lo process.lo ioloop.lo pmiserv.lo labelout.lo env.lo \
-	newsession.lo rm.lo pmiport.lo dbgiface.lo 
+	newsession.lo rm.lo pmiport.lo dbgiface.lo safestr2.lo \
+	simple_pmiutil2.lo ../../util/msgs/msgprint.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr libmpiexec.la $?" ; \
+	  echo "  AR ${AR_FLAGS} libmpiexec.la $?" ; \
 	else \
-	  echo ${AR} cr libmpiexec.la $? ; \
+	  echo ${AR} ${AR_FLAGS} libmpiexec.la $? ; \
 	fi
-	@${AR} cr libmpiexec.la $?
+	@${AR} ${AR_FLAGS} libmpiexec.la $?
 coverage: 
 	-@for file in cmnargs.c process.c ioloop.c pmiserv.c labelout.c 		     env.c \
-	newsession.c rm.c pmiport.o dbgiface.c ; do \
+	newsession.c rm.c pmiport.o dbgiface.c 		     safestr2.c \
+	simple_pmiutil2.c ../../util/msgs/msgprint.c ; do \
 		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
 htmldoc:
@@ -145,7 +149,7 @@ DEPS_DIR = .deps
 MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
-	(cd test && ${MAKE} dependencies )
+	if [ -s test/Makefile ] ; then (cd test && ${MAKE} dependencies ) ; fi
 $(DEPS_DIR)/cmnargs.d: $(srcdir)/cmnargs.c
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "MAKE_DEPEND_C cmnargs.c > $(DEPS_DIR)/cmnargs.d" ; \
@@ -209,8 +213,30 @@ $(DEPS_DIR)/dbgiface.d: $(srcdir)/dbgiface.c
 	  echo $(MAKE_DEPEND_C)  $(srcdir)/dbgiface.c >$(DEPS_DIR)/dbgiface.d ; \
 	fi
 	@$(MAKE_DEPEND_C)  $(srcdir)/dbgiface.c >$(DEPS_DIR)/dbgiface.d
+$(DEPS_DIR)/safestr2.d: $(srcdir)/safestr2.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C safestr2.c > $(DEPS_DIR)/safestr2.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/safestr2.c >$(DEPS_DIR)/safestr2.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/safestr2.c >$(DEPS_DIR)/safestr2.d
+$(DEPS_DIR)/simple_pmiutil2.d: $(srcdir)/simple_pmiutil2.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C simple_pmiutil2.c > $(DEPS_DIR)/simple_pmiutil2.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil2.c >$(DEPS_DIR)/simple_pmiutil2.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil2.c >$(DEPS_DIR)/simple_pmiutil2.d
+$(DEPS_DIR)/../../util/msgs/msgprint.d: $(srcdir)/../../util/msgs/msgprint.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C ../../util/msgs/msgprint.c > $(DEPS_DIR)/../../util/msgs/msgprint.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/../../util/msgs/msgprint.c >$(DEPS_DIR)/../../util/msgs/msgprint.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/../../util/msgs/msgprint.c >$(DEPS_DIR)/../../util/msgs/msgprint.d
 $(DEPS_DIR)/timestamp: cmnargs.c process.c ioloop.c pmiserv.c labelout.c 		     env.c newsession.c \
-	rm.c pmiport.o dbgiface.c Makefile
+	rm.c pmiport.o dbgiface.c 		     safestr2.c simple_pmiutil2.c \
+	../../util/msgs/msgprint.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "MAKE_DEPEND_C cmnargs.c > $(DEPS_DIR)/cmnargs.d" ; \
@@ -275,6 +301,27 @@ $(DEPS_DIR)/timestamp: cmnargs.c process.c ioloop.c pmiserv.c labelout.c 		     
 	fi
 	@$(MAKE_DEPEND_C)  $(srcdir)/dbgiface.c >$(DEPS_DIR)/dbgiface.d
 	echo "include $(DEPS_DIR)/dbgiface.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C safestr2.c > $(DEPS_DIR)/safestr2.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/safestr2.c >$(DEPS_DIR)/safestr2.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/safestr2.c >$(DEPS_DIR)/safestr2.d
+	echo "include $(DEPS_DIR)/safestr2.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C simple_pmiutil2.c > $(DEPS_DIR)/simple_pmiutil2.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil2.c >$(DEPS_DIR)/simple_pmiutil2.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil2.c >$(DEPS_DIR)/simple_pmiutil2.d
+	echo "include $(DEPS_DIR)/simple_pmiutil2.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C ../../util/msgs/msgprint.c > $(DEPS_DIR)/../../util/msgs/msgprint.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/../../util/msgs/msgprint.c >$(DEPS_DIR)/../../util/msgs/msgprint.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/../../util/msgs/msgprint.c >$(DEPS_DIR)/../../util/msgs/msgprint.d
+	echo "include $(DEPS_DIR)/../../util/msgs/msgprint.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
 include $(DEPS_DIR)/alldeps
@@ -282,16 +329,41 @@ include $(DEPS_DIR)/alldeps
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  cmnargs.c process.c ioloop.c pmiserv.c labelout.c env.c \
-	newsession.c rm.c dbgiface.c 
+	newsession.c rm.c dbgiface.c safestr2.c simple_pmiutil2.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
 
+# We use the msg print routines (for now) - include these in the mpiexec
+# library so that we don't need to copy the source files
+# safestr2 and simple_pmiutil2 are subsets of safestr and simple_pmiutil
+# respectively, since these may no longer be used by other applications
+# (they make use of routines like the trmem routines that may no longer
+# be used by other applications).
 
 
 distclean-local:
 clean-local:
 	-rm -f libmpiexec.a
+
+# Ensure that dgbiface is compiled with the -g option, as the symbols must
+# be present for the debugger to see them
+dgbiface.o: $(srcdir)/dgbiface.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE) -c -g $< ; \
+	fi
+	@$(C_COMPILE) -c -g $<
+dgbiface.lo: $(srcdir)/dgbiface.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "  CC              $<" ; \
+	else \
+	  echo $(C_COMPILE_SHL) -c -g $< -o _s$*.o ; \
+	echo mv -f _s$*.o $*.lo ; \
+	fi
+	@$(C_COMPILE_SHL) -c -g $< -o _s$*.o
+	@mv -f _s$*.o $*.lo
 
 
 FORCE_TARGET:

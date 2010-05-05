@@ -357,10 +357,15 @@ AC_TRY_COMPILE([int foo(int) __attribute__ ((weak));],[int a;],
 pac_cv_attr_weak=yes,pac_cv_attr_weak=no)])
 # Note that being able to compile with weak_import doesn't mean that 
 # it works.
-AC_CACHE_CHECK([whether __attribute ((weak_import)) allowed],
+AC_CACHE_CHECK([whether __attribute__ ((weak_import)) allowed],
 pac_cv_attr_weak_import,[
 AC_TRY_COMPILE([int foo(int) __attribute__ ((weak_import));],[int a;],
 pac_cv_attr_weak_import=yes,pac_cv_attr_weak_import=no)])
+# Check if the alias option for weak attributes is allowed 
+AC_CACHE_CHECK([whether __attribute__((weak,alias(...))) allowed],
+pac_cv_attr_weak_alias,[
+AC_TRY_COMPILE([int foo(int) __attribute__((weak,alias("__foo")));],[int a;],
+pac_cv_attr_weak_alias=yes,pac_cv_attr_weak_alias=no)])
 ])
 
 #
@@ -1553,3 +1558,19 @@ AC_DEFUN([PAC_STRUCT_ALIGNMENT],[
 	   pac_cv_struct_alignment="eight"
 	fi
 ])
+dnl
+dnl PAC_C_MACRO_VA_ARGS
+dnl
+dnl will AC_DEFINE([HAVE_MACRO_VA_ARGS]) if the compiler supports C99 variable
+dnl length argument lists in macros (#define foo(...) bar(__VA_ARGS__))
+AC_DEFUN([PAC_C_MACRO_VA_ARGS],[
+    AC_MSG_CHECKING([for variable argument list macro functionality])
+    AC_LINK_IFELSE([AC_LANG_PROGRAM([
+        #include <stdio.h>
+        #define conftest_va_arg_macro(...) printf(__VA_ARGS__)
+    ],
+    [conftest_va_arg_macro("a test %d", 3);])],
+    [AC_DEFINE([HAVE_MACRO_VA_ARGS],[1],[Define if C99-style variable argument list macro functionality])
+     AC_MSG_RESULT([yes])],
+    [AC_MSG_RESULT([no])])
+])dnl

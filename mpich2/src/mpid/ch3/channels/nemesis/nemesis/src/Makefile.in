@@ -7,6 +7,7 @@ all: all-redirect
 
 SHELL           = @SHELL@
 AR              = @AR@
+AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
@@ -105,11 +106,11 @@ all-redirect: .libstamp0 ../../../../../../../lib/lib${MPILIBNAME}.a
 	mpid_nem_network.o mpid_nem_debug.o mpid_nem_lmt.o mpid_nem_lmt_shm.o \
 	mpid_nem_net_array.o mpid_nem_lmt_dma.o mpid_nem_lmt_vmsplice.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../../../../lib/lib${MPILIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../../../../../lib/lib${MPILIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../../../../../lib/lib${MPILIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../../../../../lib/lib${MPILIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
@@ -124,11 +125,11 @@ all-redirect: .libstamp0 ../../../../../../../lib/lib${MPILIBNAME}.a
 	mpid_nem_lmt.lo mpid_nem_lmt_shm.lo mpid_nem_net_array.lo \
 	mpid_nem_lmt_dma.lo mpid_nem_lmt_vmsplice.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../../../../lib/lib${MPILIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../../../../../lib/lib${MPILIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../../../../lib/lib${MPILIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../../../../../lib/lib${MPILIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 coverage: 
 	-@for file in mpid_nem_alloc.c mpid_nem_init.c mpid_nem_queue.c \

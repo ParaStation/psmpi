@@ -7,13 +7,23 @@
 #ifndef DEMUX_H_INCLUDED
 #define DEMUX_H_INCLUDED
 
-/** @file demux.h */
-
-#include "hydra.h"
+#include "hydra_base.h"
+#include "hydra_utils.h"
 
 /*! \addtogroup demux Demultiplexing Engine
  * @{
  */
+
+/**
+ * \brief HYDT_dmx_init - Initialize the demux engine
+ *
+ * \param[in,out]  demux    Demux engine to use
+ *
+ * The input value of the function indicates the demux engine to be
+ * used. If the input parameter is non-NULL, it will remain unchanged;
+ * if it is NULL, an appropriate value will be filled in.
+ */
+HYD_status HYDT_dmx_init(char **demux);
 
 /**
  * \brief HYDT_dmx_register_fd - Register file descriptors for events
@@ -45,7 +55,7 @@ HYD_status HYDT_dmx_deregister_fd(int fd);
 /**
  * \brief HYDT_dmx_wait_for_event - Wait for event
  *
- * \param    time      Time to wait for in millisecond (-1 means infinite)
+ * \param    time      Time to wait for in seconds (-1 means infinite)
  *
  * This function waits till either one of the registered fd's has had
  * one of its registered events, or till the timeout expires.
@@ -60,8 +70,18 @@ HYD_status HYDT_dmx_wait_for_event(int time);
  */
 HYD_status HYDT_dmx_finalize(void);
 
-/*!
- * @}
+/**
+ * \brief HYDT_dmx_query_fd_registration - Query if an fd is registered
+ *
+ * \param[in]  fd     File descriptor to check whether registered
+ *
+ * If a file descriptor is being registered and deregistered by
+ * different layers, this function allows us to query what its state
+ * is. A return value of 1 means that the fd is still registered; 0
+ * means that it isn't.
  */
+int HYDT_dmx_query_fd_registration(int fd);
+
+HYD_status HYDT_dmx_stdin_valid(int *out);
 
 #endif /* DEMUX_H_INCLUDED */

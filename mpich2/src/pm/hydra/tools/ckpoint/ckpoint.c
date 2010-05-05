@@ -13,14 +13,22 @@
 
 struct HYDT_ckpoint_info HYDT_ckpoint_info;
 
-HYD_status HYDT_ckpoint_init(char *ckpointlib, char *ckpoint_prefix)
+HYD_status HYDT_ckpoint_init(char *user_ckpointlib, char *user_ckpoint_prefix)
 {
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
-    HYDT_ckpoint_info.ckpointlib = ckpointlib;
-    HYDT_ckpoint_info.ckpoint_prefix = ckpoint_prefix;
+    if (user_ckpointlib)
+        HYDT_ckpoint_info.ckpointlib = user_ckpointlib;
+    else
+        HYD_GET_ENV_STR_VAL(HYDT_ckpoint_info.ckpointlib, "HYDRA_CKPOINTLIB",
+                            HYDRA_DEFAULT_CKPOINTLIB);
+
+    if (user_ckpoint_prefix)
+        HYDT_ckpoint_info.ckpoint_prefix = user_ckpoint_prefix;
+    else
+        HYD_GET_ENV_STR_VAL(HYDT_ckpoint_info.ckpoint_prefix, "HYDRA_CKPOINT_PREFIX", NULL);
 
     if (HYDT_ckpoint_info.ckpoint_prefix == NULL)
         goto fn_exit;
@@ -36,8 +44,10 @@ HYD_status HYDT_ckpoint_init(char *ckpointlib, char *ckpoint_prefix)
     HYDU_FUNC_EXIT();
     return status;
 
+#if defined HAVE_BLCR
   fn_fail:
     goto fn_exit;
+#endif /* HAVE_BLCR */
 }
 
 HYD_status HYDT_ckpoint_suspend(void)
@@ -64,7 +74,7 @@ HYD_status HYDT_ckpoint_suspend(void)
     goto fn_exit;
 }
 
-HYD_status HYDT_ckpoint_restart(HYD_env_t * envlist, int num_ranks, int ranks[], int *in,
+HYD_status HYDT_ckpoint_restart(struct HYD_env *envlist, int num_ranks, int ranks[], int *in,
                                 int *out, int *err)
 {
     HYD_status status = HYD_SUCCESS;

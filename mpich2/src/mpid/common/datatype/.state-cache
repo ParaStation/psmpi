@@ -7,7 +7,7 @@
 <file name="mpid_segment.c" info="1229626685"/>
 <file name="mpid_ext32_segment.h" info="1226006997"/>
 <file name="mpid_type_indexed.c" info="1240497719"/>
-<file name="mpir_type_flatten.c" info="1236985701"/>
+<file name="mpir_type_flatten.c" info="1261095846"/>
 <file name="segment_states.h" info="1194043819"/>
 <file name="mpid_type_get_contents.c" info="1194043819"/>
 <file name="mpid_type_get_envelope.c" info="1194043819"/>
@@ -19,7 +19,7 @@
 <file name="mpid_type_blockindexed.c" info="1236985701"/>
 <file name="mpid_type_contiguous.c" info="1236985701"/>
 <file name="mpid_datatype_free.c" info="1198558967"/>
-<file name="mpid_dataloop.h" info="1244842249"/>
+<file name="mpid_dataloop.h" info="1271364812"/>
 <file name="mpid_datatype_contents.c" info="1244842249"/>
 <file name="mpid_ext32_segment.c" info="1244842249"/>
 <file name="mpid_type_create_resized.c" info="1194043819"/>

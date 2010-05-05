@@ -651,6 +651,7 @@ LIBTOOL
 C_LINK_SHL
 CC_SHL
 MPILIBNAME
+AR_FLAGS
 channel_name
 device_name
 EGREP
@@ -1918,16 +1919,6 @@ ac_config_guess="$SHELL $ac_aux_dir/config.guess"  # Please don't use this var.
 ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
 ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
-
-
-
-# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
-  if test "$FROM_MPICH2" = "yes" ; then
-    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
-    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
-    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
-    F90FLAGS="$MPICH2_INTERNAL_F90FLAGS"
-  fi
 
 
 ac_config_headers="$ac_config_headers include/mpidi_ch3i_sock_conf.h"
@@ -3575,6 +3566,9 @@ if test -z "$AR" ; then
 $as_echo "$as_me: error: The program ar is required for building MPICH2.  Make sure that your path includes ar" >&2;}
    { (exit 1); exit 1; }; }
 fi
+# AR_FLAGS provides a way to potentially improve build performance on Mac OSX
+if test -z "$AR_FLAGS" ; then AR_FLAGS=cr ; fi
+
 # Note that we set RANLIB to true if we don't find it (some systems neither
 # need it nor provide it)
 for ac_prog in ranlib
@@ -4544,6 +4538,7 @@ CPPFLAGS="${CPPFLAGS} -I${master_top_srcdir}/src/mpid/ch3/util/sock"
 
 
 
+
 	if test "$ENABLE_SHLIB" = "libtool" ; then
 	    if test -z "$LIBTOOL" ; then
 		{ $as_echo "$as_me:$LINENO: WARNING: libtool selected for shared library support but LIBTOOL is not defined" >&5
@@ -4600,16 +4595,8 @@ if test -n "$CONF_BASE_CACHEFILE" -a -s "$CONF_BASE_CACHEFILE" ; then
 fi
 
 
-# Add the MPICH2 include flags to CPPFLAGS.  See the discussion above about
-# which include flags should start in MPICH2_INCLUDE_FLAGS and which in
-# CPPFLAGS
-CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
-
 # define the ABI version of the channel ABI that we are using.
 ABIVERSION=1:1
-
-
-
 
 
 ac_config_commands="$ac_config_commands default-1"

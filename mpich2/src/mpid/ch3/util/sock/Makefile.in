@@ -7,6 +7,7 @@ all: all-redirect
 
 SHELL           = @SHELL@
 AR              = @AR@
+AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
@@ -58,9 +59,9 @@ socksources =  ch3u_init_sock.c ch3u_connect_sock.c ch3u_getinterfaces.c
 
 ${srcdir}/ch3usockconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /sw/bin/autoheader -I ../../../../../confdb && \
-	\
-	/sw/bin/autoconf -I ../../../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../../../confdb && \
+	autoconf -I \
+	../../../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -111,11 +112,11 @@ all-redirect: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 libmpich-sockutil.a: ch3u_init_sock.o ch3u_connect_sock.o \
 	ch3u_getinterfaces.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr libmpich-sockutil.a $?" ; \
+	  echo "  AR ${AR_FLAGS} libmpich-sockutil.a $?" ; \
 	else \
-	  echo ${AR} cr libmpich-sockutil.a $? ; \
+	  echo ${AR} ${AR_FLAGS} libmpich-sockutil.a $? ; \
 	fi
-	@${AR} cr libmpich-sockutil.a $?
+	@${AR} ${AR_FLAGS} libmpich-sockutil.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          libmpich-sockutil.a" ; \
 	else \
@@ -125,11 +126,11 @@ libmpich-sockutil.a: ch3u_init_sock.o ch3u_connect_sock.o \
 .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a: ch3u_init_sock.o \
 	ch3u_connect_sock.o ch3u_getinterfaces.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../../lib/lib${MPILIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../../../lib/lib${MPILIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../../../lib/lib${MPILIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
@@ -140,19 +141,19 @@ libmpich-sockutil.a: ch3u_init_sock.o ch3u_connect_sock.o \
 libmpich-sockutil.la: ch3u_init_sock.lo ch3u_connect_sock.lo \
 	ch3u_getinterfaces.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr libmpich-sockutil.la $?" ; \
+	  echo "  AR ${AR_FLAGS} libmpich-sockutil.la $?" ; \
 	else \
-	  echo ${AR} cr libmpich-sockutil.la $? ; \
+	  echo ${AR} ${AR_FLAGS} libmpich-sockutil.la $? ; \
 	fi
-	@${AR} cr libmpich-sockutil.la $?
+	@${AR} ${AR_FLAGS} libmpich-sockutil.la $?
 .libstamp1 ../../../../../lib/lib${MPILIBNAME}.la: ch3u_init_sock.lo \
 	ch3u_connect_sock.lo ch3u_getinterfaces.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../../lib/lib${MPILIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../../../lib/lib${MPILIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../../../lib/lib${MPILIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 coverage: 
 	-@for file in ${socksources} ; do \

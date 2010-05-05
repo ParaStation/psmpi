@@ -636,9 +636,9 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-SLURM_CPPFLAGS
-SLURM_LDFLAGS
-SLURM_LIBS
+WRAPPER_LIBS
+WRAPPER_LDFLAGS
+WRAPPER_CFLAGS
 EGREP
 GREP
 CPP
@@ -1880,16 +1880,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-
-# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
-  if test "$FROM_MPICH2" = "yes" ; then
-    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
-    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
-    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
-    F90FLAGS="$MPICH2_INTERNAL_F90FLAGS"
-  fi
-
-
 ac_config_headers="$ac_config_headers pmiconf.h"
 
 
@@ -2254,12 +2244,8 @@ fi
 
 # Check whether --with-slurm was given.
 if test "${with_slurm+set}" = set; then
-  withval=$with_slurm; SLURM_LDFLAGS="-L${with_slurm}/lib"
-SLURM_CPPFLAGS="-I${with_slurm}/include"
+  withval=$with_slurm;
 fi
-
-LDFLAGS="$SLURM_LDFLAGS $LDFLAGS"
-CPPFLAGS="$SLURM_CPPFLAGS $CPPFLAGS"
 
 ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
@@ -3953,9 +3939,6 @@ $as_echo "$as_me: error: could not find slurm/pmi.h.  Configure aborted" >&2;}
 fi
 
 
-saveLIBS="$LIBS"
-LIBS=""
-
 { $as_echo "$as_me:$LINENO: checking for PMI_Init in -lpmi" >&5
 $as_echo_n "checking for PMI_Init in -lpmi... " >&6; }
 if test "${ac_cv_lib_pmi_PMI_Init+set}" = set; then
@@ -4022,22 +4005,12 @@ fi
 { $as_echo "$as_me:$LINENO: result: $ac_cv_lib_pmi_PMI_Init" >&5
 $as_echo "$ac_cv_lib_pmi_PMI_Init" >&6; }
 if test "x$ac_cv_lib_pmi_PMI_Init" = x""yes; then
-  cat >>confdefs.h <<_ACEOF
-#define HAVE_LIBPMI 1
-_ACEOF
-
-  LIBS="-lpmi $LIBS"
-
+  WRAPPER_LIBS="$WRAPPER_LIBS -lpmi"
 else
   { { $as_echo "$as_me:$LINENO: error: could not find libpmi.  Configure aborted" >&5
 $as_echo "$as_me: error: could not find libpmi.  Configure aborted" >&2;}
    { (exit 1); exit 1; }; }
 fi
-
-SLURM_LIBS="$SLURM_LIBS $LIBS"
-LIBS="$LIBS $saveLIBS"
-
-
 
 
 
@@ -6524,5 +6497,4 @@ if test -n "$ac_unrecognized_opts" && test "$enable_option_checking" != no; then
   { $as_echo "$as_me:$LINENO: WARNING: unrecognized options: $ac_unrecognized_opts" >&5
 $as_echo "$as_me: WARNING: unrecognized options: $ac_unrecognized_opts" >&2;}
 fi
-
 

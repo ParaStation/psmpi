@@ -649,6 +649,7 @@ GREP
 CPP
 ENABLE_SHLIB
 RANLIB
+AR_FLAGS
 AR
 SET_MAKE
 SET_CFLAGS
@@ -1890,16 +1891,6 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-
-
-
-# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
-  if test "$FROM_MPICH2" = "yes" ; then
-    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
-    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
-    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
-    F90FLAGS="$MPICH2_INTERNAL_F90FLAGS"
-  fi
 
 
 ac_config_headers="$ac_config_headers pmutilconf.h"
@@ -3298,6 +3289,7 @@ fi
 
   test -n "$AR" && break
 done
+
 
 if test -n "$ac_tool_prefix"; then
   # Extract the first word of "${ac_tool_prefix}ranlib", so it can be a program name with args.
@@ -7944,9 +7936,6 @@ if test -n "$CONF_BASE_CACHEFILE" -a -s "$CONF_BASE_CACHEFILE" ; then
 	mv $CONF_BASE_CACHEFILE.new $CONF_BASE_CACHEFILE
     fi
 fi
-
-
-
 
 
 ac_config_files="$ac_config_files Makefile test/Makefile"

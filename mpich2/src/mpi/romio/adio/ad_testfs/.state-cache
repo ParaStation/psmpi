@@ -6,12 +6,12 @@
 <file name="ad_testfs_write.c" info="1217730774"/>
 <file name="ad_testfs_wrcoll.c" info="1194043819"/>
 <file name="ad_testfs.h" info="1194043819"/>
-<file name="ad_testfs_delete.c" info="1194043819"/>
 <file name="ad_testfs_open.c" info="1194043819"/>
+<file name="ad_testfs_delete.c" info="1194043819"/>
 <file name="ad_testfs.c" info="1220368989"/>
 <file name="ad_testfs_wait.c" info="1194043819"/>
-<file name="ad_testfs_iwrite.c" info="1197323689"/>
 <file name="ad_testfs_resize.c" info="1194043819"/>
+<file name="ad_testfs_iwrite.c" info="1197323689"/>
 <file name="ad_testfs_getsh.c" info="1194043819"/>
 <file name="ad_testfs_fcntl.c" info="1194043819"/>
 <file name="ad_testfs_setsh.c" info="1194043819"/>
@@ -35,17 +35,17 @@
 </fileinfo>
 <fileinfo name="ad_testfs.h">
 </fileinfo>
-<fileinfo name="ad_testfs_delete.c">
-</fileinfo>
 <fileinfo name="ad_testfs_open.c">
+</fileinfo>
+<fileinfo name="ad_testfs_delete.c">
 </fileinfo>
 <fileinfo name="ad_testfs.c">
 </fileinfo>
 <fileinfo name="ad_testfs_wait.c">
 </fileinfo>
-<fileinfo name="ad_testfs_iwrite.c">
-</fileinfo>
 <fileinfo name="ad_testfs_resize.c">
+</fileinfo>
+<fileinfo name="ad_testfs_iwrite.c">
 </fileinfo>
 <fileinfo name="ad_testfs_getsh.c">
 </fileinfo>

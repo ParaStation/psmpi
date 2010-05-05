@@ -6,6 +6,7 @@
 #ifndef MPIU_EX_H_INCLUDED
 #define MPIU_EX_H_INCLUDED
 
+#define WIN32_LEAN_AND_MEAN
 #ifdef HAVE_WINDOWS_H
 #include <windows.h>
 #endif
@@ -90,7 +91,7 @@ MPIU_ExCloseSet(
 */
 typedef
 int
-(WINAPI * MPIU_ExCompletionProcessor)(
+(__cdecl * MPIU_ExCompletionProcessor)(
     DWORD BytesTransferred,
     PVOID pOverlapped
     );
@@ -99,8 +100,8 @@ int
 /*
     MPIU_ExRegisterCompletionProcessor
 
-    Resister a completion processor for a specific Key.
-    N.B. Current implementation supports keys 0 - 3, where key 0 is reserved.
+    Register a completion processor for a specific Key.
+    N.B. Current implementation supports keys 0 - 3, where key 0/1 is reserved.
 */
 void
 MPIU_ExRegisterCompletionProcessor(
@@ -108,6 +109,22 @@ MPIU_ExRegisterCompletionProcessor(
     MPIU_ExCompletionProcessor pfnCompletionProcessor
     );
 
+/* Predefined Completion processor keys */
+#define MPIU_EX_GENERIC_COMP_PROC_KEY   0
+#define MPIU_EX_WIN32_COMP_PROC_KEY     1
+
+/*
+    MPIU_ExRegisterNextCompletionProcessor
+
+    Register the next completion processor and return the Key.
+    Returns an MPI error code on error
+    N.B. Current implementation supports keys 0 - 3, where key 0 is reserved.
+*/
+int
+MPIU_ExRegisterNextCompletionProcessor(
+    ULONG_PTR *Key,
+    MPIU_ExCompletionProcessor pfnCompletionProcessor
+    );
 
 /*
     MPIU_ExUnregisterCompletionProcessor
@@ -146,7 +163,6 @@ MPIU_ExGetPortValue(
     MPIU_ExSetHandle_t Set
     );
 
-
 /*
     MPIU_ExProcessCompletions
 
@@ -158,19 +174,22 @@ MPIU_ExGetPortValue(
     indication to continue.
 
     Parameters:
-        fWaitForEvent - Block until an event sequence is complete
+        fWaitForEventAndStatus -
+            If Set to TRUE, Block until an event sequence is complete
+            If Set to FALSE, Does not block for an event seq to complete
+            On return, if set to TRUE, An event seq was completed
+            On return, if set to FALSE, An event seq did not complete
 
     Return Value:
         The result of the asynchronous function last to complete.
-        if fWaitForEvent is FALSE and no more events to process, the value
+        if fWaitForEventAndStatus is FALSE and no more events to process, the value
         returned is MPI_SUCCESS.
 */
 int
 MPIU_ExProcessCompletions(
     MPIU_ExSetHandle_t Set,
-    BOOL fWaitForEvent
+    BOOL *fWaitForEventAndStatus
     );
-
 
 /*
     MPIU_ExInitialize
@@ -190,7 +209,7 @@ MPIU_ExInitialize(
     Close the completion queue progress engine. This function can only be called
     once.
 */
-void
+int
 MPIU_ExFinalize(
     void
     );
@@ -235,7 +254,7 @@ struct MPIU_EXOVERLAPPED;
 
 typedef
 int
-(WINAPI * MPIU_ExCompletionRoutine)(
+(* MPIU_ExCompletionRoutine)(
     struct MPIU_EXOVERLAPPED* pOverlapped
     );
 
@@ -253,9 +272,17 @@ typedef struct MPIU_EXOVERLAPPED {
     OVERLAPPED ov;
     MPIU_ExCompletionRoutine pfnSuccess;
     MPIU_ExCompletionRoutine pfnFailure;
+    /*  FIXME: Should we allow a user_ctxt here ?
+        This will allow us to implement finding the record containing executive
+        overlapped structure in systems/compilers that don't implement mechanisms
+        similar to CONTAINING_RECORD.
+     */
+    /* void *user_ctxt; */
 
 } MPIU_EXOVERLAPPED;
 
+/* Get pointer to OS overlapped from EX overlapped pointer*/
+#define MPIU_EX_GET_OVERLAPPED_PTR(ex_ovp) (&((ex_ovp)->ov))
 
 /*
     MPIU_ExInitOverlapped
@@ -289,6 +316,7 @@ MPIU_ExInitOverlapped(
 void
 MPIU_ExPostOverlapped(
     MPIU_ExSetHandle_t Set,
+    ULONG_PTR key,
     MPIU_EXOVERLAPPED* pOverlapped
     );
 
@@ -304,6 +332,7 @@ inline
 void
 MPIU_ExPostOverlappedResult(
     MPIU_ExSetHandle_t Set,
+    ULONG_PTR key,
     MPIU_EXOVERLAPPED* pOverlapped,
     HRESULT Status,
     DWORD BytesTransferred
@@ -311,7 +340,7 @@ MPIU_ExPostOverlappedResult(
 {
     pOverlapped->ov.Internal = Status;
     pOverlapped->ov.InternalHigh = BytesTransferred;
-    MPIU_ExPostOverlapped(Set, pOverlapped);
+    MPIU_ExPostOverlapped(Set, key, pOverlapped);
 }
 
 
@@ -327,6 +356,7 @@ MPIU_ExPostOverlappedResult(
 void
 MPIU_ExAttachHandle(
     MPIU_ExSetHandle_t Set,
+    ULONG_PTR key,
     HANDLE Handle
     );
 
@@ -346,6 +376,9 @@ MPIU_ExGetBytesTransferred(
     return (DWORD)pOverlapped->ov.InternalHigh;
 }
 
+#define MPIU_EX_STATUS_IO_ABORT  (0x80000000 | (FACILITY_WIN32 << 16) | ERROR_OPERATION_ABORTED)
+#define MPIU_EX_STATUS_TO_ERRNO(ex_status) HRESULT_CODE(~0x80000000 & ex_status)
+typedef HRESULT MPIU_Ex_status_t;
 
 /*
     MPIU_ExGetStatus
@@ -404,7 +437,6 @@ MPIU_ExCallFailure(
     return pOverlapped->pfnFailure(pOverlapped);
 }
 
-
 /*
     MPIU_ExCompleteOverlapped
 
@@ -415,13 +447,42 @@ static
 inline
 int
 MPIU_ExCompleteOverlapped(
-    MPIU_EXOVERLAPPED* pOverlapped
+    MPIU_EXOVERLAPPED* pOverlapped, int BytesTransferred
     )
 {
-    if(SUCCEEDED(MPIU_ExGetStatus(pOverlapped)))
-        return pOverlapped->pfnSuccess(pOverlapped);
+    pOverlapped->ov.InternalHigh = BytesTransferred;
 
-    return pOverlapped->pfnFailure(pOverlapped);
+    if(SUCCEEDED(MPIU_ExGetStatus(pOverlapped))){
+        return pOverlapped->pfnSuccess(pOverlapped);
+    }
+    else{
+        return pOverlapped->pfnFailure(pOverlapped);
+    }
+}
+
+/*
+    MPIU_ExWin32CompleteOverlapped
+
+    Execute the EXOVERLAPPED success or failure completion routine based
+    on the overlapped status value.
+*/
+static
+inline
+int
+MPIU_ExWin32CompleteOverlapped(
+    MPIU_EXOVERLAPPED* pOverlapped, int BytesTransferred
+    )
+{
+    pOverlapped->ov.InternalHigh = BytesTransferred;
+
+    if(SUCCEEDED(MPIU_ExGetStatus(pOverlapped))){
+        pOverlapped->ov.Internal = S_OK;
+        return pOverlapped->pfnSuccess(pOverlapped);
+    }
+    else{
+        pOverlapped->ov.Internal = HRESULT_FROM_WIN32(GetLastError());
+        return pOverlapped->pfnFailure(pOverlapped);
+    }
 }
 
 #endif /* MPIU_EX_H_INCLUDED */

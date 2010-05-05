@@ -6,3 +6,4 @@ if test -s src/mpid/ch3/channels/nemesis/nemesis/localdefs ; then
 fi
 LIBS="@LIBS@"
 LDFLAGS="@LDFLAGS@"
+WRAPPER_LDFLAGS="@WRAPPER_LDFLAGS@"

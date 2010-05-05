@@ -11,7 +11,7 @@
     {									\
 	struct { ut1_ a; ut2_ b; } foo;					\
 	disps[0] = 0;							\
-	disps[1] = MPI_VOID_PTR_CAST_TO_MPI_AINT ((char *) &foo.b - (char *) &foo.a);	\
+	disps[1] = DLOOP_VOID_PTR_CAST_TO_OFFSET ((char *) &foo.b - (char *) &foo.a);	\
 	types[0] = mt1_;						\
 	types[1] = mt2_;						\
     }
@@ -50,26 +50,18 @@ int PREPEND_PREFIX(Dataloop_create_pairtype)(MPI_Datatype type,
 		 type == MPI_LONG_INT || type == MPI_SHORT_INT ||
 		 type == MPI_LONG_DOUBLE_INT || type == MPI_2INT);
 
-    switch(type) {
-	case MPI_FLOAT_INT:
-	    PAIRTYPE_CONTENTS(MPI_FLOAT, float, MPI_INT, int);
-	    break;
-	case MPI_DOUBLE_INT:
-	    PAIRTYPE_CONTENTS(MPI_DOUBLE, double, MPI_INT, int);
-	    break;
-	case MPI_LONG_INT:
-	    PAIRTYPE_CONTENTS(MPI_LONG, long, MPI_INT, int);
-	    break;
-	case MPI_SHORT_INT:
-	    PAIRTYPE_CONTENTS(MPI_SHORT, short, MPI_INT, int);
-	    break;
-	case MPI_LONG_DOUBLE_INT:
-	    PAIRTYPE_CONTENTS(MPI_LONG_DOUBLE, long double, MPI_INT, int);
-	    break;
-	case MPI_2INT:
-	    PAIRTYPE_CONTENTS(MPI_INT, int, MPI_INT, int);
-	    break;
-    }
+    if (type ==  MPI_FLOAT_INT)
+	PAIRTYPE_CONTENTS(MPI_FLOAT, float, MPI_INT, int);
+    if (type == MPI_DOUBLE_INT)
+	PAIRTYPE_CONTENTS(MPI_DOUBLE, double, MPI_INT, int);
+    if (type == MPI_LONG_INT)
+	PAIRTYPE_CONTENTS(MPI_LONG, long, MPI_INT, int);
+    if (type == MPI_SHORT_INT)
+	PAIRTYPE_CONTENTS(MPI_SHORT, short, MPI_INT, int);
+    if (type == MPI_LONG_DOUBLE_INT)
+	PAIRTYPE_CONTENTS(MPI_LONG_DOUBLE, long double, MPI_INT, int);
+    if (type == MPI_2INT)
+	PAIRTYPE_CONTENTS(MPI_INT, int, MPI_INT, int);
 
     return PREPEND_PREFIX(Dataloop_create_struct)(2,
 						  blocks,

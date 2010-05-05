@@ -7,6 +7,7 @@ all: all-redirect
 
 SHELL           = @SHELL@
 AR              = @AR@
+AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
 INSTALL         = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -70,9 +71,9 @@ INCLUDES = -I../../../include -I${master_top_srcdir}/src/include -I../../../mpi/
 
 ${srcdir}/rlogconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /sw/bin/autoheader -I ../../../../confdb && \
-	\
-	/sw/bin/autoconf -I ../../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../../confdb && \
+	autoconf -I \
+	../../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -124,11 +125,11 @@ all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a irlog2rlog\
 .libstamp0 ../../../../lib/lib${MPILIBNAME}.a: rlog.o rlogutil.o rlogtime.o \
 	irlogutil.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../lib/lib${MPILIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../../lib/lib${MPILIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../../lib/lib${MPILIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
@@ -139,11 +140,11 @@ all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a irlog2rlog\
 .libstamp1 ../../../../lib/lib${MPILIBNAME}.la: rlog.lo rlogutil.lo \
 	rlogtime.lo irlogutil.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../lib/lib${MPILIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../../lib/lib${MPILIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../../lib/lib${MPILIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 coverage: 
 	-@for file in rlog.c rlogutil.c rlogtime.c irlogutil.c ; do \

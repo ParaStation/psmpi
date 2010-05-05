@@ -3,14 +3,26 @@
 /* Define to 1 if you have the <ctype.h> header file. */
 #undef HAVE_CTYPE_H
 
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
 /* Define if GNU __attribute__ is supported */
 #undef HAVE_GCC_ATTRIBUTE
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define if C99-style variable argument list macro functionality */
+#undef HAVE_MACRO_VA_ARGS
+
+/* Define to 1 if you have the <memcheck.h> header file. */
+#undef HAVE_MEMCHECK_H
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define to 1 if you have the `putenv' function. */
+#undef HAVE_PUTENV
 
 /* Define to 1 if you have the `snprintf' function. */
 #undef HAVE_SNPRINTF
@@ -44,6 +56,22 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the <valgrind.h> header file. */
+#undef HAVE_VALGRIND_H
+
+/* Define to 1 if you have the <valgrind/memcheck.h> header file. */
+#undef HAVE_VALGRIND_MEMCHECK_H
+
+/* Define to 1 if you have the <valgrind/valgrind.h> header file. */
+#undef HAVE_VALGRIND_VALGRIND_H
+
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
+
+/* Define if putenv needs a declaration */
+#undef NEEDS_PUTENV_DECL
 
 /* Define if snprintf needs a declaration */
 #undef NEEDS_SNPRINTF_DECL

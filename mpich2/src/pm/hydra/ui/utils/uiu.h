@@ -11,8 +11,8 @@
 
 void HYD_uiu_init_params(void);
 void HYD_uiu_free_params(void);
-HYD_status HYD_uiu_merge_exec_info_to_proxy(void);
-HYD_status HYD_uiu_get_current_exec_info(struct HYD_exec_info **info);
 void HYD_uiu_print_params(void);
+HYD_status HYD_uiu_stdout_cb(void *buf, int buflen);
+HYD_status HYD_uiu_stderr_cb(void *buf, int buflen);
 
 #endif /* UIU_H_INCLUDED */

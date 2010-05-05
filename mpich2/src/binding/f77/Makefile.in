@@ -7,6 +7,7 @@ all: all-redirect
 
 SHELL           = @SHELL@
 AR              = @AR@
+AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
 INSTALL         = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -282,7 +283,7 @@ clean:
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
-	-@rm -f Makefile mpif.h setbotf.f
+	-@rm -f Makefile mpif.h setbotf.f setbot.c
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
@@ -389,11 +390,11 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	_wnull_type_del_fnf.o _wnull_type_copy_fnf.o _wstatusf2c.o \
 	_wstatusc2f.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${FWRAPNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${FWRAPNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${FWRAPNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${FWRAPNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${FWRAPNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${FWRAPNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${FWRAPNAME}.a" ; \
 	else \
@@ -474,11 +475,11 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	null_type_del_fnf.o null_type_copy_fnf.o statusf2c.o statusc2f.o \
 	setbot.o setbotf.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${MPIFLIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPIFLIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${MPIFLIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${MPIFLIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${MPIFLIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${MPIFLIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPIFLIBNAME}.a" ; \
 	else \
@@ -576,11 +577,11 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	_wnull_type_del_fnf.lo _wnull_type_copy_fnf.lo _wstatusf2c.lo \
 	_wstatusc2f.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${FWRAPNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${FWRAPNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${FWRAPNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${FWRAPNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${FWRAPNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${FWRAPNAME}.la $?
 	date > .libstamp1
 .libstamp3 ../../../lib/lib${MPIFLIBNAME}.la: sendf.lo recvf.lo get_countf.lo \
 	bsendf.lo ssendf.lo rsendf.lo bufattachf.lo bufdetachf.lo isendf.lo \
@@ -661,11 +662,11 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	dup_type_fnf.lo null_type_del_fnf.lo null_type_copy_fnf.lo \
 	statusf2c.lo statusc2f.lo setbot.lo setbotf.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${MPIFLIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPIFLIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${MPIFLIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${MPIFLIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${MPIFLIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${MPIFLIBNAME}.la $?
 	date > .libstamp3
 
 # --------------------------------------------------------------------------
@@ -5261,7 +5262,7 @@ SOURCEFILES     = sendf.c recvf.c get_countf.c bsendf.c ssendf.c rsendf.c \
 	dup_comm_fnf.c null_comm_del_fnf.c null_comm_copy_fnf.c dup_win_fnf.c \
 	null_win_del_fnf.c null_win_copy_fnf.c dup_type_fnf.c \
 	null_type_del_fnf.c null_type_copy_fnf.c statusf2c.c statusc2f.c \
-	setbot.c $(abs_builddir)/setbotf.f 
+	$(abs_builddir)/setbot.c $(abs_builddir)/setbotf.f 
 # --------------------------------------------------------------------------
 # DO NOT EDIT
 # This file created by buildiface 

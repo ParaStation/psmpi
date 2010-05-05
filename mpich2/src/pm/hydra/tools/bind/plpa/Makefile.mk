@@ -4,6 +4,12 @@
 #     See COPYRIGHT in top-level directory.
 #
 
-libhydra_a_SOURCES += $(top_srcdir)/tools/bind/plpa/bind_plpa.c
+libhydra_la_SOURCES += $(top_srcdir)/tools/bind/plpa/bind_plpa.c
 
-include $(top_srcdir)/tools/bind/plpa/plpa/Makefile.mk
+AM_CPPFLAGS += -I$(top_srcdir)/tools/bind/plpa/plpa/src/libplpa \
+	-I$(top_builddir)/tools/bind/plpa/plpa/src/libplpa
+
+# Append plpa to the external subdirs, so it gets built first
+external_subdirs += tools/bind/plpa/plpa
+external_ldflags += -L$(top_builddir)/tools/bind/plpa/plpa/src/libplpa
+external_libs += -lplpa

@@ -94,9 +94,6 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define if the channel needs util/shm */
-#undef HAVE_UTIL_SHM
-
 /* Define if the channel needs util/sock */
 #undef HAVE_UTIL_SOCK
 

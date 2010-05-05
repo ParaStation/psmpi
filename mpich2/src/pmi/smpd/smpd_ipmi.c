@@ -110,6 +110,19 @@ static pmi_process_t pmi_process =
     ""                      /* kvs_name of singleton proc with no PM */
 };
 
+
+void pmi_init_printf(void)
+{
+    char *env;
+    
+    env = getenv("SMPD_DBG_OUTPUT");
+    if(env != NULL){
+        /* We only support tracing for now */
+        smpd_process.verbose = SMPD_TRUE;
+        smpd_process.dbg_state |= SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_TRACE;
+    }
+}
+
 static int silence = 0;
 static int pmi_err_printf(char *str, ...)
 {
@@ -308,6 +321,21 @@ static int uPMI_ConnectToHost(char *host, int port, smpd_state_t state)
     int result;
     char error_msg[MPI_MAX_ERROR_STRING];
     int len;
+
+    /* Make sure that we have the smpd passphrase before connecting to PM */
+    if (smpd_process.passphrase[0] == '\0'){
+        smpd_get_smpd_data("phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
+    }
+    if (smpd_process.passphrase[0] == '\0'){
+        if (smpd_process.noprompt){
+            pmi_err_printf("Error: No smpd passphrase specified through the registry or .smpd file, exiting.\n");
+            return PMI_FAIL;
+        }
+        else{
+            printf("Please specify an authentication passphrase for smpd: "); fflush(stdout);
+            smpd_get_password(smpd_process.passphrase);
+        }
+    }
 
     /*printf("posting a connect to %s:%d\n", host, port);fflush(stdout);*/
     result = smpd_create_context(SMPD_CONTEXT_PMI, pmi_process.set, SMPDU_SOCK_INVALID_SOCK/*pmi_process.sock*/, smpd_process.id, &pmi_process.context);
@@ -529,8 +557,7 @@ static int PMIi_InitSingleton(void ){
         MPIU_Strncpy(pmi_process.kvs_name_singleton_nopm, pmi_process.kvs_name, PMI_MAX_KVS_NAME_LENGTH);
         /* Update the pmi process structs with the new remote KVS info */
         MPIU_Strncpy(pmi_process.kvs_name, smpd_process.kvs_name, PMI_MAX_KVS_NAME_LENGTH);
-        MPIU_Strncpy(pmi_process.domain_name, smpd_process.kvs_name, PMI_MAX_KVS_NAME_LENGTH);
-        MPIU_Strncpy(smpd_process.domain_name, smpd_process.kvs_name, PMI_MAX_KVS_NAME_LENGTH);
+        MPIU_Strncpy(pmi_process.domain_name, smpd_process.domain_name, PMI_MAX_KVS_NAME_LENGTH);
         MPIU_Strncpy(pmi_process.host, smpd_process.host, PMI_MAX_HOST_NAME_LENGTH);
         MPIU_Strncpy(pmi_process.root_host, smpd_process.host, PMI_MAX_HOST_NAME_LENGTH);
         pmi_process.root_port = smpd_process.port;
@@ -542,18 +569,13 @@ static int PMIi_InitSingleton(void ){
 
         smpd_process.id = 1;
         pmi_process.smpd_id = 1;
+        pmi_process.smpd_key = 0;
         pmi_process.rpmi = PMI_TRUE;
         pmi_process.local_kvs = PMI_FALSE;
         pmi_process.iproc = 0;
         pmi_process.nproc = 1;
-        smpd_process.nproc = 1;
 
         smpd_process.is_singleton_client = SMPD_TRUE;
-		/* Get passphrase for PM */
-		result = smpd_get_smpd_data("phrase", smpd_process.passphrase, SMPD_PASSPHRASE_MAX_LENGTH);
-		if(result != SMPD_SUCCESS){
-			PMII_ERR_SETPRINTANDJUMP("Unable to obtain the smpd passphrase\n", result);
-		}
 
         result = SMPDU_Sock_create_set(&pmi_process.set);
 	    if (result != SMPD_SUCCESS){
@@ -772,6 +794,11 @@ static int rPMI_Init(int *spawned)
 
     if (spawned == NULL)
 	return PMI_ERR_INVALID_ARG;
+
+    /* Enable state machine tracing 
+    smpd_process.verbose = SMPD_TRUE;
+    smpd_process.dbg_state |= SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_TRACE;
+    */
 
     /* initialize to defaults */
     smpd_process.id = 1;
@@ -1101,6 +1128,8 @@ int iPMI_Init(int *spawned)
     smpd_process.verbose = SMPD_TRUE;
 	smpd_process.dbg_state |= SMPD_DBG_STATE_ERROUT | SMPD_DBG_STATE_STDOUT | SMPD_DBG_STATE_TRACE;
     */
+
+    pmi_init_printf();
 
     /* don't allow pmi_init to be called more than once */
     if (pmi_process.init_finalized == PMI_INITIALIZED)

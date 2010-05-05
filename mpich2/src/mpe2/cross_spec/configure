@@ -637,6 +637,7 @@ ac_includes_default="\
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
 RANLIB
+AR_FLAGS
 AR
 MPE_FLINKER
 FLINKER
@@ -6275,6 +6276,7 @@ fi
 
 if test -z "$CLINKER" ; then CLINKER="$CC" ; fi
 if test -z "$FLINKER" ; then FLINKER="$F77" ; fi
+
 
 
 

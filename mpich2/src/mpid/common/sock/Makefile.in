@@ -21,9 +21,9 @@ INCLUDES = -I../../../include -I${master_top_srcdir}/src/include
 
 ${srcdir}/mpidu_sock_conf.h  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /sw/bin/autoheader -I ../../../../confdb && \
-	\
-	/sw/bin/autoconf -I ../../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../../confdb && \
+	autoconf -I \
+	../../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -108,6 +108,7 @@ latexdoc:
 dependencies:
 	for dir in @sock_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
 		if [ "$$dir" = "iocp" ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} dependencies ) ; done
 # End of Dependencies

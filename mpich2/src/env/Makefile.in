@@ -194,7 +194,7 @@ SOURCEFILES     = $(SOURCES)
 # called mpic++
 install-postamble:
 	if [ -x ${DESTDIR}${bindir}/mpicxx ] ; then \
-	    cd ${DESTDIR}${bindir} && ln -sf mpicxx mpic++ ; fi
+	    cd ${DESTDIR}${bindir} && ln -f -s mpicxx mpic++ ; fi
 uninstall-postamble:
 	rm -f ${DESTDIR}${bindir}/mpic++
 

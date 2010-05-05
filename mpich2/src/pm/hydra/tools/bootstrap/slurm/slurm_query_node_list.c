@@ -9,6 +9,8 @@
 #include "bscu.h"
 #include "slurm.h"
 
+int HYDT_bscd_slurm_user_node_list = 1;
+
 static void full_str_to_groups(char *str, char **list)
 {
     char *tmp;
@@ -45,43 +47,40 @@ static void full_str_to_groups(char *str, char **list)
 
 static HYD_status group_to_individual_nodes(char *str, char **list)
 {
-    char *pre = NULL, *nodes = NULL, *tmp;
-    int start_node, end_node;
-    char new[MAX_HOSTNAME_LEN], *node_str[MAX_HOSTNAME_LEN];
-    int arg, i;
+    char *pre, *nodes, *tmp, *start_str, *end_str;
+    char *node_str[HYD_NUM_TMP_STRINGS], *set[HYD_NUM_TMP_STRINGS];
+    int start, end, arg, i, j;
     HYD_status status = HYD_SUCCESS;
 
-    tmp = str;
-    i = 0;
-    while (1) {
-        new[i] = *tmp;
+    pre = HYDU_strdup(str);
+    for (tmp = pre; *tmp != '[' && *tmp != 0; tmp++);
 
-        if (*tmp == '[') {
-            new[i] = 0;
-            pre = HYDU_strdup(new);
-            i = -1;
-        }
-
-        if (*tmp == ']' || *tmp == 0) {
-            new[i] = 0;
-            nodes = HYDU_strdup(new);
-            break;
-        }
-
-        i++;
-        tmp++;
+    if (*tmp == 0) {    /* only one node in the group */
+        list[0] = pre;
+        list[1] = NULL;
+        goto fn_exit;
     }
+
+    /* more than one node in the group */
+    *tmp = 0;
+    nodes = tmp + 1;
+
+    for (tmp = nodes; *tmp != ']' && *tmp != 0; tmp++);
+    *tmp = 0;   /* remove the closing ']' */
+
+    for ((set[0] = strtok(nodes, ",")), i = 1; (set[i] = strtok(NULL, ",")); i++);
 
     arg = 0;
-    if (pre == NULL) {
-        list[arg++] = nodes;
-    }
-    else {
-        start_node = atoi(strtok(nodes, "-"));
-        end_node = atoi(strtok(NULL, "-"));
-        for (i = start_node; i <= end_node; i++) {
+    for (i = 0; set[i]; i++) {
+        start_str = strtok(set[i], "-");
+        end_str = strtok(NULL, "-");
+
+        start = atoi(start_str);
+        end = end_str ? atoi(end_str) : start;
+
+        for (j = start; j <= end; j++) {
             node_str[0] = HYDU_strdup(pre);
-            node_str[1] = HYDU_int_to_str(i);
+            node_str[1] = HYDU_int_to_str(j);
             node_str[2] = NULL;
 
             status = HYDU_str_alloc_and_join(node_str, &list[arg++]);
@@ -99,39 +98,50 @@ static HYD_status group_to_individual_nodes(char *str, char **list)
     goto fn_exit;
 }
 
-HYD_status HYDT_bscd_slurm_query_node_list(int *num_cores, struct HYD_proxy **proxy_list)
+HYD_status HYDT_bscd_slurm_query_node_list(struct HYD_node **node_list)
 {
     char *str, *num_procs;
     char *tmp1[HYD_NUM_TMP_STRINGS], *tmp2[HYD_NUM_TMP_STRINGS];
-    int i, j, start_pid;
+    struct HYD_node *node, *tnode;
+    int i, j;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
-    str = getenv("SLURM_NODELIST");
-    num_procs = getenv("SLURM_JOB_CPUS_PER_NODE");
+    if (MPL_env2str("SLURM_NODELIST", (const char **) &str) == 0)
+        str = NULL;
+    if (MPL_env2str("SLURM_JOB_CPUS_PER_NODE", (const char **) &num_procs) == 0)
+        num_procs = NULL;
 
     if (str == NULL || num_procs == NULL) {
-        *proxy_list = NULL;
+        *node_list = NULL;
     }
     else {
         full_str_to_groups(str, tmp1);
         num_procs = strtok(num_procs, "(");
 
-        start_pid = 0;
         for (i = 0; tmp1[i]; i++) {
             status = group_to_individual_nodes(tmp1[i], tmp2);
             HYDU_ERR_POP(status, "unable to parse node list\n");
 
             for (j = 0; tmp2[j]; j++) {
-                status = HYDU_merge_proxy_segment(tmp2[j], start_pid, atoi(num_procs),
-                                                  proxy_list);
-                HYDU_ERR_POP(status, "merge proxy segment failed\n");
+                status = HYDU_alloc_node(&node);
+                HYDU_ERR_POP(status, "unable to allocate note\n");
 
-                start_pid += atoi(num_procs);
+                node->hostname = HYDU_strdup(tmp2[j]);
+                node->core_count = atoi(num_procs);
+
+                if (*node_list == NULL)
+                    *node_list = node;
+                else {
+                    for (tnode = *node_list; tnode->next; tnode = tnode->next);
+                    tnode->next = node;
+                }
             }
         }
-        *num_cores = start_pid;
+
+        /* node list is provided by the bootstrap server */
+        HYDT_bscd_slurm_user_node_list = 0;
     }
 
   fn_exit:

@@ -196,8 +196,8 @@ AC_SUBST(MPICH2_VERSION)
 # that were linked against it.  In our use, the version number is x:y, where
 #  x changes when the ABI changes
 #  y changes when major behavior of the routines, without changing the ABI;
-#    reset y to one when x changes.  Some systems don't like a 0 subversion,
-#    so we always use one as the smallest version number.
+#    reset y to one when x changes.  Following libtool's versioning scheme, 0 is
+#    the lowest value for any of the fields of the ABIVERSION string.
 # The ABIVERSION is not the same as the VERSION. It is used principly in the
 # Makefile.sm to pass the ABIVERSION to the createshlib script.
 # We use libtool-style version numbers (see --version-info in the 
@@ -205,7 +205,7 @@ AC_SUBST(MPICH2_VERSION)
 ABIVERSION="`cat $srcdir/maint/Version | grep ^MPICH2_ABIVERSION: | cut -f2 -d' '`"
 AC_SUBST(ABIVERSION)
 
-
+# Print out the configure options
 CONFIGURE_ARGUMENTS="$ac_configure_args"
 AC_SUBST(CONFIGURE_ARGUMENTS)
 if test -n "$ac_configure_args" ; then
@@ -213,9 +213,10 @@ if test -n "$ac_configure_args" ; then
 else 
     echo "Configuring MPICH2 version $MPICH2_VERSION"
 fi
+
 # Add the information on the system:
 echo "Running on system: `uname -a`"
-dnl
+
 dnl Definitions will be placed in this file rather than in the DEFS variable
 AC_CONFIG_HEADER(src/include/mpichconf.h)
 AH_TOP([/* -*- Mode: C; c-basic-offset:4 ; -*- */
@@ -228,17 +229,70 @@ AH_TOP([/* -*- Mode: C; c-basic-offset:4 ; -*- */
 ])
 AH_BOTTOM([#endif])
 
-dnl
 dnl Set the directory that contains support scripts such as install-sh and
 dnl config.guess
 AC_CONFIG_AUX_DIR(confdb)
-dnl
-dnl Use AC_ARG_ENABLE to look for --enable-feature and AC_ARG_WITH to look for
-dnl --with-capability
-dnl
-dnl Enable better caching control
+
+# Set the FROM_MPICH2 variable to tell subconfigures that they are
+# built from within MPICH2
+FROM_MPICH2=yes
+export FROM_MPICH2
+AC_ARG_VAR(FROM_MPICH2, [internally set flag to tell subconfigures that they are built from within MPICH2])
+
+# compute canonical system types
+AC_CANONICAL_BUILD
+AC_CANONICAL_HOST
+# TARGET not needed, MPICH2 isn't a compiler
+
+# Save a copy of precious flags as USER_* before any of these flags
+# are being modified by configure tests.
+PAC_PREFIX_ALL_FLAGS(USER)
+
+# WRAPPER_xFLAGS are used by mpicc and friends.
+#
+# WRAPPER_CFLAGS and other compile flags are used for compile options
+# that are added by MPICH2, but should be used by applications (such
+# as include paths).
+#
+# All libraries that are detected by MPICH2 as needed for some of its
+# functionality (such as -lpthread) should be added to LIBS so
+# autoconf link tests can use them. Libraries that are built by MPICH2
+# at make time (and hence are not available for autoconf link tests to
+# use), such as OPA and MPL, should be added to WRAPPER_LIBS. All
+# libraries in LIBS are added to WRAPPER_LIBS as well, at the end of
+# configure.
+PAC_PREFIX_ALL_FLAGS(WRAPPER)
+WRAPPER_CFLAGS="$CFLAGS $MPICH2_MPICC_FLAGS"
+WRAPPER_CPPFLAGS="$CPPFLAGS $MPICH2_MPICPP_FLAGS"
+WRAPPER_CXXFLAGS="$CXXFLAGS $MPICH2_MPICXX_FLAGS"
+WRAPPER_FFLAGS="$FFLAGS $MPICH2_MPIF77_FLAGS"
+WRAPPER_F90FLAGS="$F90FLAGS $MPICH2_MPIF90_FLAGS"
+WRAPPER_LDFLAGS="$LDFLAGS $MPICH2_LDFLAGS"
+WRAPPER_LIBS="$LIBS $MPICH2_LIBS"
+
+# Add MPICH2LIB_* to the appropriate flags
+AC_ARG_VAR(MPICH2LIB_CFLAGS, [extra CFLAGS used in building MPICH2 libraries])
+AC_ARG_VAR(MPICH2LIB_CPPFLAGS, [extra CPPFLAGS used in building MPICH2 libraries])
+AC_ARG_VAR(MPICH2LIB_CXXFLAGS, [extra CXXFLAGS used in building MPICH2 libraries])
+AC_ARG_VAR(MPICH2LIB_FFLAGS, [extra FFLAGS used in building MPICH2 libraries])
+AC_ARG_VAR(MPICH2LIB_F90FLAGS, [extra F90FLAGS used in building MPICH2 libraries])
+AC_ARG_VAR(MPICH2LIB_LDFLAGS, [extra LDFLAGS used in building MPICH2 libraries])
+AC_ARG_VAR(MPICH2LIB_LIBS, [extra LIBS used in building MPICH2 libraries])
+CFLAGS="$CFLAGS $MPICH2LIB_CFLAGS"
+CPPFLAGS="$CFLAGS $MPICH2LIB_CPPFLAGS"
+CXXFLAGS="$CXXFLAGS $MPICH2LIB_CXXFLAGS"
+FFLAGS="$FFLAGS $MPICH2LIB_FFLAGS"
+F90FLAGS="$F90FLAGS $MPICH2LIB_F90FLAGS"
+LDFLAGS="$LDFLAGS $MPICH2LIB_LDFLAGS"
+LIBS="$LIBS $MPICH2LIB_LIBS"
+
+# Enable better caching control
 PAC_ARG_CACHING
-dnl
+
+# Set CFLAGS for enable strict if necessary.  Do this *first* because
+# it may influence the output of the other tests
+PAC_ARG_STRICT
+
 AC_ARG_ENABLE(echo, 
 [--enable-echo  - Turn on strong echoing. The default is enable=no.] ,set -x)
 dnl
@@ -280,7 +334,7 @@ AC_ARG_ENABLE(g,
                     separated names including
     none     - No debugging
     handle   - Trace handle operations
-    handlealloc - Trace hancle allocations
+    handlealloc - Trace handle allocations
     dbg      - Add compiler flag, -g, to all internal
                compiler flags, i.e. MPICH2LIB_CFLAGS, MPICH2LIB_CXXFLAGS,
                MPICH2LIB_FFLAGS, and MPICH2LIB_F90FLAGS.
@@ -362,13 +416,6 @@ if test $smpcoll = "yes" ; then
    AC_DEFINE(USE_SMP_COLLECTIVES,1,[define to enable SMP/multi-core aware collectives])
 fi
 
-AC_ARG_ENABLE(async-progress,
-	[--enable-async-progress - Enable support for asynchronous communication progress],
-	async_progress=$enableval,async_progress=no)
-if test "$async_progress" = "yes" ; then
-   AC_DEFINE(USE_ASYNC_PROGRESS,1,[define to enable asynchronous communication progress])
-fi
-
 dnl The environment variable MPICH_DEBUGLIBNAME may be used to override the
 dnl default name of the library that the debugger will load to access the
 dnl MPICH2 internal data structures.
@@ -395,9 +442,9 @@ AC_ARG_WITH(pm,
                   valid values.  Multiple process managers may be specified as
                   long as they all use the same pmi interface by separating them
                   with colons.  The mpiexec for the first named process manager
-                  will be installed.  Example: "--with-pm=gforker:mpd:remshell"
-                  builds the three process managers gforker, mpd, and remshell;
-                  only the mpiexec from gforker is installed into the bin
+                  will be installed.  Example: "--with-pm=hydra:mpd:gforker"
+                  builds the three process managers hydra, mpd and gforker;
+                  only the mpiexec from hydra is installed into the bin
                   directory.]
     ,,with_pm=default)
 dnl
@@ -495,6 +542,7 @@ AC_ARG_WITH(namepublisher,
                                no (no service available)
                                mpd
 			       file[:directory] (optional directory)
+                               pmi
 			       ],,
 with_namepublisher=default)
 dnl
@@ -518,45 +566,7 @@ AC_ARG_WITH(fwrapname,
                         routines]
     ,[FWRAPNAME=$withval;set_FWRAPNAME="yes"],FWRAPNAME=fmpich)
 AC_SUBST(FWRAPNAME)
-dnl
-#
-# Save a copy of CFLAGS, CXXFLAGS, FFLAGS, F90FLAGS, LDFLAGS as WRAPPER_*
-# before any of these flags are being modified by configure tests.
-#
-# WRAPPER_xFLAGS are used by mpicc and friends.
-# Don't modify WRAPPER_xFLAGS
-WRAPPER_CFLAGS=$CFLAGS
-WRAPPER_CXXFLAGS=$CXXFLAGS
-WRAPPER_FFLAGS=$FFLAGS
-WRAPPER_F90FLAGS=$F90FLAGS
-export WRAPPER_CFLAGS
-export WRAPPER_CXXFLAGS
-export WRAPPER_FFLAGS
-export WRAPPER_F90FLAGS
 
-
-dnl Deal with the MPICH2LIB_xFLAGS variables.  These must come after the
-dnl WRAPPER_xFLAGS variables are set but before we attempt to add more flags to
-dnl xFLAGS via macros like PAC_CC_STRICT.  We don't attempt to validate the user's
-dnl flags but we do generally attempt to validate flags that we add ourselves.  If
-dnl flags specified by the user conflict with flags that we add, the user-specified
-dnl flags should generally be preferred.  Hence the user-specified flags must come
-dnl before such macros.
-dnl
-dnl (this is a dnl comment because maint/updatefiles complains about finding the
-dnl  string "PAC_" in a generated configure script)
-if test -n "$MPICH2LIB_CFLAGS" ; then
-    CFLAGS="$CFLAGS $MPICH2LIB_CFLAGS"
-fi
-if test -n "$MPICH2LIB_FFLAGS" ; then
-    FFLAGS="$FFLAGS $MPICH2LIB_FFLAGS"
-fi
-if test -n "$MPICH2LIB_F90FLAGS" ; then
-    F90FLAGS="$F90FLAGS $MPICH2LIB_F90FLAGS"
-fi
-if test -n "$MPICH2LIB_CXXFLAGS" ; then
-    CXXFLAGS="$CXXFLAGS $MPICH2LIB_CXXFLAGS"
-fi
 
 # -----------------------------------------------------------------------------
 # First check that we have a clean build if we are doing a VPATH build
@@ -894,7 +904,7 @@ if test "$logging_name" != "none" ; then
 	logging_name=external
 	# Add the dir to the include paths
 	#CPPFLAGS="$CPPFLAGS -I$logdir"
-	MPICH2_INCLUDE_FLAGS="$MPICH2_INCLUDE_FLAGS -I$logdir"
+	CPPFLAGS="$CPPFLAGS -I$logdir"
 	EXTERNAL_SRC_DIRS="$EXTERNAL_SRC_DIRS $logdir"
 	# Add to the list of external modules to setup
 	if test -x $logdir/setup_logging ; then
@@ -976,24 +986,26 @@ if test "$MPID_NO_SPAWN" = yes ; then
     AC_MSG_WARN([The device $with_device does not support MPI dynamic process routines])   
 fi
 
+# MPL
+PAC_CONFIG_SUBDIR(src/mpl,,AC_ERROR(MPL configure failed))
+PAC_PREPEND_FLAG([-lmpl], [WRAPPER_LIBS])
+PAC_APPEND_FLAG([-I${master_top_builddir}/src/mpl/include], [CPPFLAGS])
+PAC_APPEND_FLAG([-I${use_top_srcdir}/src/mpl/include], [CPPFLAGS])
+EXTERNAL_SRC_DIRS="$EXTERNAL_SRC_DIRS src/mpl"
+other_install_dirs="$other_install_dirs src/mpl"
 
-# ----------------------------------------------------------------------------
-# atomic operations
-# ----------------------------------------------------------------------------
-# FIXME TODO eventually delete the src/mpid/common/locks directory
-subsystems="$subsystems src/mpid/common/locks"
-
+# OpenPA
 opadir="${use_top_srcdir}/src/openpa"
 if test -e "$opadir" ; then
     EXTERNAL_SRC_DIRS="$EXTERNAL_SRC_DIRS src/openpa"
-    # this must go in CPPFLAGS intead of MPICH2_INCLUDE_FLAGS because we need it
-    # to be available to lower-level configure scripts
     CPPFLAGS="$CPPFLAGS -I${use_top_srcdir}/src/openpa/src -I${master_top_builddir}/src/openpa/src"
-    # openpa needs to go at the front of the devsubsystems because it needs to
-    # be configured before the device itself (e.g. nemesis).
-    devsubsystems="src/openpa $devsubsystems"
+
+    PAC_CONFIG_SUBDIR(src/openpa,,AC_ERROR(OpenPA configure failed))
+    PAC_PREPEND_FLAG([-lopa],[WRAPPER_LIBS])
+
     other_install_dirs="$other_install_dirs src/openpa"
 fi
+
 
 # ----------------------------------------------------------------------------
 # Threads
@@ -1313,8 +1325,6 @@ if test "$enable_nmpi_as_mpi" = yes ; then
 fi
 
 # This goes here because we need the top_srcdir
-FROM_MPICH2=yes
-export FROM_MPICH2
 if test "$enable_romio" = "yes" ; then
    if test -d $use_top_srcdir/src/mpi/romio ; then
        subsystems="$subsystems src/mpi/romio"
@@ -1382,7 +1392,7 @@ if test "$with_pmi" = "uni" -a "$with_pm" = "default" ; then
     with_pm="no"
 fi
 if test "$with_pm" = "default" -o "$with_pm" = "yes" ; then
-    with_pm=mpd,hydra,gforker
+    with_pm=hydra
 fi
 
 # We allow multiple pm names, separated by : or ,
@@ -1536,10 +1546,6 @@ if test $with_mpe != no ; then
         subsystems="$subsystems src/mpe2"
 	other_install_dirs="$other_install_dirs src/mpe2"
 	mpe_dir=mpe2
-	# Make sure that MPE knows that we're building from MPICH
-        # (similar to ROMIO)
-        FROM_MPICH2=yes
-        export FROM_MPICH2
 	# Temporarily replace the default NONE value for exec_prefix
 	# and prefix with the actual, default values.
 	savePrefix=$prefix
@@ -1633,16 +1639,7 @@ if test "$ENABLE_SHLIB" != "none" -o "$enable_debuginfo" != "no" ; then
    CREATESHLIB=`pwd`/src/util/createshlib
 fi
 AC_SUBST(CREATESHLIB)
-# ---------------------------------------------------------------------------
-# Basic properties of the C compiler; some are needed for the language 
-# bindings tests.
-# Set CFLAGS for enable strict if necessary.  Do this *first* because
-# it may influence the output of the other tests
-AC_ARG_ENABLE(strict,[--enable-strict - Turn on strict debugging with gcc],,enable_strict=no)
-PAC_CC_STRICT($enable_strict)
-if test -n "$pac_cc_strict_flags" ; then
-    CFLAGS="$CFLAGS $pac_cc_strict_flags"
-fi
+
 # Check for whether the compiler defines a symbol that contains the 
 # function name.  The MPICH2 code, for greater portability, defines
 # its own symbols, FCNAME (a string) and FUNCNAME (a token that is not a 
@@ -1878,6 +1875,12 @@ EOF
    fi
 fi
 
+# Check if multiple __attribute__((alias)) is available
+if test "$enable_f77" = yes ; then
+    PAC_C_ATTR_ALIGNED
+    PAC_C_MULTI_ATTR_ALIAS
+fi
+
 # F90 requires F77 as well.  If the user disabled f77, do not run the
 # next test; instead, drop into the warning message
 # Set a default value for f90 works with f77.  This value is
@@ -1991,33 +1994,31 @@ dnl    fi
 	 # if the compiler allows it (e.g., building with gcc but
 	 # a different Fortran compiler. Another option is to
 	 # *require* g77.
-	 AC_MSG_CHECKING([whether $F77 allows -shared -fpic])
 	 rm -f conftest.f
 	 cat > conftest.f <<EOF
        program main
        end
 EOF
-         if $F77 -shared -fpic -o conftest conftest.f >/dev/null 2>&1 ; then
-	     FC_SHL="$F77 -shared -fpic"
-             AC_MSG_RESULT(yes)
-         else
-             AC_MSG_RESULT(no)
-             AC_MSG_CHECKING([whether $F77 allows -fpic])
-             if $F77 -fpic -o conftest conftest.f >/dev/null 2>&1 ; then
-	         FC_SHL="$F77 -fpic"
+         FC_SHL=false
+         for sh_arg in "-shared -fPIC" "-fPIC" "-shared -fpic" "-fpic" ; do
+ 	     AC_MSG_CHECKING([whether $F77 allows $sh_arg])
+             if $F77 $sh_arg -o conftest conftest.f >/dev/null 2>&1 ; then
+	         FC_SHL="$F77 $sh_arg"
                  AC_MSG_RESULT(yes)
+	         break
              else
-	         FC_SHL=false
                  AC_MSG_RESULT(no)
-		 AC_MSG_WARN([Cannot build shared libraries for Fortran with this compiler])
              fi
+	 done
+	 if test "$FC_SHL" = "false" ; then
+	     AC_MSG_WARN([Cannot build shared libraries for Fortran with this compiler])
          fi
 	 # This is needed for Mac OSX 10.5
 	 rm -rf conftest.dSYM
          rm -f conftest*
-
 	 FC_LINKPATH_SHL="-Wl,-rpath -Wl,"
 	 ;;
+
 	 cygwin|cygwin-gcc)
 	 FC_SHL="$F77 -shared"
 	 FC_LINKPATH_SHL=""
@@ -2127,7 +2128,6 @@ fi
 if test ! -d bin  ; then mkdir bin ; fi 
 sed -e 's%includedir=.*%includedir='$includebuild_dir% \
     -e 's%libdir=.*%libdir='$libbuild_dir% \
-    -e 's%^opalibdir=.*%opalibdir='$opalibbuild_dir% \
     src/env/mpif77 > bin/mpif77 ;
 chmod a+x bin/mpif77
 else
@@ -2349,24 +2349,24 @@ EOF
          gcc)
          if test "$pac_cv_f90_vendor" = gnu -o "$F90" = "g95" ; then
             # If we have the GNU Fortran 95 compiler (untested)
-            F90_SHL="$F90 -shared -fpic"
+            F90_SHL="$F90 -shared -fPIC"
             F90_LINKPATH_SHL="-Wl,-rpath -Wl,"
          else
             case "$pac_cv_f90_vendor" in 
 	        absoft)
-	        F90_SHL="$F90 -fpic"
+	        F90_SHL="$F90 -fPIC"
                 F90_LINKPATH_SHL="-X -rpath -X "
 	        ;;
 
 	        intel)
 	        # Intel implements the GNU options
-	        F90_SHL="$F90 -shared -fpic"
+	        F90_SHL="$F90 -shared -fPIC"
                 F90_LINKPATH_SHL="-Wl,-rpath -Wl,"
 	        ;;
 
 	        pgi)
 	        # Portland Group implements the GNU options
-	        F90_SHL="$F90 -shared -fpic"
+	        F90_SHL="$F90 -shared -fPIC"
                 F90_LINKPATH_SHL="-Wl,-rpath -Wl,"
 	        ;;
 
@@ -2414,7 +2414,6 @@ if test ! -d bin  ; then mkdir bin ; fi
 sed -e 's%includedir=.*%includedir='$includebuild_dir% \
     -e 's%modincdir=.*%modincdir='$modincbuild_dir% \
     -e 's%libdir=.*%libdir='$libbuild_dir% \
-    -e 's%^opalibdir=.*%opalibdir='$opalibbuild_dir% \
     src/env/mpif90 > bin/mpif90 ;
 chmod a+x bin/mpif90 
 else
@@ -2548,7 +2547,7 @@ public:
 	;;
 	gcc)
         # Assume that the compiler is g++ if gcc style shared libraries chosen
-        CXX_SHL="$CXX -shared -fpic"
+        CXX_SHL="$CXX -shared -fPIC"
         CXX_LINKPATH_SHL="-Wl,-rpath -Wl,"
 	;;
 	cygwin|cygwin-gcc)
@@ -2669,10 +2668,9 @@ cp src/binding/cxx/mpicxx.h src/include
 if test ! -d bin  ; then mkdir bin ; fi 
 sed -e 's%includedir=.*%includedir='$includebuild_dir% \
     -e 's%libdir=.*%libdir='$libbuild_dir% \
-    -e 's%^opalibdir=.*%opalibdir='$opalibbuild_dir% \
     src/env/mpicxx > bin/mpicxx ;
 chmod a+x bin/mpicxx
-ln -sf mpicxx bin/mpic++
+ln -f -s mpicxx bin/mpic++
 else
     rm -f src/env/mpicxx src/env/mpicxx.conf
 fi
@@ -2715,6 +2713,16 @@ AC_CHECK_PROGS(AR,ar)
 if test -z "$AR" ; then
     AC_MSG_ERROR([The program ar is required for building MPICH2.  Make sure that your path includes ar])
 fi
+
+# AR_FLAGS provides a way to potentially improve build performance on Mac OSX
+AR_FLAGS=cr
+# this logic is lame, should really write a real test at some point
+AS_CASE([$host],
+    # Barry proposes AR_FLAGS="Scq" in trac#754, but that won't work correctly for re-builds
+    [*-*-darwin*], [AR_FLAGS=Scr]
+)
+AC_ARG_VAR([AR_FLAGS]) # causes AC_SUBST too
+
 # Note that we set RANLIB to true if we don't find it (some systems neither
 # need it nor provide it)
 AC_CHECK_PROGS(RANLIB,ranlib,true)
@@ -2841,6 +2849,35 @@ fi
 # It is difficult to import/export symbols from some shared libraries, so
 # in that case, we require PMPILIBNAME and MPILIBNAME be the same
 case $ENABLE_SHLIB in 
+     osx-gcc)
+         # By default OSX doesn't resolve symbols in dynamic libraries the same
+         # way that Linux does, especially in the presence of a mixture of
+         # static and dynamic.  If we have a dynamic lib "libA.dylib" that needs
+         # a symbol "foo" from a static lib "libB.a" and we build a program with
+         # a command like "$CC main.o -lA -lB" then we will get a linking
+         # error at *runtime* that looks like this:
+         #
+         # -------8<-------
+         # dyld: lazy symbol binding failed: Symbol not found: _foo
+         #   Referenced from: /path/to/lib/libA.dylib
+         #   Expected in: flat namespace
+         # -------8<-------
+         #
+         # There might be a better solution for this, but what I've found seems
+         # to work so far is to force the OSX static linker to use a "flat
+         # namespace" model instead of the default "two-level namespace" model.
+         # See the ld(1) and dyld(1) man pages, as well as this Apple document:
+         #
+         # http://developer.apple.com/mac/library/DOCUMENTATION/DeveloperTools/Conceptual/MachOTopics/1-Articles/executing_files.html
+         #
+         # The alternative solution is to avoid our mixture of static and
+         # dynamic libraries altogether and make sure that we provide all
+         # dynamic libs for all libraries (including MPL and OPA).
+         #
+         # [goodell@ 2010-02-09]
+         PAC_APPEND_FLAG([-Wl,-flat_namespace], [LDFLAGS])
+         PAC_APPEND_FLAG([-Wl,-flat_namespace], [WRAPPER_LDFLAGS])
+     ;;
      cygwin-gcc)
 	if test "$PMPILIBNAME_set" = "no" ; then
             # Rename PMPILIBNAME
@@ -4986,12 +5023,14 @@ fi
 if test "$enable_coverage" = "yes" ; then
     if test "$ac_cv_prog_gcc" = "yes" ; then
         CFLAGS="$CFLAGS -fprofile-arcs -ftest-coverage"
+        WRAPPER_CFLAGS="$WRAPPER_CFLAGS -fprofile-arcs -ftest-coverage"
     else
         AC_MSG_WARN([--enable-coverage only supported for GCC])
     fi
     if test "$enable_cxx" = "yes" ; then
         if test "$ac_cv_cxx_compiler_gnu" = "yes" ; then
             CXXFLAGS="$CXXFLAGS -fprofile-arcs -ftest-coverage"
+            WRAPPER_CXXFLAGS="$WRAPPER_CXXFLAGS -fprofile-arcs -ftest-coverage"
         else
             AC_MSG_WARN([--enable-coverage only supported for GCC])
         fi
@@ -5001,6 +5040,7 @@ if test "$enable_coverage" = "yes" ; then
     if test "$enable_f77" = yes ; then
         if test "$ac_cv_f77_compiler_gnu" = "yes" ; then
              FFLAGS="$FFLAGS -fprofile-arcs -ftest-coverage"
+             WRAPPER_FFLAGS="$WRAPPER_FFLAGS -fprofile-arcs -ftest-coverage"
         else
             AC_MSG_WARN([--enable-coverage only supported for G77/GFORTRAN])
         fi
@@ -5008,6 +5048,7 @@ if test "$enable_coverage" = "yes" ; then
     if test "$enable_f90" = yes ; then
         if test "$ac_cv_f90_compiler_gnu" = "yes" ; then
              F90FLAGS="$F90FLAGS -fprofile-arcs -ftest-coverage"
+             WRAPPER_F90FLAGS="$WRAPPER_F90FLAGS -fprofile-arcs -ftest-coverage"
         else
             AC_MSG_WARN([--enable-coverage only supported for GFORTRAN])
         fi
@@ -5035,6 +5076,7 @@ EOF
         else
 	    LDFLAGSsave="$LDFLAGS"
 	    LDFLAGS="$LDFLAGS -ftest-coverage -fprofile-arcs"
+	    WRAPPER_LDFLAGS="$WRAPPER_LDFLAGS -ftest-coverage -fprofile-arcs"
 	    if AC_TRY_EVAL(link_only) ; then 
 	        AC_MSG_RESULT([need -ftest-coverage -fprofile-arcs])
             else
@@ -5132,20 +5174,8 @@ void foo1( char *fmt, ... ) {
     fi
 fi
 
-AC_MSG_CHECKING([for variable argument list macro functionality])
-AC_LINK_IFELSE([AC_LANG_PROGRAM([
-#include <stdio.h>
-#define conftest_va_arg_macro(...) printf(__VA_ARGS__)
-],
-[conftest_va_arg_macro("a test %d", 3);])],
-[AC_DEFINE([HAVE_MACRO_VA_ARGS],[1],[Define if C99-style variable argument list macro functionality])
- AC_MSG_RESULT([yes])],
-[AC_MSG_RESULT([no])])
+PAC_C_MACRO_VA_ARGS
 
-
-# headers for valgrind client requests
-AC_CHECK_HEADERS([valgrind.h memcheck.h valgrind/valgrind.h valgrind/memcheck.h])
- 
 dnl
 dnl If internationalization selected, try to find the needed functions
 dnl if test "$enable_internat" = "yes" ; then
@@ -5314,17 +5344,8 @@ case "$timer_type" in
 
     clock_gettime)
     missing_function=no
-    # FIXME: We are blindly adding the flag into LDFLAGS without
-    # checking if someone else added it as well, so there might be a
-    # duplication.
-    AC_CHECK_LIB(rt,clock_gettime,LDFLAGS="$LDFLAGS -lrt",missing_function=yes)
-    if test "$missing_function" = yes ; then
-       AC_MSG_ERROR([Requested timer clock_gettime (POSIX) is not available])
-    fi
-    AC_CHECK_FUNC(clock_getres,,[missing_function=yes])
-    if test "$missing_function" = yes ; then
-        AC_MSG_ERROR([Requested timer clock_gettime (POSIX) is not available because clock_getres, also needed, is not available])
-    fi
+    AC_SEARCH_LIBS([clock_gettime],[rt],,AC_MSG_ERROR([clock_gettime is not available]))
+    AC_SEARCH_LIBS([clock_getres],[rt],,AC_MSG_ERROR([clock_getres is not available]))
     MPID_TIMER_TYPE="struct timespec"
     # AIX does not always define struct timespec (!)
     # Make sure that we can use struct timespec
@@ -5547,7 +5568,7 @@ AC_SUBST(PMPILIBNAME)
 aint_size=$ac_cv_sizeof_void_p
 if test "$with_aint_size" -gt 0 ; then
    aint_size=$with_aint_size
-   if test "$aint_size" !="$ac_cv_sizeof_void_p" ; then
+   if test "$aint_size" != "$ac_cv_sizeof_void_p" ; then
         AC_MSG_RESULT([Overriding MPI_Aint to be $aint_size bytes])
    fi
 fi
@@ -5618,7 +5639,7 @@ case "$MPI_SIZEOF_AINT" in
     16)   len_mpi_aint=10 ;;
     *)    AC_MSG_ERROR([Unable to convert MPI_SIZEOF_AINT to a hex string.  This is either because we are building on a very strange platform or there is a bug somewhere in configure.]) ;;
 esac
-# MPI_AINT and MPI_OFFSET are already taken, appending a _DATATYPE prefix
+# MPI_AINT and MPI_OFFSET are already taken, appending a _DATATYPE suffix
 MPI_AINT_DATATYPE=0x4c00${len_mpi_aint}43
 AC_SUBST(MPI_AINT_DATATYPE)
 export MPI_AINT_DATATYPE
@@ -5653,11 +5674,6 @@ fi
 #   LIBS - Add libraries needed for linking
 #   LDFLAGS - Add other LD flags (e.g., search paths for libraries)
 #   CPPFLAGS - Add C preprocessor flags, including -Idir
-#   MPICH2_INCLUDE_FLAGS - A preferred alternative to adding 
-#              directories needed for include paths.  This should include
-#              directories that are *not* needed for any configure tests
-#              (e.g., if including the directory would change the result
-#              of a test, then that include flag should go into CPPFLAGS)
 #   DEFS  - Add C preprocessor definitions, e.g., -Dfoo
 # These must be updated, not replaced, so the setup_device script should
 # do, e.g., 
@@ -5697,12 +5713,12 @@ dnl autoconf did this in a way that caused problems, paritcularly with
 dnl errors reported as inconsistent cache files.  Instead, we simply
 dnl invoke the configure scripts (if present) directly.
 export AR
+export AR_FLAGS
 export RANLIB
 export MPILIBNAME
 export PMPILIBNAME
 export CC
 export CPPFLAGS
-export MPICH2_INCLUDE_FLAGS
 export LIBS
 export CXX
 export CXXFLAGS
@@ -5752,7 +5768,10 @@ case $with_thread_package in
         #
         # OSF1 has __pthread_create but not pthread_create (because of
         # inconsistencies in the pthread spec).  Thus, we look for pthread_key_create
-        AC_CHECK_LIB([pthread],[pthread_key_create],[PAC_APPEND_FLAG([-lpthread],[LIBS])],[])
+        AC_CHECK_LIB([pthread],[pthread_key_create],have_pthreads=yes)
+	if test "$have_pthreads" = "yes" ; then
+	   PAC_PREPEND_FLAG([-lpthread],[LIBS])
+	fi
 
         AC_CHECK_FUNCS(pthread_yield)
 
@@ -5858,6 +5877,7 @@ esac
 export MPICH2_THREAD_PACKAGE
 AC_DEFINE_UNQUOTED([MPIU_THREAD_PACKAGE_NAME],[$MPIU_THREAD_PACKAGE_NAME],[set to the name of the thread package])
 
+AC_CHECK_HEADERS(sched.h)
 AC_CHECK_FUNCS(sched_yield yield usleep sleep select getpid)
 
 # Check for the Linux functions for controlling processor affinity.
@@ -5898,29 +5918,6 @@ if test "$ac_cv_func_thread_policy_set" = yes ; then
     fi
 fi
 
-#
-# THR_LDFLAGS are added to the WRAPPER_LDFLAGS (used to link user MPI programs)
-# THR_CFLAGS should be used only to compile the MPI library, not to compile
-# user programs.  We cannot set CFLAGS to THR_CFLAGS because we will
-# use CFLAGS to set WRAPPER_CFLAGS at the end of this configure step.
-# FIXME: We need to propagate THR_CFLAGS
-if test "$with_thread_package" != "none" ; then
-    if $CC -V 2>&1 | grep -i "sun workshop" 2>&1 >/dev/null ; then
-        # FIXME: the above should really be done using a feature test
-        # FIXME: the C++, F77 and F90 compilers also need the -mt flag
-	# However, the reason that we do this here is that the Sun compilers
-	# provide non-working versions of the thread mutex routines
-	# if -mt is not selected.
-	THR_CFLAGS="$THR_CFLAGS -mt"
-	THR_LDFLAGS="$THR_LDFLAGS -mt"
-    else
-	# FIXME: the reentrant flags belong in DEFS, but DEFS doesn't 
-        # appear to be propagated by MPICH2
-	# THR_DEFS="$THR_DEFS -D_REENTRANT -D_THREAD_SAFE"
-	THR_CFLAGS="$THR_CFLAGS -D_REENTRANT -D_THREAD_SAFE"
-    fi
-fi
-
 MPIU_THREAD_LIB_NAME=${MPILIBNAME}
 AC_SUBST(MPIU_THREAD_LIB_NAME)
 
@@ -5928,6 +5925,17 @@ AC_SUBST(MPIU_THREAD_LIB_NAME)
 # End of thread configure
 # -----------------------------------------------------------------------------
 
+
+# Checkpointing
+
+AC_ARG_ENABLE(checkpointing,
+    [AC_HELP_STRING([--enable-checkpointing], [Enable application checkpointing])],
+    [
+        PAC_SET_HEADER_LIB_PATH(blcr)
+	PAC_CHECK_HEADER_LIB_FATAL(blcr, libcr.h, cr, cr_init)
+        AC_DEFINE(ENABLE_CHECKPOINTING,1,[Application checkpointing enabled])
+    ],
+)
 #
 # Update the cache first with the results of the previous configure steps
 # We don't use the subdir cache because ensuring that the cache is consistant
@@ -5958,86 +5966,7 @@ if test "$DEBUG_SUBDIR_CACHE" = yes ; then
     set -x
 fi
 for subsys in $devsubsystems $subsystems ; do 
-    AC_MSG_NOTICE([configuring subsystem in $subsys])
-    if test -x $subsys/mpich2setup ; then 
-        $subsys/mpich2setup 
-    elif test -x $use_top_srcdir/$subsys/mpich2setup ; then
-        $use_top_srcdir/$subsys/mpich2setup 
-    elif test -x $use_top_srcdir/$subsys/configure ; then
-        ac_sub_configure_args=""
-	# Strip off the args that we need to update
-        for ac_arg in $ac_configure_args ; do
-	    # Remove any quotes around the args (added by configure)
-	    ac_narg=`expr x$ac_arg : 'x'"'"'\(.*\)'"'"`
-	    if test -n "$ac_narg" ; then ac_arg=$ac_narg ; fi	    
-	    case $ac_arg in 
-	        -cache-file=* | --cache-file=* | --cache-fil=* | --cache-fi=* \
-                | --cache-f=* | --cache-=* | --cache=* | --cach=* | --cac=* | --ca=* \
-                | --c=*) ;;
-        --config-cache | -C)
-        ;;
-        -srcdir=* | --srcdir=* | --srcdi=* | --srcd=* | --src=* | --sr=*) ;;
-        -prefix=* | --prefix=* | --prefi=* | --pref=* | --pre=* | --pr=* | --p=*)
-          ;;
-        --with-atomic-primitives* | --without-atomic-primitives*)
-            # if the user specified a particular atomic-primitives argument to
-            # use then we should use that instead of 'auto_allow_emulation'
-            user_specified_atomic_primitives=yes
-            ac_sub_configure_args="$ac_sub_configure_args $ac_arg"
-        ;;
-	-*)
-        ac_sub_configure_args="$ac_sub_configure_args $ac_arg" 
-	;;
-
-dnl Here's the problem.  If the user sets a few of the special variables
-dnl such as CPPFLAGS, those original settings will override the
-dnl updated values.  Here's an attempt at a fix
-        CPPFLAGS=*)
-	ac_sub_configure_args="$ac_sub_configure_args 'CPPFLAGS=$CPPFLAGS'"
-        ;;
-
-        dnl Isn't this a duplication of the *) case a few lines above? [goodell@]
-	dnl No, the case above is -*; this is for the case of environment 
-	dnl variable assignments on the configure line (such as CC=icc) [WDG]
-    	*) 
-	    ac_sub_configure_args="$ac_sub_configure_args $ac_arg" ;;
-	    esac
-        done
-
-        # pass an atomic primitives argument if the user didn't specify one
-        if test "$user_specified_atomic_primitives" = "no" ; then
-            ac_sub_configure_args="$ac_sub_configure_args --with-atomic-primitives=auto_allow_emulation"
-        fi
-
-	# add in the correct prefix argument
-        ac_sub_configure_args="--prefix=$prefix $ac_sub_configure_args"
-
-	# Create the directories if necessary
-        PAC_MKDIRS($subsys)
-	# We use eval to handle quotes around the arguments added by
-	# autoconf when saving the args
-
-	dnl Copy current CFLAGS, FFLAGS, etc., into
-	dnl MPICH2_INTERNAL_CFLAGS, etc., and export them to the
-	dnl sub-configures. If the sub-configures want, they can replace their
-	dnl CFLAGS with the current CFLAGS through this variable.
-	PAC_MPICH2_INIT()
-        if (cd $subsys && eval $use_top_srcdir/$subsys/configure $ac_sub_configure_args ) ; then
-	    :
-	else 
-	    AC_MSG_ERROR([Configure of $subsys failed!])
-	fi
-    else
-        AC_MSG_ERROR([Expected to configure $subsys but did not find configure or mpich2setup])
-    fi
-
-    # Check for any localdefs files.  These may be created, so we look in
-    # the local directory first.
-    if test -f $subsys/localdefs ; then
-        . $subsys/localdefs
-    elif test -f $use_top_srcdir/$subsys/localdefs ; then
-        . $use_top_srcdir/$subsys/localdefs
-    fi
+    PAC_CONFIG_SUBDIR($subsys,,AC_ERROR($subsys configure failed))
 done 
 if test "$DEBUG_SUBDIR_CACHE" = yes -a "$enable_echo" != yes ; then 
     set +x
@@ -6302,25 +6231,6 @@ else
 fi
 AC_SUBST(MPI_MAX_PROCESSOR_NAME)
 
-# default settings for compiler and linker flags 
-# Note:
-#   The WRAPPER_CFLAGS must not contain *all* of the CFLAGS, just the 
-#   flags needed to compile with the mpi.h header.  Normally, no flags
-#   should be required to compile MPI programs (otherwise, users that choose
-#   not to use the compile scripts will submit bug reports).
-#   For now, we try using no extra Flags.  (Never, ever set WRAPPER_CFLAGS to 
-#   $CFLAGS)
-#
-# Unlike WRAPPER_CFLAGS, the linker flags will always be needed to ensure that 
-# all of the required libraries are present.
-WRAPPER_LDFLAGS="$LDFLAGS $THR_LDFLAGS"
-export WRAPPER_LDFLAGS
-AC_SUBST(WRAPPER_CFLAGS)
-AC_SUBST(WRAPPER_CXXFLAGS)
-AC_SUBST(WRAPPER_FFLAGS)
-AC_SUBST(WRAPPER_F90FLAGS)
-AC_SUBST(WRAPPER_LDFLAGS)
-#
 # Add a definition that is used to help support Windows DLLs (used in mpi.h.in)
 MPIU_DLL_SPEC_DEF="#define MPIU_DLL_SPEC"
 AC_SUBST(MPIU_DLL_SPEC_DEF)
@@ -6398,9 +6308,6 @@ fi
 if test -z "$libbuild_dir" ; then
     libbuild_dir=`pwd`/lib
 fi
-if test -z "$opalibbuild_dir" ; then
-    opalibbuild_dir=`pwd`/src/openpa/src
-fi
 if test -z "$modincbuild_dir" ; then
    # The include files may be in a different directory from the mpif.h file
    modincbuild_dir=$top_build_dir/src/binding/f90
@@ -6414,12 +6321,10 @@ chmod a+x src/env/mpicc ;
 if test ! -d bin  ; then mkdir bin ; fi 
 sed -e 's%includedir=.*%includedir='$includebuild_dir% \
     -e 's%libdir=.*%libdir='$libbuild_dir% \
-    -e 's%^opalibdir=.*%opalibdir='$opalibbuild_dir% \
     src/env/mpicc > bin/mpicc ;
 chmod a+x bin/mpicc ],
 includebuild_dir=$includebuild_dir
 libbuild_dir=$libbuild_dir
-opalibbuild_dir=$opalibbuild_dir
 bashWorks=$bashWorks)
 
 # move the parkill command into the bin directory of the build tree
@@ -6472,37 +6377,6 @@ AC_OUTPUT_COMMANDS([chmod a+x src/util/dbg/getfuncstack])
 
 AC_OUTPUT_COMMANDS([chmod a+x test/commands/cmdtests])
 
-# ----------------------------------------------------------------------------
-# Set the compiler flags.  There are two components to each of the compiler
-# flags:
-#
-# 1. Flags used to compile MPICH2 but not needed to compile user programs,
-#    for example, optimization options.  
-#
-# 2. Flags that change the language accepted by the compiler or the code
-#    generated by the compiler.  For example, an option to change from 
-#    32-bit to 64 bit instructions, or to generate only lower-case external 
-#    names.  
-#    (An alternate approach is to provide them directly in the variable
-#    that names the compiler, e.g., CC for the C compiler.)
-# 
-# Because of the way that configure works, the flags used to compile
-# MPICH must be placed in the "usual" places, e.g. CFLAGS (the values
-# are captured during the [AC_INIT] step).
-#
-# Normally, the flags used in 1 and 2 will be the same.  If the user needs
-# different flags in the building MPICH2 libraries than those in the
-# compilation scripts, they can set CFLAGS and MPICH2LIB_CFLAGS during
-# configure, where $CFLAGS + $MPICH2LIB_CFLAGS will be used to build
-# MPICH2 libraries, only $CFLAGS will be used in the MPI compiler
-# wrapper script.
-#
-AC_ARG_VAR( MPICH2LIB_CFLAGS, [extra CFLAGS used in building MPICH2 libraries, this flags won't be passed down to the mpicc script(Only standard CFLAGS will be used in the mpicc script).  CFLAGS and MPICH2LIB_CFLAGS are non-overlapping] )
-AC_ARG_VAR( MPICH2LIB_CXXFLAGS, [extra CXXFLAGS used in building MPICH2 libraries, this flags won't be passed down to the mpicxx script(Only standard CXXFLAGS will be used in the mpicxx script).  CXXFLAGS and MPICH2LIB_CXXFLAGS are non-overlapping.] )
-AC_ARG_VAR( MPICH2LIB_FFLAGS, [extra FFLAGS used in building MPICH2 libraries, this flags won't be passed down to the mpif77 script(Only standard FFLAGS will be used in the mpif77 script).  FFLAGS and MPICH2LIB_FFLAGS are non-overlapping.] )
-AC_ARG_VAR( MPICH2LIB_F90FLAGS, [extra F90FLAGS used in building MPICH2 libraries, this flags won't be passed down to the mpif90 script(Only standard F90FLAGS will be used in the mpif90 script).  F90FLAGS and MPICH2LIB_F90FLAGS are non-overlapping.] )
-
-# AC_ARG_VAR( MPICH2LIB_LDFLAGS, [extra LDFLAGS used in building MPICH2 libraries, this flags won't be used in any of mpiXXX script.  LDFLAGS and MPICH2LIB_LDFLAGS are non-overlapping.] )
 
 # For the examples, we want to use the scripts to encourage users
 # to use them and to make them work more robustly with shared libraries
@@ -6518,19 +6392,13 @@ AC_SUBST(MPIF90)
 
 AC_DEFINE(HAVE_MPICHCONF,1,[Define so that we can test whether the mpichconf.h file has been included])
 
-# Add the MPICH2 include flags to CPPFLAGS.  See the discussion above about
-# which include flags should start in MPICH2_INCLUDE_FLAGS and which in 
-# CPPFLAGS
-CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
+# Add the LIBS we got so far to WRAPPER_LIBS
+WRAPPER_LIBS="$WRAPPER_LIBS $LIBS"
 
 if test "$USE_PMI2_API" = "yes" ; then
    AC_DEFINE(USE_PMI2_API, 1, [Define if PMI2 API must be used])
 fi
 
-dnl Place holder macro for finalize
-PAC_MPICH2_FINALIZE()
-
-dnl
 dnl This includes an experimental pkgconfig file for ch3 in the src/pkgconfig
 dnl directory
 AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
@@ -6543,6 +6411,7 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/binding/f77/Makefile \
 	  src/binding/f77/mpif.h \
 	  src/binding/f77/setbotf.f \
+	  src/binding/f77/setbot.c \
 	  src/binding/f90/Makefile \
 	  src/binding/f90/mpi_sizeofs.f90 \
 	  src/packaging/Makefile \

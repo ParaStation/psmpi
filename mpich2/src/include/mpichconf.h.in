@@ -23,6 +23,9 @@
 /* Define to 1 if using `alloca.c'. */
 #undef C_ALLOCA
 
+/* Application checkpointing enabled */
+#undef ENABLE_CHECKPOINTING
+
 /* The value of false in Fortran */
 #undef F77_FALSE_VALUE
 
@@ -103,6 +106,12 @@
 
 /* define if the compiler supports exceptions */
 #undef HAVE_CXX_EXCEPTIONS
+
+/* Define if __attribute__((aligned)) is supported. */
+#undef HAVE_C_ATTR_ALIGNED
+
+/* Define if multiple __attribute__((alias)) are supported */
+#undef HAVE_C_MULTI_ATTR_ALIAS
 
 /* Define if debugger support is included */
 #undef HAVE_DEBUGGER_SUPPORT
@@ -190,6 +199,9 @@
 /* Define when alignment of structures is based on largest component */
 #undef HAVE_LARGEST_STRUCT_ALIGNMENT
 
+/* Define to 1 if you have the `cr' library (-lcr). */
+#undef HAVE_LIBCR
+
 /* Define to 1 if you have the <limits.h> header file. */
 #undef HAVE_LIMITS_H
 
@@ -228,9 +240,6 @@
 /* Controls byte alignment of structures (for aligning allocated structures)
    */
 #undef HAVE_MAX_STRUCT_ALIGNMENT
-
-/* Define to 1 if you have the <memcheck.h> header file. */
-#undef HAVE_MEMCHECK_H
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -304,6 +313,9 @@
 /* Define to 1 if you have the `sched_getaffinity' function. */
 #undef HAVE_SCHED_GETAFFINITY
 
+/* Define to 1 if you have the <sched.h> header file. */
+#undef HAVE_SCHED_H
+
 /* Define to 1 if you have the `sched_setaffinity' function. */
 #undef HAVE_SCHED_SETAFFINITY
 
@@ -333,6 +345,9 @@
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
+
+/* Define to 1 if you have the <stdio.h> header file. */
+#undef HAVE_STDIO_H
 
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
@@ -405,15 +420,6 @@
 
 /* Define to 1 if you have the `usleep' function. */
 #undef HAVE_USLEEP
-
-/* Define to 1 if you have the <valgrind.h> header file. */
-#undef HAVE_VALGRIND_H
-
-/* Define to 1 if you have the <valgrind/memcheck.h> header file. */
-#undef HAVE_VALGRIND_MEMCHECK_H
-
-/* Define to 1 if you have the <valgrind/valgrind.h> header file. */
-#undef HAVE_VALGRIND_VALGRIND_H
 
 /* Define if we have va_copy */
 #undef HAVE_VA_COPY
@@ -717,9 +723,6 @@
 
 /* Define if alloca should be used if available */
 #undef USE_ALLOCA
-
-/* define to enable asynchronous communication progress */
-#undef USE_ASYNC_PROGRESS
 
 /* Define if assembly language atomic update macros should be used (if
    available) */

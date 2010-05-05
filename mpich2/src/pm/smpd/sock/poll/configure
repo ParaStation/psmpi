@@ -647,6 +647,7 @@ C_LINK_SHL
 CC_SHL
 MPILIBNAME
 RANLIB
+AR_FLAGS
 AR
 TCP_LIBS
 EGREP
@@ -1916,16 +1917,6 @@ ac_config_guess="$SHELL $ac_aux_dir/config.guess"  # Please don't use this var.
 ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
 ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
-
-
-
-# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
-  if test "$FROM_MPICH2" = "yes" ; then
-    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
-    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
-    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
-    F90FLAGS="$MPICH2_INTERNAL_F90FLAGS"
-  fi
 
 
 # Check whether --enable-sock-debug was given.
@@ -4882,6 +4873,7 @@ fi
 
 
 
+
 	if test "$ENABLE_SHLIB" = "libtool" ; then
 	    if test -z "$LIBTOOL" ; then
 		{ $as_echo "$as_me:$LINENO: WARNING: libtool selected for shared library support but LIBTOOL is not defined" >&5
@@ -4913,14 +4905,6 @@ if test -n "$CONF_BASE_CACHEFILE" -a -s "$CONF_BASE_CACHEFILE" ; then
 	mv $CONF_BASE_CACHEFILE.new $CONF_BASE_CACHEFILE
     fi
 fi
-
-
-# Add the MPICH2 include flags to CPPFLAGS.  See the discussion above about
-# which include flags should start in MPICH2_INCLUDE_FLAGS and which in
-# CPPFLAGS
-CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
-
-
 
 
 ac_config_commands="$ac_config_commands default-1"

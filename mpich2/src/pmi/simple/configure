@@ -637,7 +637,6 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-PMI_LIBS
 ETAGSADD
 ETAGS
 MAKE_DEPEND_C
@@ -650,6 +649,7 @@ C_LINK_SHL
 CC_SHL
 MPILIBNAME
 RANLIB
+AR_FLAGS
 AR
 EGREP
 GREP
@@ -1887,16 +1887,6 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-
-
-
-# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
-  if test "$FROM_MPICH2" = "yes" ; then
-    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
-    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
-    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
-    F90FLAGS="$MPICH2_INTERNAL_F90FLAGS"
-  fi
 
 
 ac_config_headers="$ac_config_headers pmiconf.h"
@@ -4419,8 +4409,6 @@ fi
 
 done
 
-    saveLIBS="$LIBS"
-    LIBS=""
     { $as_echo "$as_me:$LINENO: checking for library containing socket" >&5
 $as_echo_n "checking for library containing socket... " >&6; }
 if test "${ac_cv_search_socket+set}" = set; then
@@ -4454,7 +4442,7 @@ for ac_lib in '' socket; do
     ac_res="none required"
   else
     ac_res=-l$ac_lib
-    LIBS="-l$ac_lib $saveLIBS $ac_func_search_save_LIBS"
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
   fi
   rm -f conftest.$ac_objext conftest$ac_exeext
 if { (ac_try="$ac_link"
@@ -4541,7 +4529,7 @@ for ac_lib in '' nsl; do
     ac_res="none required"
   else
     ac_res=-l$ac_lib
-    LIBS="-l$ac_lib $saveLIBS $ac_func_search_save_LIBS"
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
   fi
   rm -f conftest.$ac_objext conftest$ac_exeext
 if { (ac_try="$ac_link"
@@ -4595,8 +4583,6 @@ if test "$ac_res" != no; then
 
 fi
 
-    PMI_LIBS="$PMI_LIBS $LIBS"
-    LIBS="$saveLIBS $LIBS"
     missing_functions=no
 
 
@@ -4971,6 +4957,7 @@ fi
 
 
 
+
 	if test "$ENABLE_SHLIB" = "libtool" ; then
 	    if test -z "$LIBTOOL" ; then
 		{ $as_echo "$as_me:$LINENO: WARNING: libtool selected for shared library support but LIBTOOL is not defined" >&5
@@ -4994,7 +4981,6 @@ export ETAGS
 export ETAGSADD
 
 
-
 if test -n "$CONF_BASE_CACHEFILE" -a -s "$CONF_BASE_CACHEFILE" ; then
     set | grep ac_cv > $CONF_BASE_CACHEFILE.new
     if cmp -s $CONF_BASE_CACHEFILE.new $CONF_BASE_CACHEFILE ; then
@@ -5004,9 +4990,6 @@ if test -n "$CONF_BASE_CACHEFILE" -a -s "$CONF_BASE_CACHEFILE" ; then
 	mv $CONF_BASE_CACHEFILE.new $CONF_BASE_CACHEFILE
     fi
 fi
-
-
-
 
 
 ac_config_files="$ac_config_files Makefile localdefs"

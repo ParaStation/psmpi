@@ -56,6 +56,7 @@
 #endif
 #endif
 
+#include "mpl.h"
 #include "mpimem.h"
 #include "smpd_database.h"
 #include "pmi.h"
@@ -63,6 +64,7 @@
 #include "smpd_version.h"
 #include "smpd_iov.h"
 #include "smpd_util_sock.h"
+
 #define SMPD_VERSION_FAILURE "version_failure"
 
 #define SMPD_LISTENER_PORT               8676
@@ -100,6 +102,7 @@ typedef int SMPD_BOOL;
 #define SMPD_SERVER_AUTHENTICATION          0
 #define SMPD_CLIENT_AUTHENTICATION          1
 
+#define SMPD_MAX_INT_LENGTH                12
 #define SMPD_MAX_NAME_LENGTH              256
 #define SMPD_MAX_VALUE_LENGTH            8192
 #define SMPD_MAX_FILENAME                1024
@@ -114,6 +117,8 @@ typedef int SMPD_BOOL;
 #define SMPD_MAX_DBG_PRINTF_LENGTH      (1024 + SMPD_MAX_CMD_LENGTH)
 #define SMPD_MAX_CMD_STR_LENGTH           100
 #define SMPD_MAX_HOST_LENGTH	           64
+#define SMPD_MAX_FQ_NAME_LENGTH          1024
+#define SMPD_MAX_NETBIOS_NAME_LENGTH     1024
 #define SMPD_MAX_EXE_LENGTH              4096
 #define SMPD_MAX_ENV_LENGTH              4096
 #define SMPD_MAX_CLIQUE_LENGTH           8192
@@ -219,6 +224,17 @@ typedef int SMPD_BOOL;
     }                                                               \
 }
 
+/* Some TCHAR utils for making our life easier */
+#ifdef HAVE_WINDOWS_H
+#ifdef _UNICODE
+    #define SMPDU_TCSTOMBS  wcstombs
+    #define SMPDU_MBSTOTCS  mbstowcs
+#else
+    #define SMPDU_TCSTOMBS  _tcsncpy
+    #define SMPDU_MBSTOTCS  _tcsncpy
+#endif
+#endif
+
 #ifdef HAVE_WINDOWS_H
 #   define SMPDU_UNREFERENCED_ARG(a_)   a_
 #else
@@ -227,6 +243,7 @@ typedef int SMPD_BOOL;
 
 #define SMPD_ERR_SETPRINTANDJUMP(msg, errcode) {smpd_err_printf("%s", msg); retval = errcode; goto fn_fail; }
 #define SMPD_MAX_ERR_MSG_LENGTH 100
+
 typedef enum smpd_state_t
 {
     SMPD_IDLE,
@@ -470,6 +487,7 @@ typedef struct smpd_context_t
     char session_header[SMPD_MAX_SESSION_HEADER_LENGTH];
     /* FIXME: Remove this */
     char singleton_init_kvsname[SMPD_SINGLETON_MAX_KVS_NAME_LEN];
+    char singleton_init_domainname[SMPD_SINGLETON_MAX_KVS_NAME_LEN];
     char singleton_init_hostname[SMPD_SINGLETON_MAX_HOST_NAME_LEN];
     int singleton_init_pm_port;
     /* FIXME: Remove this */
@@ -772,6 +790,7 @@ typedef struct smpd_global_t
     char encrypt_prefix[SMPD_MAX_PASSWORD_LENGTH];
     SMPD_BOOL plaintext;
     SMPD_BOOL use_sspi, use_delegation, use_sspi_job_key;
+    SMPD_BOOL use_ms_hpc;
 #ifdef HAVE_WINDOWS_H
     PSecurityFunctionTable sec_fn;
 #endif
@@ -783,6 +802,7 @@ typedef struct smpd_global_t
     char val[SMPD_MAX_VALUE_LENGTH];
     SMPD_BOOL do_console_returns;
     char env_channel[10];
+    char env_netmod[10];
     char env_dll[SMPD_MAX_FILENAME];
     char env_wrap_dll[SMPD_MAX_FILENAME];
     smpd_delayed_spawn_node_t *delayed_spawn_queue;
@@ -791,8 +811,29 @@ typedef struct smpd_global_t
     SMPD_BOOL prefix_output;
 } smpd_global_t;
 
+/* FIXME: Cleanup this struct after we start using spn list
+ * handles everywhere
+ */
+typedef struct smpd_host_spn_node_t
+{
+    char host[SMPD_MAX_NAME_LENGTH];
+    char dnshost[SMPD_MAX_NAME_LENGTH];
+    char fq_service_name[SMPD_MAX_FQ_NAME_LENGTH];
+    char spn[SMPD_MAX_FQ_NAME_LENGTH];
+    struct smpd_host_spn_node_t *next;
+} smpd_host_spn_node_t;
+typedef smpd_host_spn_node_t **smpd_spn_list_hnd_t;
+
+#define SMPD_SPN_LIST_HND_IS_INIT(hnd) (((hnd) != NULL) && (*(hnd) != NULL))
+
 extern smpd_global_t smpd_process;
 
+/* MS HPC job utils are smpd utils & hence needs the smpd structures 
+ * to be defined prior to including them.
+ */
+#ifdef HAVE_WINDOWS_H
+#include "smpd_hpc_js_exports.h"
+#endif
 
 /* function prototypes */
 #if defined(__cplusplus)
@@ -831,6 +872,14 @@ int smpd_read(SMPDU_Sock_t sock, void *buf, SMPDU_Sock_size_t len);
 int smpd_write(SMPDU_Sock_t sock, void *buf, SMPDU_Sock_size_t len);
 int smpd_dbg_printf(char *str, ...);
 int smpd_err_printf(char *str, ...);
+
+#ifdef HAVE_WINDOWS_H
+    typedef int (*smpd_printf_fp_t) (char *str, ...);
+    int smpd_tprintf_templ(smpd_printf_fp_t fp, TCHAR *str, ...);
+    #define smpd_err_tprintf(str, ...) smpd_tprintf_templ(smpd_err_printf, str, __VA_ARGS__);
+    #define smpd_dbg_tprintf(str, ...) smpd_tprintf_templ(smpd_dbg_printf, str, __VA_ARGS__);
+#endif
+
 int smpd_enter_fn(char *fcname);
 int smpd_exit_fn(char *fcname);
 SMPD_BOOL smpd_option_on(const char *option);
@@ -906,6 +955,8 @@ int smpd_clear_process_registry(void);
 int smpd_validate_process_registry(void);
 SMPD_BOOL smpd_read_password_from_registry(int index, char *szAccount, char *szPassword);
 SMPD_BOOL smpd_save_password_to_registry(int index, const char *szAccount, const char *szPassword, SMPD_BOOL persistent);
+SMPD_BOOL smpd_save_cred_to_file(const char *filename, const char *szAccount, const char *szPassword);
+SMPD_BOOL smpd_read_cred_from_file(const char *filename, char *szAccount, int acc_len, char *szPassword, int pass_len);
 SMPD_BOOL smpd_delete_current_password_registry_entry(int index);
 int smpd_cache_password(const char *account, const char *password);
 SMPD_BOOL smpd_get_cached_password(char *account, char *password);
@@ -929,6 +980,7 @@ int smpd_get_pwd_from_file(char *file_name);
 int smpd_get_next_hostname(char *host, char *alt_host);
 SMPD_BOOL smpd_parse_machine_file(char *file_name);
 int smpd_parse_hosts_string(const char *host_str);
+int smpd_free_host_list(void );
 int smpd_get_host_id(char *host, int *id_ptr);
 int smpd_get_next_host(smpd_host_node_t **host_node_pptr, smpd_launch_node_t *launch_node);
 SMPD_BOOL smpd_get_argcv_from_file(FILE *fin, int *argcp, char ***argvp);
@@ -951,10 +1003,18 @@ int smpd_create_sspi_client_context(smpd_sspi_client_context_t **new_context);
 int smpd_free_sspi_client_context(smpd_sspi_client_context_t **context);
 int smpd_sspi_context_init(smpd_sspi_client_context_t **sspi_context_pptr, const char *host, int port, smpd_sspi_type_t type);
 int smpd_sspi_context_iter(int sspi_id, void **sspi_buffer_pptr, int *length_ptr);
-SMPD_BOOL smpd_setup_scp(void);
-SMPD_BOOL smpd_remove_scp(void);
+#ifdef HAVE_WINDOWS_H
+int smpd_setup_scps_with_file(char *filename);
+int smpd_setup_scp(TCHAR *hostname);
+int smpd_remove_scp(TCHAR *hostname, smpd_spn_list_hnd_t hnd);
+int smpd_remove_scps_with_file(char *filename, smpd_spn_list_hnd_t hnd);
+#endif
 int smpd_register_spn(const char *dc, const char *dn, const char *dh);
 int smpd_lookup_spn(char *target, int length, const char * host, int port);
+int smpd_lookup_spn_list(smpd_spn_list_hnd_t hnd, char *target, int length, const char * host, int port);
+int smpd_spn_list_finalize(smpd_spn_list_hnd_t *spn_list_hnd);
+int smpd_spn_list_init(smpd_spn_list_hnd_t *spn_list_hnd);
+int smpd_spn_list_dbg_print(smpd_spn_list_hnd_t hnd);
 SMPD_BOOL smpd_map_user_drives(char *pszMap, char *pszAccount, char *pszPassword, char *pszError, int maxerrlength);
 SMPD_BOOL smpd_unmap_user_drives(char *pszMap);
 void smpd_finalize_drive_maps(void);
@@ -971,6 +1031,7 @@ SMPD_BOOL smpd_verify_version(const char *challenge);
 void smpd_fix_up_host_tree(smpd_host_node_t *node);
 SMPD_BOOL smpd_isnumbers_with_colon(const char *str);
 int smpd_add_host_to_default_list(const char *hostname);
+int smpd_get_ccp_nodes(int *np, smpd_host_node_t **host_node_ptr_p);
 int smpd_add_extended_host_to_default_list(const char *hostname, const char *alt_hostname, const int num_cpus);
 int smpd_parse_map_string(const char *str, smpd_map_drive_node_t **list);
 int smpd_delayed_spawn_enqueue(smpd_context_t *context);
@@ -981,6 +1042,15 @@ int smpd_handle_delayed_spawn_command(void);
 DWORD_PTR smpd_get_next_process_affinity_mask(void );
 DWORD_PTR smpd_get_processor_affinity_mask(int proc_num);
 BOOL smpd_init_affinity_table(void );
+
+int smpd_hpc_js_rmk_init(smpd_hpc_js_handle_t *phnd);
+int smpd_hpc_js_rmk_finalize(smpd_hpc_js_handle_t *phnd);
+int smpd_hpc_js_rmk_alloc_nodes(smpd_hpc_js_handle_t hnd, smpd_launch_node_t *head);
+
+int smpd_hpc_js_bs_init(smpd_hpc_js_handle_t hnd);
+int smpd_hpc_js_bs_finalize(smpd_hpc_js_handle_t hnd);
+int smpd_hpc_js_bs_launch_procs(smpd_hpc_js_handle_t hnd, smpd_launch_node_t *head);
+
 #endif
 
 #if defined(__cplusplus)

@@ -21,9 +21,9 @@ VPATH = .:@srcdir@
 ${srcdir}/include/mpidi_ch3i_nemesis_conf.h  ${srcdir}/configure: \
 	${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /sw/bin/autoheader -I ../../../../../confdb && \
-	\
-	/sw/bin/autoconf -I ../../../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../../../confdb && \
+	autoconf -I \
+	../../../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -93,8 +93,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 # Dependencies
 dependencies:
-	(cd nemesis && ${MAKE} dependencies )
-	(cd src && ${MAKE} dependencies )
+	if [ -s nemesis/Makefile ] ; then (cd nemesis && ${MAKE} dependencies ) ; fi
+	if [ -s src/Makefile ] ; then (cd src && ${MAKE} dependencies ) ; fi
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------

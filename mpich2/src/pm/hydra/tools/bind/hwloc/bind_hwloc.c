@@ -51,7 +51,7 @@ HYD_status HYDT_bind_hwloc_init(HYDT_bind_support_level_t * support_level)
     if (!HYDT_bind_info.machine.num_children)
         HYDT_bind_info.machine.num_children = 1;
     HYDU_MALLOC(HYDT_bind_info.machine.children, struct HYDT_topo_obj *,
-                sizeof(struct HYDT_topo_obj), status);
+                sizeof(struct HYDT_topo_obj) * HYDT_bind_info.machine.num_children, status);
     HYDT_bind_info.machine.shared_memory_depth = NULL;
 
     /* Setup the nodes levels */
@@ -62,23 +62,21 @@ HYD_status HYDT_bind_hwloc_init(HYDT_bind_support_level_t * support_level)
         obj_node =
             hwloc_get_obj_inside_cpuset_by_type(topology, obj_sys->cpuset, HWLOC_OBJ_NODE,
                                                 node);
-
         if (!obj_node)
             obj_node = obj_sys;
         node_ptr->os_index = obj_node->os_index;;
         node_ptr->num_children =
             hwloc_get_nbobjs_inside_cpuset_by_type(topology, obj_node->cpuset,
                                                    HWLOC_OBJ_SOCKET);
-
         /* In case there is no socket! */
         if (!node_ptr->num_children)
             node_ptr->num_children = 1;
 
         HYDU_MALLOC(node_ptr->children, struct HYDT_topo_obj *,
                     sizeof(struct HYDT_topo_obj) * node_ptr->num_children, status);
-       /* GM: Fix me! */
-       /*  node_ptr->shared_memory_depth = NULL; */
-       
+
+        node_ptr->shared_memory_depth = NULL;
+
         /* Setup the socket level */
         for (sock = 0; sock < node_ptr->num_children; sock++) {
             sock_ptr = &node_ptr->children[sock];
@@ -171,6 +169,7 @@ HYD_status HYDT_bind_hwloc_process(int core)
     if (core < 0)
         goto fn_exit;
 
+    /* For now, I suppose that the "core" is the physical index (os index) */
     hwloc_cpuset_set(cpuset, core);
     if (!topo_initialized) {
         hwloc_topology_init(&topology);

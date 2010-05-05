@@ -85,8 +85,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 # Dependencies
 dependencies:
-	(cd monitor && ${MAKE} dependencies )
-	(cd replacements && ${MAKE} dependencies )
+	if [ -s monitor/Makefile ] ; then (cd monitor && ${MAKE} dependencies ) ; fi
+	if [ -s replacements/Makefile ] ; then (cd replacements && ${MAKE} dependencies ) ; fi
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------

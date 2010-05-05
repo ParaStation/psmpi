@@ -30,6 +30,9 @@
 #include <ctype.h>
 #endif
 
+/* The supported values right now are "newtcp" & "nd" */
+#define SMPD_MAX_NEMESIS_NETMOD_LENGTH  10
+
 void mp_print_options(void)
 {
     printf("\n");
@@ -438,6 +441,8 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     SMPD_BOOL smpd_setting_priority = SMPD_INVALID_SETTING;
     char smpd_setting_path[SMPD_MAX_PATH_LENGTH] = "";
     SMPD_BOOL smpd_setting_localonly = SMPD_INVALID_SETTING;
+    char nemesis_netmod[SMPD_MAX_NEMESIS_NETMOD_LENGTH];
+
 #ifdef HAVE_WINDOWS_H
     int user_index;
     char user_index_str[20];
@@ -456,12 +461,18 @@ int mp_parse_command_args(int *argcp, char **argvp[])
     {
 	if (strcmp((*argvp)[1], "-register") == 0)
 	{
+        char register_filename[SMPD_MAX_FILENAME];
 	    user_index = 0;
 	    smpd_get_opt_int(argcp, argvp, "-user", &user_index);
 	    if (user_index < 0)
 	    {
 		user_index = 0;
 	    }
+        register_filename[0] = '\0';
+        if(smpd_get_opt_string(argcp, argvp, "-file", register_filename, SMPD_MAX_FILENAME))
+        {
+            smpd_dbg_printf("Registering username/password to a file\n");
+        }
 	    for (;;)
 	    {
 		smpd_get_account_and_password(smpd_process.UserAccount, smpd_process.UserPassword);
@@ -471,6 +482,18 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 		    break;
 		printf("passwords don't match, please try again.\n");
 	    }
+        if(strlen(register_filename) > 0)
+        {
+            if(smpd_save_cred_to_file(register_filename, smpd_process.UserAccount, smpd_process.UserPassword))
+            {
+                printf("Username/password encrypted and saved to registry file\n");
+            }
+            else
+            {
+                smpd_err_printf("Error saving username/password to registry file\n");
+            }
+            smpd_exit(0);
+        }
 	    if (smpd_save_password_to_registry(user_index, smpd_process.UserAccount, smpd_process.UserPassword, SMPD_TRUE)) 
 	    {
 		printf("Password encrypted into the Registry.\n");
@@ -660,6 +683,8 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 	    char host[100];
 	    int id;
 
+        smpd_process.use_pmi_server = SMPD_TRUE;
+
 	    if (smpd_get_opt(argcp, argvp, "-verbose"))
 	    {
 		smpd_process.verbose = SMPD_TRUE;
@@ -672,6 +697,18 @@ int mp_parse_command_args(int *argcp, char **argvp[])
 #endif
         }
 
+#ifdef HAVE_WINDOWS_H
+        if(smpd_get_opt(argcp, argvp, "-impersonate"))
+        {
+            smpd_process.use_sspi = SMPD_TRUE;
+            smpd_process.use_delegation = SMPD_FALSE;
+        }
+        if(smpd_get_opt(argcp, argvp, "-delegate"))
+        {
+            smpd_process.use_sspi = SMPD_TRUE;
+            smpd_process.use_delegation = SMPD_TRUE;
+        }
+#endif
 	    smpd_process.nproc = atoi((*argvp)[2]);
 	    if (smpd_process.nproc < 1)
 	    {
@@ -1391,6 +1428,25 @@ configfile_loop:
 		smpd_get_pwd_from_file(pwd_file_name);
 		num_args_to_strip = 2;
 	    }
+#ifdef HAVE_WINDOWS_H
+	    else if (strcmp(&(*argvp)[1][1], "registryfile") == 0)
+	    {
+        char reg_file_name[SMPD_MAX_FILENAME];
+		if (argc < 3)
+		{
+		    printf("Error: no filename specified after -registryfile option\n");
+		    smpd_exit_fn(FCNAME);
+		    return SMPD_FAIL;
+		}
+		strncpy(reg_file_name, (*argvp)[2], SMPD_MAX_FILENAME);
+        if(!smpd_read_cred_from_file(reg_file_name, smpd_process.UserAccount, SMPD_MAX_ACCOUNT_LENGTH, smpd_process.UserPassword, SMPD_MAX_PASSWORD_LENGTH)){
+            printf("Error: Could not read credentials from registry file\n");
+            smpd_exit_fn(FCNAME);
+            return SMPD_FAIL;
+        }
+		num_args_to_strip = 2;
+	    }
+#endif
 	    else if (strcmp(&(*argvp)[1][1], "configfile") == 0)
 	    {
 		printf("Error: The -configfile option must be the first and only option specified in a block.\n");
@@ -1493,6 +1549,19 @@ configfile_loop:
 		num_args_to_strip = 2;
 		smpd_add_host_to_default_list((*argvp)[2]);
 	    }
+#ifdef HAVE_WINDOWS_H
+        else if (strcmp(&(*argvp)[1][1], "ms_hpc") == 0)
+        {
+            smpd_process.use_ms_hpc = SMPD_TRUE;
+            /* Enable SSPI for authenticating PMs */
+            smpd_process.use_sspi = SMPD_TRUE;
+            smpd_process.use_delegation = SMPD_FALSE;
+            /* Use mpiexec as PMI server */
+            smpd_process.use_pmi_server = SMPD_TRUE;
+
+            num_args_to_strip = 1;
+        }
+#endif
 	    else if (strcmp(&(*argvp)[1][1], "hosts") == 0)
 	    {
 		if (nproc != 0)
@@ -1821,9 +1890,10 @@ configfile_loop:
 		    return SMPD_FAIL;
 		}
 		strncpy(channel, (*argvp)[2], SMPD_MAX_NAME_LENGTH);
-        if(strcmp(channel, "shm") == 0)
+        if((strcmp(channel, "shm") == 0) || (strcmp(channel, "ssm") == 0))
         {
-            printf("WARNING: SHM channel is now deprecated. Use the NEMESIS channel instead.\n");
+            printf("WARNING: SHM & SSM channels are no longer available. Use the NEMESIS channel instead.\n");
+            return SMPD_FAIL;
         }
 		num_args_to_strip = 2;
 	    }
@@ -2078,6 +2148,7 @@ configfile_loop:
 	    host_list->nproc = nproc;
 	}
 
+    smpd_dbg_printf("Processing environment variables \n");
 	/* add environment variables */
 	env_data[0] = '\0';
 	env_str = env_data;
@@ -2113,6 +2184,7 @@ configfile_loop:
 	    *env_str = '\0';
 	}
 
+    smpd_dbg_printf("Processing drive mappings\n");
 	/* merge global drive mappings with the local drive mappings */
 	gmap_node = gdrive_map_list;
 	while (gmap_node)
@@ -2162,6 +2234,7 @@ configfile_loop:
 	    gmap_node = gmap_node->next;
 	}
 
+    smpd_dbg_printf("Creating launch nodes (%d)\n", nproc);
 	for (i=0; i<nproc; i++)
 	{
 	    /* create a launch_node */
@@ -2174,6 +2247,7 @@ configfile_loop:
 	    }
 	    launch_node->clique[0] = '\0';
 	    smpd_get_next_host(&host_list, launch_node);
+        smpd_dbg_printf("Adding host (%s) to launch list \n", launch_node->hostname);
 	    launch_node->iproc = cur_rank++;
 #ifdef HAVE_WINDOWS_H
         if(smpd_process.affinity_map_sz > 0){
@@ -2329,50 +2403,27 @@ configfile_loop:
 	    */
 	    if ((strcmp(channel, "auto") == 0) && (smpd_process.launch_list != NULL))
 	    {
-		int id;
-		int multiple_nodes = 0;
-
-		/* determine whether or not there are multiple nodes */
-		id = smpd_process.launch_list->host_id;
-		iter = smpd_process.launch_list;
-		while (iter)
-		{
-		    if (iter->host_id != id)
-		    {
-			multiple_nodes = 1;
-			break;
-		    }
-		    iter = iter->next;
-		}
-
-		/* set the channel */
-		if (multiple_nodes)
-		{
-		    if (smpd_setting_internode_channel[0] != '\0')
-		    {
-			/* Use the internode channel specified in the smpd settings */
-			strncpy(channel, smpd_setting_internode_channel, 20);
-		    }
-		    else
-		    {
-			/* Use the default sock-shared-memory internode channel */
-			strcpy(channel, "ssm");
-		    }
-		}
-		else
-		{
-		    if (smpd_process.launch_list->nproc < 8)
-		    {
-			/* small jobs use the shared memory channel */
-			strcpy(channel, "shm");
-		    }
-		    else
-		    {
-			/* larger jobs use the scalable shared memory channel */
-			strcpy(channel, "ssm");
-		    }
-		}
+            strncpy(channel, "nemesis", SMPD_MAX_NAME_LENGTH);
 	    }
+
+        nemesis_netmod[0] = '\0';
+#ifdef HAVE_WINDOWS_H
+        /* See if there is a netmod specified with the channel
+         * eg: -channel nemesis:newtcp | -channel nemesis:nd
+         */
+        if(strlen(channel) > 0){
+            char seps[]=":";
+            char *tok, *ctxt;
+
+            tok = strtok_s(channel, seps, &ctxt);
+            if(tok != NULL){
+                tok = strtok_s(NULL, seps, &ctxt);
+                if(tok != NULL){
+                    MPIU_Strncpy(nemesis_netmod, tok, SMPD_MAX_NEMESIS_NETMOD_LENGTH);
+                }
+            }
+        }
+#endif
 
 	    /* add the channel to the environment of each process */
 	    iter = smpd_process.launch_list;
@@ -2381,6 +2432,7 @@ configfile_loop:
 		maxlen = (int)strlen(iter->env);
 		env_str = &iter->env[maxlen];
 		maxlen = SMPD_MAX_ENV_LENGTH - maxlen - 1;
+
 		if (maxlen > 15) /* At least 16 characters are needed to store MPICH2_CHANNEL=x */
 		{
 		    *env_str = ' ';
@@ -2390,10 +2442,24 @@ configfile_loop:
 		    env_str--;
 		    *env_str = '\0';
 		}
+		if ((strlen(nemesis_netmod) > 0) && (maxlen > 32)) /* At least 31 characters are needed to store " MPICH_NEMESIS_NETMOD=x" */
+		{
+		    *env_str = ' ';
+		    env_str++;
+		    MPIU_Str_add_string_arg(&env_str, &maxlen, "MPICH_NEMESIS_NETMOD", nemesis_netmod);
+		    /* trim the trailing white space */
+		    env_str--;
+		    *env_str = '\0';
+		}
+
 		iter = iter->next;
 	    }
+
 	    /* Save the channel to be used by spawn commands */
 	    MPIU_Strncpy(smpd_process.env_channel, channel, 10);
+        if(strlen(nemesis_netmod) > 0){
+            MPIU_Strncpy(smpd_process.env_netmod, nemesis_netmod, 10);
+        }
 	}
     }
 

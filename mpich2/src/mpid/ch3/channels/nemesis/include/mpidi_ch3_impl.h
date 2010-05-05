@@ -10,7 +10,6 @@
 #include "mpidi_ch3_conf.h"
 #include "mpidimpl.h"
 #include "mpiu_os_wrappers.h"
-#include "mpidu_process_locks.h"
 
 #if defined(HAVE_ASSERT_H)
 #include <assert.h>
@@ -115,6 +114,7 @@ union MPIDI_CH3_Pkt;
 struct MPID_nem_lmt_shm_wait_element;
 struct MPIDI_CH3_PktGeneric;
 
+typedef enum{MPID_NEM_VC_STATE_CONNECTED, MPID_NEM_VC_STATE_DISCONNECTED} MPIDI_Nem_vc_state_t;
 typedef struct MPIDI_CH3I_VC
 {
     int pg_rank;
@@ -127,6 +127,11 @@ typedef struct MPIDI_CH3I_VC
     MPID_nem_queue_ptr_t recv_queue;
     MPID_nem_queue_ptr_t free_queue;
 
+#ifdef ENABLE_CHECKPOINTING
+    MPIDI_msg_sz_t ckpt_msg_len;
+    void *ckpt_msg_buf;
+#endif
+
     /* temp buffer to store partially received header */
     MPIDI_msg_sz_t pending_pkt_len;
     struct MPIDI_CH3_PktGeneric *pending_pkt;
@@ -135,7 +140,7 @@ typedef struct MPIDI_CH3I_VC
     struct MPIDI_VC *next;
     struct MPIDI_VC *prev;
 
-    enum {MPID_NEM_VC_STATE_CONNECTED, MPID_NEM_VC_STATE_DISCONNECTED} state;
+    MPIDI_Nem_vc_state_t state;
 
     /* contig function pointers.  Netmods should set these. */
     /* iStartContigMsg -- sends a message consisting of a header (hdr) and contiguous data (data), possibly of 0 size.  If the
@@ -147,6 +152,15 @@ typedef struct MPIDI_CH3I_VC
        network module should complete the request once the message has been completely sent. */
     int (* iSendContig)(struct MPIDI_VC *vc, struct MPID_Request *sreq, void *hdr, MPIDI_msg_sz_t hdr_sz,
                         void *data, MPIDI_msg_sz_t data_sz);
+
+#ifdef ENABLE_CHECKPOINTING
+    /* ckpt_pause_send -- netmod should stop sending on this vc and queue messages to be sent after ckpt_continue()*/
+    int (* ckpt_pause_send_vc)(struct MPIDI_VC *vc);
+    /* ckpt_continue -- Notify remote side to start sending again. */
+    int (* ckpt_continue_vc)(struct MPIDI_VC *vc);
+    /* ckpt_restart -- similar to ckpt_continue, except that the process has been restarted */
+    int (* ckpt_restart_vc)(struct MPIDI_VC *vc);
+#endif
 
     /* LMT function pointers */
     int (* lmt_initiate_lmt)(struct MPIDI_VC *vc, union MPIDI_CH3_Pkt *rts_pkt, struct MPID_Request *req);
@@ -166,7 +180,11 @@ typedef struct MPIDI_CH3I_VC
     struct MPID_nem_lmt_shm_wait_element *lmt_active_lmt;
     int lmt_enqueued; /* FIXME: used for debugging */
 
-    struct 
+    /* Pointer to per-vc packet handlers */
+    MPIDI_CH3_PktHandler_Fcn **pkt_handler;
+    int num_pkt_handlers;
+    
+    struct
     {
         char padding[MPID_NEM_VC_NETMOD_AREA_LEN];
     } netmod_area;

@@ -138,7 +138,7 @@ SOURCEFILES     = $(SOURCES)
 ../util/mtestf90.o: 
 	(cd ../util && $(MAKE) mtestf90.o)
 
-../util/mtest.o:
+../../util/mtest.o:
 	(cd ../../util && $(MAKE))
 c2f902c.c: $(srcdir)/../../f90/ext/c2f902c.c
 	cp $(srcdir)/../../f90/ext/c2f902c.c c2f902c.c

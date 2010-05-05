@@ -7,6 +7,7 @@ all: all-redirect
 
 SHELL           = @SHELL@
 AR              = @AR@
+AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
@@ -99,13 +100,13 @@ all-redirect: .libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a
 	fi
 
 .libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a: tcp_finalize.o \
-	tcp_init.o tcp_send.o tcp_utility.o socksm.o tcp_getip.o 
+	tcp_init.o tcp_send.o tcp_utility.o socksm.o tcp_getip.o tcp_ckpt.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../../../../../lib/lib${MPILIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../../../../../../lib/lib${MPILIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../../../../../../lib/lib${MPILIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../../../../../../lib/lib${MPILIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
@@ -114,17 +115,18 @@ all-redirect: .libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a
 	@${RANLIB} ../../../../../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
 .libstamp1 ../../../../../../../../lib/lib${MPILIBNAME}.la: tcp_finalize.lo \
-	tcp_init.lo tcp_send.lo tcp_utility.lo socksm.lo tcp_getip.lo 
+	tcp_init.lo tcp_send.lo tcp_utility.lo socksm.lo tcp_getip.lo \
+	tcp_ckpt.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../../../../../lib/lib${MPILIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../../../../../../lib/lib${MPILIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../../../../../lib/lib${MPILIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../../../../../../lib/lib${MPILIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 coverage: 
 	-@for file in tcp_finalize.c tcp_init.c tcp_send.c tcp_utility.c socksm.c \
-	tcp_getip.c ; do \
+	tcp_getip.c tcp_ckpt.c ; do \
 		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
 htmldoc:
@@ -181,7 +183,15 @@ $(DEPS_DIR)/tcp_getip.d: $(srcdir)/tcp_getip.c
 	  echo $(MAKE_DEPEND_C)  $(srcdir)/tcp_getip.c >$(DEPS_DIR)/tcp_getip.d ; \
 	fi
 	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_getip.c >$(DEPS_DIR)/tcp_getip.d
-$(DEPS_DIR)/timestamp: tcp_finalize.c tcp_init.c tcp_send.c tcp_utility.c socksm.c tcp_getip.c Makefile
+$(DEPS_DIR)/tcp_ckpt.d: $(srcdir)/tcp_ckpt.c
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C tcp_ckpt.c > $(DEPS_DIR)/tcp_ckpt.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/tcp_ckpt.c >$(DEPS_DIR)/tcp_ckpt.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_ckpt.c >$(DEPS_DIR)/tcp_ckpt.d
+$(DEPS_DIR)/timestamp: tcp_finalize.c tcp_init.c tcp_send.c tcp_utility.c socksm.c tcp_getip.c \
+	tcp_ckpt.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "MAKE_DEPEND_C tcp_finalize.c > $(DEPS_DIR)/tcp_finalize.d" ; \
@@ -225,6 +235,13 @@ $(DEPS_DIR)/timestamp: tcp_finalize.c tcp_init.c tcp_send.c tcp_utility.c socksm
 	fi
 	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_getip.c >$(DEPS_DIR)/tcp_getip.d
 	echo "include $(DEPS_DIR)/tcp_getip.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C tcp_ckpt.c > $(DEPS_DIR)/tcp_ckpt.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/tcp_ckpt.c >$(DEPS_DIR)/tcp_ckpt.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_ckpt.c >$(DEPS_DIR)/tcp_ckpt.d
+	echo "include $(DEPS_DIR)/tcp_ckpt.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
 include $(DEPS_DIR)/alldeps
@@ -232,7 +249,7 @@ include $(DEPS_DIR)/alldeps
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  tcp_finalize.c tcp_init.c tcp_send.c tcp_utility.c \
-	socksm.c tcp_getip.c 
+	socksm.c tcp_getip.c tcp_ckpt.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------

@@ -664,6 +664,7 @@ INSTALL_DATA
 INSTALL_SCRIPT
 INSTALL_PROGRAM
 RANLIB
+AR_FLAGS
 AR
 OBJEXT
 EXEEXT
@@ -1902,16 +1903,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-
-# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
-  if test "$FROM_MPICH2" = "yes" ; then
-    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
-    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
-    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
-    F90FLAGS="$MPICH2_INTERNAL_F90FLAGS"
-  fi
-
-
 ac_config_headers="$ac_config_headers rlogconf.h"
 
 
@@ -3009,6 +3000,7 @@ else
   { $as_echo "$as_me:$LINENO: result: no" >&5
 $as_echo "no" >&6; }
 fi
+
 
 
 # Note that we set RANLIB to true if we don't find it (some systems neither
@@ -4806,9 +4798,6 @@ $as_echo "$as_me: error: Libtool requires master_top_builddir - check configure.
 
 export ETAGS
 export ETAGSADD
-
-
-
 
 
 ac_config_commands="$ac_config_commands default-1"

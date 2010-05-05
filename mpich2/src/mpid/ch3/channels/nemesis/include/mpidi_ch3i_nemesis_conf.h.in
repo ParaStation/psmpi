@@ -9,9 +9,6 @@
 #define MPIDI_CH3I_NEMESIS_CONF_H_INCLUDED
 
 
-/* Define to enable nemesis checkpointing */
-#undef ENABLED_CHECKPOINTING
-
 /* Define to disable shared-memory communication for debugging */
 #undef ENABLED_NO_LOCAL
 
@@ -43,12 +40,6 @@
 
 /* Define if you have the <knem_io.h> header file. */
 #undef HAVE_KNEM_IO_H
-
-/* Define to 1 if you have the `ckpt' library (-lckpt). */
-#undef HAVE_LIBCKPT
-
-/* Define to 1 if you have the `cli' library (-lcli). */
-#undef HAVE_LIBCLI
 
 /* Define to 1 if you have the `elan' library (-lelan). */
 #undef HAVE_LIBELAN

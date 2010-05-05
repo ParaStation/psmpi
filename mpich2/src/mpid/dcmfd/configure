@@ -617,6 +617,7 @@ CFLAGS
 CC
 MPILIBNAME
 RANLIB
+AR_FLAGS
 AR
 SET_MAKE
 SET_CFLAGS
@@ -1863,16 +1864,6 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
 
-
-# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
-  if test "$FROM_MPICH2" = "yes" ; then
-    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
-    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
-    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
-    F90FLAGS="$MPICH2_INTERNAL_F90FLAGS"
-  fi
-
-
 ac_config_headers="$ac_config_headers include/mpid_config.h"
 
 
@@ -2323,6 +2314,7 @@ fi
 
 
 
+
 INSTALL="/usr/bin/install -c"
 INSTALL_PROGRAM="${INSTALL}"
 INSTALL_DATA="${INSTALL} -m 644"
@@ -2331,10 +2323,6 @@ INSTALL_DATA="${INSTALL} -m 644"
 
 
 LIBTOOL=false
-
-
-
-
 
 
 FILE=$(cd $srcdir && find -name Makefile.in | perl -pe 's,^\./,,;s/\.in$//;s/\n/ /g;')

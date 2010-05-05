@@ -6,15 +6,6 @@ dnl config.guess
 dnl
 AC_CONFIG_AUX_DIR(../../../../../confdb)
 
-dnl The MPICH2 top-level configure adds a bunch of flags to the
-dnl user-defined CFLAGS by processing different configure command-line
-dnl arguments (--enable-g, --enable-default-optimization). These updated
-dnl flags are passed down as a separate flag. Here, we don't care about
-dnl the user-defined flags, but rather this updated flags, so we just
-dnl overwrite CFLAGS with them.
-PAC_SUBCONFIG_INIT()
-
-dnl
 dnl Definitions will be placed in this file rather than in the DEFS variable
 dnl
 AC_CONFIG_HEADER(ch3usockconf.h)
@@ -158,7 +149,11 @@ elif test "$ac_cv_sizeof_long_long" = "$ac_cv_sizeof_void_p" ; then
     AC_DEFINE(MPI_AINT_IS_LONG_LONG_INT,1,[Define if the size of an MPI_Aint is long long])
 fi
 
+# AR_FLAGS provides a way to potentially improve build performance on Mac OSX
+if test -z "$AR_FLAGS" ; then AR_FLAGS=cr ; fi
+
 AC_SUBST(AR)
+AC_SUBST(AR_FLAGS)
 AC_SUBST(RANLIB)
 AC_SUBST(MPILIBNAME)
 AC_SUBST(CC)
@@ -178,14 +173,6 @@ AC_SUBST(EXTRA_LIBS)
 PAC_SUBDIR_CACHE
 
 PAC_UPDATE_BASE_CACHE
-
-# Add the MPICH2 include flags to CPPFLAGS.  See the discussion above about
-# which include flags should start in MPICH2_INCLUDE_FLAGS and which in 
-# CPPFLAGS
-CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
-
-dnl Place holder macro for finalization
-PAC_SUBCONFIG_FINALIZE()
 
 dnl Note that once dependencies are enabled, we always try to
 dnl update the dependencies (that is usually the desired behavior)

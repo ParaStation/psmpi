@@ -7,7 +7,7 @@
 #include "hydra_utils.h"
 #include "bind.h"
 
-HYD_status HYDU_create_process(char **client_arg, HYD_env_t * env_list,
+HYD_status HYDU_create_process(char **client_arg, struct HYD_env *env_list,
                                int *in, int *out, int *err, int *pid, int os_index)
 {
     int inpipe[2], outpipe[2], errpipe[2], tpid;
@@ -16,46 +16,47 @@ HYD_status HYDU_create_process(char **client_arg, HYD_env_t * env_list,
     HYDU_FUNC_ENTER();
 
     if (in && (pipe(inpipe) < 0))
-        HYDU_ERR_SETANDJUMP1(status, HYD_SOCK_ERROR, "pipe error (%s)\n",
-                             HYDU_strerror(errno));
+        HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "pipe error (%s)\n",
+                            HYDU_strerror(errno));
 
     if (out && (pipe(outpipe) < 0))
-        HYDU_ERR_SETANDJUMP1(status, HYD_SOCK_ERROR, "pipe error (%s)\n",
-                             HYDU_strerror(errno));
+        HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "pipe error (%s)\n",
+                            HYDU_strerror(errno));
 
     if (err && (pipe(errpipe) < 0))
-        HYDU_ERR_SETANDJUMP1(status, HYD_SOCK_ERROR, "pipe error (%s)\n",
-                             HYDU_strerror(errno));
+        HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "pipe error (%s)\n",
+                            HYDU_strerror(errno));
 
     /* Fork off the process */
     tpid = fork();
     if (tpid == 0) {    /* Child process */
-        close(1);
-        if (out) {
-            close(outpipe[0]);
-            if (dup2(outpipe[1], 1) < 0)
-                HYDU_ERR_SETANDJUMP1(status, HYD_SOCK_ERROR, "dup2 error (%s)\n",
-                                     HYDU_strerror(errno));
-        }
-
-        close(2);
-        if (err) {
-            close(errpipe[0]);
-            if (dup2(errpipe[1], 2) < 0)
-                HYDU_ERR_SETANDJUMP1(status, HYD_SOCK_ERROR, "dup2 error (%s)\n",
-                                     HYDU_strerror(errno));
-        }
-
-        close(0);
+        close(STDIN_FILENO);
         if (in) {
             close(inpipe[1]);
-            if (dup2(inpipe[0], 0) < 0)
-                HYDU_ERR_SETANDJUMP1(status, HYD_SOCK_ERROR, "dup2 error (%s)\n",
-                                     HYDU_strerror(errno));
+            if (dup2(inpipe[0], STDIN_FILENO) < 0)
+                HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "dup2 error (%s)\n",
+                                    HYDU_strerror(errno));
         }
 
+        close(STDOUT_FILENO);
+        if (out) {
+            close(outpipe[0]);
+            if (dup2(outpipe[1], STDOUT_FILENO) < 0)
+                HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "dup2 error (%s)\n",
+                                    HYDU_strerror(errno));
+        }
+
+        close(STDERR_FILENO);
+        if (err) {
+            close(errpipe[0]);
+            if (dup2(errpipe[1], STDERR_FILENO) < 0)
+                HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "dup2 error (%s)\n",
+                                    HYDU_strerror(errno));
+        }
+
+        /* Forced environment overwrites existing environment */
         if (env_list) {
-            status = HYDU_putenv_list(env_list, HYD_ENV_OVERWRITE_FALSE);
+            status = HYDU_putenv_list(env_list, HYD_ENV_OVERWRITE_TRUE);
             HYDU_ERR_POP(status, "unable to putenv\n");
         }
 
@@ -81,6 +82,9 @@ HYD_status HYDU_create_process(char **client_arg, HYD_env_t * env_list,
         if (in) {
             close(inpipe[0]);
             *in = inpipe[1];
+
+            status = HYDU_sock_cloexec(*in);
+            HYDU_ERR_POP(status, "unable to set close on exec\n");
         }
         if (out)
             *out = outpipe[0];
@@ -98,78 +102,3 @@ HYD_status HYDU_create_process(char **client_arg, HYD_env_t * env_list,
   fn_fail:
     goto fn_exit;
 }
-
-
-HYD_status HYDU_fork_and_exit(int os_index)
-{
-    pid_t tpid;
-    HYD_status status = HYD_SUCCESS;
-
-    HYDU_FUNC_ENTER();
-
-    /* Fork off the process */
-    tpid = fork();
-    if (tpid == 0) {    /* Child process */
-        close(0);
-        close(1);
-        close(2);
-
-        if (os_index >= 0) {
-            status = HYDT_bind_process(os_index);
-            HYDU_ERR_POP(status, "bind process failed\n");
-        }
-    }
-    else {      /* Parent process */
-        exit(0);
-    }
-
-  fn_exit:
-    HYDU_FUNC_EXIT();
-    return status;
-
-  fn_fail:
-    goto fn_exit;
-}
-
-#if defined HAVE_THREAD_SUPPORT
-HYD_status HYDU_create_thread(void *(*func) (void *), void *args,
-                              struct HYD_thread_context *ctxt)
-{
-    int ret;
-    HYD_status status = HYD_SUCCESS;
-
-    HYDU_FUNC_ENTER();
-
-    ret = pthread_create(&ctxt->thread, NULL, func, args);
-    if (ret < 0)
-        HYDU_ERR_SETANDJUMP1(status, HYD_INTERNAL_ERROR, "pthread create failed (%s)\n",
-                             HYDU_strerror(errno));
-
-  fn_exit:
-    HYDU_FUNC_EXIT();
-    return status;
-
-  fn_fail:
-    goto fn_exit;
-}
-
-HYD_status HYDU_join_thread(struct HYD_thread_context ctxt)
-{
-    int ret;
-    HYD_status status = HYD_SUCCESS;
-
-    HYDU_FUNC_ENTER();
-
-    ret = pthread_join(ctxt.thread, NULL);
-    if (ret < 0)
-        HYDU_ERR_SETANDJUMP1(status, HYD_INTERNAL_ERROR, "pthread join failed (%s)\n",
-                             HYDU_strerror(errno));
-
-  fn_exit:
-    HYDU_FUNC_EXIT();
-    return status;
-
-  fn_fail:
-    goto fn_exit;
-}
-#endif /* HAVE_THREAD_SUPPORT */

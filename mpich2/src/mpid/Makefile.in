@@ -40,6 +40,7 @@ apply:
 	for dir in common @device_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		if [ "$$dir" = "mpe2" ] ; then continue ; fi ;\
+		if [ "$$dir" = "mpl" ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} apply ) ; done
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
@@ -50,6 +51,7 @@ clean:
 	for dir in common @device_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		if [ "$$dir" = "mpe2" ] ; then continue ; fi ;\
+		if [ "$$dir" = "mpl" ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} clean ) ; done
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -57,6 +59,7 @@ distclean-xxx:
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
 		if [ "$$dir" = "mpe2" ] ; then continue ; fi ;\
+		if [ "$$dir" = "mpl" ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} distclean ) ; done
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
@@ -70,6 +73,7 @@ maintainer-clean:  distclean-xxx remove-genmakefiles
 	for dir in common @device_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		if [ "$$dir" = "mpe2" ] ; then continue ; fi ;\
+		if [ "$$dir" = "mpl" ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} maintainer-clean ) ; done
 remove-makefile:
 	rm -f Makefile
@@ -86,22 +90,26 @@ coverage:
 	for dir in common @device_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		if [ "$$dir" = "mpe2" ] ; then continue ; fi ;\
+		if [ "$$dir" = "mpl" ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} coverage ) ; done
 # --------------------------------------------------------------------------
 htmldoc:
 	for dir in common @device_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		if [ "$$dir" = "mpe2" ] ; then continue ; fi ;\
+		if [ "$$dir" = "mpl" ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} htmldoc ) ; done
 mandoc:
 	for dir in common @device_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		if [ "$$dir" = "mpe2" ] ; then continue ; fi ;\
+		if [ "$$dir" = "mpl" ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} mandoc ) ; done
 latexdoc:
 	for dir in common @device_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		if [ "$$dir" = "mpe2" ] ; then continue ; fi ;\
+		if [ "$$dir" = "mpl" ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} latexdoc ) ; done
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -111,6 +119,7 @@ latexdoc:
 dependencies:
 	for dir in common @device_name@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
+		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} dependencies ) ; done
 # End of Dependencies
 # --------------------------------------------------------------------------

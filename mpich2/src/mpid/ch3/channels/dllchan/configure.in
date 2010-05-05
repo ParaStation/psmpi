@@ -6,15 +6,6 @@ dnl config.guess
 dnl
 AC_CONFIG_AUX_DIR(../../../../../confdb)
 
-dnl The MPICH2 top-level configure adds a bunch of flags to the
-dnl user-defined CFLAGS by processing different configure command-line
-dnl arguments (--enable-g, --enable-default-optimization). These updated
-dnl flags are passed down as a separate flag. Here, we don't care about
-dnl the user-defined flags, but rather this updated flags, so we just
-dnl overwrite CFLAGS with them.
-PAC_SUBCONFIG_INIT()
-
-dnl
 dnl Definitions will be placed in this file rather than in the DEFS variable
 dnl
 AC_CONFIG_HEADER(include/mpidi_ch3i_dllchan_conf.h)
@@ -51,10 +42,13 @@ fi
 MPICH_SHLIB_EXT='"'$SHLIB_EXT'"'
 AC_DEFINE_UNQUOTED(MPICH_SHLIB_EXT,$MPICH_SHLIB_EXT,[Extension for shared libraries])
 
+# AR_FLAGS provides a way to potentially improve build performance on Mac OSX
+if test -z "$AR_FLAGS" ; then AR_FLAGS=cr ; fi
 
 AC_SUBST(device_name)
 AC_SUBST(channel_name)
 AC_SUBST(AR)
+AC_SUBST(AR_FLAGS)
 AC_SUBST(RANLIB)
 AC_SUBST(MPILIBNAME)
 AC_SUBST(CC)
@@ -134,16 +128,5 @@ done
 # it is the first of the channels in the list
 MPICH_DEFAULT_CH3_CHANNEL='"'$firstChannel'"'
 AC_DEFINE_UNQUOTED(MPICH_DEFAULT_CH3_CHANNEL,$MPICH_DEFAULT_CH3_CHANNEL,[Define the name of the channel to use if none is selected])
-
-# -------------------------------------------------------------------------
-
-
-# Add the MPICH2 include flags to CPPFLAGS.  See the discussion above about
-# which include flags should start in MPICH2_INCLUDE_FLAGS and which in 
-# CPPFLAGS
-CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
-
-dnl Place holder macro for finalization
-PAC_SUBCONFIG_FINALIZE()
 
 AC_OUTPUT(Makefile src/Makefile localdefs)

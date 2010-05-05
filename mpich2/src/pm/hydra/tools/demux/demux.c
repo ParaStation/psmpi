@@ -4,39 +4,91 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "hydra.h"
-#include "hydra_utils.h"
 #include "demux.h"
+#include "demux_internal.h"
 
-static int num_cb_fds = 0;
+int HYDT_dmxu_num_cb_fds = 0;
+struct HYDT_dmxu_callback *HYDT_dmxu_cb_list = NULL;
+struct HYDT_dmxu_fns HYDT_dmxu_fns = { 0 };
 
-typedef struct HYDT_dmxi_callback {
-    int num_fds;
-    int *fd;
-    HYD_event_t events;
-    void *userp;
-     HYD_status(*callback) (int fd, HYD_event_t events, void *userp);
+HYD_status HYDT_dmx_init(char **demux)
+{
+    HYD_status status = HYD_SUCCESS;
 
-    struct HYDT_dmxi_callback *next;
-} HYDT_dmxi_callback_t;
+    HYDU_FUNC_ENTER();
 
-static HYDT_dmxi_callback_t *cb_list = NULL;
+    if (!(*demux)) {    /* user didn't specify anything */
+#if defined HAVE_POLL
+        HYDT_dmxu_fns.wait_for_event = HYDT_dmxu_poll_wait_for_event;
+        HYDT_dmxu_fns.stdin_valid = HYDT_dmxu_poll_stdin_valid;
+        *demux = HYDU_strdup("poll");
+#elif defined HAVE_SELECT
+        HYDT_dmxu_fns.wait_for_event = HYDT_dmxu_select_wait_for_event;
+        HYDT_dmxu_fns.stdin_valid = HYDT_dmxu_select_stdin_valid;
+        *demux = HYDU_strdup("select");
+#endif /* HAVE_SELECT */
+    }
+    else if (!strcmp(*demux, "poll")) { /* user wants to use poll */
+#if defined HAVE_POLL
+        HYDT_dmxu_fns.wait_for_event = HYDT_dmxu_poll_wait_for_event;
+        HYDT_dmxu_fns.stdin_valid = HYDT_dmxu_poll_stdin_valid;
+#endif /* HAVE_POLL */
+    }
+    else if (!strcmp(*demux, "select")) {       /* user wants to use select */
+#if defined HAVE_SELECT
+        HYDT_dmxu_fns.wait_for_event = HYDT_dmxu_select_wait_for_event;
+        HYDT_dmxu_fns.stdin_valid = HYDT_dmxu_select_stdin_valid;
+#endif /* HAVE_SELECT */
+    }
+
+    if (HYDT_dmxu_fns.wait_for_event == NULL || HYDT_dmxu_fns.stdin_valid == NULL) {
+        /* We couldn't find anything; return an error */
+        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
+                            "cannot find an appropriate demux engine\n");
+    }
+
+  fn_exit:
+    HYDU_FUNC_EXIT();
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
 
 HYD_status HYDT_dmx_register_fd(int num_fds, int *fd, HYD_event_t events, void *userp,
                                 HYD_status(*callback) (int fd, HYD_event_t events,
                                                        void *userp))
 {
-    HYDT_dmxi_callback_t *cb_element, *run;
-    int i;
+    struct HYDT_dmxu_callback *cb_element, *run;
+#if defined HAVE_ERROR_CHECKING
+    int i, j;
+#endif /* HAVE_ERROR_CHECKING */
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
-    for (i = 0; i < num_fds; i++)
-        if (fd[i] < 0)
-            HYDU_ERR_SETANDJUMP1(status, HYD_INTERNAL_ERROR, "registering bad fd %d\n", fd[i]);
+    HYDU_ASSERT(events, status);
 
-    HYDU_MALLOC(cb_element, HYDT_dmxi_callback_t *, sizeof(HYDT_dmxi_callback_t), status);
+#if defined HAVE_ERROR_CHECKING
+    for (i = 0; i < num_fds; i++) {
+        if (fd[i] < 0)
+            HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "registering bad fd %d\n", fd[i]);
+
+        cb_element = HYDT_dmxu_cb_list;
+        while (cb_element) {
+            for (j = 0; j < cb_element->num_fds; j++) {
+                if (cb_element->fd[j] == fd[i]) {
+                    HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
+                                        "registering duplicate fd %d\n", fd[i]);
+                }
+            }
+            cb_element = cb_element->next;
+        }
+    }
+#endif /* HAVE_ERROR_CHECKING */
+
+    HYDU_MALLOC(cb_element, struct HYDT_dmxu_callback *, sizeof(struct HYDT_dmxu_callback),
+                status);
     cb_element->num_fds = num_fds;
     HYDU_MALLOC(cb_element->fd, int *, num_fds * sizeof(int), status);
     memcpy(cb_element->fd, fd, num_fds * sizeof(int));
@@ -45,17 +97,17 @@ HYD_status HYDT_dmx_register_fd(int num_fds, int *fd, HYD_event_t events, void *
     cb_element->callback = callback;
     cb_element->next = NULL;
 
-    if (cb_list == NULL) {
-        cb_list = cb_element;
+    if (HYDT_dmxu_cb_list == NULL) {
+        HYDT_dmxu_cb_list = cb_element;
     }
     else {
-        run = cb_list;
+        run = HYDT_dmxu_cb_list;
         while (run->next)
             run = run->next;
         run->next = cb_element;
     }
 
-    num_cb_fds += num_fds;
+    HYDT_dmxu_num_cb_fds += num_fds;
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -65,21 +117,20 @@ HYD_status HYDT_dmx_register_fd(int num_fds, int *fd, HYD_event_t events, void *
     goto fn_exit;
 }
 
-
 HYD_status HYDT_dmx_deregister_fd(int fd)
 {
     int i;
-    HYDT_dmxi_callback_t *cb_element;
+    struct HYDT_dmxu_callback *cb_element;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
-    cb_element = cb_list;
+    cb_element = HYDT_dmxu_cb_list;
     while (cb_element) {
         for (i = 0; i < cb_element->num_fds; i++) {
             if (cb_element->fd[i] == fd) {
-                cb_element->fd[i] = -1;
-                num_cb_fds--;
+                cb_element->fd[i] = HYD_FD_UNSET;
+                HYDT_dmxu_num_cb_fds--;
                 goto fn_exit;
             }
         }
@@ -87,8 +138,8 @@ HYD_status HYDT_dmx_deregister_fd(int fd)
     }
 
     /* FD is not found */
-    HYDU_ERR_SETANDJUMP1(status, HYD_INTERNAL_ERROR,
-                         "could not find fd to deregister: %d\n", fd);
+    HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
+                        "could not find fd to deregister: %d\n", fd);
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -97,106 +148,44 @@ HYD_status HYDT_dmx_deregister_fd(int fd)
   fn_fail:
     goto fn_exit;
 }
-
 
 HYD_status HYDT_dmx_wait_for_event(int wtime)
 {
-    int total_fds, i, j, events, ret;
-    HYDT_dmxi_callback_t *run;
-    struct pollfd *pollfds = NULL;
-    HYD_status status = HYD_SUCCESS;
+    return HYDT_dmxu_fns.wait_for_event(wtime);
+}
+
+int HYDT_dmx_query_fd_registration(int fd)
+{
+    struct HYDT_dmxu_callback *run;
+    int i, ret;
 
     HYDU_FUNC_ENTER();
 
-    HYDU_MALLOC(pollfds, struct pollfd *, num_cb_fds * sizeof(struct pollfd), status);
-
-    run = cb_list;
-    i = 0;
-    while (run) {
-        for (j = 0; j < run->num_fds; j++) {
-            if (run->fd[j] == -1)
-                continue;
-
-            pollfds[i].fd = run->fd[j];
-
-            pollfds[i].events = 0;
-            if (run->events & HYD_STDOUT)
-                pollfds[i].events |= POLLIN;
-            if (run->events & HYD_STDIN)
-                pollfds[i].events |= POLLOUT;
-
-            i++;
-        }
-        run = run->next;
-    }
-    total_fds = i;
-
-    while (1) {
-        ret = poll(pollfds, total_fds, wtime);
-        if (ret < 0) {
-            if (errno == EINTR) {
-                /* We were interrupted by a system call; this is not
-                 * an error case in the regular sense; but the upper
-                 * layer needs to gracefully cleanup the processes. */
-                status = HYD_SUCCESS;
-                goto fn_exit;
-            }
-            HYDU_ERR_SETANDJUMP1(status, HYD_SOCK_ERROR, "poll error (%s)\n",
-                                 HYDU_strerror(errno));
-        }
-        break;
-    }
-
-    run = cb_list;
-    i = 0;
-    while (run) {
-        for (j = 0; j < run->num_fds; j++) {
-            if (run->fd[j] == -1)
-                continue;
-
-            if (pollfds[i].revents) {
-                events = 0;
-                if (pollfds[i].revents & POLLOUT)
-                    events |= HYD_STDIN;
-                if (pollfds[i].revents & POLLIN)
-                    events |= HYD_STDOUT;
-
-                if (run->callback == NULL)
-                    HYDU_ERR_POP(status, "no registered callback found for socket\n");
-
-                status = run->callback(pollfds[i].fd, events, run->userp);
-                HYDU_ERR_POP(status, "callback returned error status\n");
-            }
-
-            i++;
-            if (i == total_fds)
+    ret = 0;
+    for (run = HYDT_dmxu_cb_list; run; run = run->next) {
+        for (i = 0; i < run->num_fds; i++) {
+            if (run->fd[i] == fd) {     /* found it */
+                ret = 1;
                 break;
+            }
         }
-        run = run->next;
-
-        if (i == total_fds)
+        if (ret)
             break;
     }
 
-  fn_exit:
-    if (pollfds)
-        HYDU_FREE(pollfds);
     HYDU_FUNC_EXIT();
-    return status;
 
-  fn_fail:
-    goto fn_exit;
+    return ret;
 }
-
 
 HYD_status HYDT_dmx_finalize(void)
 {
-    HYDT_dmxi_callback_t *run1, *run2;
+    struct HYDT_dmxu_callback *run1, *run2;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
-    run1 = cb_list;
+    run1 = HYDT_dmxu_cb_list;
     while (run1) {
         run2 = run1->next;
         if (run1->fd)
@@ -204,8 +193,13 @@ HYD_status HYDT_dmx_finalize(void)
         HYDU_FREE(run1);
         run1 = run2;
     }
-    cb_list = NULL;
+    HYDT_dmxu_cb_list = NULL;
 
     HYDU_FUNC_EXIT();
     return status;
+}
+
+HYD_status HYDT_dmx_stdin_valid(int *out)
+{
+    return HYDT_dmxu_fns.stdin_valid(out);
 }

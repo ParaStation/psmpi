@@ -1,24 +1,28 @@
 <dir>
+<file name="segment_flatten.c" info="1271364812"/>
 <file name="dataloop_create_indexed.c" info="1248909068"/>
-<file name="veccpy.h" info="1217730774"/>
+<file name="veccpy.h" info="1271354597"/>
 <file name="typesize_support.h" info="1194043819"/>
 <file name="typesize_support.c" info="1217730774"/>
-<file name="dataloop_create_pairtype.c" info="1217730774"/>
-<file name="dataloop_create.c" info="1216938237"/>
-<file name="segment.c" info="1217730774"/>
+<file name="dataloop_create_pairtype.c" info="1271354597"/>
+<file name="dataloop_create.c" info="1271083480"/>
+<file name="segment.c" info="1271355312"/>
 <file name="darray_support.c" info="1217730774"/>
 <file name="dataloop_create_vector.c" info="1226524507"/>
 <file name="subarray_support.c" info="1217730774"/>
 <file name="dataloop_create_blockindexed.c" info="1217730774"/>
 <file name="dataloop_create.h" info="1217003706"/>
-<file name="dataloop.c" info="1244842249"/>
+<file name="dataloop.c" info="1271357004"/>
 <file name="dataloop_create_contig.c" info="1246390913"/>
-<file name="dataloop_create_struct.c" info="1246390913"/>
-<file name="dataloop_parts.h" info="1194043819"/>
-<file name="segment_ops.c" info="1246396478"/>
+<file name="segment_count.c" info="1271363627"/>
+<file name="segment_packunpack.c" info="1271355312"/>
+<file name="dataloop_parts.h" info="1271201337"/>
+<file name="dataloop_create_struct.c" info="1271355312"/>
 <file name="dataloop.h" info="1233086222"/>
 </dir>
 <data>
+<fileinfo name="segment_flatten.c">
+</fileinfo>
 <fileinfo name="dataloop_create_indexed.c">
 </fileinfo>
 <fileinfo name="veccpy.h">
@@ -47,11 +51,13 @@
 </fileinfo>
 <fileinfo name="dataloop_create_contig.c">
 </fileinfo>
-<fileinfo name="dataloop_create_struct.c">
+<fileinfo name="segment_count.c">
+</fileinfo>
+<fileinfo name="segment_packunpack.c">
 </fileinfo>
 <fileinfo name="dataloop_parts.h">
 </fileinfo>
-<fileinfo name="segment_ops.c">
+<fileinfo name="dataloop_create_struct.c">
 </fileinfo>
 <fileinfo name="dataloop.h">
 </fileinfo>

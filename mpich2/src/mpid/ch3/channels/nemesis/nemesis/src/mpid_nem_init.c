@@ -23,8 +23,6 @@ MPID_nem_mem_region_t MPID_nem_mem_region = {{0}};
 
 char MPID_nem_hostname[MAX_HOSTNAME_LEN] = "UNKNOWN";
 
-static MPID_nem_queue_ptr_t net_free_queue;
-
 static int get_local_procs(MPIDI_PG_t *pg, int our_pg_rank, int *num_local_p,
                            int **local_procs_p, int *local_rank_p);
 
@@ -59,11 +57,12 @@ MPID_nem_init(int pg_rank, MPIDI_PG_t *pg_p, int has_parent ATTRIBUTE((unused)))
     int    grank;
     MPID_nem_fastbox_t *fastboxes_p = NULL;
     MPID_nem_cell_t (*cells_p)[MPID_NEM_NUM_CELLS];
-    MPID_nem_cell_t (*network_cells_p)[MPID_NEM_NUM_CELLS];
     MPID_nem_queue_t *recv_queues_p = NULL;
     MPID_nem_queue_t *free_queues_p = NULL;
 
     MPIU_CHKPMEM_DECL(9);
+
+    /* TODO add compile-time asserts (rather than run-time) and convert most of these */
 
     /* Make sure the nemesis packet is no larger than the generic
        packet.  This is needed because we no longer include channel
@@ -180,10 +179,6 @@ MPID_nem_init(int pg_rank, MPIDI_PG_t *pg_p, int has_parent ATTRIBUTE((unused)))
     mpi_errno = MPIDI_CH3I_Seg_alloc(num_local * MPID_NEM_NUM_CELLS * sizeof(MPID_nem_cell_t), (void **)&cells_p);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-    /* Request network data cells region */
-    mpi_errno = MPIDI_CH3I_Seg_alloc(num_local  * MPID_NEM_NUM_CELLS * sizeof(MPID_nem_cell_t), (void **)&network_cells_p);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-
     /* Request free q region */
     mpi_errno = MPIDI_CH3I_Seg_alloc(num_local * sizeof(MPID_nem_queue_t), (void **)&free_queues_p);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -209,9 +204,8 @@ MPID_nem_init(int pg_rank, MPIDI_PG_t *pg_p, int has_parent ATTRIBUTE((unused)))
     mpi_errno = MPID_nem_barrier();
     if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 
-    /* find our cell regions */
+    /* find our cell region */
     MPID_nem_mem_region.Elements = cells_p[local_rank];
-    MPID_nem_mem_region.net_elements = network_cells_p[local_rank];
 
     /* Tables of pointers to shared memory Qs */
     MPIU_CHKPMEM_MALLOC(MPID_nem_mem_region.FreeQ, MPID_nem_queue_ptr_t *, num_procs * sizeof(MPID_nem_queue_ptr_t), mpi_errno, "FreeQ");
@@ -237,27 +231,15 @@ MPID_nem_init(int pg_rank, MPIDI_PG_t *pg_p, int has_parent ATTRIBUTE((unused)))
     {
         mpi_errno = MPID_nem_choose_netmod();
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-	mpi_errno = MPID_nem_netmod_func->init(MPID_nem_mem_region.RecvQ[pg_rank],
-                                               MPID_nem_mem_region.FreeQ[pg_rank],
-                                               MPID_nem_mem_region.Elements,
-                                               MPID_NEM_NUM_CELLS,
-                                               MPID_nem_mem_region.net_elements,
-                                               MPID_NEM_NUM_CELLS,
-                                               &net_free_queue,
-                                               pg_p, pg_rank,
-                                               &bc_val, &val_max_remaining);
+	mpi_errno = MPID_nem_netmod_func->init(pg_p, pg_rank, &bc_val, &val_max_remaining);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-    }
-    else
-    {
-        net_free_queue = NULL;
     }
 
     /* set default route for external processes through network */
     for (index = 0 ; index < MPID_nem_mem_region.ext_procs ; index++)
     {
 	grank = MPID_nem_mem_region.ext_ranks[index];
-	MPID_nem_mem_region.FreeQ[grank] = net_free_queue;
+	MPID_nem_mem_region.FreeQ[grank] = NULL;
 	MPID_nem_mem_region.RecvQ[grank] = NULL;
     }
 
@@ -369,8 +351,19 @@ MPID_nem_vc_init (MPIDI_VC_t *vc)
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_VC_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_VC_INIT);
-    vc_ch->send_seqno = 0;
-
+    
+    vc_ch->pkt_handler = NULL;
+    vc_ch->num_pkt_handlers = 0;
+    
+    vc_ch->send_seqno      = 0;
+#ifdef ENABLE_CHECKPOINT
+    vc_ch->ckpt_msg_len    = 0;
+    vc_ch->ckpt_msg_buf    = NULL;
+    vc_ch->ckpt_pause_send = NULL;
+    vc_ch->ckpt_pause_recv = NULL;
+    vc_ch->ckpt_continue   = NULL;
+    vc_ch->ckpt_restart    = NULL;
+#endif
     vc_ch->pending_pkt_len = 0;
     MPIU_CHKPMEM_MALLOC (vc_ch->pending_pkt, MPIDI_CH3_PktGeneric_t *, sizeof (MPIDI_CH3_PktGeneric_t), mpi_errno, "pending_pkt");
 
@@ -387,7 +380,7 @@ MPID_nem_vc_init (MPIDI_VC_t *vc)
     {
 	/* this vc is the result of a connect */
 	vc_ch->is_local = 0;
-	vc_ch->free_queue = net_free_queue;
+	vc_ch->free_queue = NULL;
     }
 
     /* override rendezvous functions */

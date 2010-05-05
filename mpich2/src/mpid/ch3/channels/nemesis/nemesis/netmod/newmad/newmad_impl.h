@@ -11,18 +11,13 @@
 #include <stdint.h>
 #include <nm_public.h>
 #include <nm_sendrecv_interface.h>
-#include <nm_predictions.h>
+#include <nm_sampling.h>
+#include <pm2_common.h>
 #include "mpid_nem_impl.h"
 
-int MPID_nem_newmad_init (MPID_nem_queue_ptr_t proc_recv_queue, MPID_nem_queue_ptr_t proc_free_queue, 
-		      MPID_nem_cell_ptr_t proc_elements,int num_proc_elements, 
-		      MPID_nem_cell_ptr_t module_elements, int num_module_elements,
-		      MPID_nem_queue_ptr_t *module_free_queue,
-		      MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_max_sz_p);
+int MPID_nem_newmad_init (MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_max_sz_p);
 int MPID_nem_newmad_finalize (void);
-int MPID_nem_newmad_ckpt_shutdown (void);
 int MPID_nem_newmad_poll(int in_blocking_progress);
-int MPID_nem_newmad_send (MPIDI_VC_t *vc, MPID_nem_cell_ptr_t cell, int datalen);
 int MPID_nem_newmad_get_business_card (int my_rank, char **bc_val_p, int *val_max_sz_p);
 int MPID_nem_newmad_connect_to_root (const char *business_card, MPIDI_VC_t *new_vc);
 int MPID_nem_newmad_vc_init (MPIDI_VC_t *vc);
@@ -53,7 +48,6 @@ void MPID_nem_newmad_anysource_posted(MPID_Request *rreq);
 int MPID_nem_newmad_anysource_matched(MPID_Request *rreq);
 
 /* Callbacks for events */
-int MPID_nem_newmad_post_init(void);
 void MPID_nem_newmad_get_adi_msg(nm_sr_event_t event, const nm_sr_event_info_t*info);
 
 /* Dtype management */
@@ -65,23 +59,13 @@ int MPID_nem_newmad_process_rdtype(MPID_Request **rreq_p, MPID_Datatype * dt_ptr
 /* Connection management*/
 int MPID_nem_newmad_send_conn_info (MPIDI_VC_t *vc);
 
-#define MPID_NEM_NMAD_MAX_NETS 4
-#define MPID_NEM_NMAD_MAX_SIZE (10*(MPID_NEM_MAX_NETMOD_STRING_LEN))
+#define MPID_NEM_NMAD_MAX_SIZE (MPID_NEM_MAX_NETMOD_STRING_LEN)
 typedef nm_gate_t mpid_nem_newmad_p_gate_t;
-
-typedef struct MPID_nem_newmad_init_req
-{
-   nm_sr_request_t           init_request;
-   mpid_nem_newmad_p_gate_t  p_gate;
-   int                       process_no;
-}
-MPID_nem_newmad_init_req_t;
 
 typedef struct MPID_nem_newmad_vc_area_internal
 {
     char                     hostname[MPID_NEM_NMAD_MAX_SIZE];
-    char                     url[MPID_NEM_NMAD_MAX_NETS][MPID_NEM_NMAD_MAX_SIZE];
-    uint8_t                  drv_id[MPID_NEM_NMAD_MAX_NETS];
+    char                     url[MPID_NEM_NMAD_MAX_SIZE];
     mpid_nem_newmad_p_gate_t p_gate;
 } MPID_nem_newmad_vc_area_internal_t;
 
@@ -99,7 +83,7 @@ typedef struct
 typedef struct 
 {
     nm_sr_request_t newmad_req;
-    void           *iov;
+    struct iovec   *iov;
 } MPID_nem_newmad_req_area;
 /* accessor macro to private fields in REQ */
 #define REQ_FIELD(reqp, field) (((MPID_nem_newmad_req_area *)((reqp)->ch.netmod_area.padding))->field)
@@ -107,15 +91,14 @@ typedef struct
 /* The begining of this structure is the same as MPID_Request */
 struct MPID_nem_newmad_internal_req
 {
-   int                    handle;     /* unused */
-   volatile int           ref_count;  /* unused */
+   MPIU_OBJECT_HEADER; /* adds (unused) handle and ref_count fields */
    MPID_Request_kind_t    kind;       /* used   */
    MPIDI_CH3_PktGeneric_t pending_pkt;
    MPIDI_VC_t            *vc;
    void                  *tmpbuf;
    MPIDI_msg_sz_t         tmpbuf_sz;
    nm_sr_request_t        newmad_req;
-   struct  MPID_nem_mx_internal_req *next;
+   struct  MPID_nem_newmad_internal_req *next;
 };
 
 typedef struct MPID_nem_newmad_internal_req MPID_nem_newmad_internal_req_t;
@@ -160,6 +143,9 @@ typedef int16_t Nmad_Nem_tag_t;
 #define NEM_NMAD_CTXT_MASK     (NEM_NMAD_MAX_CTXT<<SHIFT_CTXT)
 #define NEM_NMAD_PGRANK_MASK   (NEM_NMAD_MAX_PGRANK<<SHIFT_PGRANK)
 
+#define NEM_NMAD_MATCH_FULL_MASK  (UINT64_C(0xffffffffffffffff))
+#define NEM_NMAD_MATCH_EMPTY_MASK (UINT64_C(0x0000000000000000))
+
 #define NEM_NMAD_SET_TAG(_match, _tag)  do {                              \
     MPIU_Assert((_tag >= 0)&&(_tag <= (NEM_NMAD_MAX_TAG)));               \
     ((_match) |= (((nm_tag_t)((_tag)&(NEM_NMAD_MAX_TAG))) << SHIFT_TAG)); \
@@ -175,6 +161,13 @@ typedef int16_t Nmad_Nem_tag_t;
 #define NEM_NMAD_SET_PGRANK(_match, _pg_rank)  do {        \
     ((_match) |= (((nm_tag_t)(_pg_rank)) << SHIFT_PGRANK));\
     }while(0)
+#define NEM_NMAD_SET_ANYSRC(_match) do{  \
+   ((_match) &= ~NEM_NMAD_RANK_MASK);    \
+   }while(0)
+#define NEM_NMAD_SET_ANYTAG(_match) do{  \
+   ((_match) &= ~NEM_NMAD_TAG_MASK);     \
+   }while(0)
+  
 
 #define NEM_NMAD_MATCH_GET_TAG(_match, _tag)   do{                             \
     ((_tag)  = ((Nmad_Nem_tag_t)(((_match) & NEM_NMAD_TAG_MASK)  >> SHIFT_TAG)));\
@@ -201,11 +194,11 @@ typedef int16_t Nmad_Nem_tag_t;
 #define NEM_NMAD_DIRECT_MATCH(_match,_tag,_rank,_context) NEM_NMAD_SET_MATCH(_match,_tag,_rank,_context)
 #define NEM_NMAD_ADI_MATCH(_match)                        NEM_NMAD_SET_MATCH(_match,0,0,NEM_NMAD_INTRA_CTXT)
 
-extern nm_core_t  mpid_nem_newmad_pcore;
-extern int        mpid_nem_newmad_pending_send_req;
+extern nm_session_t mpid_nem_newmad_session;
+extern int          mpid_nem_newmad_pending_send_req;
 
-#define NMAD_IOV_MAX_DEPTH 15 /* NM_SO_PREALLOC_IOV_LEN */
-//#define DEBUG
+#define NMAD_IOV_MAX_DEPTH (256) /* NM_SO_PREALLOC_IOV_LEN */
+/*#define DEBUG*/
 
 #endif //NEWMAD_MODULE_IMPL_H
 

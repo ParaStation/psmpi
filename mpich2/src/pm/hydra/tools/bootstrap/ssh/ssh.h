@@ -9,7 +9,26 @@
 
 #include "hydra_base.h"
 
-HYD_status HYDT_bscd_ssh_launch_procs(char **global_args, const char *proxy_id_str,
-                                      struct HYD_proxy *proxy_list);
+/* Modern sshd servers don't like more than a certain number of ssh
+ * connections from the same IP address per minute. If we exceed that,
+ * the server assumes it's a hack-in attack, and does not accept any
+ * more connections. So, we limit the number of ssh connections. */
+#define SSH_LIMIT 8
+#define SSH_LIMIT_TIME 15
+
+struct HYDT_bscd_ssh_time {
+    char *hostname;
+    struct timeval init_time[SSH_LIMIT];
+    struct HYDT_bscd_ssh_time *next;
+};
+
+extern struct HYDT_bscd_ssh_time *HYDT_bscd_ssh_time;
+
+HYD_status HYDT_bscd_ssh_launch_procs(char **args, struct HYD_node *node_list,
+                                      int *control_fd, int enable_stdin,
+                                      HYD_status(*stdout_cb) (void *buf, int buflen),
+                                      HYD_status(*stderr_cb) (void *buf, int buflen));
+HYD_status HYDT_bscd_ssh_finalize(void);
+HYD_status HYDT_bscd_ssh_query_env_inherit(const char *env_name, int *ret);
 
 #endif /* SSH_H_INCLUDED */

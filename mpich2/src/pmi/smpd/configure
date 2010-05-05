@@ -644,6 +644,7 @@ C_LINK_SHL
 CC_SHL
 MPILIBNAME
 RANLIB
+AR_FLAGS
 AR
 SMPD_PMI_LIBS
 EGREP
@@ -1879,16 +1880,6 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-
-
-
-# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
-  if test "$FROM_MPICH2" = "yes" ; then
-    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
-    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
-    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
-    F90FLAGS="$MPICH2_INTERNAL_F90FLAGS"
-  fi
 
 
 ac_config_headers="$ac_config_headers pmiconf.h"
@@ -4153,18 +4144,9 @@ fi
 SMPD_PMI_LIBS=$LIBS
 LIBS=$save_libs
 
-# Add the MPICH2 include flags to CPPFLAGS.  See the discussion above about
-# which include flags should start in MPICH2_INCLUDE_FLAGS and which in
-# CPPFLAGS
-# SMPD needs a definition for MPID_IOV and the sock utilities, so
-# it needs the MPICH2 include paths
-CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
-
 . ${master_top_srcdir}/src/pm/smpd/sock/setup.args
 export smpd_sock_name
 echo "smpd_sock_name = $smpd_sock_name"
-
-
 
 
 

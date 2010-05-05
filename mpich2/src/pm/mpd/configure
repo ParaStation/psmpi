@@ -1796,16 +1796,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-
-# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
-  if test "$FROM_MPICH2" = "yes" ; then
-    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
-    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
-    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
-    F90FLAGS="$MPICH2_INTERNAL_F90FLAGS"
-  fi
-
-
 # Autoconf header:
 rm -f ${srcdir}/mpdconf.h mpdconf.h
 ac_config_headers="$ac_config_headers mpdconf.h"
@@ -4557,9 +4547,6 @@ fi
 
 # Starting output
 MPD_HOME=`pwd`
-
-
-
 
 
 

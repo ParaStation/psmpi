@@ -7,6 +7,7 @@ all: all-redirect
 
 SHELL           = @SHELL@
 AR              = @AR@
+AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
@@ -59,9 +60,9 @@ HEADERS = sock_init.i sock_set.i sock_post.i sock_immed.i sock_misc.i sock_wait.
 
 ${srcdir}/mpidu_socki_conf.h  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /sw/bin/autoheader -I ../../../../../confdb && \
-	\
-	/sw/bin/autoconf -I ../../../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../../../confdb && \
+	autoconf -I \
+	../../../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -111,11 +112,11 @@ all-redirect: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 
 libmpich2sock.a: sock.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr libmpich2sock.a $?" ; \
+	  echo "  AR ${AR_FLAGS} libmpich2sock.a $?" ; \
 	else \
-	  echo ${AR} cr libmpich2sock.a $? ; \
+	  echo ${AR} ${AR_FLAGS} libmpich2sock.a $? ; \
 	fi
-	@${AR} cr libmpich2sock.a $?
+	@${AR} ${AR_FLAGS} libmpich2sock.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          libmpich2sock.a" ; \
 	else \
@@ -124,11 +125,11 @@ libmpich2sock.a: sock.o
 	@${RANLIB} libmpich2sock.a
 .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a: sock.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../../lib/lib${MPILIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../../../lib/lib${MPILIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../../../lib/lib${MPILIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
@@ -138,18 +139,18 @@ libmpich2sock.a: sock.o
 	date > .libstamp0
 libmpich2sock.la: sock.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr libmpich2sock.la $?" ; \
+	  echo "  AR ${AR_FLAGS} libmpich2sock.la $?" ; \
 	else \
-	  echo ${AR} cr libmpich2sock.la $? ; \
+	  echo ${AR} ${AR_FLAGS} libmpich2sock.la $? ; \
 	fi
-	@${AR} cr libmpich2sock.la $?
+	@${AR} ${AR_FLAGS} libmpich2sock.la $?
 .libstamp1 ../../../../../lib/lib${MPILIBNAME}.la: sock.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../../lib/lib${MPILIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../../../lib/lib${MPILIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../../../lib/lib${MPILIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 coverage: 
 	-@for file in sock.c ; do \

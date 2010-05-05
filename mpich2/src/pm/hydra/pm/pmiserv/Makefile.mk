@@ -4,26 +4,27 @@
 #     See COPYRIGHT in top-level directory.
 #
 
-bin_PROGRAMS += pmi_proxy
+AM_CPPFLAGS += -I$(top_srcdir)/pm/utils
 
-pmi_proxy_SOURCES = $(top_srcdir)/pm/pmiserv/pmi_proxy.c \
-	$(top_srcdir)/pm/pmiserv/pmi_proxy_cb.c \
-	$(top_srcdir)/pm/pmiserv/pmi_proxy_utils.c
-pmi_proxy_LDADD = libhydra.a $(external_libs)
-pmi_proxy_LDFLAGS = $(external_ldflags)
+bin_PROGRAMS += hydra_pmi_proxy
 
-libpm_a_SOURCES += $(top_srcdir)/pm/pmiserv/pmi_handle.c \
-	$(top_srcdir)/pm/pmiserv/pmi_handle_common.c \
-	$(top_srcdir)/pm/pmiserv/pmi_handle_v1.c \
-	$(top_srcdir)/pm/pmiserv/pmi_handle_v2.c \
-	$(top_srcdir)/pm/pmiserv/pmi_serv_cb.c \
-	$(top_srcdir)/pm/pmiserv/pmi_serv_finalize.c \
-	$(top_srcdir)/pm/pmiserv/pmi_serv_launch.c \
-	$(top_srcdir)/pm/pmiserv/pmi_serv_utils.c
+hydra_pmi_proxy_SOURCES = $(top_srcdir)/pm/pmiserv/pmip.c \
+	$(top_srcdir)/pm/pmiserv/pmip_cb.c \
+	$(top_srcdir)/pm/pmiserv/pmip_utils.c \
+	$(top_srcdir)/pm/pmiserv/pmip_pmi_v1.c \
+	$(top_srcdir)/pm/pmiserv/pmip_pmi_v2.c \
+	$(top_srcdir)/pm/pmiserv/pmi_common.c \
+	$(top_srcdir)/pm/pmiserv/pmi_v2_common.c
+hydra_pmi_proxy_CFLAGS = $(AM_CFLAGS)
+hydra_pmi_proxy_LDFLAGS = $(external_ldflags) -L$(top_builddir)
+hydra_pmi_proxy_LDADD = -lhydra $(external_libs)
+hydra_pmi_proxy_DEPENDENCIES = libhydra.la
 
-install-alt-pm: pmi_proxy
-	@if [ ! -d $(DESTDIR)${bindir} ] ; then \
-	    echo "$(mkdir_p) $(DESTDIR)${bindir} " ;\
-	    $(mkdir_p) $(DESTDIR)${bindir} ;\
-	fi
-	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG) pmi_proxy $(DESTDIR)${bindir}/
+libpm_la_SOURCES += $(top_srcdir)/pm/pmiserv/pmiserv_pmi.c \
+	$(top_srcdir)/pm/pmiserv/pmiserv_pmi_v1.c \
+	$(top_srcdir)/pm/pmiserv/pmiserv_pmi_v2.c \
+	$(top_srcdir)/pm/pmiserv/pmiserv_pmci.c \
+	$(top_srcdir)/pm/pmiserv/pmiserv_cb.c \
+	$(top_srcdir)/pm/pmiserv/pmiserv_utils.c \
+	$(top_srcdir)/pm/pmiserv/pmi_common.c \
+	$(top_srcdir)/pm/pmiserv/pmi_v2_common.c

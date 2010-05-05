@@ -37,7 +37,6 @@ Makefile: ${srcdir}/Makefile.in
 # --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
-	(cd locks && ${MAKE} apply )
 	(cd datatype && ${MAKE} apply )
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
@@ -45,39 +44,31 @@ clean:
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
 	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
-	(cd locks && ${MAKE} clean )
 	(cd datatype && ${MAKE} clean )
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
-	if [ -s locks/Makefile ] ; then (cd locks && ${MAKE} distclean ) ; fi
 	if [ -s datatype/Makefile ] ; then (cd datatype && ${MAKE} distclean ) ; fi
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
 maintainer-clean:  distclean-xxx remove-genmakefiles
-	(cd locks && ${MAKE} maintainer-clean )
 	(cd datatype && ${MAKE} maintainer-clean )
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile.in Makefile
 all-redirect:
-	@(cd locks && ${MAKE} all )
 	@(cd datatype && ${MAKE} all )
 
 coverage: 
-	(cd locks && ${MAKE} coverage )
 	(cd datatype && ${MAKE} coverage )
 # --------------------------------------------------------------------------
 htmldoc:
-	(cd locks && ${MAKE} htmldoc )
 	(cd datatype && ${MAKE} htmldoc )
 mandoc:
-	(cd locks && ${MAKE} mandoc )
 	(cd datatype && ${MAKE} mandoc )
 latexdoc:
-	(cd locks && ${MAKE} latexdoc )
 	(cd datatype && ${MAKE} latexdoc )
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -85,8 +76,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 # Dependencies
 dependencies:
-	for dir in locks datatype sock ; do \
-		(cd $$dir && ${MAKE} dependencies ) ; done
+	if [ -s datatype/Makefile ] ; then (cd datatype && ${MAKE} dependencies ) ; fi
+	if [ -s sock/Makefile ] ; then (cd sock && ${MAKE} dependencies ) ; fi
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------

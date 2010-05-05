@@ -8,6 +8,8 @@
 #include "bsci.h"
 #include "ssh.h"
 
+struct HYDT_bscd_ssh_time *HYDT_bscd_ssh_time = NULL;
+
 HYD_status HYDT_bsci_ssh_init(void)
 {
     HYD_status status = HYD_SUCCESS;
@@ -15,6 +17,8 @@ HYD_status HYDT_bsci_ssh_init(void)
     HYDU_FUNC_ENTER();
 
     HYDT_bsci_fns.launch_procs = HYDT_bscd_ssh_launch_procs;
+    HYDT_bsci_fns.finalize = HYDT_bscd_ssh_finalize;
+    HYDT_bsci_fns.query_env_inherit = HYDT_bscd_ssh_query_env_inherit;
 
     HYDU_FUNC_EXIT();
 

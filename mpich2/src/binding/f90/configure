@@ -1869,16 +1869,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
 
-
-# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
-  if test "$FROM_MPICH2" = "yes" ; then
-    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
-    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
-    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
-    F90FLAGS="$MPICH2_INTERNAL_F90FLAGS"
-  fi
-
-
 ac_aux_dir=
 for ac_dir in ../../../confdb "$srcdir"/../../../confdb; do
   if test -f "$ac_dir/install-sh"; then
@@ -2568,7 +2558,7 @@ $as_echo "unknown!" >&6; }
     rm -f conftest*
 fi
 # Provide some information about the compiler.
-echo "$as_me:2571:" \
+echo "$as_me:2561:" \
      "checking for Fortran 90 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -4589,9 +4579,6 @@ F90INCFLAG=-I
 if test -z "$F90_LIBDIR_LEADER" ; then
     F90_LIBDIR_LEADER="-L"
 fi
-
-
-
 
 
 ac_config_files="$ac_config_files mpif90model.h"

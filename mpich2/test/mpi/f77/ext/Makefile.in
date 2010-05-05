@@ -135,7 +135,7 @@ SOURCEFILES     = $(SOURCES)
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)
 
-../util/mtest.o:
+../../util/mtest.o:
 	(cd ../../util && $(MAKE))
 
 FORCE_TARGET:

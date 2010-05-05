@@ -11,7 +11,6 @@ MPID_nem_netmod_funcs_t MPIDI_nem_mx_funcs = {
     MPID_nem_mx_init,
     MPID_nem_mx_finalize,
     MPID_nem_mx_poll,
-    MPID_nem_mx_send,
     MPID_nem_mx_get_business_card,
     MPID_nem_mx_connect_to_root,
     MPID_nem_mx_vc_init,
@@ -64,9 +63,9 @@ static int init_mx( MPIDI_PG_t *pg_p )
    int                mpi_errno = MPI_SUCCESS;
    int                r;
 
-   r = MPIU_PutEnv("MX_DISABLE_SHARED=1");
+   r = MPL_putenv("MX_DISABLE_SHARED=1");
    MPIU_ERR_CHKANDJUMP(r, mpi_errno, MPI_ERR_OTHER, "**putenv");
-   r = MPIU_PutEnv("MX_DISABLE_SELF=1");
+   r = MPL_putenv("MX_DISABLE_SELF=1");
    MPIU_ERR_CHKANDJUMP(r, mpi_errno, MPI_ERR_OTHER, "**putenv");
 
    ret = mx_init();
@@ -133,12 +132,7 @@ static int init_mx( MPIDI_PG_t *pg_p )
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int
-MPID_nem_mx_init (MPID_nem_queue_ptr_t proc_recv_queue, 
-		  MPID_nem_queue_ptr_t proc_free_queue, 
-		  MPID_nem_cell_ptr_t proc_elements,   int num_proc_elements,
-		  MPID_nem_cell_ptr_t module_elements, int num_module_elements, 
-		  MPID_nem_queue_ptr_t *module_free_queue,
-		  MPIDI_PG_t *pg_p, int pg_rank,
+MPID_nem_mx_init (MPIDI_PG_t *pg_p, int pg_rank,
 		  char **bc_val_p, int *val_max_sz_p)
 {   
    int mpi_errno = MPI_SUCCESS ;

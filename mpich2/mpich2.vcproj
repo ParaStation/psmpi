@@ -149,7 +149,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\ch3\channels\shm\include;src\mpid\ch3\include;src\mpid\common\locks;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
+				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpl\include;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\ch3\channels\shm\include;src\mpid\ch3\include;src\mpid\common\locks;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING,MPI_EXPORTS"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -179,7 +179,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_util.lib sock.lib ch3shm.lib cxx.lib dbg.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpl.lib smpd_util.lib sock.lib ch3shm.lib cxx.lib dbg.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2shm.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -349,7 +349,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\common\sock\iocp;src\mpid\ch3\channels\ssm\include;src\mpid\ch3\include;src\mpid\common\locks;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
+				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpl\include;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\common\sock\iocp;src\mpid\ch3\channels\ssm\include;src\mpid\ch3\include;src\mpid\common\locks;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING,MPI_EXPORTS"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -378,7 +378,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_util.lib dbg.lib sock.lib ch3ssm.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpl.lib smpd_util.lib dbg.lib sock.lib ch3ssm.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2ssm.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -552,7 +552,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\common\sock\iocp;src\mpid\ch3\include;src\mpid\common\locks;src\mpid\ch3\channels\sock\include;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
+				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpl\include;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\common\sock\iocp;src\mpid\ch3\include;src\mpid\common\locks;src\mpid\ch3\channels\sock\include;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
 				PreprocessorDefinitions="WIN32;NDEBUG;USE_WINCONF_H;MPIO_BUILD_PROFILING;HAVE_FORTRAN_BINDING;MPI_EXPORTS;WORDS_LITTLEENDIAN"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -657,7 +657,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\common\sock\iocp;src\mpid\ch3\include;src\mpid\common\locks;src\mpid\ch3\channels\sock\include;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
+				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpl\include;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\common\sock\iocp;src\mpid\ch3\include;src\mpid\common\locks;src\mpid\ch3\channels\sock\include;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
 				PreprocessorDefinitions="WIN32;NDEBUG;USE_WINCONF_H;HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED;USE_LOGGING=MPID_LOGGING_RLOG;MPIO_BUILD_PROFILING;HAVE_FORTRAN_BINDING;MPI_EXPORTS;WORDS_LITTLEENDIAN"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -1467,7 +1467,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\ch3\channels\shm\include;src\mpid\ch3\include;src\mpid\common\locks;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
+				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpl\include;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\ch3\channels\shm\include;src\mpid\ch3\include;src\mpid\common\locks;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING,MPI_EXPORTS,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -1566,7 +1566,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				InlineFunctionExpansion="1"
-				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\common\sock\iocp;src\mpid\ch3\channels\ssm\include;src\mpid\ch3\include;src\mpid\common\locks;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
+				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpl\include;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\common\sock\iocp;src\mpid\ch3\channels\ssm\include;src\mpid\ch3\include;src\mpid\common\locks;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING,MPI_EXPORTS,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -1595,7 +1595,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib rlog.lib smpd_util.lib dbg.lib sockp.lib ch3ssmp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpl.lib rlog.lib smpd_util.lib dbg.lib sockp.lib ch3ssmp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2ssmp.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -2266,7 +2266,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\common\sock\iocp;src\mpid\ch3\include;src\mpid\common\locks;src\mpid\ch3\channels\sock\include;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
+				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpl\include;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\common\sock\iocp;src\mpid\ch3\include;src\mpid\common\locks;src\mpid\ch3\channels\sock\include;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
 				PreprocessorDefinitions="WIN32,NDEBUG,USE_WINCONF_H,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING,MPI_EXPORTS,MPICH_MULTITHREADED"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -2296,7 +2296,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_util.lib dbgmt.lib sockmt.lib ch3sockmt.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib smpd_util.lib dbgmt.lib sockmt.lib ch3sockmt.lib mpl.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2mt.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -2372,7 +2372,7 @@
 				InlineFunctionExpansion="1"
 				EnableIntrinsicFunctions="true"
 				OmitFramePointers="true"
-				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\common\sock\iocp;src\mpid\ch3\include;src\mpid\common\locks;src\mpid\ch3\channels\sock\include;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
+				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpl\include;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\common\sock\iocp;src\mpid\ch3\include;src\mpid\common\locks;src\mpid\ch3\channels\sock\include;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;WIN32,NDEBUG,USE_WINCONF_H,HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED,USE_LOGGING=MPID_LOGGING_RLOG,MPIO_BUILD_PROFILING,HAVE_FORTRAN_BINDING,MPI_EXPORTS,MPICH_MULTITHREADED"
 				StringPooling="true"
 				RuntimeLibrary="0"
@@ -2402,7 +2402,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/MACHINE:I386"
-				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib rlog.lib smpd_util.lib dbgmtp.lib sockmtp.lib ch3sockmtp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
+				AdditionalDependencies="activeds.lib adsiid.lib netapi32.lib ntdsapi.lib secur32.lib mpl.lib rlog.lib smpd_util.lib dbgmtp.lib sockmtp.lib ch3sockmtp.lib pmi.lib mswsock.lib ws2_32.lib odbc32.lib odbccp32.lib rpcrt4.lib mpr.lib crypt32.lib"
 				OutputFile="lib/mpich2mtp.dll"
 				LinkIncremental="1"
 				SuppressStartupBanner="true"
@@ -3701,7 +3701,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\ch3\include;src\mpid\common\locks;src\mpi\datatype;src\util\wrappers;src\mpid\ch3\channels\nemesis\nemesis\include;src\mpid\ch3\channels\nemesis\include"
+				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\include;src\include\win32;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\ch3\include;src\mpid\common\locks;src\mpi\datatype;src\util\wrappers;src\mpid\ch3\channels\nemesis\nemesis\include;src\mpid\ch3\channels\nemesis\include;src\openpa\src;src\openpa\src\win32;src\mpl\include"
 				PreprocessorDefinitions="_CRT_SECURE_NO_DEPRECATE;WIN32;_DEBUG;USE_WINCONF_H;MPICH_DBG_OUTPUT;MPIO_BUILD_PROFILING;HAVE_FORTRAN_BINDING;MPI_EXPORTS;WORDS_LITTLEENDIAN;MPICH_MULTITHREADED;ENABLE_NO_MACRO_VARARG_NAME;_WIN32_WINNT=0x500;USE_DBG_LOGGING"
 				StringPooling="false"
 				BasicRuntimeChecks="3"
@@ -3749,9 +3749,11 @@
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
+				OutputDocumentFile=""
 			/>
 			<Tool
 				Name="VCBscMakeTool"
+				OutputFile=""
 			/>
 			<Tool
 				Name="VCFxCopTool"
@@ -3764,8 +3766,8 @@
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
-				Description="copying mpich2shmd.dll to system32 directory"
-				CommandLine="copy lib\mpich2shmd.dll %SystemRoot%\system32\mpich2shmd.dll&#x0D;&#x0A;copy $(ConfigurationName)\mpich2shmd.lib lib\mpich2shmd.lib&#x0D;&#x0A;"
+				Description="copying mpich2nemesisd.dll to system32 directory"
+				CommandLine="copy lib\mpich2nemesisd.dll %SystemRoot%\system32\mpich2nemesisd.dll&#x0D;&#x0A;copy $(ConfigurationName)\mpich2nemesisd.lib lib\mpich2nemesisd.lib&#x0D;&#x0A;"
 			/>
 		</Configuration>
 		<Configuration
@@ -3893,7 +3895,7 @@
 				Optimization="3"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\mpi\spawn;src\include;src\include\win32;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\ch3\include;src\mpid\common\locks;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32;src\util\wrappers;src\mpid\ch3\channels\nemesis\nemesis\include;src\mpid\ch3\channels\nemesis\include;src\openpa\src;src\openpa\src\win32"
+				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\mpi\spawn;src\include;src\include\win32;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\ch3\include;src\mpid\common\locks;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32;src\util\wrappers;src\mpid\ch3\channels\nemesis\nemesis\include;src\mpid\ch3\channels\nemesis\include;src\openpa\src;src\openpa\src\win32;src\mpl\include"
 				PreprocessorDefinitions="WIN32;_WIN32_WINNT=0x500;NDEBUG;USE_WINCONF_H;MPIO_BUILD_PROFILING;HAVE_FORTRAN_BINDING;MPI_EXPORTS;WORDS_LITTLEENDIAN;MPICH_MULTITHREADED;ENABLE_NO_MACRO_VARARG_NAME"
 				RuntimeLibrary="0"
 				WarningLevel="0"
@@ -3967,7 +3969,7 @@
 				Optimization="3"
 				EnableIntrinsicFunctions="true"
 				FavorSizeOrSpeed="1"
-				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\mpi\spawn;src\include;src\include\win32;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\ch3\include;src\mpid\common\locks;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32;src\util\wrappers;src\openpa\src;src\openpa\src\win32;src\mpid\ch3\channels\nemesis\nemesis\include;src\mpid\ch3\channels\nemesis\include"
+				AdditionalIncludeDirectories="&quot;src\mpi\romio\mpi-io&quot;;src\mpi\romio\adio\include;src\mpi\spawn;src\include;src\include\win32;src\mpid\common\datatype;src\mpid\common\sock;src\mpid\ch3\include;src\mpid\common\locks;src\mpi\datatype;src\mpi\binding\f90;src\mpi\binding\f90\win32;src\util\wrappers;src\openpa\src;src\openpa\src\win32;src\mpl\include;src\mpid\ch3\channels\nemesis\nemesis\include;src\mpid\ch3\channels\nemesis\include"
 				PreprocessorDefinitions="WIN32;_WIN32_WINNT=0x500;NDEBUG;USE_WINCONF_H;MPIO_BUILD_PROFILING;HAVE_FORTRAN_BINDING;MPI_EXPORTS;WORDS_LITTLEENDIAN;MPICH_MULTITHREADED;ENABLE_NO_MACRO_VARARG_NAME;HAVE_TIMING=MPID_TIMING_KIND_LOG_DETAILED;USE_LOGGING=MPID_LOGGING_RLOG"
 				RuntimeLibrary="0"
 				WarningLevel="0"
@@ -7516,16 +7518,16 @@
 				>
 			</File>
 			<File
-				RelativePath=".\src\mpid\common\datatype\dataloop\segment_ops.c"
+				RelativePath=".\src\mpid\common\datatype\dataloop\segment_count.c"
 				>
-				<FileConfiguration
-					Name="ch3sockRelease|Win32"
-					>
-					<Tool
-						Name="VCCLCompilerTool"
-						ShowIncludes="false"
-					/>
-				</FileConfiguration>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\dataloop\segment_flatten.c"
+				>
+			</File>
+			<File
+				RelativePath=".\src\mpid\common\datatype\dataloop\segment_packunpack.c"
+				>
 			</File>
 			<File
 				RelativePath=".\src\mpi\pt2pt\send.c"

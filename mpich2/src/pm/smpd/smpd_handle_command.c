@@ -827,6 +827,106 @@ launch_failure:
     return SMPD_FAIL;
 }
 
+#ifdef HAVE_WINDOWS_H
+#undef FCNAME
+#define FCNAME "smpd_add_pmi_env_to_procs"
+int smpd_add_pmi_env_to_procs(smpd_launch_node_t *head, char *hostname, int port, char *kvs_name, char *domain_name)
+{
+    int len, result;
+    errno_t ret_errno;
+    char *env_str, env_int_str[SMPD_MAX_INT_LENGTH], port_str[SMPD_MAX_INT_LENGTH];
+    smpd_enter_fn(FCNAME);
+    if((head == NULL) || (hostname == NULL) || (port <= 0) || (kvs_name == NULL) || (domain_name == NULL)){
+        smpd_err_printf("ERROR: Invalid args for adding pmi env to procs\n");
+        smpd_exit_fn(FCNAME);
+        return SMPD_FAIL;
+    }
+    
+    ret_errno = _itoa_s(port, port_str, SMPD_MAX_INT_LENGTH, 10);
+    if(ret_errno != 0){
+        smpd_err_printf("ERROR: Unable to convert port (%d) to string\n", port);
+        smpd_exit_fn(FCNAME);
+        return SMPD_FAIL;
+    }
+
+    while(head){
+        /* len => len of env string */
+        len = strlen(head->env_data);
+        head->env_data[len] = ' ';
+        env_str = &(head->env_data[len])+1;
+        /* len => remaining len in env string */
+        len = SMPD_MAX_ENV_LENGTH - len - 1;
+        result = MPIU_Str_add_string_arg(&env_str, &len, "PMI_HOST", hostname);
+        if(result != MPIU_STR_SUCCESS){
+            smpd_err_printf("ERROR: Unable to add PMI host to launch node\n");
+            smpd_exit_fn(FCNAME);
+            return SMPD_FAIL;
+        }
+        result = MPIU_Str_add_string_arg(&env_str, &len, "PMI_ROOT_HOST", hostname);
+        if(result != MPIU_STR_SUCCESS){
+            smpd_err_printf("ERROR: Unable to add PMI root host to launch node\n");
+            smpd_exit_fn(FCNAME);
+            return SMPD_FAIL;
+        }
+        result = MPIU_Str_add_string_arg(&env_str, &len, "PMI_PORT", port_str);
+        if(result != MPIU_STR_SUCCESS){
+            smpd_err_printf("ERROR: Unable to add PMI port to launch node\n");
+            smpd_exit_fn(FCNAME);
+            return SMPD_FAIL;
+        }
+        result = MPIU_Str_add_string_arg(&env_str, &len, "PMI_ROOT_PORT", port_str);
+        if(result != MPIU_STR_SUCCESS){
+            smpd_err_printf("ERROR: Unable to add PMI root port to launch node\n");
+            smpd_exit_fn(FCNAME);
+            return SMPD_FAIL;
+        }
+        result = MPIU_Str_add_string_arg(&env_str, &len, "PMI_KVS", kvs_name);
+        if(result != MPIU_STR_SUCCESS){
+            smpd_err_printf("ERROR: Unable to add PMI kvs name to launch node\n");
+            smpd_exit_fn(FCNAME);
+            return SMPD_FAIL;
+        }
+        result = MPIU_Str_add_string_arg(&env_str, &len, "PMI_DOMAIN", domain_name);
+        if(result != MPIU_STR_SUCCESS){
+            smpd_err_printf("ERROR: Unable to add PMI domain name to launch node\n");
+            smpd_exit_fn(FCNAME);
+            return SMPD_FAIL;
+        }
+
+        ret_errno = _itoa_s(head->nproc, env_int_str, SMPD_MAX_INT_LENGTH, 10);
+        if(ret_errno != 0){
+            smpd_err_printf("ERROR: Unable to convert nproc (%d) to string\n", head->nproc);
+            smpd_exit_fn(FCNAME);
+            return SMPD_FAIL;
+        }
+        result = MPIU_Str_add_string_arg(&env_str, &len, "PMI_SIZE", env_int_str);
+        if(result != MPIU_STR_SUCCESS){
+            smpd_err_printf("ERROR: Unable to add PMI size for MPI process\n");
+            smpd_exit_fn(FCNAME);
+            return SMPD_FAIL;
+        }
+        ret_errno = _itoa_s(head->iproc, env_int_str, SMPD_MAX_INT_LENGTH, 10);
+        if(ret_errno != 0){
+            smpd_err_printf("ERROR: Unable to convert iproc (%d) to string\n", head->iproc);
+            smpd_exit_fn(FCNAME);
+            return SMPD_FAIL;
+        }
+        result = MPIU_Str_add_string_arg(&env_str, &len, "PMI_RANK", env_int_str);
+        if(result != MPIU_STR_SUCCESS){
+            smpd_err_printf("ERROR: Unable to add PMI rank for MPI process\n");
+            smpd_exit_fn(FCNAME);
+            return SMPD_FAIL;
+        }
+
+        smpd_dbg_printf("ENV(%s) = %s\n", head->hostname, head->env_data);
+        head = head->next;
+    }
+
+    smpd_exit_fn(FCNAME);
+    return SMPD_SUCCESS;
+}
+#endif
+
 #undef FCNAME
 #define FCNAME "smpd_handle_result"
 int smpd_handle_result(smpd_context_t *context)
@@ -1154,13 +1254,15 @@ int smpd_handle_result(smpd_context_t *context)
 				if (MPIU_Str_get_string_arg(context->read_cmd.cmd, "domain_name", smpd_process.domain_name, SMPD_MAX_DBS_NAME_LEN) == MPIU_STR_SUCCESS)
 				{
 				    smpd_dbg_printf("start_dbs succeeded, kvs_name: '%s', domain_name: '%s'\n", smpd_process.kvs_name, smpd_process.domain_name);
-				    if (smpd_process.launch_list != NULL)
+                    if ((smpd_process.launch_list != NULL) && (!smpd_process.use_ms_hpc))
 				    {
 					ret_val = smpd_launch_processes(smpd_process.launch_list, smpd_process.kvs_name, smpd_process.domain_name, NULL);
 				    }
-				    else
+                    else
 				    {
-					/* mpiexec connected to an smpd without any processes to launch.  This means it is running -pmiserver */
+					/* mpiexec connected to an smpd without any processes to launch. 
+                     * This means it is running -pmiserver 
+                     */
 					create_process_group(smpd_process.nproc, smpd_process.kvs_name, &pg);
 					result = smpd_create_command("pmi_listen", 0, 1, SMPD_TRUE, &cmd_ptr);
 					if (result == SMPD_SUCCESS)
@@ -1232,6 +1334,8 @@ int smpd_handle_result(smpd_context_t *context)
                         SMPD_SINGLETON_MAX_HOST_NAME_LEN);
                 strncpy(p_singleton_mpiexec_context->singleton_init_kvsname, smpd_process.kvs_name,
                         SMPD_SINGLETON_MAX_KVS_NAME_LEN);
+                strncpy(p_singleton_mpiexec_context->singleton_init_domainname, smpd_process.domain_name,
+                        SMPD_SINGLETON_MAX_KVS_NAME_LEN);
                 /* Post a connect */
                 /* FIXME : mismatch btw size of connect_to->host and max host name len */
                 result = get_hostname(connect_to_host, SMPD_SINGLETON_MAX_HOST_NAME_LEN);
@@ -1259,8 +1363,61 @@ int smpd_handle_result(smpd_context_t *context)
                 }
                 ret_val = SMPD_SUCCESS;
             }
+#ifdef HAVE_WINDOWS_H /* Define MS HPC launching only for windows systems */
+            else if(smpd_process.use_ms_hpc){
+                smpd_hpc_js_handle_t js_hnd;
+                /* Launch the procs using MS HPC job scheduler */
+                smpd_dbg_printf("PMI_ROOT_HOST=%s\nPMI_ROOT_PORT=%d\nPMI_KVS=%s\nPMI_DOMAIN=%s\n", host_description, listener_port, smpd_process.kvs_name, smpd_process.domain_name);
+                result = smpd_add_pmi_env_to_procs(smpd_process.launch_list, host_description, listener_port, smpd_process.kvs_name, smpd_process.domain_name);
+                if(result != SMPD_SUCCESS){
+                    smpd_err_printf("Unable to add PMI environment to procs to be launched with MS hpc\n");
+                    smpd_exit_fn(FCNAME);
+                    return SMPD_FAIL;
+                }
+                /* Initialize MS HPC Resource management kernel & bootstrap manager
+                 */
+                result = smpd_hpc_js_rmk_init(&js_hnd);
+                if(result != SMPD_SUCCESS){
+                    smpd_err_printf("Unable to initialize MS HPC Resource management kernel\n");
+                    smpd_exit_fn(FCNAME);
+                    return SMPD_FAIL;
+                }
+
+                result = smpd_hpc_js_bs_init(js_hnd);
+                if(result != SMPD_SUCCESS){
+                    smpd_err_printf("Unable to initialize MS HPC Bootstrap manager\n");
+                    smpd_hpc_js_rmk_finalize(&js_hnd);
+                    smpd_exit_fn(FCNAME);
+                    return SMPD_FAIL;
+                }
+
+                /* Allocate nodes using the RM */
+                result = smpd_hpc_js_rmk_alloc_nodes(js_hnd, smpd_process.launch_list);
+                if(result != SMPD_SUCCESS){
+                    smpd_err_printf("Unable to allocate nodes using MS HPC Resource manager\n");
+                    smpd_hpc_js_bs_finalize(js_hnd);
+                    smpd_hpc_js_rmk_finalize(&js_hnd);
+                    smpd_exit_fn(FCNAME);
+                    return SMPD_FAIL;
+                }
+
+                /* Launch procs using the BSS */
+                result = smpd_hpc_js_bs_launch_procs(js_hnd, smpd_process.launch_list);
+                if(result != SMPD_SUCCESS){
+                    smpd_err_printf("Unable to launch procs using MS HPC Resource manager\n");
+                    smpd_hpc_js_bs_finalize(js_hnd);
+                    smpd_hpc_js_rmk_finalize(&js_hnd);
+                    smpd_exit_fn(FCNAME);
+                    return SMPD_FAIL;
+                }
+
+                smpd_hpc_js_bs_finalize(js_hnd);
+                smpd_hpc_js_rmk_finalize(&js_hnd);
+                ret_val = SMPD_SUCCESS;
+            }
+#endif /* HAVE_WINDOWS_H */
             else{
-		        printf("%s\n%d\n%s\n", host_description, listener_port, smpd_process.kvs_name);
+                printf("PMI_ROOT_HOST=%s\nPMI_ROOT_PORT=%d\nPMI_KVS=%s\nPMI_DOMAIN=%s\n", host_description, listener_port, smpd_process.kvs_name, smpd_process.domain_name);
             }
 		    /*printf("%s %d %s\n", smpd_process.host_list->host, smpd_process.port, smpd_process.kvs_name);*/
 		    fflush(stdout);
@@ -6176,6 +6333,13 @@ int smpd_handle_singinit_info_command(smpd_context_t *context){
     if (MPIU_Str_get_string_arg(cmd->cmd, "kvsname", smpd_process.kvs_name, 
             SMPD_SINGLETON_MAX_KVS_NAME_LEN) != MPIU_STR_SUCCESS){
 	    smpd_err_printf("singinit_info command missing kvsname\n");
+	    smpd_exit_fn(FCNAME);
+	    return SMPD_FAIL;
+    }
+
+    if (MPIU_Str_get_string_arg(cmd->cmd, "domainname", smpd_process.domain_name, 
+            SMPD_SINGLETON_MAX_KVS_NAME_LEN) != MPIU_STR_SUCCESS){
+	    smpd_err_printf("singinit_info command missing domainname\n");
 	    smpd_exit_fn(FCNAME);
 	    return SMPD_FAIL;
     }

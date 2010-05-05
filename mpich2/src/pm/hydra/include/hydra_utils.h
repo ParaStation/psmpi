@@ -10,6 +10,26 @@
 #include "hydra_base.h"
 #include "mpl.h"
 
+extern char *HYD_dbg_prefix;
+
+#define HYDU_dump_prefix(fp)                    \
+    {                                           \
+        fprintf(fp, "[%s] ", HYD_dbg_prefix);   \
+        fflush(fp);                             \
+    }
+
+#define HYDU_dump_noprefix(fp, ...)             \
+    {                                           \
+        fprintf(fp, __VA_ARGS__);               \
+        fflush(fp);                             \
+    }
+
+#define HYDU_dump(fp, ...)                      \
+    {                                           \
+        HYDU_dump_prefix(fp);                   \
+        HYDU_dump_noprefix(fp, __VA_ARGS__);    \
+    }
+
 #if defined HAVE__FUNC__
 #define HYDU_FUNC __func__
 #elif defined HAVE_CAP__FUNC__
@@ -18,9 +38,7 @@
 #define HYDU_FUNC __FUNCTION__
 #endif
 
-#if !defined COMPILER_ACCEPTS_VA_ARGS
-#define HYDU_error_printf printf
-#elif defined __FILE__ && defined HYDU_FUNC
+#if defined __FILE__ && defined HYDU_FUNC
 #define HYDU_error_printf(...)                                          \
     {                                                                   \
         HYDU_dump_prefix(stderr);                                       \
@@ -42,67 +60,41 @@
     }
 #endif
 
-#define HYDU_ERR_POP(status, message)                                   \
+#define HYDU_ASSERT(x, status)                                          \
     {                                                                   \
-        if (status != HYD_SUCCESS && status != HYD_GRACEFUL_ABORT) {    \
-            if (strlen(message))                                        \
-                HYDU_error_printf(message);                             \
+        if (!(x)) {                                                     \
+            HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,             \
+                                 "assert (%s) failed\n", #x);           \
+        }                                                               \
+    }
+
+#define HYDU_IGNORE_TIMEOUT(status)             \
+    {                                           \
+        if ((status) == HYD_TIMED_OUT)          \
+            (status) = HYD_SUCCESS;             \
+    }
+
+#define HYDU_ERR_POP(status, ...)                                       \
+    {                                                                   \
+        if (status && !HYD_SILENT_ERROR(status)) {                      \
+            HYDU_error_printf(__VA_ARGS__);                             \
             goto fn_fail;                                               \
         }                                                               \
-        else if (status == HYD_GRACEFUL_ABORT) {                        \
+        else if (HYD_SILENT_ERROR(status)) {                            \
             goto fn_exit;                                               \
         }                                                               \
     }
 
-#define HYDU_ERR_SETANDJUMP(status, error, message)                     \
+#define HYDU_ERR_SETANDJUMP(status, error, ...)                         \
     {                                                                   \
         status = error;                                                 \
-        if (status != HYD_SUCCESS && status != HYD_GRACEFUL_ABORT) {    \
-            if (strlen(message))                                        \
-                HYDU_error_printf(message);                             \
-            goto fn_fail;                                               \
-        }                                                               \
-        else if (status == HYD_GRACEFUL_ABORT) {                        \
-            goto fn_exit;                                               \
-        }                                                               \
+        HYDU_ERR_POP(status, __VA_ARGS__);                              \
     }
 
-#define HYDU_ERR_CHKANDJUMP(status, chk, error, message)                \
+#define HYDU_ERR_CHKANDJUMP(status, chk, error, ...)                    \
     {                                                                   \
         if ((chk))                                                      \
-            HYDU_ERR_SETANDJUMP(status, error, message);                \
-    }
-
-#define HYDU_ERR_CHKANDJUMP1(status, chk, error, message, arg1)         \
-    {                                                                   \
-        if ((chk))                                                      \
-            HYDU_ERR_SETANDJUMP1(status, error, message, arg1);         \
-    }
-
-#define HYDU_ERR_SETANDJUMP1(status, error, message, arg1)              \
-    {                                                                   \
-        status = error;                                                 \
-        if (status != HYD_SUCCESS && status != HYD_GRACEFUL_ABORT) {    \
-            if (strlen(message))                                        \
-                HYDU_error_printf(message, arg1);                       \
-            goto fn_fail;                                               \
-        }                                                               \
-        else if (status == HYD_GRACEFUL_ABORT) {                        \
-            goto fn_exit;                                               \
-        }                                                               \
-    }
-
-#define HYDU_ERR_SETANDJUMP2(status, error, message, arg1, arg2)        \
-    {                                                                   \
-        status = error;                                                 \
-        if (status != HYD_SUCCESS && status != HYD_GRACEFUL_ABORT) {    \
-            if (strlen(message))                                        \
-                HYDU_error_printf(message, arg1, arg2);                 \
-            goto fn_fail;                                               \
-        }                                                               \
-        else if (status == HYD_GRACEFUL_ABORT) {                        \
-            goto fn_exit;                                               \
-        }                                                               \
+            HYDU_ERR_SETANDJUMP(status, error, __VA_ARGS__);            \
     }
 
 #if defined ENABLE_WARNINGS || !defined COMPILER_ACCEPTS_VA_ARGS
@@ -119,62 +111,60 @@
 /* alloc */
 void HYDU_init_user_global(struct HYD_user_global *user_global);
 void HYDU_init_global_env(struct HYD_env_global *global_env);
-HYD_status HYDU_alloc_proxy(struct HYD_proxy **proxy);
-HYD_status HYDU_alloc_exec_info(struct HYD_exec_info **exec_info);
-void HYDU_free_exec_info_list(struct HYD_exec_info *exec_info_list);
+HYD_status HYDU_alloc_node(struct HYD_node **node);
+void HYDU_free_node_list(struct HYD_node *node_list);
+void HYDU_init_pg(struct HYD_pg *pg, int pgid);
+HYD_status HYDU_alloc_pg(struct HYD_pg **pg, int pgid);
+void HYDU_free_pg_list(struct HYD_pg *pg_list);
+HYD_status HYDU_alloc_proxy(struct HYD_proxy **proxy, struct HYD_pg *pg);
 void HYDU_free_proxy_list(struct HYD_proxy *proxy_list);
-HYD_status HYDU_alloc_proxy_exec(struct HYD_proxy_exec **exec);
+HYD_status HYDU_alloc_exec(struct HYD_exec **exec);
+void HYDU_free_exec_list(struct HYD_exec *exec_list);
+HYD_status HYDU_create_proxy_list(struct HYD_exec *exec_list, struct HYD_node *node_list,
+                                  struct HYD_pg *pg, int proc_offset);
+HYD_status HYDU_correct_wdir(char **wdir);
 
 /* args */
 HYD_status HYDU_find_in_path(const char *execname, char **path);
+HYD_status HYDU_parse_array(char ***argv, struct HYD_arg_match_table *match_table);
+HYD_status HYDU_set_str(char *arg, char ***argv, char **var, const char *val);
+HYD_status HYDU_set_str_and_incr(char *arg, char ***argv, char **var);
+HYD_status HYDU_set_int(char *arg, char ***argv, int *var, int val);
+HYD_status HYDU_set_int_and_incr(char *arg, char ***argv, int *var);
 char *HYDU_getcwd(void);
-HYD_status HYDU_get_base_path(const char *execname, char *wdir, char **path);
 HYD_status HYDU_parse_hostfile(char *hostfile,
                                HYD_status(*process_token) (char *token, int newline));
+char *HYDU_find_full_path(const char *execname);
+HYD_status HYDU_send_strlist(int fd, char **strlist);
 
 /* debug */
 HYD_status HYDU_dbg_init(const char *str);
-void HYDU_dump_prefix(FILE * fp);
-void HYDU_dump_noprefix(FILE * fp, const char *str, ...);
-void HYDU_dump(FILE * fp, const char *str, ...);
+void HYDU_dbg_finalize(void);
 
 /* env */
-HYD_status HYDU_env_to_str(HYD_env_t * env, char **str);
-HYD_status HYDU_str_to_env(char *str, HYD_env_t ** env);
-HYD_status HYDU_list_inherited_env(HYD_env_t ** env_list);
-HYD_env_t *HYDU_env_list_dup(HYD_env_t * env);
-HYD_status HYDU_env_create(HYD_env_t ** env, const char *env_name, char *env_value);
-HYD_status HYDU_env_free(HYD_env_t * env);
-HYD_status HYDU_env_free_list(HYD_env_t * env);
-HYD_env_t *HYDU_env_lookup(char *env_name, HYD_env_t * env_list);
-HYD_status HYDU_append_env_to_list(HYD_env_t env, HYD_env_t ** env_list);
-HYD_status HYDU_putenv(HYD_env_t * env, HYD_env_overwrite_t overwrite);
-HYD_status HYDU_putenv_list(HYD_env_t * env_list, HYD_env_overwrite_t overwrite);
-HYD_status HYDU_comma_list_to_env_list(char *str, HYD_env_t ** env_list);
+HYD_status HYDU_env_to_str(struct HYD_env *env, char **str);
+HYD_status HYDU_str_to_env(char *str, struct HYD_env **env);
+HYD_status HYDU_list_inherited_env(struct HYD_env **env_list);
+struct HYD_env *HYDU_env_list_dup(struct HYD_env *env);
+HYD_status HYDU_env_create(struct HYD_env **env, const char *env_name, const char *env_value);
+HYD_status HYDU_env_free(struct HYD_env *env);
+HYD_status HYDU_env_free_list(struct HYD_env *env);
+struct HYD_env *HYDU_env_lookup(char *env_name, struct HYD_env *env_list);
+HYD_status HYDU_append_env_to_list(struct HYD_env env, struct HYD_env **env_list);
+HYD_status HYDU_putenv(struct HYD_env *env, HYD_env_overwrite_t overwrite);
+HYD_status HYDU_putenv_list(struct HYD_env *env_list, HYD_env_overwrite_t overwrite);
+HYD_status HYDU_comma_list_to_env_list(char *str, struct HYD_env **env_list);
 
 /* launch */
-#if defined HAVE_THREAD_SUPPORT
-struct HYD_thread_context {
-    pthread_t thread;
-};
-#endif /* HAVE_THREAD_SUPPORT */
-
-HYD_status HYDU_create_process(char **client_arg, HYD_env_t * env_list,
+HYD_status HYDU_create_process(char **client_arg, struct HYD_env *env_list,
                                int *in, int *out, int *err, int *pid, int os_index);
-HYD_status HYDU_fork_and_exit(int os_index);
-#if defined HAVE_THREAD_SUPPORT
-HYD_status HYDU_create_thread(void *(*func) (void *), void *args,
-                              struct HYD_thread_context *ctxt);
-HYD_status HYDU_join_thread(struct HYD_thread_context ctxt);
-#endif /* HAVE_THREAD_SUPPORT */
 
 /* others */
-HYD_status HYDU_merge_proxy_segment(char *name, int start_pid, int core_count,
-                                    struct HYD_proxy **proxy_list);
 int HYDU_local_to_global_id(int local_id, int start_pid, int core_count,
                             int global_core_count);
-HYD_status HYDU_add_to_proxy_list(char *hostname, int num_procs,
-                                  struct HYD_proxy **proxy_list);
+HYD_status HYDU_add_to_node_list(const char *hostname, int num_procs,
+                                 struct HYD_node **node_list);
+HYD_status HYDU_gethostname(char *hostname);
 
 /* signals */
 #ifdef NEEDS_POSIX_FOR_SIGACTION
@@ -196,56 +186,64 @@ HYD_status HYDU_set_common_signals(void (*handler) (int));
 
 /* Sock utilities */
 enum HYDU_sock_comm_flag {
-    HYDU_SOCK_COMM_MSGWAIT = 0x01
+    HYDU_SOCK_COMM_NONE = 0,
+    HYDU_SOCK_COMM_MSGWAIT = 1
 };
 
 HYD_status HYDU_sock_listen(int *listen_fd, char *port_range, uint16_t * port);
 HYD_status HYDU_sock_connect(const char *host, uint16_t port, int *fd);
 HYD_status HYDU_sock_accept(int listen_fd, int *fd);
-HYD_status HYDU_sock_readline(int fd, char *buf, int maxlen, int *linelen);
-HYD_status HYDU_sock_writeline(int fd, const char *buf, int maxsize);
-HYD_status HYDU_sock_read(int fd, void *buf, int maxlen, int *count,
+HYD_status HYDU_sock_read(int fd, void *buf, int maxlen, int *recvd, int *closed,
                           enum HYDU_sock_comm_flag flag);
-HYD_status HYDU_sock_write(int fd, const void *buf, int maxsize);
-HYD_status HYDU_sock_trywrite(int fd, const void *buf, int maxsize);
-HYD_status HYDU_sock_set_nonblock(int fd);
-HYD_status HYDU_sock_set_cloexec(int fd);
-HYD_status HYDU_sock_stdout_cb(int fd, HYD_event_t events, int stdout_fd, int *closed);
-HYD_status HYDU_sock_stdin_cb(int fd, HYD_event_t events, int stdin_fd, char *buf,
-                              int *buf_count, int *buf_offset, int *closed);
+HYD_status HYDU_sock_write(int fd, const void *buf, int maxlen, int *sent, int *closed);
+HYD_status HYDU_sock_forward_stdio(int in, int out, int *closed);
+HYD_status HYDU_sock_get_iface_ip(char *iface, char **ip);
+HYD_status
+HYDU_sock_create_and_listen_portstr(char *iface, char *port_range, char **port_str,
+                                    HYD_status(*callback) (int fd, HYD_event_t events,
+                                                           void *userp), void *userp);
+HYD_status HYDU_sock_cloexec(int fd);
+
 
 /* Memory utilities */
 #include <ctype.h>
 
-/* FIXME: This should eventually become MPL_malloc and friends */
+#if defined USE_MEMORY_TRACING
+
+#define HYDU_mem_init()  MPL_trinit(0)
+
+#define HYDU_strdup(a) MPL_trstrdup(a,__LINE__,__FILE__)
+#define strdup(a)      'Error use HYDU_strdup' :::
+
+#define HYDU_malloc(a) MPL_trmalloc((unsigned)(a),__LINE__,__FILE__)
+#define malloc(a)      'Error use HYDU_malloc' :::
+
+#define HYDU_free(a) MPL_trfree(a,__LINE__,__FILE__)
+#define free(a)      'Error use HYDU_free' :::
+
+#else /* if !defined USE_MEMORY_TRACING */
+
+#define HYDU_mem_init()
+#define HYDU_strdup MPL_strdup
 #define HYDU_malloc malloc
-#define HYDU_calloc calloc
-#define HYDU_free   free
+#define HYDU_free free
+
+#endif /* USE_MEMORY_TRACING */
 
 #define HYDU_snprintf MPL_snprintf
-#define HYDU_strdup   MPL_strdup
 
 #define HYDU_MALLOC(p, type, size, status)                              \
     {                                                                   \
         (p) = (type) HYDU_malloc((size));                               \
         if ((p) == NULL)                                                \
-            HYDU_ERR_SETANDJUMP1((status), HYD_NO_MEM,                  \
-                                 "failed to allocate %d bytes\n",       \
-                                 (size));                               \
-    }
-
-#define HYDU_CALLOC(p, type, num, size, status)                         \
-    {                                                                   \
-        (p) = (type) HYDU_calloc((num), (size));                        \
-        if ((p) == NULL)                                                \
-            HYDU_ERR_SETANDJUMP1((status), HYD_NO_MEM,                  \
-                                 "failed to allocate %d bytes\n",       \
-                                 (size));                               \
+            HYDU_ERR_SETANDJUMP((status), HYD_NO_MEM,                   \
+                                "failed to allocate %d bytes\n",        \
+                                (int) (size));                          \
     }
 
 #define HYDU_FREE(p)                            \
     {                                           \
-        HYDU_free(p);                           \
+        HYDU_free((void *) p);                  \
     }
 
 #define HYDU_STRLIST_CONSOLIDATE(strlist, i, status)                    \
@@ -272,13 +270,8 @@ char *HYDU_strerror(int error);
 int HYDU_strlist_lastidx(char **strlist);
 char **HYDU_str_to_strlist(char *str);
 
-/* Timer utilities */
-/* FIXME: HYD_time should be OS specific */
-#ifdef HAVE_TIME
-#include <time.h>
-#endif /* HAVE_TIME */
-typedef struct timeval HYD_time;
-void HYDU_time_set(HYD_time * time, int *val);
-int HYDU_time_left(HYD_time start, HYD_time timeout);
+/*!
+ * @}
+ */
 
 #endif /* HYDRA_UTILS_H_INCLUDED */

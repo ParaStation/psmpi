@@ -6,9 +6,15 @@ AC_PREREQ(2.63)
 
 AC_INIT([MPL], [0.1])
 AC_CONFIG_AUX_DIR(confdb)
+AC_CONFIG_MACRO_DIR(confdb)
 AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.10])
 
-PAC_SUBCONFIG_INIT()
+LT_PREREQ([2.2.6])
+
+# Bug in libtool adds -O2 and -g by default
+save_cflags=$CFLAGS
+LT_INIT(disable-shared)
+CFLAGS=$save_cflags
 
 AC_CONFIG_HEADER([include/config.h])
 AX_PREFIX_CONFIG_H([include/mplconfig.h],[MPL])
@@ -16,35 +22,44 @@ AX_PREFIX_CONFIG_H([include/mplconfig.h],[MPL])
 # Non-verbose make
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
-dnl Bug in autoconf adds -O2 and -g by default. Make sure we only get
-dnl the flags we want.
+# Bug in autoconf adds -O2 and -g by default
 save_cflags=$CFLAGS
 AC_PROG_CC
 CFLAGS=$save_cflags
-AC_PROG_RANLIB
 AC_C_CONST
 AC_C_RESTRICT
+
+PAC_C_MACRO_VA_ARGS
 
 dnl Check if the necessary headers are available
 AC_CHECK_HEADERS(stdio.h stdlib.h string.h stdarg.h ctype.h)
 
-dnl Check for strdup
+# A C99 compliant compiler should have inttypes.h for fixed-size int types
+AC_CHECK_HEADERS(inttypes.h stdint.h)
+
+# headers for valgrind client requests
+AC_CHECK_HEADERS([valgrind.h memcheck.h valgrind/valgrind.h valgrind/memcheck.h])
+
+# Check for strdup
 AC_CHECK_FUNCS(strdup)
 if test "$ac_cv_func_strdup" = "yes" ; then
    PAC_FUNC_NEEDS_DECL([#include <string.h>],strdup)
 fi
 
-dnl Check for snprintf
+# Check for snprintf
 AC_CHECK_FUNCS(snprintf)
 if test "$ac_cv_func_snprintf" = "yes" ; then
     PAC_FUNC_NEEDS_DECL([#include <stdio.h>],snprintf)
 fi
 
+# Check for putenv
+AC_CHECK_FUNCS(putenv)
+if test "$ac_cv_func_putenv" = "yes" ; then
+    PAC_FUNC_NEEDS_DECL([#include <stdlib.h>],putenv)
+fi
+
 dnl Check for ATTRIBUTE
 PAC_C_GNU_ATTRIBUTE
-
-dnl Place holder macro for finalization
-PAC_SUBCONFIG_FINALIZE()
 
 dnl Final output
 AC_OUTPUT(Makefile)

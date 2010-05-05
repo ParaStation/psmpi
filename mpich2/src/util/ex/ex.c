@@ -6,20 +6,29 @@
 
 #include <mpichconf.h>
 #include <mpiutil.h>
+#include <mpimem.h>
 #include <mpi.h>
 #include <mpiu_ex.h>
+#ifdef USE_DBG_LOGGING
+    #include <mpidbg.h>
+#endif
 #ifdef HAVE_WINNT_H
 #include <winnt.h>
 #endif
 
 static
 int
-WINAPI
 ExpKeyZeroCompletionProcessor(
     DWORD BytesTransfered,
     PVOID pOverlapped
     );
 
+static
+int
+ExpKeyOneWin32CompletionProcessor(
+    DWORD BytesTransfered,
+    PVOID pOverlapped
+    );
 
 #if 0
 //
@@ -36,7 +45,7 @@ static HANDLE s_port;
 static MPIU_ExCompletionProcessor s_processors[] = {
 
     ExpKeyZeroCompletionProcessor,
-    NULL,
+    ExpKeyOneWin32CompletionProcessor,
     NULL,
     NULL,
 };
@@ -48,6 +57,10 @@ static inline BOOL IsValidSet(MPIU_ExSetHandle_t Set)
 }
 
 
+/* FIXME : Change ExCreateSet() to allow adding the set to a list
+ * & allow sending this list to MPIU_ExProcessCompletions()
+ * MPIU_ExSetHandle_t MPIU_ExCreateSet(MPIU_ExCreateSetList_t list)
+ */
 MPIU_ExSetHandle_t
 MPIU_ExCreateSet(
     void
@@ -87,6 +100,26 @@ MPIU_ExRegisterCompletionProcessor(
     s_processors[Key] = pfnCompletionProcessor;
 }
 
+int
+MPIU_ExRegisterNextCompletionProcessor(
+    ULONG_PTR *Key,
+    MPIU_ExCompletionProcessor pfnCompletionProcessor
+    )
+{
+    int i;
+    MPIU_Assert(Key != NULL);
+
+    /* We default to the predefined Key0 completion processor */
+    *Key = 0;
+    for(i=0; i<_countof(s_processors); i++){
+        if(s_processors[i] == NULL){
+            *Key = (ULONG_PTR )i;
+            s_processors[i] = pfnCompletionProcessor;
+            return MPI_SUCCESS;
+        }
+    }
+    return MPI_ERR_INTERN;
+}
 
 void
 MPIU_ExUnregisterCompletionProcessor(
@@ -155,7 +188,7 @@ MPIU_ExInitialize(
 }
 
 
-void
+int
 MPIU_ExFinalize(
     void
     )
@@ -165,23 +198,27 @@ MPIU_ExFinalize(
     CloseHandle(s_port);
     s_port = NULL;
 #endif
+    return MPI_SUCCESS;
 }
 
 
 int
 MPIU_ExProcessCompletions(
     MPIU_ExSetHandle_t Set,
-    BOOL fWaitForEvent
+    BOOL *fWaitForEventAndStatus
     )
 {
-    DWORD Timeout = fWaitForEvent ? INFINITE : 0;
+    DWORD Timeout;
 
+    MPIU_Assert(fWaitForEventAndStatus != NULL);
     MPIU_Assert(IsValidSet(Set));
+
+    Timeout =  (*fWaitForEventAndStatus) ? INFINITE : 0;
 
     for (;;)
     {
         BOOL fSucc;
-        DWORD BytesTransfered;
+        DWORD BytesTransfered = 0;
         ULONG_PTR Key;
         OVERLAPPED* pOverlapped = NULL;
 
@@ -193,6 +230,14 @@ MPIU_ExProcessCompletions(
                     Timeout
                     );
 
+        if(!fSucc){
+            /* Could be a timeout or an error */
+            *fWaitForEventAndStatus = FALSE;
+        }
+        else{
+            /* An Event completed */
+            *fWaitForEventAndStatus = TRUE;
+        }
         if(!fSucc && pOverlapped == NULL)
         {
             //
@@ -203,14 +248,16 @@ MPIU_ExProcessCompletions(
             if (gle == WAIT_TIMEOUT)
                 return MPI_SUCCESS;
 
+            /* FIXME: Should'nt there be a retry count ? */
             //
             // Io Completion port internal error, try again
             //
             continue;
         }
-
+        
         MPIU_Assert(Key < _countof(s_processors));
         MPIU_Assert(s_processors[Key] != NULL);
+
 
         //
         // Call the completion processor and return the result.
@@ -227,20 +274,36 @@ MPIU_ExProcessCompletions(
 
 static
 int
-WINAPI
 ExpKeyZeroCompletionProcessor(
-    DWORD BytesTransfered,
+    DWORD BytesTransferred,
     PVOID pOverlapped
     )
 {
     MPIU_EXOVERLAPPED* pov = CONTAINING_RECORD(pOverlapped, MPIU_EXOVERLAPPED, ov);
-    return MPIU_ExCompleteOverlapped(pov);
+    return MPIU_ExCompleteOverlapped(pov, BytesTransferred);
 }
 
+//----------------------------------------------------------------------------
+//
+// Preregistered completion processor for Key-One
+// Used for Win32 subsystem
+//
+
+static
+int
+ExpKeyOneWin32CompletionProcessor(
+    DWORD BytesTransferred,
+    PVOID pOverlapped
+    )
+{
+    MPIU_EXOVERLAPPED* pov = CONTAINING_RECORD(pOverlapped, MPIU_EXOVERLAPPED, ov);
+    return MPIU_ExWin32CompleteOverlapped(pov, BytesTransferred);
+}
 
 void
 MPIU_ExPostOverlapped(
     MPIU_ExSetHandle_t Set,
+    ULONG_PTR key,
     MPIU_EXOVERLAPPED* pOverlapped
     )
 {
@@ -248,7 +311,7 @@ MPIU_ExPostOverlapped(
 
     MPIU_ExPostCompletion(
         Set,
-        0, // Key,
+        key, // Key,
         &pOverlapped->ov,
         0 // BytesTransfered
         );
@@ -258,6 +321,7 @@ MPIU_ExPostOverlapped(
 void
 MPIU_ExAttachHandle(
     MPIU_ExSetHandle_t Set,
+    ULONG_PTR key,
     HANDLE Handle
     )
 {
@@ -269,7 +333,7 @@ MPIU_ExAttachHandle(
         hPort = CreateIoCompletionPort(
                     Handle, // FileHandle
                     Set,    // ExistingCompletionPort
-                    0,      // CompletionKey
+                    key,      // CompletionKey
                     0       // NumberOfConcurrentThreads
                     );
 

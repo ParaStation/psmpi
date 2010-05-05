@@ -7,6 +7,7 @@ all: all-redirect
 
 SHELL           = @SHELL@
 AR              = @AR@
+AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
 INSTALL         = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -23,17 +24,20 @@ exec_prefix     = @exec_prefix@
 bindir          = @bindir@
 DEFS            = @DEFS@ -I. -I${srcdir}
 CPPFLAGS        = @CPPFLAGS@
+LIBS            = @LIBS@
 MAKE            = @MAKE@
 MPILIBNAME      = @MPILIBNAME@
 CC              = @CC@
 CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
+C_LINK         = $(CC)
 LIBTOOL         = @LIBTOOL@
 CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
+LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
-win_sources = smpd_job.c smpd_mapdrive.c smpd_register.c smpd_ad.cpp smpd_affinitize.c
+win_sources = smpd_job.c smpd_mapdrive.c smpd_register.c smpd_ad.cpp smpd_affinitize.c smpd_ccp_util.c smpd_hpc_js_rmk.cpp smpd_hpc_js_bs.cpp smpd_hpc_js_util.cpp
 INCLUDES = -I${master_top_srcdir}/src/include -I${master_top_srcdir}/src/pmi/smpd -I${master_top_srcdir}/src/pm/smpd/sock/include -I${master_top_srcdir}/src/pm/smpd/sock/@smpd_sock_name@ -I${top_builddir}/src/include -I${top_builddir}/src/pm/smpd -I${top_builddir}/src/pm/smpd/sock/@smpd_sock_name@ 
 
 .SUFFIXES:
@@ -66,9 +70,9 @@ INCLUDES = -I${master_top_srcdir}/src/include -I${master_top_srcdir}/src/pmi/smp
 
 ${srcdir}/smpdconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /sw/bin/autoheader -I ../../../confdb && \
-	\
-	/sw/bin/autoconf -I ../../../confdb ) 
+	(cd ${srcdir} && autoheader -I ../../../confdb && \
+	autoconf -I \
+	../../../confdb ) 
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -91,12 +95,15 @@ apply:
 	for dir in ../../util/mem ./sock sock ; do \
 		(cd $$dir && ${MAKE} apply ) ; done
 clean: 
-	-@rm -f *.o ${srcdir}/*.o 
+	-@rm -f *.o ${srcdir}/*.o mpiexec smpd
 	-@rm -f .libstamp0 .libstamp1 
+	-@rm -f mpiexec.exe smpd.exe
+	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
 	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
 	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
+	-@rm -f *.irlog*
 	for dir in ../../util/mem ./sock sock ; do \
 		(cd $$dir && ${MAKE} clean ) ; done
 distclean:  clean distclean-local distclean-xxx remove-makefile
@@ -122,7 +129,7 @@ all-redirect:
 	@(cd ./sock && ${MAKE} all )
 	@(cd sock && ${MAKE} all )
 	${MAKE} all-local
-all-local: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
+all-local: .libstamp0 ../../../lib/lib${MPILIBNAME}.a mpiexec smpd
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    ${MAKE} .libstamp1 || exit 1; \
 	fi
@@ -135,11 +142,11 @@ all-local: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	smpd_start_mgr.o smpd_barrier.o smpd_do_console.o smpd_restart.o \
 	smpd_host_util.o smpd_handle_spawn.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
@@ -155,11 +162,11 @@ all-local: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	smpd_start_mgr.lo smpd_barrier.lo smpd_do_console.lo smpd_restart.lo \
 	smpd_host_util.lo smpd_handle_spawn.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${MPILIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 coverage: 
 	-@for file in smpd_hash.c smpd_authenticate.c smpd_printf.c  \
@@ -171,6 +178,16 @@ coverage:
 		gcov -b -f $$file ; done
 	for dir in ../../util/mem ./sock sock ; do \
 		(cd $$dir && ${MAKE} coverage ) ; done
+mpiexec: mpiexec.o mp_parse_command_line.o mp_parse_oldconfig.o mpiexec_rsh.o \
+	 ../../../lib/lib${MPILIBNAME}.a ../../../lib/libmpl.a 
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o mpiexec mpiexec.o \
+	mp_parse_command_line.o mp_parse_oldconfig.o mpiexec_rsh.o  \
+	-L../../../lib -L${master_top_srcdir}/lib -lmpich -lmpl ${LIBS} 
+smpd: smpd.o smpd_cmd_args.o smpd_watchprocs.o \
+	 ../../../lib/lib${MPILIBNAME}.a ../../../lib/libmpl.a 
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o smpd smpd.o smpd_cmd_args.o \
+	smpd_watchprocs.o  -L../../../lib -L${master_top_srcdir}/lib -lmpich \
+	-lmpl ${LIBS} 
 # --------------------------------------------------------------------------
 htmldoc:
 	for dir in ../../util/mem ./sock sock ; do \
@@ -205,6 +222,7 @@ MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
 
 dependencies: $(DEPS_DIR)/timestamp
 	for dir in ../../util/mem ./sock sock ; do \
+		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} dependencies ) ; done
 $(DEPS_DIR)/smpd_hash.d: $(srcdir)/smpd_hash.c
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
@@ -344,7 +362,8 @@ $(DEPS_DIR)/timestamp: smpd_hash.c smpd_authenticate.c smpd_printf.c  smpd_read_
 	smpd_command.c smpd_database.c smpd_state_machine.c  \
 	smpd_handle_command.c smpd_session.c smpd_start_mgr.c smpd_barrier.c  \
 	smpd_do_console.c smpd_restart.c smpd_host_util.c smpd_handle_spawn.c \
-	Makefile 
+	mpiexec.c mp_parse_command_line.c mp_parse_oldconfig.c mpiexec_rsh.c \
+	smpd.c smpd_cmd_args.c smpd_watchprocs.c Makefile
 	rm -f $(DEPS_DIR)/newalldeps
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "MAKE_DEPEND_C smpd_hash.c > $(DEPS_DIR)/smpd_hash.d" ; \
@@ -479,6 +498,55 @@ $(DEPS_DIR)/timestamp: smpd_hash.c smpd_authenticate.c smpd_printf.c  smpd_read_
 	fi
 	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_handle_spawn.c >$(DEPS_DIR)/smpd_handle_spawn.d
 	echo "include $(DEPS_DIR)/smpd_handle_spawn.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpiexec.c > $(DEPS_DIR)/mpiexec.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpiexec.c >$(DEPS_DIR)/mpiexec.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpiexec.c >$(DEPS_DIR)/mpiexec.d
+	echo "include $(DEPS_DIR)/mpiexec.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mp_parse_command_line.c > $(DEPS_DIR)/mp_parse_command_line.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mp_parse_command_line.c >$(DEPS_DIR)/mp_parse_command_line.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mp_parse_command_line.c >$(DEPS_DIR)/mp_parse_command_line.d
+	echo "include $(DEPS_DIR)/mp_parse_command_line.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mp_parse_oldconfig.c > $(DEPS_DIR)/mp_parse_oldconfig.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mp_parse_oldconfig.c >$(DEPS_DIR)/mp_parse_oldconfig.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mp_parse_oldconfig.c >$(DEPS_DIR)/mp_parse_oldconfig.d
+	echo "include $(DEPS_DIR)/mp_parse_oldconfig.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C mpiexec_rsh.c > $(DEPS_DIR)/mpiexec_rsh.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpiexec_rsh.c >$(DEPS_DIR)/mpiexec_rsh.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/mpiexec_rsh.c >$(DEPS_DIR)/mpiexec_rsh.d
+	echo "include $(DEPS_DIR)/mpiexec_rsh.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C smpd.c > $(DEPS_DIR)/smpd.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd.c >$(DEPS_DIR)/smpd.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/smpd.c >$(DEPS_DIR)/smpd.d
+	echo "include $(DEPS_DIR)/smpd.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C smpd_cmd_args.c > $(DEPS_DIR)/smpd_cmd_args.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_cmd_args.c >$(DEPS_DIR)/smpd_cmd_args.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_cmd_args.c >$(DEPS_DIR)/smpd_cmd_args.d
+	echo "include $(DEPS_DIR)/smpd_cmd_args.d" >>$(DEPS_DIR)/newalldeps
+	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
+	  echo "MAKE_DEPEND_C smpd_watchprocs.c > $(DEPS_DIR)/smpd_watchprocs.d" ; \
+	else \
+	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_watchprocs.c >$(DEPS_DIR)/smpd_watchprocs.d ; \
+	fi
+	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_watchprocs.c >$(DEPS_DIR)/smpd_watchprocs.d
+	echo "include $(DEPS_DIR)/smpd_watchprocs.d" >>$(DEPS_DIR)/newalldeps
 	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
 	date >$(DEPS_DIR)/timestamp
 include $(DEPS_DIR)/alldeps
@@ -490,24 +558,25 @@ SOURCES         =  smpd_hash.c smpd_authenticate.c smpd_printf.c \
 	smpd_launch_process.c smpd_command.c smpd_database.c \
 	smpd_state_machine.c smpd_handle_command.c smpd_session.c \
 	smpd_start_mgr.c smpd_barrier.c smpd_do_console.c smpd_restart.c \
-	smpd_host_util.c smpd_handle_spawn.c 
+	smpd_host_util.c smpd_handle_spawn.c mpiexec.c \
+	mp_parse_command_line.c mp_parse_oldconfig.c mpiexec_rsh.c smpd.c \
+	smpd_cmd_args.c smpd_watchprocs.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
-#mpiexec_SOURCES = mpiexec.c mp_parse_command_line.c
-#smpd_SOURCES = smpd.c smpd_cmd_args.c smpd_watchprocs.c
 
 
-#mpiexec_LDADD = -L../../../lib -L${master_top_srcdir}/lib -lmpich
-#mpiexec_DEPADD = ../../../lib/lib${MPILIBNAME}.a
-#smpd_LDADD = -L../../../lib -L${master_top_srcdir}/lib -lmpich
-#smpd_DEPADD = ../../../lib/lib${MPILIBNAME}.a
+
+# Rules to build MPL before SMPD
+../../../lib/libmpl.a:
+	build_prefix=`cd ../../.. && pwd` && \
+	for dir in ../../../src/mpl ; do \
+	    (cd $$dir && ${MAKE} prefix=$$build_prefix exec_prefix=$$build_prefix \
+	    bindir=$$build_prefix/bin install) ; \
+	done
 
 all-postamble: mpiexec smpd
-mpiexec: mpiexec.o mp_parse_command_line.o mp_parse_oldconfig.o mpiexec_rsh.o ../../../lib/lib${MPILIBNAME}.a
-	../../../bin/mpicc -o mpiexec mpiexec.o mp_parse_command_line.o mp_parse_oldconfig.o mpiexec_rsh.o
-smpd: smpd.o smpd_cmd_args.o smpd_watchprocs.o ../../../lib/lib${MPILIBNAME}.a
-	../../../bin/mpicc -o smpd smpd.o smpd_cmd_args.o smpd_watchprocs.o
+
 distclean-local:
 	@-rm -f smpdconf.h
 

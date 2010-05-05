@@ -647,7 +647,6 @@ MPIRUN
 ROMIO_TFFLAGS
 ROMIO_TCPPFLAGS
 ROMIO_TCFLAGS
-ROMIO_LIBLIST
 ROMIO_LFLAGS
 ROMIO_INCLUDE
 TEST_F77
@@ -692,6 +691,7 @@ NOPROFILE
 NOF77
 MPI_LIB
 MPI_INCLUDE_DIR
+AR_FLAGS
 AR
 MPI
 BITS
@@ -1890,13 +1890,6 @@ if test -n "$CONFIGURE_ARGS" ; then
     echo "Configuring with args $CONFIGURE_ARGS"
 fi
 
-if test "$FROM_MPICH2" = "yes" ; then
-    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
-    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
-    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
-    F90FLAGS="$MPICH2_INTERNAL_F90FLAGS"
-fi
-
 ac_config_headers="$ac_config_headers adio/include/romioconf.h"
 
 
@@ -1942,7 +1935,6 @@ MPI_FARRAY6=""
 MPI_FARRAY7=""
 DEFS=""
 ROMIO_LFLAGS=""
-ROMIO_LIBLIST=""
 ROMIO_TCFLAGS=""
 ROMIO_TCPPFLAGS=""
 ROMIO_TFFLAGS=""
@@ -4146,7 +4138,7 @@ if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
     MPI_OFFSET_KIND1="      INTEGER MPI_OFFSET_KIND"
     MPI_OFFSET_KIND2="      PARAMETER (MPI_OFFSET_KIND=8)"
     MPI_OFFSET_KIND_VAL=8
-    ROMIO_LIBLIST="$ROMIO_LIBLIST -laio"
+    LIBS="$LIBS -laio"
 fi
 #
 if test -n "$arch_CRAY" ; then
@@ -8168,7 +8160,6 @@ if test $PVFS2_CONFIG != "notfound" ; then
 		# --with-file-system (or both)
 		CFLAGS="$CFLAGS $( $PVFS2_CONFIG --cflags)"
 		LIBS="$LIBS $( $PVFS2_CONFIG --libs)"
-		ROMIO_LIBLIST="$ROMIO_LIBLIST $LIBS"
 		FILE_SYSTEM="pvfs2 $FILE_SYSTEM"
 		file_system_pvfs2=1
 	fi
@@ -9197,15 +9188,10 @@ if test -n "$file_system_bgl"; then
     SYSDEP_INC=-I${prefix}/include
 else
     SYSDEP_INC=
-#
+
 # Check for presence and characteristics of async. I/O calls if
 # not disabled.
-#
-# Q: Do we need to list some "other libs" to get things to link?
-#
-save_libs=$LIBS
-LIBS=
-#
+
 # Some systems need pthreads to get AIO to work.  However, we don't want
 # to add pthreads just because it is there, as that can cause problems
 # with some implementations of pthreads and compilers (e.g., gcc version 3
@@ -9214,11 +9200,6 @@ LIBS=
 # *not linked* with pthreads.
 #
 if test "x$disable_aio" = "xno" ; then
-    foundPTHREAD=no
-
-    # Do we have aio_write in aio or rt?
-    saveLIBS=$LIBS
-    LIBS=
     { $as_echo "$as_me:$LINENO: checking for library containing aio_write" >&5
 $as_echo_n "checking for library containing aio_write... " >&6; }
 if test "${ac_cv_search_aio_write+set}" = set; then
@@ -9303,23 +9284,14 @@ $as_echo "$ac_cv_search_aio_write" >&6; }
 ac_res=$ac_cv_search_aio_write
 if test "$ac_res" != no; then
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  foundAIO=yes
+  aio_write_found=yes
 else
-  foundAIO=no
+  aio_write_found=no
 fi
 
-    if test "$foundAIO" = yes ; then
-        AIOLIBS=$LIBS
-        LIBS="$saveLIBS $LIBS"
-    else
-        LIBS="$saveLIBS"
-    fi
-
-    # If not, try finding pthread_create first, and if found, try the
-    # test again.
-    if test "$foundAIO" = no ; then
-        saveLIBS=$LIBS
-	LIBS=
+    if test "$aio_write_found" = no ; then
+        # If not found, try finding pthread_create first, and if
+        # found, try the test again.
         { $as_echo "$as_me:$LINENO: checking for library containing pthread_create" >&5
 $as_echo_n "checking for library containing pthread_create... " >&6; }
 if test "${ac_cv_search_pthread_create+set}" = set; then
@@ -9494,32 +9466,14 @@ $as_echo "$ac_cv_search_aio_write" >&6; }
 ac_res=$ac_cv_search_aio_write
 if test "$ac_res" != no; then
   test "$ac_res" = "none required" || LIBS="$ac_res $LIBS"
-  foundAIO=yes
+  aio_write_found=yes
 else
-  foundAIO=no
+  aio_write_found=no
 fi
 
-
-	    if test "$foundAIO" = yes ; then
-	        AIO_LIBS=$LIBS
-		LIBS="$saveLIBS $LIBS"
-	    else
-                LIBS=$saveLIBS
-            fi
-        else
-	    LIBS=$saveLIBS
         fi
     fi
-
-
-    if test "$foundAIO" = yes ; then
-        ROMIO_LIBLIST="$ROMIO_LIBLIST $AIOLIBS"
-        MPI_LIB="$MPI_LIB $AIOLIBS"
-	aio_write_found=yes
-    fi
-
 fi
-LIBS=$save_libs
 
 if test "x$disable_aio" = "xno" -a -n "$aio_write_found" ; then
 
@@ -9793,8 +9747,7 @@ if test "$have_aio_h" = "yes" -o "$have_sys_aio_h" = "yes" -o "x$disable_aio" = 
     # The test is the following: if not cross compiling, try to run a
     # program that includes a *reference* to aio_write but does not call it
     # If the libraries are not set up correctly, then this will fail.
-    save_libs=$LIBS
-    LIBS="$LIBS $ROMIO_LIBLIST"
+
     { $as_echo "$as_me:$LINENO: checking whether aio routines can be used" >&5
 $as_echo_n "checking whether aio routines can be used... " >&6; }
     # Include aio.h and the aiocb struct (since we'll need these to
@@ -10059,8 +10012,6 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
     fi
-
-    LIBS=$save_libs
 
     { $as_echo "$as_me:$LINENO: checking for aio_fildes member of aiocb structure" >&5
 $as_echo_n "checking for aio_fildes member of aiocb structure... " >&6; }
@@ -12096,8 +12047,6 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_MPIU_FUNCS 1
 _ACEOF
 
-   # Add the MPICH2_INCLUDE_FLAGS to CPPFLAGS
-   CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
 fi
 #
 #

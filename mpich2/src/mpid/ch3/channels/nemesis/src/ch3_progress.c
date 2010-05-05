@@ -46,6 +46,8 @@ struct MPID_Request *MPIDI_CH3I_sendq_head[CH3_NUM_QUEUES] = {0};
 struct MPID_Request *MPIDI_CH3I_sendq_tail[CH3_NUM_QUEUES] = {0};
 struct MPID_Request *MPIDI_CH3I_active_send[CH3_NUM_QUEUES] = {0};
 
+static int pkt_NETMOD_handler(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, MPIDI_msg_sz_t *buflen, MPID_Request **rreqp);
+
 int (*MPID_nem_local_lmt_progress)(void) = NULL;
 int MPID_nem_local_lmt_pending = FALSE;
 
@@ -77,6 +79,19 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS);
     MPIU_DBG_MSG_D(CH3_PROGRESS,VERBOSE,"before outer while loop, completions=%d",completions);
 
+#ifdef ENABLE_CHECKPOINTING
+    if (MPIDI_nem_ckpt_start_checkpoint) {
+        MPIDI_nem_ckpt_start_checkpoint = FALSE;
+        mpi_errno = MPIDI_nem_ckpt_start();
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    }
+    if (MPIDI_nem_ckpt_finish_checkpoint) {
+        MPIDI_nem_ckpt_finish_checkpoint = FALSE;
+        mpi_errno = MPIDI_nem_ckpt_finish();
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    }
+#endif
+    
     do
     {
 	MPID_Request        *sreq;
@@ -109,7 +124,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
         if (pollcount >= MPID_NEM_POLLS_BEFORE_YIELD)
         {
             pollcount = 0;
-            MPIDU_Yield();
+            MPIU_PW_Sched_yield();
         }
         ++pollcount;
 #endif
@@ -168,7 +183,8 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                     MPIU_Assert(payload_len >= sizeof (MPIDI_CH3_Pkt_t));
 
                     MPIDI_PG_Get_vc_set_active(MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE(cell), &vc);
-                    MPIU_Assert(((MPIDI_CH3I_VC *)vc->channel_private)->recv_active == NULL &&
+		   
+		    MPIU_Assert(((MPIDI_CH3I_VC *)vc->channel_private)->recv_active == NULL &&
                                 ((MPIDI_CH3I_VC *)vc->channel_private)->pending_pkt_len == 0);
                     vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
 
@@ -683,11 +699,25 @@ int MPIDI_CH3I_Progress_init(void)
     }
 
     /* Initialize the code to handle incoming packets */
+    if (PKTARRAY_SIZE <= MPIDI_NEM_PKT_END) {
+        MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_INTERN, "**ch3|pktarraytoosmall");
+    }
+    /* pkt handlers from CH3 */
     mpi_errno = MPIDI_CH3_PktHandler_Init(pktArray, PKTARRAY_SIZE);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    /* pkt handlers for LMT */
     mpi_errno = MPID_nem_lmt_pkthandler_init(pktArray, PKTARRAY_SIZE);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    
+#ifdef ENABLE_CHECKPOINTING
+    mpi_errno = MPIDI_nem_ckpt_pkthandler_init(pktArray, PKTARRAY_SIZE);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+#endif
 
+    /* other pkt handlers */
+    pktArray[MPIDI_NEM_PKT_NETMOD] = pkt_NETMOD_handler;
+   
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
     return mpi_errno;
@@ -737,6 +767,28 @@ fn_fail:
 }
 /* end MPIDI_CH3_Connection_terminate() */
 
+
+#undef FUNCNAME
+#define FUNCNAME pkt_NETMOD_handler
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int pkt_NETMOD_handler(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, MPIDI_msg_sz_t *buflen, MPID_Request **rreqp)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPID_nem_pkt_netmod_t * const netmod_pkt = (MPID_nem_pkt_netmod_t *)pkt;
+    MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
+    MPIDI_STATE_DECL(MPID_STATE_PKT_NETMOD_HANDLER);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_PKT_NETMOD_HANDLER);
+
+    MPIU_Assert_fmt_msg(vc_ch->pkt_handler && netmod_pkt->subtype < vc_ch->num_pkt_handlers, ("no handler defined for netmod-local packet"));
+
+    mpi_errno = vc_ch->pkt_handler[netmod_pkt->subtype](vc, pkt, buflen, rreqp);
+
+fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_PKT_NETMOD_HANDLER);
+    return mpi_errno;
+}
 
 
 #undef FUNCNAME

@@ -6,6 +6,6 @@
 
 include ui/utils/Makefile.mk
 
-if hydra_ui_mpiexec
-include ui/mpiexec/Makefile.mk
+if hydra_ui_mpich
+include ui/mpich/Makefile.mk
 endif

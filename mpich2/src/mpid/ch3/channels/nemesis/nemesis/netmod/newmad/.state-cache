@@ -1,17 +1,20 @@
 <dir>
-<file name="newmad_probe.c" info="1238080585"/>
-<file name="newmad_send.c" info="1244842249"/>
-<file name="newmad_init.c" info="1256635127"/>
-<file name="newmad_impl.h" info="1256635127"/>
-<file name="newmad_finalize.c" info="1256635127"/>
-<file name="newmad_poll.c" info="1256635127"/>
-<file name="newmad_cancel.c" info="1238080585"/>
+<file name="newmad_probe.c" info="1260975967"/>
+<file name="newmad_extended_interface.h" info="1267802760"/>
+<file name="newmad_send.c" info="1270064763"/>
+<file name="newmad_init.c" info="1272057425"/>
+<file name="newmad_impl.h" info="1270073144"/>
+<file name="newmad_finalize.c" info="1259650757"/>
+<file name="newmad_poll.c" info="1270119153"/>
+<file name="newmad_cancel.c" info="1259650757"/>
 <file name="newmad_alloc.c" info="1256635847"/>
 <file name="newmad_test.c" info="1236293058"/>
 <file name="newmad_register.c" info="1236293058"/>
 </dir>
 <data>
 <fileinfo name="newmad_probe.c">
+</fileinfo>
+<fileinfo name="newmad_extended_interface.h">
 </fileinfo>
 <fileinfo name="newmad_send.c">
 MPID_STATE_MPID_NEM_NEWMAD_ISENDCONTIG MPID_nem_newmad_iSendContig

@@ -647,8 +647,8 @@ C_LINK_SHL
 CC_SHL
 MPILIBNAME
 RANLIB
+AR_FLAGS
 AR
-TCP_LIBS
 EGREP
 GREP
 CPP
@@ -1916,16 +1916,6 @@ ac_config_guess="$SHELL $ac_aux_dir/config.guess"  # Please don't use this var.
 ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
 ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
-
-
-
-# Initialize xFLAGS with MPICH2_INTERNAL_xFLAGS.
-  if test "$FROM_MPICH2" = "yes" ; then
-    CFLAGS="$MPICH2_INTERNAL_CFLAGS"
-    CXXFLAGS="$MPICH2_INTERNAL_CXXFLAGS"
-    FFLAGS="$MPICH2_INTERNAL_FFLAGS"
-    F90FLAGS="$MPICH2_INTERNAL_F90FLAGS"
-  fi
 
 
 # Check whether --enable-sock-debug was given.
@@ -3404,7 +3394,7 @@ fi
 if test "$pac_cv_have_func_poll" != yes ; then
     if test -f /sw/include/sys/poll.h ; then
                         CFLAGS="$CFLAGS -I/sw/include"
-        TCP_LIBS="$TCP_LIBS -L/sw/lib -lpoll"
+        LIBS="$LIBS -L/sw/lib -lpoll"
     else
         { { $as_echo "$as_me:$LINENO: error: This device requires the poll function" >&5
 $as_echo "$as_me: error: This device requires the poll function" >&2;}
@@ -4569,8 +4559,6 @@ fi
 
 fi
 
-saveLIBS="$LIBS"
-LIBS=""
 { $as_echo "$as_me:$LINENO: checking for library containing socket" >&5
 $as_echo_n "checking for library containing socket... " >&6; }
 if test "${ac_cv_search_socket+set}" = set; then
@@ -4604,7 +4592,7 @@ for ac_lib in '' socket; do
     ac_res="none required"
   else
     ac_res=-l$ac_lib
-    LIBS="-l$ac_lib $saveLIBS $ac_func_search_save_LIBS"
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
   fi
   rm -f conftest.$ac_objext conftest$ac_exeext
 if { (ac_try="$ac_link"
@@ -4691,7 +4679,7 @@ for ac_lib in '' nsl; do
     ac_res="none required"
   else
     ac_res=-l$ac_lib
-    LIBS="-l$ac_lib $saveLIBS $ac_func_search_save_LIBS"
+    LIBS="-l$ac_lib  $ac_func_search_save_LIBS"
   fi
   rm -f conftest.$ac_objext conftest$ac_exeext
 if { (ac_try="$ac_link"
@@ -4745,9 +4733,7 @@ if test "$ac_res" != no; then
 
 fi
 
-TCP_LIBS="$TCP_LIBS $LIBS"
-LIBS="$saveLIBS $LIBS"
-#
+
 # Check first for sys/socket.h .  We check not only for existence but whether
 # it can be compiled (!), as we have seen some problems with this.
 cat >conftest.$ac_ext <<_ACEOF
@@ -4869,6 +4855,9 @@ _ACEOF
 
 fi
 
+# AR_FLAGS provides a way to potentially improve build performance on Mac OSX
+if test -z "$AR_FLAGS" ; then AR_FLAGS=cr ; fi
+
 
 
 
@@ -4913,14 +4902,6 @@ if test -n "$CONF_BASE_CACHEFILE" -a -s "$CONF_BASE_CACHEFILE" ; then
 	mv $CONF_BASE_CACHEFILE.new $CONF_BASE_CACHEFILE
     fi
 fi
-
-
-# Add the MPICH2 include flags to CPPFLAGS.  See the discussion above about
-# which include flags should start in MPICH2_INCLUDE_FLAGS and which in
-# CPPFLAGS
-CPPFLAGS="$CPPFLAGS $MPICH2_INCLUDE_FLAGS"
-
-
 
 
 ac_config_commands="$ac_config_commands default-1"

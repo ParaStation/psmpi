@@ -87,8 +87,8 @@ latexdoc:
 # --------------------------------------------------------------------------
 # Dependencies
 dependencies:
-	(cd pkgconfig && ${MAKE} dependencies )
-	(cd envmods && ${MAKE} dependencies )
+	if [ -s pkgconfig/Makefile ] ; then (cd pkgconfig && ${MAKE} dependencies ) ; fi
+	if [ -s envmods/Makefile ] ; then (cd envmods && ${MAKE} dependencies ) ; fi
 # End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------

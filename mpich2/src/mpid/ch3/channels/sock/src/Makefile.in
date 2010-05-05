@@ -7,6 +7,7 @@ all: all-redirect
 
 SHELL           = @SHELL@
 AR              = @AR@
+AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
 master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
@@ -111,11 +112,11 @@ all-redirect: .libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a
 libmpich2-ch3-sock.a: ch3_finalize.o ch3_init.o ch3_isend.o ch3_isendv.o \
 	ch3_istartmsg.o ch3_istartmsgv.o ch3_progress.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr libmpich2-ch3-sock.a $?" ; \
+	  echo "  AR ${AR_FLAGS} libmpich2-ch3-sock.a $?" ; \
 	else \
-	  echo ${AR} cr libmpich2-ch3-sock.a $? ; \
+	  echo ${AR} ${AR_FLAGS} libmpich2-ch3-sock.a $? ; \
 	fi
-	@${AR} cr libmpich2-ch3-sock.a $?
+	@${AR} ${AR_FLAGS} libmpich2-ch3-sock.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          libmpich2-ch3-sock.a" ; \
 	else \
@@ -126,11 +127,11 @@ libmpich2-ch3-sock.a: ch3_finalize.o ch3_init.o ch3_isend.o ch3_isendv.o \
 	ch3_init.o ch3_isend.o ch3_isendv.o ch3_istartmsg.o ch3_istartmsgv.o \
 	ch3_progress.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../../../lib/lib${MPILIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../../../../lib/lib${MPILIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../../../../lib/lib${MPILIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../../../../lib/lib${MPILIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
@@ -141,20 +142,20 @@ libmpich2-ch3-sock.a: ch3_finalize.o ch3_init.o ch3_isend.o ch3_isendv.o \
 libmpich2-ch3-sock.la: ch3_finalize.lo ch3_init.lo ch3_isend.lo ch3_isendv.lo \
 	ch3_istartmsg.lo ch3_istartmsgv.lo ch3_progress.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr libmpich2-ch3-sock.la $?" ; \
+	  echo "  AR ${AR_FLAGS} libmpich2-ch3-sock.la $?" ; \
 	else \
-	  echo ${AR} cr libmpich2-ch3-sock.la $? ; \
+	  echo ${AR} ${AR_FLAGS} libmpich2-ch3-sock.la $? ; \
 	fi
-	@${AR} cr libmpich2-ch3-sock.la $?
+	@${AR} ${AR_FLAGS} libmpich2-ch3-sock.la $?
 .libstamp1 ../../../../../../lib/lib${MPILIBNAME}.la: ch3_finalize.lo \
 	ch3_init.lo ch3_isend.lo ch3_isendv.lo ch3_istartmsg.lo \
 	ch3_istartmsgv.lo ch3_progress.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../../../../lib/lib${MPILIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../../../../lib/lib${MPILIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../../../../lib/lib${MPILIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../../../../lib/lib${MPILIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 coverage: 
 	-@for file in ${socksources} ; do \

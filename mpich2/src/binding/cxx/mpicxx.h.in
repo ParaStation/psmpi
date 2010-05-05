@@ -88,6 +88,7 @@ class Intracomm;
 class Cartcomm;
 class Graphcomm;
 
+// base (classless) routines
 extern     int Detach_buffer( void *&v1 ) ;
 extern     bool Is_initialized( void ) ;
 extern     void Get_processor_name( char * v1, int &v2 ) ;
@@ -2698,8 +2699,6 @@ extern void Init(void);
 extern void Init(int &, char **& );
 extern int Init_thread(int);
 extern int Init_thread(int &, char **&, int );
-extern void Finalize(void);
-extern Aint Get_address( void * );
 extern double Wtime(void);
 extern double Wtick(void);
 } // namespace MPI

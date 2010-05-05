@@ -23,6 +23,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 				     int flag)
 {
     int i;
+    int err;
 
     int nr_ints, nr_aints, nr_types, combiner;
     MPI_Datatype *types;
@@ -44,6 +45,18 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
     if (combiner == MPI_COMBINER_NAMED) {
 	DLOOP_Dataloop_create_named(type, dlp_p, dlsz_p, dldepth_p, flag);
 	return;
+    }
+    else if (combiner == MPI_COMBINER_F90_REAL ||
+             combiner == MPI_COMBINER_F90_COMPLEX ||
+             combiner == MPI_COMBINER_F90_INTEGER)
+    {
+        /* the unnamed predefined types are created at runtime as
+         * contigs, but they don't need a dataloop and they have
+         * (intentionally) different envelopes/contents */
+        *dlp_p = NULL;
+        *dlsz_p = 0;
+        *dldepth_p = 0;
+        return;
     }
 
     /* Q: should we also check for "hasloop", or is the COMBINER
@@ -265,12 +278,15 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 		disps = aints;
 	    }
 
-	    PREPEND_PREFIX(Dataloop_create_struct)(ints[0] /* count */,
-						   &ints[1] /* blklens */,
-						   disps,
-						   types /* oldtype array */,
-						   dlp_p, dlsz_p, dldepth_p,
-						   flag);
+            err = PREPEND_PREFIX(Dataloop_create_struct)(ints[0] /* count */,
+                                                         &ints[1] /* blklens */,
+                                                         disps,
+                                                         types /* oldtype array */,
+                                                         dlp_p, dlsz_p, dldepth_p,
+                                                         flag);
+            /* TODO if/when this function returns error codes, propagate this failure instead */
+            DLOOP_Assert(0 == err);
+            /* if (err) return err; */
 
 	    if (combiner == MPI_COMBINER_STRUCT_INTEGER) {
 		DLOOP_Free(disps);
@@ -315,10 +331,6 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 
 	    NMPI_Type_free(&tmptype);
 	    break;
-	case MPI_COMBINER_F90_REAL:
-	case MPI_COMBINER_F90_COMPLEX:
-	case MPI_COMBINER_F90_INTEGER:
-	    /* TODO: WHAT DO I DO HERE? */
 	default:
 	    DLOOP_Assert(0);
 	    break;

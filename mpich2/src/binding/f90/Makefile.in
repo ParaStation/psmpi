@@ -7,6 +7,7 @@ all: all-redirect
 
 SHELL           = @SHELL@
 AR              = @AR@
+AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
 INSTALL         = @INSTALL@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
@@ -115,7 +116,7 @@ doc_sources =
 
  ${srcdir}/configure: ${srcdir}/configure.in 
 	@rm -rf autom4te*.cache
-	(cd ${srcdir} && /sw/bin/autoconf -I ../../../confdb )
+	(cd ${srcdir} && autoconf -I ../../../confdb )
 
 # --------------------------------------------------------------------------
 ${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
@@ -169,11 +170,11 @@ all-redirect: all-preamble .libstamp0 ../../../lib/lib${MPILIBNAME}.a lib${MPILI
 
 lib${MPILIBNAME}f90.a: mpi.o mpi_constants.o mpi_sizeofs.o mpi_base.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr lib${MPILIBNAME}f90.a $?" ; \
+	  echo "  AR ${AR_FLAGS} lib${MPILIBNAME}f90.a $?" ; \
 	else \
-	  echo ${AR} cr lib${MPILIBNAME}f90.a $? ; \
+	  echo ${AR} ${AR_FLAGS} lib${MPILIBNAME}f90.a $? ; \
 	fi
-	@${AR} cr lib${MPILIBNAME}f90.a $?
+	@${AR} ${AR_FLAGS} lib${MPILIBNAME}f90.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}f90.a" ; \
 	else \
@@ -184,11 +185,11 @@ lib${MPILIBNAME}f90.a: mpi.o mpi_constants.o mpi_sizeofs.o mpi_base.o
 	create_f90_real.o create_f90_complex.o typef90cmplxf.o typef90realf.o \
 	typef90intf.o create_f90_util.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${MPILIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${MPILIBNAME}.a" ; \
 	else \
@@ -198,20 +199,20 @@ lib${MPILIBNAME}f90.a: mpi.o mpi_constants.o mpi_sizeofs.o mpi_base.o
 	date > .libstamp0
 lib${MPILIBNAME}f90.la: mpi.lo mpi_constants.lo mpi_sizeofs.lo mpi_base.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr lib${MPILIBNAME}f90.la $?" ; \
+	  echo "  AR ${AR_FLAGS} lib${MPILIBNAME}f90.la $?" ; \
 	else \
-	  echo ${AR} cr lib${MPILIBNAME}f90.la $? ; \
+	  echo ${AR} ${AR_FLAGS} lib${MPILIBNAME}f90.la $? ; \
 	fi
-	@${AR} cr lib${MPILIBNAME}f90.la $?
+	@${AR} ${AR_FLAGS} lib${MPILIBNAME}f90.la $?
 .libstamp1 ../../../lib/lib${MPILIBNAME}.la: create_f90_int.lo \
 	create_f90_real.lo create_f90_complex.lo typef90cmplxf.lo \
 	typef90realf.lo typef90intf.lo create_f90_util.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${MPILIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${MPILIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${MPILIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
 
 # --------------------------------------------------------------------------
@@ -404,7 +405,7 @@ $(MPIMOD).$(MOD): $(MPICONSTMOD).$(MOD) $(MPISIZEOFMOD).$(MOD) \
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
 	else \
 	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        ln -sf $(srcdir)/mpi.f90 $(srcdir)/mpi.$(F90EXT) ; \
+	        ln -f -s $(srcdir)/mpi.f90 $(srcdir)/mpi.$(F90EXT) ; \
 	    fi ; \
 	    echo $(F90_COMPILE_MODS) -c $(srcdir)/mpi.$(F90EXT) ; \
 	    $(F90_COMPILE_MODS) -c $(srcdir)/mpi.$(F90EXT) ; \
@@ -422,7 +423,7 @@ $(MPICONSTMOD).$(MOD): $(srcdir)/mpi_constants.f90 mpifnoext.h
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
 	else \
 	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        ln -sf $(srcdir)/mpi_constants.f90 $(srcdir)/mpi_constants.$(F90EXT) ; \
+	        ln -f -s $(srcdir)/mpi_constants.f90 $(srcdir)/mpi_constants.$(F90EXT) ; \
 	    fi ; \
 	    echo $(F90_COMPILE_MODS) -c $(srcdir)/mpi_constants.$(F90EXT) ; \
 	    $(F90_COMPILE_MODS) -c $(srcdir)/mpi_constants.$(F90EXT) ; \
@@ -440,7 +441,7 @@ $(MPISIZEOFMOD).$(MOD): mpi_sizeofs.f90 mpifnoext.h
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
 	else \
 	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        ln -sf mpi_sizeofs.f90 mpi_sizeofs.$(F90EXT) ; \
+	        ln -f -s mpi_sizeofs.f90 mpi_sizeofs.$(F90EXT) ; \
 	    fi ; \
 	    echo $(F90_COMPILE_MODS) -c mpi_sizeofs.$(F90EXT) ; \
 	    $(F90_COMPILE_MODS) -c mpi_sizeofs.$(F90EXT) ; \
@@ -458,7 +459,7 @@ $(MPIBASEMOD).$(MOD): $(srcdir)/mpi_base.f90
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
 	else \
 	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        ln -sf $(srcdir)/mpi_base.f90 $(srcdir)/mpi_base.$(F90EXT) ; \
+	        ln -f -s $(srcdir)/mpi_base.f90 $(srcdir)/mpi_base.$(F90EXT) ; \
 	    fi ; \
 	    echo $(F90_COMPILE_MODS) -c $(srcdir)/mpi_base.$(F90EXT) ; \
 	    $(F90_COMPILE_MODS) -c $(srcdir)/mpi_base.$(F90EXT) ; \
