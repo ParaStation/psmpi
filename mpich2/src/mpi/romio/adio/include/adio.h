@@ -195,7 +195,6 @@ typedef struct ADIOI_FileD {
     unsigned d_mem;          /* data buffer memory alignment */
     unsigned d_miniosz;      /* min xfer size, xfer size multiple,
                                 and file seek offset alignment */
-    unsigned d_maxiosz;      /* max xfer size */
     ADIO_Offset fp_ind;      /* individual file pointer in MPI-IO (in bytes)*/
     ADIO_Offset fp_sys_posn; /* current location of the system file-pointer
                                 in bytes */
@@ -262,6 +261,8 @@ typedef struct {
 #define ADIO_EXCL                64
 #define ADIO_APPEND             128
 #define ADIO_SEQUENTIAL         256
+
+#define ADIO_AMODE_NOMATCH  ~(ADIO_CREATE|ADIO_RDONLY|ADIO_WRONLY|ADIO_RDWR|ADIO_DELETE_ON_CLOSE|ADIO_UNIQUE_OPEN|ADIO_EXCL|ADIO_APPEND|ADIO_SEQUENTIAL)
 
 /* file-pointer types */
 #define ADIO_EXPLICIT_OFFSET     100

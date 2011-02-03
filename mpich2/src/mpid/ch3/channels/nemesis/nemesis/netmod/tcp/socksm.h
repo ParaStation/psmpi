@@ -64,8 +64,7 @@ typedef enum {
     M_(CONN_STATE_TA_C_CNTD),                   \
     M_(CONN_STATE_TA_C_RANKRCVD),               \
     M_(CONN_STATE_TA_C_TMPVCRCVD),              \
-    M_(CONN_STATE_TS_COMMRDY),                  \
-    M_(CONN_STATE_TS_D_QUIESCENT)
+    M_(CONN_STATE_TS_COMMRDY)
 
 /* REQ - Request, RSP - Response */
 
@@ -154,12 +153,10 @@ typedef enum MPIDI_nem_tcp_socksm_pkt_type {
     MPIDI_NEM_TCP_SOCKSM_PKT_ID_INFO, /*  ID = rank + pg_id */
     MPIDI_NEM_TCP_SOCKSM_PKT_ID_ACK,
     MPIDI_NEM_TCP_SOCKSM_PKT_ID_NAK,
-    MPIDI_NEM_TCP_SOCKSM_PKT_DISC_REQ,
-    MPIDI_NEM_TCP_SOCKSM_PKT_DISC_ACK,
-    MPIDI_NEM_TCP_SOCKSM_PKT_DISC_NAK,
-    MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_INFO, 
+    MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_INFO,
     MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_ACK,
-    MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_NAK
+    MPIDI_NEM_TCP_SOCKSM_PKT_TMPVC_NAK,
+    MPIDI_NEM_TCP_SOCKSM_PKT_CLOSED
 } MPIDI_nem_tcp_socksm_pkt_type_t;
     
 typedef struct MPIDI_nem_tcp_header {

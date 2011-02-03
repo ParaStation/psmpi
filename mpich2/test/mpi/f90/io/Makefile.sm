@@ -1,9 +1,9 @@
 # This Makefile.sm generated automatically by f77tof90
 # from test/mpi/f77/io/Makefile.sm.  DO NOT EDIT
-F90INCLUDES = -I. 
+FCINCLUDES = -I. 
 DEPADD = @MPILIBLOC@ ../util/mtestf90.o
 smvar_do_sharedlibs = 0
-F90HEADERS = iodisp.h iooffset.h
+FCHEADERS = iodisp.h iooffset.h
 
 iwriteatf90_LDADD       = ../util/mtestf90.o
 iwritef90_LDADD         = ../util/mtestf90.o

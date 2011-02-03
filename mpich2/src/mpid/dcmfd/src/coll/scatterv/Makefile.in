@@ -29,7 +29,7 @@ VPATH = .:@srcdir@
 INCLUDES = -I${master_top_srcdir}/src/include -I${top_builddir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -46,8 +46,6 @@ INCLUDES = -I${master_top_srcdir}/src/include -I${top_builddir}/src/include
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -55,41 +53,20 @@ INCLUDES = -I${master_top_srcdir}/src/include -I${top_builddir}/src/include
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../../../ \
-	-configdir=src/mpid/dcmfd/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/coll/scatterv/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect:
 	${MAKE} all-local
 all-local: .libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a
@@ -97,8 +74,7 @@ all-local: .libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a
 	    ${MAKE} .libstamp1 || exit 1; \
 	fi
 
-.libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a: mpido_scatterv.o \
-	scatterv_algorithms.o 
+.libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a: mpido_scatterv.o scatterv_algorithms.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
@@ -112,8 +88,7 @@ all-local: .libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../../../../lib/lib${MPILIBNAME}.la: mpido_scatterv.lo \
-	scatterv_algorithms.lo 
+.libstamp1 ../../../../../../lib/lib${MPILIBNAME}.la: mpido_scatterv.lo scatterv_algorithms.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -121,56 +96,7 @@ all-local: .libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${AR} ${AR_FLAGS} ../../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
-coverage: 
-	-@for file in mpido_scatterv.c scatterv_algorithms.c ; do \
-		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/mpido_scatterv.d: $(srcdir)/mpido_scatterv.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpido_scatterv.c > $(DEPS_DIR)/mpido_scatterv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpido_scatterv.c >$(DEPS_DIR)/mpido_scatterv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpido_scatterv.c >$(DEPS_DIR)/mpido_scatterv.d
-$(DEPS_DIR)/scatterv_algorithms.d: $(srcdir)/scatterv_algorithms.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C scatterv_algorithms.c > $(DEPS_DIR)/scatterv_algorithms.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/scatterv_algorithms.c >$(DEPS_DIR)/scatterv_algorithms.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/scatterv_algorithms.c >$(DEPS_DIR)/scatterv_algorithms.d
-$(DEPS_DIR)/timestamp: mpido_scatterv.c scatterv_algorithms.c Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpido_scatterv.c > $(DEPS_DIR)/mpido_scatterv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpido_scatterv.c >$(DEPS_DIR)/mpido_scatterv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpido_scatterv.c >$(DEPS_DIR)/mpido_scatterv.d
-	echo "include $(DEPS_DIR)/mpido_scatterv.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C scatterv_algorithms.c > $(DEPS_DIR)/scatterv_algorithms.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/scatterv_algorithms.c >$(DEPS_DIR)/scatterv_algorithms.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/scatterv_algorithms.c >$(DEPS_DIR)/scatterv_algorithms.d
-	echo "include $(DEPS_DIR)/scatterv_algorithms.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  mpido_scatterv.c scatterv_algorithms.c
@@ -178,6 +104,8 @@ HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
 #lib${MPILIBNAME}_a_SOURCES = mpido_scatterv.c scatterv_algorithms.c #star_scatterv.c
+
+.POSIX:
 
 FORCE_TARGET:
 

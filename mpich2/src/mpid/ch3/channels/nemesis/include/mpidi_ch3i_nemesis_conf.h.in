@@ -47,9 +47,6 @@
 /* Define to 1 if you have the `gm' library (-lgm). */
 #undef HAVE_LIBGM
 
-/* Define to 1 if you have the `ibverbs' library (-libverbs). */
-#undef HAVE_LIBIBVERBS
-
 /* Define to 1 if you have the `myriexpress' library (-lmyriexpress). */
 #undef HAVE_LIBMYRIEXPRESS
 
@@ -97,6 +94,12 @@
 
 /* Define to 1 if you have the `shmget' function. */
 #undef HAVE_SHMGET
+
+/* Define to 1 if you have the `signal' function. */
+#undef HAVE_SIGNAL
+
+/* Define to 1 if you have the <signal.h> header file. */
+#undef HAVE_SIGNAL_H
 
 /* Define to 1 if you have the `srand' function. */
 #undef HAVE_SRAND

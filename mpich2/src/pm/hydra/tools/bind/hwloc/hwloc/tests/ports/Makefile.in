@@ -15,9 +15,9 @@
 
 @SET_MAKE@
 
-# Copyright 2009 INRIA, Université Bordeaux 1
-
-# Copyright 2009 INRIA, Université Bordeaux 1
+# Copyright © 2009-2010 INRIA
+# Copyright © 2009 Université Bordeaux 1
+# Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
@@ -38,26 +38,32 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(top_srcdir)/hwloc.am
 subdir = tests/ports
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/decl.m4 \
-	$(top_srcdir)/config/hwloc.m4 $(top_srcdir)/config/libtool.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/hwloc.m4 \
+	$(top_srcdir)/config/hwloc_check_attributes.m4 \
+	$(top_srcdir)/config/hwloc_check_visibility.m4 \
+	$(top_srcdir)/config/hwloc_internal.m4 \
+	$(top_srcdir)/config/hwloc_pkg.m4 \
+	$(top_srcdir)/config/libtool.m4 \
 	$(top_srcdir)/config/ltoptions.m4 \
 	$(top_srcdir)/config/ltsugar.m4 \
 	$(top_srcdir)/config/ltversion.m4 \
-	$(top_srcdir)/config/lt~obsolete.m4 \
-	$(top_srcdir)/config/pkg.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/config/lt~obsolete.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/private/config.h \
 	$(top_builddir)/include/hwloc/config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = topology.c traversal.c topology-synthetic.c \
+	topology-solaris.c topology-aix.c topology-osf.c \
+	topology-windows.c topology-darwin.c topology-freebsd.c \
+	topology-hpux.c
 CONFIG_CLEAN_VPATH_FILES =
 libhwloc_ports_la_LIBADD =
-am_libhwloc_ports_la_OBJECTS = libhwloc_ports_la-topology.lo \
+am_libhwloc_ports_la_OBJECTS =
+nodist_libhwloc_ports_la_OBJECTS = libhwloc_ports_la-topology.lo \
 	libhwloc_ports_la-traversal.lo \
 	libhwloc_ports_la-topology-synthetic.lo \
 	libhwloc_ports_la-topology-solaris.lo \
@@ -65,33 +71,49 @@ am_libhwloc_ports_la_OBJECTS = libhwloc_ports_la-topology.lo \
 	libhwloc_ports_la-topology-osf.lo \
 	libhwloc_ports_la-topology-windows.lo \
 	libhwloc_ports_la-topology-darwin.lo \
+	libhwloc_ports_la-topology-freebsd.lo \
 	libhwloc_ports_la-topology-hpux.lo
-libhwloc_ports_la_OBJECTS = $(am_libhwloc_ports_la_OBJECTS)
-libhwloc_ports_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(libhwloc_ports_la_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
-@HAVE_LINUX_TRUE@am_libhwloc_ports_la_rpath =
+libhwloc_ports_la_OBJECTS = $(am_libhwloc_ports_la_OBJECTS) \
+	$(nodist_libhwloc_ports_la_OBJECTS)
+AM_V_lt = $(am__v_lt_$(V))
+am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
+am__v_lt_0 = --silent
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_LINUX_TRUE@am_libhwloc_ports_la_rpath =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include/private -I$(top_builddir)/include/hwloc
-depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+depcomp = $(SHELL) $(top_srcdir)/./config/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_$(V))
+am__v_CC_ = $(am__v_CC_$(AM_DEFAULT_VERBOSITY))
+am__v_CC_0 = @echo "  CC    " $@;
+AM_V_at = $(am__v_at_$(V))
+am__v_at_ = $(am__v_at_$(AM_DEFAULT_VERBOSITY))
+am__v_at_0 = @
 CCLD = $(CC)
-LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
-SOURCES = $(libhwloc_ports_la_SOURCES)
+LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_$(V))
+am__v_CCLD_ = $(am__v_CCLD_$(AM_DEFAULT_VERBOSITY))
+am__v_CCLD_0 = @echo "  CCLD  " $@;
+AM_V_GEN = $(am__v_GEN_$(V))
+am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
+am__v_GEN_0 = @echo "  GEN   " $@;
+SOURCES = $(libhwloc_ports_la_SOURCES) \
+	$(nodist_libhwloc_ports_la_SOURCES)
 DIST_SOURCES = $(libhwloc_ports_la_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
 AS = @AS@
 AUTOCONF = @AUTOCONF@
@@ -99,8 +121,7 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BASH = @BASH@
-CAIRO_CFLAGS = @CAIRO_CFLAGS@
-CAIRO_LIBS = @CAIRO_LIBS@
+BUNZIPP = @BUNZIPP@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -118,25 +139,45 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+EPSTOPDF = @EPSTOPDF@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 FIG2DEV = @FIG2DEV@
-GCC_CFLAGS = @GCC_CFLAGS@
 GREP = @GREP@
-HAVE_XML = @HAVE_XML@
+GS = @GS@
+HWLOC_CAIRO_CFLAGS = @HWLOC_CAIRO_CFLAGS@
+HWLOC_CAIRO_LIBS = @HWLOC_CAIRO_LIBS@
+HWLOC_CFLAGS = @HWLOC_CFLAGS@
+HWLOC_CPPFLAGS = @HWLOC_CPPFLAGS@
 HWLOC_DIFF_U = @HWLOC_DIFF_U@
+HWLOC_EMBEDDED_CFLAGS = @HWLOC_EMBEDDED_CFLAGS@
+HWLOC_EMBEDDED_CPPFLAGS = @HWLOC_EMBEDDED_CPPFLAGS@
+HWLOC_EMBEDDED_LDADD = @HWLOC_EMBEDDED_LDADD@
+HWLOC_EMBEDDED_LIBS = @HWLOC_EMBEDDED_LIBS@
+HWLOC_HAVE_XML = @HWLOC_HAVE_XML@
+HWLOC_KERRIGHED_CFLAGS = @HWLOC_KERRIGHED_CFLAGS@
+HWLOC_KERRIGHED_LIBS = @HWLOC_KERRIGHED_LIBS@
+HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
+HWLOC_LIBS = @HWLOC_LIBS@
+HWLOC_LINUX_LIBNUMA_LIBS = @HWLOC_LINUX_LIBNUMA_LIBS@
 HWLOC_MS_LIB = @HWLOC_MS_LIB@
+HWLOC_PKG_CONFIG = @HWLOC_PKG_CONFIG@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
 HWLOC_SVN_R = @HWLOC_SVN_R@
+HWLOC_TERMCAP_LIBS = @HWLOC_TERMCAP_LIBS@
 HWLOC_VERSION = @HWLOC_VERSION@
+HWLOC_W3_GENERATOR = @HWLOC_W3_GENERATOR@
+HWLOC_X11_LIBS = @HWLOC_X11_LIBS@
+HWLOC_XML_CFLAGS = @HWLOC_XML_CFLAGS@
+HWLOC_XML_LIBS = @HWLOC_XML_LIBS@
+HWLOC_top_builddir = @HWLOC_top_builddir@
+HWLOC_top_srcdir = @HWLOC_top_srcdir@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-KERRIGHED_CFLAGS = @KERRIGHED_CFLAGS@
-KERRIGHED_LIBS = @KERRIGHED_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
@@ -163,18 +204,20 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PDFLATEX = @PDFLATEX@
-PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 SED = @SED@
+SED_I = @SED_I@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
 W3M = @W3M@
-W3_GENERATOR = @W3_GENERATOR@
+XMKMF = @XMKMF@
 XMLLINT = @XMLLINT@
-XML_CFLAGS = @XML_CFLAGS@
-XML_LIBS = @XML_LIBS@
+X_CFLAGS = @X_CFLAGS@
+X_EXTRA_LIBS = @X_EXTRA_LIBS@
+X_LIBS = @X_LIBS@
+X_PRE_LIBS = @X_PRE_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -232,36 +275,65 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CFLAGS = $(GCC_CFLAGS)
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
-AM_LDFLAGS = -L$(top_builddir)/src
-SRC = $(top_srcdir)/src
-@HAVE_LINUX_TRUE@check_LTLIBRARIES = libhwloc-ports.la
-libhwloc_ports_la_SOURCES = $(SRC)/topology.c $(SRC)/traversal.c \
-	$(SRC)/topology-synthetic.c $(SRC)/topology-solaris.c \
-	$(SRC)/topology-aix.c $(SRC)/topology-osf.c \
-	$(SRC)/topology-windows.c $(SRC)/topology-darwin.c \
-	$(SRC)/topology-hpux.c
-libhwloc_ports_la_CFLAGS = -I$(top_srcdir)/tests/ports/include -DHWLOC_COMPILE_PORTS -DHAVE_LIBLGRP -DHAVE_LIBKSTAT
-EXTRA_DIST = \
-		include/windows.h \
-		include/kstat.h \
-		include/sys/rset.h \
-		include/sys/lgrp_user.h \
-		include/sys/sysctl.h \
-		include/sys/procset.h \
-		include/sys/processor.h \
-		include/sys/thread.h \
-		include/sys/mpctl.h \
-		include/radset.h \
-		include/cpuset.h \
-		include/numa.h
+AM_CFLAGS = $(HWLOC_CFLAGS)
+AM_CPPFLAGS = $(HWLOC_CPPFLAGS)
+AM_LDFLAGS = $(HWLOC_LDFLAGS)
+SRC = $(HWLOC_top_srcdir)/src
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_LINUX_TRUE@check_LTLIBRARIES = libhwloc-ports.la
+
+# Note that AC_CONFIG_LINKS sets up the sym links for the files in
+# this directory (back to the $top_srcdir/src directory).  So if you
+# need more sym-linked files in here, go edit configure.ac.  Note that
+# we have to use sym links in here rather than just directly
+# referencing the files via $HWLOC_top_srcdir/src/foo.c because of
+# dependencies issues when using the Automake option "subdir-objects".
+# We nodist these because they're created by configure.
+nodist_libhwloc_ports_la_SOURCES = \
+        topology.c \
+        traversal.c \
+        topology-synthetic.c \
+        topology-solaris.c \
+        topology-aix.c \
+        topology-osf.c \
+        topology-windows.c \
+        topology-darwin.c \
+        topology-freebsd.c \
+        topology-hpux.c
+
+libhwloc_ports_la_SOURCES = \
+        include/windows.h \
+        include/kstat.h \
+        include/sys/rset.h \
+        include/sys/lgrp_user.h \
+        include/sys/sysctl.h \
+        include/sys/procset.h \
+        include/sys/processor.h \
+        include/sys/thread.h \
+        include/sys/mpctl.h \
+        include/sys/cpuset.h \
+        include/radset.h \
+        include/cpuset.h \
+        include/numa.h \
+        include/pthread_np.h
+
+libhwloc_ports_la_CPPFLAGS = \
+        $(HWLOC_CPPFLAGS) \
+        -I$(HWLOC_top_srcdir)/include \
+        -I$(HWLOC_top_srcdir)/tests/ports/include \
+        -DHWLOC_COMPILE_PORTS \
+        -DHWLOC_SOLARIS_SYS -DHAVE_LIBLGRP -DHAVE_LIBKSTAT -DHAVE_LGRP_LATENCY_COOKIE \
+        -DHWLOC_AIX_SYS \
+        -DHWLOC_OSF_SYS \
+        -DHWLOC_WIN_SYS \
+        -DHWLOC_DARWIN_SYS \
+        -DHWLOC_FREEBSD_SYS -DHAVE_SYS_CPUSET_H \
+        -DHWLOC_HPUX_SYS
 
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(top_srcdir)/hwloc.am $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -301,7 +373,7 @@ clean-checkLTLIBRARIES:
 	  rm -f "$${dir}/so_locations"; \
 	done
 libhwloc-ports.la: $(libhwloc_ports_la_OBJECTS) $(libhwloc_ports_la_DEPENDENCIES) 
-	$(libhwloc_ports_la_LINK) $(am_libhwloc_ports_la_rpath) $(libhwloc_ports_la_OBJECTS) $(libhwloc_ports_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) $(am_libhwloc_ports_la_rpath) $(libhwloc_ports_la_OBJECTS) $(libhwloc_ports_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -311,6 +383,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libhwloc_ports_la-topology-aix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libhwloc_ports_la-topology-darwin.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libhwloc_ports_la-topology-freebsd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libhwloc_ports_la-topology-hpux.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libhwloc_ports_la-topology-osf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libhwloc_ports_la-topology-solaris.Plo@am__quote@
@@ -320,88 +393,111 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libhwloc_ports_la-traversal.Plo@am__quote@
 
 .c.o:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+@am__fastdepCC_FALSE@	$(COMPILE) -c -o $@ $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+@am__fastdepCC_FALSE@	$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 .c.lo:
-@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
-libhwloc_ports_la-topology.lo: $(SRC)/topology.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology.Tpo -c -o libhwloc_ports_la-topology.lo `test -f '$(SRC)/topology.c' || echo '$(srcdir)/'`$(SRC)/topology.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology.Tpo $(DEPDIR)/libhwloc_ports_la-topology.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(SRC)/topology.c' object='libhwloc_ports_la-topology.lo' libtool=yes @AMDEPBACKSLASH@
+libhwloc_ports_la-topology.lo: topology.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology.Tpo -c -o libhwloc_ports_la-topology.lo `test -f 'topology.c' || echo '$(srcdir)/'`topology.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology.Tpo $(DEPDIR)/libhwloc_ports_la-topology.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='topology.c' object='libhwloc_ports_la-topology.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology.lo `test -f '$(SRC)/topology.c' || echo '$(srcdir)/'`$(SRC)/topology.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology.lo `test -f 'topology.c' || echo '$(srcdir)/'`topology.c
 
-libhwloc_ports_la-traversal.lo: $(SRC)/traversal.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-traversal.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-traversal.Tpo -c -o libhwloc_ports_la-traversal.lo `test -f '$(SRC)/traversal.c' || echo '$(srcdir)/'`$(SRC)/traversal.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libhwloc_ports_la-traversal.Tpo $(DEPDIR)/libhwloc_ports_la-traversal.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(SRC)/traversal.c' object='libhwloc_ports_la-traversal.lo' libtool=yes @AMDEPBACKSLASH@
+libhwloc_ports_la-traversal.lo: traversal.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-traversal.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-traversal.Tpo -c -o libhwloc_ports_la-traversal.lo `test -f 'traversal.c' || echo '$(srcdir)/'`traversal.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libhwloc_ports_la-traversal.Tpo $(DEPDIR)/libhwloc_ports_la-traversal.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='traversal.c' object='libhwloc_ports_la-traversal.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-traversal.lo `test -f '$(SRC)/traversal.c' || echo '$(srcdir)/'`$(SRC)/traversal.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-traversal.lo `test -f 'traversal.c' || echo '$(srcdir)/'`traversal.c
 
-libhwloc_ports_la-topology-synthetic.lo: $(SRC)/topology-synthetic.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology-synthetic.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology-synthetic.Tpo -c -o libhwloc_ports_la-topology-synthetic.lo `test -f '$(SRC)/topology-synthetic.c' || echo '$(srcdir)/'`$(SRC)/topology-synthetic.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology-synthetic.Tpo $(DEPDIR)/libhwloc_ports_la-topology-synthetic.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(SRC)/topology-synthetic.c' object='libhwloc_ports_la-topology-synthetic.lo' libtool=yes @AMDEPBACKSLASH@
+libhwloc_ports_la-topology-synthetic.lo: topology-synthetic.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology-synthetic.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology-synthetic.Tpo -c -o libhwloc_ports_la-topology-synthetic.lo `test -f 'topology-synthetic.c' || echo '$(srcdir)/'`topology-synthetic.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology-synthetic.Tpo $(DEPDIR)/libhwloc_ports_la-topology-synthetic.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='topology-synthetic.c' object='libhwloc_ports_la-topology-synthetic.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology-synthetic.lo `test -f '$(SRC)/topology-synthetic.c' || echo '$(srcdir)/'`$(SRC)/topology-synthetic.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology-synthetic.lo `test -f 'topology-synthetic.c' || echo '$(srcdir)/'`topology-synthetic.c
 
-libhwloc_ports_la-topology-solaris.lo: $(SRC)/topology-solaris.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology-solaris.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology-solaris.Tpo -c -o libhwloc_ports_la-topology-solaris.lo `test -f '$(SRC)/topology-solaris.c' || echo '$(srcdir)/'`$(SRC)/topology-solaris.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology-solaris.Tpo $(DEPDIR)/libhwloc_ports_la-topology-solaris.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(SRC)/topology-solaris.c' object='libhwloc_ports_la-topology-solaris.lo' libtool=yes @AMDEPBACKSLASH@
+libhwloc_ports_la-topology-solaris.lo: topology-solaris.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology-solaris.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology-solaris.Tpo -c -o libhwloc_ports_la-topology-solaris.lo `test -f 'topology-solaris.c' || echo '$(srcdir)/'`topology-solaris.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology-solaris.Tpo $(DEPDIR)/libhwloc_ports_la-topology-solaris.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='topology-solaris.c' object='libhwloc_ports_la-topology-solaris.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology-solaris.lo `test -f '$(SRC)/topology-solaris.c' || echo '$(srcdir)/'`$(SRC)/topology-solaris.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology-solaris.lo `test -f 'topology-solaris.c' || echo '$(srcdir)/'`topology-solaris.c
 
-libhwloc_ports_la-topology-aix.lo: $(SRC)/topology-aix.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology-aix.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology-aix.Tpo -c -o libhwloc_ports_la-topology-aix.lo `test -f '$(SRC)/topology-aix.c' || echo '$(srcdir)/'`$(SRC)/topology-aix.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology-aix.Tpo $(DEPDIR)/libhwloc_ports_la-topology-aix.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(SRC)/topology-aix.c' object='libhwloc_ports_la-topology-aix.lo' libtool=yes @AMDEPBACKSLASH@
+libhwloc_ports_la-topology-aix.lo: topology-aix.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology-aix.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology-aix.Tpo -c -o libhwloc_ports_la-topology-aix.lo `test -f 'topology-aix.c' || echo '$(srcdir)/'`topology-aix.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology-aix.Tpo $(DEPDIR)/libhwloc_ports_la-topology-aix.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='topology-aix.c' object='libhwloc_ports_la-topology-aix.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology-aix.lo `test -f '$(SRC)/topology-aix.c' || echo '$(srcdir)/'`$(SRC)/topology-aix.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology-aix.lo `test -f 'topology-aix.c' || echo '$(srcdir)/'`topology-aix.c
 
-libhwloc_ports_la-topology-osf.lo: $(SRC)/topology-osf.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology-osf.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology-osf.Tpo -c -o libhwloc_ports_la-topology-osf.lo `test -f '$(SRC)/topology-osf.c' || echo '$(srcdir)/'`$(SRC)/topology-osf.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology-osf.Tpo $(DEPDIR)/libhwloc_ports_la-topology-osf.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(SRC)/topology-osf.c' object='libhwloc_ports_la-topology-osf.lo' libtool=yes @AMDEPBACKSLASH@
+libhwloc_ports_la-topology-osf.lo: topology-osf.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology-osf.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology-osf.Tpo -c -o libhwloc_ports_la-topology-osf.lo `test -f 'topology-osf.c' || echo '$(srcdir)/'`topology-osf.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology-osf.Tpo $(DEPDIR)/libhwloc_ports_la-topology-osf.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='topology-osf.c' object='libhwloc_ports_la-topology-osf.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology-osf.lo `test -f '$(SRC)/topology-osf.c' || echo '$(srcdir)/'`$(SRC)/topology-osf.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology-osf.lo `test -f 'topology-osf.c' || echo '$(srcdir)/'`topology-osf.c
 
-libhwloc_ports_la-topology-windows.lo: $(SRC)/topology-windows.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology-windows.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology-windows.Tpo -c -o libhwloc_ports_la-topology-windows.lo `test -f '$(SRC)/topology-windows.c' || echo '$(srcdir)/'`$(SRC)/topology-windows.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology-windows.Tpo $(DEPDIR)/libhwloc_ports_la-topology-windows.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(SRC)/topology-windows.c' object='libhwloc_ports_la-topology-windows.lo' libtool=yes @AMDEPBACKSLASH@
+libhwloc_ports_la-topology-windows.lo: topology-windows.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology-windows.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology-windows.Tpo -c -o libhwloc_ports_la-topology-windows.lo `test -f 'topology-windows.c' || echo '$(srcdir)/'`topology-windows.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology-windows.Tpo $(DEPDIR)/libhwloc_ports_la-topology-windows.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='topology-windows.c' object='libhwloc_ports_la-topology-windows.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology-windows.lo `test -f '$(SRC)/topology-windows.c' || echo '$(srcdir)/'`$(SRC)/topology-windows.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology-windows.lo `test -f 'topology-windows.c' || echo '$(srcdir)/'`topology-windows.c
 
-libhwloc_ports_la-topology-darwin.lo: $(SRC)/topology-darwin.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology-darwin.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology-darwin.Tpo -c -o libhwloc_ports_la-topology-darwin.lo `test -f '$(SRC)/topology-darwin.c' || echo '$(srcdir)/'`$(SRC)/topology-darwin.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology-darwin.Tpo $(DEPDIR)/libhwloc_ports_la-topology-darwin.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(SRC)/topology-darwin.c' object='libhwloc_ports_la-topology-darwin.lo' libtool=yes @AMDEPBACKSLASH@
+libhwloc_ports_la-topology-darwin.lo: topology-darwin.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology-darwin.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology-darwin.Tpo -c -o libhwloc_ports_la-topology-darwin.lo `test -f 'topology-darwin.c' || echo '$(srcdir)/'`topology-darwin.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology-darwin.Tpo $(DEPDIR)/libhwloc_ports_la-topology-darwin.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='topology-darwin.c' object='libhwloc_ports_la-topology-darwin.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology-darwin.lo `test -f '$(SRC)/topology-darwin.c' || echo '$(srcdir)/'`$(SRC)/topology-darwin.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology-darwin.lo `test -f 'topology-darwin.c' || echo '$(srcdir)/'`topology-darwin.c
 
-libhwloc_ports_la-topology-hpux.lo: $(SRC)/topology-hpux.c
-@am__fastdepCC_TRUE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology-hpux.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology-hpux.Tpo -c -o libhwloc_ports_la-topology-hpux.lo `test -f '$(SRC)/topology-hpux.c' || echo '$(srcdir)/'`$(SRC)/topology-hpux.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology-hpux.Tpo $(DEPDIR)/libhwloc_ports_la-topology-hpux.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(SRC)/topology-hpux.c' object='libhwloc_ports_la-topology-hpux.lo' libtool=yes @AMDEPBACKSLASH@
+libhwloc_ports_la-topology-freebsd.lo: topology-freebsd.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology-freebsd.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology-freebsd.Tpo -c -o libhwloc_ports_la-topology-freebsd.lo `test -f 'topology-freebsd.c' || echo '$(srcdir)/'`topology-freebsd.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology-freebsd.Tpo $(DEPDIR)/libhwloc_ports_la-topology-freebsd.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='topology-freebsd.c' object='libhwloc_ports_la-topology-freebsd.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL)  --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(libhwloc_ports_la_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology-hpux.lo `test -f '$(SRC)/topology-hpux.c' || echo '$(srcdir)/'`$(SRC)/topology-hpux.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology-freebsd.lo `test -f 'topology-freebsd.c' || echo '$(srcdir)/'`topology-freebsd.c
+
+libhwloc_ports_la-topology-hpux.lo: topology-hpux.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT libhwloc_ports_la-topology-hpux.lo -MD -MP -MF $(DEPDIR)/libhwloc_ports_la-topology-hpux.Tpo -c -o libhwloc_ports_la-topology-hpux.lo `test -f 'topology-hpux.c' || echo '$(srcdir)/'`topology-hpux.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/libhwloc_ports_la-topology-hpux.Tpo $(DEPDIR)/libhwloc_ports_la-topology-hpux.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='topology-hpux.c' object='libhwloc_ports_la-topology-hpux.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libhwloc_ports_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libhwloc_ports_la-topology-hpux.lo `test -f 'topology-hpux.c' || echo '$(srcdir)/'`topology-hpux.c
 
 mostlyclean-libtool:
 	-rm -f *.lo

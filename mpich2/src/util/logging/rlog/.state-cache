@@ -3,14 +3,11 @@
 <file name="minalignrlog.c" info="1226006997"/>
 <file name="rlog.c" info="1226006997"/>
 <file name="irlog2rlog.c" info="1245783411"/>
-<file name="rlogutil.c" info="1245783411"/>
-<file name="logformat_trace_InputLog.c" info="1226006997"/>
+<file name="rlogutil.c" info="1283298931"/>
 <file name="printrlog.c" info="1226006997"/>
-<file name="irlogutil.c" info="1245783411"/>
 <file name="rlogtime.c" info="1194043819"/>
-<file name="trace_input.c" info="1245783411"/>
+<file name="irlogutil.c" info="1245783411"/>
 <file name="printirlog.c" info="1226006997"/>
-<file name="logformat_trace_InputLog.h" info="1226006997"/>
 </dir>
 <data>
 <fileinfo name="wintrace_impl.h">
@@ -23,18 +20,12 @@
 </fileinfo>
 <fileinfo name="rlogutil.c">
 </fileinfo>
-<fileinfo name="logformat_trace_InputLog.c">
-</fileinfo>
 <fileinfo name="printrlog.c">
-</fileinfo>
-<fileinfo name="irlogutil.c">
 </fileinfo>
 <fileinfo name="rlogtime.c">
 </fileinfo>
-<fileinfo name="trace_input.c">
+<fileinfo name="irlogutil.c">
 </fileinfo>
 <fileinfo name="printirlog.c">
-</fileinfo>
-<fileinfo name="logformat_trace_InputLog.h">
 </fileinfo>
 </data>

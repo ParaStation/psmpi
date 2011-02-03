@@ -35,12 +35,11 @@ C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
-DOCTEXT         = @DOCTEXT@
 INCLUDES = -I../include
 doc_sources = mpicc.txt mpif77.txt mpicxx.txt mpif90.txt mpiexec.txt
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .man .html .latex .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -57,8 +56,6 @@ doc_sources = mpicc.txt mpif77.txt mpicxx.txt mpif90.txt mpiexec.txt
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -66,33 +63,6 @@ doc_sources = mpicc.txt mpif77.txt mpicxx.txt mpif90.txt mpiexec.txt
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-.txt.man:
-	$(DOCTEXT) -man -mpath ../../man/man1 -ext 1 -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.txt.html:
-	$(DOCTEXT) -html -mpath ../../www/www1  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.txt.latex:
-	$(DOCTEXT) -latex -mpath ../../doc/refman  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../ \
-	-configdir=. \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile mpi_sizeofs.f90 mpif90model.h config.status config.log config.cache *conf.cache config.system" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/env/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
@@ -100,9 +70,6 @@ clean:
 	-@rm -f mpich2version.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -110,40 +77,33 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: mpich2version
 
-coverage: 
 mpich2version: mpich2version.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o mpich2version mpich2version.o  \
 	../../lib/lib@MPILIBNAME@.a ${LIBS} 
-# --------------------------------------------------------------------------
-mandoc: ${doc_sources:.txt=.man}
-htmldoc: ${doc_sources:.txt=.html}
-latexdoc: ${doc_sources:.txt=.latex}
-# --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Install target
 install:  FORCE_TARGET 
 	if [ ! -d ${DESTDIR}${exec_prefix} ] ; then $(MKDIR_P) ${DESTDIR}${exec_prefix} ; fi
 	if [ ! -d ${DESTDIR}${prefix} ] ; then $(MKDIR_P) ${DESTDIR}${prefix} ; fi
 	if [ ! -d ${DESTDIR}${bindir} ] ; then $(MKDIR_P) ${DESTDIR}${bindir} ; fi
-	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG) mpich2version ${DESTDIR}${bindir}/mpich2version
-	$(INSTALL_SCRIPT) mpicc ${DESTDIR}${bindir}/mpicc
-	$(INSTALL_SCRIPT) parkill ${DESTDIR}${bindir}/parkill
+	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)  mpich2version ${DESTDIR}${bindir}/mpich2version
+	$(INSTALL_SCRIPT)  mpicc ${DESTDIR}${bindir}/mpicc
+	$(INSTALL_SCRIPT)  parkill ${DESTDIR}${bindir}/parkill
 	if [ ! -d ${DESTDIR}${sysconfdir} ] ; then $(MKDIR_P) ${DESTDIR}${sysconfdir} ; fi
-	$(INSTALL_DATA) mpixxx_opts.conf ${DESTDIR}${sysconfdir}/mpixxx_opts.conf
-	$(INSTALL_DATA) mpicc.conf ${DESTDIR}${sysconfdir}/mpicc.conf
-	if [ -s mpicxx ] ; then $(INSTALL_SCRIPT) mpicxx ${DESTDIR}${bindir}/mpicxx ; fi
-	if [ -s mpif77 ] ; then $(INSTALL_SCRIPT) mpif77 ${DESTDIR}${bindir}/mpif77 ; fi
-	if [ -s mpif90 ] ; then $(INSTALL_SCRIPT) mpif90 ${DESTDIR}${bindir}/mpif90 ; fi
-	if [ -s mpicxx.conf ] ; then $(INSTALL_DATA) mpicxx.conf ${DESTDIR}${sysconfdir}/mpicxx.conf ; fi
-	if [ -s mpif77.conf ] ; then $(INSTALL_DATA) mpif77.conf ${DESTDIR}${sysconfdir}/mpif77.conf ; fi
-	if [ -s mpif90.conf ] ; then $(INSTALL_DATA) mpif90.conf ${DESTDIR}${sysconfdir}/mpif90.conf ; fi
+	$(INSTALL_DATA)  mpixxx_opts.conf ${DESTDIR}${sysconfdir}/mpixxx_opts.conf
+	$(INSTALL_DATA)  mpicc.conf ${DESTDIR}${sysconfdir}/mpicc.conf
+	if [ -s mpicxx ] ; then $(INSTALL_SCRIPT)  mpicxx ${DESTDIR}${bindir}/mpicxx ; fi
+	if [ -s mpif77 ] ; then $(INSTALL_SCRIPT)  mpif77 ${DESTDIR}${bindir}/mpif77 ; fi
+	if [ -s mpif90 ] ; then $(INSTALL_SCRIPT)  mpif90 ${DESTDIR}${bindir}/mpif90 ; fi
+	if [ -s mpicxx.conf ] ; then $(INSTALL_DATA)  mpicxx.conf ${DESTDIR}${sysconfdir}/mpicxx.conf ; fi
+	if [ -s mpif77.conf ] ; then $(INSTALL_DATA)  mpif77.conf ${DESTDIR}${sysconfdir}/mpif77.conf ; fi
+	if [ -s mpif90.conf ] ; then $(INSTALL_DATA)  mpif90.conf ${DESTDIR}${sysconfdir}/mpif90.conf ; fi
 	${MAKE} install-postamble
 
 install-strip:
@@ -164,26 +124,6 @@ uninstall:
 installcheck: 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/timestamp: mpich2version.c Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpich2version.c > $(DEPS_DIR)/mpich2version.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpich2version.c >$(DEPS_DIR)/mpich2version.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpich2version.c >$(DEPS_DIR)/mpich2version.d
-	echo "include $(DEPS_DIR)/mpich2version.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
 SOURCES         =  mpich2version.c
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
@@ -197,6 +137,8 @@ install-postamble:
 	    cd ${DESTDIR}${bindir} && ln -f -s mpicxx mpic++ ; fi
 uninstall-postamble:
 	rm -f ${DESTDIR}${bindir}/mpic++
+
+.POSIX:
 
 FORCE_TARGET:
 

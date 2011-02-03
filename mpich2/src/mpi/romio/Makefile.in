@@ -6,7 +6,6 @@ AR          = @AR@
 LIBNAME     = @LIBNAME@
 NOF77       = @NOF77@
 NOPROFILE   = @NOPROFILE@
-MPI         = @MPI@
 PREFIX      = @prefix@
 srcdir      = @srcdir@
 BUILD_MPI_INFO = @BUILD_MPI_INFO@
@@ -185,7 +184,6 @@ TAGS:
 # This target is appropriate for autoconf 2.59 (the command line options
 # for selecting the macro directories changes in incompatible ways between
 # autoconf releases).
-configure: ${srcdir}/configure
-${srcdir}/configure ${srcdir}/adio/include/romioconf.h: ${srcdir}/configure.in ${srcdir}/aclocal.m4
-	cd ${srcdir} && rm -rf autom4te*.cache && autoconf -I .
-	cd ${srcdir} && autoheader -I .
+${srcdir}/configure: ${srcdir}/configure.in 
+	cd ${srcdir} && autoheader -I confdb
+	cd ${srcdir} && rm -rf autom4te*.cache && autoconf -I confdb 

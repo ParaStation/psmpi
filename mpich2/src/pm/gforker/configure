@@ -646,7 +646,6 @@ C_LINK_SHL
 CC_SHL
 MPILIBNAME
 EGREP
-GREP
 CPP
 ENABLE_SHLIB
 SET_MAKE
@@ -657,6 +656,8 @@ MKDIR_P
 INSTALL_DATA
 INSTALL_SCRIPT
 INSTALL_PROGRAM
+FGREP
+GREP
 OBJEXT
 EXEEXT
 ac_ct_CC
@@ -1339,14 +1340,14 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
---enable-cache  - Turn on configure caching
+  --enable-cache          Turn on configure caching
 --enable-echo  - Turn on strong echoing. The default is enable=no.
 --enable-allowport - Turn on use of a port for communicating with the processes started by mpiexec
 --enable-onsig - Control the handling of processes that signal (e.g., SEGV)
  using ptrace.  Disabled by default
 --enable-newsession - Create a new process group session if standard in is
                       not connected to a terminal
---enable-strict  - Turn on strict compilation testing
+  --enable-strict         Turn on strict compilation testing
 
 Some influential environment variables:
   CC          C compiler command
@@ -1938,7 +1939,7 @@ echo "RUNNING CONFIGURE FOR THE GFORKER PM"
 
 # Check whether --enable-cache was given.
 if test "${enable_cache+set}" = set; then
-  enableval=$enable_cache; enable_cache="$enableval"
+  enableval=$enable_cache;
 else
   enable_cache="notgiven"
 fi
@@ -1973,6 +1974,8 @@ else
 fi
 
 
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 date >conftest$$
 # If creating a file in the current directory does not show up in the srcdir
@@ -2019,6 +2022,8 @@ $as_echo "$as_me: error: You cannot do a VPATH build if the source directory has
         fi
     fi
 fi
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 
 
@@ -2038,203 +2043,22 @@ fi
 
 
 
-ac_ext=c
+
+
+
+	if test -z "${pac_save_CFLAGS_nesting}" ; then
+	   pac_save_CFLAGS_nesting=0
+	fi
+	eval pac_save_CFLAGS_${pac_save_CFLAGS_nesting}='"$CFLAGS"'
+	pac_save_CFLAGS_nesting=`expr ${pac_save_CFLAGS_nesting} + 1`
+
+	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}gcc", so it can be a program name with args.
-set dummy ${ac_tool_prefix}gcc; ac_word=$2
-{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_CC+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_CC="${ac_tool_prefix}gcc"
-    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  { $as_echo "$as_me:$LINENO: result: $CC" >&5
-$as_echo "$CC" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_prog_CC"; then
-  ac_ct_CC=$CC
-  # Extract the first word of "gcc", so it can be a program name with args.
-set dummy gcc; ac_word=$2
-{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_ac_ct_CC+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_CC"; then
-  ac_cv_prog_ac_ct_CC="$ac_ct_CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_ac_ct_CC="gcc"
-    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_CC=$ac_cv_prog_ac_ct_CC
-if test -n "$ac_ct_CC"; then
-  { $as_echo "$as_me:$LINENO: result: $ac_ct_CC" >&5
-$as_echo "$ac_ct_CC" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_ct_CC" = x; then
-    CC=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:$LINENO: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    CC=$ac_ct_CC
-  fi
-else
-  CC="$ac_cv_prog_CC"
-fi
-
-if test -z "$CC"; then
-          if test -n "$ac_tool_prefix"; then
-    # Extract the first word of "${ac_tool_prefix}cc", so it can be a program name with args.
-set dummy ${ac_tool_prefix}cc; ac_word=$2
-{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_CC+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_CC="${ac_tool_prefix}cc"
-    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  { $as_echo "$as_me:$LINENO: result: $CC" >&5
-$as_echo "$CC" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  fi
-fi
-if test -z "$CC"; then
-  # Extract the first word of "cc", so it can be a program name with args.
-set dummy cc; ac_word=$2
-{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_CC+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-  ac_prog_rejected=no
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    if test "$as_dir/$ac_word$ac_exec_ext" = "/usr/ucb/cc"; then
-       ac_prog_rejected=yes
-       continue
-     fi
-    ac_cv_prog_CC="cc"
-    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-if test $ac_prog_rejected = yes; then
-  # We found a bogon in the path, so make sure we never use it.
-  set dummy $ac_cv_prog_CC
-  shift
-  if test $# != 0; then
-    # We chose a different compiler from the bogus one.
-    # However, it has the same basename, so the bogon will be chosen
-    # first if we set CC to just the basename; use the full file name.
-    shift
-    ac_cv_prog_CC="$as_dir/$ac_word${1+' '}$@"
-  fi
-fi
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  { $as_echo "$as_me:$LINENO: result: $CC" >&5
-$as_echo "$CC" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$CC"; then
-  if test -n "$ac_tool_prefix"; then
-  for ac_prog in cl.exe
+  for ac_prog in gcc icc pgcc xlc xlC pathcc cc
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -2278,7 +2102,7 @@ fi
 fi
 if test -z "$CC"; then
   ac_ct_CC=$CC
-  for ac_prog in cl.exe
+  for ac_prog in gcc icc pgcc xlc xlC pathcc cc
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -2331,8 +2155,6 @@ ac_tool_warned=yes ;;
 esac
     CC=$ac_ct_CC
   fi
-fi
-
 fi
 
 
@@ -2972,6 +2794,146 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
+	pac_save_CFLAGS_nesting=`expr ${pac_save_CFLAGS_nesting} - 1`
+	eval CFLAGS="\$pac_save_CFLAGS_${pac_save_CFLAGS_nesting}"
+	eval pac_save_CFLAGS_${pac_save_CFLAGS_nesting}=""
+
+
+
+{ $as_echo "$as_me:$LINENO: checking for grep that handles long lines and -e" >&5
+$as_echo_n "checking for grep that handles long lines and -e... " >&6; }
+if test "${ac_cv_path_GREP+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  if test -z "$GREP"; then
+  ac_path_GREP_found=false
+  # Loop through the user's path and test for each of PROGNAME-LIST
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_prog in grep ggrep; do
+    for ac_exec_ext in '' $ac_executable_extensions; do
+      ac_path_GREP="$as_dir/$ac_prog$ac_exec_ext"
+      { test -f "$ac_path_GREP" && $as_test_x "$ac_path_GREP"; } || continue
+# Check for GNU ac_path_GREP and select it if it is found.
+  # Check for GNU $ac_path_GREP
+case `"$ac_path_GREP" --version 2>&1` in
+*GNU*)
+  ac_cv_path_GREP="$ac_path_GREP" ac_path_GREP_found=:;;
+*)
+  ac_count=0
+  $as_echo_n 0123456789 >"conftest.in"
+  while :
+  do
+    cat "conftest.in" "conftest.in" >"conftest.tmp"
+    mv "conftest.tmp" "conftest.in"
+    cp "conftest.in" "conftest.nl"
+    $as_echo 'GREP' >> "conftest.nl"
+    "$ac_path_GREP" -e 'GREP$' -e '-(cannot match)-' < "conftest.nl" >"conftest.out" 2>/dev/null || break
+    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
+    ac_count=`expr $ac_count + 1`
+    if test $ac_count -gt ${ac_path_GREP_max-0}; then
+      # Best one so far, save it but keep looking for a better one
+      ac_cv_path_GREP="$ac_path_GREP"
+      ac_path_GREP_max=$ac_count
+    fi
+    # 10*(2^10) chars as input seems more than enough
+    test $ac_count -gt 10 && break
+  done
+  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
+esac
+
+      $ac_path_GREP_found && break 3
+    done
+  done
+done
+IFS=$as_save_IFS
+  if test -z "$ac_cv_path_GREP"; then
+    { { $as_echo "$as_me:$LINENO: error: no acceptable grep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" >&5
+$as_echo "$as_me: error: no acceptable grep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+else
+  ac_cv_path_GREP=$GREP
+fi
+
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_path_GREP" >&5
+$as_echo "$ac_cv_path_GREP" >&6; }
+ GREP="$ac_cv_path_GREP"
+
+
+{ $as_echo "$as_me:$LINENO: checking for fgrep" >&5
+$as_echo_n "checking for fgrep... " >&6; }
+if test "${ac_cv_path_FGREP+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  if echo 'ab*c' | $GREP -F 'ab*c' >/dev/null 2>&1
+   then ac_cv_path_FGREP="$GREP -F"
+   else
+     if test -z "$FGREP"; then
+  ac_path_FGREP_found=false
+  # Loop through the user's path and test for each of PROGNAME-LIST
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_prog in fgrep; do
+    for ac_exec_ext in '' $ac_executable_extensions; do
+      ac_path_FGREP="$as_dir/$ac_prog$ac_exec_ext"
+      { test -f "$ac_path_FGREP" && $as_test_x "$ac_path_FGREP"; } || continue
+# Check for GNU ac_path_FGREP and select it if it is found.
+  # Check for GNU $ac_path_FGREP
+case `"$ac_path_FGREP" --version 2>&1` in
+*GNU*)
+  ac_cv_path_FGREP="$ac_path_FGREP" ac_path_FGREP_found=:;;
+*)
+  ac_count=0
+  $as_echo_n 0123456789 >"conftest.in"
+  while :
+  do
+    cat "conftest.in" "conftest.in" >"conftest.tmp"
+    mv "conftest.tmp" "conftest.in"
+    cp "conftest.in" "conftest.nl"
+    $as_echo 'FGREP' >> "conftest.nl"
+    "$ac_path_FGREP" FGREP < "conftest.nl" >"conftest.out" 2>/dev/null || break
+    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
+    ac_count=`expr $ac_count + 1`
+    if test $ac_count -gt ${ac_path_FGREP_max-0}; then
+      # Best one so far, save it but keep looking for a better one
+      ac_cv_path_FGREP="$ac_path_FGREP"
+      ac_path_FGREP_max=$ac_count
+    fi
+    # 10*(2^10) chars as input seems more than enough
+    test $ac_count -gt 10 && break
+  done
+  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
+esac
+
+      $ac_path_FGREP_found && break 3
+    done
+  done
+done
+IFS=$as_save_IFS
+  if test -z "$ac_cv_path_FGREP"; then
+    { { $as_echo "$as_me:$LINENO: error: no acceptable fgrep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" >&5
+$as_echo "$as_me: error: no acceptable fgrep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" >&2;}
+   { (exit 1); exit 1; }; }
+  fi
+else
+  ac_cv_path_FGREP=$FGREP
+fi
+
+   fi
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_path_FGREP" >&5
+$as_echo "$ac_cv_path_FGREP" >&6; }
+ FGREP="$ac_cv_path_FGREP"
+
+
 
 # Check whether --enable-strict was given.
 if test "${enable_strict+set}" = set; then
@@ -3017,6 +2979,9 @@ if test "$enable_strict_done" != "yes" ; then
     #	    values, but they are structs of a single basic type (used to enforce
     #	    type checking for relative vs. absolute ptrs), and with optimization
     #	    the aggregate value is converted to a scalar.
+    #   -Wdeclaration-after-statement -- This is a C89
+    #       requirement. When compiling with C99, this should be
+    #       disabled.
     # the embedded newlines in this string are safe because we evaluate each
     # argument in the for-loop below and append them to the CFLAGS with a space
     # as the separator instead
@@ -3033,7 +2998,6 @@ if test "$enable_strict_done" != "yes" ; then
         -Wmissing-declarations
         -Wno-long-long
         -Wfloat-equal
-        -Wdeclaration-after-statement
         -Wundef
         -Wno-endif-labels
         -Wpointer-arith
@@ -3049,48 +3013,129 @@ if test "$enable_strict_done" != "yes" ; then
         -Winvalid-pch
         -Wno-pointer-sign
         -Wvariadic-macros
-        -std=c89
         -Wno-format-zero-length
 	-Wno-type-limits
     "
-    pac_cc_strict_flags=""
-    case "$enable_strict" in
-        yes|all|posix)
-		enable_strict_done="yes"
-		pac_cc_strict_flags="-O2 $pac_common_strict_flags -D_POSIX_C_SOURCE=199506L"
-        ;;
 
-        noposix)
+    enable_c89=yes
+    enable_c99=no
+    enable_posix=yes
+    enable_opt=yes
+    flags="`echo $enable_strict | sed -e 's/:/ /g' -e 's/,/ /g'`"
+    for flag in ${flags}; do
+        case "$flag" in
+	     c89)
 		enable_strict_done="yes"
-		pac_cc_strict_flags="-O2 $pac_common_strict_flags"
-        ;;
-
-	noopt)
+		enable_c89=yes
+		;;
+	     c99)
 		enable_strict_done="yes"
-		pac_cc_strict_flags="$pac_common_strict_flags -D_POSIX_C_SOURCE=199506L"
-	;;
-
-        no)
+		enable_c99=yes
+		;;
+	     posix)
+		enable_strict_done="yes"
+		enable_posix=yes
+		;;
+	     noposix)
+		enable_strict_done="yes"
+		enable_posix=no
+		;;
+	     opt)
+		enable_strict_done="yes"
+		enable_opt=yes
+		;;
+	     noopt)
+		enable_strict_done="yes"
+		enable_opt=no
+		;;
+	     all|yes)
+		enable_strict_done="yes"
+		enable_c89=yes
+		enable_posix=yes
+		enable_opt=yes
+	        ;;
+	     no)
 		# Accept and ignore this value
 		:
-        ;;
-
-        *)
-		if test -n "$enable_strict" ; then
-		   { $as_echo "$as_me:$LINENO: WARNING: Unrecognized value for enable-strict:$enable_strict" >&5
-$as_echo "$as_me: WARNING: Unrecognized value for enable-strict:$enable_strict" >&2;}
+		;;
+	     *)
+		if test -n "$flag" ; then
+		   { $as_echo "$as_me:$LINENO: WARNING: Unrecognized value for enable-strict:$flag" >&5
+$as_echo "$as_me: WARNING: Unrecognized value for enable-strict:$flag" >&2;}
 		fi
-        ;;
+		;;
+	esac
+    done
 
-    esac
+    pac_cc_strict_flags=""
+    if test "${enable_strict_done}" = "yes" ; then
+       if test "${enable_opt}" = "yes" ; then
+       	  pac_cc_strict_flags="-O2"
+       fi
+       pac_cc_strict_flags="$pac_cc_strict_flags $pac_common_strict_flags"
+       if test "${enable_posix}" = "yes" ; then
+
+
+	if echo "$pac_cc_strict_flags" | $FGREP -e '-D_POSIX_C_SOURCE=199506L' >/dev/null 2>&1; then
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') contains '-D_POSIX_C_SOURCE=199506L', not appending" >&5
+else
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') does not contain '-D_POSIX_C_SOURCE=199506L', appending" >&5
+		pac_cc_strict_flags="$pac_cc_strict_flags -D_POSIX_C_SOURCE=199506L"
+
+fi
+
+
+       fi
+       # We only allow one of strict-C99 or strict-C89 to be
+       # enabled. If C99 is enabled, we automatically disable C89.
+       if test "${enable_c99}" = "yes" ; then
+
+
+	if echo "$pac_cc_strict_flags" | $FGREP -e '-std=c99' >/dev/null 2>&1; then
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') contains '-std=c99', not appending" >&5
+else
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') does not contain '-std=c99', appending" >&5
+		pac_cc_strict_flags="$pac_cc_strict_flags -std=c99"
+
+fi
+
+
+       elif test "${enable_c89}" = "yes" ; then
+
+
+	if echo "$pac_cc_strict_flags" | $FGREP -e '-std=c89' >/dev/null 2>&1; then
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') contains '-std=c89', not appending" >&5
+else
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') does not contain '-std=c89', appending" >&5
+		pac_cc_strict_flags="$pac_cc_strict_flags -std=c89"
+
+fi
+
+
+
+
+	if echo "$pac_cc_strict_flags" | $FGREP -e '-Wdeclaration-after-statement' >/dev/null 2>&1; then
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') contains '-Wdeclaration-after-statement', not appending" >&5
+else
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') does not contain '-Wdeclaration-after-statement', appending" >&5
+		pac_cc_strict_flags="$pac_cc_strict_flags -Wdeclaration-after-statement"
+
+fi
+
+
+       fi
+    fi
 
     # See if the above options work with the compiler
     accepted_flags=""
     for flag in $pac_cc_strict_flags ; do
-        # the save_CFLAGS variable must be namespaced, otherwise they
-        # may not actually be saved if an invoked macro also uses
-        # save_CFLAGS
-        pcs_save_CFLAGS=$CFLAGS
+
+	if test -z "${pac_save_CFLAGS_nesting}" ; then
+	   pac_save_CFLAGS_nesting=0
+	fi
+	eval pac_save_CFLAGS_${pac_save_CFLAGS_nesting}='"$CFLAGS"'
+	pac_save_CFLAGS_nesting=`expr ${pac_save_CFLAGS_nesting} + 1`
+
 	CFLAGS="$CFLAGS $accepted_flags"
 
 { $as_echo "$as_me:$LINENO: checking whether C compiler accepts option $flag" >&5
@@ -3158,7 +3203,11 @@ fi
 rm -rf conftest.dSYM
 rm -f conftest*
 
-        CFLAGS=$pcs_save_CFLAGS
+
+	pac_save_CFLAGS_nesting=`expr ${pac_save_CFLAGS_nesting} - 1`
+	eval CFLAGS="\$pac_save_CFLAGS_${pac_save_CFLAGS_nesting}"
+	eval pac_save_CFLAGS_${pac_save_CFLAGS_nesting}=""
+
     done
     pac_cc_strict_flags=$accepted_flags
 fi
@@ -3264,6 +3313,15 @@ if test -z "$INSTALL" ; then
     { $as_echo "$as_me:$LINENO: result: No install program available" >&5
 $as_echo "No install program available" >&6; }
 else
+    # first make any "confdb/install-sh -c" into an absolute path
+    # this is a hack, but it's still much cleaner than anything else I could
+    # come up with (see tt#1007) [goodell@]
+    case "$INSTALL" in
+  /*) : ;;
+  *install-sh*) INSTALL="$master_top_srcdir/$INSTALL" ;;
+esac
+
+
     # Check that this install really works
     rm -f conftest
     echo "Test file" > conftest
@@ -3478,7 +3536,6 @@ fi
 
 
 
-
 { $as_echo "$as_me:$LINENO: checking for virtual path format" >&5
 $as_echo_n "checking for virtual path format... " >&6; }
 if test "${pac_cv_prog_make_vpath+set}" = set; then
@@ -3529,7 +3586,6 @@ if test "$pac_cv_prog_make_vpath" = "VPATH" ; then
 elif test "$pac_cv_prog_make_vpath" = ".PATH" ; then
     VPATH='.PATH: . ${srcdir}'
 fi
-
 
 
 
@@ -4997,71 +5053,6 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
-{ $as_echo "$as_me:$LINENO: checking for grep that handles long lines and -e" >&5
-$as_echo_n "checking for grep that handles long lines and -e... " >&6; }
-if test "${ac_cv_path_GREP+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -z "$GREP"; then
-  ac_path_GREP_found=false
-  # Loop through the user's path and test for each of PROGNAME-LIST
-  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH$PATH_SEPARATOR/usr/xpg4/bin
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_prog in grep ggrep; do
-    for ac_exec_ext in '' $ac_executable_extensions; do
-      ac_path_GREP="$as_dir/$ac_prog$ac_exec_ext"
-      { test -f "$ac_path_GREP" && $as_test_x "$ac_path_GREP"; } || continue
-# Check for GNU ac_path_GREP and select it if it is found.
-  # Check for GNU $ac_path_GREP
-case `"$ac_path_GREP" --version 2>&1` in
-*GNU*)
-  ac_cv_path_GREP="$ac_path_GREP" ac_path_GREP_found=:;;
-*)
-  ac_count=0
-  $as_echo_n 0123456789 >"conftest.in"
-  while :
-  do
-    cat "conftest.in" "conftest.in" >"conftest.tmp"
-    mv "conftest.tmp" "conftest.in"
-    cp "conftest.in" "conftest.nl"
-    $as_echo 'GREP' >> "conftest.nl"
-    "$ac_path_GREP" -e 'GREP$' -e '-(cannot match)-' < "conftest.nl" >"conftest.out" 2>/dev/null || break
-    diff "conftest.out" "conftest.nl" >/dev/null 2>&1 || break
-    ac_count=`expr $ac_count + 1`
-    if test $ac_count -gt ${ac_path_GREP_max-0}; then
-      # Best one so far, save it but keep looking for a better one
-      ac_cv_path_GREP="$ac_path_GREP"
-      ac_path_GREP_max=$ac_count
-    fi
-    # 10*(2^10) chars as input seems more than enough
-    test $ac_count -gt 10 && break
-  done
-  rm -f conftest.in conftest.tmp conftest.nl conftest.out;;
-esac
-
-      $ac_path_GREP_found && break 3
-    done
-  done
-done
-IFS=$as_save_IFS
-  if test -z "$ac_cv_path_GREP"; then
-    { { $as_echo "$as_me:$LINENO: error: no acceptable grep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" >&5
-$as_echo "$as_me: error: no acceptable grep could be found in $PATH$PATH_SEPARATOR/usr/xpg4/bin" >&2;}
-   { (exit 1); exit 1; }; }
-  fi
-else
-  ac_cv_path_GREP=$GREP
-fi
-
-fi
-{ $as_echo "$as_me:$LINENO: result: $ac_cv_path_GREP" >&5
-$as_echo "$ac_cv_path_GREP" >&6; }
- GREP="$ac_cv_path_GREP"
-
-
 { $as_echo "$as_me:$LINENO: checking for egrep" >&5
 $as_echo_n "checking for egrep... " >&6; }
 if test "${ac_cv_path_EGREP+set}" = set; then
@@ -5891,7 +5882,13 @@ $as_echo "$as_me: ===== configuring ../util =====" >&6;}
 
 # Build any intermediate directories
 for dir in ../util ; do
-    saveIFS="$IFS"
+
+	if test -z "${pac_save_IFS_nesting}" ; then
+	   pac_save_IFS_nesting=0
+	fi
+	eval pac_save_IFS_${pac_save_IFS_nesting}='"$IFS"'
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} + 1`
+
     IFS="/"
     tmp_curdir=""
     for tmp_subdir in $dir ; do
@@ -5899,7 +5896,11 @@ for dir in ../util ; do
 	if test ! -d "$tmp_curdir" ; then mkdir "$tmp_curdir" ; fi
         tmp_curdir="${tmp_curdir}/"
     done
-    IFS="$saveIFS"
+
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} - 1`
+	eval IFS="\$pac_save_IFS_${pac_save_IFS_nesting}"
+	eval pac_save_IFS_${pac_save_IFS_nesting}=""
+
 done
 
 	pac_abs_srcdir=`(cd $srcdir && pwd)`
@@ -5911,82 +5912,85 @@ done
         pac_subconfigure_file="$pac_abs_srcdir/../util/configure"
 	if test -x $pac_subconfigure_file ; then
 	   pac_subconfig_args=""
-	   prev_arg=""
 
-	   # Strip off the args we need to update
-	   for ac_arg in $ac_configure_args ; do
+            # Set IFS so ac_configure_args can be tokenized
+            # with extra " " tokens being skipped.
 
-	       # HACK: Though each argument in ac_configure_args is
-	       # quoted to account for spaces, when we get them, the
-	       # argument list is treated as a space separated list
-	       # and the quotes are treated as a part of the
-	       # argument. So, we explicitly look for the quotes and
-	       # recreate the arguments. If/when this is fixed by
-	       # autoconf, this hack can be deleted.
-	       end_char=`echo $ac_arg | sed -e 's/.*\(.\)$/\1/g'`
+	if test -z "${pac_save_IFS_nesting}" ; then
+	   pac_save_IFS_nesting=0
+	fi
+	eval pac_save_IFS_${pac_save_IFS_nesting}='"$IFS"'
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} + 1`
 
-	       # If the previous argument was incomplete, we append
-	       # this argument to that
-	       if test "$prev_arg" != "" -o "$end_char" != "'" ; then
-                  prev_arg="$prev_arg $ac_arg"
-	       fi
+            IFS="'"
+            for pac_arg in $ac_configure_args ; do
+                case "$pac_arg" in
+                # Ignore any null and leading blank strings.
+                ""|" "*)
+                    ;;
+                *)
+                    pac_pval=""
+                    # Restore IFS so ac_precious_vars which has
+                    # " " as separator can be correctly tokenized
 
-	       # If the end character is a quote, we are at the end of
-	       # an argument.
-	       if test "$end_char" = "'" ; then
-                  # If the previous argument just got completed, set
-		  # the current argument to the entire argument value
-		  if test "$prev_arg" != "" ; then ac_arg="$prev_arg" ; fi
-		  prev_arg=
-	       else
-		  # If the previous argument hasn't completed yet,
-		  # just continue on to the next argument
-		  continue
-	       fi
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} - 1`
+	eval IFS="\$pac_save_IFS_${pac_save_IFS_nesting}"
+	eval pac_save_IFS_${pac_save_IFS_nesting}=""
 
-	       # Remove any quotes around the args (added by configure)
-	       ac_narg=`echo $ac_arg | sed -e "s/^'\(.*\)'$/\1/g"`
+                    for pac_pvar in $ac_precious_vars ; do
+                        # check if configure argument token contains the
+                        # precious variable, i.e. "name_of_prec_var=".
+                        pvar_in_arg=`echo $pac_arg | grep "$pac_pvar="`
+                        if test "X$pvar_in_arg" != "X" ; then
+                            # check if current precious variable is set in env
+                            eval pvar_set=\${$pac_pvar+set}
+                            if test "$pvar_set" = "set" ; then
+                                # Append 'name_of_prec_var=value_of_prec_var'
+                                # to the subconfigure arguments list, where
+                                # value_of_prec_var is fetched from the env.
+                                eval pac_pval=\${$pac_pvar}
+                                pac_subconfig_args="$pac_subconfig_args '$pac_pvar=$pac_pval'"
+                                break
+                            fi
+                        fi
+                    done
+                    # since the precious variable is not set in the env.,
+                    # append the corresponding configure argument token
+                    # to the subconfigure argument list.
+                    if test "X$pac_pval" = "X" ; then
+                        pac_subconfig_args="$pac_subconfig_args '$pac_arg'"
+                    fi
+                    # reset "'" as IFS to process ac_configure_args
 
-	       case $ac_narg in
-                   CFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CFLAGS='$CFLAGS'"
-		       ;;
-		   CPPFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CPPFLAGS='$CPPFLAGS'"
-		       ;;
-		   CXXFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CXXFLAGS='$CXXFLAGS'"
-		       ;;
-		   FFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args FFLAGS='$FFLAGS'"
-		       ;;
-		   F90FLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args F90FLAGS='$F90FLAGS'"
-		       ;;
-		   LDFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args LDFLAGS='$LDFLAGS'"
-		       ;;
-		   LIBS=*)
-		       pac_subconfig_args="$pac_subconfig_args LIBS='$LIBS'"
-		       ;;
-		   *)
-		       # We store ac_arg instead of ac_narg to make
-		       # sure we retain the quotes as provided to us
-		       # by autoconf
-		       pac_subconfig_args="$pac_subconfig_args $ac_arg"
-		       ;;
-	       esac
-	   done
+	if test -z "${pac_save_IFS_nesting}" ; then
+	   pac_save_IFS_nesting=0
+	fi
+	eval pac_save_IFS_${pac_save_IFS_nesting}='"$IFS"'
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} + 1`
 
-	   echo "executing: $pac_subconfigure_file $pac_subconfig_args"
+                    IFS="'"
+                    ;;
+                esac
+            done
+            # Restore IFS.
+
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} - 1`
+	eval IFS="\$pac_save_IFS_${pac_save_IFS_nesting}"
+	eval pac_save_IFS_${pac_save_IFS_nesting}=""
+
+
+                      if test "$enable_option_checking" = no ; then
+              pac_subconfig_args="$pac_subconfig_args --disable-option-checking"
+           fi
+
+	   { $as_echo "$as_me:$LINENO: executing: $pac_subconfigure_file $pac_subconfig_args" >&5
+$as_echo "$as_me: executing: $pac_subconfigure_file $pac_subconfig_args" >&6;}
 	   if (cd ../util && eval $pac_subconfigure_file $pac_subconfig_args) ; then
-
-	      :
+               :
 	   else
-	      { { $as_echo "$as_me:$LINENO: error: pm/utils configure failed" >&5
+               { { $as_echo "$as_me:$LINENO: error: pm/utils configure failed" >&5
 $as_echo "$as_me: error: pm/utils configure failed" >&2;}
    { (exit 1); exit 1; }; }
-	      :
 	   fi
         else
            if test -e $pac_subconfigure_file ; then

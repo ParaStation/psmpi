@@ -13,8 +13,8 @@
 <file name="resource.h" info="1226006997"/>
 <file name="MainFrm.cpp" info="1226006997"/>
 <file name="ZoomDlg.cpp" info="1226006997"/>
-<file name="rimshot.cpp" info="1226006997"/>
 <file name="rimshotView.h" info="1226006997"/>
+<file name="rimshot.cpp" info="1226006997"/>
 <file name="OffsetDlg.h" info="1226006997"/>
 </dir>
 <data>
@@ -46,9 +46,9 @@
 </fileinfo>
 <fileinfo name="ZoomDlg.cpp">
 </fileinfo>
-<fileinfo name="rimshot.cpp">
-</fileinfo>
 <fileinfo name="rimshotView.h">
+</fileinfo>
+<fileinfo name="rimshot.cpp">
 </fileinfo>
 <fileinfo name="OffsetDlg.h">
 </fileinfo>

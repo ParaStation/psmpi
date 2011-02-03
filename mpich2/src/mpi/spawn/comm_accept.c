@@ -23,11 +23,23 @@
 #undef MPI_Comm_accept
 #define MPI_Comm_accept PMPI_Comm_accept
 
+#undef FUNCNAME
+#define FUNCNAME MPIR_Comm_accept_impl
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPIR_Comm_accept_impl(char * port_name, MPID_Info * info_ptr, int root,
+                          MPID_Comm * comm_ptr, MPID_Comm ** newcomm_ptr)
+{
+    return MPID_Comm_accept(port_name, info_ptr, root, comm_ptr, newcomm_ptr);
+}
+
+
 #endif
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Comm_accept
-
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
    MPI_Comm_accept - Accept a request to form a new intercommunicator
 
@@ -52,12 +64,10 @@
 int MPI_Comm_accept(char *port_name, MPI_Info info, int root, MPI_Comm comm, 
                     MPI_Comm *newcomm)
 {
-    static const char FCNAME[] = "MPI_Comm_accept";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Comm *newcomm_ptr = NULL;
     MPID_Info *info_ptr = NULL;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_ACCEPT);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -97,11 +107,10 @@ int MPI_Comm_accept(char *port_name, MPI_Info info, int root, MPI_Comm comm,
 
     /* ... body of routine ...  */
     
-    mpi_errno = MPID_Comm_accept(port_name, info_ptr, root, comm_ptr, 
-				 &newcomm_ptr);
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    mpi_errno = MPIR_Comm_accept_impl(port_name, info_ptr, root, comm_ptr, &newcomm_ptr);
+    if (mpi_errno) goto fn_fail;
 
-    *newcomm = newcomm_ptr->handle;
+    MPIU_OBJ_PUBLISH_HANDLE(*newcomm, newcomm_ptr->handle);
 
     /* ... end of body of routine ... */
 

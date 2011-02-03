@@ -34,11 +34,14 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
 {
     MPID_Request * sreq = NULL;
     int mpi_errno = MPI_SUCCESS;
+    int in_cs = FALSE;
     int again = 0;
     int j;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
+
+    MPIU_ERR_CHKANDJUMP1(vc->state == MPIDI_VC_STATE_MORIBUND, mpi_errno, MPI_ERR_OTHER, "**comm_fail", "**comm_fail %d", vc->pg_rank);
 
     if (((MPIDI_CH3I_VC *)vc->channel_private)->iStartContigMsg)
     {
@@ -67,6 +70,9 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
      * the maximum of all possible packet headers */
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)iov[0].MPID_IOV_BUF);
+
+    MPIU_THREAD_CS_ENTER(MPIDCOMM,);
+    in_cs = TRUE;
 
     if (MPIDI_CH3I_SendQ_empty (CH3_NORMAL_QUEUE))
         /* MT */
@@ -168,7 +174,7 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
             /* this is not the first send on the queue, enqueue it then
                check to see if we can send any now */
             MPIDI_CH3I_SendQ_enqueue(sreq, CH3_NORMAL_QUEUE);
-            mpi_errno = MPIDI_CH3_Progress_test();
+            mpi_errno = MPIDI_CH3I_Shm_send_progress();
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         }
     }
@@ -176,6 +182,9 @@ int MPIDI_CH3_iStartMsgv (MPIDI_VC_t *vc, MPID_IOV *iov, int n_iov, MPID_Request
     *sreq_ptr = sreq;
 
  fn_exit:
+    if (in_cs) {
+        MPIU_THREAD_CS_EXIT(MPIDCOMM,);
+    }
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSGV);
     return mpi_errno;
  fn_fail:

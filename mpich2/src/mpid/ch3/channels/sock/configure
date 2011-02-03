@@ -637,7 +637,6 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
-ABIVERSION
 ETAGSADD
 ETAGS
 MAKE_DEPEND_C
@@ -675,6 +674,7 @@ RANLIB
 INSTALL_DATA
 INSTALL_SCRIPT
 INSTALL_PROGRAM
+ABIVERSION
 target_alias
 host_alias
 build_alias
@@ -1930,7 +1930,23 @@ ac_config_headers="$ac_config_headers include/mpidi_ch3i_sock_conf.h"
 
 echo "RUNNING CONFIGURE FOR THE SOCK CHANNEL"
 
+# ABIVERSION is needed when a separate sock dll library is built (e.g., for
+# dllchan)
+if test "X$ABIVERSION" = "X" ; then
+   if test "X$libmpich_so_version" != X ; then
+      ABIVERSION="$libmpich_so_version"
+   else
+      # Note that an install of a sock-dll will fail if the ABI version is not
+      # available
+      { $as_echo "$as_me:$LINENO: WARNING: Unable to set the ABIVERSION" >&5
+$as_echo "$as_me: WARNING: Unable to set the ABIVERSION" >&2;}
+   fi
+fi
 
+
+
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 date >conftest$$
 # If creating a file in the current directory does not show up in the srcdir
@@ -1977,6 +1993,8 @@ $as_echo "$as_me: error: You cannot do a VPATH build if the source directory has
         fi
     fi
 fi
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 
 
@@ -2086,6 +2104,15 @@ if test -z "$INSTALL" ; then
     { $as_echo "$as_me:$LINENO: result: No install program available" >&5
 $as_echo "No install program available" >&6; }
 else
+    # first make any "confdb/install-sh -c" into an absolute path
+    # this is a hack, but it's still much cleaner than anything else I could
+    # come up with (see tt#1007) [goodell@]
+    case "$INSTALL" in
+  /*) : ;;
+  *install-sh*) INSTALL="$master_top_srcdir/$INSTALL" ;;
+esac
+
+
     # Check that this install really works
     rm -f conftest
     echo "Test file" > conftest
@@ -3394,7 +3421,6 @@ fi
 
 
 
-
 { $as_echo "$as_me:$LINENO: checking for virtual path format" >&5
 $as_echo_n "checking for virtual path format... " >&6; }
 if test "${pac_cv_prog_make_vpath+set}" = set; then
@@ -3445,7 +3471,6 @@ if test "$pac_cv_prog_make_vpath" = "VPATH" ; then
 elif test "$pac_cv_prog_make_vpath" = ".PATH" ; then
     VPATH='.PATH: . ${srcdir}'
 fi
-
 
 
 
@@ -4593,10 +4618,6 @@ if test -n "$CONF_BASE_CACHEFILE" -a -s "$CONF_BASE_CACHEFILE" ; then
 	mv $CONF_BASE_CACHEFILE.new $CONF_BASE_CACHEFILE
     fi
 fi
-
-
-# define the ABI version of the channel ABI that we are using.
-ABIVERSION=1:1
 
 
 ac_config_commands="$ac_config_commands default-1"

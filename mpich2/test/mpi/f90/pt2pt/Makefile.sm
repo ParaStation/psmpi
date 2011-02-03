@@ -1,6 +1,6 @@
 # This Makefile.sm generated automatically by f77tof90
 # from test/mpi/f77/pt2pt/Makefile.sm.  DO NOT EDIT
-F90INCLUDES = -I.
+FCINCLUDES = -I.
 LDADD = ../util/mtestf90.o 
 DEPADD = @MPILIBLOC@ ../util/mtestf90.o
 smvar_do_sharedlibs = 0

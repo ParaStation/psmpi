@@ -33,15 +33,14 @@ C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 LIBTOOL         = @LIBTOOL@
 CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
-FC              = @FC@
+F77             = @F77@
 FFLAGS          = @FFLAGS@
-F77_COMPILE     = $(FC) $(FFLAGS) $(F77INCLUDES)
-FC_SHL          = @FC_SHL@
-F77_COMPILE_SHL = $(FC_SHL) $(FFLAGS) $(F77INCLUDES)
+F77_COMPILE     = $(F77) $(FFLAGS) $(F77INCLUDES)
+F77_SHL         = @F77_SHL@
+F77_COMPILE_SHL = $(F77_SHL) $(FFLAGS) $(F77INCLUDES)
 
 
 VPATH = .:@srcdir@
-DOCTEXT         = @DOCTEXT@
 mpi_sources = sendf.c recvf.c get_countf.c bsendf.c ssendf.c rsendf.c \
 	bufattachf.c bufdetachf.c isendf.c ibsendf.c issendf.c irsendf.c \
 	irecvf.c waitf.c testf.c request_freef.c waitanyf.c testanyf.c \
@@ -201,7 +200,7 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include -I${master_top_src
 doc_sources = mpif77.txt
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .f .o .man .html .latex .txt 
+.SUFFIXES: .o .lo .c .f .o 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -218,8 +217,6 @@ doc_sources = mpif77.txt
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -229,14 +226,14 @@ doc_sources = mpif77.txt
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  FC              $<" ; \
+	  echo "  F77             $<" ; \
 	else \
 	  echo $(F77_COMPILE) -c $< ; \
 	fi
 	@$(F77_COMPILE) -c $<
 .f.lo:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  FC              $<" ; \
+	  echo "  F77             $<" ; \
 	else \
 	  echo $(F77_COMPILE_SHL) -c $< -o _s$*.o ; \
 	echo mv -f _s$*.o $*.lo ; \
@@ -245,53 +242,22 @@ doc_sources = mpif77.txt
 	@mv -f _s$*.o $*.lo
 .f:
 	$(F77_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-.txt.man:
-	$(DOCTEXT) -man -mpath ../../../man/man1 -ext 1 -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.txt.html:
-	$(DOCTEXT) -html -mpath ../../../www/www1  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.txt.latex:
-	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=. \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/binding/f77/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 .libstamp2 .libstamp3 .libstamp4 .libstamp5 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile mpif.h setbotf.f setbot.c
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	 ../../../lib/lib${MPIFLIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
@@ -305,90 +271,68 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	    fi ; \
 	fi
 
-.libstamp0 ../../../lib/lib${FWRAPNAME}.a: _wsendf.o _wrecvf.o _wget_countf.o \
-	_wbsendf.o _wssendf.o _wrsendf.o _wbufattachf.o _wbufdetachf.o \
-	_wisendf.o _wibsendf.o _wissendf.o _wirsendf.o _wirecvf.o _wwaitf.o \
-	_wtestf.o _wrequest_freef.o _wwaitanyf.o _wtestanyf.o _wwaitallf.o \
-	_wtestallf.o _wwaitsomef.o _wtestsomef.o _wiprobef.o _wprobef.o \
-	_wcancelf.o _wtestcancelf.o _wsend_initf.o _wbsend_initf.o \
-	_wssend_initf.o _wrsend_initf.o _wrecv_initf.o _wstartf.o \
-	_wstartallf.o _wsendrecvf.o _wsndrcvrplf.o _wtypecontigf.o \
-	_wtype_vectorf.o _wtype_hvectorf.o _wtype_indexedf.o \
-	_wtype_hindexedf.o _wtype_structf.o _wtype_extentf.o _wtype_sizef.o \
-	_wtype_lbf.o _wtype_ubf.o _wtype_commitf.o _wtype_freef.o \
-	_wget_elementsf.o _wpackf.o _wunpackf.o _wpack_sizef.o _wbarrierf.o \
-	_wbcastf.o _wgatherf.o _wgathervf.o _wscatterf.o _wscattervf.o \
-	_wallgatherf.o _wallgathervf.o _walltoallf.o _walltoallvf.o \
-	_wreducef.o _wop_createf.o _wop_freef.o _wallreducef.o _wredscatf.o \
-	_wscanf.o _wgroup_sizef.o _wgroup_rankf.o _wgrouptranksf.o \
-	_wgroup_comparef.o _wcomm_groupf.o _wgroup_unionf.o _wgroupinterf.o \
-	_wgroupdifff.o _wgroup_inclf.o _wgroup_exclf.o _wgrouprinclf.o \
-	_wgrouprexclf.o _wgroup_freef.o _wcomm_sizef.o _wcomm_rankf.o \
-	_wcomm_comparef.o _wcomm_dupf.o _wcomm_createf.o _wcomm_splitf.o \
-	_wcomm_freef.o _wcommtesticf.o _wcommrsizef.o _wcommrgroupf.o \
-	_wiccreatef.o _wicmergef.o _wkeyval_freef.o _wattr_putf.o \
-	_wattr_getf.o _wattr_deletef.o _wtopo_testf.o _wcart_createf.o \
-	_wdims_createf.o _wgraph_createf.o _wgraphdims_getf.o _wgraph_getf.o \
-	_wcartdim_getf.o _wcart_getf.o _wcart_rankf.o _wcart_coordsf.o \
-	_wgrfnbcountf.o _wgrfnbrsf.o _wcart_shiftf.o _wcart_subf.o \
-	_wcart_mapf.o _wgraph_mapf.o _wgetpnamef.o _wget_versionf.o \
-	_werrhcreatef.o _werrhsetf.o _werrhgetf.o _werrhfreef.o \
-	_werror_stringf.o _werror_classf.o _wfinalizef.o _winitializedf.o \
-	_wabortf.o _wclose_portf.o _wcomm_acceptf.o _wcomm_connectf.o \
-	_wcommdiscf.o _wcommparentf.o _wcomm_joinf.o _wcomm_spawnf.o \
-	_wspawnmultf.o _wlookup_namef.o _wopen_portf.o _wpublish_namef.o \
-	_wunpubnamef.o _waccumulatef.o _wgetf.o _wputf.o _wwin_completef.o \
-	_wwin_createf.o _wwin_fencef.o _wwin_freef.o _wwin_get_groupf.o \
-	_wwin_lockf.o _wwin_postf.o _wwin_startf.o _wwin_testf.o \
-	_wwin_unlockf.o _wwin_waitf.o _walltoallwf.o _wexscanf.o \
-	_wadderrclassf.o _wadderrcodef.o _wadderrstringf.o _wcommcallerrf.o \
-	_wcommnewkeyf.o _wcommdelattrf.o _wcommfreekeyf.o _wcomm_get_attrf.o \
-	_wcommgetnamf.o _wcomm_set_attrf.o _wcomm_set_namef.o \
-	_wfilecallerrf.o _wgreqcompletef.o _wgreqstartf.o _wisthrmainf.o \
-	_wquery_threadf.o _wstatgetclf.o _wstatsetelf.o _wtypenewkeyf.o \
-	_wtypedelattrf.o _wtype_dupf.o _wtypefreekeyf.o _wtype_get_attrf.o \
-	_wtypegetcntsf.o _wtypegetenvf.o _wtypegnamef.o _wtypesetattrf.o \
-	_wtypesetnamef.o _wtype_match_sizef.o _wwincallerrf.o _wwinnewkeyf.o \
-	_wwindelattrf.o _wwinfreekeyf.o _wwin_get_attrf.o _wwin_get_namef.o \
-	_wwin_set_attrf.o _wwin_set_namef.o _walloc_memf.o _wcommcreerrf.o \
-	_wcommgeterrf.o _wcommseterrf.o _wfilecreerrf.o _wfilegeterrf.o \
-	_wfileseterrf.o _wfinalizedf.o _wfree_memf.o _winfo_createf.o \
-	_winfo_deletef.o _winfo_dupf.o _winfo_freef.o _winfo_getf.o \
-	_winfognkf.o _winfognthkf.o _winfovallenf.o _winfo_setf.o \
-	_wpack_externalf.o _wpackesizef.o _wreqgetstatf.o _wtypedarrayf.o \
-	_wtypechindf.o _wtypechvecf.o _wtypecindbf.o _wtypecresizef.o \
-	_wtypecstructf.o _wtypecsubarrf.o _wtypegetextentf.o _wtypegtextf.o \
-	_wunpackextf.o _wwincreerrf.o _wwingeterrf.o _wwinseterrf.o \
-	_wreduce_localf.o _wop_commutativef.o _wreduce_scatter_blockf.o \
-	_wdist_graph_create_adjacentf.o _wdist_graph_createf.o \
-	_wdist_graph_neighbors_countf.o _wdist_graph_neighborsf.o \
-	_wfile_openf.o _wfile_closef.o _wfile_deletef.o _wfile_set_sizef.o \
-	_wfile_preallocatef.o _wfile_get_sizef.o _wfile_get_groupf.o \
-	_wfile_get_amodef.o _wfile_set_infof.o _wfile_get_infof.o \
-	_wfile_set_viewf.o _wfile_get_viewf.o _wfile_read_atf.o \
-	_wfile_read_at_allf.o _wfile_write_atf.o _wfile_write_at_allf.o \
-	_wfile_iread_atf.o _wfile_iwrite_atf.o _wfile_readf.o \
-	_wfile_read_allf.o _wfile_writef.o _wfile_write_allf.o \
-	_wfile_ireadf.o _wfile_iwritef.o _wfile_seekf.o \
-	_wfile_get_positionf.o _wfile_get_byte_offsetf.o \
-	_wfile_read_sharedf.o _wfile_write_sharedf.o _wfile_iread_sharedf.o \
-	_wfile_iwrite_sharedf.o _wfile_read_orderedf.o \
-	_wfile_write_orderedf.o _wfile_seek_sharedf.o \
-	_wfile_get_position_sharedf.o _wfile_read_at_all_beginf.o \
-	_wfile_read_at_all_endf.o _wfile_write_at_all_beginf.o \
-	_wfile_write_at_all_endf.o _wfile_read_all_beginf.o \
-	_wfile_read_all_endf.o _wfile_write_all_beginf.o \
-	_wfile_write_all_endf.o _wfile_read_ordered_beginf.o \
-	_wfile_read_ordered_endf.o _wfile_write_ordered_beginf.o \
-	_wfile_write_ordered_endf.o _wfile_get_type_extentf.o \
-	_wregister_datarepf.o _wfile_set_atomicityf.o _wfile_get_atomicityf.o \
-	_wfile_syncf.o _winitf.o _winitthreadf.o _wpcontrolf.o _waddressf.o \
-	_wgetaddressf.o _wwtimef.o _wwtickf.o _wkeyval_createf.o _wdup_fnf.o \
-	_wnull_del_fnf.o _wnull_copy_fnf.o _wdup_comm_fnf.o \
-	_wnull_comm_del_fnf.o _wnull_comm_copy_fnf.o _wdup_win_fnf.o \
-	_wnull_win_del_fnf.o _wnull_win_copy_fnf.o _wdup_type_fnf.o \
-	_wnull_type_del_fnf.o _wnull_type_copy_fnf.o _wstatusf2c.o \
-	_wstatusc2f.o 
+.libstamp0 ../../../lib/lib${FWRAPNAME}.a: _wsendf.o _wrecvf.o _wget_countf.o _wbsendf.o \
+	_wssendf.o _wrsendf.o _wbufattachf.o _wbufdetachf.o _wisendf.o _wibsendf.o _wissendf.o \
+	_wirsendf.o _wirecvf.o _wwaitf.o _wtestf.o _wrequest_freef.o _wwaitanyf.o _wtestanyf.o \
+	_wwaitallf.o _wtestallf.o _wwaitsomef.o _wtestsomef.o _wiprobef.o _wprobef.o _wcancelf.o \
+	_wtestcancelf.o _wsend_initf.o _wbsend_initf.o _wssend_initf.o _wrsend_initf.o \
+	_wrecv_initf.o _wstartf.o _wstartallf.o _wsendrecvf.o _wsndrcvrplf.o _wtypecontigf.o \
+	_wtype_vectorf.o _wtype_hvectorf.o _wtype_indexedf.o _wtype_hindexedf.o _wtype_structf.o \
+	_wtype_extentf.o _wtype_sizef.o _wtype_lbf.o _wtype_ubf.o _wtype_commitf.o _wtype_freef.o \
+	_wget_elementsf.o _wpackf.o _wunpackf.o _wpack_sizef.o _wbarrierf.o _wbcastf.o \
+	_wgatherf.o _wgathervf.o _wscatterf.o _wscattervf.o _wallgatherf.o _wallgathervf.o \
+	_walltoallf.o _walltoallvf.o _wreducef.o _wop_createf.o _wop_freef.o _wallreducef.o \
+	_wredscatf.o _wscanf.o _wgroup_sizef.o _wgroup_rankf.o _wgrouptranksf.o \
+	_wgroup_comparef.o _wcomm_groupf.o _wgroup_unionf.o _wgroupinterf.o _wgroupdifff.o \
+	_wgroup_inclf.o _wgroup_exclf.o _wgrouprinclf.o _wgrouprexclf.o _wgroup_freef.o \
+	_wcomm_sizef.o _wcomm_rankf.o _wcomm_comparef.o _wcomm_dupf.o _wcomm_createf.o \
+	_wcomm_splitf.o _wcomm_freef.o _wcommtesticf.o _wcommrsizef.o _wcommrgroupf.o \
+	_wiccreatef.o _wicmergef.o _wkeyval_freef.o _wattr_putf.o _wattr_getf.o _wattr_deletef.o \
+	_wtopo_testf.o _wcart_createf.o _wdims_createf.o _wgraph_createf.o _wgraphdims_getf.o \
+	_wgraph_getf.o _wcartdim_getf.o _wcart_getf.o _wcart_rankf.o _wcart_coordsf.o \
+	_wgrfnbcountf.o _wgrfnbrsf.o _wcart_shiftf.o _wcart_subf.o _wcart_mapf.o _wgraph_mapf.o \
+	_wgetpnamef.o _wget_versionf.o _werrhcreatef.o _werrhsetf.o _werrhgetf.o _werrhfreef.o \
+	_werror_stringf.o _werror_classf.o _wfinalizef.o _winitializedf.o _wabortf.o \
+	_wclose_portf.o _wcomm_acceptf.o _wcomm_connectf.o _wcommdiscf.o _wcommparentf.o \
+	_wcomm_joinf.o _wcomm_spawnf.o _wspawnmultf.o _wlookup_namef.o _wopen_portf.o \
+	_wpublish_namef.o _wunpubnamef.o _waccumulatef.o _wgetf.o _wputf.o _wwin_completef.o \
+	_wwin_createf.o _wwin_fencef.o _wwin_freef.o _wwin_get_groupf.o _wwin_lockf.o \
+	_wwin_postf.o _wwin_startf.o _wwin_testf.o _wwin_unlockf.o _wwin_waitf.o _walltoallwf.o \
+	_wexscanf.o _wadderrclassf.o _wadderrcodef.o _wadderrstringf.o _wcommcallerrf.o \
+	_wcommnewkeyf.o _wcommdelattrf.o _wcommfreekeyf.o _wcomm_get_attrf.o _wcommgetnamf.o \
+	_wcomm_set_attrf.o _wcomm_set_namef.o _wfilecallerrf.o _wgreqcompletef.o _wgreqstartf.o \
+	_wisthrmainf.o _wquery_threadf.o _wstatgetclf.o _wstatsetelf.o _wtypenewkeyf.o \
+	_wtypedelattrf.o _wtype_dupf.o _wtypefreekeyf.o _wtype_get_attrf.o _wtypegetcntsf.o \
+	_wtypegetenvf.o _wtypegnamef.o _wtypesetattrf.o _wtypesetnamef.o _wtype_match_sizef.o \
+	_wwincallerrf.o _wwinnewkeyf.o _wwindelattrf.o _wwinfreekeyf.o _wwin_get_attrf.o \
+	_wwin_get_namef.o _wwin_set_attrf.o _wwin_set_namef.o _walloc_memf.o _wcommcreerrf.o \
+	_wcommgeterrf.o _wcommseterrf.o _wfilecreerrf.o _wfilegeterrf.o _wfileseterrf.o \
+	_wfinalizedf.o _wfree_memf.o _winfo_createf.o _winfo_deletef.o _winfo_dupf.o \
+	_winfo_freef.o _winfo_getf.o _winfognkf.o _winfognthkf.o _winfovallenf.o _winfo_setf.o \
+	_wpack_externalf.o _wpackesizef.o _wreqgetstatf.o _wtypedarrayf.o _wtypechindf.o \
+	_wtypechvecf.o _wtypecindbf.o _wtypecresizef.o _wtypecstructf.o _wtypecsubarrf.o \
+	_wtypegetextentf.o _wtypegtextf.o _wunpackextf.o _wwincreerrf.o _wwingeterrf.o \
+	_wwinseterrf.o _wreduce_localf.o _wop_commutativef.o _wreduce_scatter_blockf.o \
+	_wdist_graph_create_adjacentf.o _wdist_graph_createf.o _wdist_graph_neighbors_countf.o \
+	_wdist_graph_neighborsf.o _wfile_openf.o _wfile_closef.o _wfile_deletef.o \
+	_wfile_set_sizef.o _wfile_preallocatef.o _wfile_get_sizef.o _wfile_get_groupf.o \
+	_wfile_get_amodef.o _wfile_set_infof.o _wfile_get_infof.o _wfile_set_viewf.o \
+	_wfile_get_viewf.o _wfile_read_atf.o _wfile_read_at_allf.o _wfile_write_atf.o \
+	_wfile_write_at_allf.o _wfile_iread_atf.o _wfile_iwrite_atf.o _wfile_readf.o \
+	_wfile_read_allf.o _wfile_writef.o _wfile_write_allf.o _wfile_ireadf.o _wfile_iwritef.o \
+	_wfile_seekf.o _wfile_get_positionf.o _wfile_get_byte_offsetf.o _wfile_read_sharedf.o \
+	_wfile_write_sharedf.o _wfile_iread_sharedf.o _wfile_iwrite_sharedf.o \
+	_wfile_read_orderedf.o _wfile_write_orderedf.o _wfile_seek_sharedf.o \
+	_wfile_get_position_sharedf.o _wfile_read_at_all_beginf.o _wfile_read_at_all_endf.o \
+	_wfile_write_at_all_beginf.o _wfile_write_at_all_endf.o _wfile_read_all_beginf.o \
+	_wfile_read_all_endf.o _wfile_write_all_beginf.o _wfile_write_all_endf.o \
+	_wfile_read_ordered_beginf.o _wfile_read_ordered_endf.o _wfile_write_ordered_beginf.o \
+	_wfile_write_ordered_endf.o _wfile_get_type_extentf.o _wregister_datarepf.o \
+	_wfile_set_atomicityf.o _wfile_get_atomicityf.o _wfile_syncf.o _winitf.o _winitthreadf.o \
+	_wpcontrolf.o _waddressf.o _wgetaddressf.o _wwtimef.o _wwtickf.o _wkeyval_createf.o \
+	_wdup_fnf.o _wnull_del_fnf.o _wnull_copy_fnf.o _wdup_comm_fnf.o _wnull_comm_del_fnf.o \
+	_wnull_comm_copy_fnf.o _wdup_win_fnf.o _wnull_win_del_fnf.o _wnull_win_copy_fnf.o \
+	_wdup_type_fnf.o _wnull_type_del_fnf.o _wnull_type_copy_fnf.o _wstatusf2c.o _wstatusc2f.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${FWRAPNAME}.a $?" ; \
 	else \
@@ -402,78 +346,61 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	fi
 	@${RANLIB} ../../../lib/lib${FWRAPNAME}.a
 	date > .libstamp0
-.libstamp2 ../../../lib/lib${MPIFLIBNAME}.a: sendf.o recvf.o get_countf.o \
-	bsendf.o ssendf.o rsendf.o bufattachf.o bufdetachf.o isendf.o \
-	ibsendf.o issendf.o irsendf.o irecvf.o waitf.o testf.o \
-	request_freef.o waitanyf.o testanyf.o waitallf.o testallf.o \
-	waitsomef.o testsomef.o iprobef.o probef.o cancelf.o testcancelf.o \
-	send_initf.o bsend_initf.o ssend_initf.o rsend_initf.o recv_initf.o \
-	startf.o startallf.o sendrecvf.o sndrcvrplf.o typecontigf.o \
-	type_vectorf.o type_hvectorf.o type_indexedf.o type_hindexedf.o \
-	type_structf.o type_extentf.o type_sizef.o type_lbf.o type_ubf.o \
-	type_commitf.o type_freef.o get_elementsf.o packf.o unpackf.o \
-	pack_sizef.o barrierf.o bcastf.o gatherf.o gathervf.o scatterf.o \
-	scattervf.o allgatherf.o allgathervf.o alltoallf.o alltoallvf.o \
-	reducef.o op_createf.o op_freef.o allreducef.o redscatf.o scanf.o \
-	group_sizef.o group_rankf.o grouptranksf.o group_comparef.o \
-	comm_groupf.o group_unionf.o groupinterf.o groupdifff.o group_inclf.o \
-	group_exclf.o grouprinclf.o grouprexclf.o group_freef.o comm_sizef.o \
-	comm_rankf.o comm_comparef.o comm_dupf.o comm_createf.o comm_splitf.o \
-	comm_freef.o commtesticf.o commrsizef.o commrgroupf.o iccreatef.o \
-	icmergef.o keyval_freef.o attr_putf.o attr_getf.o attr_deletef.o \
-	topo_testf.o cart_createf.o dims_createf.o graph_createf.o \
-	graphdims_getf.o graph_getf.o cartdim_getf.o cart_getf.o cart_rankf.o \
-	cart_coordsf.o grfnbcountf.o grfnbrsf.o cart_shiftf.o cart_subf.o \
-	cart_mapf.o graph_mapf.o getpnamef.o get_versionf.o errhcreatef.o \
-	errhsetf.o errhgetf.o errhfreef.o error_stringf.o error_classf.o \
-	finalizef.o initializedf.o abortf.o close_portf.o comm_acceptf.o \
-	comm_connectf.o commdiscf.o commparentf.o comm_joinf.o comm_spawnf.o \
-	spawnmultf.o lookup_namef.o open_portf.o publish_namef.o unpubnamef.o \
-	accumulatef.o getf.o putf.o win_completef.o win_createf.o \
-	win_fencef.o win_freef.o win_get_groupf.o win_lockf.o win_postf.o \
-	win_startf.o win_testf.o win_unlockf.o win_waitf.o alltoallwf.o \
-	exscanf.o adderrclassf.o adderrcodef.o adderrstringf.o commcallerrf.o \
-	commnewkeyf.o commdelattrf.o commfreekeyf.o comm_get_attrf.o \
-	commgetnamf.o comm_set_attrf.o comm_set_namef.o filecallerrf.o \
-	greqcompletef.o greqstartf.o isthrmainf.o query_threadf.o \
-	statgetclf.o statsetelf.o typenewkeyf.o typedelattrf.o type_dupf.o \
-	typefreekeyf.o type_get_attrf.o typegetcntsf.o typegetenvf.o \
-	typegnamef.o typesetattrf.o typesetnamef.o type_match_sizef.o \
-	wincallerrf.o winnewkeyf.o windelattrf.o winfreekeyf.o \
-	win_get_attrf.o win_get_namef.o win_set_attrf.o win_set_namef.o \
-	alloc_memf.o commcreerrf.o commgeterrf.o commseterrf.o filecreerrf.o \
-	filegeterrf.o fileseterrf.o finalizedf.o free_memf.o info_createf.o \
-	info_deletef.o info_dupf.o info_freef.o info_getf.o infognkf.o \
-	infognthkf.o infovallenf.o info_setf.o pack_externalf.o packesizef.o \
-	reqgetstatf.o typedarrayf.o typechindf.o typechvecf.o typecindbf.o \
-	typecresizef.o typecstructf.o typecsubarrf.o typegetextentf.o \
-	typegtextf.o unpackextf.o wincreerrf.o wingeterrf.o winseterrf.o \
-	reduce_localf.o op_commutativef.o reduce_scatter_blockf.o \
-	dist_graph_create_adjacentf.o dist_graph_createf.o \
-	dist_graph_neighbors_countf.o dist_graph_neighborsf.o file_openf.o \
-	file_closef.o file_deletef.o file_set_sizef.o file_preallocatef.o \
-	file_get_sizef.o file_get_groupf.o file_get_amodef.o file_set_infof.o \
-	file_get_infof.o file_set_viewf.o file_get_viewf.o file_read_atf.o \
-	file_read_at_allf.o file_write_atf.o file_write_at_allf.o \
-	file_iread_atf.o file_iwrite_atf.o file_readf.o file_read_allf.o \
-	file_writef.o file_write_allf.o file_ireadf.o file_iwritef.o \
-	file_seekf.o file_get_positionf.o file_get_byte_offsetf.o \
-	file_read_sharedf.o file_write_sharedf.o file_iread_sharedf.o \
-	file_iwrite_sharedf.o file_read_orderedf.o file_write_orderedf.o \
-	file_seek_sharedf.o file_get_position_sharedf.o \
-	file_read_at_all_beginf.o file_read_at_all_endf.o \
-	file_write_at_all_beginf.o file_write_at_all_endf.o \
-	file_read_all_beginf.o file_read_all_endf.o file_write_all_beginf.o \
-	file_write_all_endf.o file_read_ordered_beginf.o \
-	file_read_ordered_endf.o file_write_ordered_beginf.o \
+.libstamp2 ../../../lib/lib${MPIFLIBNAME}.a: sendf.o recvf.o get_countf.o bsendf.o ssendf.o \
+	rsendf.o bufattachf.o bufdetachf.o isendf.o ibsendf.o issendf.o irsendf.o irecvf.o \
+	waitf.o testf.o request_freef.o waitanyf.o testanyf.o waitallf.o testallf.o waitsomef.o \
+	testsomef.o iprobef.o probef.o cancelf.o testcancelf.o send_initf.o bsend_initf.o \
+	ssend_initf.o rsend_initf.o recv_initf.o startf.o startallf.o sendrecvf.o sndrcvrplf.o \
+	typecontigf.o type_vectorf.o type_hvectorf.o type_indexedf.o type_hindexedf.o \
+	type_structf.o type_extentf.o type_sizef.o type_lbf.o type_ubf.o type_commitf.o \
+	type_freef.o get_elementsf.o packf.o unpackf.o pack_sizef.o barrierf.o bcastf.o gatherf.o \
+	gathervf.o scatterf.o scattervf.o allgatherf.o allgathervf.o alltoallf.o alltoallvf.o \
+	reducef.o op_createf.o op_freef.o allreducef.o redscatf.o scanf.o group_sizef.o \
+	group_rankf.o grouptranksf.o group_comparef.o comm_groupf.o group_unionf.o groupinterf.o \
+	groupdifff.o group_inclf.o group_exclf.o grouprinclf.o grouprexclf.o group_freef.o \
+	comm_sizef.o comm_rankf.o comm_comparef.o comm_dupf.o comm_createf.o comm_splitf.o \
+	comm_freef.o commtesticf.o commrsizef.o commrgroupf.o iccreatef.o icmergef.o \
+	keyval_freef.o attr_putf.o attr_getf.o attr_deletef.o topo_testf.o cart_createf.o \
+	dims_createf.o graph_createf.o graphdims_getf.o graph_getf.o cartdim_getf.o cart_getf.o \
+	cart_rankf.o cart_coordsf.o grfnbcountf.o grfnbrsf.o cart_shiftf.o cart_subf.o \
+	cart_mapf.o graph_mapf.o getpnamef.o get_versionf.o errhcreatef.o errhsetf.o errhgetf.o \
+	errhfreef.o error_stringf.o error_classf.o finalizef.o initializedf.o abortf.o \
+	close_portf.o comm_acceptf.o comm_connectf.o commdiscf.o commparentf.o comm_joinf.o \
+	comm_spawnf.o spawnmultf.o lookup_namef.o open_portf.o publish_namef.o unpubnamef.o \
+	accumulatef.o getf.o putf.o win_completef.o win_createf.o win_fencef.o win_freef.o \
+	win_get_groupf.o win_lockf.o win_postf.o win_startf.o win_testf.o win_unlockf.o \
+	win_waitf.o alltoallwf.o exscanf.o adderrclassf.o adderrcodef.o adderrstringf.o \
+	commcallerrf.o commnewkeyf.o commdelattrf.o commfreekeyf.o comm_get_attrf.o commgetnamf.o \
+	comm_set_attrf.o comm_set_namef.o filecallerrf.o greqcompletef.o greqstartf.o \
+	isthrmainf.o query_threadf.o statgetclf.o statsetelf.o typenewkeyf.o typedelattrf.o \
+	type_dupf.o typefreekeyf.o type_get_attrf.o typegetcntsf.o typegetenvf.o typegnamef.o \
+	typesetattrf.o typesetnamef.o type_match_sizef.o wincallerrf.o winnewkeyf.o windelattrf.o \
+	winfreekeyf.o win_get_attrf.o win_get_namef.o win_set_attrf.o win_set_namef.o \
+	alloc_memf.o commcreerrf.o commgeterrf.o commseterrf.o filecreerrf.o filegeterrf.o \
+	fileseterrf.o finalizedf.o free_memf.o info_createf.o info_deletef.o info_dupf.o \
+	info_freef.o info_getf.o infognkf.o infognthkf.o infovallenf.o info_setf.o \
+	pack_externalf.o packesizef.o reqgetstatf.o typedarrayf.o typechindf.o typechvecf.o \
+	typecindbf.o typecresizef.o typecstructf.o typecsubarrf.o typegetextentf.o typegtextf.o \
+	unpackextf.o wincreerrf.o wingeterrf.o winseterrf.o reduce_localf.o op_commutativef.o \
+	reduce_scatter_blockf.o dist_graph_create_adjacentf.o dist_graph_createf.o \
+	dist_graph_neighbors_countf.o dist_graph_neighborsf.o file_openf.o file_closef.o \
+	file_deletef.o file_set_sizef.o file_preallocatef.o file_get_sizef.o file_get_groupf.o \
+	file_get_amodef.o file_set_infof.o file_get_infof.o file_set_viewf.o file_get_viewf.o \
+	file_read_atf.o file_read_at_allf.o file_write_atf.o file_write_at_allf.o \
+	file_iread_atf.o file_iwrite_atf.o file_readf.o file_read_allf.o file_writef.o \
+	file_write_allf.o file_ireadf.o file_iwritef.o file_seekf.o file_get_positionf.o \
+	file_get_byte_offsetf.o file_read_sharedf.o file_write_sharedf.o file_iread_sharedf.o \
+	file_iwrite_sharedf.o file_read_orderedf.o file_write_orderedf.o file_seek_sharedf.o \
+	file_get_position_sharedf.o file_read_at_all_beginf.o file_read_at_all_endf.o \
+	file_write_at_all_beginf.o file_write_at_all_endf.o file_read_all_beginf.o \
+	file_read_all_endf.o file_write_all_beginf.o file_write_all_endf.o \
+	file_read_ordered_beginf.o file_read_ordered_endf.o file_write_ordered_beginf.o \
 	file_write_ordered_endf.o file_get_type_extentf.o register_datarepf.o \
-	file_set_atomicityf.o file_get_atomicityf.o file_syncf.o initf.o \
-	initthreadf.o pcontrolf.o addressf.o getaddressf.o wtimef.o wtickf.o \
-	keyval_createf.o dup_fnf.o null_del_fnf.o null_copy_fnf.o \
-	dup_comm_fnf.o null_comm_del_fnf.o null_comm_copy_fnf.o dup_win_fnf.o \
-	null_win_del_fnf.o null_win_copy_fnf.o dup_type_fnf.o \
-	null_type_del_fnf.o null_type_copy_fnf.o statusf2c.o statusc2f.o \
-	setbot.o setbotf.o 
+	file_set_atomicityf.o file_get_atomicityf.o file_syncf.o initf.o initthreadf.o \
+	pcontrolf.o addressf.o getaddressf.o wtimef.o wtickf.o keyval_createf.o dup_fnf.o \
+	null_del_fnf.o null_copy_fnf.o dup_comm_fnf.o null_comm_del_fnf.o null_comm_copy_fnf.o \
+	dup_win_fnf.o null_win_del_fnf.o null_win_copy_fnf.o dup_type_fnf.o null_type_del_fnf.o \
+	null_type_copy_fnf.o statusf2c.o statusc2f.o setbot.o setbotf.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPIFLIBNAME}.a $?" ; \
 	else \
@@ -487,95 +414,72 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	fi
 	@${RANLIB} ../../../lib/lib${MPIFLIBNAME}.a
 	date > .libstamp2
-.libstamp1 ../../../lib/lib${FWRAPNAME}.la: _wsendf.lo _wrecvf.lo \
-	_wget_countf.lo _wbsendf.lo _wssendf.lo _wrsendf.lo _wbufattachf.lo \
-	_wbufdetachf.lo _wisendf.lo _wibsendf.lo _wissendf.lo _wirsendf.lo \
-	_wirecvf.lo _wwaitf.lo _wtestf.lo _wrequest_freef.lo _wwaitanyf.lo \
-	_wtestanyf.lo _wwaitallf.lo _wtestallf.lo _wwaitsomef.lo \
-	_wtestsomef.lo _wiprobef.lo _wprobef.lo _wcancelf.lo _wtestcancelf.lo \
-	_wsend_initf.lo _wbsend_initf.lo _wssend_initf.lo _wrsend_initf.lo \
-	_wrecv_initf.lo _wstartf.lo _wstartallf.lo _wsendrecvf.lo \
-	_wsndrcvrplf.lo _wtypecontigf.lo _wtype_vectorf.lo _wtype_hvectorf.lo \
-	_wtype_indexedf.lo _wtype_hindexedf.lo _wtype_structf.lo \
-	_wtype_extentf.lo _wtype_sizef.lo _wtype_lbf.lo _wtype_ubf.lo \
-	_wtype_commitf.lo _wtype_freef.lo _wget_elementsf.lo _wpackf.lo \
-	_wunpackf.lo _wpack_sizef.lo _wbarrierf.lo _wbcastf.lo _wgatherf.lo \
-	_wgathervf.lo _wscatterf.lo _wscattervf.lo _wallgatherf.lo \
-	_wallgathervf.lo _walltoallf.lo _walltoallvf.lo _wreducef.lo \
-	_wop_createf.lo _wop_freef.lo _wallreducef.lo _wredscatf.lo \
-	_wscanf.lo _wgroup_sizef.lo _wgroup_rankf.lo _wgrouptranksf.lo \
-	_wgroup_comparef.lo _wcomm_groupf.lo _wgroup_unionf.lo \
-	_wgroupinterf.lo _wgroupdifff.lo _wgroup_inclf.lo _wgroup_exclf.lo \
-	_wgrouprinclf.lo _wgrouprexclf.lo _wgroup_freef.lo _wcomm_sizef.lo \
-	_wcomm_rankf.lo _wcomm_comparef.lo _wcomm_dupf.lo _wcomm_createf.lo \
-	_wcomm_splitf.lo _wcomm_freef.lo _wcommtesticf.lo _wcommrsizef.lo \
-	_wcommrgroupf.lo _wiccreatef.lo _wicmergef.lo _wkeyval_freef.lo \
-	_wattr_putf.lo _wattr_getf.lo _wattr_deletef.lo _wtopo_testf.lo \
-	_wcart_createf.lo _wdims_createf.lo _wgraph_createf.lo \
-	_wgraphdims_getf.lo _wgraph_getf.lo _wcartdim_getf.lo _wcart_getf.lo \
-	_wcart_rankf.lo _wcart_coordsf.lo _wgrfnbcountf.lo _wgrfnbrsf.lo \
-	_wcart_shiftf.lo _wcart_subf.lo _wcart_mapf.lo _wgraph_mapf.lo \
-	_wgetpnamef.lo _wget_versionf.lo _werrhcreatef.lo _werrhsetf.lo \
-	_werrhgetf.lo _werrhfreef.lo _werror_stringf.lo _werror_classf.lo \
-	_wfinalizef.lo _winitializedf.lo _wabortf.lo _wclose_portf.lo \
-	_wcomm_acceptf.lo _wcomm_connectf.lo _wcommdiscf.lo _wcommparentf.lo \
-	_wcomm_joinf.lo _wcomm_spawnf.lo _wspawnmultf.lo _wlookup_namef.lo \
-	_wopen_portf.lo _wpublish_namef.lo _wunpubnamef.lo _waccumulatef.lo \
-	_wgetf.lo _wputf.lo _wwin_completef.lo _wwin_createf.lo \
-	_wwin_fencef.lo _wwin_freef.lo _wwin_get_groupf.lo _wwin_lockf.lo \
-	_wwin_postf.lo _wwin_startf.lo _wwin_testf.lo _wwin_unlockf.lo \
-	_wwin_waitf.lo _walltoallwf.lo _wexscanf.lo _wadderrclassf.lo \
-	_wadderrcodef.lo _wadderrstringf.lo _wcommcallerrf.lo \
-	_wcommnewkeyf.lo _wcommdelattrf.lo _wcommfreekeyf.lo \
-	_wcomm_get_attrf.lo _wcommgetnamf.lo _wcomm_set_attrf.lo \
-	_wcomm_set_namef.lo _wfilecallerrf.lo _wgreqcompletef.lo \
-	_wgreqstartf.lo _wisthrmainf.lo _wquery_threadf.lo _wstatgetclf.lo \
-	_wstatsetelf.lo _wtypenewkeyf.lo _wtypedelattrf.lo _wtype_dupf.lo \
-	_wtypefreekeyf.lo _wtype_get_attrf.lo _wtypegetcntsf.lo \
-	_wtypegetenvf.lo _wtypegnamef.lo _wtypesetattrf.lo _wtypesetnamef.lo \
-	_wtype_match_sizef.lo _wwincallerrf.lo _wwinnewkeyf.lo \
-	_wwindelattrf.lo _wwinfreekeyf.lo _wwin_get_attrf.lo \
-	_wwin_get_namef.lo _wwin_set_attrf.lo _wwin_set_namef.lo \
-	_walloc_memf.lo _wcommcreerrf.lo _wcommgeterrf.lo _wcommseterrf.lo \
-	_wfilecreerrf.lo _wfilegeterrf.lo _wfileseterrf.lo _wfinalizedf.lo \
-	_wfree_memf.lo _winfo_createf.lo _winfo_deletef.lo _winfo_dupf.lo \
-	_winfo_freef.lo _winfo_getf.lo _winfognkf.lo _winfognthkf.lo \
-	_winfovallenf.lo _winfo_setf.lo _wpack_externalf.lo _wpackesizef.lo \
-	_wreqgetstatf.lo _wtypedarrayf.lo _wtypechindf.lo _wtypechvecf.lo \
-	_wtypecindbf.lo _wtypecresizef.lo _wtypecstructf.lo _wtypecsubarrf.lo \
-	_wtypegetextentf.lo _wtypegtextf.lo _wunpackextf.lo _wwincreerrf.lo \
-	_wwingeterrf.lo _wwinseterrf.lo _wreduce_localf.lo \
-	_wop_commutativef.lo _wreduce_scatter_blockf.lo \
-	_wdist_graph_create_adjacentf.lo _wdist_graph_createf.lo \
-	_wdist_graph_neighbors_countf.lo _wdist_graph_neighborsf.lo \
-	_wfile_openf.lo _wfile_closef.lo _wfile_deletef.lo \
-	_wfile_set_sizef.lo _wfile_preallocatef.lo _wfile_get_sizef.lo \
-	_wfile_get_groupf.lo _wfile_get_amodef.lo _wfile_set_infof.lo \
-	_wfile_get_infof.lo _wfile_set_viewf.lo _wfile_get_viewf.lo \
-	_wfile_read_atf.lo _wfile_read_at_allf.lo _wfile_write_atf.lo \
-	_wfile_write_at_allf.lo _wfile_iread_atf.lo _wfile_iwrite_atf.lo \
-	_wfile_readf.lo _wfile_read_allf.lo _wfile_writef.lo \
-	_wfile_write_allf.lo _wfile_ireadf.lo _wfile_iwritef.lo \
-	_wfile_seekf.lo _wfile_get_positionf.lo _wfile_get_byte_offsetf.lo \
-	_wfile_read_sharedf.lo _wfile_write_sharedf.lo \
-	_wfile_iread_sharedf.lo _wfile_iwrite_sharedf.lo \
-	_wfile_read_orderedf.lo _wfile_write_orderedf.lo \
-	_wfile_seek_sharedf.lo _wfile_get_position_sharedf.lo \
-	_wfile_read_at_all_beginf.lo _wfile_read_at_all_endf.lo \
-	_wfile_write_at_all_beginf.lo _wfile_write_at_all_endf.lo \
-	_wfile_read_all_beginf.lo _wfile_read_all_endf.lo \
-	_wfile_write_all_beginf.lo _wfile_write_all_endf.lo \
-	_wfile_read_ordered_beginf.lo _wfile_read_ordered_endf.lo \
-	_wfile_write_ordered_beginf.lo _wfile_write_ordered_endf.lo \
-	_wfile_get_type_extentf.lo _wregister_datarepf.lo \
-	_wfile_set_atomicityf.lo _wfile_get_atomicityf.lo _wfile_syncf.lo \
-	_winitf.lo _winitthreadf.lo _wpcontrolf.lo _waddressf.lo \
-	_wgetaddressf.lo _wwtimef.lo _wwtickf.lo _wkeyval_createf.lo \
-	_wdup_fnf.lo _wnull_del_fnf.lo _wnull_copy_fnf.lo _wdup_comm_fnf.lo \
-	_wnull_comm_del_fnf.lo _wnull_comm_copy_fnf.lo _wdup_win_fnf.lo \
-	_wnull_win_del_fnf.lo _wnull_win_copy_fnf.lo _wdup_type_fnf.lo \
-	_wnull_type_del_fnf.lo _wnull_type_copy_fnf.lo _wstatusf2c.lo \
-	_wstatusc2f.lo 
+.libstamp1 ../../../lib/lib${FWRAPNAME}.la: _wsendf.lo _wrecvf.lo _wget_countf.lo _wbsendf.lo \
+	_wssendf.lo _wrsendf.lo _wbufattachf.lo _wbufdetachf.lo _wisendf.lo _wibsendf.lo \
+	_wissendf.lo _wirsendf.lo _wirecvf.lo _wwaitf.lo _wtestf.lo _wrequest_freef.lo \
+	_wwaitanyf.lo _wtestanyf.lo _wwaitallf.lo _wtestallf.lo _wwaitsomef.lo _wtestsomef.lo \
+	_wiprobef.lo _wprobef.lo _wcancelf.lo _wtestcancelf.lo _wsend_initf.lo _wbsend_initf.lo \
+	_wssend_initf.lo _wrsend_initf.lo _wrecv_initf.lo _wstartf.lo _wstartallf.lo \
+	_wsendrecvf.lo _wsndrcvrplf.lo _wtypecontigf.lo _wtype_vectorf.lo _wtype_hvectorf.lo \
+	_wtype_indexedf.lo _wtype_hindexedf.lo _wtype_structf.lo _wtype_extentf.lo \
+	_wtype_sizef.lo _wtype_lbf.lo _wtype_ubf.lo _wtype_commitf.lo _wtype_freef.lo \
+	_wget_elementsf.lo _wpackf.lo _wunpackf.lo _wpack_sizef.lo _wbarrierf.lo _wbcastf.lo \
+	_wgatherf.lo _wgathervf.lo _wscatterf.lo _wscattervf.lo _wallgatherf.lo _wallgathervf.lo \
+	_walltoallf.lo _walltoallvf.lo _wreducef.lo _wop_createf.lo _wop_freef.lo _wallreducef.lo \
+	_wredscatf.lo _wscanf.lo _wgroup_sizef.lo _wgroup_rankf.lo _wgrouptranksf.lo \
+	_wgroup_comparef.lo _wcomm_groupf.lo _wgroup_unionf.lo _wgroupinterf.lo _wgroupdifff.lo \
+	_wgroup_inclf.lo _wgroup_exclf.lo _wgrouprinclf.lo _wgrouprexclf.lo _wgroup_freef.lo \
+	_wcomm_sizef.lo _wcomm_rankf.lo _wcomm_comparef.lo _wcomm_dupf.lo _wcomm_createf.lo \
+	_wcomm_splitf.lo _wcomm_freef.lo _wcommtesticf.lo _wcommrsizef.lo _wcommrgroupf.lo \
+	_wiccreatef.lo _wicmergef.lo _wkeyval_freef.lo _wattr_putf.lo _wattr_getf.lo \
+	_wattr_deletef.lo _wtopo_testf.lo _wcart_createf.lo _wdims_createf.lo _wgraph_createf.lo \
+	_wgraphdims_getf.lo _wgraph_getf.lo _wcartdim_getf.lo _wcart_getf.lo _wcart_rankf.lo \
+	_wcart_coordsf.lo _wgrfnbcountf.lo _wgrfnbrsf.lo _wcart_shiftf.lo _wcart_subf.lo \
+	_wcart_mapf.lo _wgraph_mapf.lo _wgetpnamef.lo _wget_versionf.lo _werrhcreatef.lo \
+	_werrhsetf.lo _werrhgetf.lo _werrhfreef.lo _werror_stringf.lo _werror_classf.lo \
+	_wfinalizef.lo _winitializedf.lo _wabortf.lo _wclose_portf.lo _wcomm_acceptf.lo \
+	_wcomm_connectf.lo _wcommdiscf.lo _wcommparentf.lo _wcomm_joinf.lo _wcomm_spawnf.lo \
+	_wspawnmultf.lo _wlookup_namef.lo _wopen_portf.lo _wpublish_namef.lo _wunpubnamef.lo \
+	_waccumulatef.lo _wgetf.lo _wputf.lo _wwin_completef.lo _wwin_createf.lo _wwin_fencef.lo \
+	_wwin_freef.lo _wwin_get_groupf.lo _wwin_lockf.lo _wwin_postf.lo _wwin_startf.lo \
+	_wwin_testf.lo _wwin_unlockf.lo _wwin_waitf.lo _walltoallwf.lo _wexscanf.lo \
+	_wadderrclassf.lo _wadderrcodef.lo _wadderrstringf.lo _wcommcallerrf.lo _wcommnewkeyf.lo \
+	_wcommdelattrf.lo _wcommfreekeyf.lo _wcomm_get_attrf.lo _wcommgetnamf.lo \
+	_wcomm_set_attrf.lo _wcomm_set_namef.lo _wfilecallerrf.lo _wgreqcompletef.lo \
+	_wgreqstartf.lo _wisthrmainf.lo _wquery_threadf.lo _wstatgetclf.lo _wstatsetelf.lo \
+	_wtypenewkeyf.lo _wtypedelattrf.lo _wtype_dupf.lo _wtypefreekeyf.lo _wtype_get_attrf.lo \
+	_wtypegetcntsf.lo _wtypegetenvf.lo _wtypegnamef.lo _wtypesetattrf.lo _wtypesetnamef.lo \
+	_wtype_match_sizef.lo _wwincallerrf.lo _wwinnewkeyf.lo _wwindelattrf.lo _wwinfreekeyf.lo \
+	_wwin_get_attrf.lo _wwin_get_namef.lo _wwin_set_attrf.lo _wwin_set_namef.lo \
+	_walloc_memf.lo _wcommcreerrf.lo _wcommgeterrf.lo _wcommseterrf.lo _wfilecreerrf.lo \
+	_wfilegeterrf.lo _wfileseterrf.lo _wfinalizedf.lo _wfree_memf.lo _winfo_createf.lo \
+	_winfo_deletef.lo _winfo_dupf.lo _winfo_freef.lo _winfo_getf.lo _winfognkf.lo \
+	_winfognthkf.lo _winfovallenf.lo _winfo_setf.lo _wpack_externalf.lo _wpackesizef.lo \
+	_wreqgetstatf.lo _wtypedarrayf.lo _wtypechindf.lo _wtypechvecf.lo _wtypecindbf.lo \
+	_wtypecresizef.lo _wtypecstructf.lo _wtypecsubarrf.lo _wtypegetextentf.lo _wtypegtextf.lo \
+	_wunpackextf.lo _wwincreerrf.lo _wwingeterrf.lo _wwinseterrf.lo _wreduce_localf.lo \
+	_wop_commutativef.lo _wreduce_scatter_blockf.lo _wdist_graph_create_adjacentf.lo \
+	_wdist_graph_createf.lo _wdist_graph_neighbors_countf.lo _wdist_graph_neighborsf.lo \
+	_wfile_openf.lo _wfile_closef.lo _wfile_deletef.lo _wfile_set_sizef.lo \
+	_wfile_preallocatef.lo _wfile_get_sizef.lo _wfile_get_groupf.lo _wfile_get_amodef.lo \
+	_wfile_set_infof.lo _wfile_get_infof.lo _wfile_set_viewf.lo _wfile_get_viewf.lo \
+	_wfile_read_atf.lo _wfile_read_at_allf.lo _wfile_write_atf.lo _wfile_write_at_allf.lo \
+	_wfile_iread_atf.lo _wfile_iwrite_atf.lo _wfile_readf.lo _wfile_read_allf.lo \
+	_wfile_writef.lo _wfile_write_allf.lo _wfile_ireadf.lo _wfile_iwritef.lo _wfile_seekf.lo \
+	_wfile_get_positionf.lo _wfile_get_byte_offsetf.lo _wfile_read_sharedf.lo \
+	_wfile_write_sharedf.lo _wfile_iread_sharedf.lo _wfile_iwrite_sharedf.lo \
+	_wfile_read_orderedf.lo _wfile_write_orderedf.lo _wfile_seek_sharedf.lo \
+	_wfile_get_position_sharedf.lo _wfile_read_at_all_beginf.lo _wfile_read_at_all_endf.lo \
+	_wfile_write_at_all_beginf.lo _wfile_write_at_all_endf.lo _wfile_read_all_beginf.lo \
+	_wfile_read_all_endf.lo _wfile_write_all_beginf.lo _wfile_write_all_endf.lo \
+	_wfile_read_ordered_beginf.lo _wfile_read_ordered_endf.lo _wfile_write_ordered_beginf.lo \
+	_wfile_write_ordered_endf.lo _wfile_get_type_extentf.lo _wregister_datarepf.lo \
+	_wfile_set_atomicityf.lo _wfile_get_atomicityf.lo _wfile_syncf.lo _winitf.lo \
+	_winitthreadf.lo _wpcontrolf.lo _waddressf.lo _wgetaddressf.lo _wwtimef.lo _wwtickf.lo \
+	_wkeyval_createf.lo _wdup_fnf.lo _wnull_del_fnf.lo _wnull_copy_fnf.lo _wdup_comm_fnf.lo \
+	_wnull_comm_del_fnf.lo _wnull_comm_copy_fnf.lo _wdup_win_fnf.lo _wnull_win_del_fnf.lo \
+	_wnull_win_copy_fnf.lo _wdup_type_fnf.lo _wnull_type_del_fnf.lo _wnull_type_copy_fnf.lo \
+	_wstatusf2c.lo _wstatusc2f.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${FWRAPNAME}.la $?" ; \
 	else \
@@ -583,84 +487,65 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	fi
 	@${AR} ${AR_FLAGS} ../../../lib/lib${FWRAPNAME}.la $?
 	date > .libstamp1
-.libstamp3 ../../../lib/lib${MPIFLIBNAME}.la: sendf.lo recvf.lo get_countf.lo \
-	bsendf.lo ssendf.lo rsendf.lo bufattachf.lo bufdetachf.lo isendf.lo \
-	ibsendf.lo issendf.lo irsendf.lo irecvf.lo waitf.lo testf.lo \
-	request_freef.lo waitanyf.lo testanyf.lo waitallf.lo testallf.lo \
-	waitsomef.lo testsomef.lo iprobef.lo probef.lo cancelf.lo \
-	testcancelf.lo send_initf.lo bsend_initf.lo ssend_initf.lo \
-	rsend_initf.lo recv_initf.lo startf.lo startallf.lo sendrecvf.lo \
-	sndrcvrplf.lo typecontigf.lo type_vectorf.lo type_hvectorf.lo \
-	type_indexedf.lo type_hindexedf.lo type_structf.lo type_extentf.lo \
-	type_sizef.lo type_lbf.lo type_ubf.lo type_commitf.lo type_freef.lo \
-	get_elementsf.lo packf.lo unpackf.lo pack_sizef.lo barrierf.lo \
-	bcastf.lo gatherf.lo gathervf.lo scatterf.lo scattervf.lo \
-	allgatherf.lo allgathervf.lo alltoallf.lo alltoallvf.lo reducef.lo \
-	op_createf.lo op_freef.lo allreducef.lo redscatf.lo scanf.lo \
-	group_sizef.lo group_rankf.lo grouptranksf.lo group_comparef.lo \
-	comm_groupf.lo group_unionf.lo groupinterf.lo groupdifff.lo \
-	group_inclf.lo group_exclf.lo grouprinclf.lo grouprexclf.lo \
-	group_freef.lo comm_sizef.lo comm_rankf.lo comm_comparef.lo \
-	comm_dupf.lo comm_createf.lo comm_splitf.lo comm_freef.lo \
-	commtesticf.lo commrsizef.lo commrgroupf.lo iccreatef.lo icmergef.lo \
-	keyval_freef.lo attr_putf.lo attr_getf.lo attr_deletef.lo \
-	topo_testf.lo cart_createf.lo dims_createf.lo graph_createf.lo \
-	graphdims_getf.lo graph_getf.lo cartdim_getf.lo cart_getf.lo \
-	cart_rankf.lo cart_coordsf.lo grfnbcountf.lo grfnbrsf.lo \
-	cart_shiftf.lo cart_subf.lo cart_mapf.lo graph_mapf.lo getpnamef.lo \
-	get_versionf.lo errhcreatef.lo errhsetf.lo errhgetf.lo errhfreef.lo \
-	error_stringf.lo error_classf.lo finalizef.lo initializedf.lo \
-	abortf.lo close_portf.lo comm_acceptf.lo comm_connectf.lo \
-	commdiscf.lo commparentf.lo comm_joinf.lo comm_spawnf.lo \
-	spawnmultf.lo lookup_namef.lo open_portf.lo publish_namef.lo \
-	unpubnamef.lo accumulatef.lo getf.lo putf.lo win_completef.lo \
-	win_createf.lo win_fencef.lo win_freef.lo win_get_groupf.lo \
-	win_lockf.lo win_postf.lo win_startf.lo win_testf.lo win_unlockf.lo \
-	win_waitf.lo alltoallwf.lo exscanf.lo adderrclassf.lo adderrcodef.lo \
-	adderrstringf.lo commcallerrf.lo commnewkeyf.lo commdelattrf.lo \
-	commfreekeyf.lo comm_get_attrf.lo commgetnamf.lo comm_set_attrf.lo \
-	comm_set_namef.lo filecallerrf.lo greqcompletef.lo greqstartf.lo \
-	isthrmainf.lo query_threadf.lo statgetclf.lo statsetelf.lo \
-	typenewkeyf.lo typedelattrf.lo type_dupf.lo typefreekeyf.lo \
-	type_get_attrf.lo typegetcntsf.lo typegetenvf.lo typegnamef.lo \
-	typesetattrf.lo typesetnamef.lo type_match_sizef.lo wincallerrf.lo \
-	winnewkeyf.lo windelattrf.lo winfreekeyf.lo win_get_attrf.lo \
-	win_get_namef.lo win_set_attrf.lo win_set_namef.lo alloc_memf.lo \
-	commcreerrf.lo commgeterrf.lo commseterrf.lo filecreerrf.lo \
-	filegeterrf.lo fileseterrf.lo finalizedf.lo free_memf.lo \
-	info_createf.lo info_deletef.lo info_dupf.lo info_freef.lo \
-	info_getf.lo infognkf.lo infognthkf.lo infovallenf.lo info_setf.lo \
-	pack_externalf.lo packesizef.lo reqgetstatf.lo typedarrayf.lo \
-	typechindf.lo typechvecf.lo typecindbf.lo typecresizef.lo \
-	typecstructf.lo typecsubarrf.lo typegetextentf.lo typegtextf.lo \
-	unpackextf.lo wincreerrf.lo wingeterrf.lo winseterrf.lo \
+.libstamp3 ../../../lib/lib${MPIFLIBNAME}.la: sendf.lo recvf.lo get_countf.lo bsendf.lo ssendf.lo \
+	rsendf.lo bufattachf.lo bufdetachf.lo isendf.lo ibsendf.lo issendf.lo irsendf.lo \
+	irecvf.lo waitf.lo testf.lo request_freef.lo waitanyf.lo testanyf.lo waitallf.lo \
+	testallf.lo waitsomef.lo testsomef.lo iprobef.lo probef.lo cancelf.lo testcancelf.lo \
+	send_initf.lo bsend_initf.lo ssend_initf.lo rsend_initf.lo recv_initf.lo startf.lo \
+	startallf.lo sendrecvf.lo sndrcvrplf.lo typecontigf.lo type_vectorf.lo type_hvectorf.lo \
+	type_indexedf.lo type_hindexedf.lo type_structf.lo type_extentf.lo type_sizef.lo \
+	type_lbf.lo type_ubf.lo type_commitf.lo type_freef.lo get_elementsf.lo packf.lo \
+	unpackf.lo pack_sizef.lo barrierf.lo bcastf.lo gatherf.lo gathervf.lo scatterf.lo \
+	scattervf.lo allgatherf.lo allgathervf.lo alltoallf.lo alltoallvf.lo reducef.lo \
+	op_createf.lo op_freef.lo allreducef.lo redscatf.lo scanf.lo group_sizef.lo \
+	group_rankf.lo grouptranksf.lo group_comparef.lo comm_groupf.lo group_unionf.lo \
+	groupinterf.lo groupdifff.lo group_inclf.lo group_exclf.lo grouprinclf.lo grouprexclf.lo \
+	group_freef.lo comm_sizef.lo comm_rankf.lo comm_comparef.lo comm_dupf.lo comm_createf.lo \
+	comm_splitf.lo comm_freef.lo commtesticf.lo commrsizef.lo commrgroupf.lo iccreatef.lo \
+	icmergef.lo keyval_freef.lo attr_putf.lo attr_getf.lo attr_deletef.lo topo_testf.lo \
+	cart_createf.lo dims_createf.lo graph_createf.lo graphdims_getf.lo graph_getf.lo \
+	cartdim_getf.lo cart_getf.lo cart_rankf.lo cart_coordsf.lo grfnbcountf.lo grfnbrsf.lo \
+	cart_shiftf.lo cart_subf.lo cart_mapf.lo graph_mapf.lo getpnamef.lo get_versionf.lo \
+	errhcreatef.lo errhsetf.lo errhgetf.lo errhfreef.lo error_stringf.lo error_classf.lo \
+	finalizef.lo initializedf.lo abortf.lo close_portf.lo comm_acceptf.lo comm_connectf.lo \
+	commdiscf.lo commparentf.lo comm_joinf.lo comm_spawnf.lo spawnmultf.lo lookup_namef.lo \
+	open_portf.lo publish_namef.lo unpubnamef.lo accumulatef.lo getf.lo putf.lo \
+	win_completef.lo win_createf.lo win_fencef.lo win_freef.lo win_get_groupf.lo win_lockf.lo \
+	win_postf.lo win_startf.lo win_testf.lo win_unlockf.lo win_waitf.lo alltoallwf.lo \
+	exscanf.lo adderrclassf.lo adderrcodef.lo adderrstringf.lo commcallerrf.lo commnewkeyf.lo \
+	commdelattrf.lo commfreekeyf.lo comm_get_attrf.lo commgetnamf.lo comm_set_attrf.lo \
+	comm_set_namef.lo filecallerrf.lo greqcompletef.lo greqstartf.lo isthrmainf.lo \
+	query_threadf.lo statgetclf.lo statsetelf.lo typenewkeyf.lo typedelattrf.lo type_dupf.lo \
+	typefreekeyf.lo type_get_attrf.lo typegetcntsf.lo typegetenvf.lo typegnamef.lo \
+	typesetattrf.lo typesetnamef.lo type_match_sizef.lo wincallerrf.lo winnewkeyf.lo \
+	windelattrf.lo winfreekeyf.lo win_get_attrf.lo win_get_namef.lo win_set_attrf.lo \
+	win_set_namef.lo alloc_memf.lo commcreerrf.lo commgeterrf.lo commseterrf.lo \
+	filecreerrf.lo filegeterrf.lo fileseterrf.lo finalizedf.lo free_memf.lo info_createf.lo \
+	info_deletef.lo info_dupf.lo info_freef.lo info_getf.lo infognkf.lo infognthkf.lo \
+	infovallenf.lo info_setf.lo pack_externalf.lo packesizef.lo reqgetstatf.lo typedarrayf.lo \
+	typechindf.lo typechvecf.lo typecindbf.lo typecresizef.lo typecstructf.lo typecsubarrf.lo \
+	typegetextentf.lo typegtextf.lo unpackextf.lo wincreerrf.lo wingeterrf.lo winseterrf.lo \
 	reduce_localf.lo op_commutativef.lo reduce_scatter_blockf.lo \
-	dist_graph_create_adjacentf.lo dist_graph_createf.lo \
-	dist_graph_neighbors_countf.lo dist_graph_neighborsf.lo file_openf.lo \
-	file_closef.lo file_deletef.lo file_set_sizef.lo file_preallocatef.lo \
-	file_get_sizef.lo file_get_groupf.lo file_get_amodef.lo \
-	file_set_infof.lo file_get_infof.lo file_set_viewf.lo \
-	file_get_viewf.lo file_read_atf.lo file_read_at_allf.lo \
-	file_write_atf.lo file_write_at_allf.lo file_iread_atf.lo \
-	file_iwrite_atf.lo file_readf.lo file_read_allf.lo file_writef.lo \
-	file_write_allf.lo file_ireadf.lo file_iwritef.lo file_seekf.lo \
-	file_get_positionf.lo file_get_byte_offsetf.lo file_read_sharedf.lo \
-	file_write_sharedf.lo file_iread_sharedf.lo file_iwrite_sharedf.lo \
-	file_read_orderedf.lo file_write_orderedf.lo file_seek_sharedf.lo \
-	file_get_position_sharedf.lo file_read_at_all_beginf.lo \
-	file_read_at_all_endf.lo file_write_at_all_beginf.lo \
-	file_write_at_all_endf.lo file_read_all_beginf.lo \
+	dist_graph_create_adjacentf.lo dist_graph_createf.lo dist_graph_neighbors_countf.lo \
+	dist_graph_neighborsf.lo file_openf.lo file_closef.lo file_deletef.lo file_set_sizef.lo \
+	file_preallocatef.lo file_get_sizef.lo file_get_groupf.lo file_get_amodef.lo \
+	file_set_infof.lo file_get_infof.lo file_set_viewf.lo file_get_viewf.lo file_read_atf.lo \
+	file_read_at_allf.lo file_write_atf.lo file_write_at_allf.lo file_iread_atf.lo \
+	file_iwrite_atf.lo file_readf.lo file_read_allf.lo file_writef.lo file_write_allf.lo \
+	file_ireadf.lo file_iwritef.lo file_seekf.lo file_get_positionf.lo \
+	file_get_byte_offsetf.lo file_read_sharedf.lo file_write_sharedf.lo file_iread_sharedf.lo \
+	file_iwrite_sharedf.lo file_read_orderedf.lo file_write_orderedf.lo file_seek_sharedf.lo \
+	file_get_position_sharedf.lo file_read_at_all_beginf.lo file_read_at_all_endf.lo \
+	file_write_at_all_beginf.lo file_write_at_all_endf.lo file_read_all_beginf.lo \
 	file_read_all_endf.lo file_write_all_beginf.lo file_write_all_endf.lo \
-	file_read_ordered_beginf.lo file_read_ordered_endf.lo \
-	file_write_ordered_beginf.lo file_write_ordered_endf.lo \
-	file_get_type_extentf.lo register_datarepf.lo file_set_atomicityf.lo \
-	file_get_atomicityf.lo file_syncf.lo initf.lo initthreadf.lo \
-	pcontrolf.lo addressf.lo getaddressf.lo wtimef.lo wtickf.lo \
-	keyval_createf.lo dup_fnf.lo null_del_fnf.lo null_copy_fnf.lo \
-	dup_comm_fnf.lo null_comm_del_fnf.lo null_comm_copy_fnf.lo \
-	dup_win_fnf.lo null_win_del_fnf.lo null_win_copy_fnf.lo \
-	dup_type_fnf.lo null_type_del_fnf.lo null_type_copy_fnf.lo \
-	statusf2c.lo statusc2f.lo setbot.lo setbotf.lo 
+	file_read_ordered_beginf.lo file_read_ordered_endf.lo file_write_ordered_beginf.lo \
+	file_write_ordered_endf.lo file_get_type_extentf.lo register_datarepf.lo \
+	file_set_atomicityf.lo file_get_atomicityf.lo file_syncf.lo initf.lo initthreadf.lo \
+	pcontrolf.lo addressf.lo getaddressf.lo wtimef.lo wtickf.lo keyval_createf.lo dup_fnf.lo \
+	null_del_fnf.lo null_copy_fnf.lo dup_comm_fnf.lo null_comm_del_fnf.lo \
+	null_comm_copy_fnf.lo dup_win_fnf.lo null_win_del_fnf.lo null_win_copy_fnf.lo \
+	dup_type_fnf.lo null_type_del_fnf.lo null_type_copy_fnf.lo statusf2c.lo statusc2f.lo \
+	setbot.lo setbotf.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPIFLIBNAME}.la $?" ; \
 	else \
@@ -670,83 +555,63 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	date > .libstamp3
 
 # --------------------------------------------------------------------------
-.libstamp4: _sendf.o _recvf.o _get_countf.o _bsendf.o _ssendf.o _rsendf.o _bufattachf.o \
-	_bufdetachf.o _isendf.o _ibsendf.o _issendf.o _irsendf.o _irecvf.o \
-	_waitf.o _testf.o _request_freef.o _waitanyf.o _testanyf.o \
-	_waitallf.o _testallf.o _waitsomef.o _testsomef.o _iprobef.o \
-	_probef.o _cancelf.o _testcancelf.o _send_initf.o _bsend_initf.o \
-	_ssend_initf.o _rsend_initf.o _recv_initf.o _startf.o _startallf.o \
-	_sendrecvf.o _sndrcvrplf.o _typecontigf.o _type_vectorf.o \
-	_type_hvectorf.o _type_indexedf.o _type_hindexedf.o _type_structf.o \
-	_type_extentf.o _type_sizef.o _type_lbf.o _type_ubf.o _type_commitf.o \
-	_type_freef.o _get_elementsf.o _packf.o _unpackf.o _pack_sizef.o \
-	_barrierf.o _bcastf.o _gatherf.o _gathervf.o _scatterf.o _scattervf.o \
-	_allgatherf.o _allgathervf.o _alltoallf.o _alltoallvf.o _reducef.o \
-	_op_createf.o _op_freef.o _allreducef.o _redscatf.o _scanf.o \
-	_group_sizef.o _group_rankf.o _grouptranksf.o _group_comparef.o \
-	_comm_groupf.o _group_unionf.o _groupinterf.o _groupdifff.o \
-	_group_inclf.o _group_exclf.o _grouprinclf.o _grouprexclf.o \
-	_group_freef.o _comm_sizef.o _comm_rankf.o _comm_comparef.o \
-	_comm_dupf.o _comm_createf.o _comm_splitf.o _comm_freef.o \
-	_commtesticf.o _commrsizef.o _commrgroupf.o _iccreatef.o _icmergef.o \
-	_keyval_freef.o _attr_putf.o _attr_getf.o _attr_deletef.o \
-	_topo_testf.o _cart_createf.o _dims_createf.o _graph_createf.o \
-	_graphdims_getf.o _graph_getf.o _cartdim_getf.o _cart_getf.o \
-	_cart_rankf.o _cart_coordsf.o _grfnbcountf.o _grfnbrsf.o \
-	_cart_shiftf.o _cart_subf.o _cart_mapf.o _graph_mapf.o _getpnamef.o \
-	_get_versionf.o _errhcreatef.o _errhsetf.o _errhgetf.o _errhfreef.o \
-	_error_stringf.o _error_classf.o _finalizef.o _initializedf.o \
-	_abortf.o _close_portf.o _comm_acceptf.o _comm_connectf.o \
-	_commdiscf.o _commparentf.o _comm_joinf.o _comm_spawnf.o \
-	_spawnmultf.o _lookup_namef.o _open_portf.o _publish_namef.o \
-	_unpubnamef.o _accumulatef.o _getf.o _putf.o _win_completef.o \
-	_win_createf.o _win_fencef.o _win_freef.o _win_get_groupf.o \
-	_win_lockf.o _win_postf.o _win_startf.o _win_testf.o _win_unlockf.o \
-	_win_waitf.o _alltoallwf.o _exscanf.o _adderrclassf.o _adderrcodef.o \
-	_adderrstringf.o _commcallerrf.o _commnewkeyf.o _commdelattrf.o \
-	_commfreekeyf.o _comm_get_attrf.o _commgetnamf.o _comm_set_attrf.o \
-	_comm_set_namef.o _filecallerrf.o _greqcompletef.o _greqstartf.o \
-	_isthrmainf.o _query_threadf.o _statgetclf.o _statsetelf.o \
-	_typenewkeyf.o _typedelattrf.o _type_dupf.o _typefreekeyf.o \
-	_type_get_attrf.o _typegetcntsf.o _typegetenvf.o _typegnamef.o \
-	_typesetattrf.o _typesetnamef.o _type_match_sizef.o _wincallerrf.o \
-	_winnewkeyf.o _windelattrf.o _winfreekeyf.o _win_get_attrf.o \
-	_win_get_namef.o _win_set_attrf.o _win_set_namef.o _alloc_memf.o \
-	_commcreerrf.o _commgeterrf.o _commseterrf.o _filecreerrf.o \
-	_filegeterrf.o _fileseterrf.o _finalizedf.o _free_memf.o \
-	_info_createf.o _info_deletef.o _info_dupf.o _info_freef.o \
-	_info_getf.o _infognkf.o _infognthkf.o _infovallenf.o _info_setf.o \
-	_pack_externalf.o _packesizef.o _reqgetstatf.o _typedarrayf.o \
-	_typechindf.o _typechvecf.o _typecindbf.o _typecresizef.o \
-	_typecstructf.o _typecsubarrf.o _typegetextentf.o _typegtextf.o \
-	_unpackextf.o _wincreerrf.o _wingeterrf.o _winseterrf.o \
-	_reduce_localf.o _op_commutativef.o _reduce_scatter_blockf.o \
-	_dist_graph_create_adjacentf.o _dist_graph_createf.o \
-	_dist_graph_neighbors_countf.o _dist_graph_neighborsf.o _file_openf.o \
-	_file_closef.o _file_deletef.o _file_set_sizef.o _file_preallocatef.o \
-	_file_get_sizef.o _file_get_groupf.o _file_get_amodef.o \
-	_file_set_infof.o _file_get_infof.o _file_set_viewf.o \
-	_file_get_viewf.o _file_read_atf.o _file_read_at_allf.o \
-	_file_write_atf.o _file_write_at_allf.o _file_iread_atf.o \
-	_file_iwrite_atf.o _file_readf.o _file_read_allf.o _file_writef.o \
-	_file_write_allf.o _file_ireadf.o _file_iwritef.o _file_seekf.o \
-	_file_get_positionf.o _file_get_byte_offsetf.o _file_read_sharedf.o \
-	_file_write_sharedf.o _file_iread_sharedf.o _file_iwrite_sharedf.o \
-	_file_read_orderedf.o _file_write_orderedf.o _file_seek_sharedf.o \
-	_file_get_position_sharedf.o _file_read_at_all_beginf.o \
-	_file_read_at_all_endf.o _file_write_at_all_beginf.o \
-	_file_write_at_all_endf.o _file_read_all_beginf.o \
+.libstamp4: _sendf.o _recvf.o _get_countf.o _bsendf.o _ssendf.o _rsendf.o _bufattachf.o _bufdetachf.o \
+	_isendf.o _ibsendf.o _issendf.o _irsendf.o _irecvf.o _waitf.o _testf.o _request_freef.o \
+	_waitanyf.o _testanyf.o _waitallf.o _testallf.o _waitsomef.o _testsomef.o _iprobef.o \
+	_probef.o _cancelf.o _testcancelf.o _send_initf.o _bsend_initf.o _ssend_initf.o \
+	_rsend_initf.o _recv_initf.o _startf.o _startallf.o _sendrecvf.o _sndrcvrplf.o \
+	_typecontigf.o _type_vectorf.o _type_hvectorf.o _type_indexedf.o _type_hindexedf.o \
+	_type_structf.o _type_extentf.o _type_sizef.o _type_lbf.o _type_ubf.o _type_commitf.o \
+	_type_freef.o _get_elementsf.o _packf.o _unpackf.o _pack_sizef.o _barrierf.o _bcastf.o \
+	_gatherf.o _gathervf.o _scatterf.o _scattervf.o _allgatherf.o _allgathervf.o _alltoallf.o \
+	_alltoallvf.o _reducef.o _op_createf.o _op_freef.o _allreducef.o _redscatf.o _scanf.o \
+	_group_sizef.o _group_rankf.o _grouptranksf.o _group_comparef.o _comm_groupf.o \
+	_group_unionf.o _groupinterf.o _groupdifff.o _group_inclf.o _group_exclf.o _grouprinclf.o \
+	_grouprexclf.o _group_freef.o _comm_sizef.o _comm_rankf.o _comm_comparef.o _comm_dupf.o \
+	_comm_createf.o _comm_splitf.o _comm_freef.o _commtesticf.o _commrsizef.o _commrgroupf.o \
+	_iccreatef.o _icmergef.o _keyval_freef.o _attr_putf.o _attr_getf.o _attr_deletef.o \
+	_topo_testf.o _cart_createf.o _dims_createf.o _graph_createf.o _graphdims_getf.o \
+	_graph_getf.o _cartdim_getf.o _cart_getf.o _cart_rankf.o _cart_coordsf.o _grfnbcountf.o \
+	_grfnbrsf.o _cart_shiftf.o _cart_subf.o _cart_mapf.o _graph_mapf.o _getpnamef.o \
+	_get_versionf.o _errhcreatef.o _errhsetf.o _errhgetf.o _errhfreef.o _error_stringf.o \
+	_error_classf.o _finalizef.o _initializedf.o _abortf.o _close_portf.o _comm_acceptf.o \
+	_comm_connectf.o _commdiscf.o _commparentf.o _comm_joinf.o _comm_spawnf.o _spawnmultf.o \
+	_lookup_namef.o _open_portf.o _publish_namef.o _unpubnamef.o _accumulatef.o _getf.o \
+	_putf.o _win_completef.o _win_createf.o _win_fencef.o _win_freef.o _win_get_groupf.o \
+	_win_lockf.o _win_postf.o _win_startf.o _win_testf.o _win_unlockf.o _win_waitf.o \
+	_alltoallwf.o _exscanf.o _adderrclassf.o _adderrcodef.o _adderrstringf.o _commcallerrf.o \
+	_commnewkeyf.o _commdelattrf.o _commfreekeyf.o _comm_get_attrf.o _commgetnamf.o \
+	_comm_set_attrf.o _comm_set_namef.o _filecallerrf.o _greqcompletef.o _greqstartf.o \
+	_isthrmainf.o _query_threadf.o _statgetclf.o _statsetelf.o _typenewkeyf.o _typedelattrf.o \
+	_type_dupf.o _typefreekeyf.o _type_get_attrf.o _typegetcntsf.o _typegetenvf.o \
+	_typegnamef.o _typesetattrf.o _typesetnamef.o _type_match_sizef.o _wincallerrf.o \
+	_winnewkeyf.o _windelattrf.o _winfreekeyf.o _win_get_attrf.o _win_get_namef.o \
+	_win_set_attrf.o _win_set_namef.o _alloc_memf.o _commcreerrf.o _commgeterrf.o \
+	_commseterrf.o _filecreerrf.o _filegeterrf.o _fileseterrf.o _finalizedf.o _free_memf.o \
+	_info_createf.o _info_deletef.o _info_dupf.o _info_freef.o _info_getf.o _infognkf.o \
+	_infognthkf.o _infovallenf.o _info_setf.o _pack_externalf.o _packesizef.o _reqgetstatf.o \
+	_typedarrayf.o _typechindf.o _typechvecf.o _typecindbf.o _typecresizef.o _typecstructf.o \
+	_typecsubarrf.o _typegetextentf.o _typegtextf.o _unpackextf.o _wincreerrf.o _wingeterrf.o \
+	_winseterrf.o _reduce_localf.o _op_commutativef.o _reduce_scatter_blockf.o \
+	_dist_graph_create_adjacentf.o _dist_graph_createf.o _dist_graph_neighbors_countf.o \
+	_dist_graph_neighborsf.o _file_openf.o _file_closef.o _file_deletef.o _file_set_sizef.o \
+	_file_preallocatef.o _file_get_sizef.o _file_get_groupf.o _file_get_amodef.o \
+	_file_set_infof.o _file_get_infof.o _file_set_viewf.o _file_get_viewf.o _file_read_atf.o \
+	_file_read_at_allf.o _file_write_atf.o _file_write_at_allf.o _file_iread_atf.o \
+	_file_iwrite_atf.o _file_readf.o _file_read_allf.o _file_writef.o _file_write_allf.o \
+	_file_ireadf.o _file_iwritef.o _file_seekf.o _file_get_positionf.o \
+	_file_get_byte_offsetf.o _file_read_sharedf.o _file_write_sharedf.o _file_iread_sharedf.o \
+	_file_iwrite_sharedf.o _file_read_orderedf.o _file_write_orderedf.o _file_seek_sharedf.o \
+	_file_get_position_sharedf.o _file_read_at_all_beginf.o _file_read_at_all_endf.o \
+	_file_write_at_all_beginf.o _file_write_at_all_endf.o _file_read_all_beginf.o \
 	_file_read_all_endf.o _file_write_all_beginf.o _file_write_all_endf.o \
-	_file_read_ordered_beginf.o _file_read_ordered_endf.o \
-	_file_write_ordered_beginf.o _file_write_ordered_endf.o \
-	_file_get_type_extentf.o _register_datarepf.o _file_set_atomicityf.o \
-	_file_get_atomicityf.o _file_syncf.o _initf.o _initthreadf.o \
-	_pcontrolf.o _addressf.o _getaddressf.o _wtimef.o _wtickf.o \
-	_keyval_createf.o _dup_fnf.o _null_del_fnf.o _null_copy_fnf.o \
-	_dup_comm_fnf.o _null_comm_del_fnf.o _null_comm_copy_fnf.o \
-	_dup_win_fnf.o _null_win_del_fnf.o _null_win_copy_fnf.o \
-	_dup_type_fnf.o _null_type_del_fnf.o _null_type_copy_fnf.o \
-	_statusf2c.o _statusc2f.o 
+	_file_read_ordered_beginf.o _file_read_ordered_endf.o _file_write_ordered_beginf.o \
+	_file_write_ordered_endf.o _file_get_type_extentf.o _register_datarepf.o \
+	_file_set_atomicityf.o _file_get_atomicityf.o _file_syncf.o _initf.o _initthreadf.o \
+	_pcontrolf.o _addressf.o _getaddressf.o _wtimef.o _wtickf.o _keyval_createf.o _dup_fnf.o \
+	_null_del_fnf.o _null_copy_fnf.o _dup_comm_fnf.o _null_comm_del_fnf.o \
+	_null_comm_copy_fnf.o _dup_win_fnf.o _null_win_del_fnf.o _null_win_copy_fnf.o \
+	_dup_type_fnf.o _null_type_del_fnf.o _null_type_copy_fnf.o _statusf2c.o _statusc2f.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPIFLIBNAME}.a $?" ; \
 	else \
@@ -760,89 +625,68 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	fi
 	@${RANLIB} ../../../lib/lib${PMPIFLIBNAME}.a
 	date > .libstamp4
-.libstamp5: _sendf.lo _recvf.lo _get_countf.lo _bsendf.lo _ssendf.lo _rsendf.lo \
-	_bufattachf.lo _bufdetachf.lo _isendf.lo _ibsendf.lo _issendf.lo \
-	_irsendf.lo _irecvf.lo _waitf.lo _testf.lo _request_freef.lo \
-	_waitanyf.lo _testanyf.lo _waitallf.lo _testallf.lo _waitsomef.lo \
-	_testsomef.lo _iprobef.lo _probef.lo _cancelf.lo _testcancelf.lo \
-	_send_initf.lo _bsend_initf.lo _ssend_initf.lo _rsend_initf.lo \
-	_recv_initf.lo _startf.lo _startallf.lo _sendrecvf.lo _sndrcvrplf.lo \
-	_typecontigf.lo _type_vectorf.lo _type_hvectorf.lo _type_indexedf.lo \
-	_type_hindexedf.lo _type_structf.lo _type_extentf.lo _type_sizef.lo \
-	_type_lbf.lo _type_ubf.lo _type_commitf.lo _type_freef.lo \
-	_get_elementsf.lo _packf.lo _unpackf.lo _pack_sizef.lo _barrierf.lo \
-	_bcastf.lo _gatherf.lo _gathervf.lo _scatterf.lo _scattervf.lo \
-	_allgatherf.lo _allgathervf.lo _alltoallf.lo _alltoallvf.lo \
-	_reducef.lo _op_createf.lo _op_freef.lo _allreducef.lo _redscatf.lo \
-	_scanf.lo _group_sizef.lo _group_rankf.lo _grouptranksf.lo \
-	_group_comparef.lo _comm_groupf.lo _group_unionf.lo _groupinterf.lo \
-	_groupdifff.lo _group_inclf.lo _group_exclf.lo _grouprinclf.lo \
-	_grouprexclf.lo _group_freef.lo _comm_sizef.lo _comm_rankf.lo \
-	_comm_comparef.lo _comm_dupf.lo _comm_createf.lo _comm_splitf.lo \
-	_comm_freef.lo _commtesticf.lo _commrsizef.lo _commrgroupf.lo \
-	_iccreatef.lo _icmergef.lo _keyval_freef.lo _attr_putf.lo \
-	_attr_getf.lo _attr_deletef.lo _topo_testf.lo _cart_createf.lo \
-	_dims_createf.lo _graph_createf.lo _graphdims_getf.lo _graph_getf.lo \
-	_cartdim_getf.lo _cart_getf.lo _cart_rankf.lo _cart_coordsf.lo \
-	_grfnbcountf.lo _grfnbrsf.lo _cart_shiftf.lo _cart_subf.lo \
-	_cart_mapf.lo _graph_mapf.lo _getpnamef.lo _get_versionf.lo \
-	_errhcreatef.lo _errhsetf.lo _errhgetf.lo _errhfreef.lo \
-	_error_stringf.lo _error_classf.lo _finalizef.lo _initializedf.lo \
-	_abortf.lo _close_portf.lo _comm_acceptf.lo _comm_connectf.lo \
-	_commdiscf.lo _commparentf.lo _comm_joinf.lo _comm_spawnf.lo \
-	_spawnmultf.lo _lookup_namef.lo _open_portf.lo _publish_namef.lo \
-	_unpubnamef.lo _accumulatef.lo _getf.lo _putf.lo _win_completef.lo \
-	_win_createf.lo _win_fencef.lo _win_freef.lo _win_get_groupf.lo \
-	_win_lockf.lo _win_postf.lo _win_startf.lo _win_testf.lo \
-	_win_unlockf.lo _win_waitf.lo _alltoallwf.lo _exscanf.lo \
-	_adderrclassf.lo _adderrcodef.lo _adderrstringf.lo _commcallerrf.lo \
-	_commnewkeyf.lo _commdelattrf.lo _commfreekeyf.lo _comm_get_attrf.lo \
-	_commgetnamf.lo _comm_set_attrf.lo _comm_set_namef.lo \
-	_filecallerrf.lo _greqcompletef.lo _greqstartf.lo _isthrmainf.lo \
-	_query_threadf.lo _statgetclf.lo _statsetelf.lo _typenewkeyf.lo \
-	_typedelattrf.lo _type_dupf.lo _typefreekeyf.lo _type_get_attrf.lo \
-	_typegetcntsf.lo _typegetenvf.lo _typegnamef.lo _typesetattrf.lo \
-	_typesetnamef.lo _type_match_sizef.lo _wincallerrf.lo _winnewkeyf.lo \
-	_windelattrf.lo _winfreekeyf.lo _win_get_attrf.lo _win_get_namef.lo \
-	_win_set_attrf.lo _win_set_namef.lo _alloc_memf.lo _commcreerrf.lo \
-	_commgeterrf.lo _commseterrf.lo _filecreerrf.lo _filegeterrf.lo \
-	_fileseterrf.lo _finalizedf.lo _free_memf.lo _info_createf.lo \
-	_info_deletef.lo _info_dupf.lo _info_freef.lo _info_getf.lo \
-	_infognkf.lo _infognthkf.lo _infovallenf.lo _info_setf.lo \
-	_pack_externalf.lo _packesizef.lo _reqgetstatf.lo _typedarrayf.lo \
-	_typechindf.lo _typechvecf.lo _typecindbf.lo _typecresizef.lo \
-	_typecstructf.lo _typecsubarrf.lo _typegetextentf.lo _typegtextf.lo \
-	_unpackextf.lo _wincreerrf.lo _wingeterrf.lo _winseterrf.lo \
-	_reduce_localf.lo _op_commutativef.lo _reduce_scatter_blockf.lo \
-	_dist_graph_create_adjacentf.lo _dist_graph_createf.lo \
-	_dist_graph_neighbors_countf.lo _dist_graph_neighborsf.lo \
-	_file_openf.lo _file_closef.lo _file_deletef.lo _file_set_sizef.lo \
-	_file_preallocatef.lo _file_get_sizef.lo _file_get_groupf.lo \
-	_file_get_amodef.lo _file_set_infof.lo _file_get_infof.lo \
-	_file_set_viewf.lo _file_get_viewf.lo _file_read_atf.lo \
-	_file_read_at_allf.lo _file_write_atf.lo _file_write_at_allf.lo \
-	_file_iread_atf.lo _file_iwrite_atf.lo _file_readf.lo \
-	_file_read_allf.lo _file_writef.lo _file_write_allf.lo \
-	_file_ireadf.lo _file_iwritef.lo _file_seekf.lo \
-	_file_get_positionf.lo _file_get_byte_offsetf.lo \
+.libstamp5: _sendf.lo _recvf.lo _get_countf.lo _bsendf.lo _ssendf.lo _rsendf.lo _bufattachf.lo _bufdetachf.lo \
+	_isendf.lo _ibsendf.lo _issendf.lo _irsendf.lo _irecvf.lo _waitf.lo _testf.lo \
+	_request_freef.lo _waitanyf.lo _testanyf.lo _waitallf.lo _testallf.lo _waitsomef.lo \
+	_testsomef.lo _iprobef.lo _probef.lo _cancelf.lo _testcancelf.lo _send_initf.lo \
+	_bsend_initf.lo _ssend_initf.lo _rsend_initf.lo _recv_initf.lo _startf.lo _startallf.lo \
+	_sendrecvf.lo _sndrcvrplf.lo _typecontigf.lo _type_vectorf.lo _type_hvectorf.lo \
+	_type_indexedf.lo _type_hindexedf.lo _type_structf.lo _type_extentf.lo _type_sizef.lo \
+	_type_lbf.lo _type_ubf.lo _type_commitf.lo _type_freef.lo _get_elementsf.lo _packf.lo \
+	_unpackf.lo _pack_sizef.lo _barrierf.lo _bcastf.lo _gatherf.lo _gathervf.lo _scatterf.lo \
+	_scattervf.lo _allgatherf.lo _allgathervf.lo _alltoallf.lo _alltoallvf.lo _reducef.lo \
+	_op_createf.lo _op_freef.lo _allreducef.lo _redscatf.lo _scanf.lo _group_sizef.lo \
+	_group_rankf.lo _grouptranksf.lo _group_comparef.lo _comm_groupf.lo _group_unionf.lo \
+	_groupinterf.lo _groupdifff.lo _group_inclf.lo _group_exclf.lo _grouprinclf.lo \
+	_grouprexclf.lo _group_freef.lo _comm_sizef.lo _comm_rankf.lo _comm_comparef.lo \
+	_comm_dupf.lo _comm_createf.lo _comm_splitf.lo _comm_freef.lo _commtesticf.lo \
+	_commrsizef.lo _commrgroupf.lo _iccreatef.lo _icmergef.lo _keyval_freef.lo _attr_putf.lo \
+	_attr_getf.lo _attr_deletef.lo _topo_testf.lo _cart_createf.lo _dims_createf.lo \
+	_graph_createf.lo _graphdims_getf.lo _graph_getf.lo _cartdim_getf.lo _cart_getf.lo \
+	_cart_rankf.lo _cart_coordsf.lo _grfnbcountf.lo _grfnbrsf.lo _cart_shiftf.lo \
+	_cart_subf.lo _cart_mapf.lo _graph_mapf.lo _getpnamef.lo _get_versionf.lo _errhcreatef.lo \
+	_errhsetf.lo _errhgetf.lo _errhfreef.lo _error_stringf.lo _error_classf.lo _finalizef.lo \
+	_initializedf.lo _abortf.lo _close_portf.lo _comm_acceptf.lo _comm_connectf.lo \
+	_commdiscf.lo _commparentf.lo _comm_joinf.lo _comm_spawnf.lo _spawnmultf.lo \
+	_lookup_namef.lo _open_portf.lo _publish_namef.lo _unpubnamef.lo _accumulatef.lo _getf.lo \
+	_putf.lo _win_completef.lo _win_createf.lo _win_fencef.lo _win_freef.lo \
+	_win_get_groupf.lo _win_lockf.lo _win_postf.lo _win_startf.lo _win_testf.lo \
+	_win_unlockf.lo _win_waitf.lo _alltoallwf.lo _exscanf.lo _adderrclassf.lo _adderrcodef.lo \
+	_adderrstringf.lo _commcallerrf.lo _commnewkeyf.lo _commdelattrf.lo _commfreekeyf.lo \
+	_comm_get_attrf.lo _commgetnamf.lo _comm_set_attrf.lo _comm_set_namef.lo _filecallerrf.lo \
+	_greqcompletef.lo _greqstartf.lo _isthrmainf.lo _query_threadf.lo _statgetclf.lo \
+	_statsetelf.lo _typenewkeyf.lo _typedelattrf.lo _type_dupf.lo _typefreekeyf.lo \
+	_type_get_attrf.lo _typegetcntsf.lo _typegetenvf.lo _typegnamef.lo _typesetattrf.lo \
+	_typesetnamef.lo _type_match_sizef.lo _wincallerrf.lo _winnewkeyf.lo _windelattrf.lo \
+	_winfreekeyf.lo _win_get_attrf.lo _win_get_namef.lo _win_set_attrf.lo _win_set_namef.lo \
+	_alloc_memf.lo _commcreerrf.lo _commgeterrf.lo _commseterrf.lo _filecreerrf.lo \
+	_filegeterrf.lo _fileseterrf.lo _finalizedf.lo _free_memf.lo _info_createf.lo \
+	_info_deletef.lo _info_dupf.lo _info_freef.lo _info_getf.lo _infognkf.lo _infognthkf.lo \
+	_infovallenf.lo _info_setf.lo _pack_externalf.lo _packesizef.lo _reqgetstatf.lo \
+	_typedarrayf.lo _typechindf.lo _typechvecf.lo _typecindbf.lo _typecresizef.lo \
+	_typecstructf.lo _typecsubarrf.lo _typegetextentf.lo _typegtextf.lo _unpackextf.lo \
+	_wincreerrf.lo _wingeterrf.lo _winseterrf.lo _reduce_localf.lo _op_commutativef.lo \
+	_reduce_scatter_blockf.lo _dist_graph_create_adjacentf.lo _dist_graph_createf.lo \
+	_dist_graph_neighbors_countf.lo _dist_graph_neighborsf.lo _file_openf.lo _file_closef.lo \
+	_file_deletef.lo _file_set_sizef.lo _file_preallocatef.lo _file_get_sizef.lo \
+	_file_get_groupf.lo _file_get_amodef.lo _file_set_infof.lo _file_get_infof.lo \
+	_file_set_viewf.lo _file_get_viewf.lo _file_read_atf.lo _file_read_at_allf.lo \
+	_file_write_atf.lo _file_write_at_allf.lo _file_iread_atf.lo _file_iwrite_atf.lo \
+	_file_readf.lo _file_read_allf.lo _file_writef.lo _file_write_allf.lo _file_ireadf.lo \
+	_file_iwritef.lo _file_seekf.lo _file_get_positionf.lo _file_get_byte_offsetf.lo \
 	_file_read_sharedf.lo _file_write_sharedf.lo _file_iread_sharedf.lo \
-	_file_iwrite_sharedf.lo _file_read_orderedf.lo \
-	_file_write_orderedf.lo _file_seek_sharedf.lo \
-	_file_get_position_sharedf.lo _file_read_at_all_beginf.lo \
-	_file_read_at_all_endf.lo _file_write_at_all_beginf.lo \
-	_file_write_at_all_endf.lo _file_read_all_beginf.lo \
-	_file_read_all_endf.lo _file_write_all_beginf.lo \
-	_file_write_all_endf.lo _file_read_ordered_beginf.lo \
-	_file_read_ordered_endf.lo _file_write_ordered_beginf.lo \
-	_file_write_ordered_endf.lo _file_get_type_extentf.lo \
-	_register_datarepf.lo _file_set_atomicityf.lo _file_get_atomicityf.lo \
-	_file_syncf.lo _initf.lo _initthreadf.lo _pcontrolf.lo _addressf.lo \
-	_getaddressf.lo _wtimef.lo _wtickf.lo _keyval_createf.lo _dup_fnf.lo \
-	_null_del_fnf.lo _null_copy_fnf.lo _dup_comm_fnf.lo \
-	_null_comm_del_fnf.lo _null_comm_copy_fnf.lo _dup_win_fnf.lo \
-	_null_win_del_fnf.lo _null_win_copy_fnf.lo _dup_type_fnf.lo \
-	_null_type_del_fnf.lo _null_type_copy_fnf.lo _statusf2c.lo \
-	_statusc2f.lo 
+	_file_iwrite_sharedf.lo _file_read_orderedf.lo _file_write_orderedf.lo \
+	_file_seek_sharedf.lo _file_get_position_sharedf.lo _file_read_at_all_beginf.lo \
+	_file_read_at_all_endf.lo _file_write_at_all_beginf.lo _file_write_at_all_endf.lo \
+	_file_read_all_beginf.lo _file_read_all_endf.lo _file_write_all_beginf.lo \
+	_file_write_all_endf.lo _file_read_ordered_beginf.lo _file_read_ordered_endf.lo \
+	_file_write_ordered_beginf.lo _file_write_ordered_endf.lo _file_get_type_extentf.lo \
+	_register_datarepf.lo _file_set_atomicityf.lo _file_get_atomicityf.lo _file_syncf.lo \
+	_initf.lo _initthreadf.lo _pcontrolf.lo _addressf.lo _getaddressf.lo _wtimef.lo \
+	_wtickf.lo _keyval_createf.lo _dup_fnf.lo _null_del_fnf.lo _null_copy_fnf.lo \
+	_dup_comm_fnf.lo _null_comm_del_fnf.lo _null_comm_copy_fnf.lo _dup_win_fnf.lo \
+	_null_win_del_fnf.lo _null_win_copy_fnf.lo _dup_type_fnf.lo _null_type_del_fnf.lo \
+	_null_type_copy_fnf.lo _statusf2c.lo _statusc2f.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPIFLIBNAME}.la $?" ; \
 	else \
@@ -5093,22 +4937,12 @@ _statusc2f.lo: statusc2f.c
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/statusc2f.c -o _statusc2f.lo
 # --------------------------------------------------------------------------
-coverage: 
-	-@for file in ${wrap_objs} ; do \
-		gcov -b -f $$file ; done
-	-@for file in ${mpi_sources} setbot.c setbotf.f ; do \
-		gcov -b -f $$file ; done
-# --------------------------------------------------------------------------
-mandoc: ${doc_sources:.txt=.man}
-htmldoc: ${doc_sources:.txt=.html}
-latexdoc: ${doc_sources:.txt=.latex}
-# --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Install target
 install:  FORCE_TARGET 
 	if [ ! -d ${DESTDIR}${prefix} ] ; then $(MKDIR_P) ${DESTDIR}${prefix} ; fi
 	if [ ! -d ${DESTDIR}${includedir} ] ; then $(MKDIR_P) ${DESTDIR}${includedir} ; fi
-	$(INSTALL_DATA) mpif.h ${DESTDIR}${includedir}/mpif.h
+	$(INSTALL_DATA)  mpif.h ${DESTDIR}${includedir}/mpif.h
 
 install-strip:
 	$(MAKE) INSTALL_STRIP_FLAG=-s install
@@ -5118,151 +4952,117 @@ installcheck:
 # --------------------------------------------------------------------------
 dependencies:
 # --------------------------------------------------------------------------
-SOURCES         =  sendf.c recvf.c get_countf.c bsendf.c ssendf.c rsendf.c \
-	bufattachf.c bufdetachf.c isendf.c ibsendf.c issendf.c irsendf.c \
-	irecvf.c waitf.c testf.c request_freef.c waitanyf.c testanyf.c \
-	waitallf.c testallf.c waitsomef.c testsomef.c iprobef.c probef.c \
-	cancelf.c testcancelf.c send_initf.c bsend_initf.c ssend_initf.c \
-	rsend_initf.c recv_initf.c startf.c startallf.c sendrecvf.c \
-	sndrcvrplf.c typecontigf.c type_vectorf.c type_hvectorf.c \
-	type_indexedf.c type_hindexedf.c type_structf.c type_extentf.c \
-	type_sizef.c type_lbf.c type_ubf.c type_commitf.c type_freef.c \
-	get_elementsf.c packf.c unpackf.c pack_sizef.c barrierf.c bcastf.c \
-	gatherf.c gathervf.c scatterf.c scattervf.c allgatherf.c \
-	allgathervf.c alltoallf.c alltoallvf.c reducef.c op_createf.c \
-	op_freef.c allreducef.c redscatf.c scanf.c group_sizef.c \
-	group_rankf.c grouptranksf.c group_comparef.c comm_groupf.c \
-	group_unionf.c groupinterf.c groupdifff.c group_inclf.c group_exclf.c \
-	grouprinclf.c grouprexclf.c group_freef.c comm_sizef.c comm_rankf.c \
-	comm_comparef.c comm_dupf.c comm_createf.c comm_splitf.c comm_freef.c \
-	commtesticf.c commrsizef.c commrgroupf.c iccreatef.c icmergef.c \
-	keyval_freef.c attr_putf.c attr_getf.c attr_deletef.c topo_testf.c \
-	cart_createf.c dims_createf.c graph_createf.c graphdims_getf.c \
-	graph_getf.c cartdim_getf.c cart_getf.c cart_rankf.c cart_coordsf.c \
-	grfnbcountf.c grfnbrsf.c cart_shiftf.c cart_subf.c cart_mapf.c \
-	graph_mapf.c getpnamef.c get_versionf.c errhcreatef.c errhsetf.c \
-	errhgetf.c errhfreef.c error_stringf.c error_classf.c finalizef.c \
-	initializedf.c abortf.c close_portf.c comm_acceptf.c comm_connectf.c \
-	commdiscf.c commparentf.c comm_joinf.c comm_spawnf.c spawnmultf.c \
-	lookup_namef.c open_portf.c publish_namef.c unpubnamef.c \
-	accumulatef.c getf.c putf.c win_completef.c win_createf.c \
-	win_fencef.c win_freef.c win_get_groupf.c win_lockf.c win_postf.c \
-	win_startf.c win_testf.c win_unlockf.c win_waitf.c alltoallwf.c \
-	exscanf.c adderrclassf.c adderrcodef.c adderrstringf.c commcallerrf.c \
-	commnewkeyf.c commdelattrf.c commfreekeyf.c comm_get_attrf.c \
-	commgetnamf.c comm_set_attrf.c comm_set_namef.c filecallerrf.c \
-	greqcompletef.c greqstartf.c isthrmainf.c query_threadf.c \
-	statgetclf.c statsetelf.c typenewkeyf.c typedelattrf.c type_dupf.c \
-	typefreekeyf.c type_get_attrf.c typegetcntsf.c typegetenvf.c \
-	typegnamef.c typesetattrf.c typesetnamef.c type_match_sizef.c \
-	wincallerrf.c winnewkeyf.c windelattrf.c winfreekeyf.c \
-	win_get_attrf.c win_get_namef.c win_set_attrf.c win_set_namef.c \
-	alloc_memf.c commcreerrf.c commgeterrf.c commseterrf.c filecreerrf.c \
-	filegeterrf.c fileseterrf.c finalizedf.c free_memf.c info_createf.c \
-	info_deletef.c info_dupf.c info_freef.c info_getf.c infognkf.c \
-	infognthkf.c infovallenf.c info_setf.c pack_externalf.c packesizef.c \
-	reqgetstatf.c typedarrayf.c typechindf.c typechvecf.c typecindbf.c \
-	typecresizef.c typecstructf.c typecsubarrf.c typegetextentf.c \
-	typegtextf.c unpackextf.c wincreerrf.c wingeterrf.c winseterrf.c \
-	reduce_localf.c op_commutativef.c reduce_scatter_blockf.c \
-	dist_graph_create_adjacentf.c dist_graph_createf.c \
-	dist_graph_neighbors_countf.c dist_graph_neighborsf.c file_openf.c \
-	file_closef.c file_deletef.c file_set_sizef.c file_preallocatef.c \
-	file_get_sizef.c file_get_groupf.c file_get_amodef.c file_set_infof.c \
-	file_get_infof.c file_set_viewf.c file_get_viewf.c file_read_atf.c \
-	file_read_at_allf.c file_write_atf.c file_write_at_allf.c \
-	file_iread_atf.c file_iwrite_atf.c file_readf.c file_read_allf.c \
-	file_writef.c file_write_allf.c file_ireadf.c file_iwritef.c \
-	file_seekf.c file_get_positionf.c file_get_byte_offsetf.c \
-	file_read_sharedf.c file_write_sharedf.c file_iread_sharedf.c \
-	file_iwrite_sharedf.c file_read_orderedf.c file_write_orderedf.c \
-	file_seek_sharedf.c file_get_position_sharedf.c \
-	file_read_at_all_beginf.c file_read_at_all_endf.c \
-	file_write_at_all_beginf.c file_write_at_all_endf.c \
-	file_read_all_beginf.c file_read_all_endf.c file_write_all_beginf.c \
-	file_write_all_endf.c file_read_ordered_beginf.c \
-	file_read_ordered_endf.c file_write_ordered_beginf.c \
-	file_write_ordered_endf.c file_get_type_extentf.c register_datarepf.c \
-	file_set_atomicityf.c file_get_atomicityf.c file_syncf.c initf.c \
-	initthreadf.c pcontrolf.c addressf.c getaddressf.c wtimef.c wtickf.c \
-	keyval_createf.c dup_fnf.c null_del_fnf.c null_copy_fnf.c \
-	dup_comm_fnf.c null_comm_del_fnf.c null_comm_copy_fnf.c dup_win_fnf.c \
-	null_win_del_fnf.c null_win_copy_fnf.c dup_type_fnf.c \
-	null_type_del_fnf.c null_type_copy_fnf.c statusf2c.c statusc2f.c \
-	setbot.c setbotf.f 
+SOURCES         =  sendf.c recvf.c get_countf.c bsendf.c ssendf.c rsendf.c bufattachf.c \
+	bufdetachf.c isendf.c ibsendf.c issendf.c irsendf.c irecvf.c waitf.c testf.c \
+	request_freef.c waitanyf.c testanyf.c waitallf.c testallf.c waitsomef.c testsomef.c \
+	iprobef.c probef.c cancelf.c testcancelf.c send_initf.c bsend_initf.c ssend_initf.c \
+	rsend_initf.c recv_initf.c startf.c startallf.c sendrecvf.c sndrcvrplf.c typecontigf.c \
+	type_vectorf.c type_hvectorf.c type_indexedf.c type_hindexedf.c type_structf.c \
+	type_extentf.c type_sizef.c type_lbf.c type_ubf.c type_commitf.c type_freef.c \
+	get_elementsf.c packf.c unpackf.c pack_sizef.c barrierf.c bcastf.c gatherf.c gathervf.c \
+	scatterf.c scattervf.c allgatherf.c allgathervf.c alltoallf.c alltoallvf.c reducef.c \
+	op_createf.c op_freef.c allreducef.c redscatf.c scanf.c group_sizef.c group_rankf.c \
+	grouptranksf.c group_comparef.c comm_groupf.c group_unionf.c groupinterf.c groupdifff.c \
+	group_inclf.c group_exclf.c grouprinclf.c grouprexclf.c group_freef.c comm_sizef.c \
+	comm_rankf.c comm_comparef.c comm_dupf.c comm_createf.c comm_splitf.c comm_freef.c \
+	commtesticf.c commrsizef.c commrgroupf.c iccreatef.c icmergef.c keyval_freef.c \
+	attr_putf.c attr_getf.c attr_deletef.c topo_testf.c cart_createf.c dims_createf.c \
+	graph_createf.c graphdims_getf.c graph_getf.c cartdim_getf.c cart_getf.c cart_rankf.c \
+	cart_coordsf.c grfnbcountf.c grfnbrsf.c cart_shiftf.c cart_subf.c cart_mapf.c \
+	graph_mapf.c getpnamef.c get_versionf.c errhcreatef.c errhsetf.c errhgetf.c errhfreef.c \
+	error_stringf.c error_classf.c finalizef.c initializedf.c abortf.c close_portf.c \
+	comm_acceptf.c comm_connectf.c commdiscf.c commparentf.c comm_joinf.c comm_spawnf.c \
+	spawnmultf.c lookup_namef.c open_portf.c publish_namef.c unpubnamef.c accumulatef.c \
+	getf.c putf.c win_completef.c win_createf.c win_fencef.c win_freef.c win_get_groupf.c \
+	win_lockf.c win_postf.c win_startf.c win_testf.c win_unlockf.c win_waitf.c alltoallwf.c \
+	exscanf.c adderrclassf.c adderrcodef.c adderrstringf.c commcallerrf.c commnewkeyf.c \
+	commdelattrf.c commfreekeyf.c comm_get_attrf.c commgetnamf.c comm_set_attrf.c \
+	comm_set_namef.c filecallerrf.c greqcompletef.c greqstartf.c isthrmainf.c query_threadf.c \
+	statgetclf.c statsetelf.c typenewkeyf.c typedelattrf.c type_dupf.c typefreekeyf.c \
+	type_get_attrf.c typegetcntsf.c typegetenvf.c typegnamef.c typesetattrf.c typesetnamef.c \
+	type_match_sizef.c wincallerrf.c winnewkeyf.c windelattrf.c winfreekeyf.c win_get_attrf.c \
+	win_get_namef.c win_set_attrf.c win_set_namef.c alloc_memf.c commcreerrf.c commgeterrf.c \
+	commseterrf.c filecreerrf.c filegeterrf.c fileseterrf.c finalizedf.c free_memf.c \
+	info_createf.c info_deletef.c info_dupf.c info_freef.c info_getf.c infognkf.c \
+	infognthkf.c infovallenf.c info_setf.c pack_externalf.c packesizef.c reqgetstatf.c \
+	typedarrayf.c typechindf.c typechvecf.c typecindbf.c typecresizef.c typecstructf.c \
+	typecsubarrf.c typegetextentf.c typegtextf.c unpackextf.c wincreerrf.c wingeterrf.c \
+	winseterrf.c reduce_localf.c op_commutativef.c reduce_scatter_blockf.c \
+	dist_graph_create_adjacentf.c dist_graph_createf.c dist_graph_neighbors_countf.c \
+	dist_graph_neighborsf.c file_openf.c file_closef.c file_deletef.c file_set_sizef.c \
+	file_preallocatef.c file_get_sizef.c file_get_groupf.c file_get_amodef.c file_set_infof.c \
+	file_get_infof.c file_set_viewf.c file_get_viewf.c file_read_atf.c file_read_at_allf.c \
+	file_write_atf.c file_write_at_allf.c file_iread_atf.c file_iwrite_atf.c file_readf.c \
+	file_read_allf.c file_writef.c file_write_allf.c file_ireadf.c file_iwritef.c \
+	file_seekf.c file_get_positionf.c file_get_byte_offsetf.c file_read_sharedf.c \
+	file_write_sharedf.c file_iread_sharedf.c file_iwrite_sharedf.c file_read_orderedf.c \
+	file_write_orderedf.c file_seek_sharedf.c file_get_position_sharedf.c \
+	file_read_at_all_beginf.c file_read_at_all_endf.c file_write_at_all_beginf.c \
+	file_write_at_all_endf.c file_read_all_beginf.c file_read_all_endf.c \
+	file_write_all_beginf.c file_write_all_endf.c file_read_ordered_beginf.c \
+	file_read_ordered_endf.c file_write_ordered_beginf.c file_write_ordered_endf.c \
+	file_get_type_extentf.c register_datarepf.c file_set_atomicityf.c file_get_atomicityf.c \
+	file_syncf.c initf.c initthreadf.c pcontrolf.c addressf.c getaddressf.c wtimef.c wtickf.c \
+	keyval_createf.c dup_fnf.c null_del_fnf.c null_copy_fnf.c dup_comm_fnf.c \
+	null_comm_del_fnf.c null_comm_copy_fnf.c dup_win_fnf.c null_win_del_fnf.c \
+	null_win_copy_fnf.c dup_type_fnf.c null_type_del_fnf.c null_type_copy_fnf.c statusf2c.c \
+	statusc2f.c setbot.c setbotf.f 
 HEADERFILES     = $(HEADERS)
-SOURCEFILES     = sendf.c recvf.c get_countf.c bsendf.c ssendf.c rsendf.c \
-	bufattachf.c bufdetachf.c isendf.c ibsendf.c issendf.c irsendf.c \
-	irecvf.c waitf.c testf.c request_freef.c waitanyf.c testanyf.c \
-	waitallf.c testallf.c waitsomef.c testsomef.c iprobef.c probef.c \
-	cancelf.c testcancelf.c send_initf.c bsend_initf.c ssend_initf.c \
-	rsend_initf.c recv_initf.c startf.c startallf.c sendrecvf.c \
-	sndrcvrplf.c typecontigf.c type_vectorf.c type_hvectorf.c \
-	type_indexedf.c type_hindexedf.c type_structf.c type_extentf.c \
-	type_sizef.c type_lbf.c type_ubf.c type_commitf.c type_freef.c \
-	get_elementsf.c packf.c unpackf.c pack_sizef.c barrierf.c bcastf.c \
-	gatherf.c gathervf.c scatterf.c scattervf.c allgatherf.c \
-	allgathervf.c alltoallf.c alltoallvf.c reducef.c op_createf.c \
-	op_freef.c allreducef.c redscatf.c scanf.c group_sizef.c \
-	group_rankf.c grouptranksf.c group_comparef.c comm_groupf.c \
-	group_unionf.c groupinterf.c groupdifff.c group_inclf.c group_exclf.c \
-	grouprinclf.c grouprexclf.c group_freef.c comm_sizef.c comm_rankf.c \
-	comm_comparef.c comm_dupf.c comm_createf.c comm_splitf.c comm_freef.c \
-	commtesticf.c commrsizef.c commrgroupf.c iccreatef.c icmergef.c \
-	keyval_freef.c attr_putf.c attr_getf.c attr_deletef.c topo_testf.c \
-	cart_createf.c dims_createf.c graph_createf.c graphdims_getf.c \
-	graph_getf.c cartdim_getf.c cart_getf.c cart_rankf.c cart_coordsf.c \
-	grfnbcountf.c grfnbrsf.c cart_shiftf.c cart_subf.c cart_mapf.c \
-	graph_mapf.c getpnamef.c get_versionf.c errhcreatef.c errhsetf.c \
-	errhgetf.c errhfreef.c error_stringf.c error_classf.c finalizef.c \
-	initializedf.c abortf.c close_portf.c comm_acceptf.c comm_connectf.c \
-	commdiscf.c commparentf.c comm_joinf.c comm_spawnf.c spawnmultf.c \
-	lookup_namef.c open_portf.c publish_namef.c unpubnamef.c \
-	accumulatef.c getf.c putf.c win_completef.c win_createf.c \
-	win_fencef.c win_freef.c win_get_groupf.c win_lockf.c win_postf.c \
-	win_startf.c win_testf.c win_unlockf.c win_waitf.c alltoallwf.c \
-	exscanf.c adderrclassf.c adderrcodef.c adderrstringf.c commcallerrf.c \
-	commnewkeyf.c commdelattrf.c commfreekeyf.c comm_get_attrf.c \
-	commgetnamf.c comm_set_attrf.c comm_set_namef.c filecallerrf.c \
-	greqcompletef.c greqstartf.c isthrmainf.c query_threadf.c \
-	statgetclf.c statsetelf.c typenewkeyf.c typedelattrf.c type_dupf.c \
-	typefreekeyf.c type_get_attrf.c typegetcntsf.c typegetenvf.c \
-	typegnamef.c typesetattrf.c typesetnamef.c type_match_sizef.c \
-	wincallerrf.c winnewkeyf.c windelattrf.c winfreekeyf.c \
-	win_get_attrf.c win_get_namef.c win_set_attrf.c win_set_namef.c \
-	alloc_memf.c commcreerrf.c commgeterrf.c commseterrf.c filecreerrf.c \
-	filegeterrf.c fileseterrf.c finalizedf.c free_memf.c info_createf.c \
-	info_deletef.c info_dupf.c info_freef.c info_getf.c infognkf.c \
-	infognthkf.c infovallenf.c info_setf.c pack_externalf.c packesizef.c \
-	reqgetstatf.c typedarrayf.c typechindf.c typechvecf.c typecindbf.c \
-	typecresizef.c typecstructf.c typecsubarrf.c typegetextentf.c \
-	typegtextf.c unpackextf.c wincreerrf.c wingeterrf.c winseterrf.c \
-	reduce_localf.c op_commutativef.c reduce_scatter_blockf.c \
-	dist_graph_create_adjacentf.c dist_graph_createf.c \
-	dist_graph_neighbors_countf.c dist_graph_neighborsf.c file_openf.c \
-	file_closef.c file_deletef.c file_set_sizef.c file_preallocatef.c \
-	file_get_sizef.c file_get_groupf.c file_get_amodef.c file_set_infof.c \
-	file_get_infof.c file_set_viewf.c file_get_viewf.c file_read_atf.c \
-	file_read_at_allf.c file_write_atf.c file_write_at_allf.c \
-	file_iread_atf.c file_iwrite_atf.c file_readf.c file_read_allf.c \
-	file_writef.c file_write_allf.c file_ireadf.c file_iwritef.c \
-	file_seekf.c file_get_positionf.c file_get_byte_offsetf.c \
-	file_read_sharedf.c file_write_sharedf.c file_iread_sharedf.c \
-	file_iwrite_sharedf.c file_read_orderedf.c file_write_orderedf.c \
-	file_seek_sharedf.c file_get_position_sharedf.c \
-	file_read_at_all_beginf.c file_read_at_all_endf.c \
-	file_write_at_all_beginf.c file_write_at_all_endf.c \
-	file_read_all_beginf.c file_read_all_endf.c file_write_all_beginf.c \
-	file_write_all_endf.c file_read_ordered_beginf.c \
-	file_read_ordered_endf.c file_write_ordered_beginf.c \
-	file_write_ordered_endf.c file_get_type_extentf.c register_datarepf.c \
-	file_set_atomicityf.c file_get_atomicityf.c file_syncf.c initf.c \
-	initthreadf.c pcontrolf.c addressf.c getaddressf.c wtimef.c wtickf.c \
-	keyval_createf.c dup_fnf.c null_del_fnf.c null_copy_fnf.c \
-	dup_comm_fnf.c null_comm_del_fnf.c null_comm_copy_fnf.c dup_win_fnf.c \
-	null_win_del_fnf.c null_win_copy_fnf.c dup_type_fnf.c \
-	null_type_del_fnf.c null_type_copy_fnf.c statusf2c.c statusc2f.c \
-	$(abs_builddir)/setbot.c $(abs_builddir)/setbotf.f 
+SOURCEFILES     = sendf.c recvf.c get_countf.c bsendf.c ssendf.c rsendf.c bufattachf.c \
+	bufdetachf.c isendf.c ibsendf.c issendf.c irsendf.c irecvf.c waitf.c testf.c \
+	request_freef.c waitanyf.c testanyf.c waitallf.c testallf.c waitsomef.c testsomef.c \
+	iprobef.c probef.c cancelf.c testcancelf.c send_initf.c bsend_initf.c ssend_initf.c \
+	rsend_initf.c recv_initf.c startf.c startallf.c sendrecvf.c sndrcvrplf.c typecontigf.c \
+	type_vectorf.c type_hvectorf.c type_indexedf.c type_hindexedf.c type_structf.c \
+	type_extentf.c type_sizef.c type_lbf.c type_ubf.c type_commitf.c type_freef.c \
+	get_elementsf.c packf.c unpackf.c pack_sizef.c barrierf.c bcastf.c gatherf.c gathervf.c \
+	scatterf.c scattervf.c allgatherf.c allgathervf.c alltoallf.c alltoallvf.c reducef.c \
+	op_createf.c op_freef.c allreducef.c redscatf.c scanf.c group_sizef.c group_rankf.c \
+	grouptranksf.c group_comparef.c comm_groupf.c group_unionf.c groupinterf.c groupdifff.c \
+	group_inclf.c group_exclf.c grouprinclf.c grouprexclf.c group_freef.c comm_sizef.c \
+	comm_rankf.c comm_comparef.c comm_dupf.c comm_createf.c comm_splitf.c comm_freef.c \
+	commtesticf.c commrsizef.c commrgroupf.c iccreatef.c icmergef.c keyval_freef.c \
+	attr_putf.c attr_getf.c attr_deletef.c topo_testf.c cart_createf.c dims_createf.c \
+	graph_createf.c graphdims_getf.c graph_getf.c cartdim_getf.c cart_getf.c cart_rankf.c \
+	cart_coordsf.c grfnbcountf.c grfnbrsf.c cart_shiftf.c cart_subf.c cart_mapf.c \
+	graph_mapf.c getpnamef.c get_versionf.c errhcreatef.c errhsetf.c errhgetf.c errhfreef.c \
+	error_stringf.c error_classf.c finalizef.c initializedf.c abortf.c close_portf.c \
+	comm_acceptf.c comm_connectf.c commdiscf.c commparentf.c comm_joinf.c comm_spawnf.c \
+	spawnmultf.c lookup_namef.c open_portf.c publish_namef.c unpubnamef.c accumulatef.c \
+	getf.c putf.c win_completef.c win_createf.c win_fencef.c win_freef.c win_get_groupf.c \
+	win_lockf.c win_postf.c win_startf.c win_testf.c win_unlockf.c win_waitf.c alltoallwf.c \
+	exscanf.c adderrclassf.c adderrcodef.c adderrstringf.c commcallerrf.c commnewkeyf.c \
+	commdelattrf.c commfreekeyf.c comm_get_attrf.c commgetnamf.c comm_set_attrf.c \
+	comm_set_namef.c filecallerrf.c greqcompletef.c greqstartf.c isthrmainf.c query_threadf.c \
+	statgetclf.c statsetelf.c typenewkeyf.c typedelattrf.c type_dupf.c typefreekeyf.c \
+	type_get_attrf.c typegetcntsf.c typegetenvf.c typegnamef.c typesetattrf.c typesetnamef.c \
+	type_match_sizef.c wincallerrf.c winnewkeyf.c windelattrf.c winfreekeyf.c win_get_attrf.c \
+	win_get_namef.c win_set_attrf.c win_set_namef.c alloc_memf.c commcreerrf.c commgeterrf.c \
+	commseterrf.c filecreerrf.c filegeterrf.c fileseterrf.c finalizedf.c free_memf.c \
+	info_createf.c info_deletef.c info_dupf.c info_freef.c info_getf.c infognkf.c \
+	infognthkf.c infovallenf.c info_setf.c pack_externalf.c packesizef.c reqgetstatf.c \
+	typedarrayf.c typechindf.c typechvecf.c typecindbf.c typecresizef.c typecstructf.c \
+	typecsubarrf.c typegetextentf.c typegtextf.c unpackextf.c wincreerrf.c wingeterrf.c \
+	winseterrf.c reduce_localf.c op_commutativef.c reduce_scatter_blockf.c \
+	dist_graph_create_adjacentf.c dist_graph_createf.c dist_graph_neighbors_countf.c \
+	dist_graph_neighborsf.c file_openf.c file_closef.c file_deletef.c file_set_sizef.c \
+	file_preallocatef.c file_get_sizef.c file_get_groupf.c file_get_amodef.c file_set_infof.c \
+	file_get_infof.c file_set_viewf.c file_get_viewf.c file_read_atf.c file_read_at_allf.c \
+	file_write_atf.c file_write_at_allf.c file_iread_atf.c file_iwrite_atf.c file_readf.c \
+	file_read_allf.c file_writef.c file_write_allf.c file_ireadf.c file_iwritef.c \
+	file_seekf.c file_get_positionf.c file_get_byte_offsetf.c file_read_sharedf.c \
+	file_write_sharedf.c file_iread_sharedf.c file_iwrite_sharedf.c file_read_orderedf.c \
+	file_write_orderedf.c file_seek_sharedf.c file_get_position_sharedf.c \
+	file_read_at_all_beginf.c file_read_at_all_endf.c file_write_at_all_beginf.c \
+	file_write_at_all_endf.c file_read_all_beginf.c file_read_all_endf.c \
+	file_write_all_beginf.c file_write_all_endf.c file_read_ordered_beginf.c \
+	file_read_ordered_endf.c file_write_ordered_beginf.c file_write_ordered_endf.c \
+	file_get_type_extentf.c register_datarepf.c file_set_atomicityf.c file_get_atomicityf.c \
+	file_syncf.c initf.c initthreadf.c pcontrolf.c addressf.c getaddressf.c wtimef.c wtickf.c \
+	keyval_createf.c dup_fnf.c null_del_fnf.c null_copy_fnf.c dup_comm_fnf.c \
+	null_comm_del_fnf.c null_comm_copy_fnf.c dup_win_fnf.c null_win_del_fnf.c \
+	null_win_copy_fnf.c dup_type_fnf.c null_type_del_fnf.c null_type_copy_fnf.c statusf2c.c \
+	statusc2f.c $(abs_builddir)/setbot.c $(abs_builddir)/setbotf.f 
 # --------------------------------------------------------------------------
 # DO NOT EDIT
 # This file created by buildiface 
@@ -9897,6 +9697,8 @@ _wstatusc2f.lo: statusc2f.c
 	fi
 	@$(C_COMPILE_SHL) -o _swstatusc2f.o -c -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES $(srcdir)/statusc2f.c
 	@mv -f _swstatusc2f.o _wstatusc2f.lo
+
+.POSIX:
 
 FORCE_TARGET:
 

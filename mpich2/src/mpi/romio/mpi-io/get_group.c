@@ -40,10 +40,8 @@ int MPI_File_get_group(MPI_File mpi_fh, MPI_Group *group)
     int error_code;
     ADIO_File fh;
     static char myname[] = "MPI_FILE_GET_GROUP";
-    MPIU_THREADPRIV_DECL;
 
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
 
@@ -59,7 +57,6 @@ int MPI_File_get_group(MPI_File mpi_fh, MPI_Group *group)
     error_code = MPI_Comm_group(fh->comm, group);
 
 fn_exit:
-    MPIR_Nest_decr();
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return error_code;
 }

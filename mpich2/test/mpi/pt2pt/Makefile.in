@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -24,7 +23,7 @@ VPATH = .:@srcdir@
 INCLUDES = -I../include -I${srcdir}/../include
 
 .SUFFIXES:
-.SUFFIXES: .o .c .txt 
+.SUFFIXES: .o .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -32,8 +31,6 @@ INCLUDES = -I../include -I${srcdir}/../include
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -41,34 +38,13 @@ INCLUDES = -I../include -I${srcdir}/../include
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=test/mpi/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=pt2pt/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
-	-@rm -f *.o ${srcdir}/*.o inactivereq bsend3 bsendfrag rcancel rqfreeb bsend4 bsendpending waitany-null cancelrecv isendself rqstatus sendrecv3 sendself probenull bsendalign greq1 eagerdt bsend5 bottom anyall bsend2 probe-unexp pscancel bsend1 scancel icsend sendflood sendrecv1 waittestnull scancel2 pingping isendselfprobe sendrecv2 sendall
-	-@rm -f inactivereq.exe bsend3.exe bsendfrag.exe rcancel.exe rqfreeb.exe bsend4.exe bsendpending.exe waitany-null.exe cancelrecv.exe isendself.exe rqstatus.exe sendrecv3.exe sendself.exe probenull.exe bsendalign.exe greq1.exe eagerdt.exe bsend5.exe bottom.exe anyall.exe bsend2.exe probe-unexp.exe pscancel.exe bsend1.exe scancel.exe icsend.exe sendflood.exe sendrecv1.exe waittestnull.exe scancel2.exe pingping.exe isendselfprobe.exe sendrecv2.exe sendall.exe
+	-@rm -f *.o ${srcdir}/*.o inactivereq bsend3 bsendfrag rcancel rqfreeb bsend4 bsendpending waitany-null cancelrecv isendself rqstatus sendrecv3 sendself probenull bsendalign greq1 eagerdt bsend5 bottom anyall bsend2 probe-unexp pscancel bsend1 scancel icsend sendflood sendrecv1 waittestnull scancel2 pingping isendselfprobe large_message sendrecv2 sendall
+	-@rm -f inactivereq.exe bsend3.exe bsendfrag.exe rcancel.exe rqfreeb.exe bsend4.exe bsendpending.exe waitany-null.exe cancelrecv.exe isendself.exe rqstatus.exe sendrecv3.exe sendself.exe probenull.exe bsendalign.exe greq1.exe eagerdt.exe bsend5.exe bottom.exe anyall.exe bsend2.exe probe-unexp.exe pscancel.exe bsend1.exe scancel.exe icsend.exe sendflood.exe sendrecv1.exe waittestnull.exe scancel2.exe pingping.exe isendselfprobe.exe large_message.exe sendrecv2.exe sendall.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -76,18 +52,15 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
-all-redirect: anyall bottom bsend1 bsend2 bsend3 bsend4 bsend5 bsendalign\
-	 cancelrecv isendself sendself eagerdt isendselfprobe bsendfrag\
-	 bsendpending icsend rqstatus rqfreeb greq1 scancel scancel2 rcancel\
-	 pscancel sendflood sendrecv1 sendrecv2 sendrecv3 waitany-null\
-	 pingping probe-unexp probenull inactivereq waittestnull sendall
+	rm -f  Makefile
+all-redirect: anyall bottom bsend1 bsend2 bsend3 bsend4 bsend5 bsendalign cancelrecv isendself\
+	 sendself eagerdt isendselfprobe bsendfrag bsendpending icsend rqstatus rqfreeb greq1\
+	 scancel scancel2 rcancel pscancel sendflood sendrecv1 sendrecv2 sendrecv3 waitany-null\
+	 pingping probe-unexp probenull inactivereq waittestnull sendall large_message
 
-coverage: 
 inactivereq: inactivereq.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o inactivereq inactivereq.o  ${LIBS}
 bsend3: bsend3.o   @MPILIBLOC@ ../util/mtest.o
@@ -101,11 +74,9 @@ rqfreeb: rqfreeb.o   @MPILIBLOC@ ../util/mtest.o
 bsend4: bsend4.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o bsend4 bsend4.o  ${LIBS}
 bsendpending: bsendpending.o   @MPILIBLOC@ ../util/mtest.o
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o bsendpending bsendpending.o  \
-	${LIBS} 
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o bsendpending bsendpending.o  ${LIBS}
 waitany-null: waitany-null.o   @MPILIBLOC@ ../util/mtest.o
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o waitany-null waitany-null.o  \
-	${LIBS} 
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o waitany-null waitany-null.o  ${LIBS}
 cancelrecv: cancelrecv.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o cancelrecv cancelrecv.o  ${LIBS}
 isendself: isendself.o   @MPILIBLOC@ ../util/mtest.o
@@ -147,34 +118,27 @@ sendflood: sendflood.o   @MPILIBLOC@ ../util/mtest.o
 sendrecv1: sendrecv1.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o sendrecv1 sendrecv1.o  ${LIBS}
 waittestnull: waittestnull.o   @MPILIBLOC@ ../util/mtest.o
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o waittestnull waittestnull.o  \
-	${LIBS} 
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o waittestnull waittestnull.o  ${LIBS}
 scancel2: scancel2.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o scancel2 scancel2.o  ${LIBS}
 pingping: pingping.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o pingping pingping.o  ${LIBS}
 isendselfprobe: isendselfprobe.o   @MPILIBLOC@ ../util/mtest.o
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o isendselfprobe isendselfprobe.o  \
-	${LIBS} 
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o isendselfprobe isendselfprobe.o  ${LIBS}
+large_message: large_message.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o large_message large_message.o  ${LIBS}
 sendrecv2: sendrecv2.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o sendrecv2 sendrecv2.o  ${LIBS}
 sendall: sendall.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o sendall sendall.o  ${LIBS}
 # --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  anyall.c bottom.c bsend1.c bsend2.c bsend3.c bsend4.c \
-	bsend5.c bsendalign.c cancelrecv.c isendself.c sendself.c eagerdt.c \
-	isendselfprobe.c bsendfrag.c bsendpending.c icsend.c rqstatus.c \
-	rqfreeb.c greq1.c scancel.c scancel2.c rcancel.c pscancel.c \
-	sendflood.c sendrecv1.c sendrecv2.c sendrecv3.c waitany-null.c \
-	pingping.c probe-unexp.c probenull.c inactivereq.c waittestnull.c \
-	sendall.c 
+SOURCES         =  anyall.c bottom.c bsend1.c bsend2.c bsend3.c bsend4.c bsend5.c bsendalign.c \
+	cancelrecv.c isendself.c sendself.c eagerdt.c isendselfprobe.c bsendfrag.c bsendpending.c \
+	icsend.c rqstatus.c rqfreeb.c greq1.c scancel.c scancel2.c rcancel.c pscancel.c \
+	sendflood.c sendrecv1.c sendrecv2.c sendrecv3.c waitany-null.c pingping.c probe-unexp.c \
+	probenull.c inactivereq.c waittestnull.c sendall.c large_message.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
@@ -192,6 +156,8 @@ testing:
 		   -xmlfile=summary.xml
 clean-local:
 	-rm -f summary.xml
+
+.POSIX:
 
 FORCE_TARGET:
 

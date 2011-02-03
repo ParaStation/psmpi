@@ -9,11 +9,11 @@
 #include "bind.h"
 #include "ckpoint.h"
 #include "demux.h"
-#include "hydra_utils.h"
+#include "hydra.h"
 
 struct HYD_pmcd_pmip HYD_pmcd_pmip;
 
-void HYD_pmcd_pmip_killjob(void)
+void HYD_pmcd_pmip_kill_localprocs(void)
 {
     int i;
 
@@ -68,14 +68,19 @@ static HYD_status debug_fn(char *arg, char ***argv)
     return HYDU_set_int(arg, argv, &HYD_pmcd_pmip.user_global.debug, 1);
 }
 
-static HYD_status bootstrap_fn(char *arg, char ***argv)
+static HYD_status rmk_fn(char *arg, char ***argv)
 {
-    return HYDU_set_str_and_incr(arg, argv, &HYD_pmcd_pmip.user_global.bootstrap);
+    return HYDU_set_str_and_incr(arg, argv, &HYD_pmcd_pmip.user_global.rmk);
 }
 
-static HYD_status bootstrap_exec_fn(char *arg, char ***argv)
+static HYD_status launcher_fn(char *arg, char ***argv)
 {
-    return HYDU_set_str_and_incr(arg, argv, &HYD_pmcd_pmip.user_global.bootstrap_exec);
+    return HYDU_set_str_and_incr(arg, argv, &HYD_pmcd_pmip.user_global.launcher);
+}
+
+static HYD_status launcher_exec_fn(char *arg, char ***argv)
+{
+    return HYDU_set_str_and_incr(arg, argv, &HYD_pmcd_pmip.user_global.launcher_exec);
 }
 
 static HYD_status demux_fn(char *arg, char ***argv)
@@ -88,14 +93,9 @@ static HYD_status iface_fn(char *arg, char ***argv)
     return HYDU_set_str_and_incr(arg, argv, &HYD_pmcd_pmip.user_global.iface);
 }
 
-static HYD_status prepend_rank_fn(char *arg, char ***argv)
+static HYD_status auto_cleanup_fn(char *arg, char ***argv)
 {
-    return HYDU_set_int(arg, argv, &HYD_pmcd_pmip.user_global.prepend_rank, 1);
-}
-
-static HYD_status enable_stdin_fn(char *arg, char ***argv)
-{
-    return HYDU_set_int_and_incr(arg, argv, &HYD_pmcd_pmip.system_global.enable_stdin);
+    return HYDU_set_int_and_incr(arg, argv, &HYD_pmcd_pmip.user_global.auto_cleanup);
 }
 
 static HYD_status pmi_port_fn(char *arg, char ***argv)
@@ -157,6 +157,11 @@ static HYD_status ckpointlib_fn(char *arg, char ***argv)
     return HYDU_set_str_and_incr(arg, argv, &HYD_pmcd_pmip.user_global.ckpointlib);
 }
 
+static HYD_status ckpoint_num_fn(char *arg, char ***argv)
+{
+    return HYDU_set_int_and_incr(arg, argv, &HYD_pmcd_pmip.user_global.ckpoint_num);
+}
+
 static HYD_status ckpoint_prefix_fn(char *arg, char ***argv)
 {
     return HYDU_set_str_and_incr(arg, argv, &HYD_pmcd_pmip.user_global.ckpoint_prefix);
@@ -166,7 +171,6 @@ static HYD_status global_env_fn(char *arg, char ***argv)
 {
     int i, count;
     char *str;
-    struct HYD_env *env;
     HYD_status status = HYD_SUCCESS;
 
     count = atoi(**argv);
@@ -179,17 +183,13 @@ static HYD_status global_env_fn(char *arg, char ***argv)
             str++;
             str[strlen(str) - 1] = 0;
         }
-        status = HYDU_str_to_env(str, &env);
-        HYDU_ERR_POP(status, "error converting string to env\n");
 
         if (!strcmp(arg, "global-inherited-env"))
-            HYDU_append_env_to_list(*env, &HYD_pmcd_pmip.user_global.global_env.inherited);
+            HYDU_append_env_str_to_list(str, &HYD_pmcd_pmip.user_global.global_env.inherited);
         else if (!strcmp(arg, "global-system-env"))
-            HYDU_append_env_to_list(*env, &HYD_pmcd_pmip.user_global.global_env.system);
+            HYDU_append_env_str_to_list(str, &HYD_pmcd_pmip.user_global.global_env.system);
         else if (!strcmp(arg, "global-user-env"))
-            HYDU_append_env_to_list(*env, &HYD_pmcd_pmip.user_global.global_env.user);
-
-        HYDU_FREE(env);
+            HYDU_append_env_str_to_list(str, &HYD_pmcd_pmip.user_global.global_env.user);
     }
     (*argv)++;
 
@@ -301,7 +301,6 @@ static HYD_status exec_proc_count_fn(char *arg, char ***argv)
 static HYD_status exec_local_env_fn(char *arg, char ***argv)
 {
     struct HYD_exec *exec = NULL;
-    struct HYD_env *env;
     int i, count;
     char *str;
     HYD_status status = HYD_SUCCESS;
@@ -321,10 +320,7 @@ static HYD_status exec_local_env_fn(char *arg, char ***argv)
             str++;
             str[strlen(str) - 1] = 0;
         }
-        status = HYDU_str_to_env(str, &env);
-        HYDU_ERR_POP(status, "error converting string to env\n");
-        HYDU_append_env_to_list(*env, &exec->user_env);
-        HYDU_FREE(env);
+        HYDU_append_env_str_to_list(str, &exec->user_env);
     }
     (*argv)++;
 
@@ -387,12 +383,12 @@ struct HYD_arg_match_table HYD_pmcd_pmip_match_table[] = {
     {"proxy-id", proxy_id_fn, NULL},
     {"pgid", pgid_fn, NULL},
     {"debug", debug_fn, NULL},
-    {"bootstrap", bootstrap_fn, NULL},
-    {"bootstrap-exec", bootstrap_exec_fn, NULL},
+    {"rmk", rmk_fn, NULL},
+    {"launcher", launcher_fn, NULL},
+    {"launcher-exec", launcher_exec_fn, NULL},
     {"demux", demux_fn, NULL},
     {"iface", iface_fn, NULL},
-    {"prepend-rank", prepend_rank_fn, NULL},
-    {"enable-stdin", enable_stdin_fn, NULL},
+    {"auto-cleanup", auto_cleanup_fn, NULL},
 
     /* Executable parameters */
     {"pmi-port", pmi_port_fn, NULL},
@@ -405,6 +401,7 @@ struct HYD_arg_match_table HYD_pmcd_pmip_match_table[] = {
     {"bindlib", bindlib_fn, NULL},
     {"ckpointlib", ckpointlib_fn, NULL},
     {"ckpoint-prefix", ckpoint_prefix_fn, NULL},
+    {"ckpoint-num", ckpoint_num_fn, NULL},
     {"global-inherited-env", global_env_fn, NULL},
     {"global-system-env", global_env_fn, NULL},
     {"global-user-env", global_env_fn, NULL},
@@ -429,6 +426,7 @@ struct HYD_arg_match_table HYD_pmcd_pmip_match_table[] = {
 HYD_status HYD_pmcd_pmip_get_params(char **t_argv)
 {
     char **argv = t_argv;
+    static char dbg_prefix[2 * MAX_HOSTNAME_LEN];
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -457,18 +455,22 @@ HYD_status HYD_pmcd_pmip_get_params(char **t_argv)
     if (HYD_pmcd_pmip.user_global.debug == -1)
         HYD_pmcd_pmip.user_global.debug = 0;
 
-    if (HYD_pmcd_pmip.user_global.prepend_rank == -1)
-        HYD_pmcd_pmip.user_global.prepend_rank = 0;
-
-    status = HYDT_bsci_init(HYD_pmcd_pmip.user_global.bootstrap, NULL /* no bootstrap exec */ ,
+    status = HYDT_bsci_init(HYD_pmcd_pmip.user_global.rmk,
+                            HYD_pmcd_pmip.user_global.launcher,
+                            HYD_pmcd_pmip.user_global.launcher_exec,
                             0 /* disable x */ , HYD_pmcd_pmip.user_global.debug);
-    HYDU_ERR_POP(status, "proxy unable to initialize bootstrap\n");
+    HYDU_ERR_POP(status, "proxy unable to initialize bootstrap server\n");
 
     if (HYD_pmcd_pmip.local.id == -1) {
-        /* We didn't get a proxy ID during launch; query the bootstrap
-         * server for it. */
+        /* We didn't get a proxy ID during launch; query the launcher
+         * for it. */
         status = HYDT_bsci_query_proxy_id(&HYD_pmcd_pmip.local.id);
-        HYDU_ERR_POP(status, "unable to query bootstrap server for proxy ID\n");
+        HYDU_ERR_POP(status, "unable to query launcher for proxy ID\n");
+    }
+
+    if (HYD_pmcd_pmip.system_global.jobid == NULL) {
+        status = HYDT_bsci_query_jobid(&HYD_pmcd_pmip.system_global.jobid);
+        HYDU_ERR_POP(status, "unable to query launcher for job ID\n");
     }
 
     if (HYD_pmcd_pmip.local.id == -1)
@@ -476,6 +478,12 @@ HYD_status HYD_pmcd_pmip_get_params(char **t_argv)
 
     if (HYD_pmcd_pmip.local.pgid == -1)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "PG ID not available\n");
+
+    HYDU_dbg_finalize();
+    HYDU_snprintf(dbg_prefix, 2 * MAX_HOSTNAME_LEN, "proxy:%d:%d",
+                  HYD_pmcd_pmip.local.pgid, HYD_pmcd_pmip.local.id);
+    status = HYDU_dbg_init((const char *) dbg_prefix);
+    HYDU_ERR_POP(status, "unable to initialization debugging\n");
 
   fn_exit:
     HYDU_FUNC_EXIT();

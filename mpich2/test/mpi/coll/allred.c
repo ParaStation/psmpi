@@ -4,12 +4,14 @@
  *      See COPYRIGHT in top-level directory.
  */
 
+#include "mpi.h"
+#include "mpitest.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef HAVE_STDINT_H
 #include <stdint.h>
-#include "mpi.h"
-#include "mpitest.h"
+#endif
 
 int count, size, rank;
 int cerrcnt;
@@ -35,11 +37,12 @@ struct double_test { double a; int b; };
      (op == MPI_MINLOC) ? "MPI_MINLOC" : \
      "MPI_NO_OP")
 
+/* calloc to avoid spurious valgrind warnings when "type" has padding bytes */
 #define DECL_MALLOC_IN_OUT_SOL(type)                 \
     type *in, *out, *sol;                            \
-    in = (type *) malloc(count * sizeof(type));      \
-    out = (type *) malloc(count * sizeof(type));     \
-    sol = (type *) malloc(count * sizeof(type));
+    in  = (type *) calloc(count, sizeof(type));      \
+    out = (type *) calloc(count, sizeof(type));      \
+    sol = (type *) calloc(count, sizeof(type));
 
 #define SET_INDEX_CONST(arr, val)               \
     {                                           \
@@ -84,28 +87,40 @@ struct double_test { double a; int b; };
         free(in); free(out); free(sol);                                 \
     } while(0)
 
+/* The logic on the error check on MPI_Allreduce assumes that all 
+   MPI_Allreduce routines return a failure if any do - this is sufficient
+   for MPI implementations that reject some of the valid op/datatype pairs
+   (and motivated this addition, as some versions of the IBM MPI 
+   failed in just this way).
+*/
 #define ALLREDUCE_AND_FREE(mpi_type, mpi_op, in, out, sol)              \
     {                                                                   \
-        int i, lerrcnt = 0;                                             \
-        MPI_Allreduce(in, out, count, mpi_type, mpi_op, MPI_COMM_WORLD); \
-        for (i = 0; i < count; i++) {                                   \
-            if (out[i] != sol[i]) {                                     \
-                cerrcnt++;                                              \
-                lerrcnt++;                                              \
-            }                                                           \
+        int i, rc, lerrcnt = 0;						\
+        rc = MPI_Allreduce(in, out, count, mpi_type, mpi_op, MPI_COMM_WORLD); \
+	if (rc) { lerrcnt++; cerrcnt++; MTestPrintError( rc ); }        \
+	else {                                                          \
+          for (i = 0; i < count; i++) {                                   \
+              if (out[i] != sol[i]) {                                     \
+                  cerrcnt++;                                              \
+                  lerrcnt++;                                              \
+              }                                                           \
+	   }                                                              \
         }                                                               \
         ERROR_CHECK_AND_FREE(lerrcnt, mpi_type, mpi_op);                \
     }
 
 #define STRUCT_ALLREDUCE_AND_FREE(mpi_type, mpi_op, in, out, sol)       \
     {                                                                   \
-        int i, lerrcnt = 0;                                             \
-        MPI_Allreduce(in, out, count, mpi_type, mpi_op, MPI_COMM_WORLD); \
-        for (i = 0; i < count; i++) {                                   \
-            if ((out[i].a != sol[i].a) || (out[i].b != sol[i].b)) {     \
-                cerrcnt++;                                              \
-                lerrcnt++;                                              \
-            }                                                           \
+        int i, rc, lerrcnt = 0;						\
+        rc = MPI_Allreduce(in, out, count, mpi_type, mpi_op, MPI_COMM_WORLD); \
+	if (rc) { lerrcnt++; cerrcnt++; MTestPrintError( rc ); }        \
+        else {                                                            \
+          for (i = 0; i < count; i++) {                                   \
+              if ((out[i].a != sol[i].a) || (out[i].b != sol[i].b)) {     \
+                  cerrcnt++;                                              \
+                  lerrcnt++;                                              \
+              }                                                           \
+            }                                                             \
         }                                                               \
         ERROR_CHECK_AND_FREE(lerrcnt, mpi_type, mpi_op);                \
     }
@@ -178,7 +193,7 @@ struct double_test { double a; int b; };
 #define lxor_test2(type, mpi_type)                      \
     const_test(type, mpi_type, MPI_LXOR, 0, 0, 0)
 #define lxor_test3(type, mpi_type)                      \
-    const_test(type, mpi_type, MPI_LXOR, 1, 0, 0)
+    const_test(type, mpi_type, MPI_LXOR, 1, (size & 0x1), 0)
 #define land_test1(type, mpi_type)                              \
     const_test(type, mpi_type, MPI_LAND, (rank & 0x1), 0, 0)
 #define land_test2(type, mpi_type)                      \
@@ -190,7 +205,7 @@ struct double_test { double a; int b; };
 #define bxor_test2(type, mpi_type)                      \
     const_test(type, mpi_type, MPI_BXOR, 0, 0, 0)
 #define bxor_test3(type, mpi_type)                      \
-    const_test(type, mpi_type, MPI_BXOR, ~0, 0, 0)
+    const_test(type, mpi_type, MPI_BXOR, ~0, (size &0x1) ? ~0 : 0, 0)
 
 #define band_test1(type, mpi_type)                                      \
     {                                                                   \
@@ -285,7 +300,9 @@ struct double_test { double a; int b; };
         op##_test##post(unsigned char, MPI_BYTE);                   \
     }
 
-#if MTEST_HAVE_MIN_MPI_VERSION(2,2)
+#if MTEST_HAVE_MIN_MPI_VERSION(2,2) && defined(HAVE_FLOAT__COMPLEX) \
+    && defined(HAVE_DOUBLE__COMPLEX) \
+    && defined(HAVE_LONG_DOUBLE__COMPLEX)
 #define test_types_set4(op, post)                                         \
     do {                                                                  \
         op##_test##post(float _Complex, MPI_C_FLOAT_COMPLEX);             \
@@ -293,13 +310,17 @@ struct double_test { double a; int b; };
         op##_test##post(long double _Complex, MPI_C_LONG_DOUBLE_COMPLEX); \
     } while (0)
 
+#else
+#define test_types_set4(op, post) do { } while (0)
+#endif
+
+#if MTEST_HAVE_MIN_MPI_VERSION(2,2) && defined(HAVE__BOOL)
 #define test_types_set5(op, post)           \
     do {                                    \
         op##_test##post(_Bool, MPI_C_BOOL); \
     } while (0)
 
 #else
-#define test_types_set4(op, post) do { } while (0)
 #define test_types_set5(op, post) do { } while (0)
 #endif
 
@@ -314,7 +335,22 @@ int main( int argc, char **argv )
 	fprintf( stderr, "At least 2 processes required\n" );
 	MPI_Abort( MPI_COMM_WORLD, 1 );
     }
+
+    /* Set errors return so that we can provide better information 
+       should a routine reject one of the operand/datatype pairs */
+    MPI_Errhandler_set( MPI_COMM_WORLD, MPI_ERRORS_RETURN );
+
     count = 10;
+    /* Allow an argument to override the count.
+       Note that the product tests may fail if the count is very large.
+     */
+    if (argc >= 2) {
+	count = atoi( argv[1] );
+	if  (count <= 0) {
+	    fprintf( stderr, "Invalid count argument %s\n", argv[1] );
+	    MPI_Abort( MPI_COMM_WORLD, 1 );
+	}
+    }
 
     test_types_set2(sum, 1);
     test_types_set2(prod, 1);
@@ -370,6 +406,7 @@ int main( int argc, char **argv )
     minloc_test(struct float_test, MPI_FLOAT_INT);
     minloc_test(struct double_test, MPI_DOUBLE_INT);
 
+    MPI_Errhandler_set( MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL );
     MTest_Finalize( cerrcnt );
     MPI_Finalize();
     return 0;

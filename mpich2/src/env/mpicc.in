@@ -64,7 +64,10 @@ Show=eval
 # (e.g., "cc -64" becomes "cc--64", that file is sources, allowing other
 # changes to the compilation environment.  See the variables used by the 
 # script (defined above)
+# Added MPICH_CC_OLD, MPICH_CC can be used to prefix CC with external utility, 
+# e.g. setenv MPICH_CC 'eval linkcache $MPICH_CC_OLD'
 if [ -n "$MPICH_CC" ] ; then
+    MPICH_CC_OLD="$CC"
     CC="$MPICH_CC"
     CCname=`echo $CC | sed 's/ /-/g'`
     if [ -s $sysconfdir/mpicc-$CCname.conf ] ; then
@@ -157,6 +160,11 @@ for arg in "$@" ; do
     profConf="mpe_$profConf"
     addarg=no
     # Loading the profConf file is handled below
+    ;;
+    -nativelinking)
+    # Internal option to use native compiler for linking without MPI libraries
+    nativelinking=yes
+    addarg=no
     ;;
     -help)
     NC=`echo "$CC" | sed 's%\/% %g' | awk '{print $NF}' -`
@@ -260,8 +268,13 @@ if [ "$linking" = yes ] ; then
 	if [ "$found_path" = "0" ] ; then path_list="$path_list $path" ; fi
     done
 
-    $Show $CC $CPPFLAGS $CFLAGS $LDFLAGS $allargs -I$includedir ${path_list} $mpilibs $LIBS
-    rc=$?
+    if [ "$nativelinking" = yes ] ; then
+        $Show $CC $CPPFLAGS $CFLAGS $LDFLAGS $allargs -I$includedir
+        rc=$?
+    else
+        $Show $CC $CPPFLAGS $CFLAGS $LDFLAGS $allargs -I$includedir ${path_list} $mpilibs $LIBS
+        rc=$?
+    fi
 else
     $Show $CC $CPPFLAGS $CFLAGS $allargs -I$includedir
     rc=$?

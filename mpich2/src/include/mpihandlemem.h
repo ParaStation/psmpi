@@ -205,14 +205,37 @@ M*/
    --enable-g=log is selected.  MPIU_HANDLE_CHECK_REFCOUNT is
    defined above, and adds an additional sanity check for the refcounts
 */
-#if MPIU_THREAD_REFCOUNT == MPIU_REFCOUNT_NONE || \
-    MPIU_THREAD_REFCOUNT == MPIU_REFCOUNT_LOCK
-
 #if MPIU_THREAD_REFCOUNT == MPIU_REFCOUNT_NONE
+
 typedef int MPIU_Handle_ref_count;
+#define MPIU_HANDLE_REF_COUNT_INITIALIZER(val_) (val_)
+
+#define MPIU_Object_set_ref(objptr_,val)                 \
+    do {                                                 \
+        (objptr_)->ref_count = val;                      \
+        MPIU_HANDLE_LOG_REFCOUNT_CHANGE(objptr_, "set"); \
+    } while (0)
+
+/* must be used with care, since there is no synchronization for this read */
+#define MPIU_Object_get_ref(objptr_) \
+    ((objptr_)->ref_count)
+
+#define MPIU_Object_add_ref_always(objptr_)               \
+    do {                                                  \
+        (objptr_)->ref_count++;                           \
+        MPIU_HANDLE_LOG_REFCOUNT_CHANGE(objptr_, "incr"); \
+        MPIU_HANDLE_CHECK_REFCOUNT(objptr_,"incr");       \
+    } while (0)
+#define MPIU_Object_release_ref_always(objptr_,inuse_ptr) \
+    do {                                                  \
+        *(inuse_ptr) = --((objptr_)->ref_count);          \
+        MPIU_HANDLE_LOG_REFCOUNT_CHANGE(objptr_, "decr"); \
+        MPIU_HANDLE_CHECK_REFCOUNT(objptr_,"decr");       \
+    } while (0)
+
 #elif MPIU_THREAD_REFCOUNT == MPIU_REFCOUNT_LOCK
+
 typedef volatile int MPIU_Handle_ref_count;
-#endif
 #define MPIU_HANDLE_REF_COUNT_INITIALIZER(val_) (val_)
 
 #define MPIU_Object_set_ref(objptr_,val)                 \
@@ -245,6 +268,7 @@ typedef volatile int MPIU_Handle_ref_count;
     } while (0)
 
 #elif MPIU_THREAD_REFCOUNT == MPIU_REFCOUNT_LOCKFREE
+
 #include "opa_primitives.h"
 typedef OPA_int_t MPIU_Handle_ref_count;
 #define MPIU_HANDLE_REF_COUNT_INITIALIZER(val_) OPA_INT_T_INITIALIZER(val_)
@@ -289,6 +313,8 @@ typedef OPA_int_t MPIU_Handle_ref_count;
  * It is also assumed that any object being reference counted via these macros
  * will have a valid value in the handle field, even if it is
  * HANDLE_SET_KIND(0, HANDLE_KIND_INVALID) */
+/* TODO profile and examine the assembly that is generated for this if() on Blue
+ * Gene (and elsewhere).  We may need to mark it unlikely(). */
 #define MPIU_Object_add_ref(objptr_)                           \
     do {                                                       \
         int handle_kind_ = HANDLE_GET_KIND((objptr_)->handle); \
@@ -345,15 +371,10 @@ typedef OPA_int_t MPIU_Handle_ref_count;
  * MPIU_Object_add_ref and MPIU_Object_release_ref.
  *
  * NOTE: This macro *must* be invoked as the very first element of the structure! */
-#define MPIU_OBJECT_HEADER           \
-    int handle;                      \
+#define MPIU_OBJECT_HEADER             \
+    int handle;                        \
+    MPIU_THREAD_OBJECT_HOOK/*no-semi*/ \
     MPIU_Handle_ref_count ref_count/*semicolon intentionally omitted*/
-/* For static initialization of structures starting with MPIU_OBJECT_HEADER.
- * This should be put inside of curly braces {} at the position corresponding to
- * the MPIU_OBJECT_HEADER (should always be first unless you *really* know what
- * you are doing) */
-#define MPIU_OBJECT_HEADER_INITIALIZER(handle_val_, ref_cnt_val_) \
-    (handle_val_), MPIU_HANDLE_REF_COUNT_INITIALIZER(ref_cnt_val_)
 
 /* ALL objects have the handle as the first value. */
 /* Inactive (unused and stored on the appropriate avail list) objects 

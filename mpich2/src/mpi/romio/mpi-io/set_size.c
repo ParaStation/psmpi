@@ -38,7 +38,6 @@ int MPI_File_set_size(MPI_File mpi_fh, MPI_Offset size)
     ADIO_File fh;
     static char myname[] = "MPI_FILE_SET_SIZE";
     MPI_Offset tmp_sz;
-    MPIU_THREADPRIV_DECL;
 
 #ifdef MPI_hpux
     int fl_xmpi;
@@ -48,7 +47,6 @@ int MPI_File_set_size(MPI_File mpi_fh, MPI_Offset size)
 #endif /* MPI_hpux */
 
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
 
@@ -93,7 +91,6 @@ int MPI_File_set_size(MPI_File mpi_fh, MPI_Offset size)
 #endif /* MPI_hpux */
 
 fn_exit:
-    MPIR_Nest_decr();
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
 
     return error_code;

@@ -73,7 +73,6 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
     MPID_Comm *comm_ptr = NULL;
     MPID_Request * sreq;
     MPID_Request * rreq;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_SENDRECV);
     
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -172,12 +171,12 @@ int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 	/* --END ERROR HANDLING-- */
     }
 
-    if (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
+    if (!MPID_Request_is_complete(sreq) || !MPID_Request_is_complete(rreq))
     {
 	MPID_Progress_state progress_state;
 	
 	MPID_Progress_start(&progress_state);
-	while (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
+        while (!MPID_Request_is_complete(sreq) || !MPID_Request_is_complete(rreq))
 	{
 	    mpi_errno = MPID_Progress_wait(&progress_state);
 	    if (mpi_errno != MPI_SUCCESS)

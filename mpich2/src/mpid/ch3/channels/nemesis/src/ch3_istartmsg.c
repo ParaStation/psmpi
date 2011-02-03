@@ -28,9 +28,12 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
 {
     int mpi_errno = MPI_SUCCESS;
     int again = 0;
+    int in_cs = 0;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISTARTMSG);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSG);
+
+    MPIU_ERR_CHKANDJUMP1(vc->state == MPIDI_VC_STATE_MORIBUND, mpi_errno, MPI_ERR_OTHER, "**comm_fail", "**comm_fail %d", vc->pg_rank);
 
     if (((MPIDI_CH3I_VC *)vc->channel_private)->iStartContigMsg)
     {
@@ -45,6 +48,9 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
      * the maximum of all possible packet headers */
     hdr_sz = sizeof(MPIDI_CH3_Pkt_t);
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t*)hdr);
+
+    MPIU_THREAD_CS_ENTER(MPIDCOMM,);
+    in_cs = 1;
 
     if (MPIDI_CH3I_SendQ_empty (CH3_NORMAL_QUEUE))
        /* MT */
@@ -67,6 +73,9 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
     }
 
  fn_exit:
+    if (in_cs) {
+        MPIU_THREAD_CS_EXIT(MPIDCOMM,);
+    }
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISTARTMSG);
     return mpi_errno;
  fn_fail:
@@ -99,7 +108,9 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
             /* this is not the first send on the queue, enqueue it then
                check to see if we can send any now */
             MPIDI_CH3I_SendQ_enqueue(sreq, CH3_NORMAL_QUEUE);
-            mpi_errno = MPIDI_CH3_Progress_test();
+            /* FIXME we are sometimes called from within the progress engine, we
+             * shouldn't be calling the progress engine again */
+            mpi_errno = MPIDI_CH3I_Shm_send_progress();
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         }
     

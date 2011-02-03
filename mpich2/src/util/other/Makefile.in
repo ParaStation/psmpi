@@ -9,7 +9,6 @@ SHELL           = @SHELL@
 AR              = @AR@
 AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
-master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
@@ -32,7 +31,7 @@ VPATH = .:@srcdir@
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -49,8 +48,6 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -58,50 +55,28 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=. \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/util/other/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    ${MAKE} .libstamp1 || exit 1; \
 	fi
 
-.libstamp0 ../../../lib/lib${MPILIBNAME}.a: outliers.o 
+.libstamp0 ../../../lib/lib${MPILIBNAME}.a: outliers.o assert.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
@@ -115,7 +90,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../lib/lib${MPILIBNAME}.la: outliers.lo 
+.libstamp1 ../../../lib/lib${MPILIBNAME}.la: outliers.lo assert.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -123,48 +98,15 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
-coverage: 
-	-@for file in outliers.c ; do \
-		gcov -b -f $$file ; done
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/outliers.d: $(srcdir)/outliers.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C outliers.c > $(DEPS_DIR)/outliers.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/outliers.c >$(DEPS_DIR)/outliers.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/outliers.c >$(DEPS_DIR)/outliers.d
-$(DEPS_DIR)/timestamp: outliers.c Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C outliers.c > $(DEPS_DIR)/outliers.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/outliers.c >$(DEPS_DIR)/outliers.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/outliers.c >$(DEPS_DIR)/outliers.d
-	echo "include $(DEPS_DIR)/outliers.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  outliers.c
+SOURCES         =  outliers.c assert.c
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
+
+.POSIX:
 
 FORCE_TARGET:
 

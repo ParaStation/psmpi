@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -24,7 +23,7 @@ VPATH = .:@srcdir@
 INCLUDES = -I../include -I${srcdir}/../include
 
 .SUFFIXES:
-.SUFFIXES: .o .c .txt 
+.SUFFIXES: .o .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -32,8 +31,6 @@ INCLUDES = -I../include -I${srcdir}/../include
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -41,34 +38,13 @@ INCLUDES = -I../include -I${srcdir}/../include
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=test/mpi/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=topo/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o cartzero graphcr topodup graphcr2 cartsuball cartmap1 graphmap1 dims2 cartshift1 cartcreates topotest distgraph1 dims1
-	-@rm -f cartzero.exe graphcr.exe topodup.exe graphcr2.exe cartsuball.exe cartmap1.exe graphmap1.exe dims2.exe cartshift1.exe cartcreates.exe topotest.exe distgraph1.exe dims1.exe
+	-@rm -f *.o ${srcdir}/*.o cartzero graphcr topodup graphcr2 cartsuball cartmap1 graphmap1 dims2 cartshift1 cartcreates topotest distgraph1 dims1 dgraph_unwgt
+	-@rm -f cartzero.exe graphcr.exe topodup.exe graphcr2.exe cartsuball.exe cartmap1.exe graphmap1.exe dims2.exe cartshift1.exe cartcreates.exe topotest.exe distgraph1.exe dims1.exe dgraph_unwgt.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -76,15 +52,13 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
-all-redirect: cartmap1 cartzero cartshift1 cartsuball cartcreates dims1 dims2\
-	 graphmap1 topotest topodup graphcr graphcr2 distgraph1
+	rm -f  Makefile
+all-redirect: cartmap1 cartzero cartshift1 cartsuball cartcreates dims1 dims2 graphmap1 topotest\
+	 topodup graphcr graphcr2 distgraph1 dgraph_unwgt
 
-coverage: 
 cartzero: cartzero.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o cartzero cartzero.o  ${LIBS}
 graphcr: graphcr.o   @MPILIBLOC@ ../util/mtest.o
@@ -111,17 +85,13 @@ distgraph1: distgraph1.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o distgraph1 distgraph1.o  ${LIBS}
 dims1: dims1.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o dims1 dims1.o  ${LIBS}
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
+dgraph_unwgt: dgraph_unwgt.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o dgraph_unwgt dgraph_unwgt.o  ${LIBS}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  cartmap1.c cartzero.c cartshift1.c cartsuball.c \
-	cartcreates.c dims1.c dims2.c graphmap1.c topotest.c topodup.c \
-	graphcr.c graphcr2.c distgraph1.c 
+SOURCES         =  cartmap1.c cartzero.c cartshift1.c cartsuball.c cartcreates.c dims1.c dims2.c \
+	graphmap1.c topotest.c topodup.c graphcr.c graphcr2.c distgraph1.c dgraph_unwgt.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
@@ -134,6 +104,8 @@ testing:
 	../runtests -srcdir=$(srcdir) -tests=testlist \
 			-mpiexec=@MPIEXEC@ \
 		   	-xmlfile=summary.xml
+
+.POSIX:
 
 FORCE_TARGET:
 

@@ -29,7 +29,6 @@ CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 
 VPATH = .:@srcdir@
-DOCTEXT         = @DOCTEXT@
 mpi_sources = comm_disconnect.c comm_get_parent.c comm_join.c \
  comm_spawn.c comm_spawn_multiple.c \
  lookup_name.c publish_name.c unpublish_name.c \
@@ -38,7 +37,7 @@ HEADERS = namepub.h
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .man .html .latex .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -55,8 +54,6 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -64,53 +61,22 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-.c.man:
-	$(DOCTEXT) -man -mpath ../../../man/man3 -ext 3 -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.c.html:
-	$(DOCTEXT) -html -mpath ../../../www/www3  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.c.latex:
-	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=. \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/mpi/spawn/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 .libstamp2 .libstamp3 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
 	    ${MAKE} .libstamp2 || exit 1; \
@@ -122,10 +88,9 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	    fi ; \
 	fi
 
-.libstamp0 ../../../lib/lib${MPILIBNAME}.a: comm_disconnect.o \
-	comm_get_parent.o comm_join.o comm_spawn.o comm_spawn_multiple.o \
-	lookup_name.o publish_name.o unpublish_name.o open_port.o \
-	close_port.o comm_connect.o comm_accept.o 
+.libstamp0 ../../../lib/lib${MPILIBNAME}.a: comm_disconnect.o comm_get_parent.o comm_join.o \
+	comm_spawn.o comm_spawn_multiple.o lookup_name.o publish_name.o unpublish_name.o \
+	open_port.o close_port.o comm_connect.o comm_accept.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
@@ -139,10 +104,9 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../lib/lib${MPILIBNAME}.la: comm_disconnect.lo \
-	comm_get_parent.lo comm_join.lo comm_spawn.lo comm_spawn_multiple.lo \
-	lookup_name.lo publish_name.lo unpublish_name.lo open_port.lo \
-	close_port.lo comm_connect.lo comm_accept.lo 
+.libstamp1 ../../../lib/lib${MPILIBNAME}.la: comm_disconnect.lo comm_get_parent.lo comm_join.lo \
+	comm_spawn.lo comm_spawn_multiple.lo lookup_name.lo publish_name.lo unpublish_name.lo \
+	open_port.lo close_port.lo comm_connect.lo comm_accept.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -152,10 +116,9 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp1
 
 # --------------------------------------------------------------------------
-.libstamp2: _comm_disconnect.o _comm_get_parent.o _comm_join.o _comm_spawn.o \
-	_comm_spawn_multiple.o _lookup_name.o _publish_name.o \
-	_unpublish_name.o _open_port.o _close_port.o _comm_connect.o \
-	_comm_accept.o 
+.libstamp2: _comm_disconnect.o _comm_get_parent.o _comm_join.o _comm_spawn.o _comm_spawn_multiple.o \
+	_lookup_name.o _publish_name.o _unpublish_name.o _open_port.o _close_port.o \
+	_comm_connect.o _comm_accept.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
 	else \
@@ -169,10 +132,9 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../lib/lib${PMPILIBNAME}.a
 	date > .libstamp2
-.libstamp3: _comm_disconnect.lo _comm_get_parent.lo _comm_join.lo _comm_spawn.lo \
-	_comm_spawn_multiple.lo _lookup_name.lo _publish_name.lo \
-	_unpublish_name.lo _open_port.lo _close_port.lo _comm_connect.lo \
-	_comm_accept.lo 
+.libstamp3: _comm_disconnect.lo _comm_get_parent.lo _comm_join.lo _comm_spawn.lo _comm_spawn_multiple.lo \
+	_lookup_name.lo _publish_name.lo _unpublish_name.lo _open_port.lo _close_port.lo \
+	_comm_connect.lo _comm_accept.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
@@ -349,202 +311,12 @@ _comm_accept.lo: comm_accept.c
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/comm_accept.c -o _comm_accept.lo
 # --------------------------------------------------------------------------
-coverage: 
-	-@for file in $(mpi_sources)  ; do \
-		gcov -b -f $$file ; done
-# --------------------------------------------------------------------------
-mandoc: ${mpi_sources:.c=.man}
-htmldoc: ${mpi_sources:.c=.html}
-latexdoc: ${mpi_sources:.c=.latex}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/comm_disconnect.d: $(srcdir)/comm_disconnect.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C comm_disconnect.c > $(DEPS_DIR)/comm_disconnect.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_comm_disconnect.o comm_disconnect.o comm_disconnect.lo _comm_disconnect.lo' $(srcdir)/comm_disconnect.c >$(DEPS_DIR)/comm_disconnect.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_comm_disconnect.o comm_disconnect.o comm_disconnect.lo _comm_disconnect.lo' $(srcdir)/comm_disconnect.c >$(DEPS_DIR)/comm_disconnect.d
-$(DEPS_DIR)/comm_get_parent.d: $(srcdir)/comm_get_parent.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C comm_get_parent.c > $(DEPS_DIR)/comm_get_parent.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_comm_get_parent.o comm_get_parent.o comm_get_parent.lo _comm_get_parent.lo' $(srcdir)/comm_get_parent.c >$(DEPS_DIR)/comm_get_parent.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_comm_get_parent.o comm_get_parent.o comm_get_parent.lo _comm_get_parent.lo' $(srcdir)/comm_get_parent.c >$(DEPS_DIR)/comm_get_parent.d
-$(DEPS_DIR)/comm_join.d: $(srcdir)/comm_join.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C comm_join.c > $(DEPS_DIR)/comm_join.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_comm_join.o comm_join.o comm_join.lo _comm_join.lo' $(srcdir)/comm_join.c >$(DEPS_DIR)/comm_join.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_comm_join.o comm_join.o comm_join.lo _comm_join.lo' $(srcdir)/comm_join.c >$(DEPS_DIR)/comm_join.d
-$(DEPS_DIR)/comm_spawn.d: $(srcdir)/comm_spawn.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C comm_spawn.c > $(DEPS_DIR)/comm_spawn.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_comm_spawn.o comm_spawn.o comm_spawn.lo _comm_spawn.lo' $(srcdir)/comm_spawn.c >$(DEPS_DIR)/comm_spawn.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_comm_spawn.o comm_spawn.o comm_spawn.lo _comm_spawn.lo' $(srcdir)/comm_spawn.c >$(DEPS_DIR)/comm_spawn.d
-$(DEPS_DIR)/comm_spawn_multiple.d: $(srcdir)/comm_spawn_multiple.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C comm_spawn_multiple.c > $(DEPS_DIR)/comm_spawn_multiple.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_comm_spawn_multiple.o comm_spawn_multiple.o comm_spawn_multiple.lo _comm_spawn_multiple.lo' $(srcdir)/comm_spawn_multiple.c >$(DEPS_DIR)/comm_spawn_multiple.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_comm_spawn_multiple.o comm_spawn_multiple.o comm_spawn_multiple.lo _comm_spawn_multiple.lo' $(srcdir)/comm_spawn_multiple.c >$(DEPS_DIR)/comm_spawn_multiple.d
-$(DEPS_DIR)/lookup_name.d: $(srcdir)/lookup_name.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C lookup_name.c > $(DEPS_DIR)/lookup_name.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_lookup_name.o lookup_name.o lookup_name.lo _lookup_name.lo' $(srcdir)/lookup_name.c >$(DEPS_DIR)/lookup_name.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_lookup_name.o lookup_name.o lookup_name.lo _lookup_name.lo' $(srcdir)/lookup_name.c >$(DEPS_DIR)/lookup_name.d
-$(DEPS_DIR)/publish_name.d: $(srcdir)/publish_name.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C publish_name.c > $(DEPS_DIR)/publish_name.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_publish_name.o publish_name.o publish_name.lo _publish_name.lo' $(srcdir)/publish_name.c >$(DEPS_DIR)/publish_name.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_publish_name.o publish_name.o publish_name.lo _publish_name.lo' $(srcdir)/publish_name.c >$(DEPS_DIR)/publish_name.d
-$(DEPS_DIR)/unpublish_name.d: $(srcdir)/unpublish_name.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C unpublish_name.c > $(DEPS_DIR)/unpublish_name.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_unpublish_name.o unpublish_name.o unpublish_name.lo _unpublish_name.lo' $(srcdir)/unpublish_name.c >$(DEPS_DIR)/unpublish_name.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_unpublish_name.o unpublish_name.o unpublish_name.lo _unpublish_name.lo' $(srcdir)/unpublish_name.c >$(DEPS_DIR)/unpublish_name.d
-$(DEPS_DIR)/open_port.d: $(srcdir)/open_port.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C open_port.c > $(DEPS_DIR)/open_port.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_open_port.o open_port.o open_port.lo _open_port.lo' $(srcdir)/open_port.c >$(DEPS_DIR)/open_port.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_open_port.o open_port.o open_port.lo _open_port.lo' $(srcdir)/open_port.c >$(DEPS_DIR)/open_port.d
-$(DEPS_DIR)/close_port.d: $(srcdir)/close_port.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C close_port.c > $(DEPS_DIR)/close_port.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_close_port.o close_port.o close_port.lo _close_port.lo' $(srcdir)/close_port.c >$(DEPS_DIR)/close_port.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_close_port.o close_port.o close_port.lo _close_port.lo' $(srcdir)/close_port.c >$(DEPS_DIR)/close_port.d
-$(DEPS_DIR)/comm_connect.d: $(srcdir)/comm_connect.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C comm_connect.c > $(DEPS_DIR)/comm_connect.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_comm_connect.o comm_connect.o comm_connect.lo _comm_connect.lo' $(srcdir)/comm_connect.c >$(DEPS_DIR)/comm_connect.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_comm_connect.o comm_connect.o comm_connect.lo _comm_connect.lo' $(srcdir)/comm_connect.c >$(DEPS_DIR)/comm_connect.d
-$(DEPS_DIR)/comm_accept.d: $(srcdir)/comm_accept.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C comm_accept.c > $(DEPS_DIR)/comm_accept.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_comm_accept.o comm_accept.o comm_accept.lo _comm_accept.lo' $(srcdir)/comm_accept.c >$(DEPS_DIR)/comm_accept.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_comm_accept.o comm_accept.o comm_accept.lo _comm_accept.lo' $(srcdir)/comm_accept.c >$(DEPS_DIR)/comm_accept.d
-$(DEPS_DIR)/timestamp: $(mpi_sources)  Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C comm_disconnect.c > $(DEPS_DIR)/comm_disconnect.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_comm_disconnect.o comm_disconnect.o comm_disconnect.lo _comm_disconnect.lo' $(srcdir)/comm_disconnect.c >$(DEPS_DIR)/comm_disconnect.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_comm_disconnect.o comm_disconnect.o comm_disconnect.lo _comm_disconnect.lo' $(srcdir)/comm_disconnect.c >$(DEPS_DIR)/comm_disconnect.d
-	echo "include $(DEPS_DIR)/comm_disconnect.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C comm_get_parent.c > $(DEPS_DIR)/comm_get_parent.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_comm_get_parent.o comm_get_parent.o comm_get_parent.lo _comm_get_parent.lo' $(srcdir)/comm_get_parent.c >$(DEPS_DIR)/comm_get_parent.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_comm_get_parent.o comm_get_parent.o comm_get_parent.lo _comm_get_parent.lo' $(srcdir)/comm_get_parent.c >$(DEPS_DIR)/comm_get_parent.d
-	echo "include $(DEPS_DIR)/comm_get_parent.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C comm_join.c > $(DEPS_DIR)/comm_join.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_comm_join.o comm_join.o comm_join.lo _comm_join.lo' $(srcdir)/comm_join.c >$(DEPS_DIR)/comm_join.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_comm_join.o comm_join.o comm_join.lo _comm_join.lo' $(srcdir)/comm_join.c >$(DEPS_DIR)/comm_join.d
-	echo "include $(DEPS_DIR)/comm_join.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C comm_spawn.c > $(DEPS_DIR)/comm_spawn.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_comm_spawn.o comm_spawn.o comm_spawn.lo _comm_spawn.lo' $(srcdir)/comm_spawn.c >$(DEPS_DIR)/comm_spawn.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_comm_spawn.o comm_spawn.o comm_spawn.lo _comm_spawn.lo' $(srcdir)/comm_spawn.c >$(DEPS_DIR)/comm_spawn.d
-	echo "include $(DEPS_DIR)/comm_spawn.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C comm_spawn_multiple.c > $(DEPS_DIR)/comm_spawn_multiple.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_comm_spawn_multiple.o comm_spawn_multiple.o comm_spawn_multiple.lo _comm_spawn_multiple.lo' $(srcdir)/comm_spawn_multiple.c >$(DEPS_DIR)/comm_spawn_multiple.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_comm_spawn_multiple.o comm_spawn_multiple.o comm_spawn_multiple.lo _comm_spawn_multiple.lo' $(srcdir)/comm_spawn_multiple.c >$(DEPS_DIR)/comm_spawn_multiple.d
-	echo "include $(DEPS_DIR)/comm_spawn_multiple.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C lookup_name.c > $(DEPS_DIR)/lookup_name.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_lookup_name.o lookup_name.o lookup_name.lo _lookup_name.lo' $(srcdir)/lookup_name.c >$(DEPS_DIR)/lookup_name.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_lookup_name.o lookup_name.o lookup_name.lo _lookup_name.lo' $(srcdir)/lookup_name.c >$(DEPS_DIR)/lookup_name.d
-	echo "include $(DEPS_DIR)/lookup_name.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C publish_name.c > $(DEPS_DIR)/publish_name.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_publish_name.o publish_name.o publish_name.lo _publish_name.lo' $(srcdir)/publish_name.c >$(DEPS_DIR)/publish_name.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_publish_name.o publish_name.o publish_name.lo _publish_name.lo' $(srcdir)/publish_name.c >$(DEPS_DIR)/publish_name.d
-	echo "include $(DEPS_DIR)/publish_name.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C unpublish_name.c > $(DEPS_DIR)/unpublish_name.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_unpublish_name.o unpublish_name.o unpublish_name.lo _unpublish_name.lo' $(srcdir)/unpublish_name.c >$(DEPS_DIR)/unpublish_name.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_unpublish_name.o unpublish_name.o unpublish_name.lo _unpublish_name.lo' $(srcdir)/unpublish_name.c >$(DEPS_DIR)/unpublish_name.d
-	echo "include $(DEPS_DIR)/unpublish_name.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C open_port.c > $(DEPS_DIR)/open_port.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_open_port.o open_port.o open_port.lo _open_port.lo' $(srcdir)/open_port.c >$(DEPS_DIR)/open_port.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_open_port.o open_port.o open_port.lo _open_port.lo' $(srcdir)/open_port.c >$(DEPS_DIR)/open_port.d
-	echo "include $(DEPS_DIR)/open_port.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C close_port.c > $(DEPS_DIR)/close_port.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_close_port.o close_port.o close_port.lo _close_port.lo' $(srcdir)/close_port.c >$(DEPS_DIR)/close_port.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_close_port.o close_port.o close_port.lo _close_port.lo' $(srcdir)/close_port.c >$(DEPS_DIR)/close_port.d
-	echo "include $(DEPS_DIR)/close_port.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C comm_connect.c > $(DEPS_DIR)/comm_connect.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_comm_connect.o comm_connect.o comm_connect.lo _comm_connect.lo' $(srcdir)/comm_connect.c >$(DEPS_DIR)/comm_connect.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_comm_connect.o comm_connect.o comm_connect.lo _comm_connect.lo' $(srcdir)/comm_connect.c >$(DEPS_DIR)/comm_connect.d
-	echo "include $(DEPS_DIR)/comm_connect.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C comm_accept.c > $(DEPS_DIR)/comm_accept.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_comm_accept.o comm_accept.o comm_accept.lo _comm_accept.lo' $(srcdir)/comm_accept.c >$(DEPS_DIR)/comm_accept.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_comm_accept.o comm_accept.o comm_accept.lo _comm_accept.lo' $(srcdir)/comm_accept.c >$(DEPS_DIR)/comm_accept.d
-	echo "include $(DEPS_DIR)/comm_accept.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  comm_disconnect.c comm_get_parent.c comm_join.c \
-	comm_spawn.c comm_spawn_multiple.c lookup_name.c publish_name.c \
-	unpublish_name.c open_port.c close_port.c comm_connect.c \
-	comm_accept.c 
+SOURCES         =  comm_disconnect.c comm_get_parent.c comm_join.c comm_spawn.c \
+	comm_spawn_multiple.c lookup_name.c publish_name.c unpublish_name.c open_port.c \
+	close_port.c comm_connect.c comm_accept.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
@@ -552,6 +324,8 @@ SOURCEFILES     = $(SOURCES)
 
  
 #
+
+.POSIX:
 
 FORCE_TARGET:
 

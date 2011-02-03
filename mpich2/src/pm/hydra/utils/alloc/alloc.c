@@ -4,27 +4,62 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "hydra_utils.h"
+#include "hydra.h"
 
 void HYDU_init_user_global(struct HYD_user_global *user_global)
 {
-    user_global->bootstrap = NULL;
-    user_global->bootstrap_exec = NULL;
+    user_global->rmk = NULL;
+    user_global->launcher = NULL;
+    user_global->launcher_exec = NULL;
 
     user_global->binding = NULL;
     user_global->bindlib = NULL;
 
     user_global->ckpointlib = NULL;
     user_global->ckpoint_prefix = NULL;
+    user_global->ckpoint_num = -1;
 
     user_global->demux = NULL;
     user_global->iface = NULL;
 
     user_global->enablex = -1;
     user_global->debug = -1;
-    user_global->prepend_rank = -1;
+
+    user_global->auto_cleanup = -1;
 
     HYDU_init_global_env(&user_global->global_env);
+}
+
+void HYDU_finalize_user_global(struct HYD_user_global *user_global)
+{
+    if (user_global->rmk)
+        HYDU_FREE(user_global->rmk);
+
+    if (user_global->launcher)
+        HYDU_FREE(user_global->launcher);
+
+    if (user_global->launcher_exec)
+        HYDU_FREE(user_global->launcher_exec);
+
+    if (user_global->binding)
+        HYDU_FREE(user_global->binding);
+
+    if (user_global->bindlib)
+        HYDU_FREE(user_global->bindlib);
+
+    if (user_global->ckpointlib)
+        HYDU_FREE(user_global->ckpointlib);
+
+    if (user_global->ckpoint_prefix)
+        HYDU_FREE(user_global->ckpoint_prefix);
+
+    if (user_global->demux)
+        HYDU_FREE(user_global->demux);
+
+    if (user_global->iface)
+        HYDU_FREE(user_global->iface);
+
+    HYDU_finalize_global_env(&user_global->global_env);
 }
 
 void HYDU_init_global_env(struct HYD_env_global *global_env)
@@ -33,6 +68,21 @@ void HYDU_init_global_env(struct HYD_env_global *global_env)
     global_env->user = NULL;
     global_env->inherited = NULL;
     global_env->prop = NULL;
+}
+
+void HYDU_finalize_global_env(struct HYD_env_global *global_env)
+{
+    if (global_env->system)
+        HYDU_env_free_list(global_env->system);
+
+    if (global_env->user)
+        HYDU_env_free_list(global_env->user);
+
+    if (global_env->inherited)
+        HYDU_env_free_list(global_env->inherited);
+
+    if (global_env->prop)
+        HYDU_FREE(global_env->prop);
 }
 
 static void init_node(struct HYD_node *node)
@@ -85,6 +135,7 @@ void HYDU_init_pg(struct HYD_pg *pg, int pgid)
     pg->pgid = pgid;
     pg->proxy_list = NULL;
     pg->pg_process_count = 0;
+    pg->barrier_count = 0;
     pg->spawner_pg = NULL;
     pg->pg_scratch = NULL;
     pg->next = NULL;
@@ -161,7 +212,6 @@ HYD_status HYDU_alloc_proxy(struct HYD_proxy **proxy, struct HYD_pg *pg)
 void HYDU_free_proxy_list(struct HYD_proxy *proxy_list)
 {
     struct HYD_proxy *proxy, *tproxy;
-    struct HYD_exec *exec, *texec;
 
     HYDU_FUNC_ENTER();
 
@@ -171,6 +221,9 @@ void HYDU_free_proxy_list(struct HYD_proxy *proxy_list)
 
         if (proxy->node.hostname)
             HYDU_FREE(proxy->node.hostname);
+
+        if (proxy->node.local_binding)
+            HYDU_FREE(proxy->node.local_binding);
 
         if (proxy->exec_launch_info) {
             HYDU_free_strlist(proxy->exec_launch_info);
@@ -183,19 +236,7 @@ void HYDU_free_proxy_list(struct HYD_proxy *proxy_list)
         if (proxy->exit_status)
             HYDU_FREE(proxy->exit_status);
 
-        exec = proxy->exec_list;
-        while (exec) {
-            texec = exec->next;
-            HYDU_free_strlist(exec->exec);
-            if (exec->wdir)
-                HYDU_FREE(exec->wdir);
-            if (exec->user_env)
-                HYDU_env_free(exec->user_env);
-            if (exec->env_prop)
-                HYDU_FREE(exec->env_prop);
-            HYDU_FREE(exec);
-            exec = texec;
-        }
+        HYDU_free_exec_list(proxy->exec_list);
 
         HYDU_FREE(proxy);
         proxy = tproxy;

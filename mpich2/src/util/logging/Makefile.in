@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -18,25 +17,8 @@ PMPILIBNAME     = @PMPILIBNAME@
 VPATH = .:@srcdir@
 
 .SUFFIXES:
-.SUFFIXES:  .txt 
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=. \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/util/logging/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
+# Some make programs complain if no suffixes are set
+.SUFFIXES: .c .o
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	for dir in @logging_subdirs@ common - ; do \
@@ -45,9 +27,6 @@ apply:
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	for dir in @logging_subdirs@ common - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} clean ) ; done
@@ -63,14 +42,10 @@ distclean-xxx:
 	if [ -s slog_api/Makefile ] ; then (cd slog_api && $(MAKE) distclean ) ; fi
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
-	for dir in @logging_subdirs@ common - ; do \
-		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} maintainer-clean ) ; done
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect:
 	@for dir in @logging_subdirs@ - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
@@ -78,35 +53,7 @@ all-redirect:
 	done
 	@(cd common && ${MAKE} all )
 
-coverage: 
-	for dir in @logging_subdirs@ common - ; do \
-		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} coverage ) ; done
 # --------------------------------------------------------------------------
-htmldoc:
-	for dir in @logging_subdirs@ common - ; do \
-		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} htmldoc ) ; done
-mandoc:
-	for dir in @logging_subdirs@ common - ; do \
-		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} mandoc ) ; done
-latexdoc:
-	for dir in @logging_subdirs@ common - ; do \
-		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} latexdoc ) ; done
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-	for dir in @logging_subdirs@ common - ; do \
-		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
-		if [ "$$dir" = "slog_api" ] ; then continue ; fi ;\
-		(cd $$dir && ${MAKE} dependencies ) ; done
-# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
@@ -114,6 +61,8 @@ SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
 # SUBDIRS_logging_name are the names that @ logging_name @ can take in SUBDIRS
 
+
+.POSIX:
 
 FORCE_TARGET:
 

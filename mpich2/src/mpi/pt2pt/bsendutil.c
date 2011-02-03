@@ -77,7 +77,7 @@ static int initialized = 0;   /* keep track of the first call to any
 
 /* Forward references */
 static void MPIR_Bsend_retry_pending( void );
-static void MPIR_Bsend_check_active ( void );
+static int MPIR_Bsend_check_active ( void );
 static MPIR_Bsend_data_t *MPIR_Bsend_find_buffer( int );
 static void MPIR_Bsend_take_buffer( MPIR_Bsend_data_t *, int );
 static int MPIR_Bsend_finalize( void * );
@@ -93,7 +93,7 @@ static int MPIR_Bsend_finalize( void * );
 int MPIR_Bsend_attach( void *buffer, int buffer_size )
 {
     MPIR_Bsend_data_t *p;
-    long        offset;
+    size_t offset, align_sz;
 
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -128,11 +128,15 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
     BsendBuffer.origbuffer_size	= buffer_size;
     BsendBuffer.buffer		= buffer;
     BsendBuffer.buffer_size	= buffer_size;
-    offset = ((long)buffer) % sizeof(void *);
+
+    /* Make sure that the buffer that we use is aligned to align_sz.  Some other
+       code assumes pointer-alignment, and some code assumes double alignment.
+       Further, GCC 4.5.1 generates bad code on 32-bit platforms when this is
+       only 4-byte aligned (see #1149). */
+    align_sz = MPIR_MAX(sizeof(void *), sizeof(double));
+    offset = ((size_t)buffer) % align_sz;
     if (offset) {
-	/* Make sure that the buffer that we use is aligned for pointers,
-	   because the code assumes that */
-	offset = sizeof(void *) - offset;
+        offset = align_sz - offset;
 	buffer = (char *)buffer + offset;
 	BsendBuffer.buffer      = buffer;
 	BsendBuffer.buffer_size -= offset;
@@ -145,7 +149,7 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
     p		  = (MPIR_Bsend_data_t *)buffer;
     p->size	  = buffer_size - BSENDDATA_HEADER_TRUE_SIZE;
     p->total_size = buffer_size;
-    p->next	  = p->prev = 0;
+    p->next	  = p->prev = NULL;
     p->msg.msgbuf = (char *)p + BSENDDATA_HEADER_TRUE_SIZE;
 
     return MPI_SUCCESS;
@@ -162,24 +166,19 @@ int MPIR_Bsend_attach( void *buffer, int buffer_size )
 int MPIR_Bsend_detach( void *bufferp, int *size )
 {
     if (BsendBuffer.pending) {
-	/* FIXME: This is the wrong error text (notimpl) */
+	/* FIXME: Process pending bsend requests in detach */
 	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
-             "MPIR_Bsend_detach", __LINE__, MPI_ERR_OTHER, "**notimpl", 0 );
+            "MPIR_Bsend_detach", __LINE__, MPI_ERR_OTHER, "**bsendpending", 0 );
     }
     if (BsendBuffer.active) {
 	/* Loop through each active element and wait on it */
 	MPIR_Bsend_data_t *p = BsendBuffer.active;
-	MPIU_THREADPRIV_DECL;
-	
-	MPIU_THREADPRIV_GET;
 
-	MPIR_Nest_incr();
 	while (p) {
 	    MPI_Request r = p->request->handle;
-	    NMPI_Wait( &r, MPI_STATUS_IGNORE );
+	    MPIR_Wait_impl( &r, MPI_STATUS_IGNORE );
 	    p = p->next;
 	}
-	MPIR_Nest_decr();
     }
 
 /* Note that this works even when the buffer does not exist */
@@ -207,10 +206,10 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 		      int dest, int tag, MPID_Comm *comm_ptr, 
 		      MPIR_Bsend_kind_t kind, MPID_Request **request )
 {
+    int mpi_errno = MPI_SUCCESS;
     MPIR_Bsend_data_t *p;
     MPIR_Bsend_msg_t *msg;
-    int packsize, mpi_errno, pass;
-    MPIU_THREADPRIV_DECL;
+    int packsize, pass;
 
     /* Find a free segment and copy the data into it.  If we could 
        have, we would already have used tBsend to send the message with
@@ -220,21 +219,16 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
        or if we can just use (a MPIU_Memcpy) of the buffer.
     */
 
-    MPIU_THREADPRIV_GET;
-    MPIR_Nest_incr();
 
     /* We check the active buffer first.  This helps avoid storage 
        fragmentation */
-    MPIR_Bsend_check_active();
+    mpi_errno = MPIR_Bsend_check_active();
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     if (dtype != MPI_PACKED)
-    {
-        (void)NMPI_Pack_size( count, dtype, comm_ptr->handle, &packsize );
-    }
+        MPIR_Pack_size_impl( count, dtype, &packsize );
     else
-    {
         packsize = count;
-    }
 
     MPIU_DBG_MSG_D(BSEND,TYPICAL,"looking for buffer of size %d", packsize);
     /*
@@ -260,8 +254,8 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	    msg->count = 0;
             if (dtype != MPI_PACKED)
             {
-                (void)NMPI_Pack( buf, count, dtype, p->msg.msgbuf, packsize, 
-                                 &p->msg.count, comm_ptr->handle );
+                mpi_errno = MPIR_Pack_impl( buf, count, dtype, p->msg.msgbuf, packsize, &p->msg.count);
+                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
             }
             else
             {
@@ -273,6 +267,11 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	    mpi_errno = MPID_Isend(msg->msgbuf, msg->count, MPI_PACKED, 
 				   dest, tag, comm_ptr,
 				   MPID_CONTEXT_INTRA_PT2PT, &p->request );
+            MPIU_ERR_CHKINTERNAL(mpi_errno, mpi_errno, "Bsend internal error: isend returned err");
+            /* If the error is "request not available", we should 
+               put this on the pending list.  This will depend on
+               how we signal failure to send. */
+
 	    if (p->request) {
 		MPIU_DBG_MSG_FMT(BSEND,TYPICAL,
 		    (MPIU_DBG_FDEST,"saving request %p in %p",p->request,p));
@@ -283,16 +282,6 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 		MPIR_Bsend_take_buffer( p, p->msg.count );
 		p->kind  = kind;
 		*request = p->request;
-	    }
-	    else {
-		/* --BEGIN ERROR HANDLING-- */
-		if (mpi_errno) {
-		    MPIU_Internal_error_printf ("Bsend internal error: isend returned err = %d", mpi_errno );
-		}
-		/* --END ERROR HANDLING-- */
-		/* If the error is "request not available", we should 
-		   put this on the pending list.  This will depend on
-		   how we signal failure to send. */
 	    }
 	    break;
 	}
@@ -306,7 +295,6 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	/* Give priority to any pending operations */
 	MPIR_Bsend_retry_pending( );
     }
-    MPIR_Nest_decr();
     
     if (!p) {
 	/* Return error for no buffer space found */
@@ -314,14 +302,13 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 	   packsize could not be found */
 	MPIU_DBG_MSG(BSEND,TYPICAL,"Could not find space; dumping arena" );
 	MPIU_DBG_STMT(BSEND,TYPICAL,MPIR_Bsend_dump());
-
-	return MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "MPIR_Bsend_isend", __LINE__, MPI_ERR_BUFFER, "**bufbsend", 
-				     "**bufbsend %d %d", packsize, 
-				     BsendBuffer.buffer_size );
+        MPIU_ERR_SETANDJUMP2(mpi_errno, MPI_ERR_BUFFER, "**bufbsend", "**bufbsend %d %d", packsize, BsendBuffer.buffer_size);
     }
-    else {
-	return MPI_SUCCESS;
-    }
+    
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 /*
@@ -333,7 +320,7 @@ int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype,
 
 /* Add block p to the free list. Merge into adjacent blocks.  Used only 
    within the check_active */
-/* begin:nested */
+
 #undef FUNCNAME
 #define FUNCNAME MPIR_Bsend_free_segment
 #undef FCNAME
@@ -418,7 +405,7 @@ static void MPIR_Bsend_free_segment( MPIR_Bsend_data_t *p )
     MPIU_DBG_MSG(BSEND,TYPICAL,"At the end of free_segment:" );
     MPIU_DBG_STMT(BSEND,TYPICAL,MPIR_Bsend_dump());
 }
-/* end:nested */
+
 /* 
  * The following routine tests for completion of active sends and 
  * frees the related storage
@@ -431,8 +418,9 @@ static void MPIR_Bsend_free_segment( MPIR_Bsend_data_t *p )
 #define FUNCNAME MPIR_Bsend_check_active
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static void MPIR_Bsend_check_active( void )
+static int MPIR_Bsend_check_active( void )
 {
+    int mpi_errno = MPI_SUCCESS;
     MPIR_Bsend_data_t *active = BsendBuffer.active, *next_active;
 
     MPIU_DBG_MSG_P(BSEND,TYPICAL,"Checking active starting at %p", active);
@@ -452,19 +440,20 @@ static void MPIR_Bsend_check_active( void )
 	    flag = 0;
             /* XXX DJG FIXME-MT should we be checking this? */
 	    if (MPIU_Object_get_ref(active->request) == 1) {
-		NMPI_Test(&r, &flag, MPI_STATUS_IGNORE );
-	    }
-	    else {
+		mpi_errno = MPIR_Test_impl(&r, &flag, MPI_STATUS_IGNORE );
+                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+	    } else {
 		/* We need to invoke the progress engine in case we 
 		 need to advance other, incomplete communication.  */
 		MPID_Progress_state progress_state;
 		MPID_Progress_start(&progress_state);
-		MPID_Progress_test( );
+		mpi_errno = MPID_Progress_test( );
 		MPID_Progress_end(&progress_state);
+                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	    }
-	}
-	else {
-	    NMPI_Test( &r, &flag, MPI_STATUS_IGNORE );
+	} else {
+	    mpi_errno = MPIR_Test_impl( &r, &flag, MPI_STATUS_IGNORE );
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	}
 	if (flag) {
 	    /* We're done.  Remove this segment */
@@ -474,11 +463,16 @@ static void MPIR_Bsend_check_active( void )
 	active = next_active;
 	MPIU_DBG_MSG_P(BSEND,TYPICAL,"Next active is %p",active);
     }
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 /* 
- * FIXME : For each pending item (that is, items that we couldn't even start sending),
- * try to get them going.  
+ * FIXME : For each pending item (that is, items that we couldn't even start 
+ * sending), try to get them going.  
  */
 static void MPIR_Bsend_retry_pending( void )
 {
@@ -487,7 +481,7 @@ static void MPIR_Bsend_retry_pending( void )
     while (pending) {
 	next_pending = pending->next;
 	/* Retry sending this item */
-	/* FIXME */
+	/* FIXME: Unimplemented retry of pending bsend operations */
 	pending = next_pending;
     }
 }

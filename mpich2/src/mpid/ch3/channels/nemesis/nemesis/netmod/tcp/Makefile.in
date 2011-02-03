@@ -30,7 +30,7 @@ INCLUDES = -I. -I../../include -I${master_top_srcdir}/src/ch3/channels/nemesis/n
            -I${top_builddir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -47,8 +47,6 @@ INCLUDES = -I. -I../../include -I${master_top_srcdir}/src/ch3/channels/nemesis/n
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -56,51 +54,29 @@ INCLUDES = -I. -I../../include -I${master_top_srcdir}/src/ch3/channels/nemesis/n
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../../../../../ \
-	-configdir=src/mpid/ch3/channels/nemesis/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=nemesis/netmod/tcp/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: .libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    ${MAKE} .libstamp1 || exit 1; \
 	fi
 
-.libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a: tcp_finalize.o \
-	tcp_init.o tcp_send.o tcp_utility.o socksm.o tcp_getip.o tcp_ckpt.o 
+.libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a: tcp_finalize.o tcp_init.o tcp_send.o \
+	tcp_utility.o socksm.o tcp_getip.o tcp_ckpt.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
@@ -114,9 +90,8 @@ all-redirect: .libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../../../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../../../../../../lib/lib${MPILIBNAME}.la: tcp_finalize.lo \
-	tcp_init.lo tcp_send.lo tcp_utility.lo socksm.lo tcp_getip.lo \
-	tcp_ckpt.lo 
+.libstamp1 ../../../../../../../../lib/lib${MPILIBNAME}.la: tcp_finalize.lo tcp_init.lo \
+	tcp_send.lo tcp_utility.lo socksm.lo tcp_getip.lo tcp_ckpt.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -124,136 +99,17 @@ all-redirect: .libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${AR} ${AR_FLAGS} ../../../../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
-coverage: 
-	-@for file in tcp_finalize.c tcp_init.c tcp_send.c tcp_utility.c socksm.c \
-	tcp_getip.c tcp_ckpt.c ; do \
-		gcov -b -f $$file ; done
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/tcp_finalize.d: $(srcdir)/tcp_finalize.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C tcp_finalize.c > $(DEPS_DIR)/tcp_finalize.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/tcp_finalize.c >$(DEPS_DIR)/tcp_finalize.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_finalize.c >$(DEPS_DIR)/tcp_finalize.d
-$(DEPS_DIR)/tcp_init.d: $(srcdir)/tcp_init.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C tcp_init.c > $(DEPS_DIR)/tcp_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/tcp_init.c >$(DEPS_DIR)/tcp_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_init.c >$(DEPS_DIR)/tcp_init.d
-$(DEPS_DIR)/tcp_send.d: $(srcdir)/tcp_send.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C tcp_send.c > $(DEPS_DIR)/tcp_send.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/tcp_send.c >$(DEPS_DIR)/tcp_send.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_send.c >$(DEPS_DIR)/tcp_send.d
-$(DEPS_DIR)/tcp_utility.d: $(srcdir)/tcp_utility.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C tcp_utility.c > $(DEPS_DIR)/tcp_utility.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/tcp_utility.c >$(DEPS_DIR)/tcp_utility.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_utility.c >$(DEPS_DIR)/tcp_utility.d
-$(DEPS_DIR)/socksm.d: $(srcdir)/socksm.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C socksm.c > $(DEPS_DIR)/socksm.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/socksm.c >$(DEPS_DIR)/socksm.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/socksm.c >$(DEPS_DIR)/socksm.d
-$(DEPS_DIR)/tcp_getip.d: $(srcdir)/tcp_getip.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C tcp_getip.c > $(DEPS_DIR)/tcp_getip.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/tcp_getip.c >$(DEPS_DIR)/tcp_getip.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_getip.c >$(DEPS_DIR)/tcp_getip.d
-$(DEPS_DIR)/tcp_ckpt.d: $(srcdir)/tcp_ckpt.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C tcp_ckpt.c > $(DEPS_DIR)/tcp_ckpt.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/tcp_ckpt.c >$(DEPS_DIR)/tcp_ckpt.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_ckpt.c >$(DEPS_DIR)/tcp_ckpt.d
-$(DEPS_DIR)/timestamp: tcp_finalize.c tcp_init.c tcp_send.c tcp_utility.c socksm.c tcp_getip.c \
-	tcp_ckpt.c Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C tcp_finalize.c > $(DEPS_DIR)/tcp_finalize.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/tcp_finalize.c >$(DEPS_DIR)/tcp_finalize.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_finalize.c >$(DEPS_DIR)/tcp_finalize.d
-	echo "include $(DEPS_DIR)/tcp_finalize.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C tcp_init.c > $(DEPS_DIR)/tcp_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/tcp_init.c >$(DEPS_DIR)/tcp_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_init.c >$(DEPS_DIR)/tcp_init.d
-	echo "include $(DEPS_DIR)/tcp_init.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C tcp_send.c > $(DEPS_DIR)/tcp_send.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/tcp_send.c >$(DEPS_DIR)/tcp_send.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_send.c >$(DEPS_DIR)/tcp_send.d
-	echo "include $(DEPS_DIR)/tcp_send.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C tcp_utility.c > $(DEPS_DIR)/tcp_utility.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/tcp_utility.c >$(DEPS_DIR)/tcp_utility.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_utility.c >$(DEPS_DIR)/tcp_utility.d
-	echo "include $(DEPS_DIR)/tcp_utility.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C socksm.c > $(DEPS_DIR)/socksm.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/socksm.c >$(DEPS_DIR)/socksm.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/socksm.c >$(DEPS_DIR)/socksm.d
-	echo "include $(DEPS_DIR)/socksm.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C tcp_getip.c > $(DEPS_DIR)/tcp_getip.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/tcp_getip.c >$(DEPS_DIR)/tcp_getip.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_getip.c >$(DEPS_DIR)/tcp_getip.d
-	echo "include $(DEPS_DIR)/tcp_getip.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C tcp_ckpt.c > $(DEPS_DIR)/tcp_ckpt.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/tcp_ckpt.c >$(DEPS_DIR)/tcp_ckpt.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/tcp_ckpt.c >$(DEPS_DIR)/tcp_ckpt.d
-	echo "include $(DEPS_DIR)/tcp_ckpt.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  tcp_finalize.c tcp_init.c tcp_send.c tcp_utility.c \
-	socksm.c tcp_getip.c tcp_ckpt.c 
+SOURCES         =  tcp_finalize.c tcp_init.c tcp_send.c tcp_utility.c socksm.c tcp_getip.c \
+	tcp_ckpt.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
 
+
+.POSIX:
 
 FORCE_TARGET:
 

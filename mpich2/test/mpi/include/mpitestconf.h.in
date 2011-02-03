@@ -29,6 +29,12 @@
 /* Define if Fortran names are uppercase */
 #undef F77_NAME_UPPER
 
+/* Define to 1 if the system has the type `double _Complex'. */
+#undef HAVE_DOUBLE__COMPLEX
+
+/* Define to 1 if the system has the type `float _Complex'. */
+#undef HAVE_FLOAT__COMPLEX
+
 /* Define if Fortran is supported */
 #undef HAVE_FORTRAN_BINDING
 
@@ -47,13 +53,19 @@
 /* Define if long double is supported */
 #undef HAVE_LONG_DOUBLE
 
+/* Define to 1 if the system has the type `long double _Complex'. */
+#undef HAVE_LONG_DOUBLE__COMPLEX
+
 /* Define if compiler supports long long */
 #undef HAVE_LONG_LONG
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
-/* Define if MPI_2DOUBE_COMPLEX is available */
+/* Define if MPI_2COMPLEX is available */
+#undef HAVE_MPI_2COMPLEX
+
+/* Define if MPI_2DOUBLE_COMPLEX is available */
 #undef HAVE_MPI_2DOUBLE_COMPLEX
 
 /* Define to 1 if you have the `MPI_Init_thread' function. */
@@ -107,11 +119,17 @@
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H
 
+/* Define to 1 if you have the <sys/time.h> header file. */
+#undef HAVE_SYS_TIME_H
+
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define to 1 if the system has the type `_Bool'. */
+#undef HAVE__BOOL
 
 /* Define if MPI IO uses MPI_Request */
 #undef MPIO_USES_MPI_REQUEST
@@ -143,6 +161,9 @@
 /* The size of `long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
 
+/* The size of `MPI_Offset', as computed by sizeof. */
+#undef SIZEOF_MPI_OFFSET
+
 /* The size of `short', as computed by sizeof. */
 #undef SIZEOF_SHORT
 
@@ -158,8 +179,39 @@
 /* Define if only operations defined in MPI should be tested */
 #undef USE_STRICT_MPI
 
+/* Define for Solaris 2.5.1 so the uint32_t typedef from <sys/synch.h>,
+   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
+   #define below would cause a syntax error. */
+#undef _UINT32_T
+
+/* Define for Solaris 2.5.1 so the uint64_t typedef from <sys/synch.h>,
+   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
+   #define below would cause a syntax error. */
+#undef _UINT64_T
+
+/* Define for Solaris 2.5.1 so the uint8_t typedef from <sys/synch.h>,
+   <pthread.h>, or <semaphore.h> is not used. If the typedef were allowed, the
+   #define below would cause a syntax error. */
+#undef _UINT8_T
+
 /* Define to empty if `const' does not conform to ANSI C. */
 #undef const
+
+/* Define to the type of a signed integer type of width exactly 16 bits if
+   such a type exists and the standard includes do not define it. */
+#undef int16_t
+
+/* Define to the type of a signed integer type of width exactly 32 bits if
+   such a type exists and the standard includes do not define it. */
+#undef int32_t
+
+/* Define to the type of a signed integer type of width exactly 64 bits if
+   such a type exists and the standard includes do not define it. */
+#undef int64_t
+
+/* Define to the type of a signed integer type of width exactly 8 bits if such
+   a type exists and the standard includes do not define it. */
+#undef int8_t
 
 /* Define to the equivalent of the C99 'restrict' keyword, or to
    nothing if this is not supported.  Do not define if restrict is
@@ -173,5 +225,21 @@
 #if defined __SUNPRO_CC && !defined __RESTRICT
 # define _Restrict
 #endif
+
+/* Define to the type of an unsigned integer type of width exactly 16 bits if
+   such a type exists and the standard includes do not define it. */
+#undef uint16_t
+
+/* Define to the type of an unsigned integer type of width exactly 32 bits if
+   such a type exists and the standard includes do not define it. */
+#undef uint32_t
+
+/* Define to the type of an unsigned integer type of width exactly 64 bits if
+   such a type exists and the standard includes do not define it. */
+#undef uint64_t
+
+/* Define to the type of an unsigned integer type of width exactly 8 bits if
+   such a type exists and the standard includes do not define it. */
+#undef uint8_t
 
 #endif

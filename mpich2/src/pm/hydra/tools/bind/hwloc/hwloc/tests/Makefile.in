@@ -15,10 +15,9 @@
 
 @SET_MAKE@
 
-# Copyright 2009 INRIA, Université Bordeaux 1
-# Copyright 2009 Cisco Systems, Inc.  All rights reserved.
-
-# Copyright 2009 INRIA, Université Bordeaux 1
+# Copyright © 2009-2010 INRIA
+# Copyright © 2009-2010 Université Bordeaux 1
+# Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
@@ -39,155 +38,247 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/lstopo_xml.sh.in $(top_srcdir)/hwloc.am
-check_PROGRAMS = hwloc_cpuset_string$(EXEEXT) \
-	hwloc_get_closest_objs$(EXEEXT) \
-	hwloc_get_obj_covering_cpuset$(EXEEXT) \
-	hwloc_get_cache_covering_cpuset$(EXEEXT) \
-	hwloc_get_largest_objs_inside_cpuset$(EXEEXT) \
-	hwloc_get_next_obj_covering_cpuset$(EXEEXT) \
-	hwloc_get_obj_inside_cpuset$(EXEEXT) \
-	hwloc_get_shared_cache_covering_obj$(EXEEXT) \
-	hwloc_cpuset_first_last_weight$(EXEEXT) \
-	hwloc_cpuset_singlify$(EXEEXT) hwloc_type_depth$(EXEEXT) \
-	hwloc_bind$(EXEEXT) hwloc_object_userdata$(EXEEXT) \
-	hwloc_synthetic$(EXEEXT) hwloc_is_thissystem$(EXEEXT) \
-	$(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3)
-@HAVE_LINUX_LIBNUMA_TRUE@am__append_1 = linux-libnuma
-@HAVE_LINUX_LIBNUMA_FALSE@am__append_2 = linux-libnuma.c
-@HAVE_SCHED_SETAFFINITY_TRUE@am__append_3 = glibc-sched
-@HAVE_SCHED_SETAFFINITY_FALSE@am__append_4 = glibc-sched.c
-@HAVE_LIBIBVERBS_TRUE@am__append_5 = openfabrics-verbs
-@HAVE_LIBIBVERBS_FALSE@am__append_6 = openfabrics-verbs.c
-@HAVE_XML_TRUE@am__append_7 = lstopo_xml.sh
+@HWLOC_HAVE_LINUX_TRUE@am__append_1 = linux
+@HWLOC_BUILD_TESTS_TRUE@check_PROGRAMS = hwloc_bitmap_string$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_get_closest_objs$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_get_obj_covering_cpuset$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_get_cache_covering_cpuset$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_get_largest_objs_inside_cpuset$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_get_next_obj_covering_cpuset$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_get_obj_inside_cpuset$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_get_shared_cache_covering_obj$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_get_obj_below_array_by_type$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_bitmap_first_last_weight$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_bitmap_singlify$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_type_depth$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_bind$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_object_userdata$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_synthetic$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_is_thissystem$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	hwloc_insert_misc$(EXEEXT) \
+@HWLOC_BUILD_TESTS_TRUE@	$(am__EXEEXT_1) $(am__EXEEXT_2) \
+@HWLOC_BUILD_TESTS_TRUE@	$(am__EXEEXT_3) $(am__EXEEXT_4) \
+@HWLOC_BUILD_TESTS_TRUE@	$(am__EXEEXT_5) $(am__EXEEXT_6) \
+@HWLOC_BUILD_TESTS_TRUE@	$(am__EXEEXT_7)
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_LINUX_LIBNUMA_TRUE@am__append_2 = linux-libnuma
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_SCHED_SETAFFINITY_TRUE@am__append_3 = glibc-sched
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_LIBIBVERBS_TRUE@am__append_4 = openfabrics-verbs
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_MYRIEXPRESS_TRUE@am__append_5 = myriexpress
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_CUDA_TRUE@am__append_6 = cuda
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_CUDART_TRUE@am__append_7 = cudart
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_XML_TRUE@am__append_8 = xmlbuffer
+@HWLOC_BUILD_TESTS_TRUE@am__append_9 = $(HWLOC_top_builddir)/src/$(hwloc_lib)
 subdir = tests
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/decl.m4 \
-	$(top_srcdir)/config/hwloc.m4 $(top_srcdir)/config/libtool.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/hwloc.m4 \
+	$(top_srcdir)/config/hwloc_check_attributes.m4 \
+	$(top_srcdir)/config/hwloc_check_visibility.m4 \
+	$(top_srcdir)/config/hwloc_internal.m4 \
+	$(top_srcdir)/config/hwloc_pkg.m4 \
+	$(top_srcdir)/config/libtool.m4 \
 	$(top_srcdir)/config/ltoptions.m4 \
 	$(top_srcdir)/config/ltsugar.m4 \
 	$(top_srcdir)/config/ltversion.m4 \
-	$(top_srcdir)/config/lt~obsolete.m4 \
-	$(top_srcdir)/config/pkg.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/config/lt~obsolete.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/private/config.h \
 	$(top_builddir)/include/hwloc/config.h
-CONFIG_CLEAN_FILES = lstopo_xml.sh
+CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-@HAVE_LINUX_LIBNUMA_TRUE@am__EXEEXT_1 = linux-libnuma$(EXEEXT)
-@HAVE_SCHED_SETAFFINITY_TRUE@am__EXEEXT_2 = glibc-sched$(EXEEXT)
-@HAVE_LIBIBVERBS_TRUE@am__EXEEXT_3 = openfabrics-verbs$(EXEEXT)
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_LINUX_LIBNUMA_TRUE@am__EXEEXT_1 = linux-libnuma$(EXEEXT)
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_SCHED_SETAFFINITY_TRUE@am__EXEEXT_2 = glibc-sched$(EXEEXT)
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_LIBIBVERBS_TRUE@am__EXEEXT_3 = openfabrics-verbs$(EXEEXT)
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_MYRIEXPRESS_TRUE@am__EXEEXT_4 = myriexpress$(EXEEXT)
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_CUDA_TRUE@am__EXEEXT_5 =  \
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_CUDA_TRUE@	cuda$(EXEEXT)
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_CUDART_TRUE@am__EXEEXT_6 = cudart$(EXEEXT)
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_XML_TRUE@am__EXEEXT_7 = xmlbuffer$(EXEEXT)
+cuda_SOURCES = cuda.c
+cuda_OBJECTS = cuda.$(OBJEXT)
+cuda_LDADD = $(LDADD)
+cuda_DEPENDENCIES = $(am__append_9)
+AM_V_lt = $(am__v_lt_$(V))
+am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
+am__v_lt_0 = --silent
+cuda_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(cuda_LDFLAGS) $(LDFLAGS) -o $@
+cudart_SOURCES = cudart.c
+cudart_OBJECTS = cudart.$(OBJEXT)
+cudart_LDADD = $(LDADD)
+cudart_DEPENDENCIES = $(am__append_9)
+cudart_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(cudart_LDFLAGS) $(LDFLAGS) -o $@
 glibc_sched_SOURCES = glibc-sched.c
 glibc_sched_OBJECTS = glibc-sched.$(OBJEXT)
 glibc_sched_LDADD = $(LDADD)
+glibc_sched_DEPENDENCIES = $(am__append_9)
 hwloc_bind_SOURCES = hwloc_bind.c
 hwloc_bind_OBJECTS = hwloc_bind.$(OBJEXT)
 hwloc_bind_LDADD = $(LDADD)
-hwloc_bind_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+hwloc_bind_DEPENDENCIES = $(am__append_9)
+hwloc_bind_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(hwloc_bind_LDFLAGS) $(LDFLAGS) -o $@
-hwloc_cpuset_first_last_weight_SOURCES =  \
-	hwloc_cpuset_first_last_weight.c
-hwloc_cpuset_first_last_weight_OBJECTS =  \
-	hwloc_cpuset_first_last_weight.$(OBJEXT)
-hwloc_cpuset_first_last_weight_LDADD = $(LDADD)
-hwloc_cpuset_singlify_SOURCES = hwloc_cpuset_singlify.c
-hwloc_cpuset_singlify_OBJECTS = hwloc_cpuset_singlify.$(OBJEXT)
-hwloc_cpuset_singlify_LDADD = $(LDADD)
-hwloc_cpuset_string_SOURCES = hwloc_cpuset_string.c
-hwloc_cpuset_string_OBJECTS = hwloc_cpuset_string.$(OBJEXT)
-hwloc_cpuset_string_LDADD = $(LDADD)
+hwloc_bitmap_first_last_weight_SOURCES =  \
+	hwloc_bitmap_first_last_weight.c
+hwloc_bitmap_first_last_weight_OBJECTS =  \
+	hwloc_bitmap_first_last_weight.$(OBJEXT)
+hwloc_bitmap_first_last_weight_LDADD = $(LDADD)
+hwloc_bitmap_first_last_weight_DEPENDENCIES = $(am__append_9)
+hwloc_bitmap_singlify_SOURCES = hwloc_bitmap_singlify.c
+hwloc_bitmap_singlify_OBJECTS = hwloc_bitmap_singlify.$(OBJEXT)
+hwloc_bitmap_singlify_LDADD = $(LDADD)
+hwloc_bitmap_singlify_DEPENDENCIES = $(am__append_9)
+hwloc_bitmap_string_SOURCES = hwloc_bitmap_string.c
+hwloc_bitmap_string_OBJECTS = hwloc_bitmap_string.$(OBJEXT)
+hwloc_bitmap_string_LDADD = $(LDADD)
+hwloc_bitmap_string_DEPENDENCIES = $(am__append_9)
 hwloc_get_cache_covering_cpuset_SOURCES =  \
 	hwloc_get_cache_covering_cpuset.c
 hwloc_get_cache_covering_cpuset_OBJECTS =  \
 	hwloc_get_cache_covering_cpuset.$(OBJEXT)
 hwloc_get_cache_covering_cpuset_LDADD = $(LDADD)
+hwloc_get_cache_covering_cpuset_DEPENDENCIES = $(am__append_9)
 hwloc_get_closest_objs_SOURCES = hwloc_get_closest_objs.c
 hwloc_get_closest_objs_OBJECTS = hwloc_get_closest_objs.$(OBJEXT)
 hwloc_get_closest_objs_LDADD = $(LDADD)
+hwloc_get_closest_objs_DEPENDENCIES = $(am__append_9)
 hwloc_get_largest_objs_inside_cpuset_SOURCES =  \
 	hwloc_get_largest_objs_inside_cpuset.c
 hwloc_get_largest_objs_inside_cpuset_OBJECTS =  \
 	hwloc_get_largest_objs_inside_cpuset.$(OBJEXT)
 hwloc_get_largest_objs_inside_cpuset_LDADD = $(LDADD)
+hwloc_get_largest_objs_inside_cpuset_DEPENDENCIES = $(am__append_9)
 hwloc_get_next_obj_covering_cpuset_SOURCES =  \
 	hwloc_get_next_obj_covering_cpuset.c
 hwloc_get_next_obj_covering_cpuset_OBJECTS =  \
 	hwloc_get_next_obj_covering_cpuset.$(OBJEXT)
 hwloc_get_next_obj_covering_cpuset_LDADD = $(LDADD)
+hwloc_get_next_obj_covering_cpuset_DEPENDENCIES = $(am__append_9)
+hwloc_get_obj_below_array_by_type_SOURCES =  \
+	hwloc_get_obj_below_array_by_type.c
+hwloc_get_obj_below_array_by_type_OBJECTS =  \
+	hwloc_get_obj_below_array_by_type.$(OBJEXT)
+hwloc_get_obj_below_array_by_type_LDADD = $(LDADD)
+hwloc_get_obj_below_array_by_type_DEPENDENCIES = $(am__append_9)
 hwloc_get_obj_covering_cpuset_SOURCES =  \
 	hwloc_get_obj_covering_cpuset.c
 hwloc_get_obj_covering_cpuset_OBJECTS =  \
 	hwloc_get_obj_covering_cpuset.$(OBJEXT)
 hwloc_get_obj_covering_cpuset_LDADD = $(LDADD)
+hwloc_get_obj_covering_cpuset_DEPENDENCIES = $(am__append_9)
 hwloc_get_obj_inside_cpuset_SOURCES = hwloc_get_obj_inside_cpuset.c
 hwloc_get_obj_inside_cpuset_OBJECTS =  \
 	hwloc_get_obj_inside_cpuset.$(OBJEXT)
 hwloc_get_obj_inside_cpuset_LDADD = $(LDADD)
+hwloc_get_obj_inside_cpuset_DEPENDENCIES = $(am__append_9)
 hwloc_get_shared_cache_covering_obj_SOURCES =  \
 	hwloc_get_shared_cache_covering_obj.c
 hwloc_get_shared_cache_covering_obj_OBJECTS =  \
 	hwloc_get_shared_cache_covering_obj.$(OBJEXT)
 hwloc_get_shared_cache_covering_obj_LDADD = $(LDADD)
+hwloc_get_shared_cache_covering_obj_DEPENDENCIES = $(am__append_9)
+hwloc_insert_misc_SOURCES = hwloc_insert_misc.c
+hwloc_insert_misc_OBJECTS = hwloc_insert_misc.$(OBJEXT)
+hwloc_insert_misc_LDADD = $(LDADD)
+hwloc_insert_misc_DEPENDENCIES = $(am__append_9)
 hwloc_is_thissystem_SOURCES = hwloc_is_thissystem.c
 hwloc_is_thissystem_OBJECTS = hwloc_is_thissystem.$(OBJEXT)
 hwloc_is_thissystem_LDADD = $(LDADD)
+hwloc_is_thissystem_DEPENDENCIES = $(am__append_9)
 hwloc_object_userdata_SOURCES = hwloc_object_userdata.c
 hwloc_object_userdata_OBJECTS = hwloc_object_userdata.$(OBJEXT)
 hwloc_object_userdata_LDADD = $(LDADD)
+hwloc_object_userdata_DEPENDENCIES = $(am__append_9)
 hwloc_synthetic_SOURCES = hwloc_synthetic.c
 hwloc_synthetic_OBJECTS = hwloc_synthetic.$(OBJEXT)
 hwloc_synthetic_LDADD = $(LDADD)
+hwloc_synthetic_DEPENDENCIES = $(am__append_9)
 hwloc_type_depth_SOURCES = hwloc_type_depth.c
 hwloc_type_depth_OBJECTS = hwloc_type_depth.$(OBJEXT)
 hwloc_type_depth_LDADD = $(LDADD)
+hwloc_type_depth_DEPENDENCIES = $(am__append_9)
 linux_libnuma_SOURCES = linux-libnuma.c
 linux_libnuma_OBJECTS = linux-libnuma.$(OBJEXT)
 linux_libnuma_LDADD = $(LDADD)
-linux_libnuma_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+linux_libnuma_DEPENDENCIES = $(am__append_9)
+linux_libnuma_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(linux_libnuma_LDFLAGS) $(LDFLAGS) -o $@
+myriexpress_SOURCES = myriexpress.c
+myriexpress_OBJECTS = myriexpress.$(OBJEXT)
+myriexpress_LDADD = $(LDADD)
+myriexpress_DEPENDENCIES = $(am__append_9)
+myriexpress_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(myriexpress_LDFLAGS) $(LDFLAGS) -o $@
 openfabrics_verbs_SOURCES = openfabrics-verbs.c
 openfabrics_verbs_OBJECTS = openfabrics-verbs.$(OBJEXT)
 openfabrics_verbs_LDADD = $(LDADD)
-openfabrics_verbs_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(openfabrics_verbs_LDFLAGS) $(LDFLAGS) -o $@
+openfabrics_verbs_DEPENDENCIES = $(am__append_9)
+openfabrics_verbs_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(openfabrics_verbs_LDFLAGS) $(LDFLAGS) \
+	-o $@
+xmlbuffer_SOURCES = xmlbuffer.c
+xmlbuffer_OBJECTS = xmlbuffer.$(OBJEXT)
+xmlbuffer_LDADD = $(LDADD)
+xmlbuffer_DEPENDENCIES = $(am__append_9)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include/private -I$(top_builddir)/include/hwloc
-depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+depcomp = $(SHELL) $(top_srcdir)/./config/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_$(V))
+am__v_CC_ = $(am__v_CC_$(AM_DEFAULT_VERBOSITY))
+am__v_CC_0 = @echo "  CC    " $@;
+AM_V_at = $(am__v_at_$(V))
+am__v_at_ = $(am__v_at_$(AM_DEFAULT_VERBOSITY))
+am__v_at_0 = @
 CCLD = $(CC)
-LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
-SOURCES = glibc-sched.c hwloc_bind.c hwloc_cpuset_first_last_weight.c \
-	hwloc_cpuset_singlify.c hwloc_cpuset_string.c \
-	hwloc_get_cache_covering_cpuset.c hwloc_get_closest_objs.c \
-	hwloc_get_largest_objs_inside_cpuset.c \
-	hwloc_get_next_obj_covering_cpuset.c \
-	hwloc_get_obj_covering_cpuset.c hwloc_get_obj_inside_cpuset.c \
-	hwloc_get_shared_cache_covering_obj.c hwloc_is_thissystem.c \
-	hwloc_object_userdata.c hwloc_synthetic.c hwloc_type_depth.c \
-	linux-libnuma.c openfabrics-verbs.c
-DIST_SOURCES = glibc-sched.c hwloc_bind.c \
-	hwloc_cpuset_first_last_weight.c hwloc_cpuset_singlify.c \
-	hwloc_cpuset_string.c hwloc_get_cache_covering_cpuset.c \
+LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_$(V))
+am__v_CCLD_ = $(am__v_CCLD_$(AM_DEFAULT_VERBOSITY))
+am__v_CCLD_0 = @echo "  CCLD  " $@;
+AM_V_GEN = $(am__v_GEN_$(V))
+am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
+am__v_GEN_0 = @echo "  GEN   " $@;
+SOURCES = cuda.c cudart.c glibc-sched.c hwloc_bind.c \
+	hwloc_bitmap_first_last_weight.c hwloc_bitmap_singlify.c \
+	hwloc_bitmap_string.c hwloc_get_cache_covering_cpuset.c \
 	hwloc_get_closest_objs.c \
 	hwloc_get_largest_objs_inside_cpuset.c \
 	hwloc_get_next_obj_covering_cpuset.c \
+	hwloc_get_obj_below_array_by_type.c \
 	hwloc_get_obj_covering_cpuset.c hwloc_get_obj_inside_cpuset.c \
-	hwloc_get_shared_cache_covering_obj.c hwloc_is_thissystem.c \
-	hwloc_object_userdata.c hwloc_synthetic.c hwloc_type_depth.c \
-	linux-libnuma.c openfabrics-verbs.c
+	hwloc_get_shared_cache_covering_obj.c hwloc_insert_misc.c \
+	hwloc_is_thissystem.c hwloc_object_userdata.c \
+	hwloc_synthetic.c hwloc_type_depth.c linux-libnuma.c \
+	myriexpress.c openfabrics-verbs.c xmlbuffer.c
+DIST_SOURCES = cuda.c cudart.c glibc-sched.c hwloc_bind.c \
+	hwloc_bitmap_first_last_weight.c hwloc_bitmap_singlify.c \
+	hwloc_bitmap_string.c hwloc_get_cache_covering_cpuset.c \
+	hwloc_get_closest_objs.c \
+	hwloc_get_largest_objs_inside_cpuset.c \
+	hwloc_get_next_obj_covering_cpuset.c \
+	hwloc_get_obj_below_array_by_type.c \
+	hwloc_get_obj_covering_cpuset.c hwloc_get_obj_inside_cpuset.c \
+	hwloc_get_shared_cache_covering_obj.c hwloc_insert_misc.c \
+	hwloc_is_thissystem.c hwloc_object_userdata.c \
+	hwloc_synthetic.c hwloc_type_depth.c linux-libnuma.c \
+	myriexpress.c openfabrics-verbs.c xmlbuffer.c
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -204,7 +295,6 @@ ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
 red=; grn=; lgn=; blu=; std=
-DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
   dir0=`pwd`; \
@@ -233,6 +323,7 @@ am__relativize = \
   reldir="$$dir2"
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
 AS = @AS@
 AUTOCONF = @AUTOCONF@
@@ -240,8 +331,7 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BASH = @BASH@
-CAIRO_CFLAGS = @CAIRO_CFLAGS@
-CAIRO_LIBS = @CAIRO_LIBS@
+BUNZIPP = @BUNZIPP@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -259,29 +349,49 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+EPSTOPDF = @EPSTOPDF@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 FIG2DEV = @FIG2DEV@
-GCC_CFLAGS = @GCC_CFLAGS@
 GREP = @GREP@
-HAVE_XML = @HAVE_XML@
+GS = @GS@
+HWLOC_CAIRO_CFLAGS = @HWLOC_CAIRO_CFLAGS@
+HWLOC_CAIRO_LIBS = @HWLOC_CAIRO_LIBS@
+HWLOC_CFLAGS = @HWLOC_CFLAGS@
+HWLOC_CPPFLAGS = @HWLOC_CPPFLAGS@
 HWLOC_DIFF_U = @HWLOC_DIFF_U@
+HWLOC_EMBEDDED_CFLAGS = @HWLOC_EMBEDDED_CFLAGS@
+HWLOC_EMBEDDED_CPPFLAGS = @HWLOC_EMBEDDED_CPPFLAGS@
+HWLOC_EMBEDDED_LDADD = @HWLOC_EMBEDDED_LDADD@
+HWLOC_EMBEDDED_LIBS = @HWLOC_EMBEDDED_LIBS@
+HWLOC_HAVE_XML = @HWLOC_HAVE_XML@
+HWLOC_KERRIGHED_CFLAGS = @HWLOC_KERRIGHED_CFLAGS@
+HWLOC_KERRIGHED_LIBS = @HWLOC_KERRIGHED_LIBS@
+HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
+HWLOC_LIBS = @HWLOC_LIBS@
+HWLOC_LINUX_LIBNUMA_LIBS = @HWLOC_LINUX_LIBNUMA_LIBS@
 HWLOC_MS_LIB = @HWLOC_MS_LIB@
+HWLOC_PKG_CONFIG = @HWLOC_PKG_CONFIG@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
 HWLOC_SVN_R = @HWLOC_SVN_R@
+HWLOC_TERMCAP_LIBS = @HWLOC_TERMCAP_LIBS@
 HWLOC_VERSION = @HWLOC_VERSION@
+HWLOC_W3_GENERATOR = @HWLOC_W3_GENERATOR@
+HWLOC_X11_LIBS = @HWLOC_X11_LIBS@
+HWLOC_XML_CFLAGS = @HWLOC_XML_CFLAGS@
+HWLOC_XML_LIBS = @HWLOC_XML_LIBS@
+HWLOC_top_builddir = @HWLOC_top_builddir@
+HWLOC_top_srcdir = @HWLOC_top_srcdir@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-KERRIGHED_CFLAGS = @KERRIGHED_CFLAGS@
-KERRIGHED_LIBS = @KERRIGHED_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
-LIBS = $(top_builddir)/src/libhwloc.la
+LIBS = @LIBS@
 LIBTOOL = @LIBTOOL@
 LIPO = @LIPO@
 LN_S = @LN_S@
@@ -304,18 +414,20 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PDFLATEX = @PDFLATEX@
-PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 SED = @SED@
+SED_I = @SED_I@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
 W3M = @W3M@
-W3_GENERATOR = @W3_GENERATOR@
+XMKMF = @XMKMF@
 XMLLINT = @XMLLINT@
-XML_CFLAGS = @XML_CFLAGS@
-XML_LIBS = @XML_LIBS@
+X_CFLAGS = @X_CFLAGS@
+X_EXTRA_LIBS = @X_EXTRA_LIBS@
+X_LIBS = @X_LIBS@
+X_PRE_LIBS = @X_PRE_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -373,20 +485,30 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CFLAGS = $(GCC_CFLAGS)
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
-AM_LDFLAGS = -L$(top_builddir)/src
-SUBDIRS = linux ports
-EXTRA_DIST = $(am__append_2) $(am__append_4) $(am__append_6)
-TESTS = $(check_PROGRAMS) $(am__append_7)
-linux_libnuma_LDFLAGS = -lnuma
-openfabrics_verbs_LDFLAGS = -libverbs
-@HAVE_WINDOWS_FALSE@hwloc_bind_LDFLAGS = -lpthread
+AM_CFLAGS = $(HWLOC_CFLAGS)
+AM_CPPFLAGS = $(HWLOC_CPPFLAGS)
+AM_LDFLAGS = $(HWLOC_LDFLAGS)
+SUBDIRS = ports xml $(am__append_1)
+DIST_SUBDIRS = ports xml linux
+LDADD = $(am__append_9)
+@HWLOC_BUILD_TESTS_TRUE@TESTS = $(check_PROGRAMS)
+@HWLOC_BUILD_STANDALONE_FALSE@@HWLOC_BUILD_TESTS_TRUE@hwloc_lib = libhwloc_embedded.la
+
+# The library has a different name depending on whether we are
+# building in standalone or embedded mode.
+@HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_BUILD_TESTS_TRUE@hwloc_lib = libhwloc.la
+@HWLOC_BUILD_TESTS_TRUE@linux_libnuma_LDFLAGS = -lnuma
+@HWLOC_BUILD_TESTS_TRUE@openfabrics_verbs_LDFLAGS = -libverbs
+@HWLOC_BUILD_TESTS_TRUE@myriexpress_LDFLAGS = -lmyriexpress
+@HWLOC_BUILD_TESTS_TRUE@cuda_LDFLAGS = -lcuda
+@HWLOC_BUILD_TESTS_TRUE@cudart_LDFLAGS = -lcuda -lcudart
+@HWLOC_BUILD_TESTS_TRUE@xmlbuffer = -lxml2
+@HWLOC_BUILD_TESTS_TRUE@@HWLOC_HAVE_WINDOWS_FALSE@hwloc_bind_LDFLAGS = -lpthread
 all: all-recursive
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(top_srcdir)/hwloc.am $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -416,8 +538,6 @@ $(top_srcdir)/configure:  $(am__configure_deps)
 $(ACLOCAL_M4):  $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-lstopo_xml.sh: $(top_builddir)/config.status $(srcdir)/lstopo_xml.sh.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 clean-checkPROGRAMS:
 	@list='$(check_PROGRAMS)'; test -n "$$list" || exit 0; \
@@ -427,60 +547,78 @@ clean-checkPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
+cuda$(EXEEXT): $(cuda_OBJECTS) $(cuda_DEPENDENCIES) 
+	@rm -f cuda$(EXEEXT)
+	$(AM_V_CCLD)$(cuda_LINK) $(cuda_OBJECTS) $(cuda_LDADD) $(LIBS)
+cudart$(EXEEXT): $(cudart_OBJECTS) $(cudart_DEPENDENCIES) 
+	@rm -f cudart$(EXEEXT)
+	$(AM_V_CCLD)$(cudart_LINK) $(cudart_OBJECTS) $(cudart_LDADD) $(LIBS)
 glibc-sched$(EXEEXT): $(glibc_sched_OBJECTS) $(glibc_sched_DEPENDENCIES) 
 	@rm -f glibc-sched$(EXEEXT)
-	$(LINK) $(glibc_sched_OBJECTS) $(glibc_sched_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) $(glibc_sched_OBJECTS) $(glibc_sched_LDADD) $(LIBS)
 hwloc_bind$(EXEEXT): $(hwloc_bind_OBJECTS) $(hwloc_bind_DEPENDENCIES) 
 	@rm -f hwloc_bind$(EXEEXT)
-	$(hwloc_bind_LINK) $(hwloc_bind_OBJECTS) $(hwloc_bind_LDADD) $(LIBS)
-hwloc_cpuset_first_last_weight$(EXEEXT): $(hwloc_cpuset_first_last_weight_OBJECTS) $(hwloc_cpuset_first_last_weight_DEPENDENCIES) 
-	@rm -f hwloc_cpuset_first_last_weight$(EXEEXT)
-	$(LINK) $(hwloc_cpuset_first_last_weight_OBJECTS) $(hwloc_cpuset_first_last_weight_LDADD) $(LIBS)
-hwloc_cpuset_singlify$(EXEEXT): $(hwloc_cpuset_singlify_OBJECTS) $(hwloc_cpuset_singlify_DEPENDENCIES) 
-	@rm -f hwloc_cpuset_singlify$(EXEEXT)
-	$(LINK) $(hwloc_cpuset_singlify_OBJECTS) $(hwloc_cpuset_singlify_LDADD) $(LIBS)
-hwloc_cpuset_string$(EXEEXT): $(hwloc_cpuset_string_OBJECTS) $(hwloc_cpuset_string_DEPENDENCIES) 
-	@rm -f hwloc_cpuset_string$(EXEEXT)
-	$(LINK) $(hwloc_cpuset_string_OBJECTS) $(hwloc_cpuset_string_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(hwloc_bind_LINK) $(hwloc_bind_OBJECTS) $(hwloc_bind_LDADD) $(LIBS)
+hwloc_bitmap_first_last_weight$(EXEEXT): $(hwloc_bitmap_first_last_weight_OBJECTS) $(hwloc_bitmap_first_last_weight_DEPENDENCIES) 
+	@rm -f hwloc_bitmap_first_last_weight$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(hwloc_bitmap_first_last_weight_OBJECTS) $(hwloc_bitmap_first_last_weight_LDADD) $(LIBS)
+hwloc_bitmap_singlify$(EXEEXT): $(hwloc_bitmap_singlify_OBJECTS) $(hwloc_bitmap_singlify_DEPENDENCIES) 
+	@rm -f hwloc_bitmap_singlify$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(hwloc_bitmap_singlify_OBJECTS) $(hwloc_bitmap_singlify_LDADD) $(LIBS)
+hwloc_bitmap_string$(EXEEXT): $(hwloc_bitmap_string_OBJECTS) $(hwloc_bitmap_string_DEPENDENCIES) 
+	@rm -f hwloc_bitmap_string$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(hwloc_bitmap_string_OBJECTS) $(hwloc_bitmap_string_LDADD) $(LIBS)
 hwloc_get_cache_covering_cpuset$(EXEEXT): $(hwloc_get_cache_covering_cpuset_OBJECTS) $(hwloc_get_cache_covering_cpuset_DEPENDENCIES) 
 	@rm -f hwloc_get_cache_covering_cpuset$(EXEEXT)
-	$(LINK) $(hwloc_get_cache_covering_cpuset_OBJECTS) $(hwloc_get_cache_covering_cpuset_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) $(hwloc_get_cache_covering_cpuset_OBJECTS) $(hwloc_get_cache_covering_cpuset_LDADD) $(LIBS)
 hwloc_get_closest_objs$(EXEEXT): $(hwloc_get_closest_objs_OBJECTS) $(hwloc_get_closest_objs_DEPENDENCIES) 
 	@rm -f hwloc_get_closest_objs$(EXEEXT)
-	$(LINK) $(hwloc_get_closest_objs_OBJECTS) $(hwloc_get_closest_objs_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) $(hwloc_get_closest_objs_OBJECTS) $(hwloc_get_closest_objs_LDADD) $(LIBS)
 hwloc_get_largest_objs_inside_cpuset$(EXEEXT): $(hwloc_get_largest_objs_inside_cpuset_OBJECTS) $(hwloc_get_largest_objs_inside_cpuset_DEPENDENCIES) 
 	@rm -f hwloc_get_largest_objs_inside_cpuset$(EXEEXT)
-	$(LINK) $(hwloc_get_largest_objs_inside_cpuset_OBJECTS) $(hwloc_get_largest_objs_inside_cpuset_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) $(hwloc_get_largest_objs_inside_cpuset_OBJECTS) $(hwloc_get_largest_objs_inside_cpuset_LDADD) $(LIBS)
 hwloc_get_next_obj_covering_cpuset$(EXEEXT): $(hwloc_get_next_obj_covering_cpuset_OBJECTS) $(hwloc_get_next_obj_covering_cpuset_DEPENDENCIES) 
 	@rm -f hwloc_get_next_obj_covering_cpuset$(EXEEXT)
-	$(LINK) $(hwloc_get_next_obj_covering_cpuset_OBJECTS) $(hwloc_get_next_obj_covering_cpuset_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) $(hwloc_get_next_obj_covering_cpuset_OBJECTS) $(hwloc_get_next_obj_covering_cpuset_LDADD) $(LIBS)
+hwloc_get_obj_below_array_by_type$(EXEEXT): $(hwloc_get_obj_below_array_by_type_OBJECTS) $(hwloc_get_obj_below_array_by_type_DEPENDENCIES) 
+	@rm -f hwloc_get_obj_below_array_by_type$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(hwloc_get_obj_below_array_by_type_OBJECTS) $(hwloc_get_obj_below_array_by_type_LDADD) $(LIBS)
 hwloc_get_obj_covering_cpuset$(EXEEXT): $(hwloc_get_obj_covering_cpuset_OBJECTS) $(hwloc_get_obj_covering_cpuset_DEPENDENCIES) 
 	@rm -f hwloc_get_obj_covering_cpuset$(EXEEXT)
-	$(LINK) $(hwloc_get_obj_covering_cpuset_OBJECTS) $(hwloc_get_obj_covering_cpuset_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) $(hwloc_get_obj_covering_cpuset_OBJECTS) $(hwloc_get_obj_covering_cpuset_LDADD) $(LIBS)
 hwloc_get_obj_inside_cpuset$(EXEEXT): $(hwloc_get_obj_inside_cpuset_OBJECTS) $(hwloc_get_obj_inside_cpuset_DEPENDENCIES) 
 	@rm -f hwloc_get_obj_inside_cpuset$(EXEEXT)
-	$(LINK) $(hwloc_get_obj_inside_cpuset_OBJECTS) $(hwloc_get_obj_inside_cpuset_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) $(hwloc_get_obj_inside_cpuset_OBJECTS) $(hwloc_get_obj_inside_cpuset_LDADD) $(LIBS)
 hwloc_get_shared_cache_covering_obj$(EXEEXT): $(hwloc_get_shared_cache_covering_obj_OBJECTS) $(hwloc_get_shared_cache_covering_obj_DEPENDENCIES) 
 	@rm -f hwloc_get_shared_cache_covering_obj$(EXEEXT)
-	$(LINK) $(hwloc_get_shared_cache_covering_obj_OBJECTS) $(hwloc_get_shared_cache_covering_obj_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) $(hwloc_get_shared_cache_covering_obj_OBJECTS) $(hwloc_get_shared_cache_covering_obj_LDADD) $(LIBS)
+hwloc_insert_misc$(EXEEXT): $(hwloc_insert_misc_OBJECTS) $(hwloc_insert_misc_DEPENDENCIES) 
+	@rm -f hwloc_insert_misc$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(hwloc_insert_misc_OBJECTS) $(hwloc_insert_misc_LDADD) $(LIBS)
 hwloc_is_thissystem$(EXEEXT): $(hwloc_is_thissystem_OBJECTS) $(hwloc_is_thissystem_DEPENDENCIES) 
 	@rm -f hwloc_is_thissystem$(EXEEXT)
-	$(LINK) $(hwloc_is_thissystem_OBJECTS) $(hwloc_is_thissystem_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) $(hwloc_is_thissystem_OBJECTS) $(hwloc_is_thissystem_LDADD) $(LIBS)
 hwloc_object_userdata$(EXEEXT): $(hwloc_object_userdata_OBJECTS) $(hwloc_object_userdata_DEPENDENCIES) 
 	@rm -f hwloc_object_userdata$(EXEEXT)
-	$(LINK) $(hwloc_object_userdata_OBJECTS) $(hwloc_object_userdata_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) $(hwloc_object_userdata_OBJECTS) $(hwloc_object_userdata_LDADD) $(LIBS)
 hwloc_synthetic$(EXEEXT): $(hwloc_synthetic_OBJECTS) $(hwloc_synthetic_DEPENDENCIES) 
 	@rm -f hwloc_synthetic$(EXEEXT)
-	$(LINK) $(hwloc_synthetic_OBJECTS) $(hwloc_synthetic_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) $(hwloc_synthetic_OBJECTS) $(hwloc_synthetic_LDADD) $(LIBS)
 hwloc_type_depth$(EXEEXT): $(hwloc_type_depth_OBJECTS) $(hwloc_type_depth_DEPENDENCIES) 
 	@rm -f hwloc_type_depth$(EXEEXT)
-	$(LINK) $(hwloc_type_depth_OBJECTS) $(hwloc_type_depth_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(LINK) $(hwloc_type_depth_OBJECTS) $(hwloc_type_depth_LDADD) $(LIBS)
 linux-libnuma$(EXEEXT): $(linux_libnuma_OBJECTS) $(linux_libnuma_DEPENDENCIES) 
 	@rm -f linux-libnuma$(EXEEXT)
-	$(linux_libnuma_LINK) $(linux_libnuma_OBJECTS) $(linux_libnuma_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(linux_libnuma_LINK) $(linux_libnuma_OBJECTS) $(linux_libnuma_LDADD) $(LIBS)
+myriexpress$(EXEEXT): $(myriexpress_OBJECTS) $(myriexpress_DEPENDENCIES) 
+	@rm -f myriexpress$(EXEEXT)
+	$(AM_V_CCLD)$(myriexpress_LINK) $(myriexpress_OBJECTS) $(myriexpress_LDADD) $(LIBS)
 openfabrics-verbs$(EXEEXT): $(openfabrics_verbs_OBJECTS) $(openfabrics_verbs_DEPENDENCIES) 
 	@rm -f openfabrics-verbs$(EXEEXT)
-	$(openfabrics_verbs_LINK) $(openfabrics_verbs_OBJECTS) $(openfabrics_verbs_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(openfabrics_verbs_LINK) $(openfabrics_verbs_OBJECTS) $(openfabrics_verbs_LDADD) $(LIBS)
+xmlbuffer$(EXEEXT): $(xmlbuffer_OBJECTS) $(xmlbuffer_DEPENDENCIES) 
+	@rm -f xmlbuffer$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(xmlbuffer_OBJECTS) $(xmlbuffer_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -488,42 +626,54 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cuda.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cudart.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/glibc-sched.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_bind.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_cpuset_first_last_weight.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_cpuset_singlify.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_cpuset_string.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_bitmap_first_last_weight.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_bitmap_singlify.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_bitmap_string.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_get_cache_covering_cpuset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_get_closest_objs.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_get_largest_objs_inside_cpuset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_get_next_obj_covering_cpuset.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_get_obj_below_array_by_type.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_get_obj_covering_cpuset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_get_obj_inside_cpuset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_get_shared_cache_covering_obj.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_insert_misc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_is_thissystem.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_object_userdata.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_synthetic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hwloc_type_depth.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/linux-libnuma.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/myriexpress.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/openfabrics-verbs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xmlbuffer.Po@am__quote@
 
 .c.o:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+@am__fastdepCC_FALSE@	$(COMPILE) -c -o $@ $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+@am__fastdepCC_FALSE@	$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 .c.lo:
-@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<

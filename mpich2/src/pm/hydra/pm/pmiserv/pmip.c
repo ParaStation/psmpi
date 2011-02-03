@@ -5,13 +5,13 @@
  */
 
 #include "hydra.h"
-#include "hydra_utils.h"
 #include "pmip.h"
 #include "demux.h"
+#include "bsci.h"
 #include "bind.h"
+#include "hydt_ftb.h"
 
 struct HYD_pmcd_pmip HYD_pmcd_pmip;
-char *HYD_dbg_prefix = (char *) "unknown";
 
 static HYD_status init_params(void)
 {
@@ -19,9 +19,9 @@ static HYD_status init_params(void)
 
     HYDU_init_user_global(&HYD_pmcd_pmip.user_global);
 
-    HYD_pmcd_pmip.system_global.enable_stdin = -1;
     HYD_pmcd_pmip.system_global.global_core_count = -1;
     HYD_pmcd_pmip.system_global.global_process_count = -1;
+    HYD_pmcd_pmip.system_global.jobid = NULL;
     HYD_pmcd_pmip.system_global.pmi_port = NULL;
     HYD_pmcd_pmip.system_global.pmi_fd = NULL;
     HYD_pmcd_pmip.system_global.pmi_rank = -1;
@@ -58,18 +58,13 @@ static HYD_status init_params(void)
 
 static void cleanup_params(void)
 {
-    struct HYD_exec *exec, *texec;
+    HYD_status status = HYD_SUCCESS;
 
-    HYDU_FUNC_ENTER();
+    HYDU_finalize_user_global(&HYD_pmcd_pmip.user_global);
 
-    if (HYD_pmcd_pmip.upstream.server_name)
-        HYDU_FREE(HYD_pmcd_pmip.upstream.server_name);
-
-    if (HYD_pmcd_pmip.user_global.bootstrap)
-        HYDU_FREE(HYD_pmcd_pmip.user_global.bootstrap);
-
-    if (HYD_pmcd_pmip.user_global.bootstrap_exec)
-        HYDU_FREE(HYD_pmcd_pmip.user_global.bootstrap_exec);
+    /* System global */
+    if (HYD_pmcd_pmip.system_global.jobid)
+        HYDU_FREE(HYD_pmcd_pmip.system_global.jobid);
 
     if (HYD_pmcd_pmip.system_global.pmi_fd)
         HYDU_FREE(HYD_pmcd_pmip.system_global.pmi_fd);
@@ -80,53 +75,21 @@ static void cleanup_params(void)
     if (HYD_pmcd_pmip.system_global.pmi_process_mapping)
         HYDU_FREE(HYD_pmcd_pmip.system_global.pmi_process_mapping);
 
-    if (HYD_pmcd_pmip.user_global.binding)
-        HYDU_FREE(HYD_pmcd_pmip.user_global.binding);
 
-    if (HYD_pmcd_pmip.user_global.bindlib)
-        HYDU_FREE(HYD_pmcd_pmip.user_global.bindlib);
+    /* Upstream */
+    if (HYD_pmcd_pmip.upstream.server_name)
+        HYDU_FREE(HYD_pmcd_pmip.upstream.server_name);
 
-    if (HYD_pmcd_pmip.user_global.ckpointlib)
-        HYDU_FREE(HYD_pmcd_pmip.user_global.ckpointlib);
 
-    if (HYD_pmcd_pmip.user_global.ckpoint_prefix)
-        HYDU_FREE(HYD_pmcd_pmip.user_global.ckpoint_prefix);
-
-    if (HYD_pmcd_pmip.user_global.demux)
-        HYDU_FREE(HYD_pmcd_pmip.user_global.demux);
-
-    if (HYD_pmcd_pmip.user_global.iface)
-        HYDU_FREE(HYD_pmcd_pmip.user_global.iface);
-
-    if (HYD_pmcd_pmip.user_global.global_env.system)
-        HYDU_env_free_list(HYD_pmcd_pmip.user_global.global_env.system);
-
-    if (HYD_pmcd_pmip.user_global.global_env.user)
-        HYDU_env_free_list(HYD_pmcd_pmip.user_global.global_env.user);
-
-    if (HYD_pmcd_pmip.user_global.global_env.inherited)
-        HYDU_env_free_list(HYD_pmcd_pmip.user_global.global_env.inherited);
-
-    if (HYD_pmcd_pmip.exec_list) {
-        exec = HYD_pmcd_pmip.exec_list;
-        while (exec) {
-            texec = exec->next;
-            HYDU_free_strlist(exec->exec);
-            if (exec->user_env)
-                HYDU_env_free(exec->user_env);
-            HYDU_FREE(exec);
-            exec = texec;
-        }
-    }
-
-    if (HYD_pmcd_pmip.downstream.pid)
-        HYDU_FREE(HYD_pmcd_pmip.downstream.pid);
-
+    /* Downstream */
     if (HYD_pmcd_pmip.downstream.out)
         HYDU_FREE(HYD_pmcd_pmip.downstream.out);
 
     if (HYD_pmcd_pmip.downstream.err)
         HYDU_FREE(HYD_pmcd_pmip.downstream.err);
+
+    if (HYD_pmcd_pmip.downstream.pid)
+        HYDU_FREE(HYD_pmcd_pmip.downstream.pid);
 
     if (HYD_pmcd_pmip.downstream.exit_status)
         HYDU_FREE(HYD_pmcd_pmip.downstream.exit_status);
@@ -137,6 +100,11 @@ static void cleanup_params(void)
     if (HYD_pmcd_pmip.downstream.pmi_fd)
         HYDU_FREE(HYD_pmcd_pmip.downstream.pmi_fd);
 
+    if (HYD_pmcd_pmip.downstream.pmi_fd_active)
+        HYDU_FREE(HYD_pmcd_pmip.downstream.pmi_fd_active);
+
+
+    /* Local */
     if (HYD_pmcd_pmip.local.interface_env_name)
         HYDU_FREE(HYD_pmcd_pmip.local.interface_env_name);
 
@@ -147,22 +115,31 @@ static void cleanup_params(void)
         HYDU_FREE(HYD_pmcd_pmip.local.local_binding);
 
     if (HYD_pmcd_pmip.local.spawner_kvs_name)
-        HYDU_FREE(HYD_pmcd_pmip.local.local_binding);
+        HYDU_FREE(HYD_pmcd_pmip.local.spawner_kvs_name);
 
     HYD_pmcd_free_pmi_kvs_list(HYD_pmcd_pmip.local.kvs);
 
-    HYDT_bind_finalize();
 
-    HYDU_FUNC_EXIT();
+    /* Exec list */
+    HYDU_free_exec_list(HYD_pmcd_pmip.exec_list);
+
+    status = HYDT_bind_finalize();
 }
 
 static void signal_cb(int sig)
 {
+    int i;
+
     HYDU_FUNC_ENTER();
 
     if (sig == SIGPIPE) {
         /* Upstream socket closed; kill all processes */
-        HYD_pmcd_pmip_killjob();
+        HYD_pmcd_pmip_kill_localprocs();
+    }
+    else if (sig == SIGTSTP) {
+        for (i = 0; i < HYD_pmcd_pmip.local.proxy_process_count; i++)
+            if (HYD_pmcd_pmip.downstream.pid[i] != -1)
+                kill(HYD_pmcd_pmip.downstream.pid[i], sig);
     }
     /* Ignore other signals for now */
 
@@ -172,15 +149,21 @@ static void signal_cb(int sig)
 
 int main(int argc, char **argv)
 {
-    int i, count, pid, ret_status, sent, closed, ret;
-    enum HYD_pmcd_pmi_cmd cmd;
+    int i, count, pid, ret_status, sent, closed, ret, done;
+    struct HYD_pmcd_hdr hdr;
     HYD_status status = HYD_SUCCESS;
 
-    status = HYDU_dbg_init("proxy");
+    status = HYDU_dbg_init("proxy:unset");
     HYDU_ERR_POP(status, "unable to initialization debugging\n");
 
     status = HYDU_set_signal(SIGPIPE, signal_cb);
     HYDU_ERR_POP(status, "unable to set SIGPIPE\n");
+
+    status = HYDU_set_signal(SIGTSTP, signal_cb);
+    HYDU_ERR_POP(status, "unable to set SIGTSTP\n");
+
+    status = HYDU_set_common_signals(signal_cb);
+    HYDU_ERR_POP(status, "unable to set common signals\n");
 
     status = init_params();
     HYDU_ERR_POP(status, "Error initializing proxy params\n");
@@ -191,6 +174,9 @@ int main(int argc, char **argv)
     status = HYDT_dmx_init(&HYD_pmcd_pmip.user_global.demux);
     HYDU_ERR_POP(status, "unable to initialize the demux engine\n");
 
+    status = HYDT_ftb_init();
+    HYDU_ERR_POP(status, "unable to initialize FTB\n");
+
     /* See if HYDRA_CONTROL_FD is set before trying to connect upstream */
     ret = MPL_env2int("HYDRA_CONTROL_FD", &HYD_pmcd_pmip.upstream.control);
     if (ret < 0) {
@@ -200,8 +186,9 @@ int main(int argc, char **argv)
         status = HYDU_sock_connect(HYD_pmcd_pmip.upstream.server_name,
                                    HYD_pmcd_pmip.upstream.server_port,
                                    &HYD_pmcd_pmip.upstream.control);
-        HYDU_ERR_POP(status, "unable to connect to server %s at port %d\n",
-                      HYD_pmcd_pmip.upstream.server_name, HYD_pmcd_pmip.upstream.server_port);
+        HYDU_ERR_POP(status,
+                     "unable to connect to server %s at port %d (check for firewalls!)\n",
+                     HYD_pmcd_pmip.upstream.server_name, HYD_pmcd_pmip.upstream.server_port);
     }
 
     status = HYDU_sock_write(HYD_pmcd_pmip.upstream.control,
@@ -237,25 +224,26 @@ int main(int argc, char **argv)
     }
 
     /* Now wait for the processes to finish */
+    done = 0;
     while (1) {
         pid = waitpid(-1, &ret_status, 0);
 
         /* Find the pid and mark it as complete. */
         if (pid > 0)
             for (i = 0; i < HYD_pmcd_pmip.local.proxy_process_count; i++)
-                if (HYD_pmcd_pmip.downstream.pid[i] == pid)
-                    HYD_pmcd_pmip.downstream.exit_status[i] = ret_status;
+                if (HYD_pmcd_pmip.downstream.pid[i] == pid) {
+                    /* We store the new return status if either the
+                     * exit status is uninitialized, or if the return
+                     * status is non-zero. If the return status is
+                     * zero, and the exit status has already been set
+                     * to a different value, we use that. */
+                    if (ret_status || HYD_pmcd_pmip.downstream.exit_status[i] ==-1)
+                        HYD_pmcd_pmip.downstream.exit_status[i] = ret_status;
+                    done++;
+                }
 
-        /* Check how many more processes are pending */
-        count = 0;
-        for (i = 0; i < HYD_pmcd_pmip.local.proxy_process_count; i++) {
-            if (HYD_pmcd_pmip.downstream.exit_status[i] == -1) {
-                count++;
-                break;
-            }
-        }
-
-        if (count == 0)
+        /* If no more processes are pending, break out */
+        if (done == HYD_pmcd_pmip.local.proxy_process_count)
             break;
 
         /* Check if there are any messages from the launcher */
@@ -265,20 +253,19 @@ int main(int argc, char **argv)
     }
 
     /* Send the exit status upstream */
-    cmd = EXIT_STATUS;
+    HYD_pmcd_init_header(&hdr);
+    hdr.cmd = EXIT_STATUS;
     status =
-        HYDU_sock_write(HYD_pmcd_pmip.upstream.control, &cmd, sizeof(cmd), &sent, &closed);
+        HYDU_sock_write(HYD_pmcd_pmip.upstream.control, &hdr, sizeof(hdr), &sent, &closed);
     HYDU_ERR_POP(status, "unable to send EXIT_STATUS command upstream\n");
-    if (closed)
-        goto fn_fail;
+    HYDU_ASSERT(!closed, status);
 
     status = HYDU_sock_write(HYD_pmcd_pmip.upstream.control,
                              HYD_pmcd_pmip.downstream.exit_status,
                              HYD_pmcd_pmip.local.proxy_process_count * sizeof(int), &sent,
                              &closed);
     HYDU_ERR_POP(status, "unable to return exit status upstream\n");
-    if (closed)
-        goto fn_fail;
+    HYDU_ASSERT(!closed, status);
 
     status = HYDT_dmx_deregister_fd(HYD_pmcd_pmip.upstream.control);
     HYDU_ERR_POP(status, "unable to deregister fd\n");
@@ -286,6 +273,12 @@ int main(int argc, char **argv)
 
     status = HYDT_dmx_finalize();
     HYDU_ERR_POP(status, "error returned from demux finalize\n");
+
+    status = HYDT_ftb_finalize();
+    HYDU_ERR_POP(status, "unable to finalize FTB\n");
+
+    status = HYDT_bsci_finalize();
+    HYDU_ERR_POP(status, "unable to finalize the bootstrap device\n");
 
     /* cleanup the params structure */
     cleanup_params();
@@ -295,6 +288,6 @@ int main(int argc, char **argv)
     return status;
 
   fn_fail:
-    HYD_pmcd_pmip_killjob();
+    HYD_pmcd_pmip_kill_localprocs();
     goto fn_exit;
 }

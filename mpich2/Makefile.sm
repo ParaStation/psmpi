@@ -1,7 +1,7 @@
 # -*- Mode: makefile; -*-
-SUBDIRS = . @EXTERNAL_SRC_DIRS@ src examples
+SUBDIRS = . @EXTERNAL_SRC_DIRS@ src
 # Do not include test in the basic build.  
-OTHER_DIRS = test
+OTHER_DIRS = test examples
 DOC_SUBDIRS = doc
 # The all-local target makes sure that when different subsystems are selected
 # for the configure step, the libraries are removed and the object files 
@@ -28,7 +28,7 @@ all-local:
 	    echo "@CC@ @CFLAGS@" >>lib/pkglist.new ;\
 	    echo "@CXX@ @CXXFLAGS@" >> lib/pkglist.new ;\
 	    echo "@F77@ @FFLAGS@" >> lib/pkglist.new ;\
-	    echo "@F90@ @F90FLAGS@" >> lib/pkglist.new ;\
+	    echo "@FC@ @FCFLAGS@" >> lib/pkglist.new ;\
 	    echo "@CONFIGURE_ARGUMENTS@" >>lib/pkglist.new ; \
 	    echo "@LDFLAGS@" >> lib/pkglist.new ;\
 	    if diff lib/pkglist lib/pkglist.new >/dev/null 2>&1 ; then \
@@ -42,6 +42,9 @@ all-local:
 
 clean-preamble:
 	${MAKE} cleanlibs
+
+clean-postamble:
+	cd examples && ${MAKE} clean
 
 cleanobjsandlibs:
 	${MAKE} clean && cd test && ${MAKE} clean
@@ -68,12 +71,13 @@ cleanlibs:
 
 all-preamble:
 	@echo "Beginning make"
-	@echo "Using variables CC='@CC@' CFLAGS='@CFLAGS@' LDFLAGS='@LDFLAGS@' AR='@AR@' FC='@FC@' F90='@F90@' FFLAGS='@FFLAGS@' F90FLAGS='@F90FLAGS@' CXX='@CXX@' CPPFLAGS='@CPPFLAGS@'"
+	@echo "Using variables CC='@CC@' CFLAGS='@CFLAGS@' LDFLAGS='@LDFLAGS@' F77='@F77@' FFLAGS='@FFLAGS@' FC='@FC@' FCFLAGS='@FCFLAGS@' CXX='@CXX@' CXXFLAGS='@CXXFLAGS@' AR='@AR@' CPP='@CPP@' CPPFLAGS='@CPPFLAGS@'"
 
 # Add any final extras:
 #    1) Build the debugger interface if requested
 # Move the "pkglist.new" file to "pkglist" on successful completion
 all-postamble:
+	( cd examples && $(MAKE) )
 	@if [ "@BUILD_TVDLL@" = "yes" ] ; then \
 	( cd src/mpi/debugger && $(MAKE) ./libtvmpich2.@SHLIB_EXT@ ) ; fi
 	@if [ -s lib/pkglist.new ] ; then mv -f lib/pkglist.new lib/pkglist ; fi
@@ -148,7 +152,11 @@ optinstall_LIB = lib/lib${MPIFWRAPNAME}.a
 # UNUSED, example for experimentation only
 #lib${MPILIBNAME}_so_EXPORTS = maint/mpi.def
 #libf${MPILIBNAME}_so_EXPORTS = maint/fmpi.def
-libf${MPILIBNAME}_so_LIBS = -L. -l$(MPILIBNAME)
+lib${MPILIBNAME}_so_LIBS   = -L. @LDFLAGS_DEPS@ @LIB_DEPS@
+libf${MPILIBNAME}_so_LIBS   = -L. @LDFLAGS_DEPS@ -l$(MPILIBNAME) @LIB_DEPS@
+lib${MPILIBNAME}f90_so_LIBS = -L. @LDFLAGS_DEPS@ -l$(MPILIBNAME) @LIB_DEPS@
+lib${MPICXXLIBNAME}_so_LIBS = -L. @LDFLAGS_DEPS@ -l$(MPILIBNAME) @LIB_DEPS@
+lib${MPICXXLIBNAME}_so_LINKER = @CXX_SHL@
 
 install_INCLUDE = src/include/mpi.h
 

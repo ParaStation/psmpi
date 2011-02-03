@@ -1871,6 +1871,8 @@ echo "RUNNING CONFIGURE FOR DCMF DEVICE"
 
 # First check that we have a clean build if we are doing a VPATH build
 
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 date >conftest$$
 # If creating a file in the current directory does not show up in the srcdir
@@ -1917,6 +1919,8 @@ $as_echo "$as_me: error: You cannot do a VPATH build if the source directory has
         fi
     fi
 fi
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 
 
@@ -2166,7 +2170,6 @@ fi
 
 
 
-
 { $as_echo "$as_me:$LINENO: checking for virtual path format" >&5
 $as_echo_n "checking for virtual path format... " >&6; }
 if test "${pac_cv_prog_make_vpath+set}" = set; then
@@ -2217,7 +2220,6 @@ if test "$pac_cv_prog_make_vpath" = "VPATH" ; then
 elif test "$pac_cv_prog_make_vpath" = ".PATH" ; then
     VPATH='.PATH: . ${srcdir}'
 fi
-
 
 
 

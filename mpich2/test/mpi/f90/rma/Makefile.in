@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -21,18 +20,19 @@ MAKE            = @MAKE@
 CC              = @CC@
 CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
-F90              = @F90@
-F90FLAGS        = @F90FLAGS@
-F90_COMPILE     = $(F90) $(F90FLAGS) $(F90INCLUDES)
-F90_LINK       = $(F90)
+FC               = @FC@
+FCFLAGS         = @FCFLAGS@
+FC_COMPILE      = $(FC) $(FCFLAGS) $(FCINCLUDES)
+FC_LINK        = $(FC)
 LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
-F90INCLUDES = -I. -I../attr
-F90HEADERS = addsize.h
+FCINCLUDES = -I. -I../attr
+FCHEADERS = addsize.h
+BINDIR=${bindir}
 
 .SUFFIXES:
-.SUFFIXES: .o .c .f90 .txt 
+.SUFFIXES: .o .c .f90 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -40,8 +40,6 @@ F90HEADERS = addsize.h
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -51,31 +49,13 @@ F90HEADERS = addsize.h
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f90.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  F90             $<" ; \
+	  echo "  FC              $<" ; \
 	else \
-	  echo $(F90_COMPILE) -c $< ; \
+	  echo $(FC_COMPILE) -c $< ; \
 	fi
-	@$(F90_COMPILE) -c $<
+	@$(FC_COMPILE) -c $<
 .f90:
-	$(F90_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../ \
-	-configdir=test/mpi/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=f90/rma/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
+	$(FC_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
@@ -83,9 +63,6 @@ clean:
 	-@rm -f winerrf90.exe wingetf90.exe winaccf90.exe baseattrwinf90.exe winattr2f90.exe winscale1f90.exe wingroupf90.exe winattrf90.exe winfencef90.exe winnamef90.exe c2f2cwinf90.exe winscale2f90.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -93,64 +70,50 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
-all-redirect: winscale1f90 winscale2f90 winfencef90 wingetf90 winerrf90\
-	 winnamef90 wingroupf90 winaccf90 c2f2cwinf90 baseattrwinf90\
-	 winattrf90 winattr2f90
+	rm -f  Makefile
+all-redirect: winscale1f90 winscale2f90 winfencef90 wingetf90 winerrf90 winnamef90 wingroupf90\
+	 winaccf90 c2f2cwinf90 baseattrwinf90 winattrf90 winattr2f90
 
-coverage: 
 winerrf90: winerrf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o winerrf90 winerrf90.o  \
-	../util/mtestf90.o ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o winerrf90 winerrf90.o  ../util/mtestf90.o ${LIBS}
 wingetf90: wingetf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o wingetf90 wingetf90.o  \
-	../util/mtestf90.o ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o wingetf90 wingetf90.o  ../util/mtestf90.o ${LIBS}
 winaccf90: winaccf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o winaccf90 winaccf90.o  \
-	../util/mtestf90.o ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o winaccf90 winaccf90.o  ../util/mtestf90.o ${LIBS}
 baseattrwinf90: baseattrwinf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o baseattrwinf90 \
-	baseattrwinf90.o  ../util/mtestf90.o ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o baseattrwinf90 baseattrwinf90.o  ../util/mtestf90.o \
+	${LIBS} 
 winattr2f90: winattr2f90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o winattr2f90 winattr2f90.o  \
-	../util/mtestf90.o ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o winattr2f90 winattr2f90.o  ../util/mtestf90.o \
+	${LIBS} 
 winscale1f90: winscale1f90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o winscale1f90 winscale1f90.o  \
-	../util/mtestf90.o ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o winscale1f90 winscale1f90.o  ../util/mtestf90.o \
+	${LIBS} 
 wingroupf90: wingroupf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o wingroupf90 wingroupf90.o  \
-	../util/mtestf90.o ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o wingroupf90 wingroupf90.o  ../util/mtestf90.o \
+	${LIBS} 
 winattrf90: winattrf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o winattrf90 winattrf90.o  \
-	../util/mtestf90.o ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o winattrf90 winattrf90.o  ../util/mtestf90.o ${LIBS}
 winfencef90: winfencef90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o winfencef90 winfencef90.o  \
-	../util/mtestf90.o ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o winfencef90 winfencef90.o  ../util/mtestf90.o \
+	${LIBS} 
 winnamef90: winnamef90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o winnamef90 winnamef90.o  \
-	../util/mtestf90.o ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o winnamef90 winnamef90.o  ../util/mtestf90.o ${LIBS}
 c2f2cwinf90: c2f2cwinf90.o c2f902cwin.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o c2f2cwinf90 c2f2cwinf90.o \
-	c2f902cwin.o  ../util/mtestf90.o  ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o c2f2cwinf90 c2f2cwinf90.o c2f902cwin.o  \
+	../util/mtestf90.o  ${LIBS} 
 winscale2f90: winscale2f90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o winscale2f90 winscale2f90.o  \
-	../util/mtestf90.o ${LIBS} 
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o winscale2f90 winscale2f90.o  ../util/mtestf90.o \
+	${LIBS} 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  winscale1f90.f90 winscale2f90.f90 winfencef90.f90 \
-	wingetf90.f90 winerrf90.f90 winnamef90.f90 wingroupf90.f90 \
-	winaccf90.f90 c2f2cwinf90.f90 c2f902cwin.c baseattrwinf90.f90 \
-	winattrf90.f90 winattr2f90.f90 
+SOURCES         =  winscale1f90.f90 winscale2f90.f90 winfencef90.f90 wingetf90.f90 winerrf90.f90 \
+	winnamef90.f90 wingroupf90.f90 winaccf90.f90 c2f2cwinf90.f90 c2f902cwin.c \
+	baseattrwinf90.f90 winattrf90.f90 winattr2f90.f90 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
@@ -162,13 +125,16 @@ SOURCEFILES     = $(SOURCES)
 
 
 
+# bindir may be used in MPIEXEC, so make sure it is defined
 testing:
 	../../runtests -srcdir=$(srcdir) -tests=testlist \
-			-mpiexec=$(bindir)/mpiexec \
+			-mpiexec=@MPIEXEC@ \
 		   	-xmlfile=summary.xml
 
 ../util/mtestf90.o: 
 	(cd ../util && $(MAKE) mtestf90.o)
+
+.POSIX:
 
 FORCE_TARGET:
 

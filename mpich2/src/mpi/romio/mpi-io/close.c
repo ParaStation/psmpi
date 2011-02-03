@@ -36,7 +36,6 @@ int MPI_File_close(MPI_File *mpi_fh)
     int error_code;
     ADIO_File fh;
     static char myname[] = "MPI_FILE_CLOSE";
-    MPIU_THREADPRIV_DECL;
 #ifdef MPI_hpux
     int fl_xmpi;
 
@@ -44,7 +43,6 @@ int MPI_File_close(MPI_File *mpi_fh)
 #endif /* MPI_hpux */
 
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(*mpi_fh);
 
@@ -60,7 +58,7 @@ int MPI_File_close(MPI_File *mpi_fh)
 	deleted while others are still accessing it. */ 
 	/* FIXME: It is wrong to use MPI_Barrier; the user could choose to
 	   re-implement MPI_Barrier in an unexpected way.  Either use 
-	   NMPI_Barrier as in MPICH2 or PMPI_Barrier */
+	   MPIR_Barrier_impl as in MPICH2 or PMPI_Barrier */
         MPI_Barrier((fh)->comm);
 	if ((fh)->shared_fp_fd != ADIO_FILE_NULL) {
 	    MPI_File *mpi_fh_shared = &(fh->shared_fp_fd);
@@ -91,7 +89,6 @@ int MPI_File_close(MPI_File *mpi_fh)
 #endif /* MPI_hpux */
 
 fn_exit:
-    MPIR_Nest_decr();
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return error_code;
 fn_fail:

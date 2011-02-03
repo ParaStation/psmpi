@@ -29,7 +29,7 @@ VPATH = .:@srcdir@
 INCLUDES = -I${master_top_srcdir}/src/include -I${top_builddir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -46,8 +46,6 @@ INCLUDES = -I${master_top_srcdir}/src/include -I${top_builddir}/src/include
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -55,23 +53,6 @@ INCLUDES = -I${master_top_srcdir}/src/include -I${top_builddir}/src/include
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../../ \
-	-configdir=src/mpid/dcmfd/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/coll/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	for dir in alltoall alltoallv alltoallw barrier bcast allreduce reduce allgather allgatherv scatterv scatter gather reduce_scatter ; do \
@@ -80,9 +61,6 @@ clean:
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	for dir in alltoall alltoallv alltoallw barrier bcast allreduce reduce allgather allgatherv scatterv scatter gather reduce_scatter ; do \
 		(cd $$dir && ${MAKE} clean ) ; done
 distclean:  clean distclean-xxx remove-makefile
@@ -92,13 +70,10 @@ distclean-xxx:
 		(cd $$dir && ${MAKE} distclean ) ; done
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
-	for dir in alltoall alltoallv alltoallw barrier bcast allreduce reduce allgather allgatherv scatterv scatter gather reduce_scatter ; do \
-		(cd $$dir && ${MAKE} maintainer-clean ) ; done
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect:
 	${MAKE} all-local
 	@(cd alltoall && ${MAKE} all )
@@ -119,8 +94,7 @@ all-local: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	    ${MAKE} .libstamp1 || exit 1; \
 	fi
 
-.libstamp0 ../../../../../lib/lib${MPILIBNAME}.a: coll_utils.o unimpl.o \
-	star_repo.o star_utils.o 
+.libstamp0 ../../../../../lib/lib${MPILIBNAME}.a: coll_utils.o unimpl.o star_repo.o star_utils.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
@@ -134,8 +108,8 @@ all-local: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../../../lib/lib${MPILIBNAME}.la: coll_utils.lo unimpl.lo \
-	star_repo.lo star_utils.lo 
+.libstamp1 ../../../../../lib/lib${MPILIBNAME}.la: coll_utils.lo unimpl.lo star_repo.lo \
+	star_utils.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -143,101 +117,15 @@ all-local: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${AR} ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
-coverage: 
-	-@for file in coll_utils.c unimpl.c star_repo.c star_utils.c ; do \
-		gcov -b -f $$file ; done
-	for dir in alltoall alltoallv alltoallw barrier bcast allreduce reduce allgather allgatherv scatterv scatter gather reduce_scatter ; do \
-		(cd $$dir && ${MAKE} coverage ) ; done
 # --------------------------------------------------------------------------
-htmldoc:
-	for dir in alltoall alltoallv alltoallw barrier bcast allreduce reduce allgather allgatherv scatterv scatter gather reduce_scatter ; do \
-		(cd $$dir && ${MAKE} htmldoc ) ; done
-mandoc:
-	for dir in alltoall alltoallv alltoallw barrier bcast allreduce reduce allgather allgatherv scatterv scatter gather reduce_scatter ; do \
-		(cd $$dir && ${MAKE} mandoc ) ; done
-latexdoc:
-	for dir in alltoall alltoallv alltoallw barrier bcast allreduce reduce allgather allgatherv scatterv scatter gather reduce_scatter ; do \
-		(cd $$dir && ${MAKE} latexdoc ) ; done
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-	for dir in alltoall alltoallv alltoallw barrier bcast allreduce reduce allgather allgatherv scatterv scatter gather reduce_scatter ; do \
-		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
-		(cd $$dir && ${MAKE} dependencies ) ; done
-$(DEPS_DIR)/coll_utils.d: $(srcdir)/coll_utils.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C coll_utils.c > $(DEPS_DIR)/coll_utils.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/coll_utils.c >$(DEPS_DIR)/coll_utils.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/coll_utils.c >$(DEPS_DIR)/coll_utils.d
-$(DEPS_DIR)/unimpl.d: $(srcdir)/unimpl.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C unimpl.c > $(DEPS_DIR)/unimpl.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/unimpl.c >$(DEPS_DIR)/unimpl.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/unimpl.c >$(DEPS_DIR)/unimpl.d
-$(DEPS_DIR)/star_repo.d: $(srcdir)/star_repo.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C star_repo.c > $(DEPS_DIR)/star_repo.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/star_repo.c >$(DEPS_DIR)/star_repo.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/star_repo.c >$(DEPS_DIR)/star_repo.d
-$(DEPS_DIR)/star_utils.d: $(srcdir)/star_utils.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C star_utils.c > $(DEPS_DIR)/star_utils.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/star_utils.c >$(DEPS_DIR)/star_utils.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/star_utils.c >$(DEPS_DIR)/star_utils.d
-$(DEPS_DIR)/timestamp: coll_utils.c unimpl.c star_repo.c star_utils.c Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C coll_utils.c > $(DEPS_DIR)/coll_utils.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/coll_utils.c >$(DEPS_DIR)/coll_utils.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/coll_utils.c >$(DEPS_DIR)/coll_utils.d
-	echo "include $(DEPS_DIR)/coll_utils.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C unimpl.c > $(DEPS_DIR)/unimpl.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/unimpl.c >$(DEPS_DIR)/unimpl.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/unimpl.c >$(DEPS_DIR)/unimpl.d
-	echo "include $(DEPS_DIR)/unimpl.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C star_repo.c > $(DEPS_DIR)/star_repo.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/star_repo.c >$(DEPS_DIR)/star_repo.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/star_repo.c >$(DEPS_DIR)/star_repo.d
-	echo "include $(DEPS_DIR)/star_repo.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C star_utils.c > $(DEPS_DIR)/star_utils.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/star_utils.c >$(DEPS_DIR)/star_utils.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/star_utils.c >$(DEPS_DIR)/star_utils.d
-	echo "include $(DEPS_DIR)/star_utils.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  coll_utils.c unimpl.c star_repo.c star_utils.c
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
+
+.POSIX:
 
 FORCE_TARGET:
 

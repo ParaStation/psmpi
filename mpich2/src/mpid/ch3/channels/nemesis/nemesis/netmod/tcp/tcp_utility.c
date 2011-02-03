@@ -75,30 +75,30 @@ int MPID_nem_tcp_set_sockopts (int fd)
     option = 1;
     len = sizeof(int);
     ret = setsockopt (fd, IPPROTO_TCP, TCP_NODELAY, &option, len);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", MPIU_Strerror (errno), errno);
     ret = getsockopt (fd, IPPROTO_TCP, TCP_NODELAY, &option, &len);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", MPIU_Strerror (errno), errno);
 
     option = 128*1024;
     len = sizeof(int);
     setsockopt (fd, SOL_SOCKET, SO_RCVBUF, &option, len);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", MPIU_Strerror (errno), errno);
     getsockopt (fd, SOL_SOCKET, SO_RCVBUF, &option, &len);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", MPIU_Strerror (errno), errno);
     setsockopt (fd, SOL_SOCKET, SO_SNDBUF, &option, len);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", MPIU_Strerror (errno), errno);
     getsockopt (fd, SOL_SOCKET, SO_SNDBUF, &option, &len);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", MPIU_Strerror (errno), errno);
     
     flags = fcntl(fd, F_GETFL, 0);
-    MPIU_ERR_CHKANDJUMP2 (flags == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
+    MPIU_ERR_CHKANDJUMP2 (flags == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", MPIU_Strerror (errno), errno);
     ret = fcntl(fd, F_SETFL, flags | SO_REUSEADDR);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", MPIU_Strerror (errno), errno);
     
     flags = fcntl(fd, F_GETFL, 0);
-    MPIU_ERR_CHKANDJUMP2 (flags == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);    
+    MPIU_ERR_CHKANDJUMP2 (flags == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", MPIU_Strerror (errno), errno);    
     ret = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
-    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", strerror (errno), errno);    
+    MPIU_ERR_CHKANDJUMP2 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %s %d", MPIU_Strerror (errno), errno);    
 
  fn_exit:
 /*     fprintf(stdout, FCNAME " Exit\n"); fflush(stdout); */
@@ -160,7 +160,7 @@ MPID_nem_tcp_check_sock_status(const struct pollfd *const plfd)
         if (getsockopt(plfd->fd, SOL_SOCKET, SO_ERROR, &error, &n) < 0 || error != 0) 
         {
             rc = MPID_NEM_TCP_SOCK_ERROR_EOF; /*  (N1) */
-            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "getsockopt failure. error=%d:%s", error, strerror(error)));
+            MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "getsockopt failure. error=%d:%s", error, MPIU_Strerror(error)));
             goto fn_exit;
         }
         rc = MPID_NEM_TCP_SOCK_CONNECTED;
@@ -185,7 +185,7 @@ int MPID_nem_tcp_is_sock_connected(int fd)
     n = sizeof(error);
     if (getsockopt(fd, SOL_SOCKET, SO_ERROR, &error, &n) < 0 || error != 0) 
     {
-        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "getsockopt failure. error=%d:%s", error, strerror(error)));
+        MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "getsockopt failure. error=%d:%s", error, MPIU_Strerror(error)));
         rc = FALSE; /*  error */
         goto fn_exit;
     }
@@ -209,10 +209,9 @@ void MPID_nem_tcp_vc_dbg_print_sendq(FILE *stream, MPIDI_VC_t *vc)
 {
     int i;
     MPID_Request *sreq;
-    MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
     MPID_nem_tcp_vc_area *vc_tcp = VC_TCP(vc);
 
-    fprintf(stream, "..   sc=%p fd=%d vc_ch->state=%d\n", vc_tcp->sc, (vc_tcp->sc ? vc_tcp->sc->fd : -1), vc_ch->state);
+    fprintf(stream, "..   sc=%p fd=%d vc_tcp->state=%d\n", vc_tcp->sc, (vc_tcp->sc ? vc_tcp->sc->fd : -1), vc_tcp->state);
 
     /* This function violates any abstraction in the queues, since there's no
        good way to print them without inspecting the internals. */

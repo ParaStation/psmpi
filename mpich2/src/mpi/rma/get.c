@@ -63,7 +63,6 @@ int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
     static const char FCNAME[] = "MPI_Get";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -123,7 +122,7 @@ int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
                 MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
             }
 
-	    MPID_Comm_get_ptr(win_ptr->comm, comm_ptr);
+	    comm_ptr = win_ptr->comm_ptr;
 	    MPIR_ERRTEST_SEND_RANK(comm_ptr, target_rank, mpi_errno);
 	    
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;

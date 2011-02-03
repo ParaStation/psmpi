@@ -50,6 +50,9 @@ static int verbose = 0;         /* Message level (0 is none) */
 
  Environment Variables:
 + MPITEST_DEBUG - If set (to any value), turns on debugging output
+. MPITEST_THREADLEVEL_DEFAULT - If set, use as the default "provided"
+                                level of thread support.  Applies to 
+                                MTest_Init but not MTest_Init_thread.
 - MPITEST_VERBOSE - If set to a numeric value, turns on that level of
   verbose output.  This is used by the routine 'MTestPrintfMsg'
 
@@ -99,11 +102,44 @@ void MTest_Init_thread( int *argc, char ***argv, int required, int *provided )
 	}
     }
 }
+/* 
+ * Initialize the tests, using an MPI-1 style init.  Supports 
+ * MTEST_THREADLEVEL_DEFAULT to test with user-specified thread level
+ */
 void MTest_Init( int *argc, char ***argv )
 {
     int provided;
-    
-    MTest_Init_thread( argc, argv, MPI_THREAD_SINGLE, &provided );
+#if MPI_VERSION >= 2 || defined(HAVE_MPI_INIT_THREAD)
+    const char *str = 0;
+    int        threadLevel;
+
+    threadLevel = MPI_THREAD_SINGLE;
+    str = getenv( "MTEST_THREADLEVEL_DEFAULT" );
+    if (str && *str) {
+	if (strcmp(str,"MULTIPLE") == 0 || strcmp(str,"multiple") == 0) {
+	    threadLevel = MPI_THREAD_MULTIPLE;
+	}
+	else if (strcmp(str,"SERIALIZED") == 0 || 
+		 strcmp(str,"serialized") == 0) {
+	    threadLevel = MPI_THREAD_SERIALIZED;
+	}
+	else if (strcmp(str,"FUNNELED") == 0 || strcmp(str,"funneled") == 0) {
+	    threadLevel = MPI_THREAD_FUNNELED;
+	}
+	else if (strcmp(str,"SINGLE") == 0 || strcmp(str,"single") == 0) {
+	    threadLevel = MPI_THREAD_SINGLE;
+	}
+	else {
+	    fprintf( stderr, "Unrecognized thread level %s\n", str );
+	    /* Use exit since MPI_Init/Init_thread has not been called. */
+	    exit(1);
+	}
+    }
+    MTest_Init_thread( argc, argv, threadLevel, &provided );
+#else
+    /* If the MPI_VERSION is 1, there is no MPI_THREAD_xxx defined */
+    MTest_Init_thread( argc, argv, 0, &provided );
+#endif    
 }
 
 /*
@@ -345,77 +381,6 @@ static void *MTestTypeVectorFree( MTestDatatype *mtype )
     return 0;
 }
 
-# if 0
-/* The following is the contig init code */
-static void *MTestTypeVectorInitRecv( MTestDatatype *mtype )
-{
-    MPI_Aint size;
-    int      merr;
-
-    if (mtype->count > 0) {
-	signed char *p;
-	int  i, totsize;
-	merr = MPI_Type_extent( mtype->datatype, &size );
-	if (merr) MTestPrintError( merr );
-	totsize = size * mtype->count;
-	if (!mtype->buf) {
-	    mtype->buf = (void *) malloc( totsize );
-	}
-	p = (signed char *)(mtype->buf);
-	if (!p) {
-	    /* Error - out of memory */
-	    MTestError( "Out of memory in type buffer init" );
-	}
-	for (i=0; i<totsize; i++) {
-	    p[i] = 0xff;
-	}
-    }
-    else {
-	if (mtype->buf) {
-	    free( mtype->buf );
-	}
-	mtype->buf = 0;
-    }
-    return mtype->buf;
-}
-
-static int MTestTypeVectorCheckbuf( MTestDatatype *mtype )
-{
-    unsigned char *p;
-    unsigned char expected;
-    int  i, totsize, err = 0, merr;
-    MPI_Aint size;
-
-    p = (unsigned char *)mtype->buf;
-    if (p) {
-	merr = MPI_Type_extent( mtype->datatype, &size );
-	if (merr) MTestPrintError( merr );
-	totsize = size * mtype->count;
-
-	/* count is usually one for a vector type */
-	nc = 0;
-	for (k=0; k<mtype->count; k++) {
-	    /* For each element (block) */
-	    for (i=0; i<mtype->nelm; i++) {
-		expected = (0xff ^ (nc & 0xff));
-		/* For each value */
-		for (j=0; j<mtype->blksize; j++) {
-		    if (p[j] != expected) {
-			err++;
-			if (mtype->printErrors && err < 10) {
-			    printf( "Data expected = %x but got %x for %dth entry\n",
-				    expected, p[j], j );
-			    fflush( stdout );
-			}
-		    nc++;
-		}
-		p += mtype->stride;
-	    }
-	}
-    }
-    return err;
-}
-#endif
 /* ------------------------------------------------------------------------ */
 /* Datatype routines for indexed block datatypes                            */
 /* ------------------------------------------------------------------------ */
@@ -787,70 +752,6 @@ int MTestGetDatatypes( MTestDatatype *sendtype, MTestDatatype *recvtype,
 	recvtype->datatype = MPI_BYTE;
 	recvtype->isBasic  = 1;
 	recvtype->count    *= sizeof(int);
-	break;
-#endif
-#if 0
-    case 9:
-	/* vector recv type and contiguous send type */
-	/* These sizes are in bytes (see the VectorInit code) */
-	recvtype->stride   = 4 * sizeof(int);
-	recvtype->blksize  = sizeof(int);
-	recvtype->nelm     = recvtype->count;
-
-	merr = MPI_Type_vector( sendtype->count, 1, 4, MPI_INT, 
-				&recvtype->datatype );
-	if (merr) MTestPrintError( merr );
-        merr = MPI_Type_commit( &recvtype->datatype );
-	if (merr) MTestPrintError( merr );
-	merr = MPI_Type_set_name( recvtype->datatype, "int-vector" );
-	if (merr) MTestPrintError( merr );
-	recvtype->count    = 1;
-	sendtype->datatype = MPI_INT;
-	sendtype->isBasic  = 1;
-	recvtype->InitBuf  = MTestTypeVectorInit;
-	sendtype->InitBuf  = MTestTypeContigInitRecv;
-	recvtype->FreeBuf  = MTestTypeVectorFree;
-	sendtype->FreeBuf  = MTestTypeContigFree;
-	recvtype->CheckBuf = MTestTypeVectorCheckbuf;
-	sendtype->CheckBuf = 0;
-	break;
-    case 10:
-	/* contig send and block indexed recv */
-	/* Make indexes 5*((count-1) - i), for i=0, ..., count-1, i.e., 
-	   every 5th element, but starting from the end. */
-	recvtype->blksize  = sizeof(int);
-	recvtype->nelm     = recvtype->count;
-
-	sendtype->displs = (int *) malloc( sendtype->count );
-	if (!sendtype->displs) {
-	    MTestError( "Out of memory in indexed block" );
-	}
-	for (i=0; i<sendtype->count; i++) {
-	    sendtype->displs[i] = 5 * ( (count-1) - i );
-	}
-	sendtype->basesize = sizeof(int);
-	sendtype->nelm     = sendtype->count;
-	merr = MPI_Type_create_index_block( sendtype->count, 1, 
-					    sendtype->displs, 
-					    MPI_INT, &recvtype->datatype );
-	if (merr) MTestPrintError( merr );
-        merr = MPI_Type_commit( &recvtype->datatype );
-	if (merr) MTestPrintError( merr );
-	merr = MPI_Type_set_name( recvtype->datatype, 
-				  "int-decreasing-indexed" );
-	if (merr) MTestPrintError( merr );
-	recvtype->count    = 1;
-	sendtype->datatype = MPI_INT;
-	sendtype->isBasic  = 1;
-	recvtype->InitBuf  = MTestTypeIndexedInit;
-	sendtype->InitBuf  = MTestTypeContigInitRecv;
-	recvtype->FreeBuf  = MTestTypeIndexedFree;
-	sendtype->FreeBuf  = MTestTypeContigFree;
-	recvtype->CheckBuf = MTestTypeIndexedCheckBuf;
-	sendtype->CheckBuf = 0;
-	break;
-    case 11: 
-	/* index send and vector recv (using shorts) */
 	break;
 #endif
     default:

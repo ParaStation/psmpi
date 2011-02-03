@@ -54,6 +54,9 @@
       if (rlen .ne. 6) then
          errs = errs + 1
          print *, ' Expected 6, got ', rlen, ' for rlen'
+         if (rlen .gt. 0 .and. rlen .lt. MPI_MAX_OBJECT_NAME) then
+            print *, ' Cname = ', cname(1:rlen)
+         endif
       else if (cname(1:6) .ne. 'MyName') then
          errs = errs + 1
          print *, ' Expected MyName, got ', cname(1:6)

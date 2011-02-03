@@ -1338,7 +1338,7 @@ Optional Features:
   --disable-option-checking  ignore unrecognized --enable/--with options
   --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
   --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
---enable-cache  - Turn on configure caching
+  --enable-cache          Turn on configure caching
 --enable-pmiport - Allow PMI interface to use a host-port pair to contact
                    for PMI services
 --enable-alloca - Use alloca to allocate temporary memory if available
@@ -1902,7 +1902,7 @@ echo "RUNNING CONFIGURE FOR THE SIMPLE PMI VERSION 2"
 
 # Check whether --enable-cache was given.
 if test "${enable_cache+set}" = set; then
-  enableval=$enable_cache; enable_cache="$enableval"
+  enableval=$enable_cache;
 else
   enable_cache="notgiven"
 fi
@@ -1921,6 +1921,8 @@ if test "$enable_pmiport" != "no" ; then
 fi
 
 
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 date >conftest$$
 # If creating a file in the current directory does not show up in the srcdir
@@ -1967,6 +1969,8 @@ $as_echo "$as_me: error: You cannot do a VPATH build if the source directory has
         fi
     fi
 fi
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 
 
@@ -2139,7 +2143,6 @@ fi
 
 
 
-
 { $as_echo "$as_me:$LINENO: checking for virtual path format" >&5
 $as_echo_n "checking for virtual path format... " >&6; }
 if test "${pac_cv_prog_make_vpath+set}" = set; then
@@ -2190,7 +2193,6 @@ if test "$pac_cv_prog_make_vpath" = "VPATH" ; then
 elif test "$pac_cv_prog_make_vpath" = ".PATH" ; then
     VPATH='.PATH: . ${srcdir}'
 fi
-
 
 
 

@@ -1,10 +1,10 @@
 # This Makefile.sm generated automatically by f77tof90
 # from test/mpi/f77/rma/Makefile.sm.  DO NOT EDIT
-F90INCLUDES = -I. -I../attr
+FCINCLUDES = -I. -I../attr
 DEPADD = @MPILIBLOC@ ../util/mtestf90.o
 smvar_do_sharedlibs = 0
 
-F90HEADERS = addsize.h
+FCHEADERS = addsize.h
 
 # allocmem_SOURCES = allocmem.f90
 winscale1f90_SOURCES = winscale1f90.f90
@@ -34,9 +34,11 @@ winattrf90_LDADD        = ../util/mtestf90.o
 winattr2f90_SOURCES     = winattr2f90.f90
 winattr2f90_LDADD       = ../util/mtestf90.o
 
+# bindir may be used in MPIEXEC, so make sure it is defined
+BINDIR=${bindir}
 testing:
 	../../runtests -srcdir=$(srcdir) -tests=testlist \
-			-mpiexec=$(bindir)/mpiexec \
+			-mpiexec=@MPIEXEC@ \
 		   	-xmlfile=summary.xml
 
 ../util/mtestf90.o: 

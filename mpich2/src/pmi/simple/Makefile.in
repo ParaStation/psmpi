@@ -30,7 +30,7 @@ HEADERS = simple_pmiutil.h
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -47,8 +47,6 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -56,38 +54,12 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-${srcdir}/pmiconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
-	@rm -rf autom4te*.cache
-	(cd ${srcdir} && autoheader -I ../../../confdb && \
-	autoconf -I \
-	../../../confdb ) 
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=src/pmi/simple/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile localdefs config.status config.log config.cache *conf.cache config.system" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-if [ -x config.status ] ; then CONFIG_FILES=Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile localdefs config.status config.log config.cache *conf.cache config.system
@@ -95,12 +67,10 @@ distclean-xxx:
 	-@rm -f pmiconf.h
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
-	-rm -f pmiconf.h.in 
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    ${MAKE} .libstamp1 || exit 1; \
@@ -128,56 +98,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
-coverage: 
-	-@for file in simple_pmiutil.c simple_pmi.c ; do \
-		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/simple_pmiutil.d: $(srcdir)/simple_pmiutil.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C simple_pmiutil.c > $(DEPS_DIR)/simple_pmiutil.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil.c >$(DEPS_DIR)/simple_pmiutil.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil.c >$(DEPS_DIR)/simple_pmiutil.d
-$(DEPS_DIR)/simple_pmi.d: $(srcdir)/simple_pmi.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C simple_pmi.c > $(DEPS_DIR)/simple_pmi.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/simple_pmi.c >$(DEPS_DIR)/simple_pmi.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/simple_pmi.c >$(DEPS_DIR)/simple_pmi.d
-$(DEPS_DIR)/timestamp: simple_pmiutil.c simple_pmi.c Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C simple_pmiutil.c > $(DEPS_DIR)/simple_pmiutil.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil.c >$(DEPS_DIR)/simple_pmiutil.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil.c >$(DEPS_DIR)/simple_pmiutil.d
-	echo "include $(DEPS_DIR)/simple_pmiutil.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C simple_pmi.c > $(DEPS_DIR)/simple_pmi.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/simple_pmi.c >$(DEPS_DIR)/simple_pmi.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/simple_pmi.c >$(DEPS_DIR)/simple_pmi.d
-	echo "include $(DEPS_DIR)/simple_pmi.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  simple_pmiutil.c simple_pmi.c
@@ -187,6 +108,8 @@ SOURCEFILES     = $(SOURCES)
 
 distclean-local:
 	@-rm -f pmiconf.h
+
+.POSIX:
 
 FORCE_TARGET:
 

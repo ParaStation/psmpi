@@ -42,7 +42,7 @@ VPATH = .:@srcdir@
 INCLUDES = -I../../../include -I${master_top_srcdir}/src/include -I../../../mpi/timer -I../common -I${master_top_srcdir}/src/util/logging/common
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -59,8 +59,6 @@ INCLUDES = -I../../../include -I${master_top_srcdir}/src/include -I../../../mpi/
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -68,29 +66,6 @@ INCLUDES = -I../../../include -I${master_top_srcdir}/src/include -I../../../mpi/
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-${srcdir}/rlogconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
-	@rm -rf autom4te*.cache
-	(cd ${srcdir} && autoheader -I ../../../../confdb && \
-	autoconf -I \
-	../../../../confdb ) 
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../ \
-	-configdir=src/util/logging/rlog/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile pprintirlog config.status config.log config.cache *conf.cache config.system" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-if [ -x config.status ] ; then CONFIG_FILES=Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
@@ -99,9 +74,6 @@ clean:
 	-@rm -f printrlog.exe printirlog.exe minalignrlog.exe irlog2rlog.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
@@ -110,20 +82,17 @@ distclean-xxx:
 	-@rm -f rlogconf.h
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
-	-rm -f rlogconf.h.in 
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
-all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a irlog2rlog\
-	 printirlog printrlog minalignrlog
+	rm -f  Makefile
+all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a irlog2rlog printirlog printrlog\
+	 minalignrlog
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    ${MAKE} .libstamp1 || exit 1; \
 	fi
 
-.libstamp0 ../../../../lib/lib${MPILIBNAME}.a: rlog.o rlogutil.o rlogtime.o \
-	irlogutil.o 
+.libstamp0 ../../../../lib/lib${MPILIBNAME}.a: rlog.o rlogutil.o rlogtime.o irlogutil.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
@@ -137,8 +106,7 @@ all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a irlog2rlog\
 	fi
 	@${RANLIB} ../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../../lib/lib${MPILIBNAME}.la: rlog.lo rlogutil.lo \
-	rlogtime.lo irlogutil.lo 
+.libstamp1 ../../../../lib/lib${MPILIBNAME}.la: rlog.lo rlogutil.lo rlogtime.lo irlogutil.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -146,35 +114,27 @@ all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a irlog2rlog\
 	fi
 	@${AR} ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
-coverage: 
-	-@for file in rlog.c rlogutil.c rlogtime.c irlogutil.c ; do \
-		gcov -b -f $$file ; done
 printrlog: printrlog.o   
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o printrlog printrlog.o  \
-	-L../../../../lib -L${master_top_srcdir}/lib -lmpich ${LIBS} 
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o printrlog printrlog.o  -L../../../../lib \
+	-L${master_top_srcdir}/lib -lmpich ${LIBS} 
 printirlog: printirlog.o   
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o printirlog printirlog.o  \
-	-L../../../../lib -L${master_top_srcdir}/lib -lmpich ${LIBS} 
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o printirlog printirlog.o  -L../../../../lib \
+	-L${master_top_srcdir}/lib -lmpich ${LIBS} 
 minalignrlog: minalignrlog.o   
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o minalignrlog minalignrlog.o  \
-	-L../../../../lib -L${master_top_srcdir}/lib -lmpich ${LIBS} 
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o minalignrlog minalignrlog.o  -L../../../../lib \
+	-L${master_top_srcdir}/lib -lmpich ${LIBS} 
 irlog2rlog: irlog2rlog.o   
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o irlog2rlog irlog2rlog.o  \
-	-L../../../../lib -L${master_top_srcdir}/lib -lmpich ${LIBS} 
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
-# --------------------------------------------------------------------------
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o irlog2rlog irlog2rlog.o  -L../../../../lib \
+	-L${master_top_srcdir}/lib -lmpich ${LIBS} 
 # --------------------------------------------------------------------------
 # Install target
 install:  FORCE_TARGET 
 	if [ ! -d ${DESTDIR}${exec_prefix} ] ; then $(MKDIR_P) ${DESTDIR}${exec_prefix} ; fi
 	if [ ! -d ${DESTDIR}${prefix} ] ; then $(MKDIR_P) ${DESTDIR}${prefix} ; fi
 	if [ ! -d ${DESTDIR}${bindir} ] ; then $(MKDIR_P) ${DESTDIR}${bindir} ; fi
-	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG) printrlog ${DESTDIR}${bindir}/printrlog
-	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG) printirlog ${DESTDIR}${bindir}/printirlog
-	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG) irlog2rlog ${DESTDIR}${bindir}/irlog2rlog
+	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)  printrlog ${DESTDIR}${bindir}/printrlog
+	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)  printirlog ${DESTDIR}${bindir}/printirlog
+	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)  irlog2rlog ${DESTDIR}${bindir}/irlog2rlog
 
 install-strip:
 	$(MAKE) INSTALL_STRIP_FLAG=-s install
@@ -185,105 +145,8 @@ uninstall:
 installcheck: 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/rlog.d: $(srcdir)/rlog.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C rlog.c > $(DEPS_DIR)/rlog.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/rlog.c >$(DEPS_DIR)/rlog.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/rlog.c >$(DEPS_DIR)/rlog.d
-$(DEPS_DIR)/rlogutil.d: $(srcdir)/rlogutil.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C rlogutil.c > $(DEPS_DIR)/rlogutil.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/rlogutil.c >$(DEPS_DIR)/rlogutil.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/rlogutil.c >$(DEPS_DIR)/rlogutil.d
-$(DEPS_DIR)/rlogtime.d: $(srcdir)/rlogtime.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C rlogtime.c > $(DEPS_DIR)/rlogtime.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/rlogtime.c >$(DEPS_DIR)/rlogtime.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/rlogtime.c >$(DEPS_DIR)/rlogtime.d
-$(DEPS_DIR)/irlogutil.d: $(srcdir)/irlogutil.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C irlogutil.c > $(DEPS_DIR)/irlogutil.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/irlogutil.c >$(DEPS_DIR)/irlogutil.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/irlogutil.c >$(DEPS_DIR)/irlogutil.d
-$(DEPS_DIR)/timestamp: rlog.c rlogutil.c rlogtime.c irlogutil.c printrlog.c printirlog.c minalignrlog.c irlog2rlog.c Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C rlog.c > $(DEPS_DIR)/rlog.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/rlog.c >$(DEPS_DIR)/rlog.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/rlog.c >$(DEPS_DIR)/rlog.d
-	echo "include $(DEPS_DIR)/rlog.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C rlogutil.c > $(DEPS_DIR)/rlogutil.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/rlogutil.c >$(DEPS_DIR)/rlogutil.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/rlogutil.c >$(DEPS_DIR)/rlogutil.d
-	echo "include $(DEPS_DIR)/rlogutil.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C rlogtime.c > $(DEPS_DIR)/rlogtime.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/rlogtime.c >$(DEPS_DIR)/rlogtime.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/rlogtime.c >$(DEPS_DIR)/rlogtime.d
-	echo "include $(DEPS_DIR)/rlogtime.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C irlogutil.c > $(DEPS_DIR)/irlogutil.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/irlogutil.c >$(DEPS_DIR)/irlogutil.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/irlogutil.c >$(DEPS_DIR)/irlogutil.d
-	echo "include $(DEPS_DIR)/irlogutil.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C printrlog.c > $(DEPS_DIR)/printrlog.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/printrlog.c >$(DEPS_DIR)/printrlog.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/printrlog.c >$(DEPS_DIR)/printrlog.d
-	echo "include $(DEPS_DIR)/printrlog.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C printirlog.c > $(DEPS_DIR)/printirlog.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/printirlog.c >$(DEPS_DIR)/printirlog.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/printirlog.c >$(DEPS_DIR)/printirlog.d
-	echo "include $(DEPS_DIR)/printirlog.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C minalignrlog.c > $(DEPS_DIR)/minalignrlog.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/minalignrlog.c >$(DEPS_DIR)/minalignrlog.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/minalignrlog.c >$(DEPS_DIR)/minalignrlog.d
-	echo "include $(DEPS_DIR)/minalignrlog.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C irlog2rlog.c > $(DEPS_DIR)/irlog2rlog.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/irlog2rlog.c >$(DEPS_DIR)/irlog2rlog.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/irlog2rlog.c >$(DEPS_DIR)/irlog2rlog.d
-	echo "include $(DEPS_DIR)/irlog2rlog.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  rlog.c rlogutil.c rlogtime.c irlogutil.c irlog2rlog.c \
-	printirlog.c printrlog.c minalignrlog.c 
+SOURCES         =  rlog.c rlogutil.c rlogtime.c irlogutil.c irlog2rlog.c printirlog.c printrlog.c \
+	minalignrlog.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
@@ -293,6 +156,8 @@ distclean-local:
 
 mpich2-build-install: install
 mpich2-build-uninstall: uninstall
+
+.POSIX:
 
 FORCE_TARGET:
 

@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -16,40 +15,14 @@ MPILIBNAME      = @MPILIBNAME@
 VPATH = .:@srcdir@
 
 .SUFFIXES:
-.SUFFIXES:  .txt 
-
-${srcdir}/include/mpidi_ch3i_sctp_conf.h  ${srcdir}/configure: \
-	${srcdir}/configure.in 
-	@rm -rf autom4te*.cache
-	(cd ${srcdir} && autoheader -I ../../../../../confdb && \
-	autoconf -I \
-	../../../../../confdb ) 
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../../ \
-	-configdir=src/mpid/ch3/channels/sctp/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile src/Makefile localdefs config.status config.log config.cache *conf.cache config.system" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-if [ -x config.status ] ; then CONFIG_FILES=Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
+# Some make programs complain if no suffixes are set
+.SUFFIXES: .c .o
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	(cd src && ${MAKE} apply )
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	(cd src && ${MAKE} clean )
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
@@ -59,33 +32,14 @@ distclean-xxx:
 	-@rm -f include/mpidi_ch3i_sctp_conf.h
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  maintainer-clean-local distclean-xxx remove-genmakefiles
-	(cd src && ${MAKE} maintainer-clean )
-	-rm -f include/mpidi_ch3i_sctp_conf.h.in 
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect:
 	@(cd src && ${MAKE} all )
 
-coverage: 
-	(cd src && ${MAKE} coverage )
 # --------------------------------------------------------------------------
-htmldoc:
-	(cd src && ${MAKE} htmldoc )
-mandoc:
-	(cd src && ${MAKE} mandoc )
-latexdoc:
-	(cd src && ${MAKE} latexdoc )
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-	if [ -s src/Makefile ] ; then (cd src && ${MAKE} dependencies ) ; fi
-# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
@@ -98,6 +52,8 @@ distclean-local:
 maintainer-clean-local:
 	-rm -f include/mpidi_ch3i_sctp_conf.h.in
 
+
+.POSIX:
 
 FORCE_TARGET:
 

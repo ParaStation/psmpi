@@ -1,15 +1,20 @@
 /*
- * Copyright © 2009 CNRS, INRIA, Université Bordeaux 1
- * Copyright © 2009 Cisco Systems, Inc.  All rights reserved.
+ * Copyright © 2009 CNRS
+ * Copyright © 2009-2010 INRIA
+ * Copyright © 2009-2010 Université Bordeaux 1
+ * Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
+#include <private/config.h>
+#include <private/private.h>
 #include <hwloc.h>
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <time.h>
 
 #include "lstopo.h"
 
@@ -32,6 +37,18 @@
 #define THREAD_R_COLOR 0xff
 #define THREAD_G_COLOR 0xff
 #define THREAD_B_COLOR 0xff
+
+#define RUNNING_R_COLOR 0
+#define RUNNING_G_COLOR 0xff
+#define RUNNING_B_COLOR 0
+
+#define FORBIDDEN_R_COLOR 0xff
+#define FORBIDDEN_G_COLOR 0
+#define FORBIDDEN_B_COLOR 0
+
+#define OFFLINE_R_COLOR 0
+#define OFFLINE_G_COLOR 0
+#define OFFLINE_B_COLOR 0
 
 #define CACHE_R_COLOR 0xff
 #define CACHE_G_COLOR 0xff
@@ -67,11 +84,11 @@ static int prefer_ratio(float ratio1, float ratio2) {
   return _ratio1 < _ratio2;
 }
 
-static void* null_start(void *output, int width, int height) { return output; }
-static void null_declare_color(void *output, int r, int g, int b) { }
-static void null_box(void *output, int r, int g, int b, unsigned depth, unsigned x, unsigned width, unsigned y, unsigned height) { }
-static void null_line(void *output, int r, int g, int b, unsigned depth, unsigned x1, unsigned y1, unsigned x2, unsigned y2) { }
-static void null_text(void *output, int r, int g, int b, int size, unsigned depth, unsigned x, unsigned y, const char *text) { }
+static void* null_start(void *output, int width __hwloc_attribute_unused, int height __hwloc_attribute_unused) { return output; }
+static void null_declare_color(void *output __hwloc_attribute_unused, int r __hwloc_attribute_unused, int g __hwloc_attribute_unused, int b __hwloc_attribute_unused) { }
+static void null_box(void *output __hwloc_attribute_unused, int r __hwloc_attribute_unused, int g __hwloc_attribute_unused, int b __hwloc_attribute_unused, unsigned depth __hwloc_attribute_unused, unsigned x __hwloc_attribute_unused, unsigned width __hwloc_attribute_unused, unsigned y __hwloc_attribute_unused, unsigned height __hwloc_attribute_unused) { }
+static void null_line(void *output __hwloc_attribute_unused, int r __hwloc_attribute_unused, int g __hwloc_attribute_unused, int b __hwloc_attribute_unused, unsigned depth __hwloc_attribute_unused, unsigned x1 __hwloc_attribute_unused, unsigned y1_arg __hwloc_attribute_unused, unsigned x2 __hwloc_attribute_unused, unsigned y2 __hwloc_attribute_unused) { }
+static void null_text(void *output __hwloc_attribute_unused, int r __hwloc_attribute_unused, int g __hwloc_attribute_unused, int b __hwloc_attribute_unused, int size __hwloc_attribute_unused, unsigned depth __hwloc_attribute_unused, unsigned x __hwloc_attribute_unused, unsigned y __hwloc_attribute_unused, const char *text __hwloc_attribute_unused) { }
 
 static struct draw_methods null_draw_methods = {
   .start = null_start,
@@ -92,7 +109,7 @@ static struct draw_methods null_draw_methods = {
  * For generic detailed comments, see the node_draw function.
  */
 
-typedef void (*foo_draw)(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t obj, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight);
+typedef void (*foo_draw)(hwloc_topology_t topology, struct draw_methods *methods, int logical, hwloc_obj_t obj, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight);
 
 static foo_draw get_type_fun(hwloc_obj_type_t type);
 
@@ -106,12 +123,12 @@ static foo_draw get_type_fun(hwloc_obj_type_t type);
   hwloc_obj_t *subobjs = obj->children; \
   unsigned numsubobjs = obj->arity; \
   unsigned width, height; \
-  unsigned maxwidth, maxheight; \
+  unsigned maxwidth __hwloc_attribute_unused, maxheight __hwloc_attribute_unused; \
   maxwidth = maxheight = 0; \
   totwidth = (border) + mywidth; \
   totheight = (border) + myheight; \
   if (numsubobjs) { \
-    int i; \
+    unsigned i; \
 
 #define RECURSE_FOR() \
     /* Iterate over subobjects */ \
@@ -119,7 +136,7 @@ static foo_draw get_type_fun(hwloc_obj_type_t type);
 
       /* Recursive call */
 #define RECURSE_CALL_FUN(methods) \
-      get_type_fun(subobjs[i]->type)(topology, methods, subobjs[i], output, depth-1, x + totwidth, &width, y + totheight, &height) \
+      get_type_fun(subobjs[i]->type)(topology, methods, logical, subobjs[i], output, depth-1, x + totwidth, &width, y + totheight, &height) \
 
 #define RECURSE_END_HORIZ(separator, border) \
       /* Add the subobject's width and separator */ \
@@ -203,7 +220,7 @@ RECURSE_BEGIN(obj, border) \
     /* Total area for subobjects */ \
     area = (obj_maxwidth + (separator)) * (obj_maxheight + (separator)) * numsubobjs; \
     /* Ideal total height for spreading that area with RATIO */ \
-    idealtotheight = sqrtf(area/RATIO); \
+    idealtotheight = (float) sqrt(area/RATIO); \
     /* Underestimated number of rows */ \
     rows = idealtotheight / (obj_maxheight + (separator)); \
     columns = rows ? (numsubobjs + rows - 1) / rows : 1; \
@@ -262,7 +279,7 @@ RECURSE_BEGIN(obj, border) \
 #define RECURSE_RECT(obj, methods, separator, border) do {\
   if (obj->arity && obj->children[0]->type == HWLOC_OBJ_NODE) { \
     /* Nodes shouldn't be put with an arbitrary geometry, as NUMA distances may not be that way */ \
-    int pvert = prefer_vert(topology, level, output, depth, x, y, separator); \
+    int pvert = prefer_vert(topology, logical, level, output, depth, x, y, separator); \
     if (pvert) \
       RECURSE_VERT(level, methods, separator, border); \
     else \
@@ -303,7 +320,7 @@ struct dyna_save {
 } while (0)
 
 static int
-prefer_vert(hwloc_topology_t topology, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned y, int separator)
+prefer_vert(hwloc_topology_t topology, int logical, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned y, unsigned separator)
 {
   float horiz_ratio, vert_ratio;
   unsigned textwidth = 0;
@@ -316,32 +333,79 @@ prefer_vert(hwloc_topology_t topology, hwloc_obj_t level, void *output, unsigned
   return force_vert || (!force_horiz && prefer_ratio(vert_ratio, horiz_ratio));
 }
 
-static void
-proc_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
+static int
+lstopo_obj_snprintf(char *text, size_t textlen, hwloc_obj_t obj, int logical)
 {
-  *retwidth = fontsize ? 4*fontsize : gridsize;
-  *retheight = gridsize + (fontsize ? (fontsize + gridsize) : 0);
-
-  methods->box(output, THREAD_R_COLOR, THREAD_G_COLOR, THREAD_B_COLOR, depth, x, *retwidth, y, *retheight);
-
-  if (fontsize) {
-    char text[64];
-    hwloc_obj_snprintf(text, sizeof(text), topology, level, "#", 0);
-    methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, text);
-  }
+  unsigned idx = logical ? obj->logical_index : obj->os_index;
+  const char *indexprefix = logical ? " L#" : " P#";
+  char typestr[32];
+  char indexstr[32]= "";
+  char attrstr[256];
+  int attrlen;
+  hwloc_obj_type_snprintf(typestr, sizeof(typestr), obj, 0);
+  if (idx != (unsigned)-1 && obj->depth != 0)
+    snprintf(indexstr, sizeof(indexstr), "%s%u", indexprefix, idx);
+  attrlen = hwloc_obj_attr_snprintf(attrstr, sizeof(attrstr), obj, " ", 0);
+  if (attrlen > 0)
+    return snprintf(text, textlen, "%s%s (%s)", typestr, indexstr, attrstr);
+  else
+    return snprintf(text, textlen, "%s%s", typestr, indexstr);
 }
 
 static void
-cache_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
+pu_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
+{
+  unsigned myheight = (fontsize ? (fontsize + gridsize) : 0), totheight;
+  unsigned textwidth = fontsize ? 6*fontsize : gridsize;
+  unsigned mywidth = 0, totwidth;
+
+  DYNA_CHECK();
+
+  RECURSE_HORIZ(level, &null_draw_methods, 0, gridsize);
+
+  if (hwloc_bitmap_isset(level->online_cpuset, level->os_index))
+    if (!hwloc_bitmap_isset(level->allowed_cpuset, level->os_index))
+      methods->box(output, FORBIDDEN_R_COLOR, FORBIDDEN_G_COLOR, FORBIDDEN_B_COLOR, depth, x, *retwidth, y, *retheight);
+    else {
+      hwloc_bitmap_t bind = hwloc_bitmap_alloc();
+      if (pid != (hwloc_pid_t) -1 && pid != 0)
+        hwloc_get_proc_cpubind(topology, pid, bind, 0);
+      else if (pid == 0)
+        hwloc_get_cpubind(topology, bind, 0);
+      if (bind && hwloc_bitmap_isset(bind, level->os_index))
+        methods->box(output, RUNNING_R_COLOR, RUNNING_G_COLOR, RUNNING_B_COLOR, depth, x, *retwidth, y, *retheight);
+      else
+        methods->box(output, THREAD_R_COLOR, THREAD_G_COLOR, THREAD_B_COLOR, depth, x, *retwidth, y, *retheight);
+      hwloc_bitmap_free(bind);
+    }
+  else
+    methods->box(output, OFFLINE_R_COLOR, OFFLINE_G_COLOR, OFFLINE_B_COLOR, depth, x, *retwidth, y, *retheight);
+
+  if (fontsize) {
+    char text[64];
+    lstopo_obj_snprintf(text, sizeof(text), level, logical);
+    if (hwloc_bitmap_isset(level->online_cpuset, level->os_index))
+      methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, text);
+    else
+      methods->text(output, 0xff, 0xff, 0xff, fontsize, depth-1, x + gridsize, y + gridsize, text);
+  }
+
+  RECURSE_HORIZ(level, methods, 0, gridsize);
+
+  DYNA_SAVE();
+}
+
+static void
+cache_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
 {
   unsigned myheight = gridsize + (fontsize ? (fontsize + gridsize) : 0) + gridsize, totheight;
   unsigned mywidth = 0, totwidth;
-  unsigned textwidth = fontsize ? (level->os_index == -1 ? 7*fontsize : 9*fontsize) : 0;
+  unsigned textwidth = fontsize ? ((logical ? level->logical_index : level->os_index) == (unsigned) -1 ? 8*fontsize : 10*fontsize) : 0;
+  /* Do not separate objects when in L1 (SMT) */
   unsigned separator = level->attr->cache.depth > 1 ? gridsize : 0;
 
   DYNA_CHECK();
 
-  /* Do not separate objects when in L1 (SMT) */
   RECURSE_HORIZ(level, &null_draw_methods, separator, 0);
 
   methods->box(output, CACHE_R_COLOR, CACHE_G_COLOR, CACHE_B_COLOR, depth, x, totwidth, y, myheight - gridsize);
@@ -349,7 +413,7 @@ cache_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t 
   if (fontsize) {
     char text[64];
 
-    hwloc_obj_snprintf(text, sizeof(text), topology, level, "#", 0);
+    lstopo_obj_snprintf(text, sizeof(text), level, logical);
     methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, text);
   }
 
@@ -359,7 +423,7 @@ cache_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t 
 }
 
 static void
-core_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
+core_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
 {
   unsigned myheight = (fontsize ? (fontsize + gridsize) : 0), totheight;
   unsigned mywidth = 0, totwidth;
@@ -367,23 +431,23 @@ core_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t l
 
   DYNA_CHECK();
 
-  RECURSE_HORIZ(level, &null_draw_methods, 0, gridsize);
+  RECURSE_RECT(level, &null_draw_methods, 0, gridsize);
 
   methods->box(output, CORE_R_COLOR, CORE_G_COLOR, CORE_B_COLOR, depth, x, totwidth, y, totheight);
 
   if (fontsize) {
     char text[64];
-    hwloc_obj_snprintf(text, sizeof(text), topology, level, "#", 0);
+    lstopo_obj_snprintf(text, sizeof(text), level, logical);
     methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, text);
   }
 
-  RECURSE_HORIZ(level, methods, 0, gridsize);
+  RECURSE_RECT(level, methods, 0, gridsize);
 
   DYNA_SAVE();
 }
 
 static void
-socket_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
+socket_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
 {
   unsigned myheight = (fontsize ? (fontsize + gridsize) : 0), totheight;
   unsigned mywidth = 0, totwidth;
@@ -397,7 +461,7 @@ socket_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t
 
   if (fontsize) {
     char text[64];
-    hwloc_obj_snprintf(text, sizeof(text), topology, level, "#", 0);
+    lstopo_obj_snprintf(text, sizeof(text), level, logical);
     methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, text);
   }
 
@@ -407,7 +471,7 @@ socket_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t
 }
 
 static void
-node_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
+node_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
 {
   /* Reserve room for the heading memory box and separator */
   unsigned myheight = (fontsize ? (gridsize + fontsize) : 0) + gridsize + gridsize;
@@ -418,7 +482,7 @@ node_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t l
   /* Currently filled width */
   unsigned totwidth;
   /* Width of the heading text, thus minimal width */
-  unsigned textwidth = 11*fontsize;
+  unsigned textwidth = 16*fontsize;
 
   /* Check whether dynamic programming can save us time */
   DYNA_CHECK();
@@ -434,7 +498,7 @@ node_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t l
   if (fontsize) {
     char text[64];
     /* Output text */
-    hwloc_obj_snprintf(text, sizeof(text), topology, level, "#", 0);
+    lstopo_obj_snprintf(text, sizeof(text), level, logical);
     methods->text(output, 0, 0, 0, fontsize, depth-2, x + 2 * gridsize, y + 2 * gridsize, text);
   }
 
@@ -446,11 +510,11 @@ node_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t l
 }
 
 static void
-machine_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
+machine_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
 {
   unsigned myheight = (fontsize ? (fontsize + gridsize) : 0), totheight;
   unsigned mywidth = 0, totwidth;
-  unsigned textwidth = 11*fontsize;
+  unsigned textwidth = 8*fontsize;
 
   DYNA_CHECK();
 
@@ -460,7 +524,7 @@ machine_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_
 
   if (fontsize) {
     char text[64];
-    hwloc_obj_snprintf(text, sizeof(text), topology, level, "#", 0);
+    lstopo_obj_snprintf(text, sizeof(text), level, logical);
     methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, text);
   }
 
@@ -470,12 +534,12 @@ machine_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_
 }
 
 static void
-system_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
+system_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
 {
   unsigned myheight = (fontsize ? (fontsize + gridsize) : 0), totheight;
   unsigned mywidth = 0, totwidth;
   unsigned textwidth = 10*fontsize;
-  int vert = prefer_vert(topology, level, output, depth, x, y, gridsize);
+  int vert = prefer_vert(topology, logical, level, output, depth, x, y, gridsize);
 
   DYNA_CHECK();
 
@@ -493,7 +557,7 @@ system_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t
 
   if (fontsize) {
     char text[64];
-    hwloc_obj_snprintf(text, sizeof(text), topology, level, "#", 0);
+    lstopo_obj_snprintf(text, sizeof(text), level, logical);
     methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, text);
   }
 
@@ -536,11 +600,11 @@ system_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t
 }
 
 static void
-misc_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
+group_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
 {
   unsigned myheight = (fontsize ? (fontsize + gridsize) : 0), totheight;
   unsigned mywidth = 0, totwidth;
-  unsigned textwidth = 6*fontsize;
+  unsigned textwidth = level->name ? strlen(level->name) * fontsize : 6*fontsize;
 
   DYNA_CHECK();
 
@@ -549,9 +613,13 @@ misc_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t l
   methods->box(output, MISC_R_COLOR, MISC_G_COLOR, MISC_B_COLOR, depth, x, totwidth, y, totheight);
 
   if (fontsize) {
-    char text[64];
-    hwloc_obj_snprintf(text, sizeof(text), topology, level, "#", 0);
-    methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, text);
+    if (level->name) {
+      methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, level->name);
+    } else {
+      char text[64];
+      lstopo_obj_snprintf(text, sizeof(text), level, logical);
+      methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, text);
+    }
   }
 
   RECURSE_RECT(level, methods, gridsize, gridsize);
@@ -560,11 +628,94 @@ misc_draw(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t l
 }
 
 static void
-fig(hwloc_topology_t topology, struct draw_methods *methods, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned y)
+misc_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
 {
-  unsigned totwidth, totheight;
+  unsigned boxheight = gridsize + (fontsize ? (fontsize + gridsize) : 0);
+  unsigned myheight = boxheight + (level->arity?gridsize:0), totheight;
+  unsigned mywidth = 0, totwidth;
+  unsigned textwidth = level->name ? strlen(level->name) * fontsize : 6*fontsize;
 
-  system_draw(topology, methods, level, output, depth, x, &totwidth, y, &totheight);
+  DYNA_CHECK();
+
+  RECURSE_HORIZ(level, &null_draw_methods, gridsize, 0);
+
+  methods->box(output, MISC_R_COLOR, MISC_G_COLOR, MISC_B_COLOR, depth, x, totwidth, y, boxheight);
+
+  if (fontsize) {
+    if (level->name) {
+      methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, level->name);
+    } else {
+      char text[64];
+      lstopo_obj_snprintf(text, sizeof(text), level, logical);
+      methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, text);
+    }
+  }
+
+  RECURSE_HORIZ(level, methods, gridsize, 0);
+
+  DYNA_SAVE();
+}
+
+static void
+fig(hwloc_topology_t topology, struct draw_methods *methods, int logical, int legend, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned y)
+{
+  unsigned totwidth, totheight, offset;
+  time_t t;
+  char text[128];
+  char hostname[128] = "";
+  unsigned long hostname_size = sizeof(hostname);
+
+  system_draw(topology, methods, logical, level, output, depth, x, &totwidth, y, &totheight);
+
+  if (totwidth < 20*fontsize)
+    totwidth = 20*fontsize;
+
+  if (legend) {
+      /* Display the hostname, but only if we're showing *this*
+         system */
+    if (hwloc_topology_is_thissystem(topology)) {
+#ifdef HWLOC_WIN_SYS
+      GetComputerName(hostname, &hostname_size);
+#else
+      gethostname(hostname, hostname_size);
+#endif
+    }
+    if (*hostname) {
+      snprintf(text, sizeof(text), "Host: %s", hostname);
+      methods->box(output, 0xff, 0xff, 0xff, depth, 0, totwidth, totheight, gridsize*4 + fontsize*3);
+      methods->text(output, 0, 0, 0, fontsize, depth, gridsize, totheight + gridsize, text);
+      offset = gridsize + fontsize;
+    } else {
+      methods->box(output, 0xff, 0xff, 0xff, depth, 0, totwidth, totheight, gridsize*3 + fontsize*2);
+      offset = 0;
+    }
+
+    /* Display whether we're showing physical or logical IDs */
+    snprintf(text, sizeof(text), "Indexes: %s", logical ? "logical" : "physical");
+    methods->text(output, 0, 0, 0, fontsize, depth, gridsize, totheight + gridsize + offset, text);
+
+    /* Display timestamp */
+    t = time(NULL);
+#ifdef HAVE_STRFTIME
+    {
+      struct tm *tmp;
+      tmp = localtime(&t);
+      strftime(text, sizeof(text), "Date: %c", tmp);
+    }
+#else /* HAVE_STRFTIME */
+    {
+      char *date;
+      int n;
+      date = ctime(&t);
+      n = strlen(date);
+      if (n && date[n-1] == '\n') {
+        date[n-1] = 0;
+      }
+      snprintf(text, sizeof(text), "Date: %s", date);
+    }
+#endif /* HAVE_STRFTIME */
+    methods->text(output, 0, 0, 0, fontsize, depth, gridsize, totheight + gridsize + offset + fontsize + gridsize, text);
+  }
 }
 
 /*
@@ -580,7 +731,8 @@ get_type_fun(hwloc_obj_type_t type)
     case HWLOC_OBJ_SOCKET: return socket_draw;
     case HWLOC_OBJ_CACHE: return cache_draw;
     case HWLOC_OBJ_CORE: return core_draw;
-    case HWLOC_OBJ_PROC: return proc_draw;
+    case HWLOC_OBJ_PU: return pu_draw;
+    case HWLOC_OBJ_GROUP: return group_draw;
     case HWLOC_OBJ_MISC: return misc_draw;
   }
   return NULL;
@@ -591,30 +743,38 @@ get_type_fun(hwloc_obj_type_t type)
  */
 
 struct coords {
-  int x;
-  int y;
+  unsigned x;
+  unsigned y;
 };
 
 static void
-getmax_box(void *output, int r, int g, int b, unsigned depth, unsigned x, unsigned width, unsigned y, unsigned height)
+getmax_box(void *output, int r __hwloc_attribute_unused, int g __hwloc_attribute_unused, int b __hwloc_attribute_unused, unsigned depth __hwloc_attribute_unused, unsigned x, unsigned width, unsigned y, unsigned height)
 {
   struct coords *coords = output;
 
+  if (x > coords->x)
+    coords->x = x;
   if (x + width > coords->x)
     coords->x = x + width;
+  if (y > coords->y)
+    coords->y = y;
   if (y + height > coords->y)
     coords->y = y + height;
 }
 
 static void
-getmax_line(void *output, int r, int g, int b, unsigned depth, unsigned x1, unsigned y1, unsigned x2, unsigned y2)
+getmax_line(void *output, int r __hwloc_attribute_unused, int g __hwloc_attribute_unused, int b __hwloc_attribute_unused, unsigned depth __hwloc_attribute_unused, unsigned x1_arg, unsigned y1_arg, unsigned x2_arg, unsigned y2_arg)
 {
   struct coords *coords = output;
 
-  if (x2 > coords->x)
-    coords->x = x2;
-  if (y2 > coords->y)
-    coords->y = y2;
+  if (x1_arg > coords->x)
+    coords->x = x1_arg;
+  if (x2_arg > coords->x)
+    coords->x = x2_arg;
+  if (y1_arg > coords->y)
+    coords->y = y1_arg;
+  if (y2_arg > coords->y)
+    coords->y = y2_arg;
 }
 
 static struct draw_methods getmax_draw_methods = {
@@ -626,10 +786,10 @@ static struct draw_methods getmax_draw_methods = {
 };
 
 void *
-output_draw_start(struct draw_methods *methods, hwloc_topology_t topology, void *output)
+output_draw_start(struct draw_methods *methods, int logical, int legend, hwloc_topology_t topology, void *output)
 {
   struct coords coords = { .x = 0, .y = 0};
-  fig(topology, &getmax_draw_methods, hwloc_get_system_obj(topology), &coords, 100, 0, 0);
+  fig(topology, &getmax_draw_methods, logical, legend, hwloc_get_root_obj(topology), &coords, 100, 0, 0);
   output = methods->start(output, coords.x, coords.y);
   methods->declare_color(output, 0, 0, 0);
   methods->declare_color(output, NODE_R_COLOR, NODE_G_COLOR, NODE_B_COLOR);
@@ -637,6 +797,9 @@ output_draw_start(struct draw_methods *methods, hwloc_topology_t topology, void 
   methods->declare_color(output, MEMORY_R_COLOR, MEMORY_G_COLOR, MEMORY_B_COLOR);
   methods->declare_color(output, CORE_R_COLOR, CORE_G_COLOR, CORE_B_COLOR);
   methods->declare_color(output, THREAD_R_COLOR, THREAD_G_COLOR, THREAD_B_COLOR);
+  methods->declare_color(output, RUNNING_R_COLOR, RUNNING_G_COLOR, RUNNING_B_COLOR);
+  methods->declare_color(output, FORBIDDEN_R_COLOR, FORBIDDEN_G_COLOR, FORBIDDEN_B_COLOR);
+  methods->declare_color(output, OFFLINE_R_COLOR, OFFLINE_G_COLOR, OFFLINE_B_COLOR);
   methods->declare_color(output, CACHE_R_COLOR, CACHE_G_COLOR, CACHE_B_COLOR);
   methods->declare_color(output, MACHINE_R_COLOR, MACHINE_G_COLOR, MACHINE_B_COLOR);
   methods->declare_color(output, SYSTEM_R_COLOR, SYSTEM_G_COLOR, SYSTEM_B_COLOR);
@@ -645,7 +808,7 @@ output_draw_start(struct draw_methods *methods, hwloc_topology_t topology, void 
 }
 
 void
-output_draw(struct draw_methods *methods, hwloc_topology_t topology, void *output)
+output_draw(struct draw_methods *methods, int logical, int legend, hwloc_topology_t topology, void *output)
 {
-	fig(topology, methods, hwloc_get_system_obj(topology), output, 100, 0, 0);
+	fig(topology, methods, logical, legend, hwloc_get_root_obj(topology), output, 100, 0, 0);
 }

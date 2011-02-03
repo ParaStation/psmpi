@@ -32,10 +32,6 @@
 /* stdio is needed for vsprintf and vsnprintf */
 #include <stdio.h>
 
-/* TEMP TO KEEP COMPILER HAPPY */
-void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen, 
-				     MPIR_Err_get_class_string_func_t fn);
-
 /*
  * Structure of this file
  *
@@ -51,7 +47,7 @@ void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen,
  * abort the program.  The comm and win versions are here; ROMIO
  * provides its own routines for invoking the error handlers for Files.
  *
- * The next group of code handles the error messages.  There are three
+ * The next group of code handles the error messages.  There are four
  * options, controlled by the value of MPICH_ERROR_MSG_LEVEL. 
  *
  * MPICH_ERROR_MSG_NONE - No text messages at all
@@ -78,6 +74,8 @@ void MPIR_Err_print_stack_string_ext(int errcode, char *str, int maxlen,
  * their sizes, and masks and shifts that may be used to extract them.
  */
 
+static int did_err_init = FALSE; /* helps us solve a bootstrapping problem */
+
 /* A few prototypes.  These routines are called from the MPIR_Err_return 
    routines.  checkValidErrcode depends on the MPICH_ERROR_MSG_LEVEL */
 
@@ -87,15 +85,15 @@ static void handleFatalError( MPID_Comm *comm_ptr,
 			      const char fcname[], int errcode );
 
 #if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
-static int ErrGetInstanceString( int errorcode, char *msg, int num_remaining, 
-				 MPIR_Err_get_class_string_func_t fn );
+static int ErrGetInstanceString( int errorcode, char *msg, int num_remaining );
 static void MPIR_Err_stack_init( void );
-static int checkForUserErrcode( int errcode );
+static void CombineSpecificCodes( int, int, int );
+static int checkForUserErrcode( int );
 #else
 /* We only need special handling for user error codes when we support the
    error message stack */
 #define checkForUserErrcode(_a) _a
-#endif
+#endif /* ERROR_MSG_LEVEL >= ERROR_MSG_ALL */
 
 
 /* ------------------------------------------------------------------------- */
@@ -112,12 +110,9 @@ static int checkForUserErrcode( int errcode );
 #endif
 
 /* Preallocated errorhandler objects */
-MPID_Errhandler MPID_Errhandler_builtin[3] = {
-        { MPIU_OBJECT_HEADER_INITIALIZER(MPI_ERRORS_ARE_FATAL, 0), },
-        { MPIU_OBJECT_HEADER_INITIALIZER(MPI_ERRORS_RETURN, 0), },
-        { MPIU_OBJECT_HEADER_INITIALIZER(MPIR_ERRORS_THROW_EXCEPTIONS, 0) },
-    };
-MPID_Errhandler MPID_Errhandler_direct[MPID_ERRHANDLER_PREALLOC] = { { MPIU_OBJECT_HEADER_INITIALIZER(0,0) } };
+MPID_Errhandler MPID_Errhandler_builtin[3] = { {0} };
+MPID_Errhandler MPID_Errhandler_direct[MPID_ERRHANDLER_PREALLOC] = 
+    { {0} };
 MPIU_Object_alloc_t MPID_Errhandler_mem = { 0, 0, 0, 0, MPID_ERRHANDLER, 
 					    sizeof(MPID_Errhandler), 
 					    MPID_Errhandler_direct,
@@ -141,69 +136,8 @@ void MPIR_Errhandler_set_cxx( MPI_Errhandler errhand, void (*errcall)(void) )
     MPIR_Process.cxx_call_errfn	= (void (*)( int, int *, int *, 
 					    void (*)(void) ))errcall;
 }
-#endif
+#endif /* HAVE_CXX_BINDING */
 
-/* ------------------------------------------------------------------------- */
-/* 
-   Nesting level for routines.
-   Note that since these use per-thread data, no locks or atomic update
-   routines are required.
-
-   In a single-threaded environment, these are replaced with
-   MPIR_Thread.nest_count ++, --.  These are defined in the mpiimpl.h file.
- */
-/* ------------------------------------------------------------------------- */
-
-/* These routines export the nest increment and decrement for use in ROMIO */
-void MPIR_Nest_incr_export( void )
-{
-    MPIU_THREADPRIV_DECL;
-    MPIU_THREADPRIV_GET;
-    MPIU_THREADPRIV_FIELD(nest_count) = MPIU_THREADPRIV_FIELD(nest_count) + 1;
-}
-void MPIR_Nest_decr_export( void )
-{
-    MPIU_THREADPRIV_DECL;
-    MPIU_THREADPRIV_GET;
-    MPIU_THREADPRIV_FIELD(nest_count) = MPIU_THREADPRIV_FIELD(nest_count) - 1;
-}
-#ifdef MPICH_DEBUG_NESTING
-void MPIR_Nest_incr_export_dbg( const char *srcfile, int srcline )
-{
-    MPIU_THREADPRIV_DECL;
-    MPIU_THREADPRIV_GET;
-
-    if (MPIU_THREADPRIV_FIELD(nest_count) >= MPICH_MAX_NESTINFO) { 
-	MPIU_Internal_error_printf("nest stack exceeded at %s:%d\n",
-				   srcfile, srcline );
-    }
-    else {
-	MPIU_Strncpy(MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].file,srcfile, MPICH_MAX_NESTFILENAME);
-	MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].line=srcline;
-    }
-     MPIU_THREADPRIV_FIELD(nest_count)++; 
-}
-void MPIR_Nest_decr_export_dbg( const char *srcfile, int srcline )
-{
-    MPIU_THREADPRIV_DECL;
-    MPIU_THREADPRIV_GET;
-
-    if (MPIU_THREADPRIV_FIELD(nest_count) >= 0) {
-	MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].line=-srcline;}
-     MPIU_THREADPRIV_FIELD(nest_count)--;
-     if (MPIU_THREADPRIV_FIELD(nest_count) < MPICH_MAX_NESTINFO && 
-	 strcmp(MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].file,srcfile) != 0) {
-         MPIU_Msg_printf( "Decremented nest count in file %s:%d but incremented in different file (%s:%d)\n", 
-                          srcfile, srcline,
-                          MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].file, \
-                          MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].line);\
-     }
-     else if (MPIU_THREADPRIV_FIELD(nest_count) < 0) {
-	 MPIU_Msg_printf("Decremented nest count in file %s:%d is negative\n", 
-			 srcfile,srcline);
-     }
-}
-#endif
 /* ------------------------------------------------------------------------- */
 /* These routines are called on error exit from most top-level MPI routines
    to invoke the appropriate error handler.  Also included is the routine
@@ -241,49 +175,65 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 			  int errcode )
 {
     const int error_class = ERROR_GET_CLASS(errcode);
+    MPID_Errhandler *errhandler = NULL;
     int rc;
-    MPIU_THREADPRIV_DECL;
-
-    MPIU_THREADPRIV_GET; 
 
     rc = checkValidErrcode( error_class, fcname, &errcode );
-    
-    /* First, check the nesting level */
-    if (MPIR_Nest_value()) return errcode;
+
+    if (MPIR_Process.initialized == MPICH_PRE_INIT ||
+        MPIR_Process.initialized == MPICH_POST_FINALIZED)
+    {
+        /* for whatever reason, we aren't initialized (perhaps error 
+	   during MPI_Init) */
+        handleFatalError(MPIR_Process.comm_world, fcname, errcode);
+        return MPI_ERR_INTERN;
+    }
 
     MPIU_DBG_MSG_FMT(ERRHAND, TERSE, (MPIU_DBG_FDEST, "MPIR_Err_return_comm(comm_ptr=%p, fcname=%s, errcode=%d)", comm_ptr, fcname, errcode));
 
-    if (!comm_ptr || comm_ptr->errhandler == NULL) {
-	/* Try to replace with the default handler, which is the one on 
-	   MPI_COMM_WORLD.  This gives us correct behavior for the
-	   case where the error handler on MPI_COMM_WORLD has been changed. */
-	if (MPIR_Process.comm_world)
-	{
-	    comm_ptr = MPIR_Process.comm_world;
-	}
+    if (comm_ptr) {
+        MPIU_THREAD_CS_ENTER(MPI_OBJ, comm_ptr);
+        errhandler = comm_ptr->errhandler;
+        MPIU_THREAD_CS_EXIT(MPI_OBJ, comm_ptr);
     }
 
-    if (MPIR_Err_is_fatal(errcode) ||
-	comm_ptr == NULL || comm_ptr->errhandler == NULL || 
-	comm_ptr->errhandler->handle == MPI_ERRORS_ARE_FATAL) {
+    if (errhandler == NULL) {
+        /* Try to replace with the default handler, which is the one on 
+           MPI_COMM_WORLD.  This gives us correct behavior for the
+           case where the error handler on MPI_COMM_WORLD has been changed. */
+        if (MPIR_Process.comm_world)
+        {
+            comm_ptr = MPIR_Process.comm_world;
+        }
+    }
+
+    if (MPIR_Err_is_fatal(errcode) || comm_ptr == NULL) {
 	/* Calls MPID_Abort */
 	handleFatalError( comm_ptr, fcname, errcode );
+        /* never get here */
+    }
+
+    MPIU_Assert(comm_ptr != NULL);
+
+    /* comm_ptr may have changed to comm_world.  Keep this locked as long as we
+     * are using the errhandler to prevent it from disappearing out from under
+     * us. */
+    MPIU_THREAD_CS_ENTER(MPI_OBJ, comm_ptr);
+    errhandler = comm_ptr->errhandler;
+
+    if (errhandler == NULL || errhandler->handle == MPI_ERRORS_ARE_FATAL) {
+        MPIU_THREAD_CS_EXIT(MPI_OBJ, comm_ptr);
+	/* Calls MPID_Abort */
+	handleFatalError( comm_ptr, fcname, errcode );
+        /* never get here */
     }
 
     /* Check for the special case of a user-provided error code */
     errcode = checkForUserErrcode( errcode );
 
-    if (comm_ptr->errhandler->handle == MPI_ERRORS_RETURN ||
-	comm_ptr->errhandler->handle == MPIR_ERRORS_THROW_EXCEPTIONS)
+    if (errhandler->handle != MPI_ERRORS_RETURN &&
+        errhandler->handle != MPIR_ERRORS_THROW_EXCEPTIONS)
     {
-	return errcode;
-    }
-    else
-    {
-	/* The user error handler may make calls to MPI routines, so the
-	 * nesting counter must be incremented before the handler is called */
-	MPIR_Nest_incr();
-    
 	/* We pass a final 0 (for a null pointer) to these routines
 	   because MPICH-1 expected that */
 	switch (comm_ptr->errhandler->language)
@@ -301,18 +251,20 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 	     of an error code. */
 	    errcode = MPI_SUCCESS;
 	    break;
-#endif
+#endif /* CXX_BINDING */
 #ifdef HAVE_FORTRAN_BINDING
 	case MPID_LANG_FORTRAN90:
 	case MPID_LANG_FORTRAN:
+	    /* FIXME: If an MPI_Fint isn't an int, this code is wrong */
 	    (*comm_ptr->errhandler->errfn.F77_Handler_function)( 
 		(MPI_Fint *)&comm_ptr->handle, &errcode );
 	    break;
-#endif
+#endif /* FORTRAN_BINDING */
 	}
 
-	MPIR_Nest_decr();
     }
+
+    MPIU_THREAD_CS_EXIT(MPI_OBJ, comm_ptr);
     return errcode;
 }
 
@@ -323,17 +275,14 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
 {
     const int error_class = ERROR_GET_CLASS(errcode);
     int rc ;
-    MPIU_THREADPRIV_DECL;
-
-    MPIU_THREADPRIV_GET;
 
     if (win_ptr == NULL || win_ptr->errhandler == NULL)
 	return MPIR_Err_return_comm(NULL, fcname, errcode);
 
-    rc = checkValidErrcode( error_class, fcname, &errcode );
+    /* We don't test for MPI initialized because to call this routine,
+       we will have had to call an MPI routine that would make that test */
 
-    /* First, check the nesting level */
-    if (MPIR_Nest_value()) return errcode;
+    rc = checkValidErrcode( error_class, fcname, &errcode );
 
     MPIU_DBG_MSG_FMT(ERRHAND, TERSE, (MPIU_DBG_FDEST, "MPIR_Err_return_win(win_ptr=%p, fcname=%s, errcode=%d)", win_ptr, fcname, errcode));
 
@@ -356,10 +305,6 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
     {
 	/* Now, invoke the error handler for the window */
 
-	/* The user error handler may make calls to MPI routines, so the
-	 * nesting counter must be incremented before the handler is called */
-	MPIR_Nest_incr();
-    
 	/* We pass a final 0 (for a null pointer) to these routines
 	   because MPICH-1 expected that */
 	switch (win_ptr->errhandler->language)
@@ -377,37 +322,39 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
 	     of an error code. */
 	    errcode = MPI_SUCCESS;
 	    break;
-#endif
+#endif /* CXX_BINDING */
 #ifdef HAVE_FORTRAN_BINDING
 	    case MPID_LANG_FORTRAN90:
 	    case MPID_LANG_FORTRAN:
 		(*win_ptr->errhandler->errfn.F77_Handler_function)( 
 		    (MPI_Fint *)&win_ptr->handle, &errcode );
 		break;
-#endif
+#endif /* FORTRAN_BINDING */
 	}
 
-	MPIR_Nest_decr();
     }
     return errcode;
 }
 
-
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-static int convertErrcodeToIndexes( int errcode, int *ring_idx, int *ring_id,
-				    int *generic_idx );
-static int checkErrcodeIsValid( int errcode );
-static const char *ErrcodeInvalidReasonStr( int reason );
-static const char *get_class_msg( int error_class );
-
-
 void MPIR_Err_init( void )
 {
+    /* these are "stub" objects, so the other fields (which are statically
+     * initialized to zero) don't really matter */
+    MPID_Errhandler_builtin[0].handle = MPI_ERRORS_ARE_FATAL;
+    MPID_Errhandler_builtin[1].handle = MPI_ERRORS_RETURN;
+    MPID_Errhandler_builtin[2].handle = MPIR_ERRORS_THROW_EXCEPTIONS;
+
 #   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
     MPIR_Err_stack_init();
 #   endif
+    did_err_init = TRUE;
 }
+
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+static int checkErrcodeIsValid( int errcode );
+static const char *ErrcodeInvalidReasonStr( int reason );
+static const char *get_class_msg( int error_class );
 
 
 /* ------------------------------------------------------------------------- */
@@ -482,7 +429,7 @@ static const char *ErrcodeInvalidReasonStr( int reason )
     }
     return str;
 }
-#endif
+#endif /* MPICH_ERROR_MSG_LEVEL <= MPICH_ERROR_MSG_GENERIC */
 
 /* This routine is called when there is a fatal error */
 static void handleFatalError( MPID_Comm *comm_ptr, 
@@ -547,39 +494,10 @@ static int FindGenericMsgIndex( const char *msg )
    }
    return -1;
 */
-#endif
+#endif /* MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_GENERIC */
 
 #if MPICH_ERROR_MSG_LEVEL == MPICH_ERROR_MSG_ALL
-/* 
- * Given a message string abbreviation (e.g., one that starts "**"), return 
- * the corresponding index.  For the specific
- * (parameterized messages), use idx = FindSpecificMsgIndex( "**msg" );
- */
-static int FindSpecificMsgIndex( const char *msg )
-{
-    int i, c;
-    for (i=0; i<specific_msgs_len; i++) {
-	/* Check the sentinals to insure that the values are ok first */
-	if (specific_err_msgs[i].sentinal1 != 0xacebad03 ||
-	    specific_err_msgs[i].sentinal2 != 0xcb0bfa11) {
-	    /* Something bad has happened! Don't risk trying the
-	       short_name pointer; it may have been corrupted */
-	    break;
-	}
-	c = strcmp( specific_err_msgs[i].short_name, msg );
-	if (c == 0) return i;
-	if (c > 0)
-	{
-	    /* don't return here if the string partially matches */
-	    if (strncmp(specific_err_msgs[i].short_name, msg, strlen(msg)) != 0)
-		return -1;
-	}
-    }
-    return -1;
-}
-/* See FindGenericMsgIndex comments for a more efficient search routine that
-   could be used here as well. */
-#endif
+#endif /* MPICH_ERROR_MSG_LEVEL == MPICH_ERROR_MSG_ALL */
 
 
 /* ------------------------------------------------------------------------ */
@@ -602,14 +520,20 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[],
     int rc;
     va_list Argp;
     va_start(Argp, specific_msg);
+    MPIU_DBG_MSG_FMT(ERRHAND, TYPICAL, (MPIU_DBG_FDEST, "%sError created: %s(%d) %s", fatal ? "Fatal " : "",
+                                        fcname, line, generic_msg));
     rc = MPIR_Err_create_code_valist( lastcode, fatal, fcname, line,
 				      error_class, generic_msg, specific_msg,
 				      Argp );
     va_end(Argp);
     return rc;
 }
+
 #if MPICH_ERROR_MSG_LEVEL < MPICH_ERROR_MSG_ALL
-/* In this case, the routine ignores all but (possibly) the generic message */
+/* In this case, the routine ignores all but (possibly) the generic message.
+   It also returns lastcode *unless* lastcode is MPI_SUCCESS.  Thus, the 
+   error returned is the error specified at the point of detection.
+ */
 int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[], 
 				 int line, int error_class, 
 				 const char generic_msg[],
@@ -617,18 +541,52 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 {
 #if MPICH_ERROR_MSG_LEVEL == MPICH_ERROR_MSG_GENERIC
     int generic_idx;
-    int errcode;
-    generic_idx = FindGenericMsgIndex(generic_msg);
-    if (generic_idx >= 0) {
-	errcode = (generic_idx << ERROR_GENERIC_SHIFT) | error_class;
-	if (fatal)
-	    errcode |= ERROR_FATAL_MASK;
+    int errcode = lastcode;
+    if (lastcode == MPI_SUCCESS) {
+	generic_idx = FindGenericMsgIndex(generic_msg);
+	if (generic_idx >= 0) {
+	    errcode = (generic_idx << ERROR_GENERIC_SHIFT) | error_class;
+	    if (fatal)
+		errcode |= ERROR_FATAL_MASK;
+	}
     }
     return errcode;
 #else
-    return error_class;
-#endif    
+    int errcode = lastcode;
+    if (lastcode == MPI_SUCCESS) errcode = error_class;
+    return errcode;
+#endif /* MSG_LEVEL == GENERIC */
 }
+/* FIXME: Factor the error routines so that there is a single version of each */
+int MPIR_Err_combine_codes(int error1, int error2)
+{
+    int error1_code = error1;
+    int error2_code = error2;
+    int error2_class;
+    
+    if (error2_code == MPI_SUCCESS) return error1_code;
+    /* Return the error2 code if either it is a user-defined error or
+       error 1 is no-error */
+    if (error2_code & ERROR_DYN_MASK) return error2_code;
+    if (error1_code == MPI_SUCCESS) return error2_code;
+	    
+    error2_class = MPIR_ERR_GET_CLASS(error2_code);
+    if (MPIR_ERR_GET_CLASS(error2_class) < MPI_SUCCESS ||
+	MPIR_ERR_GET_CLASS(error2_class) > MPICH_ERR_LAST_CLASS)
+    {
+	error2_class = MPI_ERR_OTHER;
+    }
+
+    /* If the class of error1 is OTHER, replace it with the class of
+       error2 */
+    if (MPIR_ERR_GET_CLASS(error1_code) == MPI_ERR_OTHER)
+    {
+	error1_code = (error1_code & ~(ERROR_CLASS_MASK)) | error2_class;
+    }
+
+    return error1_code;
+}
+
 #endif /* msg_level < msg_all */
 
 /*
@@ -641,7 +599,11 @@ static const char *get_class_msg( int error_class )
 {
 #if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE
     if (error_class >= 0 && error_class < MPIR_MAX_ERROR_CLASS_INDEX) {
+#if MPICH_ERROR_MSG_LEVEL == MPICH_ERROR_MSG_CLASS
+	return classToMsg[error_class];
+#else
 	return generic_err_msgs[class_to_index[error_class]].long_name;
+#endif
     }
     else {
 	return "Unknown error class";
@@ -649,13 +611,13 @@ static const char *get_class_msg( int error_class )
 #else 
     /* FIXME: Not internationalized */
     return "Error message texts are not available";
-#endif
+#endif /* MSG_LEVEL > MSG_NONE */
 }
 
 /* FIXME: This routine isn't quite right yet */
 /*
  * Notes:
- * One complication is that in the instance-specific case, a 
+ * One complication is that in the instance-specific case, a ??
  */
 void MPIR_Err_get_string( int errorcode, char * msg, int length, 
 			  MPIR_Err_get_class_string_func_t fn )
@@ -703,6 +665,7 @@ void MPIR_Err_get_string( int errorcode, char * msg, int length,
     else if ( (errorcode & ERROR_CLASS_MASK) == errorcode) {
 	error_class = MPIR_ERR_GET_CLASS(errorcode);
 
+	/* FIXME: Why was the last test commented out? */
 	if (fn != NULL && error_class > MPICH_ERR_LAST_CLASS /*&& error_class < MPICH_ERR_MAX_EXT_CLASS*/)
 	{
 	    fn(errorcode, msg, length);
@@ -720,6 +683,7 @@ void MPIR_Err_get_string( int errorcode, char * msg, int length,
 	/* print the class message first */
 	error_class = MPIR_ERR_GET_CLASS(errorcode);
 
+	/* FIXME: Why was the last test commented out? */
 	if (fn != NULL && error_class > MPICH_ERR_LAST_CLASS /*&& error_class < MPICH_ERR_MAX_EXT_CLASS*/)
 	{
 	    fn(errorcode, msg, num_remaining);
@@ -736,9 +700,9 @@ void MPIR_Err_get_string( int errorcode, char * msg, int length,
 	/* then print the stack or the last specific error message */
 
 #       if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
-	if (ErrGetInstanceString( errorcode, msg, num_remaining, fn )) 
+	if (ErrGetInstanceString( errorcode, msg, num_remaining )) 
 	    goto fn_exit;
-#elif MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_NONE
+#elif MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_CLASS
 	{
 	    int generic_idx;
 	    
@@ -750,515 +714,23 @@ void MPIR_Err_get_string( int errorcode, char * msg, int length,
 		goto fn_exit;
 	    }
 	}
-#           endif
+#           endif /* MSG_LEVEL >= MSG_ALL */
     }
     
 fn_exit:
     return;
 }
 
-
-/* ------------------------------------------------------------------------- */
-/* Routines to convert instance-specific messages into a string              */
-/* This is the only case that supports instance-specific messages            */
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------ */
-/* This block of code is used to convert various MPI values into descriptive*/
-/* strings.  The routines are                                               */
-/*     GetAssertString - handle MPI_MODE_xxx (RMA asserts)                  */
-/*     GetDTypeString  - handle MPI_Datatypes                               */
-/*     GetMPIOpString  - handle MPI_Op                                      */
-/* These routines are used in vsnprintf_mpi                                 */
-/* FIXME: These functions are not thread safe                               */
-/* ------------------------------------------------------------------------ */
-#define ASSERT_STR_MAXLEN 256
-
-static const char * GetAssertString(int d)
-{
-    static char str[ASSERT_STR_MAXLEN] = "";
-    char *cur;
-    size_t len = ASSERT_STR_MAXLEN;
-    size_t n;
-
-    if (d == 0)
-    {
-	MPIU_Strncpy(str, "assert=0", ASSERT_STR_MAXLEN);
-	return str;
-    }
-    cur = str;
-    if (d & MPI_MODE_NOSTORE)
-    {
-	MPIU_Strncpy(cur, "MPI_MODE_NOSTORE", len);
-	n = strlen(cur);
-	cur += n;
-	len -= n;
-	d ^= MPI_MODE_NOSTORE;
-    }
-    if (d & MPI_MODE_NOCHECK)
-    {
-	if (len < ASSERT_STR_MAXLEN)
-	    MPIU_Strncpy(cur, " | MPI_MODE_NOCHECK", len);
-	else
-	    MPIU_Strncpy(cur, "MPI_MODE_NOCHECK", len);
-	n = strlen(cur);
-	cur += n;
-	len -= n;
-	d ^= MPI_MODE_NOCHECK;
-    }
-    if (d & MPI_MODE_NOPUT)
-    {
-	if (len < ASSERT_STR_MAXLEN)
-	    MPIU_Strncpy(cur, " | MPI_MODE_NOPUT", len);
-	else
-	    MPIU_Strncpy(cur, "MPI_MODE_NOPUT", len);
-	n = strlen(cur);
-	cur += n;
-	len -= n;
-	d ^= MPI_MODE_NOPUT;
-    }
-    if (d & MPI_MODE_NOPRECEDE)
-    {
-	if (len < ASSERT_STR_MAXLEN)
-	    MPIU_Strncpy(cur, " | MPI_MODE_NOPRECEDE", len);
-	else
-	    MPIU_Strncpy(cur, "MPI_MODE_NOPRECEDE", len);
-	n = strlen(cur);
-	cur += n;
-	len -= n;
-	d ^= MPI_MODE_NOPRECEDE;
-    }
-    if (d & MPI_MODE_NOSUCCEED)
-    {
-	if (len < ASSERT_STR_MAXLEN)
-	    MPIU_Strncpy(cur, " | MPI_MODE_NOSUCCEED", len);
-	else
-	    MPIU_Strncpy(cur, "MPI_MODE_NOSUCCEED", len);
-	n = strlen(cur);
-	cur += n;
-	len -= n;
-	d ^= MPI_MODE_NOSUCCEED;
-    }
-    if (d)
-    {
-	if (len < ASSERT_STR_MAXLEN)
-	    MPIU_Snprintf(cur, len, " | 0x%x", d);
-	else
-	    MPIU_Snprintf(cur, len, "assert=0x%x", d);
-    }
-    return str;
-}
-
-static const char * GetDTypeString(MPI_Datatype d)
-{
-    static char default_str[64];
-    int num_integers, num_addresses, num_datatypes, combiner = 0;
-    char *str;
-
-    if (HANDLE_GET_MPI_KIND(d) != MPID_DATATYPE ||      \
-	(HANDLE_GET_KIND(d) == HANDLE_KIND_INVALID &&   \
-	d != MPI_DATATYPE_NULL))
-        return "INVALID DATATYPE";
-    
-
-    if (d == MPI_DATATYPE_NULL)
-	return "MPI_DATATYPE_NULL";
-
-    if (d == 0)
-    {
-	MPIU_Strncpy(default_str, "dtype=0x0", 64);
-	return default_str;
-    }
-
-    MPID_Type_get_envelope(d, &num_integers, &num_addresses, &num_datatypes, 
-			   &combiner);
-    if (combiner == MPI_COMBINER_NAMED)
-    {
-	str = MPIDU_Datatype_builtin_to_string(d);
-	if (str == NULL)
-	{
-	    MPIU_Snprintf(default_str, 64, "dtype=0x%08x", d);
-	    return default_str;
-	}
-	return str;
-    }
-    
-    /* default is not thread safe */
-    str = MPIDU_Datatype_combiner_to_string(combiner);
-    if (str == NULL)
-    {
-	MPIU_Snprintf(default_str, 64, "dtype=USER<0x%08x>", d);
-	return default_str;
-    }
-    MPIU_Snprintf(default_str, 64, "dtype=USER<%s>", str);
-    return default_str;
-}
-
-static const char * GetMPIOpString(MPI_Op o)
-{
-    static char default_str[64];
-
-    switch (o)
-    {
-    case MPI_OP_NULL:
-	return "MPI_OP_NULL";
-    case MPI_MAX:
-	return "MPI_MAX";
-    case MPI_MIN:
-	return "MPI_MIN";
-    case MPI_SUM:
-	return "MPI_SUM";
-    case MPI_PROD:
-	return "MPI_PROD";
-    case MPI_LAND:
-	return "MPI_LAND";
-    case MPI_BAND:
-	return "MPI_BAND";
-    case MPI_LOR:
-	return "MPI_LOR";
-    case MPI_BOR:
-	return "MPI_BOR";
-    case MPI_LXOR:
-	return "MPI_LXOR";
-    case MPI_BXOR:
-	return "MPI_BXOR";
-    case MPI_MINLOC:
-	return "MPI_MINLOC";
-    case MPI_MAXLOC:
-	return "MPI_MAXLOC";
-    case MPI_REPLACE:
-	return "MPI_REPLACE";
-    }
-    /* FIXME: default is not thread safe */
-    MPIU_Snprintf(default_str, 64, "op=0x%x", o);
-    return default_str;
-}
-
-/* ------------------------------------------------------------------------ */
-/* This routine takes an instance-specific string with format specifiers    */
-/* This routine makes use of the above routines, along with some inlined    */
-/* code, to process the format specifiers for the MPI objects               */
-/* The current set of format specifiers is undocumented except for their
-   use in this routine.  In addition, these choices do not permit the 
-   use of GNU extensions to check the validity of these arguments.  
-   At some point, a documented set that can exploit those GNU extensions
-   will replace these. */
-/* ------------------------------------------------------------------------ */
-
-static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, 
-			 va_list list)
-{
-    char *begin, *end, *fmt;
-    size_t len;
-    MPI_Comm C;
-    MPI_Info I;
-    MPI_Datatype D;
-    MPI_Win W;
-    MPI_Group G;
-    MPI_Op O;
-    MPI_Request R;
-    MPI_Errhandler E;
-    char *s;
-    int t, i, d, mpi_errno=MPI_SUCCESS;
-    long long ll;
-    void *p;
-
-    fmt = MPIU_Strdup(fmt_orig);
-    if (fmt == NULL)
-    {
-	if (maxlen > 0 && str != NULL)
-	    *str = '\0';
-	return 0;
-    }
-
-    begin = fmt;
-    end = strchr(fmt, '%');
-    while (end)
-    {
-	len = maxlen;
-	if (len > (size_t)(end - begin)) {
-	    len = (size_t)(end - begin);
-	}
-	if (len)
-	{
-	    MPIU_Memcpy(str, begin, len);
-	    str += len;
-	    maxlen -= len;
-	}
-	end++;
-	begin = end+1;
-	switch ((int)(*end))
-	{
-	case (int)'s':
-	    s = va_arg(list, char *);
-	    if (s) 
-	        MPIU_Strncpy(str, s, maxlen);
-            else {
-		MPIU_Strncpy(str, "<NULL>", maxlen );
-	    }
-	    break;
-	case (int)'d':
-	    d = va_arg(list, int);
-	    MPIU_Snprintf(str, maxlen, "%d", d);
-	    break;
-	case (int)'L':
-	    ll = va_arg(list, long long);
-	    MPIU_Snprintf(str, maxlen, "%lld", ll);
-	    break;
-        case (int)'x':
-            d = va_arg(list, int);
-            MPIU_Snprintf(str, maxlen, "%x", d);
-            break;
-        case (int)'X':
-            ll = va_arg(list, long long);
-            MPIU_Snprintf(str, maxlen, "%llx", ll);
-            break;
-	case (int)'i':
-	    i = va_arg(list, int);
-	    switch (i)
-	    {
-	    case MPI_ANY_SOURCE:
-		MPIU_Strncpy(str, "MPI_ANY_SOURCE", maxlen);
-		break;
-	    case MPI_PROC_NULL:
-		MPIU_Strncpy(str, "MPI_PROC_NULL", maxlen);
-		break;
-	    case MPI_ROOT:
-		MPIU_Strncpy(str, "MPI_ROOT", maxlen);
-		break;
-	    default:
-		MPIU_Snprintf(str, maxlen, "%d", i);
-		break;
-	    }
-	    break;
-	case (int)'t':
-	    t = va_arg(list, int);
-	    switch (t)
-	    {
-	    case MPI_ANY_TAG:
-		MPIU_Strncpy(str, "MPI_ANY_TAG", maxlen);
-		break;
-	    case MPI_UNDEFINED:
-		MPIU_Strncpy(str, "MPI_UNDEFINED", maxlen);
-		break;
-	    default:
-		MPIU_Snprintf(str, maxlen, "%d", t);
-		break;
-	    }
-	    break;
-	case (int)'p':
-	    p = va_arg(list, void *);
-	    /* FIXME: A check for MPI_IN_PLACE should only be used 
-	       where that is valid */
-	    if (p == MPI_IN_PLACE)
-	    {
-		MPIU_Strncpy(str, "MPI_IN_PLACE", maxlen);
-	    }
-	    else
-	    {
-		/* FIXME: We may want to use 0x%p for systems that 
-		   (including Windows) that don't prefix %p with 0x. 
-		   This must be done with a capability, not a test on
-		   particular OS or header files */
-		MPIU_Snprintf(str, maxlen, "%p", p);
-	    }
-	    break;
-	case (int)'C':
-	    C = va_arg(list, MPI_Comm);
-	    switch (C)
-	    {
-	    case MPI_COMM_WORLD:
-		MPIU_Strncpy(str, "MPI_COMM_WORLD", maxlen);
-		break;
-	    case MPI_COMM_SELF:
-		MPIU_Strncpy(str, "MPI_COMM_SELF", maxlen);
-		break;
-	    case MPI_COMM_NULL:
-		MPIU_Strncpy(str, "MPI_COMM_NULL", maxlen);
-		break;
-	    default:
-		MPIU_Snprintf(str, maxlen, "comm=0x%x", C);
-		break;
-	    }
-	    break;
-	case (int)'I':
-	    I = va_arg(list, MPI_Info);
-	    if (I == MPI_INFO_NULL)
-	    {
-		MPIU_Strncpy(str, "MPI_INFO_NULL", maxlen);
-	    }
-	    else
-	    {
-		MPIU_Snprintf(str, maxlen, "info=0x%x", I);
-	    }
-	    break;
-	case (int)'D':
-	    D = va_arg(list, MPI_Datatype);
-	    MPIU_Snprintf(str, maxlen, "%s", GetDTypeString(D));
-	    break;
-	    /* Include support for %F only if MPI-IO is enabled */
-#ifdef MPI_MODE_RDWR
-	case (int)'F':
-	    {
-	    MPI_File F;
-	    F = va_arg(list, MPI_File);
-	    if (F == MPI_FILE_NULL)
-	    {
-		MPIU_Strncpy(str, "MPI_FILE_NULL", maxlen);
-	    }
-	    else
-	    {
-		MPIU_Snprintf(str, maxlen, "file=0x%lx", (unsigned long)F);
-	    }
-	    }
-	    break;
-#endif
-	case (int)'W':
-	    W = va_arg(list, MPI_Win);
-	    if (W == MPI_WIN_NULL)
-	    {
-		MPIU_Strncpy(str, "MPI_WIN_NULL", maxlen);
-	    }
-	    else
-	    {
-		MPIU_Snprintf(str, maxlen, "win=0x%x", W);
-	    }
-	    break;
-	case (int)'A':
-	    d = va_arg(list, int);
-	    MPIU_Snprintf(str, maxlen, "%s", GetAssertString(d));
-	    break;
-	case (int)'G':
-	    G = va_arg(list, MPI_Group);
-	    if (G == MPI_GROUP_NULL)
-	    {
-		MPIU_Strncpy(str, "MPI_GROUP_NULL", maxlen);
-	    }
-	    else
-	    {
-		MPIU_Snprintf(str, maxlen, "group=0x%x", G);
-	    }
-	    break;
-	case (int)'O':
-	    O = va_arg(list, MPI_Op);
-	    MPIU_Snprintf(str, maxlen, "%s", GetMPIOpString(O));
-	    break;
-	case (int)'R':
-	    R = va_arg(list, MPI_Request);
-	    if (R == MPI_REQUEST_NULL)
-	    {
-		MPIU_Strncpy(str, "MPI_REQUEST_NULL", maxlen);
-	    }
-	    else
-	    {
-		MPIU_Snprintf(str, maxlen, "req=0x%x", R);
-	    }
-	    break;
-	case (int)'E':
-	    E = va_arg(list, MPI_Errhandler);
-	    if (E == MPI_ERRHANDLER_NULL)
-	    {
-		MPIU_Strncpy(str, "MPI_ERRHANDLER_NULL", maxlen);
-	    }
-	    else
-	    {
-		MPIU_Snprintf(str, maxlen, "errh=0x%x", E);
-	    }
-	    break;
-	default:
-	    /* Error: unhandled output type */
-	    return 0;
-	    /*
-	    if (maxlen > 0 && str != NULL)
-		*str = '\0';
-	    break;
-	    */
-	}
-	len = strlen(str);
-	maxlen -= len;
-	str += len;
-	end = strchr(begin, '%');
-    }
-    if (*begin != '\0')
-    {
-	MPIU_Strncpy(str, begin, maxlen);
-    }
-    /* Free the dup'ed format string */
-    MPIU_Free( fmt );
-
-    return mpi_errno;
-}
-
-/* ------------------------------------------------------------------------- */
-/* ------------------------------------------------------------------------- */
-/*
- * Instance-specific error messages are stored in a ring.  The elements of this
- * ring are MPIR_Err_msg_t structures, which contain the following fields:
- *    id - this is used to check that the entry is valid; it is computed from
- *         the error code and location in the ring.  The routine
- *           ErrcodeToId( errcode, &id ) is used to extract the id from an 
- *         error code and
- *           ErrcodeCreateID( class, generic, msg, &id, &seq ) is used to 
- *         create the id from an error class, generic index, and message 
- *         string.  The "seq" field is inserted into the error code as a 
- *         check.
- *
- *    prev_error - The full MPI error code of the previous error attached 
- *         to this list of errors, or MPI_SUCCESSS (which has value 0).
- *         This is the last error code, not the index in the ring of the last 
- *         error code.  That's the right choice, because we want to ensure 
- *         that the value is valid if the ring overflows.  In addition,
- *         we allow this to be an error CLASS (one of the predefined MPI
- *         error classes).  This is particularly important for 
- *         MPI_ERR_IN_STATUS, which may be returned as a valid error code.
- *         (classes are valid error codes).
- *         
- *    use_user_error_code and user_error_code - Used to handle a few cases 
- *         in MPI where a user-provided routine returns an error code; 
- *         this allows us to provide information about the chain of 
- *         routines that were involved, while returning the users prefered
- *         error value to the users environment.  See the note below
- *         on user error codes.
- *
- *    location - A string that indicates what function and line number
- *         where the error code was set.
- *
- *    msg - A message about the error.  This may be instance-specific (e.g.,
- *         it may have been created at the time the error was detected with
- *         information about the parameters that caused the error).
- *
- * Note that both location and msg are defined as length MAX_xxx+1.  This 
- * isn't really necessary (at least for msg), since the MPI standard 
- * requires that MAX_MPI_ERROR_STRING include the space for the trailing null,
- * but using the extra byte makes the code a little simpler.
- *
- * The "id" value is used to keep a sort of "checkvalue" to ensure that the
- * error code that points at this message is in fact for this particular 
- * message.  This is used to handle the unlikely but possible situation where 
- * so many error messages are generated that the ring is overlapped.
- *
- * The message arrays are preallocated to ensure that there is space for these
- * messages when an error occurs.  One variation would be to allow these
- * to be dynamically allocated, but it is probably better to either preallocate
- * these or turn off all error message generation (which will eliminate these
- * arrays).
- *
- * One possible alternative is to use the message ring *only* for instance
- * messages and use the predefined messages in-place for the generic
- * messages.  The approach used here provides uniform handling of all 
- * error messages.
- *
- * Note on user error codes
- *
- * The "user error codes" is used to handle an ambiguity in the MPI-1 
- * standard about the return value from the attribute callbacks.  The 
- * standard does not specify what values, other than 'MPI_SUCCESS', are
- * valid.  Because the Intel MPI-1 test suite expected 'MPI_Comm_dup' to
- * return the same non-zero value returned by the attribute callback routine,
- * this is the behavior that many (if not all) MPI implementations provide.
- * As a result, the return from those routines is 
- * 
+/* 
+ * If the error message level is all, MPICH2 supports instance-specific
+ * error messages.  Details above
  */
 #if MPICH_ERROR_MSG_LEVEL == MPICH_ERROR_MSG_ALL
+
+static int convertErrcodeToIndexes( int errcode, int *ring_idx, int *ring_id,
+				    int *generic_idx );
+
+
 
 /* FIXME: Where is the documentation for this function?  What is it for?  */
 static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen);
@@ -1269,7 +741,7 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen);
 /* The maximum error string in this case may be a multi-line message,
    constructed from multiple entries in the error message ring.  The 
    individual ring messages should be shorter than MPI_MAX_ERROR_STRING,
-   perhaps as small a 256. We define a separate value for the error lines. 
+   perhaps as small as 256. We define a separate value for the error lines. 
  */
 #define MPIR_MAX_ERROR_LINE 256
 
@@ -1308,20 +780,28 @@ static MPID_Thread_mutex_t error_ring_mutex;
 static MPID_Thread_mutex_t error_ring_mutex;
 #define error_ring_mutex_create(_mpi_errno_p) MPID_Thread_mutex_create(&error_ring_mutex,_mpi_errno_p)
 #define error_ring_mutex_destroy(_mpi_errno_p) MPID_Thread_mutex_destroy(&error_ring_mutex,_mpi_errno_p)
-#define error_ring_mutex_lock() \
-    MPIU_THREAD_CHECK_BEGIN \
-     MPID_Thread_mutex_lock(&error_ring_mutex) \
-    MPIU_THREAD_CHECK_END
-#define error_ring_mutex_unlock() \
-    MPIU_THREAD_CHECK_BEGIN \
-     MPID_Thread_mutex_unlock(&error_ring_mutex) \
-    MPIU_THREAD_CHECK_END
+#define error_ring_mutex_lock()                          \
+    do {                                                 \
+        if (did_err_init) {                              \
+            MPIU_THREAD_CHECK_BEGIN                      \
+            MPID_Thread_mutex_lock(&error_ring_mutex);   \
+            MPIU_THREAD_CHECK_END                        \
+        }                                                \
+    } while (0)
+#define error_ring_mutex_unlock()                        \
+    do {                                                 \
+        if (did_err_init) {                              \
+            MPIU_THREAD_CHECK_BEGIN                      \
+            MPID_Thread_mutex_unlock(&error_ring_mutex); \
+            MPIU_THREAD_CHECK_END                        \
+        }                                                \
+    } while (0)
 #else
 #define error_ring_mutex_create(_a)
 #define error_ring_mutex_destroy(_a)
 #define error_ring_mutex_lock()
 #define error_ring_mutex_unlock()
-#endif
+#endif /* REQUIRES_THREAD_SAFETY */
 
 /* Create the ring id from information about the message */
 static void ErrcodeCreateID( int error_class, int generic_idx, 
@@ -1433,6 +913,583 @@ static int checkForUserErrcode( int errcode )
     return errcode;
 }
 
+/* 
+ * Given a message string abbreviation (e.g., one that starts "**"), return 
+ * the corresponding index.  For the specific
+ * (parameterized messages), use idx = FindSpecificMsgIndex( "**msg" );
+ */
+static int FindSpecificMsgIndex( const char *msg )
+{
+    int i, c;
+    for (i=0; i<specific_msgs_len; i++) {
+	/* Check the sentinals to insure that the values are ok first */
+	if (specific_err_msgs[i].sentinal1 != 0xacebad03 ||
+	    specific_err_msgs[i].sentinal2 != 0xcb0bfa11) {
+	    /* Something bad has happened! Don't risk trying the
+	       short_name pointer; it may have been corrupted */
+	    break;
+	}
+	c = strcmp( specific_err_msgs[i].short_name, msg );
+	if (c == 0) return i;
+	if (c > 0)
+	{
+	    /* don't return here if the string partially matches */
+	    if (strncmp(specific_err_msgs[i].short_name, msg, strlen(msg)) != 0)
+		return -1;
+	}
+    }
+    return -1;
+}
+/* See FindGenericMsgIndex comments for a more efficient search routine that
+   could be used here as well. */
+
+/* ------------------------------------------------------------------------- */
+/* Routines to convert instance-specific messages into a string              */
+/* This is the only case that supports instance-specific messages            */
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------ */
+/* This block of code is used to convert various MPI values into descriptive*/
+/* strings.  The routines are                                               */
+/*     GetAssertString - handle MPI_MODE_xxx (RMA asserts)                  */
+/*     GetDTypeString  - handle MPI_Datatypes                               */
+/*     GetMPIOpString  - handle MPI_Op                                      */
+/* These routines are used in vsnprintf_mpi                                 */
+/* FIXME: These functions are not thread safe                               */
+/* ------------------------------------------------------------------------ */
+#define ASSERT_STR_MAXLEN 256
+
+static const char * GetAssertString(int d)
+{
+    static char str[ASSERT_STR_MAXLEN] = "";
+    char *cur;
+    size_t len = ASSERT_STR_MAXLEN;
+    size_t n;
+
+    if (d == 0)
+    {
+	MPIU_Strncpy(str, "assert=0", ASSERT_STR_MAXLEN);
+	return str;
+    }
+    cur = str;
+    if (d & MPI_MODE_NOSTORE)
+    {
+	MPIU_Strncpy(cur, "MPI_MODE_NOSTORE", len);
+	n = strlen(cur);
+	cur += n;
+	len -= n;
+	d ^= MPI_MODE_NOSTORE;
+    }
+    if (d & MPI_MODE_NOCHECK)
+    {
+	if (len < ASSERT_STR_MAXLEN)
+	    MPIU_Strncpy(cur, " | MPI_MODE_NOCHECK", len);
+	else
+	    MPIU_Strncpy(cur, "MPI_MODE_NOCHECK", len);
+	n = strlen(cur);
+	cur += n;
+	len -= n;
+	d ^= MPI_MODE_NOCHECK;
+    }
+    if (d & MPI_MODE_NOPUT)
+    {
+	if (len < ASSERT_STR_MAXLEN)
+	    MPIU_Strncpy(cur, " | MPI_MODE_NOPUT", len);
+	else
+	    MPIU_Strncpy(cur, "MPI_MODE_NOPUT", len);
+	n = strlen(cur);
+	cur += n;
+	len -= n;
+	d ^= MPI_MODE_NOPUT;
+    }
+    if (d & MPI_MODE_NOPRECEDE)
+    {
+	if (len < ASSERT_STR_MAXLEN)
+	    MPIU_Strncpy(cur, " | MPI_MODE_NOPRECEDE", len);
+	else
+	    MPIU_Strncpy(cur, "MPI_MODE_NOPRECEDE", len);
+	n = strlen(cur);
+	cur += n;
+	len -= n;
+	d ^= MPI_MODE_NOPRECEDE;
+    }
+    if (d & MPI_MODE_NOSUCCEED)
+    {
+	if (len < ASSERT_STR_MAXLEN)
+	    MPIU_Strncpy(cur, " | MPI_MODE_NOSUCCEED", len);
+	else
+	    MPIU_Strncpy(cur, "MPI_MODE_NOSUCCEED", len);
+	n = strlen(cur);
+	cur += n;
+	len -= n;
+	d ^= MPI_MODE_NOSUCCEED;
+    }
+    if (d)
+    {
+	if (len < ASSERT_STR_MAXLEN)
+	    MPIU_Snprintf(cur, len, " | 0x%x", d);
+	else
+	    MPIU_Snprintf(cur, len, "assert=0x%x", d);
+    }
+    return str;
+}
+
+static const char * GetDTypeString(MPI_Datatype d)
+{
+    static char default_str[64];
+    int num_integers, num_addresses, num_datatypes, combiner = 0;
+    char *str;
+
+    if (HANDLE_GET_MPI_KIND(d) != MPID_DATATYPE ||      \
+	(HANDLE_GET_KIND(d) == HANDLE_KIND_INVALID &&   \
+	d != MPI_DATATYPE_NULL))
+        return "INVALID DATATYPE";
+    
+
+    if (d == MPI_DATATYPE_NULL)
+	return "MPI_DATATYPE_NULL";
+
+    if (d == 0)
+    {
+	MPIU_Strncpy(default_str, "dtype=0x0", sizeof(default_str));
+	return default_str;
+    }
+
+    MPID_Type_get_envelope(d, &num_integers, &num_addresses, &num_datatypes, 
+			   &combiner);
+    if (combiner == MPI_COMBINER_NAMED)
+    {
+	str = MPIDU_Datatype_builtin_to_string(d);
+	if (str == NULL)
+	{
+	    MPIU_Snprintf(default_str, sizeof(default_str), "dtype=0x%08x", d);
+	    return default_str;
+	}
+	return str;
+    }
+    
+    /* default is not thread safe */
+    str = MPIDU_Datatype_combiner_to_string(combiner);
+    if (str == NULL)
+    {
+	MPIU_Snprintf(default_str, sizeof(default_str), "dtype=USER<0x%08x>", d);
+	return default_str;
+    }
+    MPIU_Snprintf(default_str, sizeof(default_str), "dtype=USER<%s>", str);
+    return default_str;
+}
+
+static const char * GetMPIOpString(MPI_Op o)
+{
+    static char default_str[64];
+
+    switch (o)
+    {
+    case MPI_OP_NULL:
+	return "MPI_OP_NULL";
+    case MPI_MAX:
+	return "MPI_MAX";
+    case MPI_MIN:
+	return "MPI_MIN";
+    case MPI_SUM:
+	return "MPI_SUM";
+    case MPI_PROD:
+	return "MPI_PROD";
+    case MPI_LAND:
+	return "MPI_LAND";
+    case MPI_BAND:
+	return "MPI_BAND";
+    case MPI_LOR:
+	return "MPI_LOR";
+    case MPI_BOR:
+	return "MPI_BOR";
+    case MPI_LXOR:
+	return "MPI_LXOR";
+    case MPI_BXOR:
+	return "MPI_BXOR";
+    case MPI_MINLOC:
+	return "MPI_MINLOC";
+    case MPI_MAXLOC:
+	return "MPI_MAXLOC";
+    case MPI_REPLACE:
+	return "MPI_REPLACE";
+    }
+    /* FIXME: default is not thread safe */
+    MPIU_Snprintf(default_str, sizeof(default_str), "op=0x%x", o);
+    return default_str;
+}
+
+/* ------------------------------------------------------------------------ */
+/* This routine takes an instance-specific string with format specifiers    */
+/* This routine makes use of the above routines, along with some inlined    */
+/* code, to process the format specifiers for the MPI objects               */
+/* The current set of format specifiers is undocumented except for their
+   use in this routine.  In addition, these choices do not permit the 
+   use of GNU extensions to check the validity of these arguments.  
+   At some point, a documented set that can exploit those GNU extensions
+   will replace these. */
+/* ------------------------------------------------------------------------ */
+
+static int vsnprintf_mpi(char *str, size_t maxlen, const char *fmt_orig, 
+			 va_list list)
+{
+    char *begin, *end, *fmt;
+    size_t len;
+    MPI_Comm C;
+    MPI_Info I;
+    MPI_Datatype D;
+    MPI_Win W;
+    MPI_Group G;
+    MPI_Op O;
+    MPI_Request R;
+    MPI_Errhandler E;
+    char *s;
+    int t, i, d, mpi_errno=MPI_SUCCESS;
+    long long ll;
+    void *p;
+
+    fmt = MPIU_Strdup(fmt_orig);
+    if (fmt == NULL)
+    {
+	if (maxlen > 0 && str != NULL)
+	    *str = '\0';
+	return 0;
+    }
+
+    begin = fmt;
+    end = strchr(fmt, '%');
+    while (end)
+    {
+	len = maxlen;
+	if (len > (size_t)(end - begin)) {
+	    len = (size_t)(end - begin);
+	}
+	if (len)
+	{
+	    MPIU_Memcpy(str, begin, len);
+	    str += len;
+	    maxlen -= len;
+	}
+	end++;
+	begin = end+1;
+	switch ((int)(*end))
+	{
+	case (int)'s':
+	    s = va_arg(list, char *);
+	    if (s) 
+	        MPIU_Strncpy(str, s, maxlen);
+            else {
+		MPIU_Strncpy(str, "<NULL>", maxlen );
+	    }
+	    break;
+	case (int)'d':
+	    d = va_arg(list, int);
+	    MPIU_Snprintf(str, maxlen, "%d", d);
+	    break;
+	case (int)'L':
+	    ll = va_arg(list, long long);
+	    MPIU_Snprintf(str, maxlen, "%lld", ll);
+	    break;
+        case (int)'x':
+            d = va_arg(list, int);
+            MPIU_Snprintf(str, maxlen, "%x", d);
+            break;
+        case (int)'X':
+            ll = va_arg(list, long long);
+            MPIU_Snprintf(str, maxlen, "%llx", ll);
+            break;
+	case (int)'i':
+	    i = va_arg(list, int);
+	    switch (i)
+	    {
+	    case MPI_ANY_SOURCE:
+		MPIU_Strncpy(str, "MPI_ANY_SOURCE", maxlen);
+		break;
+	    case MPI_PROC_NULL:
+		MPIU_Strncpy(str, "MPI_PROC_NULL", maxlen);
+		break;
+	    case MPI_ROOT:
+		MPIU_Strncpy(str, "MPI_ROOT", maxlen);
+		break;
+	    default:
+		MPIU_Snprintf(str, maxlen, "%d", i);
+		break;
+	    }
+	    break;
+	case (int)'t':
+	    t = va_arg(list, int);
+	    switch (t)
+	    {
+	    case MPI_ANY_TAG:
+		MPIU_Strncpy(str, "MPI_ANY_TAG", maxlen);
+		break;
+		/* FIXME: Is MPI_UNDEFINED valid as a tag? */
+	    case MPI_UNDEFINED:
+		MPIU_Strncpy(str, "MPI_UNDEFINED", maxlen);
+		break;
+	    default:
+		MPIU_Snprintf(str, maxlen, "%d", t);
+		break;
+	    }
+	    break;
+	case (int)'p':
+	    p = va_arg(list, void *);
+	    /* FIXME: A check for MPI_IN_PLACE should only be used 
+	       where that is valid */
+	    if (p == MPI_IN_PLACE)
+	    {
+		MPIU_Strncpy(str, "MPI_IN_PLACE", maxlen);
+	    }
+	    else
+	    {
+		/* FIXME: We may want to use 0x%p for systems that 
+		   (including Windows) that don't prefix %p with 0x. 
+		   This must be done with a capability, not a test on
+		   particular OS or header files */
+		MPIU_Snprintf(str, maxlen, "%p", p);
+	    }
+	    break;
+	case (int)'C':
+	    C = va_arg(list, MPI_Comm);
+	    switch (C)
+	    {
+	    case MPI_COMM_WORLD:
+		MPIU_Strncpy(str, "MPI_COMM_WORLD", maxlen);
+		break;
+	    case MPI_COMM_SELF:
+		MPIU_Strncpy(str, "MPI_COMM_SELF", maxlen);
+		break;
+	    case MPI_COMM_NULL:
+		MPIU_Strncpy(str, "MPI_COMM_NULL", maxlen);
+		break;
+	    default:
+		MPIU_Snprintf(str, maxlen, "comm=0x%x", C);
+		break;
+	    }
+	    break;
+	case (int)'I':
+	    I = va_arg(list, MPI_Info);
+	    if (I == MPI_INFO_NULL)
+	    {
+		MPIU_Strncpy(str, "MPI_INFO_NULL", maxlen);
+	    }
+	    else
+	    {
+		MPIU_Snprintf(str, maxlen, "info=0x%x", I);
+	    }
+	    break;
+	case (int)'D':
+	    D = va_arg(list, MPI_Datatype);
+	    MPIU_Snprintf(str, maxlen, "%s", GetDTypeString(D));
+	    break;
+	    /* Include support for %F only if MPI-IO is enabled */
+#ifdef MPI_MODE_RDWR
+	case (int)'F':
+	    {
+	    MPI_File F;
+	    F = va_arg(list, MPI_File);
+	    if (F == MPI_FILE_NULL)
+	    {
+		MPIU_Strncpy(str, "MPI_FILE_NULL", maxlen);
+	    }
+	    else
+	    {
+		MPIU_Snprintf(str, maxlen, "file=0x%lx", (unsigned long)F);
+	    }
+	    }
+	    break;
+#endif /* MODE_RDWR */
+	case (int)'W':
+	    W = va_arg(list, MPI_Win);
+	    if (W == MPI_WIN_NULL)
+	    {
+		MPIU_Strncpy(str, "MPI_WIN_NULL", maxlen);
+	    }
+	    else
+	    {
+		MPIU_Snprintf(str, maxlen, "win=0x%x", W);
+	    }
+	    break;
+	case (int)'A':
+	    d = va_arg(list, int);
+	    MPIU_Snprintf(str, maxlen, "%s", GetAssertString(d));
+	    break;
+	case (int)'G':
+	    G = va_arg(list, MPI_Group);
+	    if (G == MPI_GROUP_NULL)
+	    {
+		MPIU_Strncpy(str, "MPI_GROUP_NULL", maxlen);
+	    }
+	    else
+	    {
+		MPIU_Snprintf(str, maxlen, "group=0x%x", G);
+	    }
+	    break;
+	case (int)'O':
+	    O = va_arg(list, MPI_Op);
+	    MPIU_Snprintf(str, maxlen, "%s", GetMPIOpString(O));
+	    break;
+	case (int)'R':
+	    R = va_arg(list, MPI_Request);
+	    if (R == MPI_REQUEST_NULL)
+	    {
+		MPIU_Strncpy(str, "MPI_REQUEST_NULL", maxlen);
+	    }
+	    else
+	    {
+		MPIU_Snprintf(str, maxlen, "req=0x%x", R);
+	    }
+	    break;
+	case (int)'E':
+	    E = va_arg(list, MPI_Errhandler);
+	    if (E == MPI_ERRHANDLER_NULL)
+	    {
+		MPIU_Strncpy(str, "MPI_ERRHANDLER_NULL", maxlen);
+	    }
+	    else
+	    {
+		MPIU_Snprintf(str, maxlen, "errh=0x%x", E);
+	    }
+	    break;
+	default:
+	    /* Error: unhandled output type */
+	    return 0;
+	    /*
+	    if (maxlen > 0 && str != NULL)
+		*str = '\0';
+	    break;
+	    */
+	}
+	len = strlen(str);
+	maxlen -= len;
+	str += len;
+	end = strchr(begin, '%');
+    }
+    if (*begin != '\0')
+    {
+	MPIU_Strncpy(str, begin, maxlen);
+    }
+    /* Free the dup'ed format string */
+    MPIU_Free( fmt );
+
+    return mpi_errno;
+}
+
+static void CombineSpecificCodes( int error1_code, int error2_code,
+				  int error2_class )
+{
+    int error_code;
+    
+    error_code = error1_code;
+    
+    error_ring_mutex_lock();
+    {
+	for (;;)
+	    {
+		int error_class;
+		int ring_idx;
+		int ring_id;
+		int generic_idx;
+		
+		if (convertErrcodeToIndexes(error_code, &ring_idx, &ring_id,
+					    &generic_idx) != 0 || generic_idx < 0 ||
+		    ErrorRing[ring_idx].id != ring_id)
+		    {
+			break;
+		    }
+		
+		error_code = ErrorRing[ring_idx].prev_error;
+		
+		if (error_code == MPI_SUCCESS)
+		    {
+			ErrorRing[ring_idx].prev_error = error2_code;
+			break;
+		    }
+		
+		error_class = MPIR_ERR_GET_CLASS(error_code);
+		
+		if (error_class == MPI_ERR_OTHER)
+		    {
+			ErrorRing[ring_idx].prev_error &= ~(ERROR_CLASS_MASK);
+			ErrorRing[ring_idx].prev_error |= error2_class;
+		    }
+	    }
+    }
+    error_ring_mutex_unlock();
+}
+
+
+/* ------------------------------------------------------------------------- */
+/* ------------------------------------------------------------------------- */
+/*
+ * Instance-specific error messages are stored in a ring.  The elements of this
+ * ring are MPIR_Err_msg_t structures, which contain the following fields:
+ *    id - this is used to check that the entry is valid; it is computed from
+ *         the error code and location in the ring.  The routine
+ *           ErrcodeToId( errcode, &id ) is used to extract the id from an 
+ *         error code and
+ *           ErrcodeCreateID( class, generic, msg, &id, &seq ) is used to 
+ *         create the id from an error class, generic index, and message 
+ *         string.  The "seq" field is inserted into the error code as a 
+ *         check.
+ *
+ *    prev_error - The full MPI error code of the previous error attached 
+ *         to this list of errors, or MPI_SUCCESSS (which has value 0).
+ *         This is the last error code, not the index in the ring of the last 
+ *         error code.  That's the right choice, because we want to ensure 
+ *         that the value is valid if the ring overflows.  In addition,
+ *         we allow this to be an error CLASS (one of the predefined MPI
+ *         error classes).  This is particularly important for 
+ *         MPI_ERR_IN_STATUS, which may be returned as a valid error code.
+ *         (classes are valid error codes).
+ *         
+ *    use_user_error_code and user_error_code - Used to handle a few cases 
+ *         in MPI where a user-provided routine returns an error code; 
+ *         this allows us to provide information about the chain of 
+ *         routines that were involved, while returning the users prefered
+ *         error value to the users environment.  See the note below
+ *         on user error codes.
+ *
+ *    location - A string that indicates what function and line number
+ *         where the error code was set.
+ *
+ *    msg - A message about the error.  This may be instance-specific (e.g.,
+ *         it may have been created at the time the error was detected with
+ *         information about the parameters that caused the error).
+ *
+ * Note that both location and msg are defined as length MAX_xxx+1.  This 
+ * isn't really necessary (at least for msg), since the MPI standard 
+ * requires that MAX_MPI_ERROR_STRING include the space for the trailing null,
+ * but using the extra byte makes the code a little simpler.
+ *
+ * The "id" value is used to keep a sort of "checkvalue" to ensure that the
+ * error code that points at this message is in fact for this particular 
+ * message.  This is used to handle the unlikely but possible situation where 
+ * so many error messages are generated that the ring is overlapped.
+ *
+ * The message arrays are preallocated to ensure that there is space for these
+ * messages when an error occurs.  One variation would be to allow these
+ * to be dynamically allocated, but it is probably better to either preallocate
+ * these or turn off all error message generation (which will eliminate these
+ * arrays).
+ *
+ * One possible alternative is to use the message ring *only* for instance
+ * messages and use the predefined messages in-place for the generic
+ * messages.  The approach used here provides uniform handling of all 
+ * error messages.
+ *
+ * Note on user error codes
+ *
+ * The "user error codes" is used to handle an ambiguity in the MPI-1 
+ * standard about the return value from the attribute callbacks.  The 
+ * standard does not specify what values, other than 'MPI_SUCCESS', are
+ * valid.  Because the Intel MPI-1 test suite expected 'MPI_Comm_dup' to
+ * return the same non-zero value returned by the attribute callback routine,
+ * this is the behavior that many (if not all) MPI implementations provide.
+ * As a result, the return from those routines is 
+ * 
+ */
+
+
 /*
  * This is the real routine for generating an error code.  It takes
  * a va_list so that it can be called by any routine that accepts a 
@@ -1493,65 +1550,54 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 
     /* Handle the generic message.  This selects a subclass, based on a text 
        string */
-#   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_GENERIC
-    {
-	generic_idx = FindGenericMsgIndex(generic_msg);
-	if (generic_idx >= 0) {
-	    if (strcmp( generic_err_msgs[generic_idx].short_name, "**user" ) == 0)
-	    {
-		use_user_error_code = 1;
-		/* This is a special case.  The format is
-		   "**user", "**userxxx %d", intval
-		   (generic, specific, parameter).  In this
-		   case we must ... save the user value because
-		   we store it explicitly in the ring.  
-		   We do this here because we cannot both access the 
-		   user error code and pass the argp to vsnprintf_mpi . */
-		if (specific_msg) {
-		    const char *specific_fmt; 
-		    int specific_idx;
-		    user_error_code = va_arg(Argp,int);
-#if MPICH_ERROR_MSG_LEVEL > MPICH_ERROR_MSG_GENERIC
-		    specific_idx = FindSpecificMsgIndex(specific_msg);
-		    if (specific_idx >= 0) {
-			specific_fmt = specific_err_msgs[specific_idx].long_name;
-		    }
-		    else {
-			specific_fmt = specific_msg;
-		    }
-#else
-			specific_fmt = specific_msg;
-#endif
-		    MPIU_Snprintf( user_ring_msg, sizeof(user_ring_msg),
-				   specific_fmt, user_error_code );
+    generic_idx = FindGenericMsgIndex(generic_msg);
+    if (generic_idx >= 0) {
+	if (strcmp( generic_err_msgs[generic_idx].short_name, "**user" ) == 0) {
+	    use_user_error_code = 1;
+	    /* This is a special case.  The format is
+	       "**user", "**userxxx %d", intval
+	       (generic, specific, parameter).  In this
+	       case we must ... save the user value because
+	       we store it explicitly in the ring.  
+	       We do this here because we cannot both access the 
+	       user error code and pass the argp to vsnprintf_mpi . */
+	    if (specific_msg) {
+		const char *specific_fmt; 
+		int specific_idx;
+		user_error_code = va_arg(Argp,int);
+		specific_idx = FindSpecificMsgIndex(specific_msg);
+		if (specific_idx >= 0) {
+		    specific_fmt = specific_err_msgs[specific_idx].long_name;
 		}
 		else {
-		    user_ring_msg[0] = 0;
+		    specific_fmt = specific_msg;
 		}
+		MPIU_Snprintf( user_ring_msg, sizeof(user_ring_msg),
+			       specific_fmt, user_error_code );
 	    }
-	    err_code |= (generic_idx + 1) << ERROR_GENERIC_SHIFT;
+	    else {
+		user_ring_msg[0] = 0;
+	    }
 	}
-	else
-	{
-	    /* TODO: lookup index for class error message */
-	    err_code &= ~ERROR_GENERIC_MASK;
-	    
+	err_code |= (generic_idx + 1) << ERROR_GENERIC_SHIFT;
+    }
+    else {
+	/* TODO: lookup index for class error message */
+	err_code &= ~ERROR_GENERIC_MASK;
+	
 #           ifdef MPICH_DBG_OUTPUT
-	    {
-		if (generic_msg[0] == '*' && generic_msg[1] == '*')
+	{
+	    if (generic_msg[0] == '*' && generic_msg[1] == '*')
 		{
 		    /* FIXME : Internal error.  Generate some debugging 
 		       information; Fix for the general release */
 		    fprintf( stderr, "Could not find %s in list of messages\n", generic_msg );
 		}
-	    }
-#           endif
 	}
+#           endif /* DBG_OUTPUT */
     }
-#   endif
 
     /* Handle the instance-specific part of the error message */
-#   if MPICH_ERROR_MSG_LEVEL == MPICH_ERROR_MSG_ALL
     {
 	int specific_idx;
 	const char * specific_fmt = 0;
@@ -1655,7 +1701,6 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 	err_code |= ring_seq << ERROR_SPECIFIC_SEQ_SHIFT;
 
     }
-#   endif
 
     if (fatal || MPIR_Err_is_fatal(lastcode))
     {
@@ -1688,48 +1733,7 @@ int MPIR_Err_combine_codes(int error1, int error2)
 	error2_class = MPI_ERR_OTHER;
     }
 
-#   if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_ALL
-    {
-	int error_code;
-
-	error_code = error1_code;
-	
-	error_ring_mutex_lock();
-	{
-	    for (;;)
-	    {
-		int error_class;
-		int ring_idx;
-		int ring_id;
-		int generic_idx;
-		
-		if (convertErrcodeToIndexes(error_code, &ring_idx, &ring_id,
-		    &generic_idx) != 0 || generic_idx < 0 ||
-		    ErrorRing[ring_idx].id != ring_id)
-		{
-		    break;
-		}
-
-		error_code = ErrorRing[ring_idx].prev_error;
-
-		if (error_code == MPI_SUCCESS)
-		{
-		    ErrorRing[ring_idx].prev_error = error2;
-		    break;
-		}
-		
-		error_class = MPIR_ERR_GET_CLASS(error_code);
-		
-		if (error_class == MPI_ERR_OTHER)
-		{
-		    ErrorRing[ring_idx].prev_error &= ~(ERROR_CLASS_MASK);
-		    ErrorRing[ring_idx].prev_error |= error2_class;
-		}
-	    }
-	}
-	error_ring_mutex_unlock();
-    }
-#   endif
+    CombineSpecificCodes( error1_code, error2_code, error2_class );
 
     if (MPIR_ERR_GET_CLASS(error1_code) == MPI_ERR_OTHER)
     {
@@ -1743,46 +1747,30 @@ int MPIR_Err_combine_codes(int error1, int error2)
 /* ------------------------------------------------------------------------- */
 /* Manage the error reporting stack                                          */
 /* ------------------------------------------------------------------------- */
-/* FIXME: This flag wasn't documented in the release specs, and in any
-   event shouldn't be controlled through source-code changes (i.e.,
-   make it either a configure option or a runtime option) */
-/* turn this flag on until we debug and release mpich2 */
-static int MPIR_Err_print_stack_flag = TRUE;
-static int MPIR_Err_chop_error_stack = FALSE;
-static int MPIR_Err_chop_width = 80;
 
 static void MPIR_Err_stack_init( void )
 {
-    int n, rc, mpi_errno = MPI_SUCCESS;
-    
+    int mpi_errno = MPI_SUCCESS;
+
     error_ring_mutex_create(&mpi_errno);
-    MPIR_Err_chop_error_stack = FALSE;
-    
-    rc = MPL_env2bool( "MPICH_PRINT_ERROR_STACK", 
-			  &MPIR_Err_print_stack_flag );
-    
-    rc = MPL_env2int( "MPICH_CHOP_ERROR_STACK", &n );
-    if (rc == 1) {
+
+    if (MPIR_PARAM_CHOP_ERROR_STACK < 0) {
+        MPIR_PARAM_CHOP_ERROR_STACK = 80;
 #ifdef HAVE_WINDOWS_H
-	/* If windows, set the default width to the window size */
-	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
-	if (hConsole != INVALID_HANDLE_VALUE)
-	{
-	    CONSOLE_SCREEN_BUFFER_INFO info;
-	    if (GetConsoleScreenBufferInfo(hConsole, &info))
-	    {
-		MPIR_Err_chop_width = info.dwMaximumWindowSize.X;
-	    }
-	}
-#endif
-	if (n > 0) {
-	    MPIR_Err_chop_error_stack = TRUE;
-	    MPIR_Err_chop_width = n;
-	}
-	else if (n == 0) {
-	    /* Use the default width */
-	    MPIR_Err_chop_error_stack = TRUE;
-	}
+        {
+            /* If windows, set the default width to the window size */
+            HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+            if (hConsole != INVALID_HANDLE_VALUE)
+            {
+                CONSOLE_SCREEN_BUFFER_INFO info;
+                if (GetConsoleScreenBufferInfo(hConsole, &info))
+                {
+                    /* override the parameter system in this case */
+                    MPIR_PARAM_CHOP_ERROR_STACK = info.dwMaximumWindowSize.X;
+                }
+            }
+        }
+#endif /* WINDOWS_H */
     }
 }
 
@@ -1826,7 +1814,7 @@ void MPIR_Err_print_stack(FILE * fp, int errcode)
     error_ring_mutex_unlock();
 	
     /* FIXME: This is wrong.  The only way that you can get here without
-       errcode beign MPI_SUCCESS is if there is an error in the 
+       errcode being MPI_SUCCESS is if there is an error in the 
        processing of the error codes.  Dropping through into the next
        level of code (particularly when that code doesn't check for 
        valid error codes!) is erroneous */
@@ -1867,7 +1855,8 @@ void MPIR_Err_print_stack(FILE * fp, int errcode)
     return;
 }
 
-/* FIXME: Shouldn't str be const char * ? */
+/* FIXME: Shouldn't str be const char * ? - no, but you don't know that without
+   some documentation */
 static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen )
 {
     char *str_orig = str;
@@ -1948,7 +1937,7 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen )
 		    maxlen--;
 		}
 		
-		if (MPIR_Err_chop_error_stack)
+		if (MPIR_PARAM_CHOP_ERROR_STACK > 0)
 		{
 		    cur_pos = ErrorRing[ring_idx].msg;
 		    len = (int)strlen(cur_pos);
@@ -1958,16 +1947,16 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen )
 		    }
 		    while (len)
 		    {
-			if (len >= MPIR_Err_chop_width - max_location_len)
+			if (len >= MPIR_PARAM_CHOP_ERROR_STACK - max_location_len)
 			{
 			    if (len > maxlen)
 				break;
 			    /* FIXME: Don't use Snprint to append a string ! */
-			    MPIU_Snprintf(str, MPIR_Err_chop_width - 1 - max_location_len, "%s", cur_pos);
-			    str[MPIR_Err_chop_width - 1 - max_location_len] = '\n';
-			    cur_pos += MPIR_Err_chop_width - 1 - max_location_len;
-			    str += MPIR_Err_chop_width - max_location_len;
-			    maxlen -= MPIR_Err_chop_width - max_location_len;
+			    MPIU_Snprintf(str, MPIR_PARAM_CHOP_ERROR_STACK - 1 - max_location_len, "%s", cur_pos);
+			    str[MPIR_PARAM_CHOP_ERROR_STACK - 1 - max_location_len] = '\n';
+			    cur_pos += MPIR_PARAM_CHOP_ERROR_STACK - 1 - max_location_len;
+			    str += MPIR_PARAM_CHOP_ERROR_STACK - max_location_len;
+			    maxlen -= MPIR_PARAM_CHOP_ERROR_STACK - max_location_len;
 			    if (maxlen < max_location_len)
 				break;
 			    for (i=0; i<max_location_len; i++)
@@ -2066,13 +2055,11 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen )
     return;
 }
 
-/* FIXME: Remove the bogus fn argument from all uses of this routine */
-static int ErrGetInstanceString( int errorcode, char *msg, int num_remaining, 
-				 MPIR_Err_get_class_string_func_t fn ATTRIBUTE((unused)) )
+static int ErrGetInstanceString( int errorcode, char *msg, int num_remaining )
 {
     int len;
 
-    if (MPIR_Err_print_stack_flag) {
+    if (MPIR_PARAM_PRINT_ERROR_STACK) {
 	MPIU_Strncpy(msg, ", error stack:\n", num_remaining);
 	msg[num_remaining - 1] = '\0';
 	len = (int)strlen(msg);
@@ -2124,4 +2111,4 @@ static int ErrGetInstanceString( int errorcode, char *msg, int num_remaining,
 
     return 0;
 }
-#endif
+#endif /* MSG_LEVEL = MSG_ALL */

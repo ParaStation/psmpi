@@ -73,7 +73,6 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
     MPIR_Topology *topo_ptr = NULL;
     MPIR_Dist_graph_topology *dist_graph_ptr = NULL;
     MPIU_CHKPMEM_DECL(5);
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_DIST_GRAPH_CREATE_ADJACENT);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -118,8 +117,7 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
                 if (sourceweights == MPI_UNWEIGHTED && destweights != MPI_UNWEIGHTED) {
                     MPIU_ERR_SET(mpi_errno, MPIR_ERR_RECOVERABLE, "**unweightedboth");
                 }
-                MPIR_ERRTEST_ARGNULL(sourceweights, "sourceweights", mpi_errno);
-                /* XXX DJG TODO check ranges for array elements too (**argarrayneg / **rankarray)*/
+                /* TODO check ranges for array elements too (**argarrayneg / **rankarray)*/
             }
             if (outdegree > 0) {
                 MPIR_ERRTEST_ARGNULL(destinations, "destinations", mpi_errno);
@@ -172,7 +170,7 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
     mpi_errno = MPIR_Topology_put(comm_dist_graph_ptr, topo_ptr);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-    *comm_dist_graph = comm_dist_graph_ptr->handle;
+    MPIU_OBJ_PUBLISH_HANDLE(*comm_dist_graph, comm_dist_graph_ptr->handle);
     /* ... end of body of routine ... */
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_DIST_GRAPH_CREATE_ADJACENT);
@@ -181,6 +179,7 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
 
     /* --BEGIN ERROR HANDLING-- */
   fn_fail:
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(
         mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
         "**mpi_dist_graph_create_adjacent",
@@ -188,6 +187,7 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
         comm_old, indegree, sources, sourceweights,
         outdegree, destinations, destweights,
         info, reorder, comm_dist_graph);
+#endif
     mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */

@@ -5617,7 +5617,7 @@ int smpd_handle_kill_command(smpd_context_t *context)
     
     result = smpd_kill_process(pmi_context->process, exit_code);
     if (result != SMPD_SUCCESS){
-	    smpd_err_printf("unable to kill process.\n");
+	    smpd_err_printf("unable to kill process. result = %d\n", result);
         pmi_context->state = SMPD_CLOSING;
         if(pmi_context->process->in){
             smpd_dbg_printf("Closing stdin ...\n");
@@ -6300,26 +6300,6 @@ int smpd_generic_fail_command(smpd_context_t *context)
     smpd_exit_fn(FCNAME);
     return result;
 }
-
-#if 0
-/* use this template to add new command handler functions */
-#undef FCNAME
-#define FCNAME "smpd_handle__command"
-int smpd_handle__command(smpd_context_t *context)
-{
-    int result;
-    smpd_command_t *cmd, *temp_cmd;
-
-    smpd_enter_fn(FCNAME);
-
-    cmd = &context->read_cmd;
-
-    result = handle command code;
-
-    smpd_exit_fn(FCNAME);
-    return result;
-}
-#endif
 
 #undef FCNAME
 #define FCNAME "smpd_handle_singinit_info_command"

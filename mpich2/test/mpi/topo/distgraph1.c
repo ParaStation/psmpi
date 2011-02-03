@@ -16,17 +16,17 @@
 #define MAX_WEIGHT 100
 
 
-#if 0
-#define DPRINTF(arg_list_) printf arg_list_
-#else
+/* #define DPRINTF(arg_list_) printf arg_list_ */
 #define DPRINTF(arg_list_)
-#endif
+
+/* convenience globals */
+int size, rank;
 
 /* We need MPI 2.2 to be able to compile the following routines. */
 #if MTEST_HAVE_MIN_MPI_VERSION(2,2)
 
 /* Maybe use a bit vector instead? */
-int **layout, size, rank;
+int **layout;
 
 #define MAX_LAYOUT_NAME_LEN 256
 char graph_layout_name[MAX_LAYOUT_NAME_LEN] = {'\0'};
@@ -259,6 +259,15 @@ int main(int argc, char *argv[])
             verify_comm(comm);
             MPI_Comm_free(&comm);
         }
+
+        /* a weak check that passing MPI_UNWEIGHTED doesn't cause
+         * create_adjacent to explode */
+        MPI_Dist_graph_create_adjacent(MPI_COMM_WORLD, indegree, sources, MPI_UNWEIGHTED,
+                                       outdegree, destinations, MPI_UNWEIGHTED, MPI_INFO_NULL,
+                                       reorder, &comm);
+        MPI_Barrier(comm);
+        /* intentionally no verify here, weights won't match */
+        MPI_Comm_free(&comm);
 
 
         /* MPI_Dist_graph_create() where each process specifies its

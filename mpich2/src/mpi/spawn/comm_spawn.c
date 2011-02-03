@@ -65,7 +65,6 @@ int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info,
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL, *intercomm_ptr;
     MPID_Info *info_ptr=NULL;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SPAWN);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -128,7 +127,7 @@ int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info,
                                          array_of_errcodes); 
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    *intercomm = intercomm_ptr->handle;
+    MPIU_OBJ_PUBLISH_HANDLE(*intercomm, intercomm_ptr->handle);
 
     /* ... end of body of routine ... */
 

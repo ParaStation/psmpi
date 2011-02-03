@@ -378,8 +378,7 @@ int MPIDU_Sock_get_conninfo_from_bc( const char *bc,
        by changing the Sock_post_connect to only accept interface
        address.  Note also that Windows does not have the inet_pton 
        routine; the Windows version of this routine will need to 
-       be identified or written.  See also channels/sock/ch3_progress.c and
-       channels/ssm/ch3_progress_connect.c */
+       be identified or written.  See also channels/sock/ch3_progress.c */
     *hasIfaddr = 0;
 #if !defined(HAVE_WINDOWS_H) && defined(HAVE_INET_PTON)
     str_errno = MPIU_Str_get_string_arg(bc, MPIDI_CH3I_IFNAME_KEY, 
@@ -433,6 +432,7 @@ int MPIDI_CH3U_Get_business_card_sock(int myRank,
 				      char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
+    int str_errno = MPIU_STR_SUCCESS;
     MPIDU_Sock_ifaddr_t ifaddr;
     char ifnamestr[MAX_HOST_DESCRIPTION_LEN];
     char *bc_orig = *bc_val_p;
@@ -442,34 +442,19 @@ int MPIDI_CH3U_Get_business_card_sock(int myRank,
 
     MPIDU_CH3U_GetSockInterfaceAddr( myRank, ifnamestr, sizeof(ifnamestr), &ifaddr );
 
-    mpi_errno = MPIU_Str_add_int_arg(bc_val_p, val_max_sz_p, 
-			     MPIDI_CH3I_PORT_KEY, MPIDI_CH3I_listener_port);
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPIU_STR_SUCCESS)
-    {
-	if (mpi_errno == MPIU_STR_NOMEM) {
-	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**buscard_len");
-	}
-	else {
-	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**buscard");
-	}
+    str_errno = MPIU_Str_add_int_arg(bc_val_p, val_max_sz_p,
+                                     MPIDI_CH3I_PORT_KEY, MPIDI_CH3I_listener_port);
+    if (str_errno) {
+        MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
-    /* --END ERROR HANDLING-- */
     
-    mpi_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, 
-			   MPIDI_CH3I_HOST_DESCRIPTION_KEY, ifnamestr );
-    /* --BEGIN ERROR HANDLING-- */
-    if (mpi_errno != MPIU_STR_SUCCESS)
-    {
-	if (mpi_errno == MPIU_STR_NOMEM) {
-	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**buscard_len");
-	}
-	else {
-	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**buscard");
-	}
-	return mpi_errno;
+    str_errno = MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p,
+                                        MPIDI_CH3I_HOST_DESCRIPTION_KEY, ifnamestr );
+    if (str_errno) {
+        MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
-    /* --END ERROR HANDLING-- */
 
     /* Look up the interface address cooresponding to this host description */
     /* FIXME: We should start switching to getaddrinfo instead of 
@@ -497,18 +482,14 @@ int MPIDI_CH3U_Get_business_card_sock(int myRank,
 	    MPIU_Snprintf( ifname, sizeof(ifname), "%u.%u.%u.%u", 
 			   p[0], p[1], p[2], p[3] );
 	    MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"ifname = %s",ifname );
-	    mpi_errno = MPIU_Str_add_string_arg( bc_val_p, 
-						 val_max_sz_p, 
+	    str_errno = MPIU_Str_add_string_arg( bc_val_p,
+						 val_max_sz_p,
 						 MPIDI_CH3I_IFNAME_KEY,
 						 ifname );
-	    if (mpi_errno != MPIU_STR_SUCCESS) {
-		if (mpi_errno == MPIU_STR_NOMEM) {
-		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**buscard_len");
-		}
-		else {
-		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**buscard");
-		}
-	    }
+            if (str_errno) {
+                MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+                MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
+            }
 	}
     }
 #endif
@@ -522,18 +503,14 @@ int MPIDI_CH3U_Get_business_card_sock(int myRank,
 	    MPIU_Snprintf( ifname, sizeof(ifname), "%u.%u.%u.%u", 
 			   p[0], p[1], p[2], p[3] );
 	    MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"ifname = %s",ifname );
-	    mpi_errno = MPIU_Str_add_string_arg( bc_val_p, 
-						 val_max_sz_p, 
+	    str_errno = MPIU_Str_add_string_arg( bc_val_p,
+						 val_max_sz_p,
 						 MPIDI_CH3I_IFNAME_KEY,
 						 ifname );
-	    if (mpi_errno != MPIU_STR_SUCCESS) {
-		if (mpi_errno == MPIU_STR_NOMEM) {
-		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**buscard_len");
-		}
-		else {
-		    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**buscard");
-		}
-	    }
+            if (str_errno) {
+                MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+                MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
+            }
 	}
     }
 
@@ -1122,10 +1099,9 @@ int MPIDI_CH3I_VC_post_sockconnect(MPIDI_VC_t * vc)
 }
 /* end MPIDI_CH3I_VC_post_sockconnect() */
 
-/* Given a connection string, start the process of creating a socket 
-   connection to that designated interface (on a node).  This routine 
-   is used both in MPIDI_CH3I_VC_post_sockconnect and in 
-   MPIDI_CH3I_VC_post_connect in the ch3:ssm channel. 
+/* Given a connection string, start the process of creating a socket
+   connection to that designated interface (on a node).  This routine
+   is used in MPIDI_CH3I_VC_post_sockconnect.
 
    vallen = sizeof(val)
 */
@@ -1180,7 +1156,7 @@ int MPIDI_CH3I_Sock_connect( MPIDI_VC_t *vc, const char val[], int vallen )
 	   the host description string instead of the interface address
 	   bytes when posting a socket connection.  This should be fixed 
 	   by changing the Sock_post_connect to only accept interface
-	   address.  See also channels/ssm/ch3_progress_connect.c */
+	   address. */
 #ifndef HAVE_WINDOWS_H
 	if (hasIfaddr) {
 	    mpi_errno = MPIDU_Sock_post_connect_ifaddr(MPIDI_CH3I_sock_set, 

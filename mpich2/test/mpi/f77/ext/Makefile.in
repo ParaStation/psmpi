@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -18,18 +17,19 @@ CC              = @CC@
 CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
-FC              = @FC@
+F77             = @F77@
 FFLAGS          = @FFLAGS@
-F77_COMPILE     = $(FC) $(FFLAGS) $(F77INCLUDES)
-F77_LINK       = $(FC)
+F77_COMPILE     = $(F77) $(FFLAGS) $(F77INCLUDES)
+F77_LINK       = $(F77)
 LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
+F77INCLUDES = -I.
 INCLUDES = -I../../include -I${srcdir}/../../include
 c2f2c_CFLAGSADD = -I../../include
 
 .SUFFIXES:
-.SUFFIXES: .o .c .f .txt 
+.SUFFIXES: .o .c .f 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -37,8 +37,6 @@ c2f2c_CFLAGSADD = -I../../include
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -48,31 +46,13 @@ c2f2c_CFLAGSADD = -I../../include
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  FC              $<" ; \
+	  echo "  F77             $<" ; \
 	else \
 	  echo $(F77_COMPILE) -c $< ; \
 	fi
 	@$(F77_COMPILE) -c $<
 .f:
 	$(F77_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../ \
-	-configdir=test/mpi/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile iooffset.h iodisp.h ioaint.h" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=f77/ext/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
@@ -80,9 +60,6 @@ clean:
 	-@rm -f ctypesinf.exe allocmemf.exe c2fmult.exe c2f2cf.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -90,42 +67,32 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: c2f2cf ctypesinf c2fmult
 
-coverage: 
-ctypesinf: ctypesinf.o ctypesfromc.o  \
-	 @MPILIBLOC@ ../util/mtestf.o ../../util/mtest.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o ctypesinf ctypesinf.o \
-	ctypesfromc.o  ../util/mtestf.o ${LIBS} 
-allocmemf: allocmemf.o   @MPILIBLOC@ ../util/mtestf.o ../../util/mtest.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o allocmemf allocmemf.o  \
+ctypesinf: ctypesinf.o ctypesfromc.o   @MPILIBLOC@ ../util/mtestf.o ../../util/mtest.o
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o ctypesinf ctypesinf.o ctypesfromc.o  \
 	../util/mtestf.o ${LIBS} 
+allocmemf: allocmemf.o   @MPILIBLOC@ ../util/mtestf.o ../../util/mtest.o
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o allocmemf allocmemf.o  ../util/mtestf.o ${LIBS}
 c2fmult: c2fmult.o   @MPILIBLOC@ ../util/mtestf.o ../../util/mtest.o
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o c2fmult c2fmult.o  \
-	../../util/mtest.o ${LIBS} 
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o c2fmult c2fmult.o  ../../util/mtest.o ${LIBS}
 c2f2cf: c2f2c.o c2f2cf.o   @MPILIBLOC@ ../util/mtestf.o ../../util/mtest.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o c2f2cf c2f2c.o c2f2cf.o  \
-	../util/mtestf.o  ${LIBS} 
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o c2f2cf c2f2c.o c2f2cf.o  ../util/mtestf.o  ${LIBS}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  allocmemf.f c2f2c.c c2f2cf.f ctypesinf.f ctypesfromc.c \
-	c2fmult.c 
+SOURCES         =  allocmemf.f c2f2c.c c2f2cf.f ctypesinf.f ctypesfromc.c c2fmult.c
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
 # We don't use a general LDADD for mtestf.o because c2fmult is a C-only
 # program
+# "F77INCLUDES = -I." is needed when allocmemf.f is compiled,
+# i.e. when cray-pointer is available, because it includes add1size.h
 
 # allocmemf is an "extra" program because it requires a Fortran extension
 
@@ -137,6 +104,8 @@ SOURCEFILES     = $(SOURCES)
 
 ../../util/mtest.o:
 	(cd ../../util && $(MAKE))
+
+.POSIX:
 
 FORCE_TARGET:
 

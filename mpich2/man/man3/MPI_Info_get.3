@@ -1,8 +1,12 @@
-.TH MPI_Info_get 3 "9/17/2009" " " "MPI"
+.TH MPI_Info_get 3 "7/29/2010" " " "MPI"
 .SH NAME
 MPI_Info_get \-  Retrieves the value associated with a key 
 .SH SYNOPSIS
 .nf
+#undef FUNCNAME
+#define FUNCNAME MPI_Info_get
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value, 
                 int *flag)
 .fi

@@ -2,6 +2,9 @@
 # from test/mpi/f77/ext/Makefile.sm.  DO NOT EDIT
 # We don't use a general LDADD for mtestf90.o because c2fmult is a C-only
 # program
+# "FCINCLUDES = -I." is needed when allocmemf90.f90 is compiled,
+# i.e. when cray-pointer is available, because it includes add1size.h
+FCINCLUDES = -I.
 INCLUDES = -I../../include -I${srcdir}/../../include
 DEPADD = @MPILIBLOC@ ../util/mtestf90.o ../../util/mtest.o
 smvar_do_sharedlibs = 0

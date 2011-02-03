@@ -36,7 +36,6 @@ int MPIR_TypeGetAttr( MPI_Datatype type, int type_keyval, void *attribute_val,
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *type_ptr = NULL;
     MPID_Attribute *p;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPIR_TYPE_GET_ATTR);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -216,8 +215,8 @@ int MPI_Type_get_attr(MPI_Datatype type, int type_keyval, void *attribute_val,
 	    "**mpi_type_get_attr %D %d %p %p", 
 	    type, type_keyval, attribute_val, flag);
     }
-    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
 #endif
+    mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

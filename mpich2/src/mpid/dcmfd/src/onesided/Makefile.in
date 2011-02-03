@@ -30,7 +30,7 @@ VPATH = .:@srcdir@
 INCLUDES = -I${master_top_srcdir}/src/include -I${top_builddir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .h .txt 
+.SUFFIXES: .o .lo .c .h 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -47,8 +47,6 @@ INCLUDES = -I${master_top_srcdir}/src/include -I${top_builddir}/src/include
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -59,41 +57,20 @@ INCLUDES = -I${master_top_srcdir}/src/include -I${top_builddir}/src/include
 .h.o:
 
 .h.lo:
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../../ \
-	-configdir=src/mpid/dcmfd/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/onesided/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect:
 	${MAKE} all-local
 all-local: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
@@ -101,9 +78,9 @@ all-local: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	    ${MAKE} .libstamp1 || exit 1; \
 	fi
 
-.libstamp0 ../../../../../lib/lib${MPILIBNAME}.a: mpid_rma_common.o \
-	mpid_win_create.o mpid_win_fence.o mpid_win_pscw.o mpid_win_lock.o \
-	mpid_put.o mpid_get.o mpid_accumulate.o mpid_misc.o 
+.libstamp0 ../../../../../lib/lib${MPILIBNAME}.a: mpid_rma_common.o mpid_win_create.o \
+	mpid_win_fence.o mpid_win_pscw.o mpid_win_lock.o mpid_put.o mpid_get.o mpid_accumulate.o \
+	mpid_misc.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
@@ -117,10 +94,9 @@ all-local: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../../../lib/lib${MPILIBNAME}.la: mpid_rma_common.lo \
-	mpid_win_create.lo mpid_win_fence.lo mpid_win_pscw.lo \
-	mpid_win_lock.lo mpid_put.lo mpid_get.lo mpid_accumulate.lo \
-	mpid_misc.lo 
+.libstamp1 ../../../../../lib/lib${MPILIBNAME}.la: mpid_rma_common.lo mpid_win_create.lo \
+	mpid_win_fence.lo mpid_win_pscw.lo mpid_win_lock.lo mpid_put.lo mpid_get.lo \
+	mpid_accumulate.lo mpid_misc.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -128,167 +104,17 @@ all-local: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${AR} ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
-coverage: 
-	-@for file in mpid_rma_common.c mpid_win_create.c mpid_win_fence.c \
-	mpid_win_pscw.c mpid_win_lock.c mpid_put.c mpid_get.c \
-	mpid_accumulate.c mpid_misc.c mpid_onesided.h ; do \
-		gcov -b -f $$file ; done
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/mpid_rma_common.d: $(srcdir)/mpid_rma_common.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_rma_common.c > $(DEPS_DIR)/mpid_rma_common.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_rma_common.c >$(DEPS_DIR)/mpid_rma_common.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_rma_common.c >$(DEPS_DIR)/mpid_rma_common.d
-$(DEPS_DIR)/mpid_win_create.d: $(srcdir)/mpid_win_create.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_win_create.c > $(DEPS_DIR)/mpid_win_create.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_win_create.c >$(DEPS_DIR)/mpid_win_create.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_win_create.c >$(DEPS_DIR)/mpid_win_create.d
-$(DEPS_DIR)/mpid_win_fence.d: $(srcdir)/mpid_win_fence.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_win_fence.c > $(DEPS_DIR)/mpid_win_fence.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_win_fence.c >$(DEPS_DIR)/mpid_win_fence.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_win_fence.c >$(DEPS_DIR)/mpid_win_fence.d
-$(DEPS_DIR)/mpid_win_pscw.d: $(srcdir)/mpid_win_pscw.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_win_pscw.c > $(DEPS_DIR)/mpid_win_pscw.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_win_pscw.c >$(DEPS_DIR)/mpid_win_pscw.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_win_pscw.c >$(DEPS_DIR)/mpid_win_pscw.d
-$(DEPS_DIR)/mpid_win_lock.d: $(srcdir)/mpid_win_lock.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_win_lock.c > $(DEPS_DIR)/mpid_win_lock.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_win_lock.c >$(DEPS_DIR)/mpid_win_lock.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_win_lock.c >$(DEPS_DIR)/mpid_win_lock.d
-$(DEPS_DIR)/mpid_put.d: $(srcdir)/mpid_put.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_put.c > $(DEPS_DIR)/mpid_put.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_put.c >$(DEPS_DIR)/mpid_put.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_put.c >$(DEPS_DIR)/mpid_put.d
-$(DEPS_DIR)/mpid_get.d: $(srcdir)/mpid_get.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_get.c > $(DEPS_DIR)/mpid_get.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_get.c >$(DEPS_DIR)/mpid_get.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_get.c >$(DEPS_DIR)/mpid_get.d
-$(DEPS_DIR)/mpid_accumulate.d: $(srcdir)/mpid_accumulate.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_accumulate.c > $(DEPS_DIR)/mpid_accumulate.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_accumulate.c >$(DEPS_DIR)/mpid_accumulate.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_accumulate.c >$(DEPS_DIR)/mpid_accumulate.d
-$(DEPS_DIR)/mpid_misc.d: $(srcdir)/mpid_misc.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_misc.c > $(DEPS_DIR)/mpid_misc.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_misc.c >$(DEPS_DIR)/mpid_misc.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_misc.c >$(DEPS_DIR)/mpid_misc.d
-$(DEPS_DIR)/timestamp: mpid_rma_common.c mpid_win_create.c mpid_win_fence.c mpid_win_pscw.c \
-	mpid_win_lock.c mpid_put.c mpid_get.c mpid_accumulate.c mpid_misc.c \
-	mpid_onesided.h Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_rma_common.c > $(DEPS_DIR)/mpid_rma_common.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_rma_common.c >$(DEPS_DIR)/mpid_rma_common.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_rma_common.c >$(DEPS_DIR)/mpid_rma_common.d
-	echo "include $(DEPS_DIR)/mpid_rma_common.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_win_create.c > $(DEPS_DIR)/mpid_win_create.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_win_create.c >$(DEPS_DIR)/mpid_win_create.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_win_create.c >$(DEPS_DIR)/mpid_win_create.d
-	echo "include $(DEPS_DIR)/mpid_win_create.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_win_fence.c > $(DEPS_DIR)/mpid_win_fence.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_win_fence.c >$(DEPS_DIR)/mpid_win_fence.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_win_fence.c >$(DEPS_DIR)/mpid_win_fence.d
-	echo "include $(DEPS_DIR)/mpid_win_fence.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_win_pscw.c > $(DEPS_DIR)/mpid_win_pscw.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_win_pscw.c >$(DEPS_DIR)/mpid_win_pscw.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_win_pscw.c >$(DEPS_DIR)/mpid_win_pscw.d
-	echo "include $(DEPS_DIR)/mpid_win_pscw.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_win_lock.c > $(DEPS_DIR)/mpid_win_lock.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_win_lock.c >$(DEPS_DIR)/mpid_win_lock.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_win_lock.c >$(DEPS_DIR)/mpid_win_lock.d
-	echo "include $(DEPS_DIR)/mpid_win_lock.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_put.c > $(DEPS_DIR)/mpid_put.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_put.c >$(DEPS_DIR)/mpid_put.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_put.c >$(DEPS_DIR)/mpid_put.d
-	echo "include $(DEPS_DIR)/mpid_put.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_get.c > $(DEPS_DIR)/mpid_get.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_get.c >$(DEPS_DIR)/mpid_get.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_get.c >$(DEPS_DIR)/mpid_get.d
-	echo "include $(DEPS_DIR)/mpid_get.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_accumulate.c > $(DEPS_DIR)/mpid_accumulate.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_accumulate.c >$(DEPS_DIR)/mpid_accumulate.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_accumulate.c >$(DEPS_DIR)/mpid_accumulate.d
-	echo "include $(DEPS_DIR)/mpid_accumulate.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_misc.c > $(DEPS_DIR)/mpid_misc.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_misc.c >$(DEPS_DIR)/mpid_misc.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_misc.c >$(DEPS_DIR)/mpid_misc.d
-	echo "include $(DEPS_DIR)/mpid_misc.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  mpid_rma_common.c mpid_win_create.c mpid_win_fence.c \
-	mpid_win_pscw.c mpid_win_lock.c mpid_put.c mpid_get.c \
-	mpid_accumulate.c mpid_misc.c 
+SOURCES         =  mpid_rma_common.c mpid_win_create.c mpid_win_fence.c mpid_win_pscw.c \
+	mpid_win_lock.c mpid_put.c mpid_get.c mpid_accumulate.c mpid_misc.c 
 HEADERS         =  mpid_onesided.h
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
+
+.POSIX:
 
 FORCE_TARGET:
 

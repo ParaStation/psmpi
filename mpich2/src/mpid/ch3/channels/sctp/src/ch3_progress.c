@@ -14,13 +14,11 @@
 #include "sctp_common.h"
 
 volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
-#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#if defined(MPICH_IS_THREADED
     volatile int MPIDI_CH3I_progress_blocked = FALSE;
     volatile int MPIDI_CH3I_progress_wakeup_signalled = FALSE;
 
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
-MPID_Thread_cond_t MPIDI_CH3I_progress_completion_cond;
-#   endif
+    MPID_Thread_cond_t MPIDI_CH3I_progress_completion_cond;
     static int MPIDI_CH3I_Progress_delay(unsigned int completion_count);
     static int MPIDI_CH3I_Progress_continue(unsigned int completion_count);
 #endif
@@ -129,7 +127,7 @@ int MPIDI_CH3_Progress_wait(MPID_Progress_state * progress_state)
      *
      * This is presently not possible, and thus the code is commented out.
      */
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_NOT_IMPLEMENTED)
+#   if !defined(MPICH_IS_THREADED)
     {
 	if (progress_state->ch.completion_count != MPIDI_CH3I_progress_completion_count)
 	{
@@ -260,7 +258,8 @@ int MPIDI_CH3I_Progress_init(int pg_size)
 
     MPIDI_DBG_PRINTF((60, FCNAME, "entering"));
 
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+    /* FIXME should be appropriately abstracted somehow */
+#   if defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
     {
 	MPID_Thread_cond_create(&MPIDI_CH3I_progress_completion_cond, NULL);
     }
@@ -320,7 +319,8 @@ int MPIDI_CH3I_Progress_finalize(void)
     /* finalize hash table */
     hash_free(MPIDI_CH3I_assocID_table);
 
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+    /* FIXME should be appropriately abstracted somehow */
+#   if defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
     {
 	MPID_Thread_cond_destroy(&MPIDI_CH3I_progress_completion_cond, NULL);
     }
@@ -605,7 +605,7 @@ int MPIDI_CH3I_Progress_handle_sctp_event(MPIDU_Sctp_event_t * event)
 
             MPIDI_VC_t* vc = (MPIDI_VC_t*) event-> user_ptr;  /* points to VC for close */
             
-            MPIU_Assert(vc->state == MPIDI_VC_STATE_CLOSE_ACKED);
+            MPIU_Assert(vc->state == MPIDI_VC_STATE_CLOSED);
 
             if(vc == MPIDI_CH3I_dynamic_tmp_vc) {
                 MPIU_Assert(MPIDI_CH3I_dynamic_tmp_fd == vc->ch.fd);
@@ -866,7 +866,7 @@ fn_exit:
 /* end MPIDI_CH3I_Progress_handle_sctp_event() */
 
 
-#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
+#if defined(MPICH_IS_THREADED)
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress_delay
@@ -876,7 +876,8 @@ static int MPIDI_CH3I_Progress_delay(unsigned int completion_count)
 {
     int mpi_errno = MPI_SUCCESS;
     
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+    /* FIXME should be appropriately abstracted somehow */
+#   if defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
     {
 	while (completion_count == MPIDI_CH3I_progress_completion_count)
 	{
@@ -898,7 +899,8 @@ static int MPIDI_CH3I_Progress_continue(unsigned int completion_count)
 {
     int mpi_errno = MPI_SUCCESS;
 
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+    /* FIXME should be appropriately abstracted somehow */
+#   if defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
     {
 	MPID_Thread_cond_broadcast(&MPIDI_CH3I_progress_completion_cond);
     }
@@ -908,7 +910,7 @@ static int MPIDI_CH3I_Progress_continue(unsigned int completion_count)
 }
 /* end MPIDI_CH3I_Progress_continue() */
 
-#endif /* (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL) */
+#endif /* defined(MPICH_IS_THREADED) */
 
 
 #define MPIDI_MAX_KVS_KEY_LEN      256

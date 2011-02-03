@@ -10,7 +10,8 @@
 #                         University of Stuttgart.  All rights reserved.
 # Copyright (c) 2004-2005 The Regents of the University of California.
 #                         All rights reserved.
-# Copyright © 2009 Cisco Systems, Inc.  All rights reserved.
+# Copyright © 2010 INRIA
+# Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 # $COPYRIGHT$
 # 
 # Additional copyrights may follow
@@ -103,8 +104,8 @@ endif
 if ($vpath == 1 && ! -d $srcdir/doc/doxygen-doc) then
     echo "*** This is a VPATH 'make dist', but the srcdir does not already"
     echo "*** have a doxygen-doc tree built.  hwloc's config/distscript.csh"
-    echo "*** the docs to be built in the srcdir before executing 'make"
-    echo "*** dist' in a VPATH build."
+    echo "*** requores the docs to be built in the srcdir before executing"
+    echo "*** 'make dist' in a VPATH build."
     exit 1
 endif
 
@@ -127,12 +128,6 @@ if ($vpath == 0) then
         echo ERROR: cannot continue
         exit 1
     endif
-
-    # Remove generate latex kruft; no need to ship that.  
-    echo "*** Remove generated latex kruft: `pwd`"
-    cd doxygen-doc/latex
-    rm -f *.aux *.toc *.idx *.ind *.ilg *.log *.out
-    cd ../..
 
     # Make new README file
     echo "*** Making new README"
@@ -164,6 +159,15 @@ cp -pf $srcdir/README $distdir
 #########################################################
 cd "$distdir"
 echo "*** Now in distdir: $distdir"
+
+#
+# Remove all the latex source files from the distribution tree (the
+# PDFs are still there; we're just removing the latex source because
+# some of the filenames get really, really long...).
+#
+
+echo "*** Removing latex source from dist tree"
+rm -rf doc/doxygen-doc/latex
 
 #
 # Get the latest config.guess and config.sub from ftp.gnu.org

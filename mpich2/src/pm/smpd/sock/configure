@@ -1882,6 +1882,8 @@ ac_config_headers="$ac_config_headers smpdu_sock_conf.h"
 echo "RUNNING CONFIGURE FOR THE SMPD SOCK INTERFACE"
 
 
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 date >conftest$$
 # If creating a file in the current directory does not show up in the srcdir
@@ -1928,6 +1930,8 @@ $as_echo "$as_me: error: You cannot do a VPATH build if the source directory has
         fi
     fi
 fi
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 
 
@@ -3143,7 +3147,6 @@ fi
 
 
 
-
 { $as_echo "$as_me:$LINENO: checking for virtual path format" >&5
 $as_echo_n "checking for virtual path format... " >&6; }
 if test "${pac_cv_prog_make_vpath+set}" = set; then
@@ -3194,7 +3197,6 @@ if test "$pac_cv_prog_make_vpath" = "VPATH" ; then
 elif test "$pac_cv_prog_make_vpath" = ".PATH" ; then
     VPATH='.PATH: . ${srcdir}'
 fi
-
 
 
 
@@ -3422,7 +3424,13 @@ $as_echo "$as_me: ===== configuring ${smpd_sock_name} =====" >&6;}
 
 # Build any intermediate directories
 for dir in ${smpd_sock_name} ; do
-    saveIFS="$IFS"
+
+	if test -z "${pac_save_IFS_nesting}" ; then
+	   pac_save_IFS_nesting=0
+	fi
+	eval pac_save_IFS_${pac_save_IFS_nesting}='"$IFS"'
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} + 1`
+
     IFS="/"
     tmp_curdir=""
     for tmp_subdir in $dir ; do
@@ -3430,7 +3438,11 @@ for dir in ${smpd_sock_name} ; do
 	if test ! -d "$tmp_curdir" ; then mkdir "$tmp_curdir" ; fi
         tmp_curdir="${tmp_curdir}/"
     done
-    IFS="$saveIFS"
+
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} - 1`
+	eval IFS="\$pac_save_IFS_${pac_save_IFS_nesting}"
+	eval pac_save_IFS_${pac_save_IFS_nesting}=""
+
 done
 
 	pac_abs_srcdir=`(cd $srcdir && pwd)`
@@ -3442,82 +3454,85 @@ done
         pac_subconfigure_file="$pac_abs_srcdir/${smpd_sock_name}/configure"
 	if test -x $pac_subconfigure_file ; then
 	   pac_subconfig_args=""
-	   prev_arg=""
 
-	   # Strip off the args we need to update
-	   for ac_arg in $ac_configure_args ; do
+            # Set IFS so ac_configure_args can be tokenized
+            # with extra " " tokens being skipped.
 
-	       # HACK: Though each argument in ac_configure_args is
-	       # quoted to account for spaces, when we get them, the
-	       # argument list is treated as a space separated list
-	       # and the quotes are treated as a part of the
-	       # argument. So, we explicitly look for the quotes and
-	       # recreate the arguments. If/when this is fixed by
-	       # autoconf, this hack can be deleted.
-	       end_char=`echo $ac_arg | sed -e 's/.*\(.\)$/\1/g'`
+	if test -z "${pac_save_IFS_nesting}" ; then
+	   pac_save_IFS_nesting=0
+	fi
+	eval pac_save_IFS_${pac_save_IFS_nesting}='"$IFS"'
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} + 1`
 
-	       # If the previous argument was incomplete, we append
-	       # this argument to that
-	       if test "$prev_arg" != "" -o "$end_char" != "'" ; then
-                  prev_arg="$prev_arg $ac_arg"
-	       fi
+            IFS="'"
+            for pac_arg in $ac_configure_args ; do
+                case "$pac_arg" in
+                # Ignore any null and leading blank strings.
+                ""|" "*)
+                    ;;
+                *)
+                    pac_pval=""
+                    # Restore IFS so ac_precious_vars which has
+                    # " " as separator can be correctly tokenized
 
-	       # If the end character is a quote, we are at the end of
-	       # an argument.
-	       if test "$end_char" = "'" ; then
-                  # If the previous argument just got completed, set
-		  # the current argument to the entire argument value
-		  if test "$prev_arg" != "" ; then ac_arg="$prev_arg" ; fi
-		  prev_arg=
-	       else
-		  # If the previous argument hasn't completed yet,
-		  # just continue on to the next argument
-		  continue
-	       fi
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} - 1`
+	eval IFS="\$pac_save_IFS_${pac_save_IFS_nesting}"
+	eval pac_save_IFS_${pac_save_IFS_nesting}=""
 
-	       # Remove any quotes around the args (added by configure)
-	       ac_narg=`echo $ac_arg | sed -e "s/^'\(.*\)'$/\1/g"`
+                    for pac_pvar in $ac_precious_vars ; do
+                        # check if configure argument token contains the
+                        # precious variable, i.e. "name_of_prec_var=".
+                        pvar_in_arg=`echo $pac_arg | grep "$pac_pvar="`
+                        if test "X$pvar_in_arg" != "X" ; then
+                            # check if current precious variable is set in env
+                            eval pvar_set=\${$pac_pvar+set}
+                            if test "$pvar_set" = "set" ; then
+                                # Append 'name_of_prec_var=value_of_prec_var'
+                                # to the subconfigure arguments list, where
+                                # value_of_prec_var is fetched from the env.
+                                eval pac_pval=\${$pac_pvar}
+                                pac_subconfig_args="$pac_subconfig_args '$pac_pvar=$pac_pval'"
+                                break
+                            fi
+                        fi
+                    done
+                    # since the precious variable is not set in the env.,
+                    # append the corresponding configure argument token
+                    # to the subconfigure argument list.
+                    if test "X$pac_pval" = "X" ; then
+                        pac_subconfig_args="$pac_subconfig_args '$pac_arg'"
+                    fi
+                    # reset "'" as IFS to process ac_configure_args
 
-	       case $ac_narg in
-                   CFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CFLAGS='$CFLAGS'"
-		       ;;
-		   CPPFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CPPFLAGS='$CPPFLAGS'"
-		       ;;
-		   CXXFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CXXFLAGS='$CXXFLAGS'"
-		       ;;
-		   FFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args FFLAGS='$FFLAGS'"
-		       ;;
-		   F90FLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args F90FLAGS='$F90FLAGS'"
-		       ;;
-		   LDFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args LDFLAGS='$LDFLAGS'"
-		       ;;
-		   LIBS=*)
-		       pac_subconfig_args="$pac_subconfig_args LIBS='$LIBS'"
-		       ;;
-		   *)
-		       # We store ac_arg instead of ac_narg to make
-		       # sure we retain the quotes as provided to us
-		       # by autoconf
-		       pac_subconfig_args="$pac_subconfig_args $ac_arg"
-		       ;;
-	       esac
-	   done
+	if test -z "${pac_save_IFS_nesting}" ; then
+	   pac_save_IFS_nesting=0
+	fi
+	eval pac_save_IFS_${pac_save_IFS_nesting}='"$IFS"'
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} + 1`
 
-	   echo "executing: $pac_subconfigure_file $pac_subconfig_args"
+                    IFS="'"
+                    ;;
+                esac
+            done
+            # Restore IFS.
+
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} - 1`
+	eval IFS="\$pac_save_IFS_${pac_save_IFS_nesting}"
+	eval pac_save_IFS_${pac_save_IFS_nesting}=""
+
+
+                      if test "$enable_option_checking" = no ; then
+              pac_subconfig_args="$pac_subconfig_args --disable-option-checking"
+           fi
+
+	   { $as_echo "$as_me:$LINENO: executing: $pac_subconfigure_file $pac_subconfig_args" >&5
+$as_echo "$as_me: executing: $pac_subconfigure_file $pac_subconfig_args" >&6;}
 	   if (cd ${smpd_sock_name} && eval $pac_subconfigure_file $pac_subconfig_args) ; then
-
-	      :
+               :
 	   else
-	      { { $as_echo "$as_me:$LINENO: error: ${smpd_sock_name} configure failed" >&5
+               { { $as_echo "$as_me:$LINENO: error: ${smpd_sock_name} configure failed" >&5
 $as_echo "$as_me: error: ${smpd_sock_name} configure failed" >&2;}
    { (exit 1); exit 1; }; }
-	      :
 	   fi
         else
            if test -e $pac_subconfigure_file ; then

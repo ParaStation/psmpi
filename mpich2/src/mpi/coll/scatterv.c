@@ -41,8 +41,13 @@
 */
 
 /* not declared static because it is called in intercomm. reduce_scatter */
+/* MPIR_Scatterv performs an scatterv using point-to-point messages.
+   This is intended to be used by device-specific implementations of
+   scatterv.  In all other cases MPIR_Scatterv_impl should be used. */
 #undef FUNCNAME
 #define FUNCNAME MPIR_Scatterv
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIR_Scatterv ( 
 	void *sendbuf, 
 	int *sendcnts, 
@@ -52,10 +57,11 @@ int MPIR_Scatterv (
 	int recvcnt,  
 	MPI_Datatype recvtype, 
 	int root, 
-	MPID_Comm *comm_ptr )
+	MPID_Comm *comm_ptr,
+        int *errflag )
 {
-    static const char FCNAME[] = "MPIR_Scatterv";
     int rank, comm_size, mpi_errno = MPI_SUCCESS;
+    int mpi_errno_ret = MPI_SUCCESS;
     MPI_Comm comm;
     MPI_Aint extent;
     int      i, reqs;
@@ -97,28 +103,32 @@ int MPIR_Scatterv (
                         mpi_errno = MPIR_Localcopy(((char *)sendbuf+displs[rank]*extent), 
                                                    sendcnts[rank], sendtype, 
                                                    recvbuf, recvcnt, recvtype);
+                        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
                     }
                 }
                 else {
-                    mpi_errno = MPIC_Isend(((char *)sendbuf+displs[i]*extent), 
-                                           sendcnts[i], sendtype, i,
-                                           MPIR_SCATTERV_TAG, comm, &reqarray[reqs++]);
+                    mpi_errno = MPIC_Isend_ft(((char *)sendbuf+displs[i]*extent), 
+                                              sendcnts[i], sendtype, i,
+                                              MPIR_SCATTERV_TAG, comm, &reqarray[reqs++], errflag);
+                    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
                 }
-		/* --BEGIN ERROR HANDLING-- */
-                if (mpi_errno) {
-		    mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-		    return mpi_errno;
-		}
-		/* --END ERROR HANDLING-- */
             }
         }
         /* ... then wait for *all* of them to finish: */
-        mpi_errno = NMPI_Waitall(reqs, reqarray, starray);
+        mpi_errno = MPIC_Waitall_ft(reqs, reqarray, starray, errflag);
+        if (mpi_errno && mpi_errno != MPI_ERR_IN_STATUS) MPIU_ERR_POP(mpi_errno);
         /* --BEGIN ERROR HANDLING-- */
         if (mpi_errno == MPI_ERR_IN_STATUS) {
             for (i = 0; i < reqs; i++) {
-                if (starray[i].MPI_ERROR != MPI_SUCCESS)
+                if (starray[i].MPI_ERROR != MPI_SUCCESS) {
                     mpi_errno = starray[i].MPI_ERROR;
+                    if (mpi_errno) {
+                        /* for communication errors, just record the error but continue */
+                        *errflag = TRUE;
+                        MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**fail");
+                        MPIU_ERR_ADD(mpi_errno_ret, mpi_errno);
+                    }
+                }
             }
         }
         /* --END ERROR HANDLING-- */
@@ -126,24 +136,60 @@ int MPIR_Scatterv (
 
     else if (root != MPI_PROC_NULL) { /* non-root nodes, and in the intercomm. case, non-root nodes on remote side */
         if (recvcnt) {
-            mpi_errno = MPIC_Recv(recvbuf,recvcnt,recvtype,root,
-                                  MPIR_SCATTERV_TAG,comm,MPI_STATUS_IGNORE);
-            /* --BEGIN ERROR HANDLING-- */
+            mpi_errno = MPIC_Recv_ft(recvbuf,recvcnt,recvtype,root,
+                                     MPIR_SCATTERV_TAG,comm,MPI_STATUS_IGNORE, errflag);
             if (mpi_errno) {
-                mpi_errno = MPIR_Err_create_code(mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**fail", 0);
-                return mpi_errno;
+                /* for communication errors, just record the error but continue */
+                *errflag = TRUE;
+                MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**fail");
+                MPIU_ERR_ADD(mpi_errno_ret, mpi_errno);
             }
-            /* --END ERROR HANDLING-- */
         }
     }
     
-    /* check if multiple threads are calling this collective function */
-    MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
     
 fn_exit:
+    /* check if multiple threads are calling this collective function */
+    MPIDU_ERR_CHECK_MULTIPLE_THREADS_EXIT( comm_ptr );
     MPIU_CHKLMEM_FREEALL();
+    if (mpi_errno_ret)
+        mpi_errno = mpi_errno_ret;
+    else if (*errflag)
+        MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**coll_fail");
     return mpi_errno;
 fn_fail:
+    goto fn_exit;
+}
+
+/* MPIR_Scatterv_impl should be called by any internal component that
+   would otherwise call MPI_Scatterv.  This differs from MPIR_Scatterv
+   in that this will call the coll_fns version if it exists.  This
+   function replaces NMPI_Scatterv. */
+#undef FUNCNAME
+#define FUNCNAME MPIR_Scatterv_impl
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPIR_Scatterv_impl(void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendtype,
+                       void *recvbuf, int recvcnt, MPI_Datatype recvtype,
+                       int root, MPID_Comm *comm_ptr, int *errflag)
+{
+    int mpi_errno = MPI_SUCCESS;
+        
+    if (comm_ptr->coll_fns != NULL && comm_ptr->coll_fns->Scatter != NULL) {
+	mpi_errno = comm_ptr->coll_fns->Scatterv(sendbuf, sendcnts, displs,
+                                                 sendtype, recvbuf, recvcnt,
+                                                 recvtype, root, comm_ptr, errflag);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    } else {
+        mpi_errno = MPIR_Scatterv(sendbuf, sendcnts, displs, sendtype,
+                                  recvbuf, recvcnt, recvtype,
+                                  root, comm_ptr, errflag);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    }
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
     goto fn_exit;
 }
 
@@ -151,7 +197,8 @@ fn_fail:
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Scatterv
-
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
 
 MPI_Scatterv - Scatters a buffer in parts to all processes in a communicator
@@ -188,10 +235,9 @@ int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs,
 		  MPI_Datatype recvtype,
 		  int root, MPI_Comm comm)
 {
-    static const char FCNAME[] = "MPI_Scatterv";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPIU_THREADPRIV_DECL;
+    int errflag = FALSE;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_SCATTERV);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -310,24 +356,10 @@ int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs,
 
     /* ... body of routine ...  */
 
-    if (comm_ptr->coll_fns != NULL && comm_ptr->coll_fns->Scatter != NULL)
-    {
-	mpi_errno = comm_ptr->coll_fns->Scatterv(sendbuf, sendcnts, displs,
-                                                sendtype, recvbuf, recvcnt,
-                                                recvtype, root, comm_ptr);
-    }
-    else
-    {
-	MPIU_THREADPRIV_GET;
-
-        MPIR_Nest_incr();
-        mpi_errno = MPIR_Scatterv(sendbuf, sendcnts, displs, sendtype, 
-                                  recvbuf, recvcnt, recvtype, 
-                                  root, comm_ptr); 
-        MPIR_Nest_decr();
-    }
-    
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    mpi_errno = MPIR_Scatterv_impl(sendbuf, sendcnts, displs, sendtype,
+                                   recvbuf, recvcnt, recvtype,
+                                   root, comm_ptr, &errflag);
+    if (mpi_errno) goto fn_fail;
 
     /* ... end of body of routine ... */
     

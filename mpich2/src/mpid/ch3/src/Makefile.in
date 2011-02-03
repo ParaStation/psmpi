@@ -29,7 +29,7 @@ VPATH = .:@srcdir@
 INCLUDES = -I../../../include -I${master_top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -46,8 +46,6 @@ INCLUDES = -I../../../include -I${master_top_srcdir}/src/include
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -55,61 +53,36 @@ INCLUDES = -I../../../include -I${master_top_srcdir}/src/include
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../ \
-	-configdir=src/mpid/ch3/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    ${MAKE} .libstamp1 || exit 1; \
 	fi
 
-.libstamp0 ../../../../lib/lib${MPILIBNAME}.a: ch3u_buffer.o \
-	ch3u_comm_spawn_multiple.o ch3u_handle_connection.o \
-	ch3u_handle_recv_pkt.o ch3u_handle_recv_req.o ch3u_handle_send_req.o \
-	ch3u_port.o ch3u_recvq.o ch3u_request.o ch3u_rma_ops.o \
-	ch3u_rma_sync.o ch3u_rndv.o ch3u_eager.o ch3u_eagersync.o \
-	mpid_abort.o mpid_cancel_recv.o mpid_cancel_send.o \
-	mpid_comm_disconnect.o mpid_comm_spawn_multiple.o mpid_finalize.o \
-	mpid_get_universe_size.o mpid_getpname.o mpid_init.o mpid_iprobe.o \
-	mpid_irecv.o mpid_irsend.o mpid_isend.o mpid_issend.o mpid_port.o \
-	mpid_probe.o mpid_recv.o mpid_rsend.o mpid_send.o mpid_ssend.o \
-	mpid_startall.o mpid_vc.o mpid_rma.o mpidi_isend_self.o mpidi_pg.o \
-	mpidi_printf.o  
+.libstamp0 ../../../../lib/lib${MPILIBNAME}.a: ch3u_buffer.o ch3u_comm_spawn_multiple.o \
+	ch3u_handle_connection.o ch3u_handle_recv_pkt.o ch3u_handle_recv_req.o \
+	ch3u_handle_send_req.o ch3u_port.o ch3u_recvq.o ch3u_request.o ch3u_rma_ops.o \
+	ch3u_rma_sync.o ch3u_rndv.o ch3u_eager.o ch3u_eagersync.o mpid_abort.o mpid_cancel_recv.o \
+	mpid_cancel_send.o mpid_comm_disconnect.o mpid_comm_spawn_multiple.o mpid_finalize.o \
+	mpid_get_universe_size.o mpid_getpname.o mpid_init.o mpid_iprobe.o mpid_irecv.o \
+	mpid_irsend.o mpid_isend.o mpid_issend.o mpid_port.o mpid_probe.o mpid_recv.o \
+	mpid_rsend.o mpid_send.o mpid_ssend.o mpid_startall.o mpid_vc.o mpid_rma.o \
+	mpidi_isend_self.o mpidi_pg.o mpidi_printf.o  
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
@@ -123,19 +96,15 @@ all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../../lib/lib${MPILIBNAME}.la: ch3u_buffer.lo \
-	ch3u_comm_spawn_multiple.lo ch3u_handle_connection.lo \
-	ch3u_handle_recv_pkt.lo ch3u_handle_recv_req.lo \
-	ch3u_handle_send_req.lo ch3u_port.lo ch3u_recvq.lo ch3u_request.lo \
-	ch3u_rma_ops.lo ch3u_rma_sync.lo ch3u_rndv.lo ch3u_eager.lo \
-	ch3u_eagersync.lo mpid_abort.lo mpid_cancel_recv.lo \
-	mpid_cancel_send.lo mpid_comm_disconnect.lo \
-	mpid_comm_spawn_multiple.lo mpid_finalize.lo \
-	mpid_get_universe_size.lo mpid_getpname.lo mpid_init.lo \
-	mpid_iprobe.lo mpid_irecv.lo mpid_irsend.lo mpid_isend.lo \
-	mpid_issend.lo mpid_port.lo mpid_probe.lo mpid_recv.lo mpid_rsend.lo \
-	mpid_send.lo mpid_ssend.lo mpid_startall.lo mpid_vc.lo mpid_rma.lo \
-	mpidi_isend_self.lo mpidi_pg.lo mpidi_printf.lo  
+.libstamp1 ../../../../lib/lib${MPILIBNAME}.la: ch3u_buffer.lo ch3u_comm_spawn_multiple.lo \
+	ch3u_handle_connection.lo ch3u_handle_recv_pkt.lo ch3u_handle_recv_req.lo \
+	ch3u_handle_send_req.lo ch3u_port.lo ch3u_recvq.lo ch3u_request.lo ch3u_rma_ops.lo \
+	ch3u_rma_sync.lo ch3u_rndv.lo ch3u_eager.lo ch3u_eagersync.lo mpid_abort.lo \
+	mpid_cancel_recv.lo mpid_cancel_send.lo mpid_comm_disconnect.lo \
+	mpid_comm_spawn_multiple.lo mpid_finalize.lo mpid_get_universe_size.lo mpid_getpname.lo \
+	mpid_init.lo mpid_iprobe.lo mpid_irecv.lo mpid_irsend.lo mpid_isend.lo mpid_issend.lo \
+	mpid_port.lo mpid_probe.lo mpid_recv.lo mpid_rsend.lo mpid_send.lo mpid_ssend.lo \
+	mpid_startall.lo mpid_vc.lo mpid_rma.lo mpidi_isend_self.lo mpidi_pg.lo mpidi_printf.lo  
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -143,632 +112,23 @@ all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${AR} ${AR_FLAGS} ../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
-coverage: 
-	-@for file in ch3u_buffer.c		    ch3u_comm_spawn_multiple.c	    \
-	ch3u_handle_connection.c	    ch3u_handle_recv_pkt.c	    \
-	ch3u_handle_recv_req.c	    ch3u_handle_send_req.c	    ch3u_port.c     \
-	                ch3u_recvq.c		    ch3u_request.c		    \
-	ch3u_rma_ops.c		    ch3u_rma_sync.c		    ch3u_rndv.c                  \
-	   ch3u_eager.c                    ch3u_eagersync.c                \
-	mpid_abort.c		    mpid_cancel_recv.c		    mpid_cancel_send.c		    \
-	mpid_comm_disconnect.c	    mpid_comm_spawn_multiple.c	    \
-	mpid_finalize.c		    mpid_get_universe_size.c	    mpid_getpname.c		   \
-	 mpid_init.c			    mpid_iprobe.c		    mpid_irecv.c		    \
-	mpid_irsend.c		    mpid_isend.c		    mpid_issend.c		    \
-	mpid_port.c			    mpid_probe.c		    mpid_recv.c			    mpid_rsend.c		  \
-	  mpid_send.c			    mpid_ssend.c		    mpid_startall.c		    \
-	mpid_vc.c			    mpid_rma.c			    mpidi_isend_self.c		    \
-	mpidi_pg.c			    mpidi_printf.c		@MPID_THREAD_SOURCES@ ; do \
-		gcov -b -f $$file ; done
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/ch3u_buffer.d: $(srcdir)/ch3u_buffer.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_buffer.c > $(DEPS_DIR)/ch3u_buffer.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_buffer.c >$(DEPS_DIR)/ch3u_buffer.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_buffer.c >$(DEPS_DIR)/ch3u_buffer.d
-$(DEPS_DIR)/ch3u_comm_spawn_multiple.d: $(srcdir)/ch3u_comm_spawn_multiple.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_comm_spawn_multiple.c > $(DEPS_DIR)/ch3u_comm_spawn_multiple.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_comm_spawn_multiple.c >$(DEPS_DIR)/ch3u_comm_spawn_multiple.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_comm_spawn_multiple.c >$(DEPS_DIR)/ch3u_comm_spawn_multiple.d
-$(DEPS_DIR)/ch3u_handle_connection.d: $(srcdir)/ch3u_handle_connection.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_handle_connection.c > $(DEPS_DIR)/ch3u_handle_connection.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_connection.c >$(DEPS_DIR)/ch3u_handle_connection.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_connection.c >$(DEPS_DIR)/ch3u_handle_connection.d
-$(DEPS_DIR)/ch3u_handle_recv_pkt.d: $(srcdir)/ch3u_handle_recv_pkt.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_handle_recv_pkt.c > $(DEPS_DIR)/ch3u_handle_recv_pkt.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_recv_pkt.c >$(DEPS_DIR)/ch3u_handle_recv_pkt.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_recv_pkt.c >$(DEPS_DIR)/ch3u_handle_recv_pkt.d
-$(DEPS_DIR)/ch3u_handle_recv_req.d: $(srcdir)/ch3u_handle_recv_req.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_handle_recv_req.c > $(DEPS_DIR)/ch3u_handle_recv_req.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_recv_req.c >$(DEPS_DIR)/ch3u_handle_recv_req.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_recv_req.c >$(DEPS_DIR)/ch3u_handle_recv_req.d
-$(DEPS_DIR)/ch3u_handle_send_req.d: $(srcdir)/ch3u_handle_send_req.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_handle_send_req.c > $(DEPS_DIR)/ch3u_handle_send_req.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_send_req.c >$(DEPS_DIR)/ch3u_handle_send_req.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_send_req.c >$(DEPS_DIR)/ch3u_handle_send_req.d
-$(DEPS_DIR)/ch3u_port.d: $(srcdir)/ch3u_port.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_port.c > $(DEPS_DIR)/ch3u_port.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_port.c >$(DEPS_DIR)/ch3u_port.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_port.c >$(DEPS_DIR)/ch3u_port.d
-$(DEPS_DIR)/ch3u_recvq.d: $(srcdir)/ch3u_recvq.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_recvq.c > $(DEPS_DIR)/ch3u_recvq.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_recvq.c >$(DEPS_DIR)/ch3u_recvq.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_recvq.c >$(DEPS_DIR)/ch3u_recvq.d
-$(DEPS_DIR)/ch3u_request.d: $(srcdir)/ch3u_request.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_request.c > $(DEPS_DIR)/ch3u_request.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_request.c >$(DEPS_DIR)/ch3u_request.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_request.c >$(DEPS_DIR)/ch3u_request.d
-$(DEPS_DIR)/ch3u_rma_ops.d: $(srcdir)/ch3u_rma_ops.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_rma_ops.c > $(DEPS_DIR)/ch3u_rma_ops.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_rma_ops.c >$(DEPS_DIR)/ch3u_rma_ops.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_rma_ops.c >$(DEPS_DIR)/ch3u_rma_ops.d
-$(DEPS_DIR)/ch3u_rma_sync.d: $(srcdir)/ch3u_rma_sync.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_rma_sync.c > $(DEPS_DIR)/ch3u_rma_sync.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_rma_sync.c >$(DEPS_DIR)/ch3u_rma_sync.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_rma_sync.c >$(DEPS_DIR)/ch3u_rma_sync.d
-$(DEPS_DIR)/ch3u_rndv.d: $(srcdir)/ch3u_rndv.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_rndv.c > $(DEPS_DIR)/ch3u_rndv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_rndv.c >$(DEPS_DIR)/ch3u_rndv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_rndv.c >$(DEPS_DIR)/ch3u_rndv.d
-$(DEPS_DIR)/ch3u_eager.d: $(srcdir)/ch3u_eager.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_eager.c > $(DEPS_DIR)/ch3u_eager.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_eager.c >$(DEPS_DIR)/ch3u_eager.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_eager.c >$(DEPS_DIR)/ch3u_eager.d
-$(DEPS_DIR)/ch3u_eagersync.d: $(srcdir)/ch3u_eagersync.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_eagersync.c > $(DEPS_DIR)/ch3u_eagersync.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_eagersync.c >$(DEPS_DIR)/ch3u_eagersync.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_eagersync.c >$(DEPS_DIR)/ch3u_eagersync.d
-$(DEPS_DIR)/mpid_abort.d: $(srcdir)/mpid_abort.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_abort.c > $(DEPS_DIR)/mpid_abort.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_abort.c >$(DEPS_DIR)/mpid_abort.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_abort.c >$(DEPS_DIR)/mpid_abort.d
-$(DEPS_DIR)/mpid_cancel_recv.d: $(srcdir)/mpid_cancel_recv.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_cancel_recv.c > $(DEPS_DIR)/mpid_cancel_recv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_recv.c >$(DEPS_DIR)/mpid_cancel_recv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_recv.c >$(DEPS_DIR)/mpid_cancel_recv.d
-$(DEPS_DIR)/mpid_cancel_send.d: $(srcdir)/mpid_cancel_send.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_cancel_send.c > $(DEPS_DIR)/mpid_cancel_send.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_send.c >$(DEPS_DIR)/mpid_cancel_send.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_send.c >$(DEPS_DIR)/mpid_cancel_send.d
-$(DEPS_DIR)/mpid_comm_disconnect.d: $(srcdir)/mpid_comm_disconnect.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_comm_disconnect.c > $(DEPS_DIR)/mpid_comm_disconnect.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_comm_disconnect.c >$(DEPS_DIR)/mpid_comm_disconnect.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_comm_disconnect.c >$(DEPS_DIR)/mpid_comm_disconnect.d
-$(DEPS_DIR)/mpid_comm_spawn_multiple.d: $(srcdir)/mpid_comm_spawn_multiple.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_comm_spawn_multiple.c > $(DEPS_DIR)/mpid_comm_spawn_multiple.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_comm_spawn_multiple.c >$(DEPS_DIR)/mpid_comm_spawn_multiple.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_comm_spawn_multiple.c >$(DEPS_DIR)/mpid_comm_spawn_multiple.d
-$(DEPS_DIR)/mpid_finalize.d: $(srcdir)/mpid_finalize.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_finalize.c > $(DEPS_DIR)/mpid_finalize.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_finalize.c >$(DEPS_DIR)/mpid_finalize.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_finalize.c >$(DEPS_DIR)/mpid_finalize.d
-$(DEPS_DIR)/mpid_get_universe_size.d: $(srcdir)/mpid_get_universe_size.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_get_universe_size.c > $(DEPS_DIR)/mpid_get_universe_size.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_get_universe_size.c >$(DEPS_DIR)/mpid_get_universe_size.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_get_universe_size.c >$(DEPS_DIR)/mpid_get_universe_size.d
-$(DEPS_DIR)/mpid_getpname.d: $(srcdir)/mpid_getpname.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_getpname.c > $(DEPS_DIR)/mpid_getpname.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_getpname.c >$(DEPS_DIR)/mpid_getpname.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_getpname.c >$(DEPS_DIR)/mpid_getpname.d
-$(DEPS_DIR)/mpid_init.d: $(srcdir)/mpid_init.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_init.c > $(DEPS_DIR)/mpid_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_init.c >$(DEPS_DIR)/mpid_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_init.c >$(DEPS_DIR)/mpid_init.d
-$(DEPS_DIR)/mpid_iprobe.d: $(srcdir)/mpid_iprobe.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_iprobe.c > $(DEPS_DIR)/mpid_iprobe.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_iprobe.c >$(DEPS_DIR)/mpid_iprobe.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_iprobe.c >$(DEPS_DIR)/mpid_iprobe.d
-$(DEPS_DIR)/mpid_irecv.d: $(srcdir)/mpid_irecv.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_irecv.c > $(DEPS_DIR)/mpid_irecv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_irecv.c >$(DEPS_DIR)/mpid_irecv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_irecv.c >$(DEPS_DIR)/mpid_irecv.d
-$(DEPS_DIR)/mpid_irsend.d: $(srcdir)/mpid_irsend.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_irsend.c > $(DEPS_DIR)/mpid_irsend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_irsend.c >$(DEPS_DIR)/mpid_irsend.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_irsend.c >$(DEPS_DIR)/mpid_irsend.d
-$(DEPS_DIR)/mpid_isend.d: $(srcdir)/mpid_isend.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_isend.c > $(DEPS_DIR)/mpid_isend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_isend.c >$(DEPS_DIR)/mpid_isend.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_isend.c >$(DEPS_DIR)/mpid_isend.d
-$(DEPS_DIR)/mpid_issend.d: $(srcdir)/mpid_issend.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_issend.c > $(DEPS_DIR)/mpid_issend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_issend.c >$(DEPS_DIR)/mpid_issend.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_issend.c >$(DEPS_DIR)/mpid_issend.d
-$(DEPS_DIR)/mpid_port.d: $(srcdir)/mpid_port.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_port.c > $(DEPS_DIR)/mpid_port.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_port.c >$(DEPS_DIR)/mpid_port.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_port.c >$(DEPS_DIR)/mpid_port.d
-$(DEPS_DIR)/mpid_probe.d: $(srcdir)/mpid_probe.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_probe.c > $(DEPS_DIR)/mpid_probe.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_probe.c >$(DEPS_DIR)/mpid_probe.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_probe.c >$(DEPS_DIR)/mpid_probe.d
-$(DEPS_DIR)/mpid_recv.d: $(srcdir)/mpid_recv.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_recv.c > $(DEPS_DIR)/mpid_recv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_recv.c >$(DEPS_DIR)/mpid_recv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_recv.c >$(DEPS_DIR)/mpid_recv.d
-$(DEPS_DIR)/mpid_rsend.d: $(srcdir)/mpid_rsend.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_rsend.c > $(DEPS_DIR)/mpid_rsend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_rsend.c >$(DEPS_DIR)/mpid_rsend.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_rsend.c >$(DEPS_DIR)/mpid_rsend.d
-$(DEPS_DIR)/mpid_send.d: $(srcdir)/mpid_send.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_send.c > $(DEPS_DIR)/mpid_send.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_send.c >$(DEPS_DIR)/mpid_send.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_send.c >$(DEPS_DIR)/mpid_send.d
-$(DEPS_DIR)/mpid_ssend.d: $(srcdir)/mpid_ssend.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_ssend.c > $(DEPS_DIR)/mpid_ssend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_ssend.c >$(DEPS_DIR)/mpid_ssend.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_ssend.c >$(DEPS_DIR)/mpid_ssend.d
-$(DEPS_DIR)/mpid_startall.d: $(srcdir)/mpid_startall.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_startall.c > $(DEPS_DIR)/mpid_startall.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_startall.c >$(DEPS_DIR)/mpid_startall.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_startall.c >$(DEPS_DIR)/mpid_startall.d
-$(DEPS_DIR)/mpid_vc.d: $(srcdir)/mpid_vc.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_vc.c > $(DEPS_DIR)/mpid_vc.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_vc.c >$(DEPS_DIR)/mpid_vc.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_vc.c >$(DEPS_DIR)/mpid_vc.d
-$(DEPS_DIR)/mpid_rma.d: $(srcdir)/mpid_rma.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_rma.c > $(DEPS_DIR)/mpid_rma.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_rma.c >$(DEPS_DIR)/mpid_rma.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_rma.c >$(DEPS_DIR)/mpid_rma.d
-$(DEPS_DIR)/mpidi_isend_self.d: $(srcdir)/mpidi_isend_self.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpidi_isend_self.c > $(DEPS_DIR)/mpidi_isend_self.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_isend_self.c >$(DEPS_DIR)/mpidi_isend_self.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_isend_self.c >$(DEPS_DIR)/mpidi_isend_self.d
-$(DEPS_DIR)/mpidi_pg.d: $(srcdir)/mpidi_pg.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpidi_pg.c > $(DEPS_DIR)/mpidi_pg.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_pg.c >$(DEPS_DIR)/mpidi_pg.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_pg.c >$(DEPS_DIR)/mpidi_pg.d
-$(DEPS_DIR)/mpidi_printf.d: $(srcdir)/mpidi_printf.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpidi_printf.c > $(DEPS_DIR)/mpidi_printf.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_printf.c >$(DEPS_DIR)/mpidi_printf.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_printf.c >$(DEPS_DIR)/mpidi_printf.d
-$(DEPS_DIR)/timestamp: ch3u_buffer.c		    ch3u_comm_spawn_multiple.c	    ch3u_handle_connection.c	   \
-	 ch3u_handle_recv_pkt.c	    ch3u_handle_recv_req.c	    \
-	ch3u_handle_send_req.c	    ch3u_port.c                     \
-	ch3u_recvq.c		    ch3u_request.c		    ch3u_rma_ops.c		    \
-	ch3u_rma_sync.c		    ch3u_rndv.c                     ch3u_eager.c     \
-	               ch3u_eagersync.c                mpid_abort.c		    \
-	mpid_cancel_recv.c		    mpid_cancel_send.c		    \
-	mpid_comm_disconnect.c	    mpid_comm_spawn_multiple.c	    \
-	mpid_finalize.c		    mpid_get_universe_size.c	    mpid_getpname.c		   \
-	 mpid_init.c			    mpid_iprobe.c		    mpid_irecv.c		    \
-	mpid_irsend.c		    mpid_isend.c		    mpid_issend.c		    \
-	mpid_port.c			    mpid_probe.c		    mpid_recv.c			    mpid_rsend.c		  \
-	  mpid_send.c			    mpid_ssend.c		    mpid_startall.c		    \
-	mpid_vc.c			    mpid_rma.c			    mpidi_isend_self.c		    \
-	mpidi_pg.c			    mpidi_printf.c		@MPID_THREAD_SOURCES@ Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_buffer.c > $(DEPS_DIR)/ch3u_buffer.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_buffer.c >$(DEPS_DIR)/ch3u_buffer.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_buffer.c >$(DEPS_DIR)/ch3u_buffer.d
-	echo "include $(DEPS_DIR)/ch3u_buffer.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_comm_spawn_multiple.c > $(DEPS_DIR)/ch3u_comm_spawn_multiple.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_comm_spawn_multiple.c >$(DEPS_DIR)/ch3u_comm_spawn_multiple.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_comm_spawn_multiple.c >$(DEPS_DIR)/ch3u_comm_spawn_multiple.d
-	echo "include $(DEPS_DIR)/ch3u_comm_spawn_multiple.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_handle_connection.c > $(DEPS_DIR)/ch3u_handle_connection.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_connection.c >$(DEPS_DIR)/ch3u_handle_connection.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_connection.c >$(DEPS_DIR)/ch3u_handle_connection.d
-	echo "include $(DEPS_DIR)/ch3u_handle_connection.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_handle_recv_pkt.c > $(DEPS_DIR)/ch3u_handle_recv_pkt.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_recv_pkt.c >$(DEPS_DIR)/ch3u_handle_recv_pkt.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_recv_pkt.c >$(DEPS_DIR)/ch3u_handle_recv_pkt.d
-	echo "include $(DEPS_DIR)/ch3u_handle_recv_pkt.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_handle_recv_req.c > $(DEPS_DIR)/ch3u_handle_recv_req.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_recv_req.c >$(DEPS_DIR)/ch3u_handle_recv_req.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_recv_req.c >$(DEPS_DIR)/ch3u_handle_recv_req.d
-	echo "include $(DEPS_DIR)/ch3u_handle_recv_req.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_handle_send_req.c > $(DEPS_DIR)/ch3u_handle_send_req.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_send_req.c >$(DEPS_DIR)/ch3u_handle_send_req.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_handle_send_req.c >$(DEPS_DIR)/ch3u_handle_send_req.d
-	echo "include $(DEPS_DIR)/ch3u_handle_send_req.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_port.c > $(DEPS_DIR)/ch3u_port.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_port.c >$(DEPS_DIR)/ch3u_port.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_port.c >$(DEPS_DIR)/ch3u_port.d
-	echo "include $(DEPS_DIR)/ch3u_port.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_recvq.c > $(DEPS_DIR)/ch3u_recvq.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_recvq.c >$(DEPS_DIR)/ch3u_recvq.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_recvq.c >$(DEPS_DIR)/ch3u_recvq.d
-	echo "include $(DEPS_DIR)/ch3u_recvq.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_request.c > $(DEPS_DIR)/ch3u_request.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_request.c >$(DEPS_DIR)/ch3u_request.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_request.c >$(DEPS_DIR)/ch3u_request.d
-	echo "include $(DEPS_DIR)/ch3u_request.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_rma_ops.c > $(DEPS_DIR)/ch3u_rma_ops.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_rma_ops.c >$(DEPS_DIR)/ch3u_rma_ops.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_rma_ops.c >$(DEPS_DIR)/ch3u_rma_ops.d
-	echo "include $(DEPS_DIR)/ch3u_rma_ops.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_rma_sync.c > $(DEPS_DIR)/ch3u_rma_sync.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_rma_sync.c >$(DEPS_DIR)/ch3u_rma_sync.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_rma_sync.c >$(DEPS_DIR)/ch3u_rma_sync.d
-	echo "include $(DEPS_DIR)/ch3u_rma_sync.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_rndv.c > $(DEPS_DIR)/ch3u_rndv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_rndv.c >$(DEPS_DIR)/ch3u_rndv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_rndv.c >$(DEPS_DIR)/ch3u_rndv.d
-	echo "include $(DEPS_DIR)/ch3u_rndv.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_eager.c > $(DEPS_DIR)/ch3u_eager.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_eager.c >$(DEPS_DIR)/ch3u_eager.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_eager.c >$(DEPS_DIR)/ch3u_eager.d
-	echo "include $(DEPS_DIR)/ch3u_eager.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3u_eagersync.c > $(DEPS_DIR)/ch3u_eagersync.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3u_eagersync.c >$(DEPS_DIR)/ch3u_eagersync.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3u_eagersync.c >$(DEPS_DIR)/ch3u_eagersync.d
-	echo "include $(DEPS_DIR)/ch3u_eagersync.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_abort.c > $(DEPS_DIR)/mpid_abort.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_abort.c >$(DEPS_DIR)/mpid_abort.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_abort.c >$(DEPS_DIR)/mpid_abort.d
-	echo "include $(DEPS_DIR)/mpid_abort.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_cancel_recv.c > $(DEPS_DIR)/mpid_cancel_recv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_recv.c >$(DEPS_DIR)/mpid_cancel_recv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_recv.c >$(DEPS_DIR)/mpid_cancel_recv.d
-	echo "include $(DEPS_DIR)/mpid_cancel_recv.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_cancel_send.c > $(DEPS_DIR)/mpid_cancel_send.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_send.c >$(DEPS_DIR)/mpid_cancel_send.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_cancel_send.c >$(DEPS_DIR)/mpid_cancel_send.d
-	echo "include $(DEPS_DIR)/mpid_cancel_send.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_comm_disconnect.c > $(DEPS_DIR)/mpid_comm_disconnect.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_comm_disconnect.c >$(DEPS_DIR)/mpid_comm_disconnect.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_comm_disconnect.c >$(DEPS_DIR)/mpid_comm_disconnect.d
-	echo "include $(DEPS_DIR)/mpid_comm_disconnect.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_comm_spawn_multiple.c > $(DEPS_DIR)/mpid_comm_spawn_multiple.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_comm_spawn_multiple.c >$(DEPS_DIR)/mpid_comm_spawn_multiple.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_comm_spawn_multiple.c >$(DEPS_DIR)/mpid_comm_spawn_multiple.d
-	echo "include $(DEPS_DIR)/mpid_comm_spawn_multiple.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_finalize.c > $(DEPS_DIR)/mpid_finalize.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_finalize.c >$(DEPS_DIR)/mpid_finalize.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_finalize.c >$(DEPS_DIR)/mpid_finalize.d
-	echo "include $(DEPS_DIR)/mpid_finalize.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_get_universe_size.c > $(DEPS_DIR)/mpid_get_universe_size.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_get_universe_size.c >$(DEPS_DIR)/mpid_get_universe_size.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_get_universe_size.c >$(DEPS_DIR)/mpid_get_universe_size.d
-	echo "include $(DEPS_DIR)/mpid_get_universe_size.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_getpname.c > $(DEPS_DIR)/mpid_getpname.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_getpname.c >$(DEPS_DIR)/mpid_getpname.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_getpname.c >$(DEPS_DIR)/mpid_getpname.d
-	echo "include $(DEPS_DIR)/mpid_getpname.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_init.c > $(DEPS_DIR)/mpid_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_init.c >$(DEPS_DIR)/mpid_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_init.c >$(DEPS_DIR)/mpid_init.d
-	echo "include $(DEPS_DIR)/mpid_init.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_iprobe.c > $(DEPS_DIR)/mpid_iprobe.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_iprobe.c >$(DEPS_DIR)/mpid_iprobe.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_iprobe.c >$(DEPS_DIR)/mpid_iprobe.d
-	echo "include $(DEPS_DIR)/mpid_iprobe.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_irecv.c > $(DEPS_DIR)/mpid_irecv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_irecv.c >$(DEPS_DIR)/mpid_irecv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_irecv.c >$(DEPS_DIR)/mpid_irecv.d
-	echo "include $(DEPS_DIR)/mpid_irecv.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_irsend.c > $(DEPS_DIR)/mpid_irsend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_irsend.c >$(DEPS_DIR)/mpid_irsend.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_irsend.c >$(DEPS_DIR)/mpid_irsend.d
-	echo "include $(DEPS_DIR)/mpid_irsend.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_isend.c > $(DEPS_DIR)/mpid_isend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_isend.c >$(DEPS_DIR)/mpid_isend.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_isend.c >$(DEPS_DIR)/mpid_isend.d
-	echo "include $(DEPS_DIR)/mpid_isend.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_issend.c > $(DEPS_DIR)/mpid_issend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_issend.c >$(DEPS_DIR)/mpid_issend.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_issend.c >$(DEPS_DIR)/mpid_issend.d
-	echo "include $(DEPS_DIR)/mpid_issend.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_port.c > $(DEPS_DIR)/mpid_port.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_port.c >$(DEPS_DIR)/mpid_port.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_port.c >$(DEPS_DIR)/mpid_port.d
-	echo "include $(DEPS_DIR)/mpid_port.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_probe.c > $(DEPS_DIR)/mpid_probe.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_probe.c >$(DEPS_DIR)/mpid_probe.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_probe.c >$(DEPS_DIR)/mpid_probe.d
-	echo "include $(DEPS_DIR)/mpid_probe.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_recv.c > $(DEPS_DIR)/mpid_recv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_recv.c >$(DEPS_DIR)/mpid_recv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_recv.c >$(DEPS_DIR)/mpid_recv.d
-	echo "include $(DEPS_DIR)/mpid_recv.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_rsend.c > $(DEPS_DIR)/mpid_rsend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_rsend.c >$(DEPS_DIR)/mpid_rsend.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_rsend.c >$(DEPS_DIR)/mpid_rsend.d
-	echo "include $(DEPS_DIR)/mpid_rsend.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_send.c > $(DEPS_DIR)/mpid_send.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_send.c >$(DEPS_DIR)/mpid_send.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_send.c >$(DEPS_DIR)/mpid_send.d
-	echo "include $(DEPS_DIR)/mpid_send.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_ssend.c > $(DEPS_DIR)/mpid_ssend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_ssend.c >$(DEPS_DIR)/mpid_ssend.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_ssend.c >$(DEPS_DIR)/mpid_ssend.d
-	echo "include $(DEPS_DIR)/mpid_ssend.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_startall.c > $(DEPS_DIR)/mpid_startall.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_startall.c >$(DEPS_DIR)/mpid_startall.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_startall.c >$(DEPS_DIR)/mpid_startall.d
-	echo "include $(DEPS_DIR)/mpid_startall.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_vc.c > $(DEPS_DIR)/mpid_vc.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_vc.c >$(DEPS_DIR)/mpid_vc.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_vc.c >$(DEPS_DIR)/mpid_vc.d
-	echo "include $(DEPS_DIR)/mpid_vc.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpid_rma.c > $(DEPS_DIR)/mpid_rma.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpid_rma.c >$(DEPS_DIR)/mpid_rma.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpid_rma.c >$(DEPS_DIR)/mpid_rma.d
-	echo "include $(DEPS_DIR)/mpid_rma.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpidi_isend_self.c > $(DEPS_DIR)/mpidi_isend_self.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_isend_self.c >$(DEPS_DIR)/mpidi_isend_self.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_isend_self.c >$(DEPS_DIR)/mpidi_isend_self.d
-	echo "include $(DEPS_DIR)/mpidi_isend_self.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpidi_pg.c > $(DEPS_DIR)/mpidi_pg.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_pg.c >$(DEPS_DIR)/mpidi_pg.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_pg.c >$(DEPS_DIR)/mpidi_pg.d
-	echo "include $(DEPS_DIR)/mpidi_pg.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpidi_printf.c > $(DEPS_DIR)/mpidi_printf.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpidi_printf.c >$(DEPS_DIR)/mpidi_printf.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpidi_printf.c >$(DEPS_DIR)/mpidi_printf.d
-	echo "include $(DEPS_DIR)/mpidi_printf.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  ch3u_buffer.c ch3u_comm_spawn_multiple.c \
-	ch3u_handle_connection.c ch3u_handle_recv_pkt.c \
-	ch3u_handle_recv_req.c ch3u_handle_send_req.c ch3u_port.c \
-	ch3u_recvq.c ch3u_request.c ch3u_rma_ops.c ch3u_rma_sync.c \
-	ch3u_rndv.c ch3u_eager.c ch3u_eagersync.c mpid_abort.c \
-	mpid_cancel_recv.c mpid_cancel_send.c mpid_comm_disconnect.c \
-	mpid_comm_spawn_multiple.c mpid_finalize.c mpid_get_universe_size.c \
-	mpid_getpname.c mpid_init.c mpid_iprobe.c mpid_irecv.c mpid_irsend.c \
-	mpid_isend.c mpid_issend.c mpid_port.c mpid_probe.c mpid_recv.c \
-	mpid_rsend.c mpid_send.c mpid_ssend.c mpid_startall.c mpid_vc.c \
-	mpid_rma.c mpidi_isend_self.c mpidi_pg.c mpidi_printf.c 
+SOURCES         =  ch3u_buffer.c ch3u_comm_spawn_multiple.c ch3u_handle_connection.c \
+	ch3u_handle_recv_pkt.c ch3u_handle_recv_req.c ch3u_handle_send_req.c ch3u_port.c \
+	ch3u_recvq.c ch3u_request.c ch3u_rma_ops.c ch3u_rma_sync.c ch3u_rndv.c ch3u_eager.c \
+	ch3u_eagersync.c mpid_abort.c mpid_cancel_recv.c mpid_cancel_send.c \
+	mpid_comm_disconnect.c mpid_comm_spawn_multiple.c mpid_finalize.c \
+	mpid_get_universe_size.c mpid_getpname.c mpid_init.c mpid_iprobe.c mpid_irecv.c \
+	mpid_irsend.c mpid_isend.c mpid_issend.c mpid_port.c mpid_probe.c mpid_recv.c \
+	mpid_rsend.c mpid_send.c mpid_ssend.c mpid_startall.c mpid_vc.c mpid_rma.c \
+	mpidi_isend_self.c mpidi_pg.c mpidi_printf.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
+
+.POSIX:
 
 FORCE_TARGET:
 

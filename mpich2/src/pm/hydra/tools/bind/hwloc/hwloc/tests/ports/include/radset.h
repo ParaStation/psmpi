@@ -1,5 +1,6 @@
 /*
- * Copyright © 2009 CNRS, INRIA, Université Bordeaux 1
+ * Copyright © 2009-2010 INRIA
+ * Copyright © 2009 Université Bordeaux 1
  * See COPYING in top-level directory.
  */
 
@@ -12,6 +13,7 @@ typedef int radset_cursor_t;
 typedef int radid_t;
 #define RAD_NONE -1
 typedef struct {
+  int foo;
 } radset_t;
 typedef unsigned int nsgid_t;
 #define NSG_NONE -1
@@ -70,6 +72,9 @@ typedef enum memalloc_policy {
   MPOL_INVALID
 } memalloc_policy_t;
 #define MPOL_NO_MIGRATE 0x100
+
+#define MADV_CURRENT 1
+#define MADV_INSIST 2
 
 int nloc(numa_attr_t *numa_attr, radset_t radset);
 

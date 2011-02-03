@@ -73,12 +73,6 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
     int mpi_errno = MPI_SUCCESS;
     MPID_Keyval* kv = attr_p->keyval;
 
-    MPIU_THREADPRIV_DECL;
-
-    MPIU_THREADPRIV_GET;
-
-    MPIR_Nest_incr();
-    
     if(kv->delfn.user_function == NULL)
         goto fn_exit;
 
@@ -92,13 +86,23 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
                 );
     /* --BEGIN ERROR HANDLING-- */
     if(rc != 0){
+#if MPICH_ERROR_MSG_LEVEL < MPICH_ERROR_MSG_ALL
+	/* If rc is a valid error class, then return that.  
+	   Note that it may be a dynamic error class */
+	/* AMBIGUOUS: This is an ambiguity in the MPI standard: What is the
+	   error value returned from the user-provided routine?  Particularly
+	   with the MPI-2 feature of user-defined error codes, the 
+	   user expectation is probably that the user-provided error code
+	   is returned. */
+	mpi_errno = rc;
+#else
         mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**userdel %d", rc);
+#endif
         goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
 
   fn_exit:
-    MPIR_Nest_decr();
     return mpi_errno;
   fn_fail:
     goto fn_exit;
@@ -126,12 +130,6 @@ int MPIR_Call_attr_copy( int handle, MPID_Attribute *attr_p, void** value_copy, 
     int rc;
     MPID_Keyval* kv = attr_p->keyval;
 
-    MPIU_THREADPRIV_DECL;
-    
-    MPIU_THREADPRIV_GET;
-    
-    MPIR_Nest_incr();
-
     if(kv->copyfn.user_function == NULL)
         goto fn_exit;
 
@@ -148,12 +146,15 @@ int MPIR_Call_attr_copy( int handle, MPID_Attribute *attr_p, void** value_copy, 
 
     /* --BEGIN ERROR HANDLING-- */
     if(rc != 0){
+#if MPICH_ERROR_MSG_LEVEL < MPICH_ERROR_MSG_ALL
+	mpi_errno = rc;
+#else
         mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**user", "**usercopy %d", rc);
+#endif
         goto fn_fail;
     }
     /* --END ERROR HANDLING-- */
 fn_exit:
-    MPIR_Nest_decr();
     return mpi_errno;
 fn_fail:
     goto fn_exit;
@@ -301,6 +302,8 @@ MPIR_Attr_copy_c_proxy(
     )
 {
     void *attrib_val = NULL;
+    int ret;
+
     /* Make sure that the attribute value is delieverd as a pointer */
     if (MPIR_ATTR_KIND(attrib_type) == MPIR_ATTR_KIND(MPIR_ATTR_INT)){
         attrib_val = &attrib;
@@ -308,7 +311,15 @@ MPIR_Attr_copy_c_proxy(
     else{
         attrib_val = attrib;
     }
-    return user_function(handle, keyval, extra_state, attrib_val, attrib_copy, flag);
+
+    /* user functions might call other MPI functions, so we need to
+     * release the lock here. This is safe to do as ALLFUNC is not at
+     * all recursive in our implementation. */
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    ret = user_function(handle, keyval, extra_state, attrib_val, attrib_copy, flag);
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+
+    return ret;
 }
 
 
@@ -323,12 +334,22 @@ MPIR_Attr_delete_c_proxy(
     )
 {
     void *attrib_val = NULL;
+    int ret;
+
     /* Make sure that the attribute value is delieverd as a pointer */
     if (MPIR_ATTR_KIND(attrib_type) == MPIR_ATTR_KIND(MPIR_ATTR_INT))
         attrib_val = &attrib;
     else
         attrib_val = attrib;
-    return user_function(handle, keyval, attrib_val, extra_state);
+
+    /* user functions might call other MPI functions, so we need to
+     * release the lock here. This is safe to do as ALLFUNC is not at
+     * all recursive in our implementation. */
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    ret = user_function(handle, keyval, attrib_val, extra_state);
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+
+    return ret;
 }
 
 

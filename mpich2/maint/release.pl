@@ -126,7 +126,7 @@ check_package("autoconf");
 check_package("automake");
 print("\n");
 
-my $current_ver = `svn cat ${source}/maint/Version | grep ^MPICH2_VERSION: | cut -f2 -d' '`;
+my $current_ver = `svn cat ${source}/maint/Version | grep ^MPICH2_VERSION | cut -f2 -d'='`;
 if ("$current_ver" ne "$version\n") {
     print("\tWARNING: Version mismatch\n\n");
 }
@@ -152,14 +152,16 @@ system("rm -f ${root}/$logfile");
 print("===> Checking out $pack SVN source... ");
 run_cmd("rm -rf ${pack}-${version}");
 run_cmd("svn export -q ${source} ${pack}-${version}");
+run_cmd("find ${pack}-${version} -name .gitignore | xargs rm -f");
 print("done\n");
 
 print("===> Create release date and version information... ");
 chdir("${root}/${pack}-${version}");
-system(qq(echo `date` > ./maint/ReleaseDate));
-system(qq(mkdir ./src/pm/hydra/version));
-system(qq(cp ./maint/Version ./src/pm/hydra/version/version));
-system(qq(cp ./maint/ReleaseDate ./src/pm/hydra/version/release_date));
+
+my $date = `date`;
+chomp $date;
+system(qq(perl -p -i -e 's/MPICH2_RELEASE_DATE=.*/MPICH2_RELEASE_DATE="$date"/g' ./maint/Version));
+system(qq(perl -p -i -e 's/MPICH2_RELEASE_DATE=.*/MPICH2_RELEASE_DATE="$date"/g' ./src/pm/hydra/VERSION));
 print("done\n");
 
 # Remove packages that are not being released
@@ -168,7 +170,7 @@ chdir("${root}/${pack}-${version}");
 run_cmd("rm -rf src/mpid/globus doc/notes src/pm/mpd/Zeroconf.py");
 
 chdir("${root}/${pack}-${version}/src/mpid/ch3/channels/nemesis/nemesis/netmod");
-my @nem_modules = qw(elan ib psm);
+my @nem_modules = qw(elan psm);
 run_cmd("rm -rf ".join(' ', map({$_ . "/*"} @nem_modules)));
 for my $module (@nem_modules) {
     # system to avoid problems with shell redirect in run_cmd
@@ -180,7 +182,14 @@ print("done\n");
 print("===> Creating configure in the main package... ");
 chdir("${root}/${pack}-${version}");
 {
+    # ./maint/updatefiles needs to be run twice; once without the
+    # -distrib option and once with.
     my $cmd = "./maint/updatefiles";
+    $cmd .= " --with-autoconf=$with_autoconf" if $with_autoconf;
+    $cmd .= " --with-automake=$with_automake" if $with_automake;
+    run_cmd($cmd);
+
+    $cmd = "./maint/updatefiles -distrib";
     $cmd .= " --with-autoconf=$with_autoconf" if $with_autoconf;
     $cmd .= " --with-automake=$with_automake" if $with_automake;
     run_cmd($cmd);
@@ -208,7 +217,7 @@ chdir("${root}/${pack}-${version}-tmp");
     $cmd .= " --with-automake=$with_automake" if $with_automake;
     run_cmd($cmd);
 }
-run_cmd("./configure --disable-mpe --disable-f90 --disable-f77 --disable-cxx");
+run_cmd("./configure --disable-mpe --disable-fc --disable-f77 --disable-cxx");
 run_cmd("(make mandoc && make htmldoc && make latexdoc)");
 print("done\n");
 

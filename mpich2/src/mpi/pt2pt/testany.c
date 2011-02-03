@@ -72,7 +72,6 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index,
     int active_flag;
     int mpi_errno = MPI_SUCCESS;
     MPIU_CHKLMEM_DECL(1);
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TESTANY);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -171,7 +170,7 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index,
 			    status);
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
-	if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
+	if (request_ptrs[i] != NULL && MPID_Request_is_complete(request_ptrs[i]))
 	{
 	    mpi_errno = MPIR_Request_complete(&array_of_requests[i], 
 					      request_ptrs[i], 

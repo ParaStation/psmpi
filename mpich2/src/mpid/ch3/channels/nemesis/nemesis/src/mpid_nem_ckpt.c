@@ -25,6 +25,15 @@ MPIU_SUPPRESS_OSX_HAS_NO_SYMBOLS_WARNING;
         }                                                                      \
     } while (0)
 
+#define CHECK_ERR_ERRNO(cond, msg) do {                                        \
+        if (cond) {                                                            \
+            fprintf(stderr, "Error: %s:%d \"%s\", %s\n", __FILE__, __LINE__,   \
+                    msg, strerror(errno));                                     \
+            fflush(stderr);                                                    \
+            return -1;                                                         \
+        }                                                                      \
+    } while (0)
+
 #define CHECK_ERR_MPI(cond, mpi_errno, msg) do {                                \
         if (cond) {                                                             \
             char error_msg[ 4096 ];                                             \
@@ -48,7 +57,7 @@ static enum {CKPT_NULL, CKPT_CONTINUE, CKPT_RESTART, CKPT_ERROR} ckpt_result = C
 
 static int reinit_pmi(void);
 static int restore_env(pid_t parent_pid, int rank);
-static int restore_stdinouterr(int requester_pid, int rank);
+static int restore_stdinouterr(int rank);
 static int open_fifo(const char *fname_template, int rank, int restart_pid, int dupfd, int flags);
 
 static sem_t ckpt_sem;
@@ -59,9 +68,12 @@ static int ckpt_cb(void *arg)
     int rc, ret;
     const struct cr_restart_info* ri;
 
-    if (MPIDI_Process.my_pg_rank == 0)
+    if (MPIDI_Process.my_pg_rank == 0) {
         MPIDI_nem_ckpt_start_checkpoint = TRUE;
-
+        /* poke the progress engine in case we're waiting in a blocking recv */
+        MPIDI_CH3_Progress_signal_completion();
+    }
+    
     ret = sem_wait(&ckpt_sem);
     CHECK_ERR(ret, "sem_wait");
 
@@ -81,7 +93,7 @@ static int ckpt_cb(void *arg)
         CHECK_ERR(!ri, "cr_get_restart_info");
         ret = restore_env(ri->requester, MPIDI_Process.my_pg_rank);
         CHECK_ERR(ret, "restore_env");
-        ret = restore_stdinouterr(ri->requester, MPIDI_Process.my_pg_rank);
+        ret = restore_stdinouterr(MPIDI_Process.my_pg_rank);
         CHECK_ERR(ret, "restore_stdinouterr");
         ret = reinit_pmi();
         CHECK_ERR(ret, "reinit_pmi");
@@ -122,19 +134,22 @@ int MPIDI_nem_ckpt_init(void)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_NEM_CKPT_INIT);
 
+    if (!MPIR_PARAM_ENABLE_CKPOINT)
+        goto fn_exit;
+    
     client_id = cr_init();
     MPIU_ERR_CHKANDJUMP(client_id < 0 && errno == ENOSYS, mpi_errno, MPI_ERR_OTHER, "**blcr_mod");
 
     cb_id = cr_register_callback(ckpt_cb, NULL, CR_THREAD_CONTEXT);
-    MPIU_ERR_CHKANDJUMP1(cb_id == -1, mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", strerror(errno));
+    MPIU_ERR_CHKANDJUMP1(cb_id == -1, mpi_errno, MPI_ERR_OTHER, "**intern", "**intern %s", MPIU_Strerror(errno));
     
     checkpointing = FALSE;
     current_wave = 0;
 
     ret = sem_init(&ckpt_sem, 0, 0);
-    MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**sem_init", "**sem_init %s", strerror(errno));
+    MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**sem_init", "**sem_init %s", MPIU_Strerror(errno));
     ret = sem_init(&cont_sem, 0, 0);
-    MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**sem_init", "**sem_init %s", strerror(errno));
+    MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**sem_init", "**sem_init %s", MPIU_Strerror(errno));
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_NEM_CKPT_INIT);
@@ -156,9 +171,9 @@ int MPIDI_nem_ckpt_finalize(void)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_NEM_CKPT_FINALIZE);
 
     ret = sem_destroy(&ckpt_sem);
-    MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**sem_destroy", "**sem_destroy %s", strerror(errno));
+    MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**sem_destroy", "**sem_destroy %s", MPIU_Strerror(errno));
     ret = sem_destroy(&cont_sem);
-    MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**sem_destroy", "**sem_destroy %s", strerror(errno));
+    MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**sem_destroy", "**sem_destroy %s", MPIU_Strerror(errno));
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_NEM_CKPT_FINALIZE);
@@ -240,72 +255,118 @@ static int restore_env(pid_t parent_pid, int rank)
     MPIU_Snprintf(env_filename, MAX_STR_LEN, "/tmp/hydra-env-file-%d:%d", parent_pid, rank); 
 
     f = fopen(env_filename, "r");
-    CHECK_ERR(!f, strerror (errno));
+    CHECK_ERR(!f, MPIU_Strerror (errno));
 
-    /* ret = unlink(env_filename); */
-    /* CHECK_ERR(ret, strerror (errno)); */
+    ret = unlink(env_filename);
+    CHECK_ERR(ret, MPIU_Strerror (errno));
 
     while (fgets(var_val, MAX_STR_LEN, f)) {
+        size_t len = strlen(var_val);
+        /* remove newline */
+        if (var_val[len-1] == '\n')
+            var_val[len-1] = '\0';
         ret = MPL_putenv(MPIU_Strdup(var_val));
-        CHECK_ERR(ret != 0, strerror (errno));
+        CHECK_ERR(ret != 0, MPIU_Strerror (errno));
     }
 
     ret = fclose(f);
-    CHECK_ERR(ret, strerror (errno));
+    CHECK_ERR(ret, MPIU_Strerror (errno));
 
     return 0;
 }
+
+typedef enum { IN_SOCK, OUT_SOCK, ERR_SOCK } socktype_t;
+typedef struct sock_ident {
+    int rank;
+    socktype_t socktype;
+    int pid;
+} sock_ident_t;
+    
+#define STDINOUTERR_PORT_NAME "HYDRA_STDINOUTERR_PORT"
 
 #undef FUNCNAME
 #define FUNCNAME open_fifo
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int open_fifo(const char *fname_template, int rank, int restart_pid, int dupfd, int flags)
+static int open_io_socket(socktype_t socktype, int rank, int dupfd)
 {
-    char filename[256];
     int fd;
     int ret;
-    MPIDI_STATE_DECL(MPID_STATE_OPEN_FIFO);
+    struct sockaddr_in sock_addr;
+    struct in_addr addr;
+    sock_ident_t id;
+    int port;
+    int len;
+    char *id_p;
+    MPIDI_STATE_DECL(MPID_STATE_OPEN_IO_SOCKET);
 
-    MPIDI_FUNC_ENTER(MPID_STATE_OPEN_FIFO);
+    MPIDI_FUNC_ENTER(MPID_STATE_OPEN_IO_SOCKET);
 
-    ret = MPIU_Snprintf(filename, sizeof(filename), fname_template, restart_pid, rank);
-    CHECK_ERR(ret >= sizeof(filename), "filename too long");
+    memset(&sock_addr, 0, sizeof(sock_addr));
+    memset(&addr, 0, sizeof(addr));
 
+    MPL_env2int(STDINOUTERR_PORT_NAME, &port);
+    ret = inet_pton(AF_INET, "127.0.0.1", &addr);
+    CHECK_ERR_ERRNO(ret != 1, "inet_pton");
 
-    fd = open(filename, flags);
-    CHECK_ERR(fd == -1 && errno != ENOENT, "open fifo");
-    if (fd == -1) goto fn_exit; /* if the file doesn't exist, skip this */
-    ret = unlink(filename);
-    CHECK_ERR(ret, "unlink fifo");
+    sock_addr.sin_family = AF_INET;
+    sock_addr.sin_port = htons((in_port_t)port);
+    sock_addr.sin_addr.s_addr = addr.s_addr;
+
+    do {
+        fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    } while (fd == -1 && errno == EINTR);
+    CHECK_ERR_ERRNO(fd == -1, "socket");
+    do {
+        ret = connect(fd, (struct sockaddr *)&sock_addr, sizeof(sock_addr));
+    } while (ret == -1 && errno == EINTR);
+    CHECK_ERR_ERRNO(ret == -1, "connect");
+
+    id.rank = rank;
+    id.socktype = socktype;
+    id.pid = getpid();
+    
+    len = sizeof(id);
+    id_p = (char *)&id;
+    do {
+        do {
+            ret = write(fd, id_p, len);
+        } while (ret == 0 || (ret == -1 && errno == EINTR));
+        CHECK_ERR_ERRNO(ret == -1, "write failed");
+        len -= ret;
+        id_p += ret;
+    } while (len);
+
     ret = dup2(fd, dupfd);
-    CHECK_ERR(ret == -1, "dup2 fifo");
+    CHECK_ERR_ERRNO(ret == -1, "dup2 socket");
     ret = close(fd);
-    CHECK_ERR(ret, "close fifo");
-
-    MPIDI_FUNC_EXIT(MPID_STATE_OPEN_FIFO);
+    CHECK_ERR_ERRNO(ret, "close socket");
+    
+    MPIDI_FUNC_EXIT(MPID_STATE_OPEN_IO_SOCKET);
 fn_exit:
     return 0;
 }
-
 
 #undef FUNCNAME
 #define FUNCNAME restore_stdinouterr
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int restore_stdinouterr(int restart_pid, int rank)
+static int restore_stdinouterr(int rank)
 {
     int ret;
+    int fd;
     MPIDI_STATE_DECL(MPID_STATE_RESTORE_STDINOUTERR);
 
     MPIDI_FUNC_ENTER(MPID_STATE_RESTORE_STDINOUTERR);
 
-    ret = open_fifo("/tmp/hydra-in-%d:%d",  rank, restart_pid, 0, O_RDONLY);
-    CHECK_ERR(ret, "open stdin fifo");
-    ret = open_fifo("/tmp/hydra-out-%d:%d", rank, restart_pid, 1, O_WRONLY);
-    CHECK_ERR(ret, "open stdout fifo");
-    ret = open_fifo("/tmp/hydra-err-%d:%d", rank, restart_pid, 2, O_WRONLY);
-    CHECK_ERR(ret, "open stderr fifo");
+    if (rank == 0) {
+        ret = open_io_socket(IN_SOCK,  rank, 0);
+        CHECK_ERR(ret, "open stdin socket");
+    }
+    ret = open_io_socket(OUT_SOCK, rank, 1);
+    CHECK_ERR(ret, "open stdin socket");
+    ret = open_io_socket(ERR_SOCK, rank, 2);
+    CHECK_ERR(ret, "open stdin socket");
 
     MPIDI_FUNC_EXIT(MPID_STATE_RESTORE_STDINOUTERR);
     return 0;
@@ -395,10 +456,10 @@ int MPIDI_nem_ckpt_finish(void)
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     ret = sem_post(&ckpt_sem);
-    MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**sem_post", "**sem_post %s", strerror(errno));
+    MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**sem_post", "**sem_post %s", MPIU_Strerror(errno));
 
     ret = sem_wait(&cont_sem);
-    MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**sem_wait", "**sem_wait %s", strerror(errno));
+    MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**sem_wait", "**sem_wait %s", MPIU_Strerror(errno));
 
     mpi_errno = MPID_nem_barrier();
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -411,7 +472,7 @@ int MPIDI_nem_ckpt_finish(void)
             continue;
 
         if (ckpt_result == CKPT_CONTINUE) {
-            MPIDI_PG_Get_vc_set_active(MPIDI_Process.my_pg, i, &vc);
+            MPIDI_PG_Get_vc(MPIDI_Process.my_pg, i, &vc);
             vc_ch = ((MPIDI_CH3I_VC *)vc->channel_private);
             if (!vc_ch->is_local) {
                 mpi_errno = vc_ch->ckpt_continue_vc(vc);
@@ -439,8 +500,6 @@ static int pkt_ckpt_marker_handler(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, MPIDI_m
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_nem_pkt_ckpt_marker_t * const ckpt_pkt = (MPID_nem_pkt_ckpt_marker_t *)pkt;
-    MPIDI_CH3I_VC *vc_ch = ((MPIDI_CH3I_VC *)vc->channel_private);
-    MPIU_CHKPMEM_DECL(1);
     MPIDI_STATE_DECL(MPID_STATE_PKT_CKPT_MARKER_HANDLER);
 
     MPIDI_FUNC_ENTER(MPID_STATE_PKT_CKPT_MARKER_HANDLER);
@@ -457,13 +516,6 @@ static int pkt_ckpt_marker_handler(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, MPIDI_m
     /* We're checkpointing the shared memory region, so we don't need
        to flush the channels between local processes, only remote
        processes */
-    
-    /* make sure netmods don't receive any packets from this vc after the marker */
-    if (!vc_ch->is_local) {
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-        /* There should be nothing in the channel following this. */
-        MPIU_Assert(*buflen == sizeof(MPIDI_CH3_Pkt_t))
-    }
 
     if (marker_count == 0) {
         MPIDI_nem_ckpt_finish_checkpoint = TRUE;

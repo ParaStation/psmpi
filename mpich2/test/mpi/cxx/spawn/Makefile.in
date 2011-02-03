@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -24,7 +23,7 @@ VPATH = .:@srcdir@
 INCLUDES = -I../../include -I${srcdir}/../../include
 
 .SUFFIXES:
-.SUFFIXES: .o .cxx .txt 
+.SUFFIXES: .o .cxx 
 .cxx.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CXX             $<" ; \
@@ -32,28 +31,8 @@ INCLUDES = -I../../include -I${srcdir}/../../include
 	  echo $(CXX_COMPILE) -c $< ; \
 	fi
 	@$(CXX_COMPILE) -c $<
-.cxx.txt:
-	$(CXXCPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .cxx:
 	$(CXX_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../ \
-	-configdir=test/mpi/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=cxx/spawn/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
@@ -61,9 +40,6 @@ clean:
 	-@rm -f spawnargvx.exe namepubx.exe selfconaccx.exe spawnintrax.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -71,35 +47,24 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: spawnargvx spawnintrax namepubx selfconaccx
 
-coverage: 
 spawnargvx: spawnargvx.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o spawnargvx spawnargvx.o  \
-	${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o spawnargvx spawnargvx.o  ${LIBS}
 namepubx: namepubx.o   @MPILIBLOC@ ../util/mtest.o
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o namepubx namepubx.o  ${LIBS}
 selfconaccx: selfconaccx.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o selfconaccx selfconaccx.o  \
-	${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o selfconaccx selfconaccx.o  ${LIBS}
 spawnintrax: spawnintrax.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o spawnintrax spawnintrax.o  \
-	${LIBS} 
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o spawnintrax spawnintrax.o  ${LIBS}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  spawnargvx.cxx spawnintrax.cxx namepubx.cxx \
-	selfconaccx.cxx 
+SOURCES         =  spawnargvx.cxx spawnintrax.cxx namepubx.cxx selfconaccx.cxx
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
@@ -107,6 +72,8 @@ SOURCEFILES     = $(SOURCES)
 
 ../util/mtest.o:
 	cd ../util && $(MAKE) mtest.o
+
+.POSIX:
 
 FORCE_TARGET:
 

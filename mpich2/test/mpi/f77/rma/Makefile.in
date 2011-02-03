@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -21,18 +20,19 @@ MAKE            = @MAKE@
 CC              = @CC@
 CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
-FC              = @FC@
+F77             = @F77@
 FFLAGS          = @FFLAGS@
-F77_COMPILE     = $(FC) $(FFLAGS) $(F77INCLUDES)
-F77_LINK       = $(FC)
+F77_COMPILE     = $(F77) $(FFLAGS) $(F77INCLUDES)
+F77_LINK       = $(F77)
 LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
 F77INCLUDES = -I. -I../attr
 F77HEADERS = addsize.h
+BINDIR=${bindir}
 
 .SUFFIXES:
-.SUFFIXES: .o .c .f .txt 
+.SUFFIXES: .o .c .f 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -40,8 +40,6 @@ F77HEADERS = addsize.h
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -51,31 +49,13 @@ F77HEADERS = addsize.h
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  FC              $<" ; \
+	  echo "  F77             $<" ; \
 	else \
 	  echo $(F77_COMPILE) -c $< ; \
 	fi
 	@$(F77_COMPILE) -c $<
 .f:
 	$(F77_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../ \
-	-configdir=test/mpi/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=f77/rma/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
@@ -83,9 +63,6 @@ clean:
 	-@rm -f wingetf.exe winscale1f.exe winattrf.exe winerrf.exe baseattrwinf.exe c2f2cwinf.exe winscale2f.exe wingroupf.exe winfencef.exe winaccf.exe winattr2f.exe winnamef.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -93,62 +70,44 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
-all-redirect: winscale1f winscale2f winfencef wingetf winerrf winnamef\
-	 wingroupf winaccf c2f2cwinf baseattrwinf winattrf winattr2f
+	rm -f  Makefile
+all-redirect: winscale1f winscale2f winfencef wingetf winerrf winnamef wingroupf winaccf c2f2cwinf\
+	 baseattrwinf winattrf winattr2f
 
-coverage: 
 wingetf: wingetf.o   @MPILIBLOC@ ../util/mtestf.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o wingetf wingetf.o  \
-	../util/mtestf.o ${LIBS} 
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o wingetf wingetf.o  ../util/mtestf.o ${LIBS}
 winscale1f: winscale1f.o   @MPILIBLOC@ ../util/mtestf.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winscale1f winscale1f.o  \
-	../util/mtestf.o ${LIBS} 
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winscale1f winscale1f.o  ../util/mtestf.o ${LIBS}
 winattrf: winattrf.o   @MPILIBLOC@ ../util/mtestf.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winattrf winattrf.o  \
-	../util/mtestf.o ${LIBS} 
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winattrf winattrf.o  ../util/mtestf.o ${LIBS}
 winerrf: winerrf.o   @MPILIBLOC@ ../util/mtestf.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winerrf winerrf.o  \
-	../util/mtestf.o ${LIBS} 
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winerrf winerrf.o  ../util/mtestf.o ${LIBS}
 baseattrwinf: baseattrwinf.o   @MPILIBLOC@ ../util/mtestf.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o baseattrwinf baseattrwinf.o  \
-	../util/mtestf.o ${LIBS} 
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o baseattrwinf baseattrwinf.o  ../util/mtestf.o \
+	${LIBS} 
 c2f2cwinf: c2f2cwin.o c2f2cwinf.o   @MPILIBLOC@ ../util/mtestf.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o c2f2cwinf c2f2cwin.o c2f2cwinf.o \
-	 ../util/mtestf.o  ${LIBS} 
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o c2f2cwinf c2f2cwin.o c2f2cwinf.o  ../util/mtestf.o  \
+	${LIBS} 
 winscale2f: winscale2f.o   @MPILIBLOC@ ../util/mtestf.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winscale2f winscale2f.o  \
-	../util/mtestf.o ${LIBS} 
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winscale2f winscale2f.o  ../util/mtestf.o ${LIBS}
 wingroupf: wingroupf.o   @MPILIBLOC@ ../util/mtestf.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o wingroupf wingroupf.o  \
-	../util/mtestf.o ${LIBS} 
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o wingroupf wingroupf.o  ../util/mtestf.o ${LIBS}
 winfencef: winfencef.o   @MPILIBLOC@ ../util/mtestf.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winfencef winfencef.o  \
-	../util/mtestf.o ${LIBS} 
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winfencef winfencef.o  ../util/mtestf.o ${LIBS}
 winaccf: winaccf.o   @MPILIBLOC@ ../util/mtestf.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winaccf winaccf.o  \
-	../util/mtestf.o ${LIBS} 
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winaccf winaccf.o  ../util/mtestf.o ${LIBS}
 winattr2f: winattr2f.o   @MPILIBLOC@ ../util/mtestf.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winattr2f winattr2f.o  \
-	../util/mtestf.o ${LIBS} 
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winattr2f winattr2f.o  ../util/mtestf.o ${LIBS}
 winnamef: winnamef.o   @MPILIBLOC@ ../util/mtestf.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winnamef winnamef.o  \
-	../util/mtestf.o ${LIBS} 
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o winnamef winnamef.o  ../util/mtestf.o ${LIBS}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  winscale1f.f winscale2f.f winfencef.f wingetf.f winerrf.f \
-	winnamef.f wingroupf.f winaccf.f c2f2cwin.c c2f2cwinf.f \
-	baseattrwinf.f winattrf.f winattr2f.f 
+SOURCES         =  winscale1f.f winscale2f.f winfencef.f wingetf.f winerrf.f winnamef.f \
+	wingroupf.f winaccf.f c2f2cwin.c c2f2cwinf.f baseattrwinf.f winattrf.f winattr2f.f 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
@@ -158,13 +117,16 @@ SOURCEFILES     = $(SOURCES)
 
 
 
+# bindir may be used in MPIEXEC, so make sure it is defined
 testing:
 	../../runtests -srcdir=$(srcdir) -tests=testlist \
-			-mpiexec=$(bindir)/mpiexec \
+			-mpiexec=@MPIEXEC@ \
 		   	-xmlfile=summary.xml
 
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)
+
+.POSIX:
 
 FORCE_TARGET:
 

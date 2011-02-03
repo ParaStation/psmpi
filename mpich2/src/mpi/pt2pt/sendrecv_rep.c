@@ -68,7 +68,6 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
     static const char FCNAME[] = "MPI_Sendrecv_replace";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPIU_THREADPRIV_DECL;
 #ifdef MPID_LOG_ARROWS
     /* This isn't the right test, but it is close enough for now */
     int sendcount = count, recvcount = count;
@@ -81,11 +80,8 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_PT2PT_FUNC_ENTER_BOTH(MPID_STATE_MPI_SENDRECV_REPLACE);
 
-    MPIU_THREADPRIV_GET;
-    
     /* Convert handles to MPI objects. */
     MPID_Comm_get_ptr(comm, comm_ptr);
-    MPIR_Nest_incr();
     
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -150,12 +146,11 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
 
 	if (count > 0 && dest != MPI_PROC_NULL)
 	{
-	    mpi_errno = NMPI_Pack_size(count, datatype, comm, &tmpbuf_size);
-	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	    MPIR_Pack_size_impl(count, datatype, &tmpbuf_size);
 
 	    MPIU_CHKLMEM_MALLOC_ORJUMP(tmpbuf, void *, tmpbuf_size, mpi_errno, "temporary send buffer");
 
-	    mpi_errno = NMPI_Pack(buf, count, datatype, tmpbuf, tmpbuf_size, &tmpbuf_count, comm);
+	    mpi_errno = MPIR_Pack_impl(buf, count, datatype, tmpbuf, tmpbuf_size, &tmpbuf_count);
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
 	
@@ -175,12 +170,12 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
 	    /* --END ERROR HANDLING-- */
 	}
 	
-	if (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
+        if (!MPID_Request_is_complete(sreq) || !MPID_Request_is_complete(rreq))
 	{
 	    MPID_Progress_state progress_state;
 	
 	    MPID_Progress_start(&progress_state);
-	    while (*sreq->cc_ptr != 0 || *rreq->cc_ptr != 0)
+            while (!MPID_Request_is_complete(sreq) || !MPID_Request_is_complete(rreq))
 	    {
 		mpi_errno = MPID_Progress_wait(&progress_state);
 		if (mpi_errno != MPI_SUCCESS)
@@ -218,7 +213,6 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
     
     /* ... end of body of routine ... */
-    MPIR_Nest_decr();
 
   fn_exit:
     MPIU_CHKLMEM_FREEALL();
@@ -227,7 +221,6 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
     return mpi_errno;
     
   fn_fail:
-    MPIR_Nest_decr();
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
     {

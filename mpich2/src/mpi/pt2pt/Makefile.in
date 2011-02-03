@@ -29,7 +29,6 @@ CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 
 VPATH = .:@srcdir@
-DOCTEXT         = @DOCTEXT@
 mpi_sources = bsend.c bsend_init.c bufattach.c buffree.c \
  cancel.c greq_start.c greq_complete.c ibsend.c iprobe.c \
  irecv.c irsend.c isend.c issend.c probe.c recv.c recv_init.c \
@@ -41,7 +40,7 @@ HEADERS = bsendutil.h
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .man .html .latex .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -58,8 +57,6 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -67,53 +64,22 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-.c.man:
-	$(DOCTEXT) -man -mpath ../../../man/man3 -ext 3 -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.c.html:
-	$(DOCTEXT) -html -mpath ../../../www/www3  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.c.latex:
-	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=. \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/mpi/pt2pt/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 .libstamp2 .libstamp3 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
 	    ${MAKE} .libstamp2 || exit 1; \
@@ -125,14 +91,12 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	    fi ; \
 	fi
 
-.libstamp0 ../../../lib/lib${MPILIBNAME}.a: bsend.o bsend_init.o bufattach.o \
-	buffree.o cancel.o greq_start.o greq_complete.o ibsend.o iprobe.o \
-	irecv.o irsend.o isend.o issend.o probe.o recv.o recv_init.o \
-	request_free.o request_get_status.o rsend.o rsend_init.o send.o \
-	send_init.o sendrecv.o sendrecv_rep.o status_set_cancelled.o ssend.o \
-	ssend_init.o start.o startall.o test.o test_cancelled.o testall.o \
-	testany.o testsome.o wait.o waitall.o waitany.o waitsome.o \
-	bsendutil.o mpir_request.o 
+.libstamp0 ../../../lib/lib${MPILIBNAME}.a: bsend.o bsend_init.o bufattach.o buffree.o cancel.o \
+	greq_start.o greq_complete.o ibsend.o iprobe.o irecv.o irsend.o isend.o issend.o probe.o \
+	recv.o recv_init.o request_free.o request_get_status.o rsend.o rsend_init.o send.o \
+	send_init.o sendrecv.o sendrecv_rep.o status_set_cancelled.o ssend.o ssend_init.o start.o \
+	startall.o test.o test_cancelled.o testall.o testany.o testsome.o wait.o waitall.o \
+	waitany.o waitsome.o bsendutil.o mpir_request.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
@@ -146,14 +110,13 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../lib/lib${MPILIBNAME}.la: bsend.lo bsend_init.lo \
-	bufattach.lo buffree.lo cancel.lo greq_start.lo greq_complete.lo \
-	ibsend.lo iprobe.lo irecv.lo irsend.lo isend.lo issend.lo probe.lo \
-	recv.lo recv_init.lo request_free.lo request_get_status.lo rsend.lo \
-	rsend_init.lo send.lo send_init.lo sendrecv.lo sendrecv_rep.lo \
-	status_set_cancelled.lo ssend.lo ssend_init.lo start.lo startall.lo \
-	test.lo test_cancelled.lo testall.lo testany.lo testsome.lo wait.lo \
-	waitall.lo waitany.lo waitsome.lo bsendutil.lo mpir_request.lo 
+.libstamp1 ../../../lib/lib${MPILIBNAME}.la: bsend.lo bsend_init.lo bufattach.lo buffree.lo \
+	cancel.lo greq_start.lo greq_complete.lo ibsend.lo iprobe.lo irecv.lo irsend.lo isend.lo \
+	issend.lo probe.lo recv.lo recv_init.lo request_free.lo request_get_status.lo rsend.lo \
+	rsend_init.lo send.lo send_init.lo sendrecv.lo sendrecv_rep.lo status_set_cancelled.lo \
+	ssend.lo ssend_init.lo start.lo startall.lo test.lo test_cancelled.lo testall.lo \
+	testany.lo testsome.lo wait.lo waitall.lo waitany.lo waitsome.lo bsendutil.lo \
+	mpir_request.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -163,14 +126,12 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp1
 
 # --------------------------------------------------------------------------
-.libstamp2: _bsend.o _bsend_init.o _bufattach.o _buffree.o _cancel.o _greq_start.o \
-	_greq_complete.o _ibsend.o _iprobe.o _irecv.o _irsend.o _isend.o \
-	_issend.o _probe.o _recv.o _recv_init.o _request_free.o \
-	_request_get_status.o _rsend.o _rsend_init.o _send.o _send_init.o \
-	_sendrecv.o _sendrecv_rep.o _status_set_cancelled.o _ssend.o \
-	_ssend_init.o _start.o _startall.o _test.o _test_cancelled.o \
-	_testall.o _testany.o _testsome.o _wait.o _waitall.o _waitany.o \
-	_waitsome.o 
+.libstamp2: _bsend.o _bsend_init.o _bufattach.o _buffree.o _cancel.o _greq_start.o _greq_complete.o _ibsend.o \
+	_iprobe.o _irecv.o _irsend.o _isend.o _issend.o _probe.o _recv.o _recv_init.o \
+	_request_free.o _request_get_status.o _rsend.o _rsend_init.o _send.o _send_init.o \
+	_sendrecv.o _sendrecv_rep.o _status_set_cancelled.o _ssend.o _ssend_init.o _start.o \
+	_startall.o _test.o _test_cancelled.o _testall.o _testany.o _testsome.o _wait.o \
+	_waitall.o _waitany.o _waitsome.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
 	else \
@@ -184,13 +145,11 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../lib/lib${PMPILIBNAME}.a
 	date > .libstamp2
-.libstamp3: _bsend.lo _bsend_init.lo _bufattach.lo _buffree.lo _cancel.lo _greq_start.lo \
-	_greq_complete.lo _ibsend.lo _iprobe.lo _irecv.lo _irsend.lo \
-	_isend.lo _issend.lo _probe.lo _recv.lo _recv_init.lo \
-	_request_free.lo _request_get_status.lo _rsend.lo _rsend_init.lo \
-	_send.lo _send_init.lo _sendrecv.lo _sendrecv_rep.lo \
-	_status_set_cancelled.lo _ssend.lo _ssend_init.lo _start.lo \
-	_startall.lo _test.lo _test_cancelled.lo _testall.lo _testany.lo \
+.libstamp3: _bsend.lo _bsend_init.lo _bufattach.lo _buffree.lo _cancel.lo _greq_start.lo _greq_complete.lo \
+	_ibsend.lo _iprobe.lo _irecv.lo _irsend.lo _isend.lo _issend.lo _probe.lo _recv.lo \
+	_recv_init.lo _request_free.lo _request_get_status.lo _rsend.lo _rsend_init.lo _send.lo \
+	_send_init.lo _sendrecv.lo _sendrecv_rep.lo _status_set_cancelled.lo _ssend.lo \
+	_ssend_init.lo _start.lo _startall.lo _test.lo _test_cancelled.lo _testall.lo _testany.lo \
 	_testsome.lo _wait.lo _waitall.lo _waitany.lo _waitsome.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
@@ -732,598 +691,15 @@ _waitsome.lo: waitsome.c
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/waitsome.c -o _waitsome.lo
 # --------------------------------------------------------------------------
-coverage: 
-	-@for file in $(mpi_sources) bsendutil.c mpir_request.c ; do \
-		gcov -b -f $$file ; done
-# --------------------------------------------------------------------------
-mandoc: ${mpi_sources:.c=.man}
-htmldoc: ${mpi_sources:.c=.html}
-latexdoc: ${mpi_sources:.c=.latex}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/bsend.d: $(srcdir)/bsend.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C bsend.c > $(DEPS_DIR)/bsend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_bsend.o bsend.o bsend.lo _bsend.lo' $(srcdir)/bsend.c >$(DEPS_DIR)/bsend.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_bsend.o bsend.o bsend.lo _bsend.lo' $(srcdir)/bsend.c >$(DEPS_DIR)/bsend.d
-$(DEPS_DIR)/bsend_init.d: $(srcdir)/bsend_init.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C bsend_init.c > $(DEPS_DIR)/bsend_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_bsend_init.o bsend_init.o bsend_init.lo _bsend_init.lo' $(srcdir)/bsend_init.c >$(DEPS_DIR)/bsend_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_bsend_init.o bsend_init.o bsend_init.lo _bsend_init.lo' $(srcdir)/bsend_init.c >$(DEPS_DIR)/bsend_init.d
-$(DEPS_DIR)/bufattach.d: $(srcdir)/bufattach.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C bufattach.c > $(DEPS_DIR)/bufattach.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_bufattach.o bufattach.o bufattach.lo _bufattach.lo' $(srcdir)/bufattach.c >$(DEPS_DIR)/bufattach.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_bufattach.o bufattach.o bufattach.lo _bufattach.lo' $(srcdir)/bufattach.c >$(DEPS_DIR)/bufattach.d
-$(DEPS_DIR)/buffree.d: $(srcdir)/buffree.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C buffree.c > $(DEPS_DIR)/buffree.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_buffree.o buffree.o buffree.lo _buffree.lo' $(srcdir)/buffree.c >$(DEPS_DIR)/buffree.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_buffree.o buffree.o buffree.lo _buffree.lo' $(srcdir)/buffree.c >$(DEPS_DIR)/buffree.d
-$(DEPS_DIR)/cancel.d: $(srcdir)/cancel.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C cancel.c > $(DEPS_DIR)/cancel.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_cancel.o cancel.o cancel.lo _cancel.lo' $(srcdir)/cancel.c >$(DEPS_DIR)/cancel.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_cancel.o cancel.o cancel.lo _cancel.lo' $(srcdir)/cancel.c >$(DEPS_DIR)/cancel.d
-$(DEPS_DIR)/greq_start.d: $(srcdir)/greq_start.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C greq_start.c > $(DEPS_DIR)/greq_start.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_greq_start.o greq_start.o greq_start.lo _greq_start.lo' $(srcdir)/greq_start.c >$(DEPS_DIR)/greq_start.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_greq_start.o greq_start.o greq_start.lo _greq_start.lo' $(srcdir)/greq_start.c >$(DEPS_DIR)/greq_start.d
-$(DEPS_DIR)/greq_complete.d: $(srcdir)/greq_complete.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C greq_complete.c > $(DEPS_DIR)/greq_complete.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_greq_complete.o greq_complete.o greq_complete.lo _greq_complete.lo' $(srcdir)/greq_complete.c >$(DEPS_DIR)/greq_complete.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_greq_complete.o greq_complete.o greq_complete.lo _greq_complete.lo' $(srcdir)/greq_complete.c >$(DEPS_DIR)/greq_complete.d
-$(DEPS_DIR)/ibsend.d: $(srcdir)/ibsend.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ibsend.c > $(DEPS_DIR)/ibsend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_ibsend.o ibsend.o ibsend.lo _ibsend.lo' $(srcdir)/ibsend.c >$(DEPS_DIR)/ibsend.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_ibsend.o ibsend.o ibsend.lo _ibsend.lo' $(srcdir)/ibsend.c >$(DEPS_DIR)/ibsend.d
-$(DEPS_DIR)/iprobe.d: $(srcdir)/iprobe.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C iprobe.c > $(DEPS_DIR)/iprobe.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_iprobe.o iprobe.o iprobe.lo _iprobe.lo' $(srcdir)/iprobe.c >$(DEPS_DIR)/iprobe.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_iprobe.o iprobe.o iprobe.lo _iprobe.lo' $(srcdir)/iprobe.c >$(DEPS_DIR)/iprobe.d
-$(DEPS_DIR)/irecv.d: $(srcdir)/irecv.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C irecv.c > $(DEPS_DIR)/irecv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_irecv.o irecv.o irecv.lo _irecv.lo' $(srcdir)/irecv.c >$(DEPS_DIR)/irecv.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_irecv.o irecv.o irecv.lo _irecv.lo' $(srcdir)/irecv.c >$(DEPS_DIR)/irecv.d
-$(DEPS_DIR)/irsend.d: $(srcdir)/irsend.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C irsend.c > $(DEPS_DIR)/irsend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_irsend.o irsend.o irsend.lo _irsend.lo' $(srcdir)/irsend.c >$(DEPS_DIR)/irsend.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_irsend.o irsend.o irsend.lo _irsend.lo' $(srcdir)/irsend.c >$(DEPS_DIR)/irsend.d
-$(DEPS_DIR)/isend.d: $(srcdir)/isend.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C isend.c > $(DEPS_DIR)/isend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_isend.o isend.o isend.lo _isend.lo' $(srcdir)/isend.c >$(DEPS_DIR)/isend.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_isend.o isend.o isend.lo _isend.lo' $(srcdir)/isend.c >$(DEPS_DIR)/isend.d
-$(DEPS_DIR)/issend.d: $(srcdir)/issend.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C issend.c > $(DEPS_DIR)/issend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_issend.o issend.o issend.lo _issend.lo' $(srcdir)/issend.c >$(DEPS_DIR)/issend.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_issend.o issend.o issend.lo _issend.lo' $(srcdir)/issend.c >$(DEPS_DIR)/issend.d
-$(DEPS_DIR)/probe.d: $(srcdir)/probe.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C probe.c > $(DEPS_DIR)/probe.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_probe.o probe.o probe.lo _probe.lo' $(srcdir)/probe.c >$(DEPS_DIR)/probe.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_probe.o probe.o probe.lo _probe.lo' $(srcdir)/probe.c >$(DEPS_DIR)/probe.d
-$(DEPS_DIR)/recv.d: $(srcdir)/recv.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C recv.c > $(DEPS_DIR)/recv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_recv.o recv.o recv.lo _recv.lo' $(srcdir)/recv.c >$(DEPS_DIR)/recv.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_recv.o recv.o recv.lo _recv.lo' $(srcdir)/recv.c >$(DEPS_DIR)/recv.d
-$(DEPS_DIR)/recv_init.d: $(srcdir)/recv_init.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C recv_init.c > $(DEPS_DIR)/recv_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_recv_init.o recv_init.o recv_init.lo _recv_init.lo' $(srcdir)/recv_init.c >$(DEPS_DIR)/recv_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_recv_init.o recv_init.o recv_init.lo _recv_init.lo' $(srcdir)/recv_init.c >$(DEPS_DIR)/recv_init.d
-$(DEPS_DIR)/request_free.d: $(srcdir)/request_free.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C request_free.c > $(DEPS_DIR)/request_free.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_request_free.o request_free.o request_free.lo _request_free.lo' $(srcdir)/request_free.c >$(DEPS_DIR)/request_free.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_request_free.o request_free.o request_free.lo _request_free.lo' $(srcdir)/request_free.c >$(DEPS_DIR)/request_free.d
-$(DEPS_DIR)/request_get_status.d: $(srcdir)/request_get_status.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C request_get_status.c > $(DEPS_DIR)/request_get_status.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_request_get_status.o request_get_status.o request_get_status.lo _request_get_status.lo' $(srcdir)/request_get_status.c >$(DEPS_DIR)/request_get_status.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_request_get_status.o request_get_status.o request_get_status.lo _request_get_status.lo' $(srcdir)/request_get_status.c >$(DEPS_DIR)/request_get_status.d
-$(DEPS_DIR)/rsend.d: $(srcdir)/rsend.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C rsend.c > $(DEPS_DIR)/rsend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_rsend.o rsend.o rsend.lo _rsend.lo' $(srcdir)/rsend.c >$(DEPS_DIR)/rsend.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_rsend.o rsend.o rsend.lo _rsend.lo' $(srcdir)/rsend.c >$(DEPS_DIR)/rsend.d
-$(DEPS_DIR)/rsend_init.d: $(srcdir)/rsend_init.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C rsend_init.c > $(DEPS_DIR)/rsend_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_rsend_init.o rsend_init.o rsend_init.lo _rsend_init.lo' $(srcdir)/rsend_init.c >$(DEPS_DIR)/rsend_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_rsend_init.o rsend_init.o rsend_init.lo _rsend_init.lo' $(srcdir)/rsend_init.c >$(DEPS_DIR)/rsend_init.d
-$(DEPS_DIR)/send.d: $(srcdir)/send.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C send.c > $(DEPS_DIR)/send.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_send.o send.o send.lo _send.lo' $(srcdir)/send.c >$(DEPS_DIR)/send.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_send.o send.o send.lo _send.lo' $(srcdir)/send.c >$(DEPS_DIR)/send.d
-$(DEPS_DIR)/send_init.d: $(srcdir)/send_init.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C send_init.c > $(DEPS_DIR)/send_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_send_init.o send_init.o send_init.lo _send_init.lo' $(srcdir)/send_init.c >$(DEPS_DIR)/send_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_send_init.o send_init.o send_init.lo _send_init.lo' $(srcdir)/send_init.c >$(DEPS_DIR)/send_init.d
-$(DEPS_DIR)/sendrecv.d: $(srcdir)/sendrecv.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C sendrecv.c > $(DEPS_DIR)/sendrecv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_sendrecv.o sendrecv.o sendrecv.lo _sendrecv.lo' $(srcdir)/sendrecv.c >$(DEPS_DIR)/sendrecv.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_sendrecv.o sendrecv.o sendrecv.lo _sendrecv.lo' $(srcdir)/sendrecv.c >$(DEPS_DIR)/sendrecv.d
-$(DEPS_DIR)/sendrecv_rep.d: $(srcdir)/sendrecv_rep.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C sendrecv_rep.c > $(DEPS_DIR)/sendrecv_rep.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_sendrecv_rep.o sendrecv_rep.o sendrecv_rep.lo _sendrecv_rep.lo' $(srcdir)/sendrecv_rep.c >$(DEPS_DIR)/sendrecv_rep.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_sendrecv_rep.o sendrecv_rep.o sendrecv_rep.lo _sendrecv_rep.lo' $(srcdir)/sendrecv_rep.c >$(DEPS_DIR)/sendrecv_rep.d
-$(DEPS_DIR)/status_set_cancelled.d: $(srcdir)/status_set_cancelled.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C status_set_cancelled.c > $(DEPS_DIR)/status_set_cancelled.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_status_set_cancelled.o status_set_cancelled.o status_set_cancelled.lo _status_set_cancelled.lo' $(srcdir)/status_set_cancelled.c >$(DEPS_DIR)/status_set_cancelled.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_status_set_cancelled.o status_set_cancelled.o status_set_cancelled.lo _status_set_cancelled.lo' $(srcdir)/status_set_cancelled.c >$(DEPS_DIR)/status_set_cancelled.d
-$(DEPS_DIR)/ssend.d: $(srcdir)/ssend.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ssend.c > $(DEPS_DIR)/ssend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_ssend.o ssend.o ssend.lo _ssend.lo' $(srcdir)/ssend.c >$(DEPS_DIR)/ssend.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_ssend.o ssend.o ssend.lo _ssend.lo' $(srcdir)/ssend.c >$(DEPS_DIR)/ssend.d
-$(DEPS_DIR)/ssend_init.d: $(srcdir)/ssend_init.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ssend_init.c > $(DEPS_DIR)/ssend_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_ssend_init.o ssend_init.o ssend_init.lo _ssend_init.lo' $(srcdir)/ssend_init.c >$(DEPS_DIR)/ssend_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_ssend_init.o ssend_init.o ssend_init.lo _ssend_init.lo' $(srcdir)/ssend_init.c >$(DEPS_DIR)/ssend_init.d
-$(DEPS_DIR)/start.d: $(srcdir)/start.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C start.c > $(DEPS_DIR)/start.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_start.o start.o start.lo _start.lo' $(srcdir)/start.c >$(DEPS_DIR)/start.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_start.o start.o start.lo _start.lo' $(srcdir)/start.c >$(DEPS_DIR)/start.d
-$(DEPS_DIR)/startall.d: $(srcdir)/startall.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C startall.c > $(DEPS_DIR)/startall.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_startall.o startall.o startall.lo _startall.lo' $(srcdir)/startall.c >$(DEPS_DIR)/startall.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_startall.o startall.o startall.lo _startall.lo' $(srcdir)/startall.c >$(DEPS_DIR)/startall.d
-$(DEPS_DIR)/test.d: $(srcdir)/test.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C test.c > $(DEPS_DIR)/test.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_test.o test.o test.lo _test.lo' $(srcdir)/test.c >$(DEPS_DIR)/test.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_test.o test.o test.lo _test.lo' $(srcdir)/test.c >$(DEPS_DIR)/test.d
-$(DEPS_DIR)/test_cancelled.d: $(srcdir)/test_cancelled.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C test_cancelled.c > $(DEPS_DIR)/test_cancelled.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_test_cancelled.o test_cancelled.o test_cancelled.lo _test_cancelled.lo' $(srcdir)/test_cancelled.c >$(DEPS_DIR)/test_cancelled.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_test_cancelled.o test_cancelled.o test_cancelled.lo _test_cancelled.lo' $(srcdir)/test_cancelled.c >$(DEPS_DIR)/test_cancelled.d
-$(DEPS_DIR)/testall.d: $(srcdir)/testall.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C testall.c > $(DEPS_DIR)/testall.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_testall.o testall.o testall.lo _testall.lo' $(srcdir)/testall.c >$(DEPS_DIR)/testall.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_testall.o testall.o testall.lo _testall.lo' $(srcdir)/testall.c >$(DEPS_DIR)/testall.d
-$(DEPS_DIR)/testany.d: $(srcdir)/testany.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C testany.c > $(DEPS_DIR)/testany.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_testany.o testany.o testany.lo _testany.lo' $(srcdir)/testany.c >$(DEPS_DIR)/testany.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_testany.o testany.o testany.lo _testany.lo' $(srcdir)/testany.c >$(DEPS_DIR)/testany.d
-$(DEPS_DIR)/testsome.d: $(srcdir)/testsome.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C testsome.c > $(DEPS_DIR)/testsome.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_testsome.o testsome.o testsome.lo _testsome.lo' $(srcdir)/testsome.c >$(DEPS_DIR)/testsome.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_testsome.o testsome.o testsome.lo _testsome.lo' $(srcdir)/testsome.c >$(DEPS_DIR)/testsome.d
-$(DEPS_DIR)/wait.d: $(srcdir)/wait.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C wait.c > $(DEPS_DIR)/wait.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_wait.o wait.o wait.lo _wait.lo' $(srcdir)/wait.c >$(DEPS_DIR)/wait.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_wait.o wait.o wait.lo _wait.lo' $(srcdir)/wait.c >$(DEPS_DIR)/wait.d
-$(DEPS_DIR)/waitall.d: $(srcdir)/waitall.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C waitall.c > $(DEPS_DIR)/waitall.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_waitall.o waitall.o waitall.lo _waitall.lo' $(srcdir)/waitall.c >$(DEPS_DIR)/waitall.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_waitall.o waitall.o waitall.lo _waitall.lo' $(srcdir)/waitall.c >$(DEPS_DIR)/waitall.d
-$(DEPS_DIR)/waitany.d: $(srcdir)/waitany.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C waitany.c > $(DEPS_DIR)/waitany.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_waitany.o waitany.o waitany.lo _waitany.lo' $(srcdir)/waitany.c >$(DEPS_DIR)/waitany.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_waitany.o waitany.o waitany.lo _waitany.lo' $(srcdir)/waitany.c >$(DEPS_DIR)/waitany.d
-$(DEPS_DIR)/waitsome.d: $(srcdir)/waitsome.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C waitsome.c > $(DEPS_DIR)/waitsome.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_waitsome.o waitsome.o waitsome.lo _waitsome.lo' $(srcdir)/waitsome.c >$(DEPS_DIR)/waitsome.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_waitsome.o waitsome.o waitsome.lo _waitsome.lo' $(srcdir)/waitsome.c >$(DEPS_DIR)/waitsome.d
-$(DEPS_DIR)/bsendutil.d: $(srcdir)/bsendutil.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C bsendutil.c > $(DEPS_DIR)/bsendutil.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_bsendutil.o bsendutil.o bsendutil.lo _bsendutil.lo' $(srcdir)/bsendutil.c >$(DEPS_DIR)/bsendutil.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_bsendutil.o bsendutil.o bsendutil.lo _bsendutil.lo' $(srcdir)/bsendutil.c >$(DEPS_DIR)/bsendutil.d
-$(DEPS_DIR)/mpir_request.d: $(srcdir)/mpir_request.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpir_request.c > $(DEPS_DIR)/mpir_request.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_mpir_request.o mpir_request.o mpir_request.lo _mpir_request.lo' $(srcdir)/mpir_request.c >$(DEPS_DIR)/mpir_request.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_mpir_request.o mpir_request.o mpir_request.lo _mpir_request.lo' $(srcdir)/mpir_request.c >$(DEPS_DIR)/mpir_request.d
-$(DEPS_DIR)/timestamp: $(mpi_sources) bsendutil.c mpir_request.c Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C bsend.c > $(DEPS_DIR)/bsend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_bsend.o bsend.o bsend.lo _bsend.lo' $(srcdir)/bsend.c >$(DEPS_DIR)/bsend.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_bsend.o bsend.o bsend.lo _bsend.lo' $(srcdir)/bsend.c >$(DEPS_DIR)/bsend.d
-	echo "include $(DEPS_DIR)/bsend.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C bsend_init.c > $(DEPS_DIR)/bsend_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_bsend_init.o bsend_init.o bsend_init.lo _bsend_init.lo' $(srcdir)/bsend_init.c >$(DEPS_DIR)/bsend_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_bsend_init.o bsend_init.o bsend_init.lo _bsend_init.lo' $(srcdir)/bsend_init.c >$(DEPS_DIR)/bsend_init.d
-	echo "include $(DEPS_DIR)/bsend_init.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C bufattach.c > $(DEPS_DIR)/bufattach.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_bufattach.o bufattach.o bufattach.lo _bufattach.lo' $(srcdir)/bufattach.c >$(DEPS_DIR)/bufattach.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_bufattach.o bufattach.o bufattach.lo _bufattach.lo' $(srcdir)/bufattach.c >$(DEPS_DIR)/bufattach.d
-	echo "include $(DEPS_DIR)/bufattach.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C buffree.c > $(DEPS_DIR)/buffree.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_buffree.o buffree.o buffree.lo _buffree.lo' $(srcdir)/buffree.c >$(DEPS_DIR)/buffree.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_buffree.o buffree.o buffree.lo _buffree.lo' $(srcdir)/buffree.c >$(DEPS_DIR)/buffree.d
-	echo "include $(DEPS_DIR)/buffree.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C cancel.c > $(DEPS_DIR)/cancel.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_cancel.o cancel.o cancel.lo _cancel.lo' $(srcdir)/cancel.c >$(DEPS_DIR)/cancel.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_cancel.o cancel.o cancel.lo _cancel.lo' $(srcdir)/cancel.c >$(DEPS_DIR)/cancel.d
-	echo "include $(DEPS_DIR)/cancel.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C greq_start.c > $(DEPS_DIR)/greq_start.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_greq_start.o greq_start.o greq_start.lo _greq_start.lo' $(srcdir)/greq_start.c >$(DEPS_DIR)/greq_start.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_greq_start.o greq_start.o greq_start.lo _greq_start.lo' $(srcdir)/greq_start.c >$(DEPS_DIR)/greq_start.d
-	echo "include $(DEPS_DIR)/greq_start.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C greq_complete.c > $(DEPS_DIR)/greq_complete.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_greq_complete.o greq_complete.o greq_complete.lo _greq_complete.lo' $(srcdir)/greq_complete.c >$(DEPS_DIR)/greq_complete.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_greq_complete.o greq_complete.o greq_complete.lo _greq_complete.lo' $(srcdir)/greq_complete.c >$(DEPS_DIR)/greq_complete.d
-	echo "include $(DEPS_DIR)/greq_complete.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ibsend.c > $(DEPS_DIR)/ibsend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_ibsend.o ibsend.o ibsend.lo _ibsend.lo' $(srcdir)/ibsend.c >$(DEPS_DIR)/ibsend.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_ibsend.o ibsend.o ibsend.lo _ibsend.lo' $(srcdir)/ibsend.c >$(DEPS_DIR)/ibsend.d
-	echo "include $(DEPS_DIR)/ibsend.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C iprobe.c > $(DEPS_DIR)/iprobe.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_iprobe.o iprobe.o iprobe.lo _iprobe.lo' $(srcdir)/iprobe.c >$(DEPS_DIR)/iprobe.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_iprobe.o iprobe.o iprobe.lo _iprobe.lo' $(srcdir)/iprobe.c >$(DEPS_DIR)/iprobe.d
-	echo "include $(DEPS_DIR)/iprobe.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C irecv.c > $(DEPS_DIR)/irecv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_irecv.o irecv.o irecv.lo _irecv.lo' $(srcdir)/irecv.c >$(DEPS_DIR)/irecv.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_irecv.o irecv.o irecv.lo _irecv.lo' $(srcdir)/irecv.c >$(DEPS_DIR)/irecv.d
-	echo "include $(DEPS_DIR)/irecv.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C irsend.c > $(DEPS_DIR)/irsend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_irsend.o irsend.o irsend.lo _irsend.lo' $(srcdir)/irsend.c >$(DEPS_DIR)/irsend.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_irsend.o irsend.o irsend.lo _irsend.lo' $(srcdir)/irsend.c >$(DEPS_DIR)/irsend.d
-	echo "include $(DEPS_DIR)/irsend.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C isend.c > $(DEPS_DIR)/isend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_isend.o isend.o isend.lo _isend.lo' $(srcdir)/isend.c >$(DEPS_DIR)/isend.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_isend.o isend.o isend.lo _isend.lo' $(srcdir)/isend.c >$(DEPS_DIR)/isend.d
-	echo "include $(DEPS_DIR)/isend.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C issend.c > $(DEPS_DIR)/issend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_issend.o issend.o issend.lo _issend.lo' $(srcdir)/issend.c >$(DEPS_DIR)/issend.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_issend.o issend.o issend.lo _issend.lo' $(srcdir)/issend.c >$(DEPS_DIR)/issend.d
-	echo "include $(DEPS_DIR)/issend.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C probe.c > $(DEPS_DIR)/probe.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_probe.o probe.o probe.lo _probe.lo' $(srcdir)/probe.c >$(DEPS_DIR)/probe.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_probe.o probe.o probe.lo _probe.lo' $(srcdir)/probe.c >$(DEPS_DIR)/probe.d
-	echo "include $(DEPS_DIR)/probe.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C recv.c > $(DEPS_DIR)/recv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_recv.o recv.o recv.lo _recv.lo' $(srcdir)/recv.c >$(DEPS_DIR)/recv.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_recv.o recv.o recv.lo _recv.lo' $(srcdir)/recv.c >$(DEPS_DIR)/recv.d
-	echo "include $(DEPS_DIR)/recv.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C recv_init.c > $(DEPS_DIR)/recv_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_recv_init.o recv_init.o recv_init.lo _recv_init.lo' $(srcdir)/recv_init.c >$(DEPS_DIR)/recv_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_recv_init.o recv_init.o recv_init.lo _recv_init.lo' $(srcdir)/recv_init.c >$(DEPS_DIR)/recv_init.d
-	echo "include $(DEPS_DIR)/recv_init.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C request_free.c > $(DEPS_DIR)/request_free.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_request_free.o request_free.o request_free.lo _request_free.lo' $(srcdir)/request_free.c >$(DEPS_DIR)/request_free.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_request_free.o request_free.o request_free.lo _request_free.lo' $(srcdir)/request_free.c >$(DEPS_DIR)/request_free.d
-	echo "include $(DEPS_DIR)/request_free.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C request_get_status.c > $(DEPS_DIR)/request_get_status.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_request_get_status.o request_get_status.o request_get_status.lo _request_get_status.lo' $(srcdir)/request_get_status.c >$(DEPS_DIR)/request_get_status.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_request_get_status.o request_get_status.o request_get_status.lo _request_get_status.lo' $(srcdir)/request_get_status.c >$(DEPS_DIR)/request_get_status.d
-	echo "include $(DEPS_DIR)/request_get_status.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C rsend.c > $(DEPS_DIR)/rsend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_rsend.o rsend.o rsend.lo _rsend.lo' $(srcdir)/rsend.c >$(DEPS_DIR)/rsend.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_rsend.o rsend.o rsend.lo _rsend.lo' $(srcdir)/rsend.c >$(DEPS_DIR)/rsend.d
-	echo "include $(DEPS_DIR)/rsend.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C rsend_init.c > $(DEPS_DIR)/rsend_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_rsend_init.o rsend_init.o rsend_init.lo _rsend_init.lo' $(srcdir)/rsend_init.c >$(DEPS_DIR)/rsend_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_rsend_init.o rsend_init.o rsend_init.lo _rsend_init.lo' $(srcdir)/rsend_init.c >$(DEPS_DIR)/rsend_init.d
-	echo "include $(DEPS_DIR)/rsend_init.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C send.c > $(DEPS_DIR)/send.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_send.o send.o send.lo _send.lo' $(srcdir)/send.c >$(DEPS_DIR)/send.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_send.o send.o send.lo _send.lo' $(srcdir)/send.c >$(DEPS_DIR)/send.d
-	echo "include $(DEPS_DIR)/send.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C send_init.c > $(DEPS_DIR)/send_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_send_init.o send_init.o send_init.lo _send_init.lo' $(srcdir)/send_init.c >$(DEPS_DIR)/send_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_send_init.o send_init.o send_init.lo _send_init.lo' $(srcdir)/send_init.c >$(DEPS_DIR)/send_init.d
-	echo "include $(DEPS_DIR)/send_init.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C sendrecv.c > $(DEPS_DIR)/sendrecv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_sendrecv.o sendrecv.o sendrecv.lo _sendrecv.lo' $(srcdir)/sendrecv.c >$(DEPS_DIR)/sendrecv.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_sendrecv.o sendrecv.o sendrecv.lo _sendrecv.lo' $(srcdir)/sendrecv.c >$(DEPS_DIR)/sendrecv.d
-	echo "include $(DEPS_DIR)/sendrecv.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C sendrecv_rep.c > $(DEPS_DIR)/sendrecv_rep.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_sendrecv_rep.o sendrecv_rep.o sendrecv_rep.lo _sendrecv_rep.lo' $(srcdir)/sendrecv_rep.c >$(DEPS_DIR)/sendrecv_rep.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_sendrecv_rep.o sendrecv_rep.o sendrecv_rep.lo _sendrecv_rep.lo' $(srcdir)/sendrecv_rep.c >$(DEPS_DIR)/sendrecv_rep.d
-	echo "include $(DEPS_DIR)/sendrecv_rep.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C status_set_cancelled.c > $(DEPS_DIR)/status_set_cancelled.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_status_set_cancelled.o status_set_cancelled.o status_set_cancelled.lo _status_set_cancelled.lo' $(srcdir)/status_set_cancelled.c >$(DEPS_DIR)/status_set_cancelled.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_status_set_cancelled.o status_set_cancelled.o status_set_cancelled.lo _status_set_cancelled.lo' $(srcdir)/status_set_cancelled.c >$(DEPS_DIR)/status_set_cancelled.d
-	echo "include $(DEPS_DIR)/status_set_cancelled.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ssend.c > $(DEPS_DIR)/ssend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_ssend.o ssend.o ssend.lo _ssend.lo' $(srcdir)/ssend.c >$(DEPS_DIR)/ssend.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_ssend.o ssend.o ssend.lo _ssend.lo' $(srcdir)/ssend.c >$(DEPS_DIR)/ssend.d
-	echo "include $(DEPS_DIR)/ssend.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ssend_init.c > $(DEPS_DIR)/ssend_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_ssend_init.o ssend_init.o ssend_init.lo _ssend_init.lo' $(srcdir)/ssend_init.c >$(DEPS_DIR)/ssend_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_ssend_init.o ssend_init.o ssend_init.lo _ssend_init.lo' $(srcdir)/ssend_init.c >$(DEPS_DIR)/ssend_init.d
-	echo "include $(DEPS_DIR)/ssend_init.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C start.c > $(DEPS_DIR)/start.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_start.o start.o start.lo _start.lo' $(srcdir)/start.c >$(DEPS_DIR)/start.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_start.o start.o start.lo _start.lo' $(srcdir)/start.c >$(DEPS_DIR)/start.d
-	echo "include $(DEPS_DIR)/start.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C startall.c > $(DEPS_DIR)/startall.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_startall.o startall.o startall.lo _startall.lo' $(srcdir)/startall.c >$(DEPS_DIR)/startall.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_startall.o startall.o startall.lo _startall.lo' $(srcdir)/startall.c >$(DEPS_DIR)/startall.d
-	echo "include $(DEPS_DIR)/startall.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C test.c > $(DEPS_DIR)/test.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_test.o test.o test.lo _test.lo' $(srcdir)/test.c >$(DEPS_DIR)/test.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_test.o test.o test.lo _test.lo' $(srcdir)/test.c >$(DEPS_DIR)/test.d
-	echo "include $(DEPS_DIR)/test.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C test_cancelled.c > $(DEPS_DIR)/test_cancelled.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_test_cancelled.o test_cancelled.o test_cancelled.lo _test_cancelled.lo' $(srcdir)/test_cancelled.c >$(DEPS_DIR)/test_cancelled.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_test_cancelled.o test_cancelled.o test_cancelled.lo _test_cancelled.lo' $(srcdir)/test_cancelled.c >$(DEPS_DIR)/test_cancelled.d
-	echo "include $(DEPS_DIR)/test_cancelled.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C testall.c > $(DEPS_DIR)/testall.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_testall.o testall.o testall.lo _testall.lo' $(srcdir)/testall.c >$(DEPS_DIR)/testall.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_testall.o testall.o testall.lo _testall.lo' $(srcdir)/testall.c >$(DEPS_DIR)/testall.d
-	echo "include $(DEPS_DIR)/testall.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C testany.c > $(DEPS_DIR)/testany.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_testany.o testany.o testany.lo _testany.lo' $(srcdir)/testany.c >$(DEPS_DIR)/testany.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_testany.o testany.o testany.lo _testany.lo' $(srcdir)/testany.c >$(DEPS_DIR)/testany.d
-	echo "include $(DEPS_DIR)/testany.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C testsome.c > $(DEPS_DIR)/testsome.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_testsome.o testsome.o testsome.lo _testsome.lo' $(srcdir)/testsome.c >$(DEPS_DIR)/testsome.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_testsome.o testsome.o testsome.lo _testsome.lo' $(srcdir)/testsome.c >$(DEPS_DIR)/testsome.d
-	echo "include $(DEPS_DIR)/testsome.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C wait.c > $(DEPS_DIR)/wait.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_wait.o wait.o wait.lo _wait.lo' $(srcdir)/wait.c >$(DEPS_DIR)/wait.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_wait.o wait.o wait.lo _wait.lo' $(srcdir)/wait.c >$(DEPS_DIR)/wait.d
-	echo "include $(DEPS_DIR)/wait.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C waitall.c > $(DEPS_DIR)/waitall.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_waitall.o waitall.o waitall.lo _waitall.lo' $(srcdir)/waitall.c >$(DEPS_DIR)/waitall.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_waitall.o waitall.o waitall.lo _waitall.lo' $(srcdir)/waitall.c >$(DEPS_DIR)/waitall.d
-	echo "include $(DEPS_DIR)/waitall.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C waitany.c > $(DEPS_DIR)/waitany.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_waitany.o waitany.o waitany.lo _waitany.lo' $(srcdir)/waitany.c >$(DEPS_DIR)/waitany.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_waitany.o waitany.o waitany.lo _waitany.lo' $(srcdir)/waitany.c >$(DEPS_DIR)/waitany.d
-	echo "include $(DEPS_DIR)/waitany.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C waitsome.c > $(DEPS_DIR)/waitsome.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_waitsome.o waitsome.o waitsome.lo _waitsome.lo' $(srcdir)/waitsome.c >$(DEPS_DIR)/waitsome.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_waitsome.o waitsome.o waitsome.lo _waitsome.lo' $(srcdir)/waitsome.c >$(DEPS_DIR)/waitsome.d
-	echo "include $(DEPS_DIR)/waitsome.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C bsendutil.c > $(DEPS_DIR)/bsendutil.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_bsendutil.o bsendutil.o bsendutil.lo _bsendutil.lo' $(srcdir)/bsendutil.c >$(DEPS_DIR)/bsendutil.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_bsendutil.o bsendutil.o bsendutil.lo _bsendutil.lo' $(srcdir)/bsendutil.c >$(DEPS_DIR)/bsendutil.d
-	echo "include $(DEPS_DIR)/bsendutil.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpir_request.c > $(DEPS_DIR)/mpir_request.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_mpir_request.o mpir_request.o mpir_request.lo _mpir_request.lo' $(srcdir)/mpir_request.c >$(DEPS_DIR)/mpir_request.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_mpir_request.o mpir_request.o mpir_request.lo _mpir_request.lo' $(srcdir)/mpir_request.c >$(DEPS_DIR)/mpir_request.d
-	echo "include $(DEPS_DIR)/mpir_request.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  bsend.c bsend_init.c bufattach.c buffree.c cancel.c \
-	greq_start.c greq_complete.c ibsend.c iprobe.c irecv.c irsend.c \
-	isend.c issend.c probe.c recv.c recv_init.c request_free.c \
-	request_get_status.c rsend.c rsend_init.c send.c send_init.c \
-	sendrecv.c sendrecv_rep.c status_set_cancelled.c ssend.c ssend_init.c \
-	start.c startall.c test.c test_cancelled.c testall.c testany.c \
-	testsome.c wait.c waitall.c waitany.c waitsome.c bsendutil.c \
-	mpir_request.c 
+SOURCES         =  bsend.c bsend_init.c bufattach.c buffree.c cancel.c greq_start.c \
+	greq_complete.c ibsend.c iprobe.c irecv.c irsend.c isend.c issend.c probe.c recv.c \
+	recv_init.c request_free.c request_get_status.c rsend.c rsend_init.c send.c send_init.c \
+	sendrecv.c sendrecv_rep.c status_set_cancelled.c ssend.c ssend_init.c start.c startall.c \
+	test.c test_cancelled.c testall.c testany.c testsome.c wait.c waitall.c waitany.c \
+	waitsome.c bsendutil.c mpir_request.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
@@ -1331,6 +707,8 @@ SOURCEFILES     = $(SOURCES)
 
  
 #
+
+.POSIX:
 
 FORCE_TARGET:
 

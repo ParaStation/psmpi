@@ -41,7 +41,7 @@ win_sources = smpd_job.c smpd_mapdrive.c smpd_register.c smpd_ad.cpp smpd_affini
 INCLUDES = -I${master_top_srcdir}/src/include -I${master_top_srcdir}/src/pmi/smpd -I${master_top_srcdir}/src/pm/smpd/sock/include -I${master_top_srcdir}/src/pm/smpd/sock/@smpd_sock_name@ -I${top_builddir}/src/include -I${top_builddir}/src/pm/smpd -I${top_builddir}/src/pm/smpd/sock/@smpd_sock_name@ 
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -58,8 +58,6 @@ INCLUDES = -I${master_top_srcdir}/src/include -I${master_top_srcdir}/src/pmi/smp
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -67,29 +65,6 @@ INCLUDES = -I${master_top_srcdir}/src/include -I${master_top_srcdir}/src/pmi/smp
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-${srcdir}/smpdconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
-	@rm -rf autom4te*.cache
-	(cd ${srcdir} && autoheader -I ../../../confdb && \
-	autoconf -I \
-	../../../confdb ) 
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=src/pm/smpd/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile localdefs config.status config.log config.cache *conf.cache config.system" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-if [ -x config.status ] ; then CONFIG_FILES=Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	for dir in ../../util/mem ./sock sock ; do \
@@ -100,9 +75,6 @@ clean:
 	-@rm -f mpiexec.exe smpd.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 	for dir in ../../util/mem ./sock sock ; do \
 		(cd $$dir && ${MAKE} clean ) ; done
@@ -116,14 +88,10 @@ distclean-xxx:
 	-@rm -f smpdconf.h
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
-	for dir in ../../util/mem ./sock sock ; do \
-		(cd $$dir && ${MAKE} maintainer-clean ) ; done
-	-rm -f smpdconf.h.in 
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect:
 	@(cd ../../util/mem && ${MAKE} all )
 	@(cd ./sock && ${MAKE} all )
@@ -135,12 +103,11 @@ all-local: .libstamp0 ../../../lib/lib${MPILIBNAME}.a mpiexec smpd
 	fi
 	${MAKE} all-postamble
 
-.libstamp0 ../../../lib/lib${MPILIBNAME}.a: smpd_hash.o smpd_authenticate.o \
-	smpd_printf.o smpd_read_write.o smpd_user_data.o smpd_connect.o \
-	smpd_get_opt.o smpd_launch_process.o smpd_command.o smpd_database.o \
-	smpd_state_machine.o smpd_handle_command.o smpd_session.o \
-	smpd_start_mgr.o smpd_barrier.o smpd_do_console.o smpd_restart.o \
-	smpd_host_util.o smpd_handle_spawn.o 
+.libstamp0 ../../../lib/lib${MPILIBNAME}.a: smpd_hash.o smpd_authenticate.o smpd_printf.o \
+	smpd_read_write.o smpd_user_data.o smpd_connect.o smpd_get_opt.o smpd_launch_process.o \
+	smpd_command.o smpd_database.o smpd_state_machine.o smpd_handle_command.o smpd_session.o \
+	smpd_start_mgr.o smpd_barrier.o smpd_do_console.o smpd_restart.o smpd_host_util.o \
+	smpd_handle_spawn.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
@@ -154,13 +121,11 @@ all-local: .libstamp0 ../../../lib/lib${MPILIBNAME}.a mpiexec smpd
 	fi
 	@${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../lib/lib${MPILIBNAME}.la: smpd_hash.lo \
-	smpd_authenticate.lo smpd_printf.lo smpd_read_write.lo \
-	smpd_user_data.lo smpd_connect.lo smpd_get_opt.lo \
-	smpd_launch_process.lo smpd_command.lo smpd_database.lo \
-	smpd_state_machine.lo smpd_handle_command.lo smpd_session.lo \
-	smpd_start_mgr.lo smpd_barrier.lo smpd_do_console.lo smpd_restart.lo \
-	smpd_host_util.lo smpd_handle_spawn.lo 
+.libstamp1 ../../../lib/lib${MPILIBNAME}.la: smpd_hash.lo smpd_authenticate.lo smpd_printf.lo \
+	smpd_read_write.lo smpd_user_data.lo smpd_connect.lo smpd_get_opt.lo \
+	smpd_launch_process.lo smpd_command.lo smpd_database.lo smpd_state_machine.lo \
+	smpd_handle_command.lo smpd_session.lo smpd_start_mgr.lo smpd_barrier.lo \
+	smpd_do_console.lo smpd_restart.lo smpd_host_util.lo smpd_handle_spawn.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -168,45 +133,23 @@ all-local: .libstamp0 ../../../lib/lib${MPILIBNAME}.a mpiexec smpd
 	fi
 	@${AR} ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
-coverage: 
-	-@for file in smpd_hash.c smpd_authenticate.c smpd_printf.c  \
-	smpd_read_write.c smpd_user_data.c smpd_connect.c smpd_get_opt.c  \
-	smpd_launch_process.c smpd_command.c smpd_database.c \
-	smpd_state_machine.c  smpd_handle_command.c smpd_session.c \
-	smpd_start_mgr.c smpd_barrier.c  smpd_do_console.c smpd_restart.c \
-	smpd_host_util.c smpd_handle_spawn.c ; do \
-		gcov -b -f $$file ; done
-	for dir in ../../util/mem ./sock sock ; do \
-		(cd $$dir && ${MAKE} coverage ) ; done
 mpiexec: mpiexec.o mp_parse_command_line.o mp_parse_oldconfig.o mpiexec_rsh.o \
 	 ../../../lib/lib${MPILIBNAME}.a ../../../lib/libmpl.a 
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o mpiexec mpiexec.o \
-	mp_parse_command_line.o mp_parse_oldconfig.o mpiexec_rsh.o  \
-	-L../../../lib -L${master_top_srcdir}/lib -lmpich -lmpl ${LIBS} 
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o mpiexec mpiexec.o mp_parse_command_line.o \
+	mp_parse_oldconfig.o mpiexec_rsh.o  -L../../../lib -L${master_top_srcdir}/lib -lmpich \
+	-lmpl ${LIBS} 
 smpd: smpd.o smpd_cmd_args.o smpd_watchprocs.o \
 	 ../../../lib/lib${MPILIBNAME}.a ../../../lib/libmpl.a 
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o smpd smpd.o smpd_cmd_args.o \
-	smpd_watchprocs.o  -L../../../lib -L${master_top_srcdir}/lib -lmpich \
-	-lmpl ${LIBS} 
-# --------------------------------------------------------------------------
-htmldoc:
-	for dir in ../../util/mem ./sock sock ; do \
-		(cd $$dir && ${MAKE} htmldoc ) ; done
-mandoc:
-	for dir in ../../util/mem ./sock sock ; do \
-		(cd $$dir && ${MAKE} mandoc ) ; done
-latexdoc:
-	for dir in ../../util/mem ./sock sock ; do \
-		(cd $$dir && ${MAKE} latexdoc ) ; done
-# --------------------------------------------------------------------------
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o smpd smpd.o smpd_cmd_args.o smpd_watchprocs.o  \
+	-L../../../lib -L${master_top_srcdir}/lib -lmpich -lmpl ${LIBS} 
 # --------------------------------------------------------------------------
 # Install target
 install:  FORCE_TARGET 
 	if [ ! -d ${DESTDIR}${exec_prefix} ] ; then $(MKDIR_P) ${DESTDIR}${exec_prefix} ; fi
 	if [ ! -d ${DESTDIR}${prefix} ] ; then $(MKDIR_P) ${DESTDIR}${prefix} ; fi
 	if [ ! -d ${DESTDIR}${bindir} ] ; then $(MKDIR_P) ${DESTDIR}${bindir} ; fi
-	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG) mpiexec ${DESTDIR}${bindir}/mpiexec
-	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG) smpd ${DESTDIR}${bindir}/smpd
+	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)  mpiexec ${DESTDIR}${bindir}/mpiexec
+	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)  smpd ${DESTDIR}${bindir}/smpd
 
 install-strip:
 	$(MAKE) INSTALL_STRIP_FLAG=-s install
@@ -216,351 +159,12 @@ uninstall:
 installcheck: 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-	for dir in ../../util/mem ./sock sock ; do \
-		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
-		(cd $$dir && ${MAKE} dependencies ) ; done
-$(DEPS_DIR)/smpd_hash.d: $(srcdir)/smpd_hash.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_hash.c > $(DEPS_DIR)/smpd_hash.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_hash.c >$(DEPS_DIR)/smpd_hash.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_hash.c >$(DEPS_DIR)/smpd_hash.d
-$(DEPS_DIR)/smpd_authenticate.d: $(srcdir)/smpd_authenticate.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_authenticate.c > $(DEPS_DIR)/smpd_authenticate.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_authenticate.c >$(DEPS_DIR)/smpd_authenticate.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_authenticate.c >$(DEPS_DIR)/smpd_authenticate.d
-$(DEPS_DIR)/smpd_printf.d: $(srcdir)/smpd_printf.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_printf.c > $(DEPS_DIR)/smpd_printf.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_printf.c >$(DEPS_DIR)/smpd_printf.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_printf.c >$(DEPS_DIR)/smpd_printf.d
-$(DEPS_DIR)/smpd_read_write.d: $(srcdir)/smpd_read_write.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_read_write.c > $(DEPS_DIR)/smpd_read_write.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_read_write.c >$(DEPS_DIR)/smpd_read_write.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_read_write.c >$(DEPS_DIR)/smpd_read_write.d
-$(DEPS_DIR)/smpd_user_data.d: $(srcdir)/smpd_user_data.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_user_data.c > $(DEPS_DIR)/smpd_user_data.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_user_data.c >$(DEPS_DIR)/smpd_user_data.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_user_data.c >$(DEPS_DIR)/smpd_user_data.d
-$(DEPS_DIR)/smpd_connect.d: $(srcdir)/smpd_connect.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_connect.c > $(DEPS_DIR)/smpd_connect.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_connect.c >$(DEPS_DIR)/smpd_connect.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_connect.c >$(DEPS_DIR)/smpd_connect.d
-$(DEPS_DIR)/smpd_get_opt.d: $(srcdir)/smpd_get_opt.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_get_opt.c > $(DEPS_DIR)/smpd_get_opt.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_get_opt.c >$(DEPS_DIR)/smpd_get_opt.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_get_opt.c >$(DEPS_DIR)/smpd_get_opt.d
-$(DEPS_DIR)/smpd_launch_process.d: $(srcdir)/smpd_launch_process.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_launch_process.c > $(DEPS_DIR)/smpd_launch_process.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_launch_process.c >$(DEPS_DIR)/smpd_launch_process.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_launch_process.c >$(DEPS_DIR)/smpd_launch_process.d
-$(DEPS_DIR)/smpd_command.d: $(srcdir)/smpd_command.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_command.c > $(DEPS_DIR)/smpd_command.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_command.c >$(DEPS_DIR)/smpd_command.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_command.c >$(DEPS_DIR)/smpd_command.d
-$(DEPS_DIR)/smpd_database.d: $(srcdir)/smpd_database.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_database.c > $(DEPS_DIR)/smpd_database.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_database.c >$(DEPS_DIR)/smpd_database.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_database.c >$(DEPS_DIR)/smpd_database.d
-$(DEPS_DIR)/smpd_state_machine.d: $(srcdir)/smpd_state_machine.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_state_machine.c > $(DEPS_DIR)/smpd_state_machine.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_state_machine.c >$(DEPS_DIR)/smpd_state_machine.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_state_machine.c >$(DEPS_DIR)/smpd_state_machine.d
-$(DEPS_DIR)/smpd_handle_command.d: $(srcdir)/smpd_handle_command.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_handle_command.c > $(DEPS_DIR)/smpd_handle_command.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_handle_command.c >$(DEPS_DIR)/smpd_handle_command.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_handle_command.c >$(DEPS_DIR)/smpd_handle_command.d
-$(DEPS_DIR)/smpd_session.d: $(srcdir)/smpd_session.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_session.c > $(DEPS_DIR)/smpd_session.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_session.c >$(DEPS_DIR)/smpd_session.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_session.c >$(DEPS_DIR)/smpd_session.d
-$(DEPS_DIR)/smpd_start_mgr.d: $(srcdir)/smpd_start_mgr.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_start_mgr.c > $(DEPS_DIR)/smpd_start_mgr.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_start_mgr.c >$(DEPS_DIR)/smpd_start_mgr.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_start_mgr.c >$(DEPS_DIR)/smpd_start_mgr.d
-$(DEPS_DIR)/smpd_barrier.d: $(srcdir)/smpd_barrier.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_barrier.c > $(DEPS_DIR)/smpd_barrier.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_barrier.c >$(DEPS_DIR)/smpd_barrier.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_barrier.c >$(DEPS_DIR)/smpd_barrier.d
-$(DEPS_DIR)/smpd_do_console.d: $(srcdir)/smpd_do_console.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_do_console.c > $(DEPS_DIR)/smpd_do_console.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_do_console.c >$(DEPS_DIR)/smpd_do_console.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_do_console.c >$(DEPS_DIR)/smpd_do_console.d
-$(DEPS_DIR)/smpd_restart.d: $(srcdir)/smpd_restart.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_restart.c > $(DEPS_DIR)/smpd_restart.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_restart.c >$(DEPS_DIR)/smpd_restart.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_restart.c >$(DEPS_DIR)/smpd_restart.d
-$(DEPS_DIR)/smpd_host_util.d: $(srcdir)/smpd_host_util.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_host_util.c > $(DEPS_DIR)/smpd_host_util.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_host_util.c >$(DEPS_DIR)/smpd_host_util.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_host_util.c >$(DEPS_DIR)/smpd_host_util.d
-$(DEPS_DIR)/smpd_handle_spawn.d: $(srcdir)/smpd_handle_spawn.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_handle_spawn.c > $(DEPS_DIR)/smpd_handle_spawn.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_handle_spawn.c >$(DEPS_DIR)/smpd_handle_spawn.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_handle_spawn.c >$(DEPS_DIR)/smpd_handle_spawn.d
-$(DEPS_DIR)/timestamp: smpd_hash.c smpd_authenticate.c smpd_printf.c  smpd_read_write.c \
-	smpd_user_data.c smpd_connect.c smpd_get_opt.c  smpd_launch_process.c \
-	smpd_command.c smpd_database.c smpd_state_machine.c  \
-	smpd_handle_command.c smpd_session.c smpd_start_mgr.c smpd_barrier.c  \
-	smpd_do_console.c smpd_restart.c smpd_host_util.c smpd_handle_spawn.c \
-	mpiexec.c mp_parse_command_line.c mp_parse_oldconfig.c mpiexec_rsh.c \
-	smpd.c smpd_cmd_args.c smpd_watchprocs.c Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_hash.c > $(DEPS_DIR)/smpd_hash.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_hash.c >$(DEPS_DIR)/smpd_hash.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_hash.c >$(DEPS_DIR)/smpd_hash.d
-	echo "include $(DEPS_DIR)/smpd_hash.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_authenticate.c > $(DEPS_DIR)/smpd_authenticate.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_authenticate.c >$(DEPS_DIR)/smpd_authenticate.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_authenticate.c >$(DEPS_DIR)/smpd_authenticate.d
-	echo "include $(DEPS_DIR)/smpd_authenticate.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_printf.c > $(DEPS_DIR)/smpd_printf.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_printf.c >$(DEPS_DIR)/smpd_printf.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_printf.c >$(DEPS_DIR)/smpd_printf.d
-	echo "include $(DEPS_DIR)/smpd_printf.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_read_write.c > $(DEPS_DIR)/smpd_read_write.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_read_write.c >$(DEPS_DIR)/smpd_read_write.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_read_write.c >$(DEPS_DIR)/smpd_read_write.d
-	echo "include $(DEPS_DIR)/smpd_read_write.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_user_data.c > $(DEPS_DIR)/smpd_user_data.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_user_data.c >$(DEPS_DIR)/smpd_user_data.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_user_data.c >$(DEPS_DIR)/smpd_user_data.d
-	echo "include $(DEPS_DIR)/smpd_user_data.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_connect.c > $(DEPS_DIR)/smpd_connect.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_connect.c >$(DEPS_DIR)/smpd_connect.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_connect.c >$(DEPS_DIR)/smpd_connect.d
-	echo "include $(DEPS_DIR)/smpd_connect.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_get_opt.c > $(DEPS_DIR)/smpd_get_opt.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_get_opt.c >$(DEPS_DIR)/smpd_get_opt.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_get_opt.c >$(DEPS_DIR)/smpd_get_opt.d
-	echo "include $(DEPS_DIR)/smpd_get_opt.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_launch_process.c > $(DEPS_DIR)/smpd_launch_process.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_launch_process.c >$(DEPS_DIR)/smpd_launch_process.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_launch_process.c >$(DEPS_DIR)/smpd_launch_process.d
-	echo "include $(DEPS_DIR)/smpd_launch_process.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_command.c > $(DEPS_DIR)/smpd_command.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_command.c >$(DEPS_DIR)/smpd_command.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_command.c >$(DEPS_DIR)/smpd_command.d
-	echo "include $(DEPS_DIR)/smpd_command.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_database.c > $(DEPS_DIR)/smpd_database.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_database.c >$(DEPS_DIR)/smpd_database.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_database.c >$(DEPS_DIR)/smpd_database.d
-	echo "include $(DEPS_DIR)/smpd_database.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_state_machine.c > $(DEPS_DIR)/smpd_state_machine.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_state_machine.c >$(DEPS_DIR)/smpd_state_machine.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_state_machine.c >$(DEPS_DIR)/smpd_state_machine.d
-	echo "include $(DEPS_DIR)/smpd_state_machine.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_handle_command.c > $(DEPS_DIR)/smpd_handle_command.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_handle_command.c >$(DEPS_DIR)/smpd_handle_command.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_handle_command.c >$(DEPS_DIR)/smpd_handle_command.d
-	echo "include $(DEPS_DIR)/smpd_handle_command.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_session.c > $(DEPS_DIR)/smpd_session.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_session.c >$(DEPS_DIR)/smpd_session.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_session.c >$(DEPS_DIR)/smpd_session.d
-	echo "include $(DEPS_DIR)/smpd_session.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_start_mgr.c > $(DEPS_DIR)/smpd_start_mgr.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_start_mgr.c >$(DEPS_DIR)/smpd_start_mgr.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_start_mgr.c >$(DEPS_DIR)/smpd_start_mgr.d
-	echo "include $(DEPS_DIR)/smpd_start_mgr.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_barrier.c > $(DEPS_DIR)/smpd_barrier.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_barrier.c >$(DEPS_DIR)/smpd_barrier.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_barrier.c >$(DEPS_DIR)/smpd_barrier.d
-	echo "include $(DEPS_DIR)/smpd_barrier.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_do_console.c > $(DEPS_DIR)/smpd_do_console.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_do_console.c >$(DEPS_DIR)/smpd_do_console.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_do_console.c >$(DEPS_DIR)/smpd_do_console.d
-	echo "include $(DEPS_DIR)/smpd_do_console.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_restart.c > $(DEPS_DIR)/smpd_restart.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_restart.c >$(DEPS_DIR)/smpd_restart.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_restart.c >$(DEPS_DIR)/smpd_restart.d
-	echo "include $(DEPS_DIR)/smpd_restart.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_host_util.c > $(DEPS_DIR)/smpd_host_util.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_host_util.c >$(DEPS_DIR)/smpd_host_util.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_host_util.c >$(DEPS_DIR)/smpd_host_util.d
-	echo "include $(DEPS_DIR)/smpd_host_util.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_handle_spawn.c > $(DEPS_DIR)/smpd_handle_spawn.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_handle_spawn.c >$(DEPS_DIR)/smpd_handle_spawn.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_handle_spawn.c >$(DEPS_DIR)/smpd_handle_spawn.d
-	echo "include $(DEPS_DIR)/smpd_handle_spawn.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpiexec.c > $(DEPS_DIR)/mpiexec.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpiexec.c >$(DEPS_DIR)/mpiexec.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpiexec.c >$(DEPS_DIR)/mpiexec.d
-	echo "include $(DEPS_DIR)/mpiexec.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mp_parse_command_line.c > $(DEPS_DIR)/mp_parse_command_line.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mp_parse_command_line.c >$(DEPS_DIR)/mp_parse_command_line.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mp_parse_command_line.c >$(DEPS_DIR)/mp_parse_command_line.d
-	echo "include $(DEPS_DIR)/mp_parse_command_line.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mp_parse_oldconfig.c > $(DEPS_DIR)/mp_parse_oldconfig.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mp_parse_oldconfig.c >$(DEPS_DIR)/mp_parse_oldconfig.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mp_parse_oldconfig.c >$(DEPS_DIR)/mp_parse_oldconfig.d
-	echo "include $(DEPS_DIR)/mp_parse_oldconfig.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpiexec_rsh.c > $(DEPS_DIR)/mpiexec_rsh.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpiexec_rsh.c >$(DEPS_DIR)/mpiexec_rsh.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpiexec_rsh.c >$(DEPS_DIR)/mpiexec_rsh.d
-	echo "include $(DEPS_DIR)/mpiexec_rsh.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd.c > $(DEPS_DIR)/smpd.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd.c >$(DEPS_DIR)/smpd.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd.c >$(DEPS_DIR)/smpd.d
-	echo "include $(DEPS_DIR)/smpd.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_cmd_args.c > $(DEPS_DIR)/smpd_cmd_args.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_cmd_args.c >$(DEPS_DIR)/smpd_cmd_args.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_cmd_args.c >$(DEPS_DIR)/smpd_cmd_args.d
-	echo "include $(DEPS_DIR)/smpd_cmd_args.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C smpd_watchprocs.c > $(DEPS_DIR)/smpd_watchprocs.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/smpd_watchprocs.c >$(DEPS_DIR)/smpd_watchprocs.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/smpd_watchprocs.c >$(DEPS_DIR)/smpd_watchprocs.d
-	echo "include $(DEPS_DIR)/smpd_watchprocs.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  smpd_hash.c smpd_authenticate.c smpd_printf.c \
-	smpd_read_write.c smpd_user_data.c smpd_connect.c smpd_get_opt.c \
-	smpd_launch_process.c smpd_command.c smpd_database.c \
-	smpd_state_machine.c smpd_handle_command.c smpd_session.c \
-	smpd_start_mgr.c smpd_barrier.c smpd_do_console.c smpd_restart.c \
-	smpd_host_util.c smpd_handle_spawn.c mpiexec.c \
-	mp_parse_command_line.c mp_parse_oldconfig.c mpiexec_rsh.c smpd.c \
-	smpd_cmd_args.c smpd_watchprocs.c 
+SOURCES         =  smpd_hash.c smpd_authenticate.c smpd_printf.c smpd_read_write.c \
+	smpd_user_data.c smpd_connect.c smpd_get_opt.c smpd_launch_process.c smpd_command.c \
+	smpd_database.c smpd_state_machine.c smpd_handle_command.c smpd_session.c \
+	smpd_start_mgr.c smpd_barrier.c smpd_do_console.c smpd_restart.c smpd_host_util.c \
+	smpd_handle_spawn.c mpiexec.c mp_parse_command_line.c mp_parse_oldconfig.c mpiexec_rsh.c \
+	smpd.c smpd_cmd_args.c smpd_watchprocs.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
@@ -583,6 +187,8 @@ distclean-local:
 mpich2-build-install: install
 
 mpich2-build-uninstall: uninstall
+
+.POSIX:
 
 FORCE_TARGET:
 

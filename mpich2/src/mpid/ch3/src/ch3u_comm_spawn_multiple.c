@@ -45,8 +45,7 @@ static int  mpi_to_pmi_keyvals( MPID_Info *info_ptr, PMI_keyval_t **kv_ptr,
 	goto fn_exit;
     }
 
-    mpi_errno = NMPI_Info_get_nkeys( info_ptr->handle, &nkeys );
-    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+    MPIR_Info_get_nkeys_impl( info_ptr, &nkeys );
     if (nkeys == 0) {
 	goto fn_exit;
     }
@@ -54,19 +53,18 @@ static int  mpi_to_pmi_keyvals( MPID_Info *info_ptr, PMI_keyval_t **kv_ptr,
     if (!kv) { MPIU_ERR_POP(mpi_errno); }
 
     for (i=0; i<nkeys; i++) {
-	mpi_errno = NMPI_Info_get_nthkey( info_ptr->handle, i, key );
+	mpi_errno = MPIR_Info_get_nthkey_impl( info_ptr, i, key );
 	if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
-	mpi_errno = NMPI_Info_get_valuelen( info_ptr->handle, key, &vallen, 
-					    &flag );
-	if (!flag || mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	MPIR_Info_get_valuelen_impl( info_ptr, key, &vallen, &flag );
+        MPIU_ERR_CHKANDJUMP1(!flag, mpi_errno, MPI_ERR_OTHER,"**infonokey", "**infonokey %s", key);
+
 	kv[i].key = MPIU_Strdup(key);
 	kv[i].val = MPIU_Malloc( vallen + 1 );
 	if (!kv[i].key || !kv[i].val) { 
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem" );
 	}
-	mpi_errno = NMPI_Info_get( info_ptr->handle, key, vallen+1,
-				   kv[i].val, &flag );
-	if (!flag || mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+	MPIR_Info_get_impl( info_ptr, key, vallen+1, kv[i].val, &flag );
+        MPIU_ERR_CHKANDJUMP1(!flag, mpi_errno, MPI_ERR_OTHER,"**infonokey", "**infonokey %s", key);
 	MPIU_DBG_PRINTF(("key: <%s>, value: <%s>\n", kv[i].key, kv[i].val));
     }
 
@@ -115,14 +113,10 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
     PMI_keyval_t **info_keyval_vectors=0, preput_keyval_vector;
     int *pmi_errcodes = 0, pmi_errno;
     int total_num_processes, should_accept = 1;
-    MPIU_THREADPRIV_DECL;
-
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_COMM_SPAWN_MULTIPLE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_COMM_SPAWN_MULTIPLE);
 
-    MPIU_THREADPRIV_GET;
-    MPIR_Nest_incr();
 
     if (comm_ptr->rank == root) {
 	/* create an array for the pmi error codes */
@@ -262,14 +256,17 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
     }
 
     if (errcodes != MPI_ERRCODES_IGNORE) {
-        mpi_errno = NMPI_Bcast(&should_accept, 1, MPI_INT, root, comm_ptr->handle);
+        int errflag = FALSE;
+        mpi_errno = MPIR_Bcast_impl(&should_accept, 1, MPI_INT, root, comm_ptr, &errflag);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-        mpi_errno = NMPI_Bcast(&total_num_processes, 1, MPI_INT, root, comm_ptr->handle);
+        mpi_errno = MPIR_Bcast_impl(&total_num_processes, 1, MPI_INT, root, comm_ptr, &errflag);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         
-        mpi_errno = NMPI_Bcast(errcodes, total_num_processes, MPI_INT, root, comm_ptr->handle);
+        mpi_errno = MPIR_Bcast_impl(errcodes, total_num_processes, MPI_INT, root, comm_ptr, &errflag);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+        MPIU_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
     }
 
     if (should_accept) {
@@ -300,7 +297,6 @@ int MPIDI_Comm_spawn_multiple(int count, char **commands,
     if (pmi_errcodes) {
 	MPIU_Free(pmi_errcodes);
     }
-    MPIR_Nest_decr();
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_COMM_SPAWN_MULTIPLE);
     return mpi_errno;
  fn_fail:

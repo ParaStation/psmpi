@@ -110,8 +110,8 @@ MPIU_ExRegisterCompletionProcessor(
     );
 
 /* Predefined Completion processor keys */
-#define MPIU_EX_GENERIC_COMP_PROC_KEY   0
-#define MPIU_EX_WIN32_COMP_PROC_KEY     1
+#define MPIU_EX_GENERIC_COMP_PROC_KEY   0x0
+#define MPIU_EX_WIN32_COMP_PROC_KEY     0x1
 
 /*
     MPIU_ExRegisterNextCompletionProcessor
@@ -306,6 +306,36 @@ MPIU_ExInitOverlapped(
     pOverlapped->pfnFailure = pfnFailure;
 }
 
+/*
+    MPIU_ExReInitOverlapped ==> ONLY REQD for manual events
+
+    Re-Initialize the success & failure callback function fields
+
+    Re-init the event
+*/
+
+static
+inline
+BOOL
+MPIU_ExReInitOverlapped(
+    MPIU_EXOVERLAPPED* pOverlapped,
+    MPIU_ExCompletionRoutine pfnSuccess,
+    MPIU_ExCompletionRoutine pfnFailure
+    )
+{
+    /* Re-init succ/fail handlers only if they are ~null */
+    if(pfnSuccess){
+        pOverlapped->pfnSuccess = pfnSuccess;
+    }
+    if(pfnFailure){
+        pOverlapped->pfnFailure = pfnFailure;
+    }
+
+    if(pOverlapped->ov.hEvent)
+        return(ResetEvent(pOverlapped->ov.hEvent));
+    else
+        return TRUE;
+}
 
 /*
     MPIU_ExPostOverlapped

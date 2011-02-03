@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -18,25 +17,8 @@ PMPILIBNAME     = @PMPILIBNAME@
 VPATH = .:@srcdir@
 
 .SUFFIXES:
-.SUFFIXES:  .txt 
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../ \
-	-configdir=. \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="mpixxx_opts.conf mpicc mpicc.conf mpicc.bash mpicxx mpicxx.conf mpicxx.bash mpif77 mpif77.conf mpif77.bash mpif90 mpif90.conf mpif90.bash parkill Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/packaging/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
+# Some make programs complain if no suffixes are set
+.SUFFIXES: .c .o
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	(cd pkgconfig && ${MAKE} apply )
@@ -44,9 +26,6 @@ apply:
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	(cd pkgconfig && ${MAKE} clean )
 	(cd envmods && ${MAKE} clean )
 distclean:  clean distclean-xxx remove-makefile
@@ -57,44 +36,22 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
-	(cd pkgconfig && ${MAKE} maintainer-clean )
-	(cd envmods && ${MAKE} maintainer-clean )
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect:
 	@(cd pkgconfig && ${MAKE} all )
 	@(cd envmods && ${MAKE} all )
 
-coverage: 
-	(cd pkgconfig && ${MAKE} coverage )
-	(cd envmods && ${MAKE} coverage )
 # --------------------------------------------------------------------------
-htmldoc:
-	(cd pkgconfig && ${MAKE} htmldoc )
-	(cd envmods && ${MAKE} htmldoc )
-mandoc:
-	(cd pkgconfig && ${MAKE} mandoc )
-	(cd envmods && ${MAKE} mandoc )
-latexdoc:
-	(cd pkgconfig && ${MAKE} latexdoc )
-	(cd envmods && ${MAKE} latexdoc )
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-dependencies:
-	if [ -s pkgconfig/Makefile ] ; then (cd pkgconfig && ${MAKE} dependencies ) ; fi
-	if [ -s envmods/Makefile ] ; then (cd envmods && ${MAKE} dependencies ) ; fi
-# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
+
+.POSIX:
 
 FORCE_TARGET:
 

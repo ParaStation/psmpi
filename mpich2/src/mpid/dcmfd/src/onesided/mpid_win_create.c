@@ -141,7 +141,7 @@ static void mpid_init(void) {
  * \param[in] comm_ptr	Communicator
  * \param[out] win_ptr	Window
  * \return MPI_SUCCESS, MPI_ERR_OTHER, or error returned from
- *	NMPI_Comm_dup or NMPI_Allgather.
+ *	NMPI_Comm_dup or MPIR_Allgather_impl.
  */
 int MPID_Win_create(void *base, MPI_Aint size, int disp_unit,
                 MPID_Info *info, MPID_Comm *comm_ptr,
@@ -151,14 +151,11 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit,
         MPID_Win *win;
         int mpi_errno=MPI_SUCCESS, comm_size, rank;
 
-        MPIU_THREADPRIV_DECL;
         MPID_MPI_STATE_DECL(MPID_STATE_MPID_WIN_CREATE);
 
         MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_WIN_CREATE);
 
         MPIU_UNREFERENCED_ARG(info);
-        MPIU_THREADPRIV_GET;
-        MPIR_Nest_incr();
 
         comm_size = MPIDU_comm_size_c(comm_ptr);
         rank = comm_ptr->rank;
@@ -184,11 +181,11 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit,
         win->_dev.epoch_type = MPID_EPOTYPE_NONE;
         win->_dev.my_cstcy = DCMF_MATCH_CONSISTENCY;
 
-        mpi_errno = NMPI_Comm_dup(comm_ptr->handle, &win->comm);
-        if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+        mpi_errno = MPI_Comm_dup_impl(comm_ptr, &win->_dev.comm_ptr);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        win->comm = win->_dev.comm_ptr->handle;
+        
         MPID_assert_debug(win->comm != MPI_COMM_NULL);
-
-        MPID_Comm_get_ptr(win->comm, win->_dev.comm_ptr);
         MPID_assert_debug(win->_dev.comm_ptr != NULL);
 
         /* allocate memory for the base addresses, disp_units, and
@@ -211,19 +208,18 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit,
 	// 'base_addr' is now an offset for the buf in memregion
 	win->_dev.coll_info[rank].base_addr = (char *)((char *)base - (char *)mem_cfg_base);
 
-        mpi_errno = NMPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
-                        win->_dev.coll_info,
-                        sizeof(struct MPID_Win_coll_info),
-                        MPI_BYTE, comm_ptr->handle);
+        mpi_errno = MPIR_Allgather_impl(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                                        win->_dev.coll_info,
+                                        sizeof(struct MPID_Win_coll_info),
+                                        MPI_BYTE, comm_ptr);
         if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
         /* try to avoid a race where one node sends us a lock request
          * before we're ready */
-        mpi_errno = NMPI_Barrier(comm_ptr->handle);
+        mpi_errno = MPIR_Barrier_impl(comm_ptr);
         if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
         *win_ptr = win;
 
 fn_exit:
-        MPIR_Nest_decr();
         MPID_MPI_FUNC_EXIT(MPID_STATE_MPID_WIN_CREATE);
         return mpi_errno;
         /* --BEGIN ERROR HANDLING-- */
@@ -244,23 +240,20 @@ fn_fail:
  * Release all references and free memory associated with window.
  *
  * \param[in,out] win_ptr	Window
- * \return MPI_SUCCESS or error returned from NMPI_Barrier.
+ * \return MPI_SUCCESS or error returned from MPIR_Barrier_impl.
  */
 int MPID_Win_free(MPID_Win **win_ptr)
 {
         int mpi_errno=MPI_SUCCESS;
         MPID_Win *win = *win_ptr;
-        MPIU_THREADPRIV_DECL;
         MPID_MPI_STATE_DECL(MPID_STATE_MPID_WIN_FREE);
 
         MPID_MPI_FUNC_ENTER(MPID_STATE_MPID_WIN_FREE);
-        MPIU_THREADPRIV_GET;
-        MPIR_Nest_incr();
 
         MPID_assert(win->_dev.epoch_type == MPID_EPOTYPE_NONE ||
         		win->_dev.epoch_type == MPID_EPOTYPE_REFENCE);
 
-        mpi_errno = NMPI_Barrier(win->_dev.comm_ptr->handle);
+        mpi_errno = MPIR_Barrier_impl(win->_dev.comm_ptr);
         if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
         /*
          * previous while loop  and barrier will not exit until all waiters have
@@ -269,7 +262,8 @@ int MPID_Win_free(MPID_Win **win_ptr)
         int rank = win->_dev.comm_ptr->rank;
 	(void) DCMF_Memregion_destroy(
 			&win->_dev.coll_info[rank].mem_region);
-        NMPI_Comm_free(&win->comm);
+        mpi_errno = MPIR_Comm_free_impl(win->_dev.comm_ptr);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         MPIDU_FREE(win->_dev.coll_info, mpi_errno, "win->_dev.coll_info");
         mpidu_free_lock(win);
         /** \todo check whether refcount needs to be decremented
@@ -277,7 +271,6 @@ int MPID_Win_free(MPID_Win **win_ptr)
         MPIU_Handle_obj_free(&MPID_Win_mem, win);
         *win_ptr = NULL;
 fn_exit:
-        MPIR_Nest_decr();
         MPID_MPI_FUNC_EXIT(MPID_STATE_MPID_WIN_FREE);
         return mpi_errno;
         /* --BEGIN ERROR HANDLING-- */

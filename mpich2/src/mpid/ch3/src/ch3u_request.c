@@ -62,7 +62,7 @@ MPID_Request * MPID_Request_create(void)
 	   values be set only for RMA requests? */
 	MPIU_Object_set_ref(req, 1);
 	req->kind		   = MPID_REQUEST_UNDEFINED;
-	req->cc			   = 1;
+        MPID_cc_set(&req->cc, 1);
 	req->cc_ptr		   = &req->cc;
 	/* FIXME: status fields meaningful only for receive, and even then
 	   should not need to be set. */
@@ -86,10 +86,6 @@ MPID_Request * MPID_Request_create(void)
 	req->dev.dtype_info	   = NULL;
 	req->dev.dataloop	   = NULL;
 	req->dev.iov_offset        = 0;
-#if 0
-	req->dev.rdma_iov_count	   = 0;
-	req->dev.rdma_iov_offset   = 0;
-#endif
 #ifdef MPIDI_CH3_REQUEST_INIT
 	MPIDI_CH3_REQUEST_INIT(req);
 #endif
@@ -237,7 +233,8 @@ int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq,
 	    {
 		MPIU_DBG_MSG(CH3_CHANNEL,TYPICAL,"SRBuf allocation failure");
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, 
-                                FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+                                FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 
+						 "**nomem %d", data_sz);
 		sreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
 	    }
@@ -422,7 +419,9 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 		   a fatal error? */
 		MPIU_DBG_MSG(CH3_CHANNEL,VERBOSE,"SRBuf allocation failure");
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, 
-			      FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 0);
+			      FCNAME, __LINE__, MPI_ERR_OTHER, "**nomem", 
+			 "**nomem %d", 
+			 rreq->dev.segment_size - rreq->dev.segment_first);
 		rreq->status.MPI_ERROR = mpi_errno;
 		goto fn_exit;
 	    }

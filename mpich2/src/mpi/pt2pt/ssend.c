@@ -58,7 +58,6 @@ int MPI_Ssend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Request * request_ptr = NULL;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_SSEND);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -129,24 +128,8 @@ int MPI_Ssend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 
     /* If a request was returned, then we need to block until the request 
        is complete */
-    if ((*(request_ptr)->cc_ptr) != 0)
-    {
-	MPID_Progress_state progress_state;
-	    
-	MPID_Progress_start(&progress_state);
-	while((*(request_ptr)->cc_ptr) != 0)
-	{
-	    mpi_errno = MPID_Progress_wait(&progress_state);
-	    if (mpi_errno != MPI_SUCCESS)
-	    {
-		/* --BEGIN ERROR HANDLING-- */
-		MPID_Progress_end(&progress_state);
-		goto fn_fail;
-		/* --END ERROR HANDLING-- */
-	    }
-	}
-	MPID_Progress_end(&progress_state);
-    }
+    mpi_errno = MPIR_Progress_wait_request(request_ptr);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     mpi_errno = request_ptr->status.MPI_ERROR;
     MPID_Request_release(request_ptr);

@@ -201,30 +201,6 @@
 #     See COPYRIGHT in top-level directory.
 #
 
-# -*- Mode: Makefile; -*-
-#
-# (C) 2008 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
-# -*- Mode: Makefile; -*-
-#
-# (C) 2008 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
-# -*- Mode: Makefile; -*-
-#
-# (C) 2008 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
-# -*- Mode: Makefile; -*-
-#
-# (C) 2008 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
-
 
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
@@ -254,22 +230,19 @@ DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/tools/bind/hwloc/Makefile.mk \
 	$(srcdir)/tools/bind/plpa/Makefile.mk \
 	$(srcdir)/tools/bootstrap/Makefile.mk \
+	$(srcdir)/tools/bootstrap/external/Makefile.mk \
 	$(srcdir)/tools/bootstrap/persist/Makefile.mk \
-	$(srcdir)/tools/bootstrap/slurm/Makefile.mk \
 	$(srcdir)/tools/bootstrap/src/Makefile.mk \
-	$(srcdir)/tools/bootstrap/ssh/Makefile.mk \
 	$(srcdir)/tools/bootstrap/utils/Makefile.mk \
 	$(srcdir)/tools/ckpoint/Makefile.mk \
 	$(srcdir)/tools/ckpoint/blcr/Makefile.mk \
 	$(srcdir)/tools/debugger/Makefile.mk \
 	$(srcdir)/tools/demux/Makefile.mk \
+	$(srcdir)/tools/ftb/Makefile.mk \
 	$(srcdir)/tools/nameserver/Makefile.mk \
-	$(srcdir)/tools/rmk/Makefile.mk \
-	$(srcdir)/tools/rmk/pbs/Makefile.mk \
-	$(srcdir)/tools/rmk/src/Makefile.mk \
-	$(srcdir)/tools/rmk/utils/Makefile.mk $(srcdir)/ui/Makefile.mk \
-	$(srcdir)/ui/mpich/Makefile.mk $(srcdir)/ui/utils/Makefile.mk \
-	$(srcdir)/utils/Makefile.mk $(srcdir)/utils/alloc/Makefile.mk \
+	$(srcdir)/ui/Makefile.mk $(srcdir)/ui/mpich/Makefile.mk \
+	$(srcdir)/ui/utils/Makefile.mk $(srcdir)/utils/Makefile.mk \
+	$(srcdir)/utils/alloc/Makefile.mk \
 	$(srcdir)/utils/args/Makefile.mk \
 	$(srcdir)/utils/dbg/Makefile.mk \
 	$(srcdir)/utils/env/Makefile.mk \
@@ -281,10 +254,8 @@ DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(top_srcdir)/include/hydra_config.h.in \
 	$(top_srcdir)/tools/bootstrap/include/bsci.h.in \
 	$(top_srcdir)/tools/bootstrap/src/bsci_init.c.in \
-	$(top_srcdir)/tools/rmk/include/rmki.h.in \
-	$(top_srcdir)/tools/rmk/src/rmki_init.c.in confdb/config.guess \
-	confdb/config.sub confdb/depcomp confdb/install-sh \
-	confdb/ltmain.sh confdb/missing
+	confdb/config.guess confdb/config.sub confdb/depcomp \
+	confdb/install-sh confdb/ltmain.sh confdb/missing
 @hydra_have_plpa_TRUE@am__append_1 = $(top_srcdir)/tools/bind/plpa/bind_plpa.c
 @hydra_have_plpa_TRUE@am__append_2 = -I$(top_srcdir)/tools/bind/plpa/plpa/src/libplpa \
 @hydra_have_plpa_TRUE@	-I$(top_builddir)/tools/bind/plpa/plpa/src/libplpa
@@ -295,35 +266,41 @@ DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 @hydra_have_plpa_TRUE@am__append_4 = -L$(top_builddir)/tools/bind/plpa/plpa/src/libplpa
 @hydra_have_plpa_TRUE@am__append_5 = -lplpa
 @hydra_have_hwloc_TRUE@am__append_6 = $(top_srcdir)/tools/bind/hwloc/bind_hwloc.c
-@hydra_have_hwloc_TRUE@am__append_7 = -I$(top_srcdir)/tools/bind/hwloc/hwloc/include \
-@hydra_have_hwloc_TRUE@	-I$(top_builddir)/tools/bind/hwloc/hwloc/include
+@hydra_build_embedded_hwloc_TRUE@@hydra_have_hwloc_TRUE@am__append_7 = -I$(top_srcdir)/tools/bind/hwloc/hwloc/include \
+@hydra_build_embedded_hwloc_TRUE@@hydra_have_hwloc_TRUE@	-I$(top_builddir)/tools/bind/hwloc/hwloc/include
 
 
 # Append hwloc to the external subdirs, so it gets built first
-@hydra_have_hwloc_TRUE@am__append_8 = tools/bind/hwloc/hwloc
-@hydra_have_hwloc_TRUE@am__append_9 = -L$(top_builddir)/tools/bind/hwloc/hwloc/src
-@hydra_have_hwloc_TRUE@am__append_10 = -lhwloc
-@hydra_bss_ssh_TRUE@am__append_11 = $(top_srcdir)/tools/bootstrap/ssh/ssh_init.c \
-@hydra_bss_ssh_TRUE@	$(top_srcdir)/tools/bootstrap/ssh/ssh_launch.c \
-@hydra_bss_ssh_TRUE@	$(top_srcdir)/tools/bootstrap/ssh/ssh_finalize.c \
-@hydra_bss_ssh_TRUE@	$(top_srcdir)/tools/bootstrap/ssh/ssh_env.c
+@hydra_build_embedded_hwloc_TRUE@@hydra_have_hwloc_TRUE@am__append_8 = tools/bind/hwloc/hwloc
+@hydra_build_embedded_hwloc_TRUE@@hydra_have_hwloc_TRUE@am__append_9 = -L$(top_builddir)/tools/bind/hwloc/hwloc/src
+@hydra_build_embedded_hwloc_TRUE@@hydra_have_hwloc_TRUE@am__append_10 = -lhwloc_embedded
+@hydra_bss_external_TRUE@am__append_11 = $(top_srcdir)/tools/bootstrap/external/external_init.c \
+@hydra_bss_external_TRUE@	$(top_srcdir)/tools/bootstrap/external/external_launch.c \
+@hydra_bss_external_TRUE@	$(top_srcdir)/tools/bootstrap/external/external_finalize.c \
+@hydra_bss_external_TRUE@	$(top_srcdir)/tools/bootstrap/external/external_env.c \
+@hydra_bss_external_TRUE@	$(top_srcdir)/tools/bootstrap/external/external_query_native_int.c \
+@hydra_bss_external_TRUE@	$(top_srcdir)/tools/bootstrap/external/external_query_jobid.c \
+@hydra_bss_external_TRUE@	$(top_srcdir)/tools/bootstrap/external/ssh.c \
+@hydra_bss_external_TRUE@	$(top_srcdir)/tools/bootstrap/external/slurm_launch.c \
+@hydra_bss_external_TRUE@	$(top_srcdir)/tools/bootstrap/external/slurm_query_node_list.c \
+@hydra_bss_external_TRUE@	$(top_srcdir)/tools/bootstrap/external/slurm_query_proxy_id.c \
+@hydra_bss_external_TRUE@	$(top_srcdir)/tools/bootstrap/external/ll_launch.c \
+@hydra_bss_external_TRUE@	$(top_srcdir)/tools/bootstrap/external/ll_query_node_list.c \
+@hydra_bss_external_TRUE@	$(top_srcdir)/tools/bootstrap/external/ll_query_proxy_id.c \
+@hydra_bss_external_TRUE@	$(top_srcdir)/tools/bootstrap/external/lsf_query_node_list.c \
+@hydra_bss_external_TRUE@	$(top_srcdir)/tools/bootstrap/external/sge_query_node_list.c \
+@hydra_bss_external_TRUE@	$(top_srcdir)/tools/bootstrap/external/pbs_query_node_list.c
 
-@hydra_bss_slurm_TRUE@am__append_12 = $(top_srcdir)/tools/bootstrap/slurm/slurm_init.c \
-@hydra_bss_slurm_TRUE@	$(top_srcdir)/tools/bootstrap/slurm/slurm_launch.c \
-@hydra_bss_slurm_TRUE@	$(top_srcdir)/tools/bootstrap/slurm/slurm_query_node_list.c \
-@hydra_bss_slurm_TRUE@	$(top_srcdir)/tools/bootstrap/slurm/slurm_query_proxy_id.c
-
-@hydra_bss_persist_TRUE@am__append_13 = hydra_persist
-@hydra_bss_persist_TRUE@am__append_14 = $(top_srcdir)/tools/bootstrap/persist/persist_init.c \
+@hydra_bss_persist_TRUE@am__append_12 = hydra_persist
+@hydra_bss_persist_TRUE@am__append_13 = $(top_srcdir)/tools/bootstrap/persist/persist_init.c \
 @hydra_bss_persist_TRUE@	$(top_srcdir)/tools/bootstrap/persist/persist_launch.c \
 @hydra_bss_persist_TRUE@	$(top_srcdir)/tools/bootstrap/persist/persist_wait.c
 
-@hydra_have_blcr_TRUE@am__append_15 = $(top_srcdir)/tools/ckpoint/blcr/ckpoint_blcr.c
-@hydra_have_poll_TRUE@am__append_16 = $(top_srcdir)/tools/demux/demux_poll.c
-@hydra_have_select_TRUE@am__append_17 = $(top_srcdir)/tools/demux/demux_select.c
-@hydra_rmk_pbs_TRUE@am__append_18 = $(top_srcdir)/tools/rmk/pbs/rmk_pbs_init.c \
-@hydra_rmk_pbs_TRUE@	$(top_srcdir)/tools/rmk/pbs/rmk_pbs_query_node_list.c
-
+@hydra_have_blcr_TRUE@am__append_14 = $(top_srcdir)/tools/ckpoint/blcr/ckpoint_blcr.c
+@hydra_have_poll_TRUE@am__append_15 = $(top_srcdir)/tools/demux/demux_poll.c
+@hydra_have_select_TRUE@am__append_16 = $(top_srcdir)/tools/demux/demux_select.c
+@hydra_have_ftb_TRUE@am__append_17 = $(top_srcdir)/tools/ftb/hydt_ftb.c
+@hydra_have_ftb_FALSE@am__append_18 = $(top_srcdir)/tools/ftb/hydt_ftb_dummy.c
 @hydra_pm_pmiserv_TRUE@am__append_19 = -I$(top_srcdir)/pm/utils
 @hydra_pm_pmiserv_TRUE@am__append_20 = hydra_pmi_proxy
 @hydra_pm_pmiserv_TRUE@am__append_21 = $(top_srcdir)/pm/pmiserv/pmiserv_pmi.c \
@@ -332,11 +309,11 @@ DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 @hydra_pm_pmiserv_TRUE@	$(top_srcdir)/pm/pmiserv/pmiserv_pmci.c \
 @hydra_pm_pmiserv_TRUE@	$(top_srcdir)/pm/pmiserv/pmiserv_cb.c \
 @hydra_pm_pmiserv_TRUE@	$(top_srcdir)/pm/pmiserv/pmiserv_utils.c \
-@hydra_pm_pmiserv_TRUE@	$(top_srcdir)/pm/pmiserv/pmi_common.c \
+@hydra_pm_pmiserv_TRUE@	$(top_srcdir)/pm/pmiserv/common.c \
 @hydra_pm_pmiserv_TRUE@	$(top_srcdir)/pm/pmiserv/pmi_v2_common.c
 
 @hydra_ui_mpich_TRUE@am__append_22 = -I$(top_srcdir)/ui/utils
-@hydra_ui_mpich_TRUE@am__append_23 = mpiexec
+@hydra_ui_mpich_TRUE@am__append_23 = mpiexec.hydra
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -356,8 +333,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/hydra_config.h
 CONFIG_CLEAN_FILES = tools/bootstrap/src/bsci_init.c \
-	tools/bootstrap/include/bsci.h tools/rmk/src/rmki_init.c \
-	tools/rmk/include/rmki.h hydra-doxygen.cfg
+	tools/bootstrap/include/bsci.h hydra-doxygen.cfg
 CONFIG_CLEAN_VPATH_FILES =
 LTLIBRARIES = $(noinst_LTLIBRARIES)
 libhydra_la_LIBADD =
@@ -376,26 +352,37 @@ am__libhydra_la_SOURCES_DIST = $(top_srcdir)/utils/alloc/alloc.c \
 	$(top_srcdir)/tools/bootstrap/src/bsci_finalize.c \
 	$(top_srcdir)/tools/bootstrap/src/bsci_launch.c \
 	$(top_srcdir)/tools/bootstrap/src/bsci_query_node_list.c \
+	$(top_srcdir)/tools/bootstrap/src/bsci_query_job_id.c \
 	$(top_srcdir)/tools/bootstrap/src/bsci_query_proxy_id.c \
+	$(top_srcdir)/tools/bootstrap/src/bsci_query_native_int.c \
 	$(top_srcdir)/tools/bootstrap/src/bsci_usize.c \
 	$(top_srcdir)/tools/bootstrap/src/bsci_wait.c \
-	$(top_srcdir)/tools/bootstrap/src/bsci_cleanup.c \
 	$(top_srcdir)/tools/bootstrap/src/bsci_env.c \
 	$(top_srcdir)/tools/bootstrap/utils/bscu_finalize.c \
 	$(top_srcdir)/tools/bootstrap/utils/bscu_query_node_list.c \
+	$(top_srcdir)/tools/bootstrap/utils/bscu_query_job_id.c \
 	$(top_srcdir)/tools/bootstrap/utils/bscu_query_proxy_id.c \
+	$(top_srcdir)/tools/bootstrap/utils/bscu_query_native_int.c \
 	$(top_srcdir)/tools/bootstrap/utils/bscu_usize.c \
 	$(top_srcdir)/tools/bootstrap/utils/bscu_wait.c \
 	$(top_srcdir)/tools/bootstrap/utils/bscu_cb.c \
 	$(top_srcdir)/tools/bootstrap/utils/bscu_env.c \
-	$(top_srcdir)/tools/bootstrap/ssh/ssh_init.c \
-	$(top_srcdir)/tools/bootstrap/ssh/ssh_launch.c \
-	$(top_srcdir)/tools/bootstrap/ssh/ssh_finalize.c \
-	$(top_srcdir)/tools/bootstrap/ssh/ssh_env.c \
-	$(top_srcdir)/tools/bootstrap/slurm/slurm_init.c \
-	$(top_srcdir)/tools/bootstrap/slurm/slurm_launch.c \
-	$(top_srcdir)/tools/bootstrap/slurm/slurm_query_node_list.c \
-	$(top_srcdir)/tools/bootstrap/slurm/slurm_query_proxy_id.c \
+	$(top_srcdir)/tools/bootstrap/external/external_init.c \
+	$(top_srcdir)/tools/bootstrap/external/external_launch.c \
+	$(top_srcdir)/tools/bootstrap/external/external_finalize.c \
+	$(top_srcdir)/tools/bootstrap/external/external_env.c \
+	$(top_srcdir)/tools/bootstrap/external/external_query_native_int.c \
+	$(top_srcdir)/tools/bootstrap/external/external_query_jobid.c \
+	$(top_srcdir)/tools/bootstrap/external/ssh.c \
+	$(top_srcdir)/tools/bootstrap/external/slurm_launch.c \
+	$(top_srcdir)/tools/bootstrap/external/slurm_query_node_list.c \
+	$(top_srcdir)/tools/bootstrap/external/slurm_query_proxy_id.c \
+	$(top_srcdir)/tools/bootstrap/external/ll_launch.c \
+	$(top_srcdir)/tools/bootstrap/external/ll_query_node_list.c \
+	$(top_srcdir)/tools/bootstrap/external/ll_query_proxy_id.c \
+	$(top_srcdir)/tools/bootstrap/external/lsf_query_node_list.c \
+	$(top_srcdir)/tools/bootstrap/external/sge_query_node_list.c \
+	$(top_srcdir)/tools/bootstrap/external/pbs_query_node_list.c \
 	$(top_srcdir)/tools/bootstrap/persist/persist_init.c \
 	$(top_srcdir)/tools/bootstrap/persist/persist_launch.c \
 	$(top_srcdir)/tools/bootstrap/persist/persist_wait.c \
@@ -404,39 +391,44 @@ am__libhydra_la_SOURCES_DIST = $(top_srcdir)/utils/alloc/alloc.c \
 	$(top_srcdir)/tools/demux/demux.c \
 	$(top_srcdir)/tools/demux/demux_poll.c \
 	$(top_srcdir)/tools/demux/demux_select.c \
-	$(top_builddir)/tools/rmk/src/rmki_init.c \
-	$(top_srcdir)/tools/rmk/src/rmki_query_node_list.c \
-	$(top_srcdir)/tools/rmk/utils/rmku_query_node_list.c \
-	$(top_srcdir)/tools/rmk/pbs/rmk_pbs_init.c \
-	$(top_srcdir)/tools/rmk/pbs/rmk_pbs_query_node_list.c \
 	$(top_srcdir)/tools/debugger/debugger.c \
+	$(top_srcdir)/tools/ftb/hydt_ftb.c \
+	$(top_srcdir)/tools/ftb/hydt_ftb_dummy.c \
 	$(top_srcdir)/ui/utils/uiu.c
 @hydra_have_plpa_TRUE@am__objects_1 = bind_plpa.lo
 @hydra_have_hwloc_TRUE@am__objects_2 = bind_hwloc.lo
-@hydra_bss_ssh_TRUE@am__objects_3 = ssh_init.lo ssh_launch.lo \
-@hydra_bss_ssh_TRUE@	ssh_finalize.lo ssh_env.lo
-@hydra_bss_slurm_TRUE@am__objects_4 = slurm_init.lo slurm_launch.lo \
-@hydra_bss_slurm_TRUE@	slurm_query_node_list.lo \
-@hydra_bss_slurm_TRUE@	slurm_query_proxy_id.lo
-@hydra_bss_persist_TRUE@am__objects_5 = persist_init.lo \
+@hydra_bss_external_TRUE@am__objects_3 = external_init.lo \
+@hydra_bss_external_TRUE@	external_launch.lo \
+@hydra_bss_external_TRUE@	external_finalize.lo external_env.lo \
+@hydra_bss_external_TRUE@	external_query_native_int.lo \
+@hydra_bss_external_TRUE@	external_query_jobid.lo ssh.lo \
+@hydra_bss_external_TRUE@	slurm_launch.lo \
+@hydra_bss_external_TRUE@	slurm_query_node_list.lo \
+@hydra_bss_external_TRUE@	slurm_query_proxy_id.lo ll_launch.lo \
+@hydra_bss_external_TRUE@	ll_query_node_list.lo \
+@hydra_bss_external_TRUE@	ll_query_proxy_id.lo \
+@hydra_bss_external_TRUE@	lsf_query_node_list.lo \
+@hydra_bss_external_TRUE@	sge_query_node_list.lo \
+@hydra_bss_external_TRUE@	pbs_query_node_list.lo
+@hydra_bss_persist_TRUE@am__objects_4 = persist_init.lo \
 @hydra_bss_persist_TRUE@	persist_launch.lo persist_wait.lo
-@hydra_have_blcr_TRUE@am__objects_6 = ckpoint_blcr.lo
-@hydra_have_poll_TRUE@am__objects_7 = demux_poll.lo
-@hydra_have_select_TRUE@am__objects_8 = demux_select.lo
-@hydra_rmk_pbs_TRUE@am__objects_9 = rmk_pbs_init.lo \
-@hydra_rmk_pbs_TRUE@	rmk_pbs_query_node_list.lo
+@hydra_have_blcr_TRUE@am__objects_5 = ckpoint_blcr.lo
+@hydra_have_poll_TRUE@am__objects_6 = demux_poll.lo
+@hydra_have_select_TRUE@am__objects_7 = demux_select.lo
+@hydra_have_ftb_TRUE@am__objects_8 = hydt_ftb.lo
+@hydra_have_ftb_FALSE@am__objects_9 = hydt_ftb_dummy.lo
 am_libhydra_la_OBJECTS = alloc.lo args.lo dbg.lo env.lo launch.lo \
 	others.lo signals.lo sock.lo string.lo bind.lo \
 	$(am__objects_1) $(am__objects_2) bsci_init.lo \
 	bsci_finalize.lo bsci_launch.lo bsci_query_node_list.lo \
-	bsci_query_proxy_id.lo bsci_usize.lo bsci_wait.lo \
-	bsci_cleanup.lo bsci_env.lo bscu_finalize.lo \
-	bscu_query_node_list.lo bscu_query_proxy_id.lo bscu_usize.lo \
-	bscu_wait.lo bscu_cb.lo bscu_env.lo $(am__objects_3) \
-	$(am__objects_4) $(am__objects_5) ckpoint.lo $(am__objects_6) \
-	demux.lo $(am__objects_7) $(am__objects_8) rmki_init.lo \
-	rmki_query_node_list.lo rmku_query_node_list.lo \
-	$(am__objects_9) debugger.lo uiu.lo
+	bsci_query_job_id.lo bsci_query_proxy_id.lo \
+	bsci_query_native_int.lo bsci_usize.lo bsci_wait.lo \
+	bsci_env.lo bscu_finalize.lo bscu_query_node_list.lo \
+	bscu_query_job_id.lo bscu_query_proxy_id.lo \
+	bscu_query_native_int.lo bscu_usize.lo bscu_wait.lo bscu_cb.lo \
+	bscu_env.lo $(am__objects_3) $(am__objects_4) ckpoint.lo \
+	$(am__objects_5) demux.lo $(am__objects_6) $(am__objects_7) \
+	debugger.lo $(am__objects_8) $(am__objects_9) uiu.lo
 libhydra_la_OBJECTS = $(am_libhydra_la_OBJECTS)
 AM_V_lt = $(am__v_lt_$(V))
 am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
@@ -448,18 +440,18 @@ am__libpm_la_SOURCES_DIST = $(top_srcdir)/pm/pmiserv/pmiserv_pmi.c \
 	$(top_srcdir)/pm/pmiserv/pmiserv_pmci.c \
 	$(top_srcdir)/pm/pmiserv/pmiserv_cb.c \
 	$(top_srcdir)/pm/pmiserv/pmiserv_utils.c \
-	$(top_srcdir)/pm/pmiserv/pmi_common.c \
+	$(top_srcdir)/pm/pmiserv/common.c \
 	$(top_srcdir)/pm/pmiserv/pmi_v2_common.c
 @hydra_pm_pmiserv_TRUE@am__objects_10 = pmiserv_pmi.lo \
 @hydra_pm_pmiserv_TRUE@	pmiserv_pmi_v1.lo pmiserv_pmi_v2.lo \
 @hydra_pm_pmiserv_TRUE@	pmiserv_pmci.lo pmiserv_cb.lo \
-@hydra_pm_pmiserv_TRUE@	pmiserv_utils.lo pmi_common.lo \
+@hydra_pm_pmiserv_TRUE@	pmiserv_utils.lo common.lo \
 @hydra_pm_pmiserv_TRUE@	pmi_v2_common.lo
 am_libpm_la_OBJECTS = $(am__objects_10)
 libpm_la_OBJECTS = $(am_libpm_la_OBJECTS)
 @hydra_bss_persist_TRUE@am__EXEEXT_1 = hydra_persist$(EXEEXT)
 @hydra_pm_pmiserv_TRUE@am__EXEEXT_2 = hydra_pmi_proxy$(EXEEXT)
-@hydra_ui_mpich_TRUE@am__EXEEXT_3 = mpiexec$(EXEEXT)
+@hydra_ui_mpich_TRUE@am__EXEEXT_3 = mpiexec.hydra$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_hydra_nameserver_OBJECTS =  \
@@ -483,7 +475,7 @@ am__hydra_pmi_proxy_SOURCES_DIST = $(top_srcdir)/pm/pmiserv/pmip.c \
 	$(top_srcdir)/pm/pmiserv/pmip_utils.c \
 	$(top_srcdir)/pm/pmiserv/pmip_pmi_v1.c \
 	$(top_srcdir)/pm/pmiserv/pmip_pmi_v2.c \
-	$(top_srcdir)/pm/pmiserv/pmi_common.c \
+	$(top_srcdir)/pm/pmiserv/common.c \
 	$(top_srcdir)/pm/pmiserv/pmi_v2_common.c
 @hydra_pm_pmiserv_TRUE@am_hydra_pmi_proxy_OBJECTS =  \
 @hydra_pm_pmiserv_TRUE@	hydra_pmi_proxy-pmip.$(OBJEXT) \
@@ -491,21 +483,21 @@ am__hydra_pmi_proxy_SOURCES_DIST = $(top_srcdir)/pm/pmiserv/pmip.c \
 @hydra_pm_pmiserv_TRUE@	hydra_pmi_proxy-pmip_utils.$(OBJEXT) \
 @hydra_pm_pmiserv_TRUE@	hydra_pmi_proxy-pmip_pmi_v1.$(OBJEXT) \
 @hydra_pm_pmiserv_TRUE@	hydra_pmi_proxy-pmip_pmi_v2.$(OBJEXT) \
-@hydra_pm_pmiserv_TRUE@	hydra_pmi_proxy-pmi_common.$(OBJEXT) \
+@hydra_pm_pmiserv_TRUE@	hydra_pmi_proxy-common.$(OBJEXT) \
 @hydra_pm_pmiserv_TRUE@	hydra_pmi_proxy-pmi_v2_common.$(OBJEXT)
 hydra_pmi_proxy_OBJECTS = $(am_hydra_pmi_proxy_OBJECTS)
 hydra_pmi_proxy_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(hydra_pmi_proxy_CFLAGS) $(CFLAGS) $(hydra_pmi_proxy_LDFLAGS) \
 	$(LDFLAGS) -o $@
-am__mpiexec_SOURCES_DIST = $(top_srcdir)/ui/mpich/mpiexec.c \
+am__mpiexec_hydra_SOURCES_DIST = $(top_srcdir)/ui/mpich/mpiexec.c \
 	$(top_srcdir)/ui/mpich/utils.c
-@hydra_ui_mpich_TRUE@am_mpiexec_OBJECTS = mpiexec.$(OBJEXT) \
+@hydra_ui_mpich_TRUE@am_mpiexec_hydra_OBJECTS = mpiexec.$(OBJEXT) \
 @hydra_ui_mpich_TRUE@	utils.$(OBJEXT)
-mpiexec_OBJECTS = $(am_mpiexec_OBJECTS)
-mpiexec_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+mpiexec_hydra_OBJECTS = $(am_mpiexec_hydra_OBJECTS)
+mpiexec_hydra_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(mpiexec_LDFLAGS) $(LDFLAGS) -o $@
+	$(mpiexec_hydra_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include
 depcomp = $(SHELL) $(top_srcdir)/confdb/depcomp
 am__depfiles_maybe = depfiles
@@ -534,12 +526,12 @@ am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
 am__v_GEN_0 = @echo "  GEN   " $@;
 SOURCES = $(libhydra_la_SOURCES) $(libpm_la_SOURCES) \
 	$(hydra_nameserver_SOURCES) $(hydra_persist_SOURCES) \
-	$(hydra_pmi_proxy_SOURCES) $(mpiexec_SOURCES)
+	$(hydra_pmi_proxy_SOURCES) $(mpiexec_hydra_SOURCES)
 DIST_SOURCES = $(am__libhydra_la_SOURCES_DIST) \
 	$(am__libpm_la_SOURCES_DIST) $(hydra_nameserver_SOURCES) \
 	$(am__hydra_persist_SOURCES_DIST) \
 	$(am__hydra_pmi_proxy_SOURCES_DIST) \
-	$(am__mpiexec_SOURCES_DIST)
+	$(am__mpiexec_hydra_SOURCES_DIST)
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -682,7 +674,11 @@ host_cpu = @host_cpu@
 host_os = @host_os@
 host_vendor = @host_vendor@
 htmldir = @htmldir@
+hydra_launcher_array = @hydra_launcher_array@
+hydra_launcher_init_array = @hydra_launcher_init_array@
 hydra_pm = @hydra_pm@
+hydra_rmk_array = @hydra_rmk_array@
+hydra_rmk_init_array = @hydra_rmk_init_array@
 hydra_ui = @hydra_ui@
 includedir = @includedir@
 infodir = @infodir@
@@ -721,10 +717,9 @@ AM_CPPFLAGS = -I$(top_srcdir)/include \
 	-I$(top_builddir)/tools/bootstrap/include \
 	-I$(top_srcdir)/tools/bootstrap/utils \
 	-I$(top_srcdir)/tools/ckpoint -I$(top_srcdir)/tools/demux \
-	-I$(top_srcdir)/tools/rmk/include \
-	-I$(top_builddir)/tools/rmk/include \
-	-I$(top_srcdir)/tools/rmk/utils -I$(top_srcdir)/tools/debugger \
-	-I$(top_srcdir)/pm/include $(am__append_19) $(am__append_22)
+	-I$(top_srcdir)/tools/debugger -I$(top_srcdir)/tools/ftb \
+	-I$(top_srcdir)/pm/include $(am__append_19) \
+	-I$(top_srcdir)/ui/include $(am__append_22)
 noinst_LTLIBRARIES = libhydra.la libpm.la
 libhydra_la_SOURCES = $(top_srcdir)/utils/alloc/alloc.c \
 	$(top_srcdir)/utils/args/args.c $(top_srcdir)/utils/dbg/dbg.c \
@@ -740,26 +735,26 @@ libhydra_la_SOURCES = $(top_srcdir)/utils/alloc/alloc.c \
 	$(top_srcdir)/tools/bootstrap/src/bsci_finalize.c \
 	$(top_srcdir)/tools/bootstrap/src/bsci_launch.c \
 	$(top_srcdir)/tools/bootstrap/src/bsci_query_node_list.c \
+	$(top_srcdir)/tools/bootstrap/src/bsci_query_job_id.c \
 	$(top_srcdir)/tools/bootstrap/src/bsci_query_proxy_id.c \
+	$(top_srcdir)/tools/bootstrap/src/bsci_query_native_int.c \
 	$(top_srcdir)/tools/bootstrap/src/bsci_usize.c \
 	$(top_srcdir)/tools/bootstrap/src/bsci_wait.c \
-	$(top_srcdir)/tools/bootstrap/src/bsci_cleanup.c \
 	$(top_srcdir)/tools/bootstrap/src/bsci_env.c \
 	$(top_srcdir)/tools/bootstrap/utils/bscu_finalize.c \
 	$(top_srcdir)/tools/bootstrap/utils/bscu_query_node_list.c \
+	$(top_srcdir)/tools/bootstrap/utils/bscu_query_job_id.c \
 	$(top_srcdir)/tools/bootstrap/utils/bscu_query_proxy_id.c \
+	$(top_srcdir)/tools/bootstrap/utils/bscu_query_native_int.c \
 	$(top_srcdir)/tools/bootstrap/utils/bscu_usize.c \
 	$(top_srcdir)/tools/bootstrap/utils/bscu_wait.c \
 	$(top_srcdir)/tools/bootstrap/utils/bscu_cb.c \
 	$(top_srcdir)/tools/bootstrap/utils/bscu_env.c \
-	$(am__append_11) $(am__append_12) $(am__append_14) \
-	$(top_srcdir)/tools/ckpoint/ckpoint.c $(am__append_15) \
-	$(top_srcdir)/tools/demux/demux.c $(am__append_16) \
-	$(am__append_17) $(top_builddir)/tools/rmk/src/rmki_init.c \
-	$(top_srcdir)/tools/rmk/src/rmki_query_node_list.c \
-	$(top_srcdir)/tools/rmk/utils/rmku_query_node_list.c \
-	$(am__append_18) $(top_srcdir)/tools/debugger/debugger.c \
-	$(top_srcdir)/ui/utils/uiu.c
+	$(am__append_11) $(am__append_13) \
+	$(top_srcdir)/tools/ckpoint/ckpoint.c $(am__append_14) \
+	$(top_srcdir)/tools/demux/demux.c $(am__append_15) \
+	$(am__append_16) $(top_srcdir)/tools/debugger/debugger.c \
+	$(am__append_17) $(am__append_18) $(top_srcdir)/ui/utils/uiu.c
 tools_libs = 
 @hydra_bss_persist_TRUE@hydra_persist_SOURCES = $(top_srcdir)/tools/bootstrap/persist/persist_server.c
 @hydra_bss_persist_TRUE@hydra_persist_CFLAGS = $(AM_CFLAGS)
@@ -777,17 +772,17 @@ libpm_la_SOURCES = $(am__append_21)
 @hydra_pm_pmiserv_TRUE@	$(top_srcdir)/pm/pmiserv/pmip_utils.c \
 @hydra_pm_pmiserv_TRUE@	$(top_srcdir)/pm/pmiserv/pmip_pmi_v1.c \
 @hydra_pm_pmiserv_TRUE@	$(top_srcdir)/pm/pmiserv/pmip_pmi_v2.c \
-@hydra_pm_pmiserv_TRUE@	$(top_srcdir)/pm/pmiserv/pmi_common.c \
+@hydra_pm_pmiserv_TRUE@	$(top_srcdir)/pm/pmiserv/common.c \
 @hydra_pm_pmiserv_TRUE@	$(top_srcdir)/pm/pmiserv/pmi_v2_common.c
 
 @hydra_pm_pmiserv_TRUE@hydra_pmi_proxy_CFLAGS = $(AM_CFLAGS)
 @hydra_pm_pmiserv_TRUE@hydra_pmi_proxy_LDFLAGS = $(external_ldflags) -L$(top_builddir)
 @hydra_pm_pmiserv_TRUE@hydra_pmi_proxy_LDADD = -lhydra $(external_libs)
 @hydra_pm_pmiserv_TRUE@hydra_pmi_proxy_DEPENDENCIES = libhydra.la
-@hydra_ui_mpich_TRUE@mpiexec_SOURCES = $(top_srcdir)/ui/mpich/mpiexec.c $(top_srcdir)/ui/mpich/utils.c
-@hydra_ui_mpich_TRUE@mpiexec_LDFLAGS = $(external_ldflags) -L$(top_builddir)
-@hydra_ui_mpich_TRUE@mpiexec_LDADD = -lpm -lhydra $(external_libs)
-@hydra_ui_mpich_TRUE@mpiexec_DEPENDENCIES = libpm.la libhydra.la
+@hydra_ui_mpich_TRUE@mpiexec_hydra_SOURCES = $(top_srcdir)/ui/mpich/mpiexec.c $(top_srcdir)/ui/mpich/utils.c
+@hydra_ui_mpich_TRUE@mpiexec_hydra_LDFLAGS = $(external_ldflags) -L$(top_builddir)
+@hydra_ui_mpich_TRUE@mpiexec_hydra_LDADD = -lpm -lhydra $(external_libs)
+@hydra_ui_mpich_TRUE@mpiexec_hydra_DEPENDENCIES = libpm.la libhydra.la
 
 # The below directories contribute to libhydra
 
@@ -799,7 +794,7 @@ all: all-recursive
 .SUFFIXES: .c .lo .o .obj
 am--refresh:
 	@:
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/utils/Makefile.mk $(srcdir)/utils/alloc/Makefile.mk $(srcdir)/utils/args/Makefile.mk $(srcdir)/utils/dbg/Makefile.mk $(srcdir)/utils/env/Makefile.mk $(srcdir)/utils/launch/Makefile.mk $(srcdir)/utils/others/Makefile.mk $(srcdir)/utils/signals/Makefile.mk $(srcdir)/utils/sock/Makefile.mk $(srcdir)/utils/string/Makefile.mk $(srcdir)/tools/Makefile.mk $(srcdir)/tools/bind/Makefile.mk $(srcdir)/tools/bind/plpa/Makefile.mk $(srcdir)/tools/bind/hwloc/Makefile.mk $(srcdir)/tools/bootstrap/Makefile.mk $(srcdir)/tools/bootstrap/src/Makefile.mk $(srcdir)/tools/bootstrap/utils/Makefile.mk $(srcdir)/tools/bootstrap/ssh/Makefile.mk $(srcdir)/tools/bootstrap/slurm/Makefile.mk $(srcdir)/tools/bootstrap/persist/Makefile.mk $(srcdir)/tools/ckpoint/Makefile.mk $(srcdir)/tools/ckpoint/blcr/Makefile.mk $(srcdir)/tools/demux/Makefile.mk $(srcdir)/tools/rmk/Makefile.mk $(srcdir)/tools/rmk/src/Makefile.mk $(srcdir)/tools/rmk/utils/Makefile.mk $(srcdir)/tools/rmk/pbs/Makefile.mk $(srcdir)/tools/debugger/Makefile.mk $(srcdir)/tools/nameserver/Makefile.mk $(srcdir)/pm/Makefile.mk $(srcdir)/pm/pmiserv/Makefile.mk $(srcdir)/ui/Makefile.mk $(srcdir)/ui/utils/Makefile.mk $(srcdir)/ui/mpich/Makefile.mk $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(srcdir)/utils/Makefile.mk $(srcdir)/utils/alloc/Makefile.mk $(srcdir)/utils/args/Makefile.mk $(srcdir)/utils/dbg/Makefile.mk $(srcdir)/utils/env/Makefile.mk $(srcdir)/utils/launch/Makefile.mk $(srcdir)/utils/others/Makefile.mk $(srcdir)/utils/signals/Makefile.mk $(srcdir)/utils/sock/Makefile.mk $(srcdir)/utils/string/Makefile.mk $(srcdir)/tools/Makefile.mk $(srcdir)/tools/bind/Makefile.mk $(srcdir)/tools/bind/plpa/Makefile.mk $(srcdir)/tools/bind/hwloc/Makefile.mk $(srcdir)/tools/bootstrap/Makefile.mk $(srcdir)/tools/bootstrap/src/Makefile.mk $(srcdir)/tools/bootstrap/utils/Makefile.mk $(srcdir)/tools/bootstrap/external/Makefile.mk $(srcdir)/tools/bootstrap/persist/Makefile.mk $(srcdir)/tools/ckpoint/Makefile.mk $(srcdir)/tools/ckpoint/blcr/Makefile.mk $(srcdir)/tools/demux/Makefile.mk $(srcdir)/tools/debugger/Makefile.mk $(srcdir)/tools/nameserver/Makefile.mk $(srcdir)/tools/ftb/Makefile.mk $(srcdir)/pm/Makefile.mk $(srcdir)/pm/pmiserv/Makefile.mk $(srcdir)/ui/Makefile.mk $(srcdir)/ui/utils/Makefile.mk $(srcdir)/ui/mpich/Makefile.mk $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -851,10 +846,6 @@ distclean-hdr:
 tools/bootstrap/src/bsci_init.c: $(top_builddir)/config.status $(top_srcdir)/tools/bootstrap/src/bsci_init.c.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 tools/bootstrap/include/bsci.h: $(top_builddir)/config.status $(top_srcdir)/tools/bootstrap/include/bsci.h.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-tools/rmk/src/rmki_init.c: $(top_builddir)/config.status $(top_srcdir)/tools/rmk/src/rmki_init.c.in
-	cd $(top_builddir) && $(SHELL) ./config.status $@
-tools/rmk/include/rmki.h: $(top_builddir)/config.status $(top_srcdir)/tools/rmk/include/rmki.h.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 hydra-doxygen.cfg: $(top_builddir)/config.status $(srcdir)/hydra-doxygen.cfg.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
@@ -923,9 +914,9 @@ hydra_persist$(EXEEXT): $(hydra_persist_OBJECTS) $(hydra_persist_DEPENDENCIES)
 hydra_pmi_proxy$(EXEEXT): $(hydra_pmi_proxy_OBJECTS) $(hydra_pmi_proxy_DEPENDENCIES) 
 	@rm -f hydra_pmi_proxy$(EXEEXT)
 	$(AM_V_CCLD)$(hydra_pmi_proxy_LINK) $(hydra_pmi_proxy_OBJECTS) $(hydra_pmi_proxy_LDADD) $(LIBS)
-mpiexec$(EXEEXT): $(mpiexec_OBJECTS) $(mpiexec_DEPENDENCIES) 
-	@rm -f mpiexec$(EXEEXT)
-	$(AM_V_CCLD)$(mpiexec_LINK) $(mpiexec_OBJECTS) $(mpiexec_LDADD) $(LIBS)
+mpiexec.hydra$(EXEEXT): $(mpiexec_hydra_OBJECTS) $(mpiexec_hydra_DEPENDENCIES) 
+	@rm -f mpiexec.hydra$(EXEEXT)
+	$(AM_V_CCLD)$(mpiexec_hydra_LINK) $(mpiexec_hydra_OBJECTS) $(mpiexec_hydra_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -938,11 +929,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bind.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bind_hwloc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bind_plpa.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsci_cleanup.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsci_env.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsci_finalize.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsci_init.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsci_launch.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsci_query_job_id.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsci_query_native_int.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsci_query_node_list.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsci_query_proxy_id.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsci_usize.Plo@am__quote@
@@ -950,34 +942,49 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bscu_cb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bscu_env.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bscu_finalize.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bscu_query_job_id.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bscu_query_native_int.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bscu_query_node_list.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bscu_query_proxy_id.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bscu_usize.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bscu_wait.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ckpoint.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ckpoint_blcr.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/common.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dbg.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/debugger.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/demux.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/demux_poll.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/demux_select.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/env.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/external_env.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/external_finalize.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/external_init.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/external_launch.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/external_query_jobid.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/external_query_native_int.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hydra_nameserver-hydra_nameserver.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hydra_persist-persist_server.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hydra_pmi_proxy-pmi_common.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hydra_pmi_proxy-common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hydra_pmi_proxy-pmi_v2_common.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hydra_pmi_proxy-pmip.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hydra_pmi_proxy-pmip_cb.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hydra_pmi_proxy-pmip_pmi_v1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hydra_pmi_proxy-pmip_pmi_v2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hydra_pmi_proxy-pmip_utils.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hydt_ftb.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hydt_ftb_dummy.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/launch.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ll_launch.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ll_query_node_list.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ll_query_proxy_id.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lsf_query_node_list.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpiexec.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/others.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pbs_query_node_list.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/persist_init.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/persist_launch.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/persist_wait.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pmi_common.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pmi_v2_common.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pmiserv_cb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pmiserv_pmci.Plo@am__quote@
@@ -985,21 +992,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pmiserv_pmi_v1.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pmiserv_pmi_v2.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pmiserv_utils.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rmk_pbs_init.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rmk_pbs_query_node_list.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rmki_init.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rmki_query_node_list.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rmku_query_node_list.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sge_query_node_list.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/signals.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slurm_init.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slurm_launch.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slurm_query_node_list.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/slurm_query_proxy_id.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sock.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssh_env.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssh_finalize.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssh_init.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssh_launch.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ssh.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/string.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uiu.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/utils.Po@am__quote@
@@ -1156,6 +1155,14 @@ bsci_query_node_list.lo: $(top_srcdir)/tools/bootstrap/src/bsci_query_node_list.
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bsci_query_node_list.lo `test -f '$(top_srcdir)/tools/bootstrap/src/bsci_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/src/bsci_query_node_list.c
 
+bsci_query_job_id.lo: $(top_srcdir)/tools/bootstrap/src/bsci_query_job_id.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bsci_query_job_id.lo -MD -MP -MF $(DEPDIR)/bsci_query_job_id.Tpo -c -o bsci_query_job_id.lo `test -f '$(top_srcdir)/tools/bootstrap/src/bsci_query_job_id.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/src/bsci_query_job_id.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bsci_query_job_id.Tpo $(DEPDIR)/bsci_query_job_id.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/src/bsci_query_job_id.c' object='bsci_query_job_id.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bsci_query_job_id.lo `test -f '$(top_srcdir)/tools/bootstrap/src/bsci_query_job_id.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/src/bsci_query_job_id.c
+
 bsci_query_proxy_id.lo: $(top_srcdir)/tools/bootstrap/src/bsci_query_proxy_id.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bsci_query_proxy_id.lo -MD -MP -MF $(DEPDIR)/bsci_query_proxy_id.Tpo -c -o bsci_query_proxy_id.lo `test -f '$(top_srcdir)/tools/bootstrap/src/bsci_query_proxy_id.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/src/bsci_query_proxy_id.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bsci_query_proxy_id.Tpo $(DEPDIR)/bsci_query_proxy_id.Plo
@@ -1163,6 +1170,14 @@ bsci_query_proxy_id.lo: $(top_srcdir)/tools/bootstrap/src/bsci_query_proxy_id.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/src/bsci_query_proxy_id.c' object='bsci_query_proxy_id.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bsci_query_proxy_id.lo `test -f '$(top_srcdir)/tools/bootstrap/src/bsci_query_proxy_id.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/src/bsci_query_proxy_id.c
+
+bsci_query_native_int.lo: $(top_srcdir)/tools/bootstrap/src/bsci_query_native_int.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bsci_query_native_int.lo -MD -MP -MF $(DEPDIR)/bsci_query_native_int.Tpo -c -o bsci_query_native_int.lo `test -f '$(top_srcdir)/tools/bootstrap/src/bsci_query_native_int.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/src/bsci_query_native_int.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bsci_query_native_int.Tpo $(DEPDIR)/bsci_query_native_int.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/src/bsci_query_native_int.c' object='bsci_query_native_int.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bsci_query_native_int.lo `test -f '$(top_srcdir)/tools/bootstrap/src/bsci_query_native_int.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/src/bsci_query_native_int.c
 
 bsci_usize.lo: $(top_srcdir)/tools/bootstrap/src/bsci_usize.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bsci_usize.lo -MD -MP -MF $(DEPDIR)/bsci_usize.Tpo -c -o bsci_usize.lo `test -f '$(top_srcdir)/tools/bootstrap/src/bsci_usize.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/src/bsci_usize.c
@@ -1179,14 +1194,6 @@ bsci_wait.lo: $(top_srcdir)/tools/bootstrap/src/bsci_wait.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/src/bsci_wait.c' object='bsci_wait.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bsci_wait.lo `test -f '$(top_srcdir)/tools/bootstrap/src/bsci_wait.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/src/bsci_wait.c
-
-bsci_cleanup.lo: $(top_srcdir)/tools/bootstrap/src/bsci_cleanup.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bsci_cleanup.lo -MD -MP -MF $(DEPDIR)/bsci_cleanup.Tpo -c -o bsci_cleanup.lo `test -f '$(top_srcdir)/tools/bootstrap/src/bsci_cleanup.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/src/bsci_cleanup.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bsci_cleanup.Tpo $(DEPDIR)/bsci_cleanup.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/src/bsci_cleanup.c' object='bsci_cleanup.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bsci_cleanup.lo `test -f '$(top_srcdir)/tools/bootstrap/src/bsci_cleanup.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/src/bsci_cleanup.c
 
 bsci_env.lo: $(top_srcdir)/tools/bootstrap/src/bsci_env.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bsci_env.lo -MD -MP -MF $(DEPDIR)/bsci_env.Tpo -c -o bsci_env.lo `test -f '$(top_srcdir)/tools/bootstrap/src/bsci_env.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/src/bsci_env.c
@@ -1212,6 +1219,14 @@ bscu_query_node_list.lo: $(top_srcdir)/tools/bootstrap/utils/bscu_query_node_lis
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bscu_query_node_list.lo `test -f '$(top_srcdir)/tools/bootstrap/utils/bscu_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/utils/bscu_query_node_list.c
 
+bscu_query_job_id.lo: $(top_srcdir)/tools/bootstrap/utils/bscu_query_job_id.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bscu_query_job_id.lo -MD -MP -MF $(DEPDIR)/bscu_query_job_id.Tpo -c -o bscu_query_job_id.lo `test -f '$(top_srcdir)/tools/bootstrap/utils/bscu_query_job_id.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/utils/bscu_query_job_id.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bscu_query_job_id.Tpo $(DEPDIR)/bscu_query_job_id.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/utils/bscu_query_job_id.c' object='bscu_query_job_id.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bscu_query_job_id.lo `test -f '$(top_srcdir)/tools/bootstrap/utils/bscu_query_job_id.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/utils/bscu_query_job_id.c
+
 bscu_query_proxy_id.lo: $(top_srcdir)/tools/bootstrap/utils/bscu_query_proxy_id.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bscu_query_proxy_id.lo -MD -MP -MF $(DEPDIR)/bscu_query_proxy_id.Tpo -c -o bscu_query_proxy_id.lo `test -f '$(top_srcdir)/tools/bootstrap/utils/bscu_query_proxy_id.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/utils/bscu_query_proxy_id.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bscu_query_proxy_id.Tpo $(DEPDIR)/bscu_query_proxy_id.Plo
@@ -1219,6 +1234,14 @@ bscu_query_proxy_id.lo: $(top_srcdir)/tools/bootstrap/utils/bscu_query_proxy_id.
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/utils/bscu_query_proxy_id.c' object='bscu_query_proxy_id.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bscu_query_proxy_id.lo `test -f '$(top_srcdir)/tools/bootstrap/utils/bscu_query_proxy_id.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/utils/bscu_query_proxy_id.c
+
+bscu_query_native_int.lo: $(top_srcdir)/tools/bootstrap/utils/bscu_query_native_int.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bscu_query_native_int.lo -MD -MP -MF $(DEPDIR)/bscu_query_native_int.Tpo -c -o bscu_query_native_int.lo `test -f '$(top_srcdir)/tools/bootstrap/utils/bscu_query_native_int.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/utils/bscu_query_native_int.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/bscu_query_native_int.Tpo $(DEPDIR)/bscu_query_native_int.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/utils/bscu_query_native_int.c' object='bscu_query_native_int.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bscu_query_native_int.lo `test -f '$(top_srcdir)/tools/bootstrap/utils/bscu_query_native_int.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/utils/bscu_query_native_int.c
 
 bscu_usize.lo: $(top_srcdir)/tools/bootstrap/utils/bscu_usize.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT bscu_usize.lo -MD -MP -MF $(DEPDIR)/bscu_usize.Tpo -c -o bscu_usize.lo `test -f '$(top_srcdir)/tools/bootstrap/utils/bscu_usize.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/utils/bscu_usize.c
@@ -1252,69 +1275,133 @@ bscu_env.lo: $(top_srcdir)/tools/bootstrap/utils/bscu_env.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o bscu_env.lo `test -f '$(top_srcdir)/tools/bootstrap/utils/bscu_env.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/utils/bscu_env.c
 
-ssh_init.lo: $(top_srcdir)/tools/bootstrap/ssh/ssh_init.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ssh_init.lo -MD -MP -MF $(DEPDIR)/ssh_init.Tpo -c -o ssh_init.lo `test -f '$(top_srcdir)/tools/bootstrap/ssh/ssh_init.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/ssh/ssh_init.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ssh_init.Tpo $(DEPDIR)/ssh_init.Plo
+external_init.lo: $(top_srcdir)/tools/bootstrap/external/external_init.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external_init.lo -MD -MP -MF $(DEPDIR)/external_init.Tpo -c -o external_init.lo `test -f '$(top_srcdir)/tools/bootstrap/external/external_init.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/external_init.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/external_init.Tpo $(DEPDIR)/external_init.Plo
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/ssh/ssh_init.c' object='ssh_init.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/external_init.c' object='external_init.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ssh_init.lo `test -f '$(top_srcdir)/tools/bootstrap/ssh/ssh_init.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/ssh/ssh_init.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external_init.lo `test -f '$(top_srcdir)/tools/bootstrap/external/external_init.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/external_init.c
 
-ssh_launch.lo: $(top_srcdir)/tools/bootstrap/ssh/ssh_launch.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ssh_launch.lo -MD -MP -MF $(DEPDIR)/ssh_launch.Tpo -c -o ssh_launch.lo `test -f '$(top_srcdir)/tools/bootstrap/ssh/ssh_launch.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/ssh/ssh_launch.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ssh_launch.Tpo $(DEPDIR)/ssh_launch.Plo
+external_launch.lo: $(top_srcdir)/tools/bootstrap/external/external_launch.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external_launch.lo -MD -MP -MF $(DEPDIR)/external_launch.Tpo -c -o external_launch.lo `test -f '$(top_srcdir)/tools/bootstrap/external/external_launch.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/external_launch.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/external_launch.Tpo $(DEPDIR)/external_launch.Plo
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/ssh/ssh_launch.c' object='ssh_launch.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/external_launch.c' object='external_launch.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ssh_launch.lo `test -f '$(top_srcdir)/tools/bootstrap/ssh/ssh_launch.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/ssh/ssh_launch.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external_launch.lo `test -f '$(top_srcdir)/tools/bootstrap/external/external_launch.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/external_launch.c
 
-ssh_finalize.lo: $(top_srcdir)/tools/bootstrap/ssh/ssh_finalize.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ssh_finalize.lo -MD -MP -MF $(DEPDIR)/ssh_finalize.Tpo -c -o ssh_finalize.lo `test -f '$(top_srcdir)/tools/bootstrap/ssh/ssh_finalize.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/ssh/ssh_finalize.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ssh_finalize.Tpo $(DEPDIR)/ssh_finalize.Plo
+external_finalize.lo: $(top_srcdir)/tools/bootstrap/external/external_finalize.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external_finalize.lo -MD -MP -MF $(DEPDIR)/external_finalize.Tpo -c -o external_finalize.lo `test -f '$(top_srcdir)/tools/bootstrap/external/external_finalize.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/external_finalize.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/external_finalize.Tpo $(DEPDIR)/external_finalize.Plo
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/ssh/ssh_finalize.c' object='ssh_finalize.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/external_finalize.c' object='external_finalize.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ssh_finalize.lo `test -f '$(top_srcdir)/tools/bootstrap/ssh/ssh_finalize.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/ssh/ssh_finalize.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external_finalize.lo `test -f '$(top_srcdir)/tools/bootstrap/external/external_finalize.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/external_finalize.c
 
-ssh_env.lo: $(top_srcdir)/tools/bootstrap/ssh/ssh_env.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ssh_env.lo -MD -MP -MF $(DEPDIR)/ssh_env.Tpo -c -o ssh_env.lo `test -f '$(top_srcdir)/tools/bootstrap/ssh/ssh_env.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/ssh/ssh_env.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ssh_env.Tpo $(DEPDIR)/ssh_env.Plo
+external_env.lo: $(top_srcdir)/tools/bootstrap/external/external_env.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external_env.lo -MD -MP -MF $(DEPDIR)/external_env.Tpo -c -o external_env.lo `test -f '$(top_srcdir)/tools/bootstrap/external/external_env.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/external_env.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/external_env.Tpo $(DEPDIR)/external_env.Plo
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/ssh/ssh_env.c' object='ssh_env.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/external_env.c' object='external_env.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ssh_env.lo `test -f '$(top_srcdir)/tools/bootstrap/ssh/ssh_env.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/ssh/ssh_env.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external_env.lo `test -f '$(top_srcdir)/tools/bootstrap/external/external_env.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/external_env.c
 
-slurm_init.lo: $(top_srcdir)/tools/bootstrap/slurm/slurm_init.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT slurm_init.lo -MD -MP -MF $(DEPDIR)/slurm_init.Tpo -c -o slurm_init.lo `test -f '$(top_srcdir)/tools/bootstrap/slurm/slurm_init.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/slurm/slurm_init.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/slurm_init.Tpo $(DEPDIR)/slurm_init.Plo
+external_query_native_int.lo: $(top_srcdir)/tools/bootstrap/external/external_query_native_int.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external_query_native_int.lo -MD -MP -MF $(DEPDIR)/external_query_native_int.Tpo -c -o external_query_native_int.lo `test -f '$(top_srcdir)/tools/bootstrap/external/external_query_native_int.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/external_query_native_int.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/external_query_native_int.Tpo $(DEPDIR)/external_query_native_int.Plo
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/slurm/slurm_init.c' object='slurm_init.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/external_query_native_int.c' object='external_query_native_int.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o slurm_init.lo `test -f '$(top_srcdir)/tools/bootstrap/slurm/slurm_init.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/slurm/slurm_init.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external_query_native_int.lo `test -f '$(top_srcdir)/tools/bootstrap/external/external_query_native_int.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/external_query_native_int.c
 
-slurm_launch.lo: $(top_srcdir)/tools/bootstrap/slurm/slurm_launch.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT slurm_launch.lo -MD -MP -MF $(DEPDIR)/slurm_launch.Tpo -c -o slurm_launch.lo `test -f '$(top_srcdir)/tools/bootstrap/slurm/slurm_launch.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/slurm/slurm_launch.c
+external_query_jobid.lo: $(top_srcdir)/tools/bootstrap/external/external_query_jobid.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT external_query_jobid.lo -MD -MP -MF $(DEPDIR)/external_query_jobid.Tpo -c -o external_query_jobid.lo `test -f '$(top_srcdir)/tools/bootstrap/external/external_query_jobid.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/external_query_jobid.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/external_query_jobid.Tpo $(DEPDIR)/external_query_jobid.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/external_query_jobid.c' object='external_query_jobid.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o external_query_jobid.lo `test -f '$(top_srcdir)/tools/bootstrap/external/external_query_jobid.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/external_query_jobid.c
+
+ssh.lo: $(top_srcdir)/tools/bootstrap/external/ssh.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ssh.lo -MD -MP -MF $(DEPDIR)/ssh.Tpo -c -o ssh.lo `test -f '$(top_srcdir)/tools/bootstrap/external/ssh.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/ssh.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ssh.Tpo $(DEPDIR)/ssh.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/ssh.c' object='ssh.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ssh.lo `test -f '$(top_srcdir)/tools/bootstrap/external/ssh.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/ssh.c
+
+slurm_launch.lo: $(top_srcdir)/tools/bootstrap/external/slurm_launch.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT slurm_launch.lo -MD -MP -MF $(DEPDIR)/slurm_launch.Tpo -c -o slurm_launch.lo `test -f '$(top_srcdir)/tools/bootstrap/external/slurm_launch.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/slurm_launch.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/slurm_launch.Tpo $(DEPDIR)/slurm_launch.Plo
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/slurm/slurm_launch.c' object='slurm_launch.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/slurm_launch.c' object='slurm_launch.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o slurm_launch.lo `test -f '$(top_srcdir)/tools/bootstrap/slurm/slurm_launch.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/slurm/slurm_launch.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o slurm_launch.lo `test -f '$(top_srcdir)/tools/bootstrap/external/slurm_launch.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/slurm_launch.c
 
-slurm_query_node_list.lo: $(top_srcdir)/tools/bootstrap/slurm/slurm_query_node_list.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT slurm_query_node_list.lo -MD -MP -MF $(DEPDIR)/slurm_query_node_list.Tpo -c -o slurm_query_node_list.lo `test -f '$(top_srcdir)/tools/bootstrap/slurm/slurm_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/slurm/slurm_query_node_list.c
+slurm_query_node_list.lo: $(top_srcdir)/tools/bootstrap/external/slurm_query_node_list.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT slurm_query_node_list.lo -MD -MP -MF $(DEPDIR)/slurm_query_node_list.Tpo -c -o slurm_query_node_list.lo `test -f '$(top_srcdir)/tools/bootstrap/external/slurm_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/slurm_query_node_list.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/slurm_query_node_list.Tpo $(DEPDIR)/slurm_query_node_list.Plo
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/slurm/slurm_query_node_list.c' object='slurm_query_node_list.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/slurm_query_node_list.c' object='slurm_query_node_list.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o slurm_query_node_list.lo `test -f '$(top_srcdir)/tools/bootstrap/slurm/slurm_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/slurm/slurm_query_node_list.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o slurm_query_node_list.lo `test -f '$(top_srcdir)/tools/bootstrap/external/slurm_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/slurm_query_node_list.c
 
-slurm_query_proxy_id.lo: $(top_srcdir)/tools/bootstrap/slurm/slurm_query_proxy_id.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT slurm_query_proxy_id.lo -MD -MP -MF $(DEPDIR)/slurm_query_proxy_id.Tpo -c -o slurm_query_proxy_id.lo `test -f '$(top_srcdir)/tools/bootstrap/slurm/slurm_query_proxy_id.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/slurm/slurm_query_proxy_id.c
+slurm_query_proxy_id.lo: $(top_srcdir)/tools/bootstrap/external/slurm_query_proxy_id.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT slurm_query_proxy_id.lo -MD -MP -MF $(DEPDIR)/slurm_query_proxy_id.Tpo -c -o slurm_query_proxy_id.lo `test -f '$(top_srcdir)/tools/bootstrap/external/slurm_query_proxy_id.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/slurm_query_proxy_id.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/slurm_query_proxy_id.Tpo $(DEPDIR)/slurm_query_proxy_id.Plo
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/slurm/slurm_query_proxy_id.c' object='slurm_query_proxy_id.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/slurm_query_proxy_id.c' object='slurm_query_proxy_id.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o slurm_query_proxy_id.lo `test -f '$(top_srcdir)/tools/bootstrap/slurm/slurm_query_proxy_id.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/slurm/slurm_query_proxy_id.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o slurm_query_proxy_id.lo `test -f '$(top_srcdir)/tools/bootstrap/external/slurm_query_proxy_id.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/slurm_query_proxy_id.c
+
+ll_launch.lo: $(top_srcdir)/tools/bootstrap/external/ll_launch.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ll_launch.lo -MD -MP -MF $(DEPDIR)/ll_launch.Tpo -c -o ll_launch.lo `test -f '$(top_srcdir)/tools/bootstrap/external/ll_launch.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/ll_launch.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ll_launch.Tpo $(DEPDIR)/ll_launch.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/ll_launch.c' object='ll_launch.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ll_launch.lo `test -f '$(top_srcdir)/tools/bootstrap/external/ll_launch.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/ll_launch.c
+
+ll_query_node_list.lo: $(top_srcdir)/tools/bootstrap/external/ll_query_node_list.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ll_query_node_list.lo -MD -MP -MF $(DEPDIR)/ll_query_node_list.Tpo -c -o ll_query_node_list.lo `test -f '$(top_srcdir)/tools/bootstrap/external/ll_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/ll_query_node_list.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ll_query_node_list.Tpo $(DEPDIR)/ll_query_node_list.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/ll_query_node_list.c' object='ll_query_node_list.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ll_query_node_list.lo `test -f '$(top_srcdir)/tools/bootstrap/external/ll_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/ll_query_node_list.c
+
+ll_query_proxy_id.lo: $(top_srcdir)/tools/bootstrap/external/ll_query_proxy_id.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ll_query_proxy_id.lo -MD -MP -MF $(DEPDIR)/ll_query_proxy_id.Tpo -c -o ll_query_proxy_id.lo `test -f '$(top_srcdir)/tools/bootstrap/external/ll_query_proxy_id.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/ll_query_proxy_id.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/ll_query_proxy_id.Tpo $(DEPDIR)/ll_query_proxy_id.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/ll_query_proxy_id.c' object='ll_query_proxy_id.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ll_query_proxy_id.lo `test -f '$(top_srcdir)/tools/bootstrap/external/ll_query_proxy_id.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/ll_query_proxy_id.c
+
+lsf_query_node_list.lo: $(top_srcdir)/tools/bootstrap/external/lsf_query_node_list.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT lsf_query_node_list.lo -MD -MP -MF $(DEPDIR)/lsf_query_node_list.Tpo -c -o lsf_query_node_list.lo `test -f '$(top_srcdir)/tools/bootstrap/external/lsf_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/lsf_query_node_list.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/lsf_query_node_list.Tpo $(DEPDIR)/lsf_query_node_list.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/lsf_query_node_list.c' object='lsf_query_node_list.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o lsf_query_node_list.lo `test -f '$(top_srcdir)/tools/bootstrap/external/lsf_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/lsf_query_node_list.c
+
+sge_query_node_list.lo: $(top_srcdir)/tools/bootstrap/external/sge_query_node_list.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT sge_query_node_list.lo -MD -MP -MF $(DEPDIR)/sge_query_node_list.Tpo -c -o sge_query_node_list.lo `test -f '$(top_srcdir)/tools/bootstrap/external/sge_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/sge_query_node_list.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/sge_query_node_list.Tpo $(DEPDIR)/sge_query_node_list.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/sge_query_node_list.c' object='sge_query_node_list.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o sge_query_node_list.lo `test -f '$(top_srcdir)/tools/bootstrap/external/sge_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/sge_query_node_list.c
+
+pbs_query_node_list.lo: $(top_srcdir)/tools/bootstrap/external/pbs_query_node_list.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT pbs_query_node_list.lo -MD -MP -MF $(DEPDIR)/pbs_query_node_list.Tpo -c -o pbs_query_node_list.lo `test -f '$(top_srcdir)/tools/bootstrap/external/pbs_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/pbs_query_node_list.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/pbs_query_node_list.Tpo $(DEPDIR)/pbs_query_node_list.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/bootstrap/external/pbs_query_node_list.c' object='pbs_query_node_list.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pbs_query_node_list.lo `test -f '$(top_srcdir)/tools/bootstrap/external/pbs_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/external/pbs_query_node_list.c
 
 persist_init.lo: $(top_srcdir)/tools/bootstrap/persist/persist_init.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT persist_init.lo -MD -MP -MF $(DEPDIR)/persist_init.Tpo -c -o persist_init.lo `test -f '$(top_srcdir)/tools/bootstrap/persist/persist_init.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/bootstrap/persist/persist_init.c
@@ -1380,46 +1467,6 @@ demux_select.lo: $(top_srcdir)/tools/demux/demux_select.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o demux_select.lo `test -f '$(top_srcdir)/tools/demux/demux_select.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/demux/demux_select.c
 
-rmki_init.lo: $(top_builddir)/tools/rmk/src/rmki_init.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT rmki_init.lo -MD -MP -MF $(DEPDIR)/rmki_init.Tpo -c -o rmki_init.lo `test -f '$(top_builddir)/tools/rmk/src/rmki_init.c' || echo '$(srcdir)/'`$(top_builddir)/tools/rmk/src/rmki_init.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/rmki_init.Tpo $(DEPDIR)/rmki_init.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_builddir)/tools/rmk/src/rmki_init.c' object='rmki_init.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o rmki_init.lo `test -f '$(top_builddir)/tools/rmk/src/rmki_init.c' || echo '$(srcdir)/'`$(top_builddir)/tools/rmk/src/rmki_init.c
-
-rmki_query_node_list.lo: $(top_srcdir)/tools/rmk/src/rmki_query_node_list.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT rmki_query_node_list.lo -MD -MP -MF $(DEPDIR)/rmki_query_node_list.Tpo -c -o rmki_query_node_list.lo `test -f '$(top_srcdir)/tools/rmk/src/rmki_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/rmk/src/rmki_query_node_list.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/rmki_query_node_list.Tpo $(DEPDIR)/rmki_query_node_list.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/rmk/src/rmki_query_node_list.c' object='rmki_query_node_list.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o rmki_query_node_list.lo `test -f '$(top_srcdir)/tools/rmk/src/rmki_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/rmk/src/rmki_query_node_list.c
-
-rmku_query_node_list.lo: $(top_srcdir)/tools/rmk/utils/rmku_query_node_list.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT rmku_query_node_list.lo -MD -MP -MF $(DEPDIR)/rmku_query_node_list.Tpo -c -o rmku_query_node_list.lo `test -f '$(top_srcdir)/tools/rmk/utils/rmku_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/rmk/utils/rmku_query_node_list.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/rmku_query_node_list.Tpo $(DEPDIR)/rmku_query_node_list.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/rmk/utils/rmku_query_node_list.c' object='rmku_query_node_list.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o rmku_query_node_list.lo `test -f '$(top_srcdir)/tools/rmk/utils/rmku_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/rmk/utils/rmku_query_node_list.c
-
-rmk_pbs_init.lo: $(top_srcdir)/tools/rmk/pbs/rmk_pbs_init.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT rmk_pbs_init.lo -MD -MP -MF $(DEPDIR)/rmk_pbs_init.Tpo -c -o rmk_pbs_init.lo `test -f '$(top_srcdir)/tools/rmk/pbs/rmk_pbs_init.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/rmk/pbs/rmk_pbs_init.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/rmk_pbs_init.Tpo $(DEPDIR)/rmk_pbs_init.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/rmk/pbs/rmk_pbs_init.c' object='rmk_pbs_init.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o rmk_pbs_init.lo `test -f '$(top_srcdir)/tools/rmk/pbs/rmk_pbs_init.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/rmk/pbs/rmk_pbs_init.c
-
-rmk_pbs_query_node_list.lo: $(top_srcdir)/tools/rmk/pbs/rmk_pbs_query_node_list.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT rmk_pbs_query_node_list.lo -MD -MP -MF $(DEPDIR)/rmk_pbs_query_node_list.Tpo -c -o rmk_pbs_query_node_list.lo `test -f '$(top_srcdir)/tools/rmk/pbs/rmk_pbs_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/rmk/pbs/rmk_pbs_query_node_list.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/rmk_pbs_query_node_list.Tpo $(DEPDIR)/rmk_pbs_query_node_list.Plo
-@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/rmk/pbs/rmk_pbs_query_node_list.c' object='rmk_pbs_query_node_list.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o rmk_pbs_query_node_list.lo `test -f '$(top_srcdir)/tools/rmk/pbs/rmk_pbs_query_node_list.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/rmk/pbs/rmk_pbs_query_node_list.c
-
 debugger.lo: $(top_srcdir)/tools/debugger/debugger.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT debugger.lo -MD -MP -MF $(DEPDIR)/debugger.Tpo -c -o debugger.lo `test -f '$(top_srcdir)/tools/debugger/debugger.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/debugger/debugger.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/debugger.Tpo $(DEPDIR)/debugger.Plo
@@ -1427,6 +1474,22 @@ debugger.lo: $(top_srcdir)/tools/debugger/debugger.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/debugger/debugger.c' object='debugger.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o debugger.lo `test -f '$(top_srcdir)/tools/debugger/debugger.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/debugger/debugger.c
+
+hydt_ftb.lo: $(top_srcdir)/tools/ftb/hydt_ftb.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT hydt_ftb.lo -MD -MP -MF $(DEPDIR)/hydt_ftb.Tpo -c -o hydt_ftb.lo `test -f '$(top_srcdir)/tools/ftb/hydt_ftb.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/ftb/hydt_ftb.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hydt_ftb.Tpo $(DEPDIR)/hydt_ftb.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/ftb/hydt_ftb.c' object='hydt_ftb.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o hydt_ftb.lo `test -f '$(top_srcdir)/tools/ftb/hydt_ftb.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/ftb/hydt_ftb.c
+
+hydt_ftb_dummy.lo: $(top_srcdir)/tools/ftb/hydt_ftb_dummy.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT hydt_ftb_dummy.lo -MD -MP -MF $(DEPDIR)/hydt_ftb_dummy.Tpo -c -o hydt_ftb_dummy.lo `test -f '$(top_srcdir)/tools/ftb/hydt_ftb_dummy.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/ftb/hydt_ftb_dummy.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hydt_ftb_dummy.Tpo $(DEPDIR)/hydt_ftb_dummy.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/tools/ftb/hydt_ftb_dummy.c' object='hydt_ftb_dummy.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o hydt_ftb_dummy.lo `test -f '$(top_srcdir)/tools/ftb/hydt_ftb_dummy.c' || echo '$(srcdir)/'`$(top_srcdir)/tools/ftb/hydt_ftb_dummy.c
 
 uiu.lo: $(top_srcdir)/ui/utils/uiu.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT uiu.lo -MD -MP -MF $(DEPDIR)/uiu.Tpo -c -o uiu.lo `test -f '$(top_srcdir)/ui/utils/uiu.c' || echo '$(srcdir)/'`$(top_srcdir)/ui/utils/uiu.c
@@ -1484,13 +1547,13 @@ pmiserv_utils.lo: $(top_srcdir)/pm/pmiserv/pmiserv_utils.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pmiserv_utils.lo `test -f '$(top_srcdir)/pm/pmiserv/pmiserv_utils.c' || echo '$(srcdir)/'`$(top_srcdir)/pm/pmiserv/pmiserv_utils.c
 
-pmi_common.lo: $(top_srcdir)/pm/pmiserv/pmi_common.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT pmi_common.lo -MD -MP -MF $(DEPDIR)/pmi_common.Tpo -c -o pmi_common.lo `test -f '$(top_srcdir)/pm/pmiserv/pmi_common.c' || echo '$(srcdir)/'`$(top_srcdir)/pm/pmiserv/pmi_common.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/pmi_common.Tpo $(DEPDIR)/pmi_common.Plo
+common.lo: $(top_srcdir)/pm/pmiserv/common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT common.lo -MD -MP -MF $(DEPDIR)/common.Tpo -c -o common.lo `test -f '$(top_srcdir)/pm/pmiserv/common.c' || echo '$(srcdir)/'`$(top_srcdir)/pm/pmiserv/common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/common.Tpo $(DEPDIR)/common.Plo
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/pm/pmiserv/pmi_common.c' object='pmi_common.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/pm/pmiserv/common.c' object='common.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pmi_common.lo `test -f '$(top_srcdir)/pm/pmiserv/pmi_common.c' || echo '$(srcdir)/'`$(top_srcdir)/pm/pmiserv/pmi_common.c
+@am__fastdepCC_FALSE@	$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o common.lo `test -f '$(top_srcdir)/pm/pmiserv/common.c' || echo '$(srcdir)/'`$(top_srcdir)/pm/pmiserv/common.c
 
 pmi_v2_common.lo: $(top_srcdir)/pm/pmiserv/pmi_v2_common.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT pmi_v2_common.lo -MD -MP -MF $(DEPDIR)/pmi_v2_common.Tpo -c -o pmi_v2_common.lo `test -f '$(top_srcdir)/pm/pmiserv/pmi_v2_common.c' || echo '$(srcdir)/'`$(top_srcdir)/pm/pmiserv/pmi_v2_common.c
@@ -1612,21 +1675,21 @@ hydra_pmi_proxy-pmip_pmi_v2.obj: $(top_srcdir)/pm/pmiserv/pmip_pmi_v2.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hydra_pmi_proxy_CFLAGS) $(CFLAGS) -c -o hydra_pmi_proxy-pmip_pmi_v2.obj `if test -f '$(top_srcdir)/pm/pmiserv/pmip_pmi_v2.c'; then $(CYGPATH_W) '$(top_srcdir)/pm/pmiserv/pmip_pmi_v2.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/pm/pmiserv/pmip_pmi_v2.c'; fi`
 
-hydra_pmi_proxy-pmi_common.o: $(top_srcdir)/pm/pmiserv/pmi_common.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hydra_pmi_proxy_CFLAGS) $(CFLAGS) -MT hydra_pmi_proxy-pmi_common.o -MD -MP -MF $(DEPDIR)/hydra_pmi_proxy-pmi_common.Tpo -c -o hydra_pmi_proxy-pmi_common.o `test -f '$(top_srcdir)/pm/pmiserv/pmi_common.c' || echo '$(srcdir)/'`$(top_srcdir)/pm/pmiserv/pmi_common.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hydra_pmi_proxy-pmi_common.Tpo $(DEPDIR)/hydra_pmi_proxy-pmi_common.Po
+hydra_pmi_proxy-common.o: $(top_srcdir)/pm/pmiserv/common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hydra_pmi_proxy_CFLAGS) $(CFLAGS) -MT hydra_pmi_proxy-common.o -MD -MP -MF $(DEPDIR)/hydra_pmi_proxy-common.Tpo -c -o hydra_pmi_proxy-common.o `test -f '$(top_srcdir)/pm/pmiserv/common.c' || echo '$(srcdir)/'`$(top_srcdir)/pm/pmiserv/common.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hydra_pmi_proxy-common.Tpo $(DEPDIR)/hydra_pmi_proxy-common.Po
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/pm/pmiserv/pmi_common.c' object='hydra_pmi_proxy-pmi_common.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/pm/pmiserv/common.c' object='hydra_pmi_proxy-common.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hydra_pmi_proxy_CFLAGS) $(CFLAGS) -c -o hydra_pmi_proxy-pmi_common.o `test -f '$(top_srcdir)/pm/pmiserv/pmi_common.c' || echo '$(srcdir)/'`$(top_srcdir)/pm/pmiserv/pmi_common.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hydra_pmi_proxy_CFLAGS) $(CFLAGS) -c -o hydra_pmi_proxy-common.o `test -f '$(top_srcdir)/pm/pmiserv/common.c' || echo '$(srcdir)/'`$(top_srcdir)/pm/pmiserv/common.c
 
-hydra_pmi_proxy-pmi_common.obj: $(top_srcdir)/pm/pmiserv/pmi_common.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hydra_pmi_proxy_CFLAGS) $(CFLAGS) -MT hydra_pmi_proxy-pmi_common.obj -MD -MP -MF $(DEPDIR)/hydra_pmi_proxy-pmi_common.Tpo -c -o hydra_pmi_proxy-pmi_common.obj `if test -f '$(top_srcdir)/pm/pmiserv/pmi_common.c'; then $(CYGPATH_W) '$(top_srcdir)/pm/pmiserv/pmi_common.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/pm/pmiserv/pmi_common.c'; fi`
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hydra_pmi_proxy-pmi_common.Tpo $(DEPDIR)/hydra_pmi_proxy-pmi_common.Po
+hydra_pmi_proxy-common.obj: $(top_srcdir)/pm/pmiserv/common.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hydra_pmi_proxy_CFLAGS) $(CFLAGS) -MT hydra_pmi_proxy-common.obj -MD -MP -MF $(DEPDIR)/hydra_pmi_proxy-common.Tpo -c -o hydra_pmi_proxy-common.obj `if test -f '$(top_srcdir)/pm/pmiserv/common.c'; then $(CYGPATH_W) '$(top_srcdir)/pm/pmiserv/common.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/pm/pmiserv/common.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/hydra_pmi_proxy-common.Tpo $(DEPDIR)/hydra_pmi_proxy-common.Po
 @am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/pm/pmiserv/pmi_common.c' object='hydra_pmi_proxy-pmi_common.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/pm/pmiserv/common.c' object='hydra_pmi_proxy-common.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hydra_pmi_proxy_CFLAGS) $(CFLAGS) -c -o hydra_pmi_proxy-pmi_common.obj `if test -f '$(top_srcdir)/pm/pmiserv/pmi_common.c'; then $(CYGPATH_W) '$(top_srcdir)/pm/pmiserv/pmi_common.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/pm/pmiserv/pmi_common.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hydra_pmi_proxy_CFLAGS) $(CFLAGS) -c -o hydra_pmi_proxy-common.obj `if test -f '$(top_srcdir)/pm/pmiserv/common.c'; then $(CYGPATH_W) '$(top_srcdir)/pm/pmiserv/common.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/pm/pmiserv/common.c'; fi`
 
 hydra_pmi_proxy-pmi_v2_common.o: $(top_srcdir)/pm/pmiserv/pmi_v2_common.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(hydra_pmi_proxy_CFLAGS) $(CFLAGS) -MT hydra_pmi_proxy-pmi_v2_common.o -MD -MP -MF $(DEPDIR)/hydra_pmi_proxy-pmi_v2_common.Tpo -c -o hydra_pmi_proxy-pmi_v2_common.o `test -f '$(top_srcdir)/pm/pmiserv/pmi_v2_common.c' || echo '$(srcdir)/'`$(top_srcdir)/pm/pmiserv/pmi_v2_common.c
@@ -2057,7 +2120,7 @@ install-dvi: install-dvi-recursive
 
 install-dvi-am:
 
-install-exec-am: install-binPROGRAMS
+install-exec-am: install-binPROGRAMS install-exec-local
 
 install-html: install-html-recursive
 
@@ -2099,7 +2162,7 @@ ps: ps-recursive
 
 ps-am:
 
-uninstall-am: uninstall-binPROGRAMS
+uninstall-am: uninstall-binPROGRAMS uninstall-local
 
 .MAKE: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) ctags-recursive \
 	install-am install-strip tags-recursive
@@ -2114,14 +2177,14 @@ uninstall-am: uninstall-binPROGRAMS
 	distuninstallcheck dvi dvi-am html html-am info info-am \
 	install install-am install-binPROGRAMS install-data \
 	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs installdirs-am maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags tags-recursive uninstall uninstall-am \
-	uninstall-binPROGRAMS
+	install-exec-am install-exec-local install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	installdirs-am maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-compile mostlyclean-generic \
+	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-recursive \
+	uninstall uninstall-am uninstall-binPROGRAMS uninstall-local
 
 
 # Use the mpich2-build-install target to include mpiexec in the build bin
@@ -2129,20 +2192,24 @@ uninstall-am: uninstall-binPROGRAMS
 mpich2-build-install: install
 mpich2-build-uninstall: uninstall
 
+# Provide an alias for mpirun to support tools that assume that
+# mpiexec is called mpirun
+install-exec-local:
+	if [ -x ${DESTDIR}${bindir}/mpiexec.hydra ] ; then \
+	    cd ${DESTDIR}${bindir} && ln -f -s mpiexec.hydra mpiexec ; \
+	    cd ${DESTDIR}${bindir} && ln -f -s mpiexec.hydra mpirun ; \
+	fi
+
 # A special alternate installation target when using multiple process managers
 install-alt: $(bin_PROGRAMS)
-	@if [ ! -d $(DESTDIR)${bindir} ] ; then \
-	    echo "$(mkdir_p) $(DESTDIR)${bindir} " ;\
-	    $(mkdir_p) $(DESTDIR)${bindir} ;\
-	fi
 	@for foo in $? ; do \
-		if test "$$foo" = "mpiexec" ; then \
-			$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG) mpiexec \
-				$(DESTDIR)${bindir}/mpiexec.hydra ; \
-		else \
-			$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG) $$foo $(DESTDIR)${bindir}/ ; \
+		if test "$$foo" != "mpiexec" ; then \
+			$(MAKE) install $$foo ; \
 		fi ; \
 	done
+
+uninstall-local:
+	rm -f ${DESTDIR}${bindir}/mpirun ${DESTDIR}${bindir}/mpiexec
 
 htmldoc:
 	if test "@DOXYGEN@" != "" ; then @DOXYGEN@ hydra-doxygen.cfg ; fi

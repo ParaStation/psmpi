@@ -60,10 +60,8 @@ int MPIOI_File_write_all_begin(MPI_File mpi_fh,
 {
     int error_code, datatype_size;
     ADIO_File fh;
-    MPIU_THREADPRIV_DECL;
 
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
 
@@ -110,7 +108,6 @@ int MPIOI_File_write_all_begin(MPI_File mpi_fh,
     /* --END ERROR HANDLING-- */
 
 fn_exit:
-    MPIR_Nest_decr();
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
 
     return error_code;

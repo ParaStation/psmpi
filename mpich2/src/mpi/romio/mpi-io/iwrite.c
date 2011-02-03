@@ -46,7 +46,6 @@ int MPI_File_iwrite(MPI_File mpi_fh, void *buf, int count,
 {
     int error_code=MPI_SUCCESS;
     static char myname[] = "MPI_FILE_IWRITE";
-    MPIU_THREADPRIV_DECL;
 #ifdef MPI_hpux
     int fl_xmpi;
 
@@ -89,8 +88,6 @@ int MPIOI_File_iwrite(MPI_File mpi_fh,
     ADIO_Offset off;
     ADIO_File fh;
     MPI_Offset nbytes=0;
-
-    MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
 
@@ -163,8 +160,6 @@ int MPIOI_File_iwrite(MPI_File mpi_fh,
 			   offset, request, &error_code);
     }
 fn_exit:
-    MPIR_Nest_decr();
-
     return error_code;
 }
 #endif

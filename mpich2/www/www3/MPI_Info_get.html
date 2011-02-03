@@ -9,6 +9,10 @@
 Retrieves the value associated with a key 
 <H2>Synopsis</H2>
 <PRE>
+#undef FUNCNAME
+#define FUNCNAME MPI_Info_get
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value, 
                 int *flag)
 </PRE>

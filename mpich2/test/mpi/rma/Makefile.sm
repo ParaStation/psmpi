@@ -15,6 +15,7 @@ test3_SOURCES = test3.c
 test4_SOURCES = test4.c
 test5_SOURCES = test5.c
 lockcontention_SOURCES = lockcontention.c
+lockcontention2_SOURCES = lockcontention2.c
 locknull_SOURCES = locknull.c
 wintest_SOURCES = wintest.c
 transpose1_SOURCES = transpose1.c
@@ -34,6 +35,7 @@ epochtest_SOURCES = epochtest.c
 getfence1_SOURCES = getfence1.c
 accfence1_SOURCES = accfence1.c
 accfence2_SOURCES = accfence2.c
+adlb_mimic1_SOURCES = adlb_mimic1.c
 putpscw1_SOURCES = putpscw1.c
 getgroup_SOURCES = getgroup.c
 contig_displ_SOURCES = contig_displ.c
@@ -55,6 +57,7 @@ fkeyvalwin_SOURCES = fkeyvalwin.c
 baseattrwin_SOURCES = baseattrwin.c
 
 nullpscw_SOURCES = nullpscw.c
+rmanull_SOURCES    = rmanull.c
 
 mixedsync_SOURCES = mixedsync.c
 selfrma_SOURCES   = selfrma.c

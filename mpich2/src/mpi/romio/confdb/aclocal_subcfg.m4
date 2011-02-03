@@ -5,7 +5,7 @@ AC_DEFUN([PAC_RESET_ALL_FLAGS],[
 	   CPPFLAGS="$USER_CPPFLAGS"
 	   CXXFLAGS="$USER_CXXFLAGS"
 	   FFLAGS="$USER_FFLAGS"
-	   F90FLAGS="$USER_F90FLAGS"
+	   FCFLAGS="$USER_FCFLAGS"
 	   LDFLAGS="$USER_LDFLAGS"
 	   LIBS="$USER_LIBS"
 	fi
@@ -19,9 +19,28 @@ AC_DEFUN([PAC_RESET_LINK_FLAGS],[
 	fi
 ])
 
-dnl Sandbox configure
-dnl Usage: PAC_CONFIG_SUBDIR(subdir,action-if-success,action-if-failure)
-AC_DEFUN([PAC_CONFIG_SUBDIR],[
+dnl Sandbox configure with additional arguments
+dnl Usage: PAC_CONFIG_SUBDIR_ARGS(subdir,configure-args,action-if-success,action-if-failure)
+dnl
+dnl The subconfigure argument list is created based on "ac_precious_vars"
+dnl instead of explicitly use of well-known Makefile variables, like
+dnl CC/CFLAGS/CPPFLAGS..., this generalization is effective as long as
+dnl calling configure.in declares the needed variables to be passed down
+dnl to subconfigure as "precious" appropriately.  The precious variable
+dnl can be created in the following ways:
+dnl 1) implicit declaration through use of autoconf macros, like
+dnl    AC_PROG_CC (declares CC/CFLAGS/CPPFLAGS/LIBS/LDFLAGS), or
+dnl    AC_PROG_F77 (declares F77/FFLAGS/FLIBS) ... 
+dnl    which are in turns invoked by other subconfigure.
+dnl    When in doubt, check "ac_precious_var" in the calling configure.
+dnl 2) explicit "precious" declaration through AC_ARG_VAR.
+dnl Without correct "precious" declaration in the calling configure.in,
+dnl there would be variables not being included in the subconfigure
+dnl argument list.
+dnl
+dnl Note: I suspect this DEFUN body is underquoted in places, but it does not
+dnl seem to cause problems in practice yet. [goodell@ 2010-05-18]
+AC_DEFUN([PAC_CONFIG_SUBDIR_ARGS],[
         AC_MSG_NOTICE([===== configuring $1 =====])
 
 	PAC_MKDIRS($1)
@@ -33,81 +52,65 @@ AC_DEFUN([PAC_CONFIG_SUBDIR],[
 
         pac_subconfigure_file="$pac_abs_srcdir/$1/configure"
 	if test -x $pac_subconfigure_file ; then
-	   pac_subconfig_args=""
-	   prev_arg=""
+	   pac_subconfig_args="$2"
 
-	   # Strip off the args we need to update
-	   for ac_arg in $ac_configure_args ; do
+            # Set IFS so ac_configure_args can be tokenized
+            # with extra " " tokens being skipped.
+	    PAC_PUSH_FLAG([IFS])
+            IFS="'"
+            for pac_arg in $ac_configure_args ; do
+                case "$pac_arg" in
+                # Ignore any null and leading blank strings.
+                ""|" "*)
+                    ;;
+                *)
+                    pac_pval=""
+                    # Restore IFS so ac_precious_vars which has
+                    # " " as separator can be correctly tokenized
+		    PAC_POP_FLAG([IFS])
+                    for pac_pvar in $ac_precious_vars ; do
+                        # check if configure argument token contains the
+                        # precious variable, i.e. "name_of_prec_var=".
+                        pvar_in_arg=`echo $pac_arg | grep "$pac_pvar="`
+                        if test "X$pvar_in_arg" != "X" ; then
+                            # check if current precious variable is set in env
+                            eval pvar_set=\${$pac_pvar+set}
+                            if test "$pvar_set" = "set" ; then
+                                # Append 'name_of_prec_var=value_of_prec_var'
+                                # to the subconfigure arguments list, where
+                                # value_of_prec_var is fetched from the env.
+                                eval pac_pval=\${$pac_pvar}
+                                pac_subconfig_args="$pac_subconfig_args '$pac_pvar=$pac_pval'"
+                                break
+                            fi
+                        fi
+                    done
+                    # since the precious variable is not set in the env.,
+                    # append the corresponding configure argument token
+                    # to the subconfigure argument list.
+                    if test "X$pac_pval" = "X" ; then
+                        pac_subconfig_args="$pac_subconfig_args '$pac_arg'"
+                    fi
+                    # reset "'" as IFS to process ac_configure_args
+		    PAC_PUSH_FLAG([IFS])
+                    IFS="'"
+                    ;;
+                esac
+            done
+            # Restore IFS.
+	    PAC_POP_FLAG([IFS])
+            dnl echo "pac_subconfig_args = |$pac_subconfig_args|"
 
-	       # HACK: Though each argument in ac_configure_args is
-	       # quoted to account for spaces, when we get them, the
-	       # argument list is treated as a space separated list
-	       # and the quotes are treated as a part of the
-	       # argument. So, we explicitly look for the quotes and
-	       # recreate the arguments. If/when this is fixed by
-	       # autoconf, this hack can be deleted.
-	       end_char=`echo $ac_arg | sed -e 's/.*\(.\)$/\1/g'`
+           dnl Add option to disable configure options checking
+           if test "$enable_option_checking" = no ; then
+              pac_subconfig_args="$pac_subconfig_args --disable-option-checking"
+           fi
 
-	       # If the previous argument was incomplete, we append
-	       # this argument to that
-	       if test "$prev_arg" != "" -o "$end_char" != "'" ; then
-                  prev_arg="$prev_arg $ac_arg"
-	       fi
-
-	       # If the end character is a quote, we are at the end of
-	       # an argument.
-	       if test "$end_char" = "'" ; then
-                  # If the previous argument just got completed, set
-		  # the current argument to the entire argument value
-		  if test "$prev_arg" != "" ; then ac_arg="$prev_arg" ; fi
-		  prev_arg=
-	       else
-		  # If the previous argument hasn't completed yet,
-		  # just continue on to the next argument
-		  continue
-	       fi
-
-	       # Remove any quotes around the args (added by configure)
-	       ac_narg=`echo $ac_arg | sed -e "s/^'\(.*\)'$/\1/g"`
-
-	       case $ac_narg in
-                   CFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CFLAGS='$CFLAGS'"
-		       ;;
-		   CPPFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CPPFLAGS='$CPPFLAGS'"
-		       ;;
-		   CXXFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CXXFLAGS='$CXXFLAGS'"
-		       ;;
-		   FFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args FFLAGS='$FFLAGS'"
-		       ;;
-		   F90FLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args F90FLAGS='$F90FLAGS'"
-		       ;;
-		   LDFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args LDFLAGS='$LDFLAGS'"
-		       ;;
-		   LIBS=*)
-		       pac_subconfig_args="$pac_subconfig_args LIBS='$LIBS'"
-		       ;;
-		   *)
-		       # We store ac_arg instead of ac_narg to make
-		       # sure we retain the quotes as provided to us
-		       # by autoconf
-		       pac_subconfig_args="$pac_subconfig_args $ac_arg"
-		       ;;
-	       esac
-	   done
-
-	   echo "executing: $pac_subconfigure_file $pac_subconfig_args"
+	   AC_MSG_NOTICE([executing: $pac_subconfigure_file $pac_subconfig_args])
 	   if (cd $1 && eval $pac_subconfigure_file $pac_subconfig_args) ; then
-	      $2
-	      :
+               ifelse([$3],[],[:],[$3])
 	   else
-	      $3
-	      :
+               ifelse([$4],[],[:],[$4])
 	   fi
         else
            if test -e $pac_subconfigure_file ; then
@@ -127,3 +130,8 @@ AC_DEFUN([PAC_CONFIG_SUBDIR],[
 	   . $pac_abs_srcdir/$1/localdefs
 	fi
 ])
+
+dnl Sandbox configure
+dnl Usage: PAC_CONFIG_SUBDIR(subdir,action-if-success,action-if-failure)
+AC_DEFUN([PAC_CONFIG_SUBDIR],[PAC_CONFIG_SUBDIR_ARGS([$1],[],[$2],[$3])])
+

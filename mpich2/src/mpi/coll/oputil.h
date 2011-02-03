@@ -35,10 +35,15 @@ MPIR_OP_TYPE_GROUP(FORTRAN_INTEGER)
 
 /* op_macro_ is a 2-arg macro or function that preforms the reduction
    operation on a single element */
+/* Ideally "b" would be const, but xlc on POWER7 can't currently handle
+ * "const long double _Complex * restrict" as a valid pointer type.  It just
+ * emits a warning and generates invalid arithmetic code.  We could drop the
+ * restrict instead, but we are more likely to get an optimization from it than
+ * const.  [goodell@ 2010-12-15] */
 #define MPIR_OP_TYPE_REDUCE_CASE(mpi_type_,c_type_,op_macro_) \
     case (mpi_type_): {                                       \
         c_type_ * restrict a = (c_type_ *)inoutvec;           \
-        const c_type_ * restrict b = (c_type_ *)invec;        \
+        /*const*/ c_type_ * restrict b = (c_type_ *)invec;    \
         for ( i=0; i<len; i++ )                               \
             a[i] = op_macro_(a[i],b[i]);                      \
         break;                                                \
@@ -66,6 +71,7 @@ MPIR_OP_TYPE_GROUP(FORTRAN_INTEGER)
 #define MPIR_OP_TYPE_MACRO_HAVE_REAL4_CTYPE(mpi_type_,c_type_)
 #define MPIR_OP_TYPE_MACRO_HAVE_REAL8_CTYPE(mpi_type_,c_type_)
 #define MPIR_OP_TYPE_MACRO_HAVE_REAL16_CTYPE(mpi_type_,c_type_)
+#define MPIR_OP_TYPE_MACRO_HAVE_CXX(mpi_type_,c_type_)
 #define MPIR_OP_TYPE_MACRO_HAVE_CXX_COMPLEX(mpi_type_,c_type_)
 #define MPIR_OP_TYPE_MACRO_HAVE_CXX_LONG_DOUBLE_COMPLEX(mpi_type_,c_type_)
 #define MPIR_OP_TYPE_MACRO_HAVE_INT8_T(mpi_type_,c_type_)
@@ -137,6 +143,12 @@ MPIR_OP_TYPE_GROUP(FORTRAN_INTEGER)
 #if defined(MPIR_REAL16_CTYPE)
 #  undef MPIR_OP_TYPE_MACRO_HAVE_REAL16_CTYPE
 #  define MPIR_OP_TYPE_MACRO_HAVE_REAL16_CTYPE(mpi_type_,c_type_) MPIR_OP_TYPE_MACRO(mpi_type_,c_type_)
+#endif
+
+/* general C++ types */
+#if defined(HAVE_CXX_BINDING)
+#  undef MPIR_OP_TYPE_MACRO_HAVE_CXX
+#  define MPIR_OP_TYPE_MACRO_HAVE_CXX(mpi_type_,c_type_) MPIR_OP_TYPE_MACRO(mpi_type_,c_type_)
 #endif
 
 /* C++ complex types */
@@ -297,7 +309,8 @@ typedef struct {
 /* FIXME Is MPI_Fint really OK here? */
 #define MPIR_OP_TYPE_GROUP_LOGICAL                         \
     MPIR_OP_TYPE_MACRO_HAVE_FORTRAN(MPI_LOGICAL, MPI_Fint) \
-    MPIR_OP_TYPE_MACRO_HAVE_C_BOOL(MPI_C_BOOL, _Bool)
+    MPIR_OP_TYPE_MACRO_HAVE_C_BOOL(MPI_C_BOOL, _Bool)      \
+    MPIR_OP_TYPE_MACRO_HAVE_CXX(MPIR_CXX_BOOL_VALUE, MPIR_CXX_BOOL_CTYPE)
 #define MPIR_OP_TYPE_GROUP_LOGICAL_EXTRA /* empty, provided for consistency */
 
 /* complex group */

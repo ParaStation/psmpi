@@ -21,12 +21,13 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #undef MPI_Comm_rank
 #define MPI_Comm_rank PMPI_Comm_rank
+
 #endif
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Comm_rank
 #undef FCNAME
-#define FCNAME "MPI_Comm_rank"
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 
 /*@
 
@@ -54,6 +55,7 @@ int MPI_Comm_rank( MPI_Comm comm, int *rank )
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_RANK);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -88,7 +90,7 @@ int MPI_Comm_rank( MPI_Comm comm, int *rank )
 
     /* ... body of routine ...  */
     
-    *rank = comm_ptr->rank;
+    *rank = MPIR_Comm_rank(comm_ptr);
     
     /* ... end of body of routine ... */
 
@@ -96,6 +98,7 @@ int MPI_Comm_rank( MPI_Comm comm, int *rank )
   fn_exit:
 #endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_RANK);
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
     /* --BEGIN ERROR HANDLING-- */

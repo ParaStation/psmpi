@@ -37,7 +37,6 @@ int MPI_File_sync(MPI_File mpi_fh)
     int error_code;
     ADIO_File fh;
     static char myname[] = "MPI_FILE_SYNC";
-    MPIU_THREADPRIV_DECL;
 #ifdef MPI_hpux
     int fl_xmpi;
 
@@ -45,7 +44,6 @@ int MPI_File_sync(MPI_File mpi_fh)
 		  MPI_DATATYPE_NULL, -1);
 #endif /* MPI_hpux */
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
     /* --BEGIN ERROR HANDLING-- */
@@ -72,7 +70,6 @@ int MPI_File_sync(MPI_File mpi_fh)
 #endif /* MPI_hpux */
  
 fn_exit:
-    MPIR_Nest_decr();
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return error_code;
 }

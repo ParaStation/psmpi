@@ -7,9 +7,9 @@
 #ifndef PMISERV_PMI_H_INCLUDED
 #define PMISERV_PMI_H_INCLUDED
 
-#include "hydra_base.h"
+#include "hydra.h"
 #include "demux.h"
-#include "pmi_common.h"
+#include "common.h"
 
 /* PMI-1 specific definitions */
 extern struct HYD_pmcd_pmi_handle *HYD_pmcd_pmi_v1;
@@ -33,6 +33,9 @@ struct HYD_pmcd_pmi_pg_scratch {
     int control_listen_fd;
     int pmi_listen_fd;
 
+    char *dead_processes;
+    int dead_process_count;
+
     struct HYD_pmcd_pmi_kvs *kvs;
 };
 
@@ -50,7 +53,6 @@ struct HYD_pmcd_pmi_publish {
 };
 
 struct HYD_proxy *HYD_pmcd_pmi_find_proxy(int fd);
-HYD_status HYD_pmcd_pmi_process_mapping(char **process_mapping);
 HYD_status HYD_pmcd_pmi_finalize(void);
 HYD_status HYD_pmcd_pmi_free_publish(struct HYD_pmcd_pmi_publish *publish);
 HYD_status HYD_pmcd_pmi_publish(char *name, char *port, int *success);

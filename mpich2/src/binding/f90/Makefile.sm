@@ -2,18 +2,18 @@
 # This file created by buildiface 
 smvar_do_dependencies = ignore
 smvar_makefile_configdir = ../../..
-MOD              = @F90MODEXT@
+MOD              = @FCMODEXT@
 MPIMOD           = @MPIMODNAME@
 MPICONSTMOD      = @MPICONSTMODNAME@
 MPISIZEOFMOD     = @MPISIZEOFMODNAME@
 MPIBASEMOD       = @MPIBASEMODNAME@
-F90INCFLAG       = @F90INCFLAG@
-F90EXT           = @F90EXT@
-F90_COMPILE_MODS = $(F90_COMPILE)
+FCINCFLAG        = @FCINCFLAG@
+FCEXT            = @FCEXT@
+FC_COMPILE_MODS  = $(FC_COMPILE)
 # We need to tell some compilers (e.g., Solaris f90) to look in the current 
 # directory when the source file is not in the working directory (i.e.,
 # in a VPATH build)
-F90INCLUDES = @F90INCFLAG@.
+FCINCLUDES = @FCINCFLAG@.
 
 mpi_sources = create_f90_int.c create_f90_real.c \
 	create_f90_complex.c \
@@ -26,9 +26,9 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include
 lib${MPILIBNAME}f90_a_SOURCES = mpi.o mpi_constants.o mpi_sizeofs.o mpi_base.o
 all-preamble: $(MPIMOD).$(MOD)
 
-# The copy line in this step makes the F90 modules available to
+# The copy line in this step makes the Fortran90 modules available to
 # the mpif90 script before an install takes place
-# The if handles the Intel F90 compiler, which has an unusual interface
+# The if handles the Intel Fortran90 compiler, which has an unusual interface
 # (The mpimod.pcl file should contain only a local mpimod.pc name; if
 # it contains a file name in another directory and that file does not 
 # exist, the compiler may refuse to compile the file)
@@ -44,75 +44,75 @@ all-preamble: $(MPIMOD).$(MOD)
 
 $(MPIMOD).$(MOD): $(MPICONSTMOD).$(MOD) $(MPISIZEOFMOD).$(MOD) \
 		  $(MPIBASEMOD).$(MOD) $(srcdir)/mpi.f90 mpifnoext.h
-	@if [ -n "@F90_WORK_FILES_ARG@" ] ; then \
+	@if [ -n "@FC_WORK_FILES_ARG@" ] ; then \
 	    rm -f mpimod.pc mpimod.pcl ; \
 	    echo "mpimod.pc" > mpimod.pcl ; \
-	    echo $(F90_COMPILE_MODS) @F90_WORK_FILES_ARG@ -c $(srcdir)/mpi.f90 ; \
-	    $(F90_COMPILE_MODS) @F90_WORK_FILES_ARG@ -c $(srcdir)/mpi.f90 ; \
+	    echo $(FC_COMPILE_MODS) @FC_WORK_FILES_ARG@ -c $(srcdir)/mpi.f90 ; \
+	    $(FC_COMPILE_MODS) @FC_WORK_FILES_ARG@ -c $(srcdir)/mpi.f90 ; \
 	    cp mpimod.pc ../../../src/include/mpimod.pc ; \
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
 	else \
-	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        ln -f -s $(srcdir)/mpi.f90 $(srcdir)/mpi.$(F90EXT) ; \
+	    if [ "$(FCEXT)" != "f90" ] ; then \
+	        ln -f -s $(srcdir)/mpi.f90 $(srcdir)/mpi.$(FCEXT) ; \
 	    fi ; \
-	    echo $(F90_COMPILE_MODS) -c $(srcdir)/mpi.$(F90EXT) ; \
-	    $(F90_COMPILE_MODS) -c $(srcdir)/mpi.$(F90EXT) ; \
-	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        rm -f $(srcdir)/mpi.$(F90EXT) ; \
+	    echo $(FC_COMPILE_MODS) -c $(srcdir)/mpi.$(FCEXT) ; \
+	    $(FC_COMPILE_MODS) -c $(srcdir)/mpi.$(FCEXT) ; \
+	    if [ "$(FCEXT)" != "f90" ] ; then \
+	        rm -f $(srcdir)/mpi.$(FCEXT) ; \
 	    fi ; \
 	fi
 $(MPICONSTMOD).$(MOD): $(srcdir)/mpi_constants.f90 mpifnoext.h
-	@if [ -n "@F90_WORK_FILES_ARG@" ] ; then \
+	@if [ -n "@FC_WORK_FILES_ARG@" ] ; then \
 	    rm -f mpimod.pc mpimod.pcl ; \
 	    echo "mpimod.pc" > mpimod.pcl ; \
-	    echo $(F90_COMPILE_MODS) @F90_WORK_FILES_ARG@ -c $(srcdir)/mpi_constants.f90 ; \
-	    $(F90_COMPILE_MODS) @F90_WORK_FILES_ARG@ -c $(srcdir)/mpi_constants.f90 ; \
+	    echo $(FC_COMPILE_MODS) @FC_WORK_FILES_ARG@ -c $(srcdir)/mpi_constants.f90 ; \
+	    $(FC_COMPILE_MODS) @FC_WORK_FILES_ARG@ -c $(srcdir)/mpi_constants.f90 ; \
 	    cp mpimod.pc ../../../src/include/mpimod.pc ; \
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
 	else \
-	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        ln -f -s $(srcdir)/mpi_constants.f90 $(srcdir)/mpi_constants.$(F90EXT) ; \
+	    if [ "$(FCEXT)" != "f90" ] ; then \
+	        ln -f -s $(srcdir)/mpi_constants.f90 $(srcdir)/mpi_constants.$(FCEXT) ; \
 	    fi ; \
-	    echo $(F90_COMPILE_MODS) -c $(srcdir)/mpi_constants.$(F90EXT) ; \
-	    $(F90_COMPILE_MODS) -c $(srcdir)/mpi_constants.$(F90EXT) ; \
-	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        rm -f $(srcdir)/mpi_constants.$(F90EXT) ; \
+	    echo $(FC_COMPILE_MODS) -c $(srcdir)/mpi_constants.$(FCEXT) ; \
+	    $(FC_COMPILE_MODS) -c $(srcdir)/mpi_constants.$(FCEXT) ; \
+	    if [ "$(FCEXT)" != "f90" ] ; then \
+	        rm -f $(srcdir)/mpi_constants.$(FCEXT) ; \
 	    fi ; \
 	fi
 $(MPISIZEOFMOD).$(MOD): mpi_sizeofs.f90 mpifnoext.h
-	@if [ -n "@F90_WORK_FILES_ARG@" ] ; then \
+	@if [ -n "@FC_WORK_FILES_ARG@" ] ; then \
 	    rm -f mpimod.pc mpimod.pcl ; \
 	    echo "mpimod.pc" > mpimod.pcl ; \
-	    echo $(F90_COMPILE_MODS) @F90_WORK_FILES_ARG@ -c mpi_sizeofs.f90 ; \
-	    $(F90_COMPILE_MODS) @F90_WORK_FILES_ARG@ -c mpi_sizeofs.f90 ; \
+	    echo $(FC_COMPILE_MODS) @FC_WORK_FILES_ARG@ -c mpi_sizeofs.f90 ; \
+	    $(FC_COMPILE_MODS) @FC_WORK_FILES_ARG@ -c mpi_sizeofs.f90 ; \
 	    cp mpimod.pc ../../../src/include/mpimod.pc ; \
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
 	else \
-	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        ln -f -s mpi_sizeofs.f90 mpi_sizeofs.$(F90EXT) ; \
+	    if [ "$(FCEXT)" != "f90" ] ; then \
+	        ln -f -s mpi_sizeofs.f90 mpi_sizeofs.$(FCEXT) ; \
 	    fi ; \
-	    echo $(F90_COMPILE_MODS) -c mpi_sizeofs.$(F90EXT) ; \
-	    $(F90_COMPILE_MODS) -c mpi_sizeofs.$(F90EXT) ; \
-	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        rm -f mpi_sizeofs.$(F90EXT) ; \
+	    echo $(FC_COMPILE_MODS) -c mpi_sizeofs.$(FCEXT) ; \
+	    $(FC_COMPILE_MODS) -c mpi_sizeofs.$(FCEXT) ; \
+	    if [ "$(FCEXT)" != "f90" ] ; then \
+	        rm -f mpi_sizeofs.$(FCEXT) ; \
 	    fi ; \
 	fi
-$(MPIBASEMOD).$(MOD): $(srcdir)/mpi_base.f90
-	@if [ -n "@F90_WORK_FILES_ARG@" ] ; then \
+$(MPIBASEMOD).$(MOD): mpi_base.f90
+	@if [ -n "@FC_WORK_FILES_ARG@" ] ; then \
 	    rm -f mpimod.pc mpimod.pcl ; \
 	    echo "mpimod.pc" > mpimod.pcl ; \
-	    echo $(F90_COMPILE_MODS) @F90_WORK_FILES_ARG@ -c $(srcdir)/mpi_base.f90 ; \
-	    $(F90_COMPILE_MODS) @F90_WORK_FILES_ARG@ -c $(srcdir)/mpi_base.f90 ; \
+	    echo $(FC_COMPILE_MODS) @FC_WORK_FILES_ARG@ -c mpi_base.f90 ; \
+	    $(FC_COMPILE_MODS) @FC_WORK_FILES_ARG@ -c mpi_base.f90 ; \
 	    cp mpimod.pc ../../../src/include/mpimod.pc ; \
 	    cp mpimod.pcl ../../../src/include/mpimod.pcl ; \
 	else \
-	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        ln -f -s $(srcdir)/mpi_base.f90 $(srcdir)/mpi_base.$(F90EXT) ; \
+	    if [ "$(FCEXT)" != "f90" ] ; then \
+	        ln -f -s mpi_base.f90 mpi_base.$(FCEXT) ; \
 	    fi ; \
-	    echo $(F90_COMPILE_MODS) -c $(srcdir)/mpi_base.$(F90EXT) ; \
-	    $(F90_COMPILE_MODS) -c $(srcdir)/mpi_base.$(F90EXT) ; \
-	    if [ "$(F90EXT)" != "f90" ] ; then \
-	        rm -f $(srcdir)/mpi_base.$(F90EXT) ; \
+	    echo $(FC_COMPILE_MODS) -c mpi_base.$(FCEXT) ; \
+	    $(FC_COMPILE_MODS) -c mpi_base.$(FCEXT) ; \
+	    if [ "$(FCEXT)" != "f90" ] ; then \
+	        rm -f mpi_base.$(FCEXT) ; \
 	    fi ; \
 	fi
 
@@ -138,6 +138,7 @@ all-postamble:
 clean-local:
 	rm -f *.$(MOD)
 	rm -f mpimod.pcl mpimod.pc
+	rm -f lib${MPILIBNAME}f90.a
 maint-clean:
 	rm -f ${mpi_sources} fproto.h
 install_INCLUDE = $(MPIMOD).$(MOD) $(MPICONSTMOD).$(MOD) $(MPIBASEMOD).$(MOD) $(MPISIZEOFMOD).$(MOD)

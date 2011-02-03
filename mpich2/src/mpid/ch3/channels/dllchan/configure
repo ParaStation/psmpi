@@ -654,6 +654,7 @@ AR_FLAGS
 AR
 channel_name
 device_name
+ABIVERSION
 EGREP
 GREP
 CPP
@@ -1927,6 +1928,8 @@ save_libs=$LIBS
 LIBS=
 
 
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 date >conftest$$
 # If creating a file in the current directory does not show up in the srcdir
@@ -1973,6 +1976,8 @@ $as_echo "$as_me: error: You cannot do a VPATH build if the source directory has
         fi
     fi
 fi
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 
 
@@ -2145,7 +2150,6 @@ fi
 
 
 
-
 { $as_echo "$as_me:$LINENO: checking for virtual path format" >&5
 $as_echo_n "checking for virtual path format... " >&6; }
 if test "${pac_cv_prog_make_vpath+set}" = set; then
@@ -2196,7 +2200,6 @@ if test "$pac_cv_prog_make_vpath" = "VPATH" ; then
 elif test "$pac_cv_prog_make_vpath" = ".PATH" ; then
     VPATH='.PATH: . ${srcdir}'
 fi
-
 
 
 
@@ -3991,6 +3994,21 @@ _ACEOF
 # AR_FLAGS provides a way to potentially improve build performance on Mac OSX
 if test -z "$AR_FLAGS" ; then AR_FLAGS=cr ; fi
 
+# ABIVERSION is needed when a separate sock dll library is built (e.g., for
+# dllchan)
+if test "X$ABIVERSION" = "X" ; then
+   if test "X$libmpich_so_version" != X ; then
+      ABIVERSION="$libmpich_so_version"
+   else
+      # Note that an install of a sock-dll will fail if the ABI version is not
+      # available
+      { $as_echo "$as_me:$LINENO: WARNING: Unable to set the ABIVERSION" >&5
+$as_echo "$as_me: WARNING: Unable to set the ABIVERSION" >&2;}
+   fi
+fi
+
+
+
 
 
 
@@ -4051,6 +4069,8 @@ fi
 if test -z "$channel_args" ; then
      channel_args=sock
 fi
+
+export ABIVERSION
 
 channel_args=`echo $channel_args | sed -e 's/,/ /g'`
 builddir=`(cd .. && pwd)`

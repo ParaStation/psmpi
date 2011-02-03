@@ -388,7 +388,6 @@ void Op::Init( User_function *f, bool commute )
 	MPIR_Op_set_cxx( the_real_op, (mpircallback) MPIR_Call_op_fn );
 
     }
-#include "mpihandlemem.h"
 #include "mpi_attr.h"
 #include "mpi_lang.h"
 static

@@ -375,6 +375,12 @@
     }                                                                   \
 }
 
+/* some simple memcpy aliasing checks */
+#define MPIU_ERR_CHKMEMCPYANDSTMT(err_,stmt_,src_,dst_,len_) \
+        MPIU_ERR_CHKANDSTMT3(MPIU_MEM_RANGES_OVERLAP((dst_),(len_),(src_),(len_)),err_,MPI_ERR_INTERN,stmt_,"**memcpyalias","**memcpyalias %p %p %L",(src_),(dst_),(long long)(len_))
+#define MPIU_ERR_CHKMEMCPYANDJUMP(err_,src_,dst_,len_) \
+        MPIU_ERR_CHKMEMCPYANDSTMT((err_),goto fn_fail,(src_),(dst_),(len_))
+
 /* Special MPI error "class/code" for out of memory */
 /* FIXME: not yet done */
 #define MPIR_ERR_MEMALLOCFAILED MPI_ERR_INTERN
@@ -394,12 +400,6 @@
     MPIU_ERR_SETFATALANDSTMT(err_,MPI_ERR_OTHER,goto fn_fail,"**fail")
 #define MPIU_ERR_POPFATAL_LABEL(err_, label_) \
     MPIU_ERR_SETFATALANDSTMT(err_,MPI_ERR_OTHER,goto label_,"**fail")
-
-/* some simple memcpy aliasing checks */
-#define MPIU_ERR_CHKMEMCPYANDSTMT(err_,stmt_,src_,dst_,len_) \
-        MPIU_ERR_CHKANDSTMT3(MPIU_MEM_RANGES_OVERLAP((dst_),(len_),(src_),(len_)),mpi_errno,MPI_ERR_INTERN,stmt_,"**memcpyalias","**memcpy %p %p %L",(src_),(dst_),(len_))
-#define MPIU_ERR_CHKMEMCPYANDJUMP(err_,src_,dst_,len_) \
-        MPIU_ERR_CHKMEMCPYANDSTMT((err_),goto fn_fail,(src_),(dst_),(len_))
 
 /* If you add any macros to this list, make sure that you update
  maint/extracterrmsgs to handle the additional macros (see the hash 
@@ -507,8 +507,10 @@
      MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
 #define MPIU_ERR_SETFATALANDSTMT4(err_,class_,stmt_,gmsg_,smsg_,arg1_,arg2_,arg3_,arg4_) \
      MPIU_ERR_SETANDSTMT(err_,class_,stmt_,gmsg_)
+    /* No-op - use original error class; discard newerr_ unless err is 
+       MPI_SUCCESS*/
 #define MPIU_ERR_ADD(err_, newerr_) \
-     MPIU_ERR_SET((err_), (newerr_), foo)
+    {if (!err_) err_ = newerr_;}
 #endif
 
 /* The following definitions are the same independent of the choice of 

@@ -11,6 +11,7 @@
 #include <assert.h>
 
 HYD_status HYDT_bind_hwloc_init(HYDT_bind_support_level_t * support_level);
-HYD_status HYDT_bind_hwloc_process(int os_index);
+HYD_status HYDT_bind_hwloc_process(struct HYDT_bind_cpuset_t cpuset);
+HYD_status HYDT_bind_hwloc_finalize(void);
 
-#endif /* BIND_PLPA_H_INCLUDED */
+#endif /* BIND_HWLOC_H_INCLUDED */

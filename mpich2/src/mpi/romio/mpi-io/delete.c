@@ -37,7 +37,6 @@ int MPI_File_delete(char *filename, MPI_Info info)
     int error_code, file_system;
     char *tmp;
     ADIOI_Fns *fsops;
-    MPIU_THREADPRIV_DECL;
 #ifdef MPI_hpux
     int fl_xmpi;
   
@@ -48,7 +47,6 @@ int MPI_File_delete(char *filename, MPI_Info info)
     MPIU_UNREFERENCED_ARG(info);
 
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPIR_Nest_incr();
 
     MPIR_MPIOInit(&error_code);
     if (error_code != MPI_SUCCESS) goto fn_exit;
@@ -90,7 +88,6 @@ int MPI_File_delete(char *filename, MPI_Info info)
 #endif /* MPI_hpux */
 
 fn_exit:
-    MPIR_Nest_decr();
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return error_code;
 }

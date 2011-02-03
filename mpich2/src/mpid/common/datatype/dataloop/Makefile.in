@@ -30,7 +30,7 @@ HEADERS = dataloop.h dataloop_parts.h dataloop_create.h ../mpid_dataloop.h  type
 INCLUDES = -I${srcdir}/.. -I${top_builddir}/src/include -I${master_top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -47,8 +47,6 @@ INCLUDES = -I${srcdir}/.. -I${top_builddir}/src/include -I${master_top_srcdir}/s
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -56,55 +54,31 @@ INCLUDES = -I${srcdir}/.. -I${top_builddir}/src/include -I${master_top_srcdir}/s
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../../ \
-	-configdir=. \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../../../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/mpid/common/datatype/dataloop/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    ${MAKE} .libstamp1 || exit 1; \
 	fi
 
-.libstamp0 ../../../../../lib/lib${MPILIBNAME}.a: dataloop.o segment.o \
-	segment_packunpack.o segment_flatten.o segment_count.o \
-	dataloop_create.o dataloop_create_contig.o dataloop_create_vector.o \
-	dataloop_create_blockindexed.o dataloop_create_indexed.o \
-	dataloop_create_struct.o dataloop_create_pairtype.o \
-	subarray_support.o darray_support.o 
+.libstamp0 ../../../../../lib/lib${MPILIBNAME}.a: dataloop.o segment.o segment_packunpack.o \
+	segment_flatten.o segment_count.o dataloop_create.o dataloop_create_contig.o \
+	dataloop_create_vector.o dataloop_create_blockindexed.o dataloop_create_indexed.o \
+	dataloop_create_struct.o dataloop_create_pairtype.o subarray_support.o darray_support.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
@@ -118,12 +92,11 @@ all-redirect: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../../../lib/lib${MPILIBNAME}.la: dataloop.lo segment.lo \
-	segment_packunpack.lo segment_flatten.lo segment_count.lo \
-	dataloop_create.lo dataloop_create_contig.lo \
-	dataloop_create_vector.lo dataloop_create_blockindexed.lo \
-	dataloop_create_indexed.lo dataloop_create_struct.lo \
-	dataloop_create_pairtype.lo subarray_support.lo darray_support.lo 
+.libstamp1 ../../../../../lib/lib${MPILIBNAME}.la: dataloop.lo segment.lo segment_packunpack.lo \
+	segment_flatten.lo segment_count.lo dataloop_create.lo dataloop_create_contig.lo \
+	dataloop_create_vector.lo dataloop_create_blockindexed.lo dataloop_create_indexed.lo \
+	dataloop_create_struct.lo dataloop_create_pairtype.lo subarray_support.lo \
+	darray_support.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -131,246 +104,19 @@ all-redirect: .libstamp0 ../../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${AR} ${AR_FLAGS} ../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
-coverage: 
-	-@for file in dataloop.c 	segment.c 	segment_packunpack.c 	segment_flatten.c \
-		segment_count.c 	dataloop_create.c 	dataloop_create_contig.c \
-		dataloop_create_vector.c 	dataloop_create_blockindexed.c \
-		dataloop_create_indexed.c 	dataloop_create_struct.c \
-		dataloop_create_pairtype.c 	subarray_support.c 	darray_support.c  ; \
-	do \
-		gcov -b -f $$file ; done
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/dataloop.d: $(srcdir)/dataloop.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop.c > $(DEPS_DIR)/dataloop.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop.c >$(DEPS_DIR)/dataloop.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop.c >$(DEPS_DIR)/dataloop.d
-$(DEPS_DIR)/segment.d: $(srcdir)/segment.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C segment.c > $(DEPS_DIR)/segment.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/segment.c >$(DEPS_DIR)/segment.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/segment.c >$(DEPS_DIR)/segment.d
-$(DEPS_DIR)/segment_packunpack.d: $(srcdir)/segment_packunpack.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C segment_packunpack.c > $(DEPS_DIR)/segment_packunpack.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/segment_packunpack.c >$(DEPS_DIR)/segment_packunpack.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/segment_packunpack.c >$(DEPS_DIR)/segment_packunpack.d
-$(DEPS_DIR)/segment_flatten.d: $(srcdir)/segment_flatten.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C segment_flatten.c > $(DEPS_DIR)/segment_flatten.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/segment_flatten.c >$(DEPS_DIR)/segment_flatten.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/segment_flatten.c >$(DEPS_DIR)/segment_flatten.d
-$(DEPS_DIR)/segment_count.d: $(srcdir)/segment_count.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C segment_count.c > $(DEPS_DIR)/segment_count.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/segment_count.c >$(DEPS_DIR)/segment_count.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/segment_count.c >$(DEPS_DIR)/segment_count.d
-$(DEPS_DIR)/dataloop_create.d: $(srcdir)/dataloop_create.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop_create.c > $(DEPS_DIR)/dataloop_create.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop_create.c >$(DEPS_DIR)/dataloop_create.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create.c >$(DEPS_DIR)/dataloop_create.d
-$(DEPS_DIR)/dataloop_create_contig.d: $(srcdir)/dataloop_create_contig.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop_create_contig.c > $(DEPS_DIR)/dataloop_create_contig.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_contig.c >$(DEPS_DIR)/dataloop_create_contig.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_contig.c >$(DEPS_DIR)/dataloop_create_contig.d
-$(DEPS_DIR)/dataloop_create_vector.d: $(srcdir)/dataloop_create_vector.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop_create_vector.c > $(DEPS_DIR)/dataloop_create_vector.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_vector.c >$(DEPS_DIR)/dataloop_create_vector.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_vector.c >$(DEPS_DIR)/dataloop_create_vector.d
-$(DEPS_DIR)/dataloop_create_blockindexed.d: $(srcdir)/dataloop_create_blockindexed.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop_create_blockindexed.c > $(DEPS_DIR)/dataloop_create_blockindexed.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_blockindexed.c >$(DEPS_DIR)/dataloop_create_blockindexed.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_blockindexed.c >$(DEPS_DIR)/dataloop_create_blockindexed.d
-$(DEPS_DIR)/dataloop_create_indexed.d: $(srcdir)/dataloop_create_indexed.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop_create_indexed.c > $(DEPS_DIR)/dataloop_create_indexed.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_indexed.c >$(DEPS_DIR)/dataloop_create_indexed.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_indexed.c >$(DEPS_DIR)/dataloop_create_indexed.d
-$(DEPS_DIR)/dataloop_create_struct.d: $(srcdir)/dataloop_create_struct.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop_create_struct.c > $(DEPS_DIR)/dataloop_create_struct.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_struct.c >$(DEPS_DIR)/dataloop_create_struct.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_struct.c >$(DEPS_DIR)/dataloop_create_struct.d
-$(DEPS_DIR)/dataloop_create_pairtype.d: $(srcdir)/dataloop_create_pairtype.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop_create_pairtype.c > $(DEPS_DIR)/dataloop_create_pairtype.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_pairtype.c >$(DEPS_DIR)/dataloop_create_pairtype.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_pairtype.c >$(DEPS_DIR)/dataloop_create_pairtype.d
-$(DEPS_DIR)/subarray_support.d: $(srcdir)/subarray_support.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C subarray_support.c > $(DEPS_DIR)/subarray_support.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/subarray_support.c >$(DEPS_DIR)/subarray_support.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/subarray_support.c >$(DEPS_DIR)/subarray_support.d
-$(DEPS_DIR)/darray_support.d: $(srcdir)/darray_support.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C darray_support.c > $(DEPS_DIR)/darray_support.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/darray_support.c >$(DEPS_DIR)/darray_support.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/darray_support.c >$(DEPS_DIR)/darray_support.d
-$(DEPS_DIR)/timestamp: dataloop.c 	segment.c 	segment_packunpack.c 	segment_flatten.c \
-		segment_count.c 	dataloop_create.c 	dataloop_create_contig.c \
-		dataloop_create_vector.c 	dataloop_create_blockindexed.c \
-		dataloop_create_indexed.c 	dataloop_create_struct.c \
-		dataloop_create_pairtype.c 	subarray_support.c 	darray_support.c \
-	Makefile 
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop.c > $(DEPS_DIR)/dataloop.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop.c >$(DEPS_DIR)/dataloop.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop.c >$(DEPS_DIR)/dataloop.d
-	echo "include $(DEPS_DIR)/dataloop.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C segment.c > $(DEPS_DIR)/segment.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/segment.c >$(DEPS_DIR)/segment.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/segment.c >$(DEPS_DIR)/segment.d
-	echo "include $(DEPS_DIR)/segment.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C segment_packunpack.c > $(DEPS_DIR)/segment_packunpack.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/segment_packunpack.c >$(DEPS_DIR)/segment_packunpack.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/segment_packunpack.c >$(DEPS_DIR)/segment_packunpack.d
-	echo "include $(DEPS_DIR)/segment_packunpack.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C segment_flatten.c > $(DEPS_DIR)/segment_flatten.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/segment_flatten.c >$(DEPS_DIR)/segment_flatten.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/segment_flatten.c >$(DEPS_DIR)/segment_flatten.d
-	echo "include $(DEPS_DIR)/segment_flatten.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C segment_count.c > $(DEPS_DIR)/segment_count.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/segment_count.c >$(DEPS_DIR)/segment_count.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/segment_count.c >$(DEPS_DIR)/segment_count.d
-	echo "include $(DEPS_DIR)/segment_count.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop_create.c > $(DEPS_DIR)/dataloop_create.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop_create.c >$(DEPS_DIR)/dataloop_create.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create.c >$(DEPS_DIR)/dataloop_create.d
-	echo "include $(DEPS_DIR)/dataloop_create.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop_create_contig.c > $(DEPS_DIR)/dataloop_create_contig.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_contig.c >$(DEPS_DIR)/dataloop_create_contig.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_contig.c >$(DEPS_DIR)/dataloop_create_contig.d
-	echo "include $(DEPS_DIR)/dataloop_create_contig.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop_create_vector.c > $(DEPS_DIR)/dataloop_create_vector.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_vector.c >$(DEPS_DIR)/dataloop_create_vector.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_vector.c >$(DEPS_DIR)/dataloop_create_vector.d
-	echo "include $(DEPS_DIR)/dataloop_create_vector.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop_create_blockindexed.c > $(DEPS_DIR)/dataloop_create_blockindexed.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_blockindexed.c >$(DEPS_DIR)/dataloop_create_blockindexed.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_blockindexed.c >$(DEPS_DIR)/dataloop_create_blockindexed.d
-	echo "include $(DEPS_DIR)/dataloop_create_blockindexed.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop_create_indexed.c > $(DEPS_DIR)/dataloop_create_indexed.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_indexed.c >$(DEPS_DIR)/dataloop_create_indexed.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_indexed.c >$(DEPS_DIR)/dataloop_create_indexed.d
-	echo "include $(DEPS_DIR)/dataloop_create_indexed.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop_create_struct.c > $(DEPS_DIR)/dataloop_create_struct.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_struct.c >$(DEPS_DIR)/dataloop_create_struct.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_struct.c >$(DEPS_DIR)/dataloop_create_struct.d
-	echo "include $(DEPS_DIR)/dataloop_create_struct.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dataloop_create_pairtype.c > $(DEPS_DIR)/dataloop_create_pairtype.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_pairtype.c >$(DEPS_DIR)/dataloop_create_pairtype.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dataloop_create_pairtype.c >$(DEPS_DIR)/dataloop_create_pairtype.d
-	echo "include $(DEPS_DIR)/dataloop_create_pairtype.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C subarray_support.c > $(DEPS_DIR)/subarray_support.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/subarray_support.c >$(DEPS_DIR)/subarray_support.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/subarray_support.c >$(DEPS_DIR)/subarray_support.d
-	echo "include $(DEPS_DIR)/subarray_support.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C darray_support.c > $(DEPS_DIR)/darray_support.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/darray_support.c >$(DEPS_DIR)/darray_support.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/darray_support.c >$(DEPS_DIR)/darray_support.d
-	echo "include $(DEPS_DIR)/darray_support.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  dataloop.c segment.c segment_packunpack.c \
-	segment_flatten.c segment_count.c dataloop_create.c \
-	dataloop_create_contig.c dataloop_create_vector.c \
-	dataloop_create_blockindexed.c dataloop_create_indexed.c \
-	dataloop_create_struct.c dataloop_create_pairtype.c \
-	subarray_support.c darray_support.c 
+SOURCES         =  dataloop.c segment.c segment_packunpack.c segment_flatten.c segment_count.c \
+	dataloop_create.c dataloop_create_contig.c dataloop_create_vector.c \
+	dataloop_create_blockindexed.c dataloop_create_indexed.c dataloop_create_struct.c \
+	dataloop_create_pairtype.c subarray_support.c darray_support.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
 # INCLUDES = -I${srcdir} -I${srcdir}/.. -I../../../include -I${master_top_srcdir}/src/include
+
+.POSIX:
 
 FORCE_TARGET:
 

@@ -12,12 +12,31 @@
 #endif
 
 /* Preallocated group objects */
-MPID_Group MPID_Group_builtin[MPID_GROUP_N_BUILTIN] = {
-    { MPIU_OBJECT_HEADER_INITIALIZER(MPI_GROUP_EMPTY, 1), 0, MPI_UNDEFINED, -1, 0, } };
-MPID_Group MPID_Group_direct[MPID_GROUP_PREALLOC] = { { MPIU_OBJECT_HEADER_INITIALIZER(0,0) } };
+MPID_Group MPID_Group_builtin[MPID_GROUP_N_BUILTIN] = { {0} };
+MPID_Group MPID_Group_direct[MPID_GROUP_PREALLOC] = { {0} };
 MPIU_Object_alloc_t MPID_Group_mem = { 0, 0, 0, 0, MPID_GROUP, 
 				      sizeof(MPID_Group), MPID_Group_direct,
 				       MPID_GROUP_PREALLOC};
+
+int MPIR_Group_init(void)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    MPIU_Assert(MPID_GROUP_N_BUILTIN == 1); /* update this func if this ever triggers */
+
+    MPID_Group_builtin[0].handle = MPI_GROUP_EMPTY;
+    MPIU_Object_set_ref(&MPID_Group_builtin[0], 1);
+    MPID_Group_builtin[0].size = 0;
+    MPID_Group_builtin[0].rank = MPI_UNDEFINED;
+    MPID_Group_builtin[0].idx_of_first_lpid = -1;
+    MPID_Group_builtin[0].lrank_to_lpid = NULL;
+
+    /* the mutex is probably never used, but initializing it doesn't hurt */
+    MPIU_THREAD_MPI_OBJ_INIT(&MPID_Group_builtin[0]);
+
+    /* TODO hook for device here? */
+    return mpi_errno;
+}
 
 
 int MPIR_Group_release(MPID_Group *group_ptr)
@@ -67,14 +86,19 @@ int MPIR_Group_create( int nproc, MPID_Group **new_group_ptr )
     /* Make sure that there is no question that the list of ranks sorted
        by pids is marked as uninitialized */
     (*new_group_ptr)->idx_of_first_lpid = -1;
+
+    (*new_group_ptr)->is_local_dense_monotonic = FALSE;
     return mpi_errno;
 }
 /*
  * return value is the first index in the list
  *
- * This sorts an lpid array by lpid value, using a simple merge sort
+ * This "sorts" an lpid array by lpid value, using a simple merge sort
  * algorithm.
  *
+ * In actuality, it does not reorder the elements of maparray (these must remain
+ * in group rank order).  Instead it builds the traversal order (in increasing
+ * lpid order) through the maparray given by the "next_lpid" fields.
  */
 static int MPIR_Mergesort_lpidarray( MPID_Group_pmap_t maparray[], int n )
 {

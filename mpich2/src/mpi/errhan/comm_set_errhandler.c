@@ -23,12 +23,39 @@
 #undef MPI_Comm_set_errhandler
 #define MPI_Comm_set_errhandler PMPI_Comm_set_errhandler
 
+#undef FUNCNAME
+#define FUNCNAME MPIR_Comm_set_errhandler_impl
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+void MPIR_Comm_set_errhandler_impl(MPID_Comm *comm_ptr, MPID_Errhandler *errhandler_ptr)
+{
+    int in_use;
+
+    MPIU_THREAD_CS_ENTER(MPI_OBJ, comm_ptr);
+
+    /* We don't bother with the case where the errhandler is NULL;
+       in this case, the error handler was the original, MPI_ERRORS_ARE_FATAL,
+       which is builtin and can never be freed. */
+    if (comm_ptr->errhandler != NULL) {
+        MPIR_Errhandler_release_ref(comm_ptr->errhandler, &in_use);
+        if (!in_use) {
+            MPID_Errhandler_free( comm_ptr->errhandler );
+        }
+    }
+
+    MPIR_Errhandler_add_ref(errhandler_ptr);
+    comm_ptr->errhandler = errhandler_ptr;
+
+    MPIU_THREAD_CS_EXIT(MPI_OBJ, comm_ptr);
+    return;
+}
+
 #endif
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Comm_set_errhandler
 #undef FCNAME
-#define FCNAME "MPI_Comm_set_errhander"
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 
 /*@
    MPI_Comm_set_errhandler - Set the error handler for a communicator
@@ -52,12 +79,12 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    int in_use;
     MPID_Errhandler *errhan_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_SET_ERRHANDLER);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
-    
+
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_SET_ERRHANDLER);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -87,9 +114,7 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 	    if (HANDLE_GET_KIND(errhandler) != HANDLE_KIND_BUILTIN) {
 		MPID_Errhandler_valid_ptr( errhan_ptr, mpi_errno );
 	    }
-	    /* FIXME: Add a check that this is a comm errhandler.
-	       This test should be a macro so that it can be used
-	       in all calls, along with similar calls for win and file */
+	    MPIR_ERRTEST_ERRHANDLER(errhandler, mpi_errno);
             if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
@@ -98,18 +123,7 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 
     /* ... body of routine ...  */
 
-    /* We don't bother with the case where the errhandler is NULL; 
-       in this case, the error handler was the original, MPI_ERRORS_ARE_FATAL,
-       which is builtin and can never be freed. */
-    if (comm_ptr->errhandler != NULL) {
-        MPIR_Errhandler_release_ref(comm_ptr->errhandler,&in_use);
-        if (!in_use) {
-            MPID_Errhandler_free( comm_ptr->errhandler );
-        }
-    }
-
-    MPIR_Errhandler_add_ref(errhan_ptr);
-    comm_ptr->errhandler = errhan_ptr;
+    MPIR_Comm_set_errhandler_impl(comm_ptr, errhan_ptr);
     
     /* ... end of body of routine ... */
 
@@ -117,6 +131,7 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
   fn_exit:
 #endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_SET_ERRHANDLER);
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
     
     /* --BEGIN ERROR HANDLING-- */

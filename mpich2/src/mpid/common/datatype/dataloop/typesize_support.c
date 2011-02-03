@@ -162,16 +162,14 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
     int ndims;
     MPI_Datatype tmptype;
 
-    mpi_errno = NMPI_Type_get_envelope(type, &nr_ints, &nr_aints,
-				       &nr_types, &combiner);
-    DLOOP_Assert(mpi_errno == MPI_SUCCESS);
+    MPIR_Type_get_envelope_impl(type, &nr_ints, &nr_aints, &nr_types, &combiner);
 
     if (combiner == MPI_COMBINER_NAMED) {
 	int mpisize;
 	MPI_Aint mpiextent;
 
-	NMPI_Type_size(type, &mpisize);
-	NMPI_Type_extent(type, &mpiextent);
+	MPIR_Type_size_impl(type, &mpisize);
+	MPIR_Type_extent_impl(type, &mpiextent);
 	tfp->size    = (DLOOP_Offset) mpisize;
 	tfp->lb      = 0;
 	tfp->ub      = (DLOOP_Offset) mpiextent;
@@ -369,7 +367,7 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
 						  types[0],
 						  &tmptype);
 	    PREPEND_PREFIX(Type_calc_footprint)(tmptype, tfp);
-	    NMPI_Type_free(&tmptype);
+	    MPIR_Type_free_impl(&tmptype);
 	    break;
 	case MPI_COMBINER_DARRAY:
 	    ndims = ints[2];
@@ -386,7 +384,7 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
 						&tmptype);
 
 	    PREPEND_PREFIX(Type_calc_footprint)(tmptype, tfp);
-	    NMPI_Type_free(&tmptype);
+	    MPIR_Type_free_impl(&tmptype);
 	    break;
 	case MPI_COMBINER_F90_REAL:
 	case MPI_COMBINER_F90_COMPLEX:
@@ -437,8 +435,7 @@ static void DLOOP_Type_calc_footprint_struct(MPI_Datatype type,
 	/* skip zero blocklength elements */
 	if (ints[i+1] == 0) continue;
 
-	NMPI_Type_get_envelope(types[i], &nr_ints, &nr_aints, &nr_types,
-			       &combiner);
+	MPIR_Type_get_envelope_impl(types[i], &nr_ints, &nr_aints, &nr_types, &combiner);
 
 	/* opt: could just inline assignments for combiner == NAMED case */
 
@@ -530,10 +527,6 @@ static void DLOOP_Type_calc_footprint_struct(MPI_Datatype type,
 	}
     }
 
-#if 0
-    printf("size = %d, extent = %d\n", (int) tmp_size, (int) tmp_extent);
-#endif
-
     tfp->size    = tmp_size;
     tfp->lb      = min_lb;
     tfp->ub      = max_ub;
@@ -576,7 +569,7 @@ static int DLOOP_Named_type_alignsize(MPI_Datatype type, MPI_Aint disp)
     if (type == MPI_LB || type == MPI_UB)
 	return 0;
 
-    NMPI_Type_size(type, &alignsize);
+    MPIR_Type_size_impl(type, &alignsize);
 
     switch(type)
     {
@@ -882,46 +875,3 @@ static int DLOOP_Structalign_llint_position()
     if (padding_varies_by_pos) return 1;
     else                       return 0;
 }
-
-#if 0
-/* from MPICH2 PAC_C_DOUBLE_ALIGNMENT_EXCEPTION test:
- *
- * Other tests assume that there is potentially a maximum alignment
- * and that if there is no maximum alignment, or a type is smaller than
- * that value, then we align on the size of the value, with the exception
- * of the "position-based alignment" rules we test for separately.
- *
- * It turns out that these assumptions have fallen short in at least one
- * case, on MacBook Pros, where doubles are aligned on 4-byte boundaries
- * even when long doubles are aligned on 16-byte boundaries. So this test
- * is here specifically to handle this case.
- *
- * Return value is 4 or 0.
-*/
-static int double_align_exception()
-{
-    struct { char a; double b; } char_double;
-    struct { double b; char a; } double_char;
-    int extent1, extent2, align_4 = 0;
-
-    extent1 = sizeof(char_double);
-    extent2 = sizeof(double_char);
-
-    /* we're interested in the largest value, will let separate test
-     * deal with position-based issues.
-     */
-    if (extent1 < extent2) extent1 = extent2;
-    if ((sizeof(double) == 8) && (extent1 % 8) != 0) {
-       if (extent1 % 4 == 0) {
-#ifdef HAVE_MAX_FP_ALIGNMENT
-          if (HAVE_MAX_FP_ALIGNMENT >= 8) align_4 = 1;
-#else
-          align_4 = 1;
-#endif
-       }
-    }
-
-    if (align_4) return 4;
-    else         return 0;
-}
-#endif

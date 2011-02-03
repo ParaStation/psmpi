@@ -81,18 +81,15 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, int sources[],
     int *rout_idx;
     int *rs;
     int in_out_peers[2] = {-1, -1};
+    int errflag = FALSE;
     MPIU_CHKLMEM_DECL(9);
     MPIU_CHKPMEM_DECL(1);
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_DIST_GRAPH_CREATE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_DIST_GRAPH_CREATE);
-
-    MPIU_THREADPRIV_GET;
-    MPIR_Nest_incr();
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -256,8 +253,9 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, int sources[],
     }
 
     /* compute the number of peers I will recv from */
-    mpi_errno = NMPI_Reduce_scatter_block(rs, in_out_peers, 2, MPI_INT, MPI_SUM, comm_old);
+    mpi_errno = MPIR_Reduce_scatter_block_impl(rs, in_out_peers, 2, MPI_INT, MPI_SUM, comm_ptr, &errflag);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    MPIU_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
 
     MPIU_Assert(in_out_peers[0] <= comm_size && in_out_peers[0] >= 0);
     MPIU_Assert(in_out_peers[1] <= comm_size && in_out_peers[1] >= 0);
@@ -269,11 +267,13 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, int sources[],
     for (i = 0; i < comm_size; ++i) {
         if (rin_sizes[i]) {
             /* send edges where i is a destination to process i */
-            NMPI_Isend(&rin[i][0], rin_sizes[i], MPI_INT, i, MPIR_TOPO_A_TAG, comm_old, &reqs[index++]);
+            mpi_errno = MPIC_Isend(&rin[i][0], rin_sizes[i], MPI_INT, i, MPIR_TOPO_A_TAG, comm_old, &reqs[index++]);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         }
         if (rout_sizes[i]) {
             /* send edges where i is a source to process i */
-            NMPI_Isend(&rout[i][0], rout_sizes[i], MPI_INT, i, MPIR_TOPO_B_TAG, comm_old, &reqs[index++]);
+            mpi_errno = MPIC_Isend(&rout[i][0], rout_sizes[i], MPI_INT, i, MPIR_TOPO_B_TAG, comm_old, &reqs[index++]);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         }
     }
     MPIU_Assert(index <= (2 * comm_size));
@@ -304,16 +304,16 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, int sources[],
         int count;
         int *buf;
         /* receive inbound edges */
-        mpi_errno = NMPI_Probe(MPI_ANY_SOURCE, MPIR_TOPO_A_TAG, comm_old, &status);
+        mpi_errno = MPIC_Probe(MPI_ANY_SOURCE, MPIR_TOPO_A_TAG, comm_old, &status);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-        mpi_errno = NMPI_Get_count(&status, MPI_INT, &count);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        MPIR_Get_count_impl(&status, MPI_INT, &count);
         /* can't use CHKLMEM macros b/c we are in a loop */
         buf = MPIU_Malloc(count*sizeof(int));
         MPIU_ERR_CHKANDJUMP(!buf, mpi_errno, MPIR_ERR_RECOVERABLE, "**nomem");
 
-        mpi_errno = NMPI_Recv(buf, count, MPI_INT, MPI_ANY_SOURCE, MPIR_TOPO_A_TAG, comm_old, MPI_STATUS_IGNORE);
-
+        mpi_errno = MPIC_Recv(buf, count, MPI_INT, MPI_ANY_SOURCE, MPIR_TOPO_A_TAG, comm_old, MPI_STATUS_IGNORE);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        
         for (j = 0; j < count/2; ++j) {
             int deg = dist_graph_ptr->indegree++;
             if (deg >= in_capacity) {
@@ -334,15 +334,15 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, int sources[],
         int count;
         int *buf;
         /* receive outbound edges */
-        mpi_errno = NMPI_Probe(MPI_ANY_SOURCE, MPIR_TOPO_B_TAG, comm_old, &status);
+        mpi_errno = MPIC_Probe(MPI_ANY_SOURCE, MPIR_TOPO_B_TAG, comm_old, &status);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-        mpi_errno = NMPI_Get_count(&status, MPI_INT, &count);
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        MPIR_Get_count_impl(&status, MPI_INT, &count);
         /* can't use CHKLMEM macros b/c we are in a loop */
         buf = MPIU_Malloc(count*sizeof(int));
         MPIU_ERR_CHKANDJUMP(!buf, mpi_errno, MPIR_ERR_RECOVERABLE, "**nomem");
 
-        mpi_errno = NMPI_Recv(buf, count, MPI_INT, MPI_ANY_SOURCE, MPIR_TOPO_B_TAG, comm_old, MPI_STATUS_IGNORE);
+        mpi_errno = MPIC_Recv(buf, count, MPI_INT, MPI_ANY_SOURCE, MPIR_TOPO_B_TAG, comm_old, MPI_STATUS_IGNORE);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
         for (j = 0; j < count/2; ++j) {
             int deg = dist_graph_ptr->outdegree++;
@@ -359,7 +359,7 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, int sources[],
         MPIU_Free(buf);
     }
 
-    mpi_errno = NMPI_Waitall(index, reqs, MPI_STATUSES_IGNORE);
+    mpi_errno = MPIR_Waitall_impl(index, reqs, MPI_STATUSES_IGNORE);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     /* remove any excess memory allocation */
@@ -374,7 +374,9 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, int sources[],
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     MPIU_CHKPMEM_COMMIT();
-    *comm_dist_graph = comm_dist_graph_ptr->handle;
+
+    MPIU_OBJ_PUBLISH_HANDLE(*comm_dist_graph, comm_dist_graph_ptr->handle);
+
     /* ... end of body of routine ... */
 
   fn_exit:
@@ -387,7 +389,6 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, int sources[],
 
     MPIU_CHKLMEM_FREEALL();
 
-    MPIR_Nest_decr();
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_DIST_GRAPH_CREATE);
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
@@ -403,10 +404,12 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, int sources[],
         MPIU_Free(dist_graph_ptr->out_weights);
     MPIU_CHKPMEM_REAP();
     /* --BEGIN ERROR HANDLING-- */
+#ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(
         mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
         "**mpi_dist_graph_create", "**mpi_dist_graph_create %C %d %p %p %p %p %I %d %p",
         comm_old, n, sources, degrees, destinations, weights, info, reorder, comm_dist_graph);
+#endif
     mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);
     goto fn_exit;
     /* --END ERROR HANDLING-- */

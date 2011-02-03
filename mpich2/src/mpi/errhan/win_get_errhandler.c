@@ -53,7 +53,6 @@ int MPI_Win_get_errhandler(MPI_Win win, MPI_Errhandler *errhandler)
 #endif
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_GET_ERRHANDLER);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -92,7 +91,9 @@ int MPI_Win_get_errhandler(MPI_Win win, MPI_Errhandler *errhandler)
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    
+
+    MPIU_THREAD_CS_ENTER(MPI_OBJ, win_ptr);
+
     if (win_ptr->errhandler) {
 	*errhandler = win_ptr->errhandler->handle;
 	MPIR_Errhandler_add_ref(win_ptr->errhandler);
@@ -101,7 +102,9 @@ int MPI_Win_get_errhandler(MPI_Win win, MPI_Errhandler *errhandler)
 	/* Use the default */
 	*errhandler = MPI_ERRORS_ARE_FATAL;
     }
-    
+
+    MPIU_THREAD_CS_EXIT(MPI_OBJ, win_ptr);
+
     /* ... end of body of routine ... */
 
 #ifdef HAVE_ERROR_CHECKING

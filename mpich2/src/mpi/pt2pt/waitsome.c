@@ -95,7 +95,6 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
     int rc;
     int mpi_errno = MPI_SUCCESS;
     MPIU_CHKLMEM_DECL(1);
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WAITSOME);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -197,7 +196,7 @@ int MPI_Waitsome(int incount, MPI_Request array_of_requests[],
 	if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	for (i = 0; i < incount; i++)
 	{
-	    if (request_ptrs[i] != NULL && *request_ptrs[i]->cc_ptr == 0)
+            if (request_ptrs[i] != NULL && MPID_Request_is_complete(request_ptrs[i]))
 	    {
 		status_ptr = (array_of_statuses != MPI_STATUSES_IGNORE) ? &array_of_statuses[n_active] : MPI_STATUS_IGNORE;
 		rc = MPIR_Request_complete(&array_of_requests[i], request_ptrs[i], status_ptr, &active_flag);

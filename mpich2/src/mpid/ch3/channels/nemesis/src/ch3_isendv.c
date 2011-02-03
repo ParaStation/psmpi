@@ -22,10 +22,18 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
     int mpi_errno = MPI_SUCCESS;
     int again = 0;
     int j;
+    int in_cs = FALSE;
     MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISENDV);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISENDV);
+
+    if (vc->state == MPIDI_VC_STATE_MORIBUND) {
+        sreq->status.MPI_ERROR = MPI_SUCCESS;
+        MPIU_ERR_SET1(sreq->status.MPI_ERROR, MPI_ERR_OTHER, "**comm_fail", "**comm_fail %d", vc->pg_rank);
+        MPIDI_CH3U_Request_complete(sreq);
+        goto fn_fail;
+    }
 
     if (vc_ch->iSendContig)
     {
@@ -54,8 +62,10 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
     iov[0].MPID_IOV_LEN = sizeof(MPIDI_CH3_Pkt_t);
     MPIDI_DBG_Print_packet((MPIDI_CH3_Pkt_t *)iov[0].MPID_IOV_BUF);
 
+    MPIU_THREAD_CS_ENTER(MPIDCOMM,);
+    in_cs = TRUE;
+
     if (MPIDI_CH3I_SendQ_empty (CH3_NORMAL_QUEUE))
-	/* MT */
     {
 	MPID_IOV *remaining_iov = iov;
 	int remaining_n_iov = n_iov;
@@ -158,11 +168,15 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
         /* this is not the first send on the queue, enqueue it then
            check to see if we can send any now */
         MPIDI_CH3I_SendQ_enqueue(sreq, CH3_NORMAL_QUEUE);
-        mpi_errno = MPIDI_CH3_Progress_test();
+        mpi_errno = MPIDI_CH3I_Shm_send_progress();
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
 
  fn_exit:
+    if (in_cs) {
+        MPIU_THREAD_CS_EXIT(MPIDCOMM,);
+    }
+
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_ISENDV);
     return mpi_errno;
  fn_fail:

@@ -1,8 +1,12 @@
-.TH MPI_Info_get_valuelen 3 "9/17/2009" " " "MPI"
+.TH MPI_Info_get_valuelen 3 "7/29/2010" " " "MPI"
 .SH NAME
 MPI_Info_get_valuelen \-  Retrieves the length of the value associated with  a key 
 .SH SYNOPSIS
 .nf
+#undef FUNCNAME
+#define FUNCNAME MPIRInfo_get_valuelen
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPI_Info_get_valuelen( MPI_Info info, char *key, int *valuelen, int *flag )
 .fi
 .SH INPUT PARAMETERS

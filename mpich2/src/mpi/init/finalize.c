@@ -118,7 +118,6 @@ int MPI_Finalize( void )
 #if defined(HAVE_USLEEP) && defined(USE_COVERAGE)
     int rank=0;
 #endif
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_FINALIZE_STATE_DECL(MPID_STATE_MPI_FINALIZE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -165,6 +164,7 @@ int MPI_Finalize( void )
      * At this point, we will release any user-defined error handlers on 
      * comm self and comm world
      */
+    /* no MPI_OBJ CS needed here */
     if (MPIR_Process.comm_world->errhandler && 
 	! (HANDLE_GET_KIND(MPIR_Process.comm_world->errhandler->handle) == 
 	   HANDLE_KIND_BUILTIN) ) {
@@ -218,40 +218,14 @@ int MPI_Finalize( void )
 
     /* FIXME: Many of these debugging items could/should be callbacks, 
        added to the finalize callback list */
-    /* FIXME: Both the memory tracing and debug nesting code blocks should
-       be finalize callbacks */
+    /* FIXME: the memory tracing code block should be a finalize callback */
     /* If memory debugging is enabled, check the memory here, after all
        finalize callbacks */
-#ifdef MPICH_DEBUG_NESTING
-    {
-	int parmFound, parmValue;
-
-	MPIU_Param_register( "nestcheck", "NESTCHECK", 
-	     "List any memory that was allocated by MPICH2 and that remains allocated when MPI_Finalize completes" );
-	parmFound = MPL_env2bool( "MPICH_NESTCHECK", &parmValue );
-	if (!parmFound) parmValue = 1;
-	if (parmValue) {
-	    MPIU_THREADPRIV_GET;
-	    /* Check for an error in the nesting level */
-	    if (MPIR_Nest_value()) {
-		int i,n;
-		n = MPIR_Nest_value();
-		fprintf( stderr, "Unexpected value for nesting level = %d\n", n );
-		fprintf( stderr, "Nest stack is:\n" );
-		for (i=n-1; i>=0; i--) {
-		    fprintf( stderr, "\t[%d] %s:%d\n", i, 
-			     MPIU_THREADPRIV_FIELD(nestinfo[i].file), 
-			     MPIU_THREADPRIV_FIELD(nestinfo[i].line) );
-		}
-	    }
-	}
-    }
-#endif
 
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     MPIR_Process.initialized = MPICH_POST_FINALIZED;
 
-    MPID_CS_FINALIZE();
+    MPIU_THREAD_CS_FINALIZE;
 
     /* We place the memory tracing at the very end because any of the other
        steps may have allocated memory that they still need to release*/
@@ -260,16 +234,7 @@ int MPI_Finalize( void )
        go to separate files or to be sorted by rank (note that
        the rank is at the head of the line) */
     {
-	int parmFound, parmValue;
-	/* The Param_register is used to document the parameters.  A 
-	   script will extract the information about these parameters,
-	   allowing the documentation to stay up-to-date with the use of the
-	   parameters (this script is still to be written) */
-	MPIU_Param_register( "memdump", "MEMDUMP", 
-	     "List any memory that was allocated by MPICH2 and that remains allocated when MPI_Finalize completes" );
-	parmFound = MPL_env2bool( "MPICH_MEMDUMP", &parmValue );
-	if (!parmFound) parmValue = 1;
-	if (parmValue) {
+	if (MPIR_PARAM_MEMDUMP) {
 	    /* The second argument is the min id to print; memory allocated 
 	       after MPI_Init is given an id of one.  This allows us to
 	       ignore, if desired, memory leaks in the MPID_Init call */

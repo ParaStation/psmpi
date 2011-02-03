@@ -187,5 +187,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_dist_graph_neighbors_count( MPI_Fint *,
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_neighbors_count_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *ierr ){
-    *ierr = MPI_Dist_graph_neighbors_count( (MPI_Comm)(*v1), v2, v3, v4 );
+    int l4;
+    *ierr = MPI_Dist_graph_neighbors_count( (MPI_Comm)(*v1), v2, v3, &l4 );
+    *v4 = MPIR_TO_FLOG(l4);
 }

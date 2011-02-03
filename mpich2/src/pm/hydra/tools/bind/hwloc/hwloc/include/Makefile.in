@@ -15,10 +15,12 @@
 
 @SET_MAKE@
 
-# Copyright 2009 INRIA, Université Bordeaux 1
-# Copyright 2009 Cisco Systems, Inc.  All rights reserved.
+# Copyright © 2009-2010 INRIA
+# Copyright © 2009-2010 Université Bordeaux 1
+# Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 
-# Copyright 2009 INRIA, Université Bordeaux 1
+# Only install the headers if we're in standalone mode (meaning:
+# *don't* install the headers if we're in embedded mode).
 
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
@@ -40,23 +42,26 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-DIST_COMMON = $(am__include_hwloc_HEADERS_DIST) \
-	$(am__noinst_HEADERS_DIST) $(include_HEADERS) \
-	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(top_srcdir)/hwloc.am
-@HAVE_LINUX_TRUE@am__append_1 = hwloc/linux.h hwloc/linux-libnuma.h
-@HAVE_LINUX_FALSE@am__append_2 = hwloc/linux.h hwloc/linux-libnuma.h
-@HAVE_SCHED_SETAFFINITY_TRUE@am__append_3 = hwloc/glibc-sched.h
-@HAVE_SCHED_SETAFFINITY_FALSE@am__append_4 = hwloc/glibc-sched.h
+@HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_LINUX_TRUE@am__append_1 = \
+@HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_LINUX_TRUE@        hwloc/linux.h \
+@HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_LINUX_TRUE@        hwloc/linux-libnuma.h
+
+@HWLOC_BUILD_STANDALONE_TRUE@@HWLOC_HAVE_SCHED_SETAFFINITY_TRUE@am__append_2 = hwloc/glibc-sched.h
 subdir = include
+DIST_COMMON = $(am__include_HEADERS_DIST) \
+	$(am__include_hwloc_HEADERS_DIST) $(am__noinst_HEADERS_DIST) \
+	$(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/decl.m4 \
-	$(top_srcdir)/config/hwloc.m4 $(top_srcdir)/config/libtool.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/hwloc.m4 \
+	$(top_srcdir)/config/hwloc_check_attributes.m4 \
+	$(top_srcdir)/config/hwloc_check_visibility.m4 \
+	$(top_srcdir)/config/hwloc_internal.m4 \
+	$(top_srcdir)/config/hwloc_pkg.m4 \
+	$(top_srcdir)/config/libtool.m4 \
 	$(top_srcdir)/config/ltoptions.m4 \
 	$(top_srcdir)/config/ltsugar.m4 \
 	$(top_srcdir)/config/ltversion.m4 \
-	$(top_srcdir)/config/lt~obsolete.m4 \
-	$(top_srcdir)/config/pkg.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/config/lt~obsolete.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -64,8 +69,15 @@ CONFIG_HEADER = $(top_builddir)/include/private/config.h \
 	$(top_builddir)/include/hwloc/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+AM_V_GEN = $(am__v_GEN_$(V))
+am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
+am__v_GEN_0 = @echo "  GEN   " $@;
+AM_V_at = $(am__v_at_$(V))
+am__v_at_ = $(am__v_at_$(AM_DEFAULT_VERBOSITY))
+am__v_at_0 = @
 SOURCES =
 DIST_SOURCES =
+am__include_HEADERS_DIST = hwloc.h
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -90,12 +102,12 @@ am__base_list = \
 am__installdirs = "$(DESTDIR)$(includedir)" \
 	"$(DESTDIR)$(include_hwlocdir)" \
 	"$(DESTDIR)$(include_hwlocdir)"
-am__include_hwloc_HEADERS_DIST = hwloc/cpuset.h hwloc/helper.h \
-	hwloc/openfabrics-verbs.h hwloc/linux.h hwloc/linux-libnuma.h \
-	hwloc/glibc-sched.h
+am__include_hwloc_HEADERS_DIST = hwloc/bitmap.h hwloc/cpuset.h \
+	hwloc/helper.h hwloc/myriexpress.h hwloc/openfabrics-verbs.h \
+	hwloc/cuda.h hwloc/cudart.h hwloc/rename.h hwloc/linux.h \
+	hwloc/linux-libnuma.h hwloc/glibc-sched.h
 am__noinst_HEADERS_DIST = private/private.h private/debug.h \
-	private/cpuset.h hwloc/linux.h hwloc/linux-libnuma.h \
-	hwloc/glibc-sched.h
+	private/misc.h private/cpuid.h
 HEADERS = $(include_HEADERS) $(include_hwloc_HEADERS) \
 	$(nodist_include_hwloc_HEADERS) $(noinst_HEADERS)
 ETAGS = etags
@@ -103,6 +115,7 @@ CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
 AS = @AS@
 AUTOCONF = @AUTOCONF@
@@ -110,8 +123,7 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BASH = @BASH@
-CAIRO_CFLAGS = @CAIRO_CFLAGS@
-CAIRO_LIBS = @CAIRO_LIBS@
+BUNZIPP = @BUNZIPP@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -129,25 +141,45 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+EPSTOPDF = @EPSTOPDF@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 FIG2DEV = @FIG2DEV@
-GCC_CFLAGS = @GCC_CFLAGS@
 GREP = @GREP@
-HAVE_XML = @HAVE_XML@
+GS = @GS@
+HWLOC_CAIRO_CFLAGS = @HWLOC_CAIRO_CFLAGS@
+HWLOC_CAIRO_LIBS = @HWLOC_CAIRO_LIBS@
+HWLOC_CFLAGS = @HWLOC_CFLAGS@
+HWLOC_CPPFLAGS = @HWLOC_CPPFLAGS@
 HWLOC_DIFF_U = @HWLOC_DIFF_U@
+HWLOC_EMBEDDED_CFLAGS = @HWLOC_EMBEDDED_CFLAGS@
+HWLOC_EMBEDDED_CPPFLAGS = @HWLOC_EMBEDDED_CPPFLAGS@
+HWLOC_EMBEDDED_LDADD = @HWLOC_EMBEDDED_LDADD@
+HWLOC_EMBEDDED_LIBS = @HWLOC_EMBEDDED_LIBS@
+HWLOC_HAVE_XML = @HWLOC_HAVE_XML@
+HWLOC_KERRIGHED_CFLAGS = @HWLOC_KERRIGHED_CFLAGS@
+HWLOC_KERRIGHED_LIBS = @HWLOC_KERRIGHED_LIBS@
+HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
+HWLOC_LIBS = @HWLOC_LIBS@
+HWLOC_LINUX_LIBNUMA_LIBS = @HWLOC_LINUX_LIBNUMA_LIBS@
 HWLOC_MS_LIB = @HWLOC_MS_LIB@
+HWLOC_PKG_CONFIG = @HWLOC_PKG_CONFIG@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
 HWLOC_SVN_R = @HWLOC_SVN_R@
+HWLOC_TERMCAP_LIBS = @HWLOC_TERMCAP_LIBS@
 HWLOC_VERSION = @HWLOC_VERSION@
+HWLOC_W3_GENERATOR = @HWLOC_W3_GENERATOR@
+HWLOC_X11_LIBS = @HWLOC_X11_LIBS@
+HWLOC_XML_CFLAGS = @HWLOC_XML_CFLAGS@
+HWLOC_XML_LIBS = @HWLOC_XML_LIBS@
+HWLOC_top_builddir = @HWLOC_top_builddir@
+HWLOC_top_srcdir = @HWLOC_top_srcdir@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-KERRIGHED_CFLAGS = @KERRIGHED_CFLAGS@
-KERRIGHED_LIBS = @KERRIGHED_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
@@ -174,18 +206,20 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PDFLATEX = @PDFLATEX@
-PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 SED = @SED@
+SED_I = @SED_I@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
 W3M = @W3M@
-W3_GENERATOR = @W3_GENERATOR@
+XMKMF = @XMKMF@
 XMLLINT = @XMLLINT@
-XML_CFLAGS = @XML_CFLAGS@
-XML_LIBS = @XML_LIBS@
+X_CFLAGS = @X_CFLAGS@
+X_EXTRA_LIBS = @X_EXTRA_LIBS@
+X_LIBS = @X_LIBS@
+X_PRE_LIBS = @X_PRE_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -243,20 +277,26 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CFLAGS = $(GCC_CFLAGS)
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
-AM_LDFLAGS = -L$(top_builddir)/src
-include_HEADERS = hwloc.h
-include_hwlocdir = $(includedir)/hwloc
-include_hwloc_HEADERS = hwloc/cpuset.h hwloc/helper.h \
-	hwloc/openfabrics-verbs.h $(am__append_1) $(am__append_3)
-nodist_include_hwloc_HEADERS = hwloc/config.h 
-noinst_HEADERS = private/private.h private/debug.h private/cpuset.h \
-	$(am__append_2) $(am__append_4)
+@HWLOC_BUILD_STANDALONE_TRUE@include_HEADERS = hwloc.h
+@HWLOC_BUILD_STANDALONE_TRUE@include_hwlocdir = $(includedir)/hwloc
+@HWLOC_BUILD_STANDALONE_TRUE@include_hwloc_HEADERS = hwloc/bitmap.h \
+@HWLOC_BUILD_STANDALONE_TRUE@	hwloc/cpuset.h hwloc/helper.h \
+@HWLOC_BUILD_STANDALONE_TRUE@	hwloc/myriexpress.h \
+@HWLOC_BUILD_STANDALONE_TRUE@	hwloc/openfabrics-verbs.h \
+@HWLOC_BUILD_STANDALONE_TRUE@	hwloc/cuda.h hwloc/cudart.h \
+@HWLOC_BUILD_STANDALONE_TRUE@	hwloc/rename.h $(am__append_1) \
+@HWLOC_BUILD_STANDALONE_TRUE@	$(am__append_2)
+@HWLOC_BUILD_STANDALONE_TRUE@nodist_include_hwloc_HEADERS = hwloc/config.h 
+@HWLOC_BUILD_STANDALONE_TRUE@noinst_HEADERS = \
+@HWLOC_BUILD_STANDALONE_TRUE@        private/private.h \
+@HWLOC_BUILD_STANDALONE_TRUE@        private/debug.h \
+@HWLOC_BUILD_STANDALONE_TRUE@        private/misc.h \
+@HWLOC_BUILD_STANDALONE_TRUE@        private/cpuid.h
+
 all: all-am
 
 .SUFFIXES:
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(top_srcdir)/hwloc.am $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \

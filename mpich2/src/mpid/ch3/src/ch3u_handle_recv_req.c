@@ -198,12 +198,9 @@ int MPIDI_CH3_ReqHandler_AccumRespDerivedDTComplete( MPIDI_VC_t *vc ATTRIBUTE((u
     MPID_Datatype *new_dtp = NULL;
     MPI_Aint true_lb, true_extent, extent;
     void *tmp_buf;
-    MPIU_THREADPRIV_DECL;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_REQHANDLER_ACCUMRESPDERIVEDDTCOMPLETE);
     
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_REQHANDLER_ACCUMRESPDERIVEDDTCOMPLETE);
-    
-    MPIU_THREADPRIV_GET;
     
     /* create derived datatype */
     create_derived_datatype(rreq, &new_dtp);
@@ -213,20 +210,14 @@ int MPIDI_CH3_ReqHandler_AccumRespDerivedDTComplete( MPIDI_VC_t *vc ATTRIBUTE((u
     
     /* first need to allocate tmp_buf to recv the data into */
     
-    MPIR_Nest_incr();
-    mpi_errno = NMPI_Type_get_true_extent(new_dtp->handle, 
-					  &true_lb, &true_extent);
-    MPIR_Nest_decr();
-    if (mpi_errno) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-    
+    MPIR_Type_get_true_extent_impl(new_dtp->handle, &true_lb, &true_extent);
     MPID_Datatype_get_extent_macro(new_dtp->handle, extent); 
     
     tmp_buf = MPIU_Malloc(rreq->dev.user_count * 
 			  (MPIR_MAX(extent,true_extent)));  
     if (!tmp_buf) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,"**nomem","**nomem %d",
+		    rreq->dev.user_count * MPIR_MAX(extent,true_extent));
     }
     
     /* adjust for potential negative lower bound in datatype */
@@ -288,7 +279,7 @@ int MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete( MPIDI_VC_t *vc,
     
     /* create request for sending data */
     sreq = MPID_Request_create();
-    MPIU_ERR_CHKANDJUMP(sreq == NULL, mpi_errno,MPI_ERR_OTHER,"**nomem");
+    MPIU_ERR_CHKANDJUMP(sreq == NULL, mpi_errno,MPI_ERR_OTHER,"**nomemreq");
     
     sreq->kind = MPID_REQUEST_SEND;
     MPIDI_Request_set_type(sreq, MPIDI_REQUEST_TYPE_GET_RESP);
@@ -324,7 +315,7 @@ int MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete( MPIDI_VC_t *vc,
         MPIU_Object_set_ref(sreq, 0);
         MPIDI_CH3_Request_destroy(sreq);
         sreq = NULL;
-        MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|rmamsg");
+        MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|rmamsg");
     }
     /* --END ERROR HANDLING-- */
     
@@ -562,7 +553,8 @@ static int create_derived_datatype(MPID_Request *req, MPID_Datatype **dtp)
     /* allocate new datatype object and handle */
     new_dtp = (MPID_Datatype *) MPIU_Handle_obj_alloc(&MPID_Datatype_mem);
     if (!new_dtp) {
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
+	MPIU_ERR_SETANDJUMP1(mpi_errno,MPI_ERR_OTHER,"**nomem","**nomem %s",
+			     "MPID_Datatype_mem" );
     }
 
     *dtp = new_dtp;
@@ -617,12 +609,9 @@ static int do_accumulate_op(MPID_Request *rreq)
     int mpi_errno = MPI_SUCCESS, predefined;
     MPI_Aint true_lb, true_extent;
     MPI_User_function *uop;
-    MPIU_THREADPRIV_DECL;
     MPIDI_STATE_DECL(MPID_STATE_DO_ACCUMULATE_OP);
     
     MPIDI_FUNC_ENTER(MPID_STATE_DO_ACCUMULATE_OP);
-
-    MPIU_THREADPRIV_GET;
 
     if (rreq->dev.op == MPI_REPLACE)
     {
@@ -641,7 +630,7 @@ static int do_accumulate_op(MPID_Request *rreq)
     if (HANDLE_GET_KIND(rreq->dev.op) == HANDLE_KIND_BUILTIN)
     {
         /* get the function by indexing into the op table */
-        uop = MPIR_Op_table[(rreq->dev.op)%16 - 1];
+        uop = MPIR_Op_table[((rreq->dev.op)&0xf) - 1];
     }
     else
     {
@@ -713,13 +702,7 @@ static int do_accumulate_op(MPID_Request *rreq)
 
  fn_exit:
     /* free the temporary buffer */
-    MPIR_Nest_incr();
-    mpi_errno = NMPI_Type_get_true_extent(rreq->dev.datatype, &true_lb, &true_extent);
-    MPIR_Nest_decr();
-    if (mpi_errno) {
-	MPIU_ERR_POP(mpi_errno);
-    }
-    
+    MPIR_Type_get_true_extent_impl(rreq->dev.datatype, &true_lb, &true_extent);
     MPIU_Free((char *) rreq->dev.user_buf + true_lb);
 
     MPIDI_FUNC_EXIT(MPID_STATE_DO_ACCUMULATE_OP);
@@ -932,7 +915,7 @@ int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t *vc, MPI_Win source_win_handle)
 					      sizeof(*pt_rma_done_pkt), &req));
     /* MPIU_THREAD_CS_EXIT(CH3COMM,vc); */
     if (mpi_errno != MPI_SUCCESS) {
-	MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|rmamsg");
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|rmamsg");
     }
 
     if (req != NULL)
@@ -973,7 +956,7 @@ static int do_simple_accumulate(MPIDI_PT_single_op *single_op)
     if (HANDLE_GET_KIND(single_op->op) == HANDLE_KIND_BUILTIN)
     {
         /* get the function by indexing into the op table */
-        uop = MPIR_Op_table[(single_op->op)%16 - 1];
+        uop = MPIR_Op_table[((single_op->op)&0xf) - 1];
     }
     else
     {
@@ -1012,7 +995,7 @@ static int do_simple_get(MPID_Win *win_ptr, MPIDI_Win_lock_queue *lock_queue)
 
     req = MPID_Request_create();
     if (req == NULL) {
-        MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
+        MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomemreq");
     }
     req->dev.target_win_handle = win_ptr->handle;
     req->dev.source_win_handle = lock_queue->source_win_handle;
@@ -1042,7 +1025,7 @@ static int do_simple_get(MPID_Win *win_ptr, MPIDI_Win_lock_queue *lock_queue)
     {
         MPIU_Object_set_ref(req, 0);
         MPIDI_CH3_Request_destroy(req);
-	MPIU_ERR_SETFATALANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|rmamsg");
+	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|rmamsg");
     }
     /* --END ERROR HANDLING-- */
 

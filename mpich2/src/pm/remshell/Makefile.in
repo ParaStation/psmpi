@@ -32,14 +32,13 @@ C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
-DOCTEXT         = @DOCTEXT@
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
     -I../../pmi/simple -I${master_top_srcdir}/src/pmi/simple \
 	-I${master_top_srcdir}/src/pm/util 
 doc_sources = mpiexec.txt
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .man .html .latex .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -56,8 +55,6 @@ doc_sources = mpiexec.txt
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -65,38 +62,6 @@ doc_sources = mpiexec.txt
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-.txt.man:
-	$(DOCTEXT) -man -mpath ../../../man/man1 -ext 1 -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes ${master_top_srcdir}/doc/mansrc/cmdnotes $<
-.txt.html:
-	$(DOCTEXT) -html -mpath ../../../www/www1  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes ${master_top_srcdir}/doc/mansrc/cmdnotes $<
-.txt.latex:
-	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes ${master_top_srcdir}/doc/mansrc/cmdnotes $<
-
-${srcdir}/remshellconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
-	@rm -rf autom4te*.cache
-	(cd ${srcdir} && autoheader -I ../../../confdb && \
-	autoconf -I \
-	../../../confdb ) 
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=src/pm/remshell/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile config.status config.log config.cache *conf.cache config.system" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-if [ -x config.status ] ; then CONFIG_FILES=Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
@@ -104,9 +69,6 @@ clean:  clean-local
 	-@rm -f mpiexec.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
@@ -115,56 +77,27 @@ distclean-xxx:
 	-@rm -f remshellconf.h
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
-	-rm -f remshellconf.h.in 
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: mpiexec
 
-coverage: 
 mpiexec: mpiexec.o  ../util/libmpiexec.a  
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o mpiexec mpiexec.o  -L../util \
-	-lmpiexec  ${LIBS} 
-# --------------------------------------------------------------------------
-mandoc: ${doc_sources:.txt=.man}
-htmldoc: ${doc_sources:.txt=.html}
-latexdoc: ${doc_sources:.txt=.latex}
-# --------------------------------------------------------------------------
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o mpiexec mpiexec.o  -L../util -lmpiexec  ${LIBS}
 # --------------------------------------------------------------------------
 # Install target
 install:  FORCE_TARGET 
 	if [ ! -d ${DESTDIR}${exec_prefix} ] ; then $(MKDIR_P) ${DESTDIR}${exec_prefix} ; fi
 	if [ ! -d ${DESTDIR}${prefix} ] ; then $(MKDIR_P) ${DESTDIR}${prefix} ; fi
 	if [ ! -d ${DESTDIR}${bindir} ] ; then $(MKDIR_P) ${DESTDIR}${bindir} ; fi
-	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG) mpiexec ${DESTDIR}${bindir}/mpiexec
+	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)  mpiexec ${DESTDIR}${bindir}/mpiexec
 
 install-strip:
 	$(MAKE) INSTALL_STRIP_FLAG=-s install
 uninstall: 
 	-rm -f ${DESTDIR}${bindir}/mpiexec
 installcheck: 
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/timestamp: mpiexec.c  Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C mpiexec.c > $(DEPS_DIR)/mpiexec.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/mpiexec.c >$(DEPS_DIR)/mpiexec.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/mpiexec.c >$(DEPS_DIR)/mpiexec.d
-	echo "include $(DEPS_DIR)/mpiexec.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  mpiexec.c
@@ -196,6 +129,8 @@ install-alt: mpiexec
 ../util/libmpiexec.a: dummy
 dummy:
 	cd ../util && $(MAKE)
+
+.POSIX:
 
 FORCE_TARGET:
 

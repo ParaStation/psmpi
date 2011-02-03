@@ -57,7 +57,12 @@ void ADIOI_LUSTRE_Open(ADIO_File fd, int *error_code)
 	 * then a list of 'lmm_objects' representing stripe */
         lumlen = sizeof(struct lov_user_md) +
                  MAX_LOV_UUID_COUNT * sizeof(struct lov_user_ost_data);
-        lum = (struct lov_user_md *)ADIOI_Malloc(lumlen);
+	/* furthermore, Pascal Deveze reports that, even though we pass a
+	 * "GETSTRIPE" (read) flag to the ioctl, if some of the values of this
+	 * struct are uninitialzed, the call can give an error.  calloc in case
+	 * there are other members that must be initialized and in case
+	 * lov_user_md struct changes in future */
+	lum = (struct lov_user_md *)ADIOI_Calloc(1,lumlen);
         lum->lmm_magic = LOV_USER_MAGIC;
         err = ioctl(fd->fd_sys, LL_IOC_LOV_GETSTRIPE, (void *)lum);
         if (!err) {
@@ -65,15 +70,15 @@ void ADIOI_LUSTRE_Open(ADIO_File fd, int *error_code)
 
             fd->hints->striping_unit = lum->lmm_stripe_size;
             sprintf(value, "%d", lum->lmm_stripe_size);
-            MPI_Info_set(fd->info, "striping_unit", value);
+            ADIOI_Info_set(fd->info, "striping_unit", value);
 
             fd->hints->striping_factor = lum->lmm_stripe_count;
             sprintf(value, "%d", lum->lmm_stripe_count);
-            MPI_Info_set(fd->info, "striping_factor", value);
+            ADIOI_Info_set(fd->info, "striping_factor", value);
 
             fd->hints->fs_hints.lustre.start_iodevice = lum->lmm_stripe_offset;
             sprintf(value, "%d", lum->lmm_stripe_offset);
-            MPI_Info_set(fd->info, "romio_lustre_start_iodevice", value);
+            ADIOI_Info_set(fd->info, "romio_lustre_start_iodevice", value);
 
             ADIOI_Free(value);
         }

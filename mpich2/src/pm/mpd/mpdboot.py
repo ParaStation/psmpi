@@ -5,10 +5,10 @@
 #
 
 """
-usage:  mpdboot --totalnum=<n_to_start> [--file=<hostsfile>]  [--help] \ 
-                [--rsh=<rshcmd>] [--user=<user>] [--mpd=<mpdcmd>]      \ 
-                [--loccons] [--remcons] [--shell] [--verbose] [-1]     \
-                [--ncpus=<ncpus>] [--ifhn=<ifhn>] [--chkup] [--chkuponly] \
+usage:  mpdboot --totalnum=<n_to_start> [--file=<hostsfile>]  [--help]        \ 
+                [--rsh=<rshcmd>] [--user=<user>] [--mpd=<mpdcmd>]             \ 
+                [--loccons] [--remcons] [--shell] [--verbose] [-1]            \ 
+                [--ncpus=<ncpus>] [--ifhn=<ifhn>] [--chkup] [--chkuponly]     \ 
                 [--maxbranch=<maxbranch>]
  or, in short form, 
         mpdboot -n n_to_start [-f <hostsfile>] [-h] [-r <rshcmd>] [-u <user>] \ 
@@ -65,7 +65,7 @@ from select   import select, error
 from signal   import SIGKILL
 from commands import getoutput, getstatusoutput
 from mpdlib   import mpd_set_my_id, mpd_get_my_username, mpd_same_ips, \
-                     mpd_get_ranks_in_binary_tree, mpd_print, MPDSock
+                     mpd_get_ranks_in_binary_tree, mpd_print, MPDSock, MPDParmDB
 
 global myHost, fullDirName, rshCmd, user, mpdCmd, debug, verbose
 
@@ -200,6 +200,12 @@ def mpdboot():
         else:
             print 'mpdboot: unrecognized argument:', argv[argidx]
             usage()
+
+    # Fix for tt#662, make sure the config file is available to avoid some very
+    # confusing error messages.  We don't actually need these values here.
+    parmdb = MPDParmDB()
+    parmdb.get_parms_from_rcfile(parmsToOverride={}, errIfMissingFile=1)
+
     if debug:
         print 'debug: starting'
 

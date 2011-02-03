@@ -63,7 +63,6 @@ int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype,
     int mpi_errno = MPI_SUCCESS;
     MPID_Request *request_ptr = NULL;
     MPID_Comm *comm_ptr = NULL;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_BSEND_INIT);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -123,7 +122,7 @@ int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype,
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* return the handle of the request to the user */
-    *request = request_ptr->handle;
+    MPIU_OBJ_PUBLISH_HANDLE(*request, request_ptr->handle);
 
     /* ... end of body of routine ... */
     

@@ -15,6 +15,9 @@
    */
 #undef HAVE_ALLOCA_H
 
+/* Define if Fortran MPI_Datatype, 2COMPLEX, exist in C */
+#undef HAVE_FORTRAN_MPI_DATATYPE_2COMPLEX_IN_C
+
 /* Define if Fortran MPI_Datatype, COMPLEXs, exist in C */
 #undef HAVE_FORTRAN_MPI_DATATYPE_COMPLEXX_IN_C
 

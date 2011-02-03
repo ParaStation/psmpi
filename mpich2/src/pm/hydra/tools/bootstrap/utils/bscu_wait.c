@@ -4,38 +4,13 @@
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "hydra_utils.h"
+#include "hydra.h"
 #include "bscu.h"
 
 int *HYD_bscu_fd_list = NULL;
 int HYD_bscu_fd_count = 0;
 int *HYD_bscu_pid_list = NULL;
 int HYD_bscu_pid_count = 0;
-
-static int cleanup = 0;
-
-HYD_status HYDT_bscu_cleanup_procs(void)
-{
-    int i;
-    HYD_status status = HYD_SUCCESS;
-
-    HYDU_FUNC_ENTER();
-
-    for (i = 0; i < HYD_bscu_pid_count; i++)
-        if (HYD_bscu_pid_list[i] != -1) {
-            kill(HYD_bscu_pid_list[i], SIGTERM);
-            kill(HYD_bscu_pid_list[i], SIGKILL);
-        }
-
-    cleanup = 1;
-
-  fn_exit:
-    HYDU_FUNC_EXIT();
-    return status;
-
-  fn_fail:
-    goto fn_exit;
-}
 
 HYD_status HYDT_bscu_wait_for_completion(int timeout)
 {
@@ -58,10 +33,6 @@ HYD_status HYDT_bscu_wait_for_completion(int timeout)
             if (HYD_bscu_fd_list[i] == HYD_FD_CLOSED)
                 continue;
 
-            /* If we need to cleanup, don't wait for any events */
-            if (cleanup)
-                continue;
-
             ret = HYDT_dmx_query_fd_registration(HYD_bscu_fd_list[i]);
             if (ret) {  /* still registered */
                 count++;        /* We still need to wait */
@@ -82,6 +53,23 @@ HYD_status HYDT_bscu_wait_for_completion(int timeout)
 
                 status = HYDT_dmx_wait_for_event(time_left);
                 HYDU_ERR_POP(status, "error waiting for event\n");
+
+                /* Check if any processes terminated badly; if they
+                 * did, return an error. */
+                pid = waitpid(-1, &ret, WNOHANG);
+                if (pid > 0) {
+                    /* Find the pid and mark it as complete */
+                    for (i = 0; i < HYD_bscu_pid_count; i++)
+                        if (HYD_bscu_pid_list[i] == pid) {
+                            HYD_bscu_pid_list[i] = -1;
+                            break;
+                        }
+
+                    if (ret) {
+                        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
+                                            "one of the processes terminated badly; aborting\n");
+                    }
+                }
 
                 goto restart_wait;
             }
@@ -113,6 +101,18 @@ HYD_status HYDT_bscu_wait_for_completion(int timeout)
                     break;
                 }
         }
+    }
+
+    if (HYD_bscu_pid_list) {
+        HYDU_FREE(HYD_bscu_pid_list);
+        HYD_bscu_pid_list = NULL;
+        HYD_bscu_pid_count = 0;
+    }
+
+    if (HYD_bscu_fd_list) {
+        HYDU_FREE(HYD_bscu_fd_list);
+        HYD_bscu_fd_list = NULL;
+        HYD_bscu_fd_count = 0;
     }
 
   fn_exit:

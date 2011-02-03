@@ -18,9 +18,6 @@
 /* Include the mpi definitions */
 #include "mpi.h"
 
-/* Include nested mpi (NMPI) definitions */
-#include "nmpi.h"
-
 /* There are a few definitions that must be made *before* the mpichconf.h
    file is included.  These include the definitions of the error levels and some
    thread granularity constants */
@@ -234,7 +231,7 @@ void MPIU_DBG_PrintVCState(MPIDI_VC_t *vc);
  else { \
     printf( "[%d]%s returned %d (errno = %d,%s)\n", \
           MPIR_Process.comm_world->rank, \
-          #b_, a_, errno, strerror(errno));\
+          #b_, a_, errno, MPIU_Strerror(errno));\
     };           fflush(stdout);}
 #else
 #define MPIU_SYSCALL(a_,b_,c_) a_ = b_ c_
@@ -372,6 +369,9 @@ void *MPIU_Handle_indirect_init( void *(**)[], int *, int, int, int, int );
 int MPIU_Handle_free( void *((*)[]), int );
 */
 /* Convert Handles to objects for MPI types that have predefined objects */
+/* TODO examine generated assembly for this construct, it's probably suboptimal
+ * on Blue Gene.  An if/else if/else might help the compiler out.  It also lets
+ * us hint that one case is likely(), usually the BUILTIN case. */
 #define MPID_Getb_ptr(kind,a,bmsk,ptr)                                  \
 {                                                                       \
    switch (HANDLE_GET_KIND(a)) {                                        \
@@ -502,8 +502,6 @@ int MPIU_Handle_free( void *((*)[]), int );
 /* ------------------------------------------------------------------------- */
 /* end of code that should the following be moved into mpihandlemem.h ?*/
 /* ------------------------------------------------------------------------- */
-
-#include "mpiparam.h"
 
 /* ------------------------------------------------------------------------- */
 /* Info */
@@ -1001,12 +999,26 @@ typedef struct MPID_Group {
     int          idx_of_first_lpid;
     MPID_Group_pmap_t *lrank_to_lpid; /* Array mapping a local rank to local 
 					 process number */
+    int          is_local_dense_monotonic; /* see NOTE-G1 */
+
     /* We may want some additional data for the RMA syncrhonization calls */
   /* Other, device-specific information */
 #ifdef MPID_DEV_GROUP_DECL
     MPID_DEV_GROUP_DECL
 #endif
 } MPID_Group;
+
+/* NOTE-G1: is_local_dense_monotonic will be true iff the group meets the
+ * following criteria:
+ * 1) the lpids are all in the range [0,size-1], i.e. a subset of comm world
+ * 2) the pids are sequentially numbered in increasing order, without any gaps,
+ *    stride, or repetitions
+ *
+ * This additional information allows us to handle the common case (insofar as
+ * group ops are common) for MPI_Group_translate_ranks where group2 is
+ * group_of(MPI_COMM_WORLD), or some simple subset.  This is an important use
+ * case for many MPI tool libraries, such as Scalasca.
+ */
 
 extern MPIU_Object_alloc_t MPID_Group_mem;
 /* Preallocated group objects */
@@ -1031,6 +1043,16 @@ int MPIR_GroupCheckVCRSubset( MPID_Group *group_ptr, int vsize, MPID_VCR *vcr, i
 typedef enum MPID_Comm_kind_t { 
     MPID_INTRACOMM = 0, 
     MPID_INTERCOMM = 1 } MPID_Comm_kind_t;
+
+/* ideally we could add these to MPID_Comm_kind_t, but there's too much existing
+ * code that assumes that the only valid values are INTRACOMM or INTERCOMM */
+typedef enum MPID_Comm_hierarchy_kind_t {
+    MPID_HIERARCHY_FLAT = 0,        /* no hierarchy */
+    MPID_HIERARCHY_PARENT = 1,      /* has subcommunicators */
+    MPID_HIERARCHY_NODE_ROOTS = 2,  /* is the subcomm for node roots */
+    MPID_HIERARCHY_NODE = 3,        /* is the subcomm for a node */
+    MPID_HIERARCHY_SIZE             /* cardinality of this enum */
+} MPID_Comm_hierarchy_kind_t;
 /* Communicators */
 
 /*S
@@ -1116,8 +1138,8 @@ typedef struct MPID_Comm {
     MPID_Errhandler *errhandler; /* Pointer to the error handler structure */
     struct MPID_Comm    *local_comm; /* Defined only for intercomms, holds
 				        an intracomm for the local group */
-    int is_node_aware;           /* true if node topology info is available,
-                                    such as node_comm and node_roots_comm */
+
+    MPID_Comm_hierarchy_kind_t hierarchy_kind; /* flat, parent, node, or node_roots */
     struct MPID_Comm *node_comm; /* Comm of processes in this comm that are on
                                     the same node as this process. */
     struct MPID_Comm *node_roots_comm; /* Comm of root processes for other nodes. */
@@ -1128,6 +1150,7 @@ typedef struct MPID_Comm {
     int *internode_table;        /* internode_table[i] gives the rank in
                                     node_roots_comm of rank i in this comm.
                                     It is of size 'local_size'. */
+
     int           is_low_group;  /* For intercomms only, this boolean is
 				    set for all members of one of the 
 				    two groups of processes and clear for 
@@ -1260,6 +1283,8 @@ extern MPID_Comm MPID_Comm_direct[];
    to create a new communicator after a spawn or connect-accept operation, 
    the device may need to create a new contextid */
 int MPIR_Get_contextid( MPID_Comm *, MPIR_Context_id_t *context_id );
+int MPIR_Get_contextid_sparse(MPID_Comm *comm_ptr, MPIR_Context_id_t *context_id, int ignore_id);
+void MPIR_Free_contextid( MPIR_Context_id_t );
 
 /* ------------------------------------------------------------------------- */
 
@@ -1291,6 +1316,10 @@ typedef void (MPIR_Grequest_f77_cancel_function)(void *, int*, int *);
 typedef void (MPIR_Grequest_f77_free_function)(void *, int *); 
 typedef void (MPIR_Grequest_f77_query_function)(void *, MPI_Status *, int *); 
 
+
+/* see mpiimplthread.h for the def of MPID_cc_t and related functions/macros */
+#define MPID_Request_is_complete(req_) (MPID_cc_is_complete((req_)->cc_ptr))
+
 /*S
   MPID_Request - Description of the Request data structure
 
@@ -1310,11 +1339,11 @@ typedef struct MPID_Request {
     MPIU_OBJECT_HEADER; /* adds handle and ref_count fields */
     MPID_Request_kind_t kind;
     /* completion counter */
-    volatile int cc;
+    MPID_cc_t cc;
     /* pointer to the completion counter */
     /* This is necessary for the case when an operation is described by a 
        list of requests */
-    int volatile *cc_ptr;
+    MPID_cc_t *cc_ptr;
     /* A comm is needed to find the proper error handler */
     MPID_Comm *comm;
     /* Status is needed for wait/test/recv */
@@ -1479,7 +1508,9 @@ typedef struct MPID_Win {
     MPID_Attribute *attributes;
     MPID_Group *start_group_ptr; /* group passed in MPI_Win_start */
     int start_assert;            /* assert passed to MPI_Win_start */
-    MPI_Comm    comm;         /* communicator of window (dup) */
+    MPID_Comm *comm_ptr;         /* Pointer to comm of window (dup) */
+    int         myrank;          /* Rank of this process in comm (used to 
+				    detect operations on self) */
 #ifdef USE_THREADED_WINDOW_CODE
     /* These were causing compilation errors.  We need to figure out how to
        integrate threads into MPICH2 before including these fields. */
@@ -1706,34 +1737,36 @@ extern MPIU_Object_alloc_t MPID_Op_mem;
 typedef struct MPID_Collops {
     int ref_count;   /* Supports lazy copies */
     /* Contains pointers to the functions for the MPI collectives */
-    int (*Barrier) (MPID_Comm *);
-    int (*Bcast) (void*, int, MPI_Datatype, int, MPID_Comm * );
+    int (*Barrier) (MPID_Comm *, int *);
+    int (*Bcast) (void*, int, MPI_Datatype, int, MPID_Comm *, int *);
     int (*Gather) (void*, int, MPI_Datatype, void*, int, MPI_Datatype, 
-                   int, MPID_Comm *); 
+                   int, MPID_Comm *, int *); 
     int (*Gatherv) (void*, int, MPI_Datatype, void*, int *, int *, 
-                    MPI_Datatype, int, MPID_Comm *); 
+                    MPI_Datatype, int, MPID_Comm *, int *); 
     int (*Scatter) (void*, int, MPI_Datatype, void*, int, MPI_Datatype, 
-                    int, MPID_Comm *);
+                    int, MPID_Comm *, int *);
     int (*Scatterv) (void*, int *, int *, MPI_Datatype, void*, int, 
-                    MPI_Datatype, int, MPID_Comm *);
+                    MPI_Datatype, int, MPID_Comm *, int *);
     int (*Allgather) (void*, int, MPI_Datatype, void*, int, 
-                      MPI_Datatype, MPID_Comm *);
+                      MPI_Datatype, MPID_Comm *, int *);
     int (*Allgatherv) (void*, int, MPI_Datatype, void*, int *, int *, 
-                       MPI_Datatype, MPID_Comm *);
+                       MPI_Datatype, MPID_Comm *, int *);
     int (*Alltoall) (void*, int, MPI_Datatype, void*, int, MPI_Datatype, 
-                               MPID_Comm *);
+                               MPID_Comm *, int *);
     int (*Alltoallv) (void*, int *, int *, MPI_Datatype, void*, int *, 
-                     int *, MPI_Datatype, MPID_Comm *);
+                     int *, MPI_Datatype, MPID_Comm *, int *);
     int (*Alltoallw) (void*, int *, int *, MPI_Datatype *, void*, int *, 
-                     int *, MPI_Datatype *, MPID_Comm *);
+                     int *, MPI_Datatype *, MPID_Comm *, int *);
     int (*Reduce) (void*, void*, int, MPI_Datatype, MPI_Op, int, 
-                   MPID_Comm *);
+                   MPID_Comm *, int *);
     int (*Allreduce) (void*, void*, int, MPI_Datatype, MPI_Op, 
-                      MPID_Comm *);
+                      MPID_Comm *, int *);
     int (*Reduce_scatter) (void*, void*, int *, MPI_Datatype, MPI_Op, 
-                           MPID_Comm *);
-    int (*Scan) (void*, void*, int, MPI_Datatype, MPI_Op, MPID_Comm * );
-    int (*Exscan) (void*, void*, int, MPI_Datatype, MPI_Op, MPID_Comm * );
+                           MPID_Comm *, int *);
+    int (*Scan) (void*, void*, int, MPI_Datatype, MPI_Op, MPID_Comm *, int * );
+    int (*Exscan) (void*, void*, int, MPI_Datatype, MPI_Op, MPID_Comm *, int * );
+    int (*Reduce_scatter_block) (void*, void*, int, MPI_Datatype, MPI_Op, 
+                           MPID_Comm *, int *);
     
 } MPID_Collops;
 
@@ -1767,122 +1800,6 @@ typedef struct MPID_TopoOps {
 /* end of mpitopo.h (in src/mpi/topo? */
 /* ------------------------------------------------------------------------- */
 
-/* Time stamps */
-/* Get the timer definitions.  The source file for this include is
-   src/mpi/timer/mpichtimer.h.in */
-#include "mpichtimer.h"
-
-typedef struct MPID_Stateinfo_t {
-    MPID_Time_t stamp;
-    int count;
-} MPID_Stateinfo_t;
-#define MPICH_MAX_STATES 512
-/* Timer state routines (src/util/instrm/states.c) */
-void MPID_TimerStateBegin( int, MPID_Time_t * );
-void MPID_TimerStateEnd( int, MPID_Time_t * );
-
-/* ------------------------------------------------------------------------- */
-/* Thread types */
-/* Temporary; this will include "mpichthread.h" eventually */
-
-#ifdef MPICH_DEBUG_NESTING
-#define MPICH_MAX_NESTFILENAME 256
-typedef struct MPICH_Nestinfo { 
-    char file[MPICH_MAX_NESTFILENAME];
-    int  line;
-} MPICH_Nestinfo_t;
-#define MPICH_MAX_NESTINFO 16
-#endif /* MPICH_DEBUG_NESTING */
-
-typedef struct MPICH_PerThread_t {
-    int              nest_count;   /* For layered MPI implementation */
-    int              op_errno;     /* For errors in predefined MPI_Ops */
-#ifdef MPICH_DEBUG_NESTING
-    MPICH_Nestinfo_t nestinfo[MPICH_MAX_NESTINFO];
-#endif
-    /* FIXME: Is this used anywhere? */
-#ifdef HAVE_TIMING
-    MPID_Stateinfo_t timestamps[MPICH_MAX_STATES];  /* per thread state info */
-#endif
-#if defined(MPID_DEV_PERTHREAD_DECL)
-    MPID_DEV_PERTHREAD_DECL
-#endif    
-} MPICH_PerThread_t;
-
-#if !defined(MPICH_IS_THREADED)
-/* If single threaded, make this point at a pre-allocated segment.
-   This structure is allocated in src/mpi/init/initthread.c */
-extern MPICH_PerThread_t MPIR_Thread;
-
-/* The following three macros define a way to portably access thread-private
-   storage in MPICH2, and avoid extra overhead when MPICH2 is single 
-   threaded
-   INITKEY - Create the key.  Must happen *before* the other threads 
-             are created
-   INIT    - Create the thread-private storage.  Must happen once per thread
-   DECL    - Declare local variables
-   GET     - Access the thread-private storage
-   FIELD   - Access the thread-private field (by name)
-
-   The "DECL" is the extern so that there is always a statement for
-   the declaration.
-*/
-#define MPIU_THREADPRIV_INITKEY
-#define MPIU_THREADPRIV_INIT 
-/* Empty declarations are not allowed in C. However multiple decls are allowed */
-#define MPIU_THREADPRIV_DECL extern MPICH_PerThread_t MPIR_Thread
-#define MPIU_THREADPRIV_GET
-#define MPIU_THREADPRIV_FIELD(_a) (MPIR_Thread._a)
-
-#elif  defined(HAVE_RUNTIME_THREADCHECK)
-/* In the case where the thread level is set in MPI_Init_thread, we
-   need a blended version of the non-threaded and the thread-multiple
-   definitions.
-   
-   The approach is to have TWO MPICH_PerThread_t pointers.  One is local
-   (The MPIU_THREADPRIV_DECL is used in the routines local definitions), 
-   as in the threaded version of these macros.  This is set by using a routine
-   to get thread-private storage.  The second is a preallocated, extern 
-   MPICH_PerThread_t struct, as in the single threaded case.  Based on
-   MPIR_Process.isThreaded, one or the other is used.
-   
- */
-/* For the single threaded case, we use a preallocated structure 
-   This structure is allocated in src/mpi/init/initthread.c */
-extern MPICH_PerThread_t MPIR_ThreadSingle;
-
-/* We need to provide a function that will cleanup the storage attached
-   to the key.  */
-#define MPIU_THREADPRIV_INITKEY  \
-    {if (MPIR_Process.isThreaded) {\
-	    MPID_Thread_tls_create(MPIR_CleanupThreadStorage,&MPIR_Process.thread_storage,NULL);}}
-#define MPIU_THREADPRIV_INIT {if (MPIR_Process.isThreaded) {\
-	MPICH_PerThread_t *(pt_) = (MPICH_PerThread_t *) MPIU_Calloc(1, sizeof(MPICH_PerThread_t));	\
-	MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) (pt_)); \
-        }}
-#define MPIU_THREADPRIV_DECL \
-    MPICH_PerThread_t *MPIR_Thread=0
-#define MPIU_THREADPRIV_GET  \
-    {if (!MPIR_Thread){MPIR_GetPerThread( &MPIR_Thread );}}
-#define MPIU_THREADPRIV_FIELD(_a) (MPIR_Thread->_a)
-
-#else /* Thread multiple */
-/* The following three macros define a way to portably access thread-private
-   storage in MPICH2, and avoid extra overhead when MPICH2 is single 
-   threaded.  We initialize the MPIR_Thread pointer to null so that
-   we need call the routine to get the thread-private storage only once
-   in an invocation of a routine.  */
-
-#define MPIU_THREADPRIV_INITKEY  \
-    MPID_Thread_tls_create(MPIR_CleanupThreadStorage,&MPIR_Process.thread_storage,NULL)
-#define MPIU_THREADPRIV_INIT {\
-	MPICH_PerThread_t *(pt_) = (MPICH_PerThread_t *) MPIU_Calloc(1, sizeof(MPICH_PerThread_t));	\
-	MPID_Thread_tls_set(&MPIR_Process.thread_storage, (void *) (pt_)); \
-        }
-#define MPIU_THREADPRIV_DECL MPICH_PerThread_t *MPIR_Thread=0
-#define MPIU_THREADPRIV_GET {if (!MPIR_Thread)MPIR_GetPerThread( &MPIR_Thread );}
-#define MPIU_THREADPRIV_FIELD(_a) (MPIR_Thread->_a)
-#endif
 
 /* Per process data */
 typedef enum MPIR_MPI_State_t { MPICH_PRE_INIT=0, MPICH_WITHIN_MPI=1,
@@ -1939,40 +1856,6 @@ typedef struct MPICH_PerProcess_t {
 } MPICH_PerProcess_t;
 extern MPICH_PerProcess_t MPIR_Process;
 
-/*D
-  MPICH_THREAD_LEVEL - Indicates the maximum level of thread
-  support provided at compile time.
- 
-  Values:
-  Any of the 'MPI_THREAD_xxx' values (these are preprocessor-time constants)
-
-  Notes:
-  The macro 'MPICH_THREAD_LEVEL' defines the maximum level of
-  thread support provided, and may be used at compile time to remove
-  thread locks and other code needed only in a multithreaded environment.
-
-  A typical use is 
-.vb
-  #ifdef MPICH_IS_THREADED
-     lock((r)->lock_ptr);
-     (r)->ref_count++;
-     unlock((r)->lock_ptr);
-  #else
-     (r)->ref_count ++;
-  #fi
-.ve
-
-  Note that 'MPICH_IS_THREADED' is defined as 1 if 
-.vb
-  MPICH_THREAD_LEVEL >= MPI_THREAD_MULTIPLE
-.ve
-  is true.  The test should be used only for special cases (such as 
-  handling 'SERIALIZED').
-
-  Module:
-  Environment-DS
-  D*/
-
 /* ------------------------------------------------------------------------- */
 /* In MPICH2, each function has an "enter" and "exit" macro.  These can be 
  * used to add various features to each function at compile time, or they
@@ -1982,20 +1865,13 @@ extern MPICH_PerProcess_t MPIR_Process;
  * 1. timing (controlled by macros in mpitimerimpl.h)
  *    These collect data on when each function began and finished; the
  *    resulting data can be displayed using special programs
- * 2. nesting (selected with --enable-g=nesting)
- *    Checks that the "NMPI" functions and the Nest_incr/decr calls
- *    are properly nested at runtime.  
- * 3. Debug logging (selected with --enable-g=log)
+ * 2. Debug logging (selected with --enable-g=log)
  *    Invokes MPIU_DBG_MSG at the entry and exit for each routine            
- * 4. Additional memory validation of the memory arena (--enable-g=memarena)
+ * 3. Additional memory validation of the memory arena (--enable-g=memarena)
  */
 /* ------------------------------------------------------------------------- */
-/* if fine-grain nest testing is enabled then define the function enter/exit
-   macros to track the nesting level; otherwise, allow the timing module the
-   opportunity to define the macros */
-#if defined(MPICH_DEBUG_FINE_GRAIN_NESTING)
-#   include "mpiu_func_nesting.h"
-#elif defined(MPICH_DEBUG_MEMARENA)
+/* allow the timing module the opportunity to define the macros */
+#if defined(MPICH_DEBUG_MEMARENA)
 #   include "mpifuncmem.h"
 #elif defined(USE_DBG_LOGGING)
 #   include "mpifunclog.h"
@@ -2055,48 +1931,12 @@ extern MPICH_PerProcess_t MPIR_Process;
 #include "mpierror.h"
 #include "mpierrs.h"
 
+/* Definitions for instrumentation (currently used within RMA code) */
+#include "mpiinstr.h"
+
 /* FIXME: This routine is only used within mpi/src/err/errutil.c and 
    smpd.  We may not want to export it.  */
 void MPIR_Err_print_stack(FILE *, int);
-
-
-/* ------------------------------------------------------------------------- */
-/* XXX DJG FIXME delete this? */
-/* FIXME: Merge these with the object refcount update routines (perhaps as
-   part of a general "atomic update" file */
-/*
- * Standardized general-purpose atomic update routines.  Some comments:
- * Setmax atomically implements *a_ptr = max(b,*a_ptr) .  This can
- * be implemented using compare-and-swap (form max, if new max is 
- * larger, compare-and-swap against old max.  if failure, restart).
- * Fetch_and_increment can be implemented in a similar way; for
- * example, in IA32, 
- * loop:
- *   mov eax, valptr
- *   mov oldvalptr, eax
- *   mov ebx, eax
- *   inc ebx
- *   lock: cmpxchg valptr, ebx
- *   jnz loop
- *
- * Implementations using LoadLink/StoreConditional are similar.
- *
- * Question: can we use the simple code for MPI_THREAD_SERIALIZED?
- * If not, do we want a separate set of definitions that can be used
- * in the code where serialized is ok.
- *
- * Currently, these are used only in the routines to create new error classes
- * and codes (src/mpi/errhan/dynerrutil.c and add_error_class.c).  
- * Note that MPI object reference counts are handled with their own routines.
- *
- * Because of the current use of these routines is within the SINGLE_CS
- * thread lock (for the THREAD_MULTIPLE case), we currently
- * do *not* include a separate Critical section for these operations.
- *
- */
-#define MPIR_Setmax(a_ptr,b) if (b>*(a_ptr)) { *(a_ptr) = b; }
-#define MPIR_Fetch_and_increment(count_ptr,value_ptr) \
-    { *value_ptr = *count_ptr; *count_ptr += 1; }
 
 /* ------------------------------------------------------------------------- */
 
@@ -2180,59 +2020,6 @@ void MPIR_Add_finalize( int (*routine)( void * ), void *extra, int priority );
 #define MPIR_FINALIZE_CALLBACK_DEFAULT_PRIO 0
 #define MPIR_FINALIZE_CALLBACK_MAX_PRIO 10
 
-/* For no error checking, we could define MPIR_Nest_incr/decr as empty */
-
-/* These routines export the nesting controls for use in ROMIO */
-void MPIR_Nest_incr_export(void);
-void MPIR_Nest_decr_export(void);
-
-#ifdef MPICH_DEBUG_NESTING
-/* These two routines export the versions of the nest macros that
-   provide the file/line where the nest value changes, also for use in ROMIO */
-void MPIR_Nest_incr_export_dbg(const char *, int);
-void MPIR_Nest_decr_export_dbg(const char *, int);
-
-/* FIXME: We should move the initialization and error reporting into
-   routines that can be called when necessary */
-#define MPIR_Nest_init() {\
-   int _i;\
-   for (_i=0;_i<MPICH_MAX_NESTINFO;_i++) {\
-      MPIU_THREADPRIV_FIELD(nestinfo)[_i].file[0] = 0;\
-      MPIU_THREADPRIV_FIELD(nestinfo)[_i].line = 0;}}
-#define MPIR_Nest_incr() {\
-     if (MPIU_THREADPRIV_FIELD(nest_count) >= MPICH_MAX_NESTINFO) {\
-     MPIU_Internal_error_printf("nest stack exceeded at %s:%d\n",\
-          __FILE__,__LINE__);\
-     }else{\
-     MPIU_Strncpy(MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].file,__FILE__,\
-                  MPICH_MAX_NESTFILENAME);\
-     MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].line=__LINE__;}\
-     MPIU_THREADPRIV_FIELD(nest_count)++; }
-/* Set the line for the current entry to - the old line - this can help
-   identify increments that did not set the fields */
-#define MPIR_Nest_decr() {\
-    if (MPIU_THREADPRIV_FIELD(nest_count) >= 0) {\
-	MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].line=-__LINE__;} \
-     MPIU_THREADPRIV_FIELD(nest_count)--; \
-     if (MPIU_THREADPRIV_FIELD(nest_count) < MPICH_MAX_NESTINFO && \
-    strcmp(MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].file,__FILE__) != 0) {\
-         MPIU_Msg_printf( "Decremented nest count in file %s:%d but incremented in different file (%s:%d)\n",\
-                          __FILE__,__LINE__,\
-                          MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].file,\
-                          MPIU_THREADPRIV_FIELD(nestinfo)[MPIU_THREADPRIV_FIELD(nest_count)].line);\
-     }else if (MPIU_THREADPRIV_FIELD(nest_count) < 0){\
-	 MPIU_Msg_printf("Decremented nest count in file %s:%d is negative\n",\
-			 __FILE__,__LINE__);}\
-}
-#else
-#define MPIR_Nest_init()
-#define MPIR_Nest_incr() {MPIU_THREADPRIV_FIELD(nest_count)++;}
-#define MPIR_Nest_decr() {MPIU_THREADPRIV_FIELD(nest_count)--;}
-#endif /* MPICH_DEBUG_NESTING */
-
-#define MPIR_Nest_value() (MPIU_THREADPRIV_FIELD(nest_count))
-
-
 /*int MPIR_Comm_attr_dup(MPID_Comm *, MPID_Attribute **);
   int MPIR_Comm_attr_delete(MPID_Comm *, MPID_Attribute *);*/
 int MPIR_Comm_copy( MPID_Comm *, int, MPID_Comm ** );
@@ -2247,8 +2034,11 @@ int MPIR_Group_create( int, MPID_Group ** );
 int MPIR_Group_release(MPID_Group *group_ptr);
 
 int MPIR_dup_fn ( MPI_Comm, int, void *, void *, void *, int * );
+/* marks a request as complete, extracting the status */
 int MPIR_Request_complete(MPI_Request *, MPID_Request *, MPI_Status *, int *);
 int MPIR_Request_get_error(MPID_Request *);
+/* run the progress engine until the given request is complete */
+int MPIR_Progress_wait_request(MPID_Request *req);
 
 /* The following routines perform the callouts to the user routines registered
    as part of a generalized request.  They handle any language binding issues
@@ -3337,6 +3127,11 @@ int MPID_VCRT_Release(MPID_VCRT vcrt, int isDisconnect);
 int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr);
 
 /*@
+  MPID_VCRT_Contains_failed_vc - returns TRUE iff a VC in this VCRT is in MORUBIND state
+  @*/
+int MPID_VCRT_Contains_failed_vc(MPID_VCRT vcrt);
+
+/*@
   MPID_VCR_Dup - Create a duplicate reference to a virtual connection
   @*/
 int MPID_VCR_Dup(MPID_VCR orig_vcr, MPID_VCR * new_vcr);
@@ -3378,41 +3173,17 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr);
 #define MPIU_CALL(context,funccall) context##_##funccall
 #endif
 
+#include "mpiimplthreadpost.h"
+
 /* Include definitions from the device which require items defined by this 
    file (mpiimpl.h). */
 #include "mpidpost.h"
 
-/* ------------------------------------------------------------------------- */
-/* FIXME: Also for mpicoll.h, in src/mpi/coll?  */
-/* ------------------------------------------------------------------------- */
-/* thresholds to switch between long and short vector algorithms for
-   collective operations */ 
-/* FIXME: Should there be a way to (a) update/compute these at configure time
-   and (b) provide runtime control?  Should these be MPIR_xxx_DEFAULT 
-   instead? */
-#define MPIR_BCAST_SHORT_MSG          12288
-#define MPIR_BCAST_LONG_MSG           524288
-#define MPIR_BCAST_MIN_PROCS          8
-#define MPIR_ALLTOALL_SHORT_MSG       256
-#define MPIR_ALLTOALL_MEDIUM_MSG      32768
-#define MPIR_ALLTOALL_THROTTLE        4  /* max no. of irecvs/isends posted at a 
-time in some alltoall algorithms. Setting it to 0 causes all irecvs/isends to be 
-posted at once. */
-#define MPIR_REDSCAT_COMMUTATIVE_LONG_MSG 524288
-#define MPIR_REDSCAT_NONCOMMUTATIVE_SHORT_MSG 512
-#define MPIR_ALLGATHER_SHORT_MSG      81920
-#define MPIR_ALLGATHER_LONG_MSG       524288
-#define MPIR_REDUCE_SHORT_MSG         2048
-#define MPIR_ALLREDUCE_SHORT_MSG      2048
-#define MPIR_GATHER_VSMALL_MSG        1024
-#define MPIR_SCATTER_SHORT_MSG        2048  /* for intercommunicator scatter */
-#define MPIR_GATHER_SHORT_MSG         2048  /* for intercommunicator scatter */
-#define MPIR_GATHERV_MIN_PROCS        32
+/* tunable parameter values */
+#include "mpich_param_vals.h"
 
-/* For pipelined collectives */
-#define MPIR_ALLGATHERV_PIPELINE_MSGSIZE   32768
-
-/* Tags for point to point operations which implement collective operations */
+/* Tags for point to point operations which implement collective and other
+   internal operations */
 #define MPIR_BARRIER_TAG               1
 #define MPIR_BCAST_TAG                 2
 #define MPIR_GATHER_TAG                3
@@ -3440,11 +3211,13 @@ posted at once. */
 #define MPIR_ALLTOALLW_TAG            25
 #define MPIR_TOPO_A_TAG               26
 #define MPIR_TOPO_B_TAG               27
+#define MPIR_REDUCE_SCATTER_BLOCK_TAG 28
+#define MPIR_ERROR_TAG                29
 
-/* These functions are used in the implementation of collective
-   operations. They are wrappers around MPID send/recv functions. They do
-   sends/receives by setting the context offset to
-   MPID_CONTEXT_INTRA_COLL. */
+/* These functions are used in the implementation of collective and
+   other internal operations. They are wrappers around MPID send/recv
+   functions. They do sends/receives by setting the context offset to
+   MPID_CONTEXT_INTRA(INTER)_COLL. */
 int MPIC_Send(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
               MPI_Comm comm);
 int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
@@ -3466,6 +3239,28 @@ int MPIC_Irecv(void *buf, int count, MPI_Datatype datatype, int
 int MPIC_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
                MPI_Comm comm, MPI_Request *request);
 int MPIC_Wait(MPID_Request * request_ptr);
+int MPIC_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status);
+
+/* FT versions of te MPIC_ functions */
+int MPIC_Send_ft(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+                 MPI_Comm comm, int *errflag);
+int MPIC_Recv_ft(void *buf, int count, MPI_Datatype datatype, int source, int tag,
+                 MPI_Comm comm, MPI_Status *status, int *errflag);
+int MPIC_Ssend_ft(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+                  MPI_Comm comm, int *errflag);
+int MPIC_Sendrecv_ft(void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                     int dest, int sendtag, void *recvbuf, int recvcount,
+                     MPI_Datatype recvtype, int source, int recvtag,
+                     MPI_Comm comm, MPI_Status *status, int *errflag);
+int MPIC_Sendrecv_replace_ft(void *buf, int count, MPI_Datatype datatype,
+                             int dest, int sendtag,
+                             int source, int recvtag,
+                             MPI_Comm comm, MPI_Status *status, int *errflag);
+int MPIC_Isend_ft(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+                  MPI_Comm comm, MPI_Request *request, int *errflag);
+int MPIC_Irecv_ft(void *buf, int count, MPI_Datatype datatype, int source,
+                  int tag, MPI_Comm comm, MPI_Request *request);
+int MPIC_Waitall_ft(int numreq, MPI_Request requests[], MPI_Status statuses[], int *errflag);
 
 
 void MPIR_MAXF  ( void *, void *, int *, MPI_Datatype * ) ;
@@ -3508,84 +3303,165 @@ extern MPIR_Op_check_dtype_fn *MPIR_Op_check_dtype_table[];
 #define MPIR_MAX(a,b) (((b)>(a))?(b):(a))
 #endif /* MPIR_MAX */
 
+int MPIR_Allgather_impl(void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                        void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                        MPID_Comm *comm_ptr, int *errflag );
 int MPIR_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype,
-                   void *recvbuf, int recvcount, MPI_Datatype recvtype, 
-                   MPID_Comm *comm_ptr );
+                   void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                   MPID_Comm *comm_ptr, int *errflag );
+int MPIR_Allgather_intra(void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                         void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+                         MPID_Comm *comm_ptr, int *errflag );
 int MPIR_Allgather_inter(void *sendbuf, int sendcount, MPI_Datatype sendtype,
                          void *recvbuf, int recvcount, MPI_Datatype recvtype, 
-                         MPID_Comm *comm_ptr );
+                         MPID_Comm *comm_ptr, int *errflag );
+int MPIR_Allgatherv_impl(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
+                         void *recvbuf, int *recvcounts, int *displs,   
+                         MPI_Datatype recvtype, MPID_Comm *comm_ptr, int *errflag );
 int MPIR_Allgatherv(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
                     void *recvbuf, int *recvcounts, int *displs,   
-                    MPI_Datatype recvtype, MPID_Comm *comm_ptr );
+                    MPI_Datatype recvtype, MPID_Comm *comm_ptr, int *errflag );
+int MPIR_Allgatherv_intra(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
+                          void *recvbuf, int *recvcounts, int *displs,   
+                          MPI_Datatype recvtype, MPID_Comm *comm_pt, int *errflag );
 int MPIR_Allgatherv_inter(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
                           void *recvbuf, int *recvcounts, int *displs,   
-                          MPI_Datatype recvtype, MPID_Comm *comm_ptr );
+                          MPI_Datatype recvtype, MPID_Comm *comm_ptr, int *errflag );
+int MPIR_Allreduce_impl(void *sendbuf, void *recvbuf, int count, 
+                        MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr, int *errflag);
 int MPIR_Allreduce(void *sendbuf, void *recvbuf, int count, 
-                   MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr);
+                   MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Allreduce_intra(void *sendbuf, void *recvbuf, int count, 
+                         MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr, int *errflag);
 int MPIR_Allreduce_inter(void *sendbuf, void *recvbuf, int count, 
-                        MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr);
-int MPIR_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
-                  void *recvbuf, int recvcount, MPI_Datatype recvtype, 
-                  MPID_Comm *comm_ptr);
+                        MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Alltoall_impl(void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                       void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                       MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                  void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                  MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Alltoall_intra(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
+                        void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+                        MPID_Comm *comm_ptr, int *errflag);
 int MPIR_Alltoall_inter(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
                         void *recvbuf, int recvcount, MPI_Datatype recvtype, 
-                        MPID_Comm *comm_ptr);
+                        MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Alltoallv_impl(void *sendbuf, int *sendcnts, int *sdispls, 
+                        MPI_Datatype sendtype, void *recvbuf, int *recvcnts, 
+                        int *rdispls, MPI_Datatype recvtype, MPID_Comm *comm_ptr, int *errflag);
 int MPIR_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, 
                    MPI_Datatype sendtype, void *recvbuf, int *recvcnts, 
-                   int *rdispls, MPI_Datatype recvtype, MPID_Comm *comm_ptr);
+                   int *rdispls, MPI_Datatype recvtype, MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Alltoallv_intra(void *sendbuf, int *sendcnts, int *sdispls, 
+                         MPI_Datatype sendtype, void *recvbuf, int *recvcnts, 
+                         int *rdispls, MPI_Datatype recvtype, MPID_Comm *comm_ptr, int *errflag);
 int MPIR_Alltoallv_inter(void *sendbuf, int *sendcnts, int *sdispls, 
                          MPI_Datatype sendtype, void *recvbuf, int *recvcnts, 
                          int *rdispls, MPI_Datatype recvtype, 
-                         MPID_Comm *comm_ptr);
+                         MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Alltoallw_impl(void *sendbuf, int *sendcnts, int *sdispls, 
+                        MPI_Datatype *sendtypes, void *recvbuf, int *recvcnts, 
+                        int *rdispls, MPI_Datatype *recvtypes, MPID_Comm *comm_ptr, int *errflag);
 int MPIR_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls, 
                    MPI_Datatype *sendtypes, void *recvbuf, int *recvcnts, 
-                   int *rdispls, MPI_Datatype *recvtypes, MPID_Comm *comm_ptr);
+                   int *rdispls, MPI_Datatype *recvtypes, MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Alltoallw_intra(void *sendbuf, int *sendcnts, int *sdispls, 
+                         MPI_Datatype *sendtypes, void *recvbuf, int *recvcnts, 
+                         int *rdispls, MPI_Datatype *recvtypes, MPID_Comm *comm_ptr, int *errflag);
 int MPIR_Alltoallw_inter(void *sendbuf, int *sendcnts, int *sdispls, 
                          MPI_Datatype *sendtypes, void *recvbuf, 
                          int *recvcnts, int *rdispls, MPI_Datatype *recvtypes, 
-                         MPID_Comm *comm_ptr);
-int MPIR_Barrier_inter( MPID_Comm *comm_ptr);
+                         MPID_Comm *comm_ptr, int *errflag);
 int MPIR_Bcast_inter(void *buffer, int count, MPI_Datatype datatype, 
-		     int root, MPID_Comm *comm_ptr);
+		     int root, MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Bcast_intra (void *buffer, int count, MPI_Datatype datatype, int
+                      root, MPID_Comm *comm_ptr, int *errflag);
 int MPIR_Bcast (void *buffer, int count, MPI_Datatype datatype, int
-                root, MPID_Comm *comm_ptr);
-int MPIR_Bcast_or_coll_fn (void *buffer, int count, MPI_Datatype datatype, int
-                root, MPID_Comm *comm_ptr);
+                root, MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Bcast_impl (void *buffer, int count, MPI_Datatype datatype, int
+                root, MPID_Comm *comm_ptr, int *errflag);
 int MPIR_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
-                MPI_Op op, MPID_Comm *comm_ptr );
+                MPI_Op op, MPID_Comm *comm_ptr, int *errflag );
+int MPIR_Exscan_impl(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+                     MPI_Op op, MPID_Comm *comm_ptr, int *errflag );
+int MPIR_Gather_impl (void *sendbuf, int sendcnt, MPI_Datatype sendtype,
+                      void *recvbuf, int recvcnt, MPI_Datatype recvtype,
+                      int root, MPID_Comm *comm_ptr, int *errflag);
 int MPIR_Gather (void *sendbuf, int sendcnt, MPI_Datatype sendtype,
                  void *recvbuf, int recvcnt, MPI_Datatype recvtype,
-                 int root, MPID_Comm *comm_ptr);
+                 int root, MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Gather_intra (void *sendbuf, int sendcnt, MPI_Datatype sendtype,
+                       void *recvbuf, int recvcnt, MPI_Datatype recvtype,
+                       int root, MPID_Comm *comm_ptr, int *errflag);
 int MPIR_Gather_inter (void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
                        void *recvbuf, int recvcnt, MPI_Datatype recvtype, 
-                       int root, MPID_Comm *comm_ptr );
+                       int root, MPID_Comm *comm_ptr, int *errflag );
 int MPIR_Gatherv (void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
                   void *recvbuf, int *recvcnts, int *displs,
-                  MPI_Datatype recvtype, int root, MPID_Comm *comm_ptr); 
+                  MPI_Datatype recvtype, int root, MPID_Comm *comm_ptr, int *errflag); 
+int MPIR_Gatherv_impl (void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
+                       void *recvbuf, int *recvcnts, int *displs,
+                       MPI_Datatype recvtype, int root, MPID_Comm *comm_ptr, int *errflag); 
+int MPIR_Reduce_scatter_impl(void *sendbuf, void *recvbuf, int *recvcnts, 
+                             MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr, int *errflag);
 int MPIR_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, 
-                        MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr);
+                        MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Reduce_scatter_intra(void *sendbuf, void *recvbuf, int *recvcnts, 
+                              MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr, int *errflag);
 int MPIR_Reduce_scatter_inter(void *sendbuf, void *recvbuf, int *recvcnts, 
                               MPI_Datatype datatype, MPI_Op op, 
-                              MPID_Comm *comm_ptr);
+                              MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Reduce_scatter_block_impl(void *sendbuf, void *recvbuf, int recvcount,
+                                   MPI_Datatype datatype, MPI_Op op, MPID_Comm
+                                   *comm_ptr, int *errflag );
+int MPIR_Reduce_scatter_block(void *sendbuf, void *recvbuf, int recvcount,
+                              MPI_Datatype datatype, MPI_Op op, MPID_Comm
+                              *comm_ptr, int *errflag );
+int MPIR_Reduce_scatter_block_intra(void *sendbuf, void *recvbuf, int recvcount,
+                                    MPI_Datatype datatype, MPI_Op op, MPID_Comm
+                                    *comm_ptr, int *errflag );
+int MPIR_Reduce_scatter_block_inter(void *sendbuf, void *recvbuf, int recvcount,
+                                    MPI_Datatype datatype, MPI_Op op, MPID_Comm
+                                    *comm_ptr, int *errflag);
+int MPIR_Reduce_impl(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+                     MPI_Op op, int root, MPID_Comm *comm_ptr, int *errflag );
 int MPIR_Reduce(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
-                MPI_Op op, int root, MPID_Comm *comm_ptr );
-int MPIR_Reduce_or_coll_fn(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
-                MPI_Op op, int root, MPID_Comm *comm_ptr );
+                MPI_Op op, int root, MPID_Comm *comm_ptr, int *errflag );
+int MPIR_Reduce_intra(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+                      MPI_Op op, int root, MPID_Comm *comm_ptr, int *errflag );
 int MPIR_Reduce_inter (void *sendbuf, void *recvbuf, int count, MPI_Datatype
-                 datatype, MPI_Op op, int root, MPID_Comm *comm_ptr); 
+                       datatype, MPI_Op op, int root, MPID_Comm *comm_ptr, int *errflag); 
+int MPIR_Scan_impl(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, 
+                   MPI_Op op, MPID_Comm *comm_ptr, int *errflag);
 int MPIR_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, 
-              MPI_Op op, MPID_Comm *comm_ptr);
+              MPI_Op op, MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Scatter_impl(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
+                      void *recvbuf, int recvcnt, MPI_Datatype recvtype, 
+                      int root, MPID_Comm *comm_ptr, int *errflag );
 int MPIR_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
                  void *recvbuf, int recvcnt, MPI_Datatype recvtype, 
-                 int root, MPID_Comm *comm_ptr );
+                 int root, MPID_Comm *comm_ptr, int *errflag );
+int MPIR_Scatter_intra(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
+                       void *recvbuf, int recvcnt, MPI_Datatype recvtype, 
+                       int root, MPID_Comm *comm_ptr, int *errflag );
 int MPIR_Scatter_inter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
                        void *recvbuf, int recvcnt, MPI_Datatype recvtype, 
-                       int root, MPID_Comm *comm_ptr );
+                       int root, MPID_Comm *comm_ptr, int *errflag );
+int MPIR_Scatterv_impl (void *sendbuf, int *sendcnts, int *displs,
+                        MPI_Datatype sendtype, void *recvbuf, int recvcnt,
+                        MPI_Datatype recvtype, int root, MPID_Comm
+                        *comm_ptr, int *errflag);
 int MPIR_Scatterv (void *sendbuf, int *sendcnts, int *displs,
                    MPI_Datatype sendtype, void *recvbuf, int recvcnt,
                    MPI_Datatype recvtype, int root, MPID_Comm
-                   *comm_ptr);
-int MPIR_Barrier( MPID_Comm *comm_ptr );
+                   *comm_ptr, int *errflag);
+int MPIR_Barrier_impl( MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Barrier( MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Barrier_intra( MPID_Comm *comm_ptr, int *errflag);
+int MPIR_Barrier_inter( MPID_Comm *comm_ptr, int *errflag);
+
+int MPIR_Reduce_local_impl(void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype, MPI_Op op);
 
 int MPIR_Setup_intercomm_localcomm( MPID_Comm * );
 
@@ -3598,6 +3474,11 @@ int MPIR_Comm_is_node_aware( MPID_Comm * );
 int MPIR_Comm_is_node_consecutive( MPID_Comm *);
 
 void MPIR_Free_err_dyncodes( void );
+
+
+/* random initializers */
+int MPIR_Group_init(void);
+int MPIR_Comm_init(MPID_Comm *);
 
 
 /* Collective functions cannot be called from multiple threads. These
@@ -3620,5 +3501,96 @@ int MPIU_Find_local_and_external(struct MPID_Comm *comm, int *local_size_p, int 
                                  int **intranode_table, int **internode_table_p);
 int MPIU_Get_internode_rank(MPID_Comm *comm_ptr, int r);
 int MPIU_Get_intranode_rank(MPID_Comm *comm_ptr, int r);
+
+/* Trivial accessor macros */
+
+#define MPIR_Comm_rank(comm_ptr) ((comm_ptr)->rank)
+#define MPIR_Comm_size(comm_ptr) ((comm_ptr)->local_size)
+#define MPIR_Type_extent_impl(datatype, extent_ptr) MPID_Datatype_get_extent_macro(datatype, *(extent_ptr))
+#define MPIR_Type_size_impl(datatype, size) MPID_Datatype_get_size_macro(datatype, *(size))
+#define MPIR_Test_cancelled_impl(status, flag) *(flag) = (status)->cancelled
+
+/* MPIR_ functions.  These are versions of MPI_ functions appropriate for calling within MPI */
+int MPIR_Cancel_impl(MPID_Request *request_ptr);
+struct MPIR_Topology;
+void MPIR_Cart_rank_impl(struct MPIR_Topology *cart_ptr, int *coords, int *rank);
+int MPIR_Cart_create_impl(MPID_Comm *comm_ptr, int ndims, const int dims[],
+                          const int periods[], int reorder, MPI_Comm *comm_cart);
+int MPIR_Cart_map_impl(const MPID_Comm *comm_ptr, int ndims, const int dims[],
+                       const int periodic[], int *newrank);
+int MPIR_Close_port_impl(char *port_name);
+int MPIR_Open_port_impl(MPID_Info *info_ptr, char *port_name);
+void MPIR_Info_get_impl(MPID_Info *info_ptr, char *key, int valuelen, char *value, int *flag);
+void MPIR_Info_get_nkeys_impl(MPID_Info *info_ptr, int *nkeys);
+int MPIR_Info_get_nthkey_impl(MPID_Info *info, int n, char *key);
+void MPIR_Info_get_valuelen_impl(MPID_Info *info_ptr, char *key, int *valuelen, int *flag);
+int MPIR_Comm_delete_attr_impl(MPID_Comm *comm_ptr, MPID_Keyval *keyval_ptr);
+int MPIR_Comm_create_keyval_impl(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
+                                 MPI_Comm_delete_attr_function *comm_delete_attr_fn,
+                                 int *comm_keyval, void *extra_state);
+int MPIR_Comm_accept_impl(char * port_name, MPID_Info * info_ptr, int root,
+                          MPID_Comm * comm_ptr, MPID_Comm ** newcomm_ptr);
+int MPIR_Comm_connect_impl(char * port_name, MPID_Info * info_ptr, int root,
+                           MPID_Comm * comm_ptr, MPID_Comm ** newcomm_ptr);
+int MPIR_Comm_create_errhandler_impl(MPI_Comm_errhandler_function *function,
+                                     MPI_Errhandler *errhandler);
+int MPIR_Comm_dup_impl(MPID_Comm *comm_ptr, MPID_Comm **newcomm_ptr);
+int MPIR_Comm_free_impl(MPID_Comm * comm_ptr);
+void MPIR_Comm_free_keyval_impl(int keyval);
+void MPIR_Comm_get_errhandler_impl(MPID_Comm *comm_ptr, MPID_Errhandler **errhandler_ptr);
+void MPIR_Comm_set_errhandler_impl(MPID_Comm *comm_ptr, MPID_Errhandler *errhandler_ptr);
+void MPIR_Comm_get_name_impl(MPID_Comm *comm, char *comm_name, int *resultlen);
+int MPIR_Comm_group_impl(MPID_Comm *comm_ptr, MPID_Group **group_ptr);
+int MPIR_Comm_remote_group_impl(MPID_Comm *comm_ptr, MPID_Group **group_ptr);
+int MPIR_Comm_split_impl(MPID_Comm *comm_ptr, int color, int key, MPID_Comm **newcomm_ptr);
+void MPIR_Group_compare_impl(MPID_Group *group_ptr1, MPID_Group *group_ptr2, int *result);
+int MPIR_Group_free_impl(MPID_Group *group_ptr);
+void MPIR_Get_count_impl(MPI_Status *status, MPI_Datatype datatype, int *count);
+void MPIR_Grequest_complete_impl(MPID_Request *request_ptr);
+int MPIR_Grequest_start_impl(MPI_Grequest_query_function *query_fn,
+                             MPI_Grequest_free_function *free_fn,
+                             MPI_Grequest_cancel_function *cancel_fn,
+                             void *extra_state, MPID_Request **request_ptr);
+int MPIR_Graph_map_impl(const MPID_Comm *comm_ptr, int nnodes,
+                        const int indx[], const int edges[], int *newrank);
+int MPIR_Type_commit_impl(MPI_Datatype *datatype);
+int MPIR_Type_create_struct_impl(int count,
+                                 int array_of_blocklengths[],
+                                 MPI_Aint array_of_displacements[],
+                                 MPI_Datatype array_of_types[],
+                                 MPI_Datatype *newtype);
+int MPIR_Type_create_indexed_block_impl(int count,
+                                        int blocklength,
+                                        int array_of_displacements[],
+                                        MPI_Datatype oldtype,
+                                        MPI_Datatype *newtype);
+int MPIR_Type_contiguous_impl(int count,
+                              MPI_Datatype old_type,
+                              MPI_Datatype *new_type_p);
+void MPIR_Type_get_extent_impl(MPI_Datatype datatype, MPI_Aint *lb, MPI_Aint *extent);
+void MPIR_Type_get_true_extent_impl(MPI_Datatype datatype, MPI_Aint *true_lb, MPI_Aint *true_extent);
+void MPIR_Type_get_envelope_impl(MPI_Datatype datatype, int *num_integers, int *num_addresses,
+                                 int *num_datatypes, int *combiner);
+int MPIR_Type_hvector_impl(int count, int blocklen, MPI_Aint stride, MPI_Datatype old_type, MPI_Datatype *newtype_p);
+int MPIR_Type_indexed_impl(int count, int blocklens[], int indices[], MPI_Datatype old_type,
+                           MPI_Datatype *newtype);
+void MPIR_Type_free_impl(MPI_Datatype *datatype);
+int MPIR_Type_vector_impl(int count, int blocklength, int stride, MPI_Datatype old_type, MPI_Datatype *newtype_p);
+int MPIR_Type_struct_impl(int count, int blocklens[], MPI_Aint indices[], MPI_Datatype old_types[], MPI_Datatype *newtype);
+void MPIR_Group_translate_ranks_impl(MPID_Group *group_ptr1, int n, int *ranks1,
+                                     MPID_Group *group_ptr2, int *ranks2);
+int MPIR_Pack_impl(void *inbuf, int incount, MPI_Datatype datatype, void *outbuf, int outcount, int *position);
+void MPIR_Pack_size_impl(int incount, MPI_Datatype datatype, int *size);
+int MPIR_Unpack_impl(void *inbuf, int insize, int *position,
+                     void *outbuf, int outcount, MPI_Datatype datatype);
+void MPIR_Type_lb_impl(MPI_Datatype datatype, MPI_Aint *displacement);
+int MPIR_Ibsend_impl(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+                     MPID_Comm *comm_ptr, MPI_Request *request);
+int MPIR_Test_impl(MPI_Request *request, int *flag, MPI_Status *status);
+int MPIR_Wait_impl(MPI_Request *request, MPI_Status *status);
+int MPIR_Waitall_impl(int count, MPI_Request array_of_requests[],
+                      MPI_Status array_of_statuses[]);
+int MPIR_Comm_set_attr_impl(MPID_Comm *comm_ptr, int comm_keyval, void *attribute_val, 
+                            MPIR_AttrType attrType);
 
 #endif /* MPIIMPL_INCLUDED */

@@ -1,8 +1,11 @@
 /*
- * Copyright © 2009 CNRS, INRIA, Université Bordeaux 1
+ * Copyright © 2009 CNRS
+ * Copyright © 2009 INRIA
+ * Copyright © 2009 Université Bordeaux 1
  * See COPYING in top-level directory.
  */
 
+#include <private/config.h>
 #include <hwloc.h>
 
 #include <stdlib.h>
@@ -15,7 +18,7 @@
 #define SYNTHETIC_TOPOLOGY_DESCRIPTION_SHARED "6 5 4 3 2" /* 736bits wide topology */
 #define SYNTHETIC_TOPOLOGY_DESCRIPTION_NONSHARED "6 5 4 1 2" /* 736bits wide topology */
 
-int main()
+int main(void)
 {
   hwloc_topology_t topology;
   hwloc_obj_t obj, cache;

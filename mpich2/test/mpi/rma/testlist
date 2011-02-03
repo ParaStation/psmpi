@@ -4,6 +4,7 @@ putfence1 4
 putfidx 4
 getfence1 4
 accfence1 4
+adlb_mimic1 3
 accfence2 4
 putpscw1 4
 getgroup 4
@@ -19,6 +20,8 @@ test3 2
 test4 2
 test5 2
 lockcontention 3
+lockcontention2 4
+lockcontention2 8	       
 transpose4 2
 fetchandadd 7
 fetchandadd_tree 7
@@ -42,3 +45,4 @@ selfrma 1
 mixedsync 4
 epochtest 4
 locknull 2
+rmanull 2

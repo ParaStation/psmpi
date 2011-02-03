@@ -1,4 +1,4 @@
-#! /usr/bin/perl
+#! /opt/local/bin/perl
 # -*- Mode: perl; -*-
 # Tested with -w 10/28/05
 # 

@@ -29,7 +29,7 @@ VPATH = .:@srcdir@
 INCLUDES = -I../../../../../include -I${master_top_srcdir}/src/include 
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -46,8 +46,6 @@ INCLUDES = -I../../../../../include -I${master_top_srcdir}/src/include
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -55,52 +53,30 @@ INCLUDES = -I../../../../../include -I${master_top_srcdir}/src/include
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../../../ \
-	-configdir=src/mpid/ch3/channels/sctp/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile src/Makefile localdefs config.status config.log config.cache *conf.cache config.system" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: .libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    ${MAKE} .libstamp1 || exit 1; \
 	fi
 
-.libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a: sctp_common.o all_hash.o \
-	sctp_util.o ch3_finalize.o ch3_init.o ch3_isend.o ch3_isendv.o \
-	ch3_istartmsg.o ch3_istartmsgv.o ch3_progress.o ch3i_connaccept.o 
+.libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a: sctp_common.o all_hash.o sctp_util.o \
+	ch3_finalize.o ch3_init.o ch3_isend.o ch3_isendv.o ch3_istartmsg.o ch3_istartmsgv.o \
+	ch3_progress.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
@@ -114,10 +90,9 @@ all-redirect: .libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../../../../lib/lib${MPILIBNAME}.la: sctp_common.lo \
-	all_hash.lo sctp_util.lo ch3_finalize.lo ch3_init.lo ch3_isend.lo \
-	ch3_isendv.lo ch3_istartmsg.lo ch3_istartmsgv.lo ch3_progress.lo \
-	ch3i_connaccept.lo 
+.libstamp1 ../../../../../../lib/lib${MPILIBNAME}.la: sctp_common.lo all_hash.lo sctp_util.lo \
+	ch3_finalize.lo ch3_init.lo ch3_isend.lo ch3_isendv.lo ch3_istartmsg.lo ch3_istartmsgv.lo \
+	ch3_progress.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -125,199 +100,19 @@ all-redirect: .libstamp0 ../../../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${AR} ${AR_FLAGS} ../../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
-coverage: 
-	-@for file in sctp_common.c				    all_hash.c					    sctp_util.c					    \
-	ch3_finalize.c				    ch3_init.c					    ch3_isend.c					    \
-	ch3_isendv.c				    ch3_istartmsg.c				    ch3_istartmsgv.c				    \
-	ch3_progress.c				    ch3i_connaccept.c ; do \
-		gcov -b -f $$file ; done
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/sctp_common.d: $(srcdir)/sctp_common.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C sctp_common.c > $(DEPS_DIR)/sctp_common.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/sctp_common.c >$(DEPS_DIR)/sctp_common.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/sctp_common.c >$(DEPS_DIR)/sctp_common.d
-$(DEPS_DIR)/all_hash.d: $(srcdir)/all_hash.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C all_hash.c > $(DEPS_DIR)/all_hash.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/all_hash.c >$(DEPS_DIR)/all_hash.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/all_hash.c >$(DEPS_DIR)/all_hash.d
-$(DEPS_DIR)/sctp_util.d: $(srcdir)/sctp_util.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C sctp_util.c > $(DEPS_DIR)/sctp_util.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/sctp_util.c >$(DEPS_DIR)/sctp_util.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/sctp_util.c >$(DEPS_DIR)/sctp_util.d
-$(DEPS_DIR)/ch3_finalize.d: $(srcdir)/ch3_finalize.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3_finalize.c > $(DEPS_DIR)/ch3_finalize.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3_finalize.c >$(DEPS_DIR)/ch3_finalize.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3_finalize.c >$(DEPS_DIR)/ch3_finalize.d
-$(DEPS_DIR)/ch3_init.d: $(srcdir)/ch3_init.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3_init.c > $(DEPS_DIR)/ch3_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3_init.c >$(DEPS_DIR)/ch3_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3_init.c >$(DEPS_DIR)/ch3_init.d
-$(DEPS_DIR)/ch3_isend.d: $(srcdir)/ch3_isend.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3_isend.c > $(DEPS_DIR)/ch3_isend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3_isend.c >$(DEPS_DIR)/ch3_isend.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3_isend.c >$(DEPS_DIR)/ch3_isend.d
-$(DEPS_DIR)/ch3_isendv.d: $(srcdir)/ch3_isendv.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3_isendv.c > $(DEPS_DIR)/ch3_isendv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3_isendv.c >$(DEPS_DIR)/ch3_isendv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3_isendv.c >$(DEPS_DIR)/ch3_isendv.d
-$(DEPS_DIR)/ch3_istartmsg.d: $(srcdir)/ch3_istartmsg.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3_istartmsg.c > $(DEPS_DIR)/ch3_istartmsg.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3_istartmsg.c >$(DEPS_DIR)/ch3_istartmsg.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3_istartmsg.c >$(DEPS_DIR)/ch3_istartmsg.d
-$(DEPS_DIR)/ch3_istartmsgv.d: $(srcdir)/ch3_istartmsgv.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3_istartmsgv.c > $(DEPS_DIR)/ch3_istartmsgv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3_istartmsgv.c >$(DEPS_DIR)/ch3_istartmsgv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3_istartmsgv.c >$(DEPS_DIR)/ch3_istartmsgv.d
-$(DEPS_DIR)/ch3_progress.d: $(srcdir)/ch3_progress.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3_progress.c > $(DEPS_DIR)/ch3_progress.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3_progress.c >$(DEPS_DIR)/ch3_progress.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3_progress.c >$(DEPS_DIR)/ch3_progress.d
-$(DEPS_DIR)/ch3i_connaccept.d: $(srcdir)/ch3i_connaccept.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3i_connaccept.c > $(DEPS_DIR)/ch3i_connaccept.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3i_connaccept.c >$(DEPS_DIR)/ch3i_connaccept.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3i_connaccept.c >$(DEPS_DIR)/ch3i_connaccept.d
-$(DEPS_DIR)/timestamp: sctp_common.c				    all_hash.c					    sctp_util.c					    \
-	ch3_finalize.c				    ch3_init.c					    ch3_isend.c					    \
-	ch3_isendv.c				    ch3_istartmsg.c				    ch3_istartmsgv.c				    \
-	ch3_progress.c				    ch3i_connaccept.c Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C sctp_common.c > $(DEPS_DIR)/sctp_common.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/sctp_common.c >$(DEPS_DIR)/sctp_common.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/sctp_common.c >$(DEPS_DIR)/sctp_common.d
-	echo "include $(DEPS_DIR)/sctp_common.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C all_hash.c > $(DEPS_DIR)/all_hash.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/all_hash.c >$(DEPS_DIR)/all_hash.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/all_hash.c >$(DEPS_DIR)/all_hash.d
-	echo "include $(DEPS_DIR)/all_hash.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C sctp_util.c > $(DEPS_DIR)/sctp_util.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/sctp_util.c >$(DEPS_DIR)/sctp_util.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/sctp_util.c >$(DEPS_DIR)/sctp_util.d
-	echo "include $(DEPS_DIR)/sctp_util.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3_finalize.c > $(DEPS_DIR)/ch3_finalize.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3_finalize.c >$(DEPS_DIR)/ch3_finalize.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3_finalize.c >$(DEPS_DIR)/ch3_finalize.d
-	echo "include $(DEPS_DIR)/ch3_finalize.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3_init.c > $(DEPS_DIR)/ch3_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3_init.c >$(DEPS_DIR)/ch3_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3_init.c >$(DEPS_DIR)/ch3_init.d
-	echo "include $(DEPS_DIR)/ch3_init.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3_isend.c > $(DEPS_DIR)/ch3_isend.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3_isend.c >$(DEPS_DIR)/ch3_isend.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3_isend.c >$(DEPS_DIR)/ch3_isend.d
-	echo "include $(DEPS_DIR)/ch3_isend.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3_isendv.c > $(DEPS_DIR)/ch3_isendv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3_isendv.c >$(DEPS_DIR)/ch3_isendv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3_isendv.c >$(DEPS_DIR)/ch3_isendv.d
-	echo "include $(DEPS_DIR)/ch3_isendv.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3_istartmsg.c > $(DEPS_DIR)/ch3_istartmsg.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3_istartmsg.c >$(DEPS_DIR)/ch3_istartmsg.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3_istartmsg.c >$(DEPS_DIR)/ch3_istartmsg.d
-	echo "include $(DEPS_DIR)/ch3_istartmsg.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3_istartmsgv.c > $(DEPS_DIR)/ch3_istartmsgv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3_istartmsgv.c >$(DEPS_DIR)/ch3_istartmsgv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3_istartmsgv.c >$(DEPS_DIR)/ch3_istartmsgv.d
-	echo "include $(DEPS_DIR)/ch3_istartmsgv.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3_progress.c > $(DEPS_DIR)/ch3_progress.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3_progress.c >$(DEPS_DIR)/ch3_progress.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3_progress.c >$(DEPS_DIR)/ch3_progress.d
-	echo "include $(DEPS_DIR)/ch3_progress.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ch3i_connaccept.c > $(DEPS_DIR)/ch3i_connaccept.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ch3i_connaccept.c >$(DEPS_DIR)/ch3i_connaccept.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ch3i_connaccept.c >$(DEPS_DIR)/ch3i_connaccept.d
-	echo "include $(DEPS_DIR)/ch3i_connaccept.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  sctp_common.c all_hash.c sctp_util.c ch3_finalize.c \
-	ch3_init.c ch3_isend.c ch3_isendv.c ch3_istartmsg.c ch3_istartmsgv.c \
-	ch3_progress.c ch3i_connaccept.c 
+SOURCES         =  sctp_common.c all_hash.c sctp_util.c ch3_finalize.c ch3_init.c ch3_isend.c \
+	ch3_isendv.c ch3_istartmsg.c ch3_istartmsgv.c ch3_progress.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
 #sctp_dir = $(SCTP_LOC)
 #INCLUDES = -I../../../../../include -I${master_top_srcdir}/src/include -I$(sctp_dir)/include
 #LIBS = -L$(SCTP_LOC)/lib -lsctp
+
+.POSIX:
 
 FORCE_TARGET:
 

@@ -60,7 +60,6 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
     /* FIXME: 100 is arbitrary and may not be long enough */
     char abort_str[100], comm_name[MPI_MAX_OBJECT_NAME];
     int len = MPI_MAX_OBJECT_NAME;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ABORT);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -109,7 +108,8 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
 	comm_ptr = MPIR_Process.comm_world;
     }
 
-    NMPI_Comm_get_name(comm, comm_name, &len);
+    
+    MPIR_Comm_get_name_impl(comm_ptr, comm_name, &len);
     if (len == 0)
     {
 	MPIU_Snprintf(comm_name, MPI_MAX_OBJECT_NAME, "comm=0x%X", comm);

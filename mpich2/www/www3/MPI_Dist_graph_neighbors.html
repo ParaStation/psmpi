@@ -15,22 +15,22 @@ int MPI_Dist_graph_neighbors(MPI_Comm comm,
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>comm </B><DD>descr (type)
+<DT><B>comm </B><DD>communicator with distributed graph topology (handle)
 
-<DT><B>maxindegree </B><DD>descr (type)
+<DT><B>maxindegree </B><DD>size of sources and sourceweights arrays (non-negative integer)
 
-<DT><B>maxoutdegree </B><DD>descr (type)
+<DT><B>maxoutdegree </B><DD>size of destinations and destweights arrays (non-negative integer)
 </DL>
 <P>
 <H2>Output Parameter</H2>
 <DL>
-<DT><B>sources </B><DD>descr (type)
+<DT><B>sources </B><DD>processes for which the calling process is a destination (array of non-negative integers)
 
-<DT><B>sourceweights </B><DD>descr (type)
+<DT><B>sourceweights </B><DD>weights of the edges into the calling process (array of non-negative integers)
 
-<DT><B>destinations </B><DD>descr (type)
+<DT><B>destinations </B><DD>processes for which the calling process is a source (array of non-negative integers)
 
-<DT><B>destweights </B><DD>descr (type)
+<DT><B>destweights </B><DD>weights of the edges out of the calling process (array of non-negative integers)
 </DL>
 <P>
 <H2>Thread and Interrupt Safety</H2>

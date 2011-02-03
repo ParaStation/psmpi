@@ -1,14 +1,14 @@
 <dir>
-<file name="tcp_finalize.c" info="1252582256"/>
-<file name="tcp_init.c" info="1272578511"/>
+<file name="tcp_finalize.c" info="1279917385"/>
+<file name="tcp_init.c" info="1294957044"/>
 <file name="tcp_queue.h" info="1248300148"/>
-<file name="tcp_utility.c" info="1257000213"/>
-<file name="tcp_send.c" info="1272057425"/>
-<file name="socksm.c" info="1272057425"/>
-<file name="tcp_ckpt.c" info="1272578511"/>
-<file name="tcp_impl.h" info="1272057425"/>
+<file name="tcp_utility.c" info="1279917385"/>
+<file name="tcp_send.c" info="1294957044"/>
+<file name="socksm.c" info="1294957044"/>
+<file name="tcp_ckpt.c" info="1285783195"/>
+<file name="tcp_impl.h" info="1294957044"/>
 <file name="tcp_getip.c" info="1248300148"/>
-<file name="socksm.h" info="1272057425"/>
+<file name="socksm.h" info="1283374210"/>
 </dir>
 <data>
 <fileinfo name="tcp_finalize.c">
@@ -36,6 +36,7 @@ MPID_STATE_MPID_NEM_TCP_CONN_EST MPID_nem_tcp_conn_est
 MPID_STATE_MPID_NEM_TCP_ISTARTCONTIGMSG MPID_nem_tcp_iStartContigMsg
 MPID_STATE_MPID_NEM_TCP_ISTARTCONTIGMSG_PAUSED MPID_nem_tcp_iStartContigMsg_paused
 MPID_STATE_MPID_NEM_TCP_ISENDCONTIGMSG MPID_nem_tcp_iSendContig
+MPID_STATE_MPID_NEM_TCP_ERROR_OUT_SEND_QUEUE MPID_nem_tcp_error_out_send_queue
 </fileinfo>
 <fileinfo name="socksm.c">
 MPID_STATE_FOUND_BETTER_SC found_better_sc
@@ -44,8 +45,10 @@ MPID_STATE_SEND_TMPVC_INFO send_tmpvc_info
 MPID_STATE_RECV_ID_OR_TMPVC_INFO recv_id_or_tmpvc_info
 MPID_STATE_RECV_CMD_PKT recv_cmd_pkt
 MPID_STATE_MPID_NEM_TCP_CONNECT MPID_nem_tcp_connect
-MPID_STATE_CLEANUP_SC MPID_nem_tcp_connect
+MPID_STATE_CLEANUP_AND_FREE_SC_PLFD cleanup_and_free_sc_plfd
+MPID_STATE_CLOSE_CLEANUP_AND_FREE_SC_PLFD close_cleanup_and_free_sc_plfd
 MPID_STATE_MPID_NEM_TCP_CLEANUP MPID_nem_tcp_cleanup
+MPID_STATE_MPID_NEM_TCP_CKPT_CLEANUP MPID_nem_tcp_ckpt_cleanup
 MPID_STATE_STATE_TC_C_CNTING_HANDLER state_tc_c_cnting_handler
 MPID_STATE_STATE_TC_C_CNTD_HANDLER state_tc_c_cntd_handler
 MPID_STATE_STATE_C_RANKSENT_HANDLER state_c_ranksent_handler
@@ -56,8 +59,9 @@ MPID_STATE_STATE_L_RANKRCVD_HANDLER state_l_rankrcvd_handler
 MPID_STATE_STATE_L_TMPVCRCVD_HANDLER state_l_tmpvcrcvd_handler
 MPID_STATE_MPID_NEM_TCP_RECV_HANDLER MPID_nem_tcp_recv_handler
 MPID_STATE_STATE_COMMRDY_HANDLER state_commrdy_handler
-MPID_STATE_STATE_D_QUIESCENT_HANDLER state_d_quiescent_handler
 MPID_STATE_MPID_NEM_TCP_STATE_LISTENING_HANDLER state_listening_handler
+MPID_STATE_ERROR_CLOSED error_closed
+MPID_STATE_MPID_NEM_TCP_CLEANUP_ON_ERROR MPID_nem_tcp_cleanup_on_error
 </fileinfo>
 <fileinfo name="tcp_ckpt.c">
 MPID_STATE_MPID_NEM_TCP_CKPT_PAUSE_SEND_VC MPID_nem_tcp_ckpt_pause_send_vc

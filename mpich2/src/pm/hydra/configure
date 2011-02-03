@@ -787,6 +787,8 @@ ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
 LIBOBJS
+hydra_have_ftb_FALSE
+hydra_have_ftb_TRUE
 hydra_have_port_FALSE
 hydra_have_port_TRUE
 hydra_have_select_FALSE
@@ -799,28 +801,28 @@ hydra_have_hwloc_FALSE
 hydra_have_hwloc_TRUE
 hydra_have_plpa_FALSE
 hydra_have_plpa_TRUE
+hydra_build_embedded_hwloc_FALSE
+hydra_build_embedded_hwloc_TRUE
 hydra_ui_mpich_FALSE
 hydra_ui_mpich_TRUE
 hydra_ui
 hydra_pm_pmiserv_FALSE
 hydra_pm_pmiserv_TRUE
 hydra_pm
-hydra_rmk_pbs_FALSE
-hydra_rmk_pbs_TRUE
-hydra_rmk_init_array
-hydra_rmk_name_array
 hydra_rmk_init_decl
-hydra_rmk_names
-hydra_bss_names
+hydra_rmk_init_array
+hydra_rmk_array
+hydra_launcher_init_decl
+hydra_launcher_init_array
+hydra_launcher_array
+hydra_bss_none_FALSE
+hydra_bss_none_TRUE
+hydra_bss_pbs_FALSE
+hydra_bss_pbs_TRUE
 hydra_bss_persist_FALSE
 hydra_bss_persist_TRUE
-hydra_bss_slurm_FALSE
-hydra_bss_slurm_TRUE
-hydra_bss_ssh_FALSE
-hydra_bss_ssh_TRUE
-hydra_bss_init_array
-hydra_bss_name_array
-hydra_bss_init_decl
+hydra_bss_external_FALSE
+hydra_bss_external_TRUE
 top_srcdir
 DOXYGEN
 mpl_srcdir
@@ -945,9 +947,9 @@ enable_libtool_lock
 enable_cache
 enable_strict
 with_hydra_bss
-with_hydra_rmk
 with_hydra_pm
 with_hydra_ui
+with_hwloc_prefix
 with_hydra_bindlib
 with_hydra_ckpointlib
 with_blcr
@@ -958,6 +960,9 @@ enable_g
 enable_error_checking
 enable_warnings
 enable_profiling
+with_ftb
+with_ftb_include
+with_ftb_lib
 '
       ac_precious_vars='build_alias
 host_alias
@@ -1607,8 +1612,8 @@ Optional Features:
   --enable-fast-install[=PKGS]
                           optimize for fast installation [default=yes]
   --disable-libtool-lock  avoid locking (might break parallel builds)
---enable-cache  - Turn on configure caching
---enable-strict  - Turn on strict compilation testing
+  --enable-cache          Turn on configure caching
+  --enable-strict         Turn on strict compilation testing
 --enable-g=option - Control the level of debugging support. option is a list of comma
 			   separated names including
 	none     - No debugging
@@ -1625,11 +1630,16 @@ Optional Packages:
   --with-pic              try to use only PIC/non-PIC objects [default=use
                           both]
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
-  --with-hydra-bss=name - Boot-strap Server (ssh, rsh, fork, slurm, persist)
-  --with-hydra-rmk=name - Resource Management Kernel (pbs)
+  --with-hydra-bss=name   Bootstrap Server
+                          (none,ssh,rsh,fork,slurm,ll,lsf,sge,persist,pbs)
   --with-hydra-pm=name - Process Manager (pmiserv)
   --with-hydra-ui=name - User Interface (mpich)
-  --with-hydra-bindlib=name - Process Binding Library (plpa, hwloc)
+  --with-hwloc-prefix[=DIR]
+                          use the hwloc library installed in DIR, rather than
+                          the one included in "tools/bind/hwloc/hwloc". Pass
+                          "embedded" to force usage of the hwloc source
+                          distributed with hydra.
+  --with-hydra-bindlib=name - Process Binding Library (hwloc, plpa)
   --with-hydra-ckpointlib=name - Checkpointing Library (blcr)
   --with-blcr=path        specify path where blcr include directory and lib
                           directory can be found
@@ -1638,6 +1648,11 @@ Optional Packages:
                           found
   --with-blcr-lib=path    specify path where blcr lib directory can be found
   --with-hydra-demux=name - Demux engine (poll, select, port)
+  --with-ftb=path         specify path where ftb include directory and lib
+                          directory can be found
+  --with-ftb-include=path specify path where ftb include directory can be
+                          found
+  --with-ftb-lib=path     specify path where ftb lib directory can be found
 
 Some influential environment variables:
   CC          C compiler command
@@ -2745,206 +2760,83 @@ AM_BACKSLASH='\'
 	fi
 
 
-# Bug in autoconf adds -O2 and -g by default. Make sure we only get
-# the flags we want.
-save_cflags=$CFLAGS
-ac_ext=c
+DEPDIR="${am__leading_dot}deps"
+
+ac_config_commands="$ac_config_commands depfiles"
+
+
+am_make=${MAKE-make}
+cat > confinc << 'END'
+am__doit:
+	@echo this is the am__doit target
+.PHONY: am__doit
+END
+# If we don't find an include directive, just comment out the code.
+{ $as_echo "$as_me:$LINENO: checking for style of include used by $am_make" >&5
+$as_echo_n "checking for style of include used by $am_make... " >&6; }
+am__include="#"
+am__quote=
+_am_result=none
+# First try GNU make style include.
+echo "include confinc" > confmf
+# Ignore all kinds of additional output from `make'.
+case `$am_make -s -f confmf 2> /dev/null` in #(
+*the\ am__doit\ target*)
+  am__include=include
+  am__quote=
+  _am_result=GNU
+  ;;
+esac
+# Now try BSD make style include.
+if test "$am__include" = "#"; then
+   echo '.include "confinc"' > confmf
+   case `$am_make -s -f confmf 2> /dev/null` in #(
+   *the\ am__doit\ target*)
+     am__include=.include
+     am__quote="\""
+     _am_result=BSD
+     ;;
+   esac
+fi
+
+
+{ $as_echo "$as_me:$LINENO: result: $_am_result" >&5
+$as_echo "$_am_result" >&6; }
+rm -f confinc confmf
+
+# Check whether --enable-dependency-tracking was given.
+if test "${enable_dependency_tracking+set}" = set; then
+  enableval=$enable_dependency_tracking;
+fi
+
+if test "x$enable_dependency_tracking" != xno; then
+  am_depcomp="$ac_aux_dir/depcomp"
+  AMDEPBACKSLASH='\'
+fi
+ if test "x$enable_dependency_tracking" != xno; then
+  AMDEP_TRUE=
+  AMDEP_FALSE='#'
+else
+  AMDEP_TRUE='#'
+  AMDEP_FALSE=
+fi
+
+
+
+
+	if test -z "${pac_save_CFLAGS_nesting}" ; then
+	   pac_save_CFLAGS_nesting=0
+	fi
+	eval pac_save_CFLAGS_${pac_save_CFLAGS_nesting}='"$CFLAGS"'
+	pac_save_CFLAGS_nesting=`expr ${pac_save_CFLAGS_nesting} + 1`
+
+	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}gcc", so it can be a program name with args.
-set dummy ${ac_tool_prefix}gcc; ac_word=$2
-{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_CC+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_CC="${ac_tool_prefix}gcc"
-    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  { $as_echo "$as_me:$LINENO: result: $CC" >&5
-$as_echo "$CC" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_prog_CC"; then
-  ac_ct_CC=$CC
-  # Extract the first word of "gcc", so it can be a program name with args.
-set dummy gcc; ac_word=$2
-{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_ac_ct_CC+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_CC"; then
-  ac_cv_prog_ac_ct_CC="$ac_ct_CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_ac_ct_CC="gcc"
-    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_CC=$ac_cv_prog_ac_ct_CC
-if test -n "$ac_ct_CC"; then
-  { $as_echo "$as_me:$LINENO: result: $ac_ct_CC" >&5
-$as_echo "$ac_ct_CC" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_ct_CC" = x; then
-    CC=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:$LINENO: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    CC=$ac_ct_CC
-  fi
-else
-  CC="$ac_cv_prog_CC"
-fi
-
-if test -z "$CC"; then
-          if test -n "$ac_tool_prefix"; then
-    # Extract the first word of "${ac_tool_prefix}cc", so it can be a program name with args.
-set dummy ${ac_tool_prefix}cc; ac_word=$2
-{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_CC+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_CC="${ac_tool_prefix}cc"
-    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  { $as_echo "$as_me:$LINENO: result: $CC" >&5
-$as_echo "$CC" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  fi
-fi
-if test -z "$CC"; then
-  # Extract the first word of "cc", so it can be a program name with args.
-set dummy cc; ac_word=$2
-{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_CC+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-  ac_prog_rejected=no
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    if test "$as_dir/$ac_word$ac_exec_ext" = "/usr/ucb/cc"; then
-       ac_prog_rejected=yes
-       continue
-     fi
-    ac_cv_prog_CC="cc"
-    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-if test $ac_prog_rejected = yes; then
-  # We found a bogon in the path, so make sure we never use it.
-  set dummy $ac_cv_prog_CC
-  shift
-  if test $# != 0; then
-    # We chose a different compiler from the bogus one.
-    # However, it has the same basename, so the bogon will be chosen
-    # first if we set CC to just the basename; use the full file name.
-    shift
-    ac_cv_prog_CC="$as_dir/$ac_word${1+' '}$@"
-  fi
-fi
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  { $as_echo "$as_me:$LINENO: result: $CC" >&5
-$as_echo "$CC" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$CC"; then
-  if test -n "$ac_tool_prefix"; then
-  for ac_prog in cl.exe
+  for ac_prog in gcc icc pgcc xlc xlC pathcc cc
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -2988,7 +2880,7 @@ fi
 fi
 if test -z "$CC"; then
   ac_ct_CC=$CC
-  for ac_prog in cl.exe
+  for ac_prog in gcc icc pgcc xlc xlC pathcc cc
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -3041,8 +2933,6 @@ ac_tool_warned=yes ;;
 esac
     CC=$ac_ct_CC
   fi
-fi
-
 fi
 
 
@@ -3680,68 +3570,6 @@ ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
-DEPDIR="${am__leading_dot}deps"
-
-ac_config_commands="$ac_config_commands depfiles"
-
-
-am_make=${MAKE-make}
-cat > confinc << 'END'
-am__doit:
-	@echo this is the am__doit target
-.PHONY: am__doit
-END
-# If we don't find an include directive, just comment out the code.
-{ $as_echo "$as_me:$LINENO: checking for style of include used by $am_make" >&5
-$as_echo_n "checking for style of include used by $am_make... " >&6; }
-am__include="#"
-am__quote=
-_am_result=none
-# First try GNU make style include.
-echo "include confinc" > confmf
-# Ignore all kinds of additional output from `make'.
-case `$am_make -s -f confmf 2> /dev/null` in #(
-*the\ am__doit\ target*)
-  am__include=include
-  am__quote=
-  _am_result=GNU
-  ;;
-esac
-# Now try BSD make style include.
-if test "$am__include" = "#"; then
-   echo '.include "confinc"' > confmf
-   case `$am_make -s -f confmf 2> /dev/null` in #(
-   *the\ am__doit\ target*)
-     am__include=.include
-     am__quote="\""
-     _am_result=BSD
-     ;;
-   esac
-fi
-
-
-{ $as_echo "$as_me:$LINENO: result: $_am_result" >&5
-$as_echo "$_am_result" >&6; }
-rm -f confinc confmf
-
-# Check whether --enable-dependency-tracking was given.
-if test "${enable_dependency_tracking+set}" = set; then
-  enableval=$enable_dependency_tracking;
-fi
-
-if test "x$enable_dependency_tracking" != xno; then
-  am_depcomp="$ac_aux_dir/depcomp"
-  AMDEPBACKSLASH='\'
-fi
- if test "x$enable_dependency_tracking" != xno; then
-  AMDEP_TRUE=
-  AMDEP_FALSE='#'
-else
-  AMDEP_TRUE='#'
-  AMDEP_FALSE=
-fi
-
-
 
 depcc="$CC"   am_compiler_list=
 
@@ -3869,6 +3697,328 @@ else
   am__fastdepCC_FALSE=
 fi
 
+
+
+	pac_save_CFLAGS_nesting=`expr ${pac_save_CFLAGS_nesting} - 1`
+	eval CFLAGS="\$pac_save_CFLAGS_${pac_save_CFLAGS_nesting}"
+	eval pac_save_CFLAGS_${pac_save_CFLAGS_nesting}=""
+
+
+
+
+{ $as_echo "$as_me:$LINENO: checking for an ANSI C-conforming const" >&5
+$as_echo_n "checking for an ANSI C-conforming const... " >&6; }
+if test "${ac_cv_c_const+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+/* FIXME: Include the comments suggested by Paul. */
+#ifndef __cplusplus
+  /* Ultrix mips cc rejects this.  */
+  typedef int charset[2];
+  const charset cs;
+  /* SunOS 4.1.1 cc rejects this.  */
+  char const *const *pcpcc;
+  char **ppc;
+  /* NEC SVR4.0.2 mips cc rejects this.  */
+  struct point {int x, y;};
+  static struct point const zero = {0,0};
+  /* AIX XL C 1.02.0.0 rejects this.
+     It does not let you subtract one const X* pointer from another in
+     an arm of an if-expression whose if-part is not a constant
+     expression */
+  const char *g = "string";
+  pcpcc = &g + (g ? g-g : 0);
+  /* HPUX 7.0 cc rejects these. */
+  ++pcpcc;
+  ppc = (char**) pcpcc;
+  pcpcc = (char const *const *) ppc;
+  { /* SCO 3.2v4 cc rejects this.  */
+    char *t;
+    char const *s = 0 ? (char *) 0 : (char const *) 0;
+
+    *t++ = 0;
+    if (s) return 0;
+  }
+  { /* Someone thinks the Sun supposedly-ANSI compiler will reject this.  */
+    int x[] = {25, 17};
+    const int *foo = &x[0];
+    ++foo;
+  }
+  { /* Sun SC1.0 ANSI compiler rejects this -- but not the above. */
+    typedef const int *iptr;
+    iptr p = 0;
+    ++p;
+  }
+  { /* AIX XL C 1.02.0.0 rejects this saying
+       "k.c", line 2.27: 1506-025 (S) Operand must be a modifiable lvalue. */
+    struct s { int j; const int *ap[3]; };
+    struct s *b; b->j = 5;
+  }
+  { /* ULTRIX-32 V3.1 (Rev 9) vcc rejects this */
+    const int foo = 10;
+    if (!foo) return 0;
+  }
+  return !cs[0] && !zero.x;
+#endif
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_c_const=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_c_const=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_c_const" >&5
+$as_echo "$ac_cv_c_const" >&6; }
+if test $ac_cv_c_const = no; then
+
+cat >>confdefs.h <<\_ACEOF
+#define const /**/
+_ACEOF
+
+fi
+
+{ $as_echo "$as_me:$LINENO: checking for working volatile" >&5
+$as_echo_n "checking for working volatile... " >&6; }
+if test "${ac_cv_c_volatile+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+int
+main ()
+{
+
+volatile int x;
+int * volatile y = (int *) 0;
+return !x && !y;
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_c_volatile=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_c_volatile=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_c_volatile" >&5
+$as_echo "$ac_cv_c_volatile" >&6; }
+if test $ac_cv_c_volatile = no; then
+
+cat >>confdefs.h <<\_ACEOF
+#define volatile /**/
+_ACEOF
+
+fi
+
+{ $as_echo "$as_me:$LINENO: checking for C/C++ restrict keyword" >&5
+$as_echo_n "checking for C/C++ restrict keyword... " >&6; }
+if test "${ac_cv_c_restrict+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_cv_c_restrict=no
+   # The order here caters to the fact that C++ does not require restrict.
+   for ac_kw in __restrict __restrict__ _Restrict restrict; do
+     cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+typedef int * int_ptr;
+	int foo (int_ptr $ac_kw ip) {
+	return ip[0];
+       }
+int
+main ()
+{
+int s[1];
+	int * $ac_kw t = s;
+	t[0] = 0;
+	return foo(t)
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_c_restrict=$ac_kw
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+     test "$ac_cv_c_restrict" != no && break
+   done
+
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_c_restrict" >&5
+$as_echo "$ac_cv_c_restrict" >&6; }
+
+
+ case $ac_cv_c_restrict in
+   restrict) ;;
+   no) cat >>confdefs.h <<\_ACEOF
+#define restrict /**/
+_ACEOF
+ ;;
+   *)  cat >>confdefs.h <<_ACEOF
+#define restrict $ac_cv_c_restrict
+_ACEOF
+ ;;
+ esac
+
+{ $as_echo "$as_me:$LINENO: checking for inline" >&5
+$as_echo_n "checking for inline... " >&6; }
+if test "${ac_cv_c_inline+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_cv_c_inline=no
+for ac_kw in inline __inline__ __inline; do
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#ifndef __cplusplus
+typedef int foo_t;
+static $ac_kw foo_t static_foo () {return 0; }
+$ac_kw foo_t foo () {return 0; }
+#endif
+
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_cv_c_inline=$ac_kw
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  test "$ac_cv_c_inline" != no && break
+done
+
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_c_inline" >&5
+$as_echo "$ac_cv_c_inline" >&6; }
+
+
+case $ac_cv_c_inline in
+  inline | yes) ;;
+  *)
+    case $ac_cv_c_inline in
+      no) ac_val=;;
+      *) ac_val=$ac_cv_c_inline;;
+    esac
+    cat >>confdefs.h <<_ACEOF
+#ifndef __cplusplus
+#define inline $ac_val
+#endif
+_ACEOF
+    ;;
+esac
 
 
 ac_ext=c
@@ -4493,6 +4643,419 @@ fi
 done
 
 
+# The cast to long int works around a bug in the HP C Compiler
+# version HP92453-01 B.11.11.23709.GP, which incorrectly rejects
+# declarations like `int a3[[(sizeof (unsigned char)) >= 0]];'.
+# This bug is HP SR number 8606223364.
+{ $as_echo "$as_me:$LINENO: checking size of unsigned long" >&5
+$as_echo_n "checking size of unsigned long... " >&6; }
+if test "${ac_cv_sizeof_unsigned_long+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  if test "$cross_compiling" = yes; then
+  # Depending upon the size, compute the lo and hi bounds.
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+static int test_array [1 - 2 * !(((long int) (sizeof (unsigned long))) >= 0)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_lo=0 ac_mid=0
+  while :; do
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+static int test_array [1 - 2 * !(((long int) (sizeof (unsigned long))) <= $ac_mid)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_hi=$ac_mid; break
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_lo=`expr $ac_mid + 1`
+			if test $ac_lo -le $ac_mid; then
+			  ac_lo= ac_hi=
+			  break
+			fi
+			ac_mid=`expr 2 '*' $ac_mid + 1`
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  done
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+static int test_array [1 - 2 * !(((long int) (sizeof (unsigned long))) < 0)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_hi=-1 ac_mid=-1
+  while :; do
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+static int test_array [1 - 2 * !(((long int) (sizeof (unsigned long))) >= $ac_mid)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_lo=$ac_mid; break
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_hi=`expr '(' $ac_mid ')' - 1`
+			if test $ac_mid -le $ac_hi; then
+			  ac_lo= ac_hi=
+			  break
+			fi
+			ac_mid=`expr 2 '*' $ac_mid`
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  done
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_lo= ac_hi=
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+# Binary search between lo and hi bounds.
+while test "x$ac_lo" != "x$ac_hi"; do
+  ac_mid=`expr '(' $ac_hi - $ac_lo ')' / 2 + $ac_lo`
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+int
+main ()
+{
+static int test_array [1 - 2 * !(((long int) (sizeof (unsigned long))) <= $ac_mid)];
+test_array [0] = 0
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_hi=$ac_mid
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_lo=`expr '(' $ac_mid ')' + 1`
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+done
+case $ac_lo in
+?*) ac_cv_sizeof_unsigned_long=$ac_lo;;
+'') if test "$ac_cv_type_unsigned_long" = yes; then
+     { { $as_echo "$as_me:$LINENO: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+{ { $as_echo "$as_me:$LINENO: error: cannot compute sizeof (unsigned long)
+See \`config.log' for more details." >&5
+$as_echo "$as_me: error: cannot compute sizeof (unsigned long)
+See \`config.log' for more details." >&2;}
+   { (exit 77); exit 77; }; }; }
+   else
+     ac_cv_sizeof_unsigned_long=0
+   fi ;;
+esac
+else
+  cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+static long int longval () { return (long int) (sizeof (unsigned long)); }
+static unsigned long int ulongval () { return (long int) (sizeof (unsigned long)); }
+#include <stdio.h>
+#include <stdlib.h>
+int
+main ()
+{
+
+  FILE *f = fopen ("conftest.val", "w");
+  if (! f)
+    return 1;
+  if (((long int) (sizeof (unsigned long))) < 0)
+    {
+      long int i = longval ();
+      if (i != ((long int) (sizeof (unsigned long))))
+	return 1;
+      fprintf (f, "%ld", i);
+    }
+  else
+    {
+      unsigned long int i = ulongval ();
+      if (i != ((long int) (sizeof (unsigned long))))
+	return 1;
+      fprintf (f, "%lu", i);
+    }
+  /* Do not output a trailing newline, as this causes \r\n confusion
+     on some platforms.  */
+  return ferror (f) || fclose (f) != 0;
+
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && { ac_try='./conftest$ac_exeext'
+  { (case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_try") 2>&5
+  ac_status=$?
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_sizeof_unsigned_long=`cat conftest.val`
+else
+  $as_echo "$as_me: program exited with status $ac_status" >&5
+$as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+( exit $ac_status )
+if test "$ac_cv_type_unsigned_long" = yes; then
+     { { $as_echo "$as_me:$LINENO: error: in \`$ac_pwd':" >&5
+$as_echo "$as_me: error: in \`$ac_pwd':" >&2;}
+{ { $as_echo "$as_me:$LINENO: error: cannot compute sizeof (unsigned long)
+See \`config.log' for more details." >&5
+$as_echo "$as_me: error: cannot compute sizeof (unsigned long)
+See \`config.log' for more details." >&2;}
+   { (exit 77); exit 77; }; }; }
+   else
+     ac_cv_sizeof_unsigned_long=0
+   fi
+fi
+rm -rf conftest.dSYM
+rm -f core *.core core.conftest.* gmon.out bb.out conftest$ac_exeext conftest.$ac_objext conftest.$ac_ext
+fi
+rm -f conftest.val
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_sizeof_unsigned_long" >&5
+$as_echo "$ac_cv_sizeof_unsigned_long" >&6; }
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define SIZEOF_UNSIGNED_LONG $ac_cv_sizeof_unsigned_long
+_ACEOF
+
+
+
+# Bug in autoconf adds -O2 and -g by default. Make sure we only get
+# the flags we want.
+
+
+	if test -z "${pac_save_CFLAGS_nesting}" ; then
+	   pac_save_CFLAGS_nesting=0
+	fi
+	eval pac_save_CFLAGS_${pac_save_CFLAGS_nesting}='"$CFLAGS"'
+	pac_save_CFLAGS_nesting=`expr ${pac_save_CFLAGS_nesting} + 1`
+
+
+	if test -z "${pac_save_CPPFLAGS_nesting}" ; then
+	   pac_save_CPPFLAGS_nesting=0
+	fi
+	eval pac_save_CPPFLAGS_${pac_save_CPPFLAGS_nesting}='"$CPPFLAGS"'
+	pac_save_CPPFLAGS_nesting=`expr ${pac_save_CPPFLAGS_nesting} + 1`
+
+
+	if test -z "${pac_save_CXXFLAGS_nesting}" ; then
+	   pac_save_CXXFLAGS_nesting=0
+	fi
+	eval pac_save_CXXFLAGS_${pac_save_CXXFLAGS_nesting}='"$CXXFLAGS"'
+	pac_save_CXXFLAGS_nesting=`expr ${pac_save_CXXFLAGS_nesting} + 1`
+
+
+	if test -z "${pac_save_FFLAGS_nesting}" ; then
+	   pac_save_FFLAGS_nesting=0
+	fi
+	eval pac_save_FFLAGS_${pac_save_FFLAGS_nesting}='"$FFLAGS"'
+	pac_save_FFLAGS_nesting=`expr ${pac_save_FFLAGS_nesting} + 1`
+
+
+	if test -z "${pac_save_FCFLAGS_nesting}" ; then
+	   pac_save_FCFLAGS_nesting=0
+	fi
+	eval pac_save_FCFLAGS_${pac_save_FCFLAGS_nesting}='"$FCFLAGS"'
+	pac_save_FCFLAGS_nesting=`expr ${pac_save_FCFLAGS_nesting} + 1`
+
+
+	if test -z "${pac_save_LDFLAGS_nesting}" ; then
+	   pac_save_LDFLAGS_nesting=0
+	fi
+	eval pac_save_LDFLAGS_${pac_save_LDFLAGS_nesting}='"$LDFLAGS"'
+	pac_save_LDFLAGS_nesting=`expr ${pac_save_LDFLAGS_nesting} + 1`
+
+
+	if test -z "${pac_save_LIBS_nesting}" ; then
+	   pac_save_LIBS_nesting=0
+	fi
+	eval pac_save_LIBS_${pac_save_LIBS_nesting}='"$LIBS"'
+	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} + 1`
+
+
 { $as_echo "$as_me:$LINENO: checking for size_t" >&5
 $as_echo_n "checking for size_t... " >&6; }
 if test "${ac_cv_type_size_t+set}" = set; then
@@ -4597,7 +5160,43 @@ _ACEOF
 
 fi
 
-CFLAGS=$save_cflags
+
+
+	pac_save_CFLAGS_nesting=`expr ${pac_save_CFLAGS_nesting} - 1`
+	eval CFLAGS="\$pac_save_CFLAGS_${pac_save_CFLAGS_nesting}"
+	eval pac_save_CFLAGS_${pac_save_CFLAGS_nesting}=""
+
+
+	pac_save_CPPFLAGS_nesting=`expr ${pac_save_CPPFLAGS_nesting} - 1`
+	eval CPPFLAGS="\$pac_save_CPPFLAGS_${pac_save_CPPFLAGS_nesting}"
+	eval pac_save_CPPFLAGS_${pac_save_CPPFLAGS_nesting}=""
+
+
+	pac_save_CXXFLAGS_nesting=`expr ${pac_save_CXXFLAGS_nesting} - 1`
+	eval CXXFLAGS="\$pac_save_CXXFLAGS_${pac_save_CXXFLAGS_nesting}"
+	eval pac_save_CXXFLAGS_${pac_save_CXXFLAGS_nesting}=""
+
+
+	pac_save_FFLAGS_nesting=`expr ${pac_save_FFLAGS_nesting} - 1`
+	eval FFLAGS="\$pac_save_FFLAGS_${pac_save_FFLAGS_nesting}"
+	eval pac_save_FFLAGS_${pac_save_FFLAGS_nesting}=""
+
+
+	pac_save_FCFLAGS_nesting=`expr ${pac_save_FCFLAGS_nesting} - 1`
+	eval FCFLAGS="\$pac_save_FCFLAGS_${pac_save_FCFLAGS_nesting}"
+	eval pac_save_FCFLAGS_${pac_save_FCFLAGS_nesting}=""
+
+
+	pac_save_LDFLAGS_nesting=`expr ${pac_save_LDFLAGS_nesting} - 1`
+	eval LDFLAGS="\$pac_save_LDFLAGS_${pac_save_LDFLAGS_nesting}"
+	eval pac_save_LDFLAGS_${pac_save_LDFLAGS_nesting}=""
+
+
+	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} - 1`
+	eval LIBS="\$pac_save_LIBS_${pac_save_LIBS_nesting}"
+	eval pac_save_LIBS_${pac_save_LIBS_nesting}=""
+
+
 
 # Libtool might be required for third-party packages
 case `pwd` in
@@ -5168,13 +5767,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:5171: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:5770: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5174: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:5773: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:5177: output\"" >&5)
+  (eval echo "\"\$as_me:5776: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -6379,7 +6978,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 6382 "configure"' > conftest.$ac_ext
+  echo '#line 6981 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -7748,11 +8347,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7751: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8350: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7755: \$? = $ac_status" >&5
+   echo "$as_me:8354: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8087,11 +8686,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8090: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8689: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:8094: \$? = $ac_status" >&5
+   echo "$as_me:8693: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -8192,11 +8791,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8195: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8794: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8199: \$? = $ac_status" >&5
+   echo "$as_me:8798: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8247,11 +8846,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:8250: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:8849: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:8254: \$? = $ac_status" >&5
+   echo "$as_me:8853: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -11047,7 +11646,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11050 "configure"
+#line 11649 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11143,7 +11742,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 11146 "configure"
+#line 11745 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -11473,7 +12072,7 @@ test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 
 # Check whether --enable-cache was given.
 if test "${enable_cache+set}" = set; then
-  enableval=$enable_cache; enable_cache="$enableval"
+  enableval=$enable_cache;
 else
   enable_cache="notgiven"
 fi
@@ -11524,6 +12123,9 @@ if test "$enable_strict_done" != "yes" ; then
     #	    values, but they are structs of a single basic type (used to enforce
     #	    type checking for relative vs. absolute ptrs), and with optimization
     #	    the aggregate value is converted to a scalar.
+    #   -Wdeclaration-after-statement -- This is a C89
+    #       requirement. When compiling with C99, this should be
+    #       disabled.
     # the embedded newlines in this string are safe because we evaluate each
     # argument in the for-loop below and append them to the CFLAGS with a space
     # as the separator instead
@@ -11540,7 +12142,6 @@ if test "$enable_strict_done" != "yes" ; then
         -Wmissing-declarations
         -Wno-long-long
         -Wfloat-equal
-        -Wdeclaration-after-statement
         -Wundef
         -Wno-endif-labels
         -Wpointer-arith
@@ -11556,48 +12157,129 @@ if test "$enable_strict_done" != "yes" ; then
         -Winvalid-pch
         -Wno-pointer-sign
         -Wvariadic-macros
-        -std=c89
         -Wno-format-zero-length
 	-Wno-type-limits
     "
-    pac_cc_strict_flags=""
-    case "$enable_strict" in
-        yes|all|posix)
-		enable_strict_done="yes"
-		pac_cc_strict_flags="-O2 $pac_common_strict_flags -D_POSIX_C_SOURCE=199506L"
-        ;;
 
-        noposix)
+    enable_c89=yes
+    enable_c99=no
+    enable_posix=yes
+    enable_opt=yes
+    flags="`echo $enable_strict | sed -e 's/:/ /g' -e 's/,/ /g'`"
+    for flag in ${flags}; do
+        case "$flag" in
+	     c89)
 		enable_strict_done="yes"
-		pac_cc_strict_flags="-O2 $pac_common_strict_flags"
-        ;;
-
-	noopt)
+		enable_c89=yes
+		;;
+	     c99)
 		enable_strict_done="yes"
-		pac_cc_strict_flags="$pac_common_strict_flags -D_POSIX_C_SOURCE=199506L"
-	;;
-
-        no)
+		enable_c99=yes
+		;;
+	     posix)
+		enable_strict_done="yes"
+		enable_posix=yes
+		;;
+	     noposix)
+		enable_strict_done="yes"
+		enable_posix=no
+		;;
+	     opt)
+		enable_strict_done="yes"
+		enable_opt=yes
+		;;
+	     noopt)
+		enable_strict_done="yes"
+		enable_opt=no
+		;;
+	     all|yes)
+		enable_strict_done="yes"
+		enable_c89=yes
+		enable_posix=yes
+		enable_opt=yes
+	        ;;
+	     no)
 		# Accept and ignore this value
 		:
-        ;;
-
-        *)
-		if test -n "$enable_strict" ; then
-		   { $as_echo "$as_me:$LINENO: WARNING: Unrecognized value for enable-strict:$enable_strict" >&5
-$as_echo "$as_me: WARNING: Unrecognized value for enable-strict:$enable_strict" >&2;}
+		;;
+	     *)
+		if test -n "$flag" ; then
+		   { $as_echo "$as_me:$LINENO: WARNING: Unrecognized value for enable-strict:$flag" >&5
+$as_echo "$as_me: WARNING: Unrecognized value for enable-strict:$flag" >&2;}
 		fi
-        ;;
+		;;
+	esac
+    done
 
-    esac
+    pac_cc_strict_flags=""
+    if test "${enable_strict_done}" = "yes" ; then
+       if test "${enable_opt}" = "yes" ; then
+       	  pac_cc_strict_flags="-O2"
+       fi
+       pac_cc_strict_flags="$pac_cc_strict_flags $pac_common_strict_flags"
+       if test "${enable_posix}" = "yes" ; then
+
+
+	if echo "$pac_cc_strict_flags" | $FGREP -e '-D_POSIX_C_SOURCE=199506L' >/dev/null 2>&1; then
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') contains '-D_POSIX_C_SOURCE=199506L', not appending" >&5
+else
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') does not contain '-D_POSIX_C_SOURCE=199506L', appending" >&5
+		pac_cc_strict_flags="$pac_cc_strict_flags -D_POSIX_C_SOURCE=199506L"
+
+fi
+
+
+       fi
+       # We only allow one of strict-C99 or strict-C89 to be
+       # enabled. If C99 is enabled, we automatically disable C89.
+       if test "${enable_c99}" = "yes" ; then
+
+
+	if echo "$pac_cc_strict_flags" | $FGREP -e '-std=c99' >/dev/null 2>&1; then
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') contains '-std=c99', not appending" >&5
+else
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') does not contain '-std=c99', appending" >&5
+		pac_cc_strict_flags="$pac_cc_strict_flags -std=c99"
+
+fi
+
+
+       elif test "${enable_c89}" = "yes" ; then
+
+
+	if echo "$pac_cc_strict_flags" | $FGREP -e '-std=c89' >/dev/null 2>&1; then
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') contains '-std=c89', not appending" >&5
+else
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') does not contain '-std=c89', appending" >&5
+		pac_cc_strict_flags="$pac_cc_strict_flags -std=c89"
+
+fi
+
+
+
+
+	if echo "$pac_cc_strict_flags" | $FGREP -e '-Wdeclaration-after-statement' >/dev/null 2>&1; then
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') contains '-Wdeclaration-after-statement', not appending" >&5
+else
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') does not contain '-Wdeclaration-after-statement', appending" >&5
+		pac_cc_strict_flags="$pac_cc_strict_flags -Wdeclaration-after-statement"
+
+fi
+
+
+       fi
+    fi
 
     # See if the above options work with the compiler
     accepted_flags=""
     for flag in $pac_cc_strict_flags ; do
-        # the save_CFLAGS variable must be namespaced, otherwise they
-        # may not actually be saved if an invoked macro also uses
-        # save_CFLAGS
-        pcs_save_CFLAGS=$CFLAGS
+
+	if test -z "${pac_save_CFLAGS_nesting}" ; then
+	   pac_save_CFLAGS_nesting=0
+	fi
+	eval pac_save_CFLAGS_${pac_save_CFLAGS_nesting}='"$CFLAGS"'
+	pac_save_CFLAGS_nesting=`expr ${pac_save_CFLAGS_nesting} + 1`
+
 	CFLAGS="$CFLAGS $accepted_flags"
 
 { $as_echo "$as_me:$LINENO: checking whether C compiler accepts option $flag" >&5
@@ -11665,13 +12347,78 @@ fi
 rm -rf conftest.dSYM
 rm -f conftest*
 
-        CFLAGS=$pcs_save_CFLAGS
+
+	pac_save_CFLAGS_nesting=`expr ${pac_save_CFLAGS_nesting} - 1`
+	eval CFLAGS="\$pac_save_CFLAGS_${pac_save_CFLAGS_nesting}"
+	eval pac_save_CFLAGS_${pac_save_CFLAGS_nesting}=""
+
     done
     pac_cc_strict_flags=$accepted_flags
 fi
 
 CFLAGS="$CFLAGS $pac_cc_strict_flags"
 export CFLAGS
+
+
+    { $as_echo "$as_me:$LINENO: checking for variable argument list macro functionality" >&5
+$as_echo_n "checking for variable argument list macro functionality... " >&6; }
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+        #include <stdio.h>
+        #define conftest_va_arg_macro(...) printf(__VA_ARGS__)
+
+int
+main ()
+{
+conftest_va_arg_macro("a test %d", 3);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_MACRO_VA_ARGS 1
+_ACEOF
+
+     { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	{ $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
 
 
 
@@ -11801,6 +12548,12 @@ if test "$cross_compiling" = yes; then
 else
   cat >conftest.$ac_ext <<_ACEOF
 
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
 #include <string.h>
 int foo(void);
 int foo(void)
@@ -11811,6 +12564,7 @@ int main(int argc, char ** argv)
 {
     return (foo() ? 0 : 1);
 }
+
 
 _ACEOF
 rm -f conftest$ac_exeext
@@ -11852,6 +12606,12 @@ fi
 if test "$tmp_am_cross" = yes ; then
     cat >conftest.$ac_ext <<_ACEOF
 
+    /* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
 #include <string.h>
 int foo(void);
 int foo(void)
@@ -11862,6 +12622,7 @@ int main(int argc, char ** argv)
 {
     return (foo() ? 0 : 1);
 }
+
 
 _ACEOF
 rm -f conftest.$ac_objext conftest$ac_exeext
@@ -11922,6 +12683,12 @@ if test "$cross_compiling" = yes; then
 else
   cat >conftest.$ac_ext <<_ACEOF
 
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
 #include <string.h>
 int foo(void);
 int foo(void)
@@ -11932,6 +12699,7 @@ int main(int argc, char ** argv)
 {
     return (foo() ? 0 : 1);
 }
+
 
 _ACEOF
 rm -f conftest$ac_exeext
@@ -11973,6 +12741,12 @@ fi
 if test "$tmp_am_cross" = yes ; then
     cat >conftest.$ac_ext <<_ACEOF
 
+    /* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
 #include <string.h>
 int foo(void);
 int foo(void)
@@ -11983,6 +12757,7 @@ int main(int argc, char ** argv)
 {
     return (foo() ? 0 : 1);
 }
+
 
 _ACEOF
 rm -f conftest.$ac_objext conftest$ac_exeext
@@ -12043,6 +12818,12 @@ if test "$cross_compiling" = yes; then
 else
   cat >conftest.$ac_ext <<_ACEOF
 
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
 #include <string.h>
 int foo(void);
 int foo(void)
@@ -12053,6 +12834,7 @@ int main(int argc, char ** argv)
 {
     return (foo() ? 0 : 1);
 }
+
 
 _ACEOF
 rm -f conftest$ac_exeext
@@ -12094,6 +12876,12 @@ fi
 if test "$tmp_am_cross" = yes ; then
     cat >conftest.$ac_ext <<_ACEOF
 
+    /* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
 #include <string.h>
 int foo(void);
 int foo(void)
@@ -12104,6 +12892,7 @@ int main(int argc, char ** argv)
 {
     return (foo() ? 0 : 1);
 }
+
 
 _ACEOF
 rm -f conftest.$ac_objext conftest$ac_exeext
@@ -12154,16 +12943,35 @@ fi
 
 
 
-# Build information
-if test -s "$srcdir/version/version" ; then
-    HYDRA_VERSION="`cat $srcdir/version/version | grep ^MPICH2_VERSION: | cut -f2 -d' '`"
+# Define -D_DARWIN_C_SOURCE on OS/X to ensure that hwloc will build even if we
+# are building under MPICH2 with --enable-strict that defined _POSIX_C_SOURCE.
+# Some standard Darwin headers don't build correctly under a strict posix
+# environment.
+case $host in
+  *-*-darwin*)
+
+	if echo "$CPPFLAGS" | $FGREP -e '-D_DARWIN_C_SOURCE' >/dev/null 2>&1; then
+  echo "CPPFLAGS(='$CPPFLAGS') contains '-D_DARWIN_C_SOURCE', not appending" >&5
 else
-    HYDRA_VERSION="development copy based on svn version: `svnversion $srcdir`"
+  echo "CPPFLAGS(='$CPPFLAGS') does not contain '-D_DARWIN_C_SOURCE', appending" >&5
+		CPPFLAGS="$CPPFLAGS -D_DARWIN_C_SOURCE"
+
 fi
-if test -s "$srcdir/version/release_date" ; then
-    HYDRA_RELEASE_DATE="`cat $srcdir/version/release_date`"
+
+
+ ;;
+esac
+
+
+# Build information
+if test -s "$srcdir/VERSION" ; then
+    . $srcdir/VERSION
+    HYDRA_VERSION="$MPICH2_VERSION"
+    HYDRA_RELEASE_DATE="$MPICH2_RELEASE_DATE"
 else
-    HYDRA_RELEASE_DATE="development copy based on svn version: `svnversion $srcdir`"
+    { { $as_echo "$as_me:$LINENO: error: Version information not found. Configuration aborted." >&5
+$as_echo "$as_me: error: Version information not found. Configuration aborted." >&2;}
+   { (exit 1); exit 1; }; }
 fi
 
 
@@ -12207,11 +13015,11 @@ _ACEOF
 	pac_save_FFLAGS_nesting=`expr ${pac_save_FFLAGS_nesting} + 1`
 
 
-	if test -z "${pac_save_F90FLAGS_nesting}" ; then
-	   pac_save_F90FLAGS_nesting=0
+	if test -z "${pac_save_FCFLAGS_nesting}" ; then
+	   pac_save_FCFLAGS_nesting=0
 	fi
-	eval pac_save_F90FLAGS_${pac_save_F90FLAGS_nesting}='"$F90FLAGS"'
-	pac_save_F90FLAGS_nesting=`expr ${pac_save_F90FLAGS_nesting} + 1`
+	eval pac_save_FCFLAGS_${pac_save_FCFLAGS_nesting}='"$FCFLAGS"'
+	pac_save_FCFLAGS_nesting=`expr ${pac_save_FCFLAGS_nesting} + 1`
 
 
 	if test -z "${pac_save_LDFLAGS_nesting}" ; then
@@ -12234,7 +13042,7 @@ _ACEOF
 	   CPPFLAGS="$USER_CPPFLAGS"
 	   CXXFLAGS="$USER_CXXFLAGS"
 	   FFLAGS="$USER_FFLAGS"
-	   F90FLAGS="$USER_F90FLAGS"
+	   FCFLAGS="$USER_FCFLAGS"
 	   LDFLAGS="$USER_LDFLAGS"
 	   LIBS="$USER_LIBS"
 	fi
@@ -12278,10 +13086,10 @@ cat >>confdefs.h <<_ACEOF
 _ACEOF
 
 fi
-if test "$F90" != "" ; then
+if test "$FC" != "" ; then
 
 cat >>confdefs.h <<_ACEOF
-#define HYDRA_F90 "$F90 $F90FLAGS $LDFLAGS $LIBS"
+#define HYDRA_F90 "$FC $FCFLAGS $LDFLAGS $LIBS"
 _ACEOF
 
 else
@@ -12313,9 +13121,9 @@ fi
 	eval pac_save_FFLAGS_${pac_save_FFLAGS_nesting}=""
 
 
-	pac_save_F90FLAGS_nesting=`expr ${pac_save_F90FLAGS_nesting} - 1`
-	eval F90FLAGS="\$pac_save_F90FLAGS_${pac_save_F90FLAGS_nesting}"
-	eval pac_save_F90FLAGS_${pac_save_F90FLAGS_nesting}=""
+	pac_save_FCFLAGS_nesting=`expr ${pac_save_FCFLAGS_nesting} - 1`
+	eval FCFLAGS="\$pac_save_FCFLAGS_${pac_save_FCFLAGS_nesting}"
+	eval pac_save_FCFLAGS_${pac_save_FCFLAGS_nesting}=""
 
 
 	pac_save_LDFLAGS_nesting=`expr ${pac_save_LDFLAGS_nesting} - 1`
@@ -12349,7 +13157,13 @@ $as_echo "$as_me: ===== configuring mpl =====" >&6;}
 
 # Build any intermediate directories
 for dir in mpl ; do
-    saveIFS="$IFS"
+
+	if test -z "${pac_save_IFS_nesting}" ; then
+	   pac_save_IFS_nesting=0
+	fi
+	eval pac_save_IFS_${pac_save_IFS_nesting}='"$IFS"'
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} + 1`
+
     IFS="/"
     tmp_curdir=""
     for tmp_subdir in $dir ; do
@@ -12357,7 +13171,11 @@ for dir in mpl ; do
 	if test ! -d "$tmp_curdir" ; then mkdir "$tmp_curdir" ; fi
         tmp_curdir="${tmp_curdir}/"
     done
-    IFS="$saveIFS"
+
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} - 1`
+	eval IFS="\$pac_save_IFS_${pac_save_IFS_nesting}"
+	eval pac_save_IFS_${pac_save_IFS_nesting}=""
+
 done
 
 	pac_abs_srcdir=`(cd $srcdir && pwd)`
@@ -12369,82 +13187,85 @@ done
         pac_subconfigure_file="$pac_abs_srcdir/mpl/configure"
 	if test -x $pac_subconfigure_file ; then
 	   pac_subconfig_args=""
-	   prev_arg=""
 
-	   # Strip off the args we need to update
-	   for ac_arg in $ac_configure_args ; do
+            # Set IFS so ac_configure_args can be tokenized
+            # with extra " " tokens being skipped.
 
-	       # HACK: Though each argument in ac_configure_args is
-	       # quoted to account for spaces, when we get them, the
-	       # argument list is treated as a space separated list
-	       # and the quotes are treated as a part of the
-	       # argument. So, we explicitly look for the quotes and
-	       # recreate the arguments. If/when this is fixed by
-	       # autoconf, this hack can be deleted.
-	       end_char=`echo $ac_arg | sed -e 's/.*\(.\)$/\1/g'`
+	if test -z "${pac_save_IFS_nesting}" ; then
+	   pac_save_IFS_nesting=0
+	fi
+	eval pac_save_IFS_${pac_save_IFS_nesting}='"$IFS"'
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} + 1`
 
-	       # If the previous argument was incomplete, we append
-	       # this argument to that
-	       if test "$prev_arg" != "" -o "$end_char" != "'" ; then
-                  prev_arg="$prev_arg $ac_arg"
-	       fi
+            IFS="'"
+            for pac_arg in $ac_configure_args ; do
+                case "$pac_arg" in
+                # Ignore any null and leading blank strings.
+                ""|" "*)
+                    ;;
+                *)
+                    pac_pval=""
+                    # Restore IFS so ac_precious_vars which has
+                    # " " as separator can be correctly tokenized
 
-	       # If the end character is a quote, we are at the end of
-	       # an argument.
-	       if test "$end_char" = "'" ; then
-                  # If the previous argument just got completed, set
-		  # the current argument to the entire argument value
-		  if test "$prev_arg" != "" ; then ac_arg="$prev_arg" ; fi
-		  prev_arg=
-	       else
-		  # If the previous argument hasn't completed yet,
-		  # just continue on to the next argument
-		  continue
-	       fi
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} - 1`
+	eval IFS="\$pac_save_IFS_${pac_save_IFS_nesting}"
+	eval pac_save_IFS_${pac_save_IFS_nesting}=""
 
-	       # Remove any quotes around the args (added by configure)
-	       ac_narg=`echo $ac_arg | sed -e "s/^'\(.*\)'$/\1/g"`
+                    for pac_pvar in $ac_precious_vars ; do
+                        # check if configure argument token contains the
+                        # precious variable, i.e. "name_of_prec_var=".
+                        pvar_in_arg=`echo $pac_arg | grep "$pac_pvar="`
+                        if test "X$pvar_in_arg" != "X" ; then
+                            # check if current precious variable is set in env
+                            eval pvar_set=\${$pac_pvar+set}
+                            if test "$pvar_set" = "set" ; then
+                                # Append 'name_of_prec_var=value_of_prec_var'
+                                # to the subconfigure arguments list, where
+                                # value_of_prec_var is fetched from the env.
+                                eval pac_pval=\${$pac_pvar}
+                                pac_subconfig_args="$pac_subconfig_args '$pac_pvar=$pac_pval'"
+                                break
+                            fi
+                        fi
+                    done
+                    # since the precious variable is not set in the env.,
+                    # append the corresponding configure argument token
+                    # to the subconfigure argument list.
+                    if test "X$pac_pval" = "X" ; then
+                        pac_subconfig_args="$pac_subconfig_args '$pac_arg'"
+                    fi
+                    # reset "'" as IFS to process ac_configure_args
 
-	       case $ac_narg in
-                   CFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CFLAGS='$CFLAGS'"
-		       ;;
-		   CPPFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CPPFLAGS='$CPPFLAGS'"
-		       ;;
-		   CXXFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CXXFLAGS='$CXXFLAGS'"
-		       ;;
-		   FFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args FFLAGS='$FFLAGS'"
-		       ;;
-		   F90FLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args F90FLAGS='$F90FLAGS'"
-		       ;;
-		   LDFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args LDFLAGS='$LDFLAGS'"
-		       ;;
-		   LIBS=*)
-		       pac_subconfig_args="$pac_subconfig_args LIBS='$LIBS'"
-		       ;;
-		   *)
-		       # We store ac_arg instead of ac_narg to make
-		       # sure we retain the quotes as provided to us
-		       # by autoconf
-		       pac_subconfig_args="$pac_subconfig_args $ac_arg"
-		       ;;
-	       esac
-	   done
+	if test -z "${pac_save_IFS_nesting}" ; then
+	   pac_save_IFS_nesting=0
+	fi
+	eval pac_save_IFS_${pac_save_IFS_nesting}='"$IFS"'
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} + 1`
 
-	   echo "executing: $pac_subconfigure_file $pac_subconfig_args"
+                    IFS="'"
+                    ;;
+                esac
+            done
+            # Restore IFS.
+
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} - 1`
+	eval IFS="\$pac_save_IFS_${pac_save_IFS_nesting}"
+	eval pac_save_IFS_${pac_save_IFS_nesting}=""
+
+
+                      if test "$enable_option_checking" = no ; then
+              pac_subconfig_args="$pac_subconfig_args --disable-option-checking"
+           fi
+
+	   { $as_echo "$as_me:$LINENO: executing: $pac_subconfigure_file $pac_subconfig_args" >&5
+$as_echo "$as_me: executing: $pac_subconfigure_file $pac_subconfig_args" >&6;}
 	   if (cd mpl && eval $pac_subconfigure_file $pac_subconfig_args) ; then
-
-	      :
+               :
 	   else
-	      { { $as_echo "$as_me:$LINENO: error: MPL configure failed" >&5
+               { { $as_echo "$as_me:$LINENO: error: MPL configure failed" >&5
 $as_echo "$as_me: error: MPL configure failed" >&2;}
    { (exit 1); exit 1; }; }
-	      :
 	   fi
         else
            if test -e $pac_subconfigure_file ; then
@@ -12533,9 +13354,16 @@ fi
 
 
 
+
+
+
+
+
+
 for ac_header in unistd.h stdlib.h string.h strings.h stdarg.h sys/types.h sys/socket.h \
 		 sched.h sys/stat.h sys/param.h netinet/in.h netinet/tcp.h \
-		 sys/un.h netdb.h sys/time.h time.h ifaddrs.h arpa/inet.h
+		 sys/un.h netdb.h sys/time.h time.h ifaddrs.h arpa/inet.h \
+		 errno.h poll.h fcntl.h netdb.h winsock2.h windows.h
 do
 as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
@@ -12835,8 +13663,9 @@ fi
 
 
 
+
 for ac_func in gettimeofday time strdup sigaction signal usleep alloca unsetenv \
-	       strerror strsignal stat getifaddrs fcntl alarm
+	       strerror strsignal stat getifaddrs fcntl alarm isatty
 do
 as_ac_var=`$as_echo "ac_cv_func_$ac_func" | $as_tr_sh`
 { $as_echo "$as_me:$LINENO: checking for $ac_func" >&5
@@ -13076,86 +13905,87 @@ fi
 if test "${with_hydra_bss+set}" = set; then
   withval=$with_hydra_bss;  hydra_bss=$withval
 else
-   hydra_bss="ssh,slurm,persist"
+   hydra_bss="none,ssh,rsh,fork,slurm,ll,lsf,sge,persist,pbs"
 fi
 
-{ $as_echo "$as_me:$LINENO: checking boot-strap server" >&5
-$as_echo_n "checking boot-strap server... " >&6; }
+{ $as_echo "$as_me:$LINENO: checking bootstrap server" >&5
+$as_echo_n "checking bootstrap server... " >&6; }
 { $as_echo "$as_me:$LINENO: result: $hydra_bss" >&5
 $as_echo "$hydra_bss" >&6; }
 hydra_bss_names="`echo $hydra_bss | sed -e 's/:/ /g' -e 's/,/ /g'`"
 
-hydra_bss_ssh=false
-hydra_bss_slurm=false
+hydra_bss_external=false
 hydra_bss_persist=false
+hydra_bss_pbs=false
+hydra_bss_none=false
 for hydra_bss_name in ${hydra_bss_names}; do
     case "$hydra_bss_name" in
-        ssh|rsh|fork)
-		if test "$hydra_bss_ssh" = "false" ; then
-		   hydra_bss_ssh=true
-		   available_bss=`echo $available_bss ssh`
-		fi
+    	ssh)
+		hydra_bss_external=true
+		available_bss=`echo $available_bss ssh`
+		available_launchers=`echo $available_launchers ssh`
+		;;
+    	rsh)
+		hydra_bss_external=true
+		available_bss=`echo $available_bss rsh`
+		available_launchers=`echo $available_launchers rsh`
+		;;
+    	fork)
+		hydra_bss_external=true
+		available_bss=`echo $available_bss fork`
+		available_launchers=`echo $available_launchers fork`
 		;;
 	slurm)
-		hydra_bss_slurm=true
+		hydra_bss_external=true
 		available_bss=`echo $available_bss slurm`
+		available_launchers=`echo $available_launchers slurm`
+		available_rmks=`echo $available_rmks slurm`
+		;;
+	ll)
+		hydra_bss_external=true
+		available_bss=`echo $available_bss ll`
+		available_launchers=`echo $available_launchers ll`
+		available_rmks=`echo $available_rmks ll`
+		;;
+	lsf)
+		hydra_bss_external=true
+		available_bss=`echo $available_bss lsf`
+		available_launchers=`echo $available_launchers lsf`
+		available_rmks=`echo $available_rmks lsf`
+		;;
+	sge)
+		hydra_bss_external=true
+		available_bss=`echo $available_bss sge`
+		available_launchers=`echo $available_launchers sge`
+		available_rmks=`echo $available_rmks sge`
 		;;
 	persist)
 		hydra_bss_persist=true
 		available_bss=`echo $available_bss persist`
+		available_launchers=`echo $available_launchers persist`
+		;;
+	pbs)
+		hydra_bss_pbs=true
+		available_bss=`echo $available_bss pbs`
+		available_rmks=`echo $available_rmks pbs`
+		;;
+	none|no)
+		hydra_bss_none=true
+		available_bss=`echo $available_bss none`
+		available_rmks=`echo $available_rmks none`
 		;;
 	*)
 		;;
     esac
 done
 
-hydra_bss_names=$available_bss
-
-for hydra_bss_name in ${hydra_bss_names}; do
-    if test -z "${hydra_default_bss}" ; then
-       hydra_default_bss=$hydra_bss_name
-    fi
-    hydra_bss_init_decl="${hydra_bss_init_decl}
-HYD_status HYDT_bsci_${hydra_bss_name}_init(void);"
-    hydra_bss_name_array="${hydra_bss_name_array} \"${hydra_bss_name}\", "
-    hydra_bss_init_array="${hydra_bss_init_array} HYDT_bsci_${hydra_bss_name}_init, "
-done
-
-hydra_bss_name_array="${hydra_bss_name_array} NULL"
-hydra_bss_init_array="${hydra_bss_init_array} NULL"
-if test "$hydra_default_bss" != "" ; then
-
-cat >>confdefs.h <<_ACEOF
-#define HYDRA_DEFAULT_BSS "$hydra_default_bss"
-_ACEOF
-
+## Bootstrap servers
+ if $hydra_bss_external; then
+  hydra_bss_external_TRUE=
+  hydra_bss_external_FALSE='#'
 else
-
-cat >>confdefs.h <<\_ACEOF
-#define HYDRA_DEFAULT_BSS NULL
-_ACEOF
-
-fi
-
-
-
-
-
-
- if $hydra_bss_ssh; then
-  hydra_bss_ssh_TRUE=
-  hydra_bss_ssh_FALSE='#'
-else
-  hydra_bss_ssh_TRUE='#'
-  hydra_bss_ssh_FALSE=
-fi
-
- if $hydra_bss_slurm; then
-  hydra_bss_slurm_TRUE=
-  hydra_bss_slurm_FALSE='#'
-else
-  hydra_bss_slurm_TRUE='#'
-  hydra_bss_slurm_FALSE=
+  hydra_bss_external_TRUE='#'
+  hydra_bss_external_FALSE=
 fi
 
  if $hydra_bss_persist; then
@@ -13166,98 +13996,75 @@ else
   hydra_bss_persist_FALSE=
 fi
 
-
-
-cat >>confdefs.h <<_ACEOF
-#define HYDRA_BSS_NAMES "$hydra_bss_names"
-_ACEOF
-
-
-
-
-
-#########################################################################
-# Check what resource management kernel we should use
-#########################################################################
-
-# Check whether --with-hydra-rmk was given.
-if test "${with_hydra_rmk+set}" = set; then
-  withval=$with_hydra_rmk;  hydra_rmk=$withval
+ if $hydra_bss_pbs; then
+  hydra_bss_pbs_TRUE=
+  hydra_bss_pbs_FALSE='#'
 else
-   hydra_rmk="dummy,pbs"
+  hydra_bss_pbs_TRUE='#'
+  hydra_bss_pbs_FALSE=
 fi
 
-{ $as_echo "$as_me:$LINENO: checking resource management kernel" >&5
-$as_echo_n "checking resource management kernel... " >&6; }
-{ $as_echo "$as_me:$LINENO: result: $hydra_rmk" >&5
-$as_echo "$hydra_rmk" >&6; }
-hydra_rmk_names="`echo $hydra_rmk | sed -e 's/:/ /g' -e 's/,/ /g'`"
+ if $hydra_bss_none; then
+  hydra_bss_none_TRUE=
+  hydra_bss_none_FALSE='#'
+else
+  hydra_bss_none_TRUE='#'
+  hydra_bss_none_FALSE=
+fi
 
-for hydra_rmk_name in ${hydra_rmk_names}; do
-    case "$hydra_rmk_name" in
-	dummy)
-		# dummy is a special RMK which means that by default
-		# we don't use any RMK
-		available_rmk=`echo $available_rmk dummy`
-		;;
-	pbs)
-		hydra_rmk_pbs=true
-		available_rmk=`echo $available_rmk pbs`
-		;;
-	*)
-		;;
-    esac
-done
 
-hydra_rmk_names=$available_rmk
+## Launchers
+for hydra_launcher in ${available_launchers} ; do
+    hydra_launcher_array="${hydra_launcher_array} \"${hydra_launcher}\", "
+    if test -z "${hydra_default_launcher}" ; then
+       hydra_default_launcher=$hydra_launcher
 
-for hydra_rmk_name in ${hydra_rmk_names}; do
-    if test -z "${hydra_default_rmk}" ; then
-       hydra_default_rmk=$hydra_rmk_name
+cat >>confdefs.h <<_ACEOF
+#define HYDRA_DEFAULT_LAUNCHER "$hydra_default_launcher"
+_ACEOF
+
     fi
-    if test "${hydra_rmk_name}" = "dummy" ; then continue ; fi
-    hydra_rmk_init_decl="${hydra_rmk_init_decl}
-HYD_status HYDT_rmki_${hydra_rmk_name}_init(void);"
-    hydra_rmk_name_array="${hydra_rmk_name_array} \"${hydra_rmk_name}\", "
-    hydra_rmk_init_array="${hydra_rmk_init_array} HYDT_rmki_${hydra_rmk_name}_init, "
+    hydra_launcher_init_decl="${hydra_launcher_init_decl}
+HYD_status HYDT_bsci_launcher_${hydra_launcher}_init(void);"
+    hydra_launcher_init_array="${hydra_launcher_init_array} HYDT_bsci_launcher_${hydra_launcher}_init, "
 done
+hydra_launcher_array="${hydra_launcher_array} NULL"
+hydra_launcher_init_array="${hydra_launcher_init_array} NULL"
+
+
+
 
 
 cat >>confdefs.h <<_ACEOF
-#define HYDRA_RMK_NAMES "$hydra_rmk_names"
+#define HYDRA_AVAILABLE_LAUNCHERS "$available_launchers"
 _ACEOF
 
 
-
-
-hydra_rmk_name_array="${hydra_rmk_name_array} NULL"
-hydra_rmk_init_array="${hydra_rmk_init_array} NULL"
-if test "$hydra_default_rmk" != "" -a "$hydra_default_rmk" != "dummy"; then
+## RMK
+for hydra_rmk in ${available_rmks} ; do
+    hydra_rmk_array="${hydra_rmk_array} \"${hydra_rmk}\", "
+    if test -z "${hydra_default_rmk}" ; then
+       hydra_default_rmk=$hydra_rmk
 
 cat >>confdefs.h <<_ACEOF
 #define HYDRA_DEFAULT_RMK "$hydra_default_rmk"
 _ACEOF
 
-else
+    fi
+    hydra_rmk_init_decl="${hydra_rmk_init_decl}
+HYD_status HYDT_bsci_rmk_${hydra_rmk}_init(void);"
+    hydra_rmk_init_array="${hydra_rmk_init_array} HYDT_bsci_rmk_${hydra_rmk}_init, "
+done
+hydra_rmk_array="${hydra_rmk_array} NULL"
+hydra_rmk_init_array="${hydra_rmk_init_array} NULL"
 
-cat >>confdefs.h <<\_ACEOF
-#define HYDRA_DEFAULT_RMK NULL
+
+
+
+
+cat >>confdefs.h <<_ACEOF
+#define HYDRA_AVAILABLE_RMKS "$available_rmks"
 _ACEOF
-
-fi
-
-
-
-
-
-
- if $hydra_rmk_pbs; then
-  hydra_rmk_pbs_TRUE=
-  hydra_rmk_pbs_FALSE='#'
-else
-  hydra_rmk_pbs_TRUE='#'
-  hydra_rmk_pbs_FALSE=
-fi
 
 
 
@@ -13314,27 +14121,91 @@ fi
 
 
 #########################################################################
+# System hwloc
+#########################################################################
+
+
+# Check whether --with-hwloc-prefix was given.
+if test "${with_hwloc_prefix+set}" = set; then
+  withval=$with_hwloc_prefix; if test "$withval" = "system" ; then
+                 :
+             elif test "$withval" = "embedded" ; then
+                 :
+             else
+
+
+	if echo "$CPPFLAGS" | $FGREP -e '-I${with_hwloc_prefix}/include' >/dev/null 2>&1; then
+  echo "CPPFLAGS(='$CPPFLAGS') contains '-I${with_hwloc_prefix}/include', not appending" >&5
+else
+  echo "CPPFLAGS(='$CPPFLAGS') does not contain '-I${with_hwloc_prefix}/include', appending" >&5
+		CPPFLAGS="$CPPFLAGS -I${with_hwloc_prefix}/include"
+
+fi
+
+
+                 if test -d "${with_hwloc_prefix}/lib64" ; then
+
+
+	if echo "$LDFLAGS" | $FGREP -e '-L${with_hwloc_prefix}/lib64' >/dev/null 2>&1; then
+  echo "LDFLAGS(='$LDFLAGS') contains '-L${with_hwloc_prefix}/lib64', not appending" >&5
+else
+  echo "LDFLAGS(='$LDFLAGS') does not contain '-L${with_hwloc_prefix}/lib64', appending" >&5
+		LDFLAGS="$LDFLAGS -L${with_hwloc_prefix}/lib64"
+
+fi
+
+
+                 fi
+
+
+	if echo "$LDFLAGS" | $FGREP -e '-L${with_hwloc_prefix}/lib' >/dev/null 2>&1; then
+  echo "LDFLAGS(='$LDFLAGS') contains '-L${with_hwloc_prefix}/lib', not appending" >&5
+else
+  echo "LDFLAGS(='$LDFLAGS') does not contain '-L${with_hwloc_prefix}/lib', appending" >&5
+		LDFLAGS="$LDFLAGS -L${with_hwloc_prefix}/lib"
+
+fi
+
+
+             fi
+
+else
+  with_hwloc_prefix="embedded"
+fi
+
+
+ if test "${with_hwloc_prefix}" = "embedded"; then
+  hydra_build_embedded_hwloc_TRUE=
+  hydra_build_embedded_hwloc_FALSE='#'
+else
+  hydra_build_embedded_hwloc_TRUE='#'
+  hydra_build_embedded_hwloc_FALSE=
+fi
+
+
+
+#########################################################################
 # Process Binding
 #########################################################################
 
 # Check whether --with-hydra-bindlib was given.
 if test "${with_hydra_bindlib+set}" = set; then
-  withval=$with_hydra_bindlib;  hydra_bindlib=$withval
+  withval=$with_hydra_bindlib;  hydra_bindlib_list=$withval
 else
-   hydra_bindlib=plpa
+   hydra_bindlib_list=hwloc,plpa
 fi
 
-{ $as_echo "$as_me:$LINENO: checking process binding library" >&5
-$as_echo_n "checking process binding library... " >&6; }
-{ $as_echo "$as_me:$LINENO: result: $hydra_bindlib" >&5
-$as_echo "$hydra_bindlib" >&6; }
+{ $as_echo "$as_me:$LINENO: checking desired process binding libraries" >&5
+$as_echo_n "checking desired process binding libraries... " >&6; }
+{ $as_echo "$as_me:$LINENO: result: $hydra_bindlib_list" >&5
+$as_echo "$hydra_bindlib_list" >&6; }
 
-hydra_bindlib_names="`echo $hydra_bindlib | sed -e 's/:/ /g' -e 's/,/ /g'`"
+hydra_bindlibs="`echo $hydra_bindlib_list | sed -e 's/:/ /g' -e 's/,/ /g'`"
 
 have_plpa=no
 have_hwloc=no
-for hydra_bindlib_name in ${hydra_bindlib_names}; do
-    case "$hydra_bindlib_name" in
+for hydra_bindlib in ${hydra_bindlibs}; do
+    case "$hydra_bindlib" in
     	plpa)
 
         { $as_echo "$as_me:$LINENO: ===== configuring tools/bind/plpa/plpa =====" >&5
@@ -13343,7 +14214,13 @@ $as_echo "$as_me: ===== configuring tools/bind/plpa/plpa =====" >&6;}
 
 # Build any intermediate directories
 for dir in tools/bind/plpa/plpa ; do
-    saveIFS="$IFS"
+
+	if test -z "${pac_save_IFS_nesting}" ; then
+	   pac_save_IFS_nesting=0
+	fi
+	eval pac_save_IFS_${pac_save_IFS_nesting}='"$IFS"'
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} + 1`
+
     IFS="/"
     tmp_curdir=""
     for tmp_subdir in $dir ; do
@@ -13351,7 +14228,11 @@ for dir in tools/bind/plpa/plpa ; do
 	if test ! -d "$tmp_curdir" ; then mkdir "$tmp_curdir" ; fi
         tmp_curdir="${tmp_curdir}/"
     done
-    IFS="$saveIFS"
+
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} - 1`
+	eval IFS="\$pac_save_IFS_${pac_save_IFS_nesting}"
+	eval pac_save_IFS_${pac_save_IFS_nesting}=""
+
 done
 
 	pac_abs_srcdir=`(cd $srcdir && pwd)`
@@ -13363,80 +14244,83 @@ done
         pac_subconfigure_file="$pac_abs_srcdir/tools/bind/plpa/plpa/configure"
 	if test -x $pac_subconfigure_file ; then
 	   pac_subconfig_args=""
-	   prev_arg=""
 
-	   # Strip off the args we need to update
-	   for ac_arg in $ac_configure_args ; do
+            # Set IFS so ac_configure_args can be tokenized
+            # with extra " " tokens being skipped.
 
-	       # HACK: Though each argument in ac_configure_args is
-	       # quoted to account for spaces, when we get them, the
-	       # argument list is treated as a space separated list
-	       # and the quotes are treated as a part of the
-	       # argument. So, we explicitly look for the quotes and
-	       # recreate the arguments. If/when this is fixed by
-	       # autoconf, this hack can be deleted.
-	       end_char=`echo $ac_arg | sed -e 's/.*\(.\)$/\1/g'`
+	if test -z "${pac_save_IFS_nesting}" ; then
+	   pac_save_IFS_nesting=0
+	fi
+	eval pac_save_IFS_${pac_save_IFS_nesting}='"$IFS"'
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} + 1`
 
-	       # If the previous argument was incomplete, we append
-	       # this argument to that
-	       if test "$prev_arg" != "" -o "$end_char" != "'" ; then
-                  prev_arg="$prev_arg $ac_arg"
-	       fi
+            IFS="'"
+            for pac_arg in $ac_configure_args ; do
+                case "$pac_arg" in
+                # Ignore any null and leading blank strings.
+                ""|" "*)
+                    ;;
+                *)
+                    pac_pval=""
+                    # Restore IFS so ac_precious_vars which has
+                    # " " as separator can be correctly tokenized
 
-	       # If the end character is a quote, we are at the end of
-	       # an argument.
-	       if test "$end_char" = "'" ; then
-                  # If the previous argument just got completed, set
-		  # the current argument to the entire argument value
-		  if test "$prev_arg" != "" ; then ac_arg="$prev_arg" ; fi
-		  prev_arg=
-	       else
-		  # If the previous argument hasn't completed yet,
-		  # just continue on to the next argument
-		  continue
-	       fi
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} - 1`
+	eval IFS="\$pac_save_IFS_${pac_save_IFS_nesting}"
+	eval pac_save_IFS_${pac_save_IFS_nesting}=""
 
-	       # Remove any quotes around the args (added by configure)
-	       ac_narg=`echo $ac_arg | sed -e "s/^'\(.*\)'$/\1/g"`
+                    for pac_pvar in $ac_precious_vars ; do
+                        # check if configure argument token contains the
+                        # precious variable, i.e. "name_of_prec_var=".
+                        pvar_in_arg=`echo $pac_arg | grep "$pac_pvar="`
+                        if test "X$pvar_in_arg" != "X" ; then
+                            # check if current precious variable is set in env
+                            eval pvar_set=\${$pac_pvar+set}
+                            if test "$pvar_set" = "set" ; then
+                                # Append 'name_of_prec_var=value_of_prec_var'
+                                # to the subconfigure arguments list, where
+                                # value_of_prec_var is fetched from the env.
+                                eval pac_pval=\${$pac_pvar}
+                                pac_subconfig_args="$pac_subconfig_args '$pac_pvar=$pac_pval'"
+                                break
+                            fi
+                        fi
+                    done
+                    # since the precious variable is not set in the env.,
+                    # append the corresponding configure argument token
+                    # to the subconfigure argument list.
+                    if test "X$pac_pval" = "X" ; then
+                        pac_subconfig_args="$pac_subconfig_args '$pac_arg'"
+                    fi
+                    # reset "'" as IFS to process ac_configure_args
 
-	       case $ac_narg in
-                   CFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CFLAGS='$CFLAGS'"
-		       ;;
-		   CPPFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CPPFLAGS='$CPPFLAGS'"
-		       ;;
-		   CXXFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CXXFLAGS='$CXXFLAGS'"
-		       ;;
-		   FFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args FFLAGS='$FFLAGS'"
-		       ;;
-		   F90FLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args F90FLAGS='$F90FLAGS'"
-		       ;;
-		   LDFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args LDFLAGS='$LDFLAGS'"
-		       ;;
-		   LIBS=*)
-		       pac_subconfig_args="$pac_subconfig_args LIBS='$LIBS'"
-		       ;;
-		   *)
-		       # We store ac_arg instead of ac_narg to make
-		       # sure we retain the quotes as provided to us
-		       # by autoconf
-		       pac_subconfig_args="$pac_subconfig_args $ac_arg"
-		       ;;
-	       esac
-	   done
+	if test -z "${pac_save_IFS_nesting}" ; then
+	   pac_save_IFS_nesting=0
+	fi
+	eval pac_save_IFS_${pac_save_IFS_nesting}='"$IFS"'
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} + 1`
 
-	   echo "executing: $pac_subconfigure_file $pac_subconfig_args"
+                    IFS="'"
+                    ;;
+                esac
+            done
+            # Restore IFS.
+
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} - 1`
+	eval IFS="\$pac_save_IFS_${pac_save_IFS_nesting}"
+	eval pac_save_IFS_${pac_save_IFS_nesting}=""
+
+
+                      if test "$enable_option_checking" = no ; then
+              pac_subconfig_args="$pac_subconfig_args --disable-option-checking"
+           fi
+
+	   { $as_echo "$as_me:$LINENO: executing: $pac_subconfigure_file $pac_subconfig_args" >&5
+$as_echo "$as_me: executing: $pac_subconfigure_file $pac_subconfig_args" >&6;}
 	   if (cd tools/bind/plpa/plpa && eval $pac_subconfigure_file $pac_subconfig_args) ; then
-	      plpa_works=yes
-	      :
+               plpa_works=yes
 	   else
-	      plpa_works=no
-	      :
+               plpa_works=no
 	   fi
         else
            if test -e $pac_subconfigure_file ; then
@@ -13527,7 +14411,7 @@ rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
 		{ $as_echo "$as_me:$LINENO: result: $plpa_works" >&5
 $as_echo "$plpa_works" >&6; }
 		if test "$plpa_works" = "yes" ; then
-		   available_bindlib=`echo $available_bindlib plpa`
+		   available_bindlibs=`echo $available_bindlibs plpa`
 		   have_plpa=yes
 
 cat >>confdefs.h <<\_ACEOF
@@ -13537,9 +14421,7 @@ _ACEOF
 		fi
 		;;
 	hwloc)
-		if test -z "${hydra_default_bindlib}" ; then
-		   hydra_default_bindlib=$hydra_bindlib_name
-		fi
+		if test "$with_hwloc_prefix" = "embedded" ; then
 
         { $as_echo "$as_me:$LINENO: ===== configuring tools/bind/hwloc/hwloc =====" >&5
 $as_echo "$as_me: ===== configuring tools/bind/hwloc/hwloc =====" >&6;}
@@ -13547,7 +14429,13 @@ $as_echo "$as_me: ===== configuring tools/bind/hwloc/hwloc =====" >&6;}
 
 # Build any intermediate directories
 for dir in tools/bind/hwloc/hwloc ; do
-    saveIFS="$IFS"
+
+	if test -z "${pac_save_IFS_nesting}" ; then
+	   pac_save_IFS_nesting=0
+	fi
+	eval pac_save_IFS_${pac_save_IFS_nesting}='"$IFS"'
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} + 1`
+
     IFS="/"
     tmp_curdir=""
     for tmp_subdir in $dir ; do
@@ -13555,7 +14443,11 @@ for dir in tools/bind/hwloc/hwloc ; do
 	if test ! -d "$tmp_curdir" ; then mkdir "$tmp_curdir" ; fi
         tmp_curdir="${tmp_curdir}/"
     done
-    IFS="$saveIFS"
+
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} - 1`
+	eval IFS="\$pac_save_IFS_${pac_save_IFS_nesting}"
+	eval pac_save_IFS_${pac_save_IFS_nesting}=""
+
 done
 
 	pac_abs_srcdir=`(cd $srcdir && pwd)`
@@ -13566,81 +14458,84 @@ done
 
         pac_subconfigure_file="$pac_abs_srcdir/tools/bind/hwloc/hwloc/configure"
 	if test -x $pac_subconfigure_file ; then
-	   pac_subconfig_args=""
-	   prev_arg=""
+	   pac_subconfig_args="--enable-embedded-mode"
 
-	   # Strip off the args we need to update
-	   for ac_arg in $ac_configure_args ; do
+            # Set IFS so ac_configure_args can be tokenized
+            # with extra " " tokens being skipped.
 
-	       # HACK: Though each argument in ac_configure_args is
-	       # quoted to account for spaces, when we get them, the
-	       # argument list is treated as a space separated list
-	       # and the quotes are treated as a part of the
-	       # argument. So, we explicitly look for the quotes and
-	       # recreate the arguments. If/when this is fixed by
-	       # autoconf, this hack can be deleted.
-	       end_char=`echo $ac_arg | sed -e 's/.*\(.\)$/\1/g'`
+	if test -z "${pac_save_IFS_nesting}" ; then
+	   pac_save_IFS_nesting=0
+	fi
+	eval pac_save_IFS_${pac_save_IFS_nesting}='"$IFS"'
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} + 1`
 
-	       # If the previous argument was incomplete, we append
-	       # this argument to that
-	       if test "$prev_arg" != "" -o "$end_char" != "'" ; then
-                  prev_arg="$prev_arg $ac_arg"
-	       fi
+            IFS="'"
+            for pac_arg in $ac_configure_args ; do
+                case "$pac_arg" in
+                # Ignore any null and leading blank strings.
+                ""|" "*)
+                    ;;
+                *)
+                    pac_pval=""
+                    # Restore IFS so ac_precious_vars which has
+                    # " " as separator can be correctly tokenized
 
-	       # If the end character is a quote, we are at the end of
-	       # an argument.
-	       if test "$end_char" = "'" ; then
-                  # If the previous argument just got completed, set
-		  # the current argument to the entire argument value
-		  if test "$prev_arg" != "" ; then ac_arg="$prev_arg" ; fi
-		  prev_arg=
-	       else
-		  # If the previous argument hasn't completed yet,
-		  # just continue on to the next argument
-		  continue
-	       fi
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} - 1`
+	eval IFS="\$pac_save_IFS_${pac_save_IFS_nesting}"
+	eval pac_save_IFS_${pac_save_IFS_nesting}=""
 
-	       # Remove any quotes around the args (added by configure)
-	       ac_narg=`echo $ac_arg | sed -e "s/^'\(.*\)'$/\1/g"`
+                    for pac_pvar in $ac_precious_vars ; do
+                        # check if configure argument token contains the
+                        # precious variable, i.e. "name_of_prec_var=".
+                        pvar_in_arg=`echo $pac_arg | grep "$pac_pvar="`
+                        if test "X$pvar_in_arg" != "X" ; then
+                            # check if current precious variable is set in env
+                            eval pvar_set=\${$pac_pvar+set}
+                            if test "$pvar_set" = "set" ; then
+                                # Append 'name_of_prec_var=value_of_prec_var'
+                                # to the subconfigure arguments list, where
+                                # value_of_prec_var is fetched from the env.
+                                eval pac_pval=\${$pac_pvar}
+                                pac_subconfig_args="$pac_subconfig_args '$pac_pvar=$pac_pval'"
+                                break
+                            fi
+                        fi
+                    done
+                    # since the precious variable is not set in the env.,
+                    # append the corresponding configure argument token
+                    # to the subconfigure argument list.
+                    if test "X$pac_pval" = "X" ; then
+                        pac_subconfig_args="$pac_subconfig_args '$pac_arg'"
+                    fi
+                    # reset "'" as IFS to process ac_configure_args
 
-	       case $ac_narg in
-                   CFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CFLAGS='$CFLAGS'"
-		       ;;
-		   CPPFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CPPFLAGS='$CPPFLAGS'"
-		       ;;
-		   CXXFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args CXXFLAGS='$CXXFLAGS'"
-		       ;;
-		   FFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args FFLAGS='$FFLAGS'"
-		       ;;
-		   F90FLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args F90FLAGS='$F90FLAGS'"
-		       ;;
-		   LDFLAGS=*)
-		       pac_subconfig_args="$pac_subconfig_args LDFLAGS='$LDFLAGS'"
-		       ;;
-		   LIBS=*)
-		       pac_subconfig_args="$pac_subconfig_args LIBS='$LIBS'"
-		       ;;
-		   *)
-		       # We store ac_arg instead of ac_narg to make
-		       # sure we retain the quotes as provided to us
-		       # by autoconf
-		       pac_subconfig_args="$pac_subconfig_args $ac_arg"
-		       ;;
-	       esac
-	   done
+	if test -z "${pac_save_IFS_nesting}" ; then
+	   pac_save_IFS_nesting=0
+	fi
+	eval pac_save_IFS_${pac_save_IFS_nesting}='"$IFS"'
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} + 1`
 
-	   echo "executing: $pac_subconfigure_file $pac_subconfig_args"
+                    IFS="'"
+                    ;;
+                esac
+            done
+            # Restore IFS.
+
+	pac_save_IFS_nesting=`expr ${pac_save_IFS_nesting} - 1`
+	eval IFS="\$pac_save_IFS_${pac_save_IFS_nesting}"
+	eval pac_save_IFS_${pac_save_IFS_nesting}=""
+
+
+                      if test "$enable_option_checking" = no ; then
+              pac_subconfig_args="$pac_subconfig_args --disable-option-checking"
+           fi
+
+	   { $as_echo "$as_me:$LINENO: executing: $pac_subconfigure_file $pac_subconfig_args" >&5
+$as_echo "$as_me: executing: $pac_subconfigure_file $pac_subconfig_args" >&6;}
 	   if (cd tools/bind/hwloc/hwloc && eval $pac_subconfigure_file $pac_subconfig_args) ; then
-	      have_hwloc=yes
-	      :
+               have_hwloc=yes
 	   else
-	      have_hwloc=no
-	      :
+               have_hwloc=no
 	   fi
         else
            if test -e $pac_subconfigure_file ; then
@@ -13663,13 +14558,253 @@ $as_echo "$as_me: ===== done with tools/bind/hwloc/hwloc configure =====" >&6;}
 	   . $pac_abs_srcdir/tools/bind/hwloc/hwloc/localdefs
 	fi
 
+                else
+
+for ac_header in hwloc.h
+do
+as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  { $as_echo "$as_me:$LINENO: checking for $ac_header" >&5
+$as_echo_n "checking for $ac_header... " >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  $as_echo_n "(cached) " >&6
+fi
+ac_res=`eval 'as_val=${'$as_ac_Header'}
+		 $as_echo "$as_val"'`
+	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ $as_echo "$as_me:$LINENO: checking $ac_header usability" >&5
+$as_echo_n "checking $ac_header usability... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+$as_echo "$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ $as_echo "$as_me:$LINENO: checking $ac_header presence" >&5
+$as_echo_n "checking $ac_header presence... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+$as_echo "$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+$as_echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+$as_echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+$as_echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+$as_echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+$as_echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+$as_echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+$as_echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+
+    ;;
+esac
+{ $as_echo "$as_me:$LINENO: checking for $ac_header" >&5
+$as_echo_n "checking for $ac_header... " >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  $as_echo_n "(cached) " >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+ac_res=`eval 'as_val=${'$as_ac_Header'}
+		 $as_echo "$as_val"'`
+	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+
+fi
+as_val=`eval 'as_val=${'$as_ac_Header'}
+		 $as_echo "$as_val"'`
+   if test "x$as_val" = x""yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+fi
+
+done
+
+                    # hwloc_topology_set_pid was added in hwloc-1.0.0, which is our minimum
+                    # required version
+
+{ $as_echo "$as_me:$LINENO: checking for hwloc_topology_set_pid in -lhwloc" >&5
+$as_echo_n "checking for hwloc_topology_set_pid in -lhwloc... " >&6; }
+if test "${ac_cv_lib_hwloc_hwloc_topology_set_pid+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lhwloc  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char hwloc_topology_set_pid ();
+int
+main ()
+{
+return hwloc_topology_set_pid ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  ac_cv_lib_hwloc_hwloc_topology_set_pid=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_hwloc_hwloc_topology_set_pid=no
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_hwloc_hwloc_topology_set_pid" >&5
+$as_echo "$ac_cv_lib_hwloc_hwloc_topology_set_pid" >&6; }
+if test "x$ac_cv_lib_hwloc_hwloc_topology_set_pid" = x""yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBHWLOC 1
+_ACEOF
+
+  LIBS="-lhwloc $LIBS"
+
+fi
+
+                    { $as_echo "$as_me:$LINENO: checking if non-embedded hwloc works" >&5
+$as_echo_n "checking if non-embedded hwloc works... " >&6; }
+                    if test "$ac_cv_header_hwloc_h" = "yes" -a "$ac_cv_lib_hwloc_hwloc_topology_set_pid" = "yes" ; then
+                        have_hwloc=yes
+                    fi
+                    { $as_echo "$as_me:$LINENO: result: $have_hwloc" >&5
+$as_echo "$have_hwloc" >&6; }
+                fi
+
+                # FIXME: Disable hwloc on Cygwin for now. The hwloc package, atleast as of 1.0.2,
+                # does not install correctly on Cygwin
+                case $host in
+  *-*-cygwin) have_hwloc=no ;;
+esac
+
+
 		if test "$have_hwloc" = "yes" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_HWLOC 1
 _ACEOF
 
-		   available_bindlib=`echo $available_bindlib hwloc`
+		   available_bindlibs=`echo $available_bindlibs hwloc`
 		fi
 		;;
 	*)
@@ -13677,17 +14812,14 @@ _ACEOF
     esac
 done
 
-hydra_bindlib_names=$available_bindlib
-
-for hydra_bindlib_name in ${hydra_bindlib_names}; do
-    if test -z "${hydra_default_bindlib}" ; then
-       hydra_default_bindlib=$hydra_bindlib_name
-    fi
+for hydra_bindlib in ${available_bindlibs}; do
+    hydra_default_bindlib=${hydra_bindlib}
+    break
 done
 
 
 cat >>confdefs.h <<_ACEOF
-#define HYDRA_BINDLIB_NAMES "$hydra_bindlib_names"
+#define HYDRA_AVAILABLE_BINDLIBS "$available_bindlibs"
 _ACEOF
 
 if test "$hydra_default_bindlib" != "" ; then
@@ -13720,6 +14852,11 @@ else
 fi
 
 
+{ $as_echo "$as_me:$LINENO: checking available process binding libraries" >&5
+$as_echo_n "checking available process binding libraries... " >&6; }
+{ $as_echo "$as_me:$LINENO: result: $available_bindlibs" >&5
+$as_echo "$available_bindlibs" >&6; }
+
 
 #########################################################################
 # Checkpoint/Restart
@@ -13727,21 +14864,21 @@ fi
 
 # Check whether --with-hydra-ckpointlib was given.
 if test "${with_hydra_ckpointlib+set}" = set; then
-  withval=$with_hydra_ckpointlib;  hydra_ckpointlib=$withval
+  withval=$with_hydra_ckpointlib;  hydra_ckpointlib_list=$withval
 else
-   hydra_ckpointlib=none
+   hydra_ckpointlib_list=none
 fi
 
 { $as_echo "$as_me:$LINENO: checking checkpointing library" >&5
 $as_echo_n "checking checkpointing library... " >&6; }
-{ $as_echo "$as_me:$LINENO: result: $hydra_ckpointlib" >&5
-$as_echo "$hydra_ckpointlib" >&6; }
+{ $as_echo "$as_me:$LINENO: result: $hydra_ckpointlib_list" >&5
+$as_echo "$hydra_ckpointlib_list" >&6; }
 
-hydra_ckpointlib_names="`echo $hydra_ckpointlib | sed -e 's/:/ /g' -e 's/,/ /g'`"
+hydra_ckpointlibs="`echo $hydra_ckpointlib_list | sed -e 's/:/ /g' -e 's/,/ /g'`"
 
 have_blcr=no
-for hydra_ckpointlib_name in ${hydra_ckpointlib_names}; do
-    case "$hydra_ckpointlib_name" in
+for hydra_ckpointlib in ${hydra_ckpointlibs}; do
+    case "$hydra_ckpointlib" in
     	blcr)
 
 
@@ -13751,7 +14888,6 @@ if test "${with_blcr+set}" = set; then
             # is adding lib64 by default really the right thing to do?  What if
             # we are on a 32-bit host that happens to have both lib dirs available?
             LDFLAGS="$LDFLAGS -L${with_blcr}/lib64 -L${with_blcr}/lib"
-            WRAPPER_LDFLAGS="$WRAPPER_LDFLAGS -L${with_blcr}/lib64 -L${with_blcr}/lib"
             CPPFLAGS="$CPPFLAGS -I${with_blcr}/include"
 	    WRAPPER_CFLAGS="$WRAPPER_CFLAGS -I${with_blcr}/include"
         fi
@@ -13771,7 +14907,6 @@ fi
 if test "${with_blcr_lib+set}" = set; then
   withval=$with_blcr_lib; if test "${with_blcr_lib}" != "yes" -a "${with_blcr_lib}" != "no" ; then
             LDFLAGS="$LDFLAGS -L${with_blcr_lib}"
-            WRAPPER_LDFLAGS="$WRAPPER_LDFLAGS -L${with_blcr_lib}"
         fi
 fi
 
@@ -14002,7 +15137,7 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_BLCR 1
 _ACEOF
 
-	       available_ckpointlib=`echo $available_ckpointlib blcr`
+	       available_ckpointlibs=`echo $available_ckpointlibs blcr`
 	    fi
 	    ;;
 	*)
@@ -14010,17 +15145,14 @@ _ACEOF
     esac
 done
 
-hydra_ckpointlib_names=$available_ckpointlib
-
-for hydra_ckpointlib_name in ${hydra_ckpointlib_names}; do
-    if test -z "${hydra_default_ckpointlib}" ; then
-       hydra_default_ckpointlib=$hydra_ckpointlib_name
-    fi
+for hydra_ckpointlib in ${available_ckpointlibs}; do
+    hydra_default_ckpointlib=${hydra_ckpointlib}
+    break
 done
 
 
 cat >>confdefs.h <<_ACEOF
-#define HYDRA_CKPOINTLIB_NAMES "$hydra_ckpointlib_names"
+#define HYDRA_AVAILABLE_CKPOINTLIBS "$available_ckpointlibs"
 _ACEOF
 
 if test "$hydra_default_ckpointlib" != "" ; then
@@ -14052,23 +15184,23 @@ fi
 
 # Check whether --with-hydra-demux was given.
 if test "${with_hydra_demux+set}" = set; then
-  withval=$with_hydra_demux;  hydra_demux=$withval
+  withval=$with_hydra_demux;  hydra_demux_list=$withval
 else
-   hydra_demux=poll,select,port
+   hydra_demux_list=poll,select,port
 fi
 
 { $as_echo "$as_me:$LINENO: checking demux engine" >&5
 $as_echo_n "checking demux engine... " >&6; }
-{ $as_echo "$as_me:$LINENO: result: $hydra_demux" >&5
-$as_echo "$hydra_demux" >&6; }
+{ $as_echo "$as_me:$LINENO: result: $hydra_demux_list" >&5
+$as_echo "$hydra_demux_list" >&6; }
 
-hydra_demux_names="`echo $hydra_demux | sed -e 's/:/ /g' -e 's/,/ /g'`"
+hydra_demuxes="`echo $hydra_demux_list | sed -e 's/:/ /g' -e 's/,/ /g'`"
 
 have_poll=no
 have_select=no
 have_port=no
-for hydra_demux_name in ${hydra_demux_names}; do
-    case "$hydra_demux_name" in
+for hydra_demux in ${hydra_demuxes}; do
+    case "$hydra_demux" in
     	poll)
 
 for ac_func in poll
@@ -14174,7 +15306,7 @@ fi
 done
 
 		if test "$have_poll" = "yes" ; then
-		   available_demux_names=`echo $available_demux_names poll`
+		   available_demuxes=`echo $available_demuxes poll`
 		fi
 		;;
 	select)
@@ -14282,13 +15414,13 @@ fi
 done
 
 		if test "$have_select" = "yes" ; then
-		   available_demux_names=`echo $available_demux_names select`
+		   available_demuxes=`echo $available_demuxes select`
 		fi
 		;;
 	port)
 		# FIXME: Need to add a test for completion ports
 		if test "$have_port" = "yes" ; then
-		   available_demux_names=`echo $available_demux_names port`
+		   available_demuxes=`echo $available_demuxes port`
 		fi
 		;;
 	*)
@@ -14296,12 +15428,9 @@ done
     esac
 done
 
-hydra_demux_names=$available_demux_names
-
-for hydra_demux_name in ${hydra_demux_names}; do
-    if test -z "${hydra_default_demux}" ; then
-       hydra_default_demux=$hydra_demux_name
-    fi
+for hydra_demux in ${available_demuxes}; do
+    hydra_default_demux=${hydra_demux}
+    break
 done
 
  if test "${have_poll}" = "yes"; then
@@ -14330,7 +15459,7 @@ fi
 
 
 cat >>confdefs.h <<_ACEOF
-#define HYDRA_DEMUX_NAMES "$hydra_demux_names"
+#define HYDRA_AVAILABLE_DEMUXES "$available_demuxes"
 _ACEOF
 
 if test "$hydra_default_demux" != "" ; then
@@ -14479,36 +15608,310 @@ fi
 
 
 #########################################################################
-# Check if __VA_ARGS__ is defined by the compiler
+# FTB integration
 #########################################################################
-{ $as_echo "$as_me:$LINENO: checking whether the compiler allows __VA_ARGS__" >&5
-$as_echo_n "checking whether the compiler allows __VA_ARGS__... " >&6; }
-rm -f conftest.c
-cat > conftest.c <<EOF
-#include <stdio.h>
-#define my_print(...) printf(__VA_ARGS__)
-int main()
-{
-    my_print("woohoo!");
-    return 0;
-}
-EOF
-pac_tmp_compile='$CC $CFLAGS conftest.c -o conftest'
-if { (eval echo "$as_me:$LINENO: \"$pac_tmp_compile\"") >&5
-  (eval $pac_tmp_compile) 2>&5
-  ac_status=$?
-  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } && test -s conftest ; then
-   { $as_echo "$as_me:$LINENO: result: yes" >&5
-$as_echo "yes" >&6; }
+# FTB requires pthreads support; add pthreads to LIBS before trying to
+# find FTB
+
+	if test -z "${pac_save_LIBS_nesting}" ; then
+	   pac_save_LIBS_nesting=0
+	fi
+	eval pac_save_LIBS_${pac_save_LIBS_nesting}='"$LIBS"'
+	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} + 1`
+
+
+
+        if echo "$LIBS" | $FGREP -e '-lpthread' >/dev/null 2>&1; then
+  echo "LIBS(='$LIBS') contains '-lpthread', not prepending" >&5
 else
-   { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-   { { $as_echo "$as_me:$LINENO: error: Hydra needs a compiler that supports __VA_ARGS__" >&5
-$as_echo "$as_me: error: Hydra needs a compiler that supports __VA_ARGS__" >&2;}
-   { (exit 1); exit 1; }; }
+  echo "LIBS(='$LIBS') does not contain '-lpthread', prepending" >&5
+                LIBS="-lpthread $LIBS"
+
 fi
-rm -f conftest*
+
+
+
+
+# Check whether --with-ftb was given.
+if test "${with_ftb+set}" = set; then
+  withval=$with_ftb; if test "${with_ftb}" != "yes" -a "${with_ftb}" != "no" ; then
+            # is adding lib64 by default really the right thing to do?  What if
+            # we are on a 32-bit host that happens to have both lib dirs available?
+            LDFLAGS="$LDFLAGS -L${with_ftb}/lib64 -L${with_ftb}/lib"
+            CPPFLAGS="$CPPFLAGS -I${with_ftb}/include"
+	    WRAPPER_CFLAGS="$WRAPPER_CFLAGS -I${with_ftb}/include"
+        fi
+fi
+
+
+# Check whether --with-ftb-include was given.
+if test "${with_ftb_include+set}" = set; then
+  withval=$with_ftb_include; if test "${with_ftb_include}" != "yes" -a "${with_ftb_include}" != "no" ; then
+            CPPFLAGS="$CPPFLAGS -I${with_ftb_include}"
+            WRAPPER_CFLAGS="$WRAPPER_CFLAGS -I${with_ftb_include}"
+        fi
+fi
+
+
+# Check whether --with-ftb-lib was given.
+if test "${with_ftb_lib+set}" = set; then
+  withval=$with_ftb_lib; if test "${with_ftb_lib}" != "yes" -a "${with_ftb_lib}" != "no" ; then
+            LDFLAGS="$LDFLAGS -L${with_ftb_lib}"
+        fi
+fi
+
+
+
+	pac_save_LIBS_nesting=`expr ${pac_save_LIBS_nesting} - 1`
+	eval LIBS="\$pac_save_LIBS_${pac_save_LIBS_nesting}"
+	eval pac_save_LIBS_${pac_save_LIBS_nesting}=""
+
+
+    failure=no
+    if test "${ac_cv_header_libftb_h+set}" = set; then
+  { $as_echo "$as_me:$LINENO: checking for libftb.h" >&5
+$as_echo_n "checking for libftb.h... " >&6; }
+if test "${ac_cv_header_libftb_h+set}" = set; then
+  $as_echo_n "(cached) " >&6
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_header_libftb_h" >&5
+$as_echo "$ac_cv_header_libftb_h" >&6; }
+else
+  # Is the header compilable?
+{ $as_echo "$as_me:$LINENO: checking libftb.h usability" >&5
+$as_echo_n "checking libftb.h usability... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <libftb.h>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+$as_echo "$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ $as_echo "$as_me:$LINENO: checking libftb.h presence" >&5
+$as_echo_n "checking libftb.h presence... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <libftb.h>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+$as_echo "$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h: accepted by the compiler, rejected by the preprocessor!" >&5
+$as_echo "$as_me: WARNING: libftb.h: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: libftb.h: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h: present but cannot be compiled" >&5
+$as_echo "$as_me: WARNING: libftb.h: present but cannot be compiled" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h:     check for missing prerequisite headers?" >&5
+$as_echo "$as_me: WARNING: libftb.h:     check for missing prerequisite headers?" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h: see the Autoconf documentation" >&5
+$as_echo "$as_me: WARNING: libftb.h: see the Autoconf documentation" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h:     section \"Present But Cannot Be Compiled\"" >&5
+$as_echo "$as_me: WARNING: libftb.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h: proceeding with the preprocessor's result" >&5
+$as_echo "$as_me: WARNING: libftb.h: proceeding with the preprocessor's result" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: libftb.h: in the future, the compiler will take precedence" >&5
+$as_echo "$as_me: WARNING: libftb.h: in the future, the compiler will take precedence" >&2;}
+
+    ;;
+esac
+{ $as_echo "$as_me:$LINENO: checking for libftb.h" >&5
+$as_echo_n "checking for libftb.h... " >&6; }
+if test "${ac_cv_header_libftb_h+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_cv_header_libftb_h=$ac_header_preproc
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_header_libftb_h" >&5
+$as_echo "$ac_cv_header_libftb_h" >&6; }
+
+fi
+if test "x$ac_cv_header_libftb_h" = x""yes; then
+  :
+else
+  failure=yes
+fi
+
+
+
+{ $as_echo "$as_me:$LINENO: checking for FTB_Connect in -lftb" >&5
+$as_echo_n "checking for FTB_Connect in -lftb... " >&6; }
+if test "${ac_cv_lib_ftb_FTB_Connect+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lftb  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char FTB_Connect ();
+int
+main ()
+{
+return FTB_Connect ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  ac_cv_lib_ftb_FTB_Connect=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_cv_lib_ftb_FTB_Connect=no
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+{ $as_echo "$as_me:$LINENO: result: $ac_cv_lib_ftb_FTB_Connect" >&5
+$as_echo "$ac_cv_lib_ftb_FTB_Connect" >&6; }
+if test "x$ac_cv_lib_ftb_FTB_Connect" = x""yes; then
+  cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBFTB 1
+_ACEOF
+
+  LIBS="-lftb $LIBS"
+
+else
+  failure=yes
+fi
+
+    if test "$failure" = "no" ; then
+       have_ftb=yes
+    else
+       have_ftb=no
+    fi
+
+if test "$have_ftb" = "yes" ; then
+   # FIXME: We need to test to make sure FTB works correctly
+
+
+	if echo "$LIBS" | $FGREP -e '-lpthread' >/dev/null 2>&1; then
+  echo "LIBS(='$LIBS') contains '-lpthread', not appending" >&5
+else
+  echo "LIBS(='$LIBS') does not contain '-lpthread', appending" >&5
+		LIBS="$LIBS -lpthread"
+
+fi
+
+
+
+cat >>confdefs.h <<\_ACEOF
+#define ENABLE_FTB 1
+_ACEOF
+
+fi
+ if test "${have_ftb}" = "yes"; then
+  hydra_have_ftb_TRUE=
+  hydra_have_ftb_FALSE='#'
+else
+  hydra_have_ftb_TRUE='#'
+  hydra_have_ftb_FALSE=
+fi
+
 
 
 #########################################################################
@@ -15093,7 +16496,7 @@ fi
 fi
 
 # Final output
-ac_config_files="$ac_config_files Makefile tools/bootstrap/src/bsci_init.c tools/bootstrap/include/bsci.h tools/rmk/src/rmki_init.c tools/rmk/include/rmki.h hydra-doxygen.cfg"
+ac_config_files="$ac_config_files Makefile tools/bootstrap/src/bsci_init.c tools/bootstrap/include/bsci.h hydra-doxygen.cfg"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -15214,17 +16617,10 @@ $as_echo "$as_me: error: conditional \"am__fastdepCC\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${hydra_bss_ssh_TRUE}" && test -z "${hydra_bss_ssh_FALSE}"; then
-  { { $as_echo "$as_me:$LINENO: error: conditional \"hydra_bss_ssh\" was never defined.
+if test -z "${hydra_bss_external_TRUE}" && test -z "${hydra_bss_external_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"hydra_bss_external\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-$as_echo "$as_me: error: conditional \"hydra_bss_ssh\" was never defined.
-Usually this means the macro was only invoked conditionally." >&2;}
-   { (exit 1); exit 1; }; }
-fi
-if test -z "${hydra_bss_slurm_TRUE}" && test -z "${hydra_bss_slurm_FALSE}"; then
-  { { $as_echo "$as_me:$LINENO: error: conditional \"hydra_bss_slurm\" was never defined.
-Usually this means the macro was only invoked conditionally." >&5
-$as_echo "$as_me: error: conditional \"hydra_bss_slurm\" was never defined.
+$as_echo "$as_me: error: conditional \"hydra_bss_external\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -15235,10 +16631,17 @@ $as_echo "$as_me: error: conditional \"hydra_bss_persist\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
-if test -z "${hydra_rmk_pbs_TRUE}" && test -z "${hydra_rmk_pbs_FALSE}"; then
-  { { $as_echo "$as_me:$LINENO: error: conditional \"hydra_rmk_pbs\" was never defined.
+if test -z "${hydra_bss_pbs_TRUE}" && test -z "${hydra_bss_pbs_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"hydra_bss_pbs\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
-$as_echo "$as_me: error: conditional \"hydra_rmk_pbs\" was never defined.
+$as_echo "$as_me: error: conditional \"hydra_bss_pbs\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${hydra_bss_none_TRUE}" && test -z "${hydra_bss_none_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"hydra_bss_none\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"hydra_bss_none\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -15253,6 +16656,13 @@ if test -z "${hydra_ui_mpich_TRUE}" && test -z "${hydra_ui_mpich_FALSE}"; then
   { { $as_echo "$as_me:$LINENO: error: conditional \"hydra_ui_mpich\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 $as_echo "$as_me: error: conditional \"hydra_ui_mpich\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${hydra_build_embedded_hwloc_TRUE}" && test -z "${hydra_build_embedded_hwloc_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"hydra_build_embedded_hwloc\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"hydra_build_embedded_hwloc\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -15295,6 +16705,13 @@ if test -z "${hydra_have_port_TRUE}" && test -z "${hydra_have_port_FALSE}"; then
   { { $as_echo "$as_me:$LINENO: error: conditional \"hydra_have_port\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 $as_echo "$as_me: error: conditional \"hydra_have_port\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${hydra_have_ftb_TRUE}" && test -z "${hydra_have_ftb_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"hydra_have_ftb\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"hydra_have_ftb\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -16067,8 +17484,6 @@ do
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "tools/bootstrap/src/bsci_init.c") CONFIG_FILES="$CONFIG_FILES tools/bootstrap/src/bsci_init.c" ;;
     "tools/bootstrap/include/bsci.h") CONFIG_FILES="$CONFIG_FILES tools/bootstrap/include/bsci.h" ;;
-    "tools/rmk/src/rmki_init.c") CONFIG_FILES="$CONFIG_FILES tools/rmk/src/rmki_init.c" ;;
-    "tools/rmk/include/rmki.h") CONFIG_FILES="$CONFIG_FILES tools/rmk/include/rmki.h" ;;
     "hydra-doxygen.cfg") CONFIG_FILES="$CONFIG_FILES hydra-doxygen.cfg" ;;
 
   *) { { $as_echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

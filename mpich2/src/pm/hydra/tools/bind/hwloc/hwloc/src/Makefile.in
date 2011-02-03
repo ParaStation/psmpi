@@ -15,9 +15,9 @@
 
 @SET_MAKE@
 
-# Copyright 2009 INRIA, Université Bordeaux 1
-
-# Copyright 2009 INRIA, Université Bordeaux 1
+# Copyright © 2009-2010 INRIA
+# Copyright © 2009-2010 Université Bordeaux 1
+# Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 
 
 VPATH = @srcdir@
@@ -40,38 +40,42 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(top_srcdir)/hwloc.am
-@HAVE_GCC_TRUE@am__append_1 = -no-undefined
-@HAVE_WINDOWS_TRUE@am__append_2 = -Xlinker --output-def -Xlinker .libs/libhwloc.def
-@HAVE_XML_TRUE@am__append_3 = topology-xml.c
-@HAVE_XML_FALSE@am__append_4 = topology-xml.c
-@HAVE_SOLARIS_TRUE@am__append_5 = topology-solaris.c
-@HAVE_SOLARIS_FALSE@am__append_6 = topology-solaris.c
-@HAVE_LINUX_TRUE@am__append_7 = topology-linux.c
-@HAVE_LINUX_FALSE@am__append_8 = topology-linux.c
-@HAVE_AIX_TRUE@am__append_9 = topology-aix.c
-@HAVE_AIX_TRUE@am__append_10 = -lpthread
-@HAVE_AIX_FALSE@am__append_11 = topology-aix.c
-@HAVE_OSF_TRUE@am__append_12 = topology-osf.c
-@HAVE_OSF_TRUE@am__append_13 = -lnuma -lpthread
-@HAVE_OSF_FALSE@am__append_14 = topology-osf.c
-@HAVE_HPUX_TRUE@am__append_15 = topology-hpux.c
-@HAVE_HPUX_TRUE@am__append_16 = -lpthread
-@HAVE_HPUX_FALSE@am__append_17 = topology-hpux.c
-@HAVE_WINDOWS_TRUE@am__append_18 = topology-windows.c
-@HAVE_WINDOWS_FALSE@am__append_19 = topology-windows.c
-@HAVE_DARWIN_TRUE@am__append_20 = topology-darwin.c
-@HAVE_DARWIN_FALSE@am__append_21 = topology-darwin.c
+
+# Conditionally add to the sources and ldflags
+@HWLOC_HAVE_XML_TRUE@am__append_1 = topology-xml.c
+@HWLOC_HAVE_SOLARIS_TRUE@am__append_2 = topology-solaris.c
+@HWLOC_HAVE_LINUX_TRUE@am__append_3 = topology-linux.c
+@HWLOC_HAVE_AIX_TRUE@am__append_4 = topology-aix.c
+@HWLOC_HAVE_AIX_TRUE@am__append_5 = -lpthread
+@HWLOC_HAVE_OSF_TRUE@am__append_6 = topology-osf.c
+@HWLOC_HAVE_OSF_TRUE@am__append_7 = -lnuma -lpthread
+@HWLOC_HAVE_HPUX_TRUE@am__append_8 = topology-hpux.c
+@HWLOC_HAVE_HPUX_TRUE@am__append_9 = -lpthread
+@HWLOC_HAVE_WINDOWS_TRUE@am__append_10 = topology-windows.c
+@HWLOC_HAVE_DARWIN_TRUE@am__append_11 = topology-darwin.c
+@HWLOC_HAVE_FREEBSD_TRUE@am__append_12 = topology-freebsd.c
+@HWLOC_HAVE_GCC_TRUE@am__append_13 = -no-undefined
+@HWLOC_HAVE_WINDOWS_TRUE@am__append_14 = -Xlinker --output-def -Xlinker .libs/libhwloc.def
+@HWLOC_HAVE_CPUID_TRUE@am__append_15 = topology-x86.c
+@HWLOC_BUILD_STANDALONE_TRUE@am__append_16 = hwloc.dtd
 subdir = src
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(srcdir)/topology-aix.c $(srcdir)/topology-darwin.c \
+	$(srcdir)/topology-freebsd.c $(srcdir)/topology-hpux.c \
+	$(srcdir)/topology-osf.c $(srcdir)/topology-solaris.c \
+	$(srcdir)/topology-synthetic.c $(srcdir)/topology-windows.c \
+	$(srcdir)/topology.c $(srcdir)/traversal.c
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/decl.m4 \
-	$(top_srcdir)/config/hwloc.m4 $(top_srcdir)/config/libtool.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/hwloc.m4 \
+	$(top_srcdir)/config/hwloc_check_attributes.m4 \
+	$(top_srcdir)/config/hwloc_check_visibility.m4 \
+	$(top_srcdir)/config/hwloc_internal.m4 \
+	$(top_srcdir)/config/hwloc_pkg.m4 \
+	$(top_srcdir)/config/libtool.m4 \
 	$(top_srcdir)/config/ltoptions.m4 \
 	$(top_srcdir)/config/ltsugar.m4 \
 	$(top_srcdir)/config/ltversion.m4 \
-	$(top_srcdir)/config/lt~obsolete.m4 \
-	$(top_srcdir)/config/pkg.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/config/lt~obsolete.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -101,51 +105,86 @@ am__base_list = \
   sed '$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;$$!N;s/\n/ /g' | \
   sed '$$!N;$$!N;$$!N;$$!N;s/\n/ /g'
 am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(xmldir)"
-LTLIBRARIES = $(lib_LTLIBRARIES)
+LTLIBRARIES = $(lib_LTLIBRARIES) $(noinst_LTLIBRARIES)
 libhwloc_la_LIBADD =
 am__libhwloc_la_SOURCES_DIST = topology.c traversal.c \
-	topology-synthetic.c bind.c cpuset.c topology-xml.c \
+	topology-synthetic.c bind.c cpuset.c misc.c topology-xml.c \
 	topology-solaris.c topology-linux.c topology-aix.c \
 	topology-osf.c topology-hpux.c topology-windows.c \
-	topology-darwin.c
-@HAVE_XML_TRUE@am__objects_1 = topology-xml.lo
-@HAVE_SOLARIS_TRUE@am__objects_2 = topology-solaris.lo
-@HAVE_LINUX_TRUE@am__objects_3 = topology-linux.lo
-@HAVE_AIX_TRUE@am__objects_4 = topology-aix.lo
-@HAVE_OSF_TRUE@am__objects_5 = topology-osf.lo
-@HAVE_HPUX_TRUE@am__objects_6 = topology-hpux.lo
-@HAVE_WINDOWS_TRUE@am__objects_7 = topology-windows.lo
-@HAVE_DARWIN_TRUE@am__objects_8 = topology-darwin.lo
-am_libhwloc_la_OBJECTS = topology.lo traversal.lo \
-	topology-synthetic.lo bind.lo cpuset.lo $(am__objects_1) \
-	$(am__objects_2) $(am__objects_3) $(am__objects_4) \
-	$(am__objects_5) $(am__objects_6) $(am__objects_7) \
-	$(am__objects_8)
+	topology-darwin.c topology-freebsd.c topology-x86.c
+@HWLOC_HAVE_XML_TRUE@am__objects_1 = topology-xml.lo
+@HWLOC_HAVE_SOLARIS_TRUE@am__objects_2 = topology-solaris.lo
+@HWLOC_HAVE_LINUX_TRUE@am__objects_3 = topology-linux.lo
+@HWLOC_HAVE_AIX_TRUE@am__objects_4 = topology-aix.lo
+@HWLOC_HAVE_OSF_TRUE@am__objects_5 = topology-osf.lo
+@HWLOC_HAVE_HPUX_TRUE@am__objects_6 = topology-hpux.lo
+@HWLOC_HAVE_WINDOWS_TRUE@am__objects_7 = topology-windows.lo
+@HWLOC_HAVE_DARWIN_TRUE@am__objects_8 = topology-darwin.lo
+@HWLOC_HAVE_FREEBSD_TRUE@am__objects_9 = topology-freebsd.lo
+@HWLOC_HAVE_CPUID_TRUE@am__objects_10 = topology-x86.lo
+am__objects_11 = topology.lo traversal.lo topology-synthetic.lo \
+	bind.lo cpuset.lo misc.lo $(am__objects_1) $(am__objects_2) \
+	$(am__objects_3) $(am__objects_4) $(am__objects_5) \
+	$(am__objects_6) $(am__objects_7) $(am__objects_8) \
+	$(am__objects_9) $(am__objects_10)
+am_libhwloc_la_OBJECTS = $(am__objects_11)
 libhwloc_la_OBJECTS = $(am_libhwloc_la_OBJECTS)
-libhwloc_la_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+AM_V_lt = $(am__v_lt_$(V))
+am__v_lt_ = $(am__v_lt_$(AM_DEFAULT_VERBOSITY))
+am__v_lt_0 = --silent
+libhwloc_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(libhwloc_la_LDFLAGS) $(LDFLAGS) -o $@
+@HWLOC_BUILD_STANDALONE_TRUE@am_libhwloc_la_rpath = -rpath $(libdir)
+libhwloc_embedded_la_LIBADD =
+am__libhwloc_embedded_la_SOURCES_DIST = topology.c traversal.c \
+	topology-synthetic.c bind.c cpuset.c misc.c topology-xml.c \
+	topology-solaris.c topology-linux.c topology-aix.c \
+	topology-osf.c topology-hpux.c topology-windows.c \
+	topology-darwin.c topology-freebsd.c topology-x86.c
+am_libhwloc_embedded_la_OBJECTS = $(am__objects_11)
+libhwloc_embedded_la_OBJECTS = $(am_libhwloc_embedded_la_OBJECTS)
+libhwloc_embedded_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(libhwloc_embedded_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
+@HWLOC_BUILD_STANDALONE_FALSE@am_libhwloc_embedded_la_rpath =
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/include/private -I$(top_builddir)/include/hwloc
-depcomp = $(SHELL) $(top_srcdir)/config/depcomp
+depcomp = $(SHELL) $(top_srcdir)/./config/depcomp
 am__depfiles_maybe = depfiles
 am__mv = mv -f
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
+LTCOMPILE = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) \
+	$(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) \
+	$(AM_CFLAGS) $(CFLAGS)
+AM_V_CC = $(am__v_CC_$(V))
+am__v_CC_ = $(am__v_CC_$(AM_DEFAULT_VERBOSITY))
+am__v_CC_0 = @echo "  CC    " $@;
+AM_V_at = $(am__v_at_$(V))
+am__v_at_ = $(am__v_at_$(AM_DEFAULT_VERBOSITY))
+am__v_at_0 = @
 CCLD = $(CC)
-LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
-SOURCES = $(libhwloc_la_SOURCES)
-DIST_SOURCES = $(am__libhwloc_la_SOURCES_DIST)
+LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
+AM_V_CCLD = $(am__v_CCLD_$(V))
+am__v_CCLD_ = $(am__v_CCLD_$(AM_DEFAULT_VERBOSITY))
+am__v_CCLD_0 = @echo "  CCLD  " $@;
+AM_V_GEN = $(am__v_GEN_$(V))
+am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
+am__v_GEN_0 = @echo "  GEN   " $@;
+SOURCES = $(libhwloc_la_SOURCES) $(libhwloc_embedded_la_SOURCES)
+DIST_SOURCES = $(am__libhwloc_la_SOURCES_DIST) \
+	$(am__libhwloc_embedded_la_SOURCES_DIST)
 DATA = $(xml_DATA)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
 AS = @AS@
 AUTOCONF = @AUTOCONF@
@@ -153,8 +192,7 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BASH = @BASH@
-CAIRO_CFLAGS = @CAIRO_CFLAGS@
-CAIRO_LIBS = @CAIRO_LIBS@
+BUNZIPP = @BUNZIPP@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -172,25 +210,45 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+EPSTOPDF = @EPSTOPDF@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 FIG2DEV = @FIG2DEV@
-GCC_CFLAGS = @GCC_CFLAGS@
 GREP = @GREP@
-HAVE_XML = @HAVE_XML@
+GS = @GS@
+HWLOC_CAIRO_CFLAGS = @HWLOC_CAIRO_CFLAGS@
+HWLOC_CAIRO_LIBS = @HWLOC_CAIRO_LIBS@
+HWLOC_CFLAGS = @HWLOC_CFLAGS@
+HWLOC_CPPFLAGS = @HWLOC_CPPFLAGS@
 HWLOC_DIFF_U = @HWLOC_DIFF_U@
+HWLOC_EMBEDDED_CFLAGS = @HWLOC_EMBEDDED_CFLAGS@
+HWLOC_EMBEDDED_CPPFLAGS = @HWLOC_EMBEDDED_CPPFLAGS@
+HWLOC_EMBEDDED_LDADD = @HWLOC_EMBEDDED_LDADD@
+HWLOC_EMBEDDED_LIBS = @HWLOC_EMBEDDED_LIBS@
+HWLOC_HAVE_XML = @HWLOC_HAVE_XML@
+HWLOC_KERRIGHED_CFLAGS = @HWLOC_KERRIGHED_CFLAGS@
+HWLOC_KERRIGHED_LIBS = @HWLOC_KERRIGHED_LIBS@
+HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
+HWLOC_LIBS = @HWLOC_LIBS@
+HWLOC_LINUX_LIBNUMA_LIBS = @HWLOC_LINUX_LIBNUMA_LIBS@
 HWLOC_MS_LIB = @HWLOC_MS_LIB@
+HWLOC_PKG_CONFIG = @HWLOC_PKG_CONFIG@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
 HWLOC_SVN_R = @HWLOC_SVN_R@
+HWLOC_TERMCAP_LIBS = @HWLOC_TERMCAP_LIBS@
 HWLOC_VERSION = @HWLOC_VERSION@
+HWLOC_W3_GENERATOR = @HWLOC_W3_GENERATOR@
+HWLOC_X11_LIBS = @HWLOC_X11_LIBS@
+HWLOC_XML_CFLAGS = @HWLOC_XML_CFLAGS@
+HWLOC_XML_LIBS = @HWLOC_XML_LIBS@
+HWLOC_top_builddir = @HWLOC_top_builddir@
+HWLOC_top_srcdir = @HWLOC_top_srcdir@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-KERRIGHED_CFLAGS = @KERRIGHED_CFLAGS@
-KERRIGHED_LIBS = @KERRIGHED_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
@@ -217,18 +275,20 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PDFLATEX = @PDFLATEX@
-PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 SED = @SED@
+SED_I = @SED_I@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
 W3M = @W3M@
-W3_GENERATOR = @W3_GENERATOR@
+XMKMF = @XMKMF@
 XMLLINT = @XMLLINT@
-XML_CFLAGS = @XML_CFLAGS@
-XML_LIBS = @XML_LIBS@
+X_CFLAGS = @X_CFLAGS@
+X_EXTRA_LIBS = @X_EXTRA_LIBS@
+X_LIBS = @X_LIBS@
+X_PRE_LIBS = @X_PRE_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -286,27 +346,43 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CFLAGS = $(GCC_CFLAGS) $(XML_CFLAGS)
-AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
-AM_LDFLAGS = -L$(top_builddir)/src
-lib_LTLIBRARIES = libhwloc.la
-EXTRA_DIST = dolib.c $(am__append_4) $(am__append_6) $(am__append_8) \
-	$(am__append_11) $(am__append_14) $(am__append_17) \
-	$(am__append_19) $(am__append_21) hwloc.dtd
-libhwloc_la_SOURCES = topology.c traversal.c topology-synthetic.c \
-	bind.c cpuset.c $(am__append_3) $(am__append_5) \
-	$(am__append_7) $(am__append_9) $(am__append_12) \
-	$(am__append_15) $(am__append_18) $(am__append_20)
-libhwloc_la_LDFLAGS = -version-number $(libhwloc_so_version) \
-	$(XML_LIBS) $(am__append_1) $(am__append_2) $(am__append_10) \
-	$(am__append_13) $(am__append_16)
-xml_DATA = $(srcdir)/hwloc.dtd
-xmldir = $(pkgdatadir)
+AM_CFLAGS = $(HWLOC_CFLAGS)
+AM_CPPFLAGS = $(HWLOC_CPPFLAGS)
+AM_LDFLAGS = $(HWLOC_LDFLAGS)
+EXTRA_DIST = dolib.c $(am__append_16)
+
+# If we're in standalone mode, build the installable library.
+# Otherwise, build the embedded library.
+@HWLOC_BUILD_STANDALONE_TRUE@lib_LTLIBRARIES = libhwloc.la
+@HWLOC_BUILD_STANDALONE_FALSE@noinst_LTLIBRARIES = libhwloc_embedded.la
+
+# Sources and ldflags
+sources = topology.c traversal.c topology-synthetic.c bind.c cpuset.c \
+	misc.c $(am__append_1) $(am__append_2) $(am__append_3) \
+	$(am__append_4) $(am__append_6) $(am__append_8) \
+	$(am__append_10) $(am__append_11) $(am__append_12) \
+	$(am__append_15)
+ldflags = $(am__append_5) $(am__append_7) $(am__append_9) \
+	$(am__append_13) $(am__append_14)
+@HWLOC_HAVE_WINDOWS_TRUE@LC_MESSAGES = C
+
+# Installable library
+libhwloc_la_SOURCES = $(sources)
+libhwloc_la_LDFLAGS = $(ldflags) -version-number $(libhwloc_so_version) $(HWLOC_XML_LIBS) $(HWLOC_LINUX_LIBNUMA_LIBS)
+
+# Embedded library (note the lack of a .so version number -- that
+# intentionally only appears in the installable library)
+libhwloc_embedded_la_SOURCES = $(sources)
+libhwloc_embedded_la_LDFLAGS = $(ldflags) $(HWLOC_XML_LIBS) $(HWLOC_LINUX_LIBNUMA_LIBS)
+
+# XML data (only install if we're building in standalone mode)
+@HWLOC_BUILD_STANDALONE_TRUE@xml_DATA = $(srcdir)/hwloc.dtd
+@HWLOC_BUILD_STANDALONE_TRUE@xmldir = $(pkgdatadir)
 all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .lo .o .obj
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am $(top_srcdir)/hwloc.am $(am__configure_deps)
+$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -367,8 +443,19 @@ clean-libLTLIBRARIES:
 	  echo "rm -f \"$${dir}/so_locations\""; \
 	  rm -f "$${dir}/so_locations"; \
 	done
+
+clean-noinstLTLIBRARIES:
+	-test -z "$(noinst_LTLIBRARIES)" || rm -f $(noinst_LTLIBRARIES)
+	@list='$(noinst_LTLIBRARIES)'; for p in $$list; do \
+	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
+	  test "$$dir" != "$$p" || dir=.; \
+	  echo "rm -f \"$${dir}/so_locations\""; \
+	  rm -f "$${dir}/so_locations"; \
+	done
 libhwloc.la: $(libhwloc_la_OBJECTS) $(libhwloc_la_DEPENDENCIES) 
-	$(libhwloc_la_LINK) -rpath $(libdir) $(libhwloc_la_OBJECTS) $(libhwloc_la_LIBADD) $(LIBS)
+	$(AM_V_CCLD)$(libhwloc_la_LINK) $(am_libhwloc_la_rpath) $(libhwloc_la_OBJECTS) $(libhwloc_la_LIBADD) $(LIBS)
+libhwloc_embedded.la: $(libhwloc_embedded_la_OBJECTS) $(libhwloc_embedded_la_DEPENDENCIES) 
+	$(AM_V_CCLD)$(libhwloc_embedded_la_LINK) $(am_libhwloc_embedded_la_rpath) $(libhwloc_embedded_la_OBJECTS) $(libhwloc_embedded_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -378,35 +465,44 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bind.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cpuset.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/misc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology-aix.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology-darwin.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology-freebsd.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology-hpux.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology-linux.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology-osf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology-solaris.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology-synthetic.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology-windows.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology-x86.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology-xml.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/topology.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/traversal.Plo@am__quote@
 
 .c.o:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c $<
+@am__fastdepCC_FALSE@	$(COMPILE) -c -o $@ $<
 
 .c.obj:
-@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ `$(CYGPATH_W) '$<'`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Po
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.obj$$||'`;\
+@am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ `$(CYGPATH_W) '$<'` &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Po
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+@am__fastdepCC_FALSE@	$(COMPILE) -c -o $@ `$(CYGPATH_W) '$<'`
 
 .c.lo:
-@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/$*.Tpo $(DEPDIR)/$*.Plo
+@am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.lo$$||'`;\
+@am__fastdepCC_TRUE@	$(LTCOMPILE) -MT $@ -MD -MP -MF $$depbase.Tpo -c -o $@ $< &&\
+@am__fastdepCC_TRUE@	$(am__mv) $$depbase.Tpo $$depbase.Plo
+@am__fastdepCC_FALSE@	$(AM_V_CC) @AM_BACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
@@ -521,8 +617,8 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-@HAVE_MS_LIB_FALSE@all-local:
-@HAVE_WINDOWS_FALSE@all-local:
+@HWLOC_HAVE_MS_LIB_FALSE@all-local:
+@HWLOC_HAVE_WINDOWS_FALSE@all-local:
 all-am: Makefile $(LTLIBRARIES) $(DATA) all-local
 installdirs:
 	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(xmldir)"; do \
@@ -553,11 +649,11 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
-@HAVE_WINDOWS_FALSE@install-exec-hook:
+@HWLOC_HAVE_WINDOWS_FALSE@install-exec-hook:
 clean: clean-am
 
 clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
-	mostlyclean-am
+	clean-noinstLTLIBRARIES mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -629,30 +725,31 @@ uninstall-am: uninstall-libLTLIBRARIES uninstall-xmlDATA
 .MAKE: install-am install-exec-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
-	clean-generic clean-libLTLIBRARIES clean-libtool ctags \
-	distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-exec-hook install-html install-html-am \
-	install-info install-info-am install-libLTLIBRARIES \
-	install-man install-pdf install-pdf-am install-ps \
-	install-ps-am install-strip install-xmlDATA installcheck \
-	installcheck-am installdirs maintainer-clean \
+	clean-generic clean-libLTLIBRARIES clean-libtool \
+	clean-noinstLTLIBRARIES ctags distclean distclean-compile \
+	distclean-generic distclean-libtool distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dvi install-dvi-am \
+	install-exec install-exec-am install-exec-hook install-html \
+	install-html-am install-info install-info-am \
+	install-libLTLIBRARIES install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip install-xmlDATA \
+	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-libLTLIBRARIES \
 	uninstall-xmlDATA
 
+@HWLOC_HAVE_WINDOWS_TRUE@export LC_MESSAGES
 
-@HAVE_MS_LIB_TRUE@@HAVE_WINDOWS_TRUE@.libs/libhwloc.lib: libhwloc.la dolib
-@HAVE_MS_LIB_TRUE@@HAVE_WINDOWS_TRUE@	./dolib "$(HWLOC_MS_LIB)" X86 .libs/libhwloc.def libhwloc-$(HWLOC_SOVERSION) .libs/libhwloc.lib
-@HAVE_MS_LIB_TRUE@@HAVE_WINDOWS_TRUE@all-local: .libs/libhwloc.lib
+@HWLOC_HAVE_MS_LIB_TRUE@@HWLOC_HAVE_WINDOWS_TRUE@.libs/libhwloc.lib: libhwloc.la dolib
+@HWLOC_HAVE_MS_LIB_TRUE@@HWLOC_HAVE_WINDOWS_TRUE@	./dolib "$(HWLOC_MS_LIB)" X86 .libs/libhwloc.def libhwloc-$(HWLOC_SOVERSION) .libs/libhwloc.lib
+@HWLOC_HAVE_MS_LIB_TRUE@@HWLOC_HAVE_WINDOWS_TRUE@all-local: .libs/libhwloc.lib
 
-@HAVE_WINDOWS_TRUE@install-exec-hook:
-@HAVE_WINDOWS_TRUE@	$(INSTALL) .libs/libhwloc.def $(DESTDIR)$(libdir)
-@HAVE_MS_LIB_TRUE@@HAVE_WINDOWS_TRUE@	$(INSTALL) .libs/libhwloc.lib $(DESTDIR)$(libdir)
-@HAVE_MS_LIB_TRUE@@HAVE_WINDOWS_TRUE@	$(INSTALL) .libs/libhwloc.exp $(DESTDIR)$(libdir)
+@HWLOC_HAVE_WINDOWS_TRUE@install-exec-hook:
+@HWLOC_HAVE_WINDOWS_TRUE@	$(INSTALL) .libs/libhwloc.def $(DESTDIR)$(libdir)
+@HWLOC_HAVE_MS_LIB_TRUE@@HWLOC_HAVE_WINDOWS_TRUE@	$(INSTALL) .libs/libhwloc.lib $(DESTDIR)$(libdir)
+@HWLOC_HAVE_MS_LIB_TRUE@@HWLOC_HAVE_WINDOWS_TRUE@	$(INSTALL) .libs/libhwloc.exp $(DESTDIR)$(libdir)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

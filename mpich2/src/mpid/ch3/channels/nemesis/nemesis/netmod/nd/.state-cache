@@ -1,14 +1,14 @@
 <dir>
 <file name="nd_poll.cpp" info="1269898911"/>
-<file name="nd_init.cpp" info="1270067098"/>
+<file name="nd_init.cpp" info="1274284053"/>
 <file name="nd_send.cpp" info="1270067098"/>
-<file name="nd_sm.cpp" info="1272897756"/>
+<file name="nd_sm.cpp" info="1289055764"/>
 <file name="nd_dp.cpp" info="1269898911"/>
 <file name="nd_ad_util.cpp" info="1269898911"/>
 <file name="nd_misc_util.cpp" info="1269898911"/>
-<file name="nd_finalize.cpp" info="1269898911"/>
-<file name="nd_impl.h" info="1270067098"/>
-<file name="nd_ep_util.cpp" info="1269898911"/>
+<file name="nd_finalize.cpp" info="1274284053"/>
+<file name="nd_impl.h" info="1289055764"/>
+<file name="nd_ep_util.cpp" info="1289055764"/>
 <file name="nd_sm.h" info="1269898911"/>
 </dir>
 <data>
@@ -28,6 +28,7 @@ MPID_STATE_MPID_NEM_ND_SEND_NONCONTIG MPID_Nem_nd_send_noncontig
 MPID_STATE_MPID_NEM_ND_SM_INIT MPID_Nem_nd_sm_init
 MPID_STATE_MPID_NEM_ND_BLOCK_OP_INIT MPID_Nem_nd_block_op_init
 MPID_STATE_MPID_NEM_ND_BLOCK_OP_FINALIZE MPID_Nem_nd_block_op_finalize
+MPID_STATE_MPID_NEM_ND_BLOCK_OP_REINIT MPID_Nem_nd_block_op_reinit
 MPID_STATE_MPID_NEM_ND_CONN_MSG_BUFS_INIT MPID_Nem_nd_conn_msg_bufs_init
 MPID_STATE_MPID_NEM_ND_POST_ACCEPT MPID_Nem_nd_post_accept
 MPID_STATE_MPID_NEM_ND_LISTEN_FOR_CONN MPID_Nem_nd_listen_for_conn
@@ -64,9 +65,11 @@ MPID_STATE_MPID_NEM_ND_SM_GEN_EX_FAIL_HANDLER gen_ex_fail_handler
 MPID_STATE_MPID_NEM_ND_SM_QUIESCENT_HANDLER quiescent_handler
 MPID_STATE_MPID_NEM_ND_SM_PASSIVE_QUIESCENT_HANDLER passive_quiescent_handler
 MPID_STATE_MPID_NEM_ND_SM_BLOCK_OP_HANDLER block_op_handler
+MPID_STATE_MPID_NEM_ND_SM_MANUAL_EVENT_HANDLER manual_event_handler
 MPID_STATE_MPID_NEM_ND_SM_GET_MY_PG_INFO get_my_pg_info
 MPID_STATE_MPID_NEM_ND_CONN_EST MPID_Nem_nd_conn_est
 MPID_STATE_MPID_NEM_ND_SM_POLL MPID_Nem_nd_sm_poll
+MPID_STATE_MPID_NEM_ND_SM_BLOCK MPID_Nem_nd_sm_block
 MPID_STATE_MPID_NEM_ND_SM_FINALIZE MPID_Nem_nd_sm_finalize
 </fileinfo>
 <fileinfo name="nd_dp.cpp">

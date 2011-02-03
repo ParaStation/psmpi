@@ -82,6 +82,8 @@ also the value at index %d
 **bufexists:Buffer already attached with MPI_BUFFER_ATTACH.
 **bsendbufsmall:Buffer size is smaller than MPI_BSEND_OVERHEAD
 **bsendbufsmall %d %d:Buffer size of %d is smaller than MPI_BSEND_OVERHEAD (%d)
+**bsendpending:Internal error - completion of Bsend requests that were \
+ deferred because of resource limits is not implemented
 **notgenreq:Attempt to complete a request with MPI_GREQUEST_COMPLETE that \
 was not started with MPI_GREQUEST_START
 **cancelunknown:Attempt to cancel an unknown type of request
@@ -177,7 +179,7 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 **dynamic_node_ids: Node information for dynamic processes currently is not implemnted
 
 **memcpyalias:memcpy arguments alias each other
-**memcpyalias %p %p %L:memcpy arguments alias each other, dst=%d src=%d len=%L
+**memcpyalias %p %p %L:memcpy arguments alias each other, dst=%p src=%p len=%L
 
 # -- FIXME: Some (but not all) of the messages below this line have been used
 #---- The messages below this line haven't been used yet.
@@ -278,6 +280,7 @@ be in the range 0 to %d
 **fileamoderead:Cannot use MPI_MODE_CREATE or MPI_MODE_EXCL with \
  MPI_MODE_RDONLY 
 **fileamodeseq:Cannot specify MPI_MODE_SEQUENTIAL with MPI_MODE_RDWR
+**fileamodediff:amode must be the same on all processors
 **filename:Invalid file name
 **filename %s:Invalid file name %s
 **filenamelong:Pathname too long
@@ -393,6 +396,12 @@ unexpected messages queued.
 #**argnull:Invalid null parameter
 #**argnull %s:Invalid null parameter %s
 
+**cond_create:MPIU_Thread_cond_create failed
+**cond_create %s:MPIU_Thread_cond_create failed: %s
+**mutex_create:MPIU_Thread_mutex_create failed
+**mutex_create %s:MPIU_Thread_mutex_create failed: %s
+**thread_create:MPIU_Thread_create failed
+**thread_create %s:MPIU_Thread_create failed: %s
 
 #
 # Errors common to several devices
@@ -857,8 +866,26 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **sem_destroy %s:sem_destroy() failed %s
 
 **comm_fail:Communication error
+**comm_fail %d:Communication error with rank %d
+**comm_fail %d %s:Communication error with rank %d: %s
+**comm_fail_conn:Communication error during connect sequence
+**comm_fail_conn %s %s:Communication error during connect sequence (state=%s): %s
+**exceeded_connect_tries:Unable to establish connection to process
+**exceeded_connect_tries %d:Unable to establish connection to rank %d
+**vc_in_error_state:Connection is in error state
+**tcp_cleanup_fail:Error while cleaning up failed connection
+**tmpvc_connect_fail:Failure during connection protocol
+
+**coll_fail:Failure during collective
 
 **blcr_mod:BLCR kernel module not present
+
+**envvarparse:Unable to parse environment variable
+**envvarparse %s:Unable to parse environment variable (%s)
+
+**signal:signal() failed
+**signal %s:signal() failed: %s
+**sigusr1:This version of MPICH requires the SIGUSR1 signal, but the application has already installed a handler
 
 #
 # mpi functions

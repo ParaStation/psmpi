@@ -686,21 +686,18 @@ TEST_LIBNAME
 LIBNAME
 ROMIO_HOME
 arch_IRIX
-MAKE
 NOPROFILE
 NOF77
 MPI_LIB
 MPI_INCLUDE_DIR
 AR_FLAGS
 AR
-MPI
 BITS
 MIPS
 USER_FFLAGS
 USER_CFLAGS
 FILE_SYSTEM
 ARCH
-VPATH
 SYSDEP_INC
 GLUE_DIR
 FILE_SYS_DIRS
@@ -734,6 +731,10 @@ F77
 CC
 RANLIB
 top_build_dir
+SET_MAKE
+SET_CFLAGS
+VPATH
+MAKE
 target_alias
 host_alias
 build_alias
@@ -782,6 +783,7 @@ enable_weak_symbols
 enable_debug
 with_file_system
 with_pvfs2
+with_mpi_impl
 with_mpi
 '
       ac_precious_vars='build_alias
@@ -1430,7 +1432,9 @@ Optional Packages:
 
 --with-pvfs2=path - Path to installation of PVFS (version 2)
 
---with-mpi=name - Specify MPI implementation to build ROMIO for
+--with-mpi-impl=name - Specify MPI implementation to build ROMIO for
+
+--with-mpi=path   - Path to instalation of MPI (headers, libs, etc)
 
 Some influential environment variables:
   CC          C compiler command
@@ -1783,21 +1787,120 @@ $as_echo "$as_me: loading site script $ac_site_file" >&6;}
   fi
 done
 
-if test -r "$cache_file"; then
-  # Some versions of bash will fail to source /dev/null (special
-  # files actually), so we avoid doing that.
-  if test -f "$cache_file"; then
-    { $as_echo "$as_me:$LINENO: loading cache $cache_file" >&5
-$as_echo "$as_me: loading cache $cache_file" >&6;}
-    case $cache_file in
-      [\\/]* | ?:[\\/]* ) . "$cache_file";;
-      *)                      . "./$cache_file";;
-    esac
+if test "$CONFIGURE_DEBUG_CACHE" = yes ; then
+    oldopts="$-"
+    clearMinusX=no
+    set -x
+    if test "$oldopts" != "$-" ; then
+        clearMinusX=yes
+    fi
+fi
+if test "X$cache_system" = "X" ; then
+    # A default file name, just in case
+    cache_system="config.system"
+    if test "$cache_file" != "/dev/null" ; then
+        # Get the directory for the cache file, if any
+
+                cache_system=`echo $cache_file | sed -e 's%^\(.*/\)[^/]*%\1config.system%'`
+
+        test "x$cache_system" = "x$cache_file" && cache_system="config.system"
+#    else
+#        We must *not* set enable_cache to no because we need to know if
+#        enable_cache was not set.
+#        enable_cache=no
+    fi
+fi
+#
+# Get a test value and flag whether we should remove/replace the
+# cache_system file (do so unless cache_system_ok is yes)
+# FC and F77 should be synonyms.  Save both in case
+# We include the xxxFLAGS in case the user is using the flags to change
+# the language (either input or output) of the compiler.  E.g.,
+# using -xarch=v9 on Solaris to select 64 bit output or using -D_BSD_SOURCE
+# with gcc to get different header files on input.
+cleanargs=`echo "$CC $F77 $FC $CXX $F90 $CFLAGS $FFLAGS $CXXFLAGS $F90FLAGS $PATH" | tr '"' ' '`
+if uname -srm >/dev/null 2>&1 ; then
+    cache_system_text="`uname -srm` $cleanargs"
+else
+    cache_system_text="-no-uname- $cleanargs"
+fi
+cache_system_ok=no
+#
+if test -z "$real_enable_cache" ; then
+    real_enable_cache=$enable_cache
+    if test -z "$real_enable_cache" ; then real_enable_cache="notgiven" ; fi
+fi
+if test "X$real_enable_cache" = "Xnotgiven" ; then
+    # check for valid cache file
+    if test -z "$cache_system" ; then cache_system="config.system" ; fi
+    if uname -srm >/dev/null 2>&1 ; then
+        if test -f "$cache_system" -a -n "$cache_system_text" ; then
+	    if test "$cache_system_text" = "`cat $cache_system`" ; then
+	        real_enable_cache="yes"
+                cache_system_ok=yes
+	    fi
+        elif test ! -f "$cache_system" -a -n "$cache_system_text" ; then
+	    # remove the cache file because it may not correspond to our
+	    # system
+	    if test "$cache_file" != "/dev/null" ; then
+	        rm -f $cache_file
+	    fi
+	    real_enable_cache="yes"
+        fi
+    fi
+fi
+if test "X$real_enable_cache" = "Xyes" -a "$cache_file" = "/dev/null" ; then
+    real_enable_cache=no
+fi
+if test "X$real_enable_cache" = "Xyes" ; then
+  if test -r "$cache_file" ; then
+    echo "loading cache $cache_file"
+    if test -w "$cache_file" ; then
+        # Clean the cache file (ergh)
+
+    rm -f confcache
+    sed -e "s/'\\\\''//g" -e "s/'\\\\/'/" -e "s/\\\\'/'/" \
+		-e "s/'\\\\''//g" $cache_file > confcache
+    if cmp -s $cache_file confcache ; then
+        :
+    else
+        if test -w $cache_file ; then
+	    echo "updating cache $cache_file"
+            cat confcache > $cache_file
+        else
+            echo "not updating unwritable cache $cache_file"
+        fi
+    fi
+    rm -f confcache
+    if test "$DEBUG_AUTOCONF_CACHE" = "yes" ; then
+        echo "Results of cleaned cache file:"
+	echo "--------------------------------------------------------"
+	cat $cache_file
+	echo "--------------------------------------------------------"
+    fi
+
+    fi
+    . $cache_file
+  else
+    echo "Configure in `pwd` creating cache $cache_file"
+    > $cache_file
+    rm -f $cache_system
   fi
 else
-  { $as_echo "$as_me:$LINENO: creating cache $cache_file" >&5
-$as_echo "$as_me: creating cache $cache_file" >&6;}
-  >$cache_file
+  cache_file="/dev/null"
+fi
+# Remember our location and the name of the cachefile
+pac_cv_my_conf_dir=`pwd`
+#
+# Update the cache_system file if necessary
+if test "$cache_system_ok" != yes ; then
+    if test -n "$cache_system" ; then
+        rm -f $cache_system
+        echo $cache_system_text > $cache_system
+    fi
+fi
+if test "$clearMinusX" = yes ; then
+    set +x
 fi
 
 # Check that the precious variables saved in the cache have kept the same
@@ -1897,7 +2000,7 @@ NOF77=0
 NOF90=0
 ARCH=""
 arch_IRIX=""
-MPI=""
+MPI_IMPL=""
 MPI_INCLUDE_DIR=""
 ROMIO_INCLUDE=""
 TEST_LIBNAME=""
@@ -2030,6 +2133,12 @@ if test "${with_pvfs2+set}" = set; then
 fi
 
 
+# Check whether --with-mpi-impl was given.
+if test "${with_mpi_impl+set}" = set; then
+  withval=$with_mpi_impl;
+fi
+
+
 # Check whether --with-mpi was given.
 if test "${with_mpi+set}" = set; then
   withval=$with_mpi;
@@ -2085,6 +2194,291 @@ ac_config_sub="$SHELL $ac_aux_dir/config.sub"  # Please don't use this var.
 ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 
 
+
+# Check if Make is working
+
+true
+if test "X$MAKE" = "X" ; then
+   for ac_prog in make gnumake nmake pmake smake
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if test "${ac_cv_prog_MAKE+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+  if test -n "$MAKE"; then
+  ac_cv_prog_MAKE="$MAKE" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
+    ac_cv_prog_MAKE="$ac_prog"
+    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+IFS=$as_save_IFS
+
+fi
+fi
+MAKE=$ac_cv_prog_MAKE
+if test -n "$MAKE"; then
+  { $as_echo "$as_me:$LINENO: result: $MAKE" >&5
+$as_echo "$MAKE" >&6; }
+else
+  { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+  test -n "$MAKE" && break
+done
+
+fi
+
+
+{ $as_echo "$as_me:$LINENO: checking whether clock skew breaks make" >&5
+$as_echo_n "checking whether clock skew breaks make... " >&6; }
+if test "${pac_cv_prog_make_found_clock_skew+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
+rm -f conftest*
+cat > conftest <<EOF
+ALL:
+	@-echo "success"
+EOF
+$MAKE -f conftest > conftest.out 2>&1
+if grep -i skew conftest >/dev/null 2>&1 ; then
+    pac_cv_prog_make_found_clock_skew=yes
+else
+    pac_cv_prog_make_found_clock_skew=no
+fi
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
+rm -f conftest*
+
+fi
+{ $as_echo "$as_me:$LINENO: result: $pac_cv_prog_make_found_clock_skew" >&5
+$as_echo "$pac_cv_prog_make_found_clock_skew" >&6; }
+if test "$pac_cv_prog_make_found_clock_skew" = "yes" ; then
+    { $as_echo "$as_me:$LINENO: WARNING: Clock skew found by make.  The configure and build may fail.
+Consider building in a local instead of NFS filesystem." >&5
+$as_echo "$as_me: WARNING: Clock skew found by make.  The configure and build may fail.
+Consider building in a local instead of NFS filesystem." >&2;}
+fi
+
+
+{ $as_echo "$as_me:$LINENO: checking whether make supports include" >&5
+$as_echo_n "checking whether make supports include... " >&6; }
+if test "${pac_cv_prog_make_include+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
+rm -f conftest
+cat > conftest <<.
+ALL:
+	@echo "success"
+.
+cat > conftest1 <<.
+include conftest
+.
+pac_str=`$MAKE -f conftest1 2>&1`
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
+rm -f conftest conftest1
+if test "$pac_str" != "success" ; then
+    pac_cv_prog_make_include="no"
+else
+    pac_cv_prog_make_include="yes"
+fi
+
+fi
+{ $as_echo "$as_me:$LINENO: result: $pac_cv_prog_make_include" >&5
+$as_echo "$pac_cv_prog_make_include" >&6; }
+if test "$pac_cv_prog_make_include" = "no" ; then
+    :
+else
+    :
+fi
+
+
+{ $as_echo "$as_me:$LINENO: checking whether make allows comments in actions" >&5
+$as_echo_n "checking whether make allows comments in actions... " >&6; }
+if test "${pac_cv_prog_make_allows_comments+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
+rm -f conftest
+cat > conftest <<.
+SHELL=/bin/sh
+ALL:
+	@# This is a valid comment!
+	@echo "success"
+.
+pac_str=`$MAKE -f conftest 2>&1`
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
+rm -f conftest
+if test "$pac_str" != "success" ; then
+    pac_cv_prog_make_allows_comments="no"
+else
+    pac_cv_prog_make_allows_comments="yes"
+fi
+
+fi
+{ $as_echo "$as_me:$LINENO: result: $pac_cv_prog_make_allows_comments" >&5
+$as_echo "$pac_cv_prog_make_allows_comments" >&6; }
+if test "$pac_cv_prog_make_allows_comments" = "no" ; then
+    { $as_echo "$as_me:$LINENO: WARNING: Your make does not allow comments in target code.
+Using this make may cause problems when building programs.
+You should consider using gnumake instead." >&5
+$as_echo "$as_me: WARNING: Your make does not allow comments in target code.
+Using this make may cause problems when building programs.
+You should consider using gnumake instead." >&2;}
+
+fi
+
+
+
+{ $as_echo "$as_me:$LINENO: checking for virtual path format" >&5
+$as_echo_n "checking for virtual path format... " >&6; }
+if test "${pac_cv_prog_make_vpath+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
+rm -rf conftest*
+mkdir conftestdir
+cat >conftestdir/a.c <<EOF
+A sample file
+EOF
+cat > conftest <<EOF
+all: a.o
+VPATH=.:conftestdir
+.c.o:
+	@echo \$<
+EOF
+ac_out=`$MAKE -f conftest 2>&1 | grep 'conftestdir/a.c'`
+if test -n "$ac_out" ; then
+    pac_cv_prog_make_vpath="VPATH"
+else
+    rm -f conftest
+    cat > conftest <<EOF
+all: a.o
+.PATH: . conftestdir
+.c.o:
+	@echo \$<
+EOF
+    ac_out=`$MAKE -f conftest 2>&1 | grep 'conftestdir/a.c'`
+    if test -n "$ac_out" ; then
+        pac_cv_prog_make_vpath=".PATH"
+    else
+	pac_cv_prog_make_vpath="neither VPATH nor .PATH works"
+    fi
+fi
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
+rm -rf conftest*
+
+fi
+{ $as_echo "$as_me:$LINENO: result: $pac_cv_prog_make_vpath" >&5
+$as_echo "$pac_cv_prog_make_vpath" >&6; }
+if test "$pac_cv_prog_make_vpath" = "VPATH" ; then
+    VPATH='VPATH=.:${srcdir}'
+elif test "$pac_cv_prog_make_vpath" = ".PATH" ; then
+    VPATH='.PATH: . ${srcdir}'
+fi
+
+
+
+{ $as_echo "$as_me:$LINENO: checking whether make sets CFLAGS" >&5
+$as_echo_n "checking whether make sets CFLAGS... " >&6; }
+if test "${pac_cv_prog_make_set_cflags+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
+rm -f conftest
+cat > conftest <<EOF
+SHELL=/bin/sh
+ALL:
+	@echo X\${CFLAGS}X
+EOF
+pac_str=`$MAKE -f conftest 2>&1`
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
+rm -f conftest
+if test "$pac_str" = "XX" ; then
+    pac_cv_prog_make_set_cflags="no"
+else
+    pac_cv_prog_make_set_cflags="yes"
+fi
+
+fi
+{ $as_echo "$as_me:$LINENO: result: $pac_cv_prog_make_set_cflags" >&5
+$as_echo "$pac_cv_prog_make_set_cflags" >&6; }
+if test "$pac_cv_prog_make_set_cflags" = "no" ; then
+    :
+else
+    SET_CFLAGS='CFLAGS='
+fi
+
+if test "$pac_cv_prog_make_echos_dir" = "no" ; then
+    { $as_echo "$as_me:$LINENO: checking whether ${MAKE-make} sets \$(MAKE)" >&5
+$as_echo_n "checking whether ${MAKE-make} sets \$(MAKE)... " >&6; }
+set x ${MAKE-make}
+ac_make=`$as_echo "$2" | sed 's/+/p/g; s/[^a-zA-Z0-9_]/_/g'`
+if { as_var=ac_cv_prog_make_${ac_make}_set; eval "test \"\${$as_var+set}\" = set"; }; then
+  $as_echo_n "(cached) " >&6
+else
+  cat >conftest.make <<\_ACEOF
+SHELL = /bin/sh
+all:
+	@echo '@@@%%%=$(MAKE)=@@@%%%'
+_ACEOF
+# GNU make sometimes prints "make[1]: Entering...", which would confuse us.
+case `${MAKE-make} -f conftest.make 2>/dev/null` in
+  *@@@%%%=?*=@@@%%%*)
+    eval ac_cv_prog_make_${ac_make}_set=yes;;
+  *)
+    eval ac_cv_prog_make_${ac_make}_set=no;;
+esac
+rm -f conftest.make
+fi
+if eval test \$ac_cv_prog_make_${ac_make}_set = yes; then
+  { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+  SET_MAKE=
+else
+  { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+  SET_MAKE="MAKE=${MAKE-make}"
+fi
+
+else
+    SET_MAKE="MAKE=${MAKE-make}"
+fi
 
 #
 # Check that an arch was set
@@ -2196,10 +2590,10 @@ else
     WITHIN_KNOWN_MPI_IMPL=no
 fi
 # check for valid MPI implementation
-if test -n "$MPI" ; then
+if test -n "$MPI_IMPL" ; then
    found=no
    for mpi in $known_mpi_impls ; do
-      if test "${MPI}_mpi" = "$mpi" ; then
+      if test "${MPI_IMPL}_mpi" = "$mpi" ; then
           found=yes
 	  break
       fi
@@ -2210,6 +2604,12 @@ $as_echo "$as_me: WARNING: Unknown MPI implementation $MPI... proceeding anyway"
    fi
 fi
 #
+
+if test -n "${with_mpi}" ; then
+	MPI_INCLUDE_DIR="${with_mpi}"/include
+	MPI_LIB_DIR="${with_mpi}"/lib
+fi
+
 # check for valid MPI include directory if specified
 if test $WITHIN_KNOWN_MPI_IMPL = no ; then
    if test -n "$MPI_INCLUDE_DIR"; then
@@ -2335,7 +2735,6 @@ else
 fi
 
 fi
-MAKE=${MAKE:-make}
 #
 # USER_CFLAGS and USER_FFLAGS are used only in test/Makefile.in
 if test $DEBUG = "yes"; then
@@ -2536,203 +2935,21 @@ test -n "$F77" || F77="f77"
     ;;
 esac
 
-ac_ext=c
+
+
+	if test -z "${pac_save_CFLAGS_nesting}" ; then
+	   pac_save_CFLAGS_nesting=0
+	fi
+	eval pac_save_CFLAGS_${pac_save_CFLAGS_nesting}='"$CFLAGS"'
+	pac_save_CFLAGS_nesting=`expr ${pac_save_CFLAGS_nesting} + 1`
+
+	ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 if test -n "$ac_tool_prefix"; then
-  # Extract the first word of "${ac_tool_prefix}gcc", so it can be a program name with args.
-set dummy ${ac_tool_prefix}gcc; ac_word=$2
-{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_CC+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_CC="${ac_tool_prefix}gcc"
-    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  { $as_echo "$as_me:$LINENO: result: $CC" >&5
-$as_echo "$CC" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$ac_cv_prog_CC"; then
-  ac_ct_CC=$CC
-  # Extract the first word of "gcc", so it can be a program name with args.
-set dummy gcc; ac_word=$2
-{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_ac_ct_CC+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$ac_ct_CC"; then
-  ac_cv_prog_ac_ct_CC="$ac_ct_CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_ac_ct_CC="gcc"
-    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-ac_ct_CC=$ac_cv_prog_ac_ct_CC
-if test -n "$ac_ct_CC"; then
-  { $as_echo "$as_me:$LINENO: result: $ac_ct_CC" >&5
-$as_echo "$ac_ct_CC" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-  if test "x$ac_ct_CC" = x; then
-    CC=""
-  else
-    case $cross_compiling:$ac_tool_warned in
-yes:)
-{ $as_echo "$as_me:$LINENO: WARNING: using cross tools not prefixed with host triplet" >&5
-$as_echo "$as_me: WARNING: using cross tools not prefixed with host triplet" >&2;}
-ac_tool_warned=yes ;;
-esac
-    CC=$ac_ct_CC
-  fi
-else
-  CC="$ac_cv_prog_CC"
-fi
-
-if test -z "$CC"; then
-          if test -n "$ac_tool_prefix"; then
-    # Extract the first word of "${ac_tool_prefix}cc", so it can be a program name with args.
-set dummy ${ac_tool_prefix}cc; ac_word=$2
-{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_CC+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    ac_cv_prog_CC="${ac_tool_prefix}cc"
-    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  { $as_echo "$as_me:$LINENO: result: $CC" >&5
-$as_echo "$CC" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-  fi
-fi
-if test -z "$CC"; then
-  # Extract the first word of "cc", so it can be a program name with args.
-set dummy cc; ac_word=$2
-{ $as_echo "$as_me:$LINENO: checking for $ac_word" >&5
-$as_echo_n "checking for $ac_word... " >&6; }
-if test "${ac_cv_prog_CC+set}" = set; then
-  $as_echo_n "(cached) " >&6
-else
-  if test -n "$CC"; then
-  ac_cv_prog_CC="$CC" # Let the user override the test.
-else
-  ac_prog_rejected=no
-as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
-for as_dir in $PATH
-do
-  IFS=$as_save_IFS
-  test -z "$as_dir" && as_dir=.
-  for ac_exec_ext in '' $ac_executable_extensions; do
-  if { test -f "$as_dir/$ac_word$ac_exec_ext" && $as_test_x "$as_dir/$ac_word$ac_exec_ext"; }; then
-    if test "$as_dir/$ac_word$ac_exec_ext" = "/usr/ucb/cc"; then
-       ac_prog_rejected=yes
-       continue
-     fi
-    ac_cv_prog_CC="cc"
-    $as_echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
-    break 2
-  fi
-done
-done
-IFS=$as_save_IFS
-
-if test $ac_prog_rejected = yes; then
-  # We found a bogon in the path, so make sure we never use it.
-  set dummy $ac_cv_prog_CC
-  shift
-  if test $# != 0; then
-    # We chose a different compiler from the bogus one.
-    # However, it has the same basename, so the bogon will be chosen
-    # first if we set CC to just the basename; use the full file name.
-    shift
-    ac_cv_prog_CC="$as_dir/$ac_word${1+' '}$@"
-  fi
-fi
-fi
-fi
-CC=$ac_cv_prog_CC
-if test -n "$CC"; then
-  { $as_echo "$as_me:$LINENO: result: $CC" >&5
-$as_echo "$CC" >&6; }
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-fi
-if test -z "$CC"; then
-  if test -n "$ac_tool_prefix"; then
-  for ac_prog in cl.exe
+  for ac_prog in gcc icc pgcc xlc xlC pathcc cc
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -2776,7 +2993,7 @@ fi
 fi
 if test -z "$CC"; then
   ac_ct_CC=$CC
-  for ac_prog in cl.exe
+  for ac_prog in gcc icc pgcc xlc xlC pathcc cc
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -2829,8 +3046,6 @@ ac_tool_warned=yes ;;
 esac
     CC=$ac_ct_CC
   fi
-fi
-
 fi
 
 
@@ -3470,16 +3685,30 @@ ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 
+	pac_save_CFLAGS_nesting=`expr ${pac_save_CFLAGS_nesting} - 1`
+	eval CFLAGS="\$pac_save_CFLAGS_${pac_save_CFLAGS_nesting}"
+	eval pac_save_CFLAGS_${pac_save_CFLAGS_nesting}=""
+
+
+
 if test "$NOF77" != 1 ; then
     # Grrr.   The autoconf test for F77 will abort the configure
     # if no compiler is found.  We'd prefer to simply turn off
     # support for Fortran, and/or give a more informative message.
-    ac_ext=f
+
+
+	if test -z "${pac_save_FFLAGS_nesting}" ; then
+	   pac_save_FFLAGS_nesting=0
+	fi
+	eval pac_save_FFLAGS_${pac_save_FFLAGS_nesting}='"$FFLAGS"'
+	pac_save_FFLAGS_nesting=`expr ${pac_save_FFLAGS_nesting} + 1`
+
+ac_ext=f
 ac_compile='$F77 -c $FFLAGS conftest.$ac_ext >&5'
 ac_link='$F77 -o conftest$ac_exeext $FFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_f77_compiler_gnu
 if test -n "$ac_tool_prefix"; then
-  for ac_prog in g77 xlf f77 frt pgf77 cf77 fort77 fl32 af77 xlf90 f90 pgf90 pghpf epcf90 gfortran g95 xlf95 f95 fort ifort ifc efc pgf95 lf95 ftn
+  for ac_prog in ifort pgf77 af77 xlf frt cf77 fort77 fl32 fort ifc efc ftn gfortran f77 g77
   do
     # Extract the first word of "$ac_tool_prefix$ac_prog", so it can be a program name with args.
 set dummy $ac_tool_prefix$ac_prog; ac_word=$2
@@ -3523,7 +3752,7 @@ fi
 fi
 if test -z "$F77"; then
   ac_ct_F77=$F77
-  for ac_prog in g77 xlf f77 frt pgf77 cf77 fort77 fl32 af77 xlf90 f90 pgf90 pghpf epcf90 gfortran g95 xlf95 f95 fort ifort ifc efc pgf95 lf95 ftn
+  for ac_prog in ifort pgf77 af77 xlf frt cf77 fort77 fl32 fort ifc efc ftn gfortran f77 g77
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -3740,6 +3969,12 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
+
+	pac_save_FFLAGS_nesting=`expr ${pac_save_FFLAGS_nesting} - 1`
+	eval FFLAGS="\$pac_save_FFLAGS_${pac_save_FFLAGS_nesting}"
+	eval pac_save_FFLAGS_${pac_save_FFLAGS_nesting}=""
+
+
 fi
 if test "$CC" = "gcc" -a -z "$C_DEBUG_FLAG" ; then
      C_DEBUG_FLAG="-g -O -Wall -Wstrict-prototypes -Wmissing-prototypes"
@@ -3753,11 +3988,11 @@ fi
 # Here go the rest of the tests
 # ---------------------------------------------------------------------------
 if test -n "$arch_solaris" || test -n "$arch_solaris86" ; then
-    if test -z "$MPI" ; then
-        MPI=mpich
+    if test -z "$MPI_IMPL" ; then
+        MPI_IMPL=mpich
         mpi_mpich=1
     fi
-    if test $MPI = "mpich" ; then
+    if test $MPI_IMPL = "mpich" ; then
         TEST_CC=mpicc
         TEST_F77=mpif77
     else
@@ -3770,8 +4005,8 @@ fi
 
 
 if test -n "$arch_rs6000"; then
-    if test -z "$MPI" ; then
-        MPI=mpich
+    if test -z "$MPI_IMPL" ; then
+        MPI_IMPL=mpich
         mpi_mpich=1
     fi
 
@@ -3792,8 +4027,8 @@ if test -n "$arch_tflop" || test -n "$arch_tflops"; then
     AR="xar cr$AR_LOCAL"
     RANLIB="xranlib"
     MPI_LIB="$MPI_LIB"
-    if test -z "$MPI" ; then
-        MPI=mpich
+    if test -z "$MPI_IMPL" ; then
+        MPI_IMPL=mpich
         mpi_mpich=1
     fi
     if test -z "$FILE_SYSTEM" ; then
@@ -4044,8 +4279,8 @@ ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-    if test -z "$MPI" ; then
-        MPI=mpich
+    if test -z "$MPI_IMPL" ; then
+        MPI_IMPL=mpich
         mpi_mpich=1
     fi
 fi
@@ -4057,8 +4292,8 @@ cat >>confdefs.h <<\_ACEOF
 #define SX4 1
 _ACEOF
 
-    if test -z "$MPI" ; then
-        MPI=mpich
+    if test -z "$MPI_IMPL" ; then
+        MPI_IMPL=mpich
         mpi_mpich=1
     fi
     if test -z "$FILE_SYSTEM" ; then
@@ -4074,27 +4309,27 @@ fi
 if test -n "$arch_hpux" || test -n "$arch_sppux" ; then
     have_aio=no
     RANLIB=":"
-    if test -z "$MPI"; then
+    if test -z "$MPI_IMPL"; then
         if test -f "/opt/mpi/include/mpi.h" ; then
             echo "assuming that you want to use ROMIO with HP MPI"
-            MPI=hp
+            MPI_IMPL=hp
         else
             echo "assuming that you want to use ROMIO with MPICH"
-            MPI=mpich
+            MPI_IMPL=mpich
         fi
     fi
-    if test $MPI = "mpich" ; then
+    if test $MPI_IMPL = "mpich" ; then
         mpi_mpich=1
         MPI_LIB="$MPI_LIB -lV3"
         CC=${CC:-cc -Ae}
         F77=${FC:-f77 +U77}
     fi
-    if test $MPI = "hp" ; then
+    if test $MPI_IMPL = "hp" ; then
         mpi_hp=1
         CC=${CC:-mpicc -Ae}
         F77=${FC:-mpif77 +U77}
     fi
-    if test $MPI = "lam" && test "$FC" != ""; then
+    if test $MPI_IMPL = "lam" && test "$FC" != ""; then
         F77="$F77 +U77"
     fi
     FTESTDEFINE="external iargc, getarg"
@@ -4105,7 +4340,7 @@ cat >>confdefs.h <<\_ACEOF
 #define HPUX 1
 _ACEOF
 
-        if test $MPI = "hp" ; then
+        if test $MPI_IMPL = "hp" ; then
            F77=${FC:-mpif90 +U77}
         else
            F77=${FC:-f90 +U77}
@@ -4130,8 +4365,8 @@ _ACEOF
 fi
 #
 if test -n "$arch_alpha" || test -n "$arch_ALPHA" ; then
-    if test -z "$MPI" ; then
-        MPI=mpich
+    if test -z "$MPI_IMPL" ; then
+        MPI_IMPL=mpich
         mpi_mpich=1
     fi
 
@@ -4152,8 +4387,8 @@ cat >>confdefs.h <<\_ACEOF
 #define CRAY 1
 _ACEOF
 
-    if test -z "$MPI" || test -n "$mpi_sgi" ; then
-        MPI=cray
+    if test -z "$MPI_IMPL" || test -n "$mpi_sgi" ; then
+        MPI_IMPL=cray
         mpi_cray=1
         mpi_sgi=""
 # above is to disable configure tests specific to SGI MPI
@@ -4327,10 +4562,10 @@ $as_echo "$as_me: error: SGI\'s MPI does not work with IRIX 5.x" >&2;}
    { (exit 1); exit 1; }; }
         fi
    elif test $osversion = 6 ; then
-	if test -z "$MPI"; then
+	if test -z "$MPI_IMPL"; then
 	    if test "$FROM_MPICH2" = "yes" ; then
 	        # Building with MPICH2.  Distinguish from MPICH-1
-		MPI=mpich2
+		MPI_IMPL=mpich2
 		mpi_mpich2=1
             elif test -f "/usr/include/mpi.h" ; then
                 # removed use of escaped single quotes in messages
@@ -4338,12 +4573,12 @@ $as_echo "$as_me: error: SGI\'s MPI does not work with IRIX 5.x" >&2;}
 		# read the files (with emacs :) )
                 { $as_echo "$as_me:$LINENO: WARNING: assuming that you want to use ROMIO with the SGI MPI" >&5
 $as_echo "$as_me: WARNING: assuming that you want to use ROMIO with the SGI MPI" >&2;}
-                MPI=sgi
+                MPI_IMPL=sgi
                 mpi_sgi=1
             else
 	        { $as_echo "$as_me:$LINENO: WARNING: assuming that you want to use ROMIO with MPICH" >&5
 $as_echo "$as_me: WARNING: assuming that you want to use ROMIO with MPICH" >&2;}
-                MPI=mpich
+                MPI_IMPL=mpich
                 mpi_mpich=1
             fi
 	fi
@@ -7268,12 +7503,17 @@ if test -n "$OFFSET_KIND" -a "A$MPI_OFFSET_KIND1" = "A!" ; then
   MPI_OFFSET_KIND_VAL=$OFFSET_KIND
 else
  if test "$FORTRAN_MPI_OFFSET" = "integer*8" && test "A$MPI_OFFSET_KIND2" = "A!" && test $NOF77 = 0 && test $NOF90 = 0 ; then
-   rm -f conftest*
+
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
+rm -f conftest*
 # Determine the extension for Fortran 90 files (not all compilers accept
 # .f and not all accept .f90)
 if test -z "$ac_f90ext" ; then
     if test -z "$F90" ; then
-       for ac_prog in f90 xlf90 pgf90 ifort epcf90 f95 fort xlf95 lf95 pathf90 g95 fc ifc efc
+       # This list should correspond to the list in aclocal_fc.m4
+       for ac_prog in ifort pgf90 pathf90 pathf95 xlf90 xlf95 f90 epcf90 \
+       f95 fort lf95 gfortran g95 ifc efc
 do
   # Extract the first word of "$ac_prog", so it can be a program name with args.
 set dummy $ac_prog; ac_word=$2
@@ -7332,6 +7572,8 @@ EOF
         { $as_echo "$as_me:$LINENO: result: f90" >&5
 $as_echo "f90" >&6; }
     else
+	# This is needed for Mac OSX 10.5
+	rm -rf conftest.dSYM
         rm -f conftest*
         ac_f90ext="f"
         cat > conftest.$ac_f90ext <<EOF
@@ -7373,6 +7615,8 @@ if $F90 -o conftest conftest.$ac_f90ext >/dev/null 2>&1 ; then
         KINDVAL=`cat conftest.out`
     fi
 fi
+# This is needed for Mac OSX 10.5
+rm -rf conftest.dSYM
 rm -f conftest*
 if test -n "$KINDVAL" -a "$KINDVAL" != "-1" ; then
    { $as_echo "$as_me:$LINENO: result: $KINDVAL" >&5
@@ -9131,6 +9375,12 @@ fi
 # layout change after pvfs-2.6.3:
 if test -n "$file_system_pvfs2"; then
     cat >conftest.$ac_ext <<_ACEOF
+
+        /* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
 
 #include <stdlib.h>
 #include "pvfs2.h"
@@ -12278,6 +12528,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <string.h>
+int strdup(double, int, double, const char *);
 int
 main ()
 {
@@ -12443,6 +12694,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <stdio.h>
+int snprintf(double, int, double, const char *);
 int
 main ()
 {
@@ -12608,6 +12860,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <unistd.h>
+int lstat(double, int, double, const char *);
 int
 main ()
 {
@@ -12773,6 +13026,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <unistd.h>
+int readlink(double, int, double, const char *);
 int
 main ()
 {
@@ -12938,6 +13192,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <unistd.h>
+int fsync(double, int, double, const char *);
 int
 main ()
 {
@@ -13103,6 +13358,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <unistd.h>
+int ftruncate(double, int, double, const char *);
 int
 main ()
 {
@@ -13268,6 +13524,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 #include <unistd.h>
+int lseek64(double, int, double, const char *);
 int
 main ()
 {
@@ -13324,9 +13581,9 @@ for dir in $FILE_SYSTEM ; do
 done
 EXTRA_SRC_DIRS=""
 GLUE_DIR=""
-if test "$FROM_MPICH2" = yes -o "${MPI}_mpi" = "mpich2_mpi"; then
+if test "$FROM_MPICH2" = yes -o "${MPI_IMPL}_mpi" = "mpich2_mpi"; then
     GLUE_DIR="mpi-io/glue/mpich2"
-elif test "$FROM_MPICH" = yes -o "${MPI}_mpi" = "mpich_mpi"; then
+elif test "$FROM_MPICH" = yes -o "${MPI_IMPL}_mpi" = "mpich_mpi"; then
     GLUE_DIR="mpi-io/glue/mpich1"
 else
     GLUE_DIR="mpi-io/glue/default"
@@ -13762,9 +14019,6 @@ echo "setting TEST_F77 to $TEST_F77"
 echo "setting CFLAGS to $CFLAGS"
 echo "setting USER_CFLAGS to $USER_CFLAGS"
 echo "setting USER_FFLAGS to $USER_FFLAGS"
-#
-VPATH='VPATH = .:${srcdir}'
-
 
 
 

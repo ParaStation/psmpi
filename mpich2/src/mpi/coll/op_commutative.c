@@ -54,7 +54,6 @@ int MPI_Op_commutative(MPI_Op op, int *commute)
 {
     MPID_Op *op_ptr = NULL;
     int mpi_errno = MPI_SUCCESS;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_OP_COMMUTATIVE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -92,6 +91,7 @@ int MPI_Op_commutative(MPI_Op op, int *commute)
 
 fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_OP_COMMUTATIVE);
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 fn_fail:
     /* --BEGIN ERROR HANDLING-- */

@@ -30,6 +30,9 @@
 /* Define if you have the <net/if.h> header file. */
 #undef HAVE_NET_IF_H
 
+/* Define to 1 if you have the `sctp_recvmsg' function. */
+#undef HAVE_SCTP_RECVMSG
+
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
 

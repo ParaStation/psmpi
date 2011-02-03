@@ -26,11 +26,9 @@ volatile unsigned int MPIDI_CH3I_progress_completion_count = 0;
     volatile int MPIDI_CH3I_progress_blocked = FALSE;
     volatile int MPIDI_CH3I_progress_wakeup_signalled = FALSE;
 
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
-/* This value must be static so that it isn't an uninitialized
-   common symbol */
-static MPID_Thread_cond_t MPIDI_CH3I_progress_completion_cond;
-#   endif
+    /* This value must be static so that it isn't an uninitialized
+       common symbol */
+    static MPID_Thread_cond_t MPIDI_CH3I_progress_completion_cond;
 
     static int MPIDI_CH3I_Progress_delay(unsigned int completion_count);
     static int MPIDI_CH3I_Progress_continue(unsigned int completion_count);
@@ -286,7 +284,8 @@ int MPIDI_CH3I_Progress_init(void)
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
 
     MPIU_THREAD_CHECK_BEGIN
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+    /* FIXME should be appropriately abstracted somehow */
+#   if defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
     {
 	MPID_Thread_cond_create(&MPIDI_CH3I_progress_completion_cond, NULL);
     }
@@ -351,7 +350,8 @@ int MPIDI_CH3I_Progress_finalize(void)
     MPIDU_Sock_finalize();
 
     MPIU_THREAD_CHECK_BEGIN
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+    /* FIXME should be appropriately abstracted somehow */
+#   if defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
     {
 	MPID_Thread_cond_destroy(&MPIDI_CH3I_progress_completion_cond, NULL);
     }
@@ -374,6 +374,7 @@ int MPIDI_CH3I_Progress_finalize(void)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 void MPIDI_CH3I_Progress_wakeup(void)
 {
+    MPIU_DBG_MSG(CH3_OTHER,TYPICAL,"progress_wakeup called");
     MPIDU_Sock_wakeup(MPIDI_CH3I_sock_set);
 }
 #endif
@@ -563,9 +564,6 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 			    
 			if (nb > 0 && adjust_iov(&iovp, &sreq->dev.iov_count, nb))
 			{
-			    int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
-			    int complete;
-
 			    reqFn = sreq->dev.OnDataAvail;
 			    if (!reqFn) {
 				MPIU_Assert(MPIDI_Request_get_type(sreq)!=MPIDI_REQUEST_TYPE_GET_RESP);
@@ -661,6 +659,7 @@ static int MPIDI_CH3I_Progress_handle_sock_event(MPIDU_Sock_event_t * event)
 
 /* Note that this routine is only called if threads are enabled; 
    it does not need to check whether runtime threads are enabled */
+/* FIXME: Test for runtime thread level (here or where used) */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress_delay
 #undef FCNAME
@@ -669,7 +668,8 @@ static int MPIDI_CH3I_Progress_delay(unsigned int completion_count)
 {
     int mpi_errno = MPI_SUCCESS;
     
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+    /* FIXME should be appropriately abstracted somehow */
+#   if defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
     {
 	while (completion_count == MPIDI_CH3I_progress_completion_count)
 	{
@@ -683,7 +683,7 @@ static int MPIDI_CH3I_Progress_delay(unsigned int completion_count)
 }
 /* end MPIDI_CH3I_Progress_delay() */
 
-
+/* FIXME: Test for runtime thread level */
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3I_Progress_continue
 #undef FCNAME
@@ -693,7 +693,8 @@ static int MPIDI_CH3I_Progress_continue(unsigned int completion_count)
     int mpi_errno = MPI_SUCCESS;
 
     MPIU_THREAD_CHECK_BEGIN
-#   if (USE_THREAD_IMPL == MPICH_THREAD_IMPL_GLOBAL_MUTEX)
+    /* FIXME should be appropriately abstracted somehow */
+#   if defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
     {
 	MPID_Thread_cond_broadcast(&MPIDI_CH3I_progress_completion_cond);
     }

@@ -31,7 +31,7 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
     -I../../pmi/simple -I${master_top_srcdir}/src/pmi/simple
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .o .txt 
+.SUFFIXES: .o .lo .c .o 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -48,8 +48,6 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -57,38 +55,12 @@ INCLUDES = -I../../include -I${master_top_srcdir}/src/include \
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-${srcdir}/pmutilconf.h  ${srcdir}/configure: ${srcdir}/configure.in 
-	@rm -rf autom4te*.cache
-	(cd ${srcdir} && autoheader -I ../../../confdb && \
-	autoconf -I \
-	../../../confdb ) 
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=src/pm/util/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile test/Makefile config.status config.log config.cache *conf.cache config.system" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-if [ -x config.status ] ; then CONFIG_FILES=Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile test/Makefile config.status config.log config.cache *conf.cache config.system
@@ -96,20 +68,17 @@ distclean-xxx:
 	-@rm -f pmutilconf.h
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
-	-rm -f pmutilconf.h.in 
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: libmpiexec.a
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    ${MAKE} libmpiexec.la || exit 1; \
 	fi
 
-libmpiexec.a: cmnargs.o process.o ioloop.o pmiserv.o labelout.o env.o \
-	newsession.o rm.o pmiport.o dbgiface.o safestr2.o simple_pmiutil2.o \
-	../../util/msgs/msgprint.o 
+libmpiexec.a: cmnargs.o process.o ioloop.o pmiserv.o labelout.o env.o newsession.o rm.o pmiport.o \
+	dbgiface.o safestr2.o simple_pmiutil2.o ../../util/msgs/msgprint.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} libmpiexec.a $?" ; \
 	else \
@@ -122,214 +91,19 @@ libmpiexec.a: cmnargs.o process.o ioloop.o pmiserv.o labelout.o env.o \
 	  echo ${RANLIB} libmpiexec.a ; \
 	fi
 	@${RANLIB} libmpiexec.a
-libmpiexec.la: cmnargs.lo process.lo ioloop.lo pmiserv.lo labelout.lo env.lo \
-	newsession.lo rm.lo pmiport.lo dbgiface.lo safestr2.lo \
-	simple_pmiutil2.lo ../../util/msgs/msgprint.lo 
+libmpiexec.la: cmnargs.lo process.lo ioloop.lo pmiserv.lo labelout.lo env.lo newsession.lo rm.lo \
+	pmiport.lo dbgiface.lo safestr2.lo simple_pmiutil2.lo ../../util/msgs/msgprint.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} libmpiexec.la $?" ; \
 	else \
 	  echo ${AR} ${AR_FLAGS} libmpiexec.la $? ; \
 	fi
 	@${AR} ${AR_FLAGS} libmpiexec.la $?
-coverage: 
-	-@for file in cmnargs.c process.c ioloop.c pmiserv.c labelout.c 		     env.c \
-	newsession.c rm.c pmiport.o dbgiface.c 		     safestr2.c \
-	simple_pmiutil2.c ../../util/msgs/msgprint.c ; do \
-		gcov -b -f $$file ; done
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-	if [ -s test/Makefile ] ; then (cd test && ${MAKE} dependencies ) ; fi
-$(DEPS_DIR)/cmnargs.d: $(srcdir)/cmnargs.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C cmnargs.c > $(DEPS_DIR)/cmnargs.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/cmnargs.c >$(DEPS_DIR)/cmnargs.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/cmnargs.c >$(DEPS_DIR)/cmnargs.d
-$(DEPS_DIR)/process.d: $(srcdir)/process.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C process.c > $(DEPS_DIR)/process.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/process.c >$(DEPS_DIR)/process.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/process.c >$(DEPS_DIR)/process.d
-$(DEPS_DIR)/ioloop.d: $(srcdir)/ioloop.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ioloop.c > $(DEPS_DIR)/ioloop.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ioloop.c >$(DEPS_DIR)/ioloop.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ioloop.c >$(DEPS_DIR)/ioloop.d
-$(DEPS_DIR)/pmiserv.d: $(srcdir)/pmiserv.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C pmiserv.c > $(DEPS_DIR)/pmiserv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/pmiserv.c >$(DEPS_DIR)/pmiserv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/pmiserv.c >$(DEPS_DIR)/pmiserv.d
-$(DEPS_DIR)/labelout.d: $(srcdir)/labelout.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C labelout.c > $(DEPS_DIR)/labelout.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/labelout.c >$(DEPS_DIR)/labelout.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/labelout.c >$(DEPS_DIR)/labelout.d
-$(DEPS_DIR)/env.d: $(srcdir)/env.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C env.c > $(DEPS_DIR)/env.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/env.c >$(DEPS_DIR)/env.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/env.c >$(DEPS_DIR)/env.d
-$(DEPS_DIR)/newsession.d: $(srcdir)/newsession.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newsession.c > $(DEPS_DIR)/newsession.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newsession.c >$(DEPS_DIR)/newsession.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newsession.c >$(DEPS_DIR)/newsession.d
-$(DEPS_DIR)/rm.d: $(srcdir)/rm.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C rm.c > $(DEPS_DIR)/rm.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/rm.c >$(DEPS_DIR)/rm.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/rm.c >$(DEPS_DIR)/rm.d
-$(DEPS_DIR)/dbgiface.d: $(srcdir)/dbgiface.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dbgiface.c > $(DEPS_DIR)/dbgiface.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dbgiface.c >$(DEPS_DIR)/dbgiface.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dbgiface.c >$(DEPS_DIR)/dbgiface.d
-$(DEPS_DIR)/safestr2.d: $(srcdir)/safestr2.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C safestr2.c > $(DEPS_DIR)/safestr2.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/safestr2.c >$(DEPS_DIR)/safestr2.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/safestr2.c >$(DEPS_DIR)/safestr2.d
-$(DEPS_DIR)/simple_pmiutil2.d: $(srcdir)/simple_pmiutil2.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C simple_pmiutil2.c > $(DEPS_DIR)/simple_pmiutil2.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil2.c >$(DEPS_DIR)/simple_pmiutil2.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil2.c >$(DEPS_DIR)/simple_pmiutil2.d
-$(DEPS_DIR)/../../util/msgs/msgprint.d: $(srcdir)/../../util/msgs/msgprint.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ../../util/msgs/msgprint.c > $(DEPS_DIR)/../../util/msgs/msgprint.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/../../util/msgs/msgprint.c >$(DEPS_DIR)/../../util/msgs/msgprint.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/../../util/msgs/msgprint.c >$(DEPS_DIR)/../../util/msgs/msgprint.d
-$(DEPS_DIR)/timestamp: cmnargs.c process.c ioloop.c pmiserv.c labelout.c 		     env.c newsession.c \
-	rm.c pmiport.o dbgiface.c 		     safestr2.c simple_pmiutil2.c \
-	../../util/msgs/msgprint.c Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C cmnargs.c > $(DEPS_DIR)/cmnargs.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/cmnargs.c >$(DEPS_DIR)/cmnargs.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/cmnargs.c >$(DEPS_DIR)/cmnargs.d
-	echo "include $(DEPS_DIR)/cmnargs.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C process.c > $(DEPS_DIR)/process.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/process.c >$(DEPS_DIR)/process.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/process.c >$(DEPS_DIR)/process.d
-	echo "include $(DEPS_DIR)/process.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ioloop.c > $(DEPS_DIR)/ioloop.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/ioloop.c >$(DEPS_DIR)/ioloop.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/ioloop.c >$(DEPS_DIR)/ioloop.d
-	echo "include $(DEPS_DIR)/ioloop.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C pmiserv.c > $(DEPS_DIR)/pmiserv.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/pmiserv.c >$(DEPS_DIR)/pmiserv.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/pmiserv.c >$(DEPS_DIR)/pmiserv.d
-	echo "include $(DEPS_DIR)/pmiserv.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C labelout.c > $(DEPS_DIR)/labelout.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/labelout.c >$(DEPS_DIR)/labelout.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/labelout.c >$(DEPS_DIR)/labelout.d
-	echo "include $(DEPS_DIR)/labelout.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C env.c > $(DEPS_DIR)/env.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/env.c >$(DEPS_DIR)/env.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/env.c >$(DEPS_DIR)/env.d
-	echo "include $(DEPS_DIR)/env.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newsession.c > $(DEPS_DIR)/newsession.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newsession.c >$(DEPS_DIR)/newsession.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newsession.c >$(DEPS_DIR)/newsession.d
-	echo "include $(DEPS_DIR)/newsession.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C rm.c > $(DEPS_DIR)/rm.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/rm.c >$(DEPS_DIR)/rm.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/rm.c >$(DEPS_DIR)/rm.d
-	echo "include $(DEPS_DIR)/rm.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dbgiface.c > $(DEPS_DIR)/dbgiface.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/dbgiface.c >$(DEPS_DIR)/dbgiface.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/dbgiface.c >$(DEPS_DIR)/dbgiface.d
-	echo "include $(DEPS_DIR)/dbgiface.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C safestr2.c > $(DEPS_DIR)/safestr2.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/safestr2.c >$(DEPS_DIR)/safestr2.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/safestr2.c >$(DEPS_DIR)/safestr2.d
-	echo "include $(DEPS_DIR)/safestr2.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C simple_pmiutil2.c > $(DEPS_DIR)/simple_pmiutil2.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil2.c >$(DEPS_DIR)/simple_pmiutil2.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/simple_pmiutil2.c >$(DEPS_DIR)/simple_pmiutil2.d
-	echo "include $(DEPS_DIR)/simple_pmiutil2.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ../../util/msgs/msgprint.c > $(DEPS_DIR)/../../util/msgs/msgprint.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/../../util/msgs/msgprint.c >$(DEPS_DIR)/../../util/msgs/msgprint.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/../../util/msgs/msgprint.c >$(DEPS_DIR)/../../util/msgs/msgprint.d
-	echo "include $(DEPS_DIR)/../../util/msgs/msgprint.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  cmnargs.c process.c ioloop.c pmiserv.c labelout.c env.c \
-	newsession.c rm.c dbgiface.c safestr2.c simple_pmiutil2.c 
+SOURCES         =  cmnargs.c process.c ioloop.c pmiserv.c labelout.c env.c newsession.c rm.c \
+	dbgiface.c safestr2.c simple_pmiutil2.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
@@ -365,6 +139,8 @@ dgbiface.lo: $(srcdir)/dgbiface.c
 	@$(C_COMPILE_SHL) -c -g $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
 
+
+.POSIX:
 
 FORCE_TARGET:
 

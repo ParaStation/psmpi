@@ -44,10 +44,8 @@ int MPI_File_write_ordered_begin(MPI_File mpi_fh, void *buf, int count,
     static char myname[] = "MPI_FILE_WRITE_ORDERED_BEGIN";
     ADIO_Offset shared_fp;
     ADIO_File fh;
-    MPIU_THREADPRIV_DECL;
 
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
 
@@ -111,7 +109,6 @@ int MPI_File_write_ordered_begin(MPI_File mpi_fh, void *buf, int count,
     /* --END ERROR HANDLING-- */
 
 fn_exit:
-    MPIR_Nest_decr();
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
 
     /* FIXME: Check for error code from WriteStridedColl? */

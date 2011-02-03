@@ -1,39 +1,13 @@
-dnl
-dnl This is a replacement for AC_PROG_CC that does not prefer gcc and
-dnl that does not mess with CFLAGS.  See acspecific.m4 for the original defn.
-dnl
-dnl/*D
-dnl PAC_PROG_CC - Find a working C compiler
-dnl
-dnl Synopsis:
-dnl PAC_PROG_CC
-dnl
-dnl Output Effect:
-dnl   Sets the variable CC if it is not already set
-dnl
-dnl Notes:
-dnl   Unlike AC_PROG_CC, this does not prefer gcc and does not set CFLAGS.
-dnl   It does check that the compiler can compile a simple C program.
-dnl   It also sets the variable GCC to yes if the compiler is gcc.  It does
-dnl   not yet check for some special options needed in particular for 
-dnl   parallel computers, such as -Tcray-t3e, or special options to get
-dnl   full ANSI/ISO C, such as -Aa for HP.
-dnl
-dnl D*/
-dnl 2.52 doesn't have AC_PROG_CC_GNU
+dnl AC_PROG_CC_GNU
 ifdef([AC_PROG_CC_GNU],,[AC_DEFUN([AC_PROG_CC_GNU],)])
+
+dnl PAC_PROG_CC - reprioritize the C compiler search order
 AC_DEFUN([PAC_PROG_CC],[
-AC_PROVIDE([AC_PROG_CC])
-AC_CHECK_PROGS(CC, cc xlC xlc pgcc icc pathcc gcc )
-test -z "$CC" && AC_MSG_ERROR([no acceptable cc found in \$PATH])
-PAC_PROG_CC_WORKS
-AC_PROG_CC_GNU
-if test "$ac_cv_prog_gcc" = yes; then
-  GCC=yes
-else
-  GCC=
-fi
+	PAC_PUSH_FLAG([CFLAGS])
+	AC_PROG_CC([gcc icc pgcc xlc xlC pathcc cc])
+	PAC_POP_FLAG([CFLAGS])
 ])
+
 dnl
 dnl/*D
 dnl PAC_C_CHECK_COMPILER_OPTION - Check that a compiler option is accepted
@@ -493,6 +467,9 @@ if test "$enable_strict_done" != "yes" ; then
     #	    values, but they are structs of a single basic type (used to enforce
     #	    type checking for relative vs. absolute ptrs), and with optimization
     #	    the aggregate value is converted to a scalar.
+    #   -Wdeclaration-after-statement -- This is a C89
+    #       requirement. When compiling with C99, this should be
+    #       disabled.
     # the embedded newlines in this string are safe because we evaluate each
     # argument in the for-loop below and append them to the CFLAGS with a space
     # as the separator instead
@@ -509,7 +486,6 @@ if test "$enable_strict_done" != "yes" ; then
         -Wmissing-declarations
         -Wno-long-long
         -Wfloat-equal
-        -Wdeclaration-after-statement
         -Wundef
         -Wno-endif-labels
         -Wpointer-arith
@@ -525,50 +501,85 @@ if test "$enable_strict_done" != "yes" ; then
         -Winvalid-pch
         -Wno-pointer-sign
         -Wvariadic-macros
-        -std=c89
         -Wno-format-zero-length
 	-Wno-type-limits
     "
-    pac_cc_strict_flags=""
-    case "$1" in 
-        yes|all|posix)
-		enable_strict_done="yes"
-		pac_cc_strict_flags="-O2 $pac_common_strict_flags -D_POSIX_C_SOURCE=199506L"
-        ;;
 
-        noposix)
+    enable_c89=yes
+    enable_c99=no
+    enable_posix=yes
+    enable_opt=yes
+    flags="`echo $1 | sed -e 's/:/ /g' -e 's/,/ /g'`"
+    for flag in ${flags}; do
+        case "$flag" in
+	     c89)
 		enable_strict_done="yes"
-		pac_cc_strict_flags="-O2 $pac_common_strict_flags"
-        ;;
-
-	noopt)
+		enable_c89=yes
+		;;
+	     c99)
 		enable_strict_done="yes"
-		pac_cc_strict_flags="$pac_common_strict_flags -D_POSIX_C_SOURCE=199506L"
-	;;
-        
-        no)
+		enable_c99=yes
+		;;
+	     posix)
+		enable_strict_done="yes"
+		enable_posix=yes
+		;;
+	     noposix)
+		enable_strict_done="yes"
+		enable_posix=no
+		;;
+	     opt)
+		enable_strict_done="yes"
+		enable_opt=yes
+		;;
+	     noopt)
+		enable_strict_done="yes"
+		enable_opt=no
+		;;
+	     all|yes)
+		enable_strict_done="yes"
+		enable_c89=yes
+		enable_posix=yes
+		enable_opt=yes
+	        ;;
+	     no)
 		# Accept and ignore this value
 		:
-        ;;
-
-        *)
-		if test -n "$1" ; then
-		   AC_MSG_WARN([Unrecognized value for enable-strict:$1])
+		;;
+	     *)
+		if test -n "$flag" ; then
+		   AC_MSG_WARN([Unrecognized value for enable-strict:$flag])
 		fi
-        ;;
+		;;
+	esac
+    done
 
-    esac
+    pac_cc_strict_flags=""
+    if test "${enable_strict_done}" = "yes" ; then
+       if test "${enable_opt}" = "yes" ; then
+       	  pac_cc_strict_flags="-O2"
+       fi
+       pac_cc_strict_flags="$pac_cc_strict_flags $pac_common_strict_flags"
+       if test "${enable_posix}" = "yes" ; then
+       	  PAC_APPEND_FLAG([-D_POSIX_C_SOURCE=199506L],[pac_cc_strict_flags])
+       fi
+       # We only allow one of strict-C99 or strict-C89 to be
+       # enabled. If C99 is enabled, we automatically disable C89.
+       if test "${enable_c99}" = "yes" ; then
+       	  PAC_APPEND_FLAG([-std=c99],[pac_cc_strict_flags])
+       elif test "${enable_c89}" = "yes" ; then
+       	  PAC_APPEND_FLAG([-std=c89],[pac_cc_strict_flags])
+       	  PAC_APPEND_FLAG([-Wdeclaration-after-statement],[pac_cc_strict_flags])
+       fi
+    fi
 
     # See if the above options work with the compiler
     accepted_flags=""
     for flag in $pac_cc_strict_flags ; do
-        # the save_CFLAGS variable must be namespaced, otherwise they
-        # may not actually be saved if an invoked macro also uses
-        # save_CFLAGS
-        pcs_save_CFLAGS=$CFLAGS
+        PAC_PUSH_FLAG([CFLAGS])
 	CFLAGS="$CFLAGS $accepted_flags"
-	PAC_C_CHECK_COMPILER_OPTION($flag,accepted_flags="$accepted_flags $flag",)
-        CFLAGS=$pcs_save_CFLAGS
+        PAC_C_CHECK_COMPILER_OPTION([$flag],[accepted_flags="$accepted_flags $flag"],)
+        PAC_POP_FLAG([CFLAGS])
     done
     pac_cc_strict_flags=$accepted_flags
 fi
@@ -586,7 +597,7 @@ dnl
 dnl D*/
 AC_DEFUN([PAC_ARG_STRICT],[
 AC_ARG_ENABLE(strict,
-[--enable-strict  - Turn on strict compilation testing])
+	AC_HELP_STRING([--enable-strict], [Turn on strict compilation testing]))
 PAC_CC_STRICT($enable_strict)
 CFLAGS="$CFLAGS $pac_cc_strict_flags"
 export CFLAGS
@@ -1290,6 +1301,7 @@ AC_CACHE_CHECK([whether the compiler defines __func__],
 pac_cv_have__func__,[
 tmp_am_cross=no
 AC_RUN_IFELSE([
+AC_LANG_SOURCE([
 #include <string.h>
 int foo(void);
 int foo(void)
@@ -1300,9 +1312,11 @@ int main(int argc, char ** argv)
 {
     return (foo() ? 0 : 1);
 }
+])
 ], pac_cv_have__func__=yes, pac_cv_have__func__=no,tmp_am_cross=yes)
 if test "$tmp_am_cross" = yes ; then
     AC_LINK_IFELSE([
+    AC_LANG_SOURCE([
 #include <string.h>
 int foo(void);
 int foo(void)
@@ -1313,6 +1327,7 @@ int main(int argc, char ** argv)
 {
     return (foo() ? 0 : 1);
 }
+    ])
 ], pac_cv_have__func__=yes, pac_cv_have__func__=no)
 fi
 ])
@@ -1325,6 +1340,7 @@ AC_CACHE_CHECK([whether the compiler defines __FUNC__],
 pac_cv_have_cap__func__,[
 tmp_am_cross=no
 AC_RUN_IFELSE([
+AC_LANG_SOURCE([
 #include <string.h>
 int foo(void);
 int foo(void)
@@ -1335,9 +1351,11 @@ int main(int argc, char ** argv)
 {
     return (foo() ? 0 : 1);
 }
+])
 ], pac_cv_have_cap__func__=yes, pac_cv_have_cap__func__=no,tmp_am_cross=yes)
 if test "$tmp_am_cross" = yes ; then
     AC_LINK_IFELSE([
+    AC_LANG_SOURCE([
 #include <string.h>
 int foo(void);
 int foo(void)
@@ -1348,6 +1366,7 @@ int main(int argc, char ** argv)
 {
     return (foo() ? 0 : 1);
 }
+    ])
 ], pac_cv_have__func__=yes, pac_cv_have__func__=no)
 fi
 ])
@@ -1360,6 +1379,7 @@ AC_CACHE_CHECK([whether the compiler sets __FUNCTION__],
 pac_cv_have__function__,[
 tmp_am_cross=no
 AC_RUN_IFELSE([
+AC_LANG_SOURCE([
 #include <string.h>
 int foo(void);
 int foo(void)
@@ -1370,9 +1390,11 @@ int main(int argc, char ** argv)
 {
     return (foo() ? 0 : 1);
 }
+])
 ], pac_cv_have__function__=yes, pac_cv_have__function__=no,tmp_am_cross=yes)
 if test "$tmp_am_cross" = yes ; then
     AC_LINK_IFELSE([
+    AC_LANG_SOURCE([
 #include <string.h>
 int foo(void);
 int foo(void)
@@ -1383,6 +1405,7 @@ int main(int argc, char ** argv)
 {
     return (foo() ? 0 : 1);
 }
+    ])
 ], pac_cv_have__func__=yes, pac_cv_have__func__=no)
 fi
 ])

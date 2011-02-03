@@ -29,12 +29,11 @@ CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 
 VPATH = .:@srcdir@
-DOCTEXT         = @DOCTEXT@
 mpi_sources = getpname.c pcontrol.c version.c
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .man .html .latex .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -51,8 +50,6 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -60,53 +57,22 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-.c.man:
-	$(DOCTEXT) -man -mpath ../../../man/man3 -ext 3 -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.c.html:
-	$(DOCTEXT) -html -mpath ../../../www/www3  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.c.latex:
-	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=. \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/mpi/misc/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 .libstamp2 .libstamp3 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
 	    ${MAKE} .libstamp2 || exit 1; \
@@ -132,8 +98,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../lib/lib${MPILIBNAME}.la: getpname.lo pcontrol.lo \
-	version.lo 
+.libstamp1 ../../../lib/lib${MPILIBNAME}.la: getpname.lo pcontrol.lo version.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -208,70 +173,7 @@ _version.lo: version.c
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/version.c -o _version.lo
 # --------------------------------------------------------------------------
-coverage: 
-	-@for file in ${mpi_sources} ; do \
-		gcov -b -f $$file ; done
 # --------------------------------------------------------------------------
-mandoc: ${mpi_sources:.c=.man}
-htmldoc: ${mpi_sources:.c=.html}
-latexdoc: ${mpi_sources:.c=.latex}
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/getpname.d: $(srcdir)/getpname.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C getpname.c > $(DEPS_DIR)/getpname.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_getpname.o getpname.o getpname.lo _getpname.lo' $(srcdir)/getpname.c >$(DEPS_DIR)/getpname.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_getpname.o getpname.o getpname.lo _getpname.lo' $(srcdir)/getpname.c >$(DEPS_DIR)/getpname.d
-$(DEPS_DIR)/pcontrol.d: $(srcdir)/pcontrol.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C pcontrol.c > $(DEPS_DIR)/pcontrol.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_pcontrol.o pcontrol.o pcontrol.lo _pcontrol.lo' $(srcdir)/pcontrol.c >$(DEPS_DIR)/pcontrol.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_pcontrol.o pcontrol.o pcontrol.lo _pcontrol.lo' $(srcdir)/pcontrol.c >$(DEPS_DIR)/pcontrol.d
-$(DEPS_DIR)/version.d: $(srcdir)/version.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C version.c > $(DEPS_DIR)/version.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_version.o version.o version.lo _version.lo' $(srcdir)/version.c >$(DEPS_DIR)/version.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_version.o version.o version.lo _version.lo' $(srcdir)/version.c >$(DEPS_DIR)/version.d
-$(DEPS_DIR)/timestamp: ${mpi_sources} Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C getpname.c > $(DEPS_DIR)/getpname.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_getpname.o getpname.o getpname.lo _getpname.lo' $(srcdir)/getpname.c >$(DEPS_DIR)/getpname.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_getpname.o getpname.o getpname.lo _getpname.lo' $(srcdir)/getpname.c >$(DEPS_DIR)/getpname.d
-	echo "include $(DEPS_DIR)/getpname.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C pcontrol.c > $(DEPS_DIR)/pcontrol.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_pcontrol.o pcontrol.o pcontrol.lo _pcontrol.lo' $(srcdir)/pcontrol.c >$(DEPS_DIR)/pcontrol.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_pcontrol.o pcontrol.o pcontrol.lo _pcontrol.lo' $(srcdir)/pcontrol.c >$(DEPS_DIR)/pcontrol.d
-	echo "include $(DEPS_DIR)/pcontrol.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C version.c > $(DEPS_DIR)/version.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_version.o version.o version.lo _version.lo' $(srcdir)/version.c >$(DEPS_DIR)/version.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_version.o version.o version.lo _version.lo' $(srcdir)/version.c >$(DEPS_DIR)/version.d
-	echo "include $(DEPS_DIR)/version.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  getpname.c pcontrol.c version.c
@@ -279,6 +181,8 @@ HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
 #
+
+.POSIX:
 
 FORCE_TARGET:
 

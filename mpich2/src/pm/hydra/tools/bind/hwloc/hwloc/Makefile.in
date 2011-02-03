@@ -15,8 +15,9 @@
 
 @SET_MAKE@
 
-# Copyright 2009 INRIA, Université Bordeaux 1
-# Copyright © 2009 Cisco Systems, Inc.  All rights reserved.
+# Copyright © 2009      INRIA
+# Copyright © 2009      Université Bordeaux 1
+# Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
@@ -38,23 +39,27 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
+@HWLOC_BUILD_STANDALONE_TRUE@am__append_1 = utils tests doc
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/hwloc.pc.in \
 	$(top_srcdir)/configure \
 	$(top_srcdir)/include/hwloc/config.h.in \
-	$(top_srcdir)/include/private/config.h.in AUTHORS COPYING NEWS \
-	config/compile config/config.guess config/config.sub \
-	config/depcomp config/install-sh config/ltmain.sh \
-	config/missing
+	$(top_srcdir)/include/private/config.h.in ./config/compile \
+	./config/config.guess ./config/config.sub ./config/depcomp \
+	./config/install-sh ./config/ltmain.sh ./config/missing \
+	AUTHORS COPYING NEWS
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/decl.m4 \
-	$(top_srcdir)/config/hwloc.m4 $(top_srcdir)/config/libtool.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/hwloc.m4 \
+	$(top_srcdir)/config/hwloc_check_attributes.m4 \
+	$(top_srcdir)/config/hwloc_check_visibility.m4 \
+	$(top_srcdir)/config/hwloc_internal.m4 \
+	$(top_srcdir)/config/hwloc_pkg.m4 \
+	$(top_srcdir)/config/libtool.m4 \
 	$(top_srcdir)/config/ltoptions.m4 \
 	$(top_srcdir)/config/ltsugar.m4 \
 	$(top_srcdir)/config/ltversion.m4 \
-	$(top_srcdir)/config/lt~obsolete.m4 \
-	$(top_srcdir)/config/pkg.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/config/lt~obsolete.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
@@ -64,6 +69,12 @@ CONFIG_HEADER = $(top_builddir)/include/private/config.h \
 	$(top_builddir)/include/hwloc/config.h
 CONFIG_CLEAN_FILES = hwloc.pc
 CONFIG_CLEAN_VPATH_FILES =
+AM_V_GEN = $(am__v_GEN_$(V))
+am__v_GEN_ = $(am__v_GEN_$(AM_DEFAULT_VERBOSITY))
+am__v_GEN_0 = @echo "  GEN   " $@;
+AM_V_at = $(am__v_at_$(V))
+am__v_at_ = $(am__v_at_$(AM_DEFAULT_VERBOSITY))
+am__v_at_0 = @
 SOURCES =
 DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
@@ -103,7 +114,6 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
 	distdir dist dist-all distcheck
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = $(SUBDIRS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -142,6 +152,7 @@ distuninstallcheck_listfiles = find . -type f -print
 distcleancheck_listfiles = find . -type f -print
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
+AM_DEFAULT_VERBOSITY = @AM_DEFAULT_VERBOSITY@
 AR = @AR@
 AS = @AS@
 AUTOCONF = @AUTOCONF@
@@ -149,8 +160,7 @@ AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
 BASH = @BASH@
-CAIRO_CFLAGS = @CAIRO_CFLAGS@
-CAIRO_LIBS = @CAIRO_LIBS@
+BUNZIPP = @BUNZIPP@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -168,25 +178,45 @@ ECHO_C = @ECHO_C@
 ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
+EPSTOPDF = @EPSTOPDF@
 EXEEXT = @EXEEXT@
 FGREP = @FGREP@
 FIG2DEV = @FIG2DEV@
-GCC_CFLAGS = @GCC_CFLAGS@
 GREP = @GREP@
-HAVE_XML = @HAVE_XML@
+GS = @GS@
+HWLOC_CAIRO_CFLAGS = @HWLOC_CAIRO_CFLAGS@
+HWLOC_CAIRO_LIBS = @HWLOC_CAIRO_LIBS@
+HWLOC_CFLAGS = @HWLOC_CFLAGS@
+HWLOC_CPPFLAGS = @HWLOC_CPPFLAGS@
 HWLOC_DIFF_U = @HWLOC_DIFF_U@
+HWLOC_EMBEDDED_CFLAGS = @HWLOC_EMBEDDED_CFLAGS@
+HWLOC_EMBEDDED_CPPFLAGS = @HWLOC_EMBEDDED_CPPFLAGS@
+HWLOC_EMBEDDED_LDADD = @HWLOC_EMBEDDED_LDADD@
+HWLOC_EMBEDDED_LIBS = @HWLOC_EMBEDDED_LIBS@
+HWLOC_HAVE_XML = @HWLOC_HAVE_XML@
+HWLOC_KERRIGHED_CFLAGS = @HWLOC_KERRIGHED_CFLAGS@
+HWLOC_KERRIGHED_LIBS = @HWLOC_KERRIGHED_LIBS@
+HWLOC_LDFLAGS = @HWLOC_LDFLAGS@
+HWLOC_LIBS = @HWLOC_LIBS@
+HWLOC_LINUX_LIBNUMA_LIBS = @HWLOC_LINUX_LIBNUMA_LIBS@
 HWLOC_MS_LIB = @HWLOC_MS_LIB@
+HWLOC_PKG_CONFIG = @HWLOC_PKG_CONFIG@
 HWLOC_RELEASE_DATE = @HWLOC_RELEASE_DATE@
 HWLOC_REQUIRES = @HWLOC_REQUIRES@
 HWLOC_SVN_R = @HWLOC_SVN_R@
+HWLOC_TERMCAP_LIBS = @HWLOC_TERMCAP_LIBS@
 HWLOC_VERSION = @HWLOC_VERSION@
+HWLOC_W3_GENERATOR = @HWLOC_W3_GENERATOR@
+HWLOC_X11_LIBS = @HWLOC_X11_LIBS@
+HWLOC_XML_CFLAGS = @HWLOC_XML_CFLAGS@
+HWLOC_XML_LIBS = @HWLOC_XML_LIBS@
+HWLOC_top_builddir = @HWLOC_top_builddir@
+HWLOC_top_srcdir = @HWLOC_top_srcdir@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-KERRIGHED_CFLAGS = @KERRIGHED_CFLAGS@
-KERRIGHED_LIBS = @KERRIGHED_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
@@ -213,18 +243,20 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PDFLATEX = @PDFLATEX@
-PKG_CONFIG = @PKG_CONFIG@
 RANLIB = @RANLIB@
 SED = @SED@
+SED_I = @SED_I@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
 W3M = @W3M@
-W3_GENERATOR = @W3_GENERATOR@
+XMKMF = @XMKMF@
 XMLLINT = @XMLLINT@
-XML_CFLAGS = @XML_CFLAGS@
-XML_LIBS = @XML_LIBS@
+X_CFLAGS = @X_CFLAGS@
+X_EXTRA_LIBS = @X_EXTRA_LIBS@
+X_LIBS = @X_LIBS@
+X_PRE_LIBS = @X_PRE_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -282,10 +314,19 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-ACLOCAL_AMFLAGS = -I config -I m4
-SUBDIRS = src utils tests include doc
-pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = hwloc.pc
+
+# Note that the -I directory must *exactly* match what was specified
+# via AC_CONFIG_MACRO_DIR in configure.ac.
+ACLOCAL_AMFLAGS = -I ./config
+SUBDIRS = src include $(am__append_1)
+
+# Do not let automake automatically add the non-standalone dirs to the
+# distribution tarball if we're building in embedded mode.
+DIST_SUBDIRS = $(SUBDIRS)
+
+# Only install the pkg file if we're building in standalone mode
+@HWLOC_BUILD_STANDALONE_TRUE@pkgconfigdir = $(libdir)/pkgconfig
+@HWLOC_BUILD_STANDALONE_TRUE@pkgconfig_DATA = hwloc.pc
 
 #
 # "make distcheck" requires that tarballs are able to be able to "make
@@ -526,6 +567,7 @@ GTAGS:
 
 distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
+@HWLOC_BUILD_STANDALONE_FALSE@dist-hook:
 
 distdir: $(DISTFILES)
 	$(am__remove_distdir)
@@ -832,25 +874,27 @@ uninstall-am: uninstall-pkgconfigDATA
 # Double check that we generated both the doxygen docs and a new copy
 # of the top-level README file.
 #
+@HWLOC_BUILD_STANDALONE_TRUE@cannot-dist:
+@HWLOC_BUILD_STANDALONE_TRUE@	@echo "ERROR: Did not build both of the doxygen docs and README."
+@HWLOC_BUILD_STANDALONE_TRUE@	@echo "ERROR: This tarball is not complete!"
+@HWLOC_BUILD_STANDALONE_TRUE@	@echo "ERROR: Cowardly refusing to complete successfully..."
+@HWLOC_BUILD_STANDALONE_TRUE@	@exit 1
 
-cannot-dist:
-	@echo "ERROR: Did not build both of the doxygen docs and README."
-	@echo "ERROR: This tarball is not complete!"
-	@echo "ERROR: Cowardly refusing to complete successfully..."
-	@exit 1
-
-@BUILD_DOXYGEN_FALSE@dist-hook: cannot-dist
-@BUILD_DOXYGEN_TRUE@@BUILD_README_FALSE@dist-hook: cannot-dist
-@BUILD_DOXYGEN_TRUE@@BUILD_README_TRUE@dist-hook:
-@BUILD_DOXYGEN_TRUE@@BUILD_README_TRUE@	csh "$(top_srcdir)/config/distscript.csh" "$(top_srcdir)" "$(distdir)" "$(HWLOC_VERSION)" "$(HWLOC_SVN_R)"
+# Refuse to make dist if we can't make the doxygen stuff (note that
+# BUILD_DOXYGEN will automatically be false if we're not building
+# standalone).
+@HWLOC_BUILD_DOXYGEN_FALSE@@HWLOC_BUILD_STANDALONE_TRUE@dist-hook: cannot-dist
+@HWLOC_BUILD_DOXYGEN_TRUE@@HWLOC_BUILD_README_FALSE@@HWLOC_BUILD_STANDALONE_TRUE@dist-hook: cannot-dist
+@HWLOC_BUILD_DOXYGEN_TRUE@@HWLOC_BUILD_README_TRUE@@HWLOC_BUILD_STANDALONE_TRUE@dist-hook:
+@HWLOC_BUILD_DOXYGEN_TRUE@@HWLOC_BUILD_README_TRUE@@HWLOC_BUILD_STANDALONE_TRUE@	csh "$(top_srcdir)/config/distscript.csh" "$(top_srcdir)" "$(distdir)" "$(HWLOC_VERSION)" "$(HWLOC_SVN_R)"
 
 #
 # Build the top-level README file
 #
 
-.PHONY: doc readme
-doc readme:
-	$(MAKE) -C doc readme
+@HWLOC_BUILD_STANDALONE_TRUE@.PHONY: doc readme
+@HWLOC_BUILD_STANDALONE_TRUE@doc readme:
+@HWLOC_BUILD_STANDALONE_TRUE@	$(MAKE) -C doc readme
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

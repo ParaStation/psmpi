@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -25,7 +24,7 @@ VPATH = .:@srcdir@
 INCLUDES = -I../../include -I${srcdir}/../../include
 
 .SUFFIXES:
-.SUFFIXES: .o .cxx .txt 
+.SUFFIXES: .o .cxx 
 .cxx.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CXX             $<" ; \
@@ -33,28 +32,8 @@ INCLUDES = -I../../include -I${srcdir}/../../include
 	  echo $(CXX_COMPILE) -c $< ; \
 	fi
 	@$(CXX_COMPILE) -c $<
-.cxx.txt:
-	$(CXXCPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .cxx:
 	$(CXX_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../ \
-	-configdir=test/mpi/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=cxx/io/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
@@ -62,9 +41,6 @@ clean:  clean-local
 	-@rm -f writeatnosx.exe shpositionx.exe writeordbenosx.exe writeordnosx.exe iwritex.exe writeordbex.exe writeatallnosx.exe iwriteatnosx.exe writeordx.exe iwriteatx.exe writeshx.exe fileerrx.exe writeatx.exe writeatallbex.exe iwritenosx.exe writex.exe iwriteshx.exe fileinfox.exe writeshnosx.exe writeallbex.exe writeatallbenosx.exe iwriteshnosx.exe filemiscx.exe writeallbenosx.exe writeallnosx.exe seekavail.exe setinfox.exe writenosx.exe writeatallx.exe writeallx.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -72,42 +48,32 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
-all-redirect: iwriteatx iwritex iwriteshx writex writeatx writeallx\
-	 writeatallx writeallbex writeordx writeordbex writeshx writeatallbex\
-	 iwriteatnosx iwritenosx iwriteshnosx writenosx writeatnosx\
-	 writeallnosx writeatallnosx writeallbenosx writeordnosx\
-	 writeordbenosx writeshnosx writeatallbenosx fileerrx fileinfox\
-	 shpositionx setinfox filemiscx seekavail
+	rm -f  Makefile
+all-redirect: iwriteatx iwritex iwriteshx writex writeatx writeallx writeatallx writeallbex\
+	 writeordx writeordbex writeshx writeatallbex iwriteatnosx iwritenosx iwriteshnosx\
+	 writenosx writeatnosx writeallnosx writeatallnosx writeallbenosx writeordnosx\
+	 writeordbenosx writeshnosx writeatallbenosx fileerrx fileinfox shpositionx setinfox\
+	 filemiscx seekavail
 
-coverage: 
 writeatnosx: writeatnosx.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeatnosx writeatnosx.o  \
-	${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeatnosx writeatnosx.o  ${LIBS}
 shpositionx: shpositionx.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o shpositionx shpositionx.o  \
-	${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o shpositionx shpositionx.o  ${LIBS}
 writeordbenosx: writeordbenosx.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeordbenosx \
-	writeordbenosx.o  ${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeordbenosx writeordbenosx.o  ${LIBS}
 writeordnosx: writeordnosx.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeordnosx writeordnosx.o  \
-	${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeordnosx writeordnosx.o  ${LIBS}
 iwritex: iwritex.o   @MPILIBLOC@ ../util/mtest.o
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o iwritex iwritex.o  ${LIBS}
 writeordbex: writeordbex.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeordbex writeordbex.o  \
-	${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeordbex writeordbex.o  ${LIBS}
 writeatallnosx: writeatallnosx.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeatallnosx \
-	writeatallnosx.o  ${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeatallnosx writeatallnosx.o  ${LIBS}
 iwriteatnosx: iwriteatnosx.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o iwriteatnosx iwriteatnosx.o  \
-	${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o iwriteatnosx iwriteatnosx.o  ${LIBS}
 writeordx: writeordx.o   @MPILIBLOC@ ../util/mtest.o
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeordx writeordx.o  ${LIBS}
 iwriteatx: iwriteatx.o   @MPILIBLOC@ ../util/mtest.o
@@ -119,11 +85,9 @@ fileerrx: fileerrx.o   @MPILIBLOC@ ../util/mtest.o
 writeatx: writeatx.o   @MPILIBLOC@ ../util/mtest.o
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeatx writeatx.o  ${LIBS}
 writeatallbex: writeatallbex.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeatallbex writeatallbex.o  \
-	${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeatallbex writeatallbex.o  ${LIBS}
 iwritenosx: iwritenosx.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o iwritenosx iwritenosx.o  \
-	${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o iwritenosx iwritenosx.o  ${LIBS}
 writex: writex.o   @MPILIBLOC@ ../util/mtest.o
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writex writex.o  ${LIBS}
 iwriteshx: iwriteshx.o   @MPILIBLOC@ ../util/mtest.o
@@ -131,25 +95,19 @@ iwriteshx: iwriteshx.o   @MPILIBLOC@ ../util/mtest.o
 fileinfox: fileinfox.o   @MPILIBLOC@ ../util/mtest.o
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o fileinfox fileinfox.o  ${LIBS}
 writeshnosx: writeshnosx.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeshnosx writeshnosx.o  \
-	${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeshnosx writeshnosx.o  ${LIBS}
 writeallbex: writeallbex.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeallbex writeallbex.o  \
-	${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeallbex writeallbex.o  ${LIBS}
 writeatallbenosx: writeatallbenosx.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeatallbenosx \
-	writeatallbenosx.o  ${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeatallbenosx writeatallbenosx.o  ${LIBS}
 iwriteshnosx: iwriteshnosx.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o iwriteshnosx iwriteshnosx.o  \
-	${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o iwriteshnosx iwriteshnosx.o  ${LIBS}
 filemiscx: filemiscx.o   @MPILIBLOC@ ../util/mtest.o
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o filemiscx filemiscx.o  ${LIBS}
 writeallbenosx: writeallbenosx.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeallbenosx \
-	writeallbenosx.o  ${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeallbenosx writeallbenosx.o  ${LIBS}
 writeallnosx: writeallnosx.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeallnosx writeallnosx.o  \
-	${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeallnosx writeallnosx.o  ${LIBS}
 seekavail: seekavail.o   @MPILIBLOC@ ../util/mtest.o
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o seekavail seekavail.o  ${LIBS}
 setinfox: setinfox.o   @MPILIBLOC@ ../util/mtest.o
@@ -157,25 +115,17 @@ setinfox: setinfox.o   @MPILIBLOC@ ../util/mtest.o
 writenosx: writenosx.o   @MPILIBLOC@ ../util/mtest.o
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writenosx writenosx.o  ${LIBS}
 writeatallx: writeatallx.o   @MPILIBLOC@ ../util/mtest.o
-	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeatallx writeatallx.o  \
-	${LIBS} 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeatallx writeatallx.o  ${LIBS}
 writeallx: writeallx.o   @MPILIBLOC@ ../util/mtest.o
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o writeallx writeallx.o  ${LIBS}
 # --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  iwriteatx.cxx iwritex.cxx iwriteshx.cxx writex.cxx \
-	writeatx.cxx writeallx.cxx writeatallx.cxx writeallbex.cxx \
-	writeordx.cxx writeordbex.cxx writeshx.cxx writeatallbex.cxx \
-	iwriteatnosx.cxx iwritenosx.cxx iwriteshnosx.cxx writenosx.cxx \
-	writeatnosx.cxx writeallnosx.cxx writeatallnosx.cxx \
-	writeallbenosx.cxx writeordnosx.cxx writeordbenosx.cxx \
-	writeshnosx.cxx writeatallbenosx.cxx fileerrx.cxx fileinfox.cxx \
+SOURCES         =  iwriteatx.cxx iwritex.cxx iwriteshx.cxx writex.cxx writeatx.cxx writeallx.cxx \
+	writeatallx.cxx writeallbex.cxx writeordx.cxx writeordbex.cxx writeshx.cxx \
+	writeatallbex.cxx iwriteatnosx.cxx iwritenosx.cxx iwriteshnosx.cxx writenosx.cxx \
+	writeatnosx.cxx writeallnosx.cxx writeatallnosx.cxx writeallbenosx.cxx writeordnosx.cxx \
+	writeordbenosx.cxx writeshnosx.cxx writeatallbenosx.cxx fileerrx.cxx fileinfox.cxx \
 	shpositionx.cxx setinfox.cxx filemiscx.cxx seekavail.cxx 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
@@ -200,6 +150,8 @@ writeatallbenosx.cxx : ioharness.tlt ioharness.defn
 
 clean-local:
 	rm -f .iotest.txt.*
+
+.POSIX:
 
 FORCE_TARGET:
 

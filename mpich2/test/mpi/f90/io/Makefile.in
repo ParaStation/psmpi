@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -23,18 +22,18 @@ CC              = @CC@
 CFLAGS          = @CFLAGS@ $(MPICH2_MAKE_CFLAGS)
 C_COMPILE       = $(CC) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 C_LINK         = $(CC)
-F90              = @F90@
-F90FLAGS        = @F90FLAGS@
-F90_COMPILE     = $(F90) $(F90FLAGS) $(F90INCLUDES)
-F90_LINK       = $(F90)
+FC               = @FC@
+FCFLAGS         = @FCFLAGS@
+FC_COMPILE      = $(FC) $(FCFLAGS) $(FCINCLUDES)
+FC_LINK        = $(FC)
 LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
-F90INCLUDES = -I. 
-F90HEADERS = iodisp.h iooffset.h
+FCINCLUDES = -I. 
+FCHEADERS = iodisp.h iooffset.h
 
 .SUFFIXES:
-.SUFFIXES: .o .c .f90 .txt 
+.SUFFIXES: .o .c .f90 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -42,8 +41,6 @@ F90HEADERS = iodisp.h iooffset.h
 	  echo $(C_COMPILE) -c $< ; \
 	fi
 	@$(C_COMPILE) -c $<
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -53,31 +50,13 @@ F90HEADERS = iodisp.h iooffset.h
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 .f90.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  F90             $<" ; \
+	  echo "  FC              $<" ; \
 	else \
-	  echo $(F90_COMPILE) -c $< ; \
+	  echo $(FC_COMPILE) -c $< ; \
 	fi
-	@$(F90_COMPILE) -c $<
+	@$(FC_COMPILE) -c $<
 .f90:
-	$(F90_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../ \
-	-configdir=test/mpi/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=f90/io/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
+	$(FC_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
@@ -85,9 +64,6 @@ clean:  clean-local
 	-@rm -f setviewcurf90.exe shpositionf90.exe c2f90multio.exe atomicityf90.exe fileerrf90.exe c2f2ciof90.exe fileinfof90.exe miscfilef90.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -95,49 +71,39 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
-all-redirect: fileerrf90 fileinfof90 shpositionf90 atomicityf90 miscfilef90\
-	 setviewcurf90 c2f90multio c2f2ciof90
+	rm -f  Makefile
+all-redirect: fileerrf90 fileinfof90 shpositionf90 atomicityf90 miscfilef90 setviewcurf90\
+	 c2f90multio c2f2ciof90
 
-coverage: 
 setviewcurf90: setviewcurf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o setviewcurf90 setviewcurf90.o  \
-	../util/mtestf90.o ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o setviewcurf90 setviewcurf90.o  ../util/mtestf90.o \
+	${LIBS} 
 shpositionf90: shpositionf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o shpositionf90 shpositionf90.o  \
-	../util/mtestf90.o ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o shpositionf90 shpositionf90.o  ../util/mtestf90.o \
+	${LIBS} 
 c2f90multio: c2f90multio.o   @MPILIBLOC@ ../util/mtestf90.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o c2f90multio c2f90multio.o  ${LIBS}
 atomicityf90: atomicityf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o atomicityf90 atomicityf90.o  \
-	${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o atomicityf90 atomicityf90.o  ${LIBS}
 fileerrf90: fileerrf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o fileerrf90 fileerrf90.o  \
-	../util/mtestf90.o ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o fileerrf90 fileerrf90.o  ../util/mtestf90.o ${LIBS}
 c2f2ciof90: c2f2ciof90.o c2f902cio.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o c2f2ciof90 c2f2ciof90.o \
-	c2f902cio.o  ../util/mtestf90.o  ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o c2f2ciof90 c2f2ciof90.o c2f902cio.o  \
+	../util/mtestf90.o  ${LIBS} 
 fileinfof90: fileinfof90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o fileinfof90 fileinfof90.o  \
-	../util/mtestf90.o ${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o fileinfof90 fileinfof90.o  ../util/mtestf90.o \
+	${LIBS} 
 miscfilef90: miscfilef90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o miscfilef90 miscfilef90.o  \
-	../util/mtestf90.o ${LIBS} 
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o miscfilef90 miscfilef90.o  ../util/mtestf90.o \
+	${LIBS} 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  fileerrf90.f90 fileinfof90.f90 shpositionf90.f90 \
-	atomicityf90.f90 miscfilef90.f90 setviewcurf90.f90 c2f90multio.c \
-	c2f2ciof90.f90 c2f902cio.c 
+SOURCES         =  fileerrf90.f90 fileinfof90.f90 shpositionf90.f90 atomicityf90.f90 \
+	miscfilef90.f90 setviewcurf90.f90 c2f90multio.c c2f2ciof90.f90 c2f902cio.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
@@ -178,6 +144,8 @@ $(srcdir)/ioharness.tlt: $(srcdir)/../../f77/io/ioharness.tlt
 	$(srcdir)/../../f77/io/ioharness.tlt > $(srcdir)/ioharness.tlt
 c2f902cio.c: $(srcdir)/../../f90/io/c2f902cio.c
 	cp $(srcdir)/../../f90/io/c2f902cio.c c2f902cio.c
+
+.POSIX:
 
 FORCE_TARGET:
 

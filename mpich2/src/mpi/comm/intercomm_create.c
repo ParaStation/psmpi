@@ -22,7 +22,7 @@
    the MPI routines */
 #ifdef HAVE_ERROR_CHECKING
 PMPI_LOCAL int MPIR_CheckDisjointLpids( int [], int, int [], int );
-#endif
+#endif /* HAVE_ERROR_CHECKING */
 PMPI_LOCAL int MPID_LPID_GetAllInComm( MPID_Comm *comm_ptr, int local_size, 
 				       int local_lpids[] );
 
@@ -238,16 +238,14 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     int is_low_group = 0;
     int i;
     MPID_Comm *newcomm_ptr;
+    int errflag = FALSE;
     MPIU_CHKLMEM_DECL(4);
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_INTERCOMM_CREATE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_INTERCOMM_CREATE);
-
-    MPIU_THREADPRIV_GET;
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -349,7 +347,6 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	}
 #       endif /* HAVE_ERROR_CHECKING */
 	
-	MPIR_Nest_incr();
 	/* First, exchange the group information.  If we were certain
 	   that the groups were disjoint, we could exchange possible 
 	   context ids at the same time, saving one communication.
@@ -362,11 +359,12 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	MPIU_DBG_MSG_FMT(COMM,VERBOSE,
              (MPIU_DBG_FDEST,"rank %d sendrecv to rank %d", 
               peer_comm_ptr->rank, remote_leader));
-	mpi_errno = NMPI_Sendrecv( &local_size,  1, MPI_INT, 
+	mpi_errno = MPIC_Sendrecv( &local_size,  1, MPI_INT, 
 				   remote_leader, tag,
 				   &remote_size, 1, MPI_INT, 
 				   remote_leader, tag, 
 				   peer_comm, MPI_STATUS_IGNORE );
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
 	MPIU_DBG_MSG_FMT(COMM,VERBOSE,
            (MPIU_DBG_FDEST, "local size = %d, remote size = %d", local_size, 
@@ -384,30 +382,23 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 
 	mpi_errno = MPID_GPID_GetAllInComm( comm_ptr, local_size, local_gpids, 
 					    &singlePG );
-	if (mpi_errno) {
-	    MPIR_Nest_decr();
-	    goto fn_fail;
-	}
-	/* Exchange the lpid arrays */
-	NMPI_Sendrecv( local_gpids, 2*local_size, MPI_INT, 
-		       remote_leader, tag,
-		       remote_gpids, 2*remote_size, MPI_INT, 
-		       remote_leader, tag, peer_comm, MPI_STATUS_IGNORE );
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
+	/* Exchange the lpid arrays */
+	mpi_errno = MPIC_Sendrecv( local_gpids, 2*local_size, MPI_INT, 
+                                   remote_leader, tag,
+                                   remote_gpids, 2*remote_size, MPI_INT, 
+                                   remote_leader, tag, peer_comm, MPI_STATUS_IGNORE );
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        
 	/* Convert the remote gpids to the lpids */
 	mpi_errno = MPID_GPID_ToLpidArray( remote_size, 
 					   remote_gpids, remote_lpids );
-	if (mpi_errno) {
-	    MPIR_Nest_decr();
-	    goto fn_fail;
-	}
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
 	/* Get our own lpids */
 	mpi_errno = MPID_LPID_GetAllInComm( comm_ptr, local_size, local_lpids );
-	if (mpi_errno) {
-	    MPIR_Nest_decr();
-	    goto fn_fail;
-	}
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	
 #       ifdef HAVE_ERROR_CHECKING
 	{
@@ -417,11 +408,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 		   check for any overlap */
 		mpi_errno = MPIR_CheckDisjointLpids( local_lpids, local_size,
 						   remote_lpids, remote_size );
-		if (mpi_errno)
-		{
-		    MPIR_Nest_decr();
-		    goto fn_fail;
-		}	    
+                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	    }
 	    MPID_END_ERROR_CHECKS;
 	}
@@ -435,7 +422,6 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	/* At this point, we're done with the local lpids; they'll
 	   be freed with the other local memory on exit */
 
-	MPIR_Nest_decr();
     } /* End of the first phase of the leader communication */
 
     /* 
@@ -454,18 +440,16 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     MPIU_Assert(recvcontext_id != 0);
     MPIU_DBG_MSG_FMT(COMM,VERBOSE, (MPIU_DBG_FDEST,"Got contextid=%d", recvcontext_id));
 
-    /* Increment the nest count for everyone because all processes
-       will be communicating now */
-    MPIR_Nest_incr();
     /* Leaders can now swap context ids and then broadcast the value
        to the local group of processes */
     if (comm_ptr->rank == local_leader) {
 	MPIR_Context_id_t remote_context_id;
 
-	NMPI_Sendrecv( &recvcontext_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, remote_leader, tag,
-		       &remote_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, remote_leader, tag, 
-		       peer_comm, MPI_STATUS_IGNORE );
-	
+	mpi_errno = MPIC_Sendrecv( &recvcontext_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, remote_leader, tag,
+                                   &remote_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, remote_leader, tag, 
+                                   peer_comm, MPI_STATUS_IGNORE );
+	if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        
 	final_context_id = remote_context_id;
 
 	/* Now, send all of our local processes the remote_lpids, 
@@ -474,9 +458,13 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	comm_info[1] = final_context_id;
 	comm_info[2] = is_low_group;
 	MPIU_DBG_MSG(COMM,VERBOSE,"About to bcast on local_comm");
-	NMPI_Bcast( comm_info, 3, MPI_INT, local_leader, local_comm );
-	NMPI_Bcast( remote_gpids, 2*remote_size, MPI_INT, local_leader, 
-		    local_comm );
+	mpi_errno = MPIR_Bcast_impl( comm_info, 3, MPI_INT, local_leader, comm_ptr, &errflag );
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        MPIU_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+	mpi_errno = MPIR_Bcast_impl( remote_gpids, 2*remote_size, MPI_INT, local_leader,
+                                     comm_ptr, &errflag );
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        MPIU_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
 	MPIU_DBG_MSG_D(COMM,VERBOSE,"end of bcast on local_comm of size %d",
 		       comm_ptr->local_size );
     }
@@ -484,14 +472,18 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     {
 	/* we're the other processes */
 	MPIU_DBG_MSG(COMM,VERBOSE,"About to receive bcast on local_comm");
-	NMPI_Bcast( comm_info, 3, MPI_INT, local_leader, local_comm );
+	mpi_errno = MPIR_Bcast_impl( comm_info, 3, MPI_INT, local_leader, comm_ptr, &errflag );
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        MPIU_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
 	remote_size = comm_info[0];
 	MPIU_CHKLMEM_MALLOC(remote_gpids,int*,2*remote_size*sizeof(int),
 			    mpi_errno,"remote_gpids");
 	MPIU_CHKLMEM_MALLOC(remote_lpids,int*,remote_size*sizeof(int),
 			    mpi_errno,"remote_lpids");
-	NMPI_Bcast( remote_gpids, 2*remote_size, MPI_INT, local_leader, 
-		    local_comm );
+	mpi_errno = MPIR_Bcast_impl( remote_gpids, 2*remote_size, MPI_INT, local_leader, 
+                                     comm_ptr, &errflag );
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        MPIU_ERR_CHKANDJUMP(errflag, mpi_errno, MPI_ERR_OTHER, "**coll_fail");
 
 	/* Extract the context and group sign informatin */
 	final_context_id = comm_info[1];
@@ -523,14 +515,12 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     if (comm_ptr->rank != local_leader) {
 	mpi_errno = MPID_GPID_ToLpidArray( remote_size, remote_gpids, 
 					   remote_lpids );
-	if (mpi_errno) { MPIR_Nest_decr(); goto fn_fail; }
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
 
 
     /* At last, we now have the information that we need to build the 
        intercommunicator */
-    /* Decrement the nesting pointer because we're done making MPI calls */
-    MPIR_Nest_decr();
 
     /* All processes in the local_comm now build the communicator */
 
@@ -558,18 +548,19 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
     }
 
     /* Inherit the error handler (if any) */
+    MPIU_THREAD_CS_ENTER(MPI_OBJ, comm_ptr);
     newcomm_ptr->errhandler = comm_ptr->errhandler;
     if (comm_ptr->errhandler) {
 	MPIR_Errhandler_add_ref( comm_ptr->errhandler );
     }
-	
+    MPIU_THREAD_CS_EXIT(MPI_OBJ, comm_ptr);
+
     /* Notify the device of this new communicator */
     MPID_Dev_comm_create_hook( newcomm_ptr );
     mpi_errno = MPIR_Comm_commit(newcomm_ptr);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-    
-    *newintercomm = newcomm_ptr->handle;
 
+    MPIU_OBJ_PUBLISH_HANDLE(*newintercomm, newcomm_ptr->handle);
     /* ... end of body of routine ... */
     
   fn_exit:
@@ -588,7 +579,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	    "**mpi_intercomm_create %C %d %C %d %d %p", local_comm, 
 	    local_leader, peer_comm, remote_leader, tag, newintercomm);
     }
-#   endif
+#   endif /* HAVE_ERROR_CHECKING */
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );
     goto fn_exit;
     /* --END ERROR HANDLING-- */

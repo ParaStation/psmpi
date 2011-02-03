@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
@@ -15,25 +14,8 @@ MAKE            = @MAKE@
 VPATH = .:@srcdir@
 
 .SUFFIXES:
-.SUFFIXES:  .txt 
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=test/mpi/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=errors/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
+# Some make programs complain if no suffixes are set
+.SUFFIXES: .c .o
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 	for dir in attr coll comm group pt2pt rma spawn topo io @otherlangs@ basic faults - ; do \
@@ -42,9 +24,6 @@ apply:
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	for dir in attr coll comm group pt2pt rma spawn topo io @otherlangs@ basic faults - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} clean ) ; done
@@ -62,14 +41,10 @@ distclean-xxx:
 	done
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
-	for dir in attr coll comm group pt2pt rma spawn topo io @otherlangs@ basic faults - ; do \
-		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} maintainer-clean ) ; done
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect:
 	@(cd attr && ${MAKE} all )
 	@(cd coll && ${MAKE} all )
@@ -87,24 +62,6 @@ all-redirect:
 	@(cd basic && ${MAKE} all )
 	@(cd faults && ${MAKE} all )
 
-coverage: 
-	for dir in attr coll comm group pt2pt rma spawn topo io @otherlangs@ basic faults - ; do \
-		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} coverage ) ; done
-# --------------------------------------------------------------------------
-htmldoc:
-	for dir in attr coll comm group pt2pt rma spawn topo io @otherlangs@ basic faults - ; do \
-		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} htmldoc ) ; done
-mandoc:
-	for dir in attr coll comm group pt2pt rma spawn topo io @otherlangs@ basic faults - ; do \
-		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} mandoc ) ; done
-latexdoc:
-	for dir in attr coll comm group pt2pt rma spawn topo io @otherlangs@ basic faults - ; do \
-		if [ "$$dir" = "-" ] ; then break ; fi ; \
-		(cd $$dir && ${MAKE} latexdoc ) ; done
-# --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -116,6 +73,8 @@ testing:
 	../runtests -srcdir=$(srcdir) -tests=testlist \
 		   -mpiexec=@MPIEXEC@ \
 		   -xmlfile=summary.xml
+
+.POSIX:
 
 FORCE_TARGET:
 

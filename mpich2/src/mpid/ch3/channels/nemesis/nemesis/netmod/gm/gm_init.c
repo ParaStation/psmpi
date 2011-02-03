@@ -15,7 +15,8 @@ MPID_nem_netmod_funcs_t MPIDI_nem_gm_funcs = {
     MPID_nem_gm_connect_to_root,
     MPID_nem_gm_vc_init,
     MPID_nem_gm_vc_destroy,
-    MPID_nem_gm_vc_terminate
+    MPID_nem_gm_vc_terminate,
+    NULL /* anysource iprobe */
 };
 
 
@@ -186,32 +187,24 @@ int
 MPID_nem_gm_get_business_card (int my_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
+    int str_errno = MPIU_STR_SUCCESS;
 
-    mpi_errno = MPIU_Str_add_int_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_PORT_KEY, port_id);
-    if (mpi_errno != MPIU_STR_SUCCESS)
-    {
-	if (mpi_errno == MPIU_STR_NOMEM) {
-	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard_len");
-	}
-	else {
-	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard");
-	}
-	return mpi_errno;
+    str_errno = MPIU_Str_add_int_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_PORT_KEY, port_id);
+    if (str_errno) {
+        MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
 
-    mpi_errno = MPIU_Str_add_binary_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_UNIQUE_KEY, (char *)unique_id, UNIQUE_ID_LEN);
-    if (mpi_errno != MPIU_STR_SUCCESS)
-    {
-	if (mpi_errno == MPIU_STR_NOMEM) {
-	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard_len");
-	}
-	else {
-	    MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**buscard");
-	}
-	return mpi_errno;
+    str_errno = MPIU_Str_add_binary_arg (bc_val_p, val_max_sz_p, MPIDI_CH3I_UNIQUE_KEY, (char *)unique_id, UNIQUE_ID_LEN);
+    if (str_errno) {
+        MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
+        MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
 
+ fn_exit:
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 #undef FUNCNAME
@@ -222,21 +215,18 @@ int
 MPID_nem_gm_get_port_unique_from_bc (const char *business_card, unsigned *port_id, unsigned char *unique_id)
 {
     int mpi_errno = MPI_SUCCESS;
+    int str_errno = MPIU_STR_SUCCESS;
     int len;
     int tmp_port_id;
     
-    mpi_errno = MPIU_Str_get_int_arg (business_card, MPIDI_CH3I_PORT_KEY, &tmp_port_id);
-    if (mpi_errno != MPIU_STR_SUCCESS) {
-	/* FIXME: create a real error string for this */
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
-    }
+    str_errno = MPIU_Str_get_int_arg (business_card, MPIDI_CH3I_PORT_KEY, &tmp_port_id);
+    /* FIXME: create a real error string for this */
+    MPIU_ERR_CHKANDJUMP(str_errno, mpi_errno, MPI_ERR_OTHER, "**argstr_hostd");
     *port_id = (unsigned)tmp_port_id;
 
-    mpi_errno = MPIU_Str_get_binary_arg (business_card, MPIDI_CH3I_UNIQUE_KEY, (char *)unique_id, UNIQUE_ID_LEN, &len);
-    if (mpi_errno != MPIU_STR_SUCCESS || len != UNIQUE_ID_LEN) {
-	/* FIXME: create a real error string for this */
-	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**argstr_hostd");
-    }
+    str_errno = MPIU_Str_get_binary_arg (business_card, MPIDI_CH3I_UNIQUE_KEY, (char *)unique_id, UNIQUE_ID_LEN, &len);
+    /* FIXME: create a real error string for this */
+    MPIU_ERR_CHKANDJUMP(str_errno || len != UNIQUE_ID_LEN, mpi_errno, MPI_ERR_OTHER, "**argstr_hostd");
 
  fn_exit:
     return mpi_errno;

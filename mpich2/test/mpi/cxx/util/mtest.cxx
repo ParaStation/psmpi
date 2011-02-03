@@ -19,6 +19,7 @@ using namespace std;
 #endif
 #include "mpitestcxx.h"
 #include <stdlib.h>
+#include <string.h>
 
 static int dbgflag = 0;         /* Flag used for debugging */
 static int wrank = -1;          /* World rank */
@@ -36,23 +37,51 @@ static void MTestRMACleanup( void );
  Environment Variables:
 + MPITEST_DEBUG - If set (to any value), turns on debugging output
 - MPITEST_VERBOSE - If set to a numeric value, turns on that level of
-  verbose output.  This is used by the routine 'MTestPrintfMsg'
+  verbose output.
 
  */
 void MTest_Init( void )
 {
     bool flag;
-    char *envval = 0;
+    const char *envval = 0;
+    int        threadLevel, provided;
+
+    threadLevel = MPI::THREAD_SINGLE;
+    envval = getenv( "MTEST_THREADLEVEL_DEFAULT" );
+    if (envval && *envval) {
+	if (strcmp(envval,"MULTIPLE") == 0 || strcmp(envval,"multiple") == 0) {
+	    threadLevel = MPI::THREAD_MULTIPLE;
+	}
+	else if (strcmp(envval,"SERIALIZED") == 0 || 
+		 strcmp(envval,"serialized") == 0) {
+	    threadLevel = MPI::THREAD_SERIALIZED;
+	}
+	else if (strcmp(envval,"FUNNELED") == 0 || 
+		 strcmp(envval,"funneled") == 0) {
+	    threadLevel = MPI::THREAD_FUNNELED;
+	}
+	else if (strcmp(envval,"SINGLE") == 0 || strcmp(envval,"single") == 0) {
+	    threadLevel = MPI::THREAD_SINGLE;
+	}
+	else {
+	    cerr << "Unrecognized thread level " << envval << "\n";
+	    cerr.flush();
+	    /* Use exit since MPI_Init/Init_thread has not been called. */
+	    exit(1);
+	}
+    }
 
     flag = MPI::Is_initialized( );
     if (!flag) {
-	MPI::Init( );
+	provided = MPI::Init_thread( threadLevel );
     }
+
     /* Check for debugging control */
     if (getenv( "MPITEST_DEBUG" )) {
 	dbgflag = 1;
 	wrank = MPI::COMM_WORLD.Get_rank();
     }
+
     /* Check for verbose control */
     envval = getenv( "MPITEST_VERBOSE" );
     if (envval) {
@@ -120,7 +149,8 @@ static void *MTestTypeContigInit( MTestDatatype *mtype )
     MPI::Aint size, lb;
     if (mtype->count > 0) {
 	signed char *p;
-	int  i, totsize;
+	int  i;
+        MPI::Aint totsize;
 	mtype->datatype.Get_extent( lb, size );
 	totsize = size * mtype->count;
 	if (!mtype->buf) {
@@ -150,7 +180,8 @@ static void *MTestTypeContigInitRecv( MTestDatatype *mtype )
     MPI_Aint size;
     if (mtype->count > 0) {
 	signed char *p;
-	int  i, totsize;
+	int  i;
+        MPI::Aint totsize;
 	MPI_Type_extent( mtype->datatype, &size );
 	totsize = size * mtype->count;
 	if (!mtype->buf) {
@@ -185,8 +216,8 @@ static int MTestTypeContigCheckbuf( MTestDatatype *mtype )
 {
     unsigned char *p;
     unsigned char expected;
-    int  i, totsize, err = 0;
-    MPI_Aint size;
+    int  i, err = 0;
+    MPI_Aint size, totsize;
 
     p = (unsigned char *)mtype->buf;
     if (p) {
@@ -218,7 +249,8 @@ static void *MTestTypeVectorInit( MTestDatatype *mtype )
 
     if (mtype->count > 0) {
 	unsigned char *p;
-	int  i, j, k, nc, totsize;
+	int  i, j, k, nc;
+        MPI::Aint totsize;
 
 	mtype->datatype.Get_extent( lb, size );
 	totsize	   = mtype->count * size;
@@ -593,7 +625,7 @@ int MTestGetIntercomm( MPI::Intercomm &comm, int &isLeftGroup, int min_size )
        MPI::COMM_NULL is always considered large enough.  The size is
        the sum of the sizes of the local and remote groups */
     while (!done) {
-	comm          = MPI::COMM_NULL;
+        comm          = MPI::COMM_NULL;
 	isLeftGroup   = 0;
 	interCommName = "MPI_COMM_NULL";
 
@@ -620,8 +652,9 @@ int MTestGetIntercomm( MPI::Intercomm &comm, int &isLeftGroup, int min_size )
 		mcomm.Free();
 		interCommName = "Intercomm by splitting MPI::COMM_WORLD";
 	    }
-	    else 
+	    else {
 		comm = MPI::COMM_NULL;
+            }
 	    break;
 	case 1:
 	    /* Split comm world in to 1 and the rest */
@@ -645,8 +678,9 @@ int MTestGetIntercomm( MPI::Intercomm &comm, int &isLeftGroup, int min_size )
 		mcomm.Free();
 		interCommName = "Intercomm by splitting MPI::COMM_WORLD into 1, rest";
 	    }
-	    else 
+	    else {
 		comm = MPI::COMM_NULL;
+            }
 	    break;
 
 	case 2:
@@ -671,10 +705,11 @@ int MTestGetIntercomm( MPI::Intercomm &comm, int &isLeftGroup, int min_size )
 		mcomm.Free();
 		interCommName = "Intercomm by splitting MPI::COMM_WORLD into 2, rest";
 	    }
-	    else 
+	    else {
 		comm = MPI::COMM_NULL;
+            }
 	    break;
-	    
+
 	default:
 	    comm = MPI::COMM_NULL;
 	    interCommName = "MPI::COMM_NULL";
@@ -688,16 +723,20 @@ int MTestGetIntercomm( MPI::Intercomm &comm, int &isLeftGroup, int min_size )
 	}
 	else
 	    done = true;
+
+        /* we are only done if all processes are done */
+        MPI::COMM_WORLD.Allreduce(MPI_IN_PLACE, &done, 1, MPI::BOOL, MPI::LAND);
+
+        /* Advance the comm index whether we are done or not, otherwise we could
+         * spin forever trying to allocate a too-small communicator over and
+         * over again. */
+        interCommIdx++;
+
+        if (!done && comm != MPI::COMM_NULL) {
+            comm.Free();
+        }
     }
 
-    /* we are only done if all processes are done */
-    MPI::COMM_WORLD.Allreduce(MPI_IN_PLACE, &done, 1, MPI::INT, MPI::LAND);
-
-    interCommIdx++;
-
-    if (!done && comm != MPI::COMM_NULL) {
-	comm.Free();
-    }
     return interCommIdx;
 }
 /* Return the name of an intercommunicator */
@@ -775,20 +814,6 @@ void MTestPrintErrorMsg( const char msg[], int errcode )
     cout.flush();
 }
 /* ------------------------------------------------------------------------ */
-#if 0
-void MTestPrintfMsg( int level, const char format[], ... )
-{
-    va_list list;
-    int n;
-
-    if (verbose && level >= verbose) {
-	va_start(list,format);
-	n = vprintf( format, list );
-	va_end(list);
-	fflush(stdout);
-    }
-}
-#endif
 /* Fatal error.  Report and exit */
 void MTestError( const char *msg )
 {

@@ -62,7 +62,6 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Request *request_ptr = NULL;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_IRECV);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -128,6 +127,9 @@ int MPI_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* return the handle of the request to the user */
+    /* MPIU_OBJ_HANDLE_PUBLISH is unnecessary for irecv, lower-level access is
+     * responsible for its own consistency, while upper-level field access is
+     * controlled by the completion counter */
     *request = request_ptr->handle;
 
     /* ... end of body of routine ... */

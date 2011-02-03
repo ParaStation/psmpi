@@ -67,7 +67,6 @@ int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
     int mpi_errno = MPI_SUCCESS;
     MPID_Group *group_ptr = NULL, *new_group_ptr;
     int size, i, newi;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_EXCL);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -145,9 +144,10 @@ int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 
     new_group_ptr->size = size - n;
     new_group_ptr->idx_of_first_lpid = -1;
+    /* TODO calculate is_local_dense_monotonic */
 
-    *newgroup = new_group_ptr->handle;
-    
+    MPIU_OBJ_PUBLISH_HANDLE(*newgroup, new_group_ptr->handle);
+
     /* ... end of body of routine ... */
 
   fn_exit:

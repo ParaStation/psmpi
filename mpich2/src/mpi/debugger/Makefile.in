@@ -44,14 +44,13 @@ C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
-DOCTEXT         = @DOCTEXT@
 mpi_sources = 
 bindir = @bindir@
 MPIC_COMPILE = @MPICC@
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .man .html .latex .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -68,8 +67,6 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -77,33 +74,6 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-.c.man:
-	$(DOCTEXT) -man -mpath ../../../man/man3 -ext 3 -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.c.html:
-	$(DOCTEXT) -html -mpath ../../../www/www3  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.c.latex:
-	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=. \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/mpi/debugger/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
@@ -112,9 +82,6 @@ clean:  clean-local
 	-@rm -f qdemo.exe tvtest.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -122,11 +89,10 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
 	    ${MAKE} .libstamp2 || exit 1; \
@@ -173,19 +139,11 @@ libtvmpich2.la: dll_mpich2.lo
 .libstamp2: 
 .libstamp3: 
 # --------------------------------------------------------------------------
-coverage: 
-	-@for file in dbginit.c ; do \
-		gcov -b -f $$file ; done
-# --------------------------------------------------------------------------
-mandoc: ${mpi_sources}
-htmldoc: ${mpi_sources}
-latexdoc: ${mpi_sources}
-# --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # Install target
 install:  FORCE_TARGET 
 	if [ ! -d ${DESTDIR}${libdir} ] ; then $(MKDIR_P) ${DESTDIR}${libdir} ; fi
-	if [ -s libtvmpich2.@SHLIB_EXT@ ] ; then $(CREATESHLIB) -version-info $(ABIVERSION) --mode=install libtvmpich2.@SHLIB_EXT@ ${DESTDIR}${libdir}/libtvmpich2.@SHLIB_EXT@ ; fi
+	if [ -s libtvmpich2.@SHLIB_EXT@ ] ; then $(CREATESHLIB) -version-info $(ABIVERSION) --mode=install  libtvmpich2.@SHLIB_EXT@ ${DESTDIR}${libdir}/libtvmpich2.@SHLIB_EXT@ ; fi
 
 install-strip:
 	$(MAKE) INSTALL_STRIP_FLAG=-s install
@@ -194,63 +152,7 @@ uninstall:
 installcheck: 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/dbginit.d: $(srcdir)/dbginit.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dbginit.c > $(DEPS_DIR)/dbginit.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_dbginit.o dbginit.o dbginit.lo _dbginit.lo' $(srcdir)/dbginit.c >$(DEPS_DIR)/dbginit.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_dbginit.o dbginit.o dbginit.lo _dbginit.lo' $(srcdir)/dbginit.c >$(DEPS_DIR)/dbginit.d
-$(DEPS_DIR)/timestamp: dbginit.c qdemo.c tvtest.c dll_mpich2.c dbgstub.c Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dbginit.c > $(DEPS_DIR)/dbginit.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_dbginit.o dbginit.o dbginit.lo _dbginit.lo' $(srcdir)/dbginit.c >$(DEPS_DIR)/dbginit.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_dbginit.o dbginit.o dbginit.lo _dbginit.lo' $(srcdir)/dbginit.c >$(DEPS_DIR)/dbginit.d
-	echo "include $(DEPS_DIR)/dbginit.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C qdemo.c > $(DEPS_DIR)/qdemo.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_qdemo.o qdemo.o qdemo.lo _qdemo.lo' $(srcdir)/qdemo.c >$(DEPS_DIR)/qdemo.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_qdemo.o qdemo.o qdemo.lo _qdemo.lo' $(srcdir)/qdemo.c >$(DEPS_DIR)/qdemo.d
-	echo "include $(DEPS_DIR)/qdemo.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C tvtest.c > $(DEPS_DIR)/tvtest.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_tvtest.o tvtest.o tvtest.lo _tvtest.lo' $(srcdir)/tvtest.c >$(DEPS_DIR)/tvtest.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_tvtest.o tvtest.o tvtest.lo _tvtest.lo' $(srcdir)/tvtest.c >$(DEPS_DIR)/tvtest.d
-	echo "include $(DEPS_DIR)/tvtest.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dll_mpich2.c > $(DEPS_DIR)/dll_mpich2.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_dll_mpich2.o dll_mpich2.o dll_mpich2.lo _dll_mpich2.lo' $(srcdir)/dll_mpich2.c >$(DEPS_DIR)/dll_mpich2.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_dll_mpich2.o dll_mpich2.o dll_mpich2.lo _dll_mpich2.lo' $(srcdir)/dll_mpich2.c >$(DEPS_DIR)/dll_mpich2.d
-	echo "include $(DEPS_DIR)/dll_mpich2.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C dbgstub.c > $(DEPS_DIR)/dbgstub.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_dbgstub.o dbgstub.o dbgstub.lo _dbgstub.lo' $(srcdir)/dbgstub.c >$(DEPS_DIR)/dbgstub.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_dbgstub.o dbgstub.o dbgstub.lo _dbgstub.lo' $(srcdir)/dbgstub.c >$(DEPS_DIR)/dbgstub.d
-	echo "include $(DEPS_DIR)/dbgstub.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  tvtest.c dll_mpich2.c dbgstub.c qdemo.c dbginit.c \
-	dll_mpich2.c 
+SOURCES         =  tvtest.c dll_mpich2.c dbgstub.c qdemo.c dbginit.c dll_mpich2.c
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
@@ -270,7 +172,7 @@ SOURCEFILES     = $(SOURCES)
 # There is no static debugger interface library
 # Force a custom target
 ./libtvmpich2.@SHLIB_EXT@: ./libtvmpich2.la
-	(cd . && $(CREATESHLIB) -libtype=@DBG_SHLIB_TYPE@ --mode=link -cc="@CC_SHL_DBG@" -clink="@C_LINK_SHL_DBG@" -o libtvmpich2.la  -rpath $(libdir) )
+	(cd . && $(CREATESHLIB) -libtype=@DBG_SHLIB_TYPE@ --mode=link -cc="@CC_SHL_DBG@" -clink="@C_LINK_SHL_DBG@" -o libtvmpich2.la  -rpath $(libdir) -ldflags "$(LDFLAGS)")
 
 #
 # We need to make sure that dbginit is compiled with -g, so
@@ -299,6 +201,8 @@ dll_mpich2.lo: $(srcdir)/dll_mpich2.c $(srcdir)/mpich2_dll_defs.h
 # versions of the shared libraries.
 clean-local:
 	rm -f libtvmpich2.*
+
+.POSIX:
 
 FORCE_TARGET:
 

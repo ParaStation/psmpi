@@ -29,7 +29,6 @@ CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 
 VPATH = .:@srcdir@
-DOCTEXT         = @DOCTEXT@
 mpi_sources = info_create.c info_delete.c \
  info_dup.c info_free.c info_get.c info_getn.c info_getnth.c \
  info_getvallen.c info_set.c
@@ -37,7 +36,7 @@ HEADERS = mpiinfo.h
 INCLUDES = -I../../include -I${top_srcdir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .man .html .latex .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -54,8 +53,6 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -63,53 +60,22 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-.c.man:
-	$(DOCTEXT) -man -mpath ../../../man/man3 -ext 3 -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.c.html:
-	$(DOCTEXT) -html -mpath ../../../www/www3  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.c.latex:
-	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=. \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/util/info/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 .libstamp2 .libstamp3 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
 	    ${MAKE} .libstamp2 || exit 1; \
@@ -121,9 +87,8 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	    fi ; \
 	fi
 
-.libstamp0 ../../../lib/lib${MPILIBNAME}.a: infoutil.o info_create.o \
-	info_delete.o info_dup.o info_free.o info_get.o info_getn.o \
-	info_getnth.o info_getvallen.o info_set.o 
+.libstamp0 ../../../lib/lib${MPILIBNAME}.a: infoutil.o info_create.o info_delete.o info_dup.o \
+	info_free.o info_get.o info_getn.o info_getnth.o info_getvallen.o info_set.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
@@ -137,9 +102,9 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../lib/lib${MPILIBNAME}.la: infoutil.lo info_create.lo \
-	info_delete.lo info_dup.lo info_free.lo info_get.lo info_getn.lo \
-	info_getnth.lo info_getvallen.lo info_set.lo 
+.libstamp1 ../../../lib/lib${MPILIBNAME}.la: infoutil.lo info_create.lo info_delete.lo \
+	info_dup.lo info_free.lo info_get.lo info_getn.lo info_getnth.lo info_getvallen.lo \
+	info_set.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -149,8 +114,8 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp1
 
 # --------------------------------------------------------------------------
-.libstamp2: _info_create.o _info_delete.o _info_dup.o _info_free.o _info_get.o \
-	_info_getn.o _info_getnth.o _info_getvallen.o _info_set.o 
+.libstamp2: _info_create.o _info_delete.o _info_dup.o _info_free.o _info_get.o _info_getn.o _info_getnth.o \
+	_info_getvallen.o _info_set.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
 	else \
@@ -164,8 +129,8 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../lib/lib${PMPILIBNAME}.a
 	date > .libstamp2
-.libstamp3: _info_create.lo _info_delete.lo _info_dup.lo _info_free.lo _info_get.lo \
-	_info_getn.lo _info_getnth.lo _info_getvallen.lo _info_set.lo 
+.libstamp3: _info_create.lo _info_delete.lo _info_dup.lo _info_free.lo _info_get.lo _info_getn.lo \
+	_info_getnth.lo _info_getvallen.lo _info_set.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
@@ -300,177 +265,17 @@ _info_set.lo: info_set.c
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/info_set.c -o _info_set.lo
 # --------------------------------------------------------------------------
-coverage: 
-	-@for file in infoutil.c ${mpi_sources} ; do \
-		gcov -b -f $$file ; done
-# --------------------------------------------------------------------------
-mandoc: ${mpi_sources:.c=.man}
-htmldoc: ${mpi_sources:.c=.html}
-latexdoc: ${mpi_sources:.c=.latex}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/infoutil.d: $(srcdir)/infoutil.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C infoutil.c > $(DEPS_DIR)/infoutil.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_infoutil.o infoutil.o infoutil.lo _infoutil.lo' $(srcdir)/infoutil.c >$(DEPS_DIR)/infoutil.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_infoutil.o infoutil.o infoutil.lo _infoutil.lo' $(srcdir)/infoutil.c >$(DEPS_DIR)/infoutil.d
-$(DEPS_DIR)/info_create.d: $(srcdir)/info_create.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_create.c > $(DEPS_DIR)/info_create.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_create.o info_create.o info_create.lo _info_create.lo' $(srcdir)/info_create.c >$(DEPS_DIR)/info_create.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_create.o info_create.o info_create.lo _info_create.lo' $(srcdir)/info_create.c >$(DEPS_DIR)/info_create.d
-$(DEPS_DIR)/info_delete.d: $(srcdir)/info_delete.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_delete.c > $(DEPS_DIR)/info_delete.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_delete.o info_delete.o info_delete.lo _info_delete.lo' $(srcdir)/info_delete.c >$(DEPS_DIR)/info_delete.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_delete.o info_delete.o info_delete.lo _info_delete.lo' $(srcdir)/info_delete.c >$(DEPS_DIR)/info_delete.d
-$(DEPS_DIR)/info_dup.d: $(srcdir)/info_dup.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_dup.c > $(DEPS_DIR)/info_dup.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_dup.o info_dup.o info_dup.lo _info_dup.lo' $(srcdir)/info_dup.c >$(DEPS_DIR)/info_dup.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_dup.o info_dup.o info_dup.lo _info_dup.lo' $(srcdir)/info_dup.c >$(DEPS_DIR)/info_dup.d
-$(DEPS_DIR)/info_free.d: $(srcdir)/info_free.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_free.c > $(DEPS_DIR)/info_free.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_free.o info_free.o info_free.lo _info_free.lo' $(srcdir)/info_free.c >$(DEPS_DIR)/info_free.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_free.o info_free.o info_free.lo _info_free.lo' $(srcdir)/info_free.c >$(DEPS_DIR)/info_free.d
-$(DEPS_DIR)/info_get.d: $(srcdir)/info_get.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_get.c > $(DEPS_DIR)/info_get.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_get.o info_get.o info_get.lo _info_get.lo' $(srcdir)/info_get.c >$(DEPS_DIR)/info_get.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_get.o info_get.o info_get.lo _info_get.lo' $(srcdir)/info_get.c >$(DEPS_DIR)/info_get.d
-$(DEPS_DIR)/info_getn.d: $(srcdir)/info_getn.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_getn.c > $(DEPS_DIR)/info_getn.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_getn.o info_getn.o info_getn.lo _info_getn.lo' $(srcdir)/info_getn.c >$(DEPS_DIR)/info_getn.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_getn.o info_getn.o info_getn.lo _info_getn.lo' $(srcdir)/info_getn.c >$(DEPS_DIR)/info_getn.d
-$(DEPS_DIR)/info_getnth.d: $(srcdir)/info_getnth.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_getnth.c > $(DEPS_DIR)/info_getnth.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_getnth.o info_getnth.o info_getnth.lo _info_getnth.lo' $(srcdir)/info_getnth.c >$(DEPS_DIR)/info_getnth.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_getnth.o info_getnth.o info_getnth.lo _info_getnth.lo' $(srcdir)/info_getnth.c >$(DEPS_DIR)/info_getnth.d
-$(DEPS_DIR)/info_getvallen.d: $(srcdir)/info_getvallen.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_getvallen.c > $(DEPS_DIR)/info_getvallen.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_getvallen.o info_getvallen.o info_getvallen.lo _info_getvallen.lo' $(srcdir)/info_getvallen.c >$(DEPS_DIR)/info_getvallen.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_getvallen.o info_getvallen.o info_getvallen.lo _info_getvallen.lo' $(srcdir)/info_getvallen.c >$(DEPS_DIR)/info_getvallen.d
-$(DEPS_DIR)/info_set.d: $(srcdir)/info_set.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_set.c > $(DEPS_DIR)/info_set.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_set.o info_set.o info_set.lo _info_set.lo' $(srcdir)/info_set.c >$(DEPS_DIR)/info_set.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_set.o info_set.o info_set.lo _info_set.lo' $(srcdir)/info_set.c >$(DEPS_DIR)/info_set.d
-$(DEPS_DIR)/timestamp: infoutil.c ${mpi_sources} Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C infoutil.c > $(DEPS_DIR)/infoutil.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_infoutil.o infoutil.o infoutil.lo _infoutil.lo' $(srcdir)/infoutil.c >$(DEPS_DIR)/infoutil.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_infoutil.o infoutil.o infoutil.lo _infoutil.lo' $(srcdir)/infoutil.c >$(DEPS_DIR)/infoutil.d
-	echo "include $(DEPS_DIR)/infoutil.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_create.c > $(DEPS_DIR)/info_create.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_create.o info_create.o info_create.lo _info_create.lo' $(srcdir)/info_create.c >$(DEPS_DIR)/info_create.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_create.o info_create.o info_create.lo _info_create.lo' $(srcdir)/info_create.c >$(DEPS_DIR)/info_create.d
-	echo "include $(DEPS_DIR)/info_create.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_delete.c > $(DEPS_DIR)/info_delete.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_delete.o info_delete.o info_delete.lo _info_delete.lo' $(srcdir)/info_delete.c >$(DEPS_DIR)/info_delete.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_delete.o info_delete.o info_delete.lo _info_delete.lo' $(srcdir)/info_delete.c >$(DEPS_DIR)/info_delete.d
-	echo "include $(DEPS_DIR)/info_delete.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_dup.c > $(DEPS_DIR)/info_dup.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_dup.o info_dup.o info_dup.lo _info_dup.lo' $(srcdir)/info_dup.c >$(DEPS_DIR)/info_dup.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_dup.o info_dup.o info_dup.lo _info_dup.lo' $(srcdir)/info_dup.c >$(DEPS_DIR)/info_dup.d
-	echo "include $(DEPS_DIR)/info_dup.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_free.c > $(DEPS_DIR)/info_free.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_free.o info_free.o info_free.lo _info_free.lo' $(srcdir)/info_free.c >$(DEPS_DIR)/info_free.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_free.o info_free.o info_free.lo _info_free.lo' $(srcdir)/info_free.c >$(DEPS_DIR)/info_free.d
-	echo "include $(DEPS_DIR)/info_free.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_get.c > $(DEPS_DIR)/info_get.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_get.o info_get.o info_get.lo _info_get.lo' $(srcdir)/info_get.c >$(DEPS_DIR)/info_get.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_get.o info_get.o info_get.lo _info_get.lo' $(srcdir)/info_get.c >$(DEPS_DIR)/info_get.d
-	echo "include $(DEPS_DIR)/info_get.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_getn.c > $(DEPS_DIR)/info_getn.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_getn.o info_getn.o info_getn.lo _info_getn.lo' $(srcdir)/info_getn.c >$(DEPS_DIR)/info_getn.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_getn.o info_getn.o info_getn.lo _info_getn.lo' $(srcdir)/info_getn.c >$(DEPS_DIR)/info_getn.d
-	echo "include $(DEPS_DIR)/info_getn.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_getnth.c > $(DEPS_DIR)/info_getnth.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_getnth.o info_getnth.o info_getnth.lo _info_getnth.lo' $(srcdir)/info_getnth.c >$(DEPS_DIR)/info_getnth.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_getnth.o info_getnth.o info_getnth.lo _info_getnth.lo' $(srcdir)/info_getnth.c >$(DEPS_DIR)/info_getnth.d
-	echo "include $(DEPS_DIR)/info_getnth.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_getvallen.c > $(DEPS_DIR)/info_getvallen.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_getvallen.o info_getvallen.o info_getvallen.lo _info_getvallen.lo' $(srcdir)/info_getvallen.c >$(DEPS_DIR)/info_getvallen.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_getvallen.o info_getvallen.o info_getvallen.lo _info_getvallen.lo' $(srcdir)/info_getvallen.c >$(DEPS_DIR)/info_getvallen.d
-	echo "include $(DEPS_DIR)/info_getvallen.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C info_set.c > $(DEPS_DIR)/info_set.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_info_set.o info_set.o info_set.lo _info_set.lo' $(srcdir)/info_set.c >$(DEPS_DIR)/info_set.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_info_set.o info_set.o info_set.lo _info_set.lo' $(srcdir)/info_set.c >$(DEPS_DIR)/info_set.d
-	echo "include $(DEPS_DIR)/info_set.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  infoutil.c info_create.c info_delete.c info_dup.c \
-	info_free.c info_get.c info_getn.c info_getnth.c info_getvallen.c \
-	info_set.c 
+SOURCES         =  infoutil.c info_create.c info_delete.c info_dup.c info_free.c info_get.c \
+	info_getn.c info_getnth.c info_getvallen.c info_set.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
 #
+
+.POSIX:
 
 FORCE_TARGET:
 

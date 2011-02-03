@@ -159,10 +159,6 @@ int MPIDI_CH3_Comm_connect(char * port_name, int root, MPID_Comm * comm_ptr,
 @*/
 void MPIDI_CH3U_Request_destroy(MPID_Request * req);
 
-/* This variable is used in the definitions of the MPID_Progress_xxx macros,
-   and must be available to the routines in src/mpi */
-extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
-
 /* Include definitions from the channel which require items defined by this 
    file (mpidimpl.h) or the file it includes
    (mpiimpl.h). */
@@ -172,31 +168,21 @@ extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
 
 /*
  * Request utility macros (public - can be used in MPID macros)
- *
- * MT: The inc/dec of the completion counter must be atomic since the progress
- * engine could be completing the request in one
- * thread and the application could be cancelling the request in another 
- * thread.
  */
-/* NOTE: If a fine-grain thread sync model is used, this macro will need 
-   to ensure that it is thread-atomic */
 
 /* SHMEM: In the case of a single-threaded shmem channel sharing requests 
    between processes, a write barrier must be performed
-   before decrementing the completion counter.  This insures that other fields
+   before decrementing the completion counter.  This ensures that other fields
    in the req structure are updated before the
    completion is signalled.  How should that be incorporated into this code 
    from the channel level? */
-#define MPIDI_CH3U_Request_decrement_cc(req_, incomplete_)	\
-{								\
-    *(incomplete_) = --(*(req_)->cc_ptr);			\
-}
-
-
-#define MPIDI_CH3U_Request_increment_cc(req_, was_incomplete_)	\
-{								\
-    *(was_incomplete_) = (*(req_)->cc_ptr)++;			\
-}
+/* The above comment is accurate, although we do not currently have any channels
+ * that do this.  Memory barriers are included in fine-grained multithreaded
+ * versions of the MPID_cc_incr/decr macros. */
+#define MPIDI_CH3U_Request_decrement_cc(req_, incomplete_)   \
+    MPID_cc_decr((req_)->cc_ptr, incomplete_)
+#define MPIDI_CH3U_Request_increment_cc(req_, was_incomplete_)   \
+    MPID_cc_incr((req_)->cc_ptr, was_incomplete_)
 
 /*
  * Device level request management macros
@@ -208,19 +194,52 @@ extern volatile unsigned int MPIDI_CH3I_progress_completion_count;
 
 #define MPID_Request_release(req_)			\
 {							\
-    int inuse;					        \
+    int inuse_;					        \
 							\
-    MPIR_Request_release_ref((req_), &inuse);	        \
-    if (inuse == 0)					\
+    MPIR_Request_release_ref((req_), &inuse_);	        \
+    if (inuse_ == 0)					\
     {							\
 	MPIDI_CH3_Request_destroy(req_);		\
     }							\
 }
 
+/* MT note: The following order of operations is _essential_ for correct
+ * operation of the fine-grained multithreading code.  Assume that
+ * _signal_completion() acquires and releases a mutex in order to update the
+ * global completion counter (it does for fine-grained ch3:nemesis).  Further,
+ * assume the following standard pattern is used by the request consumer to wait
+ * for completion:
+ *
+ *   if (req is not complete (req->cc!=0)) {
+ *     // progress_enter:
+ *     acquire mutex;
+ *     my_count = global_count;
+ *     release mutex;
+ *
+ *     while (req is not complete (req->cc!=0)) {
+ *       progress_wait(&my_count);
+ *     }
+ *   }
+ *
+ * Where progress_wait will attempt to make progress forever as long as
+ * (my_count==global_count).  If it is possible for the consumer to see the
+ * global completion count before seeing the request's completion counter drop
+ * to zero, the consumer could spin in progress_wait forever without a chance to
+ * retest the request.
+ *
+ * If the mutex approach is dropped in favor of atomic access, additional memory
+ * barriers must be inserted.  The mutex acquire/release currently enforces
+ * sufficient ordering constraints provided the statement order below is not
+ * accidentally inverted.
+ *
+ * See also the note above the MSGQUEUE CS macros and request completion in
+ * mpiimplthread.h.
+ */
 /* MPID_Request_set_completed (the function) is defined in ch3u_request.c */
 #define MPID_REQUEST_SET_COMPLETED(req_)	\
 {						\
-    *(req_)->cc_ptr = 0;			\
+    MPID_cc_set((req_)->cc_ptr, 0);             \
+    /* MT do not reorder! see note above*/      \
     MPIDI_CH3_Progress_signal_completion();	\
 }
 

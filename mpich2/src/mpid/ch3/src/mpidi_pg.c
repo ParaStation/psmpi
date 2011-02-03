@@ -144,9 +144,7 @@ int MPIDI_PG_Finalize(void)
        That reference is released
        only after ch3_finalize returns. If I release it before ch3_finalize, 
        the ssm channel crashes. */
-
 #if 0
-
     if (MPIDI_PG_list != NULL)
     { 
 	
@@ -706,11 +704,14 @@ static int getConnInfoKVS( int rank, char *buf, int bufsize, MPIDI_PG_t *pg )
     if (rc < 0 || rc > MPIDI_MAX_KVS_KEY_LEN) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
     }
+
+    MPIU_THREAD_CS_ENTER(PMI,);
     pmi_errno = PMI_KVS_Get(pg->connData, key, buf, bufsize );
     if (pmi_errno) {
 	MPIDI_PG_CheckForSingleton();
 	pmi_errno = PMI_KVS_Get(pg->connData, key, buf, bufsize );
     }
+    MPIU_THREAD_CS_EXIT(PMI,);
     if (pmi_errno) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**pmi_kvs_get");
     }
@@ -1167,15 +1168,21 @@ int MPIDI_PG_Close_VCs( void )
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_PG_CLOSE_VCS);
 
     while (pg) {
-	int i, inuse;
+	int i, inuse, n, i_start;
 
 	MPIU_DBG_MSG_S(CH3_DISCONNECT,VERBOSE,"Closing vcs for pg %s",
 		       (char *)pg->id );
 
-
-	for (i = 0; i < pg->size; i++)
+        /* We want to reduce the chance of having all processes send
+           close requests to the same process at once.  We do this by
+           having processes start at different indices, namely
+           (my_pg_rank+1) mod pg->size. */
+        i_start = (MPIDI_Process.my_pg_rank+1) % pg->size;
+	for (n = 0; n < pg->size; n++)
 	{
-	    MPIDI_VC_t * vc = &pg->vct[i];
+            MPIDI_VC_t * vc;
+            i = (n + i_start) % pg->size;
+	    vc = &pg->vct[i];
 	    /* If the VC is myself then skip the close message */
 	    if (pg == MPIDI_Process.my_pg && i == MPIDI_Process.my_pg_rank) {
                 /* XXX DJG FIXME-MT should we be checking this? */
@@ -1185,33 +1192,24 @@ int MPIDI_PG_Close_VCs( void )
 		continue;
 	    }
 
-	    if (vc->state == MPIDI_VC_STATE_ACTIVE || 
-		vc->state == MPIDI_VC_STATE_REMOTE_CLOSE
-#if defined(MPIDI_CH3_USES_SSHM) && 0
-		/* FIXME: Remove this IFDEF */
-		/* sshm queues are uni-directional.  A VC that is connected 
-		 * in the read direction is marked MPIDI_VC_STATE_INACTIVE
-		 * so that a connection will be formed on the first write.  
-		 * Since the other side is marked MPIDI_VC_STATE_ACTIVE for 
-		 * writing 
-		 * we need to initiate the close protocol on the read side 
-		 * even if the write state is MPIDI_VC_STATE_INACTIVE. */
-		|| ((vc->state == MPIDI_VC_STATE_INACTIVE) && 
-		    ((MPIDI_CH3I_VC *)(vc->channel_private))->shm_read_connected)
-#endif
-		)
-	    {
+	    if (vc->state == MPIDI_VC_STATE_ACTIVE ||
+		vc->state == MPIDI_VC_STATE_REMOTE_CLOSE) {
 		MPIDI_CH3U_VC_SendClose( vc, i );
-	    }
-	    else
-	    {
+	    } else if (vc->state == MPIDI_VC_STATE_INACTIVE ||
+                       vc->state == MPIDI_VC_STATE_MORIBUND) {
                 /* XXX DJG FIXME-MT should we be checking this? */
-                if (vc->state == MPIDI_VC_STATE_INACTIVE && MPIU_Object_get_ref(vc) != 0) {
+                if (MPIU_Object_get_ref(vc) != 0) {
 		    /* FIXME: If the reference count for the vc is not 0,
 		       something is wrong */
                     MPIDI_PG_release_ref(pg, &inuse);
                 }
-
+                /* Inactive connections need to be marked
+                   INACTIVE_CLOSED, so that if a connection request
+                   comes in during the close protocol, we know to
+                   reject it. */
+                if (vc->state == MPIDI_VC_STATE_INACTIVE)
+                    MPIDI_CHANGE_VC_STATE(vc, INACTIVE_CLOSED);
+            } else {
 		MPIU_DBG_MSG_FMT(CH3_DISCONNECT,VERBOSE,(MPIU_DBG_FDEST,
 		     "vc=%p: not sending a close to %d, vc in state %s", vc,i,
 		     MPIDI_VC_GetStateString(vc->state)));

@@ -30,7 +30,7 @@ INCLUDES = -I. -I../../include -I${master_top_srcdir}/src/ch3/channels/nemesis/n
            -I${top_builddir}/src/include
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -47,8 +47,6 @@ INCLUDES = -I. -I../../include -I${master_top_srcdir}/src/ch3/channels/nemesis/n
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -56,52 +54,30 @@ INCLUDES = -I. -I../../include -I${master_top_srcdir}/src/ch3/channels/nemesis/n
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../../../../../ \
-	-configdir=src/mpid/ch3/channels/nemesis/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=nemesis/netmod/newmad/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: .libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    ${MAKE} .libstamp1 || exit 1; \
 	fi
 
-.libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a: newmad_finalize.o \
-	newmad_init.o newmad_poll.o newmad_send.o newmad_register.o \
-	newmad_test.o newmad_cancel.o newmad_probe.o newmad_alloc.o 
+.libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a: newmad_finalize.o newmad_init.o \
+	newmad_poll.o newmad_send.o newmad_register.o newmad_test.o newmad_cancel.o \
+	newmad_probe.o newmad_alloc.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../../../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
@@ -115,10 +91,9 @@ all-redirect: .libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../../../../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../../../../../../lib/lib${MPILIBNAME}.la: \
-	newmad_finalize.lo newmad_init.lo newmad_poll.lo newmad_send.lo \
-	newmad_register.lo newmad_test.lo newmad_cancel.lo newmad_probe.lo \
-	newmad_alloc.lo 
+.libstamp1 ../../../../../../../../lib/lib${MPILIBNAME}.la: newmad_finalize.lo newmad_init.lo \
+	newmad_poll.lo newmad_send.lo newmad_register.lo newmad_test.lo newmad_cancel.lo \
+	newmad_probe.lo newmad_alloc.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../../../../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -126,166 +101,16 @@ all-redirect: .libstamp0 ../../../../../../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${AR} ${AR_FLAGS} ../../../../../../../../lib/lib${MPILIBNAME}.la $?
 	date > .libstamp1
-coverage: 
-	-@for file in newmad_finalize.c  newmad_init.c  newmad_poll.c      \
-	newmad_send.c   newmad_register.c  newmad_test.c  newmad_cancel.c    \
-	newmad_probe.c 	newmad_alloc.c ; do \
-		gcov -b -f $$file ; done
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/newmad_finalize.d: $(srcdir)/newmad_finalize.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_finalize.c > $(DEPS_DIR)/newmad_finalize.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_finalize.c >$(DEPS_DIR)/newmad_finalize.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_finalize.c >$(DEPS_DIR)/newmad_finalize.d
-$(DEPS_DIR)/newmad_init.d: $(srcdir)/newmad_init.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_init.c > $(DEPS_DIR)/newmad_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_init.c >$(DEPS_DIR)/newmad_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_init.c >$(DEPS_DIR)/newmad_init.d
-$(DEPS_DIR)/newmad_poll.d: $(srcdir)/newmad_poll.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_poll.c > $(DEPS_DIR)/newmad_poll.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_poll.c >$(DEPS_DIR)/newmad_poll.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_poll.c >$(DEPS_DIR)/newmad_poll.d
-$(DEPS_DIR)/newmad_send.d: $(srcdir)/newmad_send.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_send.c > $(DEPS_DIR)/newmad_send.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_send.c >$(DEPS_DIR)/newmad_send.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_send.c >$(DEPS_DIR)/newmad_send.d
-$(DEPS_DIR)/newmad_register.d: $(srcdir)/newmad_register.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_register.c > $(DEPS_DIR)/newmad_register.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_register.c >$(DEPS_DIR)/newmad_register.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_register.c >$(DEPS_DIR)/newmad_register.d
-$(DEPS_DIR)/newmad_test.d: $(srcdir)/newmad_test.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_test.c > $(DEPS_DIR)/newmad_test.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_test.c >$(DEPS_DIR)/newmad_test.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_test.c >$(DEPS_DIR)/newmad_test.d
-$(DEPS_DIR)/newmad_cancel.d: $(srcdir)/newmad_cancel.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_cancel.c > $(DEPS_DIR)/newmad_cancel.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_cancel.c >$(DEPS_DIR)/newmad_cancel.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_cancel.c >$(DEPS_DIR)/newmad_cancel.d
-$(DEPS_DIR)/newmad_probe.d: $(srcdir)/newmad_probe.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_probe.c > $(DEPS_DIR)/newmad_probe.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_probe.c >$(DEPS_DIR)/newmad_probe.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_probe.c >$(DEPS_DIR)/newmad_probe.d
-$(DEPS_DIR)/newmad_alloc.d: $(srcdir)/newmad_alloc.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_alloc.c > $(DEPS_DIR)/newmad_alloc.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_alloc.c >$(DEPS_DIR)/newmad_alloc.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_alloc.c >$(DEPS_DIR)/newmad_alloc.d
-$(DEPS_DIR)/timestamp: newmad_finalize.c  newmad_init.c  newmad_poll.c      newmad_send.c   \
-	newmad_register.c  newmad_test.c  newmad_cancel.c    newmad_probe.c \
-		newmad_alloc.c Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_finalize.c > $(DEPS_DIR)/newmad_finalize.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_finalize.c >$(DEPS_DIR)/newmad_finalize.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_finalize.c >$(DEPS_DIR)/newmad_finalize.d
-	echo "include $(DEPS_DIR)/newmad_finalize.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_init.c > $(DEPS_DIR)/newmad_init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_init.c >$(DEPS_DIR)/newmad_init.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_init.c >$(DEPS_DIR)/newmad_init.d
-	echo "include $(DEPS_DIR)/newmad_init.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_poll.c > $(DEPS_DIR)/newmad_poll.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_poll.c >$(DEPS_DIR)/newmad_poll.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_poll.c >$(DEPS_DIR)/newmad_poll.d
-	echo "include $(DEPS_DIR)/newmad_poll.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_send.c > $(DEPS_DIR)/newmad_send.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_send.c >$(DEPS_DIR)/newmad_send.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_send.c >$(DEPS_DIR)/newmad_send.d
-	echo "include $(DEPS_DIR)/newmad_send.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_register.c > $(DEPS_DIR)/newmad_register.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_register.c >$(DEPS_DIR)/newmad_register.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_register.c >$(DEPS_DIR)/newmad_register.d
-	echo "include $(DEPS_DIR)/newmad_register.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_test.c > $(DEPS_DIR)/newmad_test.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_test.c >$(DEPS_DIR)/newmad_test.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_test.c >$(DEPS_DIR)/newmad_test.d
-	echo "include $(DEPS_DIR)/newmad_test.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_cancel.c > $(DEPS_DIR)/newmad_cancel.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_cancel.c >$(DEPS_DIR)/newmad_cancel.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_cancel.c >$(DEPS_DIR)/newmad_cancel.d
-	echo "include $(DEPS_DIR)/newmad_cancel.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_probe.c > $(DEPS_DIR)/newmad_probe.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_probe.c >$(DEPS_DIR)/newmad_probe.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_probe.c >$(DEPS_DIR)/newmad_probe.d
-	echo "include $(DEPS_DIR)/newmad_probe.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C newmad_alloc.c > $(DEPS_DIR)/newmad_alloc.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C)  $(srcdir)/newmad_alloc.c >$(DEPS_DIR)/newmad_alloc.d ; \
-	fi
-	@$(MAKE_DEPEND_C)  $(srcdir)/newmad_alloc.c >$(DEPS_DIR)/newmad_alloc.d
-	echo "include $(DEPS_DIR)/newmad_alloc.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  newmad_finalize.c newmad_init.c newmad_poll.c \
-	newmad_send.c newmad_register.c newmad_test.c newmad_cancel.c \
-	newmad_probe.c newmad_alloc.c 
+SOURCES         =  newmad_finalize.c newmad_init.c newmad_poll.c newmad_send.c newmad_register.c \
+	newmad_test.c newmad_cancel.c newmad_probe.c newmad_alloc.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
+
+.POSIX:
 
 FORCE_TARGET:
 

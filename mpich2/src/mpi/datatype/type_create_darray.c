@@ -197,9 +197,6 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 	local_size, rem, count;
     MPI_Aint stride, disps[3];
     MPI_Datatype type_tmp, types[3];
-    MPIU_THREADPRIV_DECL;
-
-    MPIU_THREADPRIV_GET;
 
     if (darg == MPI_DISTRIBUTE_DFLT_DARG) blksize = 1;
     else blksize = darg;
@@ -266,9 +263,7 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 				     disps,
 				     types,
 				     &type_tmp);
-	MPIR_Nest_incr();
-	NMPI_Type_free(type_new);
-	MPIR_Nest_decr();
+	MPIR_Type_free_impl(type_new);
 	*type_new = type_tmp;
 
 	/* --BEGIN ERROR HANDLING-- */
@@ -297,9 +292,7 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 				     disps,
 				     types,
 				     &type_tmp);
-	MPIR_Nest_incr();
-        NMPI_Type_free(type_new);
-	MPIR_Nest_decr();
+        MPIR_Type_free_impl(type_new);
         *type_new = type_tmp;
 
 	/* --BEGIN ERROR HANDLING-- */
@@ -368,6 +361,7 @@ int MPI_Type_create_darray(int size,
 {
     static const char FCNAME[] = "MPI_Type_create_darray";
     int mpi_errno = MPI_SUCCESS, i;
+    MPI_Datatype new_handle;
 
     int procs, tmp_rank, tmp_size, blklens[3], *coords;
     MPI_Aint *st_offsets, orig_extent, disps[3];
@@ -380,7 +374,6 @@ int MPI_Type_create_darray(int size,
 
     int *ints;
     MPID_Datatype *datatype_ptr = NULL;
-    MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(3);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
 
@@ -388,8 +381,6 @@ int MPI_Type_create_darray(int size,
 
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_TYPE_CREATE_DARRAY);
-
-    MPIU_THREADPRIV_GET;
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -572,9 +563,7 @@ int MPI_Type_create_darray(int size,
 	    }
 	    if (i)
 	    {
-		MPIR_Nest_incr();
-		NMPI_Type_free(&type_old);
-		MPIR_Nest_decr();
+		MPIR_Type_free_impl(&type_old);
 	    }
 	    type_old = type_new;
 
@@ -640,9 +629,7 @@ int MPI_Type_create_darray(int size,
 	    }
 	    if (i != ndims-1)
 	    {
-		MPIR_Nest_incr();
-		NMPI_Type_free(&type_old);
-		MPIR_Nest_decr();
+		MPIR_Type_free_impl(&type_old);
 	    }
 	    type_old = type_new;
 
@@ -675,14 +662,12 @@ int MPI_Type_create_darray(int size,
 				 blklens,
 				 disps,
 				 types,
-				 newtype);
+				 &new_handle);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
     /* --END ERROR HANDLING-- */
 
-    MPIR_Nest_incr();
-    NMPI_Type_free(&type_new);
-    MPIR_Nest_decr();
+    MPIR_Type_free_impl(&type_new);
 
     /* at this point we have the new type, and we've cleaned up any
      * intermediate types created in the process.  we just need to save
@@ -709,7 +694,7 @@ int MPI_Type_create_darray(int size,
 	ints[i + 3*ndims + 3] = array_of_psizes[i];
     }
     ints[4*ndims + 3] = order;
-    MPID_Datatype_get_ptr(*newtype, datatype_ptr);
+    MPID_Datatype_get_ptr(new_handle, datatype_ptr);
     mpi_errno = MPID_Datatype_set_contents(datatype_ptr,
 					   MPI_COMBINER_DARRAY,
 					   4*ndims + 4,
@@ -722,6 +707,7 @@ int MPI_Type_create_darray(int size,
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
     /* --END ERROR HANDLING-- */
 
+    MPIU_OBJ_PUBLISH_HANDLE(*newtype, new_handle);
     /* ... end of body of routine ... */
 
   fn_exit:

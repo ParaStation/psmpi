@@ -74,10 +74,8 @@ int MPIOI_File_read(MPI_File mpi_fh,
     int datatype_size;
     ADIO_File fh;
     ADIO_Offset off;
-    MPIU_THREADPRIV_DECL;
 
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
 
@@ -136,14 +134,16 @@ int MPIOI_File_read(MPI_File mpi_fh,
         /* if atomic mode requested, lock (exclusive) the region, because
            there could be a concurrent noncontiguous request.
 	 */
-        if ((fh->atomicity) && ADIO_Feature(fh, ADIO_LOCKS))
+        if ((fh->atomicity) && ADIO_Feature(fh, ADIO_LOCKS)) {
             ADIOI_WRITE_LOCK(fh, off, SEEK_SET, bufsize);
+	}
 
 	ADIO_ReadContig(fh, buf, count, datatype, file_ptr_type,
 			off, status, &error_code); 
 
-        if ((fh->atomicity) && ADIO_Feature(fh, ADIO_LOCKS))
+        if ((fh->atomicity) && ADIO_Feature(fh, ADIO_LOCKS)) {
             ADIOI_UNLOCK(fh, off, SEEK_SET, bufsize);
+	}
     }
     else
     {
@@ -158,7 +158,6 @@ int MPIOI_File_read(MPI_File mpi_fh,
     /* --END ERROR HANDLING-- */
 
 fn_exit:
-    MPIR_Nest_decr();
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
 
     return error_code;

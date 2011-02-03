@@ -70,7 +70,6 @@ int MPI_Group_range_excl(MPI_Group group, int n, int ranges[][3],
     int mpi_errno = MPI_SUCCESS;
     MPID_Group *group_ptr = NULL, *new_group_ptr;
     int size, i, j, k, nnew, first, last, stride;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GROUP_RANGE_EXCL);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -180,8 +179,10 @@ int MPI_Group_range_excl(MPI_Group group, int n, int ranges[][3],
 	    k++;
 	}
     }
-    
-    *newgroup = new_group_ptr->handle;
+
+    /* TODO calculate is_local_dense_monotonic */
+
+    MPIU_OBJ_PUBLISH_HANDLE(*newgroup, new_group_ptr->handle);
 
     /* ... end of body of routine ... */
 

@@ -1,4 +1,4 @@
-.TH MPI_Intercomm_merge 3 "10/7/2008" " " "MPI"
+.TH MPI_Intercomm_merge 3 "1/21/2011" " " "MPI"
 .SH NAME
 MPI_Intercomm_merge \-  Creates an intracommuncator from an intercommunicator 
 .SH SYNOPSIS
@@ -70,12 +70,14 @@ All MPI objects (e.g.,
 in Fortran.
 
 .SH ALGORITHM
-b
-Allocate contexts
-Local and remote group leaders swap high values
-Determine the high value.
-Merge the two groups and make the intra-communicator
-e
+.nr e 1 1
+
+\\neAllocate contexts
+\\neLocal and remote group leaders swap high values
+\\neDetermine the high value.
+\\neMerge the two groups and make the intra-communicator
+.rr e
+
 
 .SH ERRORS
 

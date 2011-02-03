@@ -303,13 +303,6 @@ int MPIR_Dims_create( int nnodes, int ndims, int *dims )
 		dims[i] = chosen[j++];
 	    }
 	}
-#if 0
-	/* Any remaining unset dims are set to one */
-	for (i++;i<ndims; i++) {
-	    if (dims[i] == 0) 
-		dims[i] = 1;
-	}
-#endif
     }
     else {
 	/* We must combine some of the factors */
@@ -420,6 +413,7 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
     else {
 	mpi_errno = MPIR_Dims_create( nnodes, ndims, dims );
     }
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     /* ... end of body of routine ... */
 
   fn_exit:
@@ -427,16 +421,16 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
     return mpi_errno;
 
     /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_CHECKING
   fn_fail:
+#   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
 	    "**mpi_dims_create",
 	    "**mpi_dims_create %d %d %p", nnodes, ndims, dims);
     }
+#   endif
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     goto fn_exit;
-#   endif
     /* --END ERROR HANDLING-- */
 }

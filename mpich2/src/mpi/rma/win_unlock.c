@@ -53,7 +53,6 @@ int MPI_Win_unlock(int rank, MPI_Win win)
     static const char FCNAME[] = "MPI_Win_unlock";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_UNLOCK);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -88,7 +87,7 @@ int MPI_Win_unlock(int rank, MPI_Win win)
 	    /* If win_ptr is not valid, it will be reset to null */
             if (mpi_errno) goto fn_fail;
 
-            MPID_Comm_get_ptr( win_ptr->comm, comm_ptr );
+	    comm_ptr = win_ptr->comm_ptr;
             MPIR_ERRTEST_SEND_RANK(comm_ptr, rank, mpi_errno);
 
             if (mpi_errno) goto fn_fail;

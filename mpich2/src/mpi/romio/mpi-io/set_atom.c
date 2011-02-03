@@ -38,10 +38,8 @@ int MPI_File_set_atomicity(MPI_File mpi_fh, int flag)
     static char myname[] = "MPI_FILE_SET_ATOMICITY";
     ADIO_Fcntl_t *fcntl_struct;
     ADIO_File fh;
-    MPIU_THREADPRIV_DECL;
 
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPIR_Nest_incr();
 
     fh = MPIO_File_resolve(mpi_fh);
 
@@ -86,7 +84,6 @@ int MPI_File_set_atomicity(MPI_File mpi_fh, int flag)
     ADIOI_Free(fcntl_struct);
 
 fn_exit:
-    MPIR_Nest_decr();
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return error_code;
 }

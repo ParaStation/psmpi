@@ -53,16 +53,14 @@
 int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
 {
     int mpi_errno = MPI_SUCCESS;
+    int in_cs = FALSE;
     MPID_Comm *comm_ptr = NULL;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_CALL_ERRHANDLER);
     
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_CALL_ERRHANDLER);
 
-    MPIU_THREADPRIV_GET;
-    
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
     {
@@ -77,6 +75,9 @@ int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
     
     /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr( comm, comm_ptr );
+
+    MPIU_THREAD_CS_ENTER(MPI_OBJ, comm_ptr); /* protect access to comm_ptr->errhandler */
+    in_cs = TRUE;
     
     /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
@@ -122,19 +123,19 @@ int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
     }
 #endif
 
-    /* The user error handler may make calls to MPI routines, so the nesting
-     * counter must be incremented before the handler is called */
-    MPIR_Nest_incr();
-    
     /* Process any user-defined error handling function */
     switch (comm_ptr->errhandler->language) {
     case MPID_LANG_C:
-#ifdef HAVE_CXX_BINDING
-    case MPID_LANG_CXX:
-#endif
 	(*comm_ptr->errhandler->errfn.C_Comm_Handler_function)( 
 	    &comm_ptr->handle, &errorcode );
 	break;
+#ifdef HAVE_CXX_BINDING
+    case MPID_LANG_CXX:
+	MPIR_Process.cxx_call_errfn( 0, &comm_ptr->handle, 
+				     &errorcode, 
+     (void (*)(void))comm_ptr->errhandler->errfn.C_Comm_Handler_function );
+	break;
+#endif
 #ifdef HAVE_FORTRAN_BINDING
     case MPID_LANG_FORTRAN90:
     case MPID_LANG_FORTRAN:
@@ -144,11 +145,12 @@ int MPI_Comm_call_errhandler(MPI_Comm comm, int errorcode)
 #endif
     }
 
-    MPIR_Nest_decr();
-    
     /* ... end of body of routine ... */
 
   fn_exit:
+    if (in_cs)
+        MPIU_THREAD_CS_EXIT(MPI_OBJ, comm_ptr);
+
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_CALL_ERRHANDLER);
     return mpi_errno;
 

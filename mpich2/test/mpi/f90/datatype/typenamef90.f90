@@ -62,12 +62,13 @@
            print *, "Expected MPI_2INTEGER but got "//name(1:namelen)
       endif
 
-      call MPI_Type_get_name( MPI_2COMPLEX, name, namelen, ierr )
-      if (name(1:namelen) .ne. "MPI_2COMPLEX") then
-           errs = errs + 1
-           print *, "Expected MPI_2COMPLEX but got "//name(1:namelen)
-      endif
-
+! 2COMPLEX was present only in MPI 1.0
+!      call MPI_Type_get_name( MPI_2COMPLEX, name, namelen, ierr )
+!      if (name(1:namelen) .ne. "MPI_2COMPLEX") then
+!           errs = errs + 1
+!           print *, "Expected MPI_2COMPLEX but got "//name(1:namelen)
+!      endif
+!
       call MPI_Type_get_name(MPI_2DOUBLE_PRECISION, name, namelen, ierr)
       if (name(1:namelen) .ne. "MPI_2DOUBLE_PRECISION") then
            errs = errs + 1

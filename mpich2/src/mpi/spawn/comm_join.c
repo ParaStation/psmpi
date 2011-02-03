@@ -131,8 +131,8 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
 {
     static const char FCNAME[] = "MPI_Comm_join";
     int mpi_errno = MPI_SUCCESS, err;
+    MPID_Comm *intercomm_ptr;
     char *local_port, *remote_port;
-    MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(2);
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_COMM_JOIN);
 
@@ -142,16 +142,11 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_JOIN);
 
     /* ... body of routine ...  */
-
-    MPIU_THREADPRIV_GET;
-    /* Set the nest incr here so that we can jump to fn_fail and 
-       call nest_decr without worry */
-    MPIR_Nest_incr();
     
     MPIU_CHKLMEM_MALLOC(local_port, char *, MPI_MAX_PORT_NAME, mpi_errno, "local port name");
     MPIU_CHKLMEM_MALLOC(remote_port, char *, MPI_MAX_PORT_NAME, mpi_errno, "remote port name");
     
-    mpi_errno = NMPI_Open_port(MPI_INFO_NULL, local_port);
+    mpi_errno = MPIR_Open_port_impl(NULL, local_port);
     MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**openportfailed");
 
     err = MPIR_fd_send(fd, local_port, MPI_MAX_PORT_NAME);
@@ -164,19 +159,22 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
 			 "**join_portname %s %s", local_port, remote_port);
 
     if (strcmp(local_port, remote_port) < 0) {
-        mpi_errno = NMPI_Comm_accept(local_port, MPI_INFO_NULL, 0, 
-                                     MPI_COMM_SELF, intercomm);
+        MPID_Comm *comm_self_ptr;
+        MPID_Comm_get_ptr( MPI_COMM_SELF, comm_self_ptr );
+        mpi_errno = MPIR_Comm_accept_impl(local_port, NULL, 0, comm_self_ptr, &intercomm_ptr);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    } else {
+        MPID_Comm *comm_self_ptr;
+        MPID_Comm_get_ptr( MPI_COMM_SELF, comm_self_ptr );
+        mpi_errno = MPIR_Comm_connect_impl(remote_port, NULL, 0, comm_self_ptr, &intercomm_ptr);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
-    else {
-        mpi_errno = NMPI_Comm_connect(remote_port, MPI_INFO_NULL, 0, 
-                                     MPI_COMM_SELF, intercomm);
-    }
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    mpi_errno = NMPI_Close_port(local_port);
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    mpi_errno = MPIR_Close_port_impl(local_port);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-    MPIR_Nest_decr();
+    MPIU_OBJ_PUBLISH_HANDLE(*intercomm, intercomm_ptr->handle);
+
     /* ... end of body of routine ... */
 
   fn_exit:
@@ -186,7 +184,6 @@ int MPI_Comm_join(int fd, MPI_Comm *intercomm)
     return mpi_errno;
 
   fn_fail:
-    MPIR_Nest_decr();
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
     {

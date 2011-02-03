@@ -88,7 +88,6 @@ int MPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
     static const char FCNAME[] = "MPI_Op_create";
     MPID_Op *op_ptr;
     int mpi_errno = MPI_SUCCESS;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_OP_CREATE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -108,13 +107,13 @@ int MPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
     }
     /* --END ERROR HANDLING-- */
 
-    *op	             = op_ptr->handle;
     op_ptr->language = MPID_LANG_C;
     op_ptr->kind     = commute ? MPID_OP_USER : MPID_OP_USER_NONCOMMUTE;
     op_ptr->function.c_function = (void (*)(const void *, void *, 
 				   const int *, const MPI_Datatype *))function;
     MPIU_Object_set_ref(op_ptr,1);
-    
+
+    MPIU_OBJ_PUBLISH_HANDLE(*op, op_ptr->handle);
     /* ... end of body of routine ... */
 
   fn_exit:

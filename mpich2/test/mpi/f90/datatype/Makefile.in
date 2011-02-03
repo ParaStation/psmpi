@@ -6,7 +6,6 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
@@ -15,45 +14,27 @@ srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 LIBS            = @LIBS@
 MAKE            = @MAKE@
-F90              = @F90@
-F90FLAGS        = @F90FLAGS@
-F90_COMPILE     = $(F90) $(F90FLAGS) $(F90INCLUDES)
-F90_LINK       = $(F90)
+FC               = @FC@
+FCFLAGS         = @FCFLAGS@
+FC_COMPILE      = $(FC) $(FCFLAGS) $(FCINCLUDES)
+FC_LINK        = $(FC)
 LDFLAGS     =  @LDFLAGS@ ../util/mtestf90.o 
 
 VPATH = .:@srcdir@
-F90INCLUDES = -I. 
-F90HEADERS = typeaints.h
+FCINCLUDES = -I. 
+FCHEADERS = typeaints.h
 
 .SUFFIXES:
-.SUFFIXES: .o .f90 .txt 
+.SUFFIXES: .o .f90 
 .f90.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  F90             $<" ; \
+	  echo "  FC              $<" ; \
 	else \
-	  echo $(F90_COMPILE) -c $< ; \
+	  echo $(FC_COMPILE) -c $< ; \
 	fi
-	@$(F90_COMPILE) -c $<
+	@$(FC_COMPILE) -c $<
 .f90:
-	$(F90_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../../ \
-	-configdir=test/mpi/ \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=f90/datatype/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
+	$(FC_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
@@ -61,9 +42,6 @@ clean:
 	-@rm -f gaddressf90.exe typesubf90.exe structf.exe typenamef90.exe createf90.exe typem2f90.exe sizeof.exe packef90.exe indtype.exe typesnamef90.exe allctypesf90.exe typecntsf90.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 	-@rm -f *.irlog*
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
@@ -71,56 +49,43 @@ distclean-xxx:
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
-all-redirect: typenamef90 typesnamef90 typecntsf90 typesubf90 typem2f90\
-	 gaddressf90 packef90 allctypesf90 structf indtype createf90 sizeof
+	rm -f  Makefile
+all-redirect: typenamef90 typesnamef90 typecntsf90 typesubf90 typem2f90 gaddressf90 packef90\
+	 allctypesf90 structf indtype createf90 sizeof
 
-coverage: 
 gaddressf90: gaddressf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o gaddressf90 gaddressf90.o  \
-	${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o gaddressf90 gaddressf90.o  ${LIBS}
 typesubf90: typesubf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o typesubf90 typesubf90.o  \
-	${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o typesubf90 typesubf90.o  ${LIBS}
 structf: structf.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o structf structf.o  ${LIBS}
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o structf structf.o  ${LIBS}
 typenamef90: typenamef90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o typenamef90 typenamef90.o  \
-	${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o typenamef90 typenamef90.o  ${LIBS}
 createf90: createf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o createf90 createf90.o  ${LIBS}
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o createf90 createf90.o  ${LIBS}
 typem2f90: typem2f90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o typem2f90 typem2f90.o  ${LIBS}
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o typem2f90 typem2f90.o  ${LIBS}
 sizeof: sizeof.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o sizeof sizeof.o  ${LIBS}
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o sizeof sizeof.o  ${LIBS}
 packef90: packef90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o packef90 packef90.o  ${LIBS}
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o packef90 packef90.o  ${LIBS}
 indtype: indtype.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o indtype indtype.o  ${LIBS}
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o indtype indtype.o  ${LIBS}
 typesnamef90: typesnamef90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o typesnamef90 typesnamef90.o  \
-	${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o typesnamef90 typesnamef90.o  ${LIBS}
 allctypesf90: allctypesf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o allctypesf90 allctypesf90.o  \
-	${LIBS} 
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o allctypesf90 allctypesf90.o  ${LIBS}
 typecntsf90: typecntsf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(F90_LINK) $(F90FLAGS) $(LDFLAGS) -o typecntsf90 typecntsf90.o  \
-	${LIBS} 
-# --------------------------------------------------------------------------
-htmldoc:
-mandoc:
-latexdoc:
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o typecntsf90 typecntsf90.o  ${LIBS}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  typenamef90.f90 typesnamef90.f90 typecntsf90.f90 \
-	typesubf90.f90 typem2f90.f90 gaddressf90.f90 packef90.f90 \
-	allctypesf90.f90 structf.f90 indtype.f90 createf90.f90 sizeof.f90 
+SOURCES         =  typenamef90.f90 typesnamef90.f90 typecntsf90.f90 typesubf90.f90 typem2f90.f90 \
+	gaddressf90.f90 packef90.f90 allctypesf90.f90 structf.f90 indtype.f90 createf90.f90 \
+	sizeof.f90 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
@@ -136,6 +101,8 @@ testing:
 ../util/mtestf90.o: 
 	(cd ../util && $(MAKE) mtestf90.o)
 
+
+.POSIX:
 
 FORCE_TARGET:
 

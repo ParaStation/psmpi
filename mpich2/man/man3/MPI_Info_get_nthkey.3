@@ -1,8 +1,12 @@
-.TH MPI_Info_get_nthkey 3 "9/24/2009" " " "MPI"
+.TH MPI_Info_get_nthkey 3 "7/29/2010" " " "MPI"
 .SH NAME
 MPI_Info_get_nthkey \-  Returns the nth defined key in info 
 .SH SYNOPSIS
 .nf
+#undef FUNCNAME
+#define FUNCNAME MPI_Info_get_nthkey
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
 .fi
 .SH INPUT PARAMETERS

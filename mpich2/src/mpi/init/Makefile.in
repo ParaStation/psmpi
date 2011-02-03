@@ -29,14 +29,13 @@ CC_SHL          = @CC_SHL@
 C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 
 VPATH = .:@srcdir@
-DOCTEXT         = @DOCTEXT@
 mpi_sources = abort.c init.c initialized.c initthread.c \
- ismain.c finalize.c finalized.c querythread.c async.c
+ ismain.c finalize.c finalized.c querythread.c
 HEADERS = mpi_init.h
 INCLUDES = -I../../include -I${top_srcdir}/src/include -I${top_srcdir}/src/mpi/datatype -I${master_top_srcdir}/src/mpi/spawn
 
 .SUFFIXES:
-.SUFFIXES: .o .lo .c .man .html .latex .txt 
+.SUFFIXES: .o .lo .c 
 .c.o:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -53,8 +52,6 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include -I${top_srcdir}/src/mpi/d
 	fi
 	@$(C_COMPILE_SHL) -c $< -o _s$*.o
 	@mv -f _s$*.o $*.lo
-.c.txt:
-	$(CPP) $(INCLUDES) $(CPPFLAGS) $< >$*.txt
 .c:
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  CC              $<" ; \
@@ -62,53 +59,22 @@ INCLUDES = -I../../include -I${top_srcdir}/src/include -I${top_srcdir}/src/mpi/d
 	  echo $(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS) ; \
 	fi
 	@$(C_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
-.c.man:
-	$(DOCTEXT) -man -mpath ../../../man/man3 -ext 3 -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.c.html:
-	$(DOCTEXT) -html -mpath ../../../www/www3  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-.c.latex:
-	$(DOCTEXT) -latex -mpath ../../../doc/refman  -heading MPI \
-		-quotefmt ${master_top_srcdir}/maint/docnotes $<
-
-# --------------------------------------------------------------------------
-${srcdir}/Makefile.in: ${srcdir}/Makefile.sm
-	( cd ${srcdir} && ${master_top_srcdir}/maint/simplemake \
-	-rootdir=../../../ \
-	-configdir=. \
-	-common=${master_top_srcdir}/maint/makedefs \
-	-docnamedefs=${master_top_srcdir}/maint/docnotes \
-	"-autoconf=-I ROOTDIR/confdb" \
-	-libdir='$${MPILIBNAME}=ROOTDIR/lib' \
-	-smroot=${master_top_srcdir}/maint \
-	-distcleanfiles="Makefile" \
-	-smvar_doc_attop=0 \
-		Makefile.sm )
-Makefile: ${srcdir}/Makefile.in
-	-cd ../../../ && \
-	if [ -x config.status ] ; then CONFIG_FILES=src/mpi/init/Makefile CONFIG_HEADERS= ${SHELL} ./config.status ; fi
-# --------------------------------------------------------------------------
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f .libstamp0 .libstamp1 .libstamp2 .libstamp3 
 	-@rm -f *.lo ${srcdir}/*.lo
-	-@rm -f ${srcdir}/*.bb ${srcdir}/*.bbg ${srcdir}/*.da
-	-@rm -f ${srcdir}/*.gcda ${srcdir}/*.gcno
-	-@rm -f *.gcov *.bb *.bbg *.da *.gcda *.gcno
 distclean:  clean distclean-xxx remove-makefile
 distclean-xxx:
 	-@rm -f Makefile
 	-@rm -rf autom4te*.cache
 	-@rm -rf $(DEPS_DIR)
 	-@rm -f TAGS
-maintainer-clean:  distclean-xxx remove-genmakefiles
 remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
-	rm -f  Makefile.in Makefile
+	rm -f  Makefile
 all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	@if [ -n "@NO_WEAK_SYM@" ] ; then \
 	    ${MAKE} .libstamp2 || exit 1; \
@@ -120,9 +86,8 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	    fi ; \
 	fi
 
-.libstamp0 ../../../lib/lib${MPILIBNAME}.a: abort.o init.o initialized.o \
-	initthread.o ismain.o finalize.o finalized.o querythread.o async.o \
-	initinfo.o 
+.libstamp0 ../../../lib/lib${MPILIBNAME}.a: abort.o init.o initialized.o initthread.o ismain.o \
+	finalize.o finalized.o querythread.o initinfo.o async.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.a $?" ; \
 	else \
@@ -136,9 +101,8 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp0
-.libstamp1 ../../../lib/lib${MPILIBNAME}.la: abort.lo init.lo initialized.lo \
-	initthread.lo ismain.lo finalize.lo finalized.lo querythread.lo \
-	async.lo initinfo.lo 
+.libstamp1 ../../../lib/lib${MPILIBNAME}.la: abort.lo init.lo initialized.lo initthread.lo \
+	ismain.lo finalize.lo finalized.lo querythread.lo initinfo.lo async.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR ${AR_FLAGS} ../../../lib/lib${MPILIBNAME}.la $?" ; \
 	else \
@@ -148,8 +112,7 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp1
 
 # --------------------------------------------------------------------------
-.libstamp2: _abort.o _init.o _initialized.o _initthread.o _ismain.o _finalize.o \
-	_finalized.o _querythread.o _async.o 
+.libstamp2: _abort.o _init.o _initialized.o _initthread.o _ismain.o _finalize.o _finalized.o _querythread.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
 	else \
@@ -163,8 +126,8 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	fi
 	@${RANLIB} ../../../lib/lib${PMPILIBNAME}.a
 	date > .libstamp2
-.libstamp3: _abort.lo _init.lo _initialized.lo _initthread.lo _ismain.lo _finalize.lo \
-	_finalized.lo _querythread.lo _async.lo 
+.libstamp3: _abort.lo _init.lo _initialized.lo _initthread.lo _ismain.lo _finalize.lo _finalized.lo \
+	_querythread.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
@@ -284,192 +247,19 @@ _querythread.lo: querythread.c
 	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/querythread.c -o _querythread.lo ; \
 	fi
 	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/querythread.c -o _querythread.lo
-_async.o: async.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  CC             -D<profiling> ${srcdir}/async.c" ; \
-	else \
-	  echo $(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/async.c -o _async.o ; \
-	fi
-	@$(C_COMPILE) -c @PROFILE_DEF_MPI@ $(srcdir)/async.c -o _async.o
-_async.lo: async.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo " CC           -D<profiling> $(srcdir)/async.c" ; \
-	else \
-	  echo $(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/async.c -o _async.lo ; \
-	fi
-	@$(C_COMPILE_SHL) -c @PROFILE_DEF_MPI@ $(srcdir)/async.c -o _async.lo
-# --------------------------------------------------------------------------
-coverage: 
-	-@for file in ${mpi_sources} initinfo.c ; do \
-		gcov -b -f $$file ; done
-# --------------------------------------------------------------------------
-mandoc: ${mpi_sources:.c=.man}
-htmldoc: ${mpi_sources:.c=.html}
-latexdoc: ${mpi_sources:.c=.latex}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-# Dependencies
-DEPS_DIR = .deps
-MAKE_DEPEND_C   = @MAKE_DEPEND_C@ $(DEFS) $(INCLUDES) $(CPPFLAGS)
-
-dependencies: $(DEPS_DIR)/timestamp
-$(DEPS_DIR)/abort.d: $(srcdir)/abort.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C abort.c > $(DEPS_DIR)/abort.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_abort.o abort.o abort.lo _abort.lo' $(srcdir)/abort.c >$(DEPS_DIR)/abort.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_abort.o abort.o abort.lo _abort.lo' $(srcdir)/abort.c >$(DEPS_DIR)/abort.d
-$(DEPS_DIR)/init.d: $(srcdir)/init.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C init.c > $(DEPS_DIR)/init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_init.o init.o init.lo _init.lo' $(srcdir)/init.c >$(DEPS_DIR)/init.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_init.o init.o init.lo _init.lo' $(srcdir)/init.c >$(DEPS_DIR)/init.d
-$(DEPS_DIR)/initialized.d: $(srcdir)/initialized.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C initialized.c > $(DEPS_DIR)/initialized.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_initialized.o initialized.o initialized.lo _initialized.lo' $(srcdir)/initialized.c >$(DEPS_DIR)/initialized.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_initialized.o initialized.o initialized.lo _initialized.lo' $(srcdir)/initialized.c >$(DEPS_DIR)/initialized.d
-$(DEPS_DIR)/initthread.d: $(srcdir)/initthread.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C initthread.c > $(DEPS_DIR)/initthread.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_initthread.o initthread.o initthread.lo _initthread.lo' $(srcdir)/initthread.c >$(DEPS_DIR)/initthread.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_initthread.o initthread.o initthread.lo _initthread.lo' $(srcdir)/initthread.c >$(DEPS_DIR)/initthread.d
-$(DEPS_DIR)/ismain.d: $(srcdir)/ismain.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ismain.c > $(DEPS_DIR)/ismain.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_ismain.o ismain.o ismain.lo _ismain.lo' $(srcdir)/ismain.c >$(DEPS_DIR)/ismain.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_ismain.o ismain.o ismain.lo _ismain.lo' $(srcdir)/ismain.c >$(DEPS_DIR)/ismain.d
-$(DEPS_DIR)/finalize.d: $(srcdir)/finalize.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C finalize.c > $(DEPS_DIR)/finalize.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_finalize.o finalize.o finalize.lo _finalize.lo' $(srcdir)/finalize.c >$(DEPS_DIR)/finalize.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_finalize.o finalize.o finalize.lo _finalize.lo' $(srcdir)/finalize.c >$(DEPS_DIR)/finalize.d
-$(DEPS_DIR)/finalized.d: $(srcdir)/finalized.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C finalized.c > $(DEPS_DIR)/finalized.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_finalized.o finalized.o finalized.lo _finalized.lo' $(srcdir)/finalized.c >$(DEPS_DIR)/finalized.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_finalized.o finalized.o finalized.lo _finalized.lo' $(srcdir)/finalized.c >$(DEPS_DIR)/finalized.d
-$(DEPS_DIR)/querythread.d: $(srcdir)/querythread.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C querythread.c > $(DEPS_DIR)/querythread.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_querythread.o querythread.o querythread.lo _querythread.lo' $(srcdir)/querythread.c >$(DEPS_DIR)/querythread.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_querythread.o querythread.o querythread.lo _querythread.lo' $(srcdir)/querythread.c >$(DEPS_DIR)/querythread.d
-$(DEPS_DIR)/async.d: $(srcdir)/async.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C async.c > $(DEPS_DIR)/async.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_async.o async.o async.lo _async.lo' $(srcdir)/async.c >$(DEPS_DIR)/async.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_async.o async.o async.lo _async.lo' $(srcdir)/async.c >$(DEPS_DIR)/async.d
-$(DEPS_DIR)/initinfo.d: $(srcdir)/initinfo.c
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C initinfo.c > $(DEPS_DIR)/initinfo.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_initinfo.o initinfo.o initinfo.lo _initinfo.lo' $(srcdir)/initinfo.c >$(DEPS_DIR)/initinfo.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_initinfo.o initinfo.o initinfo.lo _initinfo.lo' $(srcdir)/initinfo.c >$(DEPS_DIR)/initinfo.d
-$(DEPS_DIR)/timestamp: ${mpi_sources} initinfo.c Makefile
-	rm -f $(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C abort.c > $(DEPS_DIR)/abort.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_abort.o abort.o abort.lo _abort.lo' $(srcdir)/abort.c >$(DEPS_DIR)/abort.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_abort.o abort.o abort.lo _abort.lo' $(srcdir)/abort.c >$(DEPS_DIR)/abort.d
-	echo "include $(DEPS_DIR)/abort.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C init.c > $(DEPS_DIR)/init.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_init.o init.o init.lo _init.lo' $(srcdir)/init.c >$(DEPS_DIR)/init.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_init.o init.o init.lo _init.lo' $(srcdir)/init.c >$(DEPS_DIR)/init.d
-	echo "include $(DEPS_DIR)/init.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C initialized.c > $(DEPS_DIR)/initialized.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_initialized.o initialized.o initialized.lo _initialized.lo' $(srcdir)/initialized.c >$(DEPS_DIR)/initialized.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_initialized.o initialized.o initialized.lo _initialized.lo' $(srcdir)/initialized.c >$(DEPS_DIR)/initialized.d
-	echo "include $(DEPS_DIR)/initialized.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C initthread.c > $(DEPS_DIR)/initthread.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_initthread.o initthread.o initthread.lo _initthread.lo' $(srcdir)/initthread.c >$(DEPS_DIR)/initthread.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_initthread.o initthread.o initthread.lo _initthread.lo' $(srcdir)/initthread.c >$(DEPS_DIR)/initthread.d
-	echo "include $(DEPS_DIR)/initthread.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C ismain.c > $(DEPS_DIR)/ismain.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_ismain.o ismain.o ismain.lo _ismain.lo' $(srcdir)/ismain.c >$(DEPS_DIR)/ismain.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_ismain.o ismain.o ismain.lo _ismain.lo' $(srcdir)/ismain.c >$(DEPS_DIR)/ismain.d
-	echo "include $(DEPS_DIR)/ismain.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C finalize.c > $(DEPS_DIR)/finalize.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_finalize.o finalize.o finalize.lo _finalize.lo' $(srcdir)/finalize.c >$(DEPS_DIR)/finalize.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_finalize.o finalize.o finalize.lo _finalize.lo' $(srcdir)/finalize.c >$(DEPS_DIR)/finalize.d
-	echo "include $(DEPS_DIR)/finalize.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C finalized.c > $(DEPS_DIR)/finalized.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_finalized.o finalized.o finalized.lo _finalized.lo' $(srcdir)/finalized.c >$(DEPS_DIR)/finalized.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_finalized.o finalized.o finalized.lo _finalized.lo' $(srcdir)/finalized.c >$(DEPS_DIR)/finalized.d
-	echo "include $(DEPS_DIR)/finalized.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C querythread.c > $(DEPS_DIR)/querythread.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_querythread.o querythread.o querythread.lo _querythread.lo' $(srcdir)/querythread.c >$(DEPS_DIR)/querythread.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_querythread.o querythread.o querythread.lo _querythread.lo' $(srcdir)/querythread.c >$(DEPS_DIR)/querythread.d
-	echo "include $(DEPS_DIR)/querythread.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C async.c > $(DEPS_DIR)/async.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_async.o async.o async.lo _async.lo' $(srcdir)/async.c >$(DEPS_DIR)/async.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_async.o async.o async.lo _async.lo' $(srcdir)/async.c >$(DEPS_DIR)/async.d
-	echo "include $(DEPS_DIR)/async.d" >>$(DEPS_DIR)/newalldeps
-	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "MAKE_DEPEND_C initinfo.c > $(DEPS_DIR)/initinfo.d" ; \
-	else \
-	  echo $(MAKE_DEPEND_C) -MT '_initinfo.o initinfo.o initinfo.lo _initinfo.lo' $(srcdir)/initinfo.c >$(DEPS_DIR)/initinfo.d ; \
-	fi
-	@$(MAKE_DEPEND_C) -MT '_initinfo.o initinfo.o initinfo.lo _initinfo.lo' $(srcdir)/initinfo.c >$(DEPS_DIR)/initinfo.d
-	echo "include $(DEPS_DIR)/initinfo.d" >>$(DEPS_DIR)/newalldeps
-	if [ -s $(DEPS_DIR)/newalldeps ] ; then mv -f $(DEPS_DIR)/newalldeps $(DEPS_DIR)/alldeps ; fi
-	date >$(DEPS_DIR)/timestamp
-include $(DEPS_DIR)/alldeps
-# End of Dependencies
-# --------------------------------------------------------------------------
-# --------------------------------------------------------------------------
-SOURCES         =  abort.c init.c initialized.c initthread.c ismain.c \
-	finalize.c finalized.c querythread.c async.c initinfo.c 
+SOURCES         =  abort.c init.c initialized.c initthread.c ismain.c finalize.c finalized.c \
+	querythread.c initinfo.c async.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
-# Note that initinfo is only in the MPI library, not the profile library
+# Note that initinfo and async are only in the MPI library, not the profile library
 #
+
+.POSIX:
 
 FORCE_TARGET:
 

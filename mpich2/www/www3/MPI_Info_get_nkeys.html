@@ -9,6 +9,10 @@
 Returns the number of currently defined keys in info 
 <H2>Synopsis</H2>
 <PRE>
+#undef FUNCNAME
+#define FUNCNAME MPI_Info_get_nkeys
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPI_Info_get_nkeys( MPI_Info info, int *nkeys )
 </PRE>
 <H2>Input Parameters</H2>

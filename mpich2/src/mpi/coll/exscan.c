@@ -87,20 +87,28 @@ do {                                                                            
    End Algorithm: MPI_Exscan
 */
 
-/* begin:nested */
+
 /* not declared static because a machine-specific function may call this one in some cases */
+/* MPIR_Exscan performs an exscan using point-to-point messages.  This
+   is intended to be used by device-specific implementations of
+   exscan.  In all other cases MPIR_Exscan_impl should be used. */
+#undef FUNCNAME
+#define FUNCNAME MPIR_Exscan
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIR_Exscan ( 
     void *sendbuf, 
     void *recvbuf, 
     int count, 
     MPI_Datatype datatype, 
     MPI_Op op, 
-    MPID_Comm *comm_ptr )
+    MPID_Comm *comm_ptr,
+    int *errflag )
 {
-    static const char FCNAME[] = "MPIR_Exscan";
     MPI_Status status;
     int        rank, comm_size;
-    int        mpi_errno = MPI_SUCCESS;
+    int mpi_errno = MPI_SUCCESS;
+    int mpi_errno_ret = MPI_SUCCESS;
     int mask, dst, is_commutative, flag; 
     MPI_Aint true_extent, true_lb, extent;
     void *partial_scan, *tmp_buf;
@@ -115,12 +123,13 @@ int MPIR_Exscan (
     
     if (count == 0) return MPI_SUCCESS;
 
+    MPIU_THREADPRIV_GET;
+    
     comm = comm_ptr->handle;
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
     
     /* set op_errno to 0. stored in perthread structure */
-    MPIU_THREADPRIV_GET;
     MPIU_THREADPRIV_FIELD(op_errno) = 0;
 
     if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
@@ -149,9 +158,7 @@ int MPIR_Exscan (
     }
     
     /* need to allocate temporary buffer to store partial scan*/
-    mpi_errno = NMPI_Type_get_true_extent(datatype, &true_lb,
-                                          &true_extent);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    MPIR_Type_get_true_extent_impl(datatype, &true_lb, &true_extent);
 
     MPID_Datatype_get_extent_macro( datatype, extent );
 
@@ -177,12 +184,17 @@ int MPIR_Exscan (
         dst = rank ^ mask;
         if (dst < comm_size) {
             /* Send partial_scan to dst. Recv into tmp_buf */
-            mpi_errno = MPIC_Sendrecv(partial_scan, count, datatype,
-                                      dst, MPIR_EXSCAN_TAG, tmp_buf,
-                                      count, datatype, dst,
-                                      MPIR_EXSCAN_TAG, comm,
-                                      &status);
-            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            mpi_errno = MPIC_Sendrecv_ft(partial_scan, count, datatype,
+                                         dst, MPIR_EXSCAN_TAG, tmp_buf,
+                                         count, datatype, dst,
+                                         MPIR_EXSCAN_TAG, comm,
+                                         &status, errflag);
+            if (mpi_errno) {
+                /* for communication errors, just record the error but continue */
+                *errflag = TRUE;
+                MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**fail");
+                MPIU_ERR_ADD(mpi_errno_ret, mpi_errno);
+            }
 
             if (rank > dst) {
                 call_uop(tmp_buf, partial_scan, count, datatype);
@@ -232,16 +244,50 @@ int MPIR_Exscan (
 
 fn_exit:
     MPIU_CHKLMEM_FREEALL();
-    return (mpi_errno);
+    if (mpi_errno_ret)
+        mpi_errno = mpi_errno_ret;
+    else if (*errflag)
+        MPIU_ERR_SET(mpi_errno, MPI_ERR_OTHER, "**coll_fail");
+    return mpi_errno;
 fn_fail:
     goto fn_exit;
 }
-/* end:nested */
+
+
+/* MPIR_Exscan_impl should be called by any internal component that
+   would otherwise call MPI_Exscan.  This differs from MPIR_Exscan in
+   that this will call the coll_fns version if it exists.  This
+   function replaces NMPI_Exscan. */
+#undef FUNCNAME
+#define FUNCNAME MPIR_Exscan_impl
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPIR_Exscan_impl(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr, int *errflag)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    if (comm_ptr->coll_fns != NULL && comm_ptr->coll_fns->Exscan != NULL) {
+	mpi_errno = comm_ptr->coll_fns->Exscan(sendbuf, recvbuf, count, datatype, op, comm_ptr, errflag);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    } else {
+	mpi_errno = MPIR_Exscan(sendbuf, recvbuf, count, datatype, op, comm_ptr, errflag);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    }
+
+        
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+
 #endif
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Exscan
-
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
 
 MPI_Exscan - Computes the exclusive scan (partial reductions) of data on a 
@@ -279,10 +325,9 @@ Notes:
 int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, 
                MPI_Op op, MPI_Comm comm)
 {
-    static const char FCNAME[] = "MPI_Exscan";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPIU_THREADPRIV_DECL;
+    int errflag = FALSE;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_EXSCAN);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -354,22 +399,8 @@ int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
 
     /* ... body of routine ...  */
 
-    if (comm_ptr->coll_fns != NULL && comm_ptr->coll_fns->Exscan != NULL)
-    {
-	mpi_errno = comm_ptr->coll_fns->Exscan(sendbuf, recvbuf, count,
-                                             datatype, op, comm_ptr);
-    }
-    else
-    {
-	MPIU_THREADPRIV_GET;
-
-	MPIR_Nest_incr();
-	mpi_errno = MPIR_Exscan(sendbuf, recvbuf, count, datatype,
-                              op, comm_ptr); 
-	MPIR_Nest_decr();
-    }
-
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    mpi_errno = MPIR_Exscan_impl(sendbuf, recvbuf, count, datatype, op, comm_ptr, &errflag);
+    if (mpi_errno) goto fn_fail;
 
     /* ... end of body of routine ... */
     

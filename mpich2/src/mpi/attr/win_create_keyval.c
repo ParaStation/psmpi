@@ -64,7 +64,6 @@ int MPI_Win_create_keyval(MPI_Win_copy_attr_function *win_copy_attr_fn,
     static const char FCNAME[] = "MPI_Win_create_keyval";
     int mpi_errno = MPI_SUCCESS;
     MPID_Keyval *keyval_ptr;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_CREATE_KEYVAL);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -99,7 +98,6 @@ int MPI_Win_create_keyval(MPI_Win_copy_attr_function *win_copy_attr_fn,
        field */
     keyval_ptr->handle           = (keyval_ptr->handle & ~(0x03c00000)) |
 	(MPID_WIN << 22);
-    *win_keyval		         = keyval_ptr->handle;
     MPIU_Object_set_ref(keyval_ptr,1);
     keyval_ptr->was_freed        = 0;
     keyval_ptr->kind	         = MPID_WIN;
@@ -109,6 +107,7 @@ int MPI_Win_create_keyval(MPI_Win_copy_attr_function *win_copy_attr_fn,
     keyval_ptr->delfn.user_function = win_delete_attr_fn;
     keyval_ptr->delfn.proxy = MPIR_Attr_delete_c_proxy;
     
+    MPIU_OBJ_PUBLISH_HANDLE(*win_keyval, keyval_ptr->handle);
     /* ... end of body of routine ... */
 
   fn_exit:

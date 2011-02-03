@@ -385,7 +385,7 @@ static FILE *get_fp(void)
 #ifdef MPICH_IS_THREADED
     /* if we're not initialized, use the static fp, since there should
      * only be one thread in here until then */
-    if (mpiu_dbg_initialized == MPIU_DBG_INITIALIZED && MPIU_ISTHREADED()) {
+    if (mpiu_dbg_initialized == MPIU_DBG_INITIALIZED && MPIU_ISTHREADED) {
         FILE *fp;
         MPID_Thread_tls_get(&dbg_tls_key, &fp);
         return fp;
@@ -402,7 +402,7 @@ static void set_fp(FILE *fp)
 #ifdef MPICH_IS_THREADED
     /* if we're not initialized, use the static fp, since there should
      * only be one thread in here until then */
-    if (mpiu_dbg_initialized == MPIU_DBG_INITIALIZED && MPIU_ISTHREADED()) {
+    if (mpiu_dbg_initialized == MPIU_DBG_INITIALIZED && MPIU_ISTHREADED) {
         MPID_Thread_tls_set(&dbg_tls_key, (void *)fp);
     }
     else
@@ -422,14 +422,8 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
     void *p;
     MPID_Time_t t;
     double  curtime;
-    int threadID  = 0;
-    /* Note that pthread_self gives you an id that is the address of the 
-       thread's private data, which can be the same for all processes
-       in an executable.  Thus, the thread_id will not always serve as the 
-       way to separate threads in the output; that is, the thread id
-       is not necessarily unique (or unique with high probability) among 
-       processes. */
-    static int pid = -1;
+    unsigned long long int threadID  = 0;
+    int pid = -1;
     FILE *dbg_fp = NULL;
 
     if (mpiu_dbg_initialized == MPIU_DBG_UNINIT) return 0;
@@ -438,9 +432,12 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
 
 #ifdef MPICH_IS_THREADED
     {
+        /* the thread ID is not necessarily unique between processes, so a
+         * (pid,tid) pair should be used to uniquely identify output from
+         * particular threads on a system */
 	MPIU_Thread_id_t tid;
 	MPIU_Thread_self(&tid);
-	threadID = (int)tid;
+	threadID = (unsigned long long int)tid;
     }
 #endif
 #if defined(HAVE_GETPID)
@@ -461,7 +458,7 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
 	case 0:
 	    va_start(list,fmat);
 	    str = va_arg(list,char *);
-	    fprintf( dbg_fp, "%d\t%d\t%d[%d]\t%d\t%f\t%s\t%d\t%s\n",
+	    fprintf( dbg_fp, "%d\t%d\t%llx[%d]\t%d\t%f\t%s\t%d\t%s\n",
 		     worldNum, worldRank, threadID, pid, class, curtime, 
 		     file, line, str );
 	    break;
@@ -470,7 +467,7 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
 	    str = va_arg(list,char *);
 	    MPIU_Snprintf( stmp, sizeof(stmp), fmat, str );
 	    va_end(list);
-	    fprintf( dbg_fp, "%d\t%d\t%d[%d]\t%d\t%f\t%s\t%d\t%s\n",
+	    fprintf( dbg_fp, "%d\t%d\t%llx[%d]\t%d\t%f\t%s\t%d\t%s\n",
 		     worldNum, worldRank, threadID, pid, class, curtime, 
 		     file, line, stmp );
 	    break;
@@ -479,7 +476,7 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
 	    i = va_arg(list,int);
 	    MPIU_Snprintf( stmp, sizeof(stmp), fmat, i);
 	    va_end(list);
-	    fprintf( dbg_fp, "%d\t%d\t%d[%d]\t%d\t%f\t%s\t%d\t%s\n",
+	    fprintf( dbg_fp, "%d\t%d\t%llx[%d]\t%d\t%f\t%s\t%d\t%s\n",
 		     worldNum, worldRank, threadID, pid, class, curtime, 
 		     file, line, stmp );
 	    break;
@@ -488,7 +485,7 @@ int MPIU_DBG_Outevent( const char *file, int line, int class, int kind,
 	    p = va_arg(list,void *);
 	    MPIU_Snprintf( stmp, sizeof(stmp), fmat, p);
 	    va_end(list);
-	    fprintf( dbg_fp, "%d\t%d\t%d[%d]\t%d\t%f\t%s\t%d\t%s\n",
+	    fprintf( dbg_fp, "%d\t%d\t%llx[%d]\t%d\t%f\t%s\t%d\t%s\n",
 		     worldNum, worldRank, threadID, pid, class, curtime, 
 		     file, line, stmp );
 	    break;
@@ -846,10 +843,10 @@ static int MPIU_DBG_Open_temp_file(FILE **dbg_fp)
     MPIU_Strncpy(basename, temp_pattern, sizeof(temp_pattern));
     
     fd = mkstemp(temp_filename);
-    MPIU_ERR_CHKANDJUMP1(fd == -1, mpi_errno, MPI_ERR_OTHER, "**mkstemp", "**mkstemp %s", strerror(errno));
+    MPIU_ERR_CHKANDJUMP1(fd == -1, mpi_errno, MPI_ERR_OTHER, "**mkstemp", "**mkstemp %s", MPIU_Strerror(errno));
 
     *dbg_fp = fdopen(fd, "a+");
-    MPIU_ERR_CHKANDJUMP1(*dbg_fp == NULL, mpi_errno, MPI_ERR_OTHER, "**fdopen", "**fdopen %s", strerror(errno));
+    MPIU_ERR_CHKANDJUMP1(*dbg_fp == NULL, mpi_errno, MPI_ERR_OTHER, "**fdopen", "**fdopen %s", MPIU_Strerror(errno));
     
  fn_exit:
     return mpi_errno;
@@ -884,10 +881,10 @@ static int MPIU_DBG_Open_temp_file(FILE **dbg_fp)
     MPIU_Strncpy(basename, temp_pattern, sizeof(temp_pattern));
     
     ret_errno = _mktemp_s(temp_filename, MAXPATHLEN);
-    MPIU_ERR_CHKANDJUMP1(ret_errno != 0, mpi_errno, MPI_ERR_OTHER, "**mktemp_s", "**mktemp_s %s", strerror(ret_errno));
+    MPIU_ERR_CHKANDJUMP1(ret_errno != 0, mpi_errno, MPI_ERR_OTHER, "**mktemp_s", "**mktemp_s %s", MPIU_Strerror(ret_errno));
 
     ret_errno = fopen_s(dbg_fp, temp_filename, "a+");
-    MPIU_ERR_CHKANDJUMP1(ret_errno != 0, mpi_errno, MPI_ERR_OTHER, "**fopen_s", "**fopen_s %s", strerror(ret_errno));
+    MPIU_ERR_CHKANDJUMP1(ret_errno != 0, mpi_errno, MPI_ERR_OTHER, "**fopen_s", "**fopen_s %s", MPIU_Strerror(ret_errno));
     
  fn_exit:
     return mpi_errno;
@@ -917,10 +914,10 @@ static int MPIU_DBG_Open_temp_file(FILE **dbg_fp)
     char *cret;
 
     cret = tmpnam(temp_filename);
-    MPIU_ERR_CHKANDJUMP1(cret == NULL, mpi_errno, MPI_ERR_OTHER, "**tmpnam", "**tmpnam %s", strerror(errno));
+    MPIU_ERR_CHKANDJUMP1(cret == NULL, mpi_errno, MPI_ERR_OTHER, "**tmpnam", "**tmpnam %s", MPIU_Strerror(errno));
 
     *dbg_fp = fopen(temp_filename, "w");
-    MPIU_ERR_CHKANDJUMP1(*dbg_fp == NULL, mpi_errno, MPI_ERR_OTHER, "**fopen", "**fopen %s", strerror(errno));    
+    MPIU_ERR_CHKANDJUMP1(*dbg_fp == NULL, mpi_errno, MPI_ERR_OTHER, "**fopen", "**fopen %s", MPIU_Strerror(errno));    
     
  fn_exit:
     return mpi_errno;
@@ -940,7 +937,7 @@ static int MPIU_DBG_Get_filename(char *filename, int len)
     /* FIXME: Need to know how many MPI_COMM_WORLDs are known */
     int nWorld = 1;
 #ifdef MPICH_IS_THREADED
-    int threadID = 0;
+    unsigned long long int threadID = 0;
     int nThread = 2;
 #else
     int nThread = 1;
@@ -1015,13 +1012,13 @@ static int MPIU_DBG_Get_filename(char *filename, int len)
             }
             else if (*p == 't') {
 #ifdef MPICH_IS_THREADED
-                char threadIDAsChar[20];
+                char threadIDAsChar[30];
                 MPIU_Thread_id_t tid;
                 MPIU_Thread_self(&tid);
-                threadID = (int)tid;
+                threadID = (unsigned long long int)tid;
 
                 MPIU_Snprintf( threadIDAsChar, sizeof(threadIDAsChar), 
-                               "%d", threadID );
+                               "%llx", threadID );
                 *pDest = 0;
                 MPIU_Strnapp( filename, threadIDAsChar, len );
                 pDest += strlen(threadIDAsChar);

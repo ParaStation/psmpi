@@ -22,11 +22,53 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #undef MPI_Type_contiguous
 #define MPI_Type_contiguous PMPI_Type_contiguous
+
+#undef FUNCNAME
+#define FUNCNAME MPIR_Type_contiguous_impl
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPIR_Type_contiguous_impl(int count,
+                              MPI_Datatype old_type,
+                              MPI_Datatype *new_type_p)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPID_Datatype *new_dtp;
+    MPI_Datatype new_handle;
+    
+    mpi_errno = MPID_Type_contiguous(count,
+				     old_type,
+				     &new_handle);
+
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+    MPID_Datatype_get_ptr(new_handle, new_dtp);
+    mpi_errno = MPID_Datatype_set_contents(new_dtp,
+				           MPI_COMBINER_CONTIGUOUS,
+				           1, /* ints (count) */
+				           0,
+				           1,
+				           &count,
+				           NULL,
+				           &old_type);
+
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+    MPIU_OBJ_PUBLISH_HANDLE(*new_type_p, new_handle);
+
+ fn_exit:
+    return mpi_errno;
+ fn_fail:
+
+    goto fn_exit;
+}
+
 #endif
+
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Type_contiguous
-
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
     MPI_Type_contiguous - Creates a contiguous datatype
 
@@ -51,10 +93,7 @@ int MPI_Type_contiguous(int count,
 			MPI_Datatype old_type,
 			MPI_Datatype *new_type_p)
 {
-    static const char FCNAME[] = "MPI_Type_contiguous";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Datatype *new_dtp;
-    MPIU_THREADPRIV_DECL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_CONTIGUOUS);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -86,24 +125,9 @@ int MPI_Type_contiguous(int count,
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ... */
-    
-    mpi_errno = MPID_Type_contiguous(count,
-				     old_type,
-				     new_type_p);
 
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-
-    MPID_Datatype_get_ptr(*new_type_p, new_dtp);
-    mpi_errno = MPID_Datatype_set_contents(new_dtp,
-				           MPI_COMBINER_CONTIGUOUS,
-				           1, /* ints (count) */
-				           0,
-				           1,
-				           &count,
-				           NULL,
-				           &old_type);
-
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    mpi_errno = MPIR_Type_contiguous_impl(count, old_type, new_type_p);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     /* ... end of body of routine ... */
     
@@ -125,11 +149,3 @@ int MPI_Type_contiguous(int count,
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
-
-
-
-
-
-
-
-

@@ -1,5 +1,6 @@
 /*
- * Copyright © 2009 CNRS, INRIA, Université Bordeaux 1
+ * Copyright © 2009 INRIA
+ * Copyright © 2009 Université Bordeaux 1
  * See COPYING in top-level directory.
  */
 
@@ -7,7 +8,7 @@
 #define HWLOC_PORT_SYS_THREAD_H
 
 typedef long tid_t;
-tid_t thread_self();
+tid_t thread_self(void);
 struct __pthrdsinfo {
   tid_t __pi_tid;
 };
