@@ -11,21 +11,21 @@
 <file name="buffree.c" info="1274381077"/>
 <file name="send_init.c" info="1280271650"/>
 <file name="startall.c" info="1274381077"/>
+<file name="cancel.c" info="1280505102"/>
 <file name="sendrecv.c" info="1280271254"/>
 <file name="probe.c" info="1274381077"/>
-<file name="cancel.c" info="1280505102"/>
 <file name="sendrecv_rep.c" info="1281541879"/>
-<file name="rsend_init.c" info="1280271650"/>
 <file name="iprobe.c" info="1274381077"/>
+<file name="rsend_init.c" info="1280271650"/>
 <file name="waitall.c" info="1281387994"/>
 <file name="testsome.c" info="1280271254"/>
 <file name="waitany.c" info="1280271254"/>
 <file name="request_free.c" info="1274381077"/>
-<file name="waitsome.c" info="1280271254"/>
-<file name="start.c" info="1274381077"/>
-<file name="mpir_request.c" info="1281541879"/>
-<file name="greq_complete.c" info="1280501751"/>
 <file name="bsend_init.c" info="1280271650"/>
+<file name="start.c" info="1274381077"/>
+<file name="waitsome.c" info="1280271254"/>
+<file name="greq_complete.c" info="1280501751"/>
+<file name="mpir_request.c" info="1281541879"/>
 <file name="request_get_status.c" info="1281541879"/>
 <file name="status_set_cancelled.c" info="1194043819"/>
 <file name="testany.c" info="1280271254"/>
@@ -78,23 +78,23 @@ MPID_STATE_MPI_SEND_INIT MPI_Send_init
 <fileinfo name="startall.c">
 MPID_STATE_MPI_STARTALL MPI_Startall
 </fileinfo>
+<fileinfo name="cancel.c">
+MPID_STATE_MPI_CANCEL MPI_Cancel
+</fileinfo>
 <fileinfo name="sendrecv.c">
 MPID_STATE_MPI_SENDRECV MPI_Sendrecv
 </fileinfo>
 <fileinfo name="probe.c">
 MPID_STATE_MPI_PROBE MPI_Probe
 </fileinfo>
-<fileinfo name="cancel.c">
-MPID_STATE_MPI_CANCEL MPI_Cancel
-</fileinfo>
 <fileinfo name="sendrecv_rep.c">
 MPID_STATE_MPI_SENDRECV_REPLACE MPI_Sendrecv_replace
 </fileinfo>
-<fileinfo name="rsend_init.c">
-MPID_STATE_MPI_RSEND_INIT MPI_Rsend_init
-</fileinfo>
 <fileinfo name="iprobe.c">
 MPID_STATE_MPI_IPROBE MPI_Iprobe
+</fileinfo>
+<fileinfo name="rsend_init.c">
+MPID_STATE_MPI_RSEND_INIT MPI_Rsend_init
 </fileinfo>
 <fileinfo name="waitall.c">
 MPID_STATE_MPI_WAITALL MPI_Waitall
@@ -108,19 +108,19 @@ MPID_STATE_MPI_WAITANY MPI_Waitany
 <fileinfo name="request_free.c">
 MPID_STATE_MPI_REQUEST_FREE MPI_Request_free
 </fileinfo>
-<fileinfo name="waitsome.c">
-MPID_STATE_MPI_WAITSOME MPI_Waitsome
+<fileinfo name="bsend_init.c">
+MPID_STATE_MPI_BSEND_INIT MPI_Bsend_init
 </fileinfo>
 <fileinfo name="start.c">
 MPID_STATE_MPI_START MPI_Start
 </fileinfo>
-<fileinfo name="mpir_request.c">
+<fileinfo name="waitsome.c">
+MPID_STATE_MPI_WAITSOME MPI_Waitsome
 </fileinfo>
 <fileinfo name="greq_complete.c">
 MPID_STATE_MPI_GREQUEST_COMPLETE MPI_Grequest_complete
 </fileinfo>
-<fileinfo name="bsend_init.c">
-MPID_STATE_MPI_BSEND_INIT MPI_Bsend_init
+<fileinfo name="mpir_request.c">
 </fileinfo>
 <fileinfo name="request_get_status.c">
 MPID_STATE_MPI_REQUEST_GET_STATUS MPI_Request_get_status

@@ -15,12 +15,10 @@ int MPI_Type_free(MPI_Datatype *datatype)
 .SH PREDEFINED TYPES
 
 The MPI standard states that (in Opaque Objects)
-.in 1cm
-
+qs
 MPI provides certain predefined opaque objects and predefined, static handles
 to these objects. Such objects may not be destroyed.
-.in
-
+qe
 
 Thus, it is an error to free a predefined datatype.  The same section makes
 it clear that it is an error to free a null datatype.

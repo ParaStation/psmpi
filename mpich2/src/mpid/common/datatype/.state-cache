@@ -7,8 +7,8 @@
 <file name="mpid_segment.c" info="1283298904"/>
 <file name="mpid_ext32_segment.h" info="1283298904"/>
 <file name="mpid_type_indexed.c" info="1240497719"/>
-<file name="mpir_type_flatten.c" info="1261095846"/>
 <file name="segment_states.h" info="1194043819"/>
+<file name="mpir_type_flatten.c" info="1261095846"/>
 <file name="mpid_type_get_contents.c" info="1194043819"/>
 <file name="mpid_type_get_envelope.c" info="1194043819"/>
 <file name="mpir_type_get_contig_blocks.c" info="1236985701"/>
@@ -22,8 +22,8 @@
 <file name="mpid_dataloop.h" info="1271364812"/>
 <file name="mpid_datatype_contents.c" info="1244842249"/>
 <file name="mpid_ext32_segment.c" info="1244842249"/>
-<file name="mpid_type_create_resized.c" info="1194043819"/>
 <file name="mpid_type_zerolen.c" info="1194043819"/>
+<file name="mpid_type_create_resized.c" info="1194043819"/>
 </dir>
 <data>
 <fileinfo name="mpid_type_debug.c">
@@ -49,9 +49,9 @@ MPID_STATE_MPID_SEGMENT_VECTOR_FLATTEN MPID_Segment_vector_flatten
 </fileinfo>
 <fileinfo name="mpid_type_indexed.c">
 </fileinfo>
-<fileinfo name="mpir_type_flatten.c">
-</fileinfo>
 <fileinfo name="segment_states.h">
+</fileinfo>
+<fileinfo name="mpir_type_flatten.c">
 </fileinfo>
 <fileinfo name="mpid_type_get_contents.c">
 </fileinfo>
@@ -83,8 +83,8 @@ MPID_STATE_MPID_SEGMENT_CONTIG_UNPACK_EXTERNAL32_TO_BUF MPID_Segment_contig_unpa
 MPID_STATE_MPID_SEGMENT_PACK_EXTERNAL MPID_Segment_pack_external32
 MPID_STATE_MPID_SEGMENT_UNPACK_EXTERNAL32 MPID_Segment_unpack_external32
 </fileinfo>
-<fileinfo name="mpid_type_create_resized.c">
-</fileinfo>
 <fileinfo name="mpid_type_zerolen.c">
+</fileinfo>
+<fileinfo name="mpid_type_create_resized.c">
 </fileinfo>
 </data>

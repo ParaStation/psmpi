@@ -1,4 +1,4 @@
-#! /opt/local/bin/perl -w
+#! /usr/bin/perl -w
 # -*- Mode: perl; -*-
 # This file contains the routines specific to extracting the states from 
 # the source files and writing them to the .states-cache files.  This

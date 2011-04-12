@@ -3,8 +3,8 @@
 <file name="win_free.c" info="1280864247"/>
 <file name="accumulate.c" info="1289055764"/>
 <file name="win_set_name.c" info="1194043819"/>
-<file name="win_create.c" info="1280271650"/>
 <file name="win_get_group.c" info="1289055764"/>
+<file name="win_create.c" info="1280271650"/>
 <file name="win_wait.c" info="1274381077"/>
 <file name="win_complete.c" info="1274381077"/>
 <file name="win_post.c" info="1274381077"/>
@@ -33,11 +33,11 @@ MPID_STATE_MPI_ACCUMULATE MPI_Accumulate
 <fileinfo name="win_set_name.c">
 MPID_STATE_MPI_WIN_SET_NAME MPI_Win_set_name
 </fileinfo>
-<fileinfo name="win_create.c">
-MPID_STATE_MPI_WIN_CREATE MPI_Win_create
-</fileinfo>
 <fileinfo name="win_get_group.c">
 MPID_STATE_MPI_WIN_GET_GROUP MPI_Win_get_group
+</fileinfo>
+<fileinfo name="win_create.c">
+MPID_STATE_MPI_WIN_CREATE MPI_Win_create
 </fileinfo>
 <fileinfo name="win_wait.c">
 MPID_STATE_MPI_WIN_WAIT MPI_Win_wait

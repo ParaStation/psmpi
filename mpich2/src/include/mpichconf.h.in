@@ -92,6 +92,9 @@
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
 
+/* Define to 1 if you have the <complex.h> header file. */
+#undef HAVE_COMPLEX_H
+
 /* Define if CPU_SET and CPU_ZERO defined */
 #undef HAVE_CPU_SET_MACROS
 
@@ -346,6 +349,9 @@
 
 /* Define to 1 if you have the <stdarg.h> header file. */
 #undef HAVE_STDARG_H
+
+/* Define to 1 if you have the <stdbool.h> header file. */
+#undef HAVE_STDBOOL_H
 
 /* Define to 1 if you have the <stddef.h> header file. */
 #undef HAVE_STDDEF_H

@@ -3,8 +3,8 @@
 <file name="ad_piofs.h" info="1218739596"/>
 <file name="ad_piofs_open.c" info="1274813953"/>
 <file name="ad_piofs_read.c" info="1194043819"/>
-<file name="ad_piofs.c" info="1218739596"/>
 <file name="ad_piofs_fcntl.c" info="1194043819"/>
+<file name="ad_piofs.c" info="1218739596"/>
 <file name="ad_piofs_features.c" info="1218739596"/>
 <file name="ad_piofs_write.c" info="1194043819"/>
 </dir>
@@ -17,9 +17,9 @@
 </fileinfo>
 <fileinfo name="ad_piofs_read.c">
 </fileinfo>
-<fileinfo name="ad_piofs.c">
-</fileinfo>
 <fileinfo name="ad_piofs_fcntl.c">
+</fileinfo>
+<fileinfo name="ad_piofs.c">
 </fileinfo>
 <fileinfo name="ad_piofs_features.c">
 </fileinfo>

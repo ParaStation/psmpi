@@ -1,4 +1,4 @@
-#! /opt/local/bin/perl
+#! /usr/bin/perl
 # -*- Mode: perl; -*-
 # checkbuilds.  Generated from checkbuilds.in by configure.
 #
