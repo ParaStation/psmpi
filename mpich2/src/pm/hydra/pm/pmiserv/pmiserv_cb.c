@@ -117,6 +117,10 @@ static HYD_status cleanup_proxy(struct HYD_proxy *proxy)
     if (pg->pgid == 0)
         HYDT_dbg_free_procdesc();
 
+    /* Reset the node allocations for this PG */
+    for (tproxy = pg->proxy_list; tproxy; tproxy = tproxy->next)
+        tproxy->node->active_processes -= tproxy->proxy_process_count;
+
   fn_exit:
     HYDU_FUNC_EXIT();
     return status;
@@ -125,9 +129,70 @@ static HYD_status cleanup_proxy(struct HYD_proxy *proxy)
     goto fn_exit;
 }
 
+static HYD_status cleanup_pg(struct HYD_pg *pg)
+{
+    struct HYD_proxy *proxy;
+    HYD_status status = HYD_SUCCESS;
+
+    HYDU_FUNC_ENTER();
+
+    for (proxy = pg->proxy_list; proxy; proxy = proxy->next) {
+        status = cleanup_proxy(proxy);
+        HYDU_ERR_POP(status, "unable to cleanup proxy\n");
+    }
+
+  fn_exit:
+    HYDU_FUNC_EXIT();
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
+HYD_status HYD_pmcd_pmiserv_cleanup_all_pgs(void)
+{
+    struct HYD_pg *pg;
+    HYD_status status = HYD_SUCCESS;
+
+    HYDU_FUNC_ENTER();
+
+    for (pg = &HYD_server_info.pg_list; pg; pg = pg->next) {
+        status = cleanup_pg(pg);
+        HYDU_ERR_POP(status, "unable to cleanup PG\n");
+    }
+
+  fn_exit:
+    HYDU_FUNC_EXIT();
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
+HYD_status HYD_pmcd_pmiserv_send_signal(struct HYD_proxy *proxy, int signum)
+{
+    struct HYD_pmcd_hdr hdr;
+    int sent, closed;
+    HYD_status status = HYD_SUCCESS;
+
+    HYD_pmcd_init_header(&hdr);
+    hdr.cmd = SIGNAL;
+    hdr.signum = signum;
+
+    status = HYDU_sock_write(proxy->control_fd, &hdr, sizeof(hdr), &sent, &closed);
+    HYDU_ERR_POP(status, "unable to write data to proxy\n");
+    HYDU_ASSERT(!closed, status);
+
+  fn_exit:
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
 static HYD_status control_cb(int fd, HYD_event_t events, void *userp)
 {
-    int count, closed, sent, i;
+    int count, closed, i;
     struct HYD_pg *pg;
     struct HYD_pmcd_hdr hdr;
     struct HYD_proxy *proxy, *tproxy;
@@ -190,9 +255,21 @@ static HYD_status control_cb(int fd, HYD_event_t events, void *userp)
          * processes */
         if (HYD_server_info.user_global.auto_cleanup) {
             for (i = 0; i < proxy->proxy_process_count; i++) {
-                if (proxy->exit_status[i]) {
-                    HYDU_dump(stdout, "ONE OF THE PROCESSES TERMINATED BADLY: CLEANING UP\n");
-                    status = HYD_pmcd_pmiserv_cleanup_pg(proxy->pg);
+                if (!WIFEXITED(proxy->exit_status[i])) {
+                    HYDU_dump_noprefix
+                        (stdout, "\n====================================================");
+                    HYDU_dump_noprefix(stdout, "=================================\n");
+                    HYDU_dump_noprefix
+                        (stdout, "=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES\n");
+                    HYDU_dump_noprefix(stdout, "=   EXIT CODE: %d\n", proxy->exit_status[i]);
+                    HYDU_dump_noprefix(stdout, "=   CLEANING UP REMAINING PROCESSES\n");
+                    HYDU_dump_noprefix(stdout,
+                                       "=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES\n");
+                    HYDU_dump_noprefix(stdout,
+                                       "====================================================");
+                    HYDU_dump_noprefix(stdout, "=================================\n");
+
+                    status = HYD_pmcd_pmiserv_cleanup_all_pgs();
                     HYDU_ERR_POP(status, "unable to cleanup processes\n");
                     break;
                 }
@@ -264,8 +341,8 @@ static HYD_status control_cb(int fd, HYD_event_t events, void *userp)
             if (pg_scratch->dead_process_count == 1) {
                 /* This is the first dead process */
                 HYDU_FREE(pg_scratch->dead_processes);
-                HYDU_MALLOC(pg_scratch->dead_processes, char *, MAXVALLEN, status);
-                HYDU_snprintf(pg_scratch->dead_processes, MAXVALLEN, "%d", hdr.pid);
+                HYDU_MALLOC(pg_scratch->dead_processes, char *, PMI_MAXVALLEN, status);
+                HYDU_snprintf(pg_scratch->dead_processes, PMI_MAXVALLEN, "%d", hdr.pid);
             }
             else {
                 /* FIXME: If the list of dead processes does not fit
@@ -350,18 +427,19 @@ static HYD_status control_cb(int fd, HYD_event_t events, void *userp)
 
                 str = NULL;
                 for (e = list; e; e = e->next) {
-                    HYDU_MALLOC(run, char *, MAXVALLEN, status);
+                    HYDU_MALLOC(run, char *, PMI_MAXVALLEN, status);
                     if (str) {
                         if (e->start == e->end)
-                            HYDU_snprintf(run, MAXVALLEN, "%s,%d", str, e->start);
+                            HYDU_snprintf(run, PMI_MAXVALLEN, "%s,%d", str, e->start);
                         else
-                            HYDU_snprintf(run, MAXVALLEN, "%s,%d-%d", str, e->start, e->end);
+                            HYDU_snprintf(run, PMI_MAXVALLEN, "%s,%d-%d", str, e->start,
+                                          e->end);
                     }
                     else {
                         if (e->start == e->end)
-                            HYDU_snprintf(run, MAXVALLEN, "%d", e->start);
+                            HYDU_snprintf(run, PMI_MAXVALLEN, "%d", e->start);
                         else
-                            HYDU_snprintf(run, MAXVALLEN, "%d-%d", e->start, e->end);
+                            HYDU_snprintf(run, PMI_MAXVALLEN, "%d-%d", e->start, e->end);
                     }
                     if (str)
                         HYDU_FREE(str);
@@ -380,12 +458,8 @@ static HYD_status control_cb(int fd, HYD_event_t events, void *userp)
                         tproxy->proxy_id == proxy->proxy_id)
                         continue;
 
-                    HYD_pmcd_init_header(&hdr);
-                    hdr.cmd = SIGNAL_PROCESSES;
-                    status = HYDU_sock_write(tproxy->control_fd, &hdr, sizeof(hdr), &sent,
-                                             &closed);
-                    HYDU_ERR_POP(status, "unable to write data to proxy\n");
-                    HYDU_ASSERT(!closed, status);
+                    status = HYD_pmcd_pmiserv_send_signal(tproxy, SIGUSR1);
+                    HYDU_ERR_POP(status, "unable to send SIGUSR1 downstream\n");
                 }
             }
         }
@@ -533,26 +607,6 @@ HYD_status HYD_pmcd_pmiserv_control_listen_cb(int fd, HYD_event_t events, void *
     status = HYDT_dmx_register_fd(1, &accept_fd, HYD_POLLIN, userp,
                                   HYD_pmcd_pmiserv_proxy_init_cb);
     HYDU_ERR_POP(status, "unable to register fd\n");
-
-  fn_exit:
-    HYDU_FUNC_EXIT();
-    return status;
-
-  fn_fail:
-    goto fn_exit;
-}
-
-HYD_status HYD_pmcd_pmiserv_cleanup_pg(struct HYD_pg *pg)
-{
-    struct HYD_proxy *proxy;
-    HYD_status status = HYD_SUCCESS;
-
-    HYDU_FUNC_ENTER();
-
-    for (proxy = pg->proxy_list; proxy; proxy = proxy->next) {
-        status = cleanup_proxy(proxy);
-        HYDU_ERR_POP(status, "unable to cleanup proxy\n");
-    }
 
   fn_exit:
     HYDU_FUNC_EXIT();

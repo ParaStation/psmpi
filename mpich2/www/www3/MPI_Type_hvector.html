@@ -15,17 +15,20 @@ int MPI_Type_hvector(int count,
                     MPI_Datatype old_type,
                     MPI_Datatype *newtype_p)
 </PRE>
-<H2>Arguments</H2>
+<H2>Input Parameters</H2>
 <DL>
-<DT><B>int count </B><DD>count
+<DT><B>count </B><DD>number of blocks (nonnegative integer) 
 
-<DT><B>int blocklen </B><DD>blocklen
+<DT><B>blocklength </B><DD>number of elements in each block 
+(nonnegative integer)
 
-<DT><B>MPI_Aint stride </B><DD>stride
+<DT><B>stride </B><DD>number of bytes between start of each block (integer) 
 
-<DT><B>MPI_Datatype old_type </B><DD>old datatype
-
-<DT><B>MPI_Datatype *newtype </B><DD>new datatype
+<DT><B>oldtype </B><DD>old datatype (handle) 
+</DL>
+<P>
+<H2>Output Parameter</H2>
+<DL><DT><B>newtype_p </B> <DD> new datatype (handle) 
 </DL>
 <P>
 <H2>Notes</H2>

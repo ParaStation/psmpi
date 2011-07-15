@@ -47,5 +47,6 @@ int MPI_Status_c2f( MPI_Status *c_status, MPI_Fint *f_status )
 	return MPIR_Err_return_comm( 0, "MPI_Status_c2f",  mpi_errno );
     }
     *(MPI_Status *)f_status = *c_status;
+
     return MPI_SUCCESS;
 }

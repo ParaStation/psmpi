@@ -14,9 +14,9 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT  = @INSTALL_SCRIPT@
 INSTALL_DATA    = @INSTALL_DATA@
 MKDIR_P         = @MKDIR_P@
-master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
 abs_builddir    = @abs_builddir@
+master_top_srcdir  = @master_top_srcdir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 prefix          = @prefix@
@@ -86,8 +86,7 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile
-all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a irlog2rlog printirlog printrlog\
-	 minalignrlog
+all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a
 	@if [ "@ENABLE_SHLIB@" != "none" ] ; then \
 	    ${MAKE} .libstamp1 || exit 1; \
 	fi
@@ -116,25 +115,29 @@ all-redirect: .libstamp0 ../../../../lib/lib${MPILIBNAME}.a irlog2rlog printirlo
 	date > .libstamp1
 printrlog: printrlog.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o printrlog printrlog.o  -L../../../../lib \
-	-L${master_top_srcdir}/lib -lmpich ${LIBS} 
+	-l${MPILIBNAME} -lmpl ${LIBS} 
 printirlog: printirlog.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o printirlog printirlog.o  -L../../../../lib \
-	-L${master_top_srcdir}/lib -lmpich ${LIBS} 
+	-l${MPILIBNAME} -lmpl ${LIBS} 
 minalignrlog: minalignrlog.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o minalignrlog minalignrlog.o  -L../../../../lib \
-	-L${master_top_srcdir}/lib -lmpich ${LIBS} 
+	-l${MPILIBNAME} -lmpl ${LIBS} 
 irlog2rlog: irlog2rlog.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o irlog2rlog irlog2rlog.o  -L../../../../lib \
-	-L${master_top_srcdir}/lib -lmpich ${LIBS} 
+	-l${MPILIBNAME} -lmpl ${LIBS} 
 # --------------------------------------------------------------------------
 # Install target
-install:  FORCE_TARGET 
+install:  install-preamble FORCE_TARGET 
 	if [ ! -d ${DESTDIR}${exec_prefix} ] ; then $(MKDIR_P) ${DESTDIR}${exec_prefix} ; fi
 	if [ ! -d ${DESTDIR}${prefix} ] ; then $(MKDIR_P) ${DESTDIR}${prefix} ; fi
 	if [ ! -d ${DESTDIR}${bindir} ] ; then $(MKDIR_P) ${DESTDIR}${bindir} ; fi
 	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)  printrlog ${DESTDIR}${bindir}/printrlog
 	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)  printirlog ${DESTDIR}${bindir}/printirlog
 	$(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)  irlog2rlog ${DESTDIR}${bindir}/irlog2rlog
+	if [ -s irlog2rlog ] ; then $(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)  irlog2rlog ${DESTDIR}${bindir}/irlog2rlog ; fi
+	if [ -s printirlog ] ; then $(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)  printirlog ${DESTDIR}${bindir}/printirlog ; fi
+	if [ -s printrlog ] ; then $(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)  printrlog ${DESTDIR}${bindir}/printrlog ; fi
+	if [ -s minalignrlog ] ; then $(INSTALL_PROGRAM) $(INSTALL_STRIP_FLAG)  minalignrlog ${DESTDIR}${bindir}/minalignrlog ; fi
 
 install-strip:
 	$(MAKE) INSTALL_STRIP_FLAG=-s install
@@ -142,6 +145,10 @@ uninstall:
 	-rm -f ${DESTDIR}${bindir}/printrlog
 	-rm -f ${DESTDIR}${bindir}/printirlog
 	-rm -f ${DESTDIR}${bindir}/irlog2rlog
+	-rm -f ${DESTDIR}${bindir}/irlog2rlog
+	-rm -f ${DESTDIR}${bindir}/printirlog
+	-rm -f ${DESTDIR}${bindir}/printrlog
+	-rm -f ${DESTDIR}${bindir}/minalignrlog
 installcheck: 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -151,11 +158,15 @@ HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
 #SUBDIRS = TraceInput .
+# These programs require some of the utilities used by the MPICH library.
+# They are not MPI programs and they do not require MPI-specific services
+
+# We can't build these until after the MPI libraries are completed
+
+install-preamble:  irlog2rlog printirlog printrlog minalignrlog
+
 distclean-local:
 	@-rm -f rlogconf.h
-
-mpich2-build-install: install
-mpich2-build-uninstall: uninstall
 
 .POSIX:
 

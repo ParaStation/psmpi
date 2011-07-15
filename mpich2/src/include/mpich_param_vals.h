@@ -1,12 +1,12 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2010 by Argonne National Laboratory.
+ *  (C) 2011 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 /* automatically generated
  *   by:   ./maint/genparams
- *   on:   Mon Feb 14 19:11:14 2011
- *   from: src/util/param/params.yml (md5sum 5d8dcd1c2726878fe02f95795c8a426e)
+ *   on:   Thu Jun 16 16:44:54 2011
+ *   from: src/util/param/params.yml (md5sum a5daec576251497b00e472280d6bc3ba)
  *
  * DO NOT EDIT!!!
  */
@@ -28,6 +28,7 @@ enum MPIR_Param_category_id_t {
     MPIR_PARAM_CATEGORY_ID_fault_tolerance,
     MPIR_PARAM_CATEGORY_ID_threads,
     MPIR_PARAM_CATEGORY_ID_nemesis,
+    MPIR_PARAM_CATEGORY_ID_sockets,
     MPIR_PARAM_NUM_CATEGORIES
 };
 
@@ -60,6 +61,7 @@ enum MPIR_Param_id_t {
     MPIR_PARAM_ID_ALLGATHERV_PIPELINE_MSG_SIZE,
     MPIR_PARAM_ID_COMM_SPLIT_USE_QSORT,
     MPIR_PARAM_ID_NOLOCAL,
+    MPIR_PARAM_ID_ODD_EVEN_CLIQUES,
     MPIR_PARAM_ID_MEMDUMP,
     MPIR_PARAM_ID_PROCTABLE_SIZE,
     MPIR_PARAM_ID_PROCTABLE_PRINT,
@@ -71,6 +73,7 @@ enum MPIR_Param_id_t {
     MPIR_PARAM_ID_ENABLE_CKPOINT,
     MPIR_PARAM_ID_ENABLE_COLL_FT_RET,
     MPIR_PARAM_ID_ABORT_ON_LEAKED_HANDLES,
+    MPIR_PARAM_ID_PORT_RANGE,
     MPIR_PARAM_NUM_PARAMS
 };
 
@@ -82,8 +85,14 @@ enum MPIR_Param_type_t {
     MPIR_PARAM_TYPE_INT,
     MPIR_PARAM_TYPE_DOUBLE,
     MPIR_PARAM_TYPE_BOOLEAN,
-    MPIR_PARAM_TYPE_STRING
+    MPIR_PARAM_TYPE_STRING,
+    MPIR_PARAM_TYPE_RANGE
 };
+
+typedef struct MPIR_Param_param_range_val {
+    int low;
+    int high;
+} MPIR_Param_param_range_val_t;
 
 /* used to represent default values */
 struct MPIR_Param_param_default_val_t {
@@ -93,6 +102,7 @@ struct MPIR_Param_param_default_val_t {
     const int i_val; /* also used for booleans */
     const double d_val;
     const char *s_val;
+    const MPIR_Param_param_range_val_t r_val;
 };
 
 struct MPIR_Param_t {
@@ -126,6 +136,7 @@ extern int MPIR_PARAM_SCATTER_INTER_SHORT_MSG_SIZE;
 extern int MPIR_PARAM_ALLGATHERV_PIPELINE_MSG_SIZE;
 extern int MPIR_PARAM_COMM_SPLIT_USE_QSORT;
 extern int MPIR_PARAM_NOLOCAL;
+extern int MPIR_PARAM_ODD_EVEN_CLIQUES;
 extern int MPIR_PARAM_MEMDUMP;
 extern int MPIR_PARAM_PROCTABLE_SIZE;
 extern int MPIR_PARAM_PROCTABLE_PRINT;
@@ -137,6 +148,7 @@ extern int MPIR_PARAM_DEBUG_HOLD;
 extern int MPIR_PARAM_ENABLE_CKPOINT;
 extern int MPIR_PARAM_ENABLE_COLL_FT_RET;
 extern int MPIR_PARAM_ABORT_ON_LEAKED_HANDLES;
+extern MPIR_Param_param_range_val_t MPIR_PARAM_PORT_RANGE;
 
 /* TODO: this should be defined elsewhere */
 #define MPIR_Param_assert MPIU_Assert
@@ -161,6 +173,11 @@ extern int MPIR_PARAM_ABORT_ON_LEAKED_HANDLES;
     do {                                                                                               \
         MPIR_Param_assert(MPIR_PARAM_TYPE_STRING == MPIR_Param_params[MPIR_PARAM_ID_##p_suffix_].default_val.type); \
         *(out_ptr_) = MPIR_Param_params[MPIR_PARAM_ID_##p_suffix_].default_val.s_val;                      \
+    } while (0)
+#define MPIR_PARAM_GET_DEFAULT_RANGE(p_suffix_,out_ptr_)                                               \
+    do {                                                                                               \
+        MPIR_Param_assert(MPIR_PARAM_TYPE_RANGE == MPIR_Param_params[MPIR_PARAM_ID_##p_suffix_].default_val.type); \
+        *(out_ptr_) = MPIR_Param_params[MPIR_PARAM_ID_##p_suffix_].default_val.r_val;                      \
     } while (0)
 
 #endif /* MPICH_PARAM_VALS_H_INCLUDED */

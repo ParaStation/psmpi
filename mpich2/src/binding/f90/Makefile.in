@@ -14,9 +14,9 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT  = @INSTALL_SCRIPT@
 INSTALL_DATA    = @INSTALL_DATA@
 MKDIR_P         = @MKDIR_P@
-master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
 abs_builddir    = @abs_builddir@
+master_top_srcdir  = @master_top_srcdir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 prefix          = @prefix@
@@ -179,11 +179,11 @@ lib${MPILIBNAME}f90.la: mpi.lo mpi_constants.lo mpi_sizeofs.lo mpi_base.lo
 .libstamp2: _create_f90_int.o _create_f90_real.o _create_f90_complex.o _typef90cmplxf.o _typef90realf.o \
 	_typef90intf.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/libp${MPILIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/libp${MPILIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/libp${MPILIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/libp${MPILIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../lib/libp${MPILIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../lib/libp${MPILIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          libp${MPILIBNAME}.a" ; \
 	else \
@@ -194,11 +194,11 @@ lib${MPILIBNAME}f90.la: mpi.lo mpi_constants.lo mpi_sizeofs.lo mpi_base.lo
 .libstamp3: _create_f90_int.lo _create_f90_real.lo _create_f90_complex.lo _typef90cmplxf.lo _typef90realf.lo \
 	_typef90intf.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/libp${MPILIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/libp${MPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/libp${MPILIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/libp${MPILIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../lib/libp${MPILIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../lib/libp${MPILIBNAME}.la $?
 	date > .libstamp3
 _create_f90_int.o: create_f90_int.c
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \

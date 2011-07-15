@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include "collutil.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Reduce */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -46,16 +47,10 @@ static int MPIR_Reduce_binomial (
     MPI_Status status;
     int comm_size, rank, is_commutative, type_size;
     int mask, relrank, source, lroot;
-    MPI_User_function *uop;
     MPI_Aint true_lb, true_extent, extent; 
     void *tmp_buf;
-    MPID_Op *op_ptr;
     MPI_Comm comm;
-#ifdef HAVE_CXX_BINDING
-    int is_cxx_uop = 0;
-#endif
     MPIU_CHKLMEM_DECL(2);
-    MPIU_THREADPRIV_DECL;
 
     if (count == 0) return MPI_SUCCESS;
 
@@ -63,39 +58,12 @@ static int MPIR_Reduce_binomial (
     comm_size = comm_ptr->local_size;
     rank = comm_ptr->rank;
 
-    /* set op_errno to 0. stored in perthread structure */
-    MPIU_THREADPRIV_GET;
-    MPIU_THREADPRIV_FIELD(op_errno) = 0;
-
     /* Create a temporary buffer */
 
     MPIR_Type_get_true_extent_impl(datatype, &true_lb, &true_extent);
     MPID_Datatype_get_extent_macro(datatype, extent);
 
-    if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
-        is_commutative = 1;
-        /* get the function by indexing into the op table */
-        uop = MPIR_Op_table[op%16 - 1];
-    }
-    else {
-        MPID_Op_get_ptr(op, op_ptr);
-        if (op_ptr->kind == MPID_OP_USER_NONCOMMUTE)
-            is_commutative = 0;
-        else
-            is_commutative = 1;
-        
-#ifdef HAVE_CXX_BINDING            
-            if (op_ptr->language == MPID_LANG_CXX) {
-                uop = (MPI_User_function *) op_ptr->function.c_function;
-                is_cxx_uop = 1;
-            }
-            else
-#endif
-        if ((op_ptr->language == MPID_LANG_C))
-            uop = (MPI_User_function *) op_ptr->function.c_function;
-        else
-            uop = (MPI_User_function *) op_ptr->function.f77_function;
-    }
+    is_commutative = MPIR_Op_is_commutative(op);
 
     /* I think this is the worse case, so we can avoid an assert() 
      * inside the for loop */
@@ -180,24 +148,13 @@ static int MPIR_Reduce_binomial (
                 /* The sender is above us, so the received buffer must be
                    the second argument (in the noncommutative case). */
                 if (is_commutative) {
-#ifdef HAVE_CXX_BINDING
-                    if (is_cxx_uop) {
-                        (*MPIR_Process.cxx_call_op_fn)( tmp_buf, recvbuf, 
-                                                        count, datatype, uop );
-                    }
-                    else 
-#endif
-                        (*uop)(tmp_buf, recvbuf, &count, &datatype);
+                    mpi_errno = MPIR_Reduce_local_impl(tmp_buf, recvbuf, count, datatype, op);
+                    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
                 }
                 else {
-#ifdef HAVE_CXX_BINDING
-                    if (is_cxx_uop) {
-                        (*MPIR_Process.cxx_call_op_fn)( recvbuf, tmp_buf,
-                                                        count, datatype, uop );
-                    }
-                    else 
-#endif
-                        (*uop)(recvbuf, tmp_buf, &count, &datatype);
+                    mpi_errno = MPIR_Reduce_local_impl(recvbuf, tmp_buf, count, datatype, op);
+                    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
                     mpi_errno = MPIR_Localcopy(tmp_buf, count, datatype,
                                                recvbuf, count, datatype);
                     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
@@ -241,15 +198,6 @@ static int MPIR_Reduce_binomial (
         }
     }
 
-    /* FIXME does this need to be checked after each uop invocation for
-       predefined operators? */
-    /* --BEGIN ERROR HANDLING-- */
-    if (MPIU_THREADPRIV_FIELD(op_errno)) {
-        mpi_errno = MPIU_THREADPRIV_FIELD(op_errno);
-        goto fn_fail;
-    }
-    /* --END ERROR HANDLING-- */
-
 fn_exit:
     MPIU_CHKLMEM_FREEALL();
     if (mpi_errno_ret)
@@ -262,7 +210,7 @@ fn_fail:
 }
 
 /* An implementation of Rabenseifner's reduce algorithm (see
-   http://www.hlrs.de/organization/par/services/models/mpi/myreduce.html).
+   http://www.hlrs.de/mpi/myreduce.html).
 
    This algorithm implements the reduce in two steps: first a
    reduce-scatter, followed by a gather to the root. A

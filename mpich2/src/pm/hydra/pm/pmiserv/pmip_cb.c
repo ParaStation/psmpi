@@ -253,10 +253,11 @@ static HYD_status pmi_cb(int fd, HYD_event_t events, void *userp)
             status = HYDT_ftb_publish("FTB_MPI_PROCS_DEAD", ftb_event_payload);
             HYDU_ERR_POP(status, "FTB publish failed\n");
 
-            /* Store a temporary erroneous exit status. In case the
-             * application does not return a non-zero exit status, we
-             * will use this. */
-            HYD_pmcd_pmip.downstream.exit_status[pid] = 1;
+            /* If this is not a forced cleanup, store a temporary
+             * erroneous exit status. In case the application does not
+             * return a non-zero exit status, we will use this. */
+            if (HYD_pmcd_pmip.downstream.forced_cleanup == 0)
+                HYD_pmcd_pmip.downstream.exit_status[pid] = 1;
 
             /* Deregister failed socket */
             status = HYDT_dmx_deregister_fd(fd);
@@ -442,6 +443,34 @@ static HYD_status pmi_listen_cb(int fd, HYD_event_t events, void *userp)
     goto fn_exit;
 }
 
+static int local_to_global_id(int local_id)
+{
+    int rem1, layer, rem2;
+    int ret;
+
+    if (local_id < HYD_pmcd_pmip.system_global.filler_process_map.current)
+        ret = HYD_pmcd_pmip.system_global.filler_process_map.left + local_id;
+    else {
+        /* rem1 gives the number of processes remaining after the
+         * filling the holes */
+        rem1 = local_id - HYD_pmcd_pmip.system_global.filler_process_map.current;
+
+        /* layer gives the layer of filling in which our process lies
+         * starting from layer 0; in each layer, we fill all proxies
+         * in the global list */
+        layer = rem1 / HYD_pmcd_pmip.system_global.global_core_map.current;
+
+        /* rem2 gives our relative index in the layer we belong to */
+        rem2 = rem1 % HYD_pmcd_pmip.system_global.global_core_map.current;
+
+        ret = (HYD_pmcd_pmip.system_global.filler_process_map.total +
+               (layer * HYD_pmcd_pmip.system_global.global_core_map.total) +
+               HYD_pmcd_pmip.system_global.global_core_map.left + rem2);
+    }
+
+    return ret;
+}
+
 static HYD_status launch_procs(void)
 {
     int i, j, arg, process_id;
@@ -491,10 +520,7 @@ static HYD_status launch_procs(void)
         HYD_pmcd_pmip.downstream.pmi_fd_active[i] = 0;
 
         if (HYD_pmcd_pmip.system_global.pmi_rank == -1)
-            HYD_pmcd_pmip.downstream.pmi_rank[i] =
-                HYDU_local_to_global_id(i, HYD_pmcd_pmip.start_pid,
-                                        HYD_pmcd_pmip.local.proxy_core_count,
-                                        HYD_pmcd_pmip.system_global.global_core_count);
+            HYD_pmcd_pmip.downstream.pmi_rank[i] = local_to_global_id(i);
         else
             HYD_pmcd_pmip.downstream.pmi_rank[i] = HYD_pmcd_pmip.system_global.pmi_rank;
     }
@@ -506,7 +532,6 @@ static HYD_status launch_procs(void)
     HYDU_ERR_POP(status, "unable to initialize process binding\n");
 
     status = HYDT_ckpoint_init(HYD_pmcd_pmip.user_global.ckpointlib,
-                               HYD_pmcd_pmip.user_global.ckpoint_prefix,
                                HYD_pmcd_pmip.user_global.ckpoint_num);
     HYDU_ERR_POP(status, "unable to initialize checkpointing\n");
 
@@ -526,7 +551,7 @@ static HYD_status launch_procs(void)
         status = HYDU_env_create(&env, "PMI_PORT", pmi_port);
         HYDU_ERR_POP(status, "unable to create env\n");
 
-        /* Restart the proxy */
+        /* Restart the proxy -- we use the first prefix in the list */
         MPL_snprintf(ftb_event_payload, HYDT_FTB_MAX_PAYLOAD_DATA, "pgid:%d ranks:%d-%d",
                      HYD_pmcd_pmip.local.pgid, HYD_pmcd_pmip.downstream.pmi_rank[0],
                      HYD_pmcd_pmip.downstream.pmi_rank
@@ -538,7 +563,8 @@ static HYD_status launch_procs(void)
                                       &HYD_pmcd_pmip.downstream.in,
                                       HYD_pmcd_pmip.downstream.out,
                                       HYD_pmcd_pmip.downstream.err,
-                                      HYD_pmcd_pmip.downstream.pid);
+                                      HYD_pmcd_pmip.downstream.pid,
+                                      HYD_pmcd_pmip.local.ckpoint_prefix_list[0]);
         if (status)
             status = HYDT_ftb_publish("FTB_MPI_PROCS_RESTART_FAIL", ftb_event_payload);
         else
@@ -769,14 +795,26 @@ static HYD_status parse_exec_params(char **t_argv)
     } while (1);
 
     /* verify the arguments we got */
-    if (HYD_pmcd_pmip.system_global.global_core_count == -1)
-        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "global core count not available\n");
+    if (HYD_pmcd_pmip.system_global.global_core_map.left == -1 ||
+        HYD_pmcd_pmip.system_global.global_core_map.current == -1 ||
+        HYD_pmcd_pmip.system_global.global_core_map.right == -1)
+        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
+                            "cannot find global core map (%d,%d,%d)\n",
+                            HYD_pmcd_pmip.system_global.global_core_map.left,
+                            HYD_pmcd_pmip.system_global.global_core_map.current,
+                            HYD_pmcd_pmip.system_global.global_core_map.right);
+
+    if (HYD_pmcd_pmip.system_global.filler_process_map.left == -1 ||
+        HYD_pmcd_pmip.system_global.filler_process_map.current == -1 ||
+        HYD_pmcd_pmip.system_global.filler_process_map.right == -1)
+        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
+                            "cannot find available cores (%d,%d,%d)\n",
+                            HYD_pmcd_pmip.system_global.filler_process_map.left,
+                            HYD_pmcd_pmip.system_global.filler_process_map.current,
+                            HYD_pmcd_pmip.system_global.filler_process_map.right);
 
     if (HYD_pmcd_pmip.local.proxy_core_count == -1)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "proxy core count not available\n");
-
-    if (HYD_pmcd_pmip.start_pid == -1)
-        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "start PID not available\n");
 
     if (HYD_pmcd_pmip.exec_list == NULL && HYD_pmcd_pmip.user_global.ckpoint_prefix == NULL)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
@@ -881,12 +919,8 @@ HYD_status HYD_pmcd_pmip_control_cmd_cb(int fd, HYD_event_t events, void *userp)
                      HYD_pmcd_pmip.local.pgid, HYD_pmcd_pmip.downstream.pmi_rank[0],
                      HYD_pmcd_pmip.downstream.pmi_rank
                      [HYD_pmcd_pmip.local.proxy_process_count - 1]);
-        status = HYDT_ckpoint_suspend(HYD_pmcd_pmip.local.pgid, HYD_pmcd_pmip.local.id);
-        if (status)
-            status = HYDT_ftb_publish("FTB_MPI_PROCS_CKPT_FAIL", ftb_event_payload);
-        else
-            status = HYDT_ftb_publish("FTB_MPI_PROCS_CKPTED", ftb_event_payload);
-        HYDU_ERR_POP(status, "FTB publishing failure\n");
+        status = HYDT_ckpoint_checkpoint(HYD_pmcd_pmip.local.pgid, HYD_pmcd_pmip.local.id,
+                                         HYD_pmcd_pmip.local.ckpoint_prefix_list[0]);
 
         HYDU_ERR_POP(status, "checkpoint suspend failed\n");
         HYDU_dump(stdout, "checkpoint completed\n");
@@ -895,12 +929,12 @@ HYD_status HYD_pmcd_pmip_control_cmd_cb(int fd, HYD_event_t events, void *userp)
         status = handle_pmi_response(fd, hdr);
         HYDU_ERR_POP(status, "unable to handle PMI response\n");
     }
-    else if (hdr.cmd == SIGNAL_PROCESSES) {
-        /* FIXME: This code needs to change from sending the SIGUSR1
-         * signal to a PMI-2 notification message. */
+    else if (hdr.cmd == SIGNAL) {
+        /* FIXME: This code needs to change from sending the signal to
+         * a PMI-2 notification message. */
         for (i = 0; i < HYD_pmcd_pmip.local.proxy_process_count; i++)
             if (HYD_pmcd_pmip.downstream.pid[i] != -1)
-                kill(HYD_pmcd_pmip.downstream.pid[i], SIGUSR1);
+                kill(HYD_pmcd_pmip.downstream.pid[i], hdr.signum);
     }
     else if (hdr.cmd == STDIN) {
         int count;

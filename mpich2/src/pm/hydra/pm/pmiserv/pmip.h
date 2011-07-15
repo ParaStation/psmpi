@@ -10,11 +10,20 @@
 #include "hydra.h"
 #include "common.h"
 
+struct HYD_pmcd_pmip_map {
+    int left;
+    int current;
+    int right;
+    int total;
+};
+
 struct HYD_pmcd_pmip {
     struct HYD_user_global user_global;
 
     struct {
-        int global_core_count;
+        struct HYD_pmcd_pmip_map global_core_map;
+        struct HYD_pmcd_pmip_map filler_process_map;
+
         int global_process_count;
         char *jobid;
 
@@ -45,6 +54,8 @@ struct HYD_pmcd_pmip {
         int *pmi_rank;
         int *pmi_fd;
         int *pmi_fd_active;
+
+        int forced_cleanup;
     } downstream;
 
     /* Proxy details */
@@ -60,10 +71,13 @@ struct HYD_pmcd_pmip {
 
         char *spawner_kvs_name;
         struct HYD_pmcd_pmi_kvs *kvs;   /* Node-level KVS space for node attributes */
+
+        char **ckpoint_prefix_list;
+
+        int retries;
     } local;
 
     /* Process segmentation information for this proxy */
-    int start_pid;
     struct HYD_exec *exec_list;
 };
 

@@ -11,7 +11,7 @@ maintainerclean-local:
 	rm -f ${mpi_sources}
 install_INCLUDE = mpicxx.h 
 # Documentation sources
-doc_sources = mpicxx.txt
+doc_sources = 
 DOCDESTDIRS = html:www/www1,man:man/man1,latex:doc/refman
 doc_HTML_SOURCES  = ${doc_sources}
 doc_MAN_SOURCES   = ${doc_sources}

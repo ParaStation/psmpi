@@ -283,7 +283,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_ ( MPI_Fint *v1, char *v2 F
     }
 
     if (v9 == MPI_F_ERRCODES_IGNORE) { v9 = MPI_ERRCODES_IGNORE; }
-    *ierr = MPI_Comm_spawn_multiple( *v1, p2, p3, v4, v5, *v6, (MPI_Comm)(*v7), (MPI_Comm *)(v8), (int *)v9 );
+    *ierr = MPI_Comm_spawn_multiple( *v1, p2, p3, v4, (MPI_Info *)(v5), *v6, (MPI_Comm)(*v7), (MPI_Comm *)(v8), (int *)v9 );
     MPIU_Free( p2[0] ); MPIU_Free( p2 );
     if (v3 != (char *)MPI_ARGVS_NULL) { 
         int i; 

@@ -1,18 +1,18 @@
 <dir>
 <file name="mpid_nem_mpich2_rma.c" info="1244842249"/>
-<file name="mpid_nem_ckpt.c" info="1294957044"/>
-<file name="mpid_nem_lmt.c" info="1280271244"/>
-<file name="mpid_nem_debug.c" info="1283374210"/>
+<file name="mpid_nem_ckpt.c" info="1299864523"/>
+<file name="mpid_nem_lmt.c" info="1299864523"/>
+<file name="mpid_nem_debug.c" info="1299864523"/>
 <file name="mpid_nem_alloc.c" info="1257000213"/>
-<file name="mpid_nem_mpich2.c" info="1252582256"/>
+<file name="mpid_nem_mpich2.c" info="1299864523"/>
 <file name="mpid_nem_queue.c" info="1241759641"/>
 <file name="mpid_nem_network_poll.c" info="1242092309"/>
 <file name="mpid_nem_network.c" info="1289055764"/>
-<file name="mpid_nem_lmt_dma.c" info="1286923876"/>
-<file name="mpid_nem_init.c" info="1280271244"/>
-<file name="mpid_nem_finalize.c" info="1283959284"/>
-<file name="mpid_nem_lmt_vmsplice.c" info="1257000213"/>
-<file name="mpid_nem_lmt_shm.c" info="1280271244"/>
+<file name="mpid_nem_lmt_dma.c" info="1296091123"/>
+<file name="mpid_nem_init.c" info="1303163664"/>
+<file name="mpid_nem_finalize.c" info="1299864495"/>
+<file name="mpid_nem_lmt_vmsplice.c" info="1299864523"/>
+<file name="mpid_nem_lmt_shm.c" info="1299864523"/>
 <file name="mpid_nem_barrier.c" info="1272483922"/>
 </dir>
 <data>
@@ -38,7 +38,7 @@ MPID_STATE_MPID_NEM_MPICH2_GETV MPID_nem_mpich2_getv
 MPID_STATE_MPIDI_NEM_CKPT_INIT MPIDI_nem_ckpt_init
 MPID_STATE_MPIDI_NEM_CKPT_FINALIZE MPIDI_nem_ckpt_finalize
 MPID_STATE_REINIT_PMI reinit_pmi
-MPID_STATE_OPEN_IO_SOCKET open_fifo
+MPID_STATE_OPEN_IO_SOCKET open_io_socket
 MPID_STATE_RESTORE_STDINOUTERR restore_stdinouterr
 MPID_STATE_MPIDI_NEM_CKPT_START MPIDI_nem_ckpt_start
 MPID_STATE_MPIDI_NEM_CKPT_FINISH MPIDI_nem_ckpt_finish
@@ -85,6 +85,7 @@ MPID_STATE_MPID_NEM_LMT_DMA_START_RECV MPID_nem_lmt_dma_start_recv
 MPID_STATE_MPID_NEM_LMT_DMA_DONE_SEND MPID_nem_lmt_dma_done_send
 MPID_STATE_MPID_NEM_LMT_DMA_HANDLE_COOKIE MPID_nem_lmt_dma_handle_cookie
 MPID_STATE_MPID_NEM_LMT_DMA_PROGRESS MPID_nem_lmt_dma_progress
+MPID_STATE_MPID_NEM_LMT_DMA_VC_TERMINATED MPID_nem_lmt_dma_vc_terminated
 MPID_STATE_MPID_NEM_LMT_DMA_START_SEND MPID_nem_lmt_dma_start_send
 MPID_STATE_MPID_NEM_LMT_DMA_DONE_RECV MPID_nem_lmt_dma_done_recv
 </fileinfo>
@@ -94,13 +95,13 @@ MPID_STATE_MPID_NEM_VC_DESTROY MPID_nem_vc_destroy
 </fileinfo>
 <fileinfo name="mpid_nem_finalize.c">
 MPID_STATE_MPID_NEM_FINALIZE MPID_nem_finalize
-MPID_STATE_MPID_NEM_VC_TERMINATE MPID_nem_vc_terminate
 </fileinfo>
 <fileinfo name="mpid_nem_lmt_vmsplice.c">
 MPID_STATE_MPID_NEM_LMT_VMSPLICE_INITIATE_LMT MPID_nem_lmt_vmsplice_initiate_lmt
 MPID_STATE_MPID_NEM_LMT_VMSPLICE_START_RECV MPID_nem_lmt_vmsplice_start_recv
 MPID_STATE_MPID_NEM_LMT_VMSPLICE_PROGRESS MPID_nem_lmt_vmsplice_start_recv
 MPID_STATE_MPID_NEM_LMT_VMSPLICE_START_SEND MPID_nem_lmt_vmsplice_start_send
+MPID_STATE_MPIDI_CH3_MPID_NEM_LMT_VMSPLICE_VC_TERMINATED MPIDI_CH3_MPID_nem_lmt_vmsplice_vc_terminated
 MPID_STATE_MPID_NEM_LMT_VMSPLICE_DONE_RECV MPID_nem_lmt_vmsplice_done_recv
 MPID_STATE_MPID_NEM_LMT_VMSPLICE_DONE_SEND MPID_nem_lmt_vmsplice_done_send
 MPID_STATE_MPID_NEM_LMT_VMSPLICE_HANDLE_COOKIE MPID_nem_lmt_vmsplice_handle_cookie
@@ -117,6 +118,7 @@ MPID_STATE_MPID_NEM_LMT_SHM_DONE_SEND MPID_nem_lmt_shm_done_send
 MPID_STATE_MPID_NEM_LMT_SHM_DONE_RECV MPID_nem_lmt_shm_done_recv
 MPID_STATE_LMT_SHM_PROGRESS_VC MPID_nem_lmt_shm_progress_vc
 MPID_STATE_MPID_NEM_LMT_SHM_PROGRESS MPID_nem_lmt_shm_progress
+MPID_STATE_MPID_NEM_LMT_SHM_VC_TERMINATED MPID_nem_lmt_shm_vc_terminated
 MPID_STATE_MPID_NEM_ALLOCATE_SHM_REGION MPID_nem_allocate_shm_region
 MPID_STATE_MPID_NEM_ATTACH_SHM_REGION MPID_nem_attach_shm_region
 MPID_STATE_MPID_NEM_DETACH_SHM_REGION MPID_nem_detach_shm_region

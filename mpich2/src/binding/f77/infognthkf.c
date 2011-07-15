@@ -191,7 +191,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_info_get_nthkey_ ( MPI_Fint *v1, MPI_Fint *v2, 
     p3 = (char *)MPIU_Malloc( d3 + 1 );
     *ierr = MPI_Info_get_nthkey( (MPI_Info)(*v1), *v2, p3 );
 
-    {char *p = v3, *pc=p3;
+    if (!*ierr) {char *p = v3, *pc=p3;
         while (*pc) {*p++ = *pc++;}
         while ((p-v3) < d3) { *p++ = ' '; }
     }

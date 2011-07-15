@@ -1,13 +1,13 @@
 <dir>
 <file name="tcp_finalize.c" info="1279917385"/>
-<file name="tcp_init.c" info="1294957044"/>
+<file name="tcp_init.c" info="1305847128"/>
 <file name="tcp_queue.h" info="1248300148"/>
-<file name="tcp_utility.c" info="1279917385"/>
-<file name="tcp_send.c" info="1294957044"/>
-<file name="socksm.c" info="1294957044"/>
-<file name="tcp_ckpt.c" info="1285783195"/>
-<file name="tcp_impl.h" info="1294957044"/>
-<file name="tcp_getip.c" info="1248300148"/>
+<file name="tcp_utility.c" info="1296579019"/>
+<file name="tcp_send.c" info="1299521934"/>
+<file name="socksm.c" info="1303841442"/>
+<file name="tcp_ckpt.c" info="1298495749"/>
+<file name="tcp_impl.h" info="1305847128"/>
+<file name="tcp_getip.c" info="1305847128"/>
 <file name="socksm.h" info="1283374210"/>
 </dir>
 <data>
@@ -23,7 +23,8 @@ MPID_STATE_MPID_NEM_TCP_CONNECT_TO_ROOT MPID_nem_tcp_connect_to_root
 MPID_STATE_MPID_NEM_TCP_VC_INIT MPID_nem_tcp_vc_init
 MPID_STATE_MPID_NEM_TCP_GET_ADDR_PORT_FROM_BC MPID_nem_tcp_get_addr_port_from_bc
 MPID_STATE_MPID_NEM_TCP_BIND MPID_nem_tcp_bind
-MPID_NEM_TCP_VC_TERMINATE MPID_nem_tcp_vc_terminate
+MPID_STATE_MPID_NEM_TCP_VC_TERMINATE MPID_nem_tcp_vc_terminate
+MPID_NEM_TCP_VC_TERMINATED MPID_nem_tcp_vc_terminated
 </fileinfo>
 <fileinfo name="tcp_queue.h">
 </fileinfo>
@@ -36,6 +37,7 @@ MPID_STATE_MPID_NEM_TCP_CONN_EST MPID_nem_tcp_conn_est
 MPID_STATE_MPID_NEM_TCP_ISTARTCONTIGMSG MPID_nem_tcp_iStartContigMsg
 MPID_STATE_MPID_NEM_TCP_ISTARTCONTIGMSG_PAUSED MPID_nem_tcp_iStartContigMsg_paused
 MPID_STATE_MPID_NEM_TCP_ISENDCONTIGMSG MPID_nem_tcp_iSendContig
+MPID_STATE_MPID_NEM_TCP_SENDNONCONTIG MPID_nem_tcp_SendNoncontig
 MPID_STATE_MPID_NEM_TCP_ERROR_OUT_SEND_QUEUE MPID_nem_tcp_error_out_send_queue
 </fileinfo>
 <fileinfo name="socksm.c">

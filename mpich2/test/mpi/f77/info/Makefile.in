@@ -7,6 +7,9 @@ all: all-redirect
 
 SHELL           = @SHELL@
 abs_builddir    = @abs_builddir@
+bindir          = @bindir@
+exec_prefix     = @exec_prefix@
+prefix          = @prefix@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 LIBS            = @LIBS@
@@ -62,6 +65,11 @@ HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
 
+
+testing:
+	../../runtests -srcdir=$(srcdir) -tests=testlist \
+			-mpiexec=$(bindir)/mpiexec \
+		   	-xmlfile=summary.xml
 
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)

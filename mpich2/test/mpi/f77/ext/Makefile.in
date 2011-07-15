@@ -7,6 +7,9 @@ all: all-redirect
 
 SHELL           = @SHELL@
 abs_builddir    = @abs_builddir@
+bindir          = @bindir@
+exec_prefix     = @exec_prefix@
+prefix          = @prefix@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 DEFS            = @DEFS@ -I. -I${srcdir}
@@ -98,6 +101,11 @@ SOURCEFILES     = $(SOURCES)
 
 
 # need to add this to get it to appear in ../../f90/ext/Makefile.sm
+
+testing:
+	../../runtests -srcdir=$(srcdir) -tests=testlist \
+			-mpiexec=$(bindir)/mpiexec \
+		   	-xmlfile=summary.xml
 
 ../util/mtestf.o: 
 	(cd ../util && $(MAKE) mtestf.o)

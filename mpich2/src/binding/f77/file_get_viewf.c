@@ -192,7 +192,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_file_get_view_ ( MPI_Fint *v1, MPI_Offset*v2, M
     p5 = (char *)MPIU_Malloc( d5 + 1 );
     *ierr = MPI_File_get_view( MPI_File_f2c(*v1), v2, (MPI_Datatype *)(v3), (MPI_Datatype *)(v4), p5 );
 
-    {char *p = v5, *pc=p5;
+    if (!*ierr) {char *p = v5, *pc=p5;
         while (*pc) {*p++ = *pc++;}
         while ((p-v5) < d5) { *p++ = ' '; }
     }

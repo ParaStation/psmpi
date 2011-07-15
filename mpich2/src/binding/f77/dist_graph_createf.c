@@ -187,10 +187,12 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_dist_graph_create( MPI_Fint *, MPI_Fint
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint v3[], MPI_Fint v4[], MPI_Fint v5[], MPI_Fint v6[], MPI_Fint *v7, MPI_Fint *v8, MPI_Fint *v9, MPI_Fint *ierr ){
+    int l8;
 
 #ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
 #endif
     if (v6 == MPIR_F_MPI_UNWEIGHTED) v6 = MPI_UNWEIGHTED;
-    *ierr = MPI_Dist_graph_create( (MPI_Comm)(*v1), *v2, v3, v4, v5, v6, (MPI_Info)(*v7), *v8, (MPI_Comm *)(v9) );
+    l8 = MPIR_FROM_FLOG(*v8);
+    *ierr = MPI_Dist_graph_create( (MPI_Comm)(*v1), *v2, v3, v4, v5, v6, (MPI_Info)(*v7), l8, (MPI_Comm *)(v9) );
 }

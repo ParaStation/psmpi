@@ -24,6 +24,7 @@ LDFLAGS     =  @LDFLAGS@ -L../../../lib
 
 VPATH = .:@srcdir@
 INCLUDES = -I../../../src/include -I${top_srcdir}/src/include -I../include
+MPILIBNAME = @MPILIBNAME@
 
 .SUFFIXES:
 .SUFFIXES: .o .lo .c 
@@ -79,6 +80,7 @@ SOURCES         =  reorder.c
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
+
 
 
 .POSIX:

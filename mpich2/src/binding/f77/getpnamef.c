@@ -191,7 +191,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_get_processor_name_ ( char *v1 FORT_MIXED_LEN(d
     p1 = (char *)MPIU_Malloc( d1 + 1 );
     *ierr = MPI_Get_processor_name( p1, v2 );
 
-    {char *p = v1, *pc=p1;
+    if (!*ierr) {char *p = v1, *pc=p1;
         while (*pc) {*p++ = *pc++;}
         while ((p-v1) < d1) { *p++ = ' '; }
     }

@@ -765,7 +765,7 @@ IFS="$save_IFS"
 # We must do enable-fast first, because it changes the other enable values
 if test "$enable_fast_nochkmsg" = "yes" ; then
     # 
-    if test "$enable_error_checking" != "default" ; then
+    if test "$enable_error_checking" != "default" -a "$enable_error_checking" != "no" ; then
         AC_MSG_ERROR([enable-fast overrides enable-error-checking; error-checking option $enable_error_checking ignored])
     fi
     enable_error_checking=no
@@ -1321,8 +1321,9 @@ fi
 if test "$enable_append_ndebug" = "yes" ; then
     CFLAGS="$CFLAGS -DNDEBUG -DNVALGRIND"
     CXXFLAGS="$CXXFLAGS -DNDEBUG -DNVALGRIND"
-    FFLAGS="$FFLAGS -DNDEBUG -DNVALGRIND"
-    FCFLAGS="$FCFLAGS -DNDEBUG -DNVALGRIND"
+    # MPICH2 do NOT assume any preprocessing support from the Fortran compiler,
+    # so no Fortran files contain any preprocessing statements.
+    # Don't set FFLAGS or FCFLAGS with any -D.
 fi
 if test -n "$perform_meminit" ; then
     AC_DEFINE(MPICH_DEBUG_MEMINIT,1,[Define to enable preinitialization of memory used by structures and unions])
@@ -1775,8 +1776,10 @@ if test "$enable_f77" = yes ; then
     # Now see if FLIBS works with the C compiler
     PAC_PROG_F77_CHECK_FLIBS
 
-    PAC_PROG_F77_LINKER_WITH_C
+    # Check F77+FLAGS is compatible with CC+CFLAGS before using F77+CC.
     PAC_PROG_F77_OBJ_LINKS_WITH_C
+
+    PAC_PROG_F77_LINKER_WITH_C
     # For name mangle, we need the library flags
     PAC_PROG_F77_NAME_MANGLE
     # Check whether additional libraries are needed when linking with C
@@ -1810,68 +1813,11 @@ information to configure with the FCFLAGS environment variable.])
     # (making linking C-only programs unnecessarily difficult).  What we test 
     # here is whether the much more restricted needs of the Fortran 
     # initialize can be met with no special use of the Fortran runtime
-    pac_f_init_works_with_c=unknown
-    AC_MSG_CHECKING([whether Fortran init will work with C])
-    rm -f conftest*
-    cat > conftestc.c <<EOF
-#include <stdio.h>
-#include "confdefs.h"
-#ifdef F77_NAME_UPPER
-#define minit_ MINIT
-#elif defined(F77_NAME_LOWER) || defined(F77_NAME_MIXED)
-#define minit_ minit
-#endif
-int main( int argc, char *argv )
-{
-    minit_();
-    return 0;
-}
-char *v1 = 0;
-char *vc2 = 0;
-int  v2 = 0;
-minitc_( char *dv1, int d, char *dv2, int d2, int dv3 )
-{
-v1 = dv1;
-v2 = dv3;
-vc2 = dv2;
-*vc2 = ' ';
-}
-EOF
-    cat > conftestf.f <<EOF
-       subroutine minit()
-       common /m1/ vc, vc2
-       character *1 vc(1,1), vc2(1)
-       common /m2/ vd
-       integer vd
-       save /m1/, /m2/
-       call minitc( vc, vc2, vd )
-       end
-EOF
-   myfcompile='${F77-f77} -c $FFLAGS conftestf.f 1>&AC_FD_CC'
-   myccompile='${CC-cc} -c $CFLAGS conftestc.c 1>&AC_FD_CC'
-   if AC_TRY_EVAL(myfcompile) && test -s conftestf.o ; then
-       :
-   else 
-	echo "configure: failed program was:" >&AC_FD_CC
-        cat conftestf.f >&AC_FD_CC
-   fi
-   if AC_TRY_EVAL(myccompile) && test -s conftestc.o ; then
-       :
-   else 
-	echo "configure: failed program was:" >&AC_FD_CC
-        cat conftestc.c >&AC_FD_CC
-   fi
-   # Now try the link step
-   myclink='${CC-cc} $CFLAGS -o conftest conftestc.o conftestf.o $LDFLAGS >conftest.out 2>&1'
-   if AC_TRY_EVAL(myclink) && test -x conftest${ac_exeext} ; then
-      pac_f_init_works_with_c=yes
-   else
-      pac_f_init_works_with_c=no
-   fi
-   AC_MSG_RESULT($pac_f_init_works_with_c)
+   PAC_F77_INIT_WORKS_WITH_C
    if test "$pac_f_init_works_with_c" = "yes" ; then
        AC_DEFINE(HAVE_MPI_F_INIT_WORKS_WITH_C,1,[Define if the Fortran init code for MPI works from C programs without special libraries])
    fi
+
 fi
 
 # FC requires F77 as well.  If the user disabled f77, do not run the
@@ -1969,8 +1915,11 @@ if test "$enable_f77" = "yes" ; then
     fi
 
     # Once we have name mangle, we can try to limit the number of needed libs
-    PAC_PROG_F77_IN_C_LIBS
-    AC_SUBST(F77_IN_C_LIBS)
+    dnl F77_IN_C_LIBS is not needed currently because mpirinitf_() in setbotf.f
+    dnl is called in initthread.c only when FLIBS is not needed to initialize
+    dnl Fortran constants from a C main, See PAC_F77_INIT_WORKS_WITH_C.
+    dnl PAC_PROG_F77_IN_C_LIBS
+    dnl AC_SUBST(F77_IN_C_LIBS)
 
     # ------------------------------------------------
     # Shared library support
@@ -2001,28 +1950,32 @@ dnl    fi
 	 # if the compiler allows it (e.g., building with gcc but
 	 # a different Fortran compiler. Another option is to
 	 # *require* g77.
-	 rm -f conftest.f
-	 cat > conftest.f <<EOF
-       program main
-       end
-EOF
+         AC_LANG_PUSH([Fortran 77])
+         AC_LANG_CONFTEST([
+             AC_LANG_SOURCE([
+                program main
+                end
+             ])
+         ])
+         saved_FFLAGS="$FFLAGS"
          F77_SHL=false
          for sh_arg in "-shared -fPIC" "-fPIC" "-shared -fpic" "-fpic" "-KPIC" ; do
  	     AC_MSG_CHECKING([whether $F77 allows $sh_arg])
-             if $F77 $sh_arg -o conftest conftest.f >/dev/null 2>&1 ; then
+             FFLAGS="$sh_arg $saved_FFLAGS"
+             AC_LINK_IFELSE([],[
 	         F77_SHL="$F77 $sh_arg"
                  AC_MSG_RESULT(yes)
-	         break
-             else
+                 break
+             ],[
                  AC_MSG_RESULT(no)
-             fi
+             ])
 	 done
+         FFLAGS="$saved_FFLAGS"
 	 if test "$F77_SHL" = "false" ; then
 	     AC_ERROR([Cannot build shared libraries for Fortran with this compiler])
          fi
-	 # This is needed for Mac OSX 10.5
-	 rm -rf conftest.dSYM
-         rm -f conftest*
+         rm -f confest.$ac_ext
+         AC_LANG_POP([Fortran 77])
 	 if test "$enable_rpath" = yes ; then 
 	      F77_LINKPATH_SHL="-Wl,-rpath -Wl,"
 	 fi
@@ -2546,8 +2499,6 @@ fi
 
 # Copy the mpicxx.h file to the main include directory
 # Move a working version of the mpicxx script to the bin directory
-# Create an alias mpic++ for mpicxx (BOOST, at least, makes invalid assumptions
-# about the name of the MPI C++ compilation script)
 AC_OUTPUT_COMMANDS([if test $enable_cxx = yes ; then 
 if test "$bashWorks" = yes ; then cp -f src/env/mpicxx.bash src/env/mpicxx ; fi
 chmod a+x src/env/mpicxx 
@@ -2557,7 +2508,6 @@ sed -e 's%includedir=.*%includedir='$includebuild_dir% \
     -e 's%libdir=.*%libdir='$libbuild_dir% \
     src/env/mpicxx > bin/mpicxx ;
 chmod a+x bin/mpicxx
-ln -f -s mpicxx bin/mpic++
 else
     rm -f src/env/mpicxx src/env/mpicxx.conf
 fi
@@ -3295,8 +3245,8 @@ AC_TYPE_INT16_T
 AC_TYPE_INT32_T
 AC_TYPE_INT64_T
 
-# Temporary backwards compatiblity for the pre autoconf 2.62 integer
-# type checking
+# Temporary issue in autoconf integer type checking (remove when
+# autoconf fixes this or provides a workaround for it)
 if test "$ac_cv_c_int8_t" != no ; then
     AC_DEFINE(HAVE_INT8_T,1,[Define if int8_t is supported by the C compiler])
 fi
@@ -3321,8 +3271,8 @@ AC_TYPE_UINT16_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 
-# Temporary backwards compatiblity for the pre autoconf 2.62 integer
-# type checking
+# Temporary issue in autoconf integer type checking (remove when
+# autoconf fixes this or provides a workaround for it)
 if test "$ac_cv_c_uint8_t" != no ; then
     AC_DEFINE(HAVE_UINT8_T,1,[Define if uint8_t is supported by the C compiler])
 fi
@@ -3378,9 +3328,9 @@ for type in short int long long_long float double long_double wchar_t \
            if test $type != long_long -a \
                    $type != long_double -a \
                    $type != long_double_int -a \
-                   $type != _Bool \
-                   $type != float__Complex \
-                   $type != double__Complex \
+                   $type != _Bool -a \
+                   $type != float__Complex -a \
+                   $type != double__Complex -a \
                    $type != long_double__Complex ; then
                AC_MSG_ERROR([Configure was unable to determine the size of $type ; if cross compiling,
 use the environment variables CROSS_SIZEOF_typename, e.g., CROSS_SIZEOF_SHORT,
@@ -4171,13 +4121,18 @@ if test "$enable_f77" = yes ; then
         "$ac_cv_sizeof_void_p" -gt "$pac_cv_f77_sizeof_integer" ; then
         AC_DEFINE(HAVE_AINT_LARGER_THAN_FINT,1,[Define if addresses are larger than Fortran integers])
     fi
+    if test "$ac_cv_sizeof_void_p" != 0 -a \
+        "$ac_cv_sizeof_void_p" != "$pac_cv_f77_sizeof_integer" ; then
+	AC_DEFINE(HAVE_AINT_DIFFERENT_THAN_FINT,1,[Define if addresses are a different size than Fortran integers])
+    fi
+    
     # Include a defined value for Fint is int
     if test "$MPI_FINT" = "int" ; then
         AC_DEFINE(HAVE_FINT_IS_INT,1,[Define if Fortran integer are the same size as C ints])
     elif test "$SIZEOF_F77_INTEGER" != "$ac_cv_sizeof_int" ; then
         # Make this fatal because we do not want to build a broken fortran
-	# interface
-        AC_MSG_ERROR([Fortran integers and C ints are not the same size.  The current Fortran binding does not support this case.  Either force the Fortran compiler to use integers of $ac_cv_sizeof_int bytes, or use --disable-f77 on the configure line for MPICH2.])
+	# interface (was error)
+        AC_MSG_WARN([Fortran integers and C ints are not the same size.  The current Fortran binding does not support this case.  Either force the Fortran compiler to use integers of $ac_cv_sizeof_int bytes, or use --disable-f77 on the configure line for MPICH2.])
     fi
 
     #
@@ -4189,15 +4144,10 @@ if test "$enable_f77" = yes ; then
     # This is not quite right unless the device setup script, executed above,
     # sets the EXTRA_STATUS_DECL that will be used in defining a status.
     # The default size assumes that there are 5 ints
-    default_status_size=`expr 5 \* $ac_cv_sizeof_int`
     AC_CACHE_CHECK([for size of MPI_Status],pac_cv_sizeof_mpi_status,[
-    AC_TRY_RUN([
-#include "confdefs.h"
-#include <stdio.h>
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-typedef struct { 
+        rm -f pac_mpi_status.h
+        cat > pac_mpi_status.h <<_EOF
+typedef struct {
     int count;
     int cancelled;
     int MPI_SOURCE;
@@ -4205,14 +4155,19 @@ typedef struct {
     int MPI_ERROR;
     $EXTRA_STATUS_DECL
 } MPI_Status;
-int main( int argc, char **argv ){
-  FILE *f=fopen("conftestval", "w");
-  if (!f) exit(1);
-  fprintf(f, "%d\n", sizeof(MPI_Status));
-  exit(0);
-}
-],pac_cv_sizeof_mpi_status=`cat conftestval`,pac_cv_sizeof_mpi_status=$default_status_size,pac_cv_sizeof_mpi_status=$default_status_size)
-])
+_EOF
+        dnl another alternative is to use AC_CHECK_SIZEOF as follows:
+        dnl AC_CHECK_SIZEOF([MPI_Status],[], [#include "pac_status.h"])
+        dnl But AC_CHECK_SIZEOF has its own AC_MSG_CHECKING, so can't use
+        dnl AC_CACHE_CHECK, so use AC_COMPUTE_INT here.
+        default_status_size=`expr 5 \* $ac_cv_sizeof_int`
+        AC_COMPUTE_INT([pac_cv_sizeof_mpi_status],
+                       [sizeof(MPI_Status)],
+                       [#include "pac_mpi_status.h"],
+                       [pac_cv_sizeof_mpi_status=$default_status_size])
+        rm -f pac_mpi_status.h
+    ])
+
     SIZEOF_MPI_STATUS=$pac_cv_sizeof_mpi_status
     export SIZEOF_MPI_STATUS
     AC_SUBST(SIZEOF_MPI_STATUS)
@@ -4220,10 +4175,10 @@ int main( int argc, char **argv ){
     if test -z "$MPI_STATUS_SIZE" ; then
         if test -n "$SIZEOF_MPI_STATUS" ; then
             # compute from the C sizeof
-	    MPI_STATUS_SIZE=`expr $SIZEOF_MPI_STATUS / $ac_cv_sizeof_int`
-	    if test "$MPI_STATUS_SIZE" = "0" ; then
-	         AC_MSG_WARN([Could not compute the size of MPI_Status])
-	        MPI_STATUS_SIZE=5
+            MPI_STATUS_SIZE=`expr $SIZEOF_MPI_STATUS / $ac_cv_sizeof_int`
+            if test "$MPI_STATUS_SIZE" = "0" ; then
+                AC_MSG_WARN([Could not compute the size of MPI_Status])
+                MPI_STATUS_SIZE=5
             fi
         else
             AC_MSG_WARN([MPI_STATUS_SIZE was not defined!])
@@ -4236,55 +4191,55 @@ int main( int argc, char **argv ){
     # We must convert all hex values to decimal (!).
     # This is for the C types so they are also available in Fortran
     for var in CHAR SIGNED_CHAR UNSIGNED_CHAR WCHAR SHORT \
-		  UNSIGNED_SHORT INT UNSIGNED_INT LONG UNSIGNED_LONG \
-		  FLOAT DOUBLE LONG_DOUBLE LONG_LONG_INT \
-		  UNSIGNED_LONG_LONG LONG_LONG FLOAT_INT DOUBLE_INT \
-		  LONG_INT SHORT_INT "2INT" LONG_DOUBLE_INT \
+                  UNSIGNED_SHORT INT UNSIGNED_INT LONG UNSIGNED_LONG \
+                  FLOAT DOUBLE LONG_DOUBLE LONG_LONG_INT \
+                  UNSIGNED_LONG_LONG LONG_LONG FLOAT_INT DOUBLE_INT \
+                  LONG_INT SHORT_INT "2INT" LONG_DOUBLE_INT \
                   INT8_T INT16_T INT32_T INT64_T            \
                   UINT8_T UINT16_T UINT32_T UINT64_T        \
                   C_BOOL C_FLOAT_COMPLEX C_DOUBLE_COMPLEX   \
                   C_LONG_DOUBLE_COMPLEX AINT OFFSET ; do
         fullvar="MPI_$var"
-	fullf77var="MPI_F77_$var"
+        fullf77var="MPI_F77_$var"
         eval fullvarvalue=\$$fullvar
         #echo "$fullvar = $fullvarvalue"
-	if test "x$fullvarvalue" = "x" -o \
-	        "x$fullvarvalue" = "xMPI_DATATYPE_NULL" ; then
+        if test "x$fullvarvalue" = "x" -o \
+                "x$fullvarvalue" = "xMPI_DATATYPE_NULL" ; then
              eval $fullf77var="MPI_DATATYPE_NULL"
- 	     continue
+              continue
         fi
         value=0
         fullvarvalue=`echo $fullvarvalue | sed -e 's/..\(.*\)/\1/'`
-	offset=0
+        offset=0
         for pos in 3 4 5 6 7 8 9 10 ; do
             # This works, even for Tru64, because only a single character
-  	    # is extracted
+            # is extracted
             char=`expr $fullvarvalue : '\(.\)'`
-	    # FIXME: Tru64 Unix eliminates leading zeros (!)
- 	    # How do we fix something that broken?
-	    fullvarvalue=`echo $fullvarvalue | sed -e 's/.\(.*\)/\1/'`
+            # FIXME: Tru64 Unix eliminates leading zeros (!)
+            # How do we fix something that broken?
+            fullvarvalue=`echo $fullvarvalue | sed -e 's/.\(.*\)/\1/'`
             case $char in 
                 a) char=10 ;;
-	        b) char=11 ;;
-	        c) char=12 ;;
-	        d) char=13 ;;
-	        e) char=14 ;;
-	        f) char=15 ;;
+                b) char=11 ;;
+                c) char=12 ;;
+                d) char=13 ;;
+                e) char=14 ;;
+                f) char=15 ;;
             esac
-	    # For Fortran, if the value is too big for an unsigned int, 
-	    # we need to make it a signed (negative) int. Currently, the
-	    # types in this class are the minloc/maxloc types.
-	    if test $pos = 3 -a $char -ge 8 ; then
-	        #echo "for $var in position $pos found a value >= 8"
-		char=`expr $char - 8`
-		offset=-2147483648
+            # For Fortran, if the value is too big for an unsigned int, 
+            # we need to make it a signed (negative) int. Currently, the
+            # types in this class are the minloc/maxloc types.
+            if test $pos = 3 -a $char -ge 8 ; then
+                #echo "for $var in position $pos found a value >= 8"
+                char=`expr $char - 8`
+                offset=-2147483648
             fi
-	    value=`expr $value \* 16 + $char`
+            value=`expr $value \* 16 + $char`
         done
-	if test "$offset" != 0 ; then 
-	    #echo "$fullf77var: $value, $offset"
+        if test "$offset" != 0 ; then 
+            #echo "$fullf77var: $value, $offset"
             value=`expr $value + $offset`
-	fi
+        fi
         #echo "$fullf77var = $value"
         eval $fullf77var=$value
     done
@@ -4335,100 +4290,7 @@ int main( int argc, char **argv ){
     # Try and compute the values of .true. and .false. in Fortran
     # This code has been removed because the Fortran binding code does
     # not yet support it.  
-    if test "$cross_compiling" = "no" ; then
-        AC_MSG_CHECKING([for values of Fortran logicals])
-        # Use a Fortran main program.  This simplifies some steps, 
-	# since getting all of the Fortran libraries (including shared 
-	# libraries that are not in the default library search path) can 
-	# be tricky.  Specifically, The PROG_F77_RUN_PROC_FROM_C failed with 
-        # some installations of the Portland group compiler.
-        AC_CACHE_VAL(pac_cv_prog_f77_true_false_value,[
-        # Compile a C routine to print the values of true and false
-        cat >conftestc.c <<EOF
-#include <stdio.h>
-#include "confdefs.h"
-#ifdef HAVE_STDLIB_H
-#include <stdlib.h>
-#endif
-#ifdef F77_NAME_UPPER
-#define ftest_ FTEST
-#elif defined(F77_NAME_LOWER) || defined(F77_NAME_MIXED)
-#define ftest_ ftest
-#endif
-void ftest_( $MPI_FINT *, $MPI_FINT *);
-void ftest_( $MPI_FINT *itrue, $MPI_FINT *ifalse )
-{ 
-  FILE *f = fopen("conftestval","w");
-  if (!f) exit(1);
-  fprintf( f, "%d %d\n", *itrue, *ifalse );
-  fclose(f);
-}
-EOF
-        # Create the Fortran program
-        cat >conftest.f <<EOF
-       program main
-       logical itrue, ifalse
-       itrue = .TRUE. 
-       ifalse = .FALSE.
-       call ftest( itrue, ifalse )
-       end
-EOF
-        # Compile the two files
-        pac_tmp_compile='$CC -c $CFLAGS $CPPFLAGS conftestc.c >&AC_FD_CC'
-        if AC_TRY_EVAL(pac_tmp_compile) && test -s conftestc.o ; then
-            AC_LANG_SAVE
-            AC_LANG_FORTRAN77
-            saveLIBS=$LIBS
-            LIBS="conftestc.o $LIBS"
-            if AC_TRY_EVAL(ac_link) && test -s conftest$ac_exeext ; then
-	        if ./conftest$ac_exeext ; then
-	            # success
-		    pac_cv_prog_f77_true_false_value=`cat conftestval`
-                else
-	            # failure 
-		    AC_MSG_WARN([Unable to run the program to determine the values of logicals])
-		    echo "configure: failed program was:" >&AC_FD_CC
-		    cat conftest.f >&AC_FD_CC
-	        fi
-            else
-	        # failure
-                AC_MSG_WARN([Unable to build program to determine values of logicals])
-	        echo "configure: failed program was:" >&AC_FD_CC
-	        cat conftest.f >&AC_FD_CC
-            fi
-	    LIBS=$saveLIBS
-            AC_LANG_RESTORE
-        else
-            AC_MSG_WARN([Unable to compile the C routine for finding the values of logicals])
-	    echo "configure: failed program was:" >&AC_FD_CC
-	    cat conftestc.c >&AC_FD_CC
-        fi
-])
-        true_val="`echo $pac_cv_prog_f77_true_false_value | sed -e 's/ .*//g'`"
-        false_val="`echo $pac_cv_prog_f77_true_false_value | sed -e 's/.*  *//g'`"
-        if test -n "$true_val" -a -n "$false_val" ; then
-	    AC_MSG_RESULT([True is $true_val and False is $false_val])
-        else
-	    AC_MSG_RESULT([could not determine])
-        fi
-    else
-        # Cross-compiling.  Allow the user to set the values
-        if test -n "$CROSS_F77_TRUE_VALUE" -a -n "$CROSS_F77_FALSE_VALUE" ; then
-            true_val=$CROSS_F77_TRUE_VALUE
-	    false_val=$CROSS_F77_FALSE_VALUE
-        fi	
-    fi
-    if test -n "$true_val" -a -n "$false_val" ; then
-        AC_DEFINE(F77_TRUE_VALUE_SET,1,[Define if we know the value of Fortran true and false])
-        AC_DEFINE_UNQUOTED(F77_TRUE_VALUE,$true_val,[The value of true in Fortran])
-        AC_DEFINE_UNQUOTED(F77_FALSE_VALUE,$false_val,[The value of false in Fortran])
-    fi
-    #
-    # We'd also like to check other values for .TRUE. and .FALSE. to see
-    # if the compiler allows (or uses) more than one value (some DEC compilers,
-    # for example, used the high (sign) bit to indicate true and false; the 
-    # rest of the bits were ignored.  For now, we'll assume that there are 
-    # unique true and false values.
+    PAC_F77_LOGICALS_IN_C([$MPI_FINT])
 
     # Check if multiple __attribute__((alias)) is available
     if test "$enable_multi_aliases" = "yes" ; then
@@ -4976,41 +4838,15 @@ if test "$enable_coverage" = "yes" ; then
     fi
     # On some platforms (e.g., Mac Darwin), we must also *link* 
     # with the -fprofile-args -ftest-coverage option.
-    # We cannot use TRY_LINK because that uses both the compilation and
-    # the linking flags.  
-    # This is needed for Mac OSX 10.5
-    rm -rf conftest.dSYM
-    rm -f conftest*
-    cat >>conftest.c <<EOF
-int main( int argc, char **argv ) { return 1; }
-EOF
-    #
-    compile_only='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext'
-    link_only='$CC -o conftest$ac_exeext $LDFLAGS conftest.$ac_objext $LIBS'
-    #
     AC_MSG_CHECKING([whether compilation with coverage analysis enabled works])
-    if AC_TRY_EVAL(compile_only) ; then
+    AC_LINK_IFELSE([
+        AC_LANG_SOURCE([int main(int argc, char **argv){return 1;}])
+    ],[
         AC_MSG_RESULT(yes)
-	AC_MSG_CHECKING([if extra options needed to link when coverage analysis enabled])
-        if AC_TRY_EVAL(link_only) ; then 
-	    AC_MSG_RESULT(no)
-        else
-	    LDFLAGSsave="$LDFLAGS"
-	    LDFLAGS="$LDFLAGS -ftest-coverage -fprofile-arcs"
-	    if AC_TRY_EVAL(link_only) ; then 
-	        AC_MSG_RESULT([need -ftest-coverage -fprofile-arcs])
-            else
-	        AC_MSG_RESULT([Unable to determine])
-	        AC_MSG_ERROR([Cannot link programs when coverage analysis enabled])
-            fi
-        fi
-    else
+    ],[
         AC_MSG_RESULT(no)
-        AC_MSG_ERROR([Unable to compile programs when coverage analysis enabled])
-    fi
-    # This is needed for Mac OSX 10.5
-    rm -rf conftest.dSYM
-    rm -f conftest*
+        AC_MSG_ERROR([Unable to link programs when coverage analysis enabled])
+    ])
     
     # Test for the routines that we need to use to ensure that the
     # data files are (usually) written out
@@ -5893,11 +5729,11 @@ AC_SUBST(MPIU_THREAD_LIB_NAME)
 # Checkpointing
 AC_ARG_ENABLE(checkpointing,
     [AC_HELP_STRING([--enable-checkpointing], [Enable application checkpointing])],
-    [
+    [ if test "$enableval" != "no" ; then
         PAC_SET_HEADER_LIB_PATH(blcr)
 	PAC_CHECK_HEADER_LIB_FATAL(blcr, libcr.h, cr, cr_init)
         AC_DEFINE(ENABLE_CHECKPOINTING,1,[Application checkpointing enabled])
-    ],
+      fi ],
 )
 
 # Update the cache first with the results of the previous configure steps
@@ -6255,13 +6091,6 @@ includebuild_dir=$includebuild_dir
 libbuild_dir=$libbuild_dir
 bashWorks=$bashWorks)
 
-# move the parkill command into the bin directory of the build tree
-AC_OUTPUT_COMMANDS([
-   chmod a+x src/env/parkill ;
-   if test ! -d bin  ; then mkdir bin ; fi 
-   cp src/env/parkill bin/parkill ;
-   chmod a+x bin/parkill])
-
 # Move the mpio.h file into the build directories for testing
 #export top_srcdir
 #export enable_romio
@@ -6292,7 +6121,6 @@ AC_OUTPUT_COMMANDS([if grep 'dependencies:' Makefile >/dev/null 2>&1 ; then
 fi])
 
 AC_OUTPUT_COMMANDS([chmod +x doc/mansrc/createhtmlindex])
-AC_OUTPUT_COMMANDS([ln -f -s mpiexec bin/mpirun])
 
 dnl
 dnl If we rerun configure, place a file in the lib directory with the
@@ -6379,7 +6207,6 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
 	  src/env/mpif90 \
 	  src/env/mpif90.conf \
 	  src/env/mpif90.bash \
-	  src/env/parkill \
 	  src/env/Makefile\
 	  src/util/createshlib \
           src/mpi/Makefile \
@@ -6397,6 +6224,8 @@ AC_OUTPUT(Makefile src/Makefile src/include/Makefile \
           src/mpi/spawn/Makefile \
           src/mpi/timer/Makefile \
           src/mpi/topo/Makefile \
+          src/mpix/Makefile \
+          src/mpix/comm/Makefile \
           src/mpid/Makefile \
           src/mpid/common/Makefile \
           src/mpid/common/datatype/Makefile \

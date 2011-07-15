@@ -191,7 +191,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_error_string_ ( MPI_Fint *v1, char *v2 FORT_MIX
     p2 = (char *)MPIU_Malloc( d2 + 1 );
     *ierr = MPI_Error_string( *v1, p2, v3 );
 
-    {char *p = v2, *pc=p2;
+    if (!*ierr) {char *p = v2, *pc=p2;
         while (*pc) {*p++ = *pc++;}
         while ((p-v2) < d2) { *p++ = ' '; }
     }

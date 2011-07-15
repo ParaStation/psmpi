@@ -190,6 +190,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_type_hindexed_ ( MPI_Fint *v1, MPI_Fint *v2, MP
     MPI_Aint *l3;
 
 #ifdef HAVE_AINT_LARGER_THAN_FINT
+
     if (*v1 > 0) {
         int li;
         l3 = (MPI_Aint *)MPIU_Malloc( *v1 * sizeof(MPI_Aint) );

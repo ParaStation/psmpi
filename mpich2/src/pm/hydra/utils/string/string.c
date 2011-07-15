@@ -143,7 +143,7 @@ char *HYDU_int_to_str_pad(int x, int maxlen)
 {
     int len = 1, max = 10, y;
     int actual_len, i;
-    char *str;
+    char *str = NULL;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -180,21 +180,6 @@ char *HYDU_int_to_str_pad(int x, int maxlen)
   fn_fail:
     goto fn_exit;
 }
-
-
-char *HYDU_strerror(int error)
-{
-    char *str;
-
-#if defined HAVE_STRERROR
-    str = strerror(error);
-#else
-    str = HYDU_strdup("errno: %d", error);
-#endif /* HAVE_STRERROR */
-
-    return str;
-}
-
 
 int HYDU_strlist_lastidx(char **strlist)
 {

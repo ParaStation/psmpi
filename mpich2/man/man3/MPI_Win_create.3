@@ -1,4 +1,4 @@
-.TH MPI_Win_create 3 "7/27/2010" " " "MPI"
+.TH MPI_Win_create 3 "2/28/2011" " " "MPI"
 .SH NAME
 MPI_Win_create \-  Create an MPI Window object for one-sided communication 
 .SH SYNOPSIS
@@ -107,6 +107,14 @@ possible.
 .PD 1
 .PD 0
 .TP
+.B MPI_ERR_ARG 
+- Invalid argument.  Some argument is invalid and is not
+identified by a specific error class (e.g., 
+.I MPI_ERR_RANK
+).
+.PD 1
+.PD 0
+.TP
 .B MPI_ERR_COMM 
 - Invalid communicator.  A common error is to use a null
 communicator in a call (not even allowed in 
@@ -125,6 +133,11 @@ communicator in a call (not even allowed in
 .I MPI_Error_string
 to get more information
 about this error code. 
+.PD 1
+.PD 0
+.TP
+.B MPI_ERR_SIZE 
+- 
 .PD 1
 .SH LOCATION
 win_create.c

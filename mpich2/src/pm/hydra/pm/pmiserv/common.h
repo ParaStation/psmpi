@@ -10,20 +10,18 @@
 #include "hydra.h"
 
 /* Generic definitions */
-#define MAXKEYLEN    64 /* max length of key in keyval space */
-/* FIXME: PMI-1 uses 256, PMI-2 uses 1024; we use the MAX */
-#define MAXVALLEN  1024 /* max length of value in keyval space */
-#define MAXNAMELEN  256 /* max length of various names */
-#define MAXKVSNAME  MAXNAMELEN  /* max length of a kvsname */
+#define PMI_MAXKEYLEN    (64)   /* max length of key in keyval space */
+#define PMI_MAXVALLEN    (1024) /* max length of value in keyval space */
+#define PMI_MAXKVSLEN    (256)  /* max length of various names */
 
 struct HYD_pmcd_pmi_kvs_pair {
-    char key[MAXKEYLEN];
-    char val[MAXVALLEN];
+    char key[PMI_MAXKEYLEN];
+    char val[PMI_MAXVALLEN];
     struct HYD_pmcd_pmi_kvs_pair *next;
 };
 
 struct HYD_pmcd_pmi_kvs {
-    char kvs_name[MAXNAMELEN];  /* Name of this kvs */
+    char kvs_name[PMI_MAXKVSLEN];       /* Name of this kvs */
     struct HYD_pmcd_pmi_kvs_pair *key_pair;
 };
 
@@ -36,7 +34,7 @@ struct HYD_pmcd_hdr {
         PROC_INFO,
         CKPOINT,
         PMI_RESPONSE,
-        SIGNAL_PROCESSES,
+        SIGNAL,
         STDIN,
 
         /* Proxy to UI commands */
@@ -59,6 +57,9 @@ struct HYD_pmcd_hdr {
     int pgid;
     int proxy_id;
     int rank;
+
+    /* SIGNAL */
+    int signum;
 };
 
 struct HYD_pmcd_token {

@@ -35,9 +35,9 @@ INCLUDES = -I../../../include -I${srcdir}/../../../include
 	$(CXX_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 apply: 
 	$(ACTION) $(ACTION_INPUT)
-clean: 
-	-@rm -f *.o ${srcdir}/*.o errsetx errgetx throwtest
-	-@rm -f errsetx.exe errgetx.exe throwtest.exe
+clean:  clean-local
+	-@rm -f *.o ${srcdir}/*.o errsetx errgetx commerrx throwtest
+	-@rm -f errsetx.exe errgetx.exe commerrx.exe throwtest.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f *.irlog*
@@ -51,7 +51,7 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile
-all-redirect: errgetx errsetx throwtest
+all-redirect: errgetx errsetx commerrx throwtest
 
 errsetx: errsetx.o   @MPILIBLOC@ ../../../cxx/util/mtest.o
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o errsetx errsetx.o  ../../../cxx/util/mtest.o \
@@ -59,13 +59,16 @@ errsetx: errsetx.o   @MPILIBLOC@ ../../../cxx/util/mtest.o
 errgetx: errgetx.o   @MPILIBLOC@ ../../../cxx/util/mtest.o
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o errgetx errgetx.o  ../../../cxx/util/mtest.o \
 	${LIBS} 
+commerrx: commerrx.o   @MPILIBLOC@ ../../../cxx/util/mtest.o
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o commerrx commerrx.o  ../../../cxx/util/mtest.o \
+	${LIBS} 
 throwtest: throwtest.o   @MPILIBLOC@ ../../../cxx/util/mtest.o
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o throwtest throwtest.o  ../../../cxx/util/mtest.o \
 	${LIBS} 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  errgetx.cxx errsetx.cxx throwtest.cxx
+SOURCES         =  errgetx.cxx errsetx.cxx commerrx.cxx throwtest.cxx
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
@@ -73,6 +76,14 @@ SOURCEFILES     = $(SOURCES)
 
 ../../../cxx/util/mtest.o: 
 	(cd ../../../cxx/util && $(MAKE) mtest.o)
+
+# A special testing target to simplify running just the pt2pt tests
+testing:
+	../../../runtests -srcdir=$(srcdir) -tests=testlist \
+		   -mpiexec=@MPIEXEC@ \
+		   -xmlfile=summary.xml
+clean-local:
+	-rm -f summary.xml
 
 .POSIX:
 

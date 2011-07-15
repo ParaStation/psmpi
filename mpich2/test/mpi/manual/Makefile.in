@@ -41,8 +41,8 @@ INCLUDES = -I../include -I${srcdir}/../include
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
-	-@rm -f *.o ${srcdir}/*.o testconnect singjoin spawntest_child testconnectserial dimsbalanced spawntest_master
-	-@rm -f testconnect.exe singjoin.exe spawntest_child.exe testconnectserial.exe dimsbalanced.exe spawntest_master.exe
+	-@rm -f *.o ${srcdir}/*.o testconnect singjoin spawntest_child testconnectserial segfault dimsbalanced spawntest_master
+	-@rm -f testconnect.exe singjoin.exe spawntest_child.exe testconnectserial.exe segfault.exe dimsbalanced.exe spawntest_master.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f *.irlog*
@@ -56,7 +56,8 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile
-all-redirect: singjoin testconnect testconnectserial dimsbalanced spawntest_master spawntest_child
+all-redirect: singjoin testconnect testconnectserial dimsbalanced spawntest_master spawntest_child\
+	 segfault
 
 testconnect: testconnect.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o testconnect testconnect.o  ${LIBS}
@@ -67,6 +68,8 @@ spawntest_child: spawntest_child.o
 testconnectserial: testconnectserial.o tchandlers.o tcutil.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o testconnectserial testconnectserial.o tchandlers.o \
 	tcutil.o  -lm ${LIBS} 
+segfault: segfault.o   
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o segfault segfault.o  ${LIBS}
 dimsbalanced: dimsbalanced.o   
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o dimsbalanced dimsbalanced.o  ${LIBS}
 spawntest_master: spawntest_master.o   
@@ -75,7 +78,7 @@ spawntest_master: spawntest_master.o
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  singjoin.c testconnect.c testconnectserial.c tchandlers.c tcutil.c \
-	dimsbalanced.c spawntest_master.c spawntest_child.c 
+	dimsbalanced.c spawntest_master.c spawntest_child.c segfault.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------

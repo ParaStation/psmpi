@@ -6,7 +6,7 @@ DEPADD = @MPILIBLOC@ ../util/mtestf90.o
 smvar_do_sharedlibs = 0
 
 statusesf90_SOURCES = statusesf90.f90
-greqf90_SOURCES     = greqf90.f90
+greqf90_SOURCES     = greqf90.f90 dummyf90.f90
 
 testing:
 	../../runtests -srcdir=$(srcdir) -tests=testlist \

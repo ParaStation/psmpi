@@ -14,9 +14,9 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT  = @INSTALL_SCRIPT@
 INSTALL_DATA    = @INSTALL_DATA@
 MKDIR_P         = @MKDIR_P@
-master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
 abs_builddir    = @abs_builddir@
+master_top_srcdir  = @master_top_srcdir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 prefix          = @prefix@
@@ -197,7 +197,7 @@ wrap_objs = _wsendf.o _wrecvf.o _wget_countf.o _wbsendf.o _wssendf.o _wrsendf.o 
 FWRAPNAME = @FWRAPNAME@
 HEADERS = fproto.h mpi_fortimpl.h
 INCLUDES = -I../../include -I${master_top_srcdir}/src/include -I${master_top_srcdir}/src/binding/f77 
-doc_sources = mpif77.txt
+doc_sources = 
 
 .SUFFIXES:
 .SUFFIXES: .o .lo .c .f .o 
@@ -613,11 +613,11 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	_null_comm_copy_fnf.o _dup_win_fnf.o _null_win_del_fnf.o _null_win_copy_fnf.o \
 	_dup_type_fnf.o _null_type_del_fnf.o _null_type_copy_fnf.o _statusf2c.o _statusc2f.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${PMPIFLIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${PMPIFLIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${PMPIFLIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${PMPIFLIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${PMPIFLIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${PMPIFLIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${PMPIFLIBNAME}.a" ; \
 	else \
@@ -688,11 +688,11 @@ all-redirect: .libstamp0 ../../../lib/lib${FWRAPNAME}.a .libstamp2\
 	_null_win_del_fnf.lo _null_win_copy_fnf.lo _dup_type_fnf.lo _null_type_del_fnf.lo \
 	_null_type_copy_fnf.lo _statusf2c.lo _statusc2f.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${PMPIFLIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${PMPIFLIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${PMPIFLIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${PMPIFLIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${PMPIFLIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${PMPIFLIBNAME}.la $?
 	date > .libstamp5
 _sendf.o: sendf.c
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \

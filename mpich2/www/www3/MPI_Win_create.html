@@ -63,6 +63,9 @@ possible.
 <P>
 <DL><DT><B>MPI_SUCCESS </B> <DD> No error; MPI routine completed successfully.
 </DL>
+<DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
+identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
+</DL>
 <DL><DT><B>MPI_ERR_COMM </B> <DD> Invalid communicator.  A common error is to use a null
 communicator in a call (not even allowed in <TT>MPI_Comm_rank</TT>).
 </DL>
@@ -70,6 +73,8 @@ communicator in a call (not even allowed in <TT>MPI_Comm_rank</TT>).
 </DL>
 <DL><DT><B>MPI_ERR_OTHER </B> <DD> Other error; use <TT>MPI_Error_string</TT> to get more information
 about this error code. 
+</DL>
+<DL><DT><B>MPI_ERR_SIZE </B> <DD> 
 </DL>
 <P><B>Location:</B>win_create.c<P>
 </BODY></HTML>

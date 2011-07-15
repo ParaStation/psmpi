@@ -1,12 +1,12 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2010 by Argonne National Laboratory.
+ *  (C) 2011 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 /* automatically generated
  *   by:   ./maint/genparams
- *   at:   Mon Feb 14 19:11:14 2011
- *   from: src/util/param/params.yml (md5sum 5d8dcd1c2726878fe02f95795c8a426e)
+ *   at:   Thu Jun 16 16:44:54 2011
+ *   from: src/util/param/params.yml (md5sum a5daec576251497b00e472280d6bc3ba)
  *
  * DO NOT EDIT!!!
  */
@@ -51,6 +51,9 @@ struct MPIR_Param_category_t MPIR_Param_categories[MPIR_PARAM_NUM_CATEGORIES] = 
     { MPIR_PARAM_CATEGORY_ID_nemesis,
       "nemesis",
       "parameters that control behavior of the ch3:nemesis channel" },
+    { MPIR_PARAM_CATEGORY_ID_sockets,
+      "sockets",
+      "control socket parameters" },
 };
 
 /* array of parameter info for runtime usage */
@@ -58,119 +61,127 @@ struct MPIR_Param_t MPIR_Param_params[MPIR_PARAM_NUM_PARAMS] = {
     { MPIR_PARAM_ID_ALLTOALL_SHORT_MSG_SIZE,
       "ALLTOALL_SHORT_MSG_SIZE",
       "the short message algorithm will be used if the per-destination message size (sendcount*size(sendtype)) is <= this value",
-      { MPIR_PARAM_TYPE_INT, 256, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 256, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_ALLTOALL_MEDIUM_MSG_SIZE,
       "ALLTOALL_MEDIUM_MSG_SIZE",
       "the medium message algorithm will be used if the per-destination message size (sendcount*size(sendtype)) is <= this value and larger than ALLTOALL_SHORT_MSG_SIZE",
-      { MPIR_PARAM_TYPE_INT, 32768, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 32768, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_ALLTOALL_THROTTLE,
       "ALLTOALL_THROTTLE",
       "max no. of irecvs/isends posted at a time in some alltoall algorithms. Setting it to 0 causes all irecvs/isends to be posted at once.",
-      { MPIR_PARAM_TYPE_INT, 4, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 4, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_REDSCAT_COMMUTATIVE_LONG_MSG_SIZE,
       "REDSCAT_COMMUTATIVE_LONG_MSG_SIZE",
       "the long message algorithm will be used if the operation is commutative and the send buffer size is >= this value (in bytes)",
-      { MPIR_PARAM_TYPE_INT, 524288, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 524288, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_BCAST_MIN_PROCS,
       "BCAST_MIN_PROCS",
       "the minimum number of processes in a communicator to use a non-binomial broadcast algorithm",
-      { MPIR_PARAM_TYPE_INT, 8, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 8, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_BCAST_SHORT_MSG_SIZE,
       "BCAST_SHORT_MSG_SIZE",
       "the short message algorithm will be used if the send buffer size is < this value (in bytes)",
-      { MPIR_PARAM_TYPE_INT, 12288, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 12288, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_BCAST_LONG_MSG_SIZE,
       "BCAST_LONG_MSG_SIZE",
       "the long message algorithm will be used if the send buffer size is >= this value (in bytes)",
-      { MPIR_PARAM_TYPE_INT, 524288, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 524288, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_ALLGATHER_SHORT_MSG_SIZE,
       "ALLGATHER_SHORT_MSG_SIZE",
       "For MPI_Allgather and MPI_Allgatherv, the short message algorithm will be used if the send buffer size is < this value (in bytes).",
-      { MPIR_PARAM_TYPE_INT, 81920, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 81920, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_ALLGATHER_LONG_MSG_SIZE,
       "ALLGATHER_LONG_MSG_SIZE",
       "For MPI_Allgather and MPI_Allgatherv, the long message algorithm will be used if the send buffer size is >= this value (in bytes)",
-      { MPIR_PARAM_TYPE_INT, 524288, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 524288, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_REDUCE_SHORT_MSG_SIZE,
       "REDUCE_SHORT_MSG_SIZE",
       "the short message algorithm will be used if the send buffer size is <= this value (in bytes)",
-      { MPIR_PARAM_TYPE_INT, 2048, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 2048, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_ALLREDUCE_SHORT_MSG_SIZE,
       "ALLREDUCE_SHORT_MSG_SIZE",
       "the short message algorithm will be used if the send buffer size is <= this value (in bytes)",
-      { MPIR_PARAM_TYPE_INT, 2048, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 2048, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_GATHER_VSMALL_MSG_SIZE,
       "GATHER_VSMALL_MSG_SIZE",
       "use a temporary buffer for intracommunicator MPI_Gather if the send buffer size is < this value (in bytes)",
-      { MPIR_PARAM_TYPE_INT, 1024, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 1024, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_GATHER_INTER_SHORT_MSG_SIZE,
       "GATHER_INTER_SHORT_MSG_SIZE",
       "use the short message algorithm for intercommunicator MPI_Gather if the send buffer size is < this value (in bytes)",
-      { MPIR_PARAM_TYPE_INT, 2048, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 2048, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_GATHERV_INTER_SSEND_MIN_PROCS,
       "GATHERV_INTER_SSEND_MIN_PROCS",
       "Use Ssend (synchronous send) for intercommunicator MPI_Gatherv if the \"group B\" size is >= this value.  Specifying \"-1\" always avoids using Ssend.  For backwards compatibility, specifying \"0\" uses the default value.",
-      { MPIR_PARAM_TYPE_INT, 32, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 32, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_SCATTER_INTER_SHORT_MSG_SIZE,
       "SCATTER_INTER_SHORT_MSG_SIZE",
       "use the short message algorithm for intercommunicator MPI_Scatter if the send buffer size is < this value (in bytes)",
-      { MPIR_PARAM_TYPE_INT, 2048, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 2048, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_ALLGATHERV_PIPELINE_MSG_SIZE,
       "ALLGATHERV_PIPELINE_MSG_SIZE",
       "The smallest message size that will be used for the pipelined, large-message, ring algorithm in the MPI_Allgatherv implementation.",
-      { MPIR_PARAM_TYPE_INT, 32768, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 32768, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_COMM_SPLIT_USE_QSORT,
       "COMM_SPLIT_USE_QSORT",
       "Use qsort(3) in the implementation of MPI_Comm_split instead of bubble sort.",
-      { MPIR_PARAM_TYPE_BOOLEAN, 1, 0.0, "" } },
+      { MPIR_PARAM_TYPE_BOOLEAN, 1, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_NOLOCAL,
       "NOLOCAL",
       "If true, force all processes to operate as though all processes are located on another node.  For example, this disables shared memory communication hierarchical collectives.",
-      { MPIR_PARAM_TYPE_BOOLEAN, 0, 0.0, "" } },
+      { MPIR_PARAM_TYPE_BOOLEAN, 0, 0.0, "", {0,0} } },
+    { MPIR_PARAM_ID_ODD_EVEN_CLIQUES,
+      "ODD_EVEN_CLIQUES",
+      "If true, odd procs on a node are seen as local to each other, and even procs on a node are seen as local to each other.  Used for debugging on a single machine.",
+      { MPIR_PARAM_TYPE_BOOLEAN, 0, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_MEMDUMP,
       "MEMDUMP",
       "If true, list any memory that was allocated by MPICH2 and that remains allocated when MPI_Finalize completes.",
-      { MPIR_PARAM_TYPE_BOOLEAN, 1, 0.0, "" } },
+      { MPIR_PARAM_TYPE_BOOLEAN, 1, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_PROCTABLE_SIZE,
       "PROCTABLE_SIZE",
       "Size of the \"MPIR\" debugger interface proctable (process table).",
-      { MPIR_PARAM_TYPE_INT, 64, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 64, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_PROCTABLE_PRINT,
       "PROCTABLE_PRINT",
       "If true, dump the proctable entries at MPIR_WaitForDebugger-time. (currently compile-time disabled by \"#if 0\")",
-      { MPIR_PARAM_TYPE_BOOLEAN, 1, 0.0, "" } },
+      { MPIR_PARAM_TYPE_BOOLEAN, 1, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_PRINT_ERROR_STACK,
       "PRINT_ERROR_STACK",
       "If true, print an error stack trace at error handling time.",
-      { MPIR_PARAM_TYPE_BOOLEAN, 1, 0.0, "" } },
+      { MPIR_PARAM_TYPE_BOOLEAN, 1, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_CHOP_ERROR_STACK,
       "CHOP_ERROR_STACK",
       "If >0, truncate error stack output lines this many characters wide.  If 0, do not truncate, and if <0 use a sensible default.",
-      { MPIR_PARAM_TYPE_INT, 0, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 0, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_NEM_LMT_DMA_THRESHOLD,
       "NEM_LMT_DMA_THRESHOLD",
       "Messages larger than this size will use the \"dma\" (knem) intranode LMT implementation, if it is enabled and available.",
-      { MPIR_PARAM_TYPE_INT, 2097152, 0.0, "" } },
+      { MPIR_PARAM_TYPE_INT, 2097152, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_NEMESIS_NETMOD,
       "NEMESIS_NETMOD",
       "If non-empty, this parameter specifies which network module should be used for communication.",
-      { MPIR_PARAM_TYPE_STRING, -1, 0.0, "" } },
+      { MPIR_PARAM_TYPE_STRING, -1, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_DEBUG_HOLD,
       "DEBUG_HOLD",
       "If true, causes processes to wait in MPI_Init and MPI_Initthread for a debugger to be attached.  Once the debugger has attached, the variable 'hold' should be set to 0 in order to allow the process to continue (e.g., in gdb, \"set hold=0\").",
-      { MPIR_PARAM_TYPE_BOOLEAN, 0, 0.0, "" } },
+      { MPIR_PARAM_TYPE_BOOLEAN, 0, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_ENABLE_CKPOINT,
       "ENABLE_CKPOINT",
       "If true, enables checkpointing support and returns an error if checkpointing library cannot be initialized.",
-      { MPIR_PARAM_TYPE_BOOLEAN, 0, 0.0, "" } },
+      { MPIR_PARAM_TYPE_BOOLEAN, 0, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_ENABLE_COLL_FT_RET,
       "ENABLE_COLL_FT_RET",
       "Collectives called on a communicator with a failed process should not hang, however the result of the operation may be invalid even though the function returns MPI_SUCCESS.  This option enables an experimental feature that will return an error if the result of the collective is invalid.",
-      { MPIR_PARAM_TYPE_BOOLEAN, 0, 0.0, "" } },
+      { MPIR_PARAM_TYPE_BOOLEAN, 0, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_ABORT_ON_LEAKED_HANDLES,
       "ABORT_ON_LEAKED_HANDLES",
       "If true, MPI will call MPI_Abort at MPI_Finalize if any MPI object handles have been leaked.  For example, if MPI_Comm_dup is called without calling a corresponding MPI_Comm_free.  For uninteresting reasons, enabling this option may prevent all known object leaks from being reported.  MPICH2 must have been configure with \"--enable-g=handlealloc\" or better in order for this functionality to work.",
-      { MPIR_PARAM_TYPE_BOOLEAN, 0, 0.0, "" } },
+      { MPIR_PARAM_TYPE_BOOLEAN, 0, 0.0, "", {0,0} } },
+    { MPIR_PARAM_ID_PORT_RANGE,
+      "PORT_RANGE",
+      "\"The MPICH_PORT_RANGE environment variable allows you to specify the range of TCP ports to be used by the process manager and the MPICH2 library. The format of this variable is <low>:<high>.\"",
+      { MPIR_PARAM_TYPE_RANGE, -1, 0.0, "", {0,0} } },
 };
 
 /* actual storage for parameters */
@@ -192,6 +203,7 @@ int MPIR_PARAM_SCATTER_INTER_SHORT_MSG_SIZE = 2048;
 int MPIR_PARAM_ALLGATHERV_PIPELINE_MSG_SIZE = 32768;
 int MPIR_PARAM_COMM_SPLIT_USE_QSORT = 1;
 int MPIR_PARAM_NOLOCAL = 0;
+int MPIR_PARAM_ODD_EVEN_CLIQUES = 0;
 int MPIR_PARAM_MEMDUMP = 1;
 int MPIR_PARAM_PROCTABLE_SIZE = 64;
 int MPIR_PARAM_PROCTABLE_PRINT = 1;
@@ -203,6 +215,7 @@ int MPIR_PARAM_DEBUG_HOLD = 0;
 int MPIR_PARAM_ENABLE_CKPOINT = 0;
 int MPIR_PARAM_ENABLE_COLL_FT_RET = 0;
 int MPIR_PARAM_ABORT_ON_LEAKED_HANDLES = 0;
+MPIR_Param_param_range_val_t MPIR_PARAM_PORT_RANGE = {0,0};
 
 #undef FUNCNAME
 #define FUNCNAME MPIR_Param_init_params
@@ -309,6 +322,15 @@ int MPIR_Param_init_params(void)
     rc = MPL_env2bool("MPIR_PARAM_NOLOCAL", &(MPIR_PARAM_NOLOCAL));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_NOLOCAL");
 
+    rc = MPL_env2bool("MPICH_EVEN_ODD_CLIQUES", &(MPIR_PARAM_ODD_EVEN_CLIQUES));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_EVEN_ODD_CLIQUES");
+    rc = MPL_env2bool("MPIR_PARAM_EVEN_ODD_CLIQUES", &(MPIR_PARAM_ODD_EVEN_CLIQUES));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_EVEN_ODD_CLIQUES");
+    rc = MPL_env2bool("MPICH_ODD_EVEN_CLIQUES", &(MPIR_PARAM_ODD_EVEN_CLIQUES));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_ODD_EVEN_CLIQUES");
+    rc = MPL_env2bool("MPIR_PARAM_ODD_EVEN_CLIQUES", &(MPIR_PARAM_ODD_EVEN_CLIQUES));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_ODD_EVEN_CLIQUES");
+
     rc = MPL_env2bool("MPICH_MEMDUMP", &(MPIR_PARAM_MEMDUMP));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_MEMDUMP");
     rc = MPL_env2bool("MPIR_PARAM_MEMDUMP", &(MPIR_PARAM_MEMDUMP));
@@ -363,6 +385,15 @@ int MPIR_Param_init_params(void)
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_ABORT_ON_LEAKED_HANDLES");
     rc = MPL_env2bool("MPIR_PARAM_ABORT_ON_LEAKED_HANDLES", &(MPIR_PARAM_ABORT_ON_LEAKED_HANDLES));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_ABORT_ON_LEAKED_HANDLES");
+
+    rc = MPL_env2range("MPICH_PORTRANGE", &(MPIR_PARAM_PORT_RANGE.low), &(MPIR_PARAM_PORT_RANGE.high));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_PORTRANGE");
+    rc = MPL_env2range("MPIR_PARAM_PORTRANGE", &(MPIR_PARAM_PORT_RANGE.low), &(MPIR_PARAM_PORT_RANGE.high));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_PORTRANGE");
+    rc = MPL_env2range("MPICH_PORT_RANGE", &(MPIR_PARAM_PORT_RANGE.low), &(MPIR_PARAM_PORT_RANGE.high));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_PORT_RANGE");
+    rc = MPL_env2range("MPIR_PARAM_PORT_RANGE", &(MPIR_PARAM_PORT_RANGE.low), &(MPIR_PARAM_PORT_RANGE.high));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_PORT_RANGE");
 
 fn_fail:
     return mpi_errno;

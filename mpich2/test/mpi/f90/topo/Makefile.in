@@ -6,10 +6,10 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+abs_builddir    = @abs_builddir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
-abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 LIBS            = @LIBS@
@@ -36,8 +36,8 @@ VPATH = .:@srcdir@
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o cartcrf90
-	-@rm -f cartcrf90.exe
+	-@rm -f *.o ${srcdir}/*.o dgraph_wgtf90 cartcrf90 dgraph_unwgtf90
+	-@rm -f dgraph_wgtf90.exe cartcrf90.exe dgraph_unwgtf90.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f *.irlog*
@@ -51,14 +51,18 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile
-all-redirect: cartcrf90
+all-redirect: cartcrf90 dgraph_wgtf90 dgraph_unwgtf90
 
+dgraph_wgtf90: dgraph_wgtf90.o   @MPILIBLOC@ ../util/mtestf90.o
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o dgraph_wgtf90 dgraph_wgtf90.o  ${LIBS}
 cartcrf90: cartcrf90.o   @MPILIBLOC@ ../util/mtestf90.o
 	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o cartcrf90 cartcrf90.o  ${LIBS}
+dgraph_unwgtf90: dgraph_unwgtf90.o   @MPILIBLOC@ ../util/mtestf90.o
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o dgraph_unwgtf90 dgraph_unwgtf90.o  ${LIBS}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  cartcrf90.f90
+SOURCES         =  cartcrf90.f90 dgraph_wgtf90.f90 dgraph_unwgtf90.f90
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------

@@ -22,18 +22,18 @@ VPATH = .:@srcdir@
 .SUFFIXES: .c .o
 apply: 
 	$(ACTION) $(ACTION_INPUT)
-	for dir in mpl mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
+	for dir in mpl mpid mpi mpix util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} apply ) ; done
 clean: 
 	-@rm -f *.o ${srcdir}/*.o 
 	-@rm -f *.lo ${srcdir}/*.lo
-	for dir in mpl mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
+	for dir in mpl mpid mpi mpix util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		(cd $$dir && ${MAKE} clean ) ; done
 distclean:  clean distclean-local distclean-xxx remove-makefile
 distclean-xxx:
-	for dir in mpl mpid mpi util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
+	for dir in mpl mpid mpi mpix util nameserv binding env packaging @mpe_dir@ pmi pm - ; do \
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		if [ ! -s $$dir/Makefile ] ; then continue ; fi ;\
 		(cd $$dir && ${MAKE} distclean ) ; done
@@ -50,6 +50,7 @@ all-redirect:
 	@(cd mpl && ${MAKE} all )
 	@(cd mpid && ${MAKE} all )
 	@(cd mpi && ${MAKE} all )
+	@(cd mpix && ${MAKE} all )
 	@(cd util && ${MAKE} all )
 	@(cd nameserv && ${MAKE} all )
 	@(cd binding && ${MAKE} all )

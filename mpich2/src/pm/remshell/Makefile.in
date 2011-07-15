@@ -11,11 +11,11 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT  = @INSTALL_SCRIPT@
 INSTALL_DATA    = @INSTALL_DATA@
 MKDIR_P         = @MKDIR_P@
+abs_builddir    = @abs_builddir@
 master_top_srcdir  = @master_top_srcdir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
-abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 DEFS            = @DEFS@ -I. -I${srcdir}
@@ -109,11 +109,6 @@ clean-local:
 	@-(cd ../util && $(MAKE) clean)
 distclean-local:
 	@-rm -f remshellconf.h
-
-# Use the mpich2-build-install target to include mpiexec in the build bin
-# directory (all pm's require these targets)
-mpich2-build-install: install
-mpich2-build-uninstall: uninstall
 
 # A special alternate installation target when using multiple process managers
 install-alt: mpiexec

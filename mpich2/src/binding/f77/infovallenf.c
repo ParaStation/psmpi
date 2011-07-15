@@ -199,6 +199,6 @@ FORT_DLL_SPEC void FORT_CALL mpi_info_get_valuelen_ ( MPI_Fint *v1, char *v2 FOR
         p2[li] = 0; 
     }
     *ierr = MPI_Info_get_valuelen( (MPI_Info)(*v1), p2, v3, &l4 );
-    MPIU_Free( p2 );
     *v4 = MPIR_TO_FLOG(l4);
+    MPIU_Free( p2 );
 }

@@ -165,6 +165,8 @@ int MPIR_Setup_intercomm_localcomm( MPID_Comm *intercomm_ptr )
     localcomm_ptr->recvcontext_id = MPID_CONTEXT_SET_FIELD(IS_LOCALCOMM, intercomm_ptr->recvcontext_id, 1);
     localcomm_ptr->context_id = localcomm_ptr->recvcontext_id;
 
+    MPIU_DBG_MSG_FMT(COMM,TYPICAL,(MPIU_DBG_FDEST, "setup_intercomm_localcomm ic=%p ic->context_id=%d ic->recvcontext_id=%d lc->recvcontext_id=%d", intercomm_ptr, intercomm_ptr->context_id, intercomm_ptr->recvcontext_id, localcomm_ptr->recvcontext_id));
+
     /* Duplicate the VCRT references */
     MPID_VCRT_Add_ref( intercomm_ptr->local_vcrt );
     localcomm_ptr->vcrt = intercomm_ptr->local_vcrt;
@@ -1160,16 +1162,16 @@ static int comm_delete(MPID_Comm * comm_ptr, int isDisconnect)
             }
         }
 
-        /* Check for predefined communicators - these should not
-           be freed */
-        if (! (HANDLE_GET_KIND(comm_ptr->handle) == HANDLE_KIND_BUILTIN) )
-            MPIU_Handle_obj_free( &MPID_Comm_mem, comm_ptr );
-
         /* Remove from the list of active communicators if
            we are supporting message-queue debugging.  We make this
            conditional on having debugger support since the
            operation is not constant-time */
         MPIR_COMML_FORGET( comm_ptr );
+
+        /* Check for predefined communicators - these should not
+           be freed */
+        if (! (HANDLE_GET_KIND(comm_ptr->handle) == HANDLE_KIND_BUILTIN) )
+            MPIU_Handle_obj_free( &MPID_Comm_mem, comm_ptr );
     }
     else {
         /* If the user attribute free function returns an error,

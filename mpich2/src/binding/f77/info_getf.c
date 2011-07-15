@@ -201,12 +201,12 @@ FORT_DLL_SPEC void FORT_CALL mpi_info_get_ ( MPI_Fint *v1, char *v2 FORT_MIXED_L
     }
     p4 = (char *)MPIU_Malloc( d4 + 1 );
     *ierr = MPI_Info_get( (MPI_Info)(*v1), p2, *v3, p4, &l5 );
-    MPIU_Free( p2 );
 
-    if (l5) {char *p = v4, *pc=p4;
+    if (l5 && !*ierr) {char *p = v4, *pc=p4;
         while (*pc) {*p++ = *pc++;}
         while ((p-v4) < d4) { *p++ = ' '; }
     }
-    MPIU_Free( p4 );
     *v5 = MPIR_TO_FLOG(l5);
+    MPIU_Free( p2 );
+    MPIU_Free( p4 );
 }

@@ -17,6 +17,7 @@ void HYD_pmcd_init_header(struct HYD_pmcd_hdr *hdr)
     hdr->pgid = -1;
     hdr->proxy_id = -1;
     hdr->rank = -1;
+    hdr->signum = -1;
 }
 
 HYD_status HYD_pmcd_pmi_parse_pmi_cmd(char *obuf, int pmi_version, char **pmi_cmd,
@@ -184,7 +185,7 @@ HYD_status HYD_pmcd_pmi_allocate_kvs(struct HYD_pmcd_pmi_kvs ** kvs, int pgid)
     HYDU_FUNC_ENTER();
 
     HYDU_MALLOC(*kvs, struct HYD_pmcd_pmi_kvs *, sizeof(struct HYD_pmcd_pmi_kvs), status);
-    HYDU_snprintf((*kvs)->kvs_name, MAXNAMELEN, "kvs_%d_%d", (int) getpid(), pgid);
+    HYDU_snprintf((*kvs)->kvs_name, PMI_MAXKVSLEN, "kvs_%d_%d", (int) getpid(), pgid);
     (*kvs)->key_pair = NULL;
 
   fn_exit:
@@ -222,8 +223,8 @@ HYD_status HYD_pmcd_pmi_add_kvs(const char *key, char *val, struct HYD_pmcd_pmi_
 
     HYDU_MALLOC(key_pair, struct HYD_pmcd_pmi_kvs_pair *, sizeof(struct HYD_pmcd_pmi_kvs_pair),
                 status);
-    HYDU_snprintf(key_pair->key, MAXKEYLEN, "%s", key);
-    HYDU_snprintf(key_pair->val, MAXVALLEN, "%s", val);
+    HYDU_snprintf(key_pair->key, PMI_MAXKEYLEN, "%s", key);
+    HYDU_snprintf(key_pair->val, PMI_MAXVALLEN, "%s", val);
     key_pair->next = NULL;
 
     *ret = 0;

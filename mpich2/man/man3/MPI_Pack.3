@@ -1,4 +1,4 @@
-.TH MPI_Pack 3 "8/9/2010" " " "MPI"
+.TH MPI_Pack 3 "2/26/2011" " " "MPI"
 .SH NAME
 MPI_Pack \-  Packs a datatype into contiguous memory 
 .SH SYNOPSIS
@@ -11,41 +11,45 @@ int MPI_Pack(void *inbuf,
              int *position,
              MPI_Comm comm)
 .fi
-.SH ARGUMENTS
+.SH INPUT PARAMETERS
 .PD 0
 .TP
-.B void *inbuf 
-- input buffer
+.B inbuf 
+- input buffer start (choice)
 .PD 1
 .PD 0
 .TP
-.B int incount 
-- input count
+.B incount 
+- number of input data items (non-negative integer)
 .PD 1
 .PD 0
 .TP
-.B MPI_Datatype datatype 
-- datatype
+.B datatype 
+- datatype of each input data item (handle)
 .PD 1
 .PD 0
 .TP
-.B void *outbuf 
-- output buffer
+.B outcount 
+- output buffer size, in bytes (non-negative integer)
 .PD 1
 .PD 0
 .TP
-.B int outcount 
-- output count
+.B comm 
+- communicator for packed message (handle)
 .PD 1
+
+.SH OUTPUT PARAMETER
 .PD 0
 .TP
-.B int *position 
-- position
+.B outbuf 
+- output buffer start (choice)
 .PD 1
+
+.SH INPUT/OUTPUT PARAMETER
 .PD 0
 .TP
-.B MPI_Commm comm 
-- communicator
+.B position 
+- current position in buffer, in bytes (integer)
 .PD 1
 
 .SH NOTES (FROM THE SPECIFICATIONS)
@@ -114,6 +118,22 @@ possible.
 .TP
 .B MPI_SUCCESS 
 - No error; MPI routine completed successfully.
+.PD 1
+.PD 0
+.TP
+.B MPI_ERR_ARG 
+- Invalid argument.  Some argument is invalid and is not
+identified by a specific error class (e.g., 
+.I MPI_ERR_RANK
+).
+.PD 1
+.PD 0
+.TP
+.B MPI_ERR_OTHER 
+- Other error; use 
+.I MPI_Error_string
+to get more information
+about this error code. 
 .PD 1
 .SH LOCATION
 pack.c

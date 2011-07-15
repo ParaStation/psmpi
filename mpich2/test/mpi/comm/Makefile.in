@@ -42,8 +42,8 @@ INCLUDES = -I../include -I${top_srcdir}/include
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
-	-@rm -f *.o ${srcdir}/*.o ctxsplit icsplit commcreate1 icm commname cmfree ic1 dupic probe-intercomm dup ctxalloc iccreate cmsplit icgroup
-	-@rm -f ctxsplit.exe icsplit.exe commcreate1.exe icm.exe commname.exe cmfree.exe ic1.exe dupic.exe probe-intercomm.exe dup.exe ctxalloc.exe iccreate.exe cmsplit.exe icgroup.exe
+	-@rm -f *.o ${srcdir}/*.o ctxsplit icsplit commcreate1 icm commname cmfree ic1 dupic probe-intercomm dup ctxalloc iccreate cmsplit cmsplit2 icgroup
+	-@rm -f ctxsplit.exe icsplit.exe commcreate1.exe icm.exe commname.exe cmfree.exe ic1.exe dupic.exe probe-intercomm.exe dup.exe ctxalloc.exe iccreate.exe cmsplit.exe cmsplit2.exe icgroup.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f *.irlog*
@@ -58,7 +58,7 @@ remove-makefile:
 remove-genmakefiles:
 	rm -f  Makefile
 all-redirect: commcreate1 dup dupic ic1 commname ctxalloc ctxsplit icgroup icsplit iccreate cmfree\
-	 icm cmsplit probe-intercomm
+	 icm cmsplit cmsplit2 probe-intercomm
 
 ctxsplit: ctxsplit.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o ctxsplit ctxsplit.o  ${LIBS}
@@ -86,13 +86,15 @@ iccreate: iccreate.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o iccreate iccreate.o  ${LIBS}
 cmsplit: cmsplit.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o cmsplit cmsplit.o  ${LIBS}
+cmsplit2: cmsplit2.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o cmsplit2 cmsplit2.o  ${LIBS}
 icgroup: icgroup.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o icgroup icgroup.o  ${LIBS}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 SOURCES         =  commcreate1.c dup.c dupic.c ic1.c commname.c ctxalloc.c ctxsplit.c icgroup.c \
-	icsplit.c iccreate.c cmfree.c icm.c cmsplit.c probe-intercomm.c 
+	icsplit.c iccreate.c cmfree.c icm.c cmsplit.c cmsplit2.c probe-intercomm.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------

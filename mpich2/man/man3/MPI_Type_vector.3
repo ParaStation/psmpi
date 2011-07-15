@@ -1,4 +1,4 @@
-.TH MPI_Type_vector 3 "7/29/2010" " " "MPI"
+.TH MPI_Type_vector 3 "6/14/2011" " " "MPI"
 .SH NAME
 MPI_Type_vector \-  Creates a vector (strided) datatype 
 .SH SYNOPSIS
@@ -104,6 +104,22 @@ possible.
 .TP
 .B MPI_SUCCESS 
 - No error; MPI routine completed successfully.
+.PD 1
+.PD 0
+.TP
+.B MPI_ERR_ARG 
+- Invalid argument.  Some argument is invalid and is not
+identified by a specific error class (e.g., 
+.I MPI_ERR_RANK
+).
+.PD 1
+.PD 0
+.TP
+.B MPI_ERR_OTHER 
+- Other error; use 
+.I MPI_Error_string
+to get more information
+about this error code. 
 .PD 1
 .SH LOCATION
 type_vector.c

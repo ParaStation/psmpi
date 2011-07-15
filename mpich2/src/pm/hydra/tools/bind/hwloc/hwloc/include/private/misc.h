@@ -1,7 +1,8 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2010 INRIA
- * Copyright © 2009-2010 Université Bordeaux 1
+ * Copyright © 2009-2010 INRIA.  All rights reserved.
+ * Copyright © 2009-2011 Université Bordeaux 1
+ * Copyright © 2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
@@ -10,8 +11,8 @@
 #ifndef HWLOC_PRIVATE_MISC_H
 #define HWLOC_PRIVATE_MISC_H
 
-#include <hwloc/config.h>
-#include <private/config.h>
+#include <hwloc/autogen/config.h>
+#include <private/autogen/config.h>
 #include <private/private.h>
 
 
@@ -74,7 +75,7 @@ extern int ffs(int) __hwloc_attribute_const;
 
 #else /* no ffs implementation */
 
-static inline int __hwloc_attribute_const
+static __hwloc_inline int __hwloc_attribute_const
 hwloc_ffsl(unsigned long x)
 {
 	int i;
@@ -120,7 +121,7 @@ hwloc_ffsl(unsigned long x)
 /* We only have an int ffs(int) implementation, build a long one.  */
 
 /* First make it 32 bits if it was only 16.  */
-static inline int __hwloc_attribute_const
+static __hwloc_inline int __hwloc_attribute_const
 hwloc_ffs32(unsigned long x)
 {
 #if HWLOC_BITS_PER_INT == 16
@@ -141,7 +142,7 @@ hwloc_ffs32(unsigned long x)
 }
 
 /* Then make it 64 bit if longs are.  */
-static inline int __hwloc_attribute_const
+static __hwloc_inline int __hwloc_attribute_const
 hwloc_ffsl(unsigned long x)
 {
 #if HWLOC_BITS_PER_LONG == 64
@@ -210,7 +211,7 @@ extern int clz(int) __hwloc_attribute_const;
 
 #else /* no fls implementation */
 
-static inline int __hwloc_attribute_const
+static __hwloc_inline int __hwloc_attribute_const
 hwloc_flsl(unsigned long x)
 {
 	int i = 0;
@@ -256,7 +257,7 @@ hwloc_flsl(unsigned long x)
 /* We only have an int fls(int) implementation, build a long one.  */
 
 /* First make it 32 bits if it was only 16.  */
-static inline int __hwloc_attribute_const
+static __hwloc_inline int __hwloc_attribute_const
 hwloc_fls32(unsigned long x)
 {
 #if HWLOC_BITS_PER_INT == 16
@@ -277,7 +278,7 @@ hwloc_fls32(unsigned long x)
 }
 
 /* Then make it 64 bit if longs are.  */
-static inline int __hwloc_attribute_const
+static __hwloc_inline int __hwloc_attribute_const
 hwloc_flsl(unsigned long x)
 {
 #if HWLOC_BITS_PER_LONG == 64
@@ -298,7 +299,7 @@ hwloc_flsl(unsigned long x)
 }
 #endif
 
-static inline int __hwloc_attribute_const
+static __hwloc_inline int __hwloc_attribute_const
 hwloc_weight_long(unsigned long w)
 {
 #if HWLOC_BITS_PER_LONG == 32

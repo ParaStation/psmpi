@@ -32,7 +32,8 @@ static void usage(void)
     printf("    -genv {name} {value}             environment variable name and value\n");
     printf("    -genvlist {env1,env2,...}        environment variable list to pass\n");
     printf("    -genvnone                        do not pass any environment variables\n");
-    printf("    -genvall                         pass all environment variables (default)\n");
+    printf("    -genvall                         pass all environment variables not managed\n");
+    printf("                                          by the launcher (default)\n");
 
     printf("\n");
     printf("  Other global options:\n");
@@ -103,7 +104,6 @@ static void usage(void)
     printf("  Other Hydra options:\n");
     printf("    -verbose                         verbose mode\n");
     printf("    -info                            build information\n");
-    printf("    -print-rank-map                  print rank mapping\n");
     printf("    -print-all-exitcodes             print exit codes of all processes\n");
     printf("    -iface                           network interface to use\n");
     printf("    -ppn                             processes per node\n");
@@ -117,27 +117,30 @@ static void usage(void)
     printf("    -disable-auto-cleanup            don't cleanup processes on error\n");
     printf("    -disable-hostname-propagation    let MPICH2 auto-detect the hostname\n");
     printf("    -order-nodes                     order nodes as ascending/descending cores\n");
+
+    printf("\n");
+    printf("Please see the intructions provided at\n");
+    printf("http://wiki.mcs.anl.gov/mpich2/index.php/Using_the_Hydra_Process_Manager\n");
+    printf("for further details\n\n");
 }
 
-static void signal_cb(int sig)
+static void signal_cb(int signum)
 {
     struct HYD_cmd cmd;
     int sent, closed;
 
     HYDU_FUNC_ENTER();
 
-    if (sig == SIGINT || sig == SIGQUIT || sig == SIGTERM) {
-        /* We don't want to send the abort signal directly to the
-         * proxies, since that would require two processes (this
-         * asynchronous process and the main process) to use the same
-         * control socket, potentially resulting in data
-         * corruption. The strategy we use is to set the abort flag
-         * and send a signal to ourselves. The signal callback does
-         * the process cleanup instead. */
+    if (signum == SIGINT) {
+        /* SIGINT is a special signal which we don't send to the
+         * proxies directly. This is our fallback path if something
+         * went wrong with Hydra and the user wants to abort. */
         cmd.type = HYD_CLEANUP;
         HYDU_sock_write(HYD_server_info.cleanup_pipe[1], &cmd, sizeof(cmd), &sent, &closed);
     }
-    else if (sig == SIGUSR1 || sig == SIGALRM) {
+    else if (signum == SIGALRM) {
+        /* SIGALRM is special signal that indicates that a checkpoint
+         * needs to be initiated */
         if (HYD_server_info.user_global.ckpoint_prefix == NULL) {
             HYDU_dump(stderr, "No checkpoint prefix provided\n");
             return;
@@ -151,7 +154,12 @@ static void signal_cb(int sig)
         cmd.type = HYD_CKPOINT;
         HYDU_sock_write(HYD_server_info.cleanup_pipe[1], &cmd, sizeof(cmd), &sent, &closed);
     }
-    /* Ignore all other signals */
+    else {
+        /* All other signals are forwarded to the user */
+        cmd.type = HYD_SIGNAL;
+        cmd.signum = signum;
+        HYDU_sock_write(HYD_server_info.cleanup_pipe[1], &cmd, sizeof(cmd), &sent, &closed);
+    }
 
     HYDU_FUNC_EXIT();
     return;
@@ -218,7 +226,7 @@ int main(int argc, char **argv)
     struct HYD_proxy *proxy;
     struct HYD_exec *exec;
     struct HYD_node *node;
-    int exit_status = 0, i, process_id, proc_count, timeout, reset_rmk;
+    int exit_status = 0, i, timeout, reset_rmk;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -274,13 +282,22 @@ int main(int argc, char **argv)
         HYDU_ERR_POP(status, "unable to query the RMK for a node list\n");
 
         if (HYD_server_info.node_list == NULL) {
+            char localhost[MAX_HOSTNAME_LEN] = { 0 };
+
             /* The RMK didn't give us anything back; use localhost */
-            status = HYDU_add_to_node_list("localhost", 1, &HYD_server_info.node_list);
+            status = HYDU_gethostname(localhost);
+            HYDU_ERR_POP(status, "unable to get local hostname\n");
+
+            status = HYDU_add_to_node_list(localhost, 1, &HYD_server_info.node_list);
             HYDU_ERR_POP(status, "unable to add to node list\n");
 
             reset_rmk = 1;
         }
     }
+
+    if (HYD_server_info.user_global.debug)
+        for (node = HYD_server_info.node_list; node; node = node->next)
+            HYDU_dump_noprefix(stdout, "host: %s\n", node->hostname);
 
     /* Reset the host list to use only the number of processes per
      * node as specified by the ppn option. */
@@ -309,43 +326,39 @@ int main(int argc, char **argv)
         HYDU_ERR_POP(status, "unable to reinitialize the bootstrap server\n");
     }
 
-    HYD_server_info.global_core_count = 0;
-    for (node = HYD_server_info.node_list; node; node = node->next)
-        HYD_server_info.global_core_count += node->core_count;
+    HYD_server_info.pg_list.pg_core_count = 0;
+    for (node = HYD_server_info.node_list, i = 0; node; node = node->next, i++) {
+        HYD_server_info.pg_list.pg_core_count += node->core_count;
+        node->node_id = i;
+    }
 
     /* If the number of processes is not given, we allocate all the
      * available nodes to each executable */
+    HYD_server_info.pg_list.pg_process_count = 0;
     for (exec = HYD_uii_mpx_exec_list; exec; exec = exec->next) {
-        if (exec->proc_count == -1) {
-            if (HYD_server_info.global_core_count == 0)
-                exec->proc_count = 1;
-            else
-                exec->proc_count = HYD_server_info.global_core_count;
-
-            /* If we didn't get anything from the user, take whatever
-             * the RMK gave */
-            HYD_server_info.pg_list.pg_process_count += exec->proc_count;
-        }
+        if (exec->proc_count == -1)
+            exec->proc_count = HYD_server_info.pg_list.pg_core_count;
+        HYD_server_info.pg_list.pg_process_count += exec->proc_count;
     }
 
     status = HYDU_list_inherited_env(&HYD_server_info.user_global.global_env.inherited);
     HYDU_ERR_POP(status, "unable to get the inherited env list\n");
 
     status = HYDU_create_proxy_list(HYD_uii_mpx_exec_list, HYD_server_info.node_list,
-                                    &HYD_server_info.pg_list, 0);
+                                    &HYD_server_info.pg_list);
     HYDU_ERR_POP(status, "unable to create proxy list\n");
 
     /* See if the node list contains a remotely accessible localhost */
     for (proxy = HYD_server_info.pg_list.proxy_list; proxy; proxy = proxy->next) {
         int is_local, remote_access;
 
-        status = HYDU_sock_is_local(proxy->node.hostname, &is_local);
-        HYDU_ERR_POP(status, "unable to check if %s is local\n", proxy->node.hostname);
+        status = HYDU_sock_is_local(proxy->node->hostname, &is_local);
+        HYDU_ERR_POP(status, "unable to check if %s is local\n", proxy->node->hostname);
 
         if (is_local) {
-            status = HYDU_sock_remote_access(proxy->node.hostname, &remote_access);
+            status = HYDU_sock_remote_access(proxy->node->hostname, &remote_access);
             HYDU_ERR_POP(status, "unable to check if %s is remotely accessible\n",
-                         proxy->node.hostname);
+                         proxy->node->hostname);
 
             if (remote_access)
                 break;
@@ -353,7 +366,7 @@ int main(int argc, char **argv)
     }
 
     if (proxy)
-        HYD_server_info.local_hostname = HYDU_strdup(proxy->node.hostname);
+        HYD_server_info.local_hostname = HYDU_strdup(proxy->node->hostname);
 
     if (HYD_server_info.user_global.debug)
         HYD_uiu_print_params();
@@ -370,26 +383,6 @@ int main(int argc, char **argv)
         MPL_env2str("MPIEXEC_PORT_RANGE", (const char **) &HYD_server_info.port_range) ||
         MPL_env2str("MPICH_PORT_RANGE", (const char **) &HYD_server_info.port_range))
         HYD_server_info.port_range = HYDU_strdup(HYD_server_info.port_range);
-
-    if (HYD_ui_mpich_info.print_rank_map) {
-        for (proxy = HYD_server_info.pg_list.proxy_list; proxy; proxy = proxy->next) {
-            HYDU_dump_noprefix(stdout, "(%s:", proxy->node.hostname);
-
-            process_id = 0;
-            for (exec = proxy->exec_list; exec; exec = exec->next) {
-                for (i = 0; i < exec->proc_count; i++) {
-                    HYDU_dump_noprefix(stdout, "%d",
-                                       HYDU_local_to_global_id(process_id++,
-                                                               proxy->start_pid,
-                                                               proxy->node.core_count,
-                                                               HYD_server_info.global_core_count));
-                    if (i < exec->proc_count - 1 || exec->next)
-                        HYDU_dump_noprefix(stdout, ",");
-                }
-            }
-            HYDU_dump_noprefix(stdout, ")\n");
-        }
-    }
 
     /* Add the stdout/stderr callback handlers */
     HYD_server_info.stdout_cb = HYD_uiu_stdout_cb;
@@ -410,28 +403,25 @@ int main(int argc, char **argv)
     for (proxy = HYD_server_info.pg_list.proxy_list; proxy; proxy = proxy->next) {
         if (proxy->exit_status == NULL) {
             /* We didn't receive the exit status for this proxy */
-            exit_status |= 1;
             continue;
         }
 
-        proc_count = 0;
-        for (exec = proxy->exec_list; exec; exec = exec->next)
-            proc_count += exec->proc_count;
-        for (i = 0; i < proc_count; i++) {
+        if (HYD_ui_mpich_info.print_all_exitcodes)
+            HYDU_dump_noprefix(stdout, "[%s] ", proxy->node->hostname);
+
+        for (i = 0; i < proxy->proxy_process_count; i++) {
             if (HYD_ui_mpich_info.print_all_exitcodes) {
-                HYDU_dump_noprefix(stdout, "[%d]",
-                                   HYDU_local_to_global_id(i, proxy->start_pid,
-                                                           proxy->node.core_count,
-                                                           HYD_server_info.global_core_count));
-                HYDU_dump_noprefix(stdout, "%d", WEXITSTATUS(proxy->exit_status[i]));
-                if (i < proc_count - 1)
+                HYDU_dump_noprefix(stdout, "%d", proxy->exit_status[i]);
+                if (i < proxy->proxy_process_count - 1)
                     HYDU_dump_noprefix(stdout, ",");
             }
+
             exit_status |= proxy->exit_status[i];
         }
+
+        if (HYD_ui_mpich_info.print_all_exitcodes)
+            HYDU_dump_noprefix(stdout, "\n");
     }
-    if (HYD_ui_mpich_info.print_all_exitcodes)
-        HYDU_dump_noprefix(stdout, "\n");
 
     /* Call finalize functions for lower layers to cleanup their resources */
     status = HYD_pmci_finalize();
@@ -462,15 +452,18 @@ int main(int argc, char **argv)
         return 0;
     else if (status != HYD_SUCCESS)
         return -1;
+    else if (WIFSIGNALED(exit_status)) {
+        printf("APPLICATION TERMINATED WITH THE EXIT STRING: %s (signal %d)\n",
+               strsignal(WTERMSIG(exit_status)), WTERMSIG(exit_status));
+        return exit_status;
+    }
+    else if (WIFEXITED(exit_status)) {
+        return WEXITSTATUS(exit_status);
+    }
+    else if (WIFSTOPPED(exit_status)) {
+        return WSTOPSIG(exit_status);
+    }
     else {
-        if (WIFSIGNALED(exit_status)) {
-            printf("APPLICATION TERMINATED WITH THE EXIT STRING: %s (signal %d)\n",
-                   strsignal(WTERMSIG(exit_status)), WTERMSIG(exit_status));
-        }
-        else if (WIFEXITED(exit_status))
-            return (WEXITSTATUS(exit_status));
-        else if (WIFSTOPPED(exit_status))
-            return (WSTOPSIG(exit_status));
         return exit_status;
     }
 

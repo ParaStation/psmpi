@@ -9,9 +9,9 @@ SHELL           = @SHELL@
 AR              = @AR@
 AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
-master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
 abs_builddir    = @abs_builddir@
+master_top_srcdir  = @master_top_srcdir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 top_srcdir      = @top_srcdir@
@@ -110,11 +110,11 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 # --------------------------------------------------------------------------
 .libstamp2: _getpname.o _pcontrol.o _version.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${PMPILIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${PMPILIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${PMPILIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${PMPILIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${PMPILIBNAME}.a" ; \
 	else \
@@ -124,11 +124,11 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	date > .libstamp2
 .libstamp3: _getpname.lo _pcontrol.lo _version.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${PMPILIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _getpname.o: getpname.c
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \

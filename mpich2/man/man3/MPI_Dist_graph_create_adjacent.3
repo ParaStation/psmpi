@@ -1,4 +1,4 @@
-.TH MPI_Dist_graph_create_adjacent 3 "1/18/2011" " " "MPI"
+.TH MPI_Dist_graph_create_adjacent 3 "2/26/2011" " " "MPI"
 .SH NAME
 MPI_Dist_graph_create_adjacent \-  returns a handle to a new communicator to which the distributed graph topology information is attached. 
 .SH SYNOPSIS
@@ -29,7 +29,7 @@ destination (array of non-negative integers)
 .TP
 .B sourceweights 
 - weights of the edges into the calling
-process (array of non-negative integers)
+process (array of non-negative integers or MPI_UNWEIGHTED)
 .PD 1
 .PD 0
 .TP
@@ -45,7 +45,8 @@ source (array of non-negative integers)
 .PD 0
 .TP
 .B destweights 
-- weights of the edges out of the calling process (array of non-negative integers)
+- weights of the edges out of the calling process 
+(array of non-negative integers or MPI_UNWEIGHTED)
 .PD 1
 .PD 0
 .TP
@@ -133,21 +134,19 @@ possible.
 .PD 1
 .PD 0
 .TP
-.B MPI_ERR_TOPOLOGY 
-- Invalid topology.  Either there is no topology 
-associated with this communicator, or it is not the correct type (e.g.,
-.I MPI_CART
-when expecting 
-.I MPI_GRAPH
-).
-.PD 1
-.PD 0
-.TP
 .B MPI_ERR_ARG 
 - Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., 
 .I MPI_ERR_RANK
 ).
+.PD 1
+.PD 0
+.TP
+.B MPI_ERR_OTHER 
+- Other error; use 
+.I MPI_Error_string
+to get more information
+about this error code. 
 .PD 1
 .SH LOCATION
 dist_gr_create_adj.c

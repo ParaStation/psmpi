@@ -6,10 +6,10 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+abs_builddir    = @abs_builddir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
-abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 LIBS            = @LIBS@
@@ -54,14 +54,14 @@ remove-genmakefiles:
 	rm -f  Makefile
 all-redirect: statusesf90 greqf90
 
-greqf90: greqf90.o   @MPILIBLOC@ ../util/mtestf90.o
-	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o greqf90 greqf90.o  ${LIBS}
+greqf90: greqf90.o dummyf90.o   @MPILIBLOC@ ../util/mtestf90.o
+	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o greqf90 greqf90.o dummyf90.o  ${LIBS}
 statusesf90: statusesf90.o   @MPILIBLOC@ ../util/mtestf90.o
 	$(FC_LINK) $(FCFLAGS) $(LDFLAGS) -o statusesf90 statusesf90.o  ${LIBS}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  statusesf90.f90 greqf90.f90
+SOURCES         =  statusesf90.f90 greqf90.f90 dummyf90.f90
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------

@@ -6,8 +6,8 @@
 all: all-redirect
 
 SHELL           = @SHELL@
-master_top_srcdir  = @master_top_srcdir@
 abs_builddir    = @abs_builddir@
+master_top_srcdir  = @master_top_srcdir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 DEFS            = @DEFS@ -I. -I${srcdir}

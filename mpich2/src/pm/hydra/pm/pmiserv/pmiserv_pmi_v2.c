@@ -455,21 +455,21 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
 {
     struct HYD_pg *pg;
     struct HYD_pmcd_pmi_pg_scratch *pg_scratch;
-    struct HYD_node *node_list = NULL, *node, *tnode, *user_node_list = NULL;
     struct HYD_proxy *proxy;
     struct HYD_pmcd_token *tokens;
     struct HYD_exec *exec_list = NULL, *exec;
     struct HYD_env *env;
+    struct HYD_node *node;
 
     char *thrid;
-    char key[MAXKEYLEN], *val;
+    char key[PMI_MAXKEYLEN], *val;
     int maxprocs, preputcount, infokeycount, ret;
     int ncmds;
     char *execname, *path = NULL;
 
     struct HYD_pmcd_token_segment *segment_list = NULL;
 
-    int token_count, i, j, k, new_pgid, offset;
+    int token_count, i, j, k, new_pgid;
     int argcnt, num_segments;
     char *control_port, *proxy_args[HYD_NUM_TMP_STRINGS] = { NULL };
     char *tmp[HYD_NUM_TMP_STRINGS];
@@ -519,7 +519,6 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
     HYDU_ERR_POP(status, "unable to allocate process group\n");
 
     pg = pg->next;
-    pg->pg_process_count = 0;
 
     proxy = HYD_pmcd_pmi_find_proxy(fd);
     HYDU_ASSERT(proxy, status);
@@ -566,14 +565,14 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
         for (i = 0; i < infokeycount; i++) {
             char *info_key, *info_val;
 
-            HYDU_snprintf(key, MAXKEYLEN, "infokey%d", i);
+            HYDU_snprintf(key, PMI_MAXKEYLEN, "infokey%d", i);
             val = HYD_pmcd_pmi_find_token_keyval(&tokens[segment_list[j].start_idx],
                                                  segment_list[j].token_count, key);
             HYDU_ERR_CHKANDJUMP(status, val == NULL, HYD_INTERNAL_ERROR,
                                 "unable to find token: %s\n", key);
             info_key = val;
 
-            HYDU_snprintf(key, MAXKEYLEN, "infoval%d", i);
+            HYDU_snprintf(key, PMI_MAXKEYLEN, "infoval%d", i);
             val = HYD_pmcd_pmi_find_token_keyval(&tokens[segment_list[j].start_idx],
                                                  segment_list[j].token_count, key);
             HYDU_ERR_CHKANDJUMP(status, val == NULL, HYD_INTERNAL_ERROR,
@@ -587,16 +586,12 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
                 exec->wdir = HYDU_strdup(info_val);
             }
             else if (!strcmp(info_key, "host")) {
-                HYDU_MALLOC(user_node_list, struct HYD_node *, sizeof(struct HYD_node),
-                            status);
-                user_node_list->hostname = HYDU_strdup(info_val);
-                user_node_list->core_count = 1;
-                user_node_list->local_binding = NULL;
-                user_node_list->next = NULL;
+                status = HYDU_process_mfile_token(info_val, 1, &pg->user_node_list);
+                HYDU_ERR_POP(status, "error create node list\n");
             }
             else if (!strcmp(info_key, "hostfile")) {
                 status =
-                    HYDU_parse_hostfile(info_val, &user_node_list, HYDU_process_mfile_token);
+                    HYDU_parse_hostfile(info_val, &pg->user_node_list, HYDU_process_mfile_token);
                 HYDU_ERR_POP(status, "error parsing hostfile\n");
             }
             else {
@@ -628,7 +623,7 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
         i = 0;
         exec->exec[i++] = execname;
         for (k = 0; k < argcnt; k++) {
-            HYDU_snprintf(key, MAXKEYLEN, "argv%d", k);
+            HYDU_snprintf(key, PMI_MAXKEYLEN, "argv%d", k);
             val = HYD_pmcd_pmi_find_token_keyval(&tokens[segment_list[j].start_idx],
                                                  segment_list[j].token_count, key);
             HYDU_ERR_CHKANDJUMP(status, val == NULL, HYD_INTERNAL_ERROR,
@@ -652,8 +647,22 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
     status = HYD_pmcd_pmi_alloc_pg_scratch(pg);
     HYDU_ERR_POP(status, "unable to allocate pg scratch space\n");
 
-    pg_scratch = (struct HYD_pmcd_pmi_pg_scratch *) pg->pg_scratch;
+    if (pg->user_node_list) {
+        pg->pg_core_count = 0;
+        for (i = 0, node = pg->user_node_list; node; node = node->next, i++) {
+            pg->pg_core_count += node->core_count;
+            node->node_id = i;
+        }
+    }
+    else {
+        pg->pg_core_count = HYD_server_info.pg_list.pg_core_count;
+    }
 
+    pg->pg_process_count = 0;
+    for (exec = exec_list; exec; exec = exec->next)
+        pg->pg_process_count += exec->proc_count;
+
+    pg_scratch = (struct HYD_pmcd_pmi_pg_scratch *) pg->pg_scratch;
 
     /* Get the common keys and deal with them */
     val = HYD_pmcd_pmi_find_token_keyval(tokens, token_count, "preputcount");
@@ -664,13 +673,13 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
     for (i = 0; i < preputcount; i++) {
         char *preput_key, *preput_val;
 
-        HYDU_snprintf(key, MAXKEYLEN, "ppkey%d", i);
+        HYDU_snprintf(key, PMI_MAXKEYLEN, "ppkey%d", i);
         val = HYD_pmcd_pmi_find_token_keyval(tokens, token_count, key);
         HYDU_ERR_CHKANDJUMP(status, val == NULL, HYD_INTERNAL_ERROR,
                             "unable to find token: %s\n", key);
         preput_key = val;
 
-        HYDU_snprintf(key, MAXKEYLEN, "ppval%d", i);
+        HYDU_snprintf(key, PMI_MAXKEYLEN, "ppval%d", i);
         val = HYD_pmcd_pmi_find_token_keyval(tokens, token_count, key);
         HYDU_ERR_CHKANDJUMP(status, val == NULL, HYD_INTERNAL_ERROR,
                             "unable to find token: %s\n", key);
@@ -680,18 +689,13 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
         HYDU_ERR_POP(status, "unable to add keypair to kvs\n");
     }
 
-
     /* Create the proxy list */
-    offset = 0;
-    for (pg = &HYD_server_info.pg_list; pg->next; pg = pg->next)
-        offset += pg->pg_process_count;
-
-    if (user_node_list) {
-        status = HYDU_create_proxy_list(exec_list, user_node_list, pg, 0);
+    if (pg->user_node_list) {
+        status = HYDU_create_proxy_list(exec_list, pg->user_node_list, pg);
         HYDU_ERR_POP(status, "error creating proxy list\n");
     }
     else {
-        status = HYDU_create_proxy_list(exec_list, HYD_server_info.node_list, pg, offset);
+        status = HYDU_create_proxy_list(exec_list, HYD_server_info.node_list, pg);
         HYDU_ERR_POP(status, "error creating proxy list\n");
     }
     HYDU_free_exec_list(exec_list);
@@ -708,23 +712,6 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
     /* Go to the last PG */
     for (pg = &HYD_server_info.pg_list; pg->next; pg = pg->next);
 
-    /* Copy the host list to pass to the launcher */
-    node_list = NULL;
-    for (proxy = pg->proxy_list; proxy; proxy = proxy->next) {
-        HYDU_alloc_node(&node);
-        node->hostname = HYDU_strdup(proxy->node.hostname);
-        node->core_count = proxy->node.core_count;
-        node->next = NULL;
-
-        if (node_list == NULL) {
-            node_list = node;
-        }
-        else {
-            for (tnode = node_list; tnode->next; tnode = tnode->next);
-            tnode->next = node;
-        }
-    }
-
     status = HYD_pmcd_pmi_fill_in_proxy_args(proxy_args, control_port, new_pgid);
     HYDU_ERR_POP(status, "unable to fill in proxy arguments\n");
     HYDU_FREE(control_port);
@@ -732,9 +719,8 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
     status = HYD_pmcd_pmi_fill_in_exec_launch_info(pg);
     HYDU_ERR_POP(status, "unable to fill in executable arguments\n");
 
-    status = HYDT_bsci_launch_procs(proxy_args, node_list, NULL);
+    status = HYDT_bsci_launch_procs(proxy_args, pg->proxy_list, NULL);
     HYDU_ERR_POP(status, "launcher cannot launch processes\n");
-    HYDU_free_node_list(node_list);
 
     {
         char *cmd_str[HYD_NUM_TMP_STRINGS], *cmd;
@@ -767,8 +753,6 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
     HYDU_free_strlist(proxy_args);
     if (segment_list)
         HYDU_FREE(segment_list);
-    if (user_node_list)
-        HYDU_free_node_list(user_node_list);
     HYDU_FUNC_EXIT();
     return status;
 

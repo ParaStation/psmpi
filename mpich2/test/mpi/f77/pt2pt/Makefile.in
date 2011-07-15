@@ -6,10 +6,10 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+abs_builddir    = @abs_builddir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
-abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 LIBS            = @LIBS@
@@ -54,14 +54,14 @@ remove-genmakefiles:
 	rm -f  Makefile
 all-redirect: statusesf greqf
 
-greqf: greqf.o   @MPILIBLOC@ ../util/mtestf.o
-	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o greqf greqf.o  ${LIBS}
+greqf: greqf.o dummyf.o   @MPILIBLOC@ ../util/mtestf.o
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o greqf greqf.o dummyf.o  ${LIBS}
 statusesf: statusesf.o   @MPILIBLOC@ ../util/mtestf.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o statusesf statusesf.o  ${LIBS}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  statusesf.f greqf.f
+SOURCES         =  statusesf.f greqf.f dummyf.f
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------

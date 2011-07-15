@@ -5,6 +5,8 @@ DEPADD = @MPILIBLOC@ ../util/mtestf90.o
 smvar_do_sharedlibs = 0
 
 cartcrf90_SOURCES = cartcrf90.f90
+dgraph_wgtf90_SOURCES = dgraph_wgtf90.f90
+dgraph_unwgtf90_SOURCES = dgraph_unwgtf90.f90
 
 testing:
 	../../runtests -srcdir=$(srcdir) -tests=testlist \

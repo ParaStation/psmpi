@@ -1105,6 +1105,19 @@ int main(int argc, char **argv)
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_win_set_name %W %s" );
     }
     /* src/mpi/rma/win_unlock.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**winunlockwithoutlock", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**winunlockwithoutlock" );
+    /* src/mpi/rma/win_unlock.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mismatchedlockrank", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**mismatchedlockrank" );
+    {
+    /* src/mpi/rma/win_unlock.c */
+    int i1 = 1;
+    int i2 = 2;
+     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mismatchedlockrank", "**mismatchedlockrank %d %d", i1, i2 );
+    ChkMsg( err, MPI_ERR_OTHER, "**mismatchedlockrank %d %d" );
+    }
+    /* src/mpi/rma/win_unlock.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_win_unlock", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_win_unlock" );
     {
@@ -1140,8 +1153,26 @@ int main(int argc, char **argv)
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_win_wait %W" );
     }
     /* src/mpi/rma/win_lock.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**lockassertval", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**lockassertval" );
+    {
+    /* src/mpi/rma/win_lock.c */
+    int i1 = 1;
+     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**lockassertval", "**lockassertval %d", i1 );
+    ChkMsg( err, MPI_ERR_OTHER, "**lockassertval %d" );
+    }
+    /* src/mpi/rma/win_lock.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**locktype", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**locktype" );
+    /* src/mpi/rma/win_lock.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**lockwhilelocked", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**lockwhilelocked" );
+    {
+    /* src/mpi/rma/win_lock.c */
+    int i1 = 1;
+     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**lockwhilelocked", "**lockwhilelocked %d", i1 );
+    ChkMsg( err, MPI_ERR_OTHER, "**lockwhilelocked %d" );
+    }
     /* src/mpi/rma/win_lock.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_win_lock", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_win_lock" );
@@ -1153,6 +1184,15 @@ int main(int argc, char **argv)
     int i4 = MPI_WIN_NULL;
      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_win_lock", "**mpi_win_lock %d %d %A %W", i1, i2, i3, i4 );
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_win_lock %d %d %A %W" );
+    }
+    /* src/mpi/rma/win_free.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**winfreewhilelocked", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**winfreewhilelocked" );
+    {
+    /* src/mpi/rma/win_free.c */
+    int i1 = 1;
+     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**winfreewhilelocked", "**winfreewhilelocked %d", i1 );
+    ChkMsg( err, MPI_ERR_OTHER, "**winfreewhilelocked %d" );
     }
     /* src/mpi/rma/win_free.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_win_free", 0);
@@ -3495,6 +3535,9 @@ int main(int argc, char **argv)
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_alltoall %p %d %D %p %d %D %C" );
     }
     /* src/mpi/coll/bcast.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**collective_size_mismatch", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**collective_size_mismatch" );
+    /* src/mpi/coll/bcast.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_bcast", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_bcast" );
     {
@@ -3830,9 +3873,6 @@ int main(int argc, char **argv)
     /* src/nameserv/pmi/pmi_nameserv.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**pmi_kvs_get", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**pmi_kvs_get" );
-    /* src/nameserv/pmi/pmi_nameserv.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**pmi_kvs_destroy", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**pmi_kvs_destroy" );
     /* src/util/param/param_vals.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**envvarparse", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**envvarparse" );
@@ -4246,51 +4286,6 @@ int main(int argc, char **argv)
      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_info_get_valuelen", "**mpi_info_get_valuelen %I %s %p %p", i1, s2, s3, s4 );
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_info_get_valuelen %I %s %p %p" );
     }
-    /* src/util/dbg/dbg_printf.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**fdopen", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**fdopen" );
-    {
-    /* src/util/dbg/dbg_printf.c */
-    char s1[] = "string1";
-     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**fdopen", "**fdopen %s", s1 );
-    ChkMsg( err, MPI_ERR_OTHER, "**fdopen %s" );
-    }
-    /* src/util/dbg/dbg_printf.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mktemp_s", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**mktemp_s" );
-    {
-    /* src/util/dbg/dbg_printf.c */
-    char s1[] = "string1";
-     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mktemp_s", "**mktemp_s %s", s1 );
-    ChkMsg( err, MPI_ERR_OTHER, "**mktemp_s %s" );
-    }
-    /* src/util/dbg/dbg_printf.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**fopen_s", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**fopen_s" );
-    {
-    /* src/util/dbg/dbg_printf.c */
-    char s1[] = "string1";
-     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**fopen_s", "**fopen_s %s", s1 );
-    ChkMsg( err, MPI_ERR_OTHER, "**fopen_s %s" );
-    }
-    /* src/util/dbg/dbg_printf.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**tmpnam", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**tmpnam" );
-    {
-    /* src/util/dbg/dbg_printf.c */
-    char s1[] = "string1";
-     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**tmpnam", "**tmpnam %s", s1 );
-    ChkMsg( err, MPI_ERR_OTHER, "**tmpnam %s" );
-    }
-    /* src/util/dbg/dbg_printf.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**fopen", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**fopen" );
-    {
-    /* src/util/dbg/dbg_printf.c */
-    char s1[] = "string1";
-     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**fopen", "**fopen %s", s1 );
-    ChkMsg( err, MPI_ERR_OTHER, "**fopen %s" );
-    }
     /* src/binding/f90/create_f90_real.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**f90typerealnone", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**f90typerealnone" );
@@ -4568,6 +4563,9 @@ int main(int argc, char **argv)
      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**socket", "**socket %s %d", s1, i2 );
     ChkMsg( err, MPI_ERR_OTHER, "**socket %s %d" );
     }
+    /* src/mpid/common/sock/iocp/sock.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**badportrange", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**badportrange" );
     /* src/mpid/common/sock/iocp/sock.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**duphandle", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**duphandle" );
@@ -5756,9 +5754,6 @@ int main(int argc, char **argv)
      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**signal", "**signal %s", s1 );
     ChkMsg( err, MPI_ERR_OTHER, "**signal %s" );
     }
-    /* src/mpid/ch3/channels/nemesis/src/ch3_progress.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**sigusr1", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**sigusr1" );
     /* src/mpid/ch3/channels/nemesis/nemesis/include/mpid_nem_impl.h */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**rtspkt", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**rtspkt" );
@@ -5957,16 +5952,6 @@ int main(int argc, char **argv)
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**ex_create_set", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**ex_create_set" );
     /* src/mpid/ch3/channels/nemesis/nemesis/netmod/nd/nd_sm.cpp */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**nd_write", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**nd_write" );
-    {
-    /* src/mpid/ch3/channels/nemesis/nemesis/netmod/nd/nd_sm.cpp */
-    char s1[] = "string1";
-    int i2 = 2;
-     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**nd_write", "**nd_write %s %d", s1, i2 );
-    ChkMsg( err, MPI_ERR_OTHER, "**nd_write %s %d" );
-    }
-    /* src/mpid/ch3/channels/nemesis/nemesis/netmod/nd/nd_sm.cpp */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**nd_listen", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**nd_listen" );
     {
@@ -6005,6 +5990,16 @@ int main(int argc, char **argv)
     int i2 = 2;
      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**nd_disc", "**nd_disc %s %d", s1, i2 );
     ChkMsg( err, MPI_ERR_OTHER, "**nd_disc %s %d" );
+    }
+    /* src/mpid/ch3/channels/nemesis/nemesis/netmod/nd/nd_sm.cpp */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**nd_write", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**nd_write" );
+    {
+    /* src/mpid/ch3/channels/nemesis/nemesis/netmod/nd/nd_sm.cpp */
+    char s1[] = "string1";
+    int i2 = 2;
+     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**nd_write", "**nd_write %s %d", s1, i2 );
+    ChkMsg( err, MPI_ERR_OTHER, "**nd_write %s %d" );
     }
     /* src/mpid/ch3/channels/nemesis/nemesis/netmod/nd/nd_sm.cpp */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**nd_read", 0);
@@ -6068,9 +6063,6 @@ int main(int argc, char **argv)
     /* src/mpid/ch3/channels/nemesis/nemesis/netmod/tcp/tcp_init.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**argstr_missingifname", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**argstr_missingifname" );
-    /* src/mpid/ch3/channels/nemesis/nemesis/netmod/tcp/tcp_init.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**badportrange", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**badportrange" );
     /* src/mpid/ch3/channels/nemesis/nemesis/netmod/tcp/tcp_send.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**sock_closed", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**sock_closed" );

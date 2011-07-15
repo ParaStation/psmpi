@@ -32,7 +32,7 @@ DEFS     =
 INCLUDES = -I../src/include -I${top_srcdir}/src/include
 LIBS   =
 
-EXTRA_PROGRAMS = pmandel pmandel_spawn pmandel_service pmandel_spaserv 	         pmandel_fence hellow icpi parent child srtest srvec sr 		 spawn_merge_parent spawn_merge_child1 spawn_merge_child2
+EXTRA_PROGRAMS = pmandel pmandel_spawn pmandel_service pmandel_spaserv 	         pmandel_fence hellow icpi parent child srtest 		 spawn_merge_parent spawn_merge_child1 spawn_merge_child2
 
 .SUFFIXES:
 .SUFFIXES: .o .lo .c 

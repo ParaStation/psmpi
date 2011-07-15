@@ -1,4 +1,4 @@
-.TH MPI_Unpack 3 "8/9/2010" " " "MPI"
+.TH MPI_Unpack 3 "2/26/2011" " " "MPI"
 .SH NAME
 MPI_Unpack \-  Unpack a buffer according to a datatype into contiguous memory 
 .SH SYNOPSIS
@@ -17,11 +17,6 @@ int MPI_Unpack(void *inbuf, int insize, int *position,
 .TP
 .B insize 
 - size of input buffer, in bytes (integer)
-.PD 1
-.PD 0
-.TP
-.B position 
-- current position in bytes (integer)
 .PD 1
 .PD 0
 .TP
@@ -45,6 +40,14 @@ int MPI_Unpack(void *inbuf, int insize, int *position,
 .B outbuf 
 - output buffer start (choice)
 .PD 1
+
+.SH INOUT/OUTPUT PARAMETER
+.PD 0
+.TP
+.B position 
+- current position in bytes (integer)
+.PD 1
+
 
 .SH THREAD AND INTERRUPT SAFETY
 

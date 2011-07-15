@@ -35,9 +35,9 @@ INCLUDES = -I../../../include -I${srcdir}/../../../include
 	$(CXX_COMPILE) -o $* $< $(LDFLAGS) $(LIBS)
 apply: 
 	$(ACTION) $(ACTION_INPUT)
-clean: 
-	-@rm -f *.o ${srcdir}/*.o fileerrretx
-	-@rm -f fileerrretx.exe
+clean:  clean-local
+	-@rm -f *.o ${srcdir}/*.o fileerrretx errgetfilex throwtestfilex
+	-@rm -f fileerrretx.exe errgetfilex.exe throwtestfilex.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f *.irlog*
@@ -51,19 +51,35 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile
-all-redirect: fileerrretx
+all-redirect: fileerrretx errgetfilex throwtestfilex
 
 fileerrretx: fileerrretx.o   @MPILIBLOC@ 
 	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o fileerrretx fileerrretx.o  ${LIBS}
+errgetfilex: errgetfilex.o   @MPILIBLOC@ 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o errgetfilex errgetfilex.o  \
+	../../../cxx/util/mtest.o ${LIBS} 
+throwtestfilex: throwtestfilex.o   @MPILIBLOC@ 
+	$(CXX_LINK) $(CXXFLAGS) $(LDFLAGS) -o throwtestfilex throwtestfilex.o  \
+	../../../cxx/util/mtest.o ${LIBS} 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  fileerrretx.cxx
+SOURCES         =  fileerrretx.cxx errgetfilex.cxx throwtestfilex.cxx
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
 
 
+../../../cxx/util/mtest.o: 
+	(cd ../../../cxx/util && $(MAKE) mtest.o)
+
+# A special testing target to simplify running just the pt2pt tests
+testing:
+	../../../runtests -srcdir=$(srcdir) -tests=testlist \
+		   -mpiexec=@MPIEXEC@ \
+		   -xmlfile=summary.xml
+clean-local:
+	-rm -f summary.xml
 
 .POSIX:
 

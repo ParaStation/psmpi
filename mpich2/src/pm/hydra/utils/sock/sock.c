@@ -18,6 +18,37 @@ struct fwd_hash {
     struct fwd_hash *next;
 };
 
+static char localhost[MAX_HOSTNAME_LEN] = { 0 };
+static char shortlocal[MAX_HOSTNAME_LEN] = { 0 };
+
+static HYD_status sock_localhost_init(void)
+{
+    static int init = 1;
+    int i;
+    HYD_status status = HYD_SUCCESS;
+
+    if (init) {
+        init = 0;
+
+        status = HYDU_gethostname(localhost);
+        HYDU_ERR_POP(status, "unable to get local hostname\n");
+
+        strcpy(shortlocal, localhost);
+        for (i = 0; shortlocal[i]; i++) {
+            if (shortlocal[i] == '.') {
+                shortlocal[i] = 0;
+                break;
+            }
+        }
+    }
+
+  fn_exit:
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
 HYD_status HYDU_sock_listen(int *listen_fd, char *port_range, uint16_t * port)
 {
     struct sockaddr_in sa;
@@ -92,7 +123,7 @@ HYD_status HYDU_sock_listen(int *listen_fd, char *port_range, uint16_t * port)
     if (*port > high_port)
         HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "no port to bind\n");
 
-    if (listen(*listen_fd, -1) < 0)
+    if (listen(*listen_fd, SOMAXCONN) < 0)
         HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "listen error (%s)\n",
                             HYDU_strerror(errno));
 
@@ -116,11 +147,12 @@ HYD_status HYDU_sock_listen(int *listen_fd, char *port_range, uint16_t * port)
 }
 
 
-HYD_status HYDU_sock_connect(const char *host, uint16_t port, int *fd)
+HYD_status HYDU_sock_connect(const char *host, uint16_t port, int *fd, int retries,
+                             unsigned long delay)
 {
     struct hostent *ht;
     struct sockaddr_in sa;
-    int one = 1;
+    int one = 1, ret, retry_count;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -135,7 +167,8 @@ HYD_status HYDU_sock_connect(const char *host, uint16_t port, int *fd)
     ht = gethostbyname(host);
     if (ht == NULL)
         HYDU_ERR_SETANDJUMP(status, HYD_INVALID_PARAM,
-                            "unable to get host address (%s)\n", HYDU_strerror(errno));
+                            "unable to get host address for %s (%s)\n", host,
+                            HYDU_herror(h_errno));
     memcpy(&sa.sin_addr, ht->h_addr_list[0], ht->h_length);
 
     /* Create a socket and set the required options */
@@ -147,10 +180,27 @@ HYD_status HYDU_sock_connect(const char *host, uint16_t port, int *fd)
     /* Not being able to connect is not an error in all cases. So we
      * return an error, but only print a warning message. The upper
      * layer can decide what to do with the return status. */
-    if (connect(*fd, (struct sockaddr *) &sa, sizeof(sa)) < 0) {
-        HYDU_error_printf("connect error (%s)\n", HYDU_strerror(errno));
-        status = HYD_SOCK_ERROR;
-        goto fn_fail;
+    retry_count = 0;
+    do {
+        ret = connect(*fd, (struct sockaddr *) &sa, sizeof(sa));
+        if (ret < 0 && errno == ECONNREFUSED) {
+            /* connection error; increase retry count and delay */
+            retry_count++;
+            if (retry_count > retries)
+                break;
+            HYDU_delay(delay);
+        }
+        else
+            break;
+    } while (1);
+
+    if (ret < 0) {
+        status = sock_localhost_init();
+        HYDU_ERR_POP(status, "unable to initialize sock local information\n");
+
+        HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR,
+                            "unable to connect from \"%s\" to \"%s\" (%s)\n",
+                            localhost, host, HYDU_strerror(errno));
     }
 
     /* Disable nagle */
@@ -206,7 +256,7 @@ HYD_status HYDU_sock_read(int fd, void *buf, int maxlen, int *recvd, int *closed
         do {
             tmp = read(fd, (char *) buf + *recvd, maxlen - *recvd);
             if (tmp < 0) {
-                if ((errno == ECONNRESET) || (errno == EINTR && fd == STDIN_FILENO)) {
+                if (errno == ECONNRESET || fd == STDIN_FILENO) {
                     /* If the remote end closed the socket or if we
                      * get an EINTR on stdin, set the socket to be
                      * closed and jump out */
@@ -218,15 +268,16 @@ HYD_status HYDU_sock_read(int fd, void *buf, int maxlen, int *recvd, int *closed
         } while (tmp < 0 && errno == EINTR);
 
         if (tmp < 0) {
-            *recvd = tmp;
-            HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "read errno (%s)\n",
+            HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "read error (%s)\n",
                                 HYDU_strerror(errno));
         }
         else if (tmp == 0) {
             *closed = 1;
             goto fn_exit;
         }
-        *recvd += tmp;
+        else {
+            *recvd += tmp;
+        }
 
         if (flag != HYDU_SOCK_COMM_MSGWAIT || *recvd == maxlen)
             break;
@@ -254,9 +305,9 @@ HYD_status HYDU_sock_write(int fd, const void *buf, int maxlen, int *sent, int *
     while (1) {
         do {
             tmp = write(fd, (char *) buf + *sent, maxlen - *sent);
-        } while (tmp < 0 && errno == EINTR);
+        } while (tmp < 0 && (errno == EINTR || errno == EAGAIN));
 
-        if ((tmp < 0) || (*sent == 0 && tmp == 0)) {
+        if (tmp < 0 || tmp == 0) {
             *closed = 1;
             goto fn_exit;
         }
@@ -425,7 +476,7 @@ HYD_status HYDU_sock_get_iface_ip(char *iface, char **ip)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "getifaddrs failed\n");
 
     for (ifa = ifaddr; ifa; ifa = ifa->ifa_next)
-        if (!strcmp(ifa->ifa_name, iface) && (ifa->ifa_addr->sa_family == AF_INET))
+        if (!strcmp(ifa->ifa_name, iface) && (ifa->ifa_addr) && (ifa->ifa_addr->sa_family == AF_INET))
             break;
 
     if (!ifa)
@@ -433,9 +484,13 @@ HYD_status HYDU_sock_get_iface_ip(char *iface, char **ip)
                             iface);
 
     sa = (struct sockaddr_in *) ifa->ifa_addr;
+#if defined HAVE_INET_NTOP
     (*ip) = HYDU_strdup((char *)
                         inet_ntop(AF_INET, (const void *) &(sa->sin_addr), buf,
                                   MAX_HOSTNAME_LEN));
+#else
+    (*ip) = NULL;
+#endif /* HAVE_INET_NTOP */
     if (!*ip)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
                             "unable to find IP for interface %s\n", iface);
@@ -463,9 +518,6 @@ HYD_status HYDU_sock_is_local(char *host, int *is_local)
     char *ip1 = NULL, *ip2 = NULL;
     char buf1[INET_ADDRSTRLEN], buf2[INET_ADDRSTRLEN];
     struct sockaddr_in *sa_ptr, sa;
-    static int init = 1;
-    static char localhost[MAX_HOSTNAME_LEN] = { 0 };
-    static char shortlocal[MAX_HOSTNAME_LEN] = { 0 };
     char shorthost[MAX_HOSTNAME_LEN] = { 0 };
     int i;
 
@@ -480,13 +532,19 @@ HYD_status HYDU_sock_is_local(char *host, int *is_local)
     ht = gethostbyname(host);
     if (ht == NULL)
         HYDU_ERR_SETANDJUMP(status, HYD_INVALID_PARAM,
-                            "unable to get host address (%s)\n", HYDU_strerror(errno));
+                            "unable to get host address for %s (%s)\n", host,
+                            HYDU_herror(h_errno));
 
     memset((char *) &sa, 0, sizeof(struct sockaddr_in));
     memcpy(&sa.sin_addr, ht->h_addr_list[0], ht->h_length);
+
+#if defined HAVE_INET_NTOP
     ip1 = HYDU_strdup((char *) inet_ntop(AF_INET, (const void *) &sa.sin_addr, buf1,
                                          MAX_HOSTNAME_LEN));
     HYDU_ASSERT(ip1, status);
+#else
+    goto fn_exit;
+#endif /* HAVE_INET_NTOP */
 
 #if defined(HAVE_GETIFADDRS)
     /* Got the interface name; let's query for the IP address */
@@ -494,12 +552,15 @@ HYD_status HYDU_sock_is_local(char *host, int *is_local)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "getifaddrs failed\n");
 
     for (ifa = ifaddr; ifa; ifa = ifa->ifa_next) {
-        if (ifa->ifa_addr->sa_family == AF_INET) {
+        if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET) {
             sa_ptr = (struct sockaddr_in *) ifa->ifa_addr;
+
+#if defined HAVE_INET_NTOP
             ip2 = HYDU_strdup((char *)
                               inet_ntop(AF_INET, (const void *) &(sa_ptr->sin_addr), buf2,
                                         MAX_HOSTNAME_LEN));
             HYDU_ASSERT(ip2, status);
+#endif /* HAVE_INET_NTOP */
 
             if (!strcmp(ip1, ip2)) {
                 *is_local = 1;
@@ -516,20 +577,8 @@ HYD_status HYDU_sock_is_local(char *host, int *is_local)
 #endif
 
     /* Direct comparison of host names */
-    if (init) {
-        init = 0;
-
-        status = HYDU_gethostname(localhost);
-        HYDU_ERR_POP(status, "unable to get local hostname\n");
-
-        strcpy(shortlocal, localhost);
-        for (i = 0; shortlocal[i]; i++) {
-            if (shortlocal[i] == '.') {
-                shortlocal[i] = 0;
-                break;
-            }
-        }
-    }
+    status = sock_localhost_init();
+    HYDU_ERR_POP(status, "unable to initialize sock local information\n");
 
     if (!strcmp(host, localhost) || !strcmp(host, "localhost")) {
         *is_local = 1;

@@ -6,10 +6,10 @@
 all: all-redirect
 
 SHELL           = @SHELL@
+abs_builddir    = @abs_builddir@
 bindir          = @bindir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
-abs_builddir    = @abs_builddir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 LIBS            = @LIBS@
@@ -36,8 +36,8 @@ VPATH = .:@srcdir@
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean: 
-	-@rm -f *.o ${srcdir}/*.o cartcrf
-	-@rm -f cartcrf.exe
+	-@rm -f *.o ${srcdir}/*.o dgraph_wgtf cartcrf dgraph_unwgtf
+	-@rm -f dgraph_wgtf.exe cartcrf.exe dgraph_unwgtf.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f *.irlog*
@@ -51,14 +51,18 @@ remove-makefile:
 	rm -f Makefile
 remove-genmakefiles:
 	rm -f  Makefile
-all-redirect: cartcrf
+all-redirect: cartcrf dgraph_wgtf dgraph_unwgtf
 
+dgraph_wgtf: dgraph_wgtf.o   @MPILIBLOC@ ../util/mtestf.o
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o dgraph_wgtf dgraph_wgtf.o  ${LIBS}
 cartcrf: cartcrf.o   @MPILIBLOC@ ../util/mtestf.o
 	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o cartcrf cartcrf.o  ${LIBS}
+dgraph_unwgtf: dgraph_unwgtf.o   @MPILIBLOC@ ../util/mtestf.o
+	$(F77_LINK) $(FFLAGS) $(LDFLAGS) -o dgraph_unwgtf dgraph_unwgtf.o  ${LIBS}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
-SOURCES         =  cartcrf.f
+SOURCES         =  cartcrf.f dgraph_wgtf.f dgraph_unwgtf.f
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------

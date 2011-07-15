@@ -252,8 +252,10 @@ MPIR_Comm_delete_attr_f77_proxy(
 
 
 FORT_DLL_SPEC void FORT_CALL mpi_keyval_create_ ( MPI_Copy_function v1, MPI_Delete_function v2, MPI_Fint *v3, void*v4, MPI_Fint *ierr ){
-        *ierr = MPI_Comm_create_keyval( v1, v2, v3, v4 );
+        int l3;
+        *ierr = MPI_Comm_create_keyval( v1, v2, &l3, v4 );
         if (!*ierr) {
+	    *v3 = l3;
             MPIR_Keyval_set_proxy(*v3, MPIR_Comm_copy_attr_f77_proxy, MPIR_Comm_delete_attr_f77_proxy);
         }
 }

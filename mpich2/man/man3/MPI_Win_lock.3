@@ -1,4 +1,4 @@
-.TH MPI_Win_lock 3 "11/6/2010" " " "MPI"
+.TH MPI_Win_lock 3 "2/28/2011" " " "MPI"
 .SH NAME
 MPI_Win_lock \-  Begin an RMA access epoch at the target process. 
 .SH SYNOPSIS
@@ -51,10 +51,10 @@ The
 .I assert
 argument is used to indicate special conditions for the
 fence that an implementation may use to optimize the 
-.I MPI_Win_fence
+.I MPI_Win_lock
 operation.  The value zero is always correct.  Other assertion values
 may be or'ed together.  Assertions that are valid for 
-.I MPI_Win_fence
+.I MPI_Win_lock
 are:
 
 .PD 0
@@ -153,6 +153,14 @@ zero and the size of the communicator minus one; ranks in a receive
 .TP
 .B MPI_ERR_WIN 
 - Invalid MPI window object
+.PD 1
+.PD 0
+.TP
+.B MPI_ERR_OTHER 
+- Other error; use 
+.I MPI_Error_string
+to get more information
+about this error code. 
 .PD 1
 .SH LOCATION
 win_lock.c

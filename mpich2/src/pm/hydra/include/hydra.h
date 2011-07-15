@@ -116,6 +116,8 @@ extern char *HYD_dbg_prefix;
 #define HYD_TMP_STRLEN  1024
 #define HYD_NUM_TMP_STRINGS 1000
 
+#define HYD_DEFAULT_RETRY_COUNT (10)
+
 #define dprintf(...)
 
 #ifndef ATTRIBUTE
@@ -242,6 +244,10 @@ struct HYD_pg {
 
     struct HYD_pg *spawner_pg;
 
+    /* user-specified node-list */
+    struct HYD_node *user_node_list;
+    int pg_core_count;
+
     /* scratch space for the PM */
     void *pg_scratch;
 
@@ -252,6 +258,12 @@ struct HYD_pg {
 struct HYD_node {
     char *hostname;
     int core_count;
+    int active_processes;
+
+    int node_id;
+
+    /* Username */
+    char *user;
 
     /* Node-specific binding information */
     char *local_binding;
@@ -261,7 +273,7 @@ struct HYD_node {
 
 /* Proxy information */
 struct HYD_proxy {
-    struct HYD_node node;
+    struct HYD_node *node;
 
     struct HYD_pg *pg;          /* Back pointer to the PG */
 
@@ -269,8 +281,10 @@ struct HYD_proxy {
 
     int proxy_id;
 
-    int start_pid;
     int proxy_process_count;
+
+    /* Filler processes that we are adding on this proxy */
+    int filler_processes;
 
     struct HYD_exec *exec_list;
 
@@ -420,24 +434,22 @@ void HYDU_free_node_list(struct HYD_node *node_list);
 void HYDU_init_pg(struct HYD_pg *pg, int pgid);
 HYD_status HYDU_alloc_pg(struct HYD_pg **pg, int pgid);
 void HYDU_free_pg_list(struct HYD_pg *pg_list);
-HYD_status HYDU_alloc_proxy(struct HYD_proxy **proxy, struct HYD_pg *pg);
 void HYDU_free_proxy_list(struct HYD_proxy *proxy_list);
 HYD_status HYDU_alloc_exec(struct HYD_exec **exec);
 void HYDU_free_exec_list(struct HYD_exec *exec_list);
 HYD_status HYDU_create_proxy_list(struct HYD_exec *exec_list, struct HYD_node *node_list,
-                                  struct HYD_pg *pg, int proc_offset);
+                                  struct HYD_pg *pg);
 HYD_status HYDU_correct_wdir(char **wdir);
 
 /* args */
 HYD_status HYDU_find_in_path(const char *execname, char **path);
 HYD_status HYDU_parse_array(char ***argv, struct HYD_arg_match_table *match_table);
-HYD_status HYDU_set_str(char *arg, char ***argv, char **var, const char *val);
-HYD_status HYDU_set_str_and_incr(char *arg, char ***argv, char **var);
-HYD_status HYDU_set_int(char *arg, char ***argv, int *var, int val);
-HYD_status HYDU_set_int_and_incr(char *arg, char ***argv, int *var);
+HYD_status HYDU_set_str(char *arg, char **var, const char *val);
+HYD_status HYDU_set_int(char *arg, int *var, int val);
 char *HYDU_getcwd(void);
 HYD_status HYDU_process_mfile_token(char *token, int newline, struct HYD_node **node_list);
-HYD_status HYDU_parse_hostfile(char *hostfile, struct HYD_node **node_list,
+char *HYDU_get_abs_wd(const char *wd);
+HYD_status HYDU_parse_hostfile(const char *hostfile, struct HYD_node **node_list,
                                HYD_status(*process_token) (char *token, int newline,
                                                            struct HYD_node ** node_list));
 char *HYDU_find_full_path(const char *execname);
@@ -457,7 +469,7 @@ HYD_status HYDU_env_free_list(struct HYD_env *env);
 struct HYD_env *HYDU_env_lookup(char *env_name, struct HYD_env *env_list);
 HYD_status HYDU_append_env_to_list(const char *env_name, const char *env_value,
                                    struct HYD_env **env_list);
-HYD_status HYDU_append_env_str_to_list(char *str, struct HYD_env **env_list);
+HYD_status HYDU_append_env_str_to_list(const char *str, struct HYD_env **env_list);
 HYD_status HYDU_putenv(struct HYD_env *env, HYD_env_overwrite_t overwrite);
 HYD_status HYDU_putenv_list(struct HYD_env *env_list, HYD_env_overwrite_t overwrite);
 HYD_status HYDU_comma_list_to_env_list(char *str, struct HYD_env **env_list);
@@ -469,11 +481,11 @@ HYD_status HYDU_create_process(char **client_arg, struct HYD_env *env_list,
                                struct HYDT_bind_cpuset_t cpuset);
 
 /* others */
-int HYDU_local_to_global_id(int local_id, int start_pid, int core_count,
-                            int global_core_count);
+int HYDU_dceil(int x, int y);
 HYD_status HYDU_add_to_node_list(const char *hostname, int num_procs,
                                  struct HYD_node **node_list);
 HYD_status HYDU_gethostname(char *hostname);
+void HYDU_delay(unsigned long delay);
 
 /* signals */
 #ifdef NEEDS_POSIX_FOR_SIGACTION
@@ -500,7 +512,10 @@ enum HYDU_sock_comm_flag {
 };
 
 HYD_status HYDU_sock_listen(int *listen_fd, char *port_range, uint16_t * port);
-HYD_status HYDU_sock_connect(const char *host, uint16_t port, int *fd);
+
+/* delay is in microseconds */
+HYD_status HYDU_sock_connect(const char *host, uint16_t port, int *fd, int retries,
+                             unsigned long delay);
 HYD_status HYDU_sock_accept(int listen_fd, int *fd);
 HYD_status HYDU_sock_read(int fd, void *buf, int maxlen, int *recvd, int *closed,
                           enum HYDU_sock_comm_flag flag);
@@ -549,6 +564,7 @@ HYD_status HYDU_sock_cloexec(int fd);
 
 #define HYDU_MALLOC(p, type, size, status)                              \
     {                                                                   \
+        HYDU_ASSERT(size, status);                                      \
         (p) = (type) HYDU_malloc((size));                               \
         if ((p) == NULL)                                                \
             HYDU_ERR_SETANDJUMP((status), HYD_NO_MEM,                   \
@@ -574,16 +590,6 @@ HYD_status HYDU_sock_cloexec(int fd);
         }                                                               \
     }
 
-#define HYD_GET_ENV_STR_VAL(lvalue_, env_var_name_, default_val_)       \
-    do {                                                       \
-        if (lvalue_ == NULL) {                                 \
-            const char *tmp_ = (default_val_);                 \
-            MPL_env2str(env_var_name_, (const char **) &tmp_); \
-            if (tmp_)                                          \
-                lvalue_ = HYDU_strdup(tmp_);                   \
-        }                                                      \
-    } while (0)
-
 HYD_status HYDU_list_append_strlist(char **exec, char **client_arg);
 HYD_status HYDU_print_strlist(char **args);
 void HYDU_free_strlist(char **args);
@@ -592,7 +598,19 @@ HYD_status HYDU_strsplit(char *str, char **str1, char **str2, char sep);
 HYD_status HYDU_strdup_list(char *src[], char **dest[]);
 char *HYDU_int_to_str(int x);
 char *HYDU_int_to_str_pad(int x, int maxlen);
-char *HYDU_strerror(int error);
+
+#if defined HAVE_STRERROR
+#define HYDU_strerror strerror
+#else
+#define HYDU_strerror HYDU_int_to_str
+#endif /* HAVE_STRERROR */
+
+#if defined HAVE_HERROR
+#define HYDU_herror herror
+#else
+#define HYDU_herror HYDU_int_to_str
+#endif /* HAVE_HERROR */
+
 int HYDU_strlist_lastidx(char **strlist);
 char **HYDU_str_to_strlist(char *str);
 

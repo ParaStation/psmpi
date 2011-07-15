@@ -15,6 +15,18 @@
 #include <signal.h>
 #endif
 
+typedef struct vc_term_element
+{
+    struct vc_term_element *next;
+    MPIDI_VC_t *vc;
+    MPID_Request *req;
+} vc_term_element_t;
+
+static struct { vc_term_element_t *head, *tail; } vc_term_queue;
+#define TERMQ_EMPTY() GENERIC_Q_EMPTY(vc_term_queue)
+#define TERMQ_HEAD() GENERIC_Q_HEAD(vc_term_queue)
+#define TERMQ_ENQUEUE(ep) GENERIC_Q_ENQUEUE(&vc_term_queue, ep, next)
+#define TERMQ_DEQUEUE(epp) GENERIC_Q_DEQUEUE(&vc_term_queue, epp, next)
 
 #define PKTARRAY_SIZE (MPIDI_NEM_PKT_END+1)
 static MPIDI_CH3_PktHandler_Fcn *pktArray[PKTARRAY_SIZE];
@@ -51,11 +63,12 @@ static void (*prev_sighandler) (int);
 static volatile int sigusr1_count = 0;
 static int my_sigusr1_count = 0;
 
-struct MPID_Request *MPIDI_CH3I_sendq_head[CH3_NUM_QUEUES] = {0};
-struct MPID_Request *MPIDI_CH3I_sendq_tail[CH3_NUM_QUEUES] = {0};
-struct MPID_Request *MPIDI_CH3I_active_send[CH3_NUM_QUEUES] = {0};
+MPIDI_CH3I_shm_sendq_t MPIDI_CH3I_shm_sendq = {NULL, NULL};
+struct MPID_Request *MPIDI_CH3I_shm_active_send = NULL;
 
 static int pkt_NETMOD_handler(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, MPIDI_msg_sz_t *buflen, MPID_Request **rreqp);
+static int shm_connection_terminated(MPIDI_VC_t * vc);
+static int check_terminating_vcs(void);
 
 int (*MPID_nem_local_lmt_progress)(void) = NULL;
 int MPID_nem_local_lmt_pending = FALSE;
@@ -71,12 +84,44 @@ typedef struct qn_ent
 
 static qn_ent_t *qn_head = NULL;
 
+#ifdef HAVE_SIGNAL
 static void sigusr1_handler(int sig)
 {
     ++sigusr1_count;
     /* poke the progress engine in case we're waiting in a blocking recv */
     MPIDI_CH3_Progress_signal_completion();
+    if (prev_sighandler)
+        prev_sighandler(sig);
 }
+#endif
+
+#undef FUNCNAME
+#define FUNCNAME check_terminating_vcs
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+static int check_terminating_vcs(void)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_CHECK_TERMINATING_VCS);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_CHECK_TERMINATING_VCS);
+
+    while (!TERMQ_EMPTY() && MPID_Request_is_complete(TERMQ_HEAD()->req)) {
+        vc_term_element_t *ep;
+        TERMQ_DEQUEUE(&ep);
+        MPID_Request_release(ep->req);
+        mpi_errno = shm_connection_terminated(ep->vc);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        MPIU_Free(ep);
+    }
+    
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_CHECK_TERMINATING_VCS);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
 
 /* MPIDI_CH3I_Shm_send_progress() this function makes progress sending
    queued messages on the shared memory queues.  This function is
@@ -97,7 +142,7 @@ int MPIDI_CH3I_Shm_send_progress(void)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_SHM_SEND_PROGRESS);
 
-    sreq = MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE];
+    sreq = MPIDI_CH3I_shm_active_send;
     MPIU_DBG_STMT(CH3_CHANNEL, VERBOSE, {if (sreq) MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Send: cont sreq");});
     if (sreq)
     {
@@ -139,7 +184,7 @@ int MPIDI_CH3I_Shm_send_progress(void)
     }
     else
     {
-        sreq = MPIDI_CH3I_SendQ_head (CH3_NORMAL_QUEUE);
+        sreq = MPIDI_CH3I_Sendq_head(MPIDI_CH3I_shm_sendq);
         MPIU_DBG_STMT (CH3_CHANNEL, VERBOSE, {if (sreq) MPIU_DBG_MSG (CH3_CHANNEL, VERBOSE, "Send: new sreq ");});
 
         if (!sreq->ch.noncontig)
@@ -153,7 +198,7 @@ int MPIDI_CH3I_Shm_send_progress(void)
             if (mpi_errno) MPIU_ERR_POP (mpi_errno);
             if (!again)
             {
-                MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
+                MPIDI_CH3I_shm_active_send = sreq;
                 while (!again && n_iov > 0)
                 {
                     mpi_errno = MPID_nem_mpich2_sendv(&iov, &n_iov, sreq->ch.vc, &again);
@@ -176,7 +221,7 @@ int MPIDI_CH3I_Shm_send_progress(void)
                                             &sreq->dev.pending_pkt, sreq->ch.header_sz, sreq->ch.vc, &again);
             if (!again)
             {
-                MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = sreq;
+                MPIDI_CH3I_shm_active_send = sreq;
                 while (!again && sreq->dev.segment_first < sreq->dev.segment_size)
                 {
                     MPID_nem_mpich2_send_seg(sreq->dev.segment_ptr, &sreq->dev.segment_first, sreq->dev.segment_size,
@@ -203,9 +248,11 @@ int MPIDI_CH3I_Shm_send_progress(void)
         MPIDI_CH3U_Request_complete(sreq);
 
         /* MT - clear the current active send before dequeuing/destroying the current request */
-        MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = NULL;
-        MPIDI_CH3I_SendQ_dequeue(CH3_NORMAL_QUEUE);
+        MPIDI_CH3I_shm_active_send = NULL;
+        MPIDI_CH3I_Sendq_dequeue(&MPIDI_CH3I_shm_sendq, &sreq);
         MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
+        mpi_errno = check_terminating_vcs();
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
     else
     {
@@ -215,9 +262,11 @@ int MPIDI_CH3I_Shm_send_progress(void)
 
         if (complete)
         {
-            MPIDI_CH3I_SendQ_dequeue(CH3_NORMAL_QUEUE);
-            MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] = NULL;
+            MPIDI_CH3I_shm_active_send = NULL;
+            MPIDI_CH3I_Sendq_dequeue(&MPIDI_CH3I_shm_sendq, &sreq);
             MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, ".... complete");
+            mpi_errno = check_terminating_vcs();
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         }
     }
         
@@ -333,8 +382,8 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
             /* make progress receiving */
             /* check queue */
-            if (!MPID_nem_local_lmt_pending && !MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE]
-                && !MPIDI_CH3I_SendQ_head(CH3_NORMAL_QUEUE) && is_blocking
+            if (!MPID_nem_local_lmt_pending && !MPIDI_CH3I_shm_active_send
+                && !MPIDI_CH3I_Sendq_head(MPIDI_CH3I_shm_sendq) && is_blocking
 #ifdef MPICH_IS_THREADED
 #ifdef HAVE_RUNTIME_THREADCHECK
                 && !MPIR_ThreadInfo.isThreaded
@@ -372,9 +421,9 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
                     MPIDI_PG_Get_vc_set_active(MPIDI_Process.my_pg, MPID_NEM_FBOX_SOURCE(cell), &vc);
 		   
-		    MPIU_Assert(((MPIDI_CH3I_VC *)vc->channel_private)->recv_active == NULL &&
-                                ((MPIDI_CH3I_VC *)vc->channel_private)->pending_pkt_len == 0);
-                    vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
+		    MPIU_Assert(VC_CH(vc)->recv_active == NULL &&
+                                VC_CH(vc)->pending_pkt_len == 0);
+                    vc_ch = VC_CH(vc);
 
                     /* invalid pkt data will result in unpredictable behavior */
                     MPIU_Assert(pkt->type >= 0 && pkt->type < MPIDI_NEM_PKT_END);
@@ -420,7 +469,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
 
 	/* make progress sending */
-        if (MPIDI_CH3I_active_send[CH3_NORMAL_QUEUE] || MPIDI_CH3I_SendQ_head(CH3_NORMAL_QUEUE)) {
+        if (MPIDI_CH3I_shm_active_send || MPIDI_CH3I_Sendq_head(MPIDI_CH3I_shm_sendq)) {
             mpi_errno = MPIDI_CH3I_Shm_send_progress();
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         } else {
@@ -563,7 +612,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
     int mpi_errno = MPI_SUCCESS;
     MPID_Request *rreq = NULL;
     int complete;
-    MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
+    MPIDI_CH3I_VC *vc_ch = VC_CH(vc);
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_HANDLE_PKT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_HANDLE_PKT);
@@ -695,7 +744,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
                 rreq->dev.iov_offset = iov - rreq->dev.iov;
                 rreq->dev.iov_count = n_iov;
                 vc_ch->recv_active = rreq;
-		MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "        remaining: " MPIDI_MSG_SZ_FMT " bytes + %d iov entries\n", iov->MPID_IOV_LEN, n_iov - rreq->dev.iov_offset - 1));
+		MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "        remaining: " MPIDI_MSG_SZ_FMT " bytes + %d iov entries\n", iov->MPID_IOV_LEN, n_iov));
             }
             else
             {
@@ -760,7 +809,6 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
 int MPIDI_CH3I_Progress_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
-    int i;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_INIT);
@@ -774,12 +822,10 @@ int MPIDI_CH3I_Progress_init(void)
 #   endif
     MPIU_THREAD_CHECK_END
 
-    for (i = 0; i < CH3_NUM_QUEUES; ++i)
-    {
-	MPIDI_CH3I_sendq_head[i] = NULL;
-	MPIDI_CH3I_sendq_tail[i] = NULL;
-    }
-
+    MPIDI_CH3I_shm_sendq.head = NULL;
+    MPIDI_CH3I_shm_sendq.tail = NULL;
+    MPIDI_CH3I_shm_active_send = NULL;
+    
     /* Initialize the code to handle incoming packets */
     if (PKTARRAY_SIZE <= MPIDI_NEM_PKT_END) {
         MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_INTERN, "**ch3|pktarraytoosmall");
@@ -804,8 +850,8 @@ int MPIDI_CH3I_Progress_init(void)
     /* install signal handler for process failure notifications from hydra */
     prev_sighandler = signal(SIGUSR1, sigusr1_handler);
     MPIU_ERR_CHKANDJUMP1(prev_sighandler == SIG_ERR, mpi_errno, MPI_ERR_OTHER, "**signal", "**signal %s", MPIU_Strerror(errno));
-    /* Error if the app set its own SIGUSR1 handler. */
-    MPIU_ERR_CHKANDJUMP(prev_sighandler != SIG_DFL, mpi_errno, MPI_ERR_OTHER, "**sigusr1");
+    if (prev_sighandler == SIG_IGN || prev_sighandler == SIG_DFL)
+        prev_sighandler = NULL;
 #endif
 
  fn_exit:
@@ -827,16 +873,6 @@ int MPIDI_CH3I_Progress_finalize(void)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_FINALIZE);
 
-#ifdef HAVE_SIGNAL
-    {
-        /* replace signal handler */
-        void *ret;
-        
-        ret = signal(SIGUSR1, prev_sighandler);
-        MPIU_ERR_CHKANDJUMP1(ret == SIG_ERR, mpi_errno, MPI_ERR_OTHER, "**signal", "**signal %s", MPIU_Strerror(errno));
-    }
-#endif
-
     while(qn_head) {
         ent = qn_head->next;
         MPIU_Free(qn_head);
@@ -850,14 +886,46 @@ int MPIDI_CH3I_Progress_finalize(void)
     goto fn_exit;
 }
 
+#undef FUNCNAME
+#define FUNCNAME shm_connection_terminated
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+static int shm_connection_terminated(MPIDI_VC_t * vc)
+{
+    /* This function is called after all sends have completed */
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_SHM_CONNECTION_TERMINATED);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_SHM_CONNECTION_TERMINATED);
+
+    mpi_errno = VC_CH(vc)->lmt_vc_terminated(vc);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    mpi_errno = MPIU_SHMW_Hnd_finalize(&(VC_CH(vc)->lmt_copy_buf_handle));
+    if(mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
+    mpi_errno = MPIU_SHMW_Hnd_finalize(&(VC_CH(vc)->lmt_recv_copy_buf_handle));
+    if(mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
+    
+    mpi_errno = MPIDI_CH3U_Handle_connection(vc, MPIDI_VC_EVENT_TERMINATED);
+    if(mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    MPIU_DBG_MSG_D(CH3_DISCONNECT, TYPICAL, "Terminated VC %d", vc->pg_rank);
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_SHM_CONNECTION_TERMINATED);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Connection_terminate
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIDI_CH3_Connection_terminate (MPIDI_VC_t * vc)
+int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIU_CHKPMEM_DECL(1);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_CONNECTION_TERMINATE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_CONNECTION_TERMINATE);
@@ -869,22 +937,107 @@ int MPIDI_CH3_Connection_terminate (MPIDI_VC_t * vc)
         vc->state == MPIDI_VC_STATE_INACTIVE_CLOSED)
         goto fn_exit;
 
-    if (((MPIDI_CH3I_VC *)vc->channel_private)->is_local)
-        mpi_errno = MPID_nem_vc_terminate(vc);
-    else
+    if (VC_CH(vc)->is_local) {
+        MPIU_DBG_MSG(CH3_DISCONNECT, TYPICAL, "VC is local");
+
+        if (vc->state != MPIDI_VC_STATE_CLOSED) {
+            /* VC is terminated as a result of a fault.  Complete
+               outstanding sends with an error and terminate
+               connection immediately. */
+            MPIU_DBG_MSG(CH3_DISCONNECT, TYPICAL, "VC terminated due to fault");
+            mpi_errno = MPIDI_CH3I_Complete_sendq_with_error(vc);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+            mpi_errno = shm_connection_terminated(vc);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        } else {
+            /* VC is terminated as a result of the close protocol.
+               Wait for sends to complete, then terminate. */
+
+            if (MPIDI_CH3I_Sendq_empty(MPIDI_CH3I_shm_sendq)) {
+                /* The sendq is empty, so we can immediately terminate
+                   the connection. */
+                MPIU_DBG_MSG(CH3_DISCONNECT, TYPICAL, "Shm send queue empty, terminating immediately");
+                mpi_errno = shm_connection_terminated(vc);
+                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            } else {
+                /* There may be sends from this VC on the send queue.
+                   Since there is one send queue, we don't want to
+                   search the queue to find the last send from this
+                   VC.  Instead, we use the last send in the queue,
+                   regardless of which VC it's from.  When that send
+                   completes, (since no new messages are sent on this
+                   VC anymore) we know that all sends on this VC must
+                   have completed.  */
+                vc_term_element_t *ep;
+                MPIU_DBG_MSG(CH3_DISCONNECT, TYPICAL, "Shm send queue not empty, waiting to terminate");
+                MPIU_CHKPMEM_MALLOC(ep, vc_term_element_t *, sizeof(vc_term_element_t), mpi_errno, "vc_term_element");
+                ep->vc = vc;
+                ep->req = MPIDI_CH3I_shm_sendq.tail;
+                MPIR_Request_add_ref(ep->req); /* make sure this doesn't get released before we can check it */
+                TERMQ_ENQUEUE(ep);
+            }
+        }
+    
+    } else {
+        MPIU_DBG_MSG(CH3_DISCONNECT, TYPICAL, "VC is remote");
         mpi_errno = MPID_nem_netmod_func->vc_terminate(vc);
-    if(mpi_errno) MPIU_ERR_POP(mpi_errno);
-
-    mpi_errno = MPIDI_CH3U_Handle_connection (vc, MPIDI_VC_EVENT_TERMINATED);
-    if(mpi_errno) MPIU_ERR_POP(mpi_errno);
-
-fn_exit:
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    }
+    
+ fn_exit:
+    MPIU_CHKPMEM_COMMIT();
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_CONNECTION_TERMINATE);
     return mpi_errno;
-fn_fail:
+ fn_fail:
+    MPIU_CHKPMEM_REAP();
     goto fn_exit;
 }
 /* end MPIDI_CH3_Connection_terminate() */
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_CH3I_Complete_sendq_with_error
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPIDI_CH3I_Complete_sendq_with_error(MPIDI_VC_t * vc)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPID_Request *req, *prev;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_COMPLETE_SENDQ_WITH_ERROR);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_COMPLETE_SENDQ_WITH_ERROR);
+
+    req = MPIDI_CH3I_shm_sendq.head;
+    prev = NULL;
+    while (req) {
+        if (req->ch.vc == vc) {
+            MPID_Request *next = req->dev.next;
+            if (prev)
+                prev->dev.next = next;
+            else
+                MPIDI_CH3I_shm_sendq.head = next;
+            if (MPIDI_CH3I_shm_sendq.tail == req)
+                MPIDI_CH3I_shm_sendq.tail = prev;
+
+            req->status.MPI_ERROR = MPI_SUCCESS;
+            MPIU_ERR_SET1(req->status.MPI_ERROR, MPI_ERR_OTHER, "**comm_fail", "**comm_fail %d", vc->pg_rank);
+            
+            MPID_Request_release(req); /* ref count was incremented when added to queue */
+            MPIDI_CH3U_Request_complete(req);
+            req = next;
+        } else {
+            prev = req;
+            req = req->dev.next;
+        }
+    }
+
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3I_COMPLETE_SENDQ_WITH_ERROR);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
 
 
 #undef FUNCNAME
@@ -895,7 +1048,7 @@ static int pkt_NETMOD_handler(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt, MPIDI_msg_sz
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_nem_pkt_netmod_t * const netmod_pkt = (MPID_nem_pkt_netmod_t *)pkt;
-    MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
+    MPIDI_CH3I_VC *vc_ch = VC_CH(vc);
     MPIDI_STATE_DECL(MPID_STATE_PKT_NETMOD_HANDLER);
 
     MPIDI_FUNC_ENTER(MPID_STATE_PKT_NETMOD_HANDLER);
@@ -1024,7 +1177,7 @@ void MPIDI_CH3I_Posted_recv_enqueued(MPID_Request *rreq)
          * ways to do this that don't require a hook on every request post, but
          * instead do some sort of caching or something analogous to branch
          * prediction. */
-#if defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY != MPIU_THREAD_GRANULARITY_PER_OBJECT)
+#if !(defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT))
         /* enqueue fastbox */
 
         /* don't enqueue a fastbox for yourself */
@@ -1033,7 +1186,7 @@ void MPIDI_CH3I_Posted_recv_enqueued(MPID_Request *rreq)
             goto fn_exit;
 
         /* don't enqueue non-local processes */
-        if (!((MPIDI_CH3I_VC *)vc->channel_private)->is_local)
+        if (!VC_CH(vc)->is_local)
             goto fn_exit;
 
         /* Translate the communicator rank to a local rank.  Note that there is an
@@ -1070,7 +1223,7 @@ int MPIDI_CH3I_Posted_recv_dequeued(MPID_Request *rreq)
     /* MT FIXME we unfortunately must disable this optimization for now in
      * per_object mode. There are possibly other ways to synchronize the
      * fboxes that won't cause lock-ordering deadlocks */
-#if defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY != MPIU_THREAD_GRANULARITY_PER_OBJECT)
+#if !(defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT))
     else
     {
         if (rreq->dev.match.parts.rank == rreq->comm->rank)
@@ -1079,7 +1232,7 @@ int MPIDI_CH3I_Posted_recv_dequeued(MPID_Request *rreq)
         /* don't use MPID_NEM_IS_LOCAL, it doesn't handle dynamic processes */
         MPIDI_Comm_get_vc(rreq->comm, rreq->dev.match.parts.rank, &vc);
         MPIU_Assert(vc != NULL);
-        if (!((MPIDI_CH3I_VC *)vc->channel_private)->is_local)
+        if (!VC_CH(vc)->is_local)
             goto fn_exit;
 
         /* Translate the communicator rank to a local rank.  Note that there is an

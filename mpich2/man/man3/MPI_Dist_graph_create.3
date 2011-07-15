@@ -1,4 +1,4 @@
-.TH MPI_Dist_graph_create 3 "1/21/2011" " " "MPI"
+.TH MPI_Dist_graph_create 3 "2/26/2011" " " "MPI"
 .SH NAME
 MPI_Dist_graph_create \-  MPI_DIST_GRAPH_CREATE returns a handle to a new communicator to which the distributed graph topology information is attached. 
 .SH SYNOPSIS
@@ -16,27 +16,32 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, int sources[],
 .PD 0
 .TP
 .B n 
-- number of source nodes for which this process specifies edges (non-negative integer)
+- number of source nodes for which this process specifies edges 
+(non-negative integer)
 .PD 1
 .PD 0
 .TP
 .B sources 
-- array containing the n source nodes for which this process specifies edges (array of non-negative integers)
+- array containing the n source nodes for which this process 
+specifies edges (array of non-negative integers)
 .PD 1
 .PD 0
 .TP
 .B degrees 
-- array specifying the number of destinations for each source node in the source node array (array of non-negative integers)
+- array specifying the number of destinations for each source node 
+in the source node array (array of non-negative integers)
 .PD 1
 .PD 0
 .TP
 .B destinations 
-- destination nodes for the source nodes in the source node array (array of non-negative integers)
+- destination nodes for the source nodes in the source node 
+array (array of non-negative integers)
 .PD 1
 .PD 0
 .TP
 .B weights 
-- weights for source to destination edges (array of non-negative integers)
+- weights for source to destination edges (array of non-negative 
+integers or MPI_UNWEIGHTED)
 .PD 1
 .PD 0
 .TP
@@ -121,6 +126,22 @@ possible.
 .TP
 .B MPI_SUCCESS 
 - No error; MPI routine completed successfully.
+.PD 1
+.PD 0
+.TP
+.B MPI_ERR_ARG 
+- Invalid argument.  Some argument is invalid and is not
+identified by a specific error class (e.g., 
+.I MPI_ERR_RANK
+).
+.PD 1
+.PD 0
+.TP
+.B MPI_ERR_OTHER 
+- Other error; use 
+.I MPI_Error_string
+to get more information
+about this error code. 
 .PD 1
 .SH LOCATION
 dist_gr_create.c

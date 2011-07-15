@@ -19,7 +19,13 @@ static HYD_status init_params(void)
 
     HYDU_init_user_global(&HYD_pmcd_pmip.user_global);
 
-    HYD_pmcd_pmip.system_global.global_core_count = -1;
+    HYD_pmcd_pmip.system_global.global_core_map.left = -1;
+    HYD_pmcd_pmip.system_global.global_core_map.current = -1;
+    HYD_pmcd_pmip.system_global.global_core_map.right = -1;
+    HYD_pmcd_pmip.system_global.filler_process_map.left = -1;
+    HYD_pmcd_pmip.system_global.filler_process_map.current = -1;
+    HYD_pmcd_pmip.system_global.filler_process_map.right = -1;
+
     HYD_pmcd_pmip.system_global.global_process_count = -1;
     HYD_pmcd_pmip.system_global.jobid = NULL;
     HYD_pmcd_pmip.system_global.pmi_port = NULL;
@@ -38,6 +44,7 @@ static HYD_status init_params(void)
     HYD_pmcd_pmip.downstream.exit_status = NULL;
     HYD_pmcd_pmip.downstream.pmi_rank = NULL;
     HYD_pmcd_pmip.downstream.pmi_fd = NULL;
+    HYD_pmcd_pmip.downstream.forced_cleanup = 0;
 
     HYD_pmcd_pmip.local.id = -1;
     HYD_pmcd_pmip.local.pgid = -1;
@@ -47,8 +54,9 @@ static HYD_status init_params(void)
     HYD_pmcd_pmip.local.spawner_kvs_name = NULL;
     HYD_pmcd_pmip.local.proxy_core_count = -1;
     HYD_pmcd_pmip.local.proxy_process_count = -1;
+    HYD_pmcd_pmip.local.ckpoint_prefix_list = NULL;
+    HYD_pmcd_pmip.local.retries = -1;
 
-    HYD_pmcd_pmip.start_pid = -1;
     HYD_pmcd_pmip.exec_list = NULL;
 
     status = HYD_pmcd_pmi_allocate_kvs(&HYD_pmcd_pmip.local.kvs, -1);
@@ -58,6 +66,7 @@ static HYD_status init_params(void)
 
 static void cleanup_params(void)
 {
+    int i;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_finalize_user_global(&HYD_pmcd_pmip.user_global);
@@ -116,6 +125,12 @@ static void cleanup_params(void)
 
     if (HYD_pmcd_pmip.local.spawner_kvs_name)
         HYDU_FREE(HYD_pmcd_pmip.local.spawner_kvs_name);
+
+    if (HYD_pmcd_pmip.local.ckpoint_prefix_list) {
+        for (i = 0; HYD_pmcd_pmip.local.ckpoint_prefix_list[i]; i++)
+            HYDU_FREE(HYD_pmcd_pmip.local.ckpoint_prefix_list[i]);
+        HYDU_FREE(HYD_pmcd_pmip.local.ckpoint_prefix_list);
+    }
 
     HYD_pmcd_free_pmi_kvs_list(HYD_pmcd_pmip.local.kvs);
 
@@ -183,9 +198,12 @@ int main(int argc, char **argv)
         HYDU_ERR_POP(status, "error reading HYDRA_CONTROL_FD environment\n");
     }
     else if (ret == 0) {
+        /* FIXME: Have a non-zero delay in retries; possibly have a
+         * larger delay for larger ranks */
         status = HYDU_sock_connect(HYD_pmcd_pmip.upstream.server_name,
                                    HYD_pmcd_pmip.upstream.server_port,
-                                   &HYD_pmcd_pmip.upstream.control);
+                                   &HYD_pmcd_pmip.upstream.control,
+                                   HYD_pmcd_pmip.local.retries, 0);
         HYDU_ERR_POP(status,
                      "unable to connect to server %s at port %d (check for firewalls!)\n",
                      HYD_pmcd_pmip.upstream.server_name, HYD_pmcd_pmip.upstream.server_port);
@@ -232,13 +250,19 @@ int main(int argc, char **argv)
         if (pid > 0)
             for (i = 0; i < HYD_pmcd_pmip.local.proxy_process_count; i++)
                 if (HYD_pmcd_pmip.downstream.pid[i] == pid) {
-                    /* We store the new return status if either the
-                     * exit status is uninitialized, or if the return
-                     * status is non-zero. If the return status is
-                     * zero, and the exit status has already been set
-                     * to a different value, we use that. */
-                    if (ret_status || HYD_pmcd_pmip.downstream.exit_status[i] ==-1)
+                    if (HYD_pmcd_pmip.downstream.forced_cleanup) {
+                        /* If it is a forced cleanup, the exit status
+                         * is either already set or we have to ignore
+                         * it */
+                        if (HYD_pmcd_pmip.downstream.exit_status[i] == -1)
+                            HYD_pmcd_pmip.downstream.exit_status[i] = 0;
+                        else
+                            HYD_pmcd_pmip.downstream.exit_status[i] = ret_status;
+                    }
+                    else {
                         HYD_pmcd_pmip.downstream.exit_status[i] = ret_status;
+                    }
+
                     done++;
                 }
 

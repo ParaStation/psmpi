@@ -36,9 +36,9 @@ by lock calls to windows in memory allocated by <TT>MPI_Alloc_mem</TT>. Locks ca
 be used portably only in such memory.
 <P>
 The <TT>assert</TT> argument is used to indicate special conditions for the
-fence that an implementation may use to optimize the <TT>MPI_Win_fence
+fence that an implementation may use to optimize the <TT>MPI_Win_lock
 </TT>operation.  The value zero is always correct.  Other assertion values
-may be or'ed together.  Assertions that are valid for <TT>MPI_Win_fence</TT> are:
+may be or'ed together.  Assertions that are valid for <TT>MPI_Win_lock</TT> are:
 <P>
 <DL><DT><B>MPI_MODE_NOCHECK </B> <DD> no other process holds, or will attempt to acquire a 
 conflicting lock, while the caller holds the window lock. This is useful 
@@ -87,6 +87,9 @@ zero and the size of the communicator minus one; ranks in a receive
 (<TT>MPI_Recv</TT>, <TT>MPI_Irecv</TT>, <TT>MPI_Sendrecv</TT>, etc.) may also be <TT>MPI_ANY_SOURCE</TT>.
 </DL>
 <DL><DT><B>MPI_ERR_WIN </B> <DD> Invalid MPI window object
+</DL>
+<DL><DT><B>MPI_ERR_OTHER </B> <DD> Other error; use <TT>MPI_Error_string</TT> to get more information
+about this error code. 
 </DL>
 <P><B>Location:</B>win_lock.c<P>
 </BODY></HTML>

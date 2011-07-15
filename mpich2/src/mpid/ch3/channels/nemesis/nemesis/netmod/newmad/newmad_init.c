@@ -228,7 +228,7 @@ MPID_nem_newmad_connect_to_root (const char *business_card, MPIDI_VC_t *new_vc)
 int
 MPID_nem_newmad_vc_init (MPIDI_VC_t *vc)
 {
-   MPIDI_CH3I_VC *vc_ch = (MPIDI_CH3I_VC *)vc->channel_private;
+   MPIDI_CH3I_VC *vc_ch = VC_CH(vc);
    char          *business_card;
    int            mpi_errno = MPI_SUCCESS;   
    int            val_max_sz;
@@ -291,6 +291,8 @@ int MPID_nem_newmad_vc_destroy(MPIDI_VC_t *vc)
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_nem_newmad_vc_terminate (MPIDI_VC_t *vc)
 {
-    return MPI_SUCCESS;
+    /* FIXME: Check to make sure that it's OK to terminate the
+       connection without making sure that all sends have been sent */
+    return MPIDI_CH3U_Handle_connection (vc, MPIDI_VC_EVENT_TERMINATED);
 }
 

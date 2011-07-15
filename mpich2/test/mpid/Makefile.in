@@ -23,6 +23,7 @@ C_COMPILE_SHL   = $(CC_SHL) $(DEFS) $(INCLUDES) $(CFLAGS) $(CPPFLAGS)
 LDFLAGS     =  @LDFLAGS@ 
 
 VPATH = .:@srcdir@
+MPILIBNAME = @MPILIBNAME@
 INCLUDES = -I../../src/include -I${top_srcdir}/src/include 
 
 .SUFFIXES:
@@ -76,10 +77,11 @@ all-redirect:
 	${MAKE} all-local
 all-local:
 
-atomic_fai: atomic_fai.o  ../../lib/libmpich.a  
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o atomic_fai atomic_fai.o  -L../../lib -lmpich ${LIBS}
-atomic: atomic.o  ../../lib/libmpich.a  
-	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o atomic atomic.o  -L../../lib -lmpich ${LIBS}
+atomic_fai: atomic_fai.o   
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o atomic_fai atomic_fai.o  -L../../lib -l$(MPILIBNAME) \
+	${LIBS} 
+atomic: atomic.o   
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o atomic atomic.o  -L../../lib -l$(MPILIBNAME) ${LIBS}
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------

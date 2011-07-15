@@ -9,9 +9,9 @@ SHELL           = @SHELL@
 AR              = @AR@
 AR_FLAGS        = @AR_FLAGS@
 RANLIB          = @RANLIB@
-master_top_srcdir  = @master_top_srcdir@
 top_builddir    = @master_top_builddir@
 abs_builddir    = @abs_builddir@
+master_top_srcdir  = @master_top_srcdir@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 top_srcdir      = @top_srcdir@
@@ -146,11 +146,11 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	_pack_external.o _pack_external_size.o _unpack_external.o _type_create_indexed_block.o \
 	_type_create_resized.o _type_create_darray.o _type_create_subarray.o 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.a $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${PMPILIBNAME}.a $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.a $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${PMPILIBNAME}.a $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${PMPILIBNAME}.a $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${PMPILIBNAME}.a $?
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
 	  echo "  RANLIB          lib${PMPILIBNAME}.a" ; \
 	else \
@@ -168,11 +168,11 @@ all-redirect: .libstamp0 ../../../lib/lib${MPILIBNAME}.a
 	_unpack_external.lo _type_create_indexed_block.lo _type_create_resized.lo \
 	_type_create_darray.lo _type_create_subarray.lo 
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \
-	  echo "  AR cr ../../../lib/lib${PMPILIBNAME}.la $?" ; \
+	  echo "  AR ${AR_FLAGS} ../../../lib/lib${PMPILIBNAME}.la $?" ; \
 	else \
-	  echo ${AR} cr ../../../lib/lib${PMPILIBNAME}.la $? ; \
+	  echo ${AR} ${AR_FLAGS} ../../../lib/lib${PMPILIBNAME}.la $? ; \
 	fi
-	@${AR} cr ../../../lib/lib${PMPILIBNAME}.la $?
+	@${AR} ${AR_FLAGS} ../../../lib/lib${PMPILIBNAME}.la $?
 	date > .libstamp3
 _address.o: address.c
 	@if [ "x$(VERBOSE)" != "x1" -a "x$(V)" != "x1" ] ; then \

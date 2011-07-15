@@ -13,26 +13,6 @@
 #include "pmiserv.h"
 #include "pmiserv_utils.h"
 
-static HYD_status cleanup_all_pgs(void)
-{
-    struct HYD_pg *pg;
-    HYD_status status = HYD_SUCCESS;
-
-    HYDU_FUNC_ENTER();
-
-    for (pg = &HYD_server_info.pg_list; pg; pg = pg->next) {
-        status = HYD_pmcd_pmiserv_cleanup_pg(pg);
-        HYDU_ERR_POP(status, "unable to cleanup PG\n");
-    }
-
-  fn_exit:
-    HYDU_FUNC_EXIT();
-    return status;
-
-  fn_fail:
-    goto fn_exit;
-}
-
 static HYD_status send_cmd_to_proxies(struct HYD_pmcd_hdr hdr)
 {
     struct HYD_pg *pg = &HYD_server_info.pg_list;
@@ -65,6 +45,8 @@ static HYD_status ui_cmd_cb(int fd, HYD_event_t events, void *userp)
     struct HYD_cmd cmd;
     int count, closed;
     struct HYD_pmcd_hdr hdr;
+    struct HYD_pg *pg;
+    struct HYD_proxy *proxy;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -75,7 +57,7 @@ static HYD_status ui_cmd_cb(int fd, HYD_event_t events, void *userp)
 
     if (cmd.type == HYD_CLEANUP) {
         HYDU_dump_noprefix(stdout, "Ctrl-C caught... cleaning up processes\n");
-        status = cleanup_all_pgs();
+        status = HYD_pmcd_pmiserv_cleanup_all_pgs();
         HYDU_ERR_POP(status, "cleanup of processes failed\n");
         exit(1);
     }
@@ -84,6 +66,14 @@ static HYD_status ui_cmd_cb(int fd, HYD_event_t events, void *userp)
         hdr.cmd = CKPOINT;
         status = send_cmd_to_proxies(hdr);
         HYDU_ERR_POP(status, "error checkpointing processes\n");
+    }
+    else if (cmd.type == HYD_SIGNAL) {
+        for (pg = &HYD_server_info.pg_list; pg; pg = pg->next) {
+            for (proxy = pg->proxy_list; proxy; proxy = proxy->next) {
+                status = HYD_pmcd_pmiserv_send_signal(proxy, cmd.signum);
+                HYDU_ERR_POP(status, "unable to send SIGUSR1 downstream\n");
+            }
+        }
     }
     else {
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "unrecognized command\n");
@@ -99,7 +89,6 @@ static HYD_status ui_cmd_cb(int fd, HYD_event_t events, void *userp)
 HYD_status HYD_pmci_launch_procs(void)
 {
     struct HYD_proxy *proxy;
-    struct HYD_node *node_list = NULL, *node, *tnode;
     char *proxy_args[HYD_NUM_TMP_STRINGS] = { NULL }, *control_port = NULL;
     int node_count, i, *control_fd;
     HYD_status status = HYD_SUCCESS;
@@ -112,26 +101,6 @@ HYD_status HYD_pmci_launch_procs(void)
 
     status = HYD_pmcd_pmi_alloc_pg_scratch(&HYD_server_info.pg_list);
     HYDU_ERR_POP(status, "error allocating pg scratch space\n");
-
-    /* Copy the host list to pass to the launcher */
-    node_list = NULL;
-    node_count = 0;
-    for (proxy = HYD_server_info.pg_list.proxy_list; proxy; proxy = proxy->next) {
-        HYDU_alloc_node(&node);
-        node->hostname = HYDU_strdup(proxy->node.hostname);
-        node->core_count = proxy->node.core_count;
-        node->next = NULL;
-
-        if (node_list == NULL) {
-            node_list = node;
-        }
-        else {
-            for (tnode = node_list; tnode->next; tnode = tnode->next);
-            tnode->next = node;
-        }
-
-        node_count++;
-    }
 
     status = HYDU_sock_create_and_listen_portstr(HYD_server_info.user_global.iface,
                                                  HYD_server_info.local_hostname,
@@ -148,6 +117,10 @@ HYD_status HYD_pmci_launch_procs(void)
     status = HYD_pmcd_pmi_fill_in_exec_launch_info(&HYD_server_info.pg_list);
     HYDU_ERR_POP(status, "unable to fill in executable arguments\n");
 
+    node_count = 0;
+    for (proxy = HYD_server_info.pg_list.proxy_list; proxy; proxy = proxy->next)
+        node_count++;
+
     HYDU_MALLOC(control_fd, int *, node_count * sizeof(int), status);
     for (i = 0; i < node_count; i++)
         control_fd[i] = HYD_FD_UNSET;
@@ -155,9 +128,10 @@ HYD_status HYD_pmci_launch_procs(void)
     status =
         HYDT_bind_init(HYD_server_info.user_global.binding,
                        HYD_server_info.user_global.bindlib);
-    HYDU_ERR_POP(status, "unable to initializing binding library");
+    HYDU_ERR_POP(status, "unable to initializing binding library\n");
 
-    status = HYDT_bsci_launch_procs(proxy_args, node_list, control_fd);
+    status =
+        HYDT_bsci_launch_procs(proxy_args, HYD_server_info.pg_list.proxy_list, control_fd);
     HYDU_ERR_POP(status, "launcher cannot launch processes\n");
 
     for (i = 0, proxy = HYD_server_info.pg_list.proxy_list; proxy; proxy = proxy->next, i++)
@@ -175,7 +149,6 @@ HYD_status HYD_pmci_launch_procs(void)
     if (control_port)
         HYDU_FREE(control_port);
     HYDU_free_strlist(proxy_args);
-    HYDU_free_node_list(node_list);
     HYDU_FUNC_EXIT();
     return status;
 
@@ -200,7 +173,7 @@ HYD_status HYD_pmci_wait_for_completion(int timeout)
             status = HYDT_dmx_wait_for_event(timeout);
             if (status == HYD_TIMED_OUT) {
                 HYDU_dump(stdout, "APPLICATION TIMED OUT\n");
-                status = cleanup_all_pgs();
+                status = HYD_pmcd_pmiserv_cleanup_all_pgs();
                 HYDU_ERR_POP(status, "cleanup of processes failed\n");
             }
             HYDU_ERR_POP(status, "error waiting for event\n");

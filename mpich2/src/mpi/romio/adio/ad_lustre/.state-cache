@@ -2,7 +2,7 @@
 <file name="ad_lustre_fcntl.c" info="1215552457"/>
 <file name="ad_lustre_hints.c" info="1274813953"/>
 <file name="ad_lustre_rwcontig.c" info="1266946087"/>
-<file name="ad_lustre_wrstr.c" info="1266946377"/>
+<file name="ad_lustre_wrstr.c" info="1297373268"/>
 <file name="ad_lustre_wrcoll.c" info="1266946433"/>
 <file name="ad_lustre.c" info="1240432540"/>
 <file name="ad_lustre_open.c" info="1285078250"/>

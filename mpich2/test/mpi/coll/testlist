@@ -56,14 +56,15 @@ redscat2 4
 redscat2 5
 redscat2 10
 redscat3 8
-red_scat_block 4
-red_scat_block 5
-red_scat_block 8
-red_scat_block2 4
-red_scat_block2 5
-red_scat_block2 10
-redscatblk3 8
-redscatblk3 10
+redscatinter 8
+red_scat_block 4 mpiversion=2.2
+red_scat_block 5 mpiversion=2.2
+red_scat_block 8 mpiversion=2.2
+red_scat_block2 4 mpiversion=2.2
+red_scat_block2 5 mpiversion=2.2
+red_scat_block2 10 mpiversion=2.2
+redscatblk3 8 mpiversion=2.2
+redscatblk3 10 mpiversion=2.2
 scantst 4
 exscan 10
 exscan2 5

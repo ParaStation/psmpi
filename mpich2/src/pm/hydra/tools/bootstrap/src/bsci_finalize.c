@@ -14,20 +14,15 @@ HYD_status HYDT_bsci_finalize(void)
 
     HYDU_FUNC_ENTER();
 
-    status = HYDT_bsci_fns.rmk_finalize();
-    HYDU_ERR_POP(status, "RMK returned error while finalizing\n");
+    if (HYDT_bsci_fns.rmk_finalize) {
+        status = HYDT_bsci_fns.rmk_finalize();
+        HYDU_ERR_POP(status, "RMK returned error while finalizing\n");
+    }
 
-    status = HYDT_bsci_fns.launcher_finalize();
-    HYDU_ERR_POP(status, "RMK returned error while finalizing\n");
-
-    if (HYDT_bsci_info.rmk)
-        HYDU_FREE(HYDT_bsci_info.rmk);
-
-    if (HYDT_bsci_info.launcher)
-        HYDU_FREE(HYDT_bsci_info.launcher);
-
-    if (HYDT_bsci_info.launcher_exec)
-        HYDU_FREE(HYDT_bsci_info.launcher_exec);
+    if (HYDT_bsci_fns.launcher_finalize) {
+        status = HYDT_bsci_fns.launcher_finalize();
+        HYDU_ERR_POP(status, "RMK returned error while finalizing\n");
+    }
 
   fn_exit:
     HYDU_FUNC_EXIT();

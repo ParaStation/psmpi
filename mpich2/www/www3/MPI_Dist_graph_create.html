@@ -17,15 +17,20 @@ int MPI_Dist_graph_create(MPI_Comm comm_old, int n, int sources[],
 <DL>
 <DT><B>comm_old </B><DD>input communicator (handle)
 
-<DT><B>n </B><DD>number of source nodes for which this process specifies edges (non-negative integer)
+<DT><B>n </B><DD>number of source nodes for which this process specifies edges 
+(non-negative integer)
 
-<DT><B>sources </B><DD>array containing the n source nodes for which this process specifies edges (array of non-negative integers)
+<DT><B>sources </B><DD>array containing the n source nodes for which this process 
+specifies edges (array of non-negative integers)
 
-<DT><B>degrees </B><DD>array specifying the number of destinations for each source node in the source node array (array of non-negative integers)
+<DT><B>degrees </B><DD>array specifying the number of destinations for each source node 
+in the source node array (array of non-negative integers)
 
-<DT><B>destinations </B><DD>destination nodes for the source nodes in the source node array (array of non-negative integers)
+<DT><B>destinations </B><DD>destination nodes for the source nodes in the source node 
+array (array of non-negative integers)
 
-<DT><B>weights </B><DD>weights for source to destination edges (array of non-negative integers)
+<DT><B>weights </B><DD>weights for source to destination edges (array of non-negative 
+integers or MPI_UNWEIGHTED)
 
 <DT><B>info </B><DD>hints on optimization and interpretation of weights (handle)
 
@@ -70,6 +75,12 @@ an error; however, MPI implementations will attempt to continue whenever
 possible.
 <P>
 <DL><DT><B>MPI_SUCCESS </B> <DD> No error; MPI routine completed successfully.
+</DL>
+<DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
+identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
+</DL>
+<DL><DT><B>MPI_ERR_OTHER </B> <DD> Other error; use <TT>MPI_Error_string</TT> to get more information
+about this error code. 
 </DL>
 <P><B>Location:</B>dist_gr_create.c<P>
 </BODY></HTML>

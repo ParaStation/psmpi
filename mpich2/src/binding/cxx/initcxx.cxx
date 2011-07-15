@@ -121,7 +121,7 @@ const Errhandler ERRORS_ARE_FATAL(MPI_ERRORS_ARE_FATAL);
 const Errhandler ERRORS_THROW_EXCEPTIONS(MPIR_ERRORS_THROW_EXCEPTIONS);
 const Info INFO_NULL;
 const Win WIN_NULL;
- File FILE_NULL;
+File FILE_NULL(MPI_FILE_NULL);
 const int BSEND_OVERHEAD= MPI_BSEND_OVERHEAD;
 const int KEYVAL_INVALID= MPI_KEYVAL_INVALID;
 const int CART= MPI_CART;
@@ -301,27 +301,27 @@ bool Is_initialized(void)
 void Compute_dims( int nnodes, int ndims, int dims[] )
     {
 
-	MPIX_CALL( MPI_Dims_create( nnodes, ndims, dims ) );
+	MPIX_CALLWORLD( MPI_Dims_create( nnodes, ndims, dims ) );
 
     }
 void Attach_buffer( void *buffer, int size )
     {
 
-	MPIX_CALL( MPI_Buffer_attach( buffer, size ) );
+	MPIX_CALLWORLD( MPI_Buffer_attach( buffer, size ) );
 
     }
 int Detach_buffer( void *&buffer )
     {
 	int size;
 
-	MPIX_CALL( MPI_Buffer_detach( &buffer, &size ) );
+	MPIX_CALLWORLD( MPI_Buffer_detach( &buffer, &size ) );
 
 	return size;
     }
 void Get_processor_name( char *name, int &resultlen ) 
     {
 
-    MPIX_CALL( MPI_Get_processor_name( name, &resultlen ) );
+    MPIX_CALLWORLD( MPI_Get_processor_name( name, &resultlen ) );
 
     }
 void Pcontrol( const int v, ... )
@@ -329,21 +329,21 @@ void Pcontrol( const int v, ... )
 	va_list ap;
         va_start(ap,v);
 
-	MPIX_CALL( MPI_Pcontrol( (int)v, ap ) );
+	MPIX_CALLWORLD( MPI_Pcontrol( (int)v, ap ) );
 
     }
 int Get_error_class( int errcode ) 
     {
     int errclass;
 
-    MPIX_CALL( MPI_Error_class( errcode, &errclass ) );
+    MPIX_CALLWORLD( MPI_Error_class( errcode, &errclass ) );
 
     return errclass;
     }
 void Get_error_string( int errcode, char *name, int &resultlen ) 
     {
 
-    MPIX_CALL( MPI_Error_string( errcode, name, &resultlen ) );
+    MPIX_CALLWORLD( MPI_Error_string( errcode, name, &resultlen ) );
 
     }
 Aint Get_address( void *ptr )
@@ -358,14 +358,14 @@ void *Alloc_mem( Aint size, const Info &info )
     {
         void *result;
 
-        MPIX_CALL( MPI_Alloc_mem( size, (MPI_Info)info, &result ) );
+        MPIX_CALLWORLD( MPI_Alloc_mem( size, (MPI_Info)info, &result ) );
 
         return result;
     }
 void Free_mem( void * base )
     {
 
-     MPIX_CALL( MPI_Free_mem( base ) );
+     MPIX_CALLWORLD( MPI_Free_mem( base ) );
 
     }
 
@@ -383,8 +383,8 @@ void MPIR_Call_op_fn( void *invec, void *outvec, int len, MPI_Datatype dtype,
 void Op::Init( User_function *f, bool commute )
     {
 
-	MPIX_CALL( MPI_Op_create( (MPI_User_function *)f, 
-				 (int) commute, &the_real_op ) ); 
+	MPIX_CALLWORLD( MPI_Op_create( (MPI_User_function *)f, 
+			(int) commute, &the_real_op ) ); 
 	MPIR_Op_set_cxx( the_real_op, (mpircallback) MPIR_Call_op_fn );
 
     }
@@ -401,7 +401,7 @@ MPIR_Comm_delete_attr_cxx_proxy(
     void* extra_state
     )
 {
-    void *value = NULL;
+    void *value = 0;
     /* Make sure that the attribute value is delivered as a pointer */
     if(MPIR_ATTR_KIND(attrib_type) == MPIR_ATTR_KIND(MPIR_ATTR_INT)){
         value = &attrib;
@@ -452,7 +452,7 @@ MPIR_Comm_copy_attr_cxx_proxy(
     int* flag
     )
 {
-    void *value = NULL;
+    void *value = 0;
     /* Make sure that the attribute value is delivered as a pointer */
     if(MPIR_ATTR_KIND(attrib_type) == MPIR_ATTR_KIND(MPIR_ATTR_INT)){
         value = &attrib;
@@ -499,7 +499,7 @@ int Comm::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df, void 
 
     if (cf == MPI::Comm::NULL_COPY_FN) cf = 0;
     if (df == MPI::Comm::NULL_DELETE_FN) df = 0;
-    MPIX_CALL( MPI_Comm_create_keyval( (MPI_Comm_copy_attr_function *)cf, 
+    MPIX_CALLWORLD( MPI_Comm_create_keyval( (MPI_Comm_copy_attr_function *)cf, 
 				       (MPI_Comm_delete_attr_function *)df,
 				      &keyval, extra_state ) );
     MPIR_Keyval_set_proxy( keyval, MPIR_Comm_copy_attr_cxx_proxy, MPIR_Comm_delete_attr_cxx_proxy );
@@ -519,7 +519,7 @@ MPIR_Type_delete_attr_cxx_proxy(
 {
     MPI::Datatype d = datatype;
     MPI::Datatype::Delete_attr_function* f = (MPI::Datatype::Delete_attr_function*)user_function;
-    void *value = NULL;
+    void *value = 0;
     /* Make sure that the attribute value is delivered as a pointer */
     if(MPIR_ATTR_KIND(attrib_type) == MPIR_ATTR_KIND(MPIR_ATTR_INT)){
         value = &attrib;
@@ -546,7 +546,7 @@ MPIR_Type_copy_attr_cxx_proxy(
     *flag = 0;
     MPI::Datatype d = datatype;
     MPI::Datatype::Copy_attr_function* f = (MPI::Datatype::Copy_attr_function*)user_function;
-    void *value = NULL;
+    void *value = 0;
     /* Make sure that the attribute value is delivered as a pointer */
     if(MPIR_ATTR_KIND(attrib_type) == MPIR_ATTR_KIND(MPIR_ATTR_INT)){
         value = &attrib;
@@ -563,9 +563,9 @@ int Datatype::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df, v
 
     if (cf == MPI::Datatype::NULL_COPY_FN) cf = 0;
     if (df == MPI::Datatype::NULL_DELETE_FN) df = 0;
-    MPIX_CALL( MPI_Type_create_keyval( (MPI_Type_copy_attr_function *)cf, 
-				       (MPI_Type_delete_attr_function *)df,
-				      &keyval, extra_state ) );
+    MPIX_CALLWORLD( MPI_Type_create_keyval( (MPI_Type_copy_attr_function *)cf, 
+			       (MPI_Type_delete_attr_function *)df,
+		 	       &keyval, extra_state ) );
     MPIR_Keyval_set_proxy( keyval, MPIR_Type_copy_attr_cxx_proxy, MPIR_Type_delete_attr_cxx_proxy );
     return keyval;
 }
@@ -583,7 +583,7 @@ MPIR_Win_delete_attr_cxx_proxy(
 {
     MPI::Win w = win;
     MPI::Win::Delete_attr_function* f = (MPI::Win::Delete_attr_function*)user_function;
-    void *value = NULL;
+    void *value = 0;
     /* Make sure that the attribute value is delivered as a pointer */
     if(MPIR_ATTR_KIND(attrib_type) == MPIR_ATTR_KIND(MPIR_ATTR_INT)){
         value = &attrib;
@@ -610,7 +610,7 @@ MPIR_Win_copy_attr_cxx_proxy(
     *flag = 0;
     MPI::Win w = win;
     MPI::Win::Copy_attr_function* f = (MPI::Win::Copy_attr_function*)user_function;
-    void *value = NULL;
+    void *value = 0;
     /* Make sure that the attribute value is delivered as a pointer */
     if(MPIR_ATTR_KIND(attrib_type) == MPIR_ATTR_KIND(MPIR_ATTR_INT)){
         value = &attrib;
@@ -627,7 +627,7 @@ int Win::Create_keyval( Copy_attr_function *cf, Delete_attr_function *df, void *
 
     if (cf == MPI::Win::NULL_COPY_FN) cf = 0;
     if (df == MPI::Win::NULL_DELETE_FN) df = 0;
-    MPIX_CALL( MPI_Win_create_keyval( (MPI_Win_copy_attr_function *)cf, 
+    MPIX_CALLWORLD( MPI_Win_create_keyval( (MPI_Win_copy_attr_function *)cf, 
 				       (MPI_Win_delete_attr_function *)df,
 				      &keyval, extra_state ) );
     MPIR_Keyval_set_proxy( keyval, MPIR_Win_copy_attr_cxx_proxy, MPIR_Win_delete_attr_cxx_proxy );
@@ -716,10 +716,18 @@ Errhandler Win::Create_errhandler( Errhandler_function *f )
 // cover the ERRORS_THROW_EXCEPTIONS case.
 void Comm::Call_errhandler( int errorcode ) const
 {
+    int err;
     // we must free the Errhandler object returned from Get_errhandler because
     // Get_errhandler adds a reference (the MPI Standard says as though a new
     // object were created)
-    Errhandler current = Get_errhandler();
+    // First, be careful of the communicator.  
+    Errhandler current;
+    if (the_real_comm == MPI_COMM_NULL) {
+	current = MPI::COMM_WORLD.Get_errhandler();
+    }
+    else {
+	current = Get_errhandler();
+    }
     if (current == ERRORS_THROW_EXCEPTIONS) {
         current.Free();
         throw Exception(errorcode); // throw by value, catch by reference
@@ -727,15 +735,23 @@ void Comm::Call_errhandler( int errorcode ) const
     else {
         current.Free();
     }
-    MPIX_CALL( MPI_Comm_call_errhandler( (MPI_Comm) the_real_comm, errorcode ));
+    err = MPI_Comm_call_errhandler( (MPI_Comm) the_real_comm, errorcode );
 }
 
 void Win::Call_errhandler( int errorcode ) const
 {
+    int err;
     // we must free the Errhandler object returned from Get_errhandler because
     // Get_errhandler adds a reference (the MPI Standard says as though a new
     // object were created)
-    Errhandler current = Get_errhandler();
+    // First, be careful of the communicator.  
+    Errhandler current;
+    if (the_real_win == MPI_WIN_NULL) {
+	current = MPI::COMM_WORLD.Get_errhandler();
+    }
+    else {
+	current = Get_errhandler();
+    }
     if (current == ERRORS_THROW_EXCEPTIONS) {
         current.Free();
         throw Exception(errorcode); // throw by value, catch by reference
@@ -743,15 +759,17 @@ void Win::Call_errhandler( int errorcode ) const
     else {
         current.Free();
     }
-    MPIX_CALL( MPI_Win_call_errhandler( (MPI_Win) the_real_win, errorcode ));
+    err = MPI_Win_call_errhandler( (MPI_Win) the_real_win, errorcode );
 }
 
 #ifdef MPI_MODE_RDONLY
 void File::Call_errhandler( int errorcode ) const
 {
+    int err;
     // we must free the Errhandler object returned from Get_errhandler because
     // Get_errhandler adds a reference (the MPI Standard says as though a new
     // object were created)
+    // Note that we are allowed to set handlers on FILE_NULL
     Errhandler current = Get_errhandler();
     if (current == ERRORS_THROW_EXCEPTIONS) {
         current.Free();
@@ -760,9 +778,15 @@ void File::Call_errhandler( int errorcode ) const
     else {
         current.Free();
     }
-    MPIX_CALL( MPI_File_call_errhandler( (MPI_File) the_real_file, errorcode ));
+    err = MPI_File_call_errhandler( (MPI_File) the_real_file, errorcode );
 }
 #endif // IO
+
+// Helper function to invoke the comm_world C++ error handler.
+void MPIR_Call_world_errhand( int err )
+{
+    MPI::COMM_WORLD.Call_errhandler( err );
+}
 
 
 #ifdef MPI_MODE_RDONLY
@@ -819,7 +843,7 @@ void Register_datarep( const char *datarep,
     ldata->write_fn         = write_fn;
     ldata->extent_fn        = extent_fn;
     ldata->orig_extra_state = orig_extra_state;
-    MPIX_CALL(MPI_Register_datarep( (char *)datarep, 
+    MPIX_CALLWORLD(MPI_Register_datarep( (char *)datarep, 
 				MPIR_Call_datarep_read_fn,
 				MPIR_Call_datarep_write_fn, 
 				MPIR_Call_datarep_extent_fn, (void *)ldata ));
@@ -831,15 +855,18 @@ void Register_datarep( const char *datarep,
 void Datatype::Pack( const void *inbuf, int incount, void *outbuf, 
 		     int outsize, int &position, const Comm &comm ) const {
 
-	MPIX_CALL( MPI_Pack( (void *)inbuf, incount, the_real_datatype, outbuf, 
-			    outsize, &position, comm.the_real_comm ) );
+	MPIX_CALLOBJ( comm, 
+                   MPI_Pack( (void *)inbuf, incount, the_real_datatype, 
+                   outbuf, outsize, &position, comm.the_real_comm ) );
 
     }
 
 int Datatype::Pack_size( int count, const Comm &comm ) const {
 
         int size;
-	MPIX_CALL( MPI_Pack_size( count, the_real_datatype, comm.the_real_comm, &size ) );
+	MPIX_CALLOBJ( comm, 
+                       MPI_Pack_size( count, the_real_datatype, 
+                       comm.the_real_comm, &size ) );
 
 	return size;
     }
@@ -847,8 +874,9 @@ int Datatype::Pack_size( int count, const Comm &comm ) const {
 void Datatype::Unpack( const void *inbuf, int insize, void *outbuf,
                        int outcount, int &position, const Comm &comm ) const {
 
-	MPIX_CALL( MPI_Unpack( (void *)inbuf, insize, &position, outbuf, outcount, 
-			      the_real_datatype, comm.the_real_comm ) );
+	MPIX_CALLOBJ( comm, MPI_Unpack( (void *)inbuf, insize, 
+                       &position, outbuf, outcount, 
+		       the_real_datatype, comm.the_real_comm ) );
 
     }
 double Wtime(void) { return MPI_Wtime(); }
@@ -867,7 +895,9 @@ double Wtick(void) { return MPI_Wtick(); }
         }
          l5 = (v5 == true) ? 1 : 0;
 
-        MPIX_CALL( MPI_Cart_create( (MPI_Comm) the_real_comm, v2, (int *)v3, l4, l5, &(v6.the_real_comm) ));
+        MPIX_CALLREF( this, 
+                       MPI_Cart_create( (MPI_Comm) the_real_comm, v2, 
+                       (int *)v3, l4, l5, &(v6.the_real_comm) ));
 
             delete[] l4;
         return v6;
@@ -879,7 +909,9 @@ double Wtick(void) { return MPI_Wtick(); }
         int l5;
          l5 = (v5 == true) ? 1 : 0;
 
-        MPIX_CALL( MPI_Graph_create( (MPI_Comm) the_real_comm, v2, (int *)v3, (int *)v4, l5, &(v6.the_real_comm) ));
+        MPIX_CALLREF( this, 
+                      MPI_Graph_create( (MPI_Comm) the_real_comm, 
+                      v2, (int *)v3, (int *)v4, l5, &(v6.the_real_comm) ));
 
         return v6;
     }
@@ -890,7 +922,9 @@ double Wtick(void) { return MPI_Wtick(); }
         int l2;
          l2 = (v2 == true) ? 1 : 0;
 
-        MPIX_CALL( MPI_Intercomm_merge( (MPI_Comm) the_real_comm, l2, &(v3.the_real_comm) ));
+        MPIX_CALLREF( this,
+                       MPI_Intercomm_merge( (MPI_Comm) the_real_comm, l2, 
+                       &(v3.the_real_comm) ));
 
         return v3;
     }
@@ -898,92 +932,92 @@ double Wtick(void) { return MPI_Wtick(); }
 bool Is_finalized( void )
     {
     int flag;
-    MPIX_CALL( MPI_Finalized( &flag ) );
+    MPIX_CALLWORLD( MPI_Finalized( &flag ) );
     return (flag != 0);
 }
 
 int Query_thread( void )
     {
     int provided;
-    MPIX_CALL( MPI_Query_thread( &provided ) );
+    MPIX_CALLWORLD( MPI_Query_thread( &provided ) );
     return provided;
 }
 
 bool Is_thread_main( void )
     {
     int flag;
-    MPIX_CALL( MPI_Is_thread_main( &flag ) );
+    MPIX_CALLWORLD( MPI_Is_thread_main( &flag ) );
     return (flag != 0);
 }
 
 void Get_version( int &v, int&sv )
     {
     
-    MPIX_CALL( MPI_Get_version( &v,&sv ) );
+    MPIX_CALLWORLD( MPI_Get_version( &v,&sv ) );
 }
 
 int Add_error_class( void )
     {
     int eclass;
-    MPIX_CALL( MPI_Add_error_class( &eclass ) );
+    MPIX_CALLWORLD( MPI_Add_error_class( &eclass ) );
     return eclass;
 }
 
 int Add_error_code( int eclass )
     {
     int ecode;
-    MPIX_CALL( MPI_Add_error_code( eclass, &ecode ) );
+    MPIX_CALLWORLD( MPI_Add_error_code( eclass, &ecode ) );
     return ecode;
 }
 
 void Add_error_string( int ecode, const char *estring )
     {
     
-    MPIX_CALL( MPI_Add_error_string( ecode, (char *)estring ) );
+    MPIX_CALLWORLD( MPI_Add_error_string( ecode, (char *)estring ) );
 }
 
 void Lookup_name( const char *sn, const Info &info, char *pn )
     {
     
-    MPIX_CALL( MPI_Lookup_name( (char *)sn, (MPI_Info)info, pn ) );
+    MPIX_CALLWORLD( MPI_Lookup_name( (char *)sn, (MPI_Info)info, pn ) );
 }
 
 void Publish_name( const char *sn, const Info &info, const char *pn )
     {
     
-    MPIX_CALL( MPI_Publish_name( (char *)sn, (MPI_Info)info, (char *)pn ) );
+    MPIX_CALLWORLD( MPI_Publish_name( (char *)sn, (MPI_Info)info, (char *)pn ) );
 }
 
 void Unpublish_name( const char *sn, const Info &info, const char *pn )
     {
     
-    MPIX_CALL( MPI_Unpublish_name( (char *)sn, (MPI_Info)info, (char *)pn ) );
+    MPIX_CALLWORLD( MPI_Unpublish_name( (char *)sn, (MPI_Info)info, (char *)pn ) );
 }
 
 Intercomm Comm::Get_parent( void )
     {
     MPI::Intercomm v;MPI_Comm vv;
-    MPIX_CALL( MPI_Comm_get_parent( &vv ) );
+    MPIX_CALLWORLD( MPI_Comm_get_parent( &vv ) );
     return (v = (Intercomm)vv, v);
 }
 
 Intercomm Comm::Join( const int fd )
     {
     MPI::Intercomm v;MPI_Comm vv;
-    MPIX_CALL( MPI_Comm_join( fd,&vv ) );
+    MPIX_CALLWORLD( MPI_Comm_join( fd,&vv ) );
     return (v = (Intercomm)vv,v);
 }
 
 void Close_port( const char *pn )
     {
     
-    MPIX_CALL( MPI_Close_port( (char *)pn ) );
+    MPIX_CALLWORLD( MPI_Close_port( (char *)pn ) );
 }
 
 void Open_port( const Info &info, char *portname )
     {
     
-    MPIX_CALL( MPI_Open_port( (MPI_Info)info, portname ) );
+    MPIX_CALLWORLD( MPI_Open_port( (MPI_Info)info, portname ) );
 }
 
 //
@@ -1060,3 +1094,4 @@ void MPIR_CXX_InitDatatypeNames( void )
     }
 }
 } // namespace MPI
+#undef MPIR_ARGUNUSED

@@ -1,12 +1,11 @@
-.TH MPE_Iget_mouse_press 4 "11/2/2007" " " "MPE"
+.TH MPE_Iget_mouse_press 4 "3/4/2011" " " "MPE"
 .SH NAME
 MPE_Iget_mouse_press \-  Checks for mouse button press 
 .SH SYNOPSIS
 .nf
 #include "mpe.h" 
-int MPE_Iget_mouse_press( graph, x, y, button, wasPressed )
-MPE_XGraph graph;
-int *x, *y, *button, *wasPressed;
+int MPE_Iget_mouse_press( MPE_XGraph graph, int *x, int *y, int *button, 
+                        int *wasPressed )
 .fi
 .SH INPUT PARAMETER
 .PD 0

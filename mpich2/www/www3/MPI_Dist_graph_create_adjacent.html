@@ -24,14 +24,15 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
 destination (array of non-negative integers)
 
 <DT><B>sourceweights </B><DD>weights of the edges into the calling
-process (array of non-negative integers)
+process (array of non-negative integers or MPI_UNWEIGHTED)
 
 <DT><B>outdegree </B><DD>size of destinations and destweights arrays (non-negative integer)
 
 <DT><B>destinations </B><DD>ranks of processes for which the calling process is a
 source (array of non-negative integers)
 
-<DT><B>destweights </B><DD>weights of the edges out of the calling process (array of non-negative integers)
+<DT><B>destweights </B><DD>weights of the edges out of the calling process 
+(array of non-negative integers or MPI_UNWEIGHTED)
 
 <DT><B>info </B><DD>hints on optimization and interpretation of weights (handle)
 
@@ -77,12 +78,11 @@ possible.
 <P>
 <DL><DT><B>MPI_SUCCESS </B> <DD> No error; MPI routine completed successfully.
 </DL>
-<DL><DT><B>MPI_ERR_TOPOLOGY </B> <DD> Invalid topology.  Either there is no topology 
-associated with this communicator, or it is not the correct type (e.g.,
-<TT>MPI_CART</TT> when expecting <TT>MPI_GRAPH</TT>).
-</DL>
 <DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
+</DL>
+<DL><DT><B>MPI_ERR_OTHER </B> <DD> Other error; use <TT>MPI_Error_string</TT> to get more information
+about this error code. 
 </DL>
 <P><B>Location:</B>dist_gr_create_adj.c<P>
 </BODY></HTML>

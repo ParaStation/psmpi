@@ -55,7 +55,6 @@ all-redirect:
 		if [ "$$dir" = "-" ] ; then break ; fi ; \
 		if ( cd $$dir && ${MAKE} all ) ; then : ; else exit 1; fi \
 	done
-	${MAKE} all-postamble
 
 # --------------------------------------------------------------------------
 # --------------------------------------------------------------------------
@@ -69,26 +68,9 @@ SOURCEFILES     = $(SOURCES)
 # Remove PMPILIBNAME from the common make variables for the mpid
 # directories
 
-# We need to handle the case where the process manager is external to 
-# MPICH2
-all-postamble:
-	if [ -n "@pm_name@" -a -d "@pm_name@" ] ; then \
-	build_prefix=`cd ../.. && pwd` && cd @pm_name@ && \
-	${MAKE} prefix=$$build_prefix exec_prefix=$$build_prefix bindir=$$build_prefix/bin \
-		libdir=$$build_prefix/lib includedir=$$build_prefix/include \
-		docdir=$$build_prefix/share/doc mpich2-build-install ; \
-	fi
-
 # Add util to distclean if possible
 distclean-local:
-	if [ -n "@pm_name@" -a -d "@pm_name@" ] ; then \
-	build_prefix=`cd ../.. && pwd` && cd @pm_name@ && \
-	${MAKE} prefix=$$build_prefix exec_prefix=$$build_prefix bindir=$$build_prefix/bin \
-		libdir=$$build_prefix/lib includedir=$$build_prefix/include \
-		docdir=$$build_prefix/share/doc mpich2-build-uninstall ; \
-	fi
 	if [ -s util/Makefile ] ; then 	(cd util && ${MAKE} distclean) ; fi
-
 
 .POSIX:
 

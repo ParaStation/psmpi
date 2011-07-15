@@ -75,7 +75,7 @@ typedef struct
     mpid_nem_newmad_p_gate_t p_gate;
 } MPID_nem_newmad_vc_area;
 /* accessor macro to private fields in VC */
-#define VC_FIELD(vcp, field) (((MPID_nem_newmad_vc_area *)((MPIDI_CH3I_VC *)((vcp)->channel_private))->netmod_area.padding)->field)
+#define VC_FIELD(vcp, field) (((MPID_nem_newmad_vc_area *)VC_CH(((vcp)))->netmod_area.padding)->field)
 
 /* The req provides a generic buffer in which network modules can store
    private fields This removes all dependencies from the req structure
@@ -151,12 +151,12 @@ typedef int16_t Nmad_Nem_tag_t;
     ((_match) |= (((nm_tag_t)((_tag)&(NEM_NMAD_MAX_TAG))) << SHIFT_TAG)); \
     }while(0)
 #define NEM_NMAD_SET_SRC(_match, _src) do {               \
-    MPIU_Assert(_src >= 0)&&(_src<=(NEM_NMAD_MAX_RANK))); \
+    MPIU_Assert((_src >= 0)&&(_src<=(NEM_NMAD_MAX_RANK)));\
     ((_match) |= (((nm_tag_t)(_src)) << SHIFT_RANK));     \
     }while(0)
-#define NEM_NMAD_SET_CTXT(_match, _ctxt) do {              \
-    MPIU_Assert(_ctxt >= 0)&&(_ctxt<=(NEM_NMAD_MAX_CTXT)));\
-    ((_match) |= (((nm_tag_t)(_ctxt)) << SHIFT_CTXT));	   \
+#define NEM_NMAD_SET_CTXT(_match, _ctxt) do {               \
+    MPIU_Assert((_ctxt >= 0)&&(_ctxt<=(NEM_NMAD_MAX_CTXT)));\
+    ((_match) |= (((nm_tag_t)(_ctxt)) << SHIFT_CTXT));	    \
     }while(0)
 #define NEM_NMAD_SET_PGRANK(_match, _pg_rank)  do {        \
     ((_match) |= (((nm_tag_t)(_pg_rank)) << SHIFT_PGRANK));\

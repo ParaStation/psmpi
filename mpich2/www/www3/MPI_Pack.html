@@ -17,21 +17,25 @@ int MPI_Pack(void *inbuf,
              int *position,
              MPI_Comm comm)
 </PRE>
-<H2>Arguments</H2>
+<H2>Input Parameters</H2>
 <DL>
-<DT><B>void *inbuf </B><DD>input buffer
+<DT><B>inbuf </B><DD>input buffer start (choice)
 
-<DT><B>int incount </B><DD>input count
+<DT><B>incount </B><DD>number of input data items (non-negative integer)
 
-<DT><B>MPI_Datatype datatype </B><DD>datatype
+<DT><B>datatype </B><DD>datatype of each input data item (handle)
 
-<DT><B>void *outbuf </B><DD>output buffer
+<DT><B>outcount </B><DD>output buffer size, in bytes (non-negative integer)
 
-<DT><B>int outcount </B><DD>output count
-
-<DT><B>int *position </B><DD>position
-
-<DT><B>MPI_Commm comm </B><DD>communicator
+<DT><B>comm </B><DD>communicator for packed message (handle)
+</DL>
+<P>
+<H2>Output Parameter</H2>
+<DL><DT><B>outbuf </B> <DD> output buffer start (choice)
+</DL>
+<P>
+<H2>Input/Output Parameter</H2>
+<DL><DT><B>position </B> <DD> current position in buffer, in bytes (integer)
 </DL>
 <P>
 <H2>Notes (from the specifications)</H2>
@@ -70,6 +74,12 @@ an error; however, MPI implementations will attempt to continue whenever
 possible.
 <P>
 <DL><DT><B>MPI_SUCCESS </B> <DD> No error; MPI routine completed successfully.
+</DL>
+<DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
+identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
+</DL>
+<DL><DT><B>MPI_ERR_OTHER </B> <DD> Other error; use <TT>MPI_Error_string</TT> to get more information
+about this error code. 
 </DL>
 <P><B>Location:</B>pack.c<P>
 </BODY></HTML>

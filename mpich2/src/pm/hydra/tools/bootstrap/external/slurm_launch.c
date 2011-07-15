@@ -12,20 +12,20 @@
 
 static int fd_stdout, fd_stderr;
 
-static HYD_status node_list_to_str(struct HYD_node *node_list, char **node_list_str)
+static HYD_status proxy_list_to_node_str(struct HYD_proxy *proxy_list, char **node_list_str)
 {
     int i;
     char *tmp[HYD_NUM_TMP_STRINGS], *foo = NULL;
-    struct HYD_node *node;
+    struct HYD_proxy *proxy;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
     i = 0;
-    for (node = node_list; node; node = node->next) {
-        tmp[i++] = HYDU_strdup(node->hostname);
+    for (proxy = proxy_list; proxy; proxy = proxy->next) {
+        tmp[i++] = HYDU_strdup(proxy->node->hostname);
 
-        if (node->next)
+        if (proxy->node->next)
             tmp[i++] = HYDU_strdup(",");
 
         /* If we used up more than half of the array elements, merge
@@ -59,15 +59,14 @@ static HYD_status node_list_to_str(struct HYD_node *node_list, char **node_list_
     goto fn_exit;
 }
 
-HYD_status HYDT_bscd_slurm_launch_procs(char **args, struct HYD_node *node_list,
+HYD_status HYDT_bscd_slurm_launch_procs(char **args, struct HYD_proxy *proxy_list,
                                         int *control_fd)
 {
-    int num_hosts, idx, i, exec_idx;
+    int num_hosts, idx, i;
     int *pid, *fd_list;
-    char *targs[HYD_NUM_TMP_STRINGS], *node_list_str = NULL,
-        quoted_exec_string[HYD_TMP_STRLEN];
+    char *targs[HYD_NUM_TMP_STRINGS], *node_list_str = NULL;
     char *path = NULL, *extra_arg_list = NULL, *extra_arg;
-    struct HYD_node *node;
+    struct HYD_proxy *proxy;
     struct HYDT_bind_cpuset_t cpuset;
     HYD_status status = HYD_SUCCESS;
 
@@ -86,17 +85,17 @@ HYD_status HYDT_bscd_slurm_launch_procs(char **args, struct HYD_node *node_list,
     idx = 0;
     targs[idx++] = HYDU_strdup(path);
 
-    if (!strcmp(HYDT_bsci_info.rmk, "slurm")) {
+    if (strcmp(HYDT_bsci_info.rmk, "slurm")) {
         targs[idx++] = HYDU_strdup("--nodelist");
 
-        status = node_list_to_str(node_list, &node_list_str);
+        status = proxy_list_to_node_str(proxy_list, &node_list_str);
         HYDU_ERR_POP(status, "unable to build a node list string\n");
 
         targs[idx++] = HYDU_strdup(node_list_str);
     }
 
     num_hosts = 0;
-    for (node = node_list; node; node = node->next)
+    for (proxy = proxy_list; proxy; proxy = proxy->next)
         num_hosts++;
 
     targs[idx++] = HYDU_strdup("-N");
@@ -115,16 +114,10 @@ HYD_status HYDT_bscd_slurm_launch_procs(char **args, struct HYD_node *node_list,
     }
 
     /* Fill in the remaining arguments */
-    exec_idx = idx;
+    /* We do not need to create a quoted version of the string for
+     * SLURM. It seems to be internally quoting it anyway. */
     for (i = 0; args[i]; i++)
         targs[idx++] = HYDU_strdup(args[i]);
-
-    /* Create a quoted version of the exec string, which is only used
-     * when the executable is not launched directly, but through an
-     * external launcher */
-    HYDU_snprintf(quoted_exec_string, HYD_TMP_STRLEN, "\"%s\"", targs[exec_idx]);
-    HYDU_FREE(targs[exec_idx]);
-    targs[exec_idx] = quoted_exec_string;
 
     /* Increase pid list to accommodate the new pid */
     HYDU_MALLOC(pid, int *, (HYD_bscu_pid_count + 1) * sizeof(int), status);

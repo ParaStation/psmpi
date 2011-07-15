@@ -7,11 +7,11 @@ all: all-redirect
 
 SHELL           = @SHELL@
 abs_builddir    = @abs_builddir@
-srcdir          = @srcdir@
 exec_prefix     = @exec_prefix@
 prefix          = @prefix@
-abs_srcdir      = @abs_srcdir@
 libdir          = @libdir@
+srcdir          = @srcdir@
+abs_srcdir      = @abs_srcdir@
 MAKE            = @MAKE@
 MPILIBNAME      = @MPILIBNAME@
 

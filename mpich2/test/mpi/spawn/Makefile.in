@@ -41,8 +41,8 @@ INCLUDES = -I../include -I${srcdir}/../include
 apply: 
 	$(ACTION) $(ACTION_INPUT)
 clean:  clean-local
-	-@rm -f *.o ${srcdir}/*.o spawnintra selfconacc disconnect2 disconnect3 disconnect_reconnect2 multiple_ports2 join disconnect_reconnect spaiccreate2 spawnmanyarg disconnect_reconnect3 namepub spawnargv spawnmult2 spawn1 disconnect spawnminfo1 spaconacc2 concurrent_spawns spawn2 spawninfo1 multiple_ports spaconacc spaiccreate taskmaster
-	-@rm -f spawnintra.exe selfconacc.exe disconnect2.exe disconnect3.exe disconnect_reconnect2.exe multiple_ports2.exe join.exe disconnect_reconnect.exe spaiccreate2.exe spawnmanyarg.exe disconnect_reconnect3.exe namepub.exe spawnargv.exe spawnmult2.exe spawn1.exe disconnect.exe spawnminfo1.exe spaconacc2.exe concurrent_spawns.exe spawn2.exe spawninfo1.exe multiple_ports.exe spaconacc.exe spaiccreate.exe taskmaster.exe
+	-@rm -f *.o ${srcdir}/*.o pgroup_connect_test spawnintra selfconacc disconnect2 disconnect3 disconnect_reconnect2 multiple_ports2 join disconnect_reconnect spaiccreate2 spawnmanyarg disconnect_reconnect3 namepub spawnargv spawnmult2 spawn1 disconnect spawnminfo1 spaconacc2 concurrent_spawns spawn2 spawninfo1 multiple_ports spaconacc spaiccreate pgroup_intercomm_test taskmaster
+	-@rm -f pgroup_connect_test.exe spawnintra.exe selfconacc.exe disconnect2.exe disconnect3.exe disconnect_reconnect2.exe multiple_ports2.exe join.exe disconnect_reconnect.exe spaiccreate2.exe spawnmanyarg.exe disconnect_reconnect3.exe namepub.exe spawnargv.exe spawnmult2.exe spawn1.exe disconnect.exe spawnminfo1.exe spaconacc2.exe concurrent_spawns.exe spawn2.exe spawninfo1.exe multiple_ports.exe spaconacc.exe spaiccreate.exe pgroup_intercomm_test.exe taskmaster.exe
 	-@rm -f core core.[0-9]*
 	-@rm -f *.lo ${srcdir}/*.lo
 	-@rm -f *.irlog*
@@ -59,8 +59,11 @@ remove-genmakefiles:
 all-redirect: namepub spawn1 spawninfo1 spawnminfo1 spawn2 spawnintra spawnargv spawnmanyarg\
 	 spaconacc spaconacc2 selfconacc spawnmult2 taskmaster join disconnect_reconnect\
 	 disconnect_reconnect2 disconnect_reconnect3 multiple_ports multiple_ports2 spaiccreate\
-	 spaiccreate2 disconnect disconnect2 disconnect3 concurrent_spawns
+	 spaiccreate2 disconnect disconnect2 disconnect3 concurrent_spawns pgroup_connect_test\
+	 pgroup_intercomm_test
 
+pgroup_connect_test: pgroup_connect_test.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o pgroup_connect_test pgroup_connect_test.o  ${LIBS}
 spawnintra: spawnintra.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o spawnintra spawnintra.o  ${LIBS}
 selfconacc: selfconacc.o   @MPILIBLOC@ ../util/mtest.o
@@ -109,6 +112,8 @@ spaconacc: spaconacc.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o spaconacc spaconacc.o  ${LIBS}
 spaiccreate: spaiccreate.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o spaiccreate spaiccreate.o  ${LIBS}
+pgroup_intercomm_test: pgroup_intercomm_test.o   @MPILIBLOC@ ../util/mtest.o
+	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o pgroup_intercomm_test pgroup_intercomm_test.o  ${LIBS}
 taskmaster: taskmaster.o   @MPILIBLOC@ ../util/mtest.o
 	$(C_LINK) $(CFLAGS) $(LDFLAGS) -o taskmaster taskmaster.o  ${LIBS}
 # --------------------------------------------------------------------------
@@ -118,10 +123,12 @@ SOURCES         =  namepub.c spawn1.c spawninfo1.c spawnminfo1.c spawn2.c spawni
 	spawnargv.c spawnmanyarg.c spaconacc.c spaconacc2.c selfconacc.c spawnmult2.c \
 	taskmaster.c join.c disconnect_reconnect.c disconnect_reconnect2.c \
 	disconnect_reconnect3.c multiple_ports.c multiple_ports2.c spaiccreate.c spaiccreate2.c \
-	disconnect.c disconnect2.c disconnect3.c concurrent_spawns.c 
+	disconnect.c disconnect2.c disconnect3.c concurrent_spawns.c pgroup_connect_test.c \
+	pgroup_intercomm_test.c 
 HEADERFILES     = $(HEADERS)
 SOURCEFILES     = $(SOURCES)
 # --------------------------------------------------------------------------
+
 
 
 ../util/mtest.o:

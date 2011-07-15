@@ -21,6 +21,12 @@
 /* Define if blcr is available */
 #undef HAVE_BLCR
 
+/* Define if external bss is enabled */
+#undef HAVE_BSS_EXTERNAL
+
+/* Define if persist bss is enabled */
+#undef HAVE_BSS_PERSIST
+
 /* define if the compiler defines __FUNC__ */
 #undef HAVE_CAP__FUNC__
 
@@ -63,6 +69,9 @@
 /* Define to 1 if you have the <ifaddrs.h> header file. */
 #undef HAVE_IFADDRS_H
 
+/* Define to 1 if you have the `inet_ntop' function. */
+#undef HAVE_INET_NTOP
+
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
@@ -77,6 +86,9 @@
 
 /* Define to 1 if you have the `hwloc' library (-lhwloc). */
 #undef HAVE_LIBHWLOC
+
+/* Define to 1 if you have the `plpa' library (-lplpa). */
+#undef HAVE_LIBPLPA
 
 /* Define if C99-style variable argument list macro functionality */
 #undef HAVE_MACRO_VA_ARGS
@@ -96,11 +108,20 @@
 /* Define if plpa is available */
 #undef HAVE_PLPA
 
+/* Define to 1 if you have the <plpa.h> header file. */
+#undef HAVE_PLPA_H
+
 /* Define to 1 if you have the `poll' function. */
 #undef HAVE_POLL
 
 /* Define to 1 if you have the <poll.h> header file. */
 #undef HAVE_POLL_H
+
+/* Define if pthreads is available */
+#undef HAVE_PTHREADS
+
+/* Define to 1 if you have the <pthread.h> header file. */
+#undef HAVE_PTHREAD_H
 
 /* Define to 1 if you have the <sched.h> header file. */
 #undef HAVE_SCHED_H
@@ -271,6 +292,9 @@
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
 
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
@@ -305,13 +329,14 @@
    nothing if this is not supported.  Do not define if restrict is
    supported directly.  */
 #undef restrict
-/* Work around a bug in Sun C++: it does not support _Restrict, even
-   though the corresponding Sun C compiler does, which causes
-   "#define restrict _Restrict" in the previous line.  Perhaps some future
-   version of Sun C++ will work with _Restrict; if so, it'll probably
-   define __RESTRICT, just as Sun C does.  */
+/* Work around a bug in Sun C++: it does not support _Restrict or
+   __restrict__, even though the corresponding Sun C compiler ends up with
+   "#define restrict _Restrict" or "#define restrict __restrict__" in the
+   previous line.  Perhaps some future version of Sun C++ will work with
+   restrict; if so, hopefully it defines __RESTRICT like Sun C does.  */
 #if defined __SUNPRO_CC && !defined __RESTRICT
 # define _Restrict
+# define __restrict__
 #endif
 
 /* Define to `unsigned int' if <sys/types.h> does not define. */

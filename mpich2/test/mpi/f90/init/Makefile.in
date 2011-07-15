@@ -7,6 +7,9 @@ all: all-redirect
 
 SHELL           = @SHELL@
 abs_builddir    = @abs_builddir@
+bindir          = @bindir@
+exec_prefix     = @exec_prefix@
+prefix          = @prefix@
 srcdir          = @srcdir@
 abs_srcdir      = @abs_srcdir@
 DEFS            = @DEFS@ -I. -I${srcdir}
@@ -89,6 +92,11 @@ SOURCEFILES     = $(SOURCES)
 # configure has correctly computed the sizes of MPI_Aint and MPI_Offset
 # for Fortran.  This is not run by default but can be used to check
 # that configure found the correct values.
+
+testing:
+	../../runtests -srcdir=$(srcdir) -tests=testlist \
+			-mpiexec=$(bindir)/mpiexec \
+		   	-xmlfile=summary.xml
 
 ../util/mtestf90.o: 
 	(cd ../util && $(MAKE) mtestf90.o)

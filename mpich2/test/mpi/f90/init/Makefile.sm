@@ -12,5 +12,10 @@ baseenvf90_LDADD = ../util/mtestf90.o
 checksizes_SOURCES = checksizes.c
 checksizes_LDADD = 
 
+testing:
+	../../runtests -srcdir=$(srcdir) -tests=testlist \
+			-mpiexec=$(bindir)/mpiexec \
+		   	-xmlfile=summary.xml
+
 ../util/mtestf90.o: 
 	(cd ../util && $(MAKE) mtestf90.o)
