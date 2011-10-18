@@ -9,8 +9,8 @@
 <file name="ad_zoidfs_features.c" info="1228857927"/>
 <file name="ad_zoidfs_delete.c" info="1260388542"/>
 <file name="ad_zoidfs_close.c" info="1218739596"/>
-<file name="ad_zoidfs_fcntl.c" info="1260388542"/>
 <file name="ad_zoidfs_common.h" info="1260388542"/>
+<file name="ad_zoidfs_fcntl.c" info="1260388542"/>
 <file name="ad_zoidfs_flush.c" info="1260388542"/>
 <file name="ad_zoidfs.h" info="1218739596"/>
 </dir>
@@ -35,9 +35,9 @@
 </fileinfo>
 <fileinfo name="ad_zoidfs_close.c">
 </fileinfo>
-<fileinfo name="ad_zoidfs_fcntl.c">
-</fileinfo>
 <fileinfo name="ad_zoidfs_common.h">
+</fileinfo>
+<fileinfo name="ad_zoidfs_fcntl.c">
 </fileinfo>
 <fileinfo name="ad_zoidfs_flush.c">
 </fileinfo>

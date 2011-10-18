@@ -2,8 +2,8 @@
 <file name="info_getnks.c" info="1194043819"/>
 <file name="info_free.c" info="1194043819"/>
 <file name="info_get.c" info="1194043819"/>
-<file name="info_f2c.c" info="1194043819"/>
 <file name="info_getvln.c" info="1194043819"/>
+<file name="info_f2c.c" info="1194043819"/>
 <file name="info_set.c" info="1194043819"/>
 <file name="info_delete.c" info="1194043819"/>
 <file name="info_dup.c" info="1194043819"/>
@@ -18,9 +18,9 @@
 </fileinfo>
 <fileinfo name="info_get.c">
 </fileinfo>
-<fileinfo name="info_f2c.c">
-</fileinfo>
 <fileinfo name="info_getvln.c">
+</fileinfo>
+<fileinfo name="info_f2c.c">
 </fileinfo>
 <fileinfo name="info_set.c">
 </fileinfo>

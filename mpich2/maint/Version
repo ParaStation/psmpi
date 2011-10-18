@@ -4,10 +4,10 @@
 #
 
 # Version Information
-MPICH2_VERSION=1.4
+MPICH2_VERSION=1.4.1p1
 
 # Release date
-MPICH2_RELEASE_DATE="Thu Jun 16 16:41:08 CDT 2011"
+MPICH2_RELEASE_DATE="Thu Sep  1 13:53:02 CDT 2011"
 
 # For libtool ABI versioning rules see:
 # http://www.gnu.org/software/libtool/manual/libtool.html#Updating-version-info
@@ -23,4 +23,4 @@ MPICH2_RELEASE_DATE="Thu Jun 16 16:41:08 CDT 2011"
 #
 #     4. If any interfaces have been removed since the last public
 #     release, then set age to 0.
-libmpich_so_version=3:0
+libmpich_so_version=3:3

@@ -55,6 +55,9 @@ static HYD_status external_launcher_init(void)
     if (!strcmp(HYDT_bsci_info.launcher, "ll"))
         HYDT_bsci_fns.launch_procs = HYDT_bscd_ll_launch_procs;
 
+    if (!strcmp(HYDT_bsci_info.launcher, "pbs"))
+        HYDT_bsci_fns.launch_procs = HYDT_bscd_pbs_launch_procs;
+
     /* for everything else, set default values */
     if (HYDT_bsci_fns.launch_procs == NULL)
         HYDT_bsci_fns.launch_procs = HYDT_bscd_external_launch_procs;
@@ -105,6 +108,11 @@ HYD_status HYDT_bsci_launcher_ll_init(void)
     return external_launcher_init();
 }
 
+HYD_status HYDT_bsci_launcher_manual_init(void)
+{
+    return external_launcher_init();
+}
+
 HYD_status HYDT_bsci_rmk_lsf_init(void)
 {
     return external_rmk_init();
@@ -130,7 +138,7 @@ HYD_status HYDT_bsci_rmk_pbs_init(void)
     return external_rmk_init();
 }
 
-HYD_status HYDT_bsci_rmk_none_init(void)
+HYD_status HYDT_bsci_rmk_user_init(void)
 {
     return external_rmk_init();
 }

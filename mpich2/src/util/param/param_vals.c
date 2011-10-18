@@ -5,8 +5,8 @@
  */
 /* automatically generated
  *   by:   ./maint/genparams
- *   at:   Thu Jun 16 16:44:54 2011
- *   from: src/util/param/params.yml (md5sum a5daec576251497b00e472280d6bc3ba)
+ *   at:   Thu Sep  1 13:55:43 2011
+ *   from: src/util/param/params.yml (md5sum 6d969dfaee560cd15ba5b677edcb1867)
  *
  * DO NOT EDIT!!!
  */
@@ -146,6 +146,10 @@ struct MPIR_Param_t MPIR_Param_params[MPIR_PARAM_NUM_PARAMS] = {
       "PROCTABLE_PRINT",
       "If true, dump the proctable entries at MPIR_WaitForDebugger-time. (currently compile-time disabled by \"#if 0\")",
       { MPIR_PARAM_TYPE_BOOLEAN, 1, 0.0, "", {0,0} } },
+    { MPIR_PARAM_ID_ERROR_CHECKING,
+      "ERROR_CHECKING",
+      "If true, perform checks for errors, typically to verify valid inputs to MPI routines.  Only effective when MPICH2 is configured with --enable-error-checking=runtime .",
+      { MPIR_PARAM_TYPE_BOOLEAN, 1, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_PRINT_ERROR_STACK,
       "PRINT_ERROR_STACK",
       "If true, print an error stack trace at error handling time.",
@@ -162,6 +166,18 @@ struct MPIR_Param_t MPIR_Param_params[MPIR_PARAM_NUM_PARAMS] = {
       "NEMESIS_NETMOD",
       "If non-empty, this parameter specifies which network module should be used for communication.",
       { MPIR_PARAM_TYPE_STRING, -1, 0.0, "", {0,0} } },
+    { MPIR_PARAM_ID_INTERFACE_HOSTNAME,
+      "INTERFACE_HOSTNAME",
+      "If non-NULL, this parameter specifies the IP address that other processes should use when connecting to this process. This parameter is mutually exclusive with the MPICH_NETWORK_IFACE parameter and it is an error to set them both.",
+      { MPIR_PARAM_TYPE_STRING, -1, 0.0, NULL, {0,0} } },
+    { MPIR_PARAM_ID_NETWORK_IFACE,
+      "NETWORK_IFACE",
+      "If non-NULL, this parameter specifies which pseudo-ethernet interface the tcp netmod should use (e.g., \"eth1\", \"ib0\").  Note, this is a Linux-specific parameter. This parameter is mutually exclusive with the MPICH_INTERFACE_HOSTNAME parameter and it is an error to set them both.",
+      { MPIR_PARAM_TYPE_STRING, -1, 0.0, NULL, {0,0} } },
+    { MPIR_PARAM_ID_HOST_LOOKUP_RETRIES,
+      "HOST_LOOKUP_RETRIES",
+      "This parameter controls the number of times to retry the  gethostbyname() function before giving up.",
+      { MPIR_PARAM_TYPE_INT, 10, 0.0, "", {0,0} } },
     { MPIR_PARAM_ID_DEBUG_HOLD,
       "DEBUG_HOLD",
       "If true, causes processes to wait in MPI_Init and MPI_Initthread for a debugger to be attached.  Once the debugger has attached, the variable 'hold' should be set to 0 in order to allow the process to continue (e.g., in gdb, \"set hold=0\").",
@@ -207,10 +223,14 @@ int MPIR_PARAM_ODD_EVEN_CLIQUES = 0;
 int MPIR_PARAM_MEMDUMP = 1;
 int MPIR_PARAM_PROCTABLE_SIZE = 64;
 int MPIR_PARAM_PROCTABLE_PRINT = 1;
+int MPIR_PARAM_ERROR_CHECKING = 1;
 int MPIR_PARAM_PRINT_ERROR_STACK = 1;
 int MPIR_PARAM_CHOP_ERROR_STACK = 0;
 int MPIR_PARAM_NEM_LMT_DMA_THRESHOLD = 2097152;
 const char * MPIR_PARAM_NEMESIS_NETMOD = "";
+const char * MPIR_PARAM_INTERFACE_HOSTNAME = NULL;
+const char * MPIR_PARAM_NETWORK_IFACE = NULL;
+int MPIR_PARAM_HOST_LOOKUP_RETRIES = 10;
 int MPIR_PARAM_DEBUG_HOLD = 0;
 int MPIR_PARAM_ENABLE_CKPOINT = 0;
 int MPIR_PARAM_ENABLE_COLL_FT_RET = 0;
@@ -346,6 +366,11 @@ int MPIR_Param_init_params(void)
     rc = MPL_env2bool("MPIR_PARAM_PROCTABLE_PRINT", &(MPIR_PARAM_PROCTABLE_PRINT));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_PROCTABLE_PRINT");
 
+    rc = MPL_env2bool("MPICH_ERROR_CHECKING", &(MPIR_PARAM_ERROR_CHECKING));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_ERROR_CHECKING");
+    rc = MPL_env2bool("MPIR_PARAM_ERROR_CHECKING", &(MPIR_PARAM_ERROR_CHECKING));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_ERROR_CHECKING");
+
     rc = MPL_env2bool("MPICH_PRINT_ERROR_STACK", &(MPIR_PARAM_PRINT_ERROR_STACK));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_PRINT_ERROR_STACK");
     rc = MPL_env2bool("MPIR_PARAM_PRINT_ERROR_STACK", &(MPIR_PARAM_PRINT_ERROR_STACK));
@@ -365,6 +390,21 @@ int MPIR_Param_init_params(void)
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_NEMESIS_NETMOD");
     rc = MPL_env2str("MPIR_PARAM_NEMESIS_NETMOD", &(MPIR_PARAM_NEMESIS_NETMOD));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_NEMESIS_NETMOD");
+
+    rc = MPL_env2str("MPICH_INTERFACE_HOSTNAME", &(MPIR_PARAM_INTERFACE_HOSTNAME));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_INTERFACE_HOSTNAME");
+    rc = MPL_env2str("MPIR_PARAM_INTERFACE_HOSTNAME", &(MPIR_PARAM_INTERFACE_HOSTNAME));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_INTERFACE_HOSTNAME");
+
+    rc = MPL_env2str("MPICH_NETWORK_IFACE", &(MPIR_PARAM_NETWORK_IFACE));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_NETWORK_IFACE");
+    rc = MPL_env2str("MPIR_PARAM_NETWORK_IFACE", &(MPIR_PARAM_NETWORK_IFACE));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_NETWORK_IFACE");
+
+    rc = MPL_env2int("MPICH_HOST_LOOKUP_RETRIES", &(MPIR_PARAM_HOST_LOOKUP_RETRIES));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_HOST_LOOKUP_RETRIES");
+    rc = MPL_env2int("MPIR_PARAM_HOST_LOOKUP_RETRIES", &(MPIR_PARAM_HOST_LOOKUP_RETRIES));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_HOST_LOOKUP_RETRIES");
 
     rc = MPL_env2bool("MPICH_DEBUG_HOLD", &(MPIR_PARAM_DEBUG_HOLD));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_DEBUG_HOLD");

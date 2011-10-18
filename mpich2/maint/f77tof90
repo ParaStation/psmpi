@@ -1,4 +1,4 @@
-#! /usr/bin/perl -w
+#! /opt/local/bin/perl -w
 # -*- Mode: perl; -*-
 #
 # f77tof90 indir outdir [ Makefile-template [Make-Append] ]

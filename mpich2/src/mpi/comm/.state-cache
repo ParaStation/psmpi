@@ -7,7 +7,7 @@
 <file name="comm_rank.c" info="1280329775"/>
 <file name="comm_create.c" info="1302212840"/>
 <file name="comm_set_name.c" info="1280864247"/>
-<file name="intercomm_create.c" info="1295635305"/>
+<file name="intercomm_create.c" info="1312226491"/>
 <file name="comm_remote_group.c" info="1289055764"/>
 <file name="commutil.c" info="1302736062"/>
 <file name="comm_free.c" info="1280329775"/>

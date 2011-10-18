@@ -7,8 +7,8 @@
 <file name="mpid_recv.c" info="1294263664"/>
 <file name="ch3u_rma_sync.c" info="1302212721"/>
 <file name="mpid_irecv.c" info="1294263664"/>
-<file name="mpid_ssend.c" info="1241637926"/>
 <file name="mpid_startall.c" info="1286399817"/>
+<file name="mpid_ssend.c" info="1241637926"/>
 <file name="ch3u_handle_recv_pkt.c" info="1289055764"/>
 <file name="ch3u_rndv.c" info="1283959284"/>
 <file name="ch3u_handle_connection.c" info="1299602513"/>
@@ -17,8 +17,8 @@
 <file name="ch3u_buffer.c" info="1280271254"/>
 <file name="mpid_port.c" info="1283270591"/>
 <file name="mpid_send.c" info="1283959284"/>
-<file name="ch3u_rma_ops.c" info="1295635305"/>
 <file name="ch3u_handle_send_req.c" info="1254002669"/>
+<file name="ch3u_rma_ops.c" info="1295635305"/>
 <file name="ch3u_recvq.c" info="1294957044"/>
 <file name="ch3u_eager.c" info="1283959284"/>
 <file name="mpidi_pg.c" info="1296263717"/>
@@ -27,7 +27,7 @@
 <file name="mpid_iprobe.c" info="1289055764"/>
 <file name="mpid_get_universe_size.c" info="1257000213"/>
 <file name="ch3u_request.c" info="1286399817"/>
-<file name="mpid_getpname.c" info="1226352816"/>
+<file name="mpid_getpname.c" info="1313023564"/>
 <file name="mpid_isend.c" info="1283959284"/>
 <file name="mpid_irsend.c" info="1283959284"/>
 <file name="mpid_abort.c" info="1289055764"/>
@@ -110,9 +110,6 @@ MPID_STATE_MPIDI_CH3_PKTHANDLER_PTRMADONE MPIDI_CH3_PktHandler_PtRMADone
 <fileinfo name="mpid_irecv.c">
 MPID_STATE_MPID_IRECV MPID_Irecv
 </fileinfo>
-<fileinfo name="mpid_ssend.c">
-MPID_STATE_MPID_SSEND MPID_Ssend
-</fileinfo>
 <fileinfo name="mpid_startall.c">
 MPID_STATE_MPID_STARTALL MPID_Startall
 MPID_STATE_MPID_SEND_INIT MPID_Send_init
@@ -120,6 +117,9 @@ MPID_STATE_MPID_SSEND_INIT MPID_Ssend_init
 MPID_STATE_MPID_RSEND_INIT MPID_Rsend_init
 MPID_STATE_MPID_BSEND_INIT MPID_Bsend_init
 MPID_STATE_MPID_RECV_INIT MPID_Recv_init
+</fileinfo>
+<fileinfo name="mpid_ssend.c">
+MPID_STATE_MPID_SSEND MPID_Ssend
 </fileinfo>
 <fileinfo name="ch3u_handle_recv_pkt.c">
 MPID_STATE_MPIDI_CH3U_HANDLE_ORDERED_RECV_PKT MPIDI_CH3U_Handle_ordered_recv_pkt
@@ -162,6 +162,9 @@ MPID_STATE_MPIDI_CLOSE_PORT MPIDI_Close_port
 <fileinfo name="mpid_send.c">
 MPID_STATE_MPID_SEND MPID_Send
 </fileinfo>
+<fileinfo name="ch3u_handle_send_req.c">
+MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ MPIDI_CH3U_Handle_send_req
+</fileinfo>
 <fileinfo name="ch3u_rma_ops.c">
 MPID_STATE_MPIDI_WIN_CREATE MPIDI_Win_create
 MPID_STATE_MPIDI_WIN_FREE MPIDI_Win_free
@@ -170,9 +173,6 @@ MPID_STATE_MPIDI_GET MPIDI_Get
 MPID_STATE_MPIDI_ACCUMULATE MPIDI_Accumulate
 MPID_STATE_MPIDI_ALLOC_MEM MPIDI_Alloc_mem
 MPID_STATE_MPIDI_FREE_MEM MPIDI_Free_mem
-</fileinfo>
-<fileinfo name="ch3u_handle_send_req.c">
-MPID_STATE_MPIDI_CH3U_HANDLE_SEND_REQ MPIDI_CH3U_Handle_send_req
 </fileinfo>
 <fileinfo name="ch3u_recvq.c">
 MPID_STATE_MPIDI_CH3U_RECVQ_FU MPIDI_CH3U_Recvq_FU
