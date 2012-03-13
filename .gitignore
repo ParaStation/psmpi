@@ -1,0 +1,9 @@
+.svn
+*.o
+*~
+*.d
+build*/*
+autom4te.cache/*
+mpich2/src/openpa/autom4te.cache/*
+mpich2/src/pm/hydra/autom4te.cache/*
+dist/psmpi2-*

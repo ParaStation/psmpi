@@ -1,0 +1,111 @@
+-*- text -*-
+
+Alle io_done calls global_mutex unabhägig zu machen. Sie sollten mit
+und ohne global_mutex lock aufrufbar sein. Die libpscom kann und wird
+mal mit mpi global lock und mal ohne global lock aufgerufen. Könnte
+der pscom Aufruf blockieren (z.B. pscom_wait()) wird der global mpi
+lock zuvor frei gegeben.
+
+
+Liste der io_done Aufrufe welche aus der libpscom zu jedem Zeitpunkt
+aufgerufen werden können (mit und ohne mpi lock!):
+
+ * void cb_io_done_init_msg(pscom_request_t *req)
+   Nur am Anfang mit einem Thread -> 
+   mt sicher
+
+ * void sendrequest_done(pscom_request_t *preq)
+   mt sicher
+
+ * void sendrequest_common_done(pscom_request_t *preq)
+   mt sicher
+
+ * void cb_io_done_ack(pscom_request_t *request)
+   mt sicher
+
+ * Über pscom_request_t *MPID_do_recv_forward_to(void (*io_done)(), pscom_header_net_t *hnet)
+
+   * void MPID_do_recv_cancel_data_request_ack(pscom_request_t *cancel_req)
+     ToDo: mt sicher?
+
+   * void MPID_do_recv_rma_lock_exclusive_req(pscom_request_t *req)
+     ToDo: mt sicher?
+
+   * void MPID_do_recv_rma_lock_shared_req(pscom_request_t *req)
+     ToDo: mt sicher?
+
+   * void MPID_do_recv_rma_unlock_req(pscom_request_t *req)
+     ToDo: mt sicher?
+
+ * void receive_done(pscom_request_t *request)
+   mt sicher
+   
+ * void receive_done_noncontig(pscom_request_t *request)
+   mt sicher
+
+ * void rma_put_done(pscom_request_t *req)
+   ToDo: req->user->type.put_send.win_ptr->rma_local_pending_cnt
+   wird nicht atomisch genutzt.
+
+ * void rma_put_receive_done(pscom_request_t *req)
+   ToDo: xhead_rma->win_ptr->rma_puts_accs_received ++
+   wird nicht atomisch genutzt.
+
+ * void rma_accumulate_done(pscom_request_t *req)
+   ToDo: req->user->type.accumulate_send.win_ptr->rma_local_pending_cnt
+   wird nicht atomisch genutzt.
+
+ * void rma_accumulate_receive_done(pscom_request_t *req)
+   ToDo: win_ptr->rma_puts_accs_received ++
+   wird nicht atomisch genutzt.
+
+ * void io_done_rma_get_answer(pscom_request_t *request)
+   ToDo: ga->win_ptr->rma_local_pending_cnt--
+   wird nicht atomisch genutzt.
+
+ * void io_done_get_answer_send(pscom_request_t *req)
+   mt sicher
+ 
+ * void io_done_get_answer_recv(pscom_request_t *req)
+   mt sicher
+
+Sonstige:
+
+ * void MPID_PSP_SendCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype)
+   non blocking, braucht keine locks. Betritt pscom.
+
+ * void MPID_PSP_SendRmaCtrl(MPID_Win *win_ptr, MPID_Comm *comm, pscom_connection_t *con,
+ 			  int dest_rank, enum MPID_PSP_MSGTYPE msgtype)
+   non blocking, braucht keine locks. Betritt pscom.
+
+
+Sicher gegen gleichzeitigen Aufruf?
+
+ * MPID_PSP_Subrequest_completed(req);
+
+    Requests die einen *req->cc_ptr von 1 haben rufen maximal einmal
+    MPID_PSP_Subrequest_completed auf. Höhere *cc_ptr könnten einen
+    Lock erfordern damit "(*(req->cc_ptr))--;" atomisch wird (?)
+
+ * void MPID_PSP_Request_dequeue(MPID_Request *req, MPID_Request_kind_t kind)
+   -> MPID_DEV_Request_release_ref(req, kind);
+   -> void MPID_DEV_Request_???_destroy(MPID_Request *req)
+   -> MPID_DEV_Request_common_destroy(req);
+   -> MPID_PSP_Request_destroy(req);
+   -> prep_req_enqueue(req);
+  
+   Die Funktion prep_req_enqueue Benutzt die Queue
+   prep_req_queue. Diese ist gesichert durch prep_req_mutex.
+
+
+---------------------------
+pscom_send() : non blocking
+pscom_wait() : blocking
+pscom_bcast() : blocking
+pscom_probe() : blocking
+pscom_post_bcast() : non blocking
+pscom_post_send(): non blocking
+Local Variables:
+  ispell-local-dictionary: "de"
+End:
+

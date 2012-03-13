@@ -1,0 +1,197 @@
+2011-12-16  Jens Hauke  <hauke@par-tec.com>	-	5.0.27-1
+
+	* Update to mpich2 version 1.4.1p1
+
+2011-11-09  Jens Hauke  <hauke@par-tec.com>
+
+	* Fix: MPI_Win_fence deadlock
+
+2011-07-22  Jens Hauke  <hauke@par-tec.com>
+
+	* Update: Skip -rpath from mpicc wrapper scripts
+
+	* Update: remove direct libpscom dependency
+
+	* Update: symlinks from older libmpich.so.1.1 and libmpich.so.1.2
+	to libmpich.so.3.0 for backward compatibility.
+
+2011-07-15  Jens Hauke  <hauke@par-tec.com>
+
+	* Update to mpich2 version 1.4
+
+2011-03-28  Thomas Moschny  <moschny@par-tec.com>	-	5.0.26-1
+
+	* Fix: MPI_Get_processor_name() now return the more common result
+	of gethostname().
+
+2010-11-12  Jens Hauke  <hauke@par-tec.com>	-	5.0.25-2
+
+	* psbuild for the git buildbots
+
+2010-07-21  Jens Hauke  <hauke@par-tec.com>	-	5.0.25-1
+
+	* Fix: datatype reference counting with persistent
+	requests. (MPI_Type_free() bug)
+
+	* Fix: Communicator reference counting with persistent requests.
+
+2010-06-28  Jens Hauke  <hauke@par-tec.com>	-	5.0.24-1
+
+	* Fix: Deadlocks when build with MPI_THREAD_MULTIPLE
+
+2010-04-29  Jens Hauke  <hauke@par-tec.com>
+
+	* Update to mpich2 version 1.2.1p1
+
+	* enable rpms relocate feature
+
+2010-04-06  Jens Hauke  <hauke@par-tec.com>
+
+	* Update to mpich2 version 1.2.1
+
+2010-04-21  Jens Hauke  <hauke@par-tec.com>	-	5.0.23-1
+
+	* Fix: persistent send requests (nonblocking MPI_Start()/
+	MPI_Startall with MPI_{Rsend,Send,Ssend}_init() requests)
+
+2010-03-23  Jens Hauke  <hauke@par-tec.com>	-	5.0.22-1
+
+	* Fix: memory leak when using MPI_Ssend()/MPI_Issend()
+
+	* Fix: MPI_Ibsend() *request assignment.
+
+	* minor code cleanup to avoid compiler warnings
+
+2010-02-26  Jens Hauke  <hauke@par-tec.com>	-	5.0.21-1
+
+	* Fix: MPI_Cancel()/MPI_Request_free() with active persistent
+	requests.
+
+2009-12-07  Jens Hauke  <hauke@par-tec.com>	-	5.0.20-1
+
+	* Feature: Optional build with MPI_THREAD_MULTIPLE support
+	(enabled in /opt/parastation/mpi2*-mt/ directories)
+
+	* Fix: deadlock in MPI_Finalize() when compiled with threading
+	"multiple".
+
+2009-11-20  Jens Hauke  <hauke@par-tec.com>
+
+	* Improve: speedup connection initialization. Please do not mix
+	<= 5.0.19-1 and > 5.0.19-1 versions at runtime. This might fail to
+	startup!
+
+2009-07-30  Jens Hauke  <hauke@par-tec.com>	-	5.0.19-1
+
+	* Default for PSP_ONDEMAND always 0.
+
+2009-07-30  Jens Hauke  <hauke@par-tec.com>	-	5.0.18-1
+
+	* Fix answer to MPI_Init_thread() and
+	MPI_Query_thread(). psp support MPI_THREAD_SERIALIZED.
+
+2009-07-28  Jens Hauke  <hauke@par-tec.com>
+
+	* Improve PMI error reporting.
+
+2009-07-03  Jens Hauke  <hauke@par-tec.com>
+
+	* Improve error reporting in case of network failures.
+
+2009-07-01  Jens Hauke  <hauke@par-tec.com>	-	5.0.17-1
+
+	* implement configurable thresholds to switch between long and
+	short vector algorithms.
+
+2009-06-26  Jens Hauke  <hauke@par-tec.com>	-	5.0.16-1
+
+	* implement PSP_ALLTOALL_SHORT_MSG.
+
+2009-05-27  Jens Hauke  <hauke@par-tec.com>	-	5.0.15-1
+
+	* Replace PMI_Get_id() by PMI_KVS_Get_my_name() to be compatible
+	with slurm.
+
+2009-05-27  Jens Hauke  <hauke@par-tec.com>	-	5.0.13-1
+
+	* Default for PSP_ONDEMAND: 1 if np > 32, else 0.
+
+2009-05-07  Jens Hauke  <hauke@par-tec.com>	-	5.0.12-1
+
+	* Fix persistent requests: MPI_Start() now works asynchronous and
+	never blocks, accordant to the specification.
+
+2009-02-05  Jens Hauke  <hauke@par-tec.com>	-	5.0.11-1
+
+	* "on demand" connections. Enable it with "env PSP_ONDEMAND=1".
+
+2009-01-14  Jens Hauke  <hauke@par-tec.com>	-	5.0.10-2
+
+2009-01-14  Jens Hauke  <hauke@par-tec.com>	-	5.0.10-1
+
+	* Update spec file to the new documentation path (share/man
+	share/doc ...).
+
+	* Merge branch 'vendor-1.0.8'
+
+2009-01-14  Jens Hauke  <hauke@par-tec.com>	-	5.0.9-3
+
+	* remove dependencies to intel libraries.
+
+2009-01-09  Jens Hauke  <hauke@par-tec.com>
+
+	* Generate rpms without dependencies (except /bin/sh).
+
+2008-09-29  Jens Hauke  <hauke@par-tec.com>	-	5.0.9-1
+
+	* Build for Cell.
+
+	* Add "MANPATH /opt/parastation/mpi2/man" to /etc/man.config.
+
+2008-07-10  Jens Hauke  <hauke@par-tec.com>	-	5.0.8-1
+
+	* Use icpc as the c++ compiler in case of intel.
+
+2008-06-01  Jens Hauke  <hauke@par-tec.com>
+
+	* Remove mpd files. (Do not pack mpd files).
+
+	* Update to mpich2 1.0.7.
+
+	* Improve connecting.
+
+	* Optional usage of pscom_bcast. (PSP_COLLECTIVES)
+
+2008-03-26  Jens Hauke  <hauke@par-tec.com>	-	5.0.4-1
+
+	* Fix unresolved symbols for mpich2-1.0.6p1.
+
+	* merging mpich2-1.0.6p1
+
+2008-02-18  Jens Hauke  <hauke@par-tec.com>	-	5.0.3-2
+
+	* Fix rpmbuild on Fedora 8.
+
+2007-07-30  Jens Hauke  <hauke@par-tec.com>	-	5.0.3-1
+
+	* debug PSP_DEBUG to switch sigsegv stack dump and request counting.
+
+2007-06-27  Jens Hauke  <hauke@par-tec.com>
+
+	* Update to version mpich2-1.0.5p4
+
+2007-06-27  Jens Hauke  <hauke@par-tec.com>	-	5.0.1-0
+
+	* PMI bug workaround (get universe size).
+
+2007-06-18  Jens Hauke  <hauke@par-tec.com>
+
+	* Confsets for PGI and pathscale compiler.
+
+	* Remove icc warnings. Delete some unused vars.
+
+	* Disable f77 and f90 in confset gcc without gfortran
+
+2007-06-11  Jens Hauke  <hauke@par-tec.com>
+
+	* Initial version

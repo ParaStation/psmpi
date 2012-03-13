@@ -1,0 +1,129 @@
+For 5.0.26-1_51_gcc8f5b6 on master:
+
+50 tests failed out of 584
+
+Issue #1: (32 tests)
+      MPID_Comm_spawn_multiple() not implemented
+Issue #2: (8 tests)
+      MPID_Open_port() not implemented
+Issue #3: (8 tests)
+      rma failed with 180sec timeout
+Issue #4: (2 tests)
+      Failing cancel for sends of kind send, bsend, isend and ibsend
+
+./pt2pt/scancel: #4
+	Failed to cancel an Isend request
+	Failed to cancel an Ibsend request
+	Failed to cancel an Isend request
+	Failed to cancel an Ibsend request
+	Failed to cancel an Isend request
+	Failed to cancel an Ibsend request
+	Failed to cancel an Isend request
+	Failed to cancel an Ibsend request
+	 Found 8 errors
+./pt2pt/pscancel: #4
+	Failed to cancel a persistent send request
+	Failed to cancel a persistent bsend request
+	Failed to cancel a persistent send request
+	Failed to cancel a persistent bsend request
+	Failed to cancel a persistent send request
+	Failed to cancel a persistent bsend request
+	Failed to cancel a persistent send request
+	Failed to cancel a persistent bsend request
+	 Found 8 errors
+./rma/adlb_mimic1: #3
+	PSIlogger: Maximum runtime of 180 seconds elapsed.
+./rma/lockcontention2 np=4 #3
+	PSIlogger: Maximum runtime of 180 seconds elapsed.
+./rma/lockcontention2 np=8 #3
+	PSIlogger: Maximum runtime of 180 seconds elapsed.
+./rma/fetchandadd: #3
+	PSIlogger: Maximum runtime of 180 seconds elapsed.
+./rma/fetchandadd_tree: #3
+	PSIlogger: Maximum runtime of 180 seconds elapsed.
+./rma/fetchandadd_am: #3
+	PSIlogger: Maximum runtime of 180 seconds elapsed.
+./rma/fetchandadd_tree_am: #3
+	PSIlogger: Maximum runtime of 180 seconds elapsed.
+./rma/mixedsync: #3
+	PSIlogger: Maximum runtime of 180 seconds elapsed.
+./spawn/spawn1: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/spawn2: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/spawninfo1: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/spawnminfo1: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/spawnintra np=1: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/spawnintra np=2: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/spawnargv: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/spawnmanyarg: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/spawnmult2: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/spaconacc: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/spaconacc2: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/selfconacc: #2
+	MPI_Open_port failed: Unsupported file operation
+./spawn/spaiccreate: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/taskmaster np=1: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/taskmaster np=2: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/join: #2
+	Warning: MPID_Open_port() not implemented
+./spawn/disconnect_reconnect: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/disconnect_reconnect2: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/disconnect_reconnect3: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/multiple_ports: #2
+	Warning: MPID_Open_port() not implemented
+./spawn/multiple_ports2: #2
+	Warning: MPID_Open_port() not implemented
+./spawn/disconnect: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/disconnect2: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/disconnect3: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/concurrent_spawns: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./spawn/pgroup_connect_test: #2
+	Warning: MPID_Open_port() not implemented
+./f77/spawn/spawnf: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./f77/spawn/spawnargvf: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./f77/spawn/connaccf: #2
+	Warning: MPID_Open_port() not implemented
+./f77/spawn/spawnmultf: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./f77/spawn/spawnmult2f: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./cxx/spawn/spawnintrax np=1: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./cxx/spawn/spawnintrax np=2: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./cxx/spawn/spawnargvx: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./cxx/spawn/selfconaccx: #2
+	Warning: MPID_Open_port() not implemented
+./f90/spawn/spawnf90: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./f90/spawn/spawnargvf90: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./f90/spawn/connaccf90: #2
+	Warning: MPID_Open_port() not implemented
+./f90/spawn/spawnmultf90: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented
+./f90/spawn/spawnmult2f90: #1
+	Warning: MPID_Comm_spawn_multiple() not implemented

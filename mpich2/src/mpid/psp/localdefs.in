@@ -1,0 +1,11 @@
+#! /bin/sh
+echo "RUNNING mpid/psp/localdefs FOR THE ParaStation DEVICE"
+echo
+
+LIBS="$LIBS `/opt/parastation/config/parastation-config --libs pscom`"
+
+## See if there are any definitions from the channel
+#if test -s src/mpid/ch3/channels/@channel_name@/localdefs ; then
+#    . src/mpid/ch3/channels/@channel_name@/localdefs
+#fi
+#LIBS="$LIBS @EXTRA_LIBS@"

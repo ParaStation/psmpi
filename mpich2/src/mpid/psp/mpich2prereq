@@ -1,0 +1,13 @@
+#! /bin/sh
+#
+# The psp device does not implement SPAWN
+echo "RUNNING mpid/psp/mpich2prereq FOR THE ParaStation DEVICE"
+
+MPID_NO_SPAWN=yes
+if [ "$PSP_THREADING" != "multiple" ]; then
+    MPID_MAX_THREAD_LEVEL=MPI_THREAD_SERIALIZED
+    echo "        mpid/psp : set MPID_MAX_THREAD_LEVEL=MPI_THREAD_SERIALIZED"
+else
+    MPID_MAX_THREAD_LEVEL=MPI_THREAD_MULTIPLE
+    echo "        mpid/psp : set MPID_MAX_THREAD_LEVEL=MPI_THREAD_MULTIPLE"
+fi

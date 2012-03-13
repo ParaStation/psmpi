@@ -1,0 +1,195 @@
+#!/bin/bash
+#
+# Open ParaStation
+#
+# Copyright (C) 2010 ParTec Cluster Competence Center GmbH, Munich
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+# Author:	Jens Hauke <hauke@par-tec.com>
+#
+
+
+function error() {
+    echo "$*" >&2
+    exit 1
+}
+
+
+function vecho() {
+    [ -n "$arg_verbose" ] && echo "$*" >&2
+}
+
+
+function usage(){
+    cat <<EOF
+Usage:
+  $BASH_SOURCE [OPTION]...
+
+Get a version string from the last tag of the version control.
+
+  file: use file $prjroot/VERSION with content "\${PKG_NAME}-\${VERSION}"
+
+  git: last "git tag" matching the pattern ?*-?*
+
+  svn: Expect to be in a "trunk/${PKG_NAME}" folder and searching for a tag created by:
+       svn copy \${SVN_ROOT}/tags/\${PKG_NAME}/\${PKG_NAME}-\${VERSION} \${SVN_ROOT}/tags/\${PKG_NAME}/latest
+
+  --file              force usage of VERSION file
+  --git               force usage of git
+  --svn               force usage of svn
+
+  -r,--prjroot dir    project root (default ".")
+
+  --fmt format        with format:
+                      "all"     : print full versionstring (default)
+                      "release" : print the release (everything after the first "-")
+                      "version" : print the version (everything before the first "-")
+
+  --isrelease         test, if version number matches "x.y-r" or "x.y.z-r" with xyzr digits only.
+
+  -v|--verbose        verbose
+  -h, --help          help
+EOF
+    exit 0
+}
+
+arg_prjroot="."
+arg_fmt="all"
+
+function parse_arg() {
+    while [ $# -gt 0 ]; do
+	case "$1" in
+	    --file)		arg_vc="file";;
+	    --git)		arg_vc="git";;
+	    --svn)		arg_vc="svn";;
+	    -r|--prjroot)	arg_prjroot="$2";shift;;
+	    --fmt)		arg_fmt="$2";shift;;
+	    --isrelease)	arg_isrelease="1"; arg_fmt="none";;
+	    --help|-h)		usage;;
+	    --verbose|-v)	arg_verbose=1;;
+	    *)			echo "WARNING: unhandled option '$1'";;
+	esac
+	shift
+    done
+}
+
+
+parse_arg "$@"
+
+cd "$arg_prjroot"
+
+if [ -z "$arg_vc" ]; then
+    if [ -e "VERSION" ]; then
+	arg_vc="file"
+    elif [ -d ".git" ]; then
+	arg_vc="git"
+    elif [ -d ".svn" ]; then
+	arg_vc="svn"
+    fi
+fi
+
+
+case "$arg_vc" in
+    file)
+	vecho "Tag from VERSION"
+	version="$(cat VERSION)"
+	version="${version#[a-zA-Z]*-}" # remove optional package name
+	;;
+    git)
+	vecho "Tag from git"
+	# retry git-describe without --dirty on error. (pre git-1.6.6 has no --dirty)
+	version="$(git describe --tags --dirty --always --match "?*-?*" 2>/dev/null ||\
+		   git describe --tags --always --match "?*-?*")"
+	;;
+    svn)
+	vecho "Tag from svn"
+
+	url="$({ svn info || echo "URL: ERROR";}|grep "^URL:"|{ read a b;echo $b;})"
+	[ "$url" = "ERROR" ] && error "svn info : failed"
+
+	project="${url#*/trunk/}"	# remove up to trunk
+
+	if [ "$project" != "$url" ]; then
+	    # In "trunk"
+	    tmp="${project}"
+	    project="${project%%/*}"	# remove everything after project name
+
+	    # Find the project root directory needed by svnversion
+	    root="."
+	    while [ "$tmp" != "${tmp%/*}" ]; do
+		tmp="${tmp%/*}"
+		root="$root/.."
+	    done
+	    root="$(cd $root && pwd)"
+	    vecho "root:    $root"
+
+	    tagurl="${url%%/trunk/*}/tags/$project/latest"
+	else
+	    # Not in "trunk". Try tags:
+	    project="${url#*/tags/}"	# remove up to tags
+
+	    if [ "$project" = "$url" ]; then
+		error 'Not a "trunk" or a "tags" svn working copy '"(\"$url\")"
+	    fi
+
+	    tagged=1
+	    project="${project%%/*}"	# remove everything after project name
+	    tagurl="${url%%/tags/*}/tags/$project/latest"
+	fi
+
+	vecho "url:     $url"
+	vecho "tag url: $tagurl"
+
+	copyfrom=$(svn log --verbose --limit 1 --xml "$tagurl"| xmlstarlet sel -t -v '/log/logentry/paths/path/@copyfrom-path')
+
+	prefix="/tags/$project/$project-"
+	version="${copyfrom#$prefix}"
+
+	# Assert: prefix ok?
+	if [ "$version" = "${copyfrom}" ]; then
+	    error "Unexpected tag format: \"${copyfrom}\" (expect \"$prefix*\")"
+	fi
+
+	if [ -z "$tagged" ]; then
+	    version="$version-r$(LC_ALL=C svnversion -n $root | tr -c [:alnum:] "_")"
+	fi
+	;;
+    *)
+	error No .git or .svn found
+	;;
+esac
+
+release="${version#*-}"
+# If there is no "-" inside version use the default release name "0"
+if [ "$release" == "$version" ]; then release="0"; fi
+
+version="${version%%-*}"
+
+# use only rpm release allowed chars.
+release="${release//[^a-zA-Z0-9]/_}"
+
+case "$arg_fmt" in
+    version)	echo "$version";;
+    release)	echo "$release";;
+    none)	;;
+    *)		echo "$version-$release";;
+esac
+
+if [ "$arg_isrelease" != "1" ];then
+    :
+else
+    regexp='^([0-9]+\.){1,2}[0-9]+-[0-9]+$' # see FAQ E14
+    [[ "$version-$release" =~ $regexp ]]
+fi

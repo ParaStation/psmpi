@@ -1,0 +1,61 @@
+###################################################### -*- Makefile -*- #####
+#                  ParaStation5
+#        Copyright (c) 2009 ParTec Cluster Competence Center GmbH, Munich
+#############################################################################
+#
+# @author
+#         Jens Hauke <hauke@par-tec.de>
+#############################################################################
+
+SRCDIR := $(shell cd @srcdir@;pwd)
+TOP_SRCDIR := @TOP_SRCDIR@
+TOP_BUILDDIR:=@TOP_BUILDDIR@
+
+#########################################################
+VPATH += $(SRCDIR)
+TXT2MAN:=$(TOP_SRCDIR)/scripts/txt2man
+
+# Keywords which should be highlighted in man pages
+TXT2MAN_KEYWORDS+= -B ParaStation
+
+# Get $(PKG_NAME):
+-include $(TOP_SRCDIR)/dist/Makefile.sources
+
+# Get Version
+VER:=$(shell cd $(TOP_SRCDIR) && scripts/vcversion)
+DISTNAME=$(PKG_NAME)-$(VER)
+
+#########################################################
+# Man page create rule
+%.1 %.2 %.3 %.4 %.5 .%6 %.7 %.8: %.txt
+	@echo "$@: $<" > $*.d
+	$(TXT2MAN) -s $(subst $*.,,$@) -t "$*" -r "$(DISTNAME)" -v "ParaStation" $(TXT2MAN_KEYWORDS) $< > $@
+
+all:
+
+#########################################################
+# Manpages to build:
+
+# PROGS+= foo.1
+# PROGS+= bar.3
+
+
+all: $(PROGS)
+#########################################################
+
+OBJECTS  += $(wildcard *.o)
+DEPFILES := $(wildcard *.d)
+CLEAN    += $(patsubst .clean.%,%, $(wildcard .clean.*)) $(wildcard .clean.*)
+CLEAN    += $(OBJECTS) $(DEPFILES)
+MRPROPPER+= $(PROGS) $(wildcard *~)
+
+Makefile: $(SRCDIR)/Makefile.in
+	cd $(TOP_BUILDDIR); ./config.status
+
+clean:
+	$(RM) $(CLEAN)
+
+mrpropper distclean:
+	$(RM) $(CLEAN) $(MRPROPPER)
+
+-include $(DEPFILES) dummy.d

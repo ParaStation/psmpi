@@ -1,0 +1,134 @@
+# -*- rpm-spec -*-
+%{?_with_default: %define confset default}
+%{?_with_devel: %define confset devel}
+%{?_with_gcc: %define confset gcc}
+%{?_with_intel: %define confset intel}
+%{?_with_pgi: %define confset pgi}
+%{?_with_psc: %define confset psc}
+%{?_with_cellgcc: %define confset cellgcc}
+%{?_with_cellxlc: %define confset cellxlc}
+%{?_with_ch3: %define confset ch3}
+
+%{?_with_threading: %define threading yes}
+
+%{!?subname: %{?confset: %define subname %{confset}}}
+
+Summary:   ParaStation MPI2
+Vendor:    ParTec Cluster Competence Center GmbH, Munich, Germany
+Name:      psmpi2%{?subname:-%{subname}}%{?threading:-mt}
+Version:   @VERSION_psmpi2@
+Release:   @RELEASE_psmpi2@
+License:   QPL and mpich2/COPYRIGHT
+Group:     Development/Libraries/Parallel
+Packager:  support@par-tec.de
+Source0:   psmpi2-%{version}-%{release}.tar.gz
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+# Dont use internal find_requires, because we dont want dependencies
+# to the intel libs.
+%define _use_internal_dependency_generator 0
+%define __find_requires %_builddir/psmpi2-%{version}-%{release}/dist/rpm_depgen
+
+%define prefix /opt/parastation/mpi2%{?subname:-%{subname}}%{?threading:-mt}
+Prefix: %{prefix}
+
+%description
+ParaStation MPI2. Based on MPICH2 using the ParaStation communication library pscom.
+%{?threading: Threading support: MPI_THREAD_MULTIPLE}
+MPICH2 is a freely available, portable implementation of MPI2, the Standard for message-passing libraries.
+http://www-unix.mcs.anl.gov/mpi/mpich/
+%prep
+
+cat <<DOK
+=========================================================
+Build options (confset):
+"rpmbuild --with devel"    build devel version (debug,-g ...)
+"rpmbuild --with gcc"      use gcc
+"rpmbuild --with intel"    use intel compiler
+"rpmbuild --with pgi"      use portland group compiler
+"rpmbuild --with psc"      use PathScale compiler
+"rpmbuild --with cellgcc"  use gcc compiler on Cell
+"rpmbuild --with cellxlc"  use XLC compiler on Cell
+"rpmbuild --with ch3"      MPIch2 ch3 device (no parastation)
+
+additive options:
+"rpmbuild --with threading" Support for MPI_THREAD_MULTIPLE
+
+Optional overwrite subname (default to compiler confset):
+"rpmbuild --define='subname _any_subname_'"
+
+Now using --with %{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading}
+subname: %{?subname:%{subname}}%{!?subname:<none>}
+=========================================================
+DOK
+sleep 1
+
+%setup -q -n psmpi2-%{version}-%{release}
+
+%build
+
+./configure --prefix=${RPM_BUILD_ROOT}%{prefix} --with-confset=%{?confset:%{confset}}%{!?confset:default} %{?threading:--with-threading}
+make
+
+%install
+
+make fixpath=%prefix install
+(cd ${RPM_BUILD_ROOT}%{prefix}; mv share/man man) # Use old location for man
+
+echo> filelist_nodoc
+(cd ${RPM_BUILD_ROOT}%{prefix}; ls -d * ) | grep -vE "share|man|www|doc|VERSION|ChangeLog" | while read f; do
+	echo "%attr(-,root,root) %{prefix}/$f" >> filelist_nodoc
+done
+
+# Skip build test: /usr/lib/rpm/check-buildroot
+# (do not search for ${RPM_BUILD_ROOT} as a string)
+QA_SKIP_BUILD_ROOT=1; export QA_SKIP_BUILD_ROOT
+
+%clean
+%{__rm} -rf %{buildroot}
+
+%files -f filelist_nodoc
+%attr(-,root,root) %dir %{prefix}
+%attr(-,root,root) %doc %{prefix}/VERSION.psmpi2
+%attr(-,root,root) %doc %{prefix}/ChangeLog
+
+
+%package doc
+
+Summary:   ParaStation MPI2 Documentation
+Group: Development/Tools
+
+%description doc
+
+%post doc
+if [ "$1" = 1 ]; then
+    # first install
+
+    # Add %{prefix}/man after all other MANPATH in /etc/man.config.
+    # Do nothing, if there is no MANPATH inside, or no file man.config exists.
+    ed /etc/man.config 2> /dev/null <<EOF
+?^[	 ]*MANPATH[	 ]?a
+MANPATH	%{prefix}/man
+.
+wq
+EOF
+fi
+exit 0
+
+%preun doc
+if [ "$1" = 0 ]; then
+    # final de-install
+
+    # Del one %{prefix}/man from /etc/man.config
+    ed /etc/man.config 2> /dev/null <<EOF
+?^[	 ]*MANPATH[	 ]\+%{prefix}/man\$?d
+wq
+EOF
+
+fi
+exit 0
+
+
+%files doc
+%attr(-,root,root) %doc %{prefix}/man
+%attr(-,root,root) %doc %{prefix}/share

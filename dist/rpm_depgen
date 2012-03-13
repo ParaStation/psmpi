@@ -1,0 +1,6 @@
+#!/bin/sh
+
+# Filter out dependencies to the intel libraries
+/usr/lib/rpm/find-requires | grep -v -F "libimf.so
+libintlc.so
+libsvml.so"
