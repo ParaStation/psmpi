@@ -9,8 +9,8 @@
 Unpack a buffer (packed with MPI_Pack_external) according to a datatype into contiguous memory 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Unpack_external(char *datarep,
-                      void *inbuf,
+int MPI_Unpack_external(MPICH2_CONST char *datarep,
+                      MPICH2_CONST void *inbuf,
                       MPI_Aint insize,
                       MPI_Aint *position,
                       void *outbuf,
@@ -78,5 +78,5 @@ MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 
 <DT><B>MPI_ERR_ARG </B><DD>Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
-<P><B>Location:</B>unpack_external.c<P>
+<P><B>Location:</B>src/mpi/datatype/unpack_external.c<P>
 </BODY></HTML>

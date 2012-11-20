@@ -1,9 +1,9 @@
-.TH MPI_Cart_rank 3 "7/27/2010" " " "MPI"
+.TH MPI_Cart_rank 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Cart_rank \-  Determines process rank in communicator given Cartesian location 
 .SH SYNOPSIS
 .nf
-int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
+int MPI_Cart_rank(MPI_Comm comm, MPICH2_CONST int *coords, int *rank)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -135,4 +135,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-cart_rank.c
+src/mpi/topo/cart_rank.c

@@ -9,7 +9,7 @@
 Translates the ranks of processes in one group to  those in another group 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Group_translate_ranks(MPI_Group group1, int n, int *ranks1, 
+int MPI_Group_translate_ranks(MPI_Group group1, int n, MPICH2_CONST int *ranks1,
                             MPI_Group group2, int *ranks2)
 </PRE>
 <H2>Input Parameters</H2>
@@ -66,5 +66,5 @@ possible.
 <P>
 <DL><DT><B>MPI_SUCCESS </B> <DD> No error; MPI routine completed successfully.
 </DL>
-<P><B>Location:</B>group_translate_ranks.c<P>
+<P><B>Location:</B>src/mpi/group/group_translate_ranks.c<P>
 </BODY></HTML>

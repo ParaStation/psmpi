@@ -1,9 +1,9 @@
-.TH MPI_Accumulate 3 "11/6/2010" " " "MPI"
+.TH MPI_Accumulate 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Accumulate \-  Accumulate data into the target process using remote  memory access  
 .SH SYNOPSIS
 .nf
-int MPI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
+int MPI_Accumulate(MPICH2_CONST void *origin_addr, int origin_count, MPI_Datatype
                    origin_datatype, int target_rank, MPI_Aint
                    target_disp, int target_count, MPI_Datatype
                    target_datatype, MPI_Op op, MPI_Win win) 
@@ -165,4 +165,4 @@ MPI_Datatype (see
 - Invalid MPI window object
 .PD 1
 .SH LOCATION
-accumulate.c
+src/mpi/rma/accumulate.c

@@ -55,9 +55,9 @@
 .N MPI_ERR_ARG
 @*/
 int MPI_Type_create_subarray(int ndims,
-			     int array_of_sizes[],
-			     int array_of_subsizes[],
-			     int array_of_starts[],
+			     MPICH2_CONST int array_of_sizes[],
+			     MPICH2_CONST int array_of_subsizes[],
+			     MPICH2_CONST int array_of_starts[],
 			     int order,
 			     MPI_Datatype oldtype,
 			     MPI_Datatype *newtype)
@@ -115,6 +115,7 @@ int MPI_Type_create_subarray(int ndims,
 						     "array_of_subsizes",
 						     array_of_subsizes[i],
 						     array_of_sizes[i]);
+                    goto fn_fail;
 		}
 		if (array_of_starts[i] > (array_of_sizes[i] - array_of_subsizes[i]))
 		{
@@ -129,6 +130,7 @@ int MPI_Type_create_subarray(int ndims,
 						     array_of_starts[i],
 						     array_of_sizes[i] -
 						     array_of_subsizes[i]);
+                    goto fn_fail;
 		}
 	    }
 	    if (order != MPI_ORDER_FORTRAN && order != MPI_ORDER_C) {
@@ -140,6 +142,7 @@ int MPI_Type_create_subarray(int ndims,
 						 "**arg",
 						 "**arg %s",
 						 "order");
+                goto fn_fail;
 	    }
 
 	    MPIR_Type_extent_impl(oldtype, &extent);
@@ -160,6 +163,7 @@ int MPI_Type_create_subarray(int ndims,
 						 "**subarrayoflow",
 						 "**subarrayoflow %L",
 						 size_with_offset);
+                goto fn_fail;
             }
 
             /* Validate datatype_ptr */
@@ -190,6 +194,7 @@ int MPI_Type_create_subarray(int ndims,
 					 0, /* stride in types */
 					 oldtype,
 					 &tmp1);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
 	    size = ((MPI_Aint)(array_of_sizes[0])) * extent;
 	    for (i=2; i<ndims; i++) {
@@ -200,10 +205,12 @@ int MPI_Type_create_subarray(int ndims,
 					     1, /* stride in bytes */
 					     tmp1,
 					     &tmp2);
+                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 		MPIR_Type_free_impl(&tmp1);
 		tmp1 = tmp2;
 	    }
 	}
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	
 	/* add displacement and UB */
 	
@@ -221,6 +228,7 @@ int MPI_Type_create_subarray(int ndims,
 	    mpi_errno = MPID_Type_contiguous(array_of_subsizes[0],
 					     oldtype,
 					     &tmp1);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
 	}
 	else {
@@ -230,6 +238,7 @@ int MPI_Type_create_subarray(int ndims,
 					 0, /* stride in types */
 					 oldtype,
 					 &tmp1);
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
 	    size = (MPI_Aint)(array_of_sizes[ndims-1]) * extent;
 	    for (i=ndims-3; i>=0; i--) {
@@ -240,6 +249,7 @@ int MPI_Type_create_subarray(int ndims,
 					     1,    /* stride in bytes */
 					     tmp1, /* old type */
 					     &tmp2);
+                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
 		MPIR_Type_free_impl(&tmp1);
 		tmp1 = tmp2;
@@ -282,6 +292,7 @@ int MPI_Type_create_subarray(int ndims,
 				 disps,
 				 types,
 				 &new_handle);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     MPIR_Type_free_impl(&tmp1);
 
@@ -314,8 +325,8 @@ int MPI_Type_create_subarray(int ndims,
 					   ints,
 					   NULL,
 					   &oldtype);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     MPIU_OBJ_PUBLISH_HANDLE(*newtype, new_handle);
     /* ... end of body of routine ... */

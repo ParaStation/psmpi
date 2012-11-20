@@ -252,31 +252,33 @@ fi
 # Make the given directory.  This handles building intermediate directories
 # as required, and maintains a list of created directories in dirlist.
 MkDir() {
-dest=$DESTDIR$1
-if [ ! -d $dest ] ; then
+dest=$1
+if [ ! -d $DESTDIR$dest ] ; then
     dir=`echo $dest | sed 's%/% /%g'`
     path_to_date=''
     for path in $dir ; do
         path_to_date="$path_to_date$path"
-        if [ ! -d $path_to_date ] ; then
-            if [ $verbose = 1 ] ; then echo "Creating directory $dest" ; fi
-            $Show "mkdir $path_to_date"
+        if [ ! -d $DESTDIR$path_to_date ] ; then
+            if [ $verbose = 1 ] ; then
+                echo "Creating directory $DESTDIR$path_to_date"
+            fi
+            $Show "mkdir $DESTDIR$path_to_date"
             rc=$?
             if [ $rc != 0 ] ; then
-                echo "*** Error making directory $dest. ***"
+                echo "*** Error making directory $DESTDIR$path_to_date. ***"
                 errs=`expr $errs + 1`
                 if [ $failmode = "hard" ] ; then exit $rc ; fi
-                echo "Failed to create directory $path_to_date"
+                echo "Failed to create directory $DESTDIR$path_to_date"
                 exit 1
             else
                 # Note that we store in inverse order
-                dirlist="$1 $dirlist"
+                dirlist="$path_to_date $dirlist"
             fi
             if [ "X$DMODE" != "X" ] ; then
-                $Show chmod $DMODE $path_to_date
+                $Show chmod $DMODE $DESTDIR$path_to_date
                 rc=$?
                 if [ $rc != 0 ] ; then
-                    echo "*** Error setting mode to $DMODE on directory $path_to_date. ***"
+                    echo "*** Error setting mode to $DMODE on directory $DESTDIR$path_to_date. ***"
                     errs=`expr $errs + 1`
                     if [ $chmodfailmode = "hard" ] ; then exit $rc ; fi
                 fi
@@ -369,6 +371,7 @@ else
 fi
 
 # use autoconf variables, @...@, here, as they are set w.r.t. $prefix.
+# @_libdir_@ and @_bindir_@ depends on $exec_prefix, so update exec_prefix here.
 if [ "$prefix_override" = 1 -o "$package_override" = 1 ] ; then
     exec_prefix=@exec_prefix@
     libdir=@libdir@
@@ -470,13 +473,18 @@ fi
 
 # Add the files to be removed to the UNINSTALLFILE
 for file in $filelist ; do
-    echo "$RM $file" >> $UNINSTALLFILE
+    echo "$RM \${DESTDIR}$file" >> $UNINSTALLFILE
 done
-echo "$RM $UNINSTALLFILE" >> $UNINSTALLFILE
+if [ -n "${DESTDIR}" ] ; then
+    uninstallfilename=`echo $UNINSTALLFILE| sed -e "s|^${DESTDIR}||g"`
+    echo "$RM \${DESTDIR}$uninstallfilename" >> $UNINSTALLFILE
+else
+    echo "$RM \${DESTDIR}$UNINSTALLFILE" >> $UNINSTALLFILE
+fi
 
 # Add the directories to be removed to the UNINSTALLFILE
 for dir in $dirlist ; do
-    echo "if [ -d $dir ] ; then rmdir $dir ; fi" >> $UNINSTALLFILE
+    echo "if [ -d \${DESTDIR}$dir ] ; then rmdir \${DESTDIR}$dir || true ; fi" >> $UNINSTALLFILE
 done
 
 #

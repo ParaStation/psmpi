@@ -1,9 +1,9 @@
-.TH MPI_Bsend_init 3 "7/27/2010" " " "MPI"
+.TH MPI_Bsend_init 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Bsend_init \-  Builds a handle for a buffered send 
 .SH SYNOPSIS
 .nf
-int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype, 
+int MPI_Bsend_init(MPICH2_CONST void *buf, int count, MPI_Datatype datatype,
                    int dest, int tag, MPI_Comm comm, MPI_Request *request)
 .fi
 .SH INPUT PARAMETERS
@@ -174,4 +174,4 @@ the attribute
 MPI_Buffer_attach
 .br
 .SH LOCATION
-bsend_init.c
+src/mpi/pt2pt/bsend_init.c

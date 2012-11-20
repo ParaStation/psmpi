@@ -1,9 +1,9 @@
-.TH MPI_Type_set_name 3 "11/2/2007" " " "MPI"
+.TH MPI_Type_set_name 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Type_set_name \-  set datatype name 
 .SH SYNOPSIS
 .nf
-int MPI_Type_set_name(MPI_Datatype type, char *type_name)
+int MPI_Type_set_name(MPI_Datatype type, MPICH2_CONST char *type_name)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -99,4 +99,4 @@ to get more information
 about this error code. 
 .PD 1
 .SH LOCATION
-type_set_name.c
+src/mpi/datatype/type_set_name.c

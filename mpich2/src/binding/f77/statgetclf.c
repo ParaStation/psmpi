@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_status_set_cancelled( MPI_Fint *, MPI_F
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Status_set_cancelled
 #define MPI_Status_set_cancelled PMPI_Status_set_cancelled 
 
@@ -187,5 +185,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_status_set_cancelled( MPI_Fint *, MPI_F
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_status_set_cancelled_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
-    *ierr = MPI_Status_set_cancelled( (MPI_Status *)(v1), *v2 );
+    int l2;
+    l2 = MPIR_FROM_FLOG(*v2);
+    *ierr = MPI_Status_set_cancelled( (MPI_Status *)(v1), l2 );
 }

@@ -1,9 +1,9 @@
-.TH MPI_Unpack 3 "2/26/2011" " " "MPI"
+.TH MPI_Unpack 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Unpack \-  Unpack a buffer according to a datatype into contiguous memory 
 .SH SYNOPSIS
 .nf
-int MPI_Unpack(void *inbuf, int insize, int *position,
+int MPI_Unpack(MPICH2_CONST void *inbuf, int insize, int *position,
                void *outbuf, int outcount, MPI_Datatype datatype,
                MPI_Comm comm)
 .fi
@@ -150,4 +150,4 @@ identified by a specific error class (e.g.,
 MPI_Pack, MPI_Pack_size
 .br
 .SH LOCATION
-unpack.c
+src/mpi/datatype/unpack.c

@@ -21,7 +21,6 @@ static void init_ui_mpich_info(void)
     HYD_ui_mpich_info.ppn = -1;
     HYD_ui_mpich_info.ckpoint_int = -1;
     HYD_ui_mpich_info.print_all_exitcodes = -1;
-    HYD_ui_mpich_info.ranks_per_proc = -1;
     HYD_ui_mpich_info.sort_order = NONE;
 }
 
@@ -38,6 +37,125 @@ static HYD_status get_current_exec(struct HYD_exec **exec)
     *exec = HYD_uii_mpx_exec_list;
     while ((*exec)->next)
         *exec = (*exec)->next;
+
+  fn_exit:
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
+static void help_help_fn(void)
+{
+    printf("\n");
+    printf("Usage: ./mpiexec [global opts] [exec1 local opts] : [exec2 local opts] : ...\n\n");
+
+    printf("Global options (passed to all executables):\n");
+
+    printf("\n");
+    printf("  Global environment options:\n");
+    printf("    -genv {name} {value}             environment variable name and value\n");
+    printf("    -genvlist {env1,env2,...}        environment variable list to pass\n");
+    printf("    -genvnone                        do not pass any environment variables\n");
+    printf
+        ("    -genvall                         pass all environment variables not managed\n");
+    printf("                                          by the launcher (default)\n");
+
+    printf("\n");
+    printf("  Other global options:\n");
+    printf("    -f {name}                        file containing the host names\n");
+    printf("    -hosts {host list}               comma separated host list\n");
+    printf("    -wdir {dirname}                  working directory to use\n");
+    printf
+        ("    -configfile {name}               config file containing MPMD launch options\n");
+
+    printf("\n");
+    printf("\n");
+
+    printf("Local options (passed to individual executables):\n");
+
+    printf("\n");
+    printf("  Local environment options:\n");
+    printf("    -env {name} {value}              environment variable name and value\n");
+    printf("    -envlist {env1,env2,...}         environment variable list to pass\n");
+    printf("    -envnone                         do not pass any environment variables\n");
+    printf("    -envall                          pass all environment variables (default)\n");
+
+    printf("\n");
+    printf("  Other local options:\n");
+    printf("    -n/-np {value}                   number of processes\n");
+    printf("    {exec_name} {args}               executable name and arguments\n");
+
+    printf("\n");
+    printf("\n");
+
+    printf("Hydra specific options (treated as global):\n");
+
+    printf("\n");
+    printf("  Launch options:\n");
+    printf("    -launcher                        launcher to use (%s)\n",
+           HYDRA_AVAILABLE_LAUNCHERS);
+    printf("    -launcher-exec                   executable to use to launch processes\n");
+    printf("    -enable-x/-disable-x             enable or disable X forwarding\n");
+
+    printf("\n");
+    printf("  Resource management kernel options:\n");
+    printf("    -rmk                             resource management kernel to use (%s)\n",
+           HYDRA_AVAILABLE_RMKS);
+
+    printf("\n");
+    printf("  Processor topology options:\n");
+    printf("    -topolib                         processor topology library (%s)\n",
+           HYDRA_AVAILABLE_TOPOLIBS);
+    printf("    -bind-to                         process binding\n");
+    printf("    -map-by                          process mapping\n");
+    printf("    -membind                         memory binding policy\n");
+
+    printf("\n");
+    printf("  Checkpoint/Restart options:\n");
+    printf("    -ckpoint-interval                checkpoint interval\n");
+    printf("    -ckpoint-prefix                  checkpoint file prefix\n");
+    printf("    -ckpoint-num                     checkpoint number to restart\n");
+    printf("    -ckpointlib                      checkpointing library (%s)\n",
+           !strcmp(HYDRA_AVAILABLE_CKPOINTLIBS, "") ? "none" : HYDRA_AVAILABLE_CKPOINTLIBS);
+
+    printf("\n");
+    printf("  Demux engine options:\n");
+    printf("    -demux                           demux engine (%s)\n",
+           HYDRA_AVAILABLE_DEMUXES);
+
+    printf("\n");
+    printf("  Other Hydra options:\n");
+    printf("    -verbose                         verbose mode\n");
+    printf("    -info                            build information\n");
+    printf("    -print-all-exitcodes             print exit codes of all processes\n");
+    printf("    -iface                           network interface to use\n");
+    printf("    -ppn                             processes per node\n");
+    printf("    -profile                         turn on internal profiling\n");
+    printf("    -prepend-rank                    prepend rank to output\n");
+    printf("    -prepend-pattern                 prepend pattern to output\n");
+    printf("    -outfile-pattern                 direct stdout to file\n");
+    printf("    -errfile-pattern                 direct stderr to file\n");
+    printf
+        ("    -nameserver                      name server information (host:port format)\n");
+    printf("    -disable-auto-cleanup            don't cleanup processes on error\n");
+    printf("    -disable-hostname-propagation    let MPICH2 auto-detect the hostname\n");
+    printf("    -order-nodes                     order nodes as ascending/descending cores\n");
+    printf("    -localhost                       local hostname for the launching node\n");
+    printf("    -usize                           universe size (SYSTEM, INFINITE, <value>)\n");
+
+    printf("\n");
+    printf("Please see the intructions provided at\n");
+    printf("http://wiki.mcs.anl.gov/mpich2/index.php/Using_the_Hydra_Process_Manager\n");
+    printf("for further details\n\n");
+}
+
+static HYD_status help_fn(char *arg, char ***argv)
+{
+    HYD_status status = HYD_SUCCESS;
+
+    help_help_fn();
+    HYDU_ERR_SETANDJUMP(status, HYD_GRACEFUL_ABORT, "");
 
   fn_exit:
     return status;
@@ -776,78 +894,62 @@ static HYD_status rmk_fn(char *arg, char ***argv)
     goto fn_exit;
 }
 
-static void ranks_per_proc_help_fn(void)
+static void bind_to_help_fn(void)
 {
     printf("\n");
-    printf("-ranks-per-proc: MPI ranks to assign per launched process\n\n");
+    printf("-bind-to: Process-core binding type to use\n\n");
+    printf("    Binding type options:\n");
+    printf("        Default:\n");
+    printf("            none             -- no binding (default)\n");
+    printf("\n");
+    printf("        Architecture unaware options:\n");
+    printf("            rr               -- round-robin as OS assigned processor IDs\n");
+    printf("            user:0+2,1+4,3,2 -- user specified binding\n");
+    printf("\n");
+    printf("        Architecture aware options (part within the {} braces are optional):\n");
+    printf("            board{:<n>}      -- bind to 'n' motherboards\n");
+    printf("            numa{:<n>}       -- bind to 'n' numa domains\n");
+    printf("            socket{:<n>}     -- bind to 'n' sockets\n");
+    printf("            core{:<n>}       -- bind to 'n' cores\n");
+    printf("            hwthread{:<n>}   -- bind to 'n' hardware threads\n");
+    printf("            l1cache{:<n>}    -- bind to processes on 'n' L1 cache domains\n");
+    printf("            l2cache{:<n>}    -- bind to processes on 'n' L2 cache domains\n");
+    printf("            l3cache{:<n>}    -- bind to processes on 'n' L3 cache domains\n");
+
+    printf("\n\n");
+
+    printf("-map-by: Order of bind mapping to use\n\n");
+    printf("    Options (T: hwthread; C: core; S: socket; N: NUMA domain; B: motherboard):\n");
+    printf("        Default: <same option as binding>\n");
+    printf("\n");
+    printf("        Architecture aware options:\n");
+    printf("            board            -- map to motherboard\n");
+    printf("            numa             -- map to numa domain\n");
+    printf("            socket           -- map to socket\n");
+    printf("            core             -- map to core\n");
+    printf("            hwthread         -- map to hardware thread\n");
+    printf("            l1cache          -- map to L1 cache domain\n");
+    printf("            l2cache          -- map to L2 cache domain\n");
+    printf("            l3cache          -- map to L3 cache domain\n");
+    printf("            TCSNB            -- map in order of T, C, S, N, B\n");
+    printf("            CTSNB            -- map in order of C, T, S, N, B\n");
+
+    printf("\n\n");
+
+    printf("-membind: Memory binding policy\n\n");
+    printf("    Memory binding policy options:\n");
+    printf("        Default:\n");
+    printf("            none             -- no binding (default)\n");
+    printf("\n");
+    printf("        Architecture aware options:\n");
+    printf("            firsttouch        -- closest to process that first touches memory\n");
+    printf("            nexttouch         -- closest to process that next touches memory\n");
+    printf("            bind:<list>       -- bind to memory node list\n");
+    printf("            interleave:<list> -- interleave among memory node list\n");
+    printf("            replicate:<list>  -- replicate among memory node list\n");
 }
 
-static HYD_status ranks_per_proc_fn(char *arg, char ***argv)
-{
-    HYD_status status = HYD_SUCCESS;
-
-    if (reading_config_file && HYD_ui_mpich_info.ranks_per_proc != -1) {
-        /* global variable already set; ignore */
-        goto fn_exit;
-    }
-
-    status = HYDU_set_int(arg, &HYD_ui_mpich_info.ranks_per_proc, atoi(**argv));
-    HYDU_ERR_POP(status, "error setting ranks per process\n");
-
-  fn_exit:
-    (*argv)++;
-    return status;
-
-  fn_fail:
-    goto fn_exit;
-}
-
-static void binding_help_fn(void)
-{
-    printf("\n");
-    printf("-binding: Process-core binding to use\n\n");
-    printf("Notes:\n");
-    printf("  * Usage: -binding [type]; where [type] can be:\n");
-    printf("        none -- no binding\n");
-    printf("        rr   -- round-robin as OS assigned processor IDs\n");
-    printf("        user:0,1,3,2 -- user specified binding\n");
-    printf("        cpu -- CPU topology-aware binding\n");
-    printf("        cache -- Cache topology-aware binding\n");
-    printf("\n");
-
-    printf("    CPU options (supported on CPU topology aware libs):\n");
-    printf("        cpu --         pack processes as closely to each other as possible\n");
-    printf("                       with respect to CPU processing units\n");
-    printf("        cpu:sockets -- pack processes as closely to each other as possible\n");
-    printf("                       without sharing a socket (unless the number of\n");
-    printf("                       processes is more than the number of sockets)\n");
-    printf("        cpu:cores --   pack processes as closely to each other as possible\n");
-    printf("                       without sharing a core (unless the number of processes\n");
-    printf("                       is more than the number of cores)\n");
-    printf("        cpu:threads -- pack processes as closely to each other as possible\n");
-    printf("                       without sharing a hardware thread/SMT (unless the\n");
-    printf("                       number of processes is more than the number of hardware\n");
-    printf("                       threads/SMTs\n");
-    printf("\n");
-
-    printf("    Cache options (supported on cache topology aware libs):\n");
-    printf("        cache --    pack processes as closely to each other as possible with\n");
-    printf("                    respect to cache layout\n");
-    printf("        cache:l3 -- pack processes as closely to each other as possible\n");
-    printf("                    without sharing the L3 cache (unless the number of\n");
-    printf("                    processes is more than the number of the number of L3\n");
-    printf("                    cache regions)\n");
-    printf("        cache:l2 -- pack processes as closely to each other as possible\n");
-    printf("                    without sharing the L2 cache (unless the number of\n");
-    printf("                    processes is more than the number of the number of L2\n");
-    printf("                    cache regions)\n");
-    printf("        cache:l1 -- pack processes as closely to each other as possible\n");
-    printf("                    without sharing the L1 cache (unless the number of\n");
-    printf("                    processes is more than the number of the number of L1\n");
-    printf("                    cache regions)\n");
-}
-
-static HYD_status binding_fn(char *arg, char ***argv)
+static HYD_status bind_to_fn(char *arg, char ***argv)
 {
     HYD_status status = HYD_SUCCESS;
 
@@ -858,6 +960,46 @@ static HYD_status binding_fn(char *arg, char ***argv)
 
     status = HYDU_set_str(arg, &HYD_server_info.user_global.binding, **argv);
     HYDU_ERR_POP(status, "error setting binding\n");
+
+  fn_exit:
+    (*argv)++;
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
+static HYD_status map_by_fn(char *arg, char ***argv)
+{
+    HYD_status status = HYD_SUCCESS;
+
+    if (reading_config_file && HYD_server_info.user_global.mapping) {
+        /* global variable already set; ignore */
+        goto fn_exit;
+    }
+
+    status = HYDU_set_str(arg, &HYD_server_info.user_global.mapping, **argv);
+    HYDU_ERR_POP(status, "error setting mapping\n");
+
+  fn_exit:
+    (*argv)++;
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
+static HYD_status membind_fn(char *arg, char ***argv)
+{
+    HYD_status status = HYD_SUCCESS;
+
+    if (reading_config_file && HYD_server_info.user_global.membind) {
+        /* global variable already set; ignore */
+        goto fn_exit;
+    }
+
+    status = HYDU_set_str(arg, &HYD_server_info.user_global.membind, **argv);
+    HYDU_ERR_POP(status, "error setting mapping\n");
 
   fn_exit:
     (*argv)++;
@@ -1083,7 +1225,7 @@ static HYD_status info_fn(char *arg, char ***argv)
                        "    Launchers available:                     %s\n",
                        HYDRA_AVAILABLE_LAUNCHERS);
     HYDU_dump_noprefix(stdout,
-                       "    Topology libraries available:             %s\n",
+                       "    Topology libraries available:            %s\n",
                        HYDRA_AVAILABLE_TOPOLIBS);
     HYDU_dump_noprefix(stdout,
                        "    Resource management kernels available:   %s\n",
@@ -1268,6 +1410,71 @@ static HYD_status order_nodes_fn(char *arg, char ***argv)
     goto fn_exit;
 }
 
+static void localhost_help_fn(void)
+{
+    printf("\n");
+    printf("-localhost: Local hostname to use for the launching node\n\n");
+}
+
+static HYD_status localhost_fn(char *arg, char ***argv)
+{
+    HYD_status status = HYD_SUCCESS;
+
+    if (reading_config_file && HYD_server_info.localhost) {
+        /* global variable already set; ignore */
+        goto fn_exit;
+    }
+
+    status = HYDU_set_str(arg, &HYD_server_info.localhost, **argv);
+    HYDU_ERR_POP(status, "error setting local hostname\n");
+
+  fn_exit:
+    (*argv)++;
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
+static void usize_help_fn(void)
+{
+    printf("\n");
+    printf("-usize: Universe size (SYSTEM, INFINITE, <value>\n");
+    printf("   SYSTEM: Number of cores passed to mpiexec through hostfile or resource manager\n");
+    printf("   INFINITE: No limit\n");
+    printf("   <value>: Numeric value >= 0\n\n");
+}
+
+static HYD_status usize_fn(char *arg, char ***argv)
+{
+    HYD_status status = HYD_SUCCESS;
+
+    if (reading_config_file && HYD_server_info.user_global.usize) {
+        /* global variable already set; ignore */
+        goto fn_exit;
+    }
+
+    HYDU_ERR_CHKANDJUMP(status, HYD_server_info.user_global.usize != HYD_USIZE_UNSET,
+                        HYD_INTERNAL_ERROR, "universe size already set\n");
+
+    if (!strcmp(**argv, "SYSTEM"))
+        HYD_server_info.user_global.usize = HYD_USIZE_SYSTEM;
+    else if (!strcmp(**argv, "INFINITE"))
+        HYD_server_info.user_global.usize = HYD_USIZE_INFINITE;
+    else {
+        HYD_server_info.user_global.usize = atoi(**argv);
+        HYDU_ERR_CHKANDJUMP(status, HYD_server_info.user_global.usize <= 0,
+                            HYD_INTERNAL_ERROR, "invalid universe size\n");
+    }
+
+  fn_exit:
+    (*argv)++;
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
 static HYD_status set_default_values(void)
 {
     char *tmp;
@@ -1297,9 +1504,6 @@ static HYD_status set_default_values(void)
 
     if (HYD_ui_mpich_info.print_all_exitcodes == -1)
         HYD_ui_mpich_info.print_all_exitcodes = 0;
-
-    if (HYD_ui_mpich_info.ranks_per_proc == -1)
-        HYD_ui_mpich_info.ranks_per_proc = 1;
 
     if (HYD_server_info.enable_profiling == -1)
         HYD_server_info.enable_profiling = 0;
@@ -1355,6 +1559,11 @@ static HYD_status set_default_values(void)
     if (hostname_propagation || hostname_propagation == -1)
         HYD_server_info.iface_ip_env_name = HYDU_strdup("MPICH_INTERFACE_HOSTNAME");
 
+    /* Default universe size if the user did not specify anything is
+     * INFINITE */
+    if (HYD_server_info.user_global.usize == HYD_USIZE_UNSET)
+        HYD_server_info.user_global.usize = HYD_USIZE_INFINITE;
+
   fn_exit:
     return status;
 
@@ -1365,6 +1574,13 @@ static HYD_status set_default_values(void)
 static HYD_status process_config_token(char *token, int newline, struct HYD_node **node_list)
 {
     static int idx = 0;
+
+    if (idx && newline && strcmp(config_argv[idx - 1], ":")) {
+        /* If this is a newline, but not the first one, and the
+         * previous token was not a ":", add an executable delimiter
+         * ':' */
+        config_argv[idx++] = HYDU_strdup(":");
+    }
 
     config_argv[idx++] = HYDU_strdup(token);
     config_argv[idx] = NULL;
@@ -1421,11 +1637,11 @@ static HYD_status parse_args(char **t_argv)
 
 HYD_status HYD_uii_mpx_get_parameters(char **t_argv)
 {
-    int ret;
+    int ret, len;
     char **argv = t_argv;
     char *progname = *argv;
     char *post, *loc, *tmp[HYD_NUM_TMP_STRINGS], *conf_file;
-    const char *home;
+    const char *home, *env_file;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -1438,9 +1654,21 @@ HYD_status HYD_uii_mpx_get_parameters(char **t_argv)
     HYDU_ERR_POP(status, "unable to parse user arguments\n");
 
     if (config_file == NULL) {
+        /* Check if there's a config file location in the environment */
+        ret = MPL_env2str("HYDRA_CONFIG_FILE", &env_file);
+        if (ret) {
+            ret = open(env_file, O_RDONLY);
+            if (ret >= 0) {
+                close(ret);
+                config_file = HYDU_strdup(env_file);
+                goto config_file_check_exit;
+            }
+        }
+
+        /* Check if there's a config file in the home directory */
         ret = MPL_env2str("HOME", &home);
         if (ret) {
-            int len = strlen(home) + strlen("/.mpiexec.hydra.conf") + 1;
+            len = strlen(home) + strlen("/.mpiexec.hydra.conf") + 1;
 
             HYDU_MALLOC(conf_file, char *, len, status);
             MPL_snprintf(conf_file, len, "%s/.mpiexec.hydra.conf", home);
@@ -1448,21 +1676,28 @@ HYD_status HYD_uii_mpx_get_parameters(char **t_argv)
             ret = open(conf_file, O_RDONLY);
             if (ret < 0) {
                 HYDU_FREE(conf_file);
-                conf_file = HYDU_strdup(HYDRA_CONF_FILE);
-                ret = open(conf_file, O_RDONLY);
-            }
-
-            if (ret >= 0) {
-                /* We have successfully opened the file */
-                close(ret);
-                config_file = conf_file;
             }
             else {
-                HYDU_FREE(conf_file);
+                close(ret);
+                config_file = conf_file;
+                goto config_file_check_exit;
             }
+        }
+
+        /* Check if there's a config file in the hard-coded location */
+        conf_file = HYDU_strdup(HYDRA_CONF_FILE);
+        ret = open(conf_file, O_RDONLY);
+        if (ret < 0) {
+            HYDU_FREE(conf_file);
+        }
+        else {
+            close(ret);
+            config_file = conf_file;
+            goto config_file_check_exit;
         }
     }
 
+  config_file_check_exit:
     if (config_file) {
         HYDU_ASSERT(config_argv == NULL, status);
         HYDU_MALLOC(config_argv, char **, HYD_NUM_TMP_STRINGS * sizeof(char *), status);
@@ -1520,13 +1755,6 @@ HYD_status HYD_uii_mpx_get_parameters(char **t_argv)
     HYDU_append_env_to_list("GFORTRAN_UNBUFFERED_PRECONNECTED", "y",
                             &HYD_server_info.user_global.global_env.system);
 
-    /* If auto-cleanup is disabled, ask MPICH2 to enabled
-     * FT-collective returns */
-    if (HYD_server_info.user_global.auto_cleanup == 0) {
-        HYDU_append_env_to_list("MPICH_ENABLE_COLL_FT_RET", "1",
-                                &HYD_server_info.user_global.global_env.system);
-    }
-
   fn_exit:
     HYDU_FUNC_EXIT();
     return status;
@@ -1536,6 +1764,9 @@ HYD_status HYD_uii_mpx_get_parameters(char **t_argv)
 }
 
 static struct HYD_arg_match_table match_table[] = {
+    /* help options */
+    {"help", help_fn, help_help_fn},
+
     /* Global environment options */
     {"genv", genv_fn, genv_help_fn},
     {"genvlist", genvlist_fn, genvlist_help_fn},
@@ -1587,12 +1818,12 @@ static struct HYD_arg_match_table match_table[] = {
     /* Resource management kernel options */
     {"rmk", rmk_fn, rmk_help_fn},
 
-    /* Hybrid programming options */
-    {"ranks-per-proc", ranks_per_proc_fn, ranks_per_proc_help_fn},
-
     /* Topology options */
-    {"binding", binding_fn, binding_help_fn},
     {"topolib", topolib_fn, topolib_help_fn},
+    {"binding", bind_to_fn, bind_to_help_fn},
+    {"bind-to", bind_to_fn, bind_to_help_fn},
+    {"map-by", map_by_fn, bind_to_help_fn},
+    {"membind", membind_fn, bind_to_help_fn},
 
     /* Checkpoint/restart options */
     {"ckpoint-interval", ckpoint_interval_fn, ckpoint_interval_help_fn},
@@ -1618,6 +1849,8 @@ static struct HYD_arg_match_table match_table[] = {
     {"disable-hostname-propagation", hostname_propagation_fn, hostname_propagation_help_fn},
     {"enable-hostname-propagation", hostname_propagation_fn, hostname_propagation_help_fn},
     {"order-nodes", order_nodes_fn, order_nodes_help_fn},
+    {"localhost", localhost_fn, localhost_help_fn},
+    {"usize", usize_fn, usize_help_fn},
 
     {"\0", NULL}
 };

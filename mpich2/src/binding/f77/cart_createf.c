@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_create( MPI_Fint *, MPI_Fint *, MP
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Cart_create
 #define MPI_Cart_create PMPI_Cart_create 
 
@@ -187,15 +185,16 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_create( MPI_Fint *, MPI_Fint *, MP
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_cart_create_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *ierr ){
-    int *l4 = (int *)MPIU_Malloc(*v2 * sizeof(int));
+    int *l4=0;
     int l5;
 
-    {int li; 
+    if (*v2) {int li;
+     l4 = (int *)MPIU_Malloc(*v2 * sizeof(int));
      for (li=0; li<*v2; li++) {
         l4[li] = MPIR_FROM_FLOG(v4[li]);
      }
     }
     l5 = MPIR_FROM_FLOG(*v5);
     *ierr = MPI_Cart_create( (MPI_Comm)(*v1), *v2, v3, l4, l5, (MPI_Comm *)(v6) );
-    MPIU_Free( l4 );
+    if (l4) { MPIU_Free( l4 ); }
 }

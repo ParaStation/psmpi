@@ -19,7 +19,7 @@ int MPI_Comm_create(MPI_Comm comm, MPI_Group group, MPI_Comm *newcomm)
 </DL>
 <P>
 <H2>Output Parameter</H2>
-<DL><DT><B>comm_out </B> <DD> new communicator (handle) 
+<DL><DT><B>newcomm </B> <DD> new communicator (handle)
 </DL>
 <P>
 <H2>Thread and Interrupt Safety</H2>
@@ -65,5 +65,5 @@ communicator in a call (not even allowed in <TT>MPI_Comm_rank</TT>).
 <P>
 <H2>See Also</H2>
  MPI_Comm_free
-<BR><P><B>Location:</B>comm_create.c<P>
+<BR><P><B>Location:</B>src/mpi/comm/comm_create.c<P>
 </BODY></HTML>

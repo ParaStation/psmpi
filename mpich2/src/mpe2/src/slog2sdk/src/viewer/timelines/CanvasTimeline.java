@@ -16,7 +16,11 @@ import java.awt.*;
 import javax.swing.*;
 import javax.swing.event.*;
 
+import cern.colt.map.OpenIntIntHashMap;
+
 import base.drawable.TimeBoundingBox;
+import base.drawable.Coord;
+import base.drawable.Coord_TimeRowID;
 import base.drawable.Drawable;
 import base.drawable.Shadow;
 import base.drawable.NestingStacks;
@@ -39,7 +43,9 @@ import viewer.zoomable.CoordPixelImage;
 import viewer.zoomable.ScrollableObject;
 import viewer.zoomable.SearchableView;
 import viewer.zoomable.SummarizableView;
+import viewer.zoomable.InfoPanelForDrawable;
 import viewer.zoomable.InfoDialog;
+import viewer.zoomable.InfoDialogForDrawable;
 import viewer.zoomable.SearchPanel;
 import viewer.zoomable.InitializableDialog;
 import viewer.histogram.StatlineDialog;
@@ -75,7 +81,7 @@ public class CanvasTimeline extends ScrollableObject
     private int                num_rows;
     private int                row_height;
     private NestingStacks      nesting_stacks;
-    private Map                map_line2row;
+    private OpenIntIntHashMap  map_line2row;
     private DrawnBoxSet        drawn_boxes;
 
     private boolean            isConnectedComposite;
@@ -392,6 +398,7 @@ public class CanvasTimeline extends ScrollableObject
         }
     }   // endof drawOneOffImage()
 
+    // local_click is in CanvasTimeline's pixel coordinate.
     public InfoDialog getPropertyAt( final Point            local_click,
                                      final TimeBoundingBox  vport_timeframe )
     {
@@ -400,14 +407,18 @@ public class CanvasTimeline extends ScrollableObject
         CoordPixelImage coord_xform;  // Local Coordinate Transform
         coord_xform = new CoordPixelImage( this, row_height, 
                                            super.getTimeBoundsOfImages() );
-        double clicked_time = coord_xform.convertPixelToTime( local_click.x );
+
+        // Initialize Marker with clicked location's Coord.
+        Coord_TimeRowID  marker_vtx;
+        marker_vtx = new Coord_TimeRowID(
+                               coord_xform.convertPixelToTime( local_click.x ),
+                               coord_xform.convertPixelToRow( local_click.y )
+                                        );
 
         // Determine the timeframe of the current view by vport_timeframe
         // System.out.println( "CurrView's timeframe = " + vport_timeframe );
 
-        Map map_line2treeleaf = y_maps.getMapOfLineIDToTreeLeaf();
-
-        Map map_line2row = y_maps.getMapOfLineIDToRowID();
+        OpenIntIntHashMap map_line2row = y_maps.getMapOfLineIDToRowID();
         if ( map_line2row == null ) {
             if ( ! y_maps.update() )
                 Dialogs.error( root_frame, "Error in updating YaxisMaps!" );
@@ -434,11 +445,10 @@ public class CanvasTimeline extends ScrollableObject
                 if (    clicked_dobj != null
                      && clicked_dobj.getCategory().isVisible() ) {
                     return  new InfoDialogForDrawable( root_frame,
-                                                       clicked_time,
-                                                       map_line2treeleaf,
-                                                       y_colnames,
-                                                       t_model,
-                                                       clicked_dobj );
+                                                       clicked_dobj,
+                                                       marker_vtx,
+                                                       y_colnames, y_maps,
+                                                       t_model );
                 }
             }
         }
@@ -457,11 +467,10 @@ public class CanvasTimeline extends ScrollableObject
                 if (    clicked_dobj != null
                      && clicked_dobj.getCategory().isVisible() ) {
                     return  new InfoDialogForDrawable( root_frame,
-                                                       clicked_time,
-                                                       map_line2treeleaf,
-                                                       y_colnames,
-                                                       t_model,
-                                                       clicked_dobj );
+                                                       clicked_dobj,
+                                                       marker_vtx,
+                                                       y_colnames, y_maps,
+                                                       t_model );
                 }
             }
         }
@@ -480,11 +489,10 @@ public class CanvasTimeline extends ScrollableObject
                 if (    clicked_dobj != null
                      && clicked_dobj.getCategory().isVisible() ) {
                     return  new InfoDialogForDrawable( root_frame,
-                                                       clicked_time,
-                                                       map_line2treeleaf,
-                                                       y_colnames,
-                                                       t_model,
-                                                       clicked_dobj );
+                                                       clicked_dobj,
+                                                       marker_vtx,
+                                                       y_colnames, y_maps,
+                                                       t_model );
                 }
             }
         }
@@ -503,11 +511,10 @@ public class CanvasTimeline extends ScrollableObject
                 if (    clicked_dobj != null
                      && clicked_dobj.getCategory().isVisible() ) {
                     return  new InfoDialogForDrawable( root_frame,
-                                                       clicked_time,
-                                                       map_line2treeleaf,
-                                                       y_colnames,
-                                                       t_model,
-                                                       clicked_dobj );
+                                                       clicked_dobj,
+                                                       marker_vtx,
+                                                       y_colnames, y_maps,
+                                                       t_model );
                 }
             }
         }
@@ -517,7 +524,11 @@ public class CanvasTimeline extends ScrollableObject
 
 
 
-    public Rectangle localRectangleForDrawable( final Drawable dobj )
+/*
+    // Interface function used to be part of SearchableView 
+    // This used to facilitate the coordinate transform
+    // etween Viewport and Canvas.
+    public Rectangle localRectangleForStateDrawable( final Drawable dobj )
     {
         CoordPixelImage       coord_xform;
         Rectangle             local_rect;
@@ -532,7 +543,7 @@ public class CanvasTimeline extends ScrollableObject
         width  = coord_xform.convertTimeToPixel( dobj.getLatestTime() )
                - xloc;
 
-        /* assume RowID and NestingFactor have been calculated */
+        // assume RowID and NestingFactor have been calculated
         rowID       = dobj.getRowID();
         nesting_ftr = dobj.getNestingFactor();
         rStart      = (float) rowID - nesting_ftr / 2.0f;
@@ -543,6 +554,7 @@ public class CanvasTimeline extends ScrollableObject
         local_rect = new Rectangle( xloc, yloc, width, height );
         return local_rect;
     }
+*/
 
     private InfoPanelForDrawable createInfoPanelForDrawable( Drawable dobj )
     {

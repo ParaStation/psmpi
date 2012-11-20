@@ -1,9 +1,9 @@
-.TH MPI_Unpublish_name 3 "5/20/2010" " " "MPI"
+.TH MPI_Unpublish_name 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Unpublish_name \-  Unpublish a service name published with  MPI_Publish_name 
 .SH SYNOPSIS
 .nf
-int MPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
+int MPI_Unpublish_name(MPICH2_CONST char *service_name, MPI_Info info, MPICH2_CONST char *port_name)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -118,4 +118,4 @@ to get more information
 about this error code. 
 .PD 1
 .SH LOCATION
-unpublish_name.c
+src/mpi/spawn/unpublish_name.c

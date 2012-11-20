@@ -1,10 +1,10 @@
-.TH MPI_Alltoall 3 "3/11/2011" " " "MPI"
+.TH MPI_Alltoall 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Alltoall \-  Sends data from all to all processes 
 .SH SYNOPSIS
 .nf
-int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
-                 void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+int MPI_Alltoall(MPICH2_CONST void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                 void *recvbuf, int recvcount, MPI_Datatype recvtype,
                  MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
@@ -136,4 +136,4 @@ MPI_Datatype (see
 one is not valid.
 .PD 1
 .SH LOCATION
-alltoall.c
+src/mpi/coll/alltoall.c

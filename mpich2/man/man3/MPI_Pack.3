@@ -1,9 +1,9 @@
-.TH MPI_Pack 3 "2/26/2011" " " "MPI"
+.TH MPI_Pack 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Pack \-  Packs a datatype into contiguous memory 
 .SH SYNOPSIS
 .nf
-int MPI_Pack(void *inbuf,
+int MPI_Pack(MPICH2_CONST void *inbuf,
              int incount,
              MPI_Datatype datatype,
              void *outbuf,
@@ -136,4 +136,4 @@ to get more information
 about this error code. 
 .PD 1
 .SH LOCATION
-pack.c
+src/mpi/datatype/pack.c

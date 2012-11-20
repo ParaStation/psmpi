@@ -1,4 +1,4 @@
-.TH MPI_File_iwrite_at 3 "11/2/2007" " " "MPI"
+.TH MPI_File_iwrite_at 3 "7/3/2012" " " "MPI"
 .SH NAME
 MPI_File_iwrite_at \-  Nonblocking write using explict offset 
 .SH SYNOPSIS
@@ -7,7 +7,7 @@ MPI_File_iwrite_at \-  Nonblocking write using explict offset
 #include "mpiu_greq.h"
 #endif
 
-int MPI_File_iwrite_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
+int MPI_File_iwrite_at(MPI_File mpi_fh, MPI_Offset offset, MPICH2_CONST void *buf,
                        int count, MPI_Datatype datatype, 
                        MPIO_Request *request)
 .fi
@@ -68,4 +68,4 @@ All MPI objects (e.g.,
 .I INTEGER
 in Fortran.
 .SH LOCATION
-iwrite_at.c
+mpi-io/iwrite_at.c

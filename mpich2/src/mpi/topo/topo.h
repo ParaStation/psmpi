@@ -27,6 +27,7 @@ typedef struct MPIR_Dist_graph_topology {
     int outdegree;
     int *out;
     int *out_weights;
+    int is_weighted;
 } MPIR_Dist_graph_topology;
 
 typedef struct MPIR_Topology { 
@@ -48,5 +49,19 @@ int MPIR_Graph_create( MPID_Comm *, int,
 int MPIR_Dims_create( int, int, int * );
 int MPIR_Graph_map( const MPID_Comm *, int, const int[], const int[], int* );
 int MPIR_Cart_map( const MPID_Comm *, int, const int[],  const int[], int* );
+
+/* Returns the canonicalized count of neighbors for the given topology as though
+ * MPI_Dist_graph_neighbors_count were called with a distributed graph topology,
+ * even if the given topology is actually Cartesian or Graph.  Useful for
+ * implementing neighborhood collective operations. */
+int MPIR_Topo_canon_nhb_count(MPID_Comm *comm_ptr, int *indegree, int *outdegree, int *weighted);
+
+/* Returns the canonicalized list of neighbors for a given topology, separated
+ * into inbound and outbound edges.  Equivalent to MPI_Dist_graph_neighbors but
+ * works for any topology type by canonicalizing according to the rules in
+ * Section 7.6 of the MPI-3.0 standard. */
+int MPIR_Topo_canon_nhb(MPID_Comm *comm_ptr,
+                        int indegree, int sources[], int inweights[],
+                        int outdegree, int dests[], int outweights[]);
 
 #define MAX_CART_DIM 16

@@ -9,7 +9,7 @@
 Publish a service name for use with MPI_Comm_connect 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Publish_name(char *service_name, MPI_Info info, char *port_name)
+int MPI_Publish_name(MPICH2_CONST char *service_name, MPI_Info info, MPICH2_CONST char *port_name)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -67,5 +67,5 @@ identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 <DL><DT><B>MPI_ERR_OTHER </B> <DD> Other error; use <TT>MPI_Error_string</TT> to get more information
 about this error code. 
 </DL>
-<P><B>Location:</B>publish_name.c<P>
+<P><B>Location:</B>src/mpi/spawn/publish_name.c<P>
 </BODY></HTML>

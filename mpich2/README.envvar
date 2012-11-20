@@ -117,6 +117,27 @@ MPICH_COMM_SPLIT_USE_QSORT
         instead of bubble sort.
     Default: 1
 
+MPICH_RMA_ACC_IMMED
+    Aliases: MPIR_PARAM_RMA_ACC_IMMED
+    Description: Use the immediate accumulate optimization
+    Default: 1
+
+MPICH_RMA_NREQUEST_THRESHOLD
+    Aliases: MPIR_PARAM_RMA_NREQUEST_THRESHOLD
+    Description: Threshold at which the RMA implementation attempts to
+        complete requests while completing RMA operations and while using
+        the lazy synchonization approach.  Change this value if programs
+        fail because they run out of  requests or other internal resources
+    Default: 4000
+
+MPICH_RMA_NREQUEST_NEW_THRESHOLD
+    Aliases: MPIR_PARAM_RMA_NREQUEST_NEW_THRESHOLD
+    Description: Threshold for the number of new requests since the last
+        attempt to complete pending requests.  Higher values can increase
+        performance,  but may run the risk of exceeding the available
+        number of requests or other internal resources.
+    Default: 128
+
 MPICH_NOLOCAL
     Aliases: MPICH_NO_LOCAL
              MPIR_PARAM_NOLOCAL
@@ -134,6 +155,14 @@ MPICH_ODD_EVEN_CLIQUES
         other, and even procs on a node are seen as local to each other. 
         Used for debugging on a single machine.
     Default: 0
+
+MPICH_POLLS_BEFORE_YIELD
+    Aliases: MPIR_PARAM_POLLS_BEFORE_YIELD
+    Description: When MPICH is in a busy waiting loop, it will periodically
+        call a function to yield the processor.  This parameter sets the
+        number of loops before the yield function is called.  A  value of 0
+        disables yielding.
+    Default: 1000
 
 MPICH_MEMDUMP
     Aliases: MPIR_PARAM_MEMDUMP
@@ -209,6 +238,29 @@ MPICH_HOST_LOOKUP_RETRIES
         gethostbyname() function before giving up.
     Default: 10
 
+MPICH_SHM_EAGER_MAX_SZ
+    Aliases: MPIR_PARAM_SHM_EAGER_MAX_SZ
+    Description: This parameter controls the message size at which Nemesis 
+        switches from eager to rendezvous mode.  If this parameter  is set
+        to -1, then Nemesis will choose an appropriate value.
+    Default: -1
+
+MPICH_SHM_READY_EAGER_MAX_SZ
+    Aliases: MPIR_PARAM_SHM_READY_EAGER_MAX_SZ
+    Description: This parameter controls the message size at which Nemesis
+        switches from eager to rendezvous mode for ready-send messages.  If
+        this parameter is set to -1, then ready messages will always be
+        sent eagerly.  If this parameter is set to -2, then Nemesis will
+        choose an appropriate value.
+    Default: -2
+
+MPICH_COMM_OVERRIDES
+    Aliases: MPIR_PARAM_COMM_OVERRIDES
+    Description: If set to false, communication override functionality will
+        be disabled for netmods that provide the override feature.  Some
+        netmods may not honor this flag.
+    Default: 1
+
 MPICH_DEBUG_HOLD
     Aliases: MPIR_PARAM_DEBUG_HOLD
     Description: If true, causes processes to wait in MPI_Init and
@@ -225,11 +277,12 @@ MPICH_ENABLE_CKPOINT
 
 MPICH_ENABLE_COLL_FT_RET
     Aliases: MPIR_PARAM_ENABLE_COLL_FT_RET
-    Description: Collectives called on a communicator with a failed process
-        should not hang, however the result of the operation may be invalid
-        even though the function returns MPI_SUCCESS.  This option enables
-        an experimental feature that will return an error if the result of
-        the collective is invalid.
+    Description: NOT COMPATIBLE WITH NONBLOCKING COLLECTIVES (see
+        tt#1601)!!! Collectives called on a communicator with a failed
+        process should not hang, however the result of the operation may be
+        invalid even though the function returns MPI_SUCCESS.  This option
+        enables an experimental feature that will return an error if the
+        result of the collective is invalid.
     Default: 0
 
 MPICH_ABORT_ON_LEAKED_HANDLES
@@ -247,16 +300,24 @@ MPICH_PORT_RANGE
     Aliases: MPICH_PORTRANGE
              MPIR_PARAM_PORT_RANGE
              MPIR_PARAM_PORTRANGE
-    Description: "The MPICH_PORT_RANGE environment variable allows you to
+    Description: The MPICH_PORT_RANGE environment variable allows you to
         specify the range of TCP ports to be used by the process manager
         and the MPICH2 library. The format of this variable is
-        <low>:<high>."
+        <low>:<high>.
     Default: {0,0}
+
+MPICH_CTXID_EAGER_SIZE
+    Aliases: MPIR_PARAM_CTXID_EAGER_SIZE
+    Description: The MPICH_CTXID_EAGER_SIZE environment variable allows you
+        to specify how many words in the context ID mask will be set aside
+        for the eager allocation protocol.  If the application is running
+        out of context IDs, reducing this value may help.
+    Default: 2
 
 ---------------------------------------------------------------------------
 
 Automatically generated
   by:   ./maint/genparams
-  at:   Thu Sep  1 13:55:43 2011
-  from: src/util/param/params.yml (md5sum 6d969dfaee560cd15ba5b677edcb1867)
+  at:   Mon Oct  8 14:01:08 2012
+  from: src/util/param/params.yml (md5sum dabefd4ebb90a37693fa984f8332424f)
 

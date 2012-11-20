@@ -21,6 +21,31 @@
          call mpi_abort( MPI_COMM_WORLD, 1, ierr )
       endif
 !
+! Part of this test is to ensure that lookups cleanly fail when
+! a name is not present.  This code is used to ensure that the
+! name is not in use  before the test.
+! The MPI Standard (10.4.4 Name Publishing) requires that a process that
+! has published a name unpublish it before it exits.  
+! This code attempts to lookup the name that we want to use as the
+! service name for this example.  If it is found (it should not be, but
+! might if an MPI program with this service name exits without unpublishing
+! the servicename, and the runtime that provides the name publishing
+! leaves the servicename in use.  This block of code should not be necessary
+! in a robust MPI implementation, but should not cause problems for a correct.
+!
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+      call mpi_comm_set_errhandler( MPI_COMM_WORLD, MPI_ERRORS_RETURN,  &
+      &     ierr )
+      call mpi_lookup_name( "fservtest", MPI_INFO_NULL, portname, ierr )
+      if (ierr .eq. MPI_SUCCESS) then
+          call mpi_unpublish_name( "fservtest", MPI_INFO_NULL, portname,  &
+      &        ierr )
+      endif
+      call mpi_barrier( MPI_COMM_WORLD, ierr )
+! Ignore errors from unpublish_name (such as name-not-found)      
+      call mpi_comm_set_errhandler( MPI_COMM_WORLD,  &
+      &     MPI_ERRORS_ARE_FATAL, ierr )
+!
 ! The server (accept) side is rank < size/2 and the client (connect)
 ! side is rank >= size/2
       color = 0
@@ -29,6 +54,7 @@
 !
       if (rank .lt. size/2) then
 !        Server
+         call mpi_barrier( MPI_COMM_WORLD, ierr )
          if (rank .eq. 0) then
              call mpi_open_port( MPI_INFO_NULL, portname, ierr )
              call mpi_publish_name( "fservtest", MPI_INFO_NULL,  &
@@ -38,7 +64,12 @@
          call mpi_comm_accept( portname, MPI_INFO_NULL, 0, comm,  &
       &                         intercomm, ierr )
 
-         call mpi_close_port( portname, ierr )
+         if (rank .eq. 0) then 
+            call mpi_close_port( portname, ierr )
+            call mpi_unpublish_name( "fservtest", MPI_INFO_NULL, &
+      &            portname, ierr )
+         endif
+
       else
 !        Client
          call mpi_comm_set_errhandler( MPI_COMM_WORLD,MPI_ERRORS_RETURN,  &
@@ -46,7 +77,6 @@
          ierr = MPI_SUCCESS
          call mpi_lookup_name( "fservtest", MPI_INFO_NULL,  &
       &                         portname, ierr )
-         ierr = MPI_ERR_NAME
          if (ierr .eq. MPI_SUCCESS) then
             errs = errs + 1
             print *, 'lookup name returned a value before published'
@@ -62,8 +92,19 @@
          call mpi_comm_set_errhandler( MPI_COMM_WORLD,  &
       &            MPI_ERRORS_ARE_FATAL, ierr )
          call mpi_barrier( MPI_COMM_WORLD, ierr )
+         call mpi_barrier( MPI_COMM_WORLD, ierr )
          call mpi_lookup_name( "fservtest", MPI_INFO_NULL,  &
       &                         portname, ierr )
+!        This should not happen (ERRORS_ARE_FATAL), but just in case...
+         if (ierr .ne. MPI_SUCCESS) then
+            errs = errs + 1
+            print *, ' Major error: errors_are_fatal set but returned'
+            print *, ' non MPI_SUCCESS value.  Details:'
+            call MTestPrintErrorMsg( ' Unable to lookup fservtest port',  &
+      &                               ierr )
+!           Unable to continue without a valid port
+            call mpi_abort( MPI_COMM_WORLD, 1, ierr )
+         endif
          call mpi_comm_connect( portname, MPI_INFO_NULL, 0, comm,  &
       &                          intercomm, ierr )
       endif

@@ -9,8 +9,8 @@
 Gathers into specified locations from all processes in a group 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
-                void *recvbuf, int *recvcnts, int *displs, 
+int MPI_Gatherv(MPICH2_CONST void *sendbuf, int sendcnt, MPI_Datatype sendtype,
+                void *recvbuf, MPICH2_CONST int *recvcnts, MPICH2_CONST int *displs,
                 MPI_Datatype recvtype, int root, MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -86,5 +86,5 @@ MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 <DL><DT><B>MPI_ERR_BUFFER </B> <DD> Invalid buffer pointer.  Usually a null buffer where
 one is not valid.
 </DL>
-<P><B>Location:</B>gatherv.c<P>
+<P><B>Location:</B>src/mpi/coll/gatherv.c<P>
 </BODY></HTML>

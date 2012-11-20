@@ -1,11 +1,12 @@
-.TH MPI_Alltoallw 3 "1/21/2011" " " "MPI"
+.TH MPI_Alltoallw 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Alltoallw \-  Generalized all-to-all communication allowing different datatypes, counts, and displacements for each partner 
 .SH SYNOPSIS
 .nf
-int MPI_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls, 
-                  MPI_Datatype *sendtypes, void *recvbuf, int *recvcnts, 
-                  int *rdispls, MPI_Datatype *recvtypes, MPI_Comm comm)
+int MPI_Alltoallw(MPICH2_CONST void *sendbuf, MPICH2_CONST int *sendcnts,
+                  MPICH2_CONST int *sdispls, MPICH2_CONST MPI_Datatype *sendtypes,
+                  void *recvbuf, MPICH2_CONST int *recvcnts, MPICH2_CONST int *rdispls,
+                  MPICH2_CONST MPI_Datatype *recvtypes, MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -161,4 +162,4 @@ MPI_Datatype (see
 ).
 .PD 1
 .SH LOCATION
-alltoallw.c
+src/mpi/coll/alltoallw.c

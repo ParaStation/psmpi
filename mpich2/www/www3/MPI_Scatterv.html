@@ -9,7 +9,7 @@
 Scatters a buffer in parts to all processes in a communicator 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, 
+int MPI_Scatterv(MPICH2_CONST void *sendbuf, MPICH2_CONST int *sendcnts, MPICH2_CONST int *displs,
                  MPI_Datatype sendtype, void *recvbuf, int recvcnt,
                  MPI_Datatype recvtype,
                  int root, MPI_Comm comm)
@@ -87,5 +87,5 @@ MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 <DL><DT><B>MPI_ERR_BUFFER </B> <DD> Invalid buffer pointer.  Usually a null buffer where
 one is not valid.
 </DL>
-<P><B>Location:</B>scatterv.c<P>
+<P><B>Location:</B>src/mpi/coll/scatterv.c<P>
 </BODY></HTML>

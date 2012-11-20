@@ -1,9 +1,9 @@
-.TH MPI_Cart_sub 3 "7/30/2010" " " "MPI"
+.TH MPI_Cart_sub 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Cart_sub \-  Partitions a communicator into subgroups which  form lower-dimensional cartesian subgrids 
 .SH SYNOPSIS
 .nf
-int MPI_Cart_sub(MPI_Comm comm, int *remain_dims, MPI_Comm *comm_new)
+int MPI_Cart_sub(MPI_Comm comm, MPICH2_CONST int *remain_dims, MPI_Comm *comm_new)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -124,4 +124,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-cart_sub.c
+src/mpi/topo/cart_sub.c

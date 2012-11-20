@@ -53,7 +53,7 @@ int MPIOI_File_read_all_end(MPI_File mpi_fh,
 			    char *myname,
 			    MPI_Status *status)
 {
-    int error_code;
+    int error_code = MPI_SUCCESS;
     ADIO_File fh;
 
     MPIU_UNREFERENCED_ARG(buf);
@@ -83,6 +83,6 @@ int MPIOI_File_read_all_end(MPI_File mpi_fh,
 fn_exit:
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
 
-    return MPI_SUCCESS;
+    return error_code;
 }
 #endif

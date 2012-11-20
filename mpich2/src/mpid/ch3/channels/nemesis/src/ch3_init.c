@@ -54,9 +54,6 @@ int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_p, int pg_rank)
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
 
-    mpi_errno = MPID_nem_coll_barrier_init();
-    if (mpi_errno) MPIU_ERR_POP (mpi_errno);
-
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_INIT);
     return mpi_errno;
@@ -77,19 +74,6 @@ int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *portFns )
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_PORTFNSINIT);
     return 0;
 }
-
-/* This function simply tells the CH3 device to use the defaults for the
-   MPI-2 RMA functions */
-int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns *a )
-{
-    MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_RMAFNSINIT);
-
-    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_RMAFNSINIT);
-
-    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_RMAFNSINIT);
-    return 0;
-}
-
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3_Get_business_card

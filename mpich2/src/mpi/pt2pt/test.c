@@ -50,12 +50,14 @@ int MPIR_Test_impl(MPI_Request *request, int *flag, MPI_Status *status)
     mpi_errno = MPID_Progress_test();
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    if (request_ptr->kind == MPID_UREQUEST && request_ptr->poll_fn != NULL) {
-	mpi_errno = (request_ptr->poll_fn)(request_ptr->grequest_extra_state,
-                                           status);
-	if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    if (request_ptr->kind == MPID_UREQUEST &&
+        request_ptr->greq_fns != NULL &&
+        request_ptr->greq_fns->poll_fn != NULL)
+    {
+        mpi_errno = (request_ptr->greq_fns->poll_fn)(request_ptr->greq_fns->grequest_extra_state, status);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
-    
+
     if (MPID_Request_is_complete(request_ptr)) {
 	mpi_errno = MPIR_Request_complete(request, request_ptr, status,
 					  &active_flag);
@@ -116,10 +118,7 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_ARGNULL(request, "request", mpi_errno);
-	    if (mpi_errno) goto fn_fail;
-	    
 	    MPIR_ERRTEST_REQUEST_OR_NULL(*request, mpi_errno);
-	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -136,13 +135,12 @@ int MPI_Test(MPI_Request *request, int *flag, MPI_Status *status)
 	    {
 		/* Validate request_ptr */
 		MPID_Request_valid_ptr( request_ptr, mpi_errno );
+                if (mpi_errno) goto fn_fail;
 	    }
 	    
 	    MPIR_ERRTEST_ARGNULL(flag, "flag", mpi_errno);
 	    /* NOTE: MPI_STATUS_IGNORE != NULL */
 	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
-	    
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

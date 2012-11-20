@@ -7,12 +7,18 @@
 #ifndef HYDRA_H_INCLUDED
 #define HYDRA_H_INCLUDED
 
+/* hydra_config.h must come first, otherwise feature macros like _USE_GNU that
+ * were defined by AC_USE_SYSTEM_EXTENSIONS will not be defined yet when mpl.h
+ * indirectly includes features.h.  This leads to a mismatch between the
+ * behavior determined by configure and the behavior actually caused by
+ * "#include"ing unistd.h, for example. */
+#include "hydra_config.h"
+
 #include "mpl.h"
 
 extern char *HYD_dbg_prefix;
 
 #include <stdio.h>
-#include "hydra_config.h"
 
 #if defined NEEDS_POSIX_FOR_SIGACTION
 #define _POSIX_SOURCE
@@ -117,6 +123,7 @@ extern char *HYD_dbg_prefix;
 #define HYD_NUM_TMP_STRINGS 1000
 
 #define HYD_DEFAULT_RETRY_COUNT (10)
+#define HYD_CONNECT_DELAY (10)
 
 #define dprintf(...)
 
@@ -127,9 +134,6 @@ extern char *HYD_dbg_prefix;
 #define ATTRIBUTE(a_)
 #endif
 #endif
-
-#define HYD_IS_HELP(str) \
-    ((!strcmp((str), "-h")) || (!strcmp((str), "-help")) || (!strcmp((str), "--help")))
 
 #define HYD_DRAW_LINE(x)                                 \
     {                                                    \
@@ -159,6 +163,11 @@ extern char **environ;
 
 #define HYDRA_NAMESERVER_DEFAULT_PORT 6392
 
+enum HYD_bool {
+    HYD_FALSE = 0,
+    HYD_TRUE = 1
+};
+
 /* fd state */
 enum HYD_fd_state {
     HYD_FD_UNSET = -1,
@@ -180,6 +189,10 @@ typedef enum {
     HYD_INVALID_PARAM,
     HYD_INTERNAL_ERROR
 } HYD_status;
+
+#define HYD_USIZE_UNSET     (0)
+#define HYD_USIZE_SYSTEM    (-1)
+#define HYD_USIZE_INFINITE  (-2)
 
 #if defined(NEEDS_GETHOSTNAME_DECL)
 int gethostname(char *name, size_t len);
@@ -304,9 +317,11 @@ struct HYD_user_global {
     char *launcher;
     char *launcher_exec;
 
-    /* Processor topology */
-    char *binding;
+    /* Processor/Memory topology */
     char *topolib;
+    char *binding;
+    char *mapping;
+    char *membind;
 
     /* Checkpoint restart */
     char *ckpointlib;
@@ -322,6 +337,7 @@ struct HYD_user_global {
     /* Other random parameters */
     int enablex;
     int debug;
+    int usize;
 
     int auto_cleanup;
 
@@ -475,10 +491,8 @@ HYD_status HYDU_putenv_list(struct HYD_env *env_list, HYD_env_overwrite_t overwr
 HYD_status HYDU_comma_list_to_env_list(char *str, struct HYD_env **env_list);
 
 /* launch */
-struct HYDT_topo_cpuset_t;
 HYD_status HYDU_create_process(char **client_arg, struct HYD_env *env_list,
-                               int *in, int *out, int *err, int *pid,
-                               struct HYDT_topo_cpuset_t cpuset);
+                               int *in, int *out, int *err, int *pid, int idx);
 
 /* others */
 int HYDU_dceil(int x, int y);
@@ -564,6 +578,7 @@ HYD_status HYDU_sock_cloexec(int fd);
 
 #define HYDU_MALLOC(p, type, size, status)                              \
     {                                                                   \
+        (p) = NULL; /* initialize p in case assert fails */             \
         HYDU_ASSERT(size, status);                                      \
         (p) = (type) HYDU_malloc((size));                               \
         if ((p) == NULL)                                                \

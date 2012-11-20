@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_attr_delete( MPI_Fint *, MPI_Fint *, MP
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Attr_delete
 #define MPI_Attr_delete PMPI_Attr_delete 
 

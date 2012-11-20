@@ -29,8 +29,6 @@ public class OperationDurationPanel extends JPanel
 {
     private static final long                serialVersionUID = 4100;
 
-    private static final Component           GLUE  = Box.createHorizontalGlue();
-
     private static       Border              Normal_Border = null;
 
     private              TimeBoundingBox     timebox;
@@ -42,7 +40,6 @@ public class OperationDurationPanel extends JPanel
                                    final SummarizableView  summary )
     {
         super();
-        super.setLayout( new BoxLayout( this, BoxLayout.Y_AXIS ) );
 
         timebox         = times;
         summarizable    = summary;
@@ -54,12 +51,12 @@ public class OperationDurationPanel extends JPanel
             Normal_Border = BorderFactory.createCompoundBorder(
                             BorderFactory.createRaisedBevelBorder(),
                             BorderFactory.createLoweredBevelBorder() );
-            */
             Normal_Border = BorderFactory.createEtchedBorder();
+            */
+            Normal_Border = BorderFactory.createEmptyBorder();
         }
         super.setBorder( Normal_Border );
 
-        JPanel      stat_panel = new JPanel();
         JButton     stat_btn   = null;
         URL         icon_URL   = getURL( Const.IMG_PATH + "Stat110x40.gif" );
         ImageIcon   icon, icon_shaded;
@@ -80,15 +77,14 @@ public class OperationDurationPanel extends JPanel
         }
         else
             stat_btn = new JButton( "Sumary Statistics" );
-        stat_btn.setMargin( new Insets( 2, 2, 2, 2 ) );
+        stat_btn.setMargin( Const.SQ_BTN2_INSETS );
         stat_btn.setToolTipText(
         "Summary Statistics for the selected duration, timelines & legends" );
         stat_btn.addActionListener( new StatBtnActionListener() );
 
-        stat_panel.add( GLUE );
-        stat_panel.add( stat_btn );
-        stat_panel.add( GLUE );
-        super.add( stat_panel );
+        // super.add( InfoDialog.BOX_GLUE );
+        super.add( stat_btn );
+        // super.add( InfoDialog.BOX_GLUE );
     }
 
     private URL getURL( String filename )

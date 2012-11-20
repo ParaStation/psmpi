@@ -25,6 +25,28 @@
 #define MPI_Dist_graph_neighbors_count PMPI_Dist_graph_neighbors_count
 /* any utility functions should go here, usually prefixed with PMPI_LOCAL to
  * correctly handle weak symbols and the profiling interface */
+
+#undef FUNCNAME
+#define FUNCNAME MPIR_Dist_graph_neighbors_count_impl
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPIR_Dist_graph_neighbors_count_impl(MPID_Comm *comm_ptr, int *indegree, int *outdegree, int *weighted)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_Topology *topo_ptr = NULL;
+
+    topo_ptr = MPIR_Topology_get(comm_ptr);
+    MPIU_ERR_CHKANDJUMP(!topo_ptr || topo_ptr->kind != MPI_DIST_GRAPH, mpi_errno, MPIR_ERR_RECOVERABLE, "**notdistgraphtopo");
+    *indegree = topo_ptr->topo.dist_graph.indegree;
+    *outdegree = topo_ptr->topo.dist_graph.outdegree;
+    *weighted = topo_ptr->topo.dist_graph.is_weighted;
+
+fn_exit:
+    return mpi_errno;
+fn_fail:
+    goto fn_exit;
+}
+
 #endif
 
 #undef FUNCNAME
@@ -53,7 +75,6 @@ int MPI_Dist_graph_neighbors_count(MPI_Comm comm, int *indegree, int *outdegree,
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPIR_Topology *topo_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_DIST_GRAPH_NEIGHBORS_COUNT);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -68,7 +89,6 @@ int MPI_Dist_graph_neighbors_count(MPI_Comm comm, int *indegree, int *outdegree,
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -83,22 +103,20 @@ int MPI_Dist_graph_neighbors_count(MPI_Comm comm, int *indegree, int *outdegree,
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPID_Comm_valid_ptr(comm_ptr, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
             MPIR_ERRTEST_ARGNULL(indegree, "indegree", mpi_errno);
             MPIR_ERRTEST_ARGNULL(outdegree, "outdegree", mpi_errno);
             MPIR_ERRTEST_ARGNULL(weighted, "weighted", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    topo_ptr = MPIR_Topology_get(comm_ptr);
-    MPIU_ERR_CHKANDJUMP(!topo_ptr || topo_ptr->kind != MPI_DIST_GRAPH, mpi_errno, MPIR_ERR_RECOVERABLE, "**notdistgraphtopo");
-    *indegree = topo_ptr->topo.dist_graph.indegree;
-    *outdegree = topo_ptr->topo.dist_graph.outdegree;
-    *weighted = (topo_ptr->topo.dist_graph.in_weights || topo_ptr->topo.dist_graph.out_weights);
+
+    mpi_errno = MPIR_Dist_graph_neighbors_count_impl(comm_ptr, indegree, outdegree, weighted);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     /* ... end of body of routine ... */
 

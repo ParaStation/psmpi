@@ -20,6 +20,8 @@ categories:
       description : parameters that control communicator construction and operation
     - name        : pt2pt
       description : parameters that control point-to-point communication behavior
+    - name        : rma
+      description : parameters that control RMA communicatin behavior
     - name        : intranode
       description : intranode communication parameters
     - name        : developer
@@ -187,6 +189,34 @@ parameters:
       default     : true
       description : >-
         Use qsort(3) in the implementation of MPI_Comm_split instead of bubble sort.
+    ##############################################################
+    # RMA parameters
+    - category    : rma
+      name        : RMA_ACC_IMMED
+      type        : boolean
+      default     : true
+      description : >-
+        Use the immediate accumulate optimization
+
+    - category    : rma
+      name        : RMA_NREQUEST_THRESHOLD
+      type        : int
+      default     : 4000
+      description : >-
+        Threshold at which the RMA implementation attempts to complete requests
+        while completing RMA operations and while using the lazy synchonization
+        approach.  Change this value if programs fail because they run out of 
+        requests or other internal resources
+
+    - category    : rma
+      name        : RMA_NREQUEST_NEW_THRESHOLD
+      type        : int
+      default     : 128
+      description : >-
+        Threshold for the number of new requests since the last attempt to
+        complete pending requests.  Higher values can increase performance, 
+        but may run the risk of exceeding the available number of requests
+        or other internal resources.
 
     ##############################################################
     # intranode communication parameters
@@ -211,6 +241,16 @@ parameters:
         If true, odd procs on a node are seen as local to each other, and even
         procs on a node are seen as local to each other.  Used for debugging on
         a single machine.
+
+    - category    : intranode
+      name        : POLLS_BEFORE_YIELD
+      type        : int
+      default     : 1000
+      description : >-
+        When MPICH is in a busy waiting loop, it will periodically
+        call a function to yield the processor.  This parameter sets
+        the number of loops before the yield function is called.  A 
+        value of 0 disables yielding.
 
     - category    : developer
       name        : MEMDUMP
@@ -275,7 +315,7 @@ parameters:
       description : >-
         If non-empty, this parameter specifies which network module
         should be used for communication.
-  
+
     - category    : nemesis
       name        : INTERFACE_HOSTNAME
       type        : string
@@ -307,6 +347,37 @@ parameters:
         This parameter controls the number of times to retry the 
         gethostbyname() function before giving up.
 
+    - category    : nemesis
+      name        : SHM_EAGER_MAX_SZ
+      type        : int
+      default     : -1
+      description : >-
+        This parameter controls the message size at which Nemesis 
+        switches from eager to rendezvous mode.  If this parameter 
+        is set to -1, then Nemesis will choose an appropriate value.
+
+    - category    : nemesis
+      name        : SHM_READY_EAGER_MAX_SZ
+      type        : int
+      default     : -2
+      description : >-
+        This parameter controls the message size at which Nemesis
+        switches from eager to rendezvous mode for ready-send
+        messages.  If this parameter is set to -1, then ready messages
+        will always be sent eagerly.  If this parameter is set to -2,
+        then Nemesis will choose an appropriate value.
+
+    - category    : nemesis
+      name        : COMM_OVERRIDES
+      type        : boolean
+      default     : true
+      description : >-
+        If set to false, communication override functionality will be
+        disabled for netmods that provide the override feature.  Some
+        netmods may not honor this flag.
+        # Note the netmod must implement this functionality by not
+        # setting the comm_ops table in any VC.
+
   ##############################################################
     # debugging parameters
     - category    : debugger
@@ -337,11 +408,12 @@ parameters:
       type        : boolean
       default     : false
       description : >-
+        NOT COMPATIBLE WITH NONBLOCKING COLLECTIVES (see tt#1601)!!!
         Collectives called on a communicator with a failed process
         should not hang, however the result of the operation may be
         invalid even though the function returns MPI_SUCCESS.  This
-        option enables an experimental feature that will return an
-        error if the result of the collective is invalid.
+        option enables an experimental feature that will return an error
+        if the result of the collective is invalid.
 
   ##############################################################
     # memory parameters
@@ -367,10 +439,22 @@ parameters:
       type        : range
       default     : "0:0"
       description : >-
-        "The MPICH_PORT_RANGE environment variable allows you to
+        The MPICH_PORT_RANGE environment variable allows you to
         specify the range of TCP ports to be used by the process
         manager and the MPICH2 library. The format of this variable is
-        <low>:<high>."
+        <low>:<high>.
+
+  ############################
+    # threads parameters
+    - category    : threads
+      name        : CTXID_EAGER_SIZE
+      type        : int
+      default     : 2
+      description : >-
+        The MPICH_CTXID_EAGER_SIZE environment variable allows you to
+        specify how many words in the context ID mask will be set aside
+        for the eager allocation protocol.  If the application is running
+        out of context IDs, reducing this value may help.
 
 ...
 

@@ -74,7 +74,7 @@ int main( int argc, char **argv )
 	    err++;
 	    if (err < MAX_ERRORS) {
 		fprintf( stdout, "Did not get expected value for reduce scatter\n" );
-		fprintf( stdout, "[%d] Got recvbuf[%] = %d expected %d\n", 
+		fprintf( stdout, "[%d] Got recvbuf[%d] = %d expected %d\n",
 			 rank, i, recvbuf[i], sumval );
 	    }
 	}
@@ -86,7 +86,7 @@ int main( int argc, char **argv )
     sumval = size * rank + ((size - 1) * size)/2;
     /* recv'ed values for my process should be size * (rank + i) */
     for (i=0; i<mycount; i++) {
-	if (sendbuf[rank*mycount+i] != sumval) {
+	if (sendbuf[i] != sumval) {
 	    err++;
 	    if (err < MAX_ERRORS) {
 		fprintf( stdout, "Did not get expected value for reduce scatter (in place)\n" );

@@ -9,7 +9,7 @@
 Computes the scan (partial reductions) of data on a collection of processes 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, 
+int MPI_Scan(MPICH2_CONST void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
              MPI_Op op, MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -94,5 +94,5 @@ is prohibited in MPI (because it is prohibited by the Fortran
 standard, and rather than have a separate case for C and Fortran, the
 MPI Forum adopted the more restrictive requirements of Fortran).
 </DL>
-<P><B>Location:</B>scan.c<P>
+<P><B>Location:</B>src/mpi/coll/scan.c<P>
 </BODY></HTML>

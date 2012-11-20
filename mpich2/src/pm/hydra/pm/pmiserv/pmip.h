@@ -21,15 +21,22 @@ struct HYD_pmcd_pmip {
     struct HYD_user_global user_global;
 
     struct {
-        struct HYD_pmcd_pmip_map global_core_map;
-        struct HYD_pmcd_pmip_map filler_process_map;
+        struct {
+            int local_filler;
+            int local_count;
+            int global_count;
+        } global_core_map;
+
+        struct {
+            int filler_start;
+            int non_filler_start;
+        } pmi_id_map;
 
         int global_process_count;
         char *jobid;
 
         /* PMI */
         char *pmi_fd;
-        char *pmi_port;
         int pmi_rank;           /* If this is -1, we auto-generate it */
         char *pmi_process_mapping;
     } system_global;            /* Global system parameters */
@@ -64,7 +71,6 @@ struct HYD_pmcd_pmip {
         int pgid;
         char *iface_ip_env_name;
         char *hostname;
-        char *local_binding;
 
         int proxy_core_count;
         int proxy_process_count;
@@ -85,7 +91,7 @@ extern struct HYD_pmcd_pmip HYD_pmcd_pmip;
 extern struct HYD_arg_match_table HYD_pmcd_pmip_match_table[];
 
 HYD_status HYD_pmcd_pmip_get_params(char **t_argv);
-void HYD_pmcd_pmip_kill_localprocs(void);
+void HYD_pmcd_pmip_send_signal(int sig);
 HYD_status HYD_pmcd_pmip_control_cmd_cb(int fd, HYD_event_t events, void *userp);
 
 #endif /* PMIP_H_INCLUDED */

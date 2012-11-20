@@ -14,7 +14,6 @@
     #include <winsock2.h>
     #include <windows.h>
 #endif
-#include "opa_primitives.h"
 
 /*#define MPID_USE_SEQUENCE_NUMBERS*/
 /*#define HAVE_CH3_PRE_INIT*/
@@ -46,9 +45,14 @@ struct MPIDI_CH3I_Request
     MPID_IOV             lmt_tmp_cookie; /* temporary storage for received cookie */
     void                *s_cookie;       /* temporary storage for the cookie data in case the packet can't be sent immediately */
 
-    struct
+    union
     {
         char padding[MPID_NEM_REQ_NETMOD_AREA_LEN];
+
+        /* Temporary helper field for ticket #1679.  Should force proper pointer
+         * alignment on finnicky platforms like SPARC.  Proper fix is to stop
+         * this questionable type aliasing altogether. */
+        void *align_helper;
     } netmod_area;
 };
 
@@ -82,41 +86,6 @@ struct MPIDI_CH3I_Request
 
 #define MPIDI_POSTED_RECV_ENQUEUE_HOOK(req) MPIDI_CH3I_Posted_recv_enqueued(req)
 #define MPIDI_POSTED_RECV_DEQUEUE_HOOK(req) MPIDI_CH3I_Posted_recv_dequeued(req)
-
-
-typedef struct MPIDI_CH3I_comm
-{
-    /* FIXME we should really use the copy of these values that is stored in the
-       MPID_Comm structure */
-    int local_size;      /* number of local procs in this comm */
-    int local_rank;      /* my rank among local procs in this comm */
-    int *local_ranks;    /* list of ranks of procs local to this node */
-    int external_size;   /* number of procs in external set */
-    int external_rank;   /* my rank among external set, or -1 if I'm not in external set */
-    int *external_ranks; /* list of ranks of procs in external set */
-    int *intranode_table;
-    int *internode_table;
-    struct MPID_nem_barrier_vars *barrier_vars; /* shared memory variables used in barrier */
-}
-MPIDI_CH3I_comm_t;
-
-#ifdef ENABLED_SHM_COLLECTIVES
-#define HAVE_DEV_COMM_HOOK
-#define MPID_Dev_comm_create_hook(comm_) do {           \
-        int _mpi_errno;                                 \
-        _mpi_errno = MPIDI_CH3I_comm_create (comm_);    \
-        if (_mpi_errno) MPIU_ERR_POP (_mpi_errno);      \
-    } while(0)
-
-
-#define MPID_Dev_comm_destroy_hook(comm_) do {          \
-        int _mpi_errno;                                 \
-        _mpi_errno = MPIDI_CH3I_comm_destroy (comm_);   \
-        if (_mpi_errno) MPIU_ERR_POP (_mpi_errno);      \
-    } while(0)
-
-#endif
-#define MPID_DEV_COMM_DECL MPIDI_CH3I_comm_t ch;
 
 /*
  * MPID_Progress_state - device/channel dependent state to be passed between 

@@ -1,4 +1,4 @@
-.TH MPI_Info_get_valuelen 3 "7/29/2010" " " "MPI"
+.TH MPI_Info_get_valuelen 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Info_get_valuelen \-  Retrieves the length of the value associated with  a key 
 .SH SYNOPSIS
@@ -7,7 +7,7 @@ MPI_Info_get_valuelen \-  Retrieves the length of the value associated with  a k
 #define FUNCNAME MPIRInfo_get_valuelen
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPI_Info_get_valuelen( MPI_Info info, char *key, int *valuelen, int *flag )
+int MPI_Info_get_valuelen( MPI_Info info, MPICH2_CONST char *key, int *valuelen, int *flag )
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -123,4 +123,4 @@ to get more information
 about this error code. 
 .PD 1
 .SH LOCATION
-info_getvallen.c
+src/util/info/info_getvallen.c

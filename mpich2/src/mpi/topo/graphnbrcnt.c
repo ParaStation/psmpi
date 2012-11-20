@@ -24,10 +24,39 @@
 #undef MPI_Graph_neighbors_count
 #define MPI_Graph_neighbors_count PMPI_Graph_neighbors_count
 
+#undef FUNCNAME
+#define FUNCNAME MPIR_Graph_neighbors_count_impl
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPIR_Graph_neighbors_count_impl(MPID_Comm *comm_ptr, int rank, int *nneighbors)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIR_Topology *graph_ptr;
+
+    graph_ptr = MPIR_Topology_get( comm_ptr );
+
+    MPIU_ERR_CHKANDJUMP((!graph_ptr || graph_ptr->kind != MPI_GRAPH), mpi_errno, MPI_ERR_TOPOLOGY, "**notgraphtopo");
+    MPIU_ERR_CHKANDJUMP2((rank < 0 || rank >= graph_ptr->topo.graph.nnodes), mpi_errno, MPI_ERR_RANK, "**rank",
+                         "**rank %d %d", rank, graph_ptr->topo.graph.nnodes );
+
+    if ( rank == 0 )
+        *nneighbors = graph_ptr->topo.graph.index[rank];
+    else
+        *nneighbors = graph_ptr->topo.graph.index[rank] -
+            graph_ptr->topo.graph.index[rank-1];
+
+fn_exit:
+    return mpi_errno;
+fn_fail:
+    goto fn_exit;
+}
+
 #endif
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Graph_neighbors_count
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
 
 /*@
 MPI_Graph_neighbors_count - Returns the number of neighbors of a node
@@ -53,10 +82,8 @@ Output Parameter:
 @*/
 int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
 {
-    static const char FCNAME[] = "MPI_Graph_neighbors_count";
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPIR_Topology *graph_ptr;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GRAPH_NEIGHBORS_COUNT);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -69,7 +96,6 @@ int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -85,28 +111,18 @@ int MPI_Graph_neighbors_count(MPI_Comm comm, int rank, int *nneighbors)
         {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    MPIR_ERRTEST_ARGNULL(nneighbors, "nneighbors", mpi_errno);
-
-	    /* If comm_ptr is not value, it will be reset to null */
             if (mpi_errno) goto fn_fail;
+	    MPIR_ERRTEST_ARGNULL(nneighbors, "nneighbors", mpi_errno);
+	    /* If comm_ptr is not value, it will be reset to null */
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    
-    graph_ptr = MPIR_Topology_get( comm_ptr );
 
-    MPIU_ERR_CHKANDJUMP((!graph_ptr || graph_ptr->kind != MPI_GRAPH), mpi_errno, MPI_ERR_TOPOLOGY, "**notgraphtopo");
-    MPIU_ERR_CHKANDJUMP2((rank < 0 || rank >= graph_ptr->topo.graph.nnodes), mpi_errno, MPI_ERR_RANK, "**rank",
-			 "**rank %d %d", rank, graph_ptr->topo.graph.nnodes );
-
-    if ( rank == 0 ) 
-	*nneighbors = graph_ptr->topo.graph.index[rank];
-    else
-	*nneighbors = graph_ptr->topo.graph.index[rank] - 
-	    graph_ptr->topo.graph.index[rank-1];
+    mpi_errno = MPIR_Graph_neighbors_count_impl(comm_ptr, rank, nneighbors);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     /* ... end of body of routine ... */
 

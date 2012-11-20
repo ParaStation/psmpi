@@ -1,10 +1,10 @@
-.TH MPI_Pack_external 3 "8/2/2008" " " "MPI"
+.TH MPI_Pack_external 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Pack_external \-  Packs a datatype into contiguous memory, using the external32 format 
 .SH SYNOPSIS
 .nf
-int MPI_Pack_external(char *datarep,
-                     void *inbuf,
+int MPI_Pack_external(MPICH2_CONST char *datarep,
+                     MPICH2_CONST void *inbuf,
                      int incount,
                      MPI_Datatype datatype,
                      void *outbuf,
@@ -141,4 +141,4 @@ identified by a specific error class (e.g.,
 non-negative; a count of zero is often valid.
 .PD 1
 .SH LOCATION
-pack_external.c
+src/mpi/datatype/pack_external.c

@@ -1,11 +1,11 @@
-.TH MPI_Type_hindexed 3 "7/27/2010" " " "MPI"
+.TH MPI_Type_hindexed 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Type_hindexed \-  Creates an indexed datatype with offsets in bytes 
 .SH SYNOPSIS
 .nf
 int MPI_Type_hindexed(int count,
-                     int blocklens[],
-                     MPI_Aint indices[],
+                     MPICH2_CONST int blocklens[],
+                     MPICH2_CONST MPI_Aint indices[],
                      MPI_Datatype old_type,
                      MPI_Datatype *newtype)
 .fi
@@ -178,4 +178,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-type_hindexed.c
+src/mpi/datatype/type_hindexed.c

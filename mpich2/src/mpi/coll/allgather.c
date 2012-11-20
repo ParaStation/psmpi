@@ -75,12 +75,12 @@
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIR_Allgather_intra ( 
-    void *sendbuf, 
-    int sendcount, 
+    const void *sendbuf,
+    int sendcount,
     MPI_Datatype sendtype,
-    void *recvbuf, 
-    int recvcount, 
-    MPI_Datatype recvtype, 
+    void *recvbuf,
+    int recvcount,
+    MPI_Datatype recvtype,
     MPID_Comm *comm_ptr,
     int *errflag )
 {
@@ -615,12 +615,12 @@ int MPIR_Allgather_intra (
 /* not declared static because a machine-specific function may call this one 
    in some cases */
 int MPIR_Allgather_inter ( 
-    void *sendbuf, 
-    int sendcount, 
+    const void *sendbuf,
+    int sendcount,
     MPI_Datatype sendtype,
-    void *recvbuf, 
-    int recvcount, 
-    MPI_Datatype recvtype, 
+    void *recvbuf,
+    int recvcount,
+    MPI_Datatype recvtype,
     MPID_Comm *comm_ptr,
     int *errflag)
 {
@@ -752,7 +752,7 @@ int MPIR_Allgather_inter (
 #define FUNCNAME MPIR_Allgather
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype,
+int MPIR_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                    void *recvbuf, int recvcount, MPI_Datatype recvtype,
                    MPID_Comm *comm_ptr, int *errflag)
 {
@@ -786,7 +786,7 @@ fn_fail:
 #define FUNCNAME MPIR_Allgather_impl
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_Allgather_impl(void *sendbuf, int sendcount, MPI_Datatype sendtype,
+int MPIR_Allgather_impl(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                         void *recvbuf, int recvcount, MPI_Datatype recvtype,
                         MPID_Comm *comm_ptr, int *errflag)
 {
@@ -794,10 +794,12 @@ int MPIR_Allgather_impl(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 
     if (comm_ptr->coll_fns != NULL && comm_ptr->coll_fns->Allgather != NULL)
     {
+	/* --BEGIN USEREXTENSION-- */
 	mpi_errno = comm_ptr->coll_fns->Allgather(sendbuf, sendcount, sendtype,
                                                   recvbuf, recvcount, recvtype,
                                                   comm_ptr, errflag);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+	/* --END USEREXTENSION-- */
     } else {
         mpi_errno = MPIR_Allgather(sendbuf, sendcount, sendtype,
                                    recvbuf, recvcount, recvtype,
@@ -861,8 +863,8 @@ Notes:
 .N MPI_ERR_TYPE
 .N MPI_ERR_BUFFER
 @*/
-int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
-                  void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+int MPI_Allgather(MPICH2_CONST void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                  void *recvbuf, int recvcount, MPI_Datatype recvtype,
                   MPI_Comm comm)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -881,7 +883,6 @@ int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -910,7 +911,9 @@ int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 		{
                     MPID_Datatype_get_ptr(sendtype, sendtype_ptr);
                     MPID_Datatype_valid_ptr( sendtype_ptr, mpi_errno );
+                    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
                     MPID_Datatype_committed_ptr( sendtype_ptr, mpi_errno );
+                    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
                 }
                 MPIR_ERRTEST_USERBUFFER(sendbuf,sendcount,sendtype,mpi_errno);
             }
@@ -922,15 +925,15 @@ int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 	    {
                 MPID_Datatype_get_ptr(recvtype, recvtype_ptr);
                 MPID_Datatype_valid_ptr( recvtype_ptr, mpi_errno );
+                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
                 MPID_Datatype_committed_ptr( recvtype_ptr, mpi_errno );
+                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
             }
 	    MPIR_ERRTEST_USERBUFFER(recvbuf,recvcount,recvtype,mpi_errno);
 
             /* catch common aliasing cases */
             if (sendbuf != MPI_IN_PLACE && sendtype == recvtype && recvcount != 0 && sendcount != 0)
                 MPIR_ERRTEST_ALIAS_COLL(sendbuf,recvbuf,mpi_errno);
-
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

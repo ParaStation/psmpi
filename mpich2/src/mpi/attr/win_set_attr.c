@@ -51,7 +51,6 @@ int MPIR_WinSetAttr( MPI_Win win, int win_keyval, void *attribute_val,
 	    MPIR_ERRTEST_WIN(win, mpi_errno);
 	    MPIR_ERRTEST_KEYVAL(win_keyval, MPID_WIN, "window", mpi_errno);
 	    MPIR_ERRTEST_KEYVAL_PERM(win_keyval, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -99,7 +98,8 @@ int MPIR_WinSetAttr( MPI_Win win, int win_keyval, void *attribute_val,
 		goto fn_fail;
 	    }
 	    /* --END ERROR HANDLING-- */
-	    p->value = (MPID_AttrVal_t)(MPIR_Pint)attribute_val;
+	    p->value    = (MPID_AttrVal_t)(MPIR_Pint)attribute_val;
+	    p->attrType = attrType;
 	    /* Does not change the reference count on the keyval */
 	    break;
 	}

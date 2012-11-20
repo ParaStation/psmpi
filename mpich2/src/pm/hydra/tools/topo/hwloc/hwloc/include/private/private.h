@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009      CNRS
- * Copyright © 2009-2011 INRIA.  All rights reserved.
- * Copyright © 2009-2011 Université Bordeaux 1
+ * Copyright © 2009-2011 inria.  All rights reserved.
+ * Copyright © 2009-2012 Université Bordeaux 1
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  *
  * See COPYING in top-level directory.
@@ -20,8 +20,14 @@
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
 #endif
-
+#ifdef HAVE_SYS_UTSNAME_H
+#include <sys/utsname.h>
+#endif
 #include <string.h>
+
+#if defined(HAVE_GETPAGESIZE) && defined(NEEDS_GETPAGESIZE_DECL)
+int getpagesize(void);
+#endif
 
 #ifdef HWLOC_HAVE_ATTRIBUTE_FORMAT
 # if HWLOC_HAVE_ATTRIBUTE_FORMAT
@@ -45,15 +51,16 @@ typedef enum hwloc_backend_e {
   HWLOC_BACKEND_NONE,
   HWLOC_BACKEND_SYNTHETIC,
 #ifdef HWLOC_LINUX_SYS
-  HWLOC_BACKEND_SYSFS,
+  HWLOC_BACKEND_LINUXFS,
 #endif
-#ifdef HWLOC_HAVE_XML
   HWLOC_BACKEND_XML,
-#endif
+  HWLOC_BACKEND_CUSTOM,
   /* This value is only here so that we can end the enum list without
      a comma (thereby preventing compiler warnings) */
   HWLOC_BACKEND_MAX
 } hwloc_backend_t;
+
+struct hwloc__xml_import_state_s;
 
 struct hwloc_topology {
   unsigned nb_levels;					/* Number of horizontal levels */
@@ -66,6 +73,16 @@ struct hwloc_topology {
   int is_thissystem;
   int is_loaded;
   hwloc_pid_t pid;                                      /* Process ID the topology is view from, 0 for self */
+
+  unsigned bridge_nbobjects;
+  struct hwloc_obj **bridge_level;
+  struct hwloc_obj *first_bridge, *last_bridge;
+  unsigned pcidev_nbobjects;
+  struct hwloc_obj **pcidev_level;
+  struct hwloc_obj *first_pcidev, *last_pcidev;
+  unsigned osdev_nbobjects;
+  struct hwloc_obj **osdev_level;
+  struct hwloc_obj *first_osdev, *last_osdev;
 
   int (*set_thisproc_cpubind)(hwloc_topology_t topology, hwloc_const_cpuset_t set, int flags);
   int (*get_thisproc_cpubind)(hwloc_topology_t topology, hwloc_cpuset_t set, int flags);
@@ -100,6 +117,7 @@ struct hwloc_topology {
   struct hwloc_topology_support support;
 
   struct hwloc_os_distances_s {
+    hwloc_obj_type_t type;
     int nbobjs;
     unsigned *indexes; /* array of OS indexes before we can convert them into objs. always available.
 			*/
@@ -111,30 +129,41 @@ struct hwloc_topology {
 		       * distance from i to j is stored in slot i*nbnodes+j.
 		       * will be copied into the main logical-index-ordered distance at the end of the discovery.
 		       */
-  } os_distances[HWLOC_OBJ_TYPE_MAX];
+    int forced; /* set if the user forced a matrix to ignore the OS one */
+
+    struct hwloc_os_distances_s *prev, *next;
+  } *first_osdist, *last_osdist;
 
   hwloc_backend_t backend_type;
   union hwloc_backend_params_u {
 #ifdef HWLOC_LINUX_SYS
-    struct hwloc_backend_params_sysfs_s {
-      /* sysfs backend parameters */
+    struct hwloc_backend_params_linuxfs_s {
+      /* FS root parameters */
       char *root_path; /* The path of the file system root, used when browsing, e.g., Linux' sysfs and procfs. */
       int root_fd; /* The file descriptor for the file system root, used when browsing, e.g., Linux' sysfs and procfs. */
-    } sysfs;
+      struct utsname utsname; /* cached result of uname, used multiple times */
+    } linuxfs;
 #endif /* HWLOC_LINUX_SYS */
 #if defined(HWLOC_OSF_SYS) || defined(HWLOC_COMPILE_PORTS)
     struct hwloc_backend_params_osf {
       int nbnodes;
     } osf;
 #endif /* HWLOC_OSF_SYS */
-#ifdef HWLOC_HAVE_XML
     struct hwloc_backend_params_xml_s {
       /* xml backend parameters */
-      void *doc;
+      int (*look)(struct hwloc_topology *topology, struct hwloc__xml_import_state_s *state);
+      void (*look_failed)(struct hwloc_topology *topology);
+      void (*backend_exit)(struct hwloc_topology *topology);
+      void *data; /* libxml2 doc, or nolibxml buffer */
+      struct hwloc_xml_imported_distances_s {
+	hwloc_obj_t root;
+	struct hwloc_distances_s distances;
+	struct hwloc_xml_imported_distances_s *prev, *next;
+      } *first_distances, *last_distances;
     } xml;
-#endif /* HWLOC_HAVE_XML */
     struct hwloc_backend_params_synthetic_s {
       /* synthetic backend parameters */
+      char *string;
 #define HWLOC_SYNTHETIC_MAX_DEPTH 128
       unsigned arity[HWLOC_SYNTHETIC_MAX_DEPTH];
       hwloc_obj_type_t type[HWLOC_SYNTHETIC_MAX_DEPTH];
@@ -149,20 +178,22 @@ extern void hwloc_setup_pu_level(struct hwloc_topology *topology, unsigned nb_pu
 extern int hwloc_get_sysctlbyname(const char *name, int64_t *n);
 extern int hwloc_get_sysctl(int name[], unsigned namelen, int *n);
 extern unsigned hwloc_fallback_nbprocessors(struct hwloc_topology *topology);
+extern void hwloc_connect_children(hwloc_obj_t obj);
+extern int hwloc_connect_levels(hwloc_topology_t topology);
+
 
 #if defined(HWLOC_LINUX_SYS)
-extern void hwloc_look_linux(struct hwloc_topology *topology);
-extern void hwloc_set_linux_hooks(struct hwloc_topology *topology);
-extern int hwloc_backend_sysfs_init(struct hwloc_topology *topology, const char *fsroot_path);
-extern void hwloc_backend_sysfs_exit(struct hwloc_topology *topology);
+extern void hwloc_look_linuxfs(struct hwloc_topology *topology);
+extern void hwloc_set_linuxfs_hooks(struct hwloc_topology *topology);
+extern int hwloc_backend_linuxfs_init(struct hwloc_topology *topology, const char *fsroot_path);
+extern void hwloc_backend_linuxfs_exit(struct hwloc_topology *topology);
+extern void hwloc_linuxfs_pci_lookup_osdevices(struct hwloc_topology *topology, struct hwloc_obj *pcidev);
+extern int hwloc_linuxfs_get_pcidev_cpuset(struct hwloc_topology *topology, struct hwloc_obj *pcidev, hwloc_bitmap_t cpuset);
 #endif /* HWLOC_LINUX_SYS */
 
-#ifdef HWLOC_HAVE_XML
 extern int hwloc_backend_xml_init(struct hwloc_topology *topology, const char *xmlpath, const char *xmlbuffer, int buflen);
-extern void hwloc_xml_check_distances(struct hwloc_topology *topology);
-extern void hwloc_look_xml(struct hwloc_topology *topology);
+extern int hwloc_look_xml(struct hwloc_topology *topology);
 extern void hwloc_backend_xml_exit(struct hwloc_topology *topology);
-#endif /* HWLOC_HAVE_XML */
 
 #ifdef HWLOC_SOLARIS_SYS
 extern void hwloc_look_solaris(struct hwloc_topology *topology);
@@ -201,6 +232,10 @@ extern void hwloc_set_hpux_hooks(struct hwloc_topology *topology);
 
 extern void hwloc_look_x86(struct hwloc_topology *topology, unsigned nbprocs);
 
+#ifdef HWLOC_HAVE_LIBPCI
+extern void hwloc_look_libpci(struct hwloc_topology *topology);
+#endif /* HWLOC_HAVE_LIBPCI */
+
 extern int hwloc_backend_synthetic_init(struct hwloc_topology *topology, const char *description);
 extern void hwloc_backend_synthetic_exit(struct hwloc_topology *topology);
 extern void hwloc_look_synthetic (struct hwloc_topology *topology);
@@ -223,11 +258,13 @@ extern void hwloc_look_synthetic (struct hwloc_topology *topology);
  */
 extern void hwloc_insert_object_by_cpuset(struct hwloc_topology *topology, hwloc_obj_t obj);
 
+/* Error reporting */
+typedef void (*hwloc_report_error_t)(const char * msg, int line);
+extern void hwloc_report_os_error(const char * msg, int line);
+extern int hwloc_hide_errors(void);
 /*
  * Add an object to the topology and specify which error callback to use
  */
-typedef void (*hwloc_report_error_t)(const char * msg, int line);
-extern void hwloc_report_os_error(const char * msg, int line);
 extern int hwloc__insert_object_by_cpuset(struct hwloc_topology *topology, hwloc_obj_t obj, hwloc_report_error_t report_error);
 
 /*
@@ -243,12 +280,10 @@ extern int hwloc__insert_object_by_cpuset(struct hwloc_topology *topology, hwloc
  */
 extern void hwloc_insert_object_by_parent(struct hwloc_topology *topology, hwloc_obj_t parent, hwloc_obj_t obj);
 
-/* Insert name/value in the object infos array. name and value are copied by the callee. */
-extern void hwloc_add_object_info(hwloc_obj_t obj, const char *name, const char *value);
-
 /* Insert uname-specific names/values in the object infos array */
 extern void hwloc_add_uname_info(struct hwloc_topology *topology);
 
+#ifdef HWLOC_INSIDE_LIBHWLOC
 /** \brief Return a locally-allocated stringified bitmap for printf-like calls. */
 static __hwloc_inline char *
 hwloc_bitmap_printf_value(hwloc_const_bitmap_t bitmap)
@@ -273,39 +308,7 @@ hwloc_alloc_setup_object(hwloc_obj_type_t type, signed idx)
 }
 
 extern void hwloc_free_unlinked_object(hwloc_obj_t obj);
-
-#define hwloc_object_cpuset_from_array(l, _value, _array, _max) do {	\
-		struct hwloc_obj *__l = (l);				\
-		unsigned int *__a = (_array);				\
-		int k;							\
-		__l->cpuset = hwloc_bitmap_alloc();			\
-		for(k=0; k<_max; k++)					\
-			if (__a[k] == _value)				\
-				hwloc_bitmap_set(__l->cpuset, k);	\
-	} while (0)
-
-/* Configures an array of NUM objects of type TYPE with physical IDs OSPHYSIDS
- * and for which processors have ID PROC_PHYSIDS, and add them to the topology.
- * */
-static __hwloc_inline void
-hwloc_setup_level(int procid_max, unsigned num, unsigned *osphysids, unsigned *proc_physids, struct hwloc_topology *topology, hwloc_obj_type_t type)
-{
-  struct hwloc_obj *obj;
-  unsigned j;
-
-  hwloc_debug("%d %s\n", num, hwloc_obj_type_string(type));
-
-  for (j = 0; j < num; j++)
-    {
-      obj = hwloc_alloc_setup_object(type, osphysids[j]);
-      hwloc_object_cpuset_from_array(obj, j, proc_physids, procid_max);
-      hwloc_debug_2args_bitmap("%s %d has cpuset %s\n",
-		 hwloc_obj_type_string(type),
-		 j, obj->cpuset);
-      hwloc_insert_object_by_cpuset(topology, obj);
-    }
-  hwloc_debug("%s", "\n");
-}
+#endif
 
 /* This can be used for the alloc field to get allocated data that can be freed by free() */
 void *hwloc_alloc_heap(hwloc_topology_t topology, size_t len);
@@ -329,15 +332,44 @@ hwloc_alloc_or_fail(hwloc_topology_t topology, size_t len, int flags)
   return hwloc_alloc(topology, len);
 }
 
-extern void hwloc_topology_distances_init(struct hwloc_topology *topology);
-extern void hwloc_topology_distances_clear(struct hwloc_topology *topology);
-extern void hwloc_topology_distances_destroy(struct hwloc_topology *topology);
-extern void hwloc_topology__set_distance_matrix(struct hwloc_topology *topology, hwloc_obj_type_t type, unsigned nbobjs, unsigned *indexes, hwloc_obj_t *objs, float *distances);
-extern void hwloc_store_distances_from_env(struct hwloc_topology *topology);
-extern void hwloc_convert_distances_indexes_into_objects(struct hwloc_topology *topology);
-extern void hwloc_finalize_logical_distances(struct hwloc_topology *topology);
-extern void hwloc_restrict_distances(struct hwloc_topology *topology, unsigned long flags);
-extern void hwloc_free_logical_distances(struct hwloc_distances_s *dist);
+extern void hwloc_distances_init(struct hwloc_topology *topology);
+extern void hwloc_distances_clear(struct hwloc_topology *topology);
+extern void hwloc_distances_destroy(struct hwloc_topology *topology);
+extern void hwloc_distances_set(struct hwloc_topology *topology, hwloc_obj_type_t type, unsigned nbobjs, unsigned *indexes, hwloc_obj_t *objs, float *distances, int force);
+extern void hwloc_distances_set_from_env(struct hwloc_topology *topology);
+extern void hwloc_distances_restrict_os(struct hwloc_topology *topology);
+extern void hwloc_distances_restrict(struct hwloc_topology *topology, unsigned long flags);
+extern void hwloc_distances_finalize_os(struct hwloc_topology *topology);
+extern void hwloc_distances_finalize_logical(struct hwloc_topology *topology);
+extern void hwloc_clear_object_distances(struct hwloc_obj *obj);
+extern void hwloc_clear_object_distances_one(struct hwloc_distances_s *distances);
 extern void hwloc_group_by_distances(struct hwloc_topology *topology);
+
+#ifdef HAVE_USELOCALE
+#include "locale.h"
+#ifdef HAVE_XLOCALE_H
+#include "xlocale.h"
+#endif
+#define hwloc_localeswitch_declare locale_t __old_locale = (locale_t)0, __new_locale
+#define hwloc_localeswitch_init() do {                     \
+  __new_locale = newlocale(LC_ALL_MASK, "C", (locale_t)0); \
+  if (__new_locale != (locale_t)0)                         \
+    __old_locale = uselocale(__new_locale);                \
+} while (0)
+#define hwloc_localeswitch_fini() do { \
+  if (__new_locale != (locale_t)0) {   \
+    uselocale(__old_locale);           \
+    freelocale(__new_locale);          \
+  }                                    \
+} while(0)
+#else /* HAVE_USELOCALE */
+#define hwloc_localeswitch_declare int __dummy_nolocale __hwloc_attribute_unused
+#define hwloc_localeswitch_init()
+#define hwloc_localeswitch_fini()
+#endif /* HAVE_USELOCALE */
+
+#if !HAVE_DECL_FABSF
+#define fabsf(f) fabs((double)(f))
+#endif
 
 #endif /* HWLOC_PRIVATE_H */

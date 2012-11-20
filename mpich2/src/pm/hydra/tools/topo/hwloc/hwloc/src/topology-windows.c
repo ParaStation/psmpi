@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2010 INRIA.  All rights reserved.
- * Copyright © 2009-2011 Université Bordeaux 1
+ * Copyright © 2009-2012 inria.  All rights reserved.
+ * Copyright © 2009-2012 Université Bordeaux 1
  * Copyright © 2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -172,18 +172,32 @@ typedef struct _PSAPI_WORKING_SET_EX_INFORMATION {
 } PSAPI_WORKING_SET_EX_INFORMATION;
 #endif
 
+static void hwloc_bitmap_set_ith_ULONG_PTR(hwloc_bitmap_t set, unsigned i, ULONG_PTR mask)
+{
+	/* ULONG_PTR is 64/32bits depending on the arch
+	 * while unsigned long is always 32bits */
+#if SIZEOF_VOID_P == 8
+	hwloc_bitmap_set_ith_ulong(set, 2*i, mask & 0xffffffff);
+	hwloc_bitmap_set_ith_ulong(set, 2*i+1, mask >> 32);
+#else
+	hwloc_bitmap_set_ith_ulong(set, i, mask);
+#endif
+}
+
 /* TODO: SetThreadIdealProcessor */
 
 static int
 hwloc_win_set_thread_cpubind(hwloc_topology_t topology __hwloc_attribute_unused, hwloc_thread_t thread, hwloc_const_bitmap_t hwloc_set, int flags)
 {
+  DWORD mask;
+
   if (flags & HWLOC_CPUBIND_NOMEMBIND) {
     errno = ENOSYS;
     return -1;
   }
   /* TODO: groups SetThreadGroupAffinity */
   /* The resulting binding is always strict */
-  DWORD mask = hwloc_bitmap_to_ulong(hwloc_set);
+  mask = hwloc_bitmap_to_ulong(hwloc_set);
   if (!SetThreadAffinityMask(thread, mask))
     return -1;
   return 0;
@@ -219,6 +233,7 @@ hwloc_win_set_thisthread_membind(hwloc_topology_t topology, hwloc_const_nodeset_
 static int
 hwloc_win_set_proc_cpubind(hwloc_topology_t topology __hwloc_attribute_unused, hwloc_pid_t proc, hwloc_const_bitmap_t hwloc_set, int flags)
 {
+  DWORD mask;
   if (flags & HWLOC_CPUBIND_NOMEMBIND) {
     errno = ENOSYS;
     return -1;
@@ -226,7 +241,7 @@ hwloc_win_set_proc_cpubind(hwloc_topology_t topology __hwloc_attribute_unused, h
   /* TODO: groups, hard: has to manually bind all threads into the other group,
    * and the bind the process inside the group */
   /* The resulting binding is always strict */
-  DWORD mask = hwloc_bitmap_to_ulong(hwloc_set);
+  mask = hwloc_bitmap_to_ulong(hwloc_set);
   if (!SetProcessAffinityMask(proc, mask))
     return -1;
   return 0;
@@ -304,9 +319,9 @@ hwloc_win_get_thisproc_membind(hwloc_topology_t topology, hwloc_nodeset_t nodese
   return hwloc_win_get_proc_membind(topology, GetCurrentProcess(), nodeset, policy, flags);
 }
 
-static LPVOID WINAPI (*VirtualAllocExNumaProc)(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect, DWORD nndPreferred);
-static BOOL WINAPI (*VirtualFreeExProc)(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType);
-static BOOL WINAPI (*QueryWorkingSetExProc)(HANDLE hProcess, PVOID pv, DWORD cb);
+static LPVOID (WINAPI *VirtualAllocExNumaProc)(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, DWORD flAllocationType, DWORD flProtect, DWORD nndPreferred);
+static BOOL (WINAPI *VirtualFreeExProc)(HANDLE hProcess, LPVOID lpAddress, SIZE_T dwSize, DWORD dwFreeType);
+static BOOL (WINAPI *QueryWorkingSetExProc)(HANDLE hProcess, PVOID pv, DWORD cb);
 
 static int hwloc_win_get_VirtualAllocExNumaProc(void) {
   if (VirtualAllocExNumaProc == NULL) {
@@ -411,39 +426,48 @@ hwloc_win_get_area_membind(hwloc_topology_t topology __hwloc_attribute_unused, c
 {
   SYSTEM_INFO SystemInfo;
   DWORD page_size;
+  uintptr_t start;
+  unsigned nb;
 
   GetSystemInfo(&SystemInfo);
   page_size = SystemInfo.dwPageSize;
 
-  uintptr_t start = (((uintptr_t) addr) / page_size) * page_size;
-  unsigned nb = (((uintptr_t) addr + len - start) + page_size - 1) / page_size;
+  start = (((uintptr_t) addr) / page_size) * page_size;
+  nb = (((uintptr_t) addr + len - start) + page_size - 1) / page_size;
 
   if (!nb)
     nb = 1;
 
   {
-    PSAPI_WORKING_SET_EX_INFORMATION pv[nb];
+    PSAPI_WORKING_SET_EX_INFORMATION *pv;
     unsigned i;
+
+    pv = calloc(nb, sizeof(*pv));
 
     for (i = 0; i < nb; i++)
       pv[i].VirtualAddress = (void*) (start + i * page_size);
-    if (!QueryWorkingSetExProc(GetCurrentProcess(), &pv, sizeof(pv)))
+    if (!QueryWorkingSetExProc(GetCurrentProcess(), pv, nb * sizeof(*pv))) {
+      free(pv);
       return -1;
+    }
     *policy = HWLOC_MEMBIND_BIND;
     if (flags & HWLOC_MEMBIND_STRICT) {
       unsigned node = pv[0].VirtualAttributes.Node;
       for (i = 1; i < nb; i++) {
 	if (pv[i].VirtualAttributes.Node != node) {
 	  errno = EXDEV;
+          free(pv);
 	  return -1;
 	}
       }
       hwloc_bitmap_only(nodeset, node);
+      free(pv);
       return 0;
     }
     hwloc_bitmap_zero(nodeset);
     for (i = 0; i < nb; i++)
       hwloc_bitmap_set(nodeset, pv[i].VirtualAttributes.Node);
+    free(pv);
     return 0;
   }
 }
@@ -451,10 +475,10 @@ hwloc_win_get_area_membind(hwloc_topology_t topology __hwloc_attribute_unused, c
 void
 hwloc_look_windows(struct hwloc_topology *topology)
 {
-  BOOL WINAPI (*GetLogicalProcessorInformationProc)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION Buffer, PDWORD ReturnLength);
-  BOOL WINAPI (*GetLogicalProcessorInformationExProc)(LOGICAL_PROCESSOR_RELATIONSHIP relationship, PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX Buffer, PDWORD ReturnLength);
-  BOOL WINAPI (*GetNumaAvailableMemoryNodeProc)(UCHAR Node, PULONGLONG AvailableBytes);
-  BOOL WINAPI (*GetNumaAvailableMemoryNodeExProc)(USHORT Node, PULONGLONG AvailableBytes);
+  BOOL (WINAPI *GetLogicalProcessorInformationProc)(PSYSTEM_LOGICAL_PROCESSOR_INFORMATION Buffer, PDWORD ReturnLength);
+  BOOL (WINAPI *GetLogicalProcessorInformationExProc)(LOGICAL_PROCESSOR_RELATIONSHIP relationship, PSYSTEM_LOGICAL_PROCESSOR_INFORMATION_EX Buffer, PDWORD ReturnLength);
+  BOOL (WINAPI *GetNumaAvailableMemoryNodeProc)(UCHAR Node, PULONGLONG AvailableBytes);
+  BOOL (WINAPI *GetNumaAvailableMemoryNodeExProc)(USHORT Node, PULONGLONG AvailableBytes);
   SYSTEM_INFO SystemInfo;
 
   DWORD length;
@@ -490,10 +514,11 @@ hwloc_look_windows(struct hwloc_topology *topology)
 
       for (i = 0; i < length / sizeof(*procInfo); i++) {
 
-        /* Ignore non-data caches */
-	if (procInfo[i].Relationship == RelationCache
-		&& procInfo[i].Cache.Type != CacheUnified
-		&& procInfo[i].Cache.Type != CacheData)
+        /* Ignore unknown caches */
+	if (procInfo->Relationship == RelationCache
+		&& procInfo->Cache.Type != CacheUnified
+		&& procInfo->Cache.Type != CacheData
+		&& procInfo->Cache.Type != CacheInstruction)
 	  continue;
 
 	id = -1;
@@ -520,7 +545,9 @@ hwloc_look_windows(struct hwloc_topology *topology)
 	obj = hwloc_alloc_setup_object(type, id);
         obj->cpuset = hwloc_bitmap_alloc();
 	hwloc_debug("%s#%u mask %lx\n", hwloc_obj_type_string(type), id, procInfo[i].ProcessorMask);
-	hwloc_bitmap_from_ulong(obj->cpuset, procInfo[i].ProcessorMask);
+	/* ProcessorMask is a ULONG_PTR */
+	hwloc_bitmap_set_ith_ULONG_PTR(obj->cpuset, 0, procInfo[i].ProcessorMask);
+	hwloc_debug_2args_bitmap("%s#%u bitmap %s\n", hwloc_obj_type_string(type), id, obj->cpuset);
 
 	switch (type) {
 	  case HWLOC_OBJ_NODE:
@@ -544,8 +571,23 @@ hwloc_look_windows(struct hwloc_topology *topology)
 	    }
 	  case HWLOC_OBJ_CACHE:
 	    obj->attr->cache.size = procInfo[i].Cache.Size;
+	    obj->attr->cache.associativity = procInfo[i].Cache.Associativity == CACHE_FULLY_ASSOCIATIVE ? -1 : procInfo[i].Cache.Associativity ;
 	    obj->attr->cache.linesize = procInfo[i].Cache.LineSize;
 	    obj->attr->cache.depth = procInfo[i].Cache.Level;
+	    switch (procInfo->Cache.Type) {
+	      case CacheUnified:
+		obj->attr->cache.type = HWLOC_OBJ_CACHE_UNIFIED;
+		break;
+	      case CacheData:
+		obj->attr->cache.type = HWLOC_OBJ_CACHE_DATA;
+		break;
+	      case CacheInstruction:
+		obj->attr->cache.type = HWLOC_OBJ_CACHE_INSTRUCTION;
+		break;
+	      default:
+		hwloc_free_unlinked_object(obj);
+		continue;
+	    }
 	    break;
 	  case HWLOC_OBJ_GROUP:
 	    obj->attr->group.depth = procInfo[i].Relationship == RelationGroup;
@@ -578,15 +620,16 @@ hwloc_look_windows(struct hwloc_topology *topology)
       }
 
       for (procInfo = procInfoTotal;
-	   (void*) procInfo < (void*) ((unsigned long) procInfoTotal + length);
-	   procInfo = (void*) ((unsigned long) procInfo + procInfo->Size)) {
+	   (void*) procInfo < (void*) ((uintptr_t) procInfoTotal + length);
+	   procInfo = (void*) ((uintptr_t) procInfo + procInfo->Size)) {
         unsigned num, i;
         GROUP_AFFINITY *GroupMask;
 
-        /* Ignore non-data caches */
+        /* Ignore unknown caches */
 	if (procInfo->Relationship == RelationCache
 		&& procInfo->Cache.Type != CacheUnified
-		&& procInfo->Cache.Type != CacheData)
+		&& procInfo->Cache.Type != CacheData
+		&& procInfo->Cache.Type != CacheInstruction)
 	  continue;
 
 	id = -1;
@@ -621,7 +664,9 @@ hwloc_look_windows(struct hwloc_topology *topology)
 	      mask = procInfo->Group.GroupInfo[id].ActiveProcessorMask;
 	      hwloc_debug("group %u %d cpus mask %lx\n", id,
                   procInfo->Group.GroupInfo[id].ActiveProcessorCount, mask);
-	      hwloc_bitmap_from_ith_ulong(obj->cpuset, id, mask);
+	      /* KAFFINITY is ULONG_PTR */
+	      hwloc_bitmap_set_ith_ULONG_PTR(obj->cpuset, id, mask);
+	      hwloc_debug_2args_bitmap("group %u %d bitmap %s\n", id, procInfo->Group.GroupInfo[id].ActiveProcessorCount, obj->cpuset);
 	      hwloc_insert_object_by_cpuset(topology, obj);
 	    }
 	    continue;
@@ -635,8 +680,10 @@ hwloc_look_windows(struct hwloc_topology *topology)
         obj->cpuset = hwloc_bitmap_alloc();
         for (i = 0; i < num; i++) {
           hwloc_debug("%s#%u %d: mask %d:%lx\n", hwloc_obj_type_string(type), id, i, GroupMask[i].Group, GroupMask[i].Mask);
-          hwloc_bitmap_from_ith_ulong(obj->cpuset, GroupMask[i].Group, GroupMask[i].Mask);
+	  /* GROUP_AFFINITY.Mask is KAFFINITY, which is ULONG_PTR */
+	  hwloc_bitmap_set_ith_ULONG_PTR(obj->cpuset, GroupMask[i].Group, GroupMask[i].Mask);
         }
+	hwloc_debug("%s#%u bitmap %s\n", hwloc_obj_type_string(type), id, obj->cpuset);
 
 	switch (type) {
 	  case HWLOC_OBJ_NODE:
@@ -659,8 +706,24 @@ hwloc_look_windows(struct hwloc_topology *topology)
 	    }
 	  case HWLOC_OBJ_CACHE:
 	    obj->attr->cache.size = procInfo->Cache.CacheSize;
+	    obj->attr->cache.associativity = procInfo->Cache.Associativity;
+	    obj->attr->cache.associativity = procInfo->Cache.Associativity == CACHE_FULLY_ASSOCIATIVE ? -1 : procInfo->Cache.Associativity ;
 	    obj->attr->cache.linesize = procInfo->Cache.LineSize;
 	    obj->attr->cache.depth = procInfo->Cache.Level;
+	    switch (procInfo->Cache.Type) {
+	      case CacheUnified:
+		obj->attr->cache.type = HWLOC_OBJ_CACHE_UNIFIED;
+		break;
+	      case CacheData:
+		obj->attr->cache.type = HWLOC_OBJ_CACHE_DATA;
+		break;
+	      case CacheInstruction:
+		obj->attr->cache.type = HWLOC_OBJ_CACHE_INSTRUCTION;
+		break;
+	      default:
+		hwloc_free_unlinked_object(obj);
+		continue;
+	    }
 	    break;
 	  default:
 	    break;
@@ -674,7 +737,7 @@ hwloc_look_windows(struct hwloc_topology *topology)
   /* add PU objects */
   hwloc_setup_pu_level(topology, hwloc_fallback_nbprocessors(topology));
 
-  hwloc_add_object_info(topology->levels[0][0], "Backend", "Windows");
+  hwloc_obj_add_info(topology->levels[0][0], "Backend", "Windows");
 }
 
 void

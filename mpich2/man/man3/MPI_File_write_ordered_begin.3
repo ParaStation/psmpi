@@ -1,9 +1,9 @@
-.TH MPI_File_write_ordered_begin 3 "8/11/2010" " " "MPI"
+.TH MPI_File_write_ordered_begin 3 "9/21/2012" " " "MPI"
 .SH NAME
 MPI_File_write_ordered_begin \-  Begin a split collective write using shared file pointer 
 .SH SYNOPSIS
 .nf
-int MPI_File_write_ordered_begin(MPI_File mpi_fh, void *buf, int count, 
+int MPI_File_write_ordered_begin(MPI_File mpi_fh, MPICH2_CONST void *buf, int count,
                               MPI_Datatype datatype)
 .fi
 .SH INPUT PARAMETERS
@@ -53,4 +53,4 @@ All MPI objects (e.g.,
 .I INTEGER
 in Fortran.
 .SH LOCATION
-write_ordb.c
+mpi-io/write_ordb.c

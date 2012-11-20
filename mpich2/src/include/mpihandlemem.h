@@ -59,7 +59,7 @@ typedef enum MPID_Object_kind {
   MPID_COMM       = 0x1, 
   MPID_GROUP      = 0x2,
   MPID_DATATYPE   = 0x3,
-  MPID_FILE       = 0x4,               /* This is not used */
+  MPID_FILE       = 0x4, /* only used obliquely inside MPID_Errhandler objs */
   MPID_ERRHANDLER = 0x5,
   MPID_OP         = 0x6,
   MPID_INFO       = 0x7,
@@ -90,15 +90,17 @@ const char *MPIU_Handle_get_kind_str(int kind);
 #define HANDLE_GET_KIND(a) (((unsigned)(a)&HANDLE_KIND_MASK)>>HANDLE_KIND_SHIFT)
 #define HANDLE_SET_KIND(a,kind) ((a)|((kind)<<HANDLE_KIND_SHIFT))
 
-/* For indirect, the remainder of the handle has a block and index */
-#define HANDLE_INDIRECT_SHIFT 16
-#define HANDLE_BLOCK(a) (((a)& 0x03FF0000) >> HANDLE_INDIRECT_SHIFT)
-#define HANDLE_BLOCK_INDEX(a) ((a) & 0x0000FFFF)
+/* For indirect, the remainder of the handle has a block and index within that
+ * block */
+#define HANDLE_INDIRECT_SHIFT 12
+#define HANDLE_BLOCK(a) (((a)& 0x03FFF000) >> HANDLE_INDIRECT_SHIFT)
+#define HANDLE_BLOCK_INDEX(a) ((a) & 0x00000FFF)
 
-/* Handle block is between 1 and 1024 *elements* */
-#define HANDLE_BLOCK_SIZE 256
-/* Index size is bewtween 1 and 65536 *elements* */
-#define HANDLE_BLOCK_INDEX_SIZE 1024
+/* Number of blocks is between 1 and 16384 */
+#define HANDLE_NUM_BLOCKS 8192
+/* Number of objects in a block is bewtween 1 and 4096 (each obj has an index
+ * within its block) */
+#define HANDLE_NUM_INDICES 1024
 
 /* For direct, the remainder of the handle is the index into a predefined 
    block */
@@ -123,7 +125,7 @@ const char *MPIU_Handle_get_kind_str(int kind);
                                              "Invalid refcount (%d) in %p (0x%08x) %s",             \
                                              local_ref_count_, (objptr_), (objptr_)->handle, op_)); \
         }                                                                                           \
-        MPIU_Assert(local_ref_count_ < 0);                                                          \
+        MPIU_Assert(local_ref_count_ >= 0);                                                         \
     } while (0)
 #else
 #define MPIU_HANDLE_CHECK_REFCOUNT(objptr_,op_) \

@@ -1,12 +1,12 @@
-.TH MPI_Comm_spawn_multiple 3 "7/27/2010" " " "MPI"
+.TH MPI_Comm_spawn_multiple 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Comm_spawn_multiple \-  short description 
 .SH SYNOPSIS
 .nf
-int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], 
-                          char* *array_of_argv[], int array_of_maxprocs[], 
-                          MPI_Info array_of_info[], int root, MPI_Comm comm, 
-                          MPI_Comm *intercomm, int array_of_errcodes[]) 
+int MPI_Comm_spawn_multiple(int count, char *array_of_commands[],
+                          char **array_of_argv[], MPICH2_CONST int array_of_maxprocs[],
+                          MPICH2_CONST MPI_Info array_of_info[], int root, MPI_Comm comm,
+                          MPI_Comm *intercomm, int array_of_errcodes[])
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -147,4 +147,4 @@ identified by a specific error class (e.g.,
 - 
 .PD 1
 .SH LOCATION
-comm_spawn_multiple.c
+src/mpi/spawn/comm_spawn_multiple.c

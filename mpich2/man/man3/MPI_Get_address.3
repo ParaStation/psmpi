@@ -1,9 +1,9 @@
-.TH MPI_Get_address 3 "8/2/2008" " " "MPI"
+.TH MPI_Get_address 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Get_address \-  Get the address of a location in memory 
 .SH SYNOPSIS
 .nf
-int MPI_Get_address(void *location, MPI_Aint *address)
+int MPI_Get_address(MPICH2_CONST void *location, MPI_Aint *address)
 .fi
 .SH INPUT PARAMETER
 .PD 0
@@ -116,4 +116,4 @@ to get more information
 about this error code. 
 .PD 1
 .SH LOCATION
-get_address.c
+src/mpi/datatype/get_address.c

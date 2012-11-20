@@ -129,7 +129,7 @@ static int MPIDI_Create_inter_root_communicator_connect(const char *port_name,
        temporary intercommunicator between the two roots so that
        we can use MPI functions to communicate data between them. */
 
-    mpi_errno = MPIU_CALL(MPIDI_CH3,Connect_to_root(port_name, &connect_vc));
+    mpi_errno = MPIDI_CH3_Connect_to_root(port_name, &connect_vc);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
     }
@@ -303,6 +303,12 @@ static int MPIDI_CH3I_Initialize_tmp_comm(MPID_Comm **comm_pptr,
     /* FIXME: Why do we do a dup here? */
     MPID_VCR_Dup(vc_ptr, tmp_comm->vcr);
 
+    /* Even though this is a tmp comm and we don't call
+       MPI_Comm_commit, we still need to call the creation hook
+       because the destruction hook will be called in comm_release */
+    mpi_errno = MPID_Dev_comm_create_hook(tmp_comm);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    
     *comm_pptr = tmp_comm;
 
 fn_exit:
@@ -523,7 +529,7 @@ int MPIDI_Comm_connect(const char *port_name, MPID_Info *info, int root,
     {
         int mpi_errno2 = MPI_SUCCESS;
         if (new_vc) {
-	    mpi_errno2 = MPIU_CALL(MPIDI_CH3,VC_Destroy(new_vc));
+	    mpi_errno2 = MPIDI_CH3_VC_Destroy(new_vc);
             if (mpi_errno2) MPIU_ERR_SET(mpi_errno2, MPI_ERR_OTHER, "**fail");
         }
 
@@ -1045,6 +1051,7 @@ int MPIDI_Comm_accept(const char *port_name, MPID_Info *info, int root,
     {
 	mpi_errno = ReceivePGAndDistribute( tmp_comm, comm_ptr, root, &recvtag,
 					    n_remote_pgs, remote_pg );
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
 
     /* Broadcast out the remote rank translation array */
@@ -1180,6 +1187,9 @@ static int SetupNewIntercomm( MPID_Comm *comm_ptr, int remote_comm_size,
 			 remote_translation[i].pg_rank, &intercomm->vcr[i]);
     }
 
+    mpi_errno = MPIR_Comm_commit(intercomm);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    
     MPIU_DBG_MSG(CH3_CONNECT,VERBOSE,"Barrier");
     mpi_errno = MPIR_Barrier_intra(comm_ptr, &errflag);
     if (mpi_errno != MPI_SUCCESS) {
@@ -1221,7 +1231,7 @@ static int FreeNewVC( MPIDI_VC_t *new_vc )
 	MPID_Progress_end(&progress_state);
     }
 
-    MPIU_CALL(MPIDI_CH3,VC_Destroy(new_vc));
+    MPIDI_CH3_VC_Destroy(new_vc);
     MPIU_Free(new_vc);
 
  fn_fail:

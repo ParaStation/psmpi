@@ -18,6 +18,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import cern.colt.map.OpenIntIntHashMap;
+
 import base.drawable.TimeBoundingBox;
 import base.drawable.Topology;
 // import base.drawable.Category;
@@ -38,6 +40,7 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
     private float             init_state_height_ftr;
     private float             next_state_height_ftr;
 
+    private TimeAveBox        root_avebox;
     private boolean           drawStates;
     private boolean           drawArrows;
     
@@ -50,6 +53,7 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
         map_rows2nestable   = null;
         map_rows2nestless   = null;
 
+        root_avebox         = null;
         drawStates          = true;
         drawArrows          = true;
     }
@@ -163,8 +167,9 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
 
     /*  Drawing related API */
 
-    private static List  getLine2RowMappedKey( final Map   map_line2row,
-                                               final List  old_keylist )
+    private
+    static List  getRowKeyFromLineKey( final OpenIntIntHashMap map_line2row,
+                                       final List              old_keylist )
     {
         List      new_keylist;
         Object[]  old_keys;
@@ -172,8 +177,8 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
         new_keylist    = new ArrayList(); 
         old_keys       = old_keylist.toArray(); 
         new_keylist.add( old_keys[0] );  // Topology
-        new_keylist.add( map_line2row.get( (Integer) old_keys[1] ) );
-        new_keylist.add( map_line2row.get( (Integer) old_keys[2] ) );
+        new_keylist.add( new Integer( map_line2row.get( ((Integer) old_keys[1]).intValue() ) ) );
+        new_keylist.add( new Integer( map_line2row.get( ((Integer) old_keys[2]).intValue() ) ) );
         return new_keylist;
     }
 
@@ -183,11 +188,12 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
     public void setDrawingArrows( boolean isDrawing )
     { drawArrows  = isDrawing; }
 
-    public void initializeDrawing( final Map      map_line2row,
-                                   final Color    background_color,
-                                         boolean  isZeroTimeOrigin,
-                                         float    init_state_height,
-                                         float    next_state_height )
+    public void initializeDrawing( final OpenIntIntHashMap  map_line2row,
+                                   final Color              background_color,
+                                         boolean            isYaxisRootVisible,
+                                         boolean            isZeroTimeOrigin,
+                                         float              init_state_height,
+                                         float              next_state_height )
     {
         Map.Entry          entry;
         Iterator           entry_itr, avebox_itr;
@@ -202,7 +208,7 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
             lined_key    = (List)       entry.getKey();
             lined_avebox = (TimeAveBox) entry.getValue();
             
-            rowed_key    = getLine2RowMappedKey( map_line2row, lined_key );
+            rowed_key    = getRowKeyFromLineKey( map_line2row, lined_key );
             rowed_avebox = (TimeAveBox) map_rows2nestable.get( rowed_key );
             if ( rowed_avebox == null ) {
                 rowed_avebox = new TimeAveBox( lined_avebox );
@@ -212,6 +218,7 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
                 rowed_avebox.mergeWithTimeAveBox( lined_avebox );
         }
 
+        // Initialize map_rows2nestable for drawing.
         // Do setNestingExclusion() for map_rows2nestable
         avebox_itr = map_rows2nestable.values().iterator();
         while ( avebox_itr.hasNext() ) {
@@ -236,7 +243,7 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
             lined_key    = (List)       entry.getKey();
             lined_avebox = (TimeAveBox) entry.getValue();
 
-            rowed_key    = getLine2RowMappedKey( map_line2row, lined_key );
+            rowed_key    = getRowKeyFromLineKey( map_line2row, lined_key );
             rowed_avebox = (TimeAveBox) map_rows2nestless.get( rowed_key );
             if ( rowed_avebox == null ) {
                 rowed_avebox = new TimeAveBox( lined_avebox );
@@ -246,7 +253,7 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
                 rowed_avebox.mergeWithTimeAveBox( lined_avebox );
         }
 
-        // Initialize map_rows2nestless
+        // Initialize map_rows2nestless for drawing
         avebox_itr = map_rows2nestless.values().iterator();
         while ( avebox_itr.hasNext() ) {
             rowed_avebox = (TimeAveBox) avebox_itr.next();
@@ -260,6 +267,32 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
                                                  super.getEarliestTime(),
                                                  super.getLatestTime() );
         }
+
+        if ( isYaxisRootVisible ) {
+            // Set root_avebox by averaging over the TimeAveBox's in each row:
+            root_avebox = new TimeAveBox( this, true );
+            avebox_itr = map_rows2nestable.values().iterator();
+            int row_count = 0;
+            while ( avebox_itr.hasNext() ) {
+                rowed_avebox = (TimeAveBox) avebox_itr.next();
+                root_avebox.mergeWithTimeAveBox( rowed_avebox );
+                row_count++;
+            }
+            root_avebox.rescaleAllRatios( (float) (1.0 / row_count) );
+            // Initialze root_avebox for drawing
+            root_avebox.setNestingExclusion();
+            root_avebox.initializeCategoryTimeBoxes();
+            if ( isZeroTimeOrigin )
+                SummaryState.setTimeBoundingBox( root_avebox,
+                                                 0.0d,
+                                                 super.getDuration() );
+            else
+                SummaryState.setTimeBoundingBox( root_avebox,
+                                                 super.getEarliestTime(),
+                                                 super.getLatestTime() );
+        }
+        else
+            root_avebox = null;
 
         SummaryState.setBackgroundColor( background_color );
         init_state_height_ftr  = init_state_height;
@@ -295,6 +328,15 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
             rFinal    = rStart + init_state_height_ftr;
 
             count    += SummaryState.draw( g, avebox, coord_xform,
+                                           rStart, rFinal, avebox_hgt );
+        }
+        if ( root_avebox != null ) {
+            // Draw the total averaged TimeAveBox at YaxisTree root.
+            rowID     = 0;
+            rStart    = (float) rowID - init_state_height_ftr / 2.0f;
+            rFinal    = rStart + init_state_height_ftr;
+
+            count    += SummaryState.draw( g, root_avebox, coord_xform,
                                            rStart, rFinal, avebox_hgt );
         }
         return count;
@@ -377,6 +419,18 @@ public class BufForTimeAveBoxes extends TimeBoundingBox
 
         if ( drawStates ) {
             avebox_hgt = (init_state_height_ftr - next_state_height_ftr) / 2.0f;
+            if ( root_avebox != null ) {
+                topo        = Topology.STATE;
+                rowID1      = 0;
+
+                rStart      = (float) rowID1 - init_state_height_ftr / 2.0f; 
+                rFinal      = rStart + init_state_height_ftr;
+
+                clicked_obj = SummaryState.containsPixel( root_avebox,
+                                                          coord_xform, pix_pt,
+                                                          rStart, rFinal,
+                                                          avebox_hgt );
+            }
             entries    = map_rows2nestable.entrySet().iterator();
             while ( entries.hasNext() && clicked_obj == null ) {
                 entry       = (Map.Entry) entries.next();

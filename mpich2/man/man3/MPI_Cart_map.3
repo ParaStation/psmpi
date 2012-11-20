@@ -1,9 +1,9 @@
-.TH MPI_Cart_map 3 "7/27/2010" " " "MPI"
+.TH MPI_Cart_map 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Cart_map \-  Maps process to Cartesian topology information  
 .SH SYNOPSIS
 .nf
-int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods, 
+int MPI_Cart_map(MPI_Comm comm_old, int ndims, MPICH2_CONST int *dims, MPICH2_CONST int *periods,
                 int *newrank)
 .fi
 .SH INPUT PARAMETERS
@@ -130,4 +130,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-cart_map.c
+src/mpi/topo/cart_map.c

@@ -1,9 +1,9 @@
-.TH MPI_File_delete 3 "8/11/2010" " " "MPI"
+.TH MPI_File_delete 3 "7/3/2012" " " "MPI"
 .SH NAME
 MPI_File_delete \-  Deletes a file 
 .SH SYNOPSIS
 .nf
-int MPI_File_delete(char *filename, MPI_Info info)
+int MPI_File_delete(MPICH2_CONST char *filename, MPI_Info info)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -40,4 +40,4 @@ All MPI objects (e.g.,
 .I INTEGER
 in Fortran.
 .SH LOCATION
-delete.c
+mpi-io/delete.c

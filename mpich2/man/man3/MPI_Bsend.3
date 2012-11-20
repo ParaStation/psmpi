@@ -1,9 +1,9 @@
-.TH MPI_Bsend 3 "5/20/2010" " " "MPI"
+.TH MPI_Bsend 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Bsend \-  Basic send with user-provided buffering 
 .SH SYNOPSIS
 .nf
-int MPI_Bsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
+int MPI_Bsend(MPICH2_CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag,
               MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
@@ -208,4 +208,4 @@ the attribute
 MPI_Buffer_attach, MPI_Ibsend, MPI_Bsend_init
 .br
 .SH LOCATION
-bsend.c
+src/mpi/pt2pt/bsend.c

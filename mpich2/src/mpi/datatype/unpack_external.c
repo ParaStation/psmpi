@@ -54,8 +54,8 @@
 .N MPI_ERR_TYPE
 .N MPI_ERR_ARG
 @*/
-int MPI_Unpack_external(char *datarep,
-			void *inbuf,
+int MPI_Unpack_external(MPICH2_CONST char *datarep,
+			MPICH2_CONST void *inbuf,
 			MPI_Aint insize,
 			MPI_Aint *position,
 			void *outbuf,
@@ -85,7 +85,6 @@ int MPI_Unpack_external(char *datarep,
 	    MPIR_ERRTEST_COUNT(outcount, mpi_errno);
 
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
-	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
 	    if (datatype != MPI_DATATYPE_NULL && HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
 		MPID_Datatype *datatype_ptr = NULL;

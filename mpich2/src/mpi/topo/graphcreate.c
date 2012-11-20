@@ -165,8 +165,8 @@ We ignore the 'reorder' info currently.
 .N MPI_ERR_ARG
 
 @*/
-int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *indx, int *edges, 
-		     int reorder, MPI_Comm *comm_graph)
+int MPI_Graph_create(MPI_Comm comm_old, int nnodes, MPICH2_CONST int *indx,
+                     MPICH2_CONST int *edges, int reorder, MPI_Comm *comm_graph)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
@@ -183,7 +183,6 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *indx, int *edges,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm_old, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -199,6 +198,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *indx, int *edges,
         {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            if (mpi_errno) goto fn_fail;
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    if (comm_ptr) {
 		MPIR_ERRTEST_COMM_INTRA(comm_ptr,mpi_errno);
@@ -209,7 +209,6 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *indx, int *edges,
 		MPIR_ERRTEST_ARGNULL(edges,"edges",mpi_errno);
 	    }
 	    MPIR_ERRTEST_ARGNULL(comm_graph,"comm_graph",mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -289,10 +288,12 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *indx, int *edges,
 
     if (comm_ptr->topo_fns != NULL && 
 	comm_ptr->topo_fns->graphCreate != NULL) {
+	/* --BEGIN USEREXTENSION-- */
 	mpi_errno = comm_ptr->topo_fns->graphCreate( comm_ptr, nnodes, 
 						     (const int *)indx,
 						     (const int *)edges, 
 						     reorder, comm_graph );
+	/* --END USEREXTENSION-- */
     }	
     else {
 	mpi_errno = MPIR_Graph_create( comm_ptr, nnodes, 

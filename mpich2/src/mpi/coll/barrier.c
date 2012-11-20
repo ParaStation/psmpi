@@ -112,7 +112,7 @@ PMPI_LOCAL int MPIR_Barrier_or_coll_fn(MPID_Comm *comm_ptr, int *errflag )
     if (comm_ptr->coll_fns != NULL && comm_ptr->coll_fns->Barrier != NULL)
     {
         /* --BEGIN USEREXTENSION-- */
-        mpi_errno = comm_ptr->node_roots_comm->coll_fns->Barrier(comm_ptr, errflag);
+        mpi_errno = comm_ptr->coll_fns->Barrier(comm_ptr, errflag);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         /* --END USEREXTENSION-- */
     }
@@ -262,8 +262,10 @@ int MPIR_Barrier_impl(MPID_Comm *comm_ptr, int *errflag)
     int mpi_errno_ret = MPI_SUCCESS;
     if (comm_ptr->coll_fns != NULL && comm_ptr->coll_fns->Barrier != NULL)
     {
+	/* --BEGIN USEREXTENSION-- */
 	mpi_errno = comm_ptr->coll_fns->Barrier(comm_ptr, errflag);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+	/* --END USEREXTENSION-- */
     }
     else
     {
@@ -383,7 +385,6 @@ int MPI_Barrier( MPI_Comm comm )
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }

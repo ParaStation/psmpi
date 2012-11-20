@@ -5,14 +5,21 @@
 #
 
 external_subdirs = @mpl_srcdir@
+external_dist_subdirs = @mpl_dist_srcdir@
 external_ldflags = -L$(top_builddir)/@mpl_srcdir@
 external_libs = -lmpl
 
 bin_PROGRAMS =
+noinst_HEADERS =
+DISTCLEANFILES =
 
 ACLOCAL_AMFLAGS = -I confdb
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_srcdir)/@mpl_srcdir@/include \
 	-I$(top_builddir)/@mpl_srcdir@/include
+
+noinst_HEADERS += include/hydra.h include/hydra_server.h
+
+EXTRA_DIST = autogen.sh
 
 noinst_LTLIBRARIES = libhydra.la
 libhydra_la_SOURCES =
@@ -25,6 +32,8 @@ include ui/Makefile.mk
 
 # External subdirs should be built first, as we might depend on them
 SUBDIRS = ${external_subdirs} .
+# see note in MPICH2 Makefile.am about our usage of DIST_SUBDIRS
+DIST_SUBDIRS = ${external_dist_subdirs}
 
 # Provide an alias for mpirun to support tools that assume that
 # mpiexec is called mpirun
@@ -45,3 +54,28 @@ uninstall-local:
 
 htmldoc:
 	if test "@DOXYGEN@" != "" ; then @DOXYGEN@ hydra-doxygen.cfg ; fi
+
+# created by confdb/aclocal_cache.m4
+DISTCLEANFILES += config.system
+
+# --------------------------------------------------------------------------
+.PHONY: coverage
+gcov_sources = $(libmpl_la_SOURCES)
+# assumes that these sources were compiled appropriately ("-fprofile-arcs"
+# and "-ftest-coverage")
+coverage:
+	@for file in $(gcov_sources) ; do \
+	    dir=`dirname $$file` ; \
+	    bname=`basename $$file` ; \
+	    aux=`echo $$bname | sed -e 's,\.*$$,,'` ; \
+	    echo "( $(GCOV) -b -f -o $$file $$file && mv $${bname}.gcov $$dir )" ; \
+	    ( $(GCOV) -b -f -o $$file $$file && mv $${bname}.gcov $$dir ) ; \
+	    rm -f *.gcov ; \
+	done
+## we don't recurse into SUBDIRS in hydra, since they are only really
+## external packages like hwloc
+##	for subdir in $(SUBDIRS) ; do \
+##	    ( cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) coverage ) ; \
+##	done
+# --------------------------------------------------------------------------
+

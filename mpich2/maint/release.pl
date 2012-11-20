@@ -18,7 +18,7 @@
 use strict;
 use warnings;
 
-use Cwd qw( realpath );
+use Cwd qw( getcwd realpath );
 use Getopt::Long;
 
 my $arg = 0;
@@ -88,11 +88,23 @@ sub check_package
     print "done\n";
 }
 
+sub check_autotools_version
+{
+    my $tool = shift;
+    my $req_ver = shift;
+    my $curr_ver;
+
+    $curr_ver = `$tool --version | head -1 | cut -f4 -d' ' | xargs echo -n`;
+    if ("$curr_ver" ne "$req_ver") {
+	print("\tWARNING: $tool version mismatch ($req_ver) required\n\n");
+    }
+}
+
 sub run_cmd
 {
     my $cmd = shift;
 
-    # FIXME: Allow for verbose output
+    #print("===> running cmd=|$cmd| from ".getcwd()."\n");
     system("$cmd >> $root/$logfile 2>&1");
     if ($?) {
         die "unable to execute ($cmd), \$?=$?.  Stopped";
@@ -126,7 +138,16 @@ check_package("autoconf");
 check_package("automake");
 print("\n");
 
-my $current_ver = `svn cat ${source}/maint/Version | grep ^MPICH2_VERSION | cut -f2 -d'='`;
+## IMPORTANT: Changing the autotools versions can result in ABI
+## breakage. So make sure the ABI string in the release tarball is
+## updated when you do that.
+check_autotools_version("autoconf", "2.68");
+check_autotools_version("automake", "1.11.1");
+check_autotools_version("libtool", "2.4");
+print("\n");
+
+my $current_ver = `svn cat ${source}/maint/version.m4 | grep MPICH2_VERSION_m4 | \
+                   sed -e 's/^.*\\[MPICH2_VERSION_m4\\],\\[\\(.*\\)\\].*/\\1/g'`;
 if ("$current_ver" ne "$version\n") {
     print("\tWARNING: Version mismatch\n\n");
 }
@@ -160,21 +181,21 @@ chdir("${root}/${pack}-${version}");
 
 my $date = `date`;
 chomp $date;
-system(qq(perl -p -i -e 's/MPICH2_RELEASE_DATE=.*/MPICH2_RELEASE_DATE="$date"/g' ./maint/Version));
-system(qq(perl -p -i -e 's/MPICH2_RELEASE_DATE=.*/MPICH2_RELEASE_DATE="$date"/g' ./src/pm/hydra/VERSION));
+system(qq(perl -p -i -e 's/\\[MPICH2_RELEASE_DATE_m4\\],\\[unreleased development copy\\]/[MPICH2_RELEASE_DATE_m4],[$date]/g' ./maint/version.m4));
+system(qq(perl -p -i -e 's/\\[MPICH2_RELEASE_DATE_m4\\],\\[unreleased development copy\\]/[MPICH2_RELEASE_DATE_m4],[$date]/g' ./src/pm/hydra/version.m4));
 print("done\n");
 
 # Remove packages that are not being released
 print("===> Removing packages that are not being released... ");
 chdir("${root}/${pack}-${version}");
-run_cmd("rm -rf src/mpid/globus doc/notes src/pm/mpd/Zeroconf.py");
+run_cmd("rm -rf doc/notes src/pm/mpd/Zeroconf.py");
 
 chdir("${root}/${pack}-${version}/src/mpid/ch3/channels/nemesis/nemesis/netmod");
-my @nem_modules = qw(elan psm);
-run_cmd("rm -rf ".join(' ', map({$_ . "/*"} @nem_modules)));
+my @nem_modules = qw(elan);
+run_cmd("rm -rf ".join(' ', @nem_modules));
 for my $module (@nem_modules) {
-    # system to avoid problems with shell redirect in run_cmd
-    system(qq(echo "# Stub Makefile" > ${module}/Makefile.sm));
+    run_cmd("rm -rf $module");
+    run_cmd(q{perl -p -i -e '$_="" if m|^\s*include \$.*netmod/}.${module}.q{/Makefile.mk|' Makefile.mk});
 }
 print("done\n");
 
@@ -182,14 +203,7 @@ print("done\n");
 print("===> Creating configure in the main package... ");
 chdir("${root}/${pack}-${version}");
 {
-    # ./maint/updatefiles needs to be run twice; once without the
-    # -distrib option and once with.
-    my $cmd = "./maint/updatefiles";
-    $cmd .= " --with-autoconf=$with_autoconf" if $with_autoconf;
-    $cmd .= " --with-automake=$with_automake" if $with_automake;
-    run_cmd($cmd);
-
-    $cmd = "./maint/updatefiles -distrib";
+    my $cmd = "./autogen.sh";
     $cmd .= " --with-autoconf=$with_autoconf" if $with_autoconf;
     $cmd .= " --with-automake=$with_automake" if $with_automake;
     run_cmd($cmd);
@@ -199,8 +213,8 @@ print("done\n");
 # Disable unnecessary tests in the release tarball
 print("===> Disabling unnecessary tests in the main package... ");
 chdir("${root}/${pack}-${version}");
-run_cmd("sed -i 's/^perf\$/\#perf/g' test/mpi/testlist.in");
-run_cmd("sed -i 's/^large_message /\#large_message /g' test/mpi/pt2pt/testlist");
+run_cmd("perl -p -i -e 's/^perf\$/#perf/' test/mpi/testlist.in");
+run_cmd("perl -p -i -e 's/^large_message /#large_message /' test/mpi/pt2pt/testlist");
 print("done\n");
 
 # Remove unnecessary files
@@ -219,7 +233,7 @@ print("done\n");
 print("===> Configuring and making the secondary package... ");
 chdir("${root}/${pack}-${version}-tmp");
 {
-    my $cmd = "./maint/updatefiles";
+    my $cmd = "./autogen.sh";
     $cmd .= " --with-autoconf=$with_autoconf" if $with_autoconf;
     $cmd .= " --with-automake=$with_automake" if $with_automake;
     run_cmd($cmd);

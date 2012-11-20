@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
- * Copyright © 2010-2011 INRIA.  All rights reserved.
+ * Copyright © 2010-2012 inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
@@ -56,9 +56,30 @@ extern "C" {
 #define HWLOC_OBJ_PU HWLOC_NAME_CAPS(OBJ_PU)
 #define HWLOC_OBJ_MISC HWLOC_NAME_CAPS(OBJ_MISC)
 #define HWLOC_OBJ_GROUP HWLOC_NAME_CAPS(OBJ_GROUP)
+#define HWLOC_OBJ_BRIDGE HWLOC_NAME_CAPS(OBJ_BRIDGE)
+#define HWLOC_OBJ_PCI_DEVICE HWLOC_NAME_CAPS(OBJ_PCI_DEVICE)
+#define HWLOC_OBJ_OS_DEVICE HWLOC_NAME_CAPS(OBJ_OS_DEVICE)
 #define HWLOC_OBJ_TYPE_MAX HWLOC_NAME_CAPS(OBJ_TYPE_MAX)
-
 #define hwloc_obj_type_t HWLOC_NAME(obj_type_t)
+
+#define hwloc_obj_cache_type_e HWLOC_NAME(obj_cache_type_e)
+#define hwloc_obj_cache_type_t HWLOC_NAME(obj_cache_type_t)
+#define HWLOC_OBJ_CACHE_UNIFIED HWLOC_NAME_CAPS(OBJ_CACHE_UNIFIED)
+#define HWLOC_OBJ_CACHE_DATA HWLOC_NAME_CAPS(OBJ_CACHE_DATA)
+#define HWLOC_OBJ_CACHE_INSTRUCTION HWLOC_NAME_CAPS(OBJ_CACHE_INSTRUCTION)
+
+#define hwloc_obj_bridge_type_e HWLOC_NAME(obj_bridge_type_e)
+#define hwloc_obj_bridge_type_t HWLOC_NAME(obj_bridge_type_t)
+#define HWLOC_OBJ_BRIDGE_HOST HWLOC_NAME_CAPS(OBJ_BRIDGE_HOST)
+#define HWLOC_OBJ_BRIDGE_PCI HWLOC_NAME_CAPS(OBJ_BRIDGE_PCI)
+
+#define hwloc_obj_osdev_type_e HWLOC_NAME(obj_osdev_type_e)
+#define hwloc_obj_osdev_type_t HWLOC_NAME(obj_osdev_type_t)
+#define HWLOC_OBJ_OSDEV_BLOCK HWLOC_NAME_CAPS(OBJ_OSDEV_BLOCK)
+#define HWLOC_OBJ_OSDEV_GPU HWLOC_NAME_CAPS(OBJ_OSDEV_GPU)
+#define HWLOC_OBJ_OSDEV_NETWORK HWLOC_NAME_CAPS(OBJ_OSDEV_NETWORK)
+#define HWLOC_OBJ_OSDEV_OPENFABRICS HWLOC_NAME_CAPS(OBJ_OSDEV_OPENFABRICS)
+#define HWLOC_OBJ_OSDEV_DMA HWLOC_NAME_CAPS(OBJ_OSDEV_DMA)
 
 #define hwloc_compare_types HWLOC_NAME(compare_types)
 
@@ -77,6 +98,9 @@ extern "C" {
 #define hwloc_obj_attr_u HWLOC_NAME(obj_attr_u)
 #define hwloc_cache_attr_s HWLOC_NAME(cache_attr_s)
 #define hwloc_group_attr_s HWLOC_NAME(group_attr_s)
+#define hwloc_pcidev_attr_s HWLOC_NAME(pcidev_attr_s)
+#define hwloc_bridge_attr_s HWLOC_NAME(bridge_attr_s)
+#define hwloc_osdev_attr_s HWLOC_NAME(osdev_attr_s)
 
 #define hwloc_topology_init HWLOC_NAME(topology_init)
 #define hwloc_topology_load HWLOC_NAME(topology_load)
@@ -90,6 +114,10 @@ extern "C" {
 
 #define HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM HWLOC_NAME_CAPS(TOPOLOGY_FLAG_WHOLE_SYSTEM)
 #define HWLOC_TOPOLOGY_FLAG_IS_THISSYSTEM HWLOC_NAME_CAPS(TOPOLOGY_FLAG_IS_THISSYSTEM)
+#define HWLOC_TOPOLOGY_FLAG_IO_DEVICES HWLOC_NAME_CAPS(TOPOLOGY_FLAG_IO_DEVICES)
+#define HWLOC_TOPOLOGY_FLAG_IO_BRIDGES HWLOC_NAME_CAPS(TOPOLOGY_FLAG_IO_BRIDGES)
+#define HWLOC_TOPOLOGY_FLAG_WHOLE_IO HWLOC_NAME_CAPS(TOPOLOGY_FLAG_WHOLE_IO)
+#define HWLOC_TOPOLOGY_FLAG_ICACHES HWLOC_NAME_CAPS(TOPOLOGY_FLAG_ICACHES)
 
 #define hwloc_topology_set_flags HWLOC_NAME(topology_set_flags)
 #define hwloc_topology_set_fsroot HWLOC_NAME(topology_set_fsroot)
@@ -97,6 +125,7 @@ extern "C" {
 #define hwloc_topology_set_synthetic HWLOC_NAME(topology_set_synthetic)
 #define hwloc_topology_set_xml HWLOC_NAME(topology_set_xml)
 #define hwloc_topology_set_xmlbuffer HWLOC_NAME(topology_set_xmlbuffer)
+#define hwloc_topology_set_custom HWLOC_NAME(topology_set_custom)
 #define hwloc_topology_set_distance_matrix HWLOC_NAME(topology_set_distance_matrix)
 
 #define hwloc_topology_discovery_support HWLOC_NAME(topology_discovery_support)
@@ -106,13 +135,18 @@ extern "C" {
 #define hwloc_topology_get_support HWLOC_NAME(topology_get_support)
 #define hwloc_topology_export_xml HWLOC_NAME(topology_export_xml)
 #define hwloc_topology_export_xmlbuffer HWLOC_NAME(topology_export_xmlbuffer)
+#define hwloc_free_xmlbuffer HWLOC_NAME(free_xmlbuffer)
 
 #define hwloc_topology_insert_misc_object_by_cpuset HWLOC_NAME(topology_insert_misc_object_by_cpuset)
 #define hwloc_topology_insert_misc_object_by_parent HWLOC_NAME(topology_insert_misc_object_by_parent)
 
+#define hwloc_custom_insert_topology HWLOC_NAME(custom_insert_topology)
+#define hwloc_custom_insert_group_object_by_parent HWLOC_NAME(custom_insert_group_object_by_parent)
+
 #define hwloc_restrict_flags_e HWLOC_NAME(restrict_flags_e)
 #define HWLOC_RESTRICT_FLAG_ADAPT_DISTANCES HWLOC_NAME_CAPS(RESTRICT_FLAG_ADAPT_DISTANCES)
 #define HWLOC_RESTRICT_FLAG_ADAPT_MISC HWLOC_NAME_CAPS(RESTRICT_FLAG_ADAPT_MISC)
+#define HWLOC_RESTRICT_FLAG_ADAPT_IO HWLOC_NAME_CAPS(RESTRICT_FLAG_ADAPT_IO)
 #define hwloc_topology_restrict HWLOC_NAME(topology_restrict)
 
 #define hwloc_topology_get_depth HWLOC_NAME(topology_get_depth)
@@ -121,6 +155,9 @@ extern "C" {
 #define hwloc_get_type_depth_e HWLOC_NAME(get_type_depth_e)
 #define HWLOC_TYPE_DEPTH_UNKNOWN HWLOC_NAME_CAPS(TYPE_DEPTH_UNKNOWN)
 #define HWLOC_TYPE_DEPTH_MULTIPLE HWLOC_NAME_CAPS(TYPE_DEPTH_MULTIPLE)
+#define HWLOC_TYPE_DEPTH_BRIDGE HWLOC_NAME_CAPS(TYPE_DEPTH_BRIDGE)
+#define HWLOC_TYPE_DEPTH_PCI_DEVICE HWLOC_NAME_CAPS(TYPE_DEPTH_PCI_DEVICE)
+#define HWLOC_TYPE_DEPTH_OS_DEVICE HWLOC_NAME_CAPS(TYPE_DEPTH_OS_DEVICE)
 
 #define hwloc_get_depth_type HWLOC_NAME(get_depth_type)
 #define hwloc_get_nbobjs_by_depth HWLOC_NAME(get_nbobjs_by_depth)
@@ -138,6 +175,7 @@ extern "C" {
 #define hwloc_obj_snprintf HWLOC_NAME(obj_snprintf)
 #define hwloc_obj_cpuset_snprintf HWLOC_NAME(obj_cpuset_snprintf)
 #define hwloc_obj_get_info_by_name HWLOC_NAME(obj_get_info_by_name)
+#define hwloc_obj_add_info HWLOC_NAME(obj_add_info)
 
 #define HWLOC_CPUBIND_PROCESS HWLOC_NAME_CAPS(CPUBIND_PROCESS)
 #define HWLOC_CPUBIND_THREAD HWLOC_NAME_CAPS(CPUBIND_THREAD)
@@ -191,9 +229,17 @@ extern "C" {
 #define hwloc_alloc HWLOC_NAME(alloc)
 #define hwloc_free HWLOC_NAME(free)
 
+#define hwloc_get_non_io_ancestor_obj HWLOC_NAME(get_non_io_ancestor_obj)
+#define hwloc_get_next_pcidev HWLOC_NAME(get_next_pcidev)
+#define hwloc_get_pcidev_by_busid HWLOC_NAME(get_pcidev_by_busid)
+#define hwloc_get_pcidev_by_busidstring HWLOC_NAME(get_pcidev_by_busidstring)
+#define hwloc_get_next_osdev HWLOC_NAME(get_next_osdev)
+#define hwloc_get_next_bridge HWLOC_NAME(get_next_bridge)
+#define hwloc_bridge_covers_pcibus HWLOC_NAME(bridge_covers_pcibus)
+#define hwloc_get_hostbridge_by_pcibus HWLOC_NAME(get_hostbridge_by_pcibus)
+
 /* hwloc/bitmap.h */
 
-#define hwloc_bitmap HWLOC_NAME(bitmap)
 #define hwloc_bitmap_s HWLOC_NAME(bitmap_s)
 #define hwloc_bitmap_t HWLOC_NAME(bitmap_t)
 #define hwloc_const_bitmap_t HWLOC_NAME(const_bitmap_t)
@@ -245,53 +291,6 @@ extern "C" {
 #define hwloc_bitmap_compare HWLOC_NAME(bitmap_compare)
 #define hwloc_bitmap_weight HWLOC_NAME(bitmap_weight)
 
-/* hwloc/cpuset.h -- deprecated but still available */
-
-#define hwloc_cpuset HWLOC_NAME(cpuset)
-#define hwloc_cpuset_s HWLOC_NAME(cpuset_s)
-#define hwloc_cpuset_t HWLOC_NAME(cpuset_t)
-#define hwloc_const_cpuset_t HWLOC_NAME(const_cpuset_t)
-
-#define hwloc_cpuset_alloc HWLOC_NAME(cpuset_alloc)
-#define hwloc_cpuset_free HWLOC_NAME(cpuset_free)
-#define hwloc_cpuset_dup HWLOC_NAME(cpuset_dup)
-#define hwloc_cpuset_copy HWLOC_NAME(cpuset_copy)
-#define hwloc_cpuset_snprintf HWLOC_NAME(cpuset_snprintf)
-#define hwloc_cpuset_asprintf HWLOC_NAME(cpuset_asprintf)
-#define hwloc_cpuset_from_string HWLOC_NAME(cpuset_from_string)
-#define hwloc_cpuset_zero HWLOC_NAME(cpuset_zero)
-#define hwloc_cpuset_fill HWLOC_NAME(cpuset_fill)
-#define hwloc_cpuset_from_ulong HWLOC_NAME(cpuset_from_ulong)
-
-#define hwloc_cpuset_from_ith_ulong HWLOC_NAME(cpuset_from_ith_ulong)
-#define hwloc_cpuset_to_ulong HWLOC_NAME(cpuset_to_ulong)
-#define hwloc_cpuset_to_ith_ulong HWLOC_NAME(cpuset_to_ith_ulong)
-#define hwloc_cpuset_cpu HWLOC_NAME(cpuset_cpu)
-#define hwloc_cpuset_all_but_cpu HWLOC_NAME(cpuset_all_but_cpu)
-#define hwloc_cpuset_set HWLOC_NAME(cpuset_set)
-#define hwloc_cpuset_set_range HWLOC_NAME(cpuset_set_range)
-#define hwloc_cpuset_set_ith_ulong HWLOC_NAME(cpuset_set_ith_ulong)
-#define hwloc_cpuset_clr HWLOC_NAME(cpuset_clr)
-#define hwloc_cpuset_clr_range HWLOC_NAME(cpuset_clr_range)
-#define hwloc_cpuset_isset HWLOC_NAME(cpuset_isset)
-#define hwloc_cpuset_iszero HWLOC_NAME(cpuset_iszero)
-#define hwloc_cpuset_isfull HWLOC_NAME(cpuset_isfull)
-#define hwloc_cpuset_isequal HWLOC_NAME(cpuset_isequal)
-#define hwloc_cpuset_intersects HWLOC_NAME(cpuset_intersects)
-#define hwloc_cpuset_isincluded HWLOC_NAME(cpuset_isincluded)
-#define hwloc_cpuset_or HWLOC_NAME(cpuset_or)
-#define hwloc_cpuset_and HWLOC_NAME(cpuset_and)
-#define hwloc_cpuset_andnot HWLOC_NAME(cpuset_andnot)
-#define hwloc_cpuset_xor HWLOC_NAME(cpuset_xor)
-#define hwloc_cpuset_not HWLOC_NAME(cpuset_not)
-#define hwloc_cpuset_first HWLOC_NAME(cpuset_first)
-#define hwloc_cpuset_last HWLOC_NAME(cpuset_last)
-#define hwloc_cpuset_next HWLOC_NAME(cpuset_next)
-#define hwloc_cpuset_singlify HWLOC_NAME(cpuset_singlify)
-#define hwloc_cpuset_compare_first HWLOC_NAME(cpuset_compare_first)
-#define hwloc_cpuset_compare HWLOC_NAME(cpuset_compare)
-#define hwloc_cpuset_weight HWLOC_NAME(cpuset_weight)
-
 /* hwloc/helper.h */
 
 #define hwloc_get_type_or_below_depth HWLOC_NAME(get_type_or_below_depth)
@@ -318,6 +317,7 @@ extern "C" {
 #define hwloc_get_obj_covering_cpuset HWLOC_NAME(get_obj_covering_cpuset)
 #define hwloc_get_next_obj_covering_cpuset_by_depth HWLOC_NAME(get_next_obj_covering_cpuset_by_depth)
 #define hwloc_get_next_obj_covering_cpuset_by_type HWLOC_NAME(get_next_obj_covering_cpuset_by_type)
+#define hwloc_get_cache_type_depth HWLOC_NAME(get_cache_type_depth)
 #define hwloc_get_cache_covering_cpuset HWLOC_NAME(get_cache_covering_cpuset)
 #define hwloc_get_shared_cache_covering_obj HWLOC_NAME(get_shared_cache_covering_obj)
 #define hwloc_get_closest_objs HWLOC_NAME(get_closest_objs)
@@ -358,10 +358,6 @@ extern "C" {
 #define hwloc_nodeset_to_linux_libnuma_bitmask HWLOC_NAME(nodeset_to_linux_libnuma_bitmask)
 #define hwloc_cpuset_from_linux_libnuma_bitmask HWLOC_NAME(cpuset_from_linux_libnuma_bitmask)
 #define hwloc_nodeset_from_linux_libnuma_bitmask HWLOC_NAME(nodeset_from_linux_libnuma_bitmask)
-#define hwloc_cpuset_to_linux_libnuma_nodemask HWLOC_NAME(cpuset_to_linux_libnuma_nodemask)
-#define hwloc_nodeset_to_linux_libnuma_nodemask HWLOC_NAME(nodeset_to_linux_libnuma_nodemask)
-#define hwloc_cpuset_from_linux_libnuma_nodemask HWLOC_NAME(cpuset_from_linux_libnuma_nodemask)
-#define hwloc_nodeset_from_linux_libnuma_nodemask HWLOC_NAME(nodeset_from_linux_libnuma_nodemask)
 
 /* linux.h */
 
@@ -372,6 +368,7 @@ extern "C" {
 /* openfabrics-verbs.h */
 
 #define hwloc_ibv_get_device_cpuset HWLOC_NAME(ibv_get_device_cpuset)
+#define hwloc_ibv_get_device_osdev_by_name HWLOC_NAME(ibv_get_device_osdev_by_name)
 
 /* myriexpress.h */
 
@@ -380,11 +377,15 @@ extern "C" {
 
 /* cuda.h */
 
+#define hwloc_cuda_get_device_pci_ids HWLOC_NAME(cuda_get_device_pci_ids)
 #define hwloc_cuda_get_device_cpuset HWLOC_NAME(cuda_get_device_cpuset)
+#define hwloc_cuda_get_device_pcidev HWLOC_NAME(cuda_get_device_pcidev)
 
 /* cudart.h */
 
+#define hwloc_cudart_get_device_pci_ids HWLOC_NAME(cudart_get_device_pci_ids)
 #define hwloc_cudart_get_device_cpuset HWLOC_NAME(cudart_get_device_cpuset)
+#define hwloc_cudart_get_device_pcidev HWLOC_NAME(cudart_get_device_pcidev)
 
 /* private/debug.h */
 
@@ -405,6 +406,17 @@ extern "C" {
 #define hwloc_have_cpuid HWLOC_NAME(have_cpuid)
 #define hwloc_cpuid HWLOC_NAME(cpuid)
 
+/* private/xml.h */
+#define hwloc_nolibxml_backend_init HWLOC_NAME(nolibxml_backend_init)
+#define hwloc_nolibxml_export_file HWLOC_NAME(nolibxml_export_file)
+#define hwloc_nolibxml_export_buffer HWLOC_NAME(nolibxml_export_buffer)
+#define hwloc_nolibxml_free_buffer HWLOC_NAME(nolibxml_free_buffer)
+
+#define hwloc_libxml_backend_init HWLOC_NAME(libxml_backend_init)
+#define hwloc_libxml_export_file HWLOC_NAME(libxml_export_file)
+#define hwloc_libxml_export_buffer HWLOC_NAME(libxml_export_buffer)
+#define hwloc_libxml_free_buffer HWLOC_NAME(libxml_free_buffer)
+
 /* private/private.h */
 
 #define hwloc_ignore_type_e HWLOC_NAME(ignore_type_e)
@@ -419,29 +431,33 @@ extern "C" {
 
 #define HWLOC_BACKEND_NONE HWLOC_NAME_CAPS(BACKEND_NONE)
 #define HWLOC_BACKEND_SYNTHETIC HWLOC_NAME_CAPS(BACKEND_SYNTHETIC)
-#define HWLOC_BACKEND_SYSFS HWLOC_NAME_CAPS(BACKEND_SYSFS)
+#define HWLOC_BACKEND_LINUXFS HWLOC_NAME_CAPS(BACKEND_LINUXFS)
 #define HWLOC_BACKEND_XML HWLOC_NAME_CAPS(BACKEND_XML)
 #define HWLOC_BACKEND_MAX HWLOC_NAME_CAPS(BACKEND_MAX)
 
 #define hwloc_backend_params_u HWLOC_NAME(backend_params_u)
-#define hwloc_backend_params_sysfs_s HWLOC_NAME(backend_params_sysfs_s)
+#define hwloc_backend_params_linuxfs_s HWLOC_NAME(backend_params_linuxfs_s)
 #define hwloc_backend_params_osf HWLOC_NAME(backend_params_osf)
 #define hwloc_backend_params_xml_s HWLOC_NAME(backend_params_xml_s)
 #define hwloc_backend_params_synthetic_s HWLOC_NAME(backend_params_synthetic_s)
 
+#define hwloc_xml_imported_distances_s HWLOC_NAME(xml_imported_distances_s)
+
 #define hwloc_setup_pu_level HWLOC_NAME(setup_pu_level)
-#define hwloc_setup_misc_level_from_distances HWLOC_NAME(setup_misc_level_from_distances)
 #define hwloc_get_sysctlbyname HWLOC_NAME(get_sysctlbyname)
 #define hwloc_get_sysctl HWLOC_NAME(get_sysctl)
 #define hwloc_fallback_nbprocessors HWLOC_NAME(fallback_nbprocessors)
+#define hwloc_connect_children HWLOC_NAME(connect_children)
+#define hwloc_connect_levels HWLOC_NAME(connect_levels)
 
-#define hwloc_look_linux HWLOC_NAME(look_linux)
-#define hwloc_set_linux_hooks HWLOC_NAME(set_linux_hooks)
-#define hwloc_backend_sysfs_init HWLOC_NAME(backend_sysfs_init)
-#define hwloc_backend_sysfs_exit HWLOC_NAME(backend_sysfs_exit)
+#define hwloc_look_linuxfs HWLOC_NAME(look_linuxfs)
+#define hwloc_set_linuxfs_hooks HWLOC_NAME(set_linuxfs_hooks)
+#define hwloc_backend_linuxfs_init HWLOC_NAME(backend_linuxfs_init)
+#define hwloc_backend_linuxfs_exit HWLOC_NAME(backend_linuxfs_exit)
+#define hwloc_linuxfs_pci_lookup_osdevices HWLOC_NAME(linuxfs_pci_lookup_osdevices)
+#define hwloc_linuxfs_get_pcidev_cpuset HWLOC_NAME(linuxfs_get_pcidev_cpuset)
 
 #define hwloc_backend_xml_init HWLOC_NAME(backend_xml_init)
-#define hwloc_xml_check_distances HWLOC_NAME(xml_check_distances)
 #define hwloc_look_xml HWLOC_NAME(look_xml)
 #define hwloc_backend_xml_exit HWLOC_NAME(backend_xml_exit)
 
@@ -466,6 +482,8 @@ extern "C" {
 #define hwloc_look_hpux HWLOC_NAME(look_hpux)
 #define hwloc_set_hpux_hooks HWLOC_NAME(set_hpux_hooks)
 
+#define hwloc_look_libpci HWLOC_NAME(look_libpci)
+
 #define hwloc_look_x86 HWLOC_NAME(look_x86)
 
 #define hwloc_backend_synthetic_init HWLOC_NAME(backend_synthetic_init)
@@ -475,15 +493,13 @@ extern "C" {
 #define hwloc_insert_object_by_cpuset HWLOC_NAME(insert_object_by_cpuset)
 #define hwloc_report_error_t HWLOC_NAME(report_error_t)
 #define hwloc_report_os_error HWLOC_NAME(report_os_error)
+#define hwloc_hide_errors HWLOC_NAME(hide_errors)
 #define hwloc__insert_object_by_cpuset HWLOC_NAME(_insert_object_by_cpuset)
 #define hwloc_insert_object_by_parent HWLOC_NAME(insert_object_by_parent)
-#define hwloc_add_object_info HWLOC_NAME(add_object_info)
 #define hwloc_add_uname_info HWLOC_NAME(add_uname_info)
-#define hwloc_free_object HWLOC_NAME(free_object)
 #define hwloc_bitmap_printf_value HWLOC_NAME(bitmap_printf_value)
 #define hwloc_alloc_setup_object HWLOC_NAME(alloc_setup_object)
 #define hwloc_free_unlinked_object HWLOC_NAME(free_unlinked_object)
-#define hwloc_setup_level HWLOC_NAME(setup_level)
 
 #define hwloc_alloc_heap HWLOC_NAME(alloc_heap)
 #define hwloc_alloc_mmap HWLOC_NAME(alloc_mmap)
@@ -491,15 +507,17 @@ extern "C" {
 #define hwloc_free_mmap HWLOC_NAME(free_mmap)
 #define hwloc_alloc_or_fail HWLOC_NAME(alloc_or_fail)
 
-#define hwloc_topology_distances_init HWLOC_NAME(topology_distances_init)
-#define hwloc_topology_distances_clear HWLOC_NAME(topology_distances_clear)
-#define hwloc_topology_distances_destroy HWLOC_NAME(topology_distances_destroy)
-#define hwloc_topology__set_distance_matrix HWLOC_NAME(topology__set_distance_matrix)
-#define hwloc_store_distances_from_env HWLOC_NAME(store_distances_from_env)
-#define hwloc_convert_distances_indexes_into_objects HWLOC_NAME(convert_distances_indexes_into_objects)
-#define hwloc_finalize_logical_distances HWLOC_NAME(finalize_logical_distances)
-#define hwloc_restrict_distances HWLOC_NAME(restrict_distances)
-#define hwloc_free_logical_distances HWLOC_NAME(free_logical_distances)
+#define hwloc_distances_init HWLOC_NAME(distances_init)
+#define hwloc_distances_clear HWLOC_NAME(distances_clear)
+#define hwloc_distances_destroy HWLOC_NAME(distances_destroy)
+#define hwloc_distances_set HWLOC_NAME(distances_set)
+#define hwloc_distances_set_from_env HWLOC_NAME(distances_set_from_env)
+#define hwloc_distances_restrict_os HWLOC_NAME(distances_restrict_os)
+#define hwloc_distances_restrict HWLOC_NAME(distances_restrict)
+#define hwloc_distances_finalize_os HWLOC_NAME(distances_finalize_os)
+#define hwloc_distances_finalize_logical HWLOC_NAME(distances_finalize_logical)
+#define hwloc_clear_object_distances HWLOC_NAME(clear_object_distances)
+#define hwloc_clear_object_distances_one HWLOC_NAME(clear_object_distances_one)
 #define hwloc_group_by_distances HWLOC_NAME(group_by_distances)
 
 #endif /* HWLOC_SYM_TRANSFORM */

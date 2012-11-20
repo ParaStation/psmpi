@@ -18,6 +18,8 @@ MPIU_Object_alloc_t MPID_Group_mem = { 0, 0, 0, 0, MPID_GROUP,
 				      sizeof(MPID_Group), MPID_Group_direct,
 				       MPID_GROUP_PREALLOC};
 
+MPID_Group * const MPID_Group_empty = &MPID_Group_builtin[0];
+
 int MPIR_Group_init(void)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -238,7 +240,7 @@ void MPIR_Group_setup_lpid_pairs( MPID_Group *group_ptr1,
  * must be used by only on thread at a time (per group).  For the SINGLE_CS
  * case, that means that the SINGLE_CS must be held on entry to this routine.
  */
-int MPIR_Group_check_valid_ranks( MPID_Group *group_ptr, int ranks[], int n )
+int MPIR_Group_check_valid_ranks( MPID_Group *group_ptr, const int ranks[], int n )
 {
     int mpi_errno = MPI_SUCCESS, i;
 

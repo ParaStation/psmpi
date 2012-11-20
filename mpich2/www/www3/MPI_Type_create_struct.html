@@ -10,9 +10,9 @@ Create an MPI datatype from a general set of datatypes, displacements, and block
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Type_create_struct(int count,
-                         int array_of_blocklengths[],
-                         MPI_Aint array_of_displacements[],
-                         MPI_Datatype array_of_types[],
+                         MPICH2_CONST int array_of_blocklengths[],
+                         MPICH2_CONST MPI_Aint array_of_displacements[],
+                         MPICH2_CONST MPI_Datatype array_of_types[],
                          MPI_Datatype *newtype)
 </PRE>
 <H2>Input Parameters</H2>
@@ -73,5 +73,5 @@ identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 <DL><DT><B>MPI_ERR_TYPE </B> <DD> Invalid datatype argument.  May be an uncommitted 
 MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 </DL>
-<P><B>Location:</B>type_create_struct.c<P>
+<P><B>Location:</B>src/mpi/datatype/type_create_struct.c<P>
 </BODY></HTML>

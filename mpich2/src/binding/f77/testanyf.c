@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_testany( MPI_Fint *, MPI_Fint *, MPI_Fi
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Testany
 #define MPI_Testany PMPI_Testany 
 
@@ -198,5 +196,5 @@ FORT_DLL_SPEC void FORT_CALL mpi_testany_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint
     *ierr = MPI_Testany( *v1, (MPI_Request *)(v2),  &l3, &l4, (MPI_Status *)v5 );
     *v3 = (MPI_Fint)l3;
     if (l3 >= 0) *v3 = *v3 + 1;
-    *v4 = MPIR_TO_FLOG(l4);
+    if (*ierr == MPI_SUCCESS) *v4 = MPIR_TO_FLOG(l4);
 }

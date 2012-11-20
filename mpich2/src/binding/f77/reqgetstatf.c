@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_request_get_status( MPI_Fint *, MPI_Fin
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Request_get_status
 #define MPI_Request_get_status PMPI_Request_get_status 
 
@@ -187,5 +185,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_request_get_status( MPI_Fint *, MPI_Fin
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_request_get_status_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *ierr ){
-    *ierr = MPI_Request_get_status( *v1, v2, (MPI_Status *)(v3) );
+    int l2;
+
+#ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
+    if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
+#endif
+
+    if (v3 == MPI_F_STATUS_IGNORE) { v3 = (MPI_Fint*)MPI_STATUS_IGNORE; }
+    *ierr = MPI_Request_get_status( *v1, &l2, (MPI_Status *)v3 );
+    if (*ierr == MPI_SUCCESS) *v2 = MPIR_TO_FLOG(l2);
 }

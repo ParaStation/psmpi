@@ -50,7 +50,7 @@ int MPIR_Wait_impl(MPI_Request *request, MPI_Status *status)
 	{
 	    mpi_errno = MPIR_Grequest_progress_poke(1, &request_ptr, status);
 	    if (request_ptr->kind == MPID_UREQUEST &&
-                request_ptr->wait_fn != NULL)
+                request_ptr->greq_fns->wait_fn != NULL)
 	    {
 		if (mpi_errno) {
 		    /* --BEGIN ERROR HANDLING-- */
@@ -130,10 +130,7 @@ int MPI_Wait(MPI_Request *request, MPI_Status *status)
 	    MPIR_ERRTEST_ARGNULL(request, "request", mpi_errno);
 	    /* NOTE: MPI_STATUS_IGNORE != NULL */
 	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
-	    if (mpi_errno) goto fn_fail;
-
 	    MPIR_ERRTEST_REQUEST_OR_NULL(*request, mpi_errno);
-	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }

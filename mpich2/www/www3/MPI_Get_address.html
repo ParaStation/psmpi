@@ -9,7 +9,7 @@
 Get the address of a location in memory 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Get_address(void *location, MPI_Aint *address)
+int MPI_Get_address(MPICH2_CONST void *location, MPI_Aint *address)
 </PRE>
 <H2>Input Parameter</H2>
 <DL><DT><B>location </B> <DD> location in caller memory (choice)
@@ -75,5 +75,5 @@ possible.
 <DL><DT><B>MPI_ERR_OTHER </B> <DD> Other error; use <TT>MPI_Error_string</TT> to get more information
 about this error code. 
 </DL>
-<P><B>Location:</B>get_address.c<P>
+<P><B>Location:</B>src/mpi/datatype/get_address.c<P>
 </BODY></HTML>

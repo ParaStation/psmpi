@@ -56,7 +56,7 @@ with this routine.
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Add_error_string(int errorcode, char *string)
+int MPI_Add_error_string(int errorcode, MPICH2_CONST char *string)
 {
     static const char FCNAME[] = "MPI_Add_error_string";
     int mpi_errno = MPI_SUCCESS;
@@ -73,7 +73,6 @@ int MPI_Add_error_string(int errorcode, char *string)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_ARGNULL(string,"string",mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

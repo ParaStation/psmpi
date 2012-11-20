@@ -9,7 +9,7 @@
 Collective write using individual file pointer 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_File_write_all(MPI_File mpi_fh, void *buf, int count, 
+int MPI_File_write_all(MPI_File mpi_fh, MPICH2_CONST void *buf, int count,
                        MPI_Datatype datatype, MPI_Status *status)
 </PRE>
 <H2>Input Parameters</H2>
@@ -35,5 +35,5 @@ in C.  In Fortran, MPI routines are subroutines, and are invoked with the
 <P>
 All MPI objects (e.g., <TT>MPI_Datatype</TT>, <TT>MPI_Comm</TT>) are of type <TT>INTEGER
 </TT>in Fortran.
-<P><B>Location:</B>write_all.c<P>
+<P><B>Location:</B>mpi-io/write_all.c<P>
 </BODY></HTML>

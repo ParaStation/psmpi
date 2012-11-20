@@ -9,8 +9,8 @@
 Packs a datatype into contiguous memory, using the external32 format 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Pack_external(char *datarep,
-                     void *inbuf,
+int MPI_Pack_external(MPICH2_CONST char *datarep,
+                     MPICH2_CONST void *inbuf,
                      int incount,
                      MPI_Datatype datatype,
                      void *outbuf,
@@ -82,5 +82,5 @@ identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 <DL><DT><B>MPI_ERR_COUNT </B> <DD> Invalid count argument.  Count arguments must be 
 non-negative; a count of zero is often valid.
 </DL>
-<P><B>Location:</B>pack_external.c<P>
+<P><B>Location:</B>src/mpi/datatype/pack_external.c<P>
 </BODY></HTML>

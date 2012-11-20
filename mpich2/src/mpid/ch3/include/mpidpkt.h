@@ -7,6 +7,8 @@
 #ifndef HAVE_MPIDPKT_H
 #define HAVE_MPIDPKT_H
 
+#include "oputil.h"
+
 /* Enable the use of data within the message packet for small messages */
 #define USE_EAGER_SHORT
 #define MPIDI_EAGER_SHORT_INTS 4
@@ -15,6 +17,36 @@
 
 /* This is the number of ints that can be carried within an RMA packet */
 #define MPIDI_RMA_IMMED_INTS 1
+
+/* Union over all types (integer, logical, and multi-language types) that are
+   allowed in a CAS operation.  This is used to allocate enough space in the
+   packet header for immediate data.  */
+typedef union {
+#define MPIR_OP_TYPE_MACRO(mpi_type_, c_type_, type_name_) c_type_ cas_##type_name_;
+        MPIR_OP_TYPE_GROUP(C_INTEGER)
+        MPIR_OP_TYPE_GROUP(FORTRAN_INTEGER)
+        MPIR_OP_TYPE_GROUP(LOGICAL)
+        MPIR_OP_TYPE_GROUP(BYTE)
+        MPIR_OP_TYPE_GROUP(C_INTEGER_EXTRA)
+        MPIR_OP_TYPE_GROUP(FORTRAN_INTEGER_EXTRA)
+        MPIR_OP_TYPE_GROUP(LOGICAL_EXTRA)
+        MPIR_OP_TYPE_GROUP(BYTE_EXTRA)
+#undef MPIR_OP_TYPE_MACRO
+} MPIDI_CH3_CAS_Immed_u;
+
+/* Union over all types (all predefined types) that are allowed in a
+   Fetch-and-op operation.  This can be too large for the packet header, so we
+   limit the immediate space in the header to FOP_IMMED_INTS. */
+
+#define MPIDI_RMA_FOP_IMMED_INTS 2
+#define MPIDI_RMA_FOP_RESP_IMMED_INTS 8
+
+typedef union {
+#define MPIR_OP_TYPE_MACRO(mpi_type_, c_type_, type_name_) c_type_ fop##type_name_;
+        MPIR_OP_TYPE_GROUP_ALL_BASIC
+        MPIR_OP_TYPE_GROUP_ALL_EXTRA
+#undef MPIR_OP_TYPE_MACRO
+} MPIDI_CH3_FOP_Immed_u;
 
 /*
  * MPIDI_CH3_Pkt_type_t
@@ -50,6 +82,11 @@ typedef enum MPIDI_CH3_Pkt_type
                                      /* RMA Packets end here */
     MPIDI_CH3_PKT_ACCUM_IMMED,     /* optimization for short accumulate */
     /* FIXME: Add PUT, GET_IMMED packet types */
+    MPIDI_CH3_PKT_CAS,
+    MPIDI_CH3_PKT_CAS_UNLOCK,
+    MPIDI_CH3_PKT_CAS_RESP,
+    MPIDI_CH3_PKT_FOP,
+    MPIDI_CH3_PKT_FOP_RESP,
     MPIDI_CH3_PKT_FLOW_CNTL_UPDATE,  /* FIXME: Unused */
     MPIDI_CH3_PKT_CLOSE,
     MPIDI_CH3_PKT_END_CH3
@@ -219,6 +256,59 @@ typedef struct MPIDI_CH3_Pkt_accum_immed
 }
 MPIDI_CH3_Pkt_accum_immed_t;
 
+typedef struct MPIDI_CH3_Pkt_cas
+{
+    MPIDI_CH3_Pkt_type_t type;
+    MPI_Datatype datatype;
+    void *addr;
+    MPI_Request request_handle;
+    MPI_Win target_win_handle; /* Used in the last RMA operation in each
+                                * epoch for decrementing rma op counter in
+                                * active target rma and for unlocking window 
+                                * in passive target rma. Otherwise set to NULL*/
+
+                               /* source_win_handle is omitted here to reduce
+                                * the packet size.  If this is the last CAS
+                                * packet, the type will be set to CAS_UNLOCK */
+    MPIDI_CH3_CAS_Immed_u origin_data;
+    MPIDI_CH3_CAS_Immed_u compare_data;
+}
+MPIDI_CH3_Pkt_cas_t;
+
+typedef struct MPIDI_CH3_Pkt_cas_resp
+{
+    MPIDI_CH3_Pkt_type_t type;
+    MPI_Request request_handle;
+    MPIDI_CH3_CAS_Immed_u data;
+}
+MPIDI_CH3_Pkt_cas_resp_t;
+
+typedef struct MPIDI_CH3_Pkt_fop
+{
+    MPIDI_CH3_Pkt_type_t type;
+    MPI_Datatype datatype;
+    void *addr;
+    MPI_Op op;
+    MPI_Request request_handle;
+    MPI_Win target_win_handle; /* Used in the last RMA operation in each
+                                * epoch for decrementing rma op counter in
+                                * active target rma and for unlocking window 
+                                * in passive target rma. Otherwise set to NULL*/
+    MPI_Win source_win_handle; /* Used in the last RMA operation in an
+                                * epoch in the case of passive target rma
+                                * with shared locks. Otherwise set to NULL*/
+    int origin_data[MPIDI_RMA_FOP_IMMED_INTS];
+}
+MPIDI_CH3_Pkt_fop_t;
+
+typedef struct MPIDI_CH3_Pkt_fop_resp
+{
+    MPIDI_CH3_Pkt_type_t type;
+    MPI_Request request_handle;
+    int data[MPIDI_RMA_FOP_RESP_IMMED_INTS];
+}
+MPIDI_CH3_Pkt_fop_resp_t;
+
 typedef struct MPIDI_CH3_Pkt_lock
 {
     MPIDI_CH3_Pkt_type_t type;
@@ -310,6 +400,10 @@ typedef union MPIDI_CH3_Pkt
     MPIDI_CH3_Pkt_lock_get_unlock_t lock_get_unlock;
     MPIDI_CH3_Pkt_lock_accum_unlock_t lock_accum_unlock;
     MPIDI_CH3_Pkt_close_t close;
+    MPIDI_CH3_Pkt_cas_t cas;
+    MPIDI_CH3_Pkt_cas_resp_t cas_resp;
+    MPIDI_CH3_Pkt_fop_t fop;
+    MPIDI_CH3_Pkt_fop_resp_t fop_resp;
 # if defined(MPIDI_CH3_PKT_DECL)
     MPIDI_CH3_PKT_DECL
 # endif

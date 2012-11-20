@@ -48,7 +48,7 @@
 .N fortran
   
   @*/
-int MPI_Register_datarep(char *name,
+int MPI_Register_datarep(MPICH2_CONST char *name,
 			 MPI_Datarep_conversion_function *read_conv_fn,
 			 MPI_Datarep_conversion_function *write_conv_fn,
 			 MPI_Datarep_extent_function *extent_fn,
@@ -110,14 +110,7 @@ int MPI_Register_datarep(char *name,
     /* --END ERROR HANDLING-- */
 
     datarep = ADIOI_Malloc(sizeof(ADIOI_Datarep));
-/* need to ifdef MPICH2 because if it is MPICH2 in memory tracing mode, it will complain 
-   about the use of strdup instead of MPIU_Strdup. (mpiimpl.h is being included in mpioimpl.h 
-   ifdef MPICH2 */
-#ifdef MPICH2
-    datarep->name = MPIU_Strdup(name);
-#else
     datarep->name = ADIOI_Strdup(name);
-#endif
     datarep->state         = state;
     datarep->read_conv_fn  = read_conv_fn;
     datarep->write_conv_fn = write_conv_fn;

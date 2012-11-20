@@ -18,37 +18,6 @@ struct fwd_hash {
     struct fwd_hash *next;
 };
 
-static char localhost[MAX_HOSTNAME_LEN] = { 0 };
-static char shortlocal[MAX_HOSTNAME_LEN] = { 0 };
-
-static HYD_status sock_localhost_init(void)
-{
-    static int init = 1;
-    int i;
-    HYD_status status = HYD_SUCCESS;
-
-    if (init) {
-        init = 0;
-
-        status = HYDU_gethostname(localhost);
-        HYDU_ERR_POP(status, "unable to get local hostname\n");
-
-        strcpy(shortlocal, localhost);
-        for (i = 0; shortlocal[i]; i++) {
-            if (shortlocal[i] == '.') {
-                shortlocal[i] = 0;
-                break;
-            }
-        }
-    }
-
-  fn_exit:
-    return status;
-
-  fn_fail:
-    goto fn_exit;
-}
-
 HYD_status HYDU_sock_listen(int *listen_fd, char *port_range, uint16_t * port)
 {
     struct sockaddr_in sa;
@@ -195,8 +164,10 @@ HYD_status HYDU_sock_connect(const char *host, uint16_t port, int *fd, int retri
     } while (1);
 
     if (ret < 0) {
-        status = sock_localhost_init();
-        HYDU_ERR_POP(status, "unable to initialize sock local information\n");
+        char localhost[MAX_HOSTNAME_LEN] = { 0 };
+
+        status = HYDU_gethostname(localhost);
+        HYDU_ERR_POP(status, "unable to get local hostname\n");
 
         HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR,
                             "unable to connect from \"%s\" to \"%s\" (%s)\n",
@@ -413,7 +384,8 @@ HYD_status HYDU_sock_forward_stdio(int in, int out, int *closed)
     *closed = 0;
     if (fwd_hash->buf_count == 0) {
         /* there is no data in the buffer, read something into it */
-        status = HYDU_sock_read(in, fwd_hash->buf, HYD_TMPBUF_SIZE, &count, closed, 0);
+        status = HYDU_sock_read(in, fwd_hash->buf, HYD_TMPBUF_SIZE, &count, closed,
+                                HYDU_SOCK_COMM_NONE);
         HYDU_ERR_POP(status, "read error\n");
 
         if (!*closed) {
@@ -519,22 +491,23 @@ HYD_status HYDU_sock_is_local(char *host, int *is_local)
     char *ip1 = NULL, *ip2 = NULL;
     char buf1[INET_ADDRSTRLEN], buf2[INET_ADDRSTRLEN];
     struct sockaddr_in *sa_ptr, sa;
-    char shorthost[MAX_HOSTNAME_LEN] = { 0 };
-    int i;
 
 #if defined(HAVE_GETIFADDRS)
     struct ifaddrs *ifaddr, *ifa;
 #endif /* HAVE_GETIFADDRS */
 
+#if defined (HAVE_INET_NTOP)
+    int remote_access;
+#endif /* HAVE_INET_NTOP */
+
     HYD_status status = HYD_SUCCESS;
 
     *is_local = 0;
 
-    ht = gethostbyname(host);
     /* If we are unable to resolve the remote host name, it need not
      * be an error. It could mean that the user is using an alias for
      * the hostname (e.g., an ssh config alias) */
-    if (ht == NULL)
+    if ((ht = gethostbyname(host)) == NULL)
         goto fn_exit;
 
     memset((char *) &sa, 0, sizeof(struct sockaddr_in));
@@ -544,6 +517,14 @@ HYD_status HYDU_sock_is_local(char *host, int *is_local)
     ip1 = HYDU_strdup((char *) inet_ntop(AF_INET, (const void *) &sa.sin_addr, buf1,
                                          MAX_HOSTNAME_LEN));
     HYDU_ASSERT(ip1, status);
+
+    status = HYDU_sock_remote_access(ip1, &remote_access);
+    HYDU_ERR_POP(status, "unable to check if the IP is remotely accessible\n");
+
+    if (!remote_access) {
+        *is_local = 1;
+        goto fn_exit;
+    }
 #else
     goto fn_exit;
 #endif /* HAVE_INET_NTOP */
@@ -578,33 +559,6 @@ HYD_status HYDU_sock_is_local(char *host, int *is_local)
     freeifaddrs(ifaddr);
 #endif
 
-    /* Direct comparison of host names */
-    status = sock_localhost_init();
-    HYDU_ERR_POP(status, "unable to initialize sock local information\n");
-
-    if (!strcmp(host, localhost) || !strcmp(host, "localhost")) {
-        *is_local = 1;
-        goto fn_exit;
-    }
-
-    /* If the two hostnames are not of the same length, it is possible
-     * that they differ in the domain information, and not the
-     * hostname */
-    if (strlen(host) != strlen(localhost)) {
-        strcpy(shorthost, host);
-        for (i = 0; shorthost[i]; i++) {
-            if (shorthost[i] == '.') {
-                shorthost[i] = 0;
-                break;
-            }
-        }
-
-        if (!strcmp(shorthost, shortlocal) || !strcmp(shorthost, "localhost")) {
-            *is_local = 1;
-            goto fn_exit;
-        }
-    }
-
   fn_exit:
     if (ip1)
         HYDU_FREE(ip1);
@@ -618,17 +572,36 @@ HYD_status HYDU_sock_is_local(char *host, int *is_local)
 
 HYD_status HYDU_sock_remote_access(char *host, int *remote_access)
 {
+    struct hostent *ht;
+    char *ip = NULL, buf[INET_ADDRSTRLEN];
+    struct sockaddr_in sa;
     HYD_status status = HYD_SUCCESS;
+
+    if ((ht = gethostbyname(host))) {
+        memset((char *) &sa, 0, sizeof(struct sockaddr_in));
+        memcpy(&sa.sin_addr, ht->h_addr_list[0], ht->h_length);
+
+#if defined HAVE_INET_NTOP
+        ip = HYDU_strdup((char *) inet_ntop(AF_INET, (const void *) &sa.sin_addr, buf,
+                                            MAX_HOSTNAME_LEN));
+        HYDU_ASSERT(ip, status);
+#else
+        ip = HYDU_strdup(host);
+#endif
+    }
+    else {
+        ip = HYDU_strdup(host);
+    }
 
     /* FIXME: Comparing the hostname to "127.*" does not seem like a
      * good way of checking if a hostname is remotely accessible */
-    if (!MPL_strncmp(host, "127.", strlen("127.")) || !strcmp(host, "localhost") ||
-        !MPL_strncmp(host, "localhost.", strlen("localhost.")))
+    if (!MPL_strncmp(ip, "127.", strlen("127.")))
         *remote_access = 0;
     else
         *remote_access = 1;
 
   fn_exit:
+    HYDU_FREE(ip);
     return status;
 
   fn_fail:
@@ -665,9 +638,12 @@ HYDU_sock_create_and_listen_portstr(char *iface, char *hostname, char *port_rang
         ip = HYDU_strdup(hostname);
     }
     else {
-        HYDU_MALLOC(ip, char *, MAX_HOSTNAME_LEN, status);
-        status = HYDU_gethostname(ip);
+        char localhost[MAX_HOSTNAME_LEN] = { 0 };
+
+        status = HYDU_gethostname(localhost);
         HYDU_ERR_POP(status, "unable to get local hostname\n");
+
+        ip = HYDU_strdup(localhost);
     }
 
     sport = HYDU_int_to_str(port);

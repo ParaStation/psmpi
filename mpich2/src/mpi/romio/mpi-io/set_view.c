@@ -37,7 +37,7 @@ Input Parameters:
 .N fortran
 @*/
 int MPI_File_set_view(MPI_File mpi_fh, MPI_Offset disp, MPI_Datatype etype,
-		      MPI_Datatype filetype, char *datarep, MPI_Info info)
+		      MPI_Datatype filetype, MPICH2_CONST char *datarep, MPI_Info info)
 {
     int filetype_size, etype_size, error_code;
     static char myname[] = "MPI_FILE_SET_VIEW";
@@ -111,7 +111,12 @@ int MPI_File_set_view(MPI_File mpi_fh, MPI_Offset disp, MPI_Datatype etype,
 	goto fn_exit;
     }
 
-    if (strcmp(datarep, "native") && strcmp(datarep, "NATIVE"))
+    if (strcmp(datarep, "native") && 
+	    strcmp(datarep, "NATIVE") &&
+	    strcmp(datarep, "external32") &&
+	    strcmp(datarep, "EXTERNAL32") &&
+	    strcmp(datarep, "internal") &&
+	    strcmp(datarep, "INTERNAL"))
     {
 	error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					  myname, __LINE__,
@@ -167,6 +172,10 @@ int MPI_File_set_view(MPI_File mpi_fh, MPI_Offset disp, MPI_Datatype etype,
     {
 	MPI_Barrier(fh->comm); /* for above to work correctly */
     }
+    if (strcmp(datarep, "external32") && strcmp(datarep, "EXTERNAL32"))
+	fh->is_external32 = 0;
+    else
+	fh->is_external32 = 1;
 
 fn_exit:
     MPIU_THREAD_CS_EXIT(ALLFUNC,);

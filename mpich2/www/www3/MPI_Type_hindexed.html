@@ -10,8 +10,8 @@ Creates an indexed datatype with offsets in bytes
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Type_hindexed(int count,
-                     int blocklens[],
-                     MPI_Aint indices[],
+                     MPICH2_CONST int blocklens[],
+                     MPICH2_CONST MPI_Aint indices[],
                      MPI_Datatype old_type,
                      MPI_Datatype *newtype)
 </PRE>
@@ -108,5 +108,5 @@ implementation is unable to acquire memory.
 <DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
-<P><B>Location:</B>type_hindexed.c<P>
+<P><B>Location:</B>src/mpi/datatype/type_hindexed.c<P>
 </BODY></HTML>

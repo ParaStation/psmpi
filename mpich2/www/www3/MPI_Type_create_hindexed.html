@@ -10,8 +10,8 @@ Create a datatype for an indexed datatype with displacements in bytes
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Type_create_hindexed(int count,
-                           int blocklengths[],
-                           MPI_Aint displacements[],
+                           MPICH2_CONST int blocklengths[],
+                           MPICH2_CONST MPI_Aint displacements[],
                            MPI_Datatype oldtype,
                            MPI_Datatype *newtype)
 </PRE>
@@ -72,5 +72,5 @@ MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 <DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
-<P><B>Location:</B>type_create_hindexed.c<P>
+<P><B>Location:</B>src/mpi/datatype/type_create_hindexed.c<P>
 </BODY></HTML>

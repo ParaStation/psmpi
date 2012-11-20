@@ -585,14 +585,17 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
             else if (!strcmp(info_key, "wdir")) {
                 exec->wdir = HYDU_strdup(info_val);
             }
-            else if (!strcmp(info_key, "host")) {
-                status = HYDU_process_mfile_token(info_val, 1, &pg->user_node_list);
-                HYDU_ERR_POP(status, "error create node list\n");
+            else if (!strcmp(info_key, "host") || !strcmp(info_key, "hosts")) {
+                char *host = strtok(info_val, ",");
+                while (host) {
+                    status = HYDU_process_mfile_token(host, 1, &pg->user_node_list);
+                    HYDU_ERR_POP(status, "error creating node list\n");
+                    host = strtok(NULL, ",");
+                }
             }
             else if (!strcmp(info_key, "hostfile")) {
-                status =
-                    HYDU_parse_hostfile(info_val, &pg->user_node_list,
-                                        HYDU_process_mfile_token);
+                status = HYDU_parse_hostfile(info_val, &pg->user_node_list,
+                                             HYDU_process_mfile_token);
                 HYDU_ERR_POP(status, "error parsing hostfile\n");
             }
             else {
@@ -692,10 +695,8 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
 
     if (pg->user_node_list) {
         pg->pg_core_count = 0;
-        for (i = 0, node = pg->user_node_list; node; node = node->next, i++) {
+        for (i = 0, node = pg->user_node_list; node; node = node->next, i++)
             pg->pg_core_count += node->core_count;
-            node->node_id = i;
-        }
     }
     else {
         pg->pg_core_count = 0;
@@ -704,7 +705,7 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
     }
 
     status = HYDU_sock_create_and_listen_portstr(HYD_server_info.user_global.iface,
-                                                 HYD_server_info.local_hostname,
+                                                 HYD_server_info.localhost,
                                                  HYD_server_info.port_range, &control_port,
                                                  HYD_pmcd_pmiserv_control_listen_cb,
                                                  (void *) (size_t) new_pgid);

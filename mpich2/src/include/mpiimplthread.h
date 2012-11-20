@@ -205,10 +205,9 @@ extern MPICH_PerThread_t MPIR_Thread;
 */
 #define MPIU_THREADPRIV_INITKEY
 #define MPIU_THREADPRIV_INIT
-/* Empty declarations are not allowed in C. However multiple decls are allowed */
-/* FIXME it might be better to just use a dummy variable here like we do when
- * real TLS is available to reduce the amount of compiler warnings. */
-#define MPIU_THREADPRIV_DECL extern MPICH_PerThread_t MPIR_Thread
+/* Empty declarations are not allowed in C, so we just define a dummy
+ * variable and tell the compiler it is unused. */
+#define MPIU_THREADPRIV_DECL int MPIU_THREADPRIV_LOCAL_DUMMY_VAR ATTRIBUTE((unused))
 #define MPIU_THREADPRIV_GET
 #define MPIU_THREADPRIV_FIELD(a_) (MPIR_Thread.a_)
 
@@ -236,11 +235,13 @@ void MPIR_CleanupThreadStorage(void *a);
    This structure is allocated in src/mpi/init/initthread.c */
 extern MPICH_PerThread_t MPIR_ThreadSingle;
 
-#define MPIU_THREADPRIV_INITKEY                                                                     \
-    do {                                                                                            \
-        if (MPIU_ISTHREADED) {                                                                      \
-            MPID_Thread_tls_create(MPIR_CleanupThreadStorage,&MPIR_ThreadInfo.thread_storage,NULL); \
-        }                                                                                           \
+#define MPIU_THREADPRIV_INITKEY                                         \
+    do {                                                                \
+        if (MPIU_ISTHREADED) {                                          \
+            int err_;                                                   \
+            MPID_Thread_tls_create(MPIR_CleanupThreadStorage,&MPIR_ThreadInfo.thread_storage,&err_); \
+            MPIU_Assert(err_ == 0);                                     \
+        }                                                               \
     } while (0)
 #define MPIU_THREADPRIV_INIT                                                                            \
     do {                                                                                                \
@@ -272,8 +273,12 @@ extern MPICH_PerThread_t MPIR_ThreadSingle;
 /* We initialize the MPIR_Thread pointer to null so that we need call the
  * routine to get the thread-private storage only once in an invocation of a
  * routine.  */
-#define MPIU_THREADPRIV_INITKEY  \
-    MPID_Thread_tls_create(MPIR_CleanupThreadStorage,&MPIR_ThreadInfo.thread_storage,NULL)
+#define MPIU_THREADPRIV_INITKEY                                         \
+    do {                                                                \
+        int err_;                                                       \
+        MPID_Thread_tls_create(MPIR_CleanupThreadStorage,&MPIR_ThreadInfo.thread_storage,&err_); \
+        MPIU_Assert(err_ == 0);                                         \
+    } while (0)
 #define MPIU_THREADPRIV_INIT                                                                        \
     do {                                                                                            \
         MPIR_Thread = (MPICH_PerThread_t *) MPIU_Calloc(1, sizeof(MPICH_PerThread_t));              \
@@ -296,15 +301,17 @@ extern MPICH_PerThread_t MPIR_ThreadSingle;
 /* common definitions when using MPID_Thread-based TLS */
 #define MPIU_THREADPRIV_DECL MPICH_PerThread_t *MPIR_Thread=NULL
 #define MPIU_THREADPRIV_FIELD(a_) (MPIR_Thread->a_)
-#define MPIU_THREADPRIV_FINALIZE                                           \
-    do {                                                                   \
-        MPIU_THREADPRIV_DECL;                                              \
-        if (MPIU_ISTHREADED) {                                             \
-            MPIU_THREADPRIV_GET;                                           \
-            MPIU_Free(MPIR_Thread);                                        \
-            MPID_Thread_tls_set(&MPIR_ThreadInfo.thread_storage,NULL);     \
-            MPID_Thread_tls_destroy(&MPIR_ThreadInfo.thread_storage,NULL); \
-        }                                                                  \
+#define MPIU_THREADPRIV_FINALIZE                                                        \
+    do {                                                                                \
+        MPIU_THREADPRIV_DECL;                                                           \
+        if (MPIU_ISTHREADED) {                                                          \
+            int tpf_err_; /* unique name to not conflict with vars in called macros */  \
+            MPIU_THREADPRIV_GET;                                                        \
+            MPIU_Free(MPIR_Thread);                                                     \
+            MPID_Thread_tls_set(&MPIR_ThreadInfo.thread_storage,NULL);                  \
+            MPID_Thread_tls_destroy(&MPIR_ThreadInfo.thread_storage,&tpf_err_);         \
+            MPIU_Assert(tpf_err_ == 0);                                                 \
+        }                                                                               \
     } while (0)
 
 #else /* defined(MPIU_TLS_SPECIFIER) */
@@ -911,9 +918,9 @@ enum MPIU_Nest_mutexes {
 #elif !defined(MPID_DEVICE_DEFINES_THREAD_CS) /* && !defined(MPICH_IS_THREADED) */
 #define MPIU_THREAD_CS_INIT
 #define MPIU_THREAD_CS_FINALIZE
-#define MPIU_THREAD_CS_ENTER(_name,_context)
-#define MPIU_THREAD_CS_EXIT(_name,_context)
-#define MPIU_THREAD_CS_YIELD(_name,_context)
+#define MPIU_THREAD_CS_ENTER(_name,_context) do{/*nothing*/}while(0)
+#define MPIU_THREAD_CS_EXIT(_name,_context)  do{/*nothing*/}while(0)
+#define MPIU_THREAD_CS_YIELD(_name,_context) do{/*nothing*/}while(0)
 #endif /* MPICH_IS_THREADED */
 
 /* catch-all */

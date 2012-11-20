@@ -1,4 +1,4 @@
-OpenPA v1.0.2
+OpenPA v1.0.3
 -------------
 
 The goal of this project is to provide an open source, highly-portable
@@ -20,9 +20,9 @@ Building
 --------
 
 If you checked out the project from source control then you will need to
-generate configure files and makefiles with autoreconf:
+generate configure files and makefiles with autogen.sh:
 
-% autoreconf -vif
+% ./autogen.sh
 
 Otherwise, the build procedure is basically the same as any other
 autoconfiscated software:

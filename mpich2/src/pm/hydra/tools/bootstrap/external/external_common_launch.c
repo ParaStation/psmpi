@@ -108,7 +108,6 @@ HYD_status HYDT_bscd_common_launch_procs(char **args, struct HYD_proxy *proxy_li
         NULL, *extra_arg;
     char quoted_exec_string[HYD_TMP_STRLEN], *original_exec_string;
     struct HYD_env *env = NULL;
-    struct HYDT_topo_cpuset_t cpuset;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -131,6 +130,9 @@ HYD_status HYDT_bscd_common_launch_procs(char **args, struct HYD_proxy *proxy_li
     else if (!strcmp(HYDT_bsci_info.launcher, "sge")) {
         status = sge_get_path(&path);
         HYDU_ERR_POP(status, "unable to get path to the qrsh executable\n");
+    }
+    else if (!strcmp(HYDT_bsci_info.launcher, "manual")) {
+        /* manual has no separate launcher */
     }
     else {
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "bad launcher type %s\n",
@@ -210,8 +212,7 @@ HYD_status HYDT_bscd_common_launch_procs(char **args, struct HYD_proxy *proxy_li
         autofork = 1;
 
     targs[idx] = NULL;
-    HYDT_topo_cpuset_zero(&cpuset);
-    for (i = 0, proxy = proxy_list; proxy; proxy = proxy->next, i++) {
+    for (proxy = proxy_list; proxy; proxy = proxy->next) {
 
         if (targs[host_idx])
             HYDU_FREE(targs[host_idx]);
@@ -229,18 +230,8 @@ HYD_status HYDT_bscd_common_launch_procs(char **args, struct HYD_proxy *proxy_li
         /* append proxy ID */
         if (targs[idx])
             HYDU_FREE(targs[idx]);
-        targs[idx] = HYDU_int_to_str(i);
+        targs[idx] = HYDU_int_to_str(proxy->proxy_id);
         targs[idx + 1] = NULL;
-
-        /* ssh has many types of security controls that do not allow a
-         * user to ssh to the same node multiple times very
-         * quickly. If this happens, the ssh daemons disables ssh
-         * connections causing the job to fail. This is basically a
-         * hack to slow down ssh connections to the same node. */
-        if (!strcmp(HYDT_bsci_info.launcher, "ssh")) {
-            status = HYDTI_bscd_ssh_store_launch_time(proxy->node->hostname);
-            HYDU_ERR_POP(status, "error storing launch time\n");
-        }
 
         status = HYDU_sock_is_local(proxy->node->hostname, &lh);
         HYDU_ERR_POP(status, "error checking if node is localhost\n");
@@ -262,11 +253,11 @@ HYD_status HYDT_bscd_common_launch_procs(char **args, struct HYD_proxy *proxy_li
                 HYDU_ERR_POP(status, "unable to create env\n");
                 HYDU_FREE(str);
 
-                control_fd[i] = sockpair[0];
+                control_fd[proxy->proxy_id] = sockpair[0];
 
                 /* make sure control_fd[i] is not shared by the
                  * processes spawned in the future */
-                status = HYDU_sock_cloexec(control_fd[i]);
+                status = HYDU_sock_cloexec(control_fd[proxy->proxy_id]);
                 HYDU_ERR_POP(status, "unable to set control socket to close on exec\n");
             }
 
@@ -302,11 +293,24 @@ HYD_status HYDT_bscd_common_launch_procs(char **args, struct HYD_proxy *proxy_li
             continue;
         }
 
+        /* ssh has many types of security controls that do not allow a
+         * user to ssh to the same node multiple times very
+         * quickly. If this happens, the ssh daemons disables ssh
+         * connections causing the job to fail. This is basically a
+         * hack to slow down ssh connections to the same node. We
+         * check for offset == 0 before applying this hack, so we only
+         * slow down the cases where ssh is being used, and not the
+         * cases where we fall back to fork. */
+        if (!strcmp(HYDT_bsci_info.launcher, "ssh") && !offset) {
+            status = HYDTI_bscd_ssh_store_launch_time(proxy->node->hostname);
+            HYDU_ERR_POP(status, "error storing launch time\n");
+        }
+
         /* The stdin pointer is a dummy value. We don't just pass it
          * NULL, as older versions of ssh seem to freak out when no
          * stdin socket is provided. */
         status = HYDU_create_process(targs + offset, env, dummy, &fd_stdout, &fd_stderr,
-                                     &HYD_bscu_pid_list[HYD_bscu_pid_count++], cpuset);
+                                     &HYD_bscu_pid_list[HYD_bscu_pid_count++], -1);
         HYDU_ERR_POP(status, "create process returned error\n");
 
         /* Reset the exec string to the original value */

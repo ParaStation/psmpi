@@ -27,7 +27,7 @@
 #define FUNCNAME MPIR_Info_get_impl
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-void MPIR_Info_get_impl(MPID_Info *info_ptr, char *key, int valuelen, char *value, int *flag)
+void MPIR_Info_get_impl(MPID_Info *info_ptr, const char *key, int valuelen, char *value, int *flag)
 {
     MPID_Info *curr_ptr;
     curr_ptr = info_ptr->next;
@@ -81,7 +81,7 @@ Output Parameters:
 #define FUNCNAME MPI_Info_get
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value, 
+int MPI_Info_get(MPI_Info info, MPICH2_CONST char *key, int valuelen, char *value,
 		 int *flag)
 {
     MPID_Info *info_ptr=0;
@@ -99,7 +99,6 @@ int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INFO(info, mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -130,9 +129,8 @@ int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value,
 
 	    /* Check value arguments */
 	    MPIR_ERRTEST_ARGNEG(valuelen, "valuelen", mpi_errno);
-	    MPIU_ERR_CHKANDSTMT((!value), mpi_errno, MPI_ERR_INFO_VALUE,;, 
+	    MPIU_ERR_CHKANDSTMT((!value), mpi_errno, MPI_ERR_INFO_VALUE,goto fn_fail,
 				"**infovalnull");
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

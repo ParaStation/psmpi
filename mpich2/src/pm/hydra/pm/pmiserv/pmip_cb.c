@@ -17,7 +17,6 @@ struct HYD_pmcd_pmip_pmi_handle *HYD_pmcd_pmip_pmi_handle = { 0 };
 
 static int storage_len = 0;
 static char storage[HYD_TMPBUF_SIZE], *sptr = storage, r[HYD_TMPBUF_SIZE];
-static int using_pmi_port = 0;
 
 static HYD_status stdio_cb(int fd, HYD_event_t events, void *userp)
 {
@@ -30,7 +29,7 @@ static HYD_status stdio_cb(int fd, HYD_event_t events, void *userp)
 
     stdfd = (int) (size_t) userp;
 
-    status = HYDU_sock_read(fd, buf, HYD_TMPBUF_SIZE, &recvd, &closed, 0);
+    status = HYDU_sock_read(fd, buf, HYD_TMPBUF_SIZE, &recvd, &closed, HYDU_SOCK_COMM_NONE);
     HYDU_ERR_POP(status, "sock read error\n");
 
     if (recvd) {
@@ -224,7 +223,7 @@ static HYD_status pmi_cb(int fd, HYD_event_t events, void *userp)
      * them. When we don't have a full PMI command, we store the
      * rest. */
     status = HYDU_sock_read(fd, storage + storage_len, HYD_TMPBUF_SIZE - storage_len,
-                            &linelen, &closed, 0);
+                            &linelen, &closed, HYDU_SOCK_COMM_NONE);
     HYDU_ERR_POP(status, "unable to read PMI command\n");
 
     /* Try to find the PMI FD */
@@ -265,7 +264,8 @@ static HYD_status pmi_cb(int fd, HYD_event_t events, void *userp)
             close(fd);
 
             if (HYD_pmcd_pmip.user_global.auto_cleanup) {
-                HYD_pmcd_pmip_kill_localprocs();
+                /* kill all processes */
+                HYD_pmcd_pmip_send_signal(SIGKILL);
             }
             else {
                 /* If the user doesn't want to automatically cleanup,
@@ -274,9 +274,7 @@ static HYD_status pmi_cb(int fd, HYD_event_t events, void *userp)
 
                 /* FIXME: This code needs to change from sending the
                  * SIGUSR1 signal to a PMI-2 notification message. */
-                for (i = 0; i < HYD_pmcd_pmip.local.proxy_process_count; i++)
-                    if (HYD_pmcd_pmip.downstream.pid[i] != -1)
-                        kill(HYD_pmcd_pmip.downstream.pid[i], SIGUSR1);
+                HYD_pmcd_pmip_send_signal(SIGUSR1);
 
                 hdr.cmd = PROCESS_TERMINATED;
                 hdr.pid = HYD_pmcd_pmip.downstream.pmi_rank[pid];
@@ -445,27 +443,17 @@ static HYD_status pmi_listen_cb(int fd, HYD_event_t events, void *userp)
 
 static int local_to_global_id(int local_id)
 {
-    int rem1, layer, rem2;
-    int ret;
+    int rem1, rem2, layer, ret;
 
-    if (local_id < HYD_pmcd_pmip.system_global.filler_process_map.current)
-        ret = HYD_pmcd_pmip.system_global.filler_process_map.left + local_id;
+    if (local_id < HYD_pmcd_pmip.system_global.global_core_map.local_filler)
+        ret = HYD_pmcd_pmip.system_global.pmi_id_map.filler_start + local_id;
     else {
-        /* rem1 gives the number of processes remaining after the
-         * filling the holes */
-        rem1 = local_id - HYD_pmcd_pmip.system_global.filler_process_map.current;
+        rem1 = local_id - HYD_pmcd_pmip.system_global.global_core_map.local_filler;
+        layer = rem1 / HYD_pmcd_pmip.system_global.global_core_map.local_count;
+        rem2 = rem1 - (layer * HYD_pmcd_pmip.system_global.global_core_map.local_count);
 
-        /* layer gives the layer of filling in which our process lies
-         * starting from layer 0; in each layer, we fill all proxies
-         * in the global list */
-        layer = rem1 / HYD_pmcd_pmip.system_global.global_core_map.current;
-
-        /* rem2 gives our relative index in the layer we belong to */
-        rem2 = rem1 % HYD_pmcd_pmip.system_global.global_core_map.current;
-
-        ret = (HYD_pmcd_pmip.system_global.filler_process_map.total +
-               (layer * HYD_pmcd_pmip.system_global.global_core_map.total) +
-               HYD_pmcd_pmip.system_global.global_core_map.left + rem2);
+        ret = HYD_pmcd_pmip.system_global.pmi_id_map.non_filler_start +
+            (layer * HYD_pmcd_pmip.system_global.global_core_map.global_count) + rem2;
     }
 
     return ret;
@@ -474,13 +462,13 @@ static int local_to_global_id(int local_id)
 static HYD_status launch_procs(void)
 {
     int i, j, arg, process_id;
+    int using_pmi_port = 0;
     char *str, *envstr, *list, *pmi_port;
     char *client_args[HYD_NUM_TMP_STRINGS];
     struct HYD_env *env, *force_env = NULL;
     struct HYD_exec *exec;
     struct HYD_pmcd_hdr hdr;
     int sent, closed, pmi_fds[2] = { HYD_FD_UNSET, HYD_FD_UNSET };
-    struct HYDT_topo_cpuset_t cpuset;
     char ftb_event_payload[HYDT_FTB_MAX_PAYLOAD_DATA];
     HYD_status status = HYD_SUCCESS;
 
@@ -518,52 +506,28 @@ static HYD_status launch_procs(void)
          * PORT. */
         HYD_pmcd_pmip.downstream.pmi_fd[i] = HYD_FD_UNSET;
         HYD_pmcd_pmip.downstream.pmi_fd_active[i] = 0;
-
-        if (HYD_pmcd_pmip.system_global.pmi_rank == -1)
-            HYD_pmcd_pmip.downstream.pmi_rank[i] = local_to_global_id(i);
-        else
-            HYD_pmcd_pmip.downstream.pmi_rank[i] = HYD_pmcd_pmip.system_global.pmi_rank;
+        HYD_pmcd_pmip.downstream.pmi_rank[i] = local_to_global_id(i);
     }
 
-    status = HYDT_topo_init(HYD_pmcd_pmip.local.local_binding ?
-                            HYD_pmcd_pmip.local.local_binding :
+    status = HYDT_topo_init(HYD_pmcd_pmip.user_global.topolib,
                             HYD_pmcd_pmip.user_global.binding,
-                            HYD_pmcd_pmip.user_global.topolib);
+                            HYD_pmcd_pmip.user_global.mapping,
+                            HYD_pmcd_pmip.user_global.membind);
     HYDU_ERR_POP(status, "unable to initialize process topology\n");
-
-    if (HYD_pmcd_pmip.user_global.debug) {
-        char *map;
-
-        status = HYDT_topo_get_topomap(&map);
-        HYDU_ERR_POP(status, "error reading topology map\n");
-        if (map)
-            HYDU_dump(stdout, "topomap: %s\n", map);
-        HYDU_FREE(map);
-
-        status = HYDT_topo_get_processmap(&map);
-        HYDU_ERR_POP(status, "error reading process map\n");
-        if (map)
-            HYDU_dump(stdout, "processmap: %s\n", map);
-        HYDU_FREE(map);
-    }
 
     status = HYDT_ckpoint_init(HYD_pmcd_pmip.user_global.ckpointlib,
                                HYD_pmcd_pmip.user_global.ckpoint_num);
     HYDU_ERR_POP(status, "unable to initialize checkpointing\n");
 
-    if (HYD_pmcd_pmip.system_global.pmi_port || HYD_pmcd_pmip.user_global.ckpoint_prefix) {
+    if (HYD_pmcd_pmip.user_global.ckpoint_prefix) {
         using_pmi_port = 1;
-        if (HYD_pmcd_pmip.system_global.pmi_port)
-            pmi_port = HYD_pmcd_pmip.system_global.pmi_port;
-        else {
-            status = HYDU_sock_create_and_listen_portstr(HYD_pmcd_pmip.user_global.iface,
-                                                         NULL, NULL, &pmi_port, pmi_listen_cb,
-                                                         NULL);
-            HYDU_ERR_POP(status, "unable to create PMI port\n");
-        }
+        status = HYDU_sock_create_and_listen_portstr(HYD_pmcd_pmip.user_global.iface,
+                                                     NULL, NULL, &pmi_port, pmi_listen_cb,
+                                                     NULL);
+        HYDU_ERR_POP(status, "unable to create PMI port\n");
     }
 
-    if (HYD_pmcd_pmip.exec_list->exec[0] == NULL) {     /* Checkpoint restart cast */
+    if (HYD_pmcd_pmip.exec_list->exec[0] == NULL) {     /* Checkpoint restart case */
         status = HYDU_env_create(&env, "PMI_PORT", pmi_port);
         HYDU_ERR_POP(status, "unable to create env\n");
 
@@ -707,24 +671,17 @@ static HYD_status launch_procs(void)
                 HYDU_ERR_POP(status, "unable to add env to list\n");
                 HYDU_FREE(str);
 
-                /* PMI_FD */
-                if (HYD_pmcd_pmip.system_global.pmi_fd) {
-                    /* If a global PMI port is provided, use it */
-                    str = HYDU_strdup(HYD_pmcd_pmip.system_global.pmi_fd);
-                }
-                else {
-                    if (socketpair(AF_UNIX, SOCK_STREAM, 0, pmi_fds) < 0)
-                        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "pipe error\n");
+                if (socketpair(AF_UNIX, SOCK_STREAM, 0, pmi_fds) < 0)
+                    HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "pipe error\n");
 
-                    status = HYDT_dmx_register_fd(1, &pmi_fds[0], HYD_POLLIN, NULL, pmi_cb);
-                    HYDU_ERR_POP(status, "unable to register fd\n");
+                status = HYDT_dmx_register_fd(1, &pmi_fds[0], HYD_POLLIN, NULL, pmi_cb);
+                HYDU_ERR_POP(status, "unable to register fd\n");
 
-                    status = HYDU_sock_cloexec(pmi_fds[0]);
-                    HYDU_ERR_POP(status, "unable to set socket to close on exec\n");
+                status = HYDU_sock_cloexec(pmi_fds[0]);
+                HYDU_ERR_POP(status, "unable to set socket to close on exec\n");
 
-                    HYD_pmcd_pmip.downstream.pmi_fd[process_id] = pmi_fds[0];
-                    str = HYDU_int_to_str(pmi_fds[1]);
-                }
+                HYD_pmcd_pmip.downstream.pmi_fd[process_id] = pmi_fds[0];
+                str = HYDU_int_to_str(pmi_fds[1]);
 
                 status = HYDU_append_env_to_list("PMI_FD", str, &force_env);
                 HYDU_ERR_POP(status, "unable to add env to list\n");
@@ -741,13 +698,13 @@ static HYD_status launch_procs(void)
                 client_args[arg++] = HYDU_strdup(exec->exec[j]);
             client_args[arg++] = NULL;
 
-            HYDT_topo_pid_to_cpuset(process_id, &cpuset);
             status = HYDU_create_process(client_args, force_env,
                                          HYD_pmcd_pmip.downstream.pmi_rank[process_id] ? NULL :
                                          &HYD_pmcd_pmip.downstream.in,
                                          &HYD_pmcd_pmip.downstream.out[process_id],
                                          &HYD_pmcd_pmip.downstream.err[process_id],
-                                         &HYD_pmcd_pmip.downstream.pid[process_id], cpuset);
+                                         &HYD_pmcd_pmip.downstream.pid[process_id],
+                                         process_id);
             HYDU_ERR_POP(status, "create process returned error\n");
 
             HYDU_free_strlist(client_args);
@@ -817,23 +774,21 @@ static HYD_status parse_exec_params(char **t_argv)
     } while (1);
 
     /* verify the arguments we got */
-    if (HYD_pmcd_pmip.system_global.global_core_map.left == -1 ||
-        HYD_pmcd_pmip.system_global.global_core_map.current == -1 ||
-        HYD_pmcd_pmip.system_global.global_core_map.right == -1)
+    if (HYD_pmcd_pmip.system_global.global_core_map.local_filler == -1 ||
+        HYD_pmcd_pmip.system_global.global_core_map.local_count == -1 ||
+        HYD_pmcd_pmip.system_global.global_core_map.global_count == -1)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
                             "cannot find global core map (%d,%d,%d)\n",
-                            HYD_pmcd_pmip.system_global.global_core_map.left,
-                            HYD_pmcd_pmip.system_global.global_core_map.current,
-                            HYD_pmcd_pmip.system_global.global_core_map.right);
+                            HYD_pmcd_pmip.system_global.global_core_map.local_filler,
+                            HYD_pmcd_pmip.system_global.global_core_map.local_count,
+                            HYD_pmcd_pmip.system_global.global_core_map.global_count);
 
-    if (HYD_pmcd_pmip.system_global.filler_process_map.left == -1 ||
-        HYD_pmcd_pmip.system_global.filler_process_map.current == -1 ||
-        HYD_pmcd_pmip.system_global.filler_process_map.right == -1)
+    if (HYD_pmcd_pmip.system_global.pmi_id_map.filler_start == -1 ||
+        HYD_pmcd_pmip.system_global.pmi_id_map.non_filler_start == -1)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
-                            "cannot find available cores (%d,%d,%d)\n",
-                            HYD_pmcd_pmip.system_global.filler_process_map.left,
-                            HYD_pmcd_pmip.system_global.filler_process_map.current,
-                            HYD_pmcd_pmip.system_global.filler_process_map.right);
+                            "cannot find pmi id map (%d,%d)\n",
+                            HYD_pmcd_pmip.system_global.pmi_id_map.filler_start,
+                            HYD_pmcd_pmip.system_global.pmi_id_map.non_filler_start);
 
     if (HYD_pmcd_pmip.local.proxy_core_count == -1)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "proxy core count not available\n");
@@ -843,7 +798,7 @@ static HYD_status parse_exec_params(char **t_argv)
                             "no executable given and doesn't look like a restart either\n");
 
     /* Set default values */
-    if (HYD_pmcd_pmip.user_global.binding == NULL && HYD_pmcd_pmip.local.local_binding == NULL)
+    if (HYD_pmcd_pmip.user_global.binding == NULL)
         HYD_pmcd_pmip.user_global.binding = HYDU_strdup("none");
 
     if (HYD_pmcd_pmip.user_global.topolib == NULL && HYDRA_DEFAULT_TOPOLIB)
@@ -914,7 +869,7 @@ static HYD_status procinfo(int fd)
 
 HYD_status HYD_pmcd_pmip_control_cmd_cb(int fd, HYD_event_t events, void *userp)
 {
-    int cmd_len, closed, i;
+    int cmd_len, closed;
     struct HYD_pmcd_hdr hdr;
     char ftb_event_payload[HYDT_FTB_MAX_PAYLOAD_DATA];
     char *buf;
@@ -954,9 +909,7 @@ HYD_status HYD_pmcd_pmip_control_cmd_cb(int fd, HYD_event_t events, void *userp)
     else if (hdr.cmd == SIGNAL) {
         /* FIXME: This code needs to change from sending the signal to
          * a PMI-2 notification message. */
-        for (i = 0; i < HYD_pmcd_pmip.local.proxy_process_count; i++)
-            if (HYD_pmcd_pmip.downstream.pid[i] != -1)
-                kill(HYD_pmcd_pmip.downstream.pid[i], hdr.signum);
+        HYD_pmcd_pmip_send_signal(hdr.signum);
     }
     else if (hdr.cmd == STDIN) {
         int count;

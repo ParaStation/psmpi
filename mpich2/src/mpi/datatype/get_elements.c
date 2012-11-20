@@ -210,6 +210,7 @@ PMPI_LOCAL int MPIR_Type_get_elements(int *bytes_p,
 		return MPIR_Type_get_elements(bytes_p, count * (*ints), *types);
 		break;
 	    case MPI_COMBINER_INDEXED_BLOCK:
+	    case MPIX_COMBINER_HINDEXED_BLOCK:
 		/* count is first in ints array, blocklength is second */
 		return MPIR_Type_get_elements(bytes_p,
 					      count * ints[0] * ints[1],
@@ -302,7 +303,7 @@ Output Parameter:
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
+int MPI_Get_elements(MPICH2_CONST MPI_Status *status, MPI_Datatype datatype, int *elements)
 {
     int mpi_errno = MPI_SUCCESS, byte_count;
     MPID_Datatype *datatype_ptr = NULL;
@@ -319,7 +320,6 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -339,11 +339,11 @@ int MPI_Get_elements(MPI_Status *status, MPI_Datatype datatype, int *elements)
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
 		MPID_Datatype_get_ptr(datatype, datatype_ptr);
 		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
-		if (mpi_errno == MPI_SUCCESS) {
-		    MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
-		}
+                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+                MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    }
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

@@ -7,6 +7,7 @@ accfence1 4
 adlb_mimic1 3
 accfence2 4
 putpscw1 4
+accpscw1 4
 getgroup 4
 transpose1 2
 transpose2 2
@@ -21,7 +22,9 @@ test4 2
 test5 2
 lockcontention 3
 lockcontention2 4
-lockcontention2 8	       
+lockcontention2 8
+lockcontention3 8
+lockopts 2
 transpose4 2
 fetchandadd 7
 fetchandadd_tree 7
@@ -56,3 +59,19 @@ contention_put 4
 contention_putget 4
 put_base 2
 put_bottom 2
+win_flavors 4 strict=false
+manyrma2 2 timeLimit=500
+win_shared 4 strict=false
+win_shared_noncontig 4 strict=false
+win_shared_noncontig_put 4 strict=false
+win_dynamic_acc 4 strict=false
+get_acc_local 1 strict=false
+linked_list 4 strict=false
+linked_list_fop 4 strict=false
+compare_and_swap 4 strict=false
+fetch_and_op_char 4 strict=false
+fetch_and_op_short 4 strict=false
+fetch_and_op_int 4 strict=false
+fetch_and_op_long 4 strict=false
+fetch_and_op_double 4 strict=false
+fetch_and_op_long_double 4 strict=false

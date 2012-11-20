@@ -1,4 +1,4 @@
-/* cross_conf.h.in.  Generated from configure.in by autoheader.  */
+/* cross_conf.h.in.  Generated from configure.ac by autoheader.  */
 
 /* Define Cross-Spec's output filename */
 #undef CROSS_SPEC_FILE
@@ -70,6 +70,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION

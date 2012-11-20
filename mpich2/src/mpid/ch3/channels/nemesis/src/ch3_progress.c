@@ -288,9 +288,10 @@ int MPIDI_CH3I_Shm_send_progress(void)
 int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 {
     int mpi_errno = MPI_SUCCESS;
-#if !defined(ENABLE_NO_YIELD) || defined(MPICH_IS_THREADED)
+#ifdef MPICH_IS_THREADED
     int pollcount = 0;
 #endif
+    int made_progress = FALSE;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS);
@@ -330,41 +331,6 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 	int                  in_fbox = 0;
 	MPIDI_VC_t          *vc;
 
-#ifdef MPICH_IS_THREADED
-        MPIU_THREAD_CHECK_BEGIN;
-        {
-	    /* In the case of threads, we poll for lesser number of
-	     * iterations than the case with only processes, as
-	     * threads contend for CPU and the lock, while processes
-	     * only contend for the CPU. */
-            if (pollcount >= MPID_NEM_THREAD_POLLS_BEFORE_YIELD)
-            {
-                pollcount = 0;
-                MPIDI_CH3I_progress_blocked = TRUE;
-                MPIU_THREAD_CS_YIELD(ALLFUNC,);
-                /* MPIDCOMM yield is needed because at least the send functions
-                 * acquire MPIDCOMM to put things into the send queues.  Failure
-                 * to yield could result in a deadlock.  This thread needs the
-                 * send from another thread to be posted, but the other thread
-                 * can't post it while this CS is held. */
-                /* assertion: we currently do not hold any other critical
-                 * sections besides the MPIDCOMM CS at this point.  Violating
-                 * this will probably lead to lock-ordering deadlocks. */
-                MPIU_THREAD_CS_YIELD(MPIDCOMM,);
-                MPIDI_CH3I_progress_blocked = FALSE;
-                MPIDI_CH3I_progress_wakeup_signalled = FALSE;
-            }
-            ++pollcount;
-        }
-        MPIU_THREAD_CHECK_END;
-#elif !defined(ENABLE_NO_YIELD)
-        if (pollcount >= MPID_NEM_POLLS_BEFORE_YIELD)
-        {
-            pollcount = 0;
-            MPIU_PW_Sched_yield();
-        }
-        ++pollcount;
-#endif
         do /* receive progress */
         {
 
@@ -382,8 +348,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
             /* make progress receiving */
             /* check queue */
-            if (!MPID_nem_local_lmt_pending && !MPIDI_CH3I_shm_active_send
-                && !MPIDI_CH3I_Sendq_head(MPIDI_CH3I_shm_sendq) && is_blocking
+            if (MPID_nem_safe_to_block_recv() && is_blocking
 #ifdef MPICH_IS_THREADED
 #ifdef HAVE_RUNTIME_THREADCHECK
                 && !MPIR_ThreadInfo.isThreaded
@@ -496,6 +461,13 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         }
 
+        /* make progress on NBC schedules */
+        mpi_errno = MPIDU_Sched_progress(&made_progress);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (made_progress) {
+            MPIDI_CH3_Progress_signal_completion();
+        }
+
         /* in the case of progress_wait, bail out if anything completed (CC-1) */
         if (is_blocking) {
             int completion_count = OPA_load_int(&MPIDI_CH3I_progress_completion_count);
@@ -508,6 +480,37 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                 break;
             }
         }
+
+#ifdef MPICH_IS_THREADED
+        MPIU_THREAD_CHECK_BEGIN;
+        {
+	    /* In the case of threads, we poll for lesser number of
+	     * iterations than the case with only processes, as
+	     * threads contend for CPU and the lock, while processes
+	     * only contend for the CPU. */
+            if (pollcount >= MPID_NEM_THREAD_POLLS_BEFORE_YIELD)
+            {
+                pollcount = 0;
+                MPIDI_CH3I_progress_blocked = TRUE;
+                MPIU_THREAD_CS_YIELD(ALLFUNC,);
+                /* MPIDCOMM yield is needed because at least the send functions
+                 * acquire MPIDCOMM to put things into the send queues.  Failure
+                 * to yield could result in a deadlock.  This thread needs the
+                 * send from another thread to be posted, but the other thread
+                 * can't post it while this CS is held. */
+                /* assertion: we currently do not hold any other critical
+                 * sections besides the MPIDCOMM CS at this point.  Violating
+                 * this will probably lead to lock-ordering deadlocks. */
+                MPIU_THREAD_CS_YIELD(MPIDCOMM,);
+                MPIDI_CH3I_progress_blocked = FALSE;
+                MPIDI_CH3I_progress_wakeup_signalled = FALSE;
+            }
+            ++pollcount;
+        }
+        MPIU_THREAD_CHECK_END;
+#else
+        MPIU_Busy_wait();
+#endif
     }
     while (is_blocking);
 
@@ -817,7 +820,9 @@ int MPIDI_CH3I_Progress_init(void)
     /* FIXME should be appropriately abstracted somehow */
 #   if defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
     {
-	MPID_Thread_cond_create(&MPIDI_CH3I_progress_completion_cond, NULL);
+        int err;
+	MPID_Thread_cond_create(&MPIDI_CH3I_progress_completion_cond, &err);
+        MPIU_Assert(err == 0);
     }
 #   endif
     MPIU_THREAD_CHECK_END
@@ -898,9 +903,11 @@ static int shm_connection_terminated(MPIDI_VC_t * vc)
 
     MPIDI_FUNC_ENTER(MPID_STATE_SHM_CONNECTION_TERMINATED);
 
-    mpi_errno = VC_CH(vc)->lmt_vc_terminated(vc);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-
+    if (VC_CH(vc)->lmt_vc_terminated) {
+        mpi_errno = VC_CH(vc)->lmt_vc_terminated(vc);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    }
+    
     mpi_errno = MPIU_SHMW_Hnd_finalize(&(VC_CH(vc)->lmt_copy_buf_handle));
     if(mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
     mpi_errno = MPIU_SHMW_Hnd_finalize(&(VC_CH(vc)->lmt_recv_copy_buf_handle));
@@ -1020,7 +1027,7 @@ int MPIDI_CH3I_Complete_sendq_with_error(MPIDI_VC_t * vc)
                 MPIDI_CH3I_shm_sendq.tail = prev;
 
             req->status.MPI_ERROR = MPI_SUCCESS;
-            MPIU_ERR_SET1(req->status.MPI_ERROR, MPI_ERR_OTHER, "**comm_fail", "**comm_fail %d", vc->pg_rank);
+            MPIU_ERR_SET1(req->status.MPI_ERROR, MPIX_ERR_PROC_FAIL_STOP, "**comm_fail", "**comm_fail %d", vc->pg_rank);
             
             MPID_Request_release(req); /* ref count was incremented when added to queue */
             MPIDI_CH3U_Request_complete(req);

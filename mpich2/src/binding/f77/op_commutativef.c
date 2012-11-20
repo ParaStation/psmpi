@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_op_commutative( MPI_Fint *, MPI_Fint *,
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Op_commutative
 #define MPI_Op_commutative PMPI_Op_commutative 
 
@@ -189,5 +187,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_op_commutative( MPI_Fint *, MPI_Fint *,
 FORT_DLL_SPEC void FORT_CALL mpi_op_commutative_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
     int l2;
     *ierr = MPI_Op_commutative( *v1, &l2 );
-    *v2 = MPIR_TO_FLOG(l2);
+    if (*ierr == MPI_SUCCESS) *v2 = MPIR_TO_FLOG(l2);
 }

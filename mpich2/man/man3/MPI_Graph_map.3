@@ -1,9 +1,9 @@
-.TH MPI_Graph_map 3 "7/30/2010" " " "MPI"
+.TH MPI_Graph_map 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Graph_map \-  Maps process to graph topology information 
 .SH SYNOPSIS
 .nf
-int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *indx, int *edges,
+int MPI_Graph_map(MPI_Comm comm_old, int nnodes, MPICH2_CONST int *indx, MPICH2_CONST int *edges,
                   int *newrank)
 .fi
 .SH INPUT PARAMETERS
@@ -130,4 +130,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-graph_map.c
+src/mpi/topo/graph_map.c

@@ -1,9 +1,9 @@
-.TH MPI_Irsend 3 "7/27/2010" " " "MPI"
+.TH MPI_Irsend 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Irsend \-  Starts a nonblocking ready send 
 .SH SYNOPSIS
 .nf
-int MPI_Irsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+int MPI_Irsend(MPICH2_CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag,
                MPI_Comm comm, MPI_Request *request)
 .fi
 .SH INPUT PARAMETERS
@@ -177,4 +177,4 @@ implementation is unable to acquire memory.
 .PD 1
 
 .SH LOCATION
-irsend.c
+src/mpi/pt2pt/irsend.c

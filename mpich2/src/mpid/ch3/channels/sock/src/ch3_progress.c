@@ -169,6 +169,16 @@ static int MPIDI_CH3i_Progress_wait(MPID_Progress_state * progress_state)
     
     do
     {
+        int made_progress = FALSE;
+
+        /* make progress on NBC schedules, must come before we block on sock_wait */
+        mpi_errno = MPIDU_Sched_progress(&made_progress);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (made_progress) {
+            MPIDI_CH3_Progress_signal_completion();
+            break;
+        }
+
 #       ifdef MPICH_IS_THREADED
 
 	/* The logic for this case is just complicated enough that
@@ -287,7 +297,9 @@ int MPIDI_CH3I_Progress_init(void)
     /* FIXME should be appropriately abstracted somehow */
 #   if defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
     {
-	MPID_Thread_cond_create(&MPIDI_CH3I_progress_completion_cond, NULL);
+        int err;
+	MPID_Thread_cond_create(&MPIDI_CH3I_progress_completion_cond, &err);
+        MPIU_Assert(err == 0);
     }
 #   endif
     MPIU_THREAD_CHECK_END
@@ -353,7 +365,9 @@ int MPIDI_CH3I_Progress_finalize(void)
     /* FIXME should be appropriately abstracted somehow */
 #   if defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
     {
-	MPID_Thread_cond_destroy(&MPIDI_CH3I_progress_completion_cond, NULL);
+        int err;
+	MPID_Thread_cond_destroy(&MPIDI_CH3I_progress_completion_cond, &err);
+        MPIU_Assert(err == 0);
     }
 #   endif
     MPIU_THREAD_CHECK_END

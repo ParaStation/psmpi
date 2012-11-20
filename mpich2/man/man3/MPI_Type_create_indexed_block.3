@@ -1,11 +1,11 @@
-.TH MPI_Type_create_indexed_block 3 "7/29/2010" " " "MPI"
+.TH MPI_Type_create_indexed_block 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Type_create_indexed_block \-  Create an indexed datatype with constant-sized blocks 
 .SH SYNOPSIS
 .nf
 int MPI_Type_create_indexed_block(int count,
                                int blocklength,
-                               int array_of_displacements[],
+                               MPICH2_CONST int array_of_displacements[],
                                MPI_Datatype oldtype,
                                MPI_Datatype *newtype)
 .fi
@@ -156,4 +156,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-type_create_indexed_block.c
+src/mpi/datatype/type_create_indexed_block.c

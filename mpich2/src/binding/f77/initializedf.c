@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_initialized( MPI_Fint *, MPI_Fint * );
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Initialized
 #define MPI_Initialized PMPI_Initialized 
 
@@ -189,5 +187,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_initialized( MPI_Fint *, MPI_Fint * );
 FORT_DLL_SPEC void FORT_CALL mpi_initialized_ ( MPI_Fint *v1, MPI_Fint *ierr ){
     int l1;
     *ierr = MPI_Initialized( &l1 );
-    *v1 = MPIR_TO_FLOG(l1);
+    if (*ierr == MPI_SUCCESS) *v1 = MPIR_TO_FLOG(l1);
 }

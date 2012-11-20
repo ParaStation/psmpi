@@ -42,7 +42,7 @@
 .N MPI_SUCCESS
 .N 
 @*/
-int MPI_Info_delete( MPI_Info info, char *key )
+int MPI_Info_delete( MPI_Info info, MPICH2_CONST char *key )
 {
     static const char FCNAME[] = "MPI_Info_delete";
     int mpi_errno = MPI_SUCCESS;
@@ -61,7 +61,6 @@ int MPI_Info_delete( MPI_Info info, char *key )
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INFO(info, mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

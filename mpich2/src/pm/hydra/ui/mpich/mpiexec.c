@@ -20,128 +20,17 @@ struct HYD_exec *HYD_uii_mpx_exec_list = NULL;
 struct HYD_ui_info HYD_ui_info;
 struct HYD_ui_mpich_info HYD_ui_mpich_info;
 
-static void usage(void)
-{
-    printf("\n");
-    printf("Usage: ./mpiexec [global opts] [exec1 local opts] : [exec2 local opts] : ...\n\n");
-
-    printf("Global options (passed to all executables):\n");
-
-    printf("\n");
-    printf("  Global environment options:\n");
-    printf("    -genv {name} {value}             environment variable name and value\n");
-    printf("    -genvlist {env1,env2,...}        environment variable list to pass\n");
-    printf("    -genvnone                        do not pass any environment variables\n");
-    printf
-        ("    -genvall                         pass all environment variables not managed\n");
-    printf("                                          by the launcher (default)\n");
-
-    printf("\n");
-    printf("  Other global options:\n");
-    printf("    -f {name}                        file containing the host names\n");
-    printf("    -hosts {host list}               comma separated host list\n");
-    printf("    -wdir {dirname}                  working directory to use\n");
-    printf
-        ("    -configfile {name}               config file containing MPMD launch options\n");
-
-    printf("\n");
-    printf("\n");
-
-    printf("Local options (passed to individual executables):\n");
-
-    printf("\n");
-    printf("  Local environment options:\n");
-    printf("    -env {name} {value}              environment variable name and value\n");
-    printf("    -envlist {env1,env2,...}         environment variable list to pass\n");
-    printf("    -envnone                         do not pass any environment variables\n");
-    printf("    -envall                          pass all environment variables (default)\n");
-
-    printf("\n");
-    printf("  Other local options:\n");
-    printf("    -n/-np {value}                   number of processes\n");
-    printf("    {exec_name} {args}               executable name and arguments\n");
-
-    printf("\n");
-    printf("\n");
-
-    printf("Hydra specific options (treated as global):\n");
-
-    printf("\n");
-    printf("  Launch options:\n");
-    printf("    -launcher                        launcher to use (%s)\n",
-           HYDRA_AVAILABLE_LAUNCHERS);
-    printf("    -launcher-exec                   executable to use to launch processes\n");
-    printf("    -enable-x/-disable-x             enable or disable X forwarding\n");
-
-    printf("\n");
-    printf("  Resource management kernel options:\n");
-    printf("    -rmk                             resource management kernel to use (%s)\n",
-           HYDRA_AVAILABLE_RMKS);
-
-    printf("\n");
-    printf("  Hybrid programming options:\n");
-    printf("    -ranks-per-proc                  assign so many ranks to each process\n");
-
-    printf("\n");
-    printf("  Processor topology options:\n");
-    printf("    -binding                         process-to-core binding mode\n");
-    printf("    -topolib                         processor topology library (%s)\n",
-           HYDRA_AVAILABLE_TOPOLIBS);
-
-    printf("\n");
-    printf("  Checkpoint/Restart options:\n");
-    printf("    -ckpoint-interval                checkpoint interval\n");
-    printf("    -ckpoint-prefix                  checkpoint file prefix\n");
-    printf("    -ckpoint-num                     checkpoint number to restart\n");
-    printf("    -ckpointlib                      checkpointing library (%s)\n",
-           !strcmp(HYDRA_AVAILABLE_CKPOINTLIBS, "") ? "none" : HYDRA_AVAILABLE_CKPOINTLIBS);
-
-    printf("\n");
-    printf("  Demux engine options:\n");
-    printf("    -demux                           demux engine (%s)\n",
-           HYDRA_AVAILABLE_DEMUXES);
-
-    printf("\n");
-    printf("  Other Hydra options:\n");
-    printf("    -verbose                         verbose mode\n");
-    printf("    -info                            build information\n");
-    printf("    -print-all-exitcodes             print exit codes of all processes\n");
-    printf("    -iface                           network interface to use\n");
-    printf("    -ppn                             processes per node\n");
-    printf("    -profile                         turn on internal profiling\n");
-    printf("    -prepend-rank                    prepend rank to output\n");
-    printf("    -prepend-pattern                 prepend pattern to output\n");
-    printf("    -outfile-pattern                 direct stdout to file\n");
-    printf("    -errfile-pattern                 direct stderr to file\n");
-    printf
-        ("    -nameserver                      name server information (host:port format)\n");
-    printf("    -disable-auto-cleanup            don't cleanup processes on error\n");
-    printf("    -disable-hostname-propagation    let MPICH2 auto-detect the hostname\n");
-    printf("    -order-nodes                     order nodes as ascending/descending cores\n");
-
-    printf("\n");
-    printf("Please see the intructions provided at\n");
-    printf("http://wiki.mcs.anl.gov/mpich2/index.php/Using_the_Hydra_Process_Manager\n");
-    printf("for further details\n\n");
-}
-
 static void signal_cb(int signum)
 {
     struct HYD_cmd cmd;
+    static int sigint_count = 0;
     int sent, closed;
 
     HYDU_FUNC_ENTER();
 
-    if (signum == SIGINT) {
-        /* SIGINT is a special signal which we don't send to the
-         * proxies directly. This is our fallback path if something
-         * went wrong with Hydra and the user wants to abort. */
-        cmd.type = HYD_CLEANUP;
-        HYDU_sock_write(HYD_server_info.cleanup_pipe[1], &cmd, sizeof(cmd), &sent, &closed);
-    }
-    else if (signum == SIGALRM) {
-        /* SIGALRM is special signal that indicates that a checkpoint
-         * needs to be initiated */
+    /* SIGALRM is a special signal that indicates that a checkpoint
+     * needs to be initiated */
+    if (signum == SIGALRM) {
         if (HYD_server_info.user_global.ckpoint_prefix == NULL) {
             HYDU_dump(stderr, "No checkpoint prefix provided\n");
             return;
@@ -153,15 +42,28 @@ static void signal_cb(int signum)
 #endif /* HAVE_ALARM */
 
         cmd.type = HYD_CKPOINT;
-        HYDU_sock_write(HYD_server_info.cleanup_pipe[1], &cmd, sizeof(cmd), &sent, &closed);
-    }
-    else {
-        /* All other signals are forwarded to the user */
-        cmd.type = HYD_SIGNAL;
-        cmd.signum = signum;
-        HYDU_sock_write(HYD_server_info.cleanup_pipe[1], &cmd, sizeof(cmd), &sent, &closed);
+        HYDU_sock_write(HYD_server_info.cmd_pipe[1], &cmd, sizeof(cmd), &sent, &closed);
+
+        goto fn_exit;
     }
 
+    cmd.type = HYD_SIGNAL;
+    cmd.signum = signum;
+
+    /* SIGINT is a partially special signal. The first time we see it,
+     * we will send it to the processes. The next time, we will treat
+     * it as a SIGKILL (user convenience to force kill processes). */
+    if (signum == SIGINT && ++sigint_count > 1)
+        cmd.type = HYD_CLEANUP;
+    else if (signum == SIGINT) {
+        /* First Ctrl-C */
+        HYDU_dump(stdout, "Sending Ctrl-C to processes as requested\n");
+        HYDU_dump(stdout, "Press Ctrl-C again to force abort\n");
+    }
+
+    HYDU_sock_write(HYD_server_info.cmd_pipe[1], &cmd, sizeof(cmd), &sent, &closed);
+
+  fn_exit:
     HYDU_FUNC_EXIT();
     return;
 }
@@ -240,7 +142,7 @@ int main(int argc, char **argv)
     status = HYDU_set_common_signals(signal_cb);
     HYDU_ERR_POP(status, "unable to set signal\n");
 
-    if (pipe(HYD_server_info.cleanup_pipe) < 0)
+    if (pipe(HYD_server_info.cmd_pipe) < 0)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "pipe error\n");
 
     status = HYDT_ftb_init();
@@ -249,13 +151,7 @@ int main(int argc, char **argv)
 
     /* Get user preferences */
     status = HYD_uii_mpx_get_parameters(argv);
-    if (status == HYD_GRACEFUL_ABORT) {
-        exit(0);
-    }
-    else if (status != HYD_SUCCESS) {
-        usage();
-        goto fn_fail;
-    }
+    HYDU_ERR_POP(status, "error parsing parameters\n");
 
 
     /* Now we initialize engines that require us to know user
@@ -296,6 +192,21 @@ int main(int argc, char **argv)
         }
     }
 
+    /*
+     * If this is a checkpoint-restart, if the user specified the
+     * number of processes, we already have a dummy executable. If the
+     * number of processes came from the RMK, our executable list is
+     * still NULL; a dummy executable needs to be created.
+     */
+    if (HYD_uii_mpx_exec_list == NULL) {
+        HYDU_ASSERT(HYD_server_info.user_global.ckpoint_prefix, status);
+
+        /* create a dummy executable */
+        status = HYDU_alloc_exec(&HYD_uii_mpx_exec_list);
+        HYDU_ERR_POP(status, "unable to allocate exec\n");
+        HYD_uii_mpx_exec_list->appnum = 0;
+    }
+
     if (HYD_server_info.user_global.debug)
         for (node = HYD_server_info.node_list; node; node = node->next)
             HYDU_dump_noprefix(stdout, "host: %s\n", node->hostname);
@@ -316,6 +227,10 @@ int main(int argc, char **argv)
     }
 
     if (reset_rmk) {
+        /* Reassign node IDs to each node */
+        for (node = HYD_server_info.node_list, i = 0; node; node = node->next, i++)
+            node->node_id = i;
+
         /* Reinitialize the bootstrap server with the "user" RMK, so
          * it knows that we are not using the node list provided by
          * the RMK */
@@ -326,10 +241,6 @@ int main(int argc, char **argv)
                                 HYDT_bsci_info.enablex, HYDT_bsci_info.debug);
         HYDU_ERR_POP(status, "unable to reinitialize the bootstrap server\n");
     }
-
-    /* Assign a node ID to each node */
-    for (node = HYD_server_info.node_list, i = 0; node; node = node->next, i++)
-        node->node_id = i;
 
     /* If the number of processes is not given, we allocate all the
      * available nodes to each executable */
@@ -356,25 +267,34 @@ int main(int argc, char **argv)
     for (proxy = HYD_server_info.pg_list.proxy_list; proxy; proxy = proxy->next)
         HYD_server_info.pg_list.pg_core_count += proxy->node->core_count;
 
-    /* See if the node list contains a remotely accessible localhost */
-    for (proxy = HYD_server_info.pg_list.proxy_list; proxy; proxy = proxy->next) {
-        int is_local, remote_access;
+    /* If the user didn't specify a local hostname, try to find one in
+     * the list of nodes passed to us */
+    if (HYD_server_info.localhost == NULL) {
+        /* See if the node list contains a remotely accessible localhost */
+        for (node = HYD_server_info.node_list; node; node = node->next) {
+            int is_local, remote_access;
 
-        status = HYDU_sock_is_local(proxy->node->hostname, &is_local);
-        HYDU_ERR_POP(status, "unable to check if %s is local\n", proxy->node->hostname);
+            status = HYDU_sock_is_local(node->hostname, &is_local);
+            HYDU_ERR_POP(status, "unable to check if %s is local\n", node->hostname);
 
-        if (is_local) {
-            status = HYDU_sock_remote_access(proxy->node->hostname, &remote_access);
-            HYDU_ERR_POP(status, "unable to check if %s is remotely accessible\n",
-                         proxy->node->hostname);
+            if (is_local) {
+                status = HYDU_sock_remote_access(node->hostname, &remote_access);
+                HYDU_ERR_POP(status, "unable to check if %s is remotely accessible\n",
+                             node->hostname);
 
-            if (remote_access)
-                break;
+                if (remote_access)
+                    break;
+            }
+        }
+
+        if (node)
+            HYD_server_info.localhost = HYDU_strdup(node->hostname);
+        else {
+            HYDU_MALLOC(HYD_server_info.localhost, char *, MAX_HOSTNAME_LEN, status);
+            status = HYDU_gethostname(HYD_server_info.localhost);
+            HYDU_ERR_POP(status, "unable to get local hostname\n");
         }
     }
-
-    if (proxy)
-        HYD_server_info.local_hostname = HYDU_strdup(proxy->node->hostname);
 
     if (HYD_server_info.user_global.debug)
         HYD_uiu_print_params();
@@ -461,8 +381,10 @@ int main(int argc, char **argv)
     else if (status != HYD_SUCCESS)
         return -1;
     else if (WIFSIGNALED(exit_status)) {
-        printf("APPLICATION TERMINATED WITH THE EXIT STRING: %s (signal %d)\n",
+        printf("YOUR APPLICATION TERMINATED WITH THE EXIT STRING: %s (signal %d)\n",
                strsignal(WTERMSIG(exit_status)), WTERMSIG(exit_status));
+        printf("This typically refers to a problem with your application.\n");
+        printf("Please see the FAQ page for debugging suggestions\n");
         return exit_status;
     }
     else if (WIFEXITED(exit_status)) {

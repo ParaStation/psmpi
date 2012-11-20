@@ -1,3 +1,4 @@
+!     -*- Mode: Fortran; -*-
 !  (C) 2008 by Argonne National Laboratory.
 !       See COPYRIGHT in top-level directory.
         MODULE MPI_CONSTANTS

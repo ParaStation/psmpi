@@ -10,9 +10,13 @@
 package base.drawable;
 
 // import java.util.Comparator;
-import java.util.Map;
 import java.awt.Graphics2D;
+import java.awt.Color;
 import java.awt.Point;
+
+import cern.colt.map.OpenIntIntHashMap;
+import base.topology.Pointer;
+import base.topology.MarkerState;
 
 public abstract class Drawable extends InfoBox
 {
@@ -40,7 +44,7 @@ public abstract class Drawable extends InfoBox
     private              int        row_ID;        // For SLOG-2 Input API
 
     // non-null parent => this Drawable is part of a Composite Drawable
-    private              Drawable parent;        // For SLOG-2 Input API
+    private              Drawable   parent;        // For SLOG-2 Input API
 
 
     public Drawable()
@@ -171,44 +175,226 @@ public abstract class Drawable extends InfoBox
 
     public abstract Coord     getFinalVertex();
 
-    public abstract int       drawState( Graphics2D       g,
-                                         CoordPixelXform  coord_xform,
-                                         Map              map_line2row,
-                                         DrawnBoxSet      drawn_boxes,
-                                         ColorAlpha       color );
+    public abstract int       drawStateOnCanvas( Graphics2D        g,
+                                                 CoordPixelXform   coord_xform,
+                                                 OpenIntIntHashMap map_line2row,
+                                                 DrawnBoxSet       drawn_boxes,
+                                                 ColorAlpha        color );
 
-    public abstract int       drawArrow( Graphics2D       g,
-                                         CoordPixelXform  coord_xform,
-                                         Map              map_line2row,
-                                         DrawnBoxSet      drawn_boxes,
-                                         ColorAlpha       color );
+    public abstract int       drawArrowOnCanvas( Graphics2D        g,
+                                                 CoordPixelXform   coord_xform,
+                                                 OpenIntIntHashMap map_line2row,
+                                                 DrawnBoxSet       drawn_boxes,
+                                                 ColorAlpha        color );
 
-    public abstract int       drawEvent( Graphics2D       g,
-                                         CoordPixelXform  coord_xform,
-                                         Map              map_line2row,
-                                         DrawnBoxSet      drawn_boxes,
-                                         ColorAlpha       color );
+    public abstract int       drawEventOnCanvas( Graphics2D        g,
+                                                 CoordPixelXform   coord_xform,
+                                                 OpenIntIntHashMap map_line2row,
+                                                 DrawnBoxSet       drawn_boxes,
+                                                 ColorAlpha        color );
 
-    public abstract boolean   isPixelInState( CoordPixelXform  coord_xform,
-                                              Map              map_line2row,
-                                              Point            pix_pt );
+    public abstract boolean   isPixelInState( CoordPixelXform   coord_xform,
+                                              OpenIntIntHashMap map_line2row,
+                                              Point             pix_pt );
 
-    public abstract boolean   isPixelOnArrow( CoordPixelXform  coord_xform,
-                                              Map              map_line2row,
-                                              Point            pix_pt );
+    public abstract boolean   isPixelOnArrow( CoordPixelXform   coord_xform,
+                                              OpenIntIntHashMap map_line2row,
+                                              Point             pix_pt );
 
-    public abstract boolean   isPixelAtEvent( CoordPixelXform  coord_xform,
-                                              Map              map_line2row,
-                                              Point            pix_pt );
+    public abstract boolean   isPixelAtEvent( CoordPixelXform   coord_xform,
+                                              OpenIntIntHashMap map_line2row,
+                                              Point             pix_pt );
+
+    public abstract int       drawStateOnViewport( Graphics2D     g,
+                                                CoordPixelXform   coord_xform,
+                                                OpenIntIntHashMap map_line2row,
+                                                ColorAlpha        color );
+
+    public abstract int       drawArrowOnViewport( Graphics2D     g,
+                                                CoordPixelXform   coord_xform,
+                                                OpenIntIntHashMap map_line2row,
+                                                ColorAlpha        color );
+
+    public abstract int       drawEventOnViewport( Graphics2D     g,
+                                                CoordPixelXform   coord_xform,
+                                                OpenIntIntHashMap map_line2row,
+                                                ColorAlpha        color );
 
     public abstract boolean   containSearchable();
+
+    // Since Searchable is assumed to be a State drawable,
+    // drawSearchableOnViewport() still needs to be an abstract interface.
+    // Because State drawable can be Shadow or Primitive which have different
+    // way of obtaining the start and final timestamps.  In the simplest
+    // possible scenario, when there is no Composite drawable, Shadow and
+    // Primitive, could have identical GET timestamp methods, i.e.
+    // getEarliestTime() and getLatestTime().  But just to be consistent with
+    // drawStateOnViewport() which is an abstract interface, 
+    // drawSearchableOnViewport() should be made abstract interface.
+    public abstract int  drawSearchableOnViewport( Graphics2D     g,
+                                                CoordPixelXform   coord_xform,
+                                                OpenIntIntHashMap map_line2row
+                                                 );
+
+
+
+    private float getRowIDAtTimeOnEvent( OpenIntIntHashMap map_line2row,
+                                         double            marker_time )
+    {
+        Coord vtx   = this.getStartVertex();
+        return (float) map_line2row.get( vtx.lineID );
+    }
+
+    private float getRowIDAtTimeOnState( OpenIntIntHashMap map_line2row,
+                                         double            marker_time )
+    {
+        Coord vtx   = this.getStartVertex();
+        return (float) map_line2row.get( vtx.lineID );
+    }
+
+    private float getRowIDAtTimeOnArrow( OpenIntIntHashMap map_line2row,
+                                         double            marker_time )
+    {
+        Coord  start_vtx, final_vtx;
+        start_vtx = this.getStartVertex();
+        final_vtx = this.getFinalVertex();
+
+        double tStart, tFinal;
+        tStart = start_vtx.time;
+        tFinal = final_vtx.time;
+
+        double  rStart, rFinal;
+        rStart = (double) map_line2row.get( start_vtx.lineID );
+        rFinal = (double) map_line2row.get( final_vtx.lineID );
+
+        boolean  isSlopeNonComputable = false;
+        double   slope = 0.0;
+        if ( tStart != tFinal )
+            slope = (double) ( rFinal - rStart ) / ( tFinal - tStart );
+        else {
+            isSlopeNonComputable = true;
+            if ( rStart != rFinal )
+                if ( rFinal > rStart )
+                    slope = Double.POSITIVE_INFINITY;
+                else
+                    slope = Double.NEGATIVE_INFINITY;
+            else
+                // rStart==rFinal, tStart==tFinal, same point
+                slope = Double.NaN;
+        }
+
+        double marker_rowID;
+        if ( ! isSlopeNonComputable )
+            marker_rowID = slope * ( marker_time - tStart ) + rStart;
+        else
+            marker_rowID = ( rStart + rFinal ) / 2.0;
+
+        return (float) marker_rowID;
+    }
+
+    public float getRowIDAtTime( OpenIntIntHashMap  map_line2row,
+                                 double             marker_time )
+    {
+        Category type = super.getCategory();
+        Topology topo = type.getTopology();
+        if ( topo.isEvent() ) {
+            return this.getRowIDAtTimeOnEvent( map_line2row, marker_time );
+        }
+        else if ( topo.isState() ) {
+            return this.getRowIDAtTimeOnState( map_line2row, marker_time );
+        }
+        else if ( topo.isArrow() ) {
+            return this.getRowIDAtTimeOnArrow( map_line2row, marker_time );
+        }
+        else
+            System.err.println( "Non-recognized Primitive type! " + this );
+        return 0;
+    }
+
+    private int drawEventPointerOnViewport( Graphics2D       g,
+                                            CoordPixelXform  coord_xform,
+                                            Coord_TimeRowID  marker_vtx )
+    {
+        Color color = super.getCategory().getColor();
+        int marker_rowID_i = Math.round( marker_vtx.rowID );
+        Pointer.drawLower( g, color, null, coord_xform,
+                           marker_vtx.time, marker_rowID_i+0.3f, 0 );
+        return 1;
+    }
+
+    private int drawStatePointerOnViewport( Graphics2D       g,
+                                            CoordPixelXform  coord_xform,
+                                            Coord_TimeRowID  marker_vtx )
+    {
+        Color color = super.getCategory().getColor();
+        int marker_rowID_i = Math.round( marker_vtx.rowID );
+        float  nestingftr;
+        /* assume NestingFactor has been calculated */
+        nestingftr  = this.getNestingFactor();
+
+        float  rStart, rFinal;
+        rStart = (float) marker_rowID_i - nestingftr / 2.0f;
+        rFinal = rStart + nestingftr;
+
+        Pointer.drawUpper( g, color, null, coord_xform,
+                           marker_vtx.time, rStart, -MarkerState.Border_Width );
+        Pointer.drawLower( g, color, null, coord_xform,
+                           marker_vtx.time, rFinal, MarkerState.Border_Width );
+        return 1;
+    }
+
+    private int drawArrowPointerOnViewport( Graphics2D       g,
+                                            CoordPixelXform  coord_xform,
+                                            Coord_TimeRowID  marker_vtx )
+    {
+        Color color = super.getCategory().getColor();
+        // Check if marker's rowID is an integral value, or close to one.
+        if ( Math.abs( marker_vtx.rowID - (int)marker_vtx.rowID ) < 0.01f ) {
+            Pointer.drawUpper( g, color, null, coord_xform,
+                               marker_vtx.time, marker_vtx.rowID-0.3f, 0 );
+            Pointer.drawLower( g, color, null, coord_xform,
+                               marker_vtx.time, marker_vtx.rowID+0.3f, 0 );
+        }
+        else {
+            if ( marker_vtx.rowID - Math.round( marker_vtx.rowID ) < 0.0f )
+                Pointer.drawUpper( g, color, null, coord_xform,
+                                   marker_vtx.time, marker_vtx.rowID, 0 );
+            else
+                Pointer.drawLower( g, color, null, coord_xform,
+                                   marker_vtx.time, marker_vtx.rowID, 0 );
+        }
+        return 1;
+    }
+
+    public int drawPointerOnViewport( Graphics2D       g,
+                                      CoordPixelXform  coord_xform,
+                                      Coord_TimeRowID  marker_vtx )
+    {
+        Category type = super.getCategory();
+        Topology topo = type.getTopology();
+        if ( topo.isEvent() ) {
+            return this.drawEventPointerOnViewport( g, coord_xform,
+                                                    marker_vtx );
+        }
+        else if ( topo.isState() ) {
+            return this.drawStatePointerOnViewport( g, coord_xform,
+                                                    marker_vtx );
+        }
+        else if ( topo.isArrow() ) {
+            return this.drawArrowPointerOnViewport( g, coord_xform,
+                                                    marker_vtx );
+        }
+        else
+            System.err.println( "Non-recognized Primitive type! " + this );
+        return 0;
+    }
 
 
 
     /* Caller needs to be sure that the Drawable displayed is a State */
-    public void setStateRowAndNesting( CoordPixelXform  coord_xform,
-                                       Map              map_line2row,
-                                       NestingStacks    nesting_stacks )
+    public void setStateRowAndNesting( CoordPixelXform    coord_xform,
+                                       OpenIntIntHashMap  map_line2row,
+                                       NestingStacks      nesting_stacks )
     {
         Coord  start_vtx;
         start_vtx = this.getStartVertex();
@@ -217,40 +403,40 @@ public abstract class Drawable extends InfoBox
         final_vtx = this.getFinalVertex();
         */
 
-        row_ID  = ( (Integer)
-                    map_line2row.get( new Integer(start_vtx.lineID) )
-                  ).intValue();
+        row_ID      = map_line2row.get( start_vtx.lineID );
         nesting_ftr = nesting_stacks.getNestingFactorFor( this );
     }
 
     /* return number of primitives drawn */
-    public int       drawOnCanvas( Graphics2D      g,
-                                   CoordPixelXform coord_xform,
-                                   Map             map_line2row,
-                                   DrawnBoxSet     drawn_boxes )
+    // drawOnCanvas() implementation DOES NOT check
+    // if drawable is completely out of image bound.
+    public int       drawOnCanvas( Graphics2D         g,
+                                   CoordPixelXform    coord_xform,
+                                   OpenIntIntHashMap  map_line2row,
+                                   DrawnBoxSet        drawn_boxes )
     {
         Category type = super.getCategory();
         Topology topo = type.getTopology();
         if ( topo.isEvent() ) {
-            return this.drawEvent( g, coord_xform, map_line2row,
-                                   drawn_boxes, type.getColor() );
+            return this.drawEventOnCanvas( g, coord_xform, map_line2row,
+                                           drawn_boxes, type.getColor() );
         }
         else if ( topo.isState() ) {
-            return this.drawState( g, coord_xform, map_line2row,
-                                   drawn_boxes, type.getColor() );
+            return this.drawStateOnCanvas( g, coord_xform, map_line2row,
+                                           drawn_boxes, type.getColor() );
         }
         else if ( topo.isArrow() ) {
-            return this.drawArrow( g, coord_xform, map_line2row,
-                                   drawn_boxes, type.getColor() );
+            return this.drawArrowOnCanvas( g, coord_xform, map_line2row,
+                                           drawn_boxes, type.getColor() );
         }
         else
             System.err.println( "Non-recognized Primitive type! " + this );
         return 0;
     }
 
-    public Drawable getDrawableAt( CoordPixelXform  coord_xform,
-                                   Map              map_line2row,
-                                   Point            pix_pt )
+    public Drawable getDrawableAt( CoordPixelXform    coord_xform,
+                                   OpenIntIntHashMap  map_line2row,
+                                   Point              pix_pt )
     {
         Category type = super.getCategory();
         Topology topo = type.getTopology();
@@ -269,6 +455,32 @@ public abstract class Drawable extends InfoBox
         else
             System.err.println( "Non-recognized Primitive type! " + this );
         return null;
+    }
+
+    /* return number of primitives drawn */
+    // drawOnViewport() implementation DOES check
+    // if drawable is completely out of image bound.
+    public int       drawOnViewport( Graphics2D         g,
+                                     CoordPixelXform    coord_xform,
+                                     OpenIntIntHashMap  map_line2row )
+    {
+        Category type = super.getCategory();
+        Topology topo = type.getTopology();
+        if ( topo.isEvent() ) {
+            return this.drawEventOnViewport( g, coord_xform, map_line2row,
+                                             type.getColor() );
+        }
+        else if ( topo.isState() ) {
+            return this.drawStateOnViewport( g, coord_xform, map_line2row,
+                                             type.getColor() );
+        }
+        else if ( topo.isArrow() ) {
+            return this.drawArrowOnViewport( g, coord_xform, map_line2row,
+                                             type.getColor() );
+        }
+        else
+            System.err.println( "Non-recognized Primitive type! " + this );
+        return 0;
     }
 
 

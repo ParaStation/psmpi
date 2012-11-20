@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_get_name( MPI_Fint *, char * FORT_
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Type_get_name
 #define MPI_Type_get_name PMPI_Type_get_name 
 

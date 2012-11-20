@@ -90,7 +90,6 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
 	    if (count != 0) {
 		MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
@@ -98,7 +97,6 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
 		MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
 	    }
 	    MPIR_ERRTEST_ARGNULL(index, "index", mpi_errno);
-	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -126,9 +124,7 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
 #ifdef HAVE_ERROR_CHECKING
                 MPID_BEGIN_ERROR_CHECKS;
                 {
-                    MPIR_ERRTEST_ARRAYREQUEST_OR_NULL(array_of_requests[i], 
-						      i, mpi_errno);
-                    if (mpi_errno != MPI_SUCCESS) goto fn_progress_end_fail;
+                    MPIR_ERRTEST_ARRAYREQUEST_OR_NULL(array_of_requests[i], i, mpi_errno);
                 }
                 MPID_END_ERROR_CHECKS;
 #endif /* HAVE_ERROR_CHECKING */
@@ -158,10 +154,10 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
             /* we found at least one non-null request */
             found_nonnull_req = TRUE;
             
-	    if (request_ptrs[i]->kind == MPID_UREQUEST && request_ptrs[i]->poll_fn != NULL)
+            if (request_ptrs[i]->kind == MPID_UREQUEST && request_ptrs[i]->greq_fns->poll_fn != NULL)
 	    {
                 /* this is a generalized request; make progress on it */
-		mpi_errno = (request_ptrs[i]->poll_fn)(request_ptrs[i]->grequest_extra_state, status);
+                mpi_errno = (request_ptrs[i]->greq_fns->poll_fn)(request_ptrs[i]->greq_fns->grequest_extra_state, status);
 		if (mpi_errno != MPI_SUCCESS) goto fn_progress_end_fail;
 	    }
             if (MPID_Request_is_complete(request_ptrs[i]))

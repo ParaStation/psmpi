@@ -10,8 +10,8 @@ Creates an indexed datatype
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Type_indexed(int count,
-                    int blocklens[],
-                    int indices[],
+                    MPICH2_CONST int blocklens[],
+                    MPICH2_CONST int indices[],
                     MPI_Datatype old_type,
                     MPI_Datatype *newtype)
 </PRE>
@@ -100,5 +100,5 @@ identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 <DL><DT><B>MPI_ERR_INTERN </B> <DD> This error is returned when some part of the MPICH 
 implementation is unable to acquire memory.  
 </DL>
-<P><B>Location:</B>type_indexed.c<P>
+<P><B>Location:</B>src/mpi/datatype/type_indexed.c<P>
 </BODY></HTML>

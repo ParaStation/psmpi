@@ -9,8 +9,8 @@
 Gathers data from all tasks and distribute the combined data to all tasks 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
-                  void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+int MPI_Allgather(MPICH2_CONST void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                  void *recvbuf, int recvcount, MPI_Datatype recvtype,
                   MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -103,5 +103,5 @@ MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 <DL><DT><B>MPI_ERR_BUFFER </B> <DD> Invalid buffer pointer.  Usually a null buffer where
 one is not valid.
 </DL>
-<P><B>Location:</B>allgather.c<P>
+<P><B>Location:</B>src/mpi/coll/allgather.c<P>
 </BODY></HTML>

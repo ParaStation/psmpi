@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_errhandler_free( MPI_Fint *, MPI_Fint *
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Errhandler_free
 #define MPI_Errhandler_free PMPI_Errhandler_free 
 
@@ -187,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_errhandler_free( MPI_Fint *, MPI_Fint *
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_errhandler_free_ ( MPI_Fint *v1, MPI_Fint *ierr ){
-    *ierr = MPI_Errhandler_free( v1 );
+    *ierr = MPI_Errhandler_free( (MPI_Errhandler *)(v1) );
 }

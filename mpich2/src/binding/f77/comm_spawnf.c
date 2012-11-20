@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn( char * FORT_MIXED_LEN_DECL,
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Comm_spawn
 #define MPI_Comm_spawn PMPI_Comm_spawn 
 
@@ -236,8 +234,9 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_ ( char *v1 FORT_MIXED_LEN(d1), char
     p2[asize2-1] = 0;
     }
 
-    if (v8 == MPI_F_ERRCODES_IGNORE) { v8 = MPI_ERRCODES_IGNORE; }
+    if ((MPI_Fint*)v8 == MPI_F_ERRCODES_IGNORE) { v8 = (MPI_Fint *)MPI_ERRCODES_IGNORE; }
     *ierr = MPI_Comm_spawn( p1, p2, *v3, (MPI_Info)(*v4), *v5, (MPI_Comm)(*v6), (MPI_Comm *)(v7), (int *)v8 );
     MPIU_Free( p1 );
-    MPIU_Free( p2[0] ); MPIU_Free( p2 );
+    MPIU_Free( p2[0] );
+    MPIU_Free( p2 );
 }

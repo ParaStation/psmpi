@@ -5,8 +5,8 @@
  */
 /* automatically generated
  *   by:   ./maint/genparams
- *   on:   Thu Sep  1 13:55:43 2011
- *   from: src/util/param/params.yml (md5sum 6d969dfaee560cd15ba5b677edcb1867)
+ *   on:   Mon Oct  8 14:01:08 2012
+ *   from: src/util/param/params.yml (md5sum dabefd4ebb90a37693fa984f8332424f)
  *
  * DO NOT EDIT!!!
  */
@@ -19,6 +19,7 @@ enum MPIR_Param_category_id_t {
     MPIR_PARAM_CATEGORY_ID_collective,
     MPIR_PARAM_CATEGORY_ID_communicator,
     MPIR_PARAM_CATEGORY_ID_pt2pt,
+    MPIR_PARAM_CATEGORY_ID_rma,
     MPIR_PARAM_CATEGORY_ID_intranode,
     MPIR_PARAM_CATEGORY_ID_developer,
     MPIR_PARAM_CATEGORY_ID_memory,
@@ -60,8 +61,12 @@ enum MPIR_Param_id_t {
     MPIR_PARAM_ID_SCATTER_INTER_SHORT_MSG_SIZE,
     MPIR_PARAM_ID_ALLGATHERV_PIPELINE_MSG_SIZE,
     MPIR_PARAM_ID_COMM_SPLIT_USE_QSORT,
+    MPIR_PARAM_ID_RMA_ACC_IMMED,
+    MPIR_PARAM_ID_RMA_NREQUEST_THRESHOLD,
+    MPIR_PARAM_ID_RMA_NREQUEST_NEW_THRESHOLD,
     MPIR_PARAM_ID_NOLOCAL,
     MPIR_PARAM_ID_ODD_EVEN_CLIQUES,
+    MPIR_PARAM_ID_POLLS_BEFORE_YIELD,
     MPIR_PARAM_ID_MEMDUMP,
     MPIR_PARAM_ID_PROCTABLE_SIZE,
     MPIR_PARAM_ID_PROCTABLE_PRINT,
@@ -73,16 +78,22 @@ enum MPIR_Param_id_t {
     MPIR_PARAM_ID_INTERFACE_HOSTNAME,
     MPIR_PARAM_ID_NETWORK_IFACE,
     MPIR_PARAM_ID_HOST_LOOKUP_RETRIES,
+    MPIR_PARAM_ID_SHM_EAGER_MAX_SZ,
+    MPIR_PARAM_ID_SHM_READY_EAGER_MAX_SZ,
+    MPIR_PARAM_ID_COMM_OVERRIDES,
     MPIR_PARAM_ID_DEBUG_HOLD,
     MPIR_PARAM_ID_ENABLE_CKPOINT,
     MPIR_PARAM_ID_ENABLE_COLL_FT_RET,
     MPIR_PARAM_ID_ABORT_ON_LEAKED_HANDLES,
     MPIR_PARAM_ID_PORT_RANGE,
+    MPIR_PARAM_ID_CTXID_EAGER_SIZE,
     MPIR_PARAM_NUM_PARAMS
 };
 
 /* initializes parameter values from the environment */
 int MPIR_Param_init_params(void);
+
+int MPIR_Param_finalize(void);
 
 enum MPIR_Param_type_t {
     MPIR_PARAM_TYPE_INVALID = 0,
@@ -114,7 +125,7 @@ struct MPIR_Param_t {
     const char *name;
     const char *description;
     const struct MPIR_Param_param_default_val_t default_val;
-    /* TODO other fields here */
+    void *val_p; /* ptr to the actual value */
 };
 
 /* array of parameter info for runtime usage */
@@ -139,8 +150,12 @@ extern int MPIR_PARAM_GATHERV_INTER_SSEND_MIN_PROCS;
 extern int MPIR_PARAM_SCATTER_INTER_SHORT_MSG_SIZE;
 extern int MPIR_PARAM_ALLGATHERV_PIPELINE_MSG_SIZE;
 extern int MPIR_PARAM_COMM_SPLIT_USE_QSORT;
+extern int MPIR_PARAM_RMA_ACC_IMMED;
+extern int MPIR_PARAM_RMA_NREQUEST_THRESHOLD;
+extern int MPIR_PARAM_RMA_NREQUEST_NEW_THRESHOLD;
 extern int MPIR_PARAM_NOLOCAL;
 extern int MPIR_PARAM_ODD_EVEN_CLIQUES;
+extern int MPIR_PARAM_POLLS_BEFORE_YIELD;
 extern int MPIR_PARAM_MEMDUMP;
 extern int MPIR_PARAM_PROCTABLE_SIZE;
 extern int MPIR_PARAM_PROCTABLE_PRINT;
@@ -148,18 +163,25 @@ extern int MPIR_PARAM_ERROR_CHECKING;
 extern int MPIR_PARAM_PRINT_ERROR_STACK;
 extern int MPIR_PARAM_CHOP_ERROR_STACK;
 extern int MPIR_PARAM_NEM_LMT_DMA_THRESHOLD;
-extern const char * MPIR_PARAM_NEMESIS_NETMOD;
-extern const char * MPIR_PARAM_INTERFACE_HOSTNAME;
-extern const char * MPIR_PARAM_NETWORK_IFACE;
+extern char * MPIR_PARAM_NEMESIS_NETMOD;
+extern char * MPIR_PARAM_INTERFACE_HOSTNAME;
+extern char * MPIR_PARAM_NETWORK_IFACE;
 extern int MPIR_PARAM_HOST_LOOKUP_RETRIES;
+extern int MPIR_PARAM_SHM_EAGER_MAX_SZ;
+extern int MPIR_PARAM_SHM_READY_EAGER_MAX_SZ;
+extern int MPIR_PARAM_COMM_OVERRIDES;
 extern int MPIR_PARAM_DEBUG_HOLD;
 extern int MPIR_PARAM_ENABLE_CKPOINT;
 extern int MPIR_PARAM_ENABLE_COLL_FT_RET;
 extern int MPIR_PARAM_ABORT_ON_LEAKED_HANDLES;
 extern MPIR_Param_param_range_val_t MPIR_PARAM_PORT_RANGE;
+extern int MPIR_PARAM_CTXID_EAGER_SIZE;
 
 /* TODO: this should be defined elsewhere */
 #define MPIR_Param_assert MPIU_Assert
+
+/* arbitrary, simplifies interaction with external interfaces like MPI_T_ */
+#define MPIR_PARAM_MAX_STRLEN (4096)
 
 /* helper macros for safely getting the default value of a parameter */
 #define MPIR_PARAM_GET_DEFAULT_INT(p_suffix_,out_ptr_)                                               \

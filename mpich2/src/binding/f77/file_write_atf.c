@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_write_at( MPI_Fint *, MPI_Offset *
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_File_write_at
 #define MPI_File_write_at PMPI_File_write_at 
 
@@ -188,7 +186,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_write_at( MPI_Fint *, MPI_Offset *
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_file_write_at_ ( MPI_Fint *v1, MPI_Offset *v2, void*v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *ierr ){
 #ifdef MPI_MODE_RDONLY
-    *ierr = MPI_File_write_at( MPI_File_f2c(*v1), *v2, v3, *v4, (MPI_Datatype)(*v5), (MPI_Status *)(v6) );
+
+#ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
+    if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
+#endif
+
+    if (v6 == MPI_F_STATUS_IGNORE) { v6 = (MPI_Fint*)MPI_STATUS_IGNORE; }
+    *ierr = MPI_File_write_at( MPI_File_f2c(*v1), *v2, v3, *v4, (MPI_Datatype)(*v5), (MPI_Status *)v6 );
 #else
 *ierr = MPI_ERR_INTERN;
 #endif

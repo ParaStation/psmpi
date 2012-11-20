@@ -1,4 +1,4 @@
-/* -*- MODE: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -202,9 +202,9 @@ int MPIR_Bsend_detach( void *bufferp, int *size )
 #define FUNCNAME MPIR_Bsend_isend
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPIR_Bsend_isend( void *buf, int count, MPI_Datatype dtype, 
-		      int dest, int tag, MPID_Comm *comm_ptr, 
-		      MPIR_Bsend_kind_t kind, MPID_Request **request )
+int MPIR_Bsend_isend(const void *buf, int count, MPI_Datatype dtype,
+                     int dest, int tag, MPID_Comm *comm_ptr,
+                     MPIR_Bsend_kind_t kind, MPID_Request **request )
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Bsend_data_t *p;

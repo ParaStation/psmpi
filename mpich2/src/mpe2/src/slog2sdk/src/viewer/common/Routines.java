@@ -17,6 +17,8 @@ import java.awt.event.MouseEvent;
 import javax.swing.JComponent;
 import javax.swing.SwingUtilities;
 
+import java.util.ArrayList;
+
 public class Routines
 {
     private static final String UnitIndentStr = "   ";
@@ -186,5 +188,55 @@ public class Routines
         return    SwingUtilities.isRightMouseButton( mouse_evt )
                || ( SwingUtilities.isLeftMouseButton( mouse_evt )
                  && mouse_evt.isControlDown() );
+    }
+
+    /*
+       String Split() with single delimiter
+       which consists of multiple characters.
+    */
+    public static String[] stringSplit( String str, String delim )
+    {
+        int delimlen, strlen, begin, end;
+
+        // The following checks are not here to protect against careless use.
+        if ( delim == null )
+            return new String[] {str};
+        delimlen = delim.length();
+        if ( delimlen == 0 )
+            return new String[] {str};
+    
+        ArrayList  tokenlist = new ArrayList(10);
+    
+        // Extract the tokens from the str based on count.
+        strlen = str.length();
+        begin  = 0;
+        while ((end = str.indexOf(delim, begin)) != -1) {
+            tokenlist.add( str.substring(begin, end) );
+            begin = end + delimlen;
+        }
+        end = strlen;
+        tokenlist.add( str.substring(begin, end) );
+
+        String[]  strs = new String[tokenlist.size()];
+        return (String[]) tokenlist.toArray( strs );
+    }
+
+    public static final int MEGA = 1024*1024;
+
+    public static String toMemoryStatusString( String prefix )
+    {
+        long maxBytes, allocBytes, freeBytes;
+        Runtime runtime = Runtime.getRuntime();
+        StringBuffer strbuf = new StringBuffer();
+
+        maxBytes = runtime.maxMemory();
+        strbuf.append(prefix + "Maximum memory: " + maxBytes/MEGA + "M\n");
+        allocBytes = runtime.totalMemory();
+        strbuf.append(prefix + "Allocated memory: " + allocBytes/MEGA + "M\n");
+        freeBytes = runtime.freeMemory();
+        strbuf.append(prefix + "Free memory: " + freeBytes/MEGA + "M\n");
+        strbuf.append(prefix + "Total Free memory: "
+                     + (freeBytes + maxBytes - allocBytes)/MEGA + "M\n");
+        return strbuf.toString();
     }
 }

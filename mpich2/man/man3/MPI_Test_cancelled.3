@@ -1,9 +1,9 @@
-.TH MPI_Test_cancelled 3 "8/6/2010" " " "MPI"
+.TH MPI_Test_cancelled 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Test_cancelled \-  Tests to see if a request was cancelled 
 .SH SYNOPSIS
 .nf
-int MPI_Test_cancelled(MPI_Status *status, int *flag)
+int MPI_Test_cancelled(MPICH2_CONST MPI_Status *status, int *flag)
 .fi
 .SH INPUT PARAMETER
 .PD 0
@@ -94,4 +94,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-test_cancelled.c
+src/mpi/pt2pt/test_cancelled.c

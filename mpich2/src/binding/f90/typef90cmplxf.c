@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_create_f90_complex( MPI_Fint *, MP
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Type_create_f90_complex
 #define MPI_Type_create_f90_complex PMPI_Type_create_f90_complex 
 

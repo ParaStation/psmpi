@@ -1,9 +1,9 @@
-.TH MPI_Close_port 3 "7/19/2010" " " "MPI"
+.TH MPI_Close_port 3 "7/3/2012" " " "MPI"
 .SH NAME
 MPI_Close_port \-  close port 
 .SH SYNOPSIS
 .nf
-int MPI_Close_port(char *port_name)
+int MPI_Close_port(MPICH2_CONST char *port_name)
 .fi
 .SH INPUT PARAMETER
 .PD 0
@@ -85,4 +85,4 @@ possible.
 - No error; MPI routine completed successfully.
 .PD 1
 .SH LOCATION
-close_port.c
+src/mpi/spawn/close_port.c

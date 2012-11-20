@@ -7,6 +7,33 @@
  *  @author  Anthony Chan
  */
 
+   *********************************************************************
+   *  Prefered reference for slog2sdk tools including Jumpshot-4 for   *
+   *  publications:                                                    *
+   *                                                                   *
+   *     An Efficient Format for Nearly Constant-Time Access to        *
+   *        Arbitrary Time Intervals in Large Trace Files.             *
+   *     Anthony Chan, William Gropp, and Ewing Lusk.                  *
+   *     Scientific Programming, Volume 16, Number 2-3,                *
+   *     pages 155-165, 2008.                                          *
+   *                                                                   *
+   *     Bibtex entry:                                                 *
+   *     @article{slog2,                                               *
+   *     author    = {Anthony Chan and William Gropp and Ewing Lusk},  *
+   *     title     = {An Efficient Format for Nearly Constant-Time     *
+   *                  Access to Arbitrary Time Intervals in Large      *
+   *                  Trace Files},                                    *
+   *     journal   = {Scientific Programming},                         *
+   *     volume    = {16},                                             *
+   *     number    = {2-3},                                            *
+   *     year      = {2008},                                           *
+   *     issn      = {1058-9244},                                      *
+   *     pages     = {155--165},                                       *
+   *     publisher = {IOS Press},                                      *
+   *     address   = {Amsterdam, The Netherlands, The Netherlands},    *
+   *     }                                                             *
+   *********************************************************************
+
 
 This package provides both the Runtime and the Software Development
 environment for SLOG-2.  The runtime environment includes a visualization
@@ -99,7 +126,7 @@ needs to modify variable IMPL_CSRC in trace_sample/src/Makefile.in.
 IMPL_CSRC defines the C programs needed to build a TRACE-API implementation.
 If you are interested to modify the name of the utility program like
 traceprint and traceTOslog2 to something more meaningful, you need
-to change TRACE_NAME define configure.in.  The TRACE_NAME replaces
+to change TRACE_NAME define configure.ac.  The TRACE_NAME replaces
 the prefix "trace" in traceprint and traceTOslog2.  Remember to run
 autoconf afterward.  If you need to add extra system header files to
 be checked by autoconf, e.g. through AC_CHECK_HEAEDERS, you need to

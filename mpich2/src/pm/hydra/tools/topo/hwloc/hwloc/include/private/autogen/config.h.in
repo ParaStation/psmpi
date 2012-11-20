@@ -2,7 +2,7 @@
 
 /* -*- c -*-
  *
- * Copyright © 2009 CNRS, INRIA., Université Bordeaux 1  All rights reserved.
+ * Copyright © 2009, 2012 CNRS, inria., Université Bordeaux 1  All rights reserved.
  * Copyright © 2009 Cisco Systems, Inc.  All rights reserved.
  * $COPYRIGHT$
  * 
@@ -30,6 +30,9 @@
 /* Define to 1 if you have the `clzl' function. */
 #undef HAVE_CLZL
 
+/* Define to 1 if you have the `cpuset_setaffinity' function. */
+#undef HAVE_CPUSET_SETAFFINITY
+
 /* Define to 1 if we have -lcuda */
 #undef HAVE_CUDA
 
@@ -46,9 +49,17 @@
    */
 #undef HAVE_DECL_CTL_HW
 
+/* Define to 1 if you have the declaration of `fabsf', and to 0 if you don't.
+   */
+#undef HAVE_DECL_FABSF
+
 /* Define to 1 if you have the declaration of `HW_NCPU', and to 0 if you
    don't. */
 #undef HAVE_DECL_HW_NCPU
+
+/* Define to 1 if you have the declaration of `PCI_LOOKUP_NO_NUMBERS', and to
+   0 if you don't. */
+#undef HAVE_DECL_PCI_LOOKUP_NO_NUMBERS
 
 /* Define to 1 if you have the declaration of `pthread_getaffinity_np', and to
    0 if you don't. */
@@ -77,6 +88,9 @@
 /* Define to 1 if you have the declaration of `_SC_NPROC_ONLN', and to 0 if
    you don't. */
 #undef HAVE_DECL__SC_NPROC_ONLN
+
+/* Define to 1 if you have the <dirent.h> header file. */
+#undef HAVE_DIRENT_H
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -132,6 +146,9 @@
 /* Define to 1 if we have -llgrp */
 #undef HAVE_LIBLGRP
 
+/* Define to 1 if you have the `pci' library (-lpci). */
+#undef HAVE_LIBPCI
+
 /* Define to 1 if you have the <locale.h> header file. */
 #undef HAVE_LOCALE_H
 
@@ -167,6 +184,12 @@
 
 /* Define to 1 if you have the `openat' function. */
 #undef HAVE_OPENAT
+
+/* Define to 1 if you have the <pci/pci.h> header file. */
+#undef HAVE_PCI_PCI_H
+
+/* Define to 1 if you have the <picl.h> header file. */
+#undef HAVE_PICL_H
 
 /* Define to 1 if you have the `posix_memalign' function. */
 #undef HAVE_POSIX_MEMALIGN
@@ -264,6 +287,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define to 1 if you have the `uselocale' function. */
+#undef HAVE_USELOCALE
+
 /* Define to 1 if the system has the type `wchar_t'. */
 #undef HAVE_WCHAR_T
 
@@ -276,10 +302,13 @@
 /* Define to 1 if you have the <X11/Xutil.h> header file. */
 #undef HAVE_X11_XUTIL_H
 
+/* Define to 1 if you have the <xlocale.h> header file. */
+#undef HAVE_XLOCALE_H
+
 /* Define to 1 on AIX */
 #undef HWLOC_AIX_SYS
 
-/* Whether C compiler supports -fvisibility */
+/* Whether C compiler supports symbol visibility or not */
 #undef HWLOC_C_HAVE_VISIBILITY
 
 /* Define to 1 on Darwin */
@@ -348,6 +377,9 @@
 /* Whether your compiler has __attribute__ weak alias or not */
 #undef HWLOC_HAVE_ATTRIBUTE_WEAK_ALIAS
 
+/* Define to 1 if your `ffs' function is known to be broken. */
+#undef HWLOC_HAVE_BROKEN_FFS
+
 /* Define to 1 if you have the `cairo' library. */
 #undef HWLOC_HAVE_CAIRO
 
@@ -396,8 +428,14 @@
 /* Define to 1 if you have the `flsl' function. */
 #undef HWLOC_HAVE_FLSL
 
+/* Define to 1 if you have the `libpci' library. */
+#undef HWLOC_HAVE_LIBPCI
+
 /* Define to 1 if you have a library providing the termcap interface */
 #undef HWLOC_HAVE_LIBTERMCAP
+
+/* Define to 1 if you have the `libxml2' library. */
+#undef HWLOC_HAVE_LIBXML2
 
 /* Define to 1 if mbind is available. */
 #undef HWLOC_HAVE_MBIND
@@ -405,11 +443,24 @@
 /* Define to 1 if migrate_pages is available. */
 #undef HWLOC_HAVE_MIGRATE_PAGES
 
-/* Define to 1 if glibc provides the old prototype of sched_setaffinity() */
+/* Define to 1 if glibc provides the old prototype (without length) of
+   sched_setaffinity() */
 #undef HWLOC_HAVE_OLD_SCHED_SETAFFINITY
+
+/* Define to 1 if struct pci_dev has a `device_class' field. */
+#undef HWLOC_HAVE_PCIDEV_DEVICE_CLASS
+
+/* Define to 1 if struct pci_dev has a `domain' field. */
+#undef HWLOC_HAVE_PCIDEV_DOMAIN
+
+/* Define to 1 if `libpci' has the `pci_find_cap' function. */
+#undef HWLOC_HAVE_PCI_FIND_CAP
 
 /* `Define to 1 if you have pthread_getthrds_np' */
 #undef HWLOC_HAVE_PTHREAD_GETTHRDS_NP
+
+/* Define to 1 if glibc provides a prototype of sched_setaffinity() */
+#undef HWLOC_HAVE_SCHED_SETAFFINITY
 
 /* Define to 1 if set_mempolicy is available. */
 #undef HWLOC_HAVE_SET_MEMPOLICY
@@ -422,9 +473,6 @@
 
 /* Define to 1 if X11 libraries are available. */
 #undef HWLOC_HAVE_X11
-
-/* Define to 1 if you have the `xml' library. */
-#undef HWLOC_HAVE_XML
 
 /* Define to 1 if the _syscall3 macro works */
 #undef HWLOC_HAVE__SYSCALL3
@@ -487,6 +535,9 @@
    */
 #undef LT_OBJDIR
 
+/* Define to 1 if getpagesize needs a declaration */
+#undef NEEDS_GETPAGESIZE_DECL
+
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O
 
@@ -504,6 +555,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
@@ -566,10 +620,6 @@
 
 /* Define to 1 if you need to in order for `stat' and other things to work. */
 #undef _POSIX_SOURCE
-
-/* Define this to a keyword that can safely replace inline in installed
-   headers */
-#undef __hwloc_inline
 
 /* Define this to the process ID type */
 #undef hwloc_pid_t

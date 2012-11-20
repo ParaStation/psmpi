@@ -1,8 +1,8 @@
 # -*- shell-script -*-
 #
 # Copyright © 2009      CNRS
-# Copyright © 2009-2010 INRIA.  All rights reserved.
-# Copyright © 2009, 2011      Université Bordeaux 1
+# Copyright © 2009-2010 inria.  All rights reserved.
+# Copyright © 2009, 2011-2012      Université Bordeaux 1
 # Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 #
 # See COPYING in top-level directory.
@@ -14,7 +14,7 @@
 
 AC_INIT([hwloc], 
         [m4_normalize(esyscmd([config/hwloc_get_version.sh VERSION --base]))],
-        [http://www.open-mpi.org/community/help/], [hwloc])
+        [http://www.open-mpi.org/projects/hwloc/], [hwloc])
 AC_PREREQ(2.63)
 AC_CONFIG_AUX_DIR(./config)
 # Note that this directory must *exactly* match what was specified via
@@ -42,6 +42,7 @@ m4_ifdef([LT_PREREQ], [],
 LT_PREREQ([2.2.6])
 
 AC_LANG([C])
+AC_USE_SYSTEM_EXTENSIONS
 
 # Make configure depend on the VERSION file, since it's used in AC_INIT
 AC_SUBST([CONFIGURE_DEPENDENCIES], ['$(top_srcdir)/VERSION'])
@@ -85,7 +86,7 @@ AC_SUBST([libhwloc_so_version])
 # Setup the header file
 AH_TOP([/* -*- c -*-
  *
- * Copyright © 2009 CNRS, INRIA., Université Bordeaux 1  All rights reserved.
+ * Copyright © 2009, 2012 CNRS, inria., Université Bordeaux 1  All rights reserved.
  * Copyright © 2009 Cisco Systems, Inc.  All rights reserved.
  * $COPYRIGHT$
  * 
@@ -108,8 +109,17 @@ AH_BOTTOM([
 
 CFLAGS_save="$CFLAGS"
 AC_PROG_CC
+AC_PROG_CXX
 AM_PROG_CC_C_O
 CFLAGS="$CFLAGS_save"
+# This did not exist pre AM 1.11.x (where x is somewhere >0 and <3),
+# but it is necessary in AM 1.12.x.
+m4_ifdef([AM_PROG_AR], [AM_PROG_AR])
+
+AC_ARG_VAR(CC_FOR_BUILD,[build system C compiler])
+AS_IF([test -z "$CC_FOR_BUILD"],[
+    AC_SUBST([CC_FOR_BUILD], [$CC])
+])
 
 # Define hwloc's configure arguments
 HWLOC_DEFINE_ARGS
@@ -152,5 +162,60 @@ AM_DISABLE_STATIC
 AM_PROG_LIBTOOL([win32-dll])
 LT_LANG([C])
 
+## Enable creation of libtool-style versioning or no versioning
+AC_ARG_ENABLE(versioning,
+        [AC_HELP_STRING([--enable-versioning],[Enable library versioning])],,
+        [enable_versioning=yes])
+
+if test "$enable_versioning" = "yes" ; then
+   libhwloc_so_versionflags="-version-info \$(libhwloc_so_version)"
+else
+   libhwloc_so_versionflags="-avoid-version"
+fi
+export libhwloc_so_versionflags
+AC_SUBST(libhwloc_so_versionflags)
+
+
 # Party on
 AC_OUTPUT
+
+# Create a comma-delimited list in an environment variable.
+# $1 = variable name
+# $2 = value to append
+append_env() {
+    # Tricky shell/m4 quoting here -- not for the meek.
+    var=[$]1
+    # Note: quotes *NOT* needed in this assignment
+    eval initial_value=\$$var
+
+    AS_IF([test "$initial_value" != ""], 
+          [new_value="$initial_value, [$]2"],
+          [new_value="[$]2]")
+    eval "[$]1=\"$new_value\""
+}
+
+# Show which optional support we'll be building
+hwloc_xml_status=basic
+AS_IF([test "$hwloc_libxml2_happy" = "yes"], [hwloc_xml_status=full])
+
+# Beginning of generic support
+cat <<EOF
+
+-----------------------------------------------------------------------------
+Hwloc optional build support status (more details can be found above):
+
+Probe / display PCI devices: $hwloc_pci_happy
+Graphical output (Cairo):    $hwloc_cairo_happy
+XML input / output:          $hwloc_xml_status
+EOF
+
+# Linux specific support
+AS_IF([test "$hwloc_linux" = "yes"], [cat <<EOF
+libnuma memory support:      $hwloc_linux_libnuma_happy
+EOF])
+
+# End of generic support
+cat <<EOF
+-----------------------------------------------------------------------------
+
+EOF

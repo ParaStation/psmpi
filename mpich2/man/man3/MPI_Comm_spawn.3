@@ -1,9 +1,9 @@
-.TH MPI_Comm_spawn 3 "7/27/2010" " " "MPI"
+.TH MPI_Comm_spawn 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Comm_spawn \-  Spawn up to maxprocs instances of a single MPI application 
 .SH SYNOPSIS
 .nf
-int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, 
+int MPI_Comm_spawn(MPICH2_CONST char *command, char *argv[], int maxprocs, MPI_Info info,
                   int root, MPI_Comm comm, MPI_Comm *intercomm,
                   int array_of_errcodes[])
 .fi
@@ -147,4 +147,4 @@ identified by a specific error class (e.g.,
 - 
 .PD 1
 .SH LOCATION
-comm_spawn.c
+src/mpi/spawn/comm_spawn.c

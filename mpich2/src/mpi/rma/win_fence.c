@@ -80,11 +80,10 @@ int MPI_Win_fence(int assert, MPI_Win win)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_WIN(win, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif
+#   endif /* HAVE_ERROR_CHECKING */
     
     /* Convert MPI object handles to object pointers */
     MPID_Win_get_ptr( win, win_ptr );
@@ -96,6 +95,9 @@ int MPI_Win_fence(int assert, MPI_Win win)
         {
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
+
+            /* TODO: validate window is not in passive mode */
+            /* TODO: validate assert argument */
 
             if (mpi_errno) goto fn_fail;
         }

@@ -59,10 +59,10 @@
 .N MPI_ERR_INFO
 .N MPI_ERR_SPAWN
 @*/
-int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], 
-			    char* *array_of_argv[], int array_of_maxprocs[], 
-			    MPI_Info array_of_info[], int root, MPI_Comm comm, 
-			    MPI_Comm *intercomm, int array_of_errcodes[]) 
+int MPI_Comm_spawn_multiple(int count, char *array_of_commands[],
+			    char **array_of_argv[], MPICH2_CONST int array_of_maxprocs[],
+			    MPICH2_CONST MPI_Info array_of_info[], int root, MPI_Comm comm,
+			    MPI_Comm *intercomm, int array_of_errcodes[])
 {
     static const char FCNAME[] = "MPI_Comm_spawn_multiple";
     int mpi_errno = MPI_SUCCESS, i;
@@ -83,7 +83,6 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[],
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -115,7 +114,6 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[],
 		    MPIR_ERRTEST_ARGNULL(array_of_commands[i], "array_of_commands[i]", mpi_errno);
 		    MPIR_ERRTEST_ARGNEG(array_of_maxprocs[i], "array_of_maxprocs[i]", mpi_errno);
 		}
-		if (mpi_errno) goto fn_fail;
 	    }
         }
         MPID_END_ERROR_CHECKS;

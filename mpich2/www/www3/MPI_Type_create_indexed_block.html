@@ -11,7 +11,7 @@ Create an indexed datatype with constant-sized blocks
 <PRE>
 int MPI_Type_create_indexed_block(int count,
                                int blocklength,
-                               int array_of_displacements[],
+                               MPICH2_CONST int array_of_displacements[],
                                MPI_Datatype oldtype,
                                MPI_Datatype *newtype)
 </PRE>
@@ -95,5 +95,5 @@ MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 <DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
-<P><B>Location:</B>type_create_indexed_block.c<P>
+<P><B>Location:</B>src/mpi/datatype/type_create_indexed_block.c<P>
 </BODY></HTML>

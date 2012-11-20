@@ -536,6 +536,20 @@ do {									\
     }									\
 } while(0)
 
+/* helper macro: takes an MPI_Datatype handle value and returns TRUE in
+ * (*is_config_) if the type is contiguous */
+#define MPID_Datatype_is_contig(dtype_, is_contig_)                            \
+    do {                                                                       \
+        if (HANDLE_GET_KIND(dtype_) == HANDLE_KIND_BUILTIN) {                  \
+            *(is_contig_) = TRUE;                                              \
+        }                                                                      \
+        else {                                                                 \
+            MPID_Datatype *dtp_ = NULL;                                        \
+            MPID_Datatype_get_ptr((dtype_), dtp_);                             \
+            *(is_contig_) = dtp_->is_contig;                                   \
+        }                                                                      \
+    } while (0)
+
 /* Datatype functions */
 int MPID_Type_commit(MPI_Datatype *type);
 
@@ -543,21 +557,21 @@ int MPID_Type_dup(MPI_Datatype oldtype,
 		  MPI_Datatype *newtype);
 
 int MPID_Type_struct(int count,
-		     int *blocklength_array,
-		     MPI_Aint *displacement_array,
-		     MPI_Datatype *oldtype_array,
+		     const int *blocklength_array,
+		     const MPI_Aint *displacement_array,
+		     const MPI_Datatype *oldtype_array,
 		     MPI_Datatype *newtype);
 
 int MPID_Type_indexed(int count,
-		      int *blocklength_array,
-		      void *displacement_array,
+		      const int *blocklength_array,
+		      const void *displacement_array,
 		      int dispinbytes,
 		      MPI_Datatype oldtype,
 		      MPI_Datatype *newtype);
 
 int MPID_Type_blockindexed(int count,
 			   int blocklength,
-			   void *displacement_array,
+			   const void *displacement_array,
 			   int dispinbytes,
 			   MPI_Datatype oldtype,
 			   MPI_Datatype *newtype);
@@ -661,8 +675,8 @@ int MPID_Datatype_set_contents(struct MPID_Datatype *ptr,
 			       int nr_aints,
 			       int nr_types,
 			       int *ints,
-			       MPI_Aint *aints,
-			       MPI_Datatype *types);
+			       const MPI_Aint *aints,
+			       const MPI_Datatype *types);
 
 void MPID_Datatype_free_contents(struct MPID_Datatype *ptr);
 void MPIDI_Datatype_get_contents_aints(MPID_Datatype_contents *cp,

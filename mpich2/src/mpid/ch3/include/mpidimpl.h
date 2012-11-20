@@ -30,6 +30,8 @@
 /* Add the ch3 packet definitions */
 #include "mpidpkt.h"
 
+#include "mpid_sched.h"
+
 /* We need to match the size of MPIR_Pint to the relevant Format control
  */
 #define MPIDI_MSG_SZ_FMT MPIR_PINT_FMT_DEC_SPEC
@@ -42,6 +44,10 @@
    !defined(gethostname)
 int gethostname(char *name, size_t len);
 # endif
+
+/* group of processes detected to have failed.  This is a subset of
+   comm_world group. */
+extern MPID_Group *MPIDI_Failed_procs_group;
 
 extern int MPIDI_Use_pmi2_api;
 
@@ -317,6 +323,7 @@ extern MPIDI_Process_t MPIDI_Process;
     MPIU_Object_set_ref((sreq_), 2);				\
     (sreq_)->kind = MPID_REQUEST_SEND;				\
     (sreq_)->comm = comm;					\
+    (sreq_)->greq_fns = NULL;                                   \
     MPID_cc_set(&(sreq_)->cc, 1);                               \
     (sreq_)->cc_ptr		   = &(sreq_)->cc;              \
     (sreq_)->partner_request   = NULL;                          \
@@ -355,6 +362,7 @@ extern MPIDI_Process_t MPIDI_Process;
     MPIU_Object_set_ref((rreq_), 2);				\
     (rreq_)->kind = MPID_REQUEST_RECV;				\
     (rreq_)->comm = NULL;					\
+    (rreq_)->greq_fns = NULL;                                   \
     MPID_cc_set(&(rreq_)->cc, 1);                               \
     (rreq_)->cc_ptr		   = &(rreq_)->cc;              \
     (rreq_)->status.MPI_ERROR	   = MPI_SUCCESS;               \
@@ -369,6 +377,23 @@ extern MPIDI_Process_t MPIDI_Process;
     (rreq_)->dev.OnFinal	   = NULL;                      \
      MPIDI_CH3_REQUEST_INIT(rreq_);\
 }
+
+/* creates a new, trivially complete recv request that is suitable for
+ * returning when a user passed MPI_PROC_NULL */
+#define MPIDI_Request_create_null_rreq(rreq_, mpi_errno_, FAIL_)           \
+    do {                                                                   \
+        (rreq_) = MPID_Request_create();                                   \
+        if ((rreq_) != NULL) {                                             \
+            MPIU_Object_set_ref((rreq_), 1);                               \
+            /* MT FIXME should these be handled by MPID_Request_create? */ \
+            MPID_cc_set(&(rreq_)->cc, 0);                                  \
+            (rreq_)->kind = MPID_REQUEST_RECV;                             \
+            MPIR_Status_set_procnull(&(rreq_)->status);                    \
+        }                                                                  \
+        else {                                                             \
+            MPIU_ERR_SETANDJUMP(mpi_errno_,MPI_ERR_OTHER,"**nomemreq");    \
+        }                                                                  \
+    } while (0)
 
 #define MPIDI_REQUEST_MSG_MASK (0x3 << MPIDI_REQUEST_MSG_SHIFT)
 #define MPIDI_REQUEST_MSG_SHIFT 0
@@ -507,11 +532,21 @@ extern MPIDI_Process_t MPIDI_Process;
   ------------------*/
 #define MPIDI_Comm_get_vc(comm_, rank_, vcp_) *(vcp_) = (comm_)->vcr[(rank_)]
 
+#ifdef USE_MPIDI_DBG_PRINT_VC
+void MPIDI_DBG_PrintVC(MPIDI_VC_t *vc);
+void MPIDI_DBG_PrintVCState2(MPIDI_VC_t *vc, MPIDI_VC_State_t new_state);
+void MPIDI_DBG_PrintVCState(MPIDI_VC_t *vc);
+#else
+#define MPIDI_DBG_PrintVC(vc)
+#define MPIDI_DBG_PrintVCState2(vc, new_state)
+#define MPIDI_DBG_PrintVCState(vc)
+#endif
+
 #define MPIDI_Comm_get_vc_set_active(comm_, rank_, vcp_) do {           \
         *(vcp_) = (comm_)->vcr[(rank_)];                                \
         if ((*(vcp_))->state == MPIDI_VC_STATE_INACTIVE)                \
         {                                                               \
-            MPIU_DBG_PrintVCState2(*(vcp_), MPIDI_VC_STATE_ACTIVE);     \
+            MPIDI_DBG_PrintVCState2(*(vcp_), MPIDI_VC_STATE_ACTIVE);     \
             MPIDI_CHANGE_VC_STATE((*(vcp_)), ACTIVE);                   \
         }                                                               \
     } while(0)
@@ -596,7 +631,7 @@ do {                                            \
         *(vcp_) = &(pg_)->vct[rank_];                                   \
         if ((*(vcp_))->state == MPIDI_VC_STATE_INACTIVE)                \
         {                                                               \
-            MPIU_DBG_PrintVCState2(*(vcp_), MPIDI_VC_STATE_ACTIVE);     \
+            MPIDI_DBG_PrintVCState2(*(vcp_), MPIDI_VC_STATE_ACTIVE);     \
             MPIDI_CHANGE_VC_STATE((*(vcp_)), ACTIVE);                   \
         }                                                               \
     } while(0)
@@ -682,11 +717,15 @@ typedef struct MPIDI_Comm_ops
 		                  MPI_Status *status);
     int (*iprobe)(struct MPIDI_VC *vc,  int source, int tag, MPID_Comm *comm, int context_offset,
 		  int *flag, MPI_Status *status);
-   
+    int (*improbe)(struct MPIDI_VC *vc,  int source, int tag, MPID_Comm *comm, int context_offset,
+                   int *flag, MPID_Request **message, MPI_Status *status);
 } MPIDI_Comm_ops_t;
 
 extern int (*MPIDI_Anysource_iprobe_fn)(int tag, MPID_Comm * comm, int context_offset, int *flag,
                                         MPI_Status * status);
+extern int (*MPIDI_Anysource_improbe_fn)(int tag, MPID_Comm * comm, int context_offset,
+                                         int *flag, MPID_Request **message,
+                                         MPI_Status * status);
 #endif
 
 typedef struct MPIDI_VC
@@ -743,7 +782,9 @@ typedef struct MPIDI_VC
 
     /* eager message threshold */
     int eager_max_msg_sz;
-    
+    /* eager message threshold for ready sends.  -1 means there's no limit */
+    int ready_eager_max_msg_sz;
+ 
     /* noncontiguous send function pointer.  Called to send a
        noncontiguous message.  Caller must initialize
        sreq->dev.segment, _first and _size.  Contiguous messages are
@@ -752,7 +793,7 @@ typedef struct MPIDI_VC
 			      void *header, MPIDI_msg_sz_t hdr_sz );
 
 #ifdef ENABLE_COMM_OVERRIDES
-    MPIDI_Comm_ops_t *comm_ops;    
+    MPIDI_Comm_ops_t *comm_ops;
 #endif
 
     /* Rather than have each channel define its own fields for the 
@@ -931,13 +972,13 @@ int MPIDI_PrintConnStrToFile( FILE *fd, const char *file, int line,
      MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST, \
      "vc=%p: Setting state (vc) from %s to %s, vcchstate is %s", \
                  _vc, MPIDI_VC_GetStateString((_vc)->state), \
-                 #_newstate, MPIU_CALL(MPIDI_CH3,VC_GetStateString( (_vc) ))) );\
+                 #_newstate, MPIDI_CH3_VC_GetStateString( (_vc) ))); \
 } while (0)
 
 #define MPIU_DBG_VCCHSTATECHANGE(_vc,_newstate) \
      MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST, \
      "vc=%p: Setting state (ch) from %s to %s, vc state is %s", \
-	   _vc, MPIU_CALL(MPIDI_CH3,VC_GetStateString((_vc))), \
+           _vc, MPIDI_CH3_VC_GetStateString((_vc)), \
            #_newstate, MPIDI_VC_GetStateString( (_vc)->state )) )
 
 #define MPIU_DBG_CONNSTATECHANGE(_vc,_conn,_newstate) \
@@ -973,8 +1014,8 @@ void MPIDI_dbg_printf(int, char *, char *, ...);
 void MPIDI_err_printf(char *, char *, ...);
 
 /* FIXME: This does not belong here */
-#ifdef USE_MPIU_DBG_PRINT_VC
-extern char *MPIU_DBG_parent_str;
+#ifdef USE_MPIDI_DBG_PRINT_VC
+extern char *MPIDI_DBG_parent_str;
 #endif
 
 #if defined(MPICH_DBG_OUTPUT)
@@ -1031,7 +1072,7 @@ int MPIDI_Isend_self(const void *, int, MPI_Datatype, int, int, MPID_Comm *,
 int MPIDI_Comm_connect(const char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
 int MPIDI_Comm_accept(const char *, MPID_Info *, int, MPID_Comm *, MPID_Comm **);
 
-int MPIDI_Comm_spawn_multiple(int, char **, char ***, int *, MPID_Info **, 
+int MPIDI_Comm_spawn_multiple(int, char **, char ***, const int *, MPID_Info **,
 			      int, MPID_Comm *, MPID_Comm **, int *);
 
 
@@ -1071,91 +1112,113 @@ int MPIDI_CH3U_Comm_FinishPending( MPID_Comm * );
 /* mpirma.h (in src/mpi/rma?) */
 /* ------------------------------------------------------------------------- */
 
-/* This structure defines a module that handles the routines that 
-   work with MPI-2 RMA ops */
-typedef struct MPIDI_RMA_Ops {
-    int (*Win_create)(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
-		      MPID_Win **, struct MPIDI_RMA_Ops *);
-    int (*Win_free)(MPID_Win **);
-    int (*Put)(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype, 
-		MPID_Win *);
-    int (*Get)(void *, int, MPI_Datatype, int, MPI_Aint, int, MPI_Datatype, 
-		MPID_Win *);
-    int (*Accumulate)(void *, int, MPI_Datatype, int, MPI_Aint, int, 
-		       MPI_Datatype, MPI_Op, MPID_Win *);
-    int (*Win_fence)(int, MPID_Win *);
-    int (*Win_post)(MPID_Group *, int, MPID_Win *);
-    int (*Win_start)(MPID_Group *, int, MPID_Win *);
-    int (*Win_complete)(MPID_Win *);
-    int (*Win_wait)(MPID_Win *);
-    int (*Win_lock)(int, int, int, MPID_Win *);
-    int (*Win_unlock)(int, MPID_Win *);
-    void * (*Alloc_mem)(size_t, MPID_Info *);
-    int (*Free_mem)(void *);
-} MPIDI_RMAFns;
-#define MPIDI_RMAFNS_VERSION 1
-int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns * );
+/* The Win_fns table contains pointers to the channel's implementation of the
+ * RMA window creation routines.  The channel must provide the init function,
+ * which can optionally override any defaults already set by CH3.
+ */
 
-/* FIXME: These are specific to the RMA code and should be in the RMA 
-   header file. */
-#define MPIDI_RMA_PUT 23
-#define MPIDI_RMA_GET 24
-#define MPIDI_RMA_ACCUMULATE 25
-#define MPIDI_RMA_LOCK 26
+typedef struct MPIDI_CH3U_Win_fns_s {
+    int (*create)(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *, MPID_Win **);
+    int (*allocate)(MPI_Aint, int, MPID_Info *, MPID_Comm *, void *, MPID_Win **);
+    int (*allocate_shared)(MPI_Aint, int, MPID_Info *, MPID_Comm *, void **, MPID_Win **);
+    int (*create_dynamic)(MPID_Info *, MPID_Comm *, MPID_Win **);
+} MPIDI_CH3U_Win_fns_t;
 
-/* Special case RMA operations */
-#define MPIDI_RMA_ACC_CONTIG 27
+extern MPIDI_CH3U_Win_fns_t MPIDI_CH3U_Win_fns;
 
-#define MPIDI_RMA_DATATYPE_BASIC 50
-#define MPIDI_RMA_DATATYPE_DERIVED 51
+/* CH3 and Channel window functions initializers */
+int MPIDI_Win_fns_init(MPIDI_CH3U_Win_fns_t *win_fns);
+int MPIDI_CH3_Win_fns_init(MPIDI_CH3U_Win_fns_t *win_fns);
 
-#define MPID_LOCK_NONE 0
+/* Default window creation functions provided by CH3 */
+int MPIDI_CH3U_Win_create(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
+                         MPID_Win **);
+int MPIDI_CH3U_Win_allocate(MPI_Aint size, int disp_unit, MPID_Info *info,
+                           MPID_Comm *comm, void *baseptr, MPID_Win **win);
+int MPIDI_CH3U_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info_ptr,
+                                   MPID_Comm *comm_ptr, void **baseptr, MPID_Win **win_ptr);
+int MPIDI_CH3U_Win_create_dynamic(MPID_Info *info, MPID_Comm *comm, MPID_Win **win);
+
+
+/* MPI RMA Utility functions */
+
+int MPIDI_CH3U_Win_create_gather(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
+                                 MPID_Win **);
+
+
+/* MPI-2 RMA Routines */
 
 int MPIDI_Win_create(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
-                    MPID_Win ** );
-int MPIDI_Win_fence(int, MPID_Win *);
-int MPIDI_Put(void *, int, MPI_Datatype, int, MPI_Aint, int,
-            MPI_Datatype, MPID_Win *); 
-int MPIDI_Get(void *, int, MPI_Datatype, int, MPI_Aint, int,
-            MPI_Datatype, MPID_Win *);
-int MPIDI_Accumulate(void *, int, MPI_Datatype, int, MPI_Aint, int, 
-		   MPI_Datatype,  MPI_Op, MPID_Win *);
+                     MPID_Win **);
 int MPIDI_Win_free(MPID_Win **); 
-int MPIDI_Win_wait(MPID_Win *win_ptr);
-int MPIDI_Win_test(MPID_Win *win_ptr, int *);
-int MPIDI_Win_complete(MPID_Win *win_ptr);
+
+int MPIDI_Put(const void *, int, MPI_Datatype, int, MPI_Aint, int,
+              MPI_Datatype, MPID_Win *); 
+int MPIDI_Get(void *, int, MPI_Datatype, int, MPI_Aint, int,
+              MPI_Datatype, MPID_Win *);
+int MPIDI_Accumulate(const void *, int, MPI_Datatype, int, MPI_Aint, int,
+                     MPI_Datatype, MPI_Op, MPID_Win *);
+
+int MPIDI_Win_fence(int, MPID_Win *);
 int MPIDI_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr);
 int MPIDI_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr);
+int MPIDI_Win_test(MPID_Win *win_ptr, int *flag);
+int MPIDI_Win_wait(MPID_Win *win_ptr);
+int MPIDI_Win_complete(MPID_Win *win_ptr);
+
 int MPIDI_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr);
 int MPIDI_Win_unlock(int dest, MPID_Win *win_ptr);
+
+/* MPI-3 RMA Routines */
+
+int MPIDI_Win_allocate(MPI_Aint size, int disp_unit, MPID_Info *info,
+                       MPID_Comm *comm, void *baseptr, MPID_Win **win);
+int MPIDI_Win_allocate_shared(MPI_Aint size, MPID_Info *info_ptr, MPID_Comm *comm_ptr,
+                              void **baseptr, MPID_Win **win_ptr);
+int MPIDI_Win_create_dynamic(MPID_Info *info, MPID_Comm *comm, MPID_Win **win);
+int MPIDI_Win_attach(MPID_Win *win, void *base, MPI_Aint size);
+int MPIDI_Win_detach(MPID_Win *win, const void *base);
+int MPIDI_Win_shared_query(MPID_Win *win_ptr, int rank, MPI_Aint *size, int *disp_unit, void *base);
+
+int MPIDI_Get_accumulate(const void *origin_addr, int origin_count,
+                         MPI_Datatype origin_datatype, void *result_addr, int result_count,
+                         MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
+                         int target_count, MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win);
+int MPIDI_Fetch_and_op(const void *origin_addr, void *result_addr,
+                       MPI_Datatype datatype, int target_rank, MPI_Aint target_disp,
+                       MPI_Op op, MPID_Win *win);
+int MPIDI_Compare_and_swap(const void *origin_addr, const void *compare_addr,
+                           void *result_addr, MPI_Datatype datatype, int target_rank,
+                           MPI_Aint target_disp, MPID_Win *win);
+int MPIDI_Rput(const void *origin_addr, int origin_count,
+               MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp,
+               int target_count, MPI_Datatype target_datatype, MPID_Win *win,
+               MPID_Request **request);
+int MPIDI_Rget(void *origin_addr, int origin_count,
+               MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp,
+               int target_count, MPI_Datatype target_datatype, MPID_Win *win,
+               MPID_Request **request);
+int MPIDI_Raccumulate(const void *origin_addr, int origin_count,
+                      MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp,
+                      int target_count, MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win,
+                      MPID_Request **request);
+int MPIDI_Rget_accumulate(const void *origin_addr, int origin_count,
+                          MPI_Datatype origin_datatype, void *result_addr, int result_count,
+                          MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
+                          int target_count, MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win,
+                          MPID_Request **request);
+
+int MPIDI_Win_lock_all(int assert, MPID_Win *win);
+int MPIDI_Win_unlock_all(MPID_Win *win);
+int MPIDI_Win_flush(int rank, MPID_Win *win);
+int MPIDI_Win_flush_all(MPID_Win *win);
+int MPIDI_Win_flush_local(int rank, MPID_Win *win);
+int MPIDI_Win_flush_local_all(MPID_Win *win);
+int MPIDI_Win_sync(MPID_Win *win);
+
+
 void *MPIDI_Alloc_mem(size_t size, MPID_Info *info_ptr);
 int MPIDI_Free_mem(void *ptr);
-
-/* optional channel-specific */
-void *MPIDI_CH3_Alloc_mem(size_t size, MPID_Info *info_ptr);
-int MPIDI_CH3_Win_create(void *base, MPI_Aint size, int disp_unit, 
-			 MPID_Info *info, MPID_Comm *comm_ptr, 
-			 MPID_Win **win_ptr, MPIDI_RMAFns *RMAFns);
-int MPIDI_CH3_Free_mem(void *ptr);
-void MPIDI_CH3_Cleanup_mem(void);
-int MPIDI_CH3_Win_free(MPID_Win **win_ptr);
-int MPIDI_CH3_Put(void *origin_addr, int origin_count, MPI_Datatype
-            origin_datatype, int target_rank, MPI_Aint target_disp,
-            int target_count, MPI_Datatype target_datatype, MPID_Win *win_ptr);
-int MPIDI_CH3_Get(void *origin_addr, int origin_count, MPI_Datatype
-            origin_datatype, int target_rank, MPI_Aint target_disp,
-            int target_count, MPI_Datatype target_datatype, MPID_Win *win_ptr);
-int MPIDI_CH3_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
-                    origin_datatype, int target_rank, MPI_Aint target_disp,
-                    int target_count, MPI_Datatype target_datatype, MPI_Op op,
-                    MPID_Win *win_ptr);
-int MPIDI_CH3_Win_fence(int assert, MPID_Win *win_ptr);
-int MPIDI_CH3_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr);
-int MPIDI_CH3_Win_unlock(int dest, MPID_Win *win_ptr);
-int MPIDI_CH3_Win_wait(MPID_Win *win_ptr);
-int MPIDI_CH3_Win_complete(MPID_Win *win_ptr);
-int MPIDI_CH3_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr);
-int MPIDI_CH3_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr);
 
 /* internal */
 int MPIDI_CH3I_Release_lock(MPID_Win * win_ptr);
@@ -1201,9 +1264,7 @@ int MPIDI_CH3I_Progress_finalize(void);
  */
 
 /* This allows the channel to define an alternate to the 
-   completion counter.  The dllchannel uses this to access the 
-   counter through a pointer.  Others could use this to provide
-   more complex operations */
+   completion counter.  */
 #ifndef MPIDI_CH3I_INCR_PROGRESS_COMPLETION_COUNT
 #define MPIDI_CH3I_INCR_PROGRESS_COMPLETION_COUNT                                \
     do {                                                                         \
@@ -1429,15 +1490,14 @@ int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc);
    MPID_Comm_connect and accept */
 int MPIDI_CH3_Connect_to_root(const char *, MPIDI_VC_t **);
 
-/* keyval for COMM_WORLD attribute holding list of failed processes */
-extern int MPICH_ATTR_FAILED_PROCESSES;
-
-
 /*
  * Channel utility prototypes
  */
+int MPIDI_CH3U_Recvq_init(void);
 int MPIDI_CH3U_Recvq_FU(int, int, int, MPI_Status * );
 MPID_Request * MPIDI_CH3U_Recvq_FDU(MPI_Request, MPIDI_Message_match *);
+MPID_Request * MPIDI_CH3U_Recvq_FDU_matchonly(int source, int tag, int context_id, MPID_Comm *comm,
+                                   int *foundp);
 MPID_Request * MPIDI_CH3U_Recvq_FDU_or_AEP(int source, int tag, 
                                           int context_id, MPID_Comm *comm, void *user_buf,
                                            int user_count, MPI_Datatype datatype, int * foundp);
@@ -1446,6 +1506,7 @@ MPID_Request * MPIDI_CH3U_Recvq_FDP_or_AEU(MPIDI_Message_match * match,
 					   int * found);
 int MPIDI_CH3U_Recvq_count_unexp(void);
 int MPIDI_CH3U_Complete_posted_with_error(MPIDI_VC_t *vc);
+int MPIDI_CH3U_Complete_disabled_anysources(void);
 
 
 int MPIDI_CH3U_Request_load_send_iov(MPID_Request * const sreq, 
@@ -1463,6 +1524,18 @@ int MPIDI_CH3U_Post_data_receive_found(MPID_Request * rreqp);
 int MPIDI_CH3U_Post_data_receive_unexpected(MPID_Request * rreqp);
 int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t *buflen, int *complete);
 int MPIDI_CH3U_Receive_data_unexpected(MPID_Request * rreq, char *buf, MPIDI_msg_sz_t *buflen, int *complete);
+
+/* Initialization routine for ch3u_comm.c */
+int MPIDI_CH3I_Comm_init(void);
+
+int MPIDI_CH3I_Comm_handle_failed_procs(MPID_Group *new_failed_procs);
+
+/* The functions below allow channels to register functions to be
+   called immediately after a communicator has been created, and
+   immediately before a communicator is to be destroyed.
+ */
+int MPIDI_CH3U_Comm_register_create_hook(int (*hook_fn)(struct MPID_Comm *, void *), void *param);
+int MPIDI_CH3U_Comm_register_destroy_hook(int (*hook_fn)(struct MPID_Comm *, void *), void *param);
 
 /* FIXME: This is a macro! */
 #ifndef MPIDI_CH3_Request_add_ref
@@ -1636,17 +1709,6 @@ int MPIDI_CH3_Pre_init (int *setvals, int *has_parent, int *rank, int *size);
 int MPIDI_CH3_Init(int has_parent, MPIDI_PG_t *pg_ptr, int pg_rank );
 
 /*@
-  MPIDI_CH3_PreLoad - Setup a channel before calling MPIDI_CH3_Init
-
-  Notes:
-  This routine is called only if the channel defines 'HAVE_CH3_PRELOAD' .
-  It may be used to perform any initialization that is required before any
-  of the channel routines may be used.
-
-  @*/
-int MPIDI_CH3_PreLoad( void );
-
-/*@
   MPIDI_CH3_Finalize - Shutdown the channel implementation.
 
   Return value:
@@ -1721,6 +1783,14 @@ int MPIDI_CH3_PktHandler_Accumulate( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
 				     MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_Accumulate_Immed( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
 				     MPIDI_msg_sz_t *, MPID_Request ** );
+int MPIDI_CH3_PktHandler_CAS( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
+                              MPIDI_msg_sz_t *, MPID_Request ** );
+int MPIDI_CH3_PktHandler_CASResp( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
+                                  MPIDI_msg_sz_t *, MPID_Request ** );
+int MPIDI_CH3_PktHandler_FOP( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
+                              MPIDI_msg_sz_t *, MPID_Request ** );
+int MPIDI_CH3_PktHandler_FOPResp( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
+                                  MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_Get( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
 			      MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_GetResp( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
@@ -1825,6 +1895,7 @@ int MPIDI_CH3_ReqHandler_SinglePutAccumComplete( MPIDI_VC_t *, MPID_Request *,
 						 int * );
 int MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete( MPIDI_VC_t *, 
 						   MPID_Request *, int * );
+int MPIDI_CH3_ReqHandler_FOPComplete( MPIDI_VC_t *, MPID_Request *, int * );
 
 /* Send Handlers */
 int MPIDI_CH3_ReqHandler_SendReloadIOV( MPIDI_VC_t *vc, MPID_Request *sreq, 

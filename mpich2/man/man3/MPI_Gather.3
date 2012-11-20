@@ -1,10 +1,10 @@
-.TH MPI_Gather 3 "1/21/2011" " " "MPI"
+.TH MPI_Gather 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Gather \-  Gathers together values from a group of processes 
 .SH SYNOPSIS
 .nf
-int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
-               void *recvbuf, int recvcnt, MPI_Datatype recvtype, 
+int MPI_Gather(MPICH2_CONST void *sendbuf, int sendcnt, MPI_Datatype sendtype,
+               void *recvbuf, int recvcnt, MPI_Datatype recvtype,
                int root, MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
@@ -150,4 +150,4 @@ MPI_Datatype (see
 one is not valid.
 .PD 1
 .SH LOCATION
-gather.c
+src/mpi/coll/gather.c

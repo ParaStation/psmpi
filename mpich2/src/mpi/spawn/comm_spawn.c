@@ -57,7 +57,7 @@
 .N MPI_ERR_INFO
 .N MPI_ERR_SPAWN
 @*/
-int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info, 
+int MPI_Comm_spawn(MPICH2_CONST char *command, char *argv[], int maxprocs, MPI_Info info,
 		   int root, MPI_Comm comm, MPI_Comm *intercomm,
 		   int array_of_errcodes[])
 {
@@ -78,7 +78,6 @@ int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -105,8 +104,6 @@ int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info,
 		MPIR_ERRTEST_ARGNULL(command, "command", mpi_errno);
 		MPIR_ERRTEST_ARGNEG(maxprocs, "maxprocs", mpi_errno);
 	    }
-
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -121,7 +118,7 @@ int MPI_Comm_spawn(char *command, char *argv[], int maxprocs, MPI_Info info,
     /* check if multiple threads are calling this collective function */
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
 
-    mpi_errno = MPID_Comm_spawn_multiple(1, &command, &argv,
+    mpi_errno = MPID_Comm_spawn_multiple(1, (char **) &command, &argv,
                                          &maxprocs, &info_ptr, root,  
                                          comm_ptr, &intercomm_ptr,
                                          array_of_errcodes); 

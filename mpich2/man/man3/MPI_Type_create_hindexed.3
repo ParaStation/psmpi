@@ -1,11 +1,11 @@
-.TH MPI_Type_create_hindexed 3 "7/27/2010" " " "MPI"
+.TH MPI_Type_create_hindexed 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Type_create_hindexed \-  Create a datatype for an indexed datatype with displacements in bytes 
 .SH SYNOPSIS
 .nf
 int MPI_Type_create_hindexed(int count,
-                           int blocklengths[],
-                           MPI_Aint displacements[],
+                           MPICH2_CONST int blocklengths[],
+                           MPICH2_CONST MPI_Aint displacements[],
                            MPI_Datatype oldtype,
                            MPI_Datatype *newtype)
 .fi
@@ -122,4 +122,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-type_create_hindexed.c
+src/mpi/datatype/type_create_hindexed.c

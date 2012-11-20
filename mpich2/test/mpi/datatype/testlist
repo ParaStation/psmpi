@@ -3,6 +3,7 @@ gaddress 1
 lbub 1
 localpack 1
 simple-pack 1
+simple-pack-external 1
 transpose-pack 1
 slice-pack 1
 struct-pack 1
@@ -43,3 +44,6 @@ zeroblks 1
 struct-derived-zeros 1
 struct-verydeep 1
 get-elements 1
+hindexed_block 1 strict=false
+hindexed_block_contents 1 strict=false
+longdouble 1

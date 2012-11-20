@@ -67,7 +67,6 @@ int MPI_Win_get_name(MPI_Win win, char *win_name, int *resultlen)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_WIN(win, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -83,12 +82,11 @@ int MPI_Win_get_name(MPI_Win win, char *win_name, int *resultlen)
         {
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
+            if (mpi_errno) goto fn_fail;
 	    /* If win_ptr is not valid, it will be reset to null */
 
 	    MPIR_ERRTEST_ARGNULL(win_name, "win_name", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(resultlen, "resultlen", mpi_errno);
-
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -101,23 +99,21 @@ int MPI_Win_get_name(MPI_Win win, char *win_name, int *resultlen)
     
     /* ... end of body of routine ... */
 
-#ifdef HAVE_ERROR_CHECKING
   fn_exit:
-#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_GET_NAME);
     return mpi_errno;
 
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
-  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
 	    "**mpi_win_get_name", 
 	    "**mpi_win_get_name %W %p %p", win, win_name, resultlen);
     }
+#   endif
     mpi_errno = MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
     goto fn_exit;
-#   endif
     /* --END ERROR HANDLING-- */
 }

@@ -10,10 +10,11 @@
 package viewer.histogram;
 
 import java.util.Date;
-import java.util.Map;
 import java.awt.*;
 import javax.swing.*;
 import javax.swing.event.*;
+
+import cern.colt.map.OpenIntIntHashMap;
 
 import base.drawable.TimeBoundingBox;
 import base.statistics.Summarizable;
@@ -55,7 +56,7 @@ public class CanvasStatline extends ScrollableObject
 
     private int                num_rows;
     private int                row_height;
-    private Map                map_line2row;
+    private OpenIntIntHashMap  map_line2row;
 
     private Date               zero_time, init_time, final_time;
 
@@ -211,6 +212,12 @@ public class CanvasStatline extends ScrollableObject
                                           RenderingHints.VALUE_ANTIALIAS_OFF );
 
             // Draw the center TimeLines.
+            if ( tree_view.isRootVisible() ) {
+                offGraphics.setColor( Color.red );
+                irow = 0;
+                i_Y = coord_xform.convertRowToPixel( (float) irow );
+                offGraphics.drawLine( 0, i_Y, offImage_width-1, i_Y );
+            }
             offGraphics.setColor( Color.cyan );
             for ( irow = 0 ; irow < num_rows ; irow++ ) {
                 //  Select only non-expanded row
@@ -219,6 +226,7 @@ public class CanvasStatline extends ScrollableObject
                     offGraphics.drawLine( 0, i_Y, offImage_width-1, i_Y );
                 }
             }
+            
 
             // Draw the image separator when in Debug or Profile mode
             if ( Debug.isActive() || Profile.isActive() ) {
@@ -229,6 +237,7 @@ public class CanvasStatline extends ScrollableObject
 
 
             buf4statboxes.initializeDrawing( map_line2row, back_color,
+                                             tree_view.isRootVisible(),
                                              Parameters.HISTOGRAM_ZERO_ORIGIN,
                                              Parameters.STATE_HEIGHT_FACTOR,
                                              Parameters.NESTING_HEIGHT_FACTOR );

@@ -212,10 +212,10 @@ class Datatype  {
     {
         MPIX_CALLWORLD( MPI_Type_free( (MPI_Datatype *) &the_real_datatype ));
     }
-    virtual Datatype Create_indexed( int v1, const int * v2, const int * v3 ) const
+    virtual Datatype Create_indexed( int v1, const MPICH2_CONST int * v2, const MPICH2_CONST int * v3 ) const
     {
         Datatype v5;
-        MPIX_CALLWORLD( MPI_Type_indexed( v1, (int *)v2, (int *)v3, (MPI_Datatype) the_real_datatype, &(v5.the_real_datatype) ));
+        MPIX_CALLWORLD( MPI_Type_indexed( v1, (MPICH2_CONST int *)v2, (MPICH2_CONST int *)v3, (MPI_Datatype) the_real_datatype, &(v5.the_real_datatype) ));
         return v5;
     }
     virtual Datatype Create_contiguous( int v1 ) const
@@ -336,9 +336,9 @@ class Datatype  {
     {
         MPIX_CALLWORLD( MPI_Type_set_attr( (MPI_Datatype) the_real_datatype, v2, (void *)v3 ));
     }
-    virtual void Set_name( const char * v2 ) 
+    virtual void Set_name( const MPICH2_CONST char * v2 ) 
     {
-        MPIX_CALLWORLD( MPI_Type_set_name( (MPI_Datatype) the_real_datatype, (char *)v2 ));
+        MPIX_CALLWORLD( MPI_Type_set_name( (MPI_Datatype) the_real_datatype, (MPICH2_CONST char *)v2 ));
     }
     static Datatype Create_f90_complex( int v1, int v2 ) 
     {
@@ -352,9 +352,9 @@ class Datatype  {
         MPIX_CALLWORLD( MPI_Type_create_subarray( v1, v2, (int *)v3, (int *)v4, (int)v5, (MPI_Datatype) the_real_datatype, &(v7.the_real_datatype) ));
         return v7;
     }
-    virtual void Unpack_external( char * v1, const void * v2, const Aint v3, Aint & v4, void * v5, int v6 ) const
+    virtual void Unpack_external( char * v1, const MPICH2_CONST void * v2, const Aint v3, Aint & v4, void * v5, int v6 ) const
     {
-        MPIX_CALLWORLD( MPI_Unpack_external( v1, (void *)v2, (MPI_Aint)v3, &v4, v5, v6, (MPI_Datatype) the_real_datatype ));
+        MPIX_CALLWORLD( MPI_Unpack_external( v1, (MPICH2_CONST void *)v2, (MPI_Aint)v3, &v4, v5, v6, (MPI_Datatype) the_real_datatype ));
     }
     static void Free_keyval( int &v1 ) 
     {
@@ -380,9 +380,9 @@ class Datatype  {
         MPIX_CALLWORLD( MPI_Type_create_f90_integer( v1, &(v2.the_real_datatype) ));
         return v2;
     }
-    virtual void Pack_external( char * v1, const void * v2, const int v3, void * v5, Aint v6, Aint & v7 ) const
+    virtual void Pack_external( char * v1, const MPICH2_CONST void * v2, const int v3, void * v5, Aint v6, Aint & v7 ) const
     {
-        MPIX_CALLWORLD( MPI_Pack_external( v1, (void *)v2, (int)v3, (MPI_Datatype) the_real_datatype, v5, v6, &v7 ));
+        MPIX_CALLWORLD( MPI_Pack_external( v1, (MPICH2_CONST void *)v2, (int)v3, (MPI_Datatype) the_real_datatype, v5, v6, &v7 ));
     }
     virtual void Get_extent( Aint & v2, Aint & v3 ) const
     {
@@ -455,9 +455,9 @@ class Info  {
     inline operator MPI_Info() const { return the_real_info; }
     Info& operator=(const MPI_Info& obj) {
       the_real_info = obj; return *this; }
-    virtual void Delete( const char * v2 ) 
+    virtual void Delete( const MPICH2_CONST char * v2 ) 
     {
-        MPIX_CALLWORLD( MPI_Info_delete( (MPI_Info) the_real_info, (char *)v2 ));
+        MPIX_CALLWORLD( MPI_Info_delete( (MPI_Info) the_real_info, (MPICH2_CONST char *)v2 ));
     }
     virtual void Get_nthkey( int v2, char * v3 ) const
     {
@@ -473,9 +473,9 @@ class Info  {
         MPIX_CALLWORLD( MPI_Info_create( &(v1.the_real_info) ));
         return v1;
     }
-    virtual void Set( const char * v2, const char * v3 ) 
+    virtual void Set( const MPICH2_CONST char * v2, const MPICH2_CONST char * v3 ) 
     {
-        MPIX_CALLWORLD( MPI_Info_set( (MPI_Info) the_real_info, (char *)v2, (char *)v3 ));
+        MPIX_CALLWORLD( MPI_Info_set( (MPI_Info) the_real_info, (MPICH2_CONST char *)v2, (MPICH2_CONST char *)v3 ));
     }
     Info Dup( void ) const
     {
@@ -483,16 +483,16 @@ class Info  {
         MPIX_CALLWORLD( MPI_Info_dup( (MPI_Info) the_real_info, &(v2.the_real_info) ));
         return v2;
     }
-    virtual bool Get_valuelen( const char * v2, int &v3 ) const
+    virtual bool Get_valuelen( const MPICH2_CONST char * v2, int &v3 ) const
     {
         int v4;
-        MPIX_CALLWORLD( MPI_Info_get_valuelen( (MPI_Info) the_real_info, (char *)v2, &v3, &v4 ));
+        MPIX_CALLWORLD( MPI_Info_get_valuelen( (MPI_Info) the_real_info, (MPICH2_CONST char *)v2, &v3, &v4 ));
         return v4!= 0;
     }
-    virtual bool Get( const char * v2, int v3, char * v4 ) const
+    virtual bool Get( const MPICH2_CONST char * v2, int v3, char * v4 ) const
     {
         int v5;
-        MPIX_CALLWORLD( MPI_Info_get( (MPI_Info) the_real_info, (char *)v2, v3, v4, &v5 ));
+        MPIX_CALLWORLD( MPI_Info_get( (MPI_Info) the_real_info, (MPICH2_CONST char *)v2, v3, v4, &v5 ));
         return v5!= 0;
     }
     virtual int Get_nkeys( void ) const
@@ -601,10 +601,10 @@ class Group  {
     inline operator MPI_Group() const { return the_real_group; }
     Group& operator=(const MPI_Group& obj) {
       the_real_group = obj; return *this; }
-    virtual Group Excl( int v2, const int * v3 ) const
+    virtual Group Excl( int v2, const MPICH2_CONST int * v3 ) const
     {
         Group v4;
-        MPIX_CALLWORLD( MPI_Group_excl( (MPI_Group) the_real_group, v2, (int *)v3, &(v4.the_real_group) ));
+        MPIX_CALLWORLD( MPI_Group_excl( (MPI_Group) the_real_group, v2, (MPICH2_CONST int *)v3, &(v4.the_real_group) ));
         return v4;
     }
     virtual int Get_rank( void ) const
@@ -647,14 +647,14 @@ class Group  {
         MPIX_CALLWORLD( MPI_Group_difference( (MPI_Group)(v1.the_real_group), (MPI_Group)(v2.the_real_group), &(v3.the_real_group) ));
         return v3;
     }
-    static void Translate_ranks( const Group &v1, int v2, const int * v3, const Group &v4, int * v5 ) 
+    static void Translate_ranks( const Group &v1, int v2, const MPICH2_CONST int * v3, const Group &v4, int * v5 ) 
     {
-        MPIX_CALLWORLD( MPI_Group_translate_ranks( (MPI_Group)(v1.the_real_group), v2, (int *)v3, (MPI_Group)(v4.the_real_group), v5 ));
+        MPIX_CALLWORLD( MPI_Group_translate_ranks( (MPI_Group)(v1.the_real_group), v2, (MPICH2_CONST int *)v3, (MPI_Group)(v4.the_real_group), v5 ));
     }
-    virtual Group Incl( int v2, const int * v3 ) const
+    virtual Group Incl( int v2, const MPICH2_CONST int * v3 ) const
     {
         Group v4;
-        MPIX_CALLWORLD( MPI_Group_incl( (MPI_Group) the_real_group, v2, (int *)v3, &(v4.the_real_group) ));
+        MPIX_CALLWORLD( MPI_Group_incl( (MPI_Group) the_real_group, v2, (MPICH2_CONST int *)v3, &(v4.the_real_group) ));
         return v4;
     }
     virtual int Get_size( void ) const
@@ -1362,9 +1362,9 @@ class Comm  {
     {
         MPIX_CALLREF( this, MPI_Reduce_scatter_block( (void *)v1, v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPI_Op)(v5.the_real_op), (MPI_Comm) the_real_comm ));
     }
-    virtual void Gatherv( const void* v1, int v2, const Datatype &v3, void* v4, const int * v5, const int * v6, const Datatype &v7, int v8 ) const
+    virtual void Gatherv( const void* v1, int v2, const Datatype &v3, void* v4, const MPICH2_CONST int * v5, const MPICH2_CONST int * v6, const Datatype &v7, int v8 ) const
     {
-        MPIX_CALLREF( this, MPI_Gatherv( (void*)v1, v2, (MPI_Datatype)(v3.the_real_datatype), v4, (int *)v5, (int *)v6, (MPI_Datatype)(v7.the_real_datatype), v8, (MPI_Comm) the_real_comm ));
+        MPIX_CALLREF( this, MPI_Gatherv( (void*)v1, v2, (MPI_Datatype)(v3.the_real_datatype), v4, (MPICH2_CONST int *)v5, (MPICH2_CONST int *)v6, (MPI_Datatype)(v7.the_real_datatype), v8, (MPI_Comm) the_real_comm ));
     }
     virtual void Disconnect( void ) 
     {
@@ -1417,16 +1417,16 @@ class Comm  {
     {
         MPIX_CALLREF( this, MPI_Comm_set_attr( (MPI_Comm) the_real_comm, v2, (void *)v3 ));
     }
-    virtual void Set_name( const char * v2 ) 
+    virtual void Set_name( const MPICH2_CONST char * v2 ) 
     {
-        MPIX_CALLREF( this, MPI_Comm_set_name( (MPI_Comm) the_real_comm, (char *)v2 ));
+        MPIX_CALLREF( this, MPI_Comm_set_name( (MPI_Comm) the_real_comm, (MPICH2_CONST char *)v2 ));
     }
     static Intercomm Get_parent( void ) ;
-    virtual void Alltoallv( const void* v1, const int * v2, const int * v3, const Datatype &v4, void* v5, const int * v6, const int * v7, const Datatype &v8 ) const
+    virtual void Alltoallv( const void* v1, const MPICH2_CONST int * v2, const MPICH2_CONST int * v3, const Datatype &v4, void* v5, const MPICH2_CONST int * v6, const MPICH2_CONST int * v7, const Datatype &v8 ) const
     {
-        MPIX_CALLREF( this, MPI_Alltoallv( (void*)v1, (int *)v2, (int *)v3, (MPI_Datatype)(v4.the_real_datatype), v5, (int *)v6, (int *)v7, (MPI_Datatype)(v8.the_real_datatype), (MPI_Comm) the_real_comm ));
+        MPIX_CALLREF( this, MPI_Alltoallv( (void*)v1, (MPICH2_CONST int *)v2, (MPICH2_CONST int *)v3, (MPI_Datatype)(v4.the_real_datatype), v5, (MPICH2_CONST int *)v6, (MPICH2_CONST int *)v7, (MPI_Datatype)(v8.the_real_datatype), (MPI_Comm) the_real_comm ));
     }
-    virtual void Reduce_scatter( const void* v1, void* v2, int * v3, const Datatype &v4, const Op &v5 ) const
+    virtual void Reduce_scatter( const void* v1, void* v2, MPICH2_CONST int * v3, const Datatype &v4, const Op &v5 ) const
     {
         MPIX_CALLREF( this, MPI_Reduce_scatter( (void*)v1, v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPI_Op)(v5.the_real_op), (MPI_Comm) the_real_comm ));
     }
@@ -1455,17 +1455,17 @@ class Comm  {
     {
         MPIX_CALLREF( this, MPI_Comm_delete_attr( (MPI_Comm) the_real_comm, v2 ));
     }
-    virtual void Scatterv( const void* v1, const int * v2, const int * v3, const Datatype &v4, void* v5, int v6, const Datatype &v7, int v8 ) const
+    virtual void Scatterv( const void* v1, const MPICH2_CONST int * v2, const MPICH2_CONST int * v3, const Datatype &v4, void* v5, int v6, const Datatype &v7, int v8 ) const
     {
-        MPIX_CALLREF( this, MPI_Scatterv( (void*)v1, (int *)v2, (int *)v3, (MPI_Datatype)(v4.the_real_datatype), v5, v6, (MPI_Datatype)(v7.the_real_datatype), v8, (MPI_Comm) the_real_comm ));
+        MPIX_CALLREF( this, MPI_Scatterv( (void*)v1, (MPICH2_CONST int *)v2, (MPICH2_CONST int *)v3, (MPI_Datatype)(v4.the_real_datatype), v5, v6, (MPI_Datatype)(v7.the_real_datatype), v8, (MPI_Comm) the_real_comm ));
     }
     virtual void Get_name( char * v2, int &v3 ) const
     {
         MPIX_CALLREF( this, MPI_Comm_get_name( (MPI_Comm) the_real_comm, v2, &v3 ));
     }
-    virtual void Allgatherv( const void* v1, int v2, const Datatype &v3, void* v4, const int * v5, const int * v6, const Datatype &v7 ) const
+    virtual void Allgatherv( const void* v1, int v2, const Datatype &v3, void* v4, const MPICH2_CONST int * v5, const MPICH2_CONST int * v6, const Datatype &v7 ) const
     {
-        MPIX_CALLREF( this, MPI_Allgatherv( (void*)v1, v2, (MPI_Datatype)(v3.the_real_datatype), v4, (int *)v5, (int *)v6, (MPI_Datatype)(v7.the_real_datatype), (MPI_Comm) the_real_comm ));
+        MPIX_CALLREF( this, MPI_Allgatherv( (void*)v1, v2, (MPI_Datatype)(v3.the_real_datatype), v4, (MPICH2_CONST int *)v5, (MPICH2_CONST int *)v6, (MPI_Datatype)(v7.the_real_datatype), (MPI_Comm) the_real_comm ));
     }
     virtual Comm &Clone(void) const = 0;
     typedef int Copy_attr_function(const Comm& oldcomm, int comm_keyval, void* extra_state, void* attribute_val_in, void* attribute_val_out, bool& flag); 
@@ -1633,8 +1633,8 @@ class Intracomm : public Comm {
         MPIX_CALLREF( this, MPI_Comm_split( (MPI_Comm) the_real_comm, v2, v3, &(v4.the_real_comm) ));
         return v4;
     }
-    virtual Graphcomm Create_graph( int v2, const int * v3, const int * v4, bool v5 ) const;
-    virtual Cartcomm Create_cart( int v2, const int * v3, const bool v4[], bool v5 ) const;
+    virtual Graphcomm Create_graph( int v2, const MPICH2_CONST int * v3, const MPICH2_CONST int * v4, bool v5 ) const;
+    virtual Cartcomm Create_cart( int v2, const MPICH2_CONST int * v3, const bool v4[], bool v5 ) const;
     virtual Intracomm Create( const Group &v2 ) const
     {
         Intracomm v3;
@@ -1860,9 +1860,9 @@ class Win  {
     {
         MPIX_CALLREF( this, MPI_Win_set_errhandler( (MPI_Win) the_real_win, (MPI_Errhandler)(v2.the_real_errhandler) ));
     }
-    virtual void Set_name( const char * v2 ) 
+    virtual void Set_name( const MPICH2_CONST char * v2 ) 
     {
-        MPIX_CALLREF( this, MPI_Win_set_name( (MPI_Win) the_real_win, (char *)v2 ));
+        MPIX_CALLREF( this, MPI_Win_set_name( (MPI_Win) the_real_win, (MPICH2_CONST char *)v2 ));
     }
     virtual void Accumulate( const void * v1, int v2, const Datatype &v3, int v4, Aint v5, int v6, const Datatype &v7, const Op &v8 ) const
     {
@@ -2003,21 +2003,21 @@ class File  {
         MPIX_CALLREF( this, MPI_File_get_info( (MPI_File) the_real_file, &(v2.the_real_info) ));
         return v2;
     }
-    virtual void Write_ordered_begin( const void * v2, int v3, const Datatype &v4 ) 
+    virtual void Write_ordered_begin( const MPICH2_CONST void * v2, int v3, const Datatype &v4 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_ordered_begin( (MPI_File) the_real_file, (void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype) ));
+        MPIX_CALLREF( this, MPI_File_write_ordered_begin( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype) ));
     }
     virtual void Set_info( const Info &v2 ) 
     {
         MPIX_CALLREF( this, MPI_File_set_info( (MPI_File) the_real_file, (MPI_Info)(v2.the_real_info) ));
     }
-    virtual void Write_ordered( const void * v2, int v3, const Datatype &v4, Status & v5 ) 
+    virtual void Write_ordered( const MPICH2_CONST void * v2, int v3, const Datatype &v4, Status & v5 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_ordered( (MPI_File) the_real_file, (void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPI_Status *)&(v5.the_real_status ) ));
+        MPIX_CALLREF( this, MPI_File_write_ordered( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPI_Status *)&(v5.the_real_status ) ));
     }
-    virtual void Write_ordered( const void * v2, int v3, const Datatype &v4 ) 
+    virtual void Write_ordered( const MPICH2_CONST void * v2, int v3, const Datatype &v4 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_ordered( (MPI_File) the_real_file, (void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), MPI_STATUS_IGNORE ));
+        MPIX_CALLREF( this, MPI_File_write_ordered( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), MPI_STATUS_IGNORE ));
     }
     virtual void Sync( void ) 
     {
@@ -2031,13 +2031,13 @@ class File  {
     {
         MPIX_CALLREF( this, MPI_File_read( (MPI_File) the_real_file, v2, v3, (MPI_Datatype)(v4.the_real_datatype), MPI_STATUS_IGNORE ));
     }
-    virtual void Write_all( const void * v2, int v3, const Datatype &v4, Status & v5 ) 
+    virtual void Write_all( const MPICH2_CONST void * v2, int v3, const Datatype &v4, Status & v5 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_all( (MPI_File) the_real_file, (void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPI_Status *)&(v5.the_real_status ) ));
+        MPIX_CALLREF( this, MPI_File_write_all( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPI_Status *)&(v5.the_real_status ) ));
     }
-    virtual void Write_all( const void * v2, int v3, const Datatype &v4 ) 
+    virtual void Write_all( const MPICH2_CONST void * v2, int v3, const Datatype &v4 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_all( (MPI_File) the_real_file, (void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), MPI_STATUS_IGNORE ));
+        MPIX_CALLREF( this, MPI_File_write_all( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), MPI_STATUS_IGNORE ));
     }
     virtual Offset Get_size( void ) const
     {
@@ -2045,13 +2045,13 @@ class File  {
         MPIX_CALLREF( this, MPI_File_get_size( (MPI_File) the_real_file, &v2 ));
         return v2;
     }
-    virtual void Write_all_end( const void * v2, Status & v3 ) 
+    virtual void Write_all_end( const MPICH2_CONST void * v2, Status & v3 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_all_end( (MPI_File) the_real_file, (void *)v2, (MPI_Status *)&(v3.the_real_status ) ));
+        MPIX_CALLREF( this, MPI_File_write_all_end( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, (MPI_Status *)&(v3.the_real_status ) ));
     }
-    virtual void Write_all_end( const void * v2 ) 
+    virtual void Write_all_end( const MPICH2_CONST void * v2 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_all_end( (MPI_File) the_real_file, (void *)v2, MPI_STATUS_IGNORE ));
+        MPIX_CALLREF( this, MPI_File_write_all_end( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, MPI_STATUS_IGNORE ));
     }
     static void Delete( const char * v1, const Info &v2 ) 
     {
@@ -2067,13 +2067,13 @@ class File  {
         MPIX_CALLREF( this, MPI_File_iread_at( (MPI_File) the_real_file, v2, v3, v4, (MPI_Datatype)(v5.the_real_datatype), (MPIO_Request *)&(v6.the_real_request) ));
         return v6;
     }
-    virtual void Write_at_all_end( const void * v2, Status & v3 ) 
+    virtual void Write_at_all_end( const MPICH2_CONST void * v2, Status & v3 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_at_all_end( (MPI_File) the_real_file, (void *)v2, (MPI_Status *)&(v3.the_real_status ) ));
+        MPIX_CALLREF( this, MPI_File_write_at_all_end( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, (MPI_Status *)&(v3.the_real_status ) ));
     }
-    virtual void Write_at_all_end( const void * v2 ) 
+    virtual void Write_at_all_end( const MPICH2_CONST void * v2 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_at_all_end( (MPI_File) the_real_file, (void *)v2, MPI_STATUS_IGNORE ));
+        MPIX_CALLREF( this, MPI_File_write_at_all_end( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, MPI_STATUS_IGNORE ));
     }
     virtual Offset Get_position_shared( void ) const
     {
@@ -2081,18 +2081,18 @@ class File  {
         MPIX_CALLREF( this, MPI_File_get_position_shared( (MPI_File) the_real_file, &v2 ));
         return v2;
     }
-    virtual void Write_shared( const void * v2, int v3, const Datatype &v4, Status & v5 ) 
+    virtual void Write_shared( const MPICH2_CONST void * v2, int v3, const Datatype &v4, Status & v5 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_shared( (MPI_File) the_real_file, (void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPI_Status *)&(v5.the_real_status ) ));
+        MPIX_CALLREF( this, MPI_File_write_shared( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPI_Status *)&(v5.the_real_status ) ));
     }
-    virtual void Write_shared( const void * v2, int v3, const Datatype &v4 ) 
+    virtual void Write_shared( const MPICH2_CONST void * v2, int v3, const Datatype &v4 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_shared( (MPI_File) the_real_file, (void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), MPI_STATUS_IGNORE ));
+        MPIX_CALLREF( this, MPI_File_write_shared( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), MPI_STATUS_IGNORE ));
     }
-    virtual Request Iwrite_at( Offset v2, const void * v3, int v4, const Datatype &v5 ) 
+    virtual Request Iwrite_at( Offset v2, const MPICH2_CONST void * v3, int v4, const Datatype &v5 ) 
     {
         Request v6;
-        MPIX_CALLREF( this, MPI_File_iwrite_at( (MPI_File) the_real_file, (MPI_Offset)v2, (void *)v3, v4, (MPI_Datatype)(v5.the_real_datatype), (MPIO_Request *)&(v6.the_real_request) ));
+        MPIX_CALLREF( this, MPI_File_iwrite_at( (MPI_File) the_real_file, (MPI_Offset)v2, (MPICH2_CONST void *)v3, v4, (MPI_Datatype)(v5.the_real_datatype), (MPIO_Request *)&(v6.the_real_request) ));
         return v6;
     }
     virtual void Get_view( Offset & v2, Datatype &v3, Datatype &v4, char * v5 ) const
@@ -2100,9 +2100,9 @@ class File  {
         MPIX_CALLREF( this, MPI_File_get_view( (MPI_File) the_real_file, &v2, (MPI_Datatype *)&(v3.the_real_datatype), (MPI_Datatype *)&(v4.the_real_datatype), v5 ));
     }
     virtual void Call_errhandler( int v2 ) const;
-    virtual void Write_all_begin( const void * v2, int v3, const Datatype &v4 ) 
+    virtual void Write_all_begin( const MPICH2_CONST void * v2, int v3, const Datatype &v4 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_all_begin( (MPI_File) the_real_file, (void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype) ));
+        MPIX_CALLREF( this, MPI_File_write_all_begin( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype) ));
     }
     virtual void Read_all_end( void * v2, Status & v3 ) 
     {
@@ -2132,17 +2132,17 @@ class File  {
     {
         MPIX_CALLREF( this, MPI_File_read_at_all_end( (MPI_File) the_real_file, v2, MPI_STATUS_IGNORE ));
     }
-    virtual void Write_at( Offset v2, const void * v3, int v4, const Datatype &v5, Status & v6 ) 
+    virtual void Write_at( Offset v2, const MPICH2_CONST void * v3, int v4, const Datatype &v5, Status & v6 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_at( (MPI_File) the_real_file, v2, (void *)v3, v4, (MPI_Datatype)(v5.the_real_datatype), (MPI_Status *)&(v6.the_real_status ) ));
+        MPIX_CALLREF( this, MPI_File_write_at( (MPI_File) the_real_file, v2, (MPICH2_CONST void *)v3, v4, (MPI_Datatype)(v5.the_real_datatype), (MPI_Status *)&(v6.the_real_status ) ));
     }
-    virtual void Write_at( Offset v2, const void * v3, int v4, const Datatype &v5 ) 
+    virtual void Write_at( Offset v2, const MPICH2_CONST void * v3, int v4, const Datatype &v5 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_at( (MPI_File) the_real_file, v2, (void *)v3, v4, (MPI_Datatype)(v5.the_real_datatype), MPI_STATUS_IGNORE ));
+        MPIX_CALLREF( this, MPI_File_write_at( (MPI_File) the_real_file, v2, (MPICH2_CONST void *)v3, v4, (MPI_Datatype)(v5.the_real_datatype), MPI_STATUS_IGNORE ));
     }
-    virtual void Write_at_all_begin( Offset v2, const void * v3, int v4, const Datatype &v5 ) 
+    virtual void Write_at_all_begin( Offset v2, const MPICH2_CONST void * v3, int v4, const Datatype &v5 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_at_all_begin( (MPI_File) the_real_file, v2, (void *)v3, v4, (MPI_Datatype)(v5.the_real_datatype) ));
+        MPIX_CALLREF( this, MPI_File_write_at_all_begin( (MPI_File) the_real_file, v2, (MPICH2_CONST void *)v3, v4, (MPI_Datatype)(v5.the_real_datatype) ));
     }
     virtual Errhandler Get_errhandler( void ) const
     {
@@ -2174,10 +2174,10 @@ class File  {
         MPIX_CALLREF( this, MPI_File_get_position( (MPI_File) the_real_file, &v2 ));
         return v2;
     }
-    static File Open( const Intracomm &v1, const char * v2, int v3, const Info &v4 ) 
+    static File Open( const Intracomm &v1, const MPICH2_CONST char * v2, int v3, const Info &v4 ) 
     {
         File v5;
-        MPIX_CALLOBJ( FILE_NULL, MPI_File_open( (MPI_Comm)(v1.the_real_comm), (char *)v2, v3, (MPI_Info)(v4.the_real_info), &(v5.the_real_file) ));
+        MPIX_CALLOBJ( FILE_NULL, MPI_File_open( (MPI_Comm)(v1.the_real_comm), (MPICH2_CONST char *)v2, v3, (MPI_Info)(v4.the_real_info), &(v5.the_real_file) ));
         return v5;
     }
     virtual void Seek( Offset v2, int v3 ) 
@@ -2220,37 +2220,37 @@ class File  {
     {
         MPIX_CALLREF( this, MPI_File_read_shared( (MPI_File) the_real_file, v2, v3, (MPI_Datatype)(v4.the_real_datatype), MPI_STATUS_IGNORE ));
     }
-    virtual Request Iwrite( const void * v2, int v3, const Datatype &v4 ) 
+    virtual Request Iwrite( const MPICH2_CONST void * v2, int v3, const Datatype &v4 ) 
     {
         Request v5;
-        MPIX_CALLREF( this, MPI_File_iwrite( (MPI_File) the_real_file, (void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPIO_Request *)&(v5.the_real_request) ));
+        MPIX_CALLREF( this, MPI_File_iwrite( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPIO_Request *)&(v5.the_real_request) ));
         return v5;
     }
-    virtual Request Iwrite_shared( const void * v2, int v3, const Datatype &v4 ) 
+    virtual Request Iwrite_shared( const MPICH2_CONST void * v2, int v3, const Datatype &v4 ) 
     {
         Request v5;
-        MPIX_CALLREF( this, MPI_File_iwrite_shared( (MPI_File) the_real_file, (void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPIO_Request *)&(v5.the_real_request) ));
+        MPIX_CALLREF( this, MPI_File_iwrite_shared( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPIO_Request *)&(v5.the_real_request) ));
         return v5;
     }
     virtual void Set_errhandler( const Errhandler &v2 ) 
     {
         MPIX_CALLREF( this, MPI_File_set_errhandler( (MPI_File) the_real_file, (MPI_Errhandler)(v2.the_real_errhandler) ));
     }
-    virtual void Write_at_all( Offset v2, const void * v3, int v4, const Datatype &v5, Status & v6 ) 
+    virtual void Write_at_all( Offset v2, const MPICH2_CONST void * v3, int v4, const Datatype &v5, Status & v6 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_at_all( (MPI_File) the_real_file, v2, (void *)v3, v4, (MPI_Datatype)(v5.the_real_datatype), (MPI_Status *)&(v6.the_real_status ) ));
+        MPIX_CALLREF( this, MPI_File_write_at_all( (MPI_File) the_real_file, v2, (MPICH2_CONST void *)v3, v4, (MPI_Datatype)(v5.the_real_datatype), (MPI_Status *)&(v6.the_real_status ) ));
     }
-    virtual void Write_at_all( Offset v2, const void * v3, int v4, const Datatype &v5 ) 
+    virtual void Write_at_all( Offset v2, const MPICH2_CONST void * v3, int v4, const Datatype &v5 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_at_all( (MPI_File) the_real_file, v2, (void *)v3, v4, (MPI_Datatype)(v5.the_real_datatype), MPI_STATUS_IGNORE ));
+        MPIX_CALLREF( this, MPI_File_write_at_all( (MPI_File) the_real_file, v2, (MPICH2_CONST void *)v3, v4, (MPI_Datatype)(v5.the_real_datatype), MPI_STATUS_IGNORE ));
     }
     virtual void Set_size( Offset v2 ) 
     {
         MPIX_CALLREF( this, MPI_File_set_size( (MPI_File) the_real_file, v2 ));
     }
-    virtual void Set_view( Offset v2, const Datatype &v3, const Datatype v4, const char * v5, const Info &v6 ) 
+    virtual void Set_view( Offset v2, const Datatype &v3, const Datatype v4, const MPICH2_CONST char * v5, const Info &v6 ) 
     {
-        MPIX_CALLREF( this, MPI_File_set_view( (MPI_File) the_real_file, v2, (MPI_Datatype)(v3.the_real_datatype), (MPI_Datatype)v4, (char *)v5, (MPI_Info)(v6.the_real_info) ));
+        MPIX_CALLREF( this, MPI_File_set_view( (MPI_File) the_real_file, v2, (MPI_Datatype)(v3.the_real_datatype), (MPI_Datatype)v4, (MPICH2_CONST char *)v5, (MPI_Info)(v6.the_real_info) ));
     }
     virtual void Read_at( Offset v2, void * v3, int v4, const Datatype &v5, Status & v6 ) 
     {
@@ -2264,21 +2264,21 @@ class File  {
     {
         MPIX_CALLREF( this, MPI_File_close( (MPI_File *) &the_real_file ));
     }
-    virtual void Write_ordered_end( const void * v2, Status & v3 ) 
+    virtual void Write_ordered_end( const MPICH2_CONST void * v2, Status & v3 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_ordered_end( (MPI_File) the_real_file, (void *)v2, (MPI_Status *)&(v3.the_real_status ) ));
+        MPIX_CALLREF( this, MPI_File_write_ordered_end( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, (MPI_Status *)&(v3.the_real_status ) ));
     }
-    virtual void Write_ordered_end( const void * v2 ) 
+    virtual void Write_ordered_end( const MPICH2_CONST void * v2 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write_ordered_end( (MPI_File) the_real_file, (void *)v2, MPI_STATUS_IGNORE ));
+        MPIX_CALLREF( this, MPI_File_write_ordered_end( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, MPI_STATUS_IGNORE ));
     }
-    virtual void Write( const void * v2, int v3, const Datatype &v4, Status & v5 ) 
+    virtual void Write( const MPICH2_CONST void * v2, int v3, const Datatype &v4, Status & v5 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write( (MPI_File) the_real_file, (void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPI_Status *)&(v5.the_real_status ) ));
+        MPIX_CALLREF( this, MPI_File_write( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPI_Status *)&(v5.the_real_status ) ));
     }
-    virtual void Write( const void * v2, int v3, const Datatype &v4 ) 
+    virtual void Write( const MPICH2_CONST void * v2, int v3, const Datatype &v4 ) 
     {
-        MPIX_CALLREF( this, MPI_File_write( (MPI_File) the_real_file, (void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), MPI_STATUS_IGNORE ));
+        MPIX_CALLREF( this, MPI_File_write( (MPI_File) the_real_file, (MPICH2_CONST void *)v2, v3, (MPI_Datatype)(v4.the_real_datatype), MPI_STATUS_IGNORE ));
     }
     virtual bool Get_atomicity( void ) const
     {
@@ -2323,10 +2323,10 @@ class Graphcomm : public Intracomm {
     {
         MPIX_CALLREF( this, MPI_Graph_get( (MPI_Comm) the_real_comm, v2, v3, v4, v5 ));
     }
-    virtual int Map( int v2, const int * v3, const int * v4 ) const
+    virtual int Map( int v2, const MPICH2_CONST int * v3, const MPICH2_CONST int * v4 ) const
     {
         int v5;
-        MPIX_CALLREF( this, MPI_Graph_map( (MPI_Comm) the_real_comm, v2, (int *)v3, (int *)v4, &v5 ));
+        MPIX_CALLREF( this, MPI_Graph_map( (MPI_Comm) the_real_comm, v2, (MPICH2_CONST int *)v3, (MPICH2_CONST int *)v4, &v5 ));
         return v5;
     }
     virtual void Get_neighbors( int v2, int v3, int * v4 ) const
@@ -2391,10 +2391,10 @@ class Cartcomm : public Intracomm {
     {
         MPIX_CALLREF( this, MPI_Cart_coords( (MPI_Comm) the_real_comm, v2, v3, v4 ));
     }
-    virtual int Get_cart_rank( const int * v2 ) const
+    virtual int Get_cart_rank( const MPICH2_CONST int * v2 ) const
     {
         int v3;
-        MPIX_CALLREF( this, MPI_Cart_rank( (MPI_Comm) the_real_comm, (int *)v2, &v3 ));
+        MPIX_CALLREF( this, MPI_Cart_rank( (MPI_Comm) the_real_comm, (MPICH2_CONST int *)v2, &v3 ));
         return v3;
     }
     virtual int Get_dim( void ) const
@@ -2420,7 +2420,7 @@ class Cartcomm : public Intracomm {
             delete[] l4;
         }
     }
-    virtual int Map( int v2, const int * v3, const bool v4[] ) const
+    virtual int Map( int v2, const MPICH2_CONST int * v3, const bool v4[] ) const
     {
         int v5;
         int *l4 = new int[v2];
@@ -2430,7 +2430,7 @@ class Cartcomm : public Intracomm {
                 l4[i4] = v4[i4] == true ? 1 : 0;
             }
         }
-        MPIX_CALLREF( this, MPI_Cart_map( (MPI_Comm) the_real_comm, v2, (int *)v3, l4, &v5 ));
+        MPIX_CALLREF( this, MPI_Cart_map( (MPI_Comm) the_real_comm, v2, (MPICH2_CONST int *)v3, l4, &v5 ));
 
             delete[] l4;
         return v5;
@@ -2483,10 +2483,10 @@ class Cartcomm : public Intracomm {
 extern     int Add_error_class( void ) ;
 extern     void* Alloc_mem( Aint v1, const Info &v2 ) ;
 extern     void Lookup_name( const char * v1, const Info &v2, char * v3 ) ;
-extern     void Publish_name( const char * v1, const Info &v2, const char * v3 ) ;
-extern     void Unpublish_name( const char * v1, const Info &v2, const char * v3 ) ;
+extern     void Publish_name( const char * v1, const Info &v2, const MPICH2_CONST char * v3 ) ;
+extern     void Unpublish_name( const char * v1, const Info &v2, const MPICH2_CONST char * v3 ) ;
 extern     Aint Get_address( void * v1 ) ;
-extern     void Add_error_string( int v1, const char * v2 ) ;
+extern     void Add_error_string( int v1, const MPICH2_CONST char * v2 ) ;
 extern     int Query_thread( void ) ;
 extern     void Close_port( const char * v1 ) ;
 extern     int Add_error_code( int v1 ) ;
@@ -2705,6 +2705,7 @@ extern const int MODE_NOPRECEDE;
 extern const int MODE_NOPUT;
 extern const int MODE_NOSTORE;
 extern const int MODE_NOSUCCEED;
+extern const int COMM_TYPE_SHARED;
 extern const int COMBINER_CONTIGUOUS;
 extern const int COMBINER_DARRAY;
 extern const int COMBINER_DUP;
@@ -2723,6 +2724,7 @@ extern const int COMBINER_STRUCT_INTEGER;
 extern const int COMBINER_STRUCT;
 extern const int COMBINER_SUBARRAY;
 extern const int COMBINER_VECTOR;
+extern const int COMBINER_HINDEXED_BLOCK;
 extern const int THREAD_FUNNELED;
 extern const int THREAD_MULTIPLE;
 extern const int THREAD_SERIALIZED;

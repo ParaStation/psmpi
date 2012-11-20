@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2011 INRIA.  All rights reserved.
+ * Copyright © 2009-2012 inria.  All rights reserved.
  * Copyright © 2009-2010 Université Bordeaux 1
  * Copyright © 2009 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -10,19 +10,22 @@
 #include <hwloc-calc.h>
 #include <hwloc.h>
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <errno.h>
 
 static void usage(FILE *where)
 {
   fprintf(where, "Usage: hwloc-bind [options] <location> -- command ...\n");
   fprintf(where, " <location> may be a space-separated list of cpusets or objects\n");
-  fprintf(where, "            as supported by the hwloc-calc utility.\n");
+  fprintf(where, "            as supported by the hwloc-calc utility, e.g:\n");
+  hwloc_calc_locations_usage(where);
   fprintf(where, "Options:\n");
   fprintf(where, "  --cpubind      Use following arguments for cpu binding (default)\n");
   fprintf(where, "  --membind      Use following arguments for memory binding\n");
   fprintf(where, "  --mempolicy <default|firsttouch|bind|interleave|replicate|nexttouch>\n"
-		 "                 Change the memory binding policy (default is bind)\n");
+		 "                 Change policy that --membind applies (default is bind)\n");
   fprintf(where, "  -l --logical   Take logical object indexes (default)\n");
   fprintf(where, "  -p --physical  Take physical object indexes\n");
   fprintf(where, "  --single       Bind on a single CPU to prevent migration\n");
@@ -31,7 +34,7 @@ static void usage(FILE *where)
   fprintf(where, "  --get-last-cpu-location\n"
 		 "                 Retrieve the last processors where the current process ran\n");
   fprintf(where, "  --pid <pid>    Operate on process <pid>\n");
-  fprintf(where, "  --taskset      Manipulate taskset-specific cpuset strings\n");
+  fprintf(where, "  --taskset      Use taskset-specific format when displaying cpuset strings\n");
   fprintf(where, "  -v             Show verbose messages\n");
   fprintf(where, "  --version      Report version and exit\n");
 }
@@ -60,6 +63,7 @@ int main(int argc, char *argv[])
   membind_set = hwloc_bitmap_alloc();
 
   hwloc_topology_init(&topology);
+  hwloc_topology_set_flags(topology, HWLOC_TOPOLOGY_FLAG_WHOLE_IO|HWLOC_TOPOLOGY_FLAG_ICACHES);
   hwloc_topology_load(topology);
   depth = hwloc_topology_get_depth(topology);
 
@@ -162,9 +166,9 @@ int main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
-    ret = hwloc_mask_process_arg(topology, depth, argv[0], logical,
+    ret = hwloc_calc_process_arg(topology, depth, argv[0], logical,
 				 cpubind ? cpubind_set : membind_set,
-				 taskset, verbose);
+				 verbose);
     if (ret < 0) {
       if (verbose)
 	fprintf(stderr, "assuming the command starts at %s\n", argv[0]);

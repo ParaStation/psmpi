@@ -2,6 +2,15 @@
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
+ *
+ * Portions of this code were written by Microsoft. Those portions are
+ * Copyright (c) 2007 Microsoft Corporation. Microsoft grants
+ * permission to use, reproduce, prepare derivative works, and to
+ * redistribute to others. The code is licensed "as is." The User
+ * bears the risk of using it. Microsoft gives no express warranties,
+ * guarantees or conditions. To the extent permitted by law, Microsoft
+ * excludes the implied warranties of merchantability, fitness for a
+ * particular purpose and non-infringement.
  */
 
 #include "mpiimpl.h"
@@ -138,12 +147,14 @@ void MPIR_CleanupThreadStorage( void *a )
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 static int MPIR_Thread_CS_Init( void )
 {
+    int err;
     MPIU_THREADPRIV_DECL;
 
     MPIU_Assert(MPICH_MAX_LOCKS >= MPIU_Nest_NUM_MUTEXES);
 
     /* we create this at all granularities right now */
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.memalloc_mutex, NULL);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.memalloc_mutex, &err);
+    MPIU_Assert(err == 0);
 
     /* must come after memalloc_mutex creation */
     MPIU_THREADPRIV_INITKEY;
@@ -151,17 +162,25 @@ static int MPIR_Thread_CS_Init( void )
 
 #if MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL
 /* There is a single, global lock, held for the duration of an MPI call */
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.global_mutex, NULL);
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.handle_mutex, NULL);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.global_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.handle_mutex, &err);
+    MPIU_Assert(err == 0);
 
 #elif MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT
     /* MPIU_THREAD_GRANULARITY_PER_OBJECT: Multiple locks */
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.global_mutex, NULL);
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.handle_mutex, NULL);
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.msgq_mutex, NULL);
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.completion_mutex, NULL);
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.ctx_mutex, NULL);
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.pmi_mutex, NULL);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.global_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.handle_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.msgq_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.completion_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.ctx_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.pmi_mutex, &err);
+    MPIU_Assert(err == 0);
 
 #elif MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_LOCK_FREE
 /* Updates to shared data and access to shared services is handled without 
@@ -184,20 +203,29 @@ static int MPIR_Thread_CS_Init( void )
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIR_Thread_CS_Finalize( void )
 {
+    int err;
+
     MPIU_DBG_MSG(THREAD,TYPICAL,"Freeing global mutex and private storage");
 #if MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL
 /* There is a single, global lock, held for the duration of an MPI call */
-    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.global_mutex, NULL);
+    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.global_mutex, &err);
+    MPIU_Assert(err == 0);
 
 #elif MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT
     /* MPIU_THREAD_GRANULARITY_PER_OBJECT: There are multiple locks,
      * one for each logical class (e.g., each type of object) */
-    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.global_mutex, NULL);
-    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.handle_mutex, NULL);
-    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.msgq_mutex, NULL);
-    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.completion_mutex, NULL);
-    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.ctx_mutex, NULL);
-    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.pmi_mutex, NULL);
+    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.global_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.handle_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.msgq_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.completion_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.ctx_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.pmi_mutex, &err);
+    MPIU_Assert(err == 0);
 
 
 #elif MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_LOCK_FREE
@@ -374,7 +402,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required, int * provided)
     }
 
 
-#if HAVE_ERROR_CHECKING == MPID_ERROR_LEVEL_RUNTIME
+#if defined(HAVE_ERROR_CHECKING) && (HAVE_ERROR_CHECKING == MPID_ERROR_LEVEL_RUNTIME)
     MPIR_Process.do_error_checks = MPIR_PARAM_ERROR_CHECKING;
 #endif
 
@@ -390,6 +418,16 @@ int MPIR_Init_thread(int * argc, char ***argv, int required, int * provided)
     mpi_errno = MPID_Init(argc, argv, required, &thread_provided, 
 			  &has_args, &has_env);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    /* Assert: tag_ub should be a power of 2 minus 1 */
+    MPIU_Assert(((unsigned)MPIR_Process.attrs.tag_ub & ((unsigned)MPIR_Process.attrs.tag_ub + 1)) == 0);
+
+    /* Set aside tag space for tagged collectives */
+    MPIR_Process.attrs.tag_ub     >>= 1;
+    MPIR_Process.tagged_coll_mask   = MPIR_Process.attrs.tag_ub + 1;
+
+    /* Assert: tag_ub is at least the minimum asked for in the MPI spec */
+    MPIU_Assert( MPIR_Process.attrs.tag_ub >= 32767 );
 
     /* Capture the level of thread support provided */
     MPIR_ThreadInfo.thread_provided = thread_provided;

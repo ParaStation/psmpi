@@ -30,7 +30,7 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 
     if (vc->state == MPIDI_VC_STATE_MORIBUND) {
         sreq->status.MPI_ERROR = MPI_SUCCESS;
-        MPIU_ERR_SET1(sreq->status.MPI_ERROR, MPI_ERR_OTHER, "**comm_fail", "**comm_fail %d", vc->pg_rank);
+        MPIU_ERR_SET1(sreq->status.MPI_ERROR, MPIX_ERR_PROC_FAIL_STOP, "**comm_fail", "**comm_fail %d", vc->pg_rank);
         MPIDI_CH3U_Request_complete(sreq);
         goto fn_fail;
     }
@@ -85,7 +85,7 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 	    {
 		/* header was not sent */
 		sreq->dev.pending_pkt =
-		    *(MPIDI_CH3_PktGeneric_t *) iov[0].MPID_IOV_BUF;
+		    *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
 		sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->dev.pending_pkt;
 		sreq->dev.iov[0].MPID_IOV_LEN = iov[0].MPID_IOV_LEN;
 	    }
@@ -151,7 +151,7 @@ int MPIDI_CH3_iSendv (MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV *iov, int n_i
 	
 	MPIDI_DBG_PRINTF((55, FCNAME, "enqueuing"));
 	
-	sreq->dev.pending_pkt = *(MPIDI_CH3_PktGeneric_t *) iov[0].MPID_IOV_BUF;
+	sreq->dev.pending_pkt = *(MPIDI_CH3_Pkt_t *) iov[0].MPID_IOV_BUF;
 	sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->dev.pending_pkt;
 	sreq->dev.iov[0].MPID_IOV_LEN = iov[0].MPID_IOV_LEN;
 

@@ -13,7 +13,7 @@ Nonblocking write using explict offset
 #include "mpiu_greq.h"
 #endif
 
-int MPI_File_iwrite_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
+int MPI_File_iwrite_at(MPI_File mpi_fh, MPI_Offset offset, MPICH2_CONST void *buf,
                        int count, MPI_Datatype datatype, 
                        MPIO_Request *request)
 </PRE>
@@ -42,5 +42,5 @@ in C.  In Fortran, MPI routines are subroutines, and are invoked with the
 <P>
 All MPI objects (e.g., <TT>MPI_Datatype</TT>, <TT>MPI_Comm</TT>) are of type <TT>INTEGER
 </TT>in Fortran.
-<P><B>Location:</B>iwrite_at.c<P>
+<P><B>Location:</B>mpi-io/iwrite_at.c<P>
 </BODY></HTML>

@@ -1,10 +1,10 @@
-.TH MPI_Cart_create 3 "7/30/2010" " " "MPI"
+.TH MPI_Cart_create 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Cart_create \-  Makes a new communicator to which topology information has been attached 
 .SH SYNOPSIS
 .nf
-int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods, 
-                   int reorder, MPI_Comm *comm_cart)
+int MPI_Cart_create(MPI_Comm comm_old, int ndims, MPICH2_CONST int *dims,
+                    MPICH2_CONST int *periods, int reorder, MPI_Comm *comm_cart)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -138,4 +138,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-cart_create.c
+src/mpi/topo/cart_create.c

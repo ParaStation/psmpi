@@ -7,6 +7,8 @@ allred3 10
 allred4 4
 allred5 5
 allred5 10
+allred6 4
+allred6 7
 reduce 5
 reduce 10
 reduce_local 2 mpiversion=2.2
@@ -35,6 +37,10 @@ bcast2 4
 # msg algorithm (see coll definitions in mpiimpl.h)
 bcast2 10 timeLimit=420
 bcast3 10 timeLimit=420
+bcastzerotype 1
+bcastzerotype 4
+bcastzerotype 5
+bcastzerotype 10
 coll2 5
 coll3 5
 coll4 4
@@ -65,6 +71,8 @@ red_scat_block2 5 mpiversion=2.2
 red_scat_block2 10 mpiversion=2.2
 redscatblk3 8 mpiversion=2.2
 redscatblk3 10 mpiversion=2.2
+redscatbkinter 8 mpiversion=2.2
+redscatbkinter 10 mpiversion=2.2
 scantst 4
 exscan 10
 exscan2 5
@@ -117,3 +125,23 @@ opmin 4
 opminloc 4
 opmax 5
 opmaxloc 5
+# Eventually, the nonblocking tests should be changed to use mpiversion=3.0
+nonblocking 4 strict=false
+nonblocking 5 strict=false
+nonblocking 10 strict=false
+nonblocking2 1 strict=false
+nonblocking2 4 strict=false
+nonblocking2 5 strict=false
+nonblocking2 10 timeLimit=420 strict=false
+nonblocking3 1 strict=false
+nonblocking3 4 strict=false
+nonblocking3 5 strict=false
+nonblocking3 10 timeLimit=600 strict=false
+iallred 2 strict=false
+# run some of the tests, relinked with the nbc_pmpi_adaptor.o file
+nballtoall1 8 strict=false
+nbcoll2 5     strict=false
+nbredscat 4   strict=false
+nbredscat 8   strict=false
+nbredscat3 8  strict=false
+nbredscatinter 8 strict=false

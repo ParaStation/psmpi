@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2010 INRIA.  All rights reserved.
- * Copyright © 2009-2010 Université Bordeaux 1
+ * Copyright © 2009-2012 inria.  All rights reserved.
+ * Copyright © 2009-2011 Université Bordeaux 1
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -31,7 +31,8 @@ hwloc_look_darwin(struct hwloc_topology *topology)
   unsigned i, j, cpu;
   struct hwloc_obj *obj;
   size_t size;
-  int64_t l1cachesize;
+  int64_t l1dcachesize, l1icachesize;
+  int64_t cacheways[2];
   int64_t l2cachesize;
   int64_t cachelinesize;
   int64_t memsize;
@@ -92,11 +93,24 @@ hwloc_look_darwin(struct hwloc_topology *topology)
     }
   }
 
-  if (hwloc_get_sysctlbyname("hw.l1dcachesize", &l1cachesize))
-    l1cachesize = 0;
+  if (hwloc_get_sysctlbyname("hw.l1dcachesize", &l1dcachesize))
+    l1dcachesize = 0;
+
+  if (hwloc_get_sysctlbyname("hw.l1icachesize", &l1icachesize))
+    l1icachesize = 0;
 
   if (hwloc_get_sysctlbyname("hw.l2cachesize", &l2cachesize))
     l2cachesize = 0;
+
+  if (hwloc_get_sysctlbyname("machdep.cpu.cache.L1_associativity", &cacheways[0]))
+    cacheways[0] = 0;
+  else if (cacheways[0] == 0xff)
+    cacheways[0] = -1;
+
+  if (hwloc_get_sysctlbyname("machdep.cpu.cache.L2_associativity", &cacheways[1]))
+    cacheways[1] = 0;
+  else if (cacheways[1] == 0xff)
+    cacheways[1] = -1;
 
   if (hwloc_get_sysctlbyname("hw.cachelinesize", &cachelinesize))
     cachelinesize = 0;
@@ -139,7 +153,7 @@ hwloc_look_darwin(struct hwloc_topology *topology)
         if (n > 0)
           cachesize[0] = memsize;
         if (n > 1)
-          cachesize[1] = l1cachesize;
+          cachesize[1] = l1dcachesize;
         if (n > 2)
           cachesize[2] = l2cachesize;
       }
@@ -168,12 +182,35 @@ hwloc_look_darwin(struct hwloc_topology *topology)
                cpu++)
             hwloc_bitmap_set(obj->cpuset, cpu);
 
+          if (i == 1 && l1icachesize) {
+            /* FIXME assuming that L1i and L1d are shared the same way. Darwin
+             * does not yet provide a way to know.  */
+            hwloc_obj_t l1i = hwloc_alloc_setup_object(HWLOC_OBJ_CACHE, j);
+            l1i->cpuset = hwloc_bitmap_dup(obj->cpuset);
+            hwloc_debug_1arg_bitmap("L1icache %u has cpuset %s\n",
+                j, l1i->cpuset);
+            l1i->attr->cache.depth = i;
+            l1i->attr->cache.size = l1icachesize;
+            l1i->attr->cache.linesize = cachelinesize;
+            l1i->attr->cache.associativity = 0;
+            l1i->attr->cache.type = HWLOC_OBJ_CACHE_INSTRUCTION;
+
+            hwloc_insert_object_by_cpuset(topology, l1i);
+          }
           if (i) {
             hwloc_debug_2args_bitmap("L%ucache %u has cpuset %s\n",
                 i, j, obj->cpuset);
             obj->attr->cache.depth = i;
             obj->attr->cache.size = cachesize[i];
             obj->attr->cache.linesize = cachelinesize;
+            if (i <= sizeof(cacheways) / sizeof(cacheways[0]))
+              obj->attr->cache.associativity = cacheways[i-1];
+            else
+              obj->attr->cache.associativity = 0;
+            if (i == 1 && l1icachesize)
+              obj->attr->cache.type = HWLOC_OBJ_CACHE_DATA;
+            else
+              obj->attr->cache.type = HWLOC_OBJ_CACHE_UNIFIED;
           } else {
             hwloc_debug_1arg_bitmap("node %u has cpuset %s\n",
                 j, obj->cpuset);
@@ -207,7 +244,7 @@ hwloc_look_darwin(struct hwloc_topology *topology)
   /* add PU objects */
   hwloc_setup_pu_level(topology, nprocs);
 
-  hwloc_add_object_info(topology->levels[0][0], "Backend", "Darwin");
+  hwloc_obj_add_info(topology->levels[0][0], "Backend", "Darwin");
 }
 
 void

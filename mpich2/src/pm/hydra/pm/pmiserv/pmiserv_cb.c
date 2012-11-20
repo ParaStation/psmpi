@@ -81,20 +81,23 @@ static HYD_status cleanup_proxy(struct HYD_proxy *proxy)
          * find the wrong proxy */
         proxy->control_fd = HYD_FD_CLOSED;
     }
-    else {
-        /* We go through the following cleanup only if we actually
-         * cleaned up a proxy. Otherwise, once all the proxies in a PG
-         * are cleaned up, every time this function is called, we
-         * might try to cleanup the resources. */
-        goto fn_exit;
-    }
 
+    /* If there is an active proxy, don't clean up the PG */
     for (tproxy = pg->proxy_list; tproxy; tproxy = tproxy->next)
         if (tproxy->control_fd != HYD_FD_CLOSED)
             goto fn_exit;
 
+    /* If there is no active proxy, ignore the proxies that haven't
+     * connected back to us yet. */
+    for (tproxy = pg->proxy_list; tproxy; tproxy = tproxy->next)
+        tproxy->control_fd = HYD_FD_CLOSED;
+
     /* All proxies in this process group have terminated */
     pg_scratch = (struct HYD_pmcd_pmi_pg_scratch *) pg->pg_scratch;
+
+    /* If this PG has already been closed, exit */
+    if (pg_scratch->pmi_listen_fd == HYD_FD_CLOSED)
+        goto fn_exit;
 
     /* If the PMI listen fd has been initialized, deregister it */
     if (pg_scratch->pmi_listen_fd != HYD_FD_UNSET &&
@@ -129,36 +132,19 @@ static HYD_status cleanup_proxy(struct HYD_proxy *proxy)
     goto fn_exit;
 }
 
-static HYD_status cleanup_pg(struct HYD_pg *pg)
+HYD_status HYD_pmcd_pmiserv_cleanup_all_pgs(void)
 {
+    struct HYD_pg *pg;
     struct HYD_proxy *proxy;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
-    for (proxy = pg->proxy_list; proxy; proxy = proxy->next) {
-        status = cleanup_proxy(proxy);
-        HYDU_ERR_POP(status, "unable to cleanup proxy\n");
-    }
-
-  fn_exit:
-    HYDU_FUNC_EXIT();
-    return status;
-
-  fn_fail:
-    goto fn_exit;
-}
-
-HYD_status HYD_pmcd_pmiserv_cleanup_all_pgs(void)
-{
-    struct HYD_pg *pg;
-    HYD_status status = HYD_SUCCESS;
-
-    HYDU_FUNC_ENTER();
-
     for (pg = &HYD_server_info.pg_list; pg; pg = pg->next) {
-        status = cleanup_pg(pg);
-        HYDU_ERR_POP(status, "unable to cleanup PG\n");
+        for (proxy = pg->proxy_list; proxy; proxy = proxy->next) {
+            status = cleanup_proxy(proxy);
+            HYDU_ERR_POP(status, "unable to cleanup proxy\n");
+        }
     }
 
   fn_exit:
@@ -251,22 +237,28 @@ static HYD_status control_cb(int fd, HYD_event_t events, void *userp)
         status = cleanup_proxy(proxy);
         HYDU_ERR_POP(status, "error cleaning up proxy connection\n");
 
-        /* If any of the processes aborted, cleanup the remaining
+        /* If any of the processes was killed with a signal or if it
+         * returned with a bad exit code, cleanup the remaining
          * processes */
         if (HYD_server_info.user_global.auto_cleanup) {
             for (i = 0; i < proxy->proxy_process_count; i++) {
-                if (!WIFEXITED(proxy->exit_status[i])) {
+                if (!WIFEXITED(proxy->exit_status[i]) || WEXITSTATUS(proxy->exit_status[i])) {
+                    int code = proxy->exit_status[i];
+                    /* show the value passed to exit(), not (val<<8) */
+                    if (WIFEXITED(proxy->exit_status[i]))
+                        code = WEXITSTATUS(proxy->exit_status[i]);
+
                     HYDU_dump_noprefix
-                        (stdout, "\n====================================================");
+                        (stdout, "\n==================================================");
                     HYDU_dump_noprefix(stdout, "=================================\n");
                     HYDU_dump_noprefix
                         (stdout, "=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES\n");
-                    HYDU_dump_noprefix(stdout, "=   EXIT CODE: %d\n", proxy->exit_status[i]);
+                    HYDU_dump_noprefix(stdout, "=   EXIT CODE: %d\n", code);
                     HYDU_dump_noprefix(stdout, "=   CLEANING UP REMAINING PROCESSES\n");
                     HYDU_dump_noprefix(stdout,
                                        "=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES\n");
                     HYDU_dump_noprefix(stdout,
-                                       "====================================================");
+                                       "==================================================");
                     HYDU_dump_noprefix(stdout, "=================================\n");
 
                     status = HYD_pmcd_pmiserv_cleanup_all_pgs();
@@ -311,7 +303,8 @@ static HYD_status control_cb(int fd, HYD_event_t events, void *userp)
         HYDU_MALLOC(buf, char *, HYD_TMPBUF_SIZE, status);
         HYDU_ERR_POP(status, "unable to allocate memory\n");
 
-        HYDU_sock_read(STDIN_FILENO, buf, HYD_TMPBUF_SIZE, &count, &closed, 0);
+        HYDU_sock_read(STDIN_FILENO, buf, HYD_TMPBUF_SIZE, &count, &closed,
+                       HYDU_SOCK_COMM_NONE);
         HYDU_ERR_POP(status, "error reading from stdin\n");
 
         hdr.buflen = count;

@@ -9,7 +9,7 @@
 Unpack a buffer according to a datatype into contiguous memory 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Unpack(void *inbuf, int insize, int *position,
+int MPI_Unpack(MPICH2_CONST void *inbuf, int insize, int *position,
                void *outbuf, int outcount, MPI_Datatype datatype,
                MPI_Comm comm)
 </PRE>
@@ -85,5 +85,5 @@ identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 <P>
 <H2>See Also</H2>
  MPI_Pack, MPI_Pack_size
-<BR><P><B>Location:</B>unpack.c<P>
+<BR><P><B>Location:</B>src/mpi/datatype/unpack.c<P>
 </BODY></HTML>

@@ -35,10 +35,9 @@
 #undef FUNCNAME
 #define FUNCNAME MPI_Status_f2c
 
-int MPI_Status_f2c( MPI_Fint *f_status, MPI_Status *c_status )
+int MPI_Status_f2c( MPICH2_CONST MPI_Fint *f_status, MPI_Status *c_status )
 {
     int mpi_errno = MPI_SUCCESS;
-    /* This code assumes that the ints are the same size */
     
     if (f_status == MPI_F_STATUS_IGNORE) {
 	/* The call is erroneous (see 4.12.5 in MPI-2) */
@@ -46,6 +45,8 @@ int MPI_Status_f2c( MPI_Fint *f_status, MPI_Status *c_status )
 		 "MPI_Status_f2c", __LINE__, MPI_ERR_OTHER, "**notfstatignore", 0 );
 	return MPIR_Err_return_comm( 0, "MPI_Status_f2c",  mpi_errno );
     }
+
     *c_status = *(MPI_Status *)	f_status;
-    return MPI_SUCCESS;  
+
+    return MPI_SUCCESS;
 }

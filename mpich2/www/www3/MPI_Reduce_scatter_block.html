@@ -9,8 +9,9 @@
 Combines values and scatters the results 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Reduce_scatter_block(void *sendbuf, void *recvbuf, int recvcount, 
-                      MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
+int MPI_Reduce_scatter_block(MPICH2_CONST void *sendbuf, void *recvbuf, 
+                             int recvcount, 
+                             MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -98,5 +99,5 @@ is prohibited in MPI (because it is prohibited by the Fortran
 standard, and rather than have a separate case for C and Fortran, the
 MPI Forum adopted the more restrictive requirements of Fortran).
 </DL>
-<P><B>Location:</B>red_scat_block.c<P>
+<P><B>Location:</B>src/mpi/coll/red_scat_block.c<P>
 </BODY></HTML>

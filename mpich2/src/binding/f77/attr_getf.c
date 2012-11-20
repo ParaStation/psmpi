@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_attr_get( MPI_Fint *, MPI_Fint *, void*
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Attr_get
 #define MPI_Attr_get PMPI_Attr_get 
 
@@ -195,7 +193,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_attr_get_ ( MPI_Fint *v1, MPI_Fint *v2, void*v3
         *(MPI_Fint*)v3 = 0;
     }
     else {
-        *(MPI_Fint*)v3 = (MPI_Fint)(MPIR_Pint)attrv3;
+        *(MPI_Fint*)v3 = (MPI_Fint)*(int *)&attrv3;
     }
-    *v4 = MPIR_TO_FLOG(l4);
+    if (*ierr == MPI_SUCCESS) *v4 = MPIR_TO_FLOG(l4);
 }

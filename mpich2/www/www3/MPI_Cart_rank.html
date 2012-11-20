@@ -9,7 +9,7 @@
 Determines process rank in communicator given Cartesian location 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
+int MPI_Cart_rank(MPI_Comm comm, MPICH2_CONST int *coords, int *rank)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -73,5 +73,5 @@ zero and the size of the communicator minus one; ranks in a receive
 <DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
-<P><B>Location:</B>cart_rank.c<P>
+<P><B>Location:</B>src/mpi/topo/cart_rank.c<P>
 </BODY></HTML>

@@ -1,9 +1,9 @@
-.TH MPI_Scatter 3 "1/21/2011" " " "MPI"
+.TH MPI_Scatter 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Scatter \-  Sends data from one process to all other processes in a  communicator 
 .SH SYNOPSIS
 .nf
-int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
+int MPI_Scatter(MPICH2_CONST void *sendbuf, int sendcnt, MPI_Datatype sendtype,
                void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, 
                MPI_Comm comm)
 .fi
@@ -155,4 +155,4 @@ MPI_Datatype (see
 one is not valid.
 .PD 1
 .SH LOCATION
-scatter.c
+src/mpi/coll/scatter.c

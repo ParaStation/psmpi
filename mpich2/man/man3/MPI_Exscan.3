@@ -1,9 +1,9 @@
-.TH MPI_Exscan 3 "1/21/2011" " " "MPI"
+.TH MPI_Exscan 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Exscan \-  Computes the exclusive scan (partial reductions) of data on a  collection of processes 
 .SH SYNOPSIS
 .nf
-int MPI_Exscan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, 
+int MPI_Exscan(MPICH2_CONST void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
                MPI_Op op, MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
@@ -172,4 +172,4 @@ standard, and rather than have a separate case for C and Fortran, the
 MPI Forum adopted the more restrictive requirements of Fortran).
 .PD 1
 .SH LOCATION
-exscan.c
+src/mpi/coll/exscan.c

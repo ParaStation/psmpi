@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_iprobe( MPI_Fint *, MPI_Fint *, MPI_Fin
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Iprobe
 #define MPI_Iprobe PMPI_Iprobe 
 
@@ -195,5 +193,5 @@ FORT_DLL_SPEC void FORT_CALL mpi_iprobe_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint 
 
     if (v5 == MPI_F_STATUS_IGNORE) { v5 = (MPI_Fint*)MPI_STATUS_IGNORE; }
     *ierr = MPI_Iprobe( *v1, *v2, (MPI_Comm)(*v3), &l4, (MPI_Status *)v5 );
-    *v4 = MPIR_TO_FLOG(l4);
+    if (*ierr == MPI_SUCCESS) *v4 = MPIR_TO_FLOG(l4);
 }

@@ -10,6 +10,7 @@
 package base.drawable;
 
 import java.awt.Graphics2D;
+import java.awt.Color;
 import java.awt.Stroke;
 import java.awt.BasicStroke;
 import java.awt.Insets;
@@ -24,12 +25,17 @@ import java.util.ArrayList;
 import java.util.Stack;
 import java.util.Iterator;
 
+import cern.colt.map.OpenIntIntHashMap;
+
 import base.io.MixedDataInput;
 import base.io.MixedDataOutput;
 import base.io.MixedDataIO;
 import base.topology.Line;
 import base.topology.PreviewEvent;
 import base.topology.PreviewState;
+import base.topology.Pointer;
+import base.topology.MarkerLine;
+import base.topology.MarkerState;
 /*
 import base.topology.Arrow;
 import base.topology.State;
@@ -543,9 +549,11 @@ public class Shadow extends Primitive
     /* 
         0.0f < nesting_ftr <= 1.0f
     */
-    public  int  drawState( Graphics2D g, CoordPixelXform coord_xform,
-                            Map map_line2row, DrawnBoxSet drawn_boxes,
-                            ColorAlpha color )
+    public  int  drawStateOnCanvas( Graphics2D         g,
+                                    CoordPixelXform    coord_xform,
+                                    OpenIntIntHashMap  map_line2row,
+                                    DrawnBoxSet        drawn_boxes,
+                                    ColorAlpha         color )
     {
         // Coord  start_vtx, final_vtx;
         // start_vtx = this.getStartVertex();
@@ -577,12 +585,14 @@ public class Shadow extends Primitive
 
 
 
-    private static long     Arrow_Log_Base = 10;
-    private static Stroke[] Line_Strokes;
+    private static long           Arrow_Log_Base = 10;
+    private static BasicStroke[]  Line_Strokes;
     static {
-         Line_Strokes = new Stroke[ 10 ];
+         Line_Strokes = new BasicStroke[ 10 ];
          for ( int idx = Line_Strokes.length-1; idx >=0 ; idx-- )
-             Line_Strokes[ idx ] = new BasicStroke( (float) (idx+1) );
+             Line_Strokes[ idx ] = new BasicStroke( (float) (idx+1),
+                                                    BasicStroke.CAP_ROUND,
+                                                    BasicStroke.JOIN_MITER );
     }
 
     public static void setBaseOfLogOfObjectNumToArrowWidth( int new_log_base )
@@ -590,7 +600,7 @@ public class Shadow extends Primitive
         Arrow_Log_Base = (long) new_log_base;
     }
 
-    private static  Stroke  getArrowStroke( long  inum )
+    private static  BasicStroke  getArrowStroke( long  inum )
     {
         int  idx;
         for ( idx = 0; idx < Line_Strokes.length; idx++ ) {
@@ -604,9 +614,11 @@ public class Shadow extends Primitive
             return Line_Strokes[ Line_Strokes.length-1 ];
     }
 
-    public  int  drawArrow( Graphics2D g, CoordPixelXform coord_xform,
-                            Map map_line2row, DrawnBoxSet drawn_boxes,
-                            ColorAlpha color )
+    public  int  drawArrowOnCanvas( Graphics2D         g,
+                                    CoordPixelXform    coord_xform,
+                                    OpenIntIntHashMap  map_line2row,
+                                    DrawnBoxSet        drawn_boxes,
+                                    ColorAlpha         color )
     {
         Coord  start_vtx, final_vtx;
         start_vtx = this.getStartVertex();
@@ -617,12 +629,8 @@ public class Shadow extends Primitive
         tFinal = super.getLatestTime();      /* different from Primitive */
 
         int    iStart, iFinal;
-        iStart = ( (Integer)
-                   map_line2row.get( new Integer(start_vtx.lineID) )
-                 ).intValue();
-        iFinal = ( (Integer)
-                   map_line2row.get( new Integer(final_vtx.lineID) )
-                 ).intValue();
+        iStart = map_line2row.get( start_vtx.lineID );
+        iFinal = map_line2row.get( final_vtx.lineID );
 
         Stroke  arrow_stroke = getArrowStroke( num_real_objs );
 
@@ -631,9 +639,11 @@ public class Shadow extends Primitive
                           tStart, (float) iStart, tFinal, (float) iFinal );
     }
 
-    public  int  drawEvent( Graphics2D g, CoordPixelXform coord_xform,
-                            Map map_line2row, DrawnBoxSet drawn_boxes,
-                            ColorAlpha color )
+    public  int  drawEventOnCanvas( Graphics2D         g,
+                                    CoordPixelXform    coord_xform,
+                                    OpenIntIntHashMap  map_line2row,
+                                    DrawnBoxSet        drawn_boxes,
+                                    ColorAlpha         color )
     {
         Coord  vtx;
         vtx = this.getStartVertex();
@@ -647,9 +657,7 @@ public class Shadow extends Primitive
 
         int    rowID;
         float  rPeak, rStart, rFinal;
-        rowID  = ( (Integer)
-                   map_line2row.get( new Integer(vtx.lineID) )
-                 ).intValue();
+        rowID  = map_line2row.get( vtx.lineID );
         // rPeak  = (float) rowID + NestingStacks.getHalfInitialNestingHeight();
         rPeak  = (float) rowID - 0.25f;
         rStart = (float) rowID - 0.5f;
@@ -664,8 +672,9 @@ public class Shadow extends Primitive
     /* 
         0.0f < nesting_ftr <= 1.0f
     */
-    public  boolean isPixelInState( CoordPixelXform coord_xform,
-                                    Map map_line2row, Point pix_pt )
+    public  boolean isPixelInState( CoordPixelXform    coord_xform,
+                                    OpenIntIntHashMap  map_line2row,
+                                    Point              pix_pt )
     {
         /*
         Coord  start_vtx, final_vtx;
@@ -680,9 +689,7 @@ public class Shadow extends Primitive
         int    rowID;
         float  nesting_ftr;
         /*
-        rowID  = ( (Integer)
-                   map_line2row.get( new Integer(start_vtx.lineID) )
-                 ).intValue();
+        rowID  = map_line2row.get( start_vtx.lineID );
         */
         rowID       = super.getRowID();
         /* assume NestingFactor has been calculated */
@@ -702,8 +709,9 @@ public class Shadow extends Primitive
     }
 
     //  assume this Shadow overlaps with coord_xform.TimeBoundingBox
-    public  boolean isPixelOnArrow( CoordPixelXform coord_xform,
-                                    Map map_line2row, Point pix_pt )
+    public  boolean isPixelOnArrow( CoordPixelXform    coord_xform,
+                                    OpenIntIntHashMap  map_line2row,
+                                    Point              pix_pt )
     {
         Coord  start_vtx, final_vtx;
         start_vtx = this.getStartVertex();
@@ -714,19 +722,16 @@ public class Shadow extends Primitive
         tFinal = super.getLatestTime();      /* different from Primitive */
 
         float  rStart, rFinal;
-        rStart = ( (Integer)
-                   map_line2row.get( new Integer(start_vtx.lineID) )
-                 ).floatValue();
-        rFinal = ( (Integer)
-                   map_line2row.get( new Integer(final_vtx.lineID) )
-                 ).floatValue();
+        rStart = (float) map_line2row.get( start_vtx.lineID );
+        rFinal = (float) map_line2row.get( final_vtx.lineID );
 
         return Line.containsPixel( coord_xform, pix_pt,
                                    tStart, rStart, tFinal, rFinal );
     }
 
-    public  boolean isPixelAtEvent( CoordPixelXform coord_xform,
-                                    Map map_line2row, Point pix_pt )
+    public  boolean isPixelAtEvent( CoordPixelXform    coord_xform,
+                                    OpenIntIntHashMap  map_line2row,
+                                    Point              pix_pt )
     {
         Coord  vtx;
         vtx = this.getStartVertex();
@@ -740,9 +745,7 @@ public class Shadow extends Primitive
 
         int    rowID;
         float  rPeak, rStart, rFinal;
-        rowID  = ( (Integer)
-                   map_line2row.get( new Integer(vtx.lineID) )
-                 ).intValue();
+        rowID  = map_line2row.get( vtx.lineID );
         // rPeak  = (float) rowID + NestingStacks.getHalfInitialNestingHeight();
         rPeak  = (float) rowID - 0.25f;
         rStart = (float) rowID - 0.5f;
@@ -751,6 +754,73 @@ public class Shadow extends Primitive
         return PreviewEvent.containsPixel( coord_xform, pix_pt,
                                            tStart, rStart, tFinal, rFinal,
                                            tPoint, rPeak );
+    }
+
+    public  int  drawStateOnViewport( Graphics2D         g,  
+                                      CoordPixelXform    coord_xform,
+                                      OpenIntIntHashMap  map_line2row,
+                                      ColorAlpha         color )
+    {
+        double tStart, tFinal;
+        tStart = super.getEarliestTime();    /* different from Primitive */
+        tFinal = super.getLatestTime();      /* different from Primitive */
+
+        int    rowID;
+        float  nesting_ftr;
+        rowID       = super.getRowID();
+        nesting_ftr = super.getNestingFactor();
+
+        // System.out.println( "\t" + this + " nestftr=" + nesting_ftr );
+
+        float  rStart, rFinal;
+        rStart = (float) rowID - nesting_ftr / 2.0f;
+        rFinal = rStart + nesting_ftr;
+
+        return MarkerState.draw( g, color, null, coord_xform,
+                                 tStart, rStart, tFinal, rFinal );
+    }
+
+    public  int  drawArrowOnViewport( Graphics2D         g,  
+                                      CoordPixelXform    coord_xform,
+                                      OpenIntIntHashMap  map_line2row,
+                                      ColorAlpha         color )
+    {
+        Coord  start_vtx, final_vtx;
+        start_vtx = this.getStartVertex();
+        final_vtx = this.getFinalVertex();
+
+        double tStart, tFinal;
+        tStart = super.getEarliestTime();    /* different from Primitive */
+        tFinal = super.getLatestTime();      /* different from Primitive */
+
+        int    iStart, iFinal;
+        iStart = map_line2row.get( start_vtx.lineID );
+        iFinal = map_line2row.get( final_vtx.lineID );
+
+        BasicStroke  arrow_stroke = getArrowStroke( num_real_objs );
+
+        return MarkerLine.draw( g, color, arrow_stroke, coord_xform,
+                                tStart, (float)iStart, tFinal, (float)iFinal );
+    }
+
+    public  int  drawEventOnViewport( Graphics2D         g,  
+                                      CoordPixelXform    coord_xform,
+                                      OpenIntIntHashMap  map_line2row,
+                                      ColorAlpha         color )
+    {
+        Coord  vtx;
+        vtx = this.getStartVertex();
+
+        double tPoint;
+        tPoint = vtx.time;
+
+        int    rowID;
+        float  rPoint;
+        rowID  = map_line2row.get( vtx.lineID );
+        rPoint = (float) rowID - 0.5f;
+
+        return Pointer.drawUpper( g, color, null, coord_xform,
+                                  tPoint, rPoint, 0 );
     }
 
     public boolean containSearchable()
@@ -764,5 +834,34 @@ public class Shadow extends Primitive
                  return true;
         }
         return false;
+    }
+
+    public int drawSearchableOnViewport( Graphics2D        g,
+                                         CoordPixelXform   coord_xform,
+                                         OpenIntIntHashMap map_line2row )
+    {
+        double tStart, tFinal;
+        tStart = super.getEarliestTime();    /* different from Primitive */
+        tFinal = super.getLatestTime();      /* different from Primitive */
+
+        int    rowID;
+        float  nestingftr;
+        /* assume RowID and NestingFactor have been calculated */
+        rowID       = this.getRowID();
+        nestingftr  = this.getNestingFactor();
+
+        // System.out.println( "\t" + this + " nestftr=" + nestingftr );
+
+        float  rStart, rFinal;
+        rStart = (float) rowID - nestingftr / 2.0f;
+        rFinal = rStart + nestingftr;
+
+        Color color = super.getCategory().getColor();
+        Pointer.drawUpper( g, color, null, coord_xform,
+                           tStart, rStart, -MarkerState.Border_Width );
+        Pointer.drawLower( g, Color.yellow, null, coord_xform,
+                           tStart, rFinal, MarkerState.Border_Width );
+        return MarkerState.draw( g, color, null, coord_xform,
+                                 tStart, rStart, tFinal, rFinal );
     }
 }

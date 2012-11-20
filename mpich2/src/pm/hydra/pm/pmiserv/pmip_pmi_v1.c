@@ -298,7 +298,12 @@ static HYD_status fn_get_usize(int fd, char *args[])
 
     i = 0;
     tmp[i++] = HYDU_strdup("cmd=universe_size size=");
-    tmp[i++] = HYDU_int_to_str(HYD_pmcd_pmip.system_global.global_core_map.total);
+    if (HYD_pmcd_pmip.user_global.usize == HYD_USIZE_SYSTEM)
+        tmp[i++] = HYDU_int_to_str(HYD_pmcd_pmip.system_global.global_core_map.global_count);
+    else if (HYD_pmcd_pmip.user_global.usize == HYD_USIZE_INFINITE)
+        tmp[i++] = HYDU_int_to_str(-1);
+    else
+        tmp[i++] = HYDU_int_to_str(HYD_pmcd_pmip.user_global.usize);
     tmp[i++] = HYDU_strdup("\n");
     tmp[i++] = NULL;
 
@@ -348,64 +353,6 @@ static HYD_status fn_get(int fd, char *args[])
         status = send_cmd_downstream(fd, cmd);
         HYDU_ERR_POP(status, "error sending PMI response\n");
         HYDU_FREE(cmd);
-    }
-    else if (!strcmp(key, "hydra_node_topomap")) {
-        char *map;
-
-        status = HYDT_topo_get_topomap(&map);
-        HYDU_ERR_POP(status, "error getting topology map\n");
-
-        i = 0;
-
-        tmp[i++] = HYDU_strdup("cmd=get_result rc=");
-        if (map) {
-            tmp[i++] = HYDU_strdup("0 msg=success value=");
-            tmp[i++] = HYDU_strdup(map);
-        }
-        else {
-            tmp[i++] = HYDU_strdup("-1 msg=hydra_node_topomap_not_found value=unknown");
-        }
-        tmp[i++] = HYDU_strdup("\n");
-        tmp[i++] = NULL;
-
-        status = HYDU_str_alloc_and_join(tmp, &cmd);
-        HYDU_ERR_POP(status, "unable to join strings\n");
-        HYDU_free_strlist(tmp);
-
-        status = send_cmd_downstream(fd, cmd);
-        HYDU_ERR_POP(status, "error sending PMI response\n");
-        HYDU_FREE(cmd);
-
-        HYDU_FREE(map);
-    }
-    else if (!strcmp(key, "hydra_node_processmap")) {
-        char *map;
-
-        status = HYDT_topo_get_processmap(&map);
-        HYDU_ERR_POP(status, "error getting topology map\n");
-
-        i = 0;
-
-        tmp[i++] = HYDU_strdup("cmd=get_result rc=");
-        if (map) {
-            tmp[i++] = HYDU_strdup("0 msg=success value=");
-            tmp[i++] = HYDU_strdup(map);
-        }
-        else {
-            tmp[i++] = HYDU_strdup("-1 msg=hydra_node_processmap_not_found value=unknown");
-        }
-        tmp[i++] = HYDU_strdup("\n");
-        tmp[i++] = NULL;
-
-        status = HYDU_str_alloc_and_join(tmp, &cmd);
-        HYDU_ERR_POP(status, "unable to join strings\n");
-        HYDU_free_strlist(tmp);
-
-        status = send_cmd_downstream(fd, cmd);
-        HYDU_ERR_POP(status, "error sending PMI response\n");
-        HYDU_FREE(cmd);
-
-        HYDU_FREE(map);
     }
     else {
         status = send_cmd_upstream("cmd=get ", fd, args);

@@ -151,11 +151,13 @@ int MPI_Finalize( void )
     if (MPIR_Process.attr_free && MPIR_Process.comm_self->attributes) {
         mpi_errno = MPIR_Process.attr_free( MPI_COMM_SELF,
 					    &MPIR_Process.comm_self->attributes);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	MPIR_Process.comm_self->attributes = 0;
     }
     if (MPIR_Process.attr_free && MPIR_Process.comm_world->attributes) {
         mpi_errno = MPIR_Process.attr_free( MPI_COMM_WORLD, 
                                             &MPIR_Process.comm_world->attributes);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	MPIR_Process.comm_world->attributes = 0;
     }
 
@@ -174,8 +176,9 @@ int MPI_Finalize( void )
 	if (!in_use) {
 	    MPIU_Handle_obj_free( &MPID_Errhandler_mem, 
 				  MPIR_Process.comm_world->errhandler );
-            MPIR_Process.comm_world->errhandler = NULL;
 	}
+        /* always set to NULL to avoid a double-release later in finalize */
+        MPIR_Process.comm_world->errhandler = NULL;
     }
     if (MPIR_Process.comm_self->errhandler && 
 	! (HANDLE_GET_KIND(MPIR_Process.comm_self->errhandler->handle) == 
@@ -186,8 +189,9 @@ int MPI_Finalize( void )
 	if (!in_use) {
 	    MPIU_Handle_obj_free( &MPID_Errhandler_mem, 
 				  MPIR_Process.comm_self->errhandler );
-            MPIR_Process.comm_self->errhandler = NULL;
 	}
+        /* always set to NULL to avoid a double-release later in finalize */
+        MPIR_Process.comm_self->errhandler = NULL;
     }
 
     /* FIXME: Why is this not one of the finalize callbacks?.  Do we need
@@ -221,6 +225,15 @@ int MPI_Finalize( void )
     /* FIXME: the memory tracing code block should be a finalize callback */
     /* If memory debugging is enabled, check the memory here, after all
        finalize callbacks */
+
+    /* FIXME The init/finalize paths in general need a big overhaul in order
+     * to account for the new MPIX_T_ code. */
+    if (!MPIR_T_is_initialized()) {
+        MPIR_T_finalize_pvars();
+
+        mpi_errno = MPIR_Param_finalize();
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    }
 
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     MPIR_Process.initialized = MPICH_POST_FINALIZED;
@@ -268,7 +281,6 @@ int MPI_Finalize( void )
 #endif
 
     /* ... end of body of routine ... */
-
   fn_exit:
     MPID_MPI_FINALIZE_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
     return mpi_errno;

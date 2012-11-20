@@ -9,7 +9,7 @@
 Opens a file 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_File_open(MPI_Comm comm, char *filename, int amode, 
+int MPI_File_open(MPI_Comm comm, MPICH2_CONST char *filename, int amode,
                   MPI_Info info, MPI_File *fh)
 </PRE>
 <H2>Input Parameters</H2>
@@ -35,5 +35,5 @@ in C.  In Fortran, MPI routines are subroutines, and are invoked with the
 <P>
 All MPI objects (e.g., <TT>MPI_Datatype</TT>, <TT>MPI_Comm</TT>) are of type <TT>INTEGER
 </TT>in Fortran.
-<P><B>Location:</B>open.c<P>
+<P><B>Location:</B>mpi-io/open.c<P>
 </BODY></HTML>

@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_status_set_elements( MPI_Fint *, MPI_Fi
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Status_set_elements
 #define MPI_Status_set_elements PMPI_Status_set_elements 
 
@@ -187,5 +185,11 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_status_set_elements( MPI_Fint *, MPI_Fi
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_status_set_elements_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *ierr ){
-    *ierr = MPI_Status_set_elements( (MPI_Status *)(v1), (MPI_Datatype)(*v2), *v3 );
+
+#ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
+    if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
+#endif
+
+    if (v1 == MPI_F_STATUS_IGNORE) { v1 = (MPI_Fint*)MPI_STATUS_IGNORE; }
+    *ierr = MPI_Status_set_elements( (MPI_Status *)v1, (MPI_Datatype)(*v2), *v3 );
 }

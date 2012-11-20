@@ -1,9 +1,9 @@
-.TH MPI_File_open 3 "11/6/2010" " " "MPI"
+.TH MPI_File_open 3 "7/3/2012" " " "MPI"
 .SH NAME
 MPI_File_open \-  Opens a file 
 .SH SYNOPSIS
 .nf
-int MPI_File_open(MPI_Comm comm, char *filename, int amode, 
+int MPI_File_open(MPI_Comm comm, MPICH2_CONST char *filename, int amode,
                   MPI_Info info, MPI_File *fh)
 .fi
 .SH INPUT PARAMETERS
@@ -58,4 +58,4 @@ All MPI objects (e.g.,
 .I INTEGER
 in Fortran.
 .SH LOCATION
-open.c
+mpi-io/open.c

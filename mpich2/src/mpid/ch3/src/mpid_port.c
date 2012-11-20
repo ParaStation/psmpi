@@ -51,7 +51,7 @@ int MPID_Open_port(MPID_Info *info_ptr, char *port_name)
     /* Check to see if we need to setup channel-specific functions
        for handling the port operations */
     if (setupPortFunctions) {
-	MPIU_CALL(MPIDI_CH3,PortFnsInit( &portFns ));
+	MPIDI_CH3_PortFnsInit( &portFns );
 	setupPortFunctions = 0;
     }
 
@@ -102,7 +102,7 @@ int MPID_Close_port(const char *port_name)
     /* Check to see if we need to setup channel-specific functions
        for handling the port operations */
     if (setupPortFunctions) {
-	MPIU_CALL(MPIDI_CH3,PortFnsInit( &portFns ));
+	MPIDI_CH3_PortFnsInit( &portFns );
 	setupPortFunctions = 0;
     }
 
@@ -128,7 +128,7 @@ int MPID_Close_port(const char *port_name)
 #define FUNCNAME MPID_Comm_accept
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-int MPID_Comm_accept(char * port_name, MPID_Info * info, int root, 
+int MPID_Comm_accept(const char * port_name, MPID_Info * info, int root,
 		     MPID_Comm * comm, MPID_Comm ** newcomm_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -139,7 +139,7 @@ int MPID_Comm_accept(char * port_name, MPID_Info * info, int root,
     /* Check to see if we need to setup channel-specific functions
        for handling the port operations */
     if (setupPortFunctions) {
-	MPIU_CALL(MPIDI_CH3,PortFnsInit( &portFns ));
+	MPIDI_CH3_PortFnsInit( &portFns );
 	setupPortFunctions = 0;
     }
 
@@ -177,7 +177,7 @@ int MPID_Comm_connect(const char * port_name, MPID_Info * info, int root,
     /* Check to see if we need to setup channel-specific functions
        for handling the port operations */
     if (setupPortFunctions) {
-	MPIU_CALL(MPIDI_CH3,PortFnsInit( &portFns ));
+	MPIDI_CH3_PortFnsInit( &portFns );
 	setupPortFunctions = 0;
     }
 
@@ -266,12 +266,12 @@ fn_fail:
 
 static void free_port_name_tag(int tag)
 {
-    int index, rem_tag;
+    int idx, rem_tag;
 
-    index = tag / (sizeof(int) * 8);
-    rem_tag = tag - (index * sizeof(int) * 8);
+    idx = tag / (sizeof(int) * 8);
+    rem_tag = tag - (idx * sizeof(int) * 8);
 
-    port_name_tag_mask[index] &= ~(1 << ((8 * sizeof(int)) - 1 - rem_tag));
+    port_name_tag_mask[idx] &= ~(1 << ((8 * sizeof(int)) - 1 - rem_tag));
 }
 
 /*
@@ -309,7 +309,7 @@ static int MPIDI_Open_port(MPID_Info *info_ptr, char *port_name)
        connections between processes that are started separately (e.g.,
        may not use shared memory).  We may need a channel-specific 
        function to create an exportable connection string.  */
-    mpi_errno = MPIU_CALL(MPIDI_CH3,Get_business_card(myRank, port_name, len));
+    mpi_errno = MPIDI_CH3_Get_business_card(myRank, port_name, len);
     MPIU_DBG_MSG_FMT(CH3, VERBOSE, (MPIU_DBG_FDEST, "port_name = %s", port_name));
 
 fn_exit:

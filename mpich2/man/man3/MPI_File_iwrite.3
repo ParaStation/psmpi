@@ -1,4 +1,4 @@
-.TH MPI_File_iwrite 3 "8/11/2010" " " "MPI"
+.TH MPI_File_iwrite 3 "7/3/2012" " " "MPI"
 .SH NAME
 MPI_File_iwrite \-  Nonblocking write using individual file pointer 
 .SH SYNOPSIS
@@ -7,7 +7,7 @@ MPI_File_iwrite \-  Nonblocking write using individual file pointer
 #include "mpiu_greq.h"
 #endif
 
-int MPI_File_iwrite(MPI_File mpi_fh, void *buf, int count, 
+int MPI_File_iwrite(MPI_File mpi_fh, MPICH2_CONST void *buf, int count,
                    MPI_Datatype datatype, MPI_Request *request)
 .fi
 .SH INPUT PARAMETERS
@@ -62,4 +62,4 @@ All MPI objects (e.g.,
 .I INTEGER
 in Fortran.
 .SH LOCATION
-iwrite.c
+mpi-io/iwrite.c

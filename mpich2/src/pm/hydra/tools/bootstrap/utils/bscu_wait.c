@@ -14,7 +14,7 @@ int HYD_bscu_pid_count = 0;
 
 HYD_status HYDT_bscu_wait_for_completion(int timeout)
 {
-    int pid, ret, count, i, time_elapsed, time_left;
+    int pgid, pid, ret, count, i, time_elapsed, time_left;
     struct timeval start, now;
     HYD_status status = HYD_SUCCESS;
 
@@ -40,16 +40,22 @@ HYD_status HYDT_bscu_wait_for_completion(int timeout)
                 gettimeofday(&now, NULL);
                 time_elapsed = (now.tv_sec - start.tv_sec);     /* Ignore microsec granularity */
 
+                time_left = -1;
                 if (timeout > 0) {
                     if (time_elapsed > timeout) {
-                        status = HYD_TIMED_OUT;
-                        goto fn_exit;
+#if defined(HAVE_GETPGID) && defined(HAVE_SETSID)
+                        /* If we are able to get the process group ID,
+                         * send a signal to the entire process
+                         * group */
+                        pgid = getpgid(HYD_bscu_pid_list[i]);
+                        killpg(pgid, SIGKILL);
+#else
+                        kill(HYD_bscu_pid_list[i], SIGKILL);
+#endif
                     }
                     else
                         time_left = timeout - time_elapsed;
                 }
-                else
-                    time_left = -1;
 
                 status = HYDT_dmx_wait_for_event(time_left);
                 HYDU_ERR_POP(status, "error waiting for event\n");

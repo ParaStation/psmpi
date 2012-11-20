@@ -13,7 +13,7 @@ Retrieves the value associated with a key
 #define FUNCNAME MPI_Info_get
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value, 
+int MPI_Info_get(MPI_Info info, MPICH2_CONST char *key, int valuelen, char *value,
                 int *flag)
 </PRE>
 <H2>Input Parameters</H2>
@@ -85,5 +85,5 @@ identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
 <DL><DT><B>MPI_ERR_INFO_VALUE </B> <DD> Invalid or null value string for info
 </DL>
-<P><B>Location:</B>info_get.c<P>
+<P><B>Location:</B>src/util/info/info_get.c<P>
 </BODY></HTML>

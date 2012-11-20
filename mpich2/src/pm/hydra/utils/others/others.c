@@ -32,6 +32,7 @@ HYD_status HYDU_add_to_node_list(const char *hostname, int num_procs,
 
         (*node_list)->hostname = HYDU_strdup(hostname);
         (*node_list)->core_count = num_procs;
+        (*node_list)->node_id = 0;
     }
     else {
         for (node = *node_list; node->next; node = node->next);
@@ -40,6 +41,8 @@ HYD_status HYDU_add_to_node_list(const char *hostname, int num_procs,
             /* If the hostname does not match, create a new node */
             status = HYDU_alloc_node(&node->next);
             HYDU_ERR_POP(status, "unable to allocate node\n");
+
+            node->next->node_id = node->node_id + 1;
 
             node = node->next;
             node->hostname = HYDU_strdup(hostname);
@@ -56,16 +59,17 @@ HYD_status HYDU_add_to_node_list(const char *hostname, int num_procs,
     goto fn_exit;
 }
 
-static char local_hostname[MAX_HOSTNAME_LEN] = { 0 };
-
+/* This function just adds a simple caching logic to gethostname to
+ * avoid hitting the DNS too many times */
 HYD_status HYDU_gethostname(char *hostname)
 {
+    static char localhost[MAX_HOSTNAME_LEN] = { 0 };
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
 
-    if (strcmp(local_hostname, "")) {
-        HYDU_snprintf(hostname, MAX_HOSTNAME_LEN, "%s", local_hostname);
+    if (strcmp(localhost, "")) {
+        HYDU_snprintf(hostname, MAX_HOSTNAME_LEN, "%s", localhost);
         goto fn_exit;
     }
 
@@ -73,7 +77,7 @@ HYD_status HYDU_gethostname(char *hostname)
         HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR,
                             "gethostname error (hostname: %s; errno: %d)\n", hostname, errno);
 
-    HYDU_snprintf(local_hostname, MAX_HOSTNAME_LEN, "%s", hostname);
+    HYDU_snprintf(localhost, MAX_HOSTNAME_LEN, "%s", hostname);
 
   fn_exit:
     HYDU_FUNC_EXIT();

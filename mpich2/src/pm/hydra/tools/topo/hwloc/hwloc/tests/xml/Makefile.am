@@ -1,4 +1,4 @@
-# Copyright © 2009 INRIA.  All rights reserved.
+# Copyright © 2009 inria.  All rights reserved.
 # Copyright © 2009-2010 Université Bordeaux 1
 # Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
@@ -12,14 +12,14 @@ xml_inputs = \
 	16amd64-8n2c-cpusets.xml \
 	16em64t-4s2c2t.xml \
 	16em64t-4s2c2t-offlines.xml \
-	8em64t-2mi2ma2c.xml
+	24em64t-2n6c2t-pci.xml \
+	8em64t-2mi2ma2c.xml \
+	96em64t-4n4d3ca2co-pci.xml
 
 # Only run the tests if we're building standalone, because the tests
 # call hwloc executables.
 if HWLOC_BUILD_TESTS
-if HWLOC_HAVE_XML
 TESTS = $(xml_inputs)
-endif HWLOC_HAVE_XML
 endif HWLOC_BUILD_TESTS
 
 EXTRA_DIST = $(xml_inputs)

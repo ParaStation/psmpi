@@ -9,9 +9,10 @@
 Generalized all-to-all communication allowing different datatypes, counts, and displacements for each partner 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Alltoallw(void *sendbuf, int *sendcnts, int *sdispls, 
-                  MPI_Datatype *sendtypes, void *recvbuf, int *recvcnts, 
-                  int *rdispls, MPI_Datatype *recvtypes, MPI_Comm comm)
+int MPI_Alltoallw(MPICH2_CONST void *sendbuf, MPICH2_CONST int *sendcnts,
+                  MPICH2_CONST int *sdispls, MPICH2_CONST MPI_Datatype *sendtypes,
+                  void *recvbuf, MPICH2_CONST int *recvcnts, MPICH2_CONST int *rdispls,
+                  MPICH2_CONST MPI_Datatype *recvtypes, MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -91,5 +92,5 @@ non-negative; a count of zero is often valid.
 <DL><DT><B>MPI_ERR_TYPE </B> <DD> Invalid datatype argument.  May be an uncommitted 
 MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 </DL>
-<P><B>Location:</B>alltoallw.c<P>
+<P><B>Location:</B>src/mpi/coll/alltoallw.c<P>
 </BODY></HTML>

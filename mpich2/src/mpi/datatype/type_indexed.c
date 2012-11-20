@@ -27,8 +27,8 @@
 #define FUNCNAME MPIR_Type_indexed_impl
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_Type_indexed_impl(int count, int blocklens[], int indices[], MPI_Datatype old_type,
-                           MPI_Datatype *newtype)
+int MPIR_Type_indexed_impl(int count, const int blocklens[], const int indices[],
+                           MPI_Datatype old_type, MPI_Datatype *newtype)
 {
     int mpi_errno = MPI_SUCCESS;
     MPI_Datatype new_handle;
@@ -130,8 +130,8 @@ consider declaring the Fortran array with a zero origin
 .N MPI_ERR_EXHAUSTED
 @*/
 int MPI_Type_indexed(int count,
-		     int blocklens[],
-		     int indices[],
+		     MPICH2_CONST int blocklens[],
+		     MPICH2_CONST int indices[],
 		     MPI_Datatype old_type,
 		     MPI_Datatype *newtype)
 {
@@ -157,18 +157,17 @@ int MPI_Type_indexed(int count,
 		MPIR_ERRTEST_ARGNULL(indices, "indices", mpi_errno);
 	    }
 	    MPIR_ERRTEST_DATATYPE(old_type, "datatype", mpi_errno);
-	    if (mpi_errno == MPI_SUCCESS) {
- 		if (HANDLE_GET_KIND(old_type) != HANDLE_KIND_BUILTIN) {
-		    MPID_Datatype_get_ptr( old_type, datatype_ptr );
-		    MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
-		}
-		/* verify that all blocklengths are >= 0 */
-		for (j=0; j < count; j++) {
-		    MPIR_ERRTEST_ARGNEG(blocklens[j], "blocklen", mpi_errno);
-		}
-	    }
+
+            if (HANDLE_GET_KIND(old_type) != HANDLE_KIND_BUILTIN) {
+                MPID_Datatype_get_ptr( old_type, datatype_ptr );
+                MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+            }
+            /* verify that all blocklengths are >= 0 */
+            for (j=0; j < count; j++) {
+                MPIR_ERRTEST_ARGNEG(blocklens[j], "blocklen", mpi_errno);
+            }
+
 	    MPIR_ERRTEST_ARGNULL(newtype, "newtype", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

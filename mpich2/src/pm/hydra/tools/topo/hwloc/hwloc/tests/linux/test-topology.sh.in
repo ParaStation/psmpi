@@ -3,7 +3,7 @@
 
 #
 # Copyright © 2009 CNRS
-# Copyright © 2009-2010 INRIA.  All rights reserved.
+# Copyright © 2009-2012 Inria.  All rights reserved.
 # Copyright © 2009-2011 Université Bordeaux 1
 # Copyright © 2009 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
@@ -14,7 +14,7 @@
 
 HWLOC_top_srcdir="@HWLOC_top_srcdir@"
 HWLOC_top_builddir="@HWLOC_top_builddir@"
-lstopo="$HWLOC_top_builddir/utils/lstopo"
+lstopo="$HWLOC_top_builddir/utils/lstopo-no-graphics"
 
 actual_output="$1"
 
@@ -78,10 +78,7 @@ test_eligible()
     local dir="$1"
     local output="$2"
 
-    needxml=0
-    grep '<?xml' "$output" >/dev/null 2>&1 && needxml=1
-
-    [ -d "$dir" -a -f "$output" -a \( "@HWLOC_HAVE_XML@" = 1 -o "$needxml" = 0 \) ]
+    [ -d "$dir" -a -f "$output" ]
 }
 
 
@@ -104,6 +101,11 @@ if [ -f "$topology".source ] ; then
     actual_source="$HWLOC_top_srcdir"/tests/linux/`cat "$topology".source`
 else
     actual_source="$topology".tar.bz2
+fi
+
+# if there's a .env file, source it
+if [ -f "$topology".env ] ; then
+    source "$topology".env
 fi
 
 # use an absolute path for tar options because tar is invoked from the temp directory

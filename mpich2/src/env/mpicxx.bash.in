@@ -14,8 +14,6 @@
 #    WRAPPER_CXXFLAGS      - Any special flags needed to compile 
 #    WRAPPER_LDFLAGS       - Any special flags needed to link
 #    WRAPPER_LIBS          - Any special libraries needed in order to link
-#    MPILIBNAME         - Name of the MPI library
-#    MPICXXLIBNAME      - Name of the C++ binding part of the MPI library
 #    
 # We assume that (a) the C++ compiler can both compile and link programs
 #
@@ -36,17 +34,14 @@ libdir=@libdir@
 
 # Default settings for compiler, flags, and libraries
 CXX="@CXX@"
-CXX_LINKPATH_SHL="@CXX_LINKPATH_SHL@"
 CXXFLAGS="@WRAPPER_CXXFLAGS@"
 LDFLAGS="@WRAPPER_LDFLAGS@"
 LIBS="@WRAPPER_LIBS@"
-MPILIBNAME="@MPILIBNAME@"
-PMPILIBNAME="@PMPILIBNAME@"
-MPICXXLIBNAME="@MPICXXLIBNAME@"
-NEEDSPLIB="@NEEDSPLIB@"
-# MPICH2_VERSION is the version of the MPICH2 library that mpicxx is intended for
 MPICH2_VERSION="@MPICH2_VERSION@"
-#
+
+enable_wrapper_rpath="@enable_wrapper_rpath@"
+@cxx_shlib_conf@
+
 # Internal variables
 # Show is set to echo to cause the compilation command to be echoed instead 
 # of executed.
@@ -203,14 +198,10 @@ fi
 # Derived variables.  These are assembled from variables set from the
 # default, environment, configuration file (if any) and command-line
 # options (if any)
-if [ "$NEEDSPLIB" = yes ] ; then
-    mpilibs="-l$PMPILIBNAME -l$MPILIBNAME"
-else
-    mpilibs="-l$MPILIBNAME"
-fi
+mpilibs="@LPMPILIBNAME@ -l@MPILIBNAME@"
 cxxlibs=
-if [ "$MPICXXLIBNAME" != "$MPILIBNAME" ] ; then
-    cxxlibs="-l$MPICXXLIBNAME"
+if [ "@MPICXXLIBNAME@" != "@MPILIBNAME@" ] ; then
+    cxxlibs="-l@MPICXXLIBNAME@"
 fi
 
 # Handle the case of a profile switch
@@ -243,9 +234,14 @@ fi
 # Eventually, we'll want to move this after any non-MPI implementation 
 # libraries
 if [ "$linking" = yes ] ; then
-    if [ -n "$CXX_LINKPATH_SHL" ] ; then
-        # Prepend the path for the shared libraries to the library list
-        shllibpath="$CXX_LINKPATH_SHL$libdir"
+    # Attempt to encode rpath info into the executable if the user has not
+    # disabled rpath usage and some flavor of rpath makes sense on this
+    # platform.
+    # TODO configure and config.rpath are computing more sophisticated rpath
+    # schemes than this simple one.  Consider updating this logic accordingly.
+    if test "X$enable_wrapper_rpath" = "Xyes" ; then
+        # prepend the path for the shared libraries to the library list
+        eval mpilibs=\"${hardcode_libdir_flag_spec} \$mpilibs\"
     fi
 
     path_list=""

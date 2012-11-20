@@ -175,12 +175,14 @@ int MPIR_Cart_create_impl(MPID_Comm *comm_ptr, int ndims, const int dims[],
     int mpi_errno = MPI_SUCCESS;
         
     if (comm_ptr->topo_fns != NULL && comm_ptr->topo_fns->cartCreate != NULL) {
+	/* --BEGIN USEREXTENSION-- */
 	mpi_errno = comm_ptr->topo_fns->cartCreate( comm_ptr, ndims,
 						    (const int*) dims,
 						    (const int*) periods,
 						    reorder,
 						    comm_cart );
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+	/* --END USEREXTENSION-- */
     } else {
 	mpi_errno = MPIR_Cart_create( comm_ptr, ndims,
 				      (const int*) dims,
@@ -231,8 +233,8 @@ We ignore 'reorder' info currently.
 .N MPI_ERR_DIMS
 .N MPI_ERR_ARG
 @*/
-int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods, 
-		    int reorder, MPI_Comm *comm_cart)
+int MPI_Cart_create(MPI_Comm comm_old, int ndims, MPICH2_CONST int *dims,
+                    MPICH2_CONST int *periods, int reorder, MPI_Comm *comm_cart)
 {
     int       mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
@@ -249,7 +251,6 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm_old, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -265,6 +266,7 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
         {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    if (comm_ptr) {
 		MPIR_ERRTEST_COMM_INTRA(comm_ptr,mpi_errno);
@@ -280,12 +282,12 @@ int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 		mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 
 			  MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_DIMS,
 						  "**dims",  "**dims %d", 0 );
+                goto fn_fail;
 	    }
 	    MPIR_ERRTEST_ARGNEG( ndims, "ndims", mpi_errno );
 	    if (comm_ptr) {
 		MPIR_ERRTEST_COMM_INTRA( comm_ptr, mpi_errno );
 	    }
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

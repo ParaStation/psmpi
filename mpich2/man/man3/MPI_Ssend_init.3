@@ -1,9 +1,9 @@
-.TH MPI_Ssend_init 3 "7/27/2010" " " "MPI"
+.TH MPI_Ssend_init 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Ssend_init \-  Creates a persistent request for a synchronous send 
 .SH SYNOPSIS
 .nf
-int MPI_Ssend_init(void *buf, int count, MPI_Datatype datatype, int dest,
+int MPI_Ssend_init(MPICH2_CONST void *buf, int count, MPI_Datatype datatype, int dest,
                   int tag, MPI_Comm comm, MPI_Request *request)
 .fi
 .SH INPUT PARAMETERS
@@ -170,4 +170,4 @@ zero and the size of the communicator minus one; ranks in a receive
 
 .PD 1
 .SH LOCATION
-ssend_init.c
+src/mpi/pt2pt/ssend_init.c

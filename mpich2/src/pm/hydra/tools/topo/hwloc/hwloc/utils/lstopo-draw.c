@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2010 INRIA.  All rights reserved.
- * Copyright © 2009-2010 Université Bordeaux 1
+ * Copyright © 2009-2010 inria.  All rights reserved.
+ * Copyright © 2009-2011 Université Bordeaux 1
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -21,6 +21,14 @@
 #define EPOXY_R_COLOR 0xe7
 #define EPOXY_G_COLOR 0xff
 #define EPOXY_B_COLOR 0xb5
+
+#define DARK_EPOXY_R_COLOR ((EPOXY_R_COLOR * 100) / 110)
+#define DARK_EPOXY_G_COLOR ((EPOXY_G_COLOR * 100) / 110)
+#define DARK_EPOXY_B_COLOR ((EPOXY_B_COLOR * 100) / 110)
+
+#define DARKER_EPOXY_R_COLOR ((DARK_EPOXY_R_COLOR * 100) / 110)
+#define DARKER_EPOXY_G_COLOR ((DARK_EPOXY_G_COLOR * 100) / 110)
+#define DARKER_EPOXY_B_COLOR ((DARK_EPOXY_B_COLOR * 100) / 110)
 
 #define SOCKET_R_COLOR 0xde
 #define SOCKET_G_COLOR 0xde
@@ -58,9 +66,9 @@
 #define MACHINE_G_COLOR EPOXY_G_COLOR
 #define MACHINE_B_COLOR EPOXY_B_COLOR
 
-#define NODE_R_COLOR ((EPOXY_R_COLOR * 100) / 110)
-#define NODE_G_COLOR ((EPOXY_G_COLOR * 100) / 110)
-#define NODE_B_COLOR ((EPOXY_B_COLOR * 100) / 110)
+#define NODE_R_COLOR DARK_EPOXY_R_COLOR
+#define NODE_G_COLOR DARK_EPOXY_G_COLOR
+#define NODE_B_COLOR DARK_EPOXY_B_COLOR
 
 #define SYSTEM_R_COLOR 0xff
 #define SYSTEM_G_COLOR 0xff
@@ -70,8 +78,23 @@
 #define MISC_G_COLOR 0xff
 #define MISC_B_COLOR 0xff
 
+#define PCI_DEVICE_R_COLOR DARKER_EPOXY_R_COLOR
+#define PCI_DEVICE_G_COLOR DARKER_EPOXY_G_COLOR
+#define PCI_DEVICE_B_COLOR DARKER_EPOXY_B_COLOR
+
+#define OS_DEVICE_R_COLOR 0xde
+#define OS_DEVICE_G_COLOR 0xde
+#define OS_DEVICE_B_COLOR 0xde
+
+#define BRIDGE_R_COLOR 0xff
+#define BRIDGE_G_COLOR 0xff
+#define BRIDGE_B_COLOR 0xff
+
 /* preferred width/height compromise */
 #define RATIO (4.f/3.f)
+
+/* PCI object height: just a box */
+#define PCI_HEIGHT (fontsize ? gridsize + fontsize + gridsize : gridsize)
 
 /* do we prefer ratio1 over ratio2? */
 static int prefer_ratio(float ratio1, float ratio2) {
@@ -107,6 +130,9 @@ static struct draw_methods null_draw_methods = {
  * space that the drawing took.
  *
  * For generic detailed comments, see the node_draw function.
+ *
+ * border is added around the objects
+ * separator is added between objects
  */
 
 typedef void (*foo_draw)(hwloc_topology_t topology, struct draw_methods *methods, int logical, hwloc_obj_t obj, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight);
@@ -116,7 +142,7 @@ static foo_draw get_type_fun(hwloc_obj_type_t type);
 /*
  * Helper to recurse into sublevels, either horizontally or vertically
  * Updates caller's totwidth/myheight and maxwidth/maxheight
- * Needs textwidth, border, topology, output, depth, x and y
+ * Needs textwidth, topology, output, depth, x and y
  */
 
 #define RECURSE_BEGIN(obj, border) do { \
@@ -154,11 +180,11 @@ static foo_draw get_type_fun(hwloc_obj_type_t type);
     totheight += maxheight; \
     /* And add border below */ \
     totheight += (border); \
+    /* Add border on the right */ \
+    totwidth += (border); \
   } \
   if (totwidth < textwidth) \
     totwidth = textwidth; \
-  /* Add border on the right */ \
-  totwidth += (border); \
   /* Update returned values */ \
   *retwidth = totwidth; \
   *retheight = totheight; \
@@ -173,17 +199,17 @@ static foo_draw get_type_fun(hwloc_obj_type_t type);
     } \
     /* Remove spurious separator at the bottom */ \
     totheight -= (separator); \
+    /* Add subobjects width */ \
+    totwidth += maxwidth; \
+    /* And add border on the right */ \
+    totwidth += (border); \
+    /* Add border at the bottom */ \
+    totheight = totheight + (border); \
   } \
   \
   /* Make sure there is width for the heading text */ \
-  if (maxwidth < textwidth) \
-    maxwidth = textwidth; \
-  /* Add subobjects width */ \
-  totwidth += maxwidth; \
-  /* And add border on the right */ \
-  totwidth += (border); \
-  /* Add border at the bottom */ \
-  totheight = totheight + (border); \
+  if (totwidth < textwidth) \
+    totwidth = textwidth; \
   /* Update returned values */ \
   *retwidth = totwidth; \
   *retheight = totheight; \
@@ -205,74 +231,90 @@ static foo_draw get_type_fun(hwloc_obj_type_t type);
 
 #define RECURSE_RECT_BEGIN(obj, methods, separator, border) \
 RECURSE_BEGIN(obj, border) \
-    unsigned obj_maxwidth = 0, obj_maxheight = 0; \
-    unsigned area; \
-    float idealtotheight; \
+    /* Total width for subobjects */ \
+    unsigned obj_totwidth = 0, obj_totheight = 0; \
+    /* Total area for subobjects */ \
+    unsigned area = 0; \
     unsigned rows, columns; \
-    float under_ratio, over_ratio; \
     RECURSE_FOR() \
       RECURSE_CALL_FUN(&null_draw_methods); \
-      if (height > obj_maxheight) \
-        obj_maxheight = height; \
-      if (width > obj_maxwidth) \
-        obj_maxwidth = width; \
+      obj_totwidth += width + (separator); \
+      obj_totheight += height + (separator); \
+      area += (width + (separator)) * (height + (separator)); \
     } \
-    /* Total area for subobjects */ \
-    area = (obj_maxwidth + (separator)) * (obj_maxheight + (separator)) * numsubobjs; \
-    /* Ideal total height for spreading that area with RATIO */ \
-    idealtotheight = (float) sqrt(area/RATIO); \
-    /* Underestimated number of rows */ \
-    rows = idealtotheight / (obj_maxheight + (separator)); \
-    columns = rows ? (numsubobjs + rows - 1) / rows : 1; \
-    /* Ratio obtained by underestimation */ \
-    under_ratio = (float) (columns * (obj_maxwidth + (separator))) / (rows * (obj_maxheight + (separator))); \
-    \
-    /* try to overestimate too */ \
-    rows++; \
-    columns = (numsubobjs + rows - 1) / rows; \
-    /* Ratio obtained by overestimation */ \
-    over_ratio = (float) (columns * (obj_maxwidth + (separator))) / (rows * (obj_maxheight + (separator))); \
-    /* Did we actually preferred underestimation? (good row/column fit or good ratio) */ \
-    if (rows > 1 && prefer_ratio(under_ratio, over_ratio)) { \
-      rows--; \
-      columns = (numsubobjs + rows - 1) / rows; \
-    } \
-    if (force_horiz) { \
+    if (force_orient[obj->type] == LSTOPO_ORIENT_HORIZ) { \
       rows =  1; \
       columns = numsubobjs; \
-    } \
-    if (force_vert) { \
+    } else if (force_orient[obj->type] == LSTOPO_ORIENT_VERT) { \
       columns =  1; \
       rows = numsubobjs; \
+    } else { \
+      unsigned found = 0; \
+      /* Try to find a fitting rectangle */ \
+      for (rows = floor(sqrt(numsubobjs)); rows >= ceil(pow(numsubobjs,0.33)) && rows > 1; rows--) { \
+        columns = numsubobjs / rows; \
+        if (columns > 1 && columns * rows == numsubobjs) { \
+          found = 1; \
+          break; \
+        } \
+      } \
+      if (!found) { \
+        /* Average object size */ \
+        unsigned obj_avgwidth = obj_totwidth / numsubobjs; \
+        unsigned obj_avgheight = obj_totheight / numsubobjs; \
+        /* Ideal total height for spreading that area with RATIO */ \
+        float idealtotheight = (float) sqrt(area/RATIO); \
+        float under_ratio, over_ratio; \
+        /* approximation of number of rows */ \
+        rows = idealtotheight / obj_avgheight; \
+        columns = rows ? (numsubobjs + rows - 1) / rows : 1; \
+        /* Ratio obtained by underestimation */ \
+        under_ratio = (float) (columns * obj_avgwidth) / (rows * obj_avgheight); \
+        \
+        /* try to overestimate too */ \
+        rows++; \
+        columns = (numsubobjs + rows - 1) / rows; \
+        /* Ratio obtained by overestimation */ \
+        over_ratio = (float) (columns * obj_avgwidth) / (rows * obj_avgheight); \
+        /* Did we actually preferred underestimation? (good row/column fit or good ratio) */ \
+        if (rows > 1 && prefer_ratio(under_ratio, over_ratio)) { \
+          rows--; \
+          columns = (numsubobjs + rows - 1) / rows; \
+        } \
+      } \
     } \
     \
+    maxheight = 0; \
     RECURSE_FOR() \
       /* Newline? */ \
       if (i && i%columns == 0) { \
         totwidth = (border) + mywidth; \
         /* Add the same height to all rows */ \
-        totheight += obj_maxheight + (separator); \
+        totheight += maxheight + (separator); \
+        maxheight = 0; \
       } \
 
 #define RECURSE_RECT_END(obj, methods, separator, border) \
       if (totwidth + width + (separator) > maxwidth) \
         maxwidth = totwidth + width + (separator); \
-      /* Add the same width to all columns */ \
-      totwidth += obj_maxwidth + (separator); \
+      totwidth += width + (separator); \
+      /* Update maximum height */ \
+      if (height > maxheight) \
+	maxheight = height; \
     } \
     /* Remove spurious separator on the right */ \
     maxwidth -= (separator); \
-    /* Make sure there is width for the heading text */ \
-    if (maxwidth < textwidth) \
-      maxwidth = textwidth; \
     /* Compute total width */ \
     totwidth = maxwidth + (border); \
     /* Add the last row's height and border at the bottom */ \
-    totheight += obj_maxheight + (border); \
-    /* Update returned values */ \
-    *retwidth = totwidth; \
-    *retheight = totheight; \
+    totheight += maxheight + (border); \
   } \
+  /* Make sure there is width for the heading text */ \
+  if (totwidth < textwidth) \
+    totwidth = textwidth; \
+  /* Update returned values */ \
+  *retwidth = totwidth; \
+  *retheight = totheight; \
 } while(0)
 
 /* Pack objects in a grid */
@@ -338,7 +380,7 @@ prefer_vert(hwloc_topology_t topology, int logical, hwloc_obj_t level, void *out
   horiz_ratio = (float)totwidth / totheight;
   RECURSE_VERT(level, &null_draw_methods, separator, 0);
   vert_ratio = (float)totwidth / totheight;
-  return force_vert || (!force_horiz && prefer_ratio(vert_ratio, horiz_ratio));
+  return force_orient[level->type] == LSTOPO_ORIENT_VERT || (force_orient[level->type] != LSTOPO_ORIENT_HORIZ && prefer_ratio(vert_ratio, horiz_ratio));
 }
 
 static int
@@ -351,13 +393,128 @@ lstopo_obj_snprintf(char *text, size_t textlen, hwloc_obj_t obj, int logical)
   char attrstr[256];
   int attrlen;
   hwloc_obj_type_snprintf(typestr, sizeof(typestr), obj, 0);
-  if (idx != (unsigned)-1 && obj->depth != 0)
+  if (idx != (unsigned)-1 && obj->depth != 0
+      && obj->type != HWLOC_OBJ_PCI_DEVICE
+      && (obj->type != HWLOC_OBJ_BRIDGE || obj->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_HOST))
     snprintf(indexstr, sizeof(indexstr), "%s%u", indexprefix, idx);
   attrlen = hwloc_obj_attr_snprintf(attrstr, sizeof(attrstr), obj, " ", 0);
   if (attrlen > 0)
     return snprintf(text, textlen, "%s%s (%s)", typestr, indexstr, attrstr);
   else
     return snprintf(text, textlen, "%s%s", typestr, indexstr);
+}
+
+static void
+pci_device_draw(hwloc_topology_t topology __hwloc_attribute_unused, struct draw_methods *methods, int logical, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
+{
+  unsigned textwidth = gridsize;
+  unsigned textheight = (fontsize ? (fontsize + gridsize) : 0);
+  unsigned myheight = textheight;
+  unsigned mywidth = 0;
+  unsigned totwidth, totheight;
+  char text[64];
+  int n;
+
+  DYNA_CHECK();
+
+  if (fontsize) {
+    n = lstopo_obj_snprintf(text, sizeof(text), level, logical);
+    textwidth = (n * fontsize * 3) / 4;
+  }
+
+  RECURSE_RECT(level, &null_draw_methods, gridsize, gridsize);
+
+  methods->box(output, PCI_DEVICE_R_COLOR, PCI_DEVICE_G_COLOR, PCI_DEVICE_B_COLOR, depth, x, *retwidth, y, *retheight);
+
+  if (fontsize)
+    methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, text);
+
+  RECURSE_RECT(level, methods, gridsize, gridsize);
+
+  DYNA_SAVE();
+}
+
+static void
+os_device_draw(hwloc_topology_t topology __hwloc_attribute_unused, struct draw_methods *methods, int logical __hwloc_attribute_unused, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
+{
+  unsigned textwidth = 0;
+  unsigned totheight = gridsize;
+  unsigned totwidth = gridsize;
+  int n;
+
+  if (fontsize) {
+    n = strlen(level->name);
+    textwidth = (n * fontsize * 3) / 4;
+    totheight = gridsize + fontsize + gridsize;
+    totwidth = gridsize + textwidth + gridsize;
+  }
+
+  *retwidth = totwidth;
+  *retheight = totheight;
+
+  methods->box(output, OS_DEVICE_R_COLOR, OS_DEVICE_G_COLOR, OS_DEVICE_B_COLOR, depth, x, *retwidth, y, *retheight);
+
+  if (fontsize)
+    methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, level->name);
+}
+
+static void
+bridge_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
+{
+  unsigned textwidth = 0;
+  unsigned myheight = 0;
+  /* Room for square, left link and speed */
+  unsigned speedwidth = fontsize ? fontsize + gridsize : 0;
+  unsigned mywidth = 2*gridsize + gridsize + speedwidth;
+  unsigned totwidth, totheight;
+
+  DYNA_CHECK();
+
+  RECURSE_VERT(level, &null_draw_methods, gridsize, 0);
+
+  /* Square and left link */
+  methods->box(output, BRIDGE_R_COLOR, BRIDGE_G_COLOR, BRIDGE_B_COLOR, depth, x, gridsize, y + PCI_HEIGHT/2 - gridsize/2, gridsize);
+  methods->line(output, 0, 0, 0, depth, x + gridsize, y + PCI_HEIGHT/2, x + 2*gridsize, y + PCI_HEIGHT/2);
+
+  if (level->arity > 0) {
+    unsigned bottom = 0, top = 0;
+    RECURSE_BEGIN(level, 0);
+    RECURSE_FOR()
+      unsigned center;
+      RECURSE_CALL_FUN(methods);
+
+      /* Line to PCI device */
+      center = y + totheight + PCI_HEIGHT / 2;
+      if (!top)
+        top = center;
+      bottom = center;
+      methods->line(output, 0, 0, 0, depth, x + 2*gridsize, center, x + 2*gridsize + gridsize + speedwidth, center);
+
+      /* Negotiated link speed */
+      if (fontsize) {
+        float speed = 0.;
+        if (subobjs[i]->type == HWLOC_OBJ_PCI_DEVICE)
+          speed = subobjs[i]->attr->pcidev.linkspeed;
+        if (subobjs[i]->type == HWLOC_OBJ_BRIDGE && subobjs[i]->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_PCI)
+          speed = subobjs[i]->attr->bridge.upstream.pci.linkspeed;
+        if (speed != 0.) {
+          char text[4];
+          snprintf(text, sizeof(text), "%0.1f", subobjs[i]->attr->pcidev.linkspeed);
+          methods->text(output, 0, 0, 0, fontsize, depth-1, x + 2*gridsize + gridsize, y + totheight, text);
+        }
+      }
+    RECURSE_END_VERT(gridsize, 0);
+
+    /* Vertical line */
+    methods->line(output, 0, 0, 0, depth, x + 2*gridsize, top, x + 2*gridsize, bottom);
+  } else
+    RECURSE_VERT(level, methods, gridsize, 0);
+
+  /* Empty bridges still need some room */
+  if (*retheight < PCI_HEIGHT)
+    *retheight = PCI_HEIGHT;
+
+  DYNA_SAVE();
 }
 
 static void
@@ -369,7 +526,7 @@ pu_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, hw
 
   DYNA_CHECK();
 
-  RECURSE_HORIZ(level, &null_draw_methods, 0, gridsize);
+  RECURSE_RECT(level, &null_draw_methods, 0, gridsize);
 
   if (hwloc_bitmap_isset(level->online_cpuset, level->os_index))
     if (!hwloc_bitmap_isset(level->allowed_cpuset, level->os_index))
@@ -398,7 +555,7 @@ pu_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, hw
       methods->text(output, 0xff, 0xff, 0xff, fontsize, depth-1, x + gridsize, y + gridsize, text);
   }
 
-  RECURSE_HORIZ(level, methods, 0, gridsize);
+  RECURSE_RECT(level, methods, 0, gridsize);
 
   DYNA_SAVE();
 }
@@ -414,7 +571,7 @@ cache_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical,
 
   DYNA_CHECK();
 
-  RECURSE_HORIZ(level, &null_draw_methods, separator, 0);
+  RECURSE_RECT(level, &null_draw_methods, separator, 0);
 
   methods->box(output, CACHE_R_COLOR, CACHE_G_COLOR, CACHE_B_COLOR, depth, x, totwidth, y, myheight - gridsize);
 
@@ -425,7 +582,7 @@ cache_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical,
     methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, text);
   }
 
-  RECURSE_HORIZ(level, methods, separator, 0);
+  RECURSE_RECT(level, methods, separator, 0);
 
   DYNA_SAVE();
 }
@@ -496,7 +653,7 @@ node_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, 
   DYNA_CHECK();
 
   /* Compute the size needed by sublevels */
-  RECURSE_HORIZ(level, &null_draw_methods, gridsize, gridsize);
+  RECURSE_RECT(level, &null_draw_methods, gridsize, gridsize);
 
   /* Draw the epoxy box */
   methods->box(output, NODE_R_COLOR, NODE_G_COLOR, NODE_B_COLOR, depth, x, totwidth, y, totheight);
@@ -511,7 +668,7 @@ node_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, 
   }
 
   /* Restart, now really drawing sublevels */
-  RECURSE_HORIZ(level, methods, gridsize, gridsize);
+  RECURSE_RECT(level, methods, gridsize, gridsize);
 
   /* Save result for dynamic programming */
   DYNA_SAVE();
@@ -541,6 +698,47 @@ machine_draw(hwloc_topology_t topology, struct draw_methods *methods, int logica
   DYNA_SAVE();
 }
 
+#define NETWORK_DRAW_BEGIN() do { \
+  /* network of machines, either horizontal or vertical */ \
+  if (vert) { \
+    mywidth += gridsize; \
+    RECURSE_VERT(level, &null_draw_methods, gridsize, gridsize); \
+  } else \
+    RECURSE_HORIZ(level, &null_draw_methods, gridsize, gridsize); \
+} while(0)
+
+#define NETWORK_DRAW_END() do { \
+  if (vert) { \
+    unsigned top = 0, bottom = 0; \
+    unsigned center; \
+    RECURSE_BEGIN(level, gridsize) \
+    RECURSE_FOR() \
+      RECURSE_CALL_FUN(methods); \
+      center = y + totheight + height / 2; \
+      if (!top) \
+        top = center; \
+      bottom = center; \
+      methods->line(output, 0, 0, 0, depth, x + mywidth, center, x + mywidth + gridsize, center); \
+    RECURSE_END_VERT(gridsize, gridsize); \
+ \
+    methods->line(output, 0, 0, 0, depth, x + mywidth, top, x + mywidth, bottom); \
+  } else { \
+    unsigned left = 0, right = 0; \
+    unsigned center; \
+    RECURSE_BEGIN(level, gridsize) \
+    RECURSE_FOR() \
+      RECURSE_CALL_FUN(methods); \
+      center = x + totwidth + width / 2; \
+      if (!left) \
+        left = center; \
+      right = center; \
+      methods->line(output, 0, 0, 0, depth, center, y + myheight, center, y + myheight + gridsize); \
+    RECURSE_END_HORIZ(gridsize, gridsize); \
+ \
+    methods->line(output, 0, 0, 0, depth, left, y + myheight, right, y + myheight); \
+  } \
+} while(0)
+
 static void
 system_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, hwloc_obj_t level, void *output, unsigned depth, unsigned x, unsigned *retwidth, unsigned y, unsigned *retheight)
 {
@@ -551,14 +749,9 @@ system_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical
 
   DYNA_CHECK();
 
-  if (level->arity > 1 && level->children[0]->type == HWLOC_OBJ_MACHINE) {
-    /* network of machines, either horizontal or vertical */
-    if (vert) {
-      mywidth += gridsize;
-      RECURSE_VERT(level, &null_draw_methods, gridsize, gridsize);
-    } else
-      RECURSE_HORIZ(level, &null_draw_methods, gridsize, gridsize);
-  } else
+  if (level->arity > 1 && (level->children[0]->type == HWLOC_OBJ_MACHINE || !level->children[0]->cpuset))
+    NETWORK_DRAW_BEGIN();
+  else
     RECURSE_RECT(level, &null_draw_methods, gridsize, gridsize);
 
   methods->box(output, SYSTEM_R_COLOR, SYSTEM_G_COLOR, SYSTEM_B_COLOR, depth, x, totwidth, y, totheight);
@@ -569,39 +762,9 @@ system_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical
     methods->text(output, 0, 0, 0, fontsize, depth-1, x + gridsize, y + gridsize, text);
   }
 
-  if (level->arity > 1 && level->children[0]->type == HWLOC_OBJ_MACHINE) {
-    if (vert) {
-      unsigned top = 0, bottom = 0;
-      unsigned center;
-      RECURSE_BEGIN(level, gridsize)
-      RECURSE_FOR()
-	RECURSE_CALL_FUN(methods);
-        center = y + totheight + height / 2;
-	if (!top)
-	  top = center;
-	bottom = center;
-	methods->line(output, 0, 0, 0, depth, x + mywidth, center, x + mywidth + gridsize, center);
-      RECURSE_END_VERT(gridsize, gridsize);
-
-      if (level->arity > 1 && level->children[0]->type == HWLOC_OBJ_MACHINE)
-	methods->line(output, 0, 0, 0, depth, x + mywidth, top, x + mywidth, bottom);
-    } else {
-      unsigned left = 0, right = 0;
-      unsigned center;
-      RECURSE_BEGIN(level, gridsize)
-      RECURSE_FOR()
-	RECURSE_CALL_FUN(methods);
-        center = x + totwidth + width / 2;
-	if (!left)
-	  left = center;
-	right = center;
-	methods->line(output, 0, 0, 0, depth, center, y + myheight, center, y + myheight + gridsize);
-      RECURSE_END_HORIZ(gridsize, gridsize);
-
-      if (level->arity > 1 && level->children[0]->type == HWLOC_OBJ_MACHINE)
-	methods->line(output, 0, 0, 0, depth, left, y + myheight, right, y + myheight);
-    }
-  } else
+  if (level->arity > 1 && (level->children[0]->type == HWLOC_OBJ_MACHINE || !level->children[0]->cpuset))
+    NETWORK_DRAW_END();
+  else
     RECURSE_RECT(level, methods, gridsize, gridsize);
 
   DYNA_SAVE();
@@ -613,10 +776,21 @@ group_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical,
   unsigned myheight = (fontsize ? (fontsize + gridsize) : 0), totheight;
   unsigned mywidth = 0, totwidth;
   unsigned textwidth = level->name ? strlen(level->name) * fontsize : 6*fontsize;
+  int vert = prefer_vert(topology, logical, level, output, depth, x, y, gridsize);
 
   DYNA_CHECK();
 
-  RECURSE_RECT(level, &null_draw_methods, gridsize, gridsize);
+#if 0
+  if (fontsize) {
+    n = lstopo_obj_snprintf(text, sizeof(text), level, logical);
+    textwidth = (n * fontsize * 3) / 4;
+  }
+#endif
+
+  if (level->arity > 1 && (level->children[0]->type == HWLOC_OBJ_MACHINE || !level->children[0]->cpuset))
+    NETWORK_DRAW_BEGIN();
+  else
+    RECURSE_RECT(level, &null_draw_methods, gridsize, gridsize);
 
   methods->box(output, MISC_R_COLOR, MISC_G_COLOR, MISC_B_COLOR, depth, x, totwidth, y, totheight);
 
@@ -630,7 +804,10 @@ group_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical,
     }
   }
 
-  RECURSE_RECT(level, methods, gridsize, gridsize);
+  if (level->arity > 1 && (level->children[0]->type == HWLOC_OBJ_MACHINE || !level->children[0]->cpuset))
+    NETWORK_DRAW_END();
+  else
+    RECURSE_RECT(level, methods, gridsize, gridsize);
 
   DYNA_SAVE();
 }
@@ -642,10 +819,14 @@ misc_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, 
   unsigned myheight = boxheight + (level->arity?gridsize:0), totheight;
   unsigned mywidth = 0, totwidth;
   unsigned textwidth = level->name ? strlen(level->name) * fontsize : 6*fontsize;
+  int vert = prefer_vert(topology, logical, level, output, depth, x, y, gridsize);
 
   DYNA_CHECK();
 
-  RECURSE_HORIZ(level, &null_draw_methods, gridsize, 0);
+  if (level->arity > 1 && (level->children[0]->type == HWLOC_OBJ_MACHINE || !level->children[0]->cpuset))
+    NETWORK_DRAW_BEGIN();
+  else
+    RECURSE_HORIZ(level, &null_draw_methods, gridsize, 0);
 
   methods->box(output, MISC_R_COLOR, MISC_G_COLOR, MISC_B_COLOR, depth, x, totwidth, y, boxheight);
 
@@ -659,7 +840,10 @@ misc_draw(hwloc_topology_t topology, struct draw_methods *methods, int logical, 
     }
   }
 
-  RECURSE_HORIZ(level, methods, gridsize, 0);
+  if (level->arity > 1 && (level->children[0]->type == HWLOC_OBJ_MACHINE || !level->children[0]->cpuset))
+    NETWORK_DRAW_END();
+  else
+    RECURSE_HORIZ(level, methods, gridsize, 0);
 
   DYNA_SAVE();
 }
@@ -741,10 +925,13 @@ get_type_fun(hwloc_obj_type_t type)
     case HWLOC_OBJ_CORE: return core_draw;
     case HWLOC_OBJ_PU: return pu_draw;
     case HWLOC_OBJ_GROUP: return group_draw;
+    case HWLOC_OBJ_PCI_DEVICE: return pci_device_draw;
+    case HWLOC_OBJ_OS_DEVICE: return os_device_draw;
+    case HWLOC_OBJ_BRIDGE: return bridge_draw;
+    default:
     case HWLOC_OBJ_MISC: return misc_draw;
     case HWLOC_OBJ_TYPE_MAX: assert(0);
   }
-  return NULL;
 }
 
 /*
@@ -813,6 +1000,8 @@ output_draw_start(struct draw_methods *methods, int logical, int legend, hwloc_t
   methods->declare_color(output, MACHINE_R_COLOR, MACHINE_G_COLOR, MACHINE_B_COLOR);
   methods->declare_color(output, SYSTEM_R_COLOR, SYSTEM_G_COLOR, SYSTEM_B_COLOR);
   methods->declare_color(output, MISC_R_COLOR, MISC_G_COLOR, MISC_B_COLOR);
+  methods->declare_color(output, PCI_DEVICE_R_COLOR, PCI_DEVICE_G_COLOR, PCI_DEVICE_B_COLOR);
+  methods->declare_color(output, BRIDGE_R_COLOR, BRIDGE_G_COLOR, BRIDGE_B_COLOR);
   return output;
 }
 

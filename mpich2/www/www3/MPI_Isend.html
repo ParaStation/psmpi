@@ -9,7 +9,7 @@
 Begins a nonblocking send 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Isend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+int MPI_Isend(MPICH2_CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag,
               MPI_Comm comm, MPI_Request *request)
 </PRE>
 <H2>Input Parameters</H2>
@@ -80,5 +80,5 @@ zero and the size of the communicator minus one; ranks in a receive
 implementation is unable to acquire memory.  
 </DL>
 <P>
-<P><B>Location:</B>isend.c<P>
+<P><B>Location:</B>src/mpi/pt2pt/isend.c<P>
 </BODY></HTML>

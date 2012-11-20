@@ -51,7 +51,7 @@
 .N MPI_ERR_TYPE
 .N MPI_ERR_ARG
 @*/
-int MPI_Pack_external_size(char *datarep,
+int MPI_Pack_external_size(MPICH2_CONST char *datarep,
 			   int incount,
 			   MPI_Datatype datatype,
 			   MPI_Aint *size)
@@ -70,9 +70,7 @@ int MPI_Pack_external_size(char *datarep,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COUNT(incount,mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

@@ -1,11 +1,13 @@
-.TH MPI_Dist_graph_create_adjacent 3 "2/26/2011" " " "MPI"
+.TH MPI_Dist_graph_create_adjacent 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Dist_graph_create_adjacent \-  returns a handle to a new communicator to which the distributed graph topology information is attached. 
 .SH SYNOPSIS
 .nf
 int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
-                                   int indegree, int sources[], int sourceweights[],
-                                   int outdegree, int destinations[], int destweights[],
+                                   int indegree, MPICH2_CONST int sources[],
+                                   MPICH2_CONST int sourceweights[],
+                                   int outdegree, MPICH2_CONST int destinations[],
+                                   MPICH2_CONST int destweights[],
                                    MPI_Info info, int reorder, MPI_Comm *comm_dist_graph)
 .fi
 .SH INPUT PARAMETERS
@@ -149,4 +151,4 @@ to get more information
 about this error code. 
 .PD 1
 .SH LOCATION
-dist_gr_create_adj.c
+src/mpi/topo/dist_gr_create_adj.c

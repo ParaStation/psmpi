@@ -1,9 +1,9 @@
-.TH MPI_File_write_at_all 3 "11/2/2007" " " "MPI"
+.TH MPI_File_write_at_all 3 "7/3/2012" " " "MPI"
 .SH NAME
 MPI_File_write_at_all \-  Collective write using explict offset 
 .SH SYNOPSIS
 .nf
-int MPI_File_write_at_all(MPI_File mpi_fh, MPI_Offset offset, void *buf,
+int MPI_File_write_at_all(MPI_File mpi_fh, MPI_Offset offset, MPICH2_CONST void *buf,
                           int count, MPI_Datatype datatype, 
                           MPI_Status *status)
 .fi
@@ -64,4 +64,4 @@ All MPI objects (e.g.,
 .I INTEGER
 in Fortran.
 .SH LOCATION
-write_atall.c
+mpi-io/write_atall.c

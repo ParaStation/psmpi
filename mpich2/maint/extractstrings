@@ -1,4 +1,4 @@
-#! /opt/local/bin/perl -w
+#! /Users/goodell/perl5/perlbrew/perls/perl-5.14.2/bin/perl -w
 # -*- Mode: perl; -*-
 # 
 # This script is a replacement for several scripts that process source

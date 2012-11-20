@@ -18,6 +18,33 @@ int MPID_Abort( struct MPID_Comm *comm, int mpi_errno, int exit_code, const char
  * Thread safe implementation of strerror(), whenever possible. */
 const char *MPIU_Strerror(int errnum);
 
+/*
+ * MPIU_Busy_wait()
+ *
+ * Call this in every busy wait loop to periodically yield the processor.  The
+ * MPIR_PARAM_POLLS_BEFORE_YIELD parameter can be used to adjust the number of
+ * times MPIU_Busy_wait is called before the yield function is called.
+ */
+#ifdef USE_NOTHING_FOR_YIELD
+/* optimize if we're not yielding the processor */
+#define MPIU_Busy_wait() do {} while (0)
+#else
+/* MT: Updating the static int poll_count variable isn't thread safe and will
+   need to be changed for fine-grained multithreading.  A possible alternative
+   is to make it a global thread-local variable. */
+#define MPIU_Busy_wait() do {                                   \
+        if (MPIR_PARAM_POLLS_BEFORE_YIELD) {                    \
+            static int poll_count_ = 0;                         \
+            if (poll_count_ >= MPIR_PARAM_POLLS_BEFORE_YIELD) { \
+                poll_count_ = 0;                                \
+                MPIU_PW_Sched_yield();                          \
+            } else {                                            \
+                ++poll_count_;                                  \
+            }                                                   \
+        }                                                       \
+    } while (0)
+#endif
+
 /* prototypes for assertion implementation helpers */
 int MPIR_Assert_fail(const char *cond, const char *file_name, int line_num);
 int MPIR_Assert_fail_fmt(const char *cond, const char *file_name, int line_num, const char *fmt, ...);
@@ -37,7 +64,7 @@ int MPIR_Assert_fail_fmt(const char *cond, const char *file_name, int line_num, 
 #   define MPIU_AssertDeclValue(_a,_b) _a = _b
 #   define MPIU_Assert(a_)                             \
     do {                                               \
-        if (!(a_)) {                                   \
+        if (unlikely(!(a_))) {                         \
             MPIR_Assert_fail(#a_, __FILE__, __LINE__); \
         }                                              \
     } while (0)
@@ -59,7 +86,7 @@ int MPIR_Assert_fail_fmt(const char *cond, const char *file_name, int line_num, 
  */
 #define MPIU_Assertp(a_)                                             \
     do {                                                             \
-        if (!(a_)) {                                                 \
+        if (unlikely(!(a_))) {                                       \
             MPIR_Assert_fail(#a_, __FILE__, __LINE__);               \
         }                                                            \
     } while (0)
@@ -95,7 +122,7 @@ int MPIR_Assert_fail_fmt(const char *cond, const char *file_name, int line_num, 
 /* newlines are added internally by the impl function, callers do not need to include them */
 #    define MPIU_Assert_fmt_msg(cond_,fmt_arg_parens_)                         \
     do {                                                                       \
-        if (!(cond_)) {                                                        \
+        if (unlikely(!(cond_))) {                                              \
             MPIR_Assert_fail_fmt(#cond_, __FILE__, __LINE__,                   \
                                  MPIU_Assert_fmt_msg_expand_ fmt_arg_parens_); \
         }                                                                      \
@@ -107,7 +134,7 @@ int MPIR_Assert_fail_fmt(const char *cond, const char *file_name, int line_num, 
 
 #    define MPIU_Assert_fmt_msg(cond_,fmt_arg_parens_)                                                   \
     do {                                                                                                 \
-        if (!(cond_)) {                                                                                  \
+        if (unlikely(!(cond_))) {                                                                        \
             MPIR_Assert_fail_fmt(#cond_, __FILE__, __LINE__,                                             \
                                  "%s", "macro __VA_ARGS__ not supported, unable to print user message"); \
         }                                                                                                \
@@ -187,7 +214,7 @@ int MPIR_Assert_fail_fmt(const char *cond, const char *file_name, int line_num, 
  * These macros are not namespaced because the namespacing is cumbersome.
  */
 /* safety guard for now, add a configure check in the future */
-#if defined(__GNUC__) && (__GNUC__ >= 3)
+#if ( defined(__GNUC__) && (__GNUC__ >= 3) ) || defined(__xlc__)
 #  define unlikely(x_) __builtin_expect(!!(x_),0)
 #  define likely(x_)   __builtin_expect(!!(x_),1)
 #else

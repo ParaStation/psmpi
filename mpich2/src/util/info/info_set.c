@@ -47,7 +47,7 @@ Input Parameters:
 .N MPI_ERR_INFO_VALUE
 .N MPI_ERR_EXHAUSTED
 @*/
-int MPI_Info_set( MPI_Info info, char *key, char *value )
+int MPI_Info_set( MPI_Info info, MPICH2_CONST char *key, MPICH2_CONST char *value )
 {
     static const char FCNAME[] = "MPI_Info_set";
     int mpi_errno = MPI_SUCCESS;
@@ -65,7 +65,6 @@ int MPI_Info_set( MPI_Info info, char *key, char *value )
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INFO(info, mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

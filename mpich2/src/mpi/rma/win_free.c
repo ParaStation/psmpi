@@ -65,7 +65,6 @@ int MPI_Win_free(MPI_Win *win)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_WIN(*win, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -81,15 +80,17 @@ int MPI_Win_free(MPI_Win *win)
         {
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
-	    /* If win_ptr is not valid, it will be reset to null */
-
             if (mpi_errno) goto fn_fail;
+
 	    /* Check for unterminated lock epoch */
-	    if (win_ptr->lockRank != -1) {
+            if (win_ptr->lockRank != MPID_WIN_STATE_UNLOCKED) {
 		MPIU_ERR_SET1(mpi_errno,MPI_ERR_OTHER, 
 			     "**winfreewhilelocked",
 			     "**winfreewhilelocked %d", win_ptr->lockRank);
 	    }
+
+            /* TODO: check for unterminated active mode epoch */
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -121,6 +122,7 @@ int MPI_Win_free(MPI_Win *win)
     }
     
     mpi_errno = MPIU_RMA_CALL(win_ptr,Win_free(&win_ptr));
+    if (mpi_errno) goto fn_fail;
     *win = MPI_WIN_NULL;
 
     /* ... end of body of routine ... */

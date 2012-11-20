@@ -28,7 +28,7 @@
 #define FUNCNAME MPIR_Cart_rank_impl
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-void MPIR_Cart_rank_impl(MPIR_Topology *cart_ptr, int *coords, int *rank)
+void MPIR_Cart_rank_impl(MPIR_Topology *cart_ptr, const int *coords, int *rank)
 {
     int i, ndims, coord, multiplier;
 
@@ -86,7 +86,7 @@ Notes:
 .N MPI_ERR_RANK
 .N MPI_ERR_ARG
 @*/
-int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
+int MPI_Cart_rank(MPI_Comm comm, MPICH2_CONST int *coords, int *rank)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
@@ -103,7 +103,6 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -117,9 +116,9 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
         {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            if (mpi_errno) goto fn_fail;
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(rank,"rank",mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -137,14 +136,13 @@ int MPI_Cart_rank(MPI_Comm comm, int *coords, int *rank)
 	    ndims = cart_ptr->topo.cart.ndims;
 	    if (ndims != 0) {
 		MPIR_ERRTEST_ARGNULL(coords,"coords",mpi_errno);
-                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	    }
 	    for (i=0; i<ndims; i++) {
 		if (!cart_ptr->topo.cart.periodic[i]) {
 		    coord = coords[i];
 		    MPIU_ERR_CHKANDJUMP3(
 			(coord < 0 || coord >= cart_ptr->topo.cart.dims[i] ), mpi_errno, MPI_ERR_ARG, "**cartcoordinvalid",
-			"**cartcoordinvalid %d %d %d",i, coords[i], cart_ptr->topo.cart.dims[i]-1 )
+			"**cartcoordinvalid %d %d %d",i, coords[i], cart_ptr->topo.cart.dims[i]-1 );
 		}
 	    }
 	}

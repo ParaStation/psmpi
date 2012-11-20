@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_exscan( void*, void*, MPI_Fint *, MPI_F
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Exscan
 #define MPI_Exscan PMPI_Exscan 
 
@@ -187,5 +185,10 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_exscan( void*, void*, MPI_Fint *, MPI_F
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_exscan_ ( void*v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *ierr ){
+
+#ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
+    if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
+#endif
+    if (v1 == MPIR_F_MPI_IN_PLACE) v1 = MPI_IN_PLACE;
     *ierr = MPI_Exscan( v1, v2, *v3, (MPI_Datatype)(*v4), *v5, (MPI_Comm)(*v6) );
 }

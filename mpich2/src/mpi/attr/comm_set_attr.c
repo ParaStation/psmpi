@@ -33,7 +33,7 @@ int MPIR_Comm_set_attr_impl(MPID_Comm *comm_ptr, int comm_keyval, void *attribut
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Keyval *keyval_ptr = NULL;
-    MPID_Attribute *p, **old_p;
+    MPID_Attribute *p;
 
     MPIU_ERR_CHKANDJUMP(comm_keyval == MPI_KEYVAL_INVALID, mpi_errno, MPI_ERR_KEYVAL, "**keyvalinvalid");
 
@@ -46,7 +46,6 @@ int MPIR_Comm_set_attr_impl(MPID_Comm *comm_ptr, int comm_keyval, void *attribut
     MPIU_Assert(keyval_ptr != NULL);
 
     /* printf( "Setting attr val to %x\n", attribute_val ); */
-    old_p = &comm_ptr->attributes;
     p     = comm_ptr->attributes;
     while (p) {
 	if (p->keyval->handle == keyval_ptr->handle) {
@@ -57,12 +56,18 @@ int MPIR_Comm_set_attr_impl(MPID_Comm *comm_ptr, int comm_keyval, void *attribut
 		goto fn_fail;
 	    }
 	    p->attrType = attrType;
+	    /* FIXME: This code is incorrect in some cases, particularly
+	       in the case where MPIR_Pint is different from MPI_Aint, 
+	       since in that case, the Fortran 9x interface will provide
+	       more bytes in the attribute_val than this allows. The 
+	       dual casts are a sign that this is faulty. This will 
+	       need to be fixed in the type/win set_attr routines as 
+	       well. */
 	    p->value    = (MPID_AttrVal_t)(MPIR_Pint)attribute_val;
 	    /* printf( "Updating attr at %x\n", &p->value ); */
 	    /* Does not change the reference count on the keyval */
 	    break;
 	}
-	old_p = &p->next;
 	p = p->next;
     }
     /* CHANGE FOR MPI 2.2: If not found, add at the beginning */
@@ -73,6 +78,7 @@ int MPIR_Comm_set_attr_impl(MPID_Comm *comm_ptr, int comm_keyval, void *attribut
 	new_p->keyval	     = keyval_ptr;
 	new_p->attrType      = attrType;
 	new_p->pre_sentinal  = 0;
+	/* FIXME: See the comment above on this dual cast. */
 	new_p->value	     = (MPID_AttrVal_t)(MPIR_Pint)attribute_val;
 	new_p->post_sentinal = 0;
 	new_p->next	     = comm_ptr->attributes;
@@ -119,7 +125,6 @@ int MPIR_CommSetAttr( MPI_Comm comm, int comm_keyval, void *attribute_val,
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
 	    MPIR_ERRTEST_KEYVAL(comm_keyval, MPID_COMM, "communicator", mpi_errno);
 	    MPIR_ERRTEST_KEYVAL_PERM(comm_keyval, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -226,7 +231,6 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
 	    MPIR_ERRTEST_KEYVAL(comm_keyval, MPID_COMM, "communicator", mpi_errno);
 	    MPIR_ERRTEST_KEYVAL_PERM(comm_keyval, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

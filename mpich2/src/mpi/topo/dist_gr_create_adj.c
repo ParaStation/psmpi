@@ -63,14 +63,15 @@ Output Parameter:
 .N MPI_ERR_OTHER
 @*/
 int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
-                                   int indegree, int sources[], int sourceweights[],
-                                   int outdegree, int destinations[], int destweights[],
+                                   int indegree, MPICH2_CONST int sources[],
+                                   MPICH2_CONST int sourceweights[],
+                                   int outdegree, MPICH2_CONST int destinations[],
+                                   MPICH2_CONST int destweights[],
                                    MPI_Info info, int reorder, MPI_Comm *comm_dist_graph)
 {
     int       mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_Comm *comm_dist_graph_ptr = NULL;
-    MPID_Info *info_ptr = NULL;
     MPIR_Topology *topo_ptr = NULL;
     MPIR_Dist_graph_topology *dist_graph_ptr = NULL;
     MPIU_CHKPMEM_DECL(5);
@@ -88,7 +89,6 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
         {
             MPIR_ERRTEST_COMM(comm_old, mpi_errno);
             MPIR_ERRTEST_INFO_OR_NULL(info, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -96,7 +96,6 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
 
     /* Convert MPI object handles to object pointers */
     MPID_Comm_get_ptr(comm_old, comm_ptr);
-    MPID_Info_get_ptr(info, info_ptr);
 
     /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
@@ -105,6 +104,7 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
         {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr(comm_ptr, mpi_errno);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
             /* If comm_ptr is not valid, it will be reset to null */
             if (comm_ptr) {
                 MPIR_ERRTEST_COMM_INTRA(comm_ptr, mpi_errno);
@@ -117,6 +117,7 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
                 MPIR_ERRTEST_ARGNULL(sources, "sources", mpi_errno);
                 if (sourceweights == MPI_UNWEIGHTED && destweights != MPI_UNWEIGHTED) {
                     MPIU_ERR_SET(mpi_errno, MPIR_ERR_RECOVERABLE, "**unweightedboth");
+                    goto fn_fail;
                 }
                 /* TODO check ranges for array elements too (**argarrayneg / **rankarray)*/
             }
@@ -124,11 +125,10 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
                 MPIR_ERRTEST_ARGNULL(destinations, "destinations", mpi_errno);
                 if (destweights == MPI_UNWEIGHTED && sourceweights != MPI_UNWEIGHTED) {
                     MPIU_ERR_SET(mpi_errno, MPIR_ERR_RECOVERABLE, "**unweightedboth");
+                    goto fn_fail;
                 }
             }
             MPIR_ERRTEST_ARGNULL(comm_dist_graph, "comm_dist_graph", mpi_errno);
-
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -155,13 +155,14 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
     dist_graph_ptr->outdegree = outdegree;
     dist_graph_ptr->out = NULL;
     dist_graph_ptr->out_weights = NULL;
+    dist_graph_ptr->is_weighted = (sourceweights != MPI_UNWEIGHTED);
 
     MPIU_CHKPMEM_MALLOC(dist_graph_ptr->in, int *, indegree*sizeof(int), mpi_errno, "dist_graph_ptr->in");
     MPIU_CHKPMEM_MALLOC(dist_graph_ptr->out, int *, outdegree*sizeof(int), mpi_errno, "dist_graph_ptr->out");
     MPIU_Memcpy(dist_graph_ptr->in, sources, indegree*sizeof(int));
     MPIU_Memcpy(dist_graph_ptr->out, destinations, outdegree*sizeof(int));
 
-    if (sourceweights != MPI_UNWEIGHTED) {
+    if (dist_graph_ptr->is_weighted) {
         MPIU_CHKPMEM_MALLOC(dist_graph_ptr->in_weights, int *, indegree*sizeof(int), mpi_errno, "dist_graph_ptr->in_weights");
         MPIU_CHKPMEM_MALLOC(dist_graph_ptr->out_weights, int *, outdegree*sizeof(int), mpi_errno, "dist_graph_ptr->out_weights");
         MPIU_Memcpy(dist_graph_ptr->in_weights, sourceweights, indegree*sizeof(int));
@@ -172,6 +173,7 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     MPIU_OBJ_PUBLISH_HANDLE(*comm_dist_graph, comm_dist_graph_ptr->handle);
+    MPIU_CHKPMEM_COMMIT();
     /* ... end of body of routine ... */
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_DIST_GRAPH_CREATE_ADJACENT);
@@ -180,6 +182,7 @@ int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
 
     /* --BEGIN ERROR HANDLING-- */
   fn_fail:
+    MPIU_CHKPMEM_REAP();
 #ifdef HAVE_ERROR_CHECKING
     mpi_errno = MPIR_Err_create_code(
         mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,

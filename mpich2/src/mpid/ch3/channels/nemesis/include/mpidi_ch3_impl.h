@@ -7,7 +7,6 @@
 #if !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED)
 #define MPICH_MPIDI_CH3_IMPL_H_INCLUDED
 
-#include "mpidi_ch3_conf.h"
 #include "mpidimpl.h"
 #include "mpiu_os_wrappers.h"
 #include "mpid_nem_generic_queue.h"
@@ -88,7 +87,6 @@ struct MPID_Request;
 struct MPID_nem_copy_buf;
 union MPIDI_CH3_Pkt;
 struct MPID_nem_lmt_shm_wait_element;
-struct MPIDI_CH3_PktGeneric;
 
 typedef struct MPIDI_CH3I_VC
 {
@@ -109,7 +107,7 @@ typedef struct MPIDI_CH3I_VC
 
     /* temp buffer to store partially received header */
     MPIDI_msg_sz_t pending_pkt_len;
-    struct MPIDI_CH3_PktGeneric *pending_pkt;
+    union MPIDI_CH3_Pkt *pending_pkt;
 
     /* can be used by netmods to put this vc on a send queue or list */
     struct MPIDI_VC *next;
@@ -158,9 +156,14 @@ typedef struct MPIDI_CH3I_VC
     MPIDI_CH3_PktHandler_Fcn **pkt_handler;
     int num_pkt_handlers;
     
-    struct
+    union
     {
         char padding[MPID_NEM_VC_NETMOD_AREA_LEN];
+
+        /* Temporary helper field for ticket #1679.  Should force proper pointer
+         * alignment on finnicky platforms like SPARC.  Proper fix is to stop
+         * this questionable type aliasing altogether. */
+        void *align_helper;
     } netmod_area;
     
 
@@ -170,5 +173,8 @@ typedef struct MPIDI_CH3I_VC
     void *sendq_head;
 } MPIDI_CH3I_VC;
 
+/* Nemesis-provided RMA implementation */
+int MPIDI_CH3_SHM_Win_shared_query(MPID_Win *win_ptr, int target_rank, MPI_Aint *size, int *disp_unit, void *baseptr);
+int MPIDI_CH3_SHM_Win_free(MPID_Win **win_ptr);
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

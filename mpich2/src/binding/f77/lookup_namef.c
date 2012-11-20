@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_lookup_name( char * FORT_MIXED_LEN_DECL
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Lookup_name
 #define MPI_Lookup_name PMPI_Lookup_name 
 

@@ -1,9 +1,9 @@
-.TH MPI_Win_set_name 3 "11/2/2007" " " "MPI"
+.TH MPI_Win_set_name 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Win_set_name \-  Set the print name for an MPI RMA window 
 .SH SYNOPSIS
 .nf
-int MPI_Win_set_name(MPI_Win win, char *win_name)
+int MPI_Win_set_name(MPI_Win win, MPICH2_CONST char *win_name)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -105,4 +105,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-win_set_name.c
+src/mpi/rma/win_set_name.c

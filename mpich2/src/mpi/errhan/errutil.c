@@ -156,6 +156,7 @@ void MPIR_Errhandler_set_fc( MPI_Errhandler errhand )
 /* ------------------------------------------------------------------------- */
 /* Special error handler to call if we are not yet initialized, or if we
    have finalized */
+/* --BEGIN ERROR HANDLING-- */
 void MPIR_Err_preOrPostInit( void )
 {
     if (MPIR_Process.initialized == MPICH_PRE_INIT) {
@@ -169,6 +170,7 @@ void MPIR_Err_preOrPostInit( void )
     }
     exit(1);
 }
+/* --END ERROR HANDLING-- */
 
 /* Return true if the error code indicates a fatal error */
 int MPIR_Err_is_fatal(int errcode)
@@ -186,10 +188,10 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 {
     const int error_class = ERROR_GET_CLASS(errcode);
     MPID_Errhandler *errhandler = NULL;
-    int rc;
 
-    rc = checkValidErrcode( error_class, fcname, &errcode );
+    checkValidErrcode( error_class, fcname, &errcode );
 
+    /* --BEGIN ERROR HANDLING-- */
     if (MPIR_Process.initialized == MPICH_PRE_INIT ||
         MPIR_Process.initialized == MPICH_POST_FINALIZED)
     {
@@ -198,6 +200,7 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
         handleFatalError(MPIR_Process.comm_world, fcname, errcode);
         return MPI_ERR_INTERN;
     }
+    /* --END ERROR HANDLING-- */
 
     MPIU_DBG_MSG_FMT(ERRHAND, TERSE, (MPIU_DBG_FDEST, "MPIR_Err_return_comm(comm_ptr=%p, fcname=%s, errcode=%d)", comm_ptr, fcname, errcode));
 
@@ -217,11 +220,13 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
         }
     }
 
+    /* --BEGIN ERROR HANDLING-- */
     if (MPIR_Err_is_fatal(errcode) || comm_ptr == NULL) {
 	/* Calls MPID_Abort */
 	handleFatalError( comm_ptr, fcname, errcode );
         /* never get here */
     }
+    /* --END ERROR HANDLING-- */
 
     MPIU_Assert(comm_ptr != NULL);
 
@@ -231,12 +236,14 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
     MPIU_THREAD_CS_ENTER(MPI_OBJ, comm_ptr);
     errhandler = comm_ptr->errhandler;
 
+    /* --BEGIN ERROR HANDLING-- */
     if (errhandler == NULL || errhandler->handle == MPI_ERRORS_ARE_FATAL) {
         MPIU_THREAD_CS_EXIT(MPI_OBJ, comm_ptr);
 	/* Calls MPID_Abort */
 	handleFatalError( comm_ptr, fcname, errcode );
         /* never get here */
     }
+    /* --END ERROR HANDLING-- */
 
     /* Check for the special case of a user-provided error code */
     errcode = checkForUserErrcode( errcode );
@@ -290,7 +297,6 @@ int MPIR_Err_return_comm( MPID_Comm  *comm_ptr, const char fcname[],
 int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
 {
     const int error_class = ERROR_GET_CLASS(errcode);
-    int rc ;
 
     if (win_ptr == NULL || win_ptr->errhandler == NULL)
 	return MPIR_Err_return_comm(NULL, fcname, errcode);
@@ -298,16 +304,18 @@ int MPIR_Err_return_win( MPID_Win  *win_ptr, const char fcname[], int errcode )
     /* We don't test for MPI initialized because to call this routine,
        we will have had to call an MPI routine that would make that test */
 
-    rc = checkValidErrcode( error_class, fcname, &errcode );
+    checkValidErrcode( error_class, fcname, &errcode );
 
     MPIU_DBG_MSG_FMT(ERRHAND, TERSE, (MPIU_DBG_FDEST, "MPIR_Err_return_win(win_ptr=%p, fcname=%s, errcode=%d)", win_ptr, fcname, errcode));
 
+    /* --BEGIN ERROR HANDLING-- */
     if (MPIR_Err_is_fatal(errcode) ||
 	win_ptr == NULL || win_ptr->errhandler == NULL || 
 	win_ptr->errhandler->handle == MPI_ERRORS_ARE_FATAL) {
 	/* Calls MPID_Abort */
 	handleFatalError( NULL, fcname, errcode );
     }
+    /* --END ERROR HANDLING-- */
 
     /* Check for the special case of a user-provided error code */
     errcode = checkForUserErrcode( errcode );
@@ -398,6 +406,7 @@ static int checkValidErrcode( int error_class, const char fcname[],
 
     if (error_class > MPICH_ERR_LAST_CLASS)
     {
+	/* --BEGIN ERROR HANDLING-- */
 	if (errcode & ~ERROR_CLASS_MASK)
 	{
 	    MPIU_Error_printf("INTERNAL ERROR: Invalid error class (%d) encountered while returning from\n"
@@ -417,6 +426,7 @@ static int checkValidErrcode( int error_class, const char fcname[],
 	   and discard the rest of the bits */
 	errcode = (errcode & ~ERROR_CLASS_MASK) | MPI_ERR_UNKNOWN;
 	rc = 1;
+	/* --END ERROR HANDLING-- */
     }
     *errcode_p = errcode;
     return rc;
@@ -454,6 +464,7 @@ static const char *ErrcodeInvalidReasonStr( int reason )
 }
 #endif /* MPICH_ERROR_MSG_LEVEL <= MPICH_ERROR_MSG_GENERIC */
 
+/* --BEGIN ERROR HANDLING-- */
 /* This routine is called when there is a fatal error */
 static void handleFatalError( MPID_Comm *comm_ptr, 
 			      const char fcname[], int errcode )
@@ -474,12 +485,14 @@ static void handleFatalError( MPID_Comm *comm_ptr,
        an error */
     MPID_Abort(comm_ptr, MPI_SUCCESS, 1, error_msg);
 }
+/* --END ERROR HANDLING-- */
 
 #if MPICH_ERROR_MSG_LEVEL >= MPICH_ERROR_MSG_GENERIC
 /* 
  * Given a message string abbreviation (e.g., one that starts "**"), return 
  * the corresponding index.  For the generic (non
  * parameterized messages), use idx = FindGenericMsgIndex( "**msg" );
+ * Returns -1 on failure to find the matching message
  */
 static int FindGenericMsgIndex( const char *msg )
 {
@@ -497,11 +510,14 @@ static int FindGenericMsgIndex( const char *msg )
 	if (c > 0)
 	{
 	    /* don't return here if the string partially matches */
+	    /* FIXME: Why return failure instead of continuing to check? */
 	    if (strncmp(generic_err_msgs[i].short_name, msg, strlen(msg)) != 0)
 		return -1;
 	}
     }
+    /* --BEGIN ERROR HANDLING-- */
     return -1;
+    /* --END ERROR HANDLING-- */
 }
 
 /* 
@@ -543,8 +559,8 @@ int MPIR_Err_create_code( int lastcode, int fatal, const char fcname[],
     int rc;
     va_list Argp;
     va_start(Argp, specific_msg);
-    MPIU_DBG_MSG_FMT(ERRHAND, TYPICAL, (MPIU_DBG_FDEST, "%sError created: %s(%d) %s", fatal ? "Fatal " : "",
-                                        fcname, line, generic_msg));
+    MPIU_DBG_MSG_FMT(ERRHAND, TYPICAL, (MPIU_DBG_FDEST, "%sError created: last=%#010x class=%#010x %s(%d) %s",
+                                        fatal ? "Fatal " : "", lastcode, error_class, fcname, line, generic_msg));
     rc = MPIR_Err_create_code_valist( lastcode, fatal, fcname, line,
 				      error_class, generic_msg, specific_msg,
 				      Argp );
@@ -586,12 +602,15 @@ int MPIR_Err_combine_codes(int error1, int error2)
     int error1_code = error1;
     int error2_code = error2;
     int error2_class;
-    
-    if (error2_code == MPI_SUCCESS) return error1_code;
-    /* Return the error2 code if either it is a user-defined error or
-       error 1 is no-error */
-    if (error2_code & ERROR_DYN_MASK) return error2_code;
+
+    /* If either error code is success, return the other */
     if (error1_code == MPI_SUCCESS) return error2_code;
+    if (error2_code == MPI_SUCCESS) return error1_code;
+
+    /* If an error code is dynamic, return that.  If both are, we choose
+       error1. */
+    if (error1_code & ERROR_DYN_MASK) return error1_code;
+    if (error2_code & ERROR_DYN_MASK) return error2_code;
 	    
     error2_class = MPIR_ERR_GET_CLASS(error2_code);
     if (MPIR_ERR_GET_CLASS(error2_class) < MPI_SUCCESS ||
@@ -629,7 +648,9 @@ static const char *get_class_msg( int error_class )
 #endif
     }
     else {
+	/* --BEGIN ERROR HANDLING-- */
 	return "Unknown error class";
+	/* --END ERROR HANDLING-- */
     }
 #else 
     /* FIXME: Not internationalized */
@@ -648,8 +669,15 @@ void MPIR_Err_get_string( int errorcode, char * msg, int length,
     int error_class;
     int len, num_remaining = length;
     
-    if (num_remaining == 0)
-	num_remaining = MPI_MAX_ERROR_STRING;
+    /* There was code to set num_remaining to MPI_MAX_ERROR_STRING
+       if it was zero.  But based on the usage of this routine, 
+       such a choice would overwrite memory. (This was caught by
+       reading the coverage reports and looking into why this
+       code was (thankfully!) never executed.) */
+    /* if (num_remaining == 0)
+       num_remaining = MPI_MAX_ERROR_STRING; */
+    if (num_remaining == 0) 
+	goto fn_exit;
 
     /* Convert the code to a string.  The cases are:
        simple class.  Find the corresponding string.
@@ -876,6 +904,9 @@ static int checkErrcodeIsValid( int errcode )
     if (errcode <= MPIR_MAX_ERROR_CLASS_INDEX && errcode >= 0) return 0;
 
     convertErrcodeToIndexes( errcode, &ring_idx, &ring_id, &generic_idx );
+    MPIU_DBG_MSG_FMT(ERRHAND, VERBOSE, (MPIU_DBG_FDEST, "code=%#010x ring_idx=%d ring_id=%#010x generic_idx=%d",
+                                        errcode, ring_idx, ring_id, generic_idx));
+
     if (ring_idx < 0 || ring_idx >= MAX_ERROR_RING ||
 	ring_idx > max_error_ring_loc) return 1;
     if (ErrorRing[ring_idx].id != ring_id) return 2;
@@ -884,6 +915,8 @@ static int checkErrcodeIsValid( int errcode )
     if (generic_idx < -1 || generic_idx > generic_msgs_len) return 3;
     return 0;
 }
+
+/* --BEGIN ERROR HANDLING-- */
 static const char *ErrcodeInvalidReasonStr( int reason )
 {
     const char *str = 0;
@@ -903,6 +936,8 @@ static const char *ErrcodeInvalidReasonStr( int reason )
     }
     return str;
 }
+/* --END ERROR HANDLING-- */
+
 /* Check to see if the error code is a user-specified error code
    (e.g., from the attribute delete function) and if so, set the error code
    to the value provide by the user */
@@ -917,9 +952,11 @@ static int checkForUserErrcode( int errcode )
 	    
 	    if (convertErrcodeToIndexes( errcode, &ring_idx, &ring_id,
 					 &generic_idx ) != 0) {
+		/* --BEGIN ERROR HANDLING-- */
 		MPIU_Error_printf( 
 		  "Invalid error code (%d) (error ring index %d invalid)\n", 
 		  errcode, ring_idx );
+		/* --END ERROR HANDLING-- */
 	    }
 	    else {
 		/* Can we get a more specific error message */
@@ -1536,10 +1573,12 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 	int reason;
 	reason = checkErrcodeIsValid(lastcode);
 	if (reason) {
+	    /* --BEGIN ERROR HANDLING-- */
 	    MPIU_Error_printf( "Internal Error: invalid error code %x (%s) in %s:%d\n", 
 			       lastcode, ErrcodeInvalidReasonStr( reason ), 
 			       fcname, line );
 	    lastcode = MPI_SUCCESS;
+	    /* --END ERROR HANDLING-- */
 	}
     }
 
@@ -1692,9 +1731,11 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 		if (convertErrcodeToIndexes( lastcode, &last_ring_idx, 
 					     &last_ring_id,
 					     &last_generic_idx ) != 0) {
+		    /* --BEGIN ERROR HANDLING-- */
 		    MPIU_Error_printf( 
 		  "Invalid error code (%d) (error ring index %d invalid)\n", 
 		  lastcode, last_ring_idx );
+		    /* --END ERROR HANDLING-- */
 		}
 		else {
 		    if (last_generic_idx >= 0 && 
@@ -1717,6 +1758,12 @@ int MPIR_Err_create_code_valist( int lastcode, int fatal, const char fcname[],
 	    {
 		ErrorRing[ring_idx].location[0] = '\0';
 	    }
+            {
+                MPIU_DBG_MSG_FMT(ERRHAND,VERBOSE,(MPIU_DBG_FDEST, "New ErrorRing[%d]", ring_idx));
+                MPIU_DBG_MSG_FMT(ERRHAND,VERBOSE,(MPIU_DBG_FDEST, "    id         = %#010x", ErrorRing[ring_idx].id));
+                MPIU_DBG_MSG_FMT(ERRHAND,VERBOSE,(MPIU_DBG_FDEST, "    prev_error = %#010x", ErrorRing[ring_idx].prev_error));
+                MPIU_DBG_MSG_FMT(ERRHAND,VERBOSE,(MPIU_DBG_FDEST, "    user=%d", ErrorRing[ring_idx].use_user_error_code));
+            }
 	}
 	error_ring_mutex_unlock();
 
@@ -1745,10 +1792,15 @@ int MPIR_Err_combine_codes(int error1, int error2)
     int error2_code = error2;
     int error2_class;
     
-    if (error2_code == MPI_SUCCESS) return error1_code;
-    if (error2_code & ERROR_DYN_MASK) return error2_code;
+    /* If either error code is success, return the other */
     if (error1_code == MPI_SUCCESS) return error2_code;
-	    
+    if (error2_code == MPI_SUCCESS) return error1_code;
+
+    /* If an error code is dynamic, return that.  If both are, we choose
+       error1. */
+    if (error1_code & ERROR_DYN_MASK) return error1_code;
+    if (error2_code & ERROR_DYN_MASK) return error2_code;
+
     error2_class = MPIR_ERR_GET_CLASS(error2_code);
     if (MPIR_ERR_GET_CLASS(error2_class) < MPI_SUCCESS ||
 	MPIR_ERR_GET_CLASS(error2_class) > MPICH_ERR_LAST_CLASS)
@@ -1811,10 +1863,12 @@ void MPIR_Err_print_stack(FILE * fp, int errcode)
 	    
 	    if (convertErrcodeToIndexes( errcode, &ring_idx, &ring_id,
 					 &generic_idx ) != 0) {
+		/* --BEGIN ERROR HANDLING-- */
 		MPIU_Error_printf( 
 		    "Invalid error code (%d) (error ring index %d invalid)\n", 
 		    errcode, ring_idx );
 		break;
+		/* --END ERROR HANDLING-- */
 	    }
 	    
 	    if (generic_idx < 0)
@@ -1897,10 +1951,12 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen )
 	    
 	    if (convertErrcodeToIndexes( tmp_errcode, &ring_idx, &ring_id,
 					 &generic_idx ) != 0) {
+		/* --BEGIN ERROR HANDLING-- */
 		MPIU_Error_printf( 
 		    "Invalid error code (%d) (error ring index %d invalid)\n", 
 		    errcode, ring_idx );
 		break;
+		/* --END ERROR HANDLING-- */
 	    }
 
 	    if (generic_idx < 0) {
@@ -1928,9 +1984,11 @@ static void MPIR_Err_print_stack_string(int errcode, char *str, int maxlen )
 	    
 	    if (convertErrcodeToIndexes( errcode, &ring_idx, &ring_id,
 					 &generic_idx ) != 0) {
+		/* --BEGIN ERROR HANDLING-- */
 		MPIU_Error_printf( 
 		    "Invalid error code (%d) (error ring index %d invalid)\n", 
 		    errcode, ring_idx );
+		/* --END ERROR HANDLING-- */
 	    }
 	    
 	    if (generic_idx < 0)
@@ -2104,10 +2162,12 @@ static int ErrGetInstanceString( int errorcode, char *msg, int num_remaining )
 		if (convertErrcodeToIndexes( errorcode, &ring_idx, 
 					     &ring_id,
 					     &generic_idx ) != 0) {
+		    /* --BEGIN ERROR HANDLING-- */
 		    MPIU_Error_printf( 
 	      "Invalid error code (%d) (error ring index %d invalid)\n", 
 	      errorcode, ring_idx );
 		    break;
+		    /* --END ERROR HANDLING-- */
 		}
 		
 		if (generic_idx < 0) {

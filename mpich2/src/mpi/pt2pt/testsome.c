@@ -90,7 +90,6 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COUNT(incount, mpi_errno);
-	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
 	    if (incount != 0) {
 		MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
@@ -99,14 +98,10 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount,
 		MPIR_ERRTEST_ARGNULL(array_of_statuses, "array_of_statuses", mpi_errno);
 	    }
 	    MPIR_ERRTEST_ARGNULL(outcount, "outcount", mpi_errno);
-	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
  
-	    for (i = 0; i < incount; i++)
-	    {
-		MPIR_ERRTEST_ARRAYREQUEST_OR_NULL(array_of_requests[i], 
-						  i, mpi_errno);
+	    for (i = 0; i < incount; i++) {
+		MPIR_ERRTEST_ARRAYREQUEST_OR_NULL(array_of_requests[i], i, mpi_errno);
 	    }
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -164,11 +159,11 @@ int MPI_Testsome(int incount, MPI_Request array_of_requests[], int *outcount,
     for (i = 0; i < incount; i++)
     {
 	if (request_ptrs[i] != NULL && 
-			request_ptrs[i]->kind == MPID_UREQUEST &&
-			request_ptrs[i]->poll_fn != NULL)
+            request_ptrs[i]->kind == MPID_UREQUEST &&
+            request_ptrs[i]->greq_fns->poll_fn != NULL)
 	{
-	    mpi_errno = (request_ptrs[i]->poll_fn)(request_ptrs[i]->grequest_extra_state, 
-			    array_of_statuses);
+            mpi_errno = (request_ptrs[i]->greq_fns->poll_fn)(request_ptrs[i]->greq_fns->grequest_extra_state,
+                                                             array_of_statuses);
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
 	if (request_ptrs[i] != NULL && MPID_Request_is_complete(request_ptrs[i]))

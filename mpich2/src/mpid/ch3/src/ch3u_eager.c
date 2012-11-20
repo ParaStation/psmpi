@@ -41,7 +41,7 @@ int MPIDI_CH3_SendNoncontig_iov( MPIDI_VC_t *vc, MPID_Request *sreq,
 	
 	/* Note this routine is invoked withing a CH3 critical section */
 	/* MPIU_THREAD_CS_ENTER(CH3COMM,vc); */
-	mpi_errno = MPIU_CALL(MPIDI_CH3,iSendv(vc, sreq, iov, iov_n));
+	mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, iov_n);
 	/* MPIU_THREAD_CS_EXIT(CH3COMM,vc); */
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
@@ -180,7 +180,7 @@ int MPIDI_CH3_EagerContigSend( MPID_Request **sreq_p,
     
     MPIU_DBG_MSGPKT(vc,tag,eager_pkt->match.parts.context_id,rank,data_sz,"EagerContig");
     MPIU_THREAD_CS_ENTER(CH3COMM,vc);
-    mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsgv(vc, iov, 2, sreq_p));
+    mpi_errno = MPIDI_CH3_iStartMsgv(vc, iov, 2, sreq_p);
     MPIU_THREAD_CS_EXIT(CH3COMM,vc);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|eagermsg");
@@ -255,8 +255,7 @@ int MPIDI_CH3_EagerContigShortSend( MPID_Request **sreq_p,
     MPIU_DBG_MSGPKT(vc,tag,eagershort_pkt->match.parts.context_id,rank,data_sz,
 		    "EagerShort");
     MPIU_THREAD_CS_ENTER(CH3COMM,vc);
-    mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsg(vc, eagershort_pkt, 
-				      sizeof(*eagershort_pkt), sreq_p ));
+    mpi_errno = MPIDI_CH3_iStartMsg(vc, eagershort_pkt, sizeof(*eagershort_pkt), sreq_p);
     MPIU_THREAD_CS_EXIT(CH3COMM,vc);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|eagermsg");
@@ -444,6 +443,14 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
  	    /* Copy the payload. We could optimize this if recv_data_sz & 0x3 == 0 
 	       (copy (recv_data_sz >> 2) ints, inline that since data size is 
 	       currently limited to 4 ints */
+            /* We actually could optimize this a lot of ways, including just
+             * putting a memcpy here.  Modern compilers will inline fast
+             * versions of the memcpy here (__builtin_memcpy, etc).  Another
+             * option is a classic word-copy loop with a switch block at the end
+             * for a remainder.  Alternatively a Duff's device loop could work.
+             * Any replacement should be profile driven, and no matter what
+             * we're likely to pick something suboptimal for at least one
+             * compiler out there. [goodell@ 2012-02-10] */
 	    {
 		unsigned char const * restrict p = 
 		    (unsigned char *)eagershort_pkt->data;
@@ -538,7 +545,7 @@ int MPIDI_CH3_EagerContigIsend( MPID_Request **sreq_p,
     
     MPIU_DBG_MSGPKT(vc,tag,eager_pkt->match.parts.context_id,rank,data_sz,"EagerIsend");
     MPIU_THREAD_CS_ENTER(CH3COMM,vc);
-    mpi_errno = MPIU_CALL(MPIDI_CH3,iSendv(vc, sreq, iov, 2 ));
+    mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, 2);
     MPIU_THREAD_CS_EXIT(CH3COMM,vc);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)

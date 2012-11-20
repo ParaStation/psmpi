@@ -9,7 +9,7 @@
 Maps process to Cartesian topology information  
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods, 
+int MPI_Cart_map(MPI_Comm comm_old, int ndims, MPICH2_CONST int *dims, MPICH2_CONST int *periods,
                 int *newrank)
 </PRE>
 <H2>Input Parameters</H2>
@@ -72,5 +72,5 @@ is null or its length is less than or equal to zero.
 <DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
-<P><B>Location:</B>cart_map.c<P>
+<P><B>Location:</B>src/mpi/topo/cart_map.c<P>
 </BODY></HTML>

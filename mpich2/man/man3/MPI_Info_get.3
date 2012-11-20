@@ -1,4 +1,4 @@
-.TH MPI_Info_get 3 "7/29/2010" " " "MPI"
+.TH MPI_Info_get 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Info_get \-  Retrieves the value associated with a key 
 .SH SYNOPSIS
@@ -7,7 +7,7 @@ MPI_Info_get \-  Retrieves the value associated with a key
 #define FUNCNAME MPI_Info_get
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPI_Info_get(MPI_Info info, char *key, int valuelen, char *value, 
+int MPI_Info_get(MPI_Info info, MPICH2_CONST char *key, int valuelen, char *value,
                 int *flag)
 .fi
 .SH INPUT PARAMETERS
@@ -143,4 +143,4 @@ identified by a specific error class (e.g.,
 - Invalid or null value string for info
 .PD 1
 .SH LOCATION
-info_get.c
+src/util/info/info_get.c

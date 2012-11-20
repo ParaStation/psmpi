@@ -33,7 +33,7 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISTARTMSG);
 
-    MPIU_ERR_CHKANDJUMP1(vc->state == MPIDI_VC_STATE_MORIBUND, mpi_errno, MPI_ERR_OTHER, "**comm_fail", "**comm_fail %d", vc->pg_rank);
+    MPIU_ERR_CHKANDJUMP1(vc->state == MPIDI_VC_STATE_MORIBUND, mpi_errno, MPIX_ERR_PROC_FAIL_STOP, "**comm_fail", "**comm_fail %d", vc->pg_rank);
 
     if (VC_CH(vc)->iStartContigMsg)
     {
@@ -93,7 +93,7 @@ int MPIDI_CH3_iStartMsg (MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, MPID_
 	MPIU_Object_set_ref (sreq, 2);
 	sreq->kind = MPID_REQUEST_SEND;
 
-	sreq->dev.pending_pkt = *(MPIDI_CH3_PktGeneric_t *) hdr;
+	sreq->dev.pending_pkt = *(MPIDI_CH3_Pkt_t *) hdr;
 	sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->dev.pending_pkt;
 	sreq->dev.iov[0].MPID_IOV_LEN = hdr_sz;
 	sreq->dev.iov_count = 1;

@@ -12,10 +12,10 @@ Create a datatype representing a distributed array
 int MPI_Type_create_darray(int size,
                          int rank,
                          int ndims,
-                         int array_of_gsizes[],
-                         int array_of_distribs[],
-                         int array_of_dargs[],
-                         int array_of_psizes[],
+                         MPICH2_CONST int array_of_gsizes[],
+                         MPICH2_CONST int array_of_distribs[],
+                         MPICH2_CONST int array_of_dargs[],
+                         MPICH2_CONST int array_of_psizes[],
                          int order,
                          MPI_Datatype oldtype,
                          MPI_Datatype *newtype)
@@ -86,5 +86,5 @@ MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 <DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
-<P><B>Location:</B>type_create_darray.c<P>
+<P><B>Location:</B>src/mpi/datatype/type_create_darray.c<P>
 </BODY></HTML>

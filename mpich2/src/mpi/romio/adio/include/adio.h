@@ -168,7 +168,7 @@ MPI_Info PMPI_Info_f2c(MPI_Fint info);
 char *strdup(const char *s);
 # endif
 #if defined(HAVE_READLINK) && defined(NEEDS_READLINK_DECL) && !defined(readlink)
-int readlink(const char *path, char *buf, size_t bufsiz);
+ssize_t readlink(const char *path, char *buf, size_t bufsiz);
 # endif
 #if defined(HAVE_LSTAT) && defined(NEEDS_LSTAT_DECL) && !defined(lstat)
 int lstat(const char *file_name, struct stat *buf);
@@ -233,6 +233,9 @@ typedef struct ADIOI_FileD {
     ADIO_Offset *file_realm_st_offs; /* file realm starting offsets */
     MPI_Datatype *file_realm_types;  /* file realm datatypes */
     int my_cb_nodes_index; /* my index into cb_config_list. -1 if N/A */
+    /* External32 */
+    int is_external32;      /* bool:  0 means native view */
+
 } ADIOI_FileD;
 
 typedef struct ADIOI_FileD *ADIO_File;
@@ -324,10 +327,10 @@ typedef struct {
 
 void ADIO_Init(int *argc, char ***argv, int *error_code);
 void ADIO_End(int *error_code);
-MPI_File ADIO_Open(MPI_Comm orig_comm, MPI_Comm comm, char *filename, 
+MPI_File ADIO_Open(MPI_Comm orig_comm, MPI_Comm comm, const char *filename,
 		   int file_system, ADIOI_Fns *ops,
-		   int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
-		   MPI_Datatype filetype, 
+		   int access_mode, ADIO_Offset disp, MPI_Datatype etype,
+		   MPI_Datatype filetype,
 		   MPI_Info info, int perm, int *error_code);
 void ADIOI_OpenColl(ADIO_File fd, int rank, int acces_mode, int *error_code);
 void ADIO_ImmediateOpen(ADIO_File fd, int *error_code);
@@ -365,7 +368,7 @@ void ADIO_ReadStrided(ADIO_File fd, void *buf, int count,
 		       MPI_Datatype datatype, int file_ptr_type,
 		       ADIO_Offset offset, ADIO_Status *status, int
 		       *error_code);
-void ADIO_WriteStrided(ADIO_File fd, void *buf, int count,
+void ADIO_WriteStrided(ADIO_File fd, const void *buf, int count,
 		       MPI_Datatype datatype, int file_ptr_type,
 		       ADIO_Offset offset, ADIO_Status *status, int
 		       *error_code);
@@ -391,7 +394,7 @@ void ADIO_Delete(char *filename, int *error_code);
 void ADIO_Flush(ADIO_File fd, int *error_code);
 void ADIO_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
 void ADIO_SetInfo(ADIO_File fd, MPI_Info users_info, int *error_code);
-void ADIO_ResolveFileType(MPI_Comm comm, char *filename, int *fstype, 
+void ADIO_ResolveFileType(MPI_Comm comm, const char *filename, int *fstype,
           ADIOI_Fns **ops, int *error_code);
 void ADIO_Get_shared_fp(ADIO_File fd, int size, ADIO_Offset *shared_fp, 
 			 int *error_code);

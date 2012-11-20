@@ -1,10 +1,10 @@
-.TH MPI_Unpack_external 3 "8/2/2008" " " "MPI"
+.TH MPI_Unpack_external 3 "9/20/2012" " " "MPI"
 .SH NAME
 MPI_Unpack_external \-  Unpack a buffer (packed with MPI_Pack_external) according to a datatype into contiguous memory 
 .SH SYNOPSIS
 .nf
-int MPI_Unpack_external(char *datarep,
-                      void *inbuf,
+int MPI_Unpack_external(MPICH2_CONST char *datarep,
+                      MPICH2_CONST void *inbuf,
                       MPI_Aint insize,
                       MPI_Aint *position,
                       void *outbuf,
@@ -135,4 +135,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-unpack_external.c
+src/mpi/datatype/unpack_external.c

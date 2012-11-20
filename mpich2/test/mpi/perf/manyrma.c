@@ -16,7 +16,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_COUNT 65536
+#define MAX_COUNT 65536*4
 #define MAX_RMA_SIZE 16
 #define MAX_RUNS 10
 
@@ -47,7 +47,7 @@ void RunPutPSCW( MPI_Win win, int destRank, int cnt, int sz,
 
 int main( int argc, char *argv[] )
 {
-    int arraysize, i, cnt, sz, maxCount, *arraybuffer;
+    int arraysize, i, cnt, sz, maxCount=MAX_COUNT, *arraybuffer;
     int wrank, wsize, destRank, srcRank;
     MPI_Win win;
     MPI_Group wgroup, accessGroup, exposureGroup;
@@ -86,11 +86,16 @@ int main( int argc, char *argv[] )
 	    i++;
 	    maxSz = atoi( argv[i] );
 	}
+	else if (strcmp( argv[i], "-maxcount" ) == 0) {
+	    i++;
+	    maxCount = atoi( argv[i] );
+	}
 	else if (strcmp( argv[i], "-barrier" ) == 0) {
 	    barrierSync = 1;
 	}
 	else {
 	    fprintf( stderr, "Unrecognized argument %s\n", argv[i] );
+	    fprintf( stderr, "%s [ -put ] [ -acc ] [ -lock ] [ -fence ] [ -pscw ] [ -barrier ]  [ -maxsz msgsize ]\n", argv[0] );
 	    MPI_Abort( MPI_COMM_WORLD, 1 );
 	}
     }
@@ -123,7 +128,10 @@ int main( int argc, char *argv[] )
        an absolute limit.
     */
 
-    maxCount = MAX_COUNT;
+    if (maxCount > MAX_COUNT) {
+	fprintf( stderr, "MaxCount must not exceed %d\n", MAX_COUNT );
+	MPI_Abort( MPI_COMM_WORLD, 1 );
+    }
 
     if ((syncChoice & SYNC_FENCE) && (rmaChoice & RMA_ACC)) {
 	for (sz=1; sz<=maxSz; sz = sz + sz) {
@@ -379,6 +387,7 @@ void PrintResults( int cnt, timing t[] )
 	d2 = minD2;
 	/* d1 = d1 / MAX_RUNS; d2 = d2 / MAX_RUNS); */
 	if (d2 > 0) rate = (long)(cnt) / d2;
+	/* count, op, sync, op/each, sync/each, rate */
 	printf( "%d\t%e\t%e\t%e\t%e\t%ld\n", cnt, 
 		d1, d2, 
 		d1 / cnt, d2 / cnt, rate );

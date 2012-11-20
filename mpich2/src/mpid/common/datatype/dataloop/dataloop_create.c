@@ -50,12 +50,13 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
              combiner == MPI_COMBINER_F90_COMPLEX ||
              combiner == MPI_COMBINER_F90_INTEGER)
     {
-        /* the unnamed predefined types are created at runtime as
-         * contigs, but they don't need a dataloop and they have
-         * (intentionally) different envelopes/contents */
-        *dlp_p = NULL;
-        *dlsz_p = 0;
-        *dldepth_p = 0;
+        MPI_Datatype f90basetype;
+        DLOOP_Handle_get_basic_type_macro(type, f90basetype);
+        PREPEND_PREFIX(Dataloop_create_contiguous)(1 /* count */,
+                                                   f90basetype,
+                                                   dlp_p, dlsz_p,
+                                                   dldepth_p,
+                                                   flag);
         return;
     }
 
@@ -81,6 +82,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 	case MPI_COMBINER_HVECTOR_INTEGER:
 	case MPI_COMBINER_HVECTOR:
 	case MPI_COMBINER_INDEXED_BLOCK:
+	case MPIX_COMBINER_HINDEXED_BLOCK:
 	case MPI_COMBINER_INDEXED:
 	case MPI_COMBINER_HINDEXED_INTEGER:
 	case MPI_COMBINER_HINDEXED:
@@ -204,6 +206,20 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 							 dlp_p, dlsz_p,
 							 dldepth_p,
 							 flag);
+	    break;
+	case MPIX_COMBINER_HINDEXED_BLOCK:
+            disps = (MPI_Aint *) DLOOP_Malloc(ints[0] * sizeof(MPI_Aint));
+            for (i = 0; i < ints[0]; i++)
+                disps[i] = aints[i];
+	    PREPEND_PREFIX(Dataloop_create_blockindexed)(ints[0] /* count */,
+							 ints[1] /* blklen */,
+							 disps /* disps */,
+							 1 /* disp is bytes */,
+							 types[0] /* oldtype */,
+							 dlp_p, dlsz_p,
+							 dldepth_p,
+							 flag);
+            DLOOP_Free(disps);
 	    break;
 	case MPI_COMBINER_INDEXED:
 	    PREPEND_PREFIX(Dataloop_create_indexed)(ints[0] /* count */,

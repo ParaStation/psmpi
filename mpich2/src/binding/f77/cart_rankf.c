@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_rank( MPI_Fint *, MPI_Fint *, MPI_
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Cart_rank
 #define MPI_Cart_rank PMPI_Cart_rank 
 

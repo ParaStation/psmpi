@@ -9,7 +9,7 @@
 Accept a request to form a new intercommunicator 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Comm_accept(char *port_name, MPI_Info info, int root, MPI_Comm comm, 
+int MPI_Comm_accept(MPICH2_CONST char *port_name, MPI_Info info, int root, MPI_Comm comm,
                     MPI_Comm *newcomm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -67,5 +67,5 @@ possible.
 <DL><DT><B>MPI_ERR_COMM </B> <DD> Invalid communicator.  A common error is to use a null
 communicator in a call (not even allowed in <TT>MPI_Comm_rank</TT>).
 </DL>
-<P><B>Location:</B>comm_accept.c<P>
+<P><B>Location:</B>src/mpi/spawn/comm_accept.c<P>
 </BODY></HTML>

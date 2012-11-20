@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_get( MPI_Fint *, MPI_Fint *, MPI_F
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Cart_get
 #define MPI_Cart_get PMPI_Cart_get 
 
@@ -189,7 +187,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_get( MPI_Fint *, MPI_Fint *, MPI_F
 FORT_DLL_SPEC void FORT_CALL mpi_cart_get_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *ierr ){
     *ierr = MPI_Cart_get( (MPI_Comm)(*v1), *v2, v3, v4, v5 );
 
-    {int li;
+    if (*ierr == MPI_SUCCESS) {int li;
      for (li=0; li<*v2; li++) {
         v4[li] = MPIR_TO_FLOG(v4[li]);
      }

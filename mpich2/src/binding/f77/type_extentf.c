@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_extent( MPI_Fint *, MPI_Fint *, MP
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Type_extent
 #define MPI_Type_extent PMPI_Type_extent 
 
@@ -189,5 +187,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_extent( MPI_Fint *, MPI_Fint *, MP
 FORT_DLL_SPEC void FORT_CALL mpi_type_extent_ ( MPI_Fint *v1, MPI_Fint * v2, MPI_Fint *ierr ){
     MPI_Aint l2;
     *ierr = MPI_Type_extent( (MPI_Datatype)(*v1), &l2 );
-    *v2 = (MPI_Fint)(l2);
+    if (*ierr == MPI_SUCCESS) *v2 = (MPI_Fint)(l2);
 }

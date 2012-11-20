@@ -36,8 +36,6 @@
 typedef struct MPIDI_VCRT
 {
     MPIU_OBJECT_HEADER; /* adds handle and ref_count fields */
-    int contains_failed_vc;
-    int last_check_for_failed_vc;
     int size;
     MPIDI_VC_t * vcr_table[1];
 }
@@ -83,16 +81,16 @@ int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
     MPIU_Object_set_ref(vcrt, 1);
     vcrt->size = size;
     *vcrt_ptr = vcrt;
-    vcrt->contains_failed_vc = FALSE;
-    vcrt->last_check_for_failed_vc = 0;
 
  fn_exit:
     MPIU_CHKPMEM_COMMIT();
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_CREATE);
     return mpi_errno;
  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 /*@
@@ -217,7 +215,7 @@ int MPID_VCRT_Release(MPID_VCRT vcrt, int isDisconnect )
 			     vc, i, MPIDI_VC_GetStateString(vc->state)));
 		}
 
-                /* NOTE: we used to * MPIU_CALL(MPIDI_CH3,VC_Destroy(&(pg->vct[i])))
+                /* NOTE: we used to * MPIDI_CH3_VC_Destroy(&(pg->vct[i])))
                    here but that is incorrect.  According to the standard, it's
                    entirely possible (likely even) that this VC might still be
                    connected.  VCs are now destroyed when the PG that "owns"
@@ -257,34 +255,6 @@ int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_GET_PTR);
     return MPI_SUCCESS;
 }
-
-/*@
-  MPID_VCRT_Contains_failed_vc - returns TRUE iff a VC in this VCRT is in MORUBIND state
-  @*/
-#undef FUNCNAME
-#define FUNCNAME MPID_VCRT_Contains_failed_vc
-#undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPID_VCRT_Contains_failed_vc(MPID_VCRT vcrt)
-{
-    if (vcrt->contains_failed_vc) {
-        /* We have already determined that this VCRT has a dead VC */
-        return TRUE;
-    } else if (vcrt->last_check_for_failed_vc < MPIDI_Failed_vc_count) {
-        /* A VC has failed since the last time we checked for dead VCs
-           in this VCRT */
-        int i;
-        for (i = 0; i < vcrt->size; ++i) {
-            if (vcrt->vcr_table[i]->state == MPIDI_VC_STATE_MORIBUND) {
-                vcrt->contains_failed_vc = TRUE;
-                return TRUE;
-            }
-        }
-        vcrt->last_check_for_failed_vc = MPIDI_Failed_vc_count;
-    }
-    return FALSE;
-}
-
 
 /*@
   MPID_VCR_Dup - Duplicate a virtual connection reference 
@@ -435,12 +405,19 @@ int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] )
 	do {
 	    MPIDI_PG_Get_next( &iter, &pg );
 	    if (!pg) {
+		/* --BEGIN ERROR HANDLING-- */
 		/* Internal error.  This gpid is unknown on this process */
-		printf("No matching pg foung for id = %d\n", pgid );
+		/* A printf is NEVER valid in code that might be executed
+		   by the user, even in an error case (use 
+		   MPIU_Internal_error_printf if you need to print
+		   an error message and its not appropriate to use the
+		   regular error code system */
+		/* printf("No matching pg foung for id = %d\n", pgid ); */
 		lpid[i] = -1;
 		MPIU_ERR_SET2(mpi_errno,MPI_ERR_INTERN, "**unknowngpid",
 			      "**unknowngpid %d %d", gpid[0], gpid[1] );
 		return mpi_errno;
+		/* --END ERROR HANDLING-- */
 	    }
 	    MPIDI_PG_IdToNum( pg, &pgid );
 
@@ -452,10 +429,12 @@ int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] )
 		    lpid[i] = pg->vct[gpid[1]].lpid;
 		}
 		else {
+		    /* --BEGIN ERROR HANDLING-- */
 		    lpid[i] = -1;
 		    MPIU_ERR_SET2(mpi_errno,MPI_ERR_INTERN, "**unknowngpid",
 				  "**unknowngpid %d %d", gpid[0], gpid[1] );
 		    return mpi_errno;
+		    /* --END ERROR HANDLING-- */
 		}
 		/* printf( "lpid[%d] = %d for gpid = (%d)%d\n", i, lpid[i], 
 		   gpid[0], gpid[1] ); */
@@ -656,7 +635,10 @@ static int MPIDI_CH3U_VC_FinishPending( MPIDI_VCRT_t *vcrt )
 	    }
 	}
 	if (nPending > 0) {
-	    printf( "Panic! %d pending operations!\n", nPending );
+	    /* FIXME: See note about printfs above.  It is never valid
+	       to use printfs, even for panic messages */
+	    MPIU_Internal_error_printf( "Panic! %d pending operations!\n", nPending );
+	    /* printf( "Panic! %d pending operations!\n", nPending ); */
 	    fflush(stdout);
 	    MPIU_Assert( nPending == 0 );
 	}
@@ -740,6 +722,8 @@ int MPIDI_VC_Init( MPIDI_VC_t *vc, MPIDI_PG_t *pg, int rank )
     vc->rndvSend_fn      = MPIDI_CH3_RndvSend;
     vc->rndvRecv_fn      = MPIDI_CH3_RecvRndv;
     vc->eager_max_msg_sz = MPIDI_CH3_EAGER_MAX_MSG_SIZE;
+    vc->ready_eager_max_msg_sz = -1; /* no limit */;
+
     vc->sendNoncontig_fn = MPIDI_CH3_SendNoncontig_iov;
 #ifdef ENABLE_COMM_OVERRIDES
     vc->comm_ops         = NULL;
@@ -747,10 +731,14 @@ int MPIDI_VC_Init( MPIDI_VC_t *vc, MPIDI_PG_t *pg, int rank )
     /* FIXME: We need a better abstraction for initializing the thread state 
        for an object */
 #if MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT
-    MPID_Thread_mutex_create(&vc->pobj_mutex,NULL);
+    {
+        int err;
+        MPID_Thread_mutex_create(&vc->pobj_mutex,&err);
+        MPIU_Assert(err == 0);
+    }
 #endif /* MPIU_THREAD_GRANULARITY */
-    MPIU_CALL(MPIDI_CH3,VC_Init( vc ));
-    MPIU_DBG_PrintVCState(vc);
+    MPIDI_CH3_VC_Init(vc);
+    MPIDI_DBG_PrintVCState(vc);
 
     return MPI_SUCCESS;
 }
@@ -961,8 +949,10 @@ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_PARSE_MAPPING);
     return mpi_errno;
 fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 #if 0
@@ -1073,8 +1063,10 @@ fn_exit:
     MPIU_Free(mb);
     return mpi_errno;
 fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     *did_map = 0;
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 /* Fills in the node_id info from PMI info.  Adapted from MPIU_Get_local_procs.

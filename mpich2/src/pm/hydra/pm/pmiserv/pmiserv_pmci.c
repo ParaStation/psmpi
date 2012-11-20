@@ -9,7 +9,6 @@
 #include "pmci.h"
 #include "pmiserv_pmi.h"
 #include "bsci.h"
-#include "topo.h"
 #include "pmiserv.h"
 #include "pmiserv_utils.h"
 
@@ -55,23 +54,28 @@ static HYD_status ui_cmd_cb(int fd, HYD_event_t events, void *userp)
     HYDU_ERR_POP(status, "read error\n");
     HYDU_ASSERT(!closed, status);
 
-    if (cmd.type == HYD_CLEANUP) {
-        HYDU_dump_noprefix(stdout, "Ctrl-C caught... cleaning up processes\n");
-        status = HYD_pmcd_pmiserv_cleanup_all_pgs();
-        HYDU_ERR_POP(status, "cleanup of processes failed\n");
-        exit(1);
-    }
-    else if (cmd.type == HYD_CKPOINT) {
+    if (cmd.type == HYD_CKPOINT) {
         HYD_pmcd_init_header(&hdr);
         hdr.cmd = CKPOINT;
         status = send_cmd_to_proxies(hdr);
         HYDU_ERR_POP(status, "error checkpointing processes\n");
     }
+    else if (cmd.type == HYD_CLEANUP) {
+        HYDU_dump_noprefix(stdout, "Ctrl-C caught... cleaning up processes\n");
+        status = HYD_pmcd_pmiserv_cleanup_all_pgs();
+        HYDU_ERR_POP(status, "cleanup of processes failed\n");
+
+        /* Force kill all bootstrap processes that we launched */
+        status = HYDT_bsci_wait_for_completion(0);
+        HYDU_ERR_POP(status, "launcher returned error waiting for completion\n");
+
+        exit(1);
+    }
     else if (cmd.type == HYD_SIGNAL) {
         for (pg = &HYD_server_info.pg_list; pg; pg = pg->next) {
             for (proxy = pg->proxy_list; proxy; proxy = proxy->next) {
                 status = HYD_pmcd_pmiserv_send_signal(proxy, cmd.signum);
-                HYDU_ERR_POP(status, "unable to send SIGUSR1 downstream\n");
+                HYDU_ERR_POP(status, "unable to send signal downstream\n");
             }
         }
     }
@@ -95,15 +99,14 @@ HYD_status HYD_pmci_launch_procs(void)
 
     HYDU_FUNC_ENTER();
 
-    status =
-        HYDT_dmx_register_fd(1, &HYD_server_info.cleanup_pipe[0], POLLIN, NULL, ui_cmd_cb);
+    status = HYDT_dmx_register_fd(1, &HYD_server_info.cmd_pipe[0], POLLIN, NULL, ui_cmd_cb);
     HYDU_ERR_POP(status, "unable to register fd\n");
 
     status = HYD_pmcd_pmi_alloc_pg_scratch(&HYD_server_info.pg_list);
     HYDU_ERR_POP(status, "error allocating pg scratch space\n");
 
     status = HYDU_sock_create_and_listen_portstr(HYD_server_info.user_global.iface,
-                                                 HYD_server_info.local_hostname,
+                                                 HYD_server_info.localhost,
                                                  HYD_server_info.port_range, &control_port,
                                                  HYD_pmcd_pmiserv_control_listen_cb,
                                                  (void *) (size_t) 0);
@@ -118,19 +121,12 @@ HYD_status HYD_pmci_launch_procs(void)
     HYDU_ERR_POP(status, "unable to fill in executable arguments\n");
 
     node_count = 0;
-    for (proxy = HYD_server_info.pg_list.proxy_list; proxy; proxy = proxy->next) {
-        proxy->node->active_processes += proxy->proxy_process_count;
+    for (proxy = HYD_server_info.pg_list.proxy_list; proxy; proxy = proxy->next)
         node_count++;
-    }
 
     HYDU_MALLOC(control_fd, int *, node_count * sizeof(int), status);
     for (i = 0; i < node_count; i++)
         control_fd[i] = HYD_FD_UNSET;
-
-    status =
-        HYDT_topo_init(HYD_server_info.user_global.binding,
-                       HYD_server_info.user_global.topolib);
-    HYDU_ERR_POP(status, "unable to initializing topology library\n");
 
     status =
         HYDT_bsci_launch_procs(proxy_args, HYD_server_info.pg_list.proxy_list, control_fd);
@@ -162,9 +158,13 @@ HYD_status HYD_pmci_wait_for_completion(int timeout)
 {
     struct HYD_pg *pg;
     struct HYD_pmcd_pmi_pg_scratch *pg_scratch;
+    int time_elapsed, time_left;
+    struct timeval start, now;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
+
+    gettimeofday(&start, NULL);
 
     /* We first wait for the exit statuses to arrive till the timeout
      * period */
@@ -172,12 +172,27 @@ HYD_status HYD_pmci_wait_for_completion(int timeout)
         pg_scratch = (struct HYD_pmcd_pmi_pg_scratch *) pg->pg_scratch;
 
         while (pg_scratch->control_listen_fd != HYD_FD_CLOSED) {
-            status = HYDT_dmx_wait_for_event(timeout);
-            if (status == HYD_TIMED_OUT) {
-                HYDU_dump(stdout, "APPLICATION TIMED OUT\n");
-                status = HYD_pmcd_pmiserv_cleanup_all_pgs();
-                HYDU_ERR_POP(status, "cleanup of processes failed\n");
+            gettimeofday(&now, NULL);
+            time_elapsed = (now.tv_sec - start.tv_sec);
+            time_left = timeout;
+            if (timeout > 0) {
+                if (time_elapsed > timeout) {
+                    HYDU_dump(stdout, "APPLICATION TIMED OUT\n");
+
+                    status = HYD_pmcd_pmiserv_cleanup_all_pgs();
+                    HYDU_ERR_POP(status, "cleanup of processes failed\n");
+
+                    /* Force kill all bootstrap processes that we launched */
+                    status = HYDT_bsci_wait_for_completion(0);
+                    HYDU_ERR_POP(status, "launcher returned error waiting for completion\n");
+                }
+                else
+                    time_left = timeout - time_elapsed;
             }
+
+            status = HYDT_dmx_wait_for_event(time_left);
+            if (status == HYD_TIMED_OUT)
+                continue;
             HYDU_ERR_POP(status, "error waiting for event\n");
         }
 
@@ -185,9 +200,19 @@ HYD_status HYD_pmci_wait_for_completion(int timeout)
         HYDU_ERR_POP(status, "error freeing PG scratch space\n");
     }
 
-    /* Either all application processes exited or we have timed
-     * out. We now wait for all the proxies to terminate. */
-    status = HYDT_bsci_wait_for_completion(-1);
+    /* Either all application processes exited or we have timed out.
+     * We now wait for all the proxies to terminate. */
+    gettimeofday(&now, NULL);
+    time_elapsed = (now.tv_sec - start.tv_sec);
+    if (timeout > 0) {
+        time_left = timeout - time_elapsed;
+        if (time_left < 0)
+            time_left = 0;
+    }
+    else
+        time_left = timeout;
+
+    status = HYDT_bsci_wait_for_completion(time_left);
     HYDU_ERR_POP(status, "launcher returned error waiting for completion\n");
 
   fn_exit:
@@ -212,9 +237,6 @@ HYD_status HYD_pmci_finalize(void)
 
     status = HYDT_dmx_finalize();
     HYDU_ERR_POP(status, "error returned from demux finalize\n");
-
-    status = HYDT_topo_finalize();
-    HYDU_ERR_POP(status, "error returned from topology finalize\n");
 
   fn_exit:
     HYDU_FUNC_EXIT();

@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_finalized( MPI_Fint *, MPI_Fint * );
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Finalized
 #define MPI_Finalized PMPI_Finalized 
 
@@ -187,5 +185,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_finalized( MPI_Fint *, MPI_Fint * );
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_finalized_ ( MPI_Fint *v1, MPI_Fint *ierr ){
-    *ierr = MPI_Finalized( v1 );
+    int l1;
+    *ierr = MPI_Finalized( &l1 );
+    if (*ierr == MPI_SUCCESS) *v1 = MPIR_TO_FLOG(l1);
 }

@@ -13,7 +13,7 @@ Nonblocking write using shared file pointer
 #include "mpiu_greq.h"
 #endif
 
-int MPI_File_iwrite_shared(MPI_File mpi_fh, void *buf, int count, 
+int MPI_File_iwrite_shared(MPI_File mpi_fh, MPICH2_CONST void *buf, int count,
                          MPI_Datatype datatype, MPIO_Request *request)
 </PRE>
 <H2>Input Parameters</H2>
@@ -39,5 +39,5 @@ in C.  In Fortran, MPI routines are subroutines, and are invoked with the
 <P>
 All MPI objects (e.g., <TT>MPI_Datatype</TT>, <TT>MPI_Comm</TT>) are of type <TT>INTEGER
 </TT>in Fortran.
-<P><B>Location:</B>iwrite_sh.c<P>
+<P><B>Location:</B>mpi-io/iwrite_sh.c<P>
 </BODY></HTML>

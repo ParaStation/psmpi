@@ -3,6 +3,15 @@
  *
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
+ *
+ * Portions of this code were written by Microsoft. Those portions are
+ * Copyright (c) 2007 Microsoft Corporation. Microsoft grants
+ * permission to use, reproduce, prepare derivative works, and to
+ * redistribute to others. The code is licensed "as is." The User
+ * bears the risk of using it. Microsoft gives no express warranties,
+ * guarantees or conditions. To the extent permitted by law, Microsoft
+ * excludes the implied warranties of merchantability, fitness for a
+ * particular purpose and non-infringement.
  */
 
 #include "mpi.h"
@@ -384,6 +393,7 @@ static struct fn_table
     int (*MPI_Type_create_hindexed)(int, int [], MPI_Aint [], MPI_Datatype, MPI_Datatype *);
     int (*MPI_Type_create_hvector)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *);
     int (*MPI_Type_create_indexed_block)(int, int, int [], MPI_Datatype, MPI_Datatype *);
+    int (*MPIX_Type_create_hindexed_block)(int, int, const int [], MPI_Datatype, MPI_Datatype *);
     int (*MPI_Type_create_resized)(MPI_Datatype, MPI_Aint, MPI_Aint, MPI_Datatype *);
     int (*MPI_Type_create_struct)(int, int [], MPI_Aint [], MPI_Datatype [], MPI_Datatype *);
     int (*MPI_Type_create_subarray)(int, int [], int [], int [], int, MPI_Datatype, MPI_Datatype *);
@@ -699,6 +709,7 @@ static struct fn_table
     int (*PMPI_Type_create_hindexed)(int, int [], MPI_Aint [], MPI_Datatype, MPI_Datatype *);
     int (*PMPI_Type_create_hvector)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *);
     int (*PMPI_Type_create_indexed_block)(int, int, int [], MPI_Datatype, MPI_Datatype *);
+    int (*PMPIX_Type_create_hindexed_block)(int, int, const int [], MPI_Datatype, MPI_Datatype *);
     int (*PMPI_Type_create_resized)(MPI_Datatype, MPI_Aint, MPI_Aint, MPI_Datatype *);
     int (*PMPI_Type_create_struct)(int, int [], MPI_Aint [], MPI_Datatype [], MPI_Datatype *);
     int (*PMPI_Type_create_subarray)(int, int [], int [], int [], int, MPI_Datatype, MPI_Datatype *);
@@ -1369,6 +1380,8 @@ static BOOL LoadFunctions(const char *dll_name, const char *wrapper_dll_name)
     if (fn.MPI_Type_create_hvector == NULL) fn.MPI_Type_create_hvector = (int (*)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "MPI_Type_create_hvector");
     fn.MPI_Type_create_indexed_block = (int (*)(int, int, int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_create_indexed_block");
     if (fn.MPI_Type_create_indexed_block == NULL) fn.MPI_Type_create_indexed_block = (int (*)(int, int, int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "MPI_Type_create_indexed_block");
+    fn.MPIX_Type_create_hindexed_block = (int (*)(int, int, const int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPIX_Type_create_hindexed_block");
+    if (fn.MPIX_Type_create_hindexed_block == NULL) fn.MPIX_Type_create_hindexed_block = (int (*)(int, int, const int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "MPIX_Type_create_hindexed_block");
     fn.MPI_Type_create_resized = (int (*)(MPI_Datatype, MPI_Aint, MPI_Aint, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_create_resized");
     if (fn.MPI_Type_create_resized == NULL) fn.MPI_Type_create_resized = (int (*)(MPI_Datatype, MPI_Aint, MPI_Aint, MPI_Datatype *))GetProcAddress(hPMPIModule, "MPI_Type_create_resized");
     fn.MPI_Type_create_struct = (int (*)(int, int [], MPI_Aint [], MPI_Datatype [], MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_create_struct");
@@ -1692,6 +1705,7 @@ static BOOL LoadFunctions(const char *dll_name, const char *wrapper_dll_name)
     fn.PMPI_Type_create_hindexed = (int (*)(int, int [], MPI_Aint [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_hindexed");
     fn.PMPI_Type_create_hvector = (int (*)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_hvector");
     fn.PMPI_Type_create_indexed_block = (int (*)(int, int, int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_indexed_block");
+    fn.PMPIX_Type_create_hindexed_block = (int (*)(int, int, const int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPIX_Type_create_hindexed_block");
     fn.PMPI_Type_create_resized = (int (*)(MPI_Datatype, MPI_Aint, MPI_Aint, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_resized");
     fn.PMPI_Type_create_struct = (int (*)(int, int [], MPI_Aint [], MPI_Datatype [], MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_struct");
     fn.PMPI_Type_create_subarray = (int (*)(int, int [], int [], int [], int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_subarray");
@@ -2687,6 +2701,18 @@ int MPI_Type_create_indexed_block(int count,
 {
     MPICH_CHECK_INIT(FCNAME);
     return fn.MPI_Type_create_indexed_block(count, blocklength, array_of_displacements, oldtype, newtype);
+}
+
+#undef FCNAME
+#define FCNAME MPIX_Type_create_hindexed_block
+int MPIX_Type_create_hindexed_block(int count,
+                                    int blocklength,
+                                    const int array_of_displacements[],
+                                    MPI_Datatype oldtype,
+                                    MPI_Datatype *newtype)
+{
+    MPICH_CHECK_INIT(FCNAME);
+    return fn.MPIX_Type_create_hindexed_block(count, blocklength, array_of_displacements, oldtype, newtype);
 }
 
 #undef FCNAME
@@ -5316,6 +5342,18 @@ int PMPI_Type_create_indexed_block(int count,
 {
     MPICH_CHECK_INIT(FCNAME);
     return fn.PMPI_Type_create_indexed_block(count, blocklength, array_of_displacements, oldtype, newtype);
+}
+
+#undef FCNAME
+#define FCNAME PMPIX_Type_create_hindexed_block
+int PMPIX_Type_create_hindexed_block(int count,
+                                     int blocklength,
+                                     const int array_of_displacements[],
+                                     MPI_Datatype oldtype,
+                                     MPI_Datatype *newtype)
+{
+    MPICH_CHECK_INIT(FCNAME);
+    return fn.PMPIX_Type_create_hindexed_block(count, blocklength, array_of_displacements, oldtype, newtype);
 }
 
 #undef FCNAME

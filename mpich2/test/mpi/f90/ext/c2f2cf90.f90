@@ -117,6 +117,5 @@
       endif
 
       call mpi_finalize( ierr )
-      stop
       end
       

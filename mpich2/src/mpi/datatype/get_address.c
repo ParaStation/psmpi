@@ -67,7 +67,7 @@ Output Parameter:
 .N MPI_SUCCESS
 .N MPI_ERR_OTHER
 @*/
-int MPI_Get_address(void *location, MPI_Aint *address)
+int MPI_Get_address(MPICH2_CONST void *location, MPI_Aint *address)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET_ADDRESS);
@@ -82,7 +82,6 @@ int MPI_Get_address(void *location, MPI_Aint *address)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_ARGNULL(address,"address",mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

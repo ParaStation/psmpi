@@ -9,9 +9,9 @@
 Sends and receives a message 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
+int MPI_Sendrecv(MPICH2_CONST void *sendbuf, int sendcount, MPI_Datatype sendtype,
                 int dest, int sendtag,
-                void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+                void *recvbuf, int recvcount, MPI_Datatype recvtype,
                 int source, int recvtag,
                 MPI_Comm comm, MPI_Status *status)
 </PRE>
@@ -102,5 +102,5 @@ zero and the size of the communicator minus one; ranks in a receive
 (<TT>MPI_Recv</TT>, <TT>MPI_Irecv</TT>, <TT>MPI_Sendrecv</TT>, etc.) may also be <TT>MPI_ANY_SOURCE</TT>.
 </DL>
 <P>
-<P><B>Location:</B>sendrecv.c<P>
+<P><B>Location:</B>src/mpi/pt2pt/sendrecv.c<P>
 </BODY></HTML>

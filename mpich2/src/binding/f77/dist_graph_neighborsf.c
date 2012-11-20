@@ -164,9 +164,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_dist_graph_neighbors( MPI_Fint *, MPI_F
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Dist_graph_neighbors
 #define MPI_Dist_graph_neighbors PMPI_Dist_graph_neighbors 
 
@@ -191,7 +189,5 @@ FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_neighbors_ ( MPI_Fint *v1, MPI_Fint 
 #ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
 #endif
-    if (v4 == MPIR_F_MPI_UNWEIGHTED) v4 = MPI_UNWEIGHTED;
-    if (v7 == MPIR_F_MPI_UNWEIGHTED) v7 = MPI_UNWEIGHTED;
     *ierr = MPI_Dist_graph_neighbors( (MPI_Comm)(*v1), *v2, v3, v4, *v5, v6, v7 );
 }
