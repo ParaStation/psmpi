@@ -1989,7 +1989,7 @@ case $CONFSET in
 
 	CONF_OPS="$CONF_OPS CC=icc CXX=icpc FC=ifort"
 	CONF_OPS="$CONF_OPS CFLAGS=-O3"
-	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
+	EXTRA_VERSION_INFO=" compiler: $(icc -V|head -n 1)"
 	;;
 "pgi")
 	echo "Using confset=pgi"
