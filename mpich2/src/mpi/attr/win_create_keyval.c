@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -41,12 +41,12 @@
 /*@
    MPI_Win_create_keyval - Create an attribute keyval for MPI window objects
 
-   Input Parameters:
+Input Parameters:
 + win_copy_attr_fn - copy callback function for win_keyval (function) 
 . win_delete_attr_fn - delete callback function for win_keyval (function) 
 - extra_state - extra state for callback functions 
 
-   Output Parameter:
+Output Parameters:
 . win_keyval - key value for future access (integer) 
 
    Notes:

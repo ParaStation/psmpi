@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -52,7 +52,7 @@ Input Parameters:
 .N MPI_ERR_RANK
 
 @*/
-int MPI_Rsend(MPICH2_CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+int MPI_Rsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	      MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Rsend";

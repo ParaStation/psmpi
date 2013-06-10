@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,36 +6,43 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
-/* -- Begin Profiling Symbol Block for routine MPIX_Win_attach */
+/* -- Begin Profiling Symbol Block for routine MPI_Win_attach */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPIX_Win_attach = PMPIX_Win_attach
+#pragma weak MPI_Win_attach = PMPI_Win_attach
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIX_Win_attach  MPIX_Win_attach
+#pragma _HP_SECONDARY_DEF PMPI_Win_attach  MPI_Win_attach
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPIX_Win_attach as PMPIX_Win_attach
+#pragma _CRI duplicate MPI_Win_attach as PMPI_Win_attach
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#undef MPIX_Win_attach
-#define MPIX_Win_attach PMPIX_Win_attach
+#undef MPI_Win_attach
+#define MPI_Win_attach PMPI_Win_attach
 
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPIX_Win_attach
+#define FUNCNAME MPI_Win_attach
 
 /*@
-   MPIX_Win_attach - Attach memory to a dynamic window
+MPI_Win_attach - Attach memory to a dynamic window.
 
- Input Parameters:
+
+Attaches a local memory region beginning at base for remote access within the
+given window. The memory region specified must not contain any part that is
+already attached to the window win, that is, attaching overlapping memory
+concurrently within the same window is erroneous. The argument win must be a
+window that was created with 'MPI_Win_create_dynamic'. Multiple (but
+non-overlapping) memory regions may be attached to the same window.
+
+Input Parameters:
 + size - size of memory to be attached in bytes
-. base - initial address of memory to be attached 
-- win - window object used for communication (handle) 
+. base - initial address of memory to be attached
+- win - window object used for communication (handle)
 
 .N ThreadSafe
 
@@ -48,18 +55,20 @@
 .N MPI_ERR_RANK
 .N MPI_ERR_TYPE
 .N MPI_ERR_WIN
+
+.seealso: MPI_Win_create_dynamic MPI_Win_detach
 @*/
-int MPIX_Win_attach(MPI_Win win, void *base, MPI_Aint size)
+int MPI_Win_attach(MPI_Win win, void *base, MPI_Aint size)
 {
-    static const char FCNAME[] = "MPIX_Win_attach";
+    static const char FCNAME[] = "MPI_Win_attach";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIX_WIN_ATTACH);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_ATTACH);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPIX_WIN_ATTACH);
+    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_ATTACH);
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -116,7 +125,7 @@ int MPIX_Win_attach(MPI_Win win, void *base, MPI_Aint size)
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPIX_WIN_ATTACH);
+    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_ATTACH);
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
@@ -125,7 +134,7 @@ int MPIX_Win_attach(MPI_Win win, void *base, MPI_Aint size)
 #   ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno = MPIR_Err_create_code(
-            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpix_win_attach", "**mpix_win_attach %W %p %d",
+            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_win_attach", "**mpi_win_attach %W %p %d",
             size, base, win);
     }
 #   endif

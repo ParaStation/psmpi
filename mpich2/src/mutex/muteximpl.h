@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -10,7 +10,7 @@
 #include <mpi.h>
 #include <mpitypedefs.h>
 
-#define MPI_MUTEX_TAG 100
+#define MPIX_MUTEX_TAG 100
 
 #ifdef ENABLE_DEBUG
 #define debug_print(...) do { printf(__VA_ARGS__); } while (0)

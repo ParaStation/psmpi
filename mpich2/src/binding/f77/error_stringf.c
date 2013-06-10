@@ -187,7 +187,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_error_string( MPI_Fint *, char * FORT_M
 FORT_DLL_SPEC void FORT_CALL mpi_error_string_ ( MPI_Fint *v1, char *v2 FORT_MIXED_LEN(d2), MPI_Fint *v3, MPI_Fint *ierr FORT_END_LEN(d2) ){
     char *p2;
     p2 = (char *)MPIU_Malloc( d2 + 1 );
-    *ierr = MPI_Error_string( *v1, p2, v3 );
+    *ierr = MPI_Error_string( (int)*v1, p2, v3 );
 
     if (!*ierr) {char *p = v2, *pc=p2;
         while (*pc) {*p++ = *pc++;}

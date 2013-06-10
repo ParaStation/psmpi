@@ -12,10 +12,10 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPI_TESTALL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_testall__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_testall( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_testall_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_TESTALL( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_testall__( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_testall( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_testall_( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak MPI_TESTALL = PMPI_TESTALL
@@ -44,19 +44,19 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_testall_( MPI_Fint *, MPI_Fint *, MPI_Fi
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPI_TESTALL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_TESTALL( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #pragma weak MPI_TESTALL = PMPI_TESTALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_testall__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_testall__( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #pragma weak mpi_testall__ = pmpi_testall__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_testall( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_testall( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #pragma weak mpi_testall = pmpi_testall
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpi_testall_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_testall_( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #pragma weak mpi_testall_ = pmpi_testall_
 #endif
@@ -90,10 +90,10 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_testall_( MPI_Fint *, MPI_Fint *, MPI_Fi
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPI_TESTALL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_testall__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_testall( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_testall_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_TESTALL( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_testall__( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_testall( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_testall_( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak mpi_testall__ = MPI_TESTALL
@@ -120,16 +120,16 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_testall_( MPI_Fint *, MPI_Fint *, MPI_Fi
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPI_TESTALL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_TESTALL( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_testall__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_testall__( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_testall_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_testall_( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpi_testall( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_testall( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #endif
 
@@ -184,7 +184,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_testall( MPI_Fint *, MPI_Fint *, MPI_Fi
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpi_testall_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *ierr ){
+FORT_DLL_SPEC void FORT_CALL mpi_testall_ ( MPI_Fint *v1, MPI_Fint v2[], MPI_Fint *v3, MPI_Fint v4[], MPI_Fint *ierr ){
     int l3;
 
 #ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
@@ -192,6 +192,6 @@ FORT_DLL_SPEC void FORT_CALL mpi_testall_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint
 #endif
 
     if (v4 == MPI_F_STATUSES_IGNORE) { v4 = (MPI_Fint *)MPI_STATUSES_IGNORE; }
-    *ierr = MPI_Testall( *v1, (MPI_Request *)(v2), &l3, (MPI_Status *)v4 );
+    *ierr = MPI_Testall( (int)*v1, (MPI_Request *)(v2), &l3, (MPI_Status *)v4 );
     if (*ierr == MPI_SUCCESS) *v3 = MPIR_TO_FLOG(l3);
 }

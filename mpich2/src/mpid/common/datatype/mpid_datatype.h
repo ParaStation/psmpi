@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -427,7 +427,9 @@ extern MPIU_Object_alloc_t MPID_Datatype_mem;
  * here. */
 /* FIXME calculating this value this way is foolish, we should make this more
  * automatic and less error prone */
-#define MPID_DATATYPE_N_BUILTIN 68
+/* FIXME: Given that this is relatively static, an adequate alternative is
+   to provide a check that this value is valid. */
+#define MPID_DATATYPE_N_BUILTIN 69
 extern MPID_Datatype MPID_Datatype_builtin[MPID_DATATYPE_N_BUILTIN + 1];
 extern MPID_Datatype MPID_Datatype_direct[];
 
@@ -648,7 +650,7 @@ void MPID_Dataloop_dup(DLOOP_Dataloop *old_loop,
 		       DLOOP_Dataloop **new_loop_p);
 void MPID_Dataloop_free(struct MPID_Dataloop **dataloop);
 
-/* Segment functions specific to MPICH2 */
+/* Segment functions specific to MPICH */
 void MPID_Segment_pack_vector(struct DLOOP_Segment *segp,
 			      DLOOP_Offset first,
 			      DLOOP_Offset *lastp,

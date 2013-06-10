@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2006 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -254,7 +254,7 @@ int MPID_nem_mx_directRecv(MPIDI_VC_t *vc, MPID_Request *rreq)
   MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_MX_DIRECTRECV);    
   MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_MX_DIRECTRECV);    
   
-  if (!VC_CH(vc)->is_local)
+  if (!vc->ch.is_local)
   {
       uint64_t          match_info = NEM_MX_MATCH_DIRECT;
       uint64_t          match_mask = NEM_MX_MATCH_FULL_MASK;

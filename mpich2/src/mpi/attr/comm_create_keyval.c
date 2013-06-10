@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -85,11 +85,11 @@ int MPIR_Comm_create_keyval_impl(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
    MPI_Comm_create_keyval - Create a new attribute key 
 
 Input Parameters:
-+ copy_fn - Copy callback function for 'keyval' 
-. delete_fn - Delete callback function for 'keyval' 
++ comm_copy_attr_fn - Copy callback function for 'keyval'
+. comm_delete_attr_fn - Delete callback function for 'keyval'
 - extra_state - Extra state for callback functions 
 
-Output Parameter:
+Output Parameters:
 . comm_keyval - key value for future access (integer) 
 
 Notes:
@@ -103,7 +103,7 @@ Default copy and delete functions are available.  These are
 There are subtle differences between C and Fortran that require that the
 copy_fn be written in the same language from which 'MPI_Comm_create_keyval'
 is called.
-This should not be a problem for most users; only programers using both 
+This should not be a problem for most users; only programmers using both
 Fortran and C in the same program need to be sure that they follow this rule.
 
 .N AttrErrReturn

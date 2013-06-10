@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IEXSCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iexscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iexscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iexscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IEXSCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iexscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iexscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iexscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_IEXSCAN = PMPIX_IEXSCAN
-#pragma weak mpix_iexscan__ = PMPIX_IEXSCAN
-#pragma weak mpix_iexscan_ = PMPIX_IEXSCAN
-#pragma weak mpix_iexscan = PMPIX_IEXSCAN
+#pragma weak MPI_IEXSCAN = PMPI_IEXSCAN
+#pragma weak mpi_iexscan__ = PMPI_IEXSCAN
+#pragma weak mpi_iexscan_ = PMPI_IEXSCAN
+#pragma weak mpi_iexscan = PMPI_IEXSCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_IEXSCAN = pmpix_iexscan__
-#pragma weak mpix_iexscan__ = pmpix_iexscan__
-#pragma weak mpix_iexscan_ = pmpix_iexscan__
-#pragma weak mpix_iexscan = pmpix_iexscan__
+#pragma weak MPI_IEXSCAN = pmpi_iexscan__
+#pragma weak mpi_iexscan__ = pmpi_iexscan__
+#pragma weak mpi_iexscan_ = pmpi_iexscan__
+#pragma weak mpi_iexscan = pmpi_iexscan__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_IEXSCAN = pmpix_iexscan_
-#pragma weak mpix_iexscan__ = pmpix_iexscan_
-#pragma weak mpix_iexscan_ = pmpix_iexscan_
-#pragma weak mpix_iexscan = pmpix_iexscan_
+#pragma weak MPI_IEXSCAN = pmpi_iexscan_
+#pragma weak mpi_iexscan__ = pmpi_iexscan_
+#pragma weak mpi_iexscan_ = pmpi_iexscan_
+#pragma weak mpi_iexscan = pmpi_iexscan_
 #else
-#pragma weak MPIX_IEXSCAN = pmpix_iexscan
-#pragma weak mpix_iexscan__ = pmpix_iexscan
-#pragma weak mpix_iexscan_ = pmpix_iexscan
-#pragma weak mpix_iexscan = pmpix_iexscan
+#pragma weak MPI_IEXSCAN = pmpi_iexscan
+#pragma weak mpi_iexscan__ = pmpi_iexscan
+#pragma weak mpi_iexscan_ = pmpi_iexscan
+#pragma weak mpi_iexscan = pmpi_iexscan
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_iexscan_( void*, void*, MPI_Fint *, MPI
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IEXSCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IEXSCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_IEXSCAN = PMPIX_IEXSCAN
+#pragma weak MPI_IEXSCAN = PMPI_IEXSCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_iexscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iexscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_iexscan__ = pmpix_iexscan__
+#pragma weak mpi_iexscan__ = pmpi_iexscan__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_iexscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iexscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_iexscan = pmpix_iexscan
+#pragma weak mpi_iexscan = pmpi_iexscan
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_iexscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iexscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_iexscan_ = pmpix_iexscan_
+#pragma weak mpi_iexscan_ = pmpi_iexscan_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_IEXSCAN  MPIX_IEXSCAN
+#pragma _HP_SECONDARY_DEF PMPI_IEXSCAN  MPI_IEXSCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_iexscan__  mpix_iexscan__
+#pragma _HP_SECONDARY_DEF pmpi_iexscan__  mpi_iexscan__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_iexscan  mpix_iexscan
+#pragma _HP_SECONDARY_DEF pmpi_iexscan  mpi_iexscan
 #else
-#pragma _HP_SECONDARY_DEF pmpix_iexscan_  mpix_iexscan_
+#pragma _HP_SECONDARY_DEF pmpi_iexscan_  mpi_iexscan_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_IEXSCAN as PMPIX_IEXSCAN
+#pragma _CRI duplicate MPI_IEXSCAN as PMPI_IEXSCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_iexscan__ as pmpix_iexscan__
+#pragma _CRI duplicate mpi_iexscan__ as pmpi_iexscan__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_iexscan as pmpix_iexscan
+#pragma _CRI duplicate mpi_iexscan as pmpi_iexscan
 #else
-#pragma _CRI duplicate mpix_iexscan_ as pmpix_iexscan_
+#pragma _CRI duplicate mpi_iexscan_ as pmpi_iexscan_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_iexscan_( void*, void*, MPI_Fint *, MPI
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IEXSCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iexscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iexscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iexscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IEXSCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iexscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iexscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iexscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_iexscan__ = MPIX_IEXSCAN
-#pragma weak mpix_iexscan_ = MPIX_IEXSCAN
-#pragma weak mpix_iexscan = MPIX_IEXSCAN
+#pragma weak mpi_iexscan__ = MPI_IEXSCAN
+#pragma weak mpi_iexscan_ = MPI_IEXSCAN
+#pragma weak mpi_iexscan = MPI_IEXSCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_IEXSCAN = mpix_iexscan__
-#pragma weak mpix_iexscan_ = mpix_iexscan__
-#pragma weak mpix_iexscan = mpix_iexscan__
+#pragma weak MPI_IEXSCAN = mpi_iexscan__
+#pragma weak mpi_iexscan_ = mpi_iexscan__
+#pragma weak mpi_iexscan = mpi_iexscan__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_IEXSCAN = mpix_iexscan_
-#pragma weak mpix_iexscan__ = mpix_iexscan_
-#pragma weak mpix_iexscan = mpix_iexscan_
+#pragma weak MPI_IEXSCAN = mpi_iexscan_
+#pragma weak mpi_iexscan__ = mpi_iexscan_
+#pragma weak mpi_iexscan = mpi_iexscan_
 #else
-#pragma weak MPIX_IEXSCAN = mpix_iexscan
-#pragma weak mpix_iexscan__ = mpix_iexscan
-#pragma weak mpix_iexscan_ = mpix_iexscan
+#pragma weak MPI_IEXSCAN = mpi_iexscan
+#pragma weak mpi_iexscan__ = mpi_iexscan
+#pragma weak mpi_iexscan_ = mpi_iexscan
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_iexscan_( void*, void*, MPI_Fint *, MPI
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_IEXSCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IEXSCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_iexscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iexscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_iexscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iexscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_iexscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iexscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_iexscan__ = PMPIX_IEXSCAN
-#pragma weak pmpix_iexscan_ = PMPIX_IEXSCAN
-#pragma weak pmpix_iexscan = PMPIX_IEXSCAN
+#pragma weak pmpi_iexscan__ = PMPI_IEXSCAN
+#pragma weak pmpi_iexscan_ = PMPI_IEXSCAN
+#pragma weak pmpi_iexscan = PMPI_IEXSCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_IEXSCAN = pmpix_iexscan__
-#pragma weak pmpix_iexscan_ = pmpix_iexscan__
-#pragma weak pmpix_iexscan = pmpix_iexscan__
+#pragma weak PMPI_IEXSCAN = pmpi_iexscan__
+#pragma weak pmpi_iexscan_ = pmpi_iexscan__
+#pragma weak pmpi_iexscan = pmpi_iexscan__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_IEXSCAN = pmpix_iexscan_
-#pragma weak pmpix_iexscan__ = pmpix_iexscan_
-#pragma weak pmpix_iexscan = pmpix_iexscan_
+#pragma weak PMPI_IEXSCAN = pmpi_iexscan_
+#pragma weak pmpi_iexscan__ = pmpi_iexscan_
+#pragma weak pmpi_iexscan = pmpi_iexscan_
 #else
-#pragma weak PMPIX_IEXSCAN = pmpix_iexscan
-#pragma weak pmpix_iexscan__ = pmpix_iexscan
-#pragma weak pmpix_iexscan_ = pmpix_iexscan
+#pragma weak PMPI_IEXSCAN = pmpi_iexscan
+#pragma weak pmpi_iexscan__ = pmpi_iexscan
+#pragma weak pmpi_iexscan_ = pmpi_iexscan
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_iexscan_ PMPIX_IEXSCAN
+#define mpi_iexscan_ PMPI_IEXSCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_iexscan_ pmpix_iexscan__
+#define mpi_iexscan_ pmpi_iexscan__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_iexscan_ pmpix_iexscan
+#define mpi_iexscan_ pmpi_iexscan
 #else
-#define mpix_iexscan_ pmpix_iexscan_
+#define mpi_iexscan_ pmpi_iexscan_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Iexscan
-#define MPIX_Iexscan PMPIX_Iexscan 
+#undef MPI_Iexscan
+#define MPI_Iexscan PMPI_Iexscan 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_iexscan_ MPIX_IEXSCAN
+#define mpi_iexscan_ MPI_IEXSCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_iexscan_ mpix_iexscan__
+#define mpi_iexscan_ mpi_iexscan__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_iexscan_ mpix_iexscan
+#define mpi_iexscan_ mpi_iexscan
 /* Else leave name alone */
 #endif
 
@@ -184,6 +184,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_iexscan( void*, void*, MPI_Fint *, MPI
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_iexscan_ ( void*v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *ierr ){
-    *ierr = MPIX_Iexscan( v1, v2, *v3, (MPI_Datatype)(*v4), *v5, (MPI_Comm)(*v6), (MPI_Request *)(v7) );
+FORT_DLL_SPEC void FORT_CALL mpi_iexscan_ ( void*v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *ierr ){
+    *ierr = MPI_Iexscan( v1, v2, (int)*v3, (MPI_Datatype)(*v4), (MPI_Op)*v5, (MPI_Comm)(*v6), (MPI_Request *)(v7) );
 }

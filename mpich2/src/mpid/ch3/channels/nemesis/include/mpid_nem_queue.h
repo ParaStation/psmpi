@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2006 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -14,11 +14,6 @@
 #include "mpid_nem_atomics.h"
 
 int MPID_nem_network_poll(int in_blocking_progress);
-
-#define MPID_nem_dump_cell_mpich2(cell, index)  MPID_nem_dump_cell_mpich2__((cell),(index),__FILE__,__LINE__) 
-
-void MPID_nem_dump_cell_mpich2__( MPID_nem_cell_ptr_t cell, int, char* ,int);
-void MPID_nem_dump_cell_mpich( MPID_nem_cell_ptr_t cell, int);
 
 /* Assertion macros for nemesis queues.  We don't use the normal
  * assertion macros because we don't usually want to assert several

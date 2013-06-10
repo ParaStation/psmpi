@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -85,7 +85,7 @@ int MPIX_Mutex_unlock(MPIX_Mutex hdl, int mutex, int proc)
         int p = (rank + i) % nproc;
         if (buf[p] == 1) {
             debug_print("notifying %d [proc = %d, mutex = %d]\n", p, proc, mutex);
-            MPI_Send(NULL, 0, MPI_BYTE, p, MPI_MUTEX_TAG + mutex, hdl->comm);
+            MPI_Send(NULL, 0, MPI_BYTE, p, MPIX_MUTEX_TAG + mutex, hdl->comm);
             break;
         }
     }

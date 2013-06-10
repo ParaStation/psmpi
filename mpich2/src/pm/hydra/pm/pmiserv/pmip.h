@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -33,7 +33,6 @@ struct HYD_pmcd_pmip {
         } pmi_id_map;
 
         int global_process_count;
-        char *jobid;
 
         /* PMI */
         char *pmi_fd;
@@ -75,7 +74,7 @@ struct HYD_pmcd_pmip {
         int proxy_core_count;
         int proxy_process_count;
 
-        char *spawner_kvs_name;
+        char *spawner_kvsname;
         struct HYD_pmcd_pmi_kvs *kvs;   /* Node-level KVS space for node attributes */
 
         char **ckpoint_prefix_list;

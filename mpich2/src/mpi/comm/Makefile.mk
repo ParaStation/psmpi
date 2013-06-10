@@ -10,8 +10,11 @@ mpi_sources +=                       \
     src/mpi/comm/comm_create.c       \
     src/mpi/comm/comm_create_group.c \
     src/mpi/comm/comm_dup.c          \
+    src/mpi/comm/comm_dup_with_info.c \
     src/mpi/comm/comm_free.c         \
     src/mpi/comm/comm_get_name.c     \
+    src/mpi/comm/comm_get_info.c     \
+    src/mpi/comm/comm_set_info.c     \
     src/mpi/comm/comm_group.c        \
     src/mpi/comm/comm_idup.c         \
     src/mpi/comm/comm_rank.c         \

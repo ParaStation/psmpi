@@ -33,10 +33,10 @@
 
 MPIX_Comm_reenable_anysource - Re-enable the ability to post receives using MPI_ANY_SOURCE on the communicator 
 
-Input Parameter:
+Input Parameters:
 . comm - Communicator (handle)
 
-Output Parameter:
+Output Parameters:
 . failed_group - Group of failed processes communicator (handle)
 
 Notes:
@@ -109,8 +109,8 @@ int MPIX_Comm_reenable_anysource(MPI_Comm comm, MPI_Group *failed_group)
 #   ifdef HAVE_ERROR_CHECKING
     {
 	mpi_errno = MPIR_Err_create_code(
-	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_comm_reenable_anysource",
-	    "**mpi_comm_reenable_anysource %C %p", comm, failed_group);
+	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpix_comm_reenable_anysource",
+	    "**mpix_comm_reenable_anysource %C %p", comm, failed_group);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

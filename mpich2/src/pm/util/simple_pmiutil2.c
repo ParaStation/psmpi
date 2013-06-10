@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -28,7 +28,7 @@
 #include <errno.h>
 #include "simple_pmiutil2.h"
 
-/* Use the MPI error message routines from mpich2/src/include */
+/* Use the MPI error message routines from mpich/src/include */
 #include "mpibase.h"
 
 #define MAXVALLEN 1024
@@ -132,7 +132,11 @@ int PMIU_readline( int fd, char *buf, int maxlen )
 	if (nextChar == lastChar) {
 	    lastfd = fd;
 	    do {
-		n = read( fd, readbuf, sizeof(readbuf)-1 );
+                /* The size of the read buffer will always fit within 
+                   an int. */
+                /* FIXME: the read length should be the size of the buffer,
+                   not the size of the pointer to buffer */
+		n = (int)read( fd, readbuf, sizeof(readbuf)-1 );
 	    } while (n == -1 && errno == EINTR);
 	    if (n == 0) {
 		/* EOF */
@@ -172,7 +176,8 @@ int PMIU_readline( int fd, char *buf, int maxlen )
 
 int PMIU_writeline( int fd, char *buf )	
 {
-    int size, n;
+    int    n;
+    size_t size;
 
     size = strlen( buf );
     if ( size > PMIU_MAXLINE ) {
@@ -184,7 +189,10 @@ int PMIU_writeline( int fd, char *buf )
 		       buf );
     else {
 	do {
-	    n = write( fd, buf, size );
+            /* We assume that the size of any buf to be written fits
+               in an int.  For the PMI interface, this should always 
+               be true */
+	    n = (int)write( fd, buf, size );
 	} while (n == -1 && errno == EINTR);
 
 	if ( n < 0 ) {
@@ -204,8 +212,8 @@ int PMIU_writeline( int fd, char *buf )
  */
 int PMIU_parse_keyvals( char *st )
 {
-    char *p, *keystart, *valstart;
-    int  offset;
+    char   *p, *keystart, *valstart;
+    size_t  offset;
 
     if ( !st )
 	return( -1 );

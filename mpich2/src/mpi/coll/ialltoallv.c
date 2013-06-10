@@ -6,21 +6,21 @@
 
 #include "mpiimpl.h"
 
-/* -- Begin Profiling Symbol Block for routine MPIX_Ialltoallv */
+/* -- Begin Profiling Symbol Block for routine MPI_Ialltoallv */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPIX_Ialltoallv = PMPIX_Ialltoallv
+#pragma weak MPI_Ialltoallv = PMPI_Ialltoallv
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIX_Ialltoallv  MPIX_Ialltoallv
+#pragma _HP_SECONDARY_DEF PMPI_Ialltoallv  MPI_Ialltoallv
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPIX_Ialltoallv as PMPIX_Ialltoallv
+#pragma _CRI duplicate MPI_Ialltoallv as PMPI_Ialltoallv
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#undef MPIX_Ialltoallv
-#define MPIX_Ialltoallv PMPIX_Ialltoallv
+#undef MPI_Ialltoallv
+#define MPI_Ialltoallv PMPI_Ialltoallv
 
 /* any non-MPI functions go here, especially non-static ones */
 
@@ -28,7 +28,10 @@
 #define FUNCNAME MPIR_Ialltoallv_intra
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_Ialltoallv_intra(const void *sendbuf, const int *sendcounts, const int *sdispls, MPI_Datatype sendtype, void *recvbuf, const int *recvcounts, const int *rdispls, MPI_Datatype recvtype, MPID_Comm *comm_ptr, MPID_Sched_t s)
+int MPIR_Ialltoallv_intra(const void *sendbuf, const int sendcounts[], const int sdispls[],
+                          MPI_Datatype sendtype, void *recvbuf, const int recvcounts[],
+                          const int rdispls[], MPI_Datatype recvtype, MPID_Comm *comm_ptr,
+                          MPID_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
     int comm_size;
@@ -153,7 +156,10 @@ fn_fail:
 #define FUNCNAME MPIR_Ialltoallv_inter
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_Ialltoallv_inter(const void *sendbuf, const int *sendcounts, const int *sdispls, MPI_Datatype sendtype, void *recvbuf, const int *recvcounts, const int *rdispls, MPI_Datatype recvtype, MPID_Comm *comm_ptr, MPID_Sched_t s)
+int MPIR_Ialltoallv_inter(const void *sendbuf, const int sendcounts[], const int sdispls[],
+                          MPI_Datatype sendtype, void *recvbuf, const int recvcounts[],
+                          const int rdispls[], MPI_Datatype recvtype, MPID_Comm *comm_ptr,
+                          MPID_Sched_t s)
 {
 /* Intercommunicator alltoallv. We use a pairwise exchange algorithm
    similar to the one used in intracommunicator alltoallv. Since the
@@ -233,7 +239,10 @@ fn_fail:
 #define FUNCNAME MPIR_Ialltoallv_impl
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_Ialltoallv_impl(const void *sendbuf, const int *sendcounts, const int *sdispls, MPI_Datatype sendtype, void *recvbuf, const int *recvcounts, const int *rdispls, MPI_Datatype recvtype, MPID_Comm *comm_ptr, MPI_Request *request)
+int MPIR_Ialltoallv_impl(const void *sendbuf, const int sendcounts[], const int sdispls[],
+                         MPI_Datatype sendtype, void *recvbuf, const int recvcounts[],
+                         const int rdispls[], MPI_Datatype recvtype, MPID_Comm *comm_ptr,
+                         MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
     int tag = -1;
@@ -266,11 +275,11 @@ fn_fail:
 #endif /* MPICH_MPI_FROM_PMPI */
 
 #undef FUNCNAME
-#define FUNCNAME MPIX_Ialltoallv
+#define FUNCNAME MPI_Ialltoallv
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPIX_Ialltoallv - XXX description here
+MPI_Ialltoallv - XXX description here
 
 Input Parameters:
 + sendbuf - starting address of the send buffer (choice)
@@ -292,14 +301,16 @@ Output Parameters:
 
 .N Errors
 @*/
-int MPIX_Ialltoallv(const void *sendbuf, const int *sendcounts, const int *sdispls, MPI_Datatype sendtype, void *recvbuf, const int *recvcounts, const int *rdispls, MPI_Datatype recvtype, MPI_Comm comm, MPI_Request *request)
+int MPI_Ialltoallv(const void *sendbuf, const int sendcounts[], const int sdispls[],
+                   MPI_Datatype sendtype, void *recvbuf, const int recvcounts[],
+                   const int rdispls[], MPI_Datatype recvtype, MPI_Comm comm, MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIX_IALLTOALLV);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_IALLTOALLV);
 
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPIX_IALLTOALLV);
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IALLTOALLV);
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -367,7 +378,7 @@ int MPIX_Ialltoallv(const void *sendbuf, const int *sendcounts, const int *sdisp
     /* ... end of body of routine ... */
 
 fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPIX_IALLTOALLV);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IALLTOALLV);
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
@@ -377,7 +388,7 @@ fn_fail:
     {
         mpi_errno = MPIR_Err_create_code(
             mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-            "**mpix_ialltoallv", "**mpix_ialltoallv %p %p %p %D %p %p %p %D %C %p", sendbuf, sendcounts, sdispls, sendtype, recvbuf, recvcounts, rdispls, recvtype, comm, request);
+            "**mpi_ialltoallv", "**mpi_ialltoallv %p %p %p %D %p %p %p %D %C %p", sendbuf, sendcounts, sdispls, sendtype, recvbuf, recvcounts, rdispls, recvtype, comm, request);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);

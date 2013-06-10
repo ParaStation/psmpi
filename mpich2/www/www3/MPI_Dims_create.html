@@ -9,7 +9,7 @@
 Creates a division of processors in a cartesian grid 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Dims_create(int nnodes, int ndims, int *dims)
+int MPI_Dims_create(int nnodes, int ndims, int dims[])
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -18,7 +18,7 @@ int MPI_Dims_create(int nnodes, int ndims, int *dims)
 <DT><B>ndims </B><DD>number of cartesian dimensions (integer) 
 </DL>
 <P>
-<H2>In/Out Parameter</H2>
+<H2>Input/Output Parameters</H2>
 <DL><DT><B>dims </B> <DD> integer array of size  <TT>ndims</TT> specifying the number of nodes in each 
 dimension.  A value of 0 indicates that <TT>MPI_Dims_create</TT> should fill in a
 suitable value.

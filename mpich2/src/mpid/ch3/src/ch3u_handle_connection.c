@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -26,7 +26,7 @@ MPID_Group *MPIDI_Failed_procs_group = NULL;
 /*@
   MPIDI_CH3U_Handle_connection - handle connection event
 
-  Input Parameters:
+Input Parameters:
 + vc - virtual connection
 . event - connection event
 
@@ -201,7 +201,7 @@ fn_fail:
 /*@
   MPIDI_CH3U_VC_SendClose - Initiate a close on a virtual connection
   
-  Input Parameters:
+Input Parameters:
 + vc - Virtual connection to close
 - i  - rank of virtual connection within a process group (used for debugging)
 
@@ -312,11 +312,8 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	}
 	else /* (vc->state == MPIDI_VC_STATE_ACTIVE) */
         {
-	    /* FIXME: Debugging */
-	    if (vc->state != MPIDI_VC_STATE_ACTIVE) {
-		printf( "Unexpected state %s in vc %p (expecting MPIDI_VC_STATE_ACTIVE)\n", MPIDI_VC_GetStateString(vc->state), vc );
-		fflush(stdout);
-	    }
+	    if (vc->state != MPIDI_VC_STATE_ACTIVE)
+		MPIU_DBG_MSG_FMT(CH3_DISCONNECT, TYPICAL, (MPIU_DBG_FDEST, "Unexpected state %s in vc %p (rank=%d) (expecting MPIDI_VC_STATE_ACTIVE)\n", MPIDI_VC_GetStateString(vc->state), vc, vc->pg_rank ));
 	    MPIU_DBG_MSG_D(CH3_DISCONNECT,TYPICAL,
                      "received close(FALSE) from %d, moving to REMOTE_CLOSE.",
 				   vc->pg_rank);

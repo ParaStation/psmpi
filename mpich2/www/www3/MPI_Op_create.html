@@ -9,16 +9,16 @@
 Creates a user-defined combination function handle 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Op_create(MPI_User_function *function, int commute, MPI_Op *op)
+int MPI_Op_create(MPI_User_function *user_fn, int commute, MPI_Op *op)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>function </B><DD>user defined function (function) 
+<DT><B>user_fn </B><DD>user defined function (function)
 
 <DT><B>commute </B><DD>true if commutative;  false otherwise. (logical)
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>op </B> <DD> operation (handle) 
 </DL>
 <P>

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -35,7 +35,7 @@
 /*@
   MPI_Get_processor_name - Gets the name of the processor
 
-  Output Parameters:
+Output Parameters:
 + name - A unique specifier for the actual (as opposed to virtual) node. This
   must be an array of size at least 'MPI_MAX_PROCESSOR_NAME'.
 - resultlen - Length (in characters) of the name 

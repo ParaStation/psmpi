@@ -1,10 +1,10 @@
-.TH MPI_Cart_shift 3 "9/20/2012" " " "MPI"
+.TH MPI_Cart_shift 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Cart_shift \-  Returns the shifted source and destination ranks, given a  shift direction and amount 
 .SH SYNOPSIS
 .nf
-int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source, 
-                  int *dest)
+int MPI_Cart_shift(MPI_Comm comm, int direction, int disp, int *rank_source,
+                  int *rank_dest)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -19,20 +19,20 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
 .PD 1
 .PD 0
 .TP
-.B displ 
-- displacement (> 0: upwards shift, < 0: downwards shift) (integer) 
+.B disp 
+- displacement (> 0: upwards shift, < 0: downwards shift) (integer)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
-.B source 
-- rank of source process (integer) 
+.B rank_source 
+- rank of source process (integer)
 .PD 1
 .PD 0
 .TP
-.B dest 
-- rank of destination process (integer) 
+.B rank_dest 
+- rank of destination process (integer)
 .PD 1
 
 .SH NOTES

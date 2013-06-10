@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -29,18 +29,11 @@
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 void MPIR_Type_get_true_extent_impl(MPI_Datatype datatype, MPI_Aint *true_lb, MPI_Aint *true_extent)
 {
-    MPID_Datatype *datatype_ptr = NULL;
+    MPI_Count true_lb_x, true_extent_x;
 
-    MPID_Datatype_get_ptr(datatype, datatype_ptr);
-
-    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
-	*true_lb     = 0;
-	*true_extent = MPID_Datatype_get_basic_size(datatype);
-    }
-    else {
-	*true_lb     = datatype_ptr->true_lb;
-	*true_extent = datatype_ptr->true_ub - datatype_ptr->true_lb;
-    }
+    MPIR_Type_get_true_extent_x_impl(datatype, &true_lb_x, &true_extent_x);
+    *true_lb = (true_lb_x > MPIR_AINT_MAX) ? MPI_UNDEFINED : (MPI_Aint)true_lb_x;
+    *true_extent = (true_extent_x > MPIR_AINT_MAX) ? MPI_UNDEFINED : (MPI_Aint)true_extent_x;
 }
 
 #endif
@@ -53,10 +46,10 @@ void MPIR_Type_get_true_extent_impl(MPI_Datatype datatype, MPI_Aint *true_lb, MP
    MPI_Type_get_true_extent - Get the true lower bound and extent for a
      datatype
 
-   Input Parameter:
+Input Parameters:
 . datatype - datatype to get information on (handle)
 
-   Output Parameters:
+Output Parameters:
 + true_lb - true lower bound of datatype (address integer)
 - true_extent - true size of datatype (address integer)
 

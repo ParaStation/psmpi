@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -40,7 +40,7 @@ Input Parameters:
 . tag - message tag (integer) 
 - comm - communicator (handle) 
 
-Output Parameter:
+Output Parameters:
 . request - communication request (handle) 
 
 .N Fortran
@@ -55,7 +55,7 @@ Output Parameter:
 .N MPI_ERR_EXHAUSTED
 
 @*/
-int MPI_Isend(MPICH2_CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+int MPI_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	      MPI_Comm comm, MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;

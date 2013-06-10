@@ -195,6 +195,6 @@ FORT_DLL_SPEC void FORT_CALL mpi_unpack_external_ ( char *v1 FORT_MIXED_LEN(d1),
         for (li=0; li<(p-v1); li++) { p1[li] = v1[li]; }
         p1[li] = 0; 
     }
-    *ierr = MPI_Unpack_external( p1, v2, *v3, v4, v5, *v6, (MPI_Datatype)(*v7) );
+    *ierr = MPI_Unpack_external( p1, v2, *v3, v4, v5, (int)*v6, (MPI_Datatype)(*v7) );
     MPIU_Free( p1 );
 }

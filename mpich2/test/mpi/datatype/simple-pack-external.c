@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -327,7 +327,7 @@ int struct_of_basics_test(void)
     for (i = 0; i < 10; i++) {
 	blocks[i] = 2;
 	indices[i] = 2 * i * sizeofint;
-	/* This will cause MPICH2 to consider this as a blockindex. We
+	/* This will cause MPICH to consider this as a blockindex. We
 	 * need different types here. */
 	types[i] = MPI_INT;
     }

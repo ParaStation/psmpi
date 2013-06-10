@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -139,14 +139,14 @@ static void help_help_fn(void)
     printf
         ("    -nameserver                      name server information (host:port format)\n");
     printf("    -disable-auto-cleanup            don't cleanup processes on error\n");
-    printf("    -disable-hostname-propagation    let MPICH2 auto-detect the hostname\n");
+    printf("    -disable-hostname-propagation    let MPICH auto-detect the hostname\n");
     printf("    -order-nodes                     order nodes as ascending/descending cores\n");
     printf("    -localhost                       local hostname for the launching node\n");
     printf("    -usize                           universe size (SYSTEM, INFINITE, <value>)\n");
 
     printf("\n");
     printf("Please see the intructions provided at\n");
-    printf("http://wiki.mcs.anl.gov/mpich2/index.php/Using_the_Hydra_Process_Manager\n");
+    printf("http://wiki.mpich.org/mpich/index.php/Using_the_Hydra_Process_Manager\n");
     printf("for further details\n\n");
 }
 
@@ -1353,8 +1353,8 @@ static HYD_status auto_cleanup_fn(char *arg, char ***argv)
 static void hostname_propagation_help_fn(void)
 {
     printf("\n");
-    printf("-disable-hostname-propagation: Let MPICH2 auto-detect the hostname\n");
-    printf("-enable-hostname-propagation: Pass user hostnames to MPICH2 (default)\n\n");
+    printf("-disable-hostname-propagation: Let MPICH auto-detect the hostname\n");
+    printf("-enable-hostname-propagation: Pass user hostnames to MPICH (default)\n\n");
 }
 
 static HYD_status hostname_propagation_fn(char *arg, char ***argv)
@@ -1440,7 +1440,8 @@ static void usize_help_fn(void)
 {
     printf("\n");
     printf("-usize: Universe size (SYSTEM, INFINITE, <value>\n");
-    printf("   SYSTEM: Number of cores passed to mpiexec through hostfile or resource manager\n");
+    printf
+        ("   SYSTEM: Number of cores passed to mpiexec through hostfile or resource manager\n");
     printf("   INFINITE: No limit\n");
     printf("   <value>: Numeric value >= 0\n\n");
 }
@@ -1539,6 +1540,11 @@ static HYD_status set_default_values(void)
      * launch */
     if (HYD_uii_mpx_exec_list == NULL && HYD_server_info.user_global.ckpoint_prefix == NULL)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "no executable provided\n");
+
+    /* If hostname propagation is not set on the command-line, check
+     * for the environment variable */
+    if (hostname_propagation == -1)
+        MPL_env2bool("HYDRA_HOSTNAME_PROPAGATION", &hostname_propagation);
 
     /* If an interface is provided, set that */
     if (HYD_server_info.user_global.iface) {
@@ -1766,6 +1772,7 @@ HYD_status HYD_uii_mpx_get_parameters(char **t_argv)
 static struct HYD_arg_match_table match_table[] = {
     /* help options */
     {"help", help_fn, help_help_fn},
+    {"h", help_fn, help_help_fn},
 
     /* Global environment options */
     {"genv", genv_fn, genv_help_fn},

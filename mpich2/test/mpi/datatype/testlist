@@ -27,6 +27,7 @@ subarray 2
 darray-pack 1
 darray-pack 9
 # darray-pack 72
+darray-cyclic 12
 pairtype-size-extent 1
 simple-commit 1
 simple-size-extent 1
@@ -44,6 +45,8 @@ zeroblks 1
 struct-derived-zeros 1
 struct-verydeep 1
 get-elements 1
-hindexed_block 1 strict=false
-hindexed_block_contents 1 strict=false
+hindexed_block 1 mpiversion=3.0
+hindexed_block_contents 1 mpiversion=3.0
 longdouble 1
+#large-count 1 mpiversion=3.0 xfail=ticket1767
+cxx-types 1 mpiversion=3.0

@@ -190,5 +190,5 @@ FORT_DLL_SPEC void FORT_CALL mpi_scatterv_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
 #endif
     if (v5 == MPIR_F_MPI_IN_PLACE) v5 = MPI_IN_PLACE;
-    *ierr = MPI_Scatterv( v1, v2, v3, (MPI_Datatype)(*v4), v5, *v6, (MPI_Datatype)(*v7), *v8, (MPI_Comm)(*v9) );
+    *ierr = MPI_Scatterv( v1, v2, v3, (MPI_Datatype)(*v4), v5, (int)*v6, (MPI_Datatype)(*v7), (int)*v8, (MPI_Comm)(*v9) );
 }

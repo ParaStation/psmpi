@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -7,7 +7,7 @@
 
 #include "mpiimpl.h"
 
-/* mpiext.h contains the prototypes for functions to interface MPICH2
+/* mpiext.h contains the prototypes for functions to interface MPICH
    and ROMIO */
 #include "mpiext.h"
 
@@ -35,7 +35,7 @@
 /*@
    MPI_File_set_errhandler - Set the error handler for an MPI file
 
-   Input Parameters:
+Input Parameters:
 + file - MPI file (handle) 
 - errhandler - new error handler for file (handle) 
 

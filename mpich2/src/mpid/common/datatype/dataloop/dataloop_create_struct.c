@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -43,13 +43,13 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
   Dataloop_create_struct - create the dataloop representation for a
   struct datatype
 
-  Input Parameters:
+Input Parameters:
 + count - number of blocks in vector
 . blklens - number of elements in each block
 . disps - offsets of blocks from start of type in bytes
 - oldtypes - types (using handle) of datatypes on which vector is based
 
-  Output Parameters:
+Output Parameters:
 + dlp_p - pointer to address in which to place pointer to new dataloop
 - dlsz_p - pointer to address in which to place size of new dataloop
 
@@ -682,7 +682,7 @@ static int DLOOP_Dataloop_create_flattened_struct(int count,
 	MPIU_DBG_OUT(DATATYPE,"--- start of flattened type ---");
         for (i=0; i < nr_blks; i++) {
 	MPIU_DBG_OUT_FMT(DATATYPE,(MPIU_DBG_FDEST,
-				   "a[%d] = (%d, " DLOOP_OFFSET_FMT_DEC_SPEC ")\n", i,
+				   "a[%d] = (%d, " DLOOP_OFFSET_FMT_DEC_SPEC ")", i,
 				   tmp_blklens[i], tmp_disps[i]));
 	}
 	MPIU_DBG_OUT(DATATYPE,"--- end of flattened type ---");

@@ -10,9 +10,9 @@ Creates a struct datatype
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Type_struct(int count,
-                   MPICH2_CONST int blocklens[],
-                   MPICH2_CONST MPI_Aint indices[],
-                   MPICH2_CONST MPI_Datatype old_types[],
+                   const int *array_of_blocklengths,
+                   const MPI_Aint *array_of_displacements,
+                   const MPI_Datatype *array_of_types,
                    MPI_Datatype *newtype)
 </PRE>
 <H2>Input Parameters</H2>
@@ -21,15 +21,15 @@ int MPI_Type_struct(int count,
 entries in arrays array_of_types ,
 array_of_displacements  and array_of_blocklengths  
 
-<DT><B>blocklens </B><DD>number of elements in each block (array)
+<DT><B>array_of_blocklengths </B><DD>number of elements in each block (array)
 
-<DT><B>indices </B><DD>byte displacement of each block (array)
+<DT><B>array_of_displacements </B><DD>byte displacement of each block (array)
 
-<DT><B>old_types </B><DD>type of elements in each block (array 
+<DT><B>array_of_types </B><DD>type of elements in each block (array
 of handles to datatype objects) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>newtype </B> <DD> new datatype (handle) 
 </DL>
 <P>
@@ -74,10 +74,10 @@ multiple items, you should explicitly include an <TT>MPI_UB</TT> entry as the
 last member of the structure.  For example, the following code can be used
 for the structure foo
 <PRE>
-    blen[0] = 1; indices[0] = 0; oldtypes[0] = MPI_INT;
-    blen[1] = 1; indices[1] = &amp;foo.b - &amp;foo; oldtypes[1] = MPI_CHAR;
-    blen[2] = 1; indices[2] = sizeof(foo); oldtypes[2] = MPI_UB;
-    MPI_Type_struct( 3, blen, indices, oldtypes, &amp;newtype );
+    blen[0] = 1; array_of_displacements[0] = 0; oldtypes[0] = MPI_INT;
+    blen[1] = 1; array_of_displacements[1] = &amp;foo.b - &amp;foo; oldtypes[1] = MPI_CHAR;
+    blen[2] = 1; array_of_displacements[2] = sizeof(foo); oldtypes[2] = MPI_UB;
+    MPI_Type_struct( 3, blen, array_of_displacements, oldtypes, &amp;newtype );
 </PRE>
 
 <P>

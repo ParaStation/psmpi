@@ -5,7 +5,7 @@ AC_PREREQ(2.62)
 #
 
 m4_include([version.m4])
-AC_INIT([Hydra], MPICH2_VERSION_m4)
+AC_INIT([Hydra], MPICH_VERSION_m4)
 
 AC_CONFIG_AUX_DIR(confdb)
 AC_CONFIG_MACRO_DIR(confdb)
@@ -14,9 +14,17 @@ AC_CONFIG_MACRO_DIR(confdb)
 # bizarre expansion ordering warnings
 AC_CANONICAL_TARGET
 AC_ARG_PROGRAM
+
+dnl must come before LT_INIT, which AC_REQUIREs AC_PROG_CC
+dnl must also come before AC_USE_SYSTEM_EXTENSIONS
+PAC_PROG_CC
+
+# also needed by hwloc in embedded mode, must also come early for expansion
+# ordering reasons
 AC_USE_SYSTEM_EXTENSIONS
+
 # Define -D_DARWIN_C_SOURCE on OS/X to ensure that hwloc will build even if we
-# are building under MPICH2 with --enable-strict that defined _POSIX_C_SOURCE.
+# are building under MPICH with --enable-strict that defined _POSIX_C_SOURCE.
 # Some standard Darwin headers don't build correctly under a strict posix
 # environment.
 AS_CASE([$host],
@@ -36,7 +44,6 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 # Reset link flags
 PAC_RESET_LINK_FLAGS()
 
-PAC_PROG_CC
 AM_PROG_CC_C_O
 
 PAC_ARG_STRICT
@@ -66,8 +73,8 @@ PAC_CC_FUNCTION_NAME_SYMBOL
 
 # Build information
 # these values come from the m4_include above
-HYDRA_VERSION="MPICH2_VERSION_m4"
-HYDRA_RELEASE_DATE="MPICH2_RELEASE_DATE_m4"
+HYDRA_VERSION="MPICH_VERSION_m4"
+HYDRA_RELEASE_DATE="MPICH_RELEASE_DATE_m4"
 if test -z "$HYDRA_VERSION" ; then
     AC_MSG_ERROR([Version information not found. Configuration aborted.])
 fi
@@ -101,10 +108,10 @@ PAC_POP_ALL_FLAGS
 
 AC_DEFINE_UNQUOTED(HYDRA_CONFIGURE_ARGS_CLEAN,"`echo $ac_configure_args`",[Configure arguments])
 
-# Dirty hack -- If we are compiling within MPICH2, use the MPL in the
+# Dirty hack -- If we are compiling within MPICH, use the MPL in the
 # src/mpl directory. If not, use the one we checked out separately for
 # Hydra.
-if test "$FROM_MPICH2" = "yes" ; then
+if test "$FROM_MPICH" = "yes" ; then
    mpl_srcdir="../../mpl"
    mpl_dist_srcdir=
 else
@@ -164,9 +171,9 @@ fi
 #########################################################################
 AC_ARG_WITH(hydra-bss,
 	[AC_HELP_STRING([--with-hydra-bss=name],
-		[Bootstrap Server (user,ssh,rsh,fork,slurm,ll,lsf,sge,pbs,manual,persist)])],
+		[Bootstrap Server (user,ssh,rsh,fork,slurm,ll,lsf,sge,pbs,cobalt,manual,persist)])],
 	[ hydra_bss=$withval ],
-	[ hydra_bss="user,ssh,rsh,fork,slurm,ll,lsf,sge,pbs,manual,persist" ])
+	[ hydra_bss="user,ssh,rsh,fork,slurm,ll,lsf,sge,pbs,cobalt,manual,persist" ])
 AC_MSG_CHECKING(bootstrap server)
 AC_MSG_RESULT($hydra_bss)
 hydra_bss_names="`echo $hydra_bss | sed -e 's/:/ /g' -e 's/,/ /g'`"
@@ -222,6 +229,10 @@ for hydra_bss_name in ${hydra_bss_names}; do
 		    available_launchers="$available_launchers pbs"
                 fi
 		available_rmks="$available_rmks pbs"
+		;;
+	cobalt)
+		hydra_bss_external=true
+		available_rmks="$available_rmks cobalt"
 		;;
 	manual)
 		hydra_bss_external=true
@@ -349,6 +360,7 @@ m4_include([tools/topo/hwloc/hwloc/config/hwloc.m4])
 m4_include([tools/topo/hwloc/hwloc/config/hwloc_check_attributes.m4])
 m4_include([tools/topo/hwloc/hwloc/config/hwloc_check_visibility.m4])
 m4_include([tools/topo/hwloc/hwloc/config/hwloc_check_vendor.m4])
+m4_include([tools/topo/hwloc/hwloc/config/hwloc_components.m4])
 m4_include([tools/topo/hwloc/hwloc/config/hwloc_pkg.m4])
 
 have_hwloc=no

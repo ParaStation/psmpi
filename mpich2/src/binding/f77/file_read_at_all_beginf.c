@@ -186,7 +186,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_read_at_all_begin( MPI_Fint *, MPI
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_file_read_at_all_begin_ ( MPI_Fint *v1, MPI_Offset *v2, void*v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *ierr ){
 #ifdef MPI_MODE_RDONLY
-    *ierr = MPI_File_read_at_all_begin( MPI_File_f2c(*v1), *v2, v3, *v4, (MPI_Datatype)(*v5) );
+    *ierr = MPI_File_read_at_all_begin( MPI_File_f2c(*v1), (MPI_Offset)*v2, v3, (int)*v4, (MPI_Datatype)(*v5) );
 #else
 *ierr = MPI_ERR_INTERN;
 #endif

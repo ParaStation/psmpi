@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -39,6 +39,19 @@ typedef enum MPIDI_CH3I_VC_state
     MPIDI_CH3I_VC_STATE_FAILED
 }
 MPIDI_CH3I_VC_state_t;
+
+/* channel-specific fields for the VC structure */
+typedef struct MPIDI_CH3I_VC
+{
+    struct MPID_Request * sendq_head;
+    struct MPID_Request * sendq_tail;
+    MPIDI_CH3I_VC_state_t state;
+    struct MPIDU_Sock *sock;
+    struct MPIDI_CH3I_Connection * conn;
+}
+MPIDI_CH3I_VC;
+
+#define MPIDI_CH3_VC_DECL struct MPIDI_CH3I_VC ch;
 
 /*
  * MPIDI_CH3_REQUEST_DECL (additions to MPID_Request)

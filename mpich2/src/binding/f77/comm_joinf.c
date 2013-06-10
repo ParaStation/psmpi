@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_join( MPI_Fint *, MPI_Fint *, MPI_
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_comm_join_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
-    *ierr = MPI_Comm_join( *v1, (MPI_Comm *)(v2) );
+    *ierr = MPI_Comm_join( (int)*v1, (MPI_Comm *)(v2) );
 }

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -14,6 +14,7 @@
 #include "ll.h"
 #include "sge.h"
 #include "pbs.h"
+#include "cobalt.h"
 
 int HYDTI_bscd_env_is_avail(const char *env_name);
 int HYDTI_bscd_in_env_list(const char *env_name, const char *env_list[]);

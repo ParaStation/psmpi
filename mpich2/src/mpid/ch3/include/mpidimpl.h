@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -796,20 +796,6 @@ typedef struct MPIDI_VC
     MPIDI_Comm_ops_t *comm_ops;
 #endif
 
-    /* Rather than have each channel define its own fields for the 
-       channel-specific data, we provide a fixed-sized scratchpad.  Currently,
-       this has a very generous size, though this may shrink later (a channel
-       can always allocate storage and hang it off of the end).  This 
-       is necessary to allow dynamic loading of channels at MPI_Init time. */
-    /* The ssm channel needed a *huge* space for the VC.  But now that it's
-       gone, we need to determine the appropriate smaller size to use instead. */
-    /* Note also that for dynamically-loaded channels, the VCs must all be the
-       same size, so MPIDI_CH3_VC_SIZE should not be overridden when building
-       multiple channels that will be used together */
-#ifndef MPIDI_CH3_VC_SIZE
-#define MPIDI_CH3_VC_SIZE 256
-#endif
-    int32_t channel_private[MPIDI_CH3_VC_SIZE];
 # if defined(MPIDI_CH3_VC_DECL)
     MPIDI_CH3_VC_DECL
 # endif
@@ -1032,15 +1018,15 @@ extern char *MPIDI_DBG_parent_str;
 
 #define MPIDI_ERR_PRINTF(e) MPIDI_err_printf e
 
-#if defined(HAVE_CPP_VARARGS)
-#   define MPIDI_dbg_printf(level, func, fmt, args...)			\
+#if defined(HAVE_MACRO_VA_ARGS)
+#   define MPIDI_dbg_printf(level, func, fmt, ...)			\
     {									\
-    	MPIU_dbglog_printf("[%d] %s(): " fmt "\n", MPIR_Process.comm_world->rank, func, ## args);	\
+        MPIU_dbglog_printf("[%d] %s(): " fmt "\n", MPIR_Process.comm_world->rank, func, __VA_ARGS__);   \
     }
-#   define MPIDI_err_printf(func, fmt, args...)				\
+#   define MPIDI_err_printf(func, fmt, ...)				\
     {									\
-    	MPIU_Error_printf("[%d] ERROR - %s(): " fmt "\n", MPIR_Process.comm_world->rank, func, ## args);	\
-    	fflush(stdout);							\
+        MPIU_Error_printf("[%d] ERROR - %s(): " fmt "\n", MPIR_Process.comm_world->rank, func, __VA_ARGS__);    \
+        fflush(stdout);							\
     }
 #endif
 
@@ -1117,7 +1103,7 @@ int MPIDI_CH3U_Comm_FinishPending( MPID_Comm * );
  * which can optionally override any defaults already set by CH3.
  */
 
-typedef struct MPIDI_CH3U_Win_fns_s {
+typedef struct {
     int (*create)(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *, MPID_Win **);
     int (*allocate)(MPI_Aint, int, MPID_Info *, MPID_Comm *, void *, MPID_Win **);
     int (*allocate_shared)(MPI_Aint, int, MPID_Info *, MPID_Comm *, void **, MPID_Win **);
@@ -1180,6 +1166,9 @@ int MPIDI_Win_attach(MPID_Win *win, void *base, MPI_Aint size);
 int MPIDI_Win_detach(MPID_Win *win, const void *base);
 int MPIDI_Win_shared_query(MPID_Win *win_ptr, int rank, MPI_Aint *size, int *disp_unit, void *base);
 
+int MPIDI_Win_set_info(MPID_Win *win, MPID_Info *info);
+int MPIDI_Win_get_info(MPID_Win *win, MPID_Info **info_used);
+
 int MPIDI_Get_accumulate(const void *origin_addr, int origin_count,
                          MPI_Datatype origin_datatype, void *result_addr, int result_count,
                          MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
@@ -1221,10 +1210,14 @@ void *MPIDI_Alloc_mem(size_t size, MPID_Info *info_ptr);
 int MPIDI_Free_mem(void *ptr);
 
 /* internal */
+int MPIDI_SHM_Win_free(MPID_Win **);
 int MPIDI_CH3I_Release_lock(MPID_Win * win_ptr);
 int MPIDI_CH3I_Try_acquire_win_lock(MPID_Win * win_ptr, int requested_lock);
-int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC_t * vc, int source_win_ptr);
-int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t * vc, int source_win_ptr);
+int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC_t * vc, MPID_Win *win_ptr, int source_win_hdl);
+int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t * vc, MPID_Win *win_ptr, int source_win_hdl);
+int MPIDI_CH3_Start_rma_op_target(MPID_Win *win_ptr, MPIDI_CH3_Pkt_flags_t flags);
+int MPIDI_CH3_Finish_rma_op_target(MPIDI_VC_t *vc, MPID_Win *win_ptr, int is_rma_update,
+                                   MPIDI_CH3_Pkt_flags_t flags, MPI_Win source_win_handle);
 
 #define MPIDI_CH3I_DATATYPE_IS_PREDEFINED(type, predefined) \
     if ((HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) || \
@@ -1791,6 +1784,8 @@ int MPIDI_CH3_PktHandler_FOP( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
                               MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_FOPResp( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
                                   MPIDI_msg_sz_t *, MPID_Request ** );
+int MPIDI_CH3_PktHandler_Get_AccumResp( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
+                                        MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_Get( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
 			      MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_GetResp( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
@@ -1799,6 +1794,10 @@ int MPIDI_CH3_PktHandler_Lock( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
 			      MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_LockGranted( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
 				      MPIDI_msg_sz_t *, MPID_Request ** );
+int MPIDI_CH3_PktHandler_Unlock( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
+                                 MPIDI_msg_sz_t *, MPID_Request ** );
+int MPIDI_CH3_PktHandler_Flush( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
+                                MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_PtRMADone( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
 				    MPIDI_msg_sz_t *, MPID_Request ** );
 int MPIDI_CH3_PktHandler_LockPutUnlock( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *, 
@@ -1814,18 +1813,6 @@ int MPIDI_CH3_PktHandler_Close( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
 int MPIDI_CH3_PktHandler_EndCH3( MPIDI_VC_t *, MPIDI_CH3_Pkt_t *,
 				 MPIDI_msg_sz_t *, MPID_Request ** );
 
-/* PktHandler function:
-   vc  (INPUT) -- vc on which the packet was received
-   pkt (INPUT) -- pointer to packet header at beginning of receive buffer
-   buflen (I/O) -- IN: number of bytes received into receive buffer
-                   OUT: number of bytes processed by the handler function
-   req (OUTPUT) -- NULL, if the whole message has been processed by the handler
-                   function, otherwise, pointer to the receive request for this
-                   message.  The IOV will be set describing where the rest of the
-                   message should be received.
-*/
-typedef int MPIDI_CH3_PktHandler_Fcn(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
-				     MPIDI_msg_sz_t *buflen, MPID_Request **req );
 int MPIDI_CH3_PktHandler_Init( MPIDI_CH3_PktHandler_Fcn *[], int );
 
 #ifdef MPICH_DBG_OUTPUT
@@ -1891,6 +1878,9 @@ int MPIDI_CH3_ReqHandler_PutAccumRespComplete( MPIDI_VC_t *, MPID_Request *,
 int MPIDI_CH3_ReqHandler_AccumRespDerivedDTComplete( MPIDI_VC_t *, 
 						     MPID_Request *,
 						     int * );
+int MPIDI_CH3_ReqHandler_GetAccumRespComplete( MPIDI_VC_t *vc, 
+                                               MPID_Request *rreq, 
+                                               int *complete );
 int MPIDI_CH3_ReqHandler_SinglePutAccumComplete( MPIDI_VC_t *, MPID_Request *,
 						 int * );
 int MPIDI_CH3_ReqHandler_GetRespDerivedDTComplete( MPIDI_VC_t *, 
@@ -1956,5 +1946,12 @@ int MPIDI_CH3_ReqHandler_GetSendRespComplete( MPIDI_VC_t *, MPID_Request *,
 
 #endif /* MPICH_IS_THREADED */
 
-#endif /* !defined(MPICH_MPIDIMPL_H_INCLUDED) */
+#define MPIDI_CH3_GET_EAGER_THRESHOLD(eager_threshold_p, comm, vc)  \
+    do {                                                            \
+        if ((comm)->ch.eager_max_msg_sz != -1)                      \
+            *(eager_threshold_p) = (comm)->ch.eager_max_msg_sz;     \
+        else                                                        \
+            *(eager_threshold_p) = (vc)->eager_max_msg_sz;          \
+    } while (0)
 
+#endif /* !defined(MPICH_MPIDIMPL_H_INCLUDED) */

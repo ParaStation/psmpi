@@ -9,11 +9,11 @@
 Packs a datatype into contiguous memory 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Pack(MPICH2_CONST void *inbuf,
+int MPI_Pack(const void *inbuf,
              int incount,
              MPI_Datatype datatype,
              void *outbuf,
-             int outcount,
+             int outsize,
              int *position,
              MPI_Comm comm)
 </PRE>
@@ -25,16 +25,16 @@ int MPI_Pack(MPICH2_CONST void *inbuf,
 
 <DT><B>datatype </B><DD>datatype of each input data item (handle)
 
-<DT><B>outcount </B><DD>output buffer size, in bytes (non-negative integer)
+<DT><B>outsize </B><DD>output buffer size, in bytes (non-negative integer)
 
 <DT><B>comm </B><DD>communicator for packed message (handle)
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>outbuf </B> <DD> output buffer start (choice)
 </DL>
 <P>
-<H2>Input/Output Parameter</H2>
+<H2>Input/Output Parameters</H2>
 <DL><DT><B>position </B> <DD> current position in buffer, in bytes (integer)
 </DL>
 <P>

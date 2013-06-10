@@ -1,16 +1,16 @@
-.TH MPI_Type_get_attr 3 "9/20/2012" " " "MPI"
+.TH MPI_Type_get_attr 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Type_get_attr \-  Retrieves attribute value by key 
 .SH SYNOPSIS
 .nf
-int MPI_Type_get_attr(MPI_Datatype type, int type_keyval, void *attribute_val, 
+int MPI_Type_get_attr(MPI_Datatype datatype, int type_keyval, void *attribute_val,
                      int *flag)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
-.B type 
-- datatype to which the attribute is attached (handle) 
+.B datatype 
+- datatype to which the attribute is attached (handle)
 .PD 1
 .PD 0
 .TP
@@ -41,7 +41,7 @@ why.
 .SH NOTES FOR C
 Even though the 
 .I attr_value
-arguement is declared as 
+argument is declared as 
 .I void *
 , it is
 really the address of a void pointer.  See the rationale in the

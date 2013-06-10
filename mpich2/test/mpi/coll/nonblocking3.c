@@ -21,6 +21,10 @@
 /* USE_STRICT_MPI may be defined in mpitestconf.h */
 #include "mpitestconf.h"
 
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+
 static int errs = 0;
 
 /* Constants that control the high level test harness behavior. */
@@ -52,12 +56,12 @@ static int errs = 0;
         }                                                                                \
     } while (0)
 
-/* Since MPICH2 is currently the only NBC implementation in existence, just use
+/* Since MPICH is currently the only NBC implementation in existence, just use
  * this quick-and-dirty #ifdef to decide whether to test the nonblocking
  * collectives.  Eventually we can add a configure option or configure test, or
  * the MPI-3 standard will be released and these can be gated on a MPI_VERSION
  * check */
-#if !defined(USE_STRICT_MPI) && defined(MPICH2)
+#if !defined(USE_STRICT_MPI) && defined(MPICH)
 #define TEST_NBC_ROUTINES 1
 #endif
 
@@ -159,7 +163,7 @@ static void start_random_nonblocking(MPI_Comm comm, unsigned int rndnum, MPI_Req
 #define NUM_CASES (21)
     l->case_num = rand_range(rndnum, 0, NUM_CASES);
     switch (l->case_num) {
-        case 0: /* MPIX_Ibcast */
+        case 0: /* MPI_Ibcast */
             for (i = 0; i < COUNT; ++i) {
                 if (rank == 0) {
                     buf[i] = i;
@@ -168,10 +172,10 @@ static void start_random_nonblocking(MPI_Comm comm, unsigned int rndnum, MPI_Req
                     buf[i] = 0xdeadbeef;
                 }
             }
-            MPIX_Ibcast(buf, COUNT, MPI_INT, 0, comm, req);
+            MPI_Ibcast(buf, COUNT, MPI_INT, 0, comm, req);
             break;
 
-        case 1: /* MPIX_Ibcast (again, but designed to stress scatter/allgather impls) */
+        case 1: /* MPI_Ibcast (again, but designed to stress scatter/allgather impls) */
             /* FIXME fiddle with PRIME and buffer allocation s.t. PRIME is much larger (1021?) */
             buf_alias = (char *)buf;
             my_assert(COUNT*size*sizeof(int) > PRIME); /* sanity */
@@ -184,19 +188,19 @@ static void start_random_nonblocking(MPI_Comm comm, unsigned int rndnum, MPI_Req
             for (i = PRIME; i < COUNT * size * sizeof(int); ++i) {
                 buf_alias[i] = 0xbf;
             }
-            MPIX_Ibcast(buf, PRIME, MPI_SIGNED_CHAR, 0, comm, req);
+            MPI_Ibcast(buf, PRIME, MPI_SIGNED_CHAR, 0, comm, req);
             break;
 
-        case 2: /* MPIX_Ibarrier */
-            MPIX_Ibarrier(comm, req);
+        case 2: /* MPI_Ibarrier */
+            MPI_Ibarrier(comm, req);
             break;
 
-        case 3: /* MPIX_Ireduce */
+        case 3: /* MPI_Ireduce */
             for (i = 0; i < COUNT; ++i) {
                 buf[i] = rank + i;
                 recvbuf[i] = 0xdeadbeef;
             }
-            MPIX_Ireduce(buf, recvbuf, COUNT, MPI_INT, MPI_SUM, 0, comm, req);
+            MPI_Ireduce(buf, recvbuf, COUNT, MPI_INT, MPI_SUM, 0, comm, req);
             break;
 
         case 4: /* same again, use a user op and free it before the wait */
@@ -207,20 +211,20 @@ static void start_random_nonblocking(MPI_Comm comm, unsigned int rndnum, MPI_Req
                     buf[i] = rank + i;
                     recvbuf[i] = 0xdeadbeef;
                 }
-                MPIX_Ireduce(buf, recvbuf, COUNT, MPI_INT, op, 0, comm, req);
+                MPI_Ireduce(buf, recvbuf, COUNT, MPI_INT, op, 0, comm, req);
                 MPI_Op_free(&op);
             }
             break;
 
-        case 5: /* MPIX_Iallreduce */
+        case 5: /* MPI_Iallreduce */
             for (i = 0; i < COUNT; ++i) {
                 buf[i] = rank + i;
                 recvbuf[i] = 0xdeadbeef;
             }
-            MPIX_Iallreduce(buf, recvbuf, COUNT, MPI_INT, MPI_SUM, comm, req);
+            MPI_Iallreduce(buf, recvbuf, COUNT, MPI_INT, MPI_SUM, comm, req);
             break;
 
-        case 6: /* MPIX_Ialltoallv (a weak test, neither irregular nor sparse) */
+        case 6: /* MPI_Ialltoallv (a weak test, neither irregular nor sparse) */
             for (i = 0; i < size; ++i) {
                 sendcounts[i] = COUNT;
                 recvcounts[i] = COUNT;
@@ -231,15 +235,15 @@ static void start_random_nonblocking(MPI_Comm comm, unsigned int rndnum, MPI_Req
                     recvbuf[i*COUNT+j] = 0xdeadbeef;
                 }
             }
-            MPIX_Ialltoallv(buf, sendcounts, sdispls, MPI_INT, recvbuf, recvcounts, rdispls, MPI_INT, comm, req);
+            MPI_Ialltoallv(buf, sendcounts, sdispls, MPI_INT, recvbuf, recvcounts, rdispls, MPI_INT, comm, req);
             break;
 
-        case 7: /* MPIX_Igather */
+        case 7: /* MPI_Igather */
             for (i = 0; i < size*COUNT; ++i) {
                 buf[i] = rank + i;
                 recvbuf[i] = 0xdeadbeef;
             }
-            MPIX_Igather(buf, COUNT, MPI_INT, recvbuf, COUNT, MPI_INT, 0, comm, req);
+            MPI_Igather(buf, COUNT, MPI_INT, recvbuf, COUNT, MPI_INT, 0, comm, req);
             break;
 
         case 8: /* same test again, just use a dup'ed datatype and free it before the wait */
@@ -250,13 +254,13 @@ static void start_random_nonblocking(MPI_Comm comm, unsigned int rndnum, MPI_Req
                     buf[i] = rank + i;
                     recvbuf[i] = 0xdeadbeef;
                 }
-                MPIX_Igather(buf, COUNT, MPI_INT, recvbuf, COUNT, type, 0, comm, req);
+                MPI_Igather(buf, COUNT, MPI_INT, recvbuf, COUNT, type, 0, comm, req);
                 MPI_Type_free(&type); /* should cause implementations that don't refcount
                                          correctly to blow up or hang in the wait */
             }
             break;
 
-        case 9: /* MPIX_Iscatter */
+        case 9: /* MPI_Iscatter */
             for (i = 0; i < size; ++i) {
                 for (j = 0; j < COUNT; ++j) {
                     if (rank == 0)
@@ -266,10 +270,10 @@ static void start_random_nonblocking(MPI_Comm comm, unsigned int rndnum, MPI_Req
                     recvbuf[i*COUNT+j] = 0xdeadbeef;
                 }
             }
-            MPIX_Iscatter(buf, COUNT, MPI_INT, recvbuf, COUNT, MPI_INT, 0, comm, req);
+            MPI_Iscatter(buf, COUNT, MPI_INT, recvbuf, COUNT, MPI_INT, 0, comm, req);
             break;
 
-        case 10: /* MPIX_Iscatterv */
+        case 10: /* MPI_Iscatterv */
             for (i = 0; i < size; ++i) {
                 /* weak test, just test the regular case where all counts are equal */
                 sendcounts[i] = COUNT;
@@ -282,10 +286,10 @@ static void start_random_nonblocking(MPI_Comm comm, unsigned int rndnum, MPI_Req
                     recvbuf[i*COUNT+j] = 0xdeadbeef;
                 }
             }
-            MPIX_Iscatterv(buf, sendcounts, sdispls, MPI_INT, recvbuf, COUNT, MPI_INT, 0, comm, req);
+            MPI_Iscatterv(buf, sendcounts, sdispls, MPI_INT, recvbuf, COUNT, MPI_INT, 0, comm, req);
             break;
 
-        case 11: /* MPIX_Ireduce_scatter */
+        case 11: /* MPI_Ireduce_scatter */
             for (i = 0; i < size; ++i) {
                 recvcounts[i] = COUNT;
                 for (j = 0; j < COUNT; ++j) {
@@ -293,20 +297,20 @@ static void start_random_nonblocking(MPI_Comm comm, unsigned int rndnum, MPI_Req
                     recvbuf[i*COUNT+j] = 0xdeadbeef;
                 }
             }
-            MPIX_Ireduce_scatter(buf, recvbuf, recvcounts, MPI_INT, MPI_SUM, comm, req);
+            MPI_Ireduce_scatter(buf, recvbuf, recvcounts, MPI_INT, MPI_SUM, comm, req);
             break;
 
-        case 12: /* MPIX_Ireduce_scatter_block */
+        case 12: /* MPI_Ireduce_scatter_block */
             for (i = 0; i < size; ++i) {
                 for (j = 0; j < COUNT; ++j) {
                     buf[i*COUNT+j] = rank + i;
                     recvbuf[i*COUNT+j] = 0xdeadbeef;
                 }
             }
-            MPIX_Ireduce_scatter_block(buf, recvbuf, COUNT, MPI_INT, MPI_SUM, comm, req);
+            MPI_Ireduce_scatter_block(buf, recvbuf, COUNT, MPI_INT, MPI_SUM, comm, req);
             break;
 
-        case 13: /* MPIX_Igatherv */
+        case 13: /* MPI_Igatherv */
             for (i = 0; i < size*COUNT; ++i) {
                 buf[i] = 0xdeadbeef;
                 recvbuf[i] = 0xdeadbeef;
@@ -318,28 +322,28 @@ static void start_random_nonblocking(MPI_Comm comm, unsigned int rndnum, MPI_Req
                 recvcounts[i] = COUNT;
                 rdispls[i] = i * COUNT;
             }
-            MPIX_Igatherv(buf, COUNT, MPI_INT, recvbuf, recvcounts, rdispls, MPI_INT, 0, comm, req);
+            MPI_Igatherv(buf, COUNT, MPI_INT, recvbuf, recvcounts, rdispls, MPI_INT, 0, comm, req);
             break;
 
-        case 14: /* MPIX_Ialltoall */
+        case 14: /* MPI_Ialltoall */
             for (i = 0; i < size; ++i) {
                 for (j = 0; j < COUNT; ++j) {
                     buf[i*COUNT+j] = rank + (i * j);
                     recvbuf[i*COUNT+j] = 0xdeadbeef;
                 }
             }
-            MPIX_Ialltoall(buf, COUNT, MPI_INT, recvbuf, COUNT, MPI_INT, comm, req);
+            MPI_Ialltoall(buf, COUNT, MPI_INT, recvbuf, COUNT, MPI_INT, comm, req);
             break;
 
-        case 15: /* MPIX_Iallgather */
+        case 15: /* MPI_Iallgather */
             for (i = 0; i < size*COUNT; ++i) {
                 buf[i] = rank + i;
                 recvbuf[i] = 0xdeadbeef;
             }
-            MPIX_Iallgather(buf, COUNT, MPI_INT, recvbuf, COUNT, MPI_INT, comm, req);
+            MPI_Iallgather(buf, COUNT, MPI_INT, recvbuf, COUNT, MPI_INT, comm, req);
             break;
 
-        case 16: /* MPIX_Iallgatherv */
+        case 16: /* MPI_Iallgatherv */
             for (i = 0; i < size; ++i) {
                 for (j = 0; j < COUNT; ++j) {
                     recvbuf[i*COUNT+j] = 0xdeadbeef;
@@ -349,26 +353,26 @@ static void start_random_nonblocking(MPI_Comm comm, unsigned int rndnum, MPI_Req
             }
             for (i = 0; i < COUNT; ++i)
                 buf[i] = rank + i;
-            MPIX_Iallgatherv(buf, COUNT, MPI_INT, recvbuf, recvcounts, rdispls, MPI_INT, comm, req);
+            MPI_Iallgatherv(buf, COUNT, MPI_INT, recvbuf, recvcounts, rdispls, MPI_INT, comm, req);
             break;
 
-        case 17: /* MPIX_Iscan */
+        case 17: /* MPI_Iscan */
             for (i = 0; i < COUNT; ++i) {
                 buf[i] = rank + i;
                 recvbuf[i] = 0xdeadbeef;
             }
-            MPIX_Iscan(buf, recvbuf, COUNT, MPI_INT, MPI_SUM, comm, req);
+            MPI_Iscan(buf, recvbuf, COUNT, MPI_INT, MPI_SUM, comm, req);
             break;
 
-        case 18: /* MPIX_Iexscan */
+        case 18: /* MPI_Iexscan */
             for (i = 0; i < COUNT; ++i) {
                 buf[i] = rank + i;
                 recvbuf[i] = 0xdeadbeef;
             }
-            MPIX_Iexscan(buf, recvbuf, COUNT, MPI_INT, MPI_SUM, comm, req);
+            MPI_Iexscan(buf, recvbuf, COUNT, MPI_INT, MPI_SUM, comm, req);
             break;
 
-        case 19: /* MPIX_Ialltoallw (a weak test, neither irregular nor sparse) */
+        case 19: /* MPI_Ialltoallw (a weak test, neither irregular nor sparse) */
             for (i = 0; i < size; ++i) {
                 sendcounts[i] = COUNT;
                 recvcounts[i] = COUNT;
@@ -381,7 +385,7 @@ static void start_random_nonblocking(MPI_Comm comm, unsigned int rndnum, MPI_Req
                     recvbuf[i*COUNT+j] = 0xdeadbeef;
                 }
             }
-            MPIX_Ialltoallw(buf, sendcounts, sdispls, sendtypes, recvbuf, recvcounts, rdispls, recvtypes, comm, req);
+            MPI_Ialltoallw(buf, sendcounts, sdispls, sendtypes, recvbuf, recvcounts, rdispls, recvtypes, comm, req);
             break;
 
         case 20: /* basic pt2pt MPI_Isend/MPI_Irecv pairing */
@@ -425,7 +429,7 @@ static void check_after_completion(struct laundry *l)
 
     /* these cases all correspond to cases in start_random_nonblocking */
     switch (l->case_num) {
-        case 0: /* MPIX_Ibcast */
+        case 0: /* MPI_Ibcast */
             for (i = 0; i < COUNT; ++i) {
                 if (buf[i] != i)
                     printf("buf[%d]=%d i=%d\n", i, buf[i], i);
@@ -433,7 +437,7 @@ static void check_after_completion(struct laundry *l)
             }
             break;
 
-        case 1: /* MPIX_Ibcast (again, but designed to stress scatter/allgather impls) */
+        case 1: /* MPI_Ibcast (again, but designed to stress scatter/allgather impls) */
             for (i = 0; i < PRIME; ++i) {
                 if (buf_alias[i] != i)
                     printf("buf_alias[%d]=%d i=%d\n", i, buf_alias[i], i);
@@ -441,11 +445,11 @@ static void check_after_completion(struct laundry *l)
             }
             break;
 
-        case 2: /* MPIX_Ibarrier */
+        case 2: /* MPI_Ibarrier */
             /* nothing to check */
             break;
 
-        case 3: /* MPIX_Ireduce */
+        case 3: /* MPI_Ireduce */
             if (rank == 0) {
                 for (i = 0; i < COUNT; ++i) {
                     if (recvbuf[i] != ((size * (size-1) / 2) + (i * size)))
@@ -465,7 +469,7 @@ static void check_after_completion(struct laundry *l)
             }
             break;
 
-        case 5: /* MPIX_Iallreduce */
+        case 5: /* MPI_Iallreduce */
             for (i = 0; i < COUNT; ++i) {
                 if (recvbuf[i] != ((size * (size-1) / 2) + (i * size)))
                     printf("got recvbuf[%d]=%d, expected %d\n", i, recvbuf[i], ((size * (size-1) / 2) + (i * size)));
@@ -473,7 +477,7 @@ static void check_after_completion(struct laundry *l)
             }
             break;
 
-        case 6: /* MPIX_Ialltoallv (a weak test, neither irregular nor sparse) */
+        case 6: /* MPI_Ialltoallv (a weak test, neither irregular nor sparse) */
             for (i = 0; i < size; ++i) {
                 for (j = 0; j < COUNT; ++j) {
                     /*printf("recvbuf[%d*COUNT+%d]=%d, expecting %d\n", i, j, recvbuf[i*COUNT+j], (i + (rank * j)));*/
@@ -482,7 +486,7 @@ static void check_after_completion(struct laundry *l)
             }
             break;
 
-        case 7: /* MPIX_Igather */
+        case 7: /* MPI_Igather */
             if (rank == 0) {
                 for (i = 0; i < size; ++i) {
                     for (j = 0; j < COUNT; ++j) {
@@ -512,7 +516,7 @@ static void check_after_completion(struct laundry *l)
             }
             break;
 
-        case 9: /* MPIX_Iscatter */
+        case 9: /* MPI_Iscatter */
             for (j = 0; j < COUNT; ++j) {
                 my_assert(recvbuf[j] == rank + j);
             }
@@ -524,7 +528,7 @@ static void check_after_completion(struct laundry *l)
             }
             break;
 
-        case 10: /* MPIX_Iscatterv */
+        case 10: /* MPI_Iscatterv */
             for (j = 0; j < COUNT; ++j) {
                 my_assert(recvbuf[j] == rank + j);
             }
@@ -542,7 +546,7 @@ static void check_after_completion(struct laundry *l)
             }
             break;
 
-        case 11: /* MPIX_Ireduce_scatter */
+        case 11: /* MPI_Ireduce_scatter */
             for (j = 0; j < COUNT; ++j) {
                 my_assert(recvbuf[j] == (size * rank + ((size - 1) * size) / 2));
             }
@@ -554,7 +558,7 @@ static void check_after_completion(struct laundry *l)
             }
             break;
 
-        case 12: /* MPIX_Ireduce_scatter_block */
+        case 12: /* MPI_Ireduce_scatter_block */
             for (j = 0; j < COUNT; ++j) {
                 my_assert(recvbuf[j] == (size * rank + ((size - 1) * size) / 2));
             }
@@ -566,7 +570,7 @@ static void check_after_completion(struct laundry *l)
             }
             break;
 
-        case 13: /* MPIX_Igatherv */
+        case 13: /* MPI_Igatherv */
             if (rank == 0) {
                 for (i = 0; i < size; ++i) {
                     for (j = 0; j < COUNT; ++j) {
@@ -581,7 +585,7 @@ static void check_after_completion(struct laundry *l)
             }
             break;
 
-        case 14: /* MPIX_Ialltoall */
+        case 14: /* MPI_Ialltoall */
             for (i = 0; i < size; ++i) {
                 for (j = 0; j < COUNT; ++j) {
                     /*printf("recvbuf[%d*COUNT+%d]=%d, expecting %d\n", i, j, recvbuf[i*COUNT+j], (i + (i * j)));*/
@@ -590,7 +594,7 @@ static void check_after_completion(struct laundry *l)
             }
             break;
 
-        case 15: /* MPIX_Iallgather */
+        case 15: /* MPI_Iallgather */
             for (i = 0; i < size; ++i) {
                 for (j = 0; j < COUNT; ++j) {
                     my_assert(recvbuf[i*COUNT+j] == i + j);
@@ -598,7 +602,7 @@ static void check_after_completion(struct laundry *l)
             }
             break;
 
-        case 16: /* MPIX_Iallgatherv */
+        case 16: /* MPI_Iallgatherv */
             for (i = 0; i < size; ++i) {
                 for (j = 0; j < COUNT; ++j) {
                     my_assert(recvbuf[i*COUNT+j] == i + j);
@@ -606,13 +610,13 @@ static void check_after_completion(struct laundry *l)
             }
             break;
 
-        case 17: /* MPIX_Iscan */
+        case 17: /* MPI_Iscan */
             for (i = 0; i < COUNT; ++i) {
                 my_assert(recvbuf[i] == ((rank * (rank+1) / 2) + (i * (rank + 1))));
             }
             break;
 
-        case 18: /* MPIX_Iexscan */
+        case 18: /* MPI_Iexscan */
             for (i = 0; i < COUNT; ++i) {
                 if (rank == 0)
                     my_assert(recvbuf[i] == 0xdeadbeef);
@@ -621,7 +625,7 @@ static void check_after_completion(struct laundry *l)
             }
             break;
 
-        case 19: /* MPIX_Ialltoallw (a weak test, neither irregular nor sparse) */
+        case 19: /* MPI_Ialltoallw (a weak test, neither irregular nor sparse) */
             for (i = 0; i < size; ++i) {
                 for (j = 0; j < COUNT; ++j) {
                     /*printf("recvbuf[%d*COUNT+%d]=%d, expecting %d\n", i, j, recvbuf[i*COUNT+j], (i + (rank * j)));*/

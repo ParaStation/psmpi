@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -33,8 +33,8 @@ extern void MPIDI_CH3_RMA_InitInstr(void);
  *       thread/process; free in Finalize handler.  Option to use for
  *       single-threaded to avoid thread overheads)
  * Possible interface
- *    int MPIDI_RMAListAlloc(MPIDI_RMA_ops **a,MPID_Win *win)
- *    int MPIDI_RMAListFree(MPIDI_RMA_ops *a, MPID_Win *win)
+ *    int MPIDI_RMAListAlloc(MPIDI_RMA_Op_t **a,MPID_Win *win)
+ *    int MPIDI_RMAListFree(MPIDI_RMA_Op_t *a, MPID_Win *win)
  *    return value is error code (e.g., allocation failure).
  */
 
@@ -51,7 +51,10 @@ int MPIDI_Win_free(MPID_Win **win_ptr)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_WIN_FREE);
         
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_WIN_FREE);
-        
+
+    MPIU_ERR_CHKANDJUMP((*win_ptr)->epoch_state != MPIDI_EPOCH_NONE,
+                        mpi_errno, MPI_ERR_RMA_SYNC, "**rmasync");
+
     comm_ptr = (*win_ptr)->comm_ptr;
     MPIU_INSTR_DURATION_START(winfree_rs);
     mpi_errno = MPIR_Reduce_scatter_block_impl((*win_ptr)->pt_rma_puts_accs, 
@@ -86,6 +89,7 @@ int MPIDI_Win_free(MPID_Win **win_ptr)
     mpi_errno = MPIR_Comm_free_impl(comm_ptr);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
+    MPIU_Free((*win_ptr)->targets);
     MPIU_Free((*win_ptr)->base_addrs);
     MPIU_Free((*win_ptr)->sizes);
     MPIU_Free((*win_ptr)->disp_units);
@@ -93,7 +97,7 @@ int MPIDI_Win_free(MPID_Win **win_ptr)
     MPIU_Free((*win_ptr)->pt_rma_puts_accs);
 
     /* Free the attached buffer for windows created with MPI_Win_allocate() */
-    if ((*win_ptr)->create_flavor == MPIX_WIN_FLAVOR_ALLOCATE && (*win_ptr)->size > 0) {
+    if ((*win_ptr)->create_flavor == MPI_WIN_FLAVOR_ALLOCATE && (*win_ptr)->size > 0) {
       MPIU_Free((*win_ptr)->base);
     }
 
@@ -112,6 +116,63 @@ int MPIDI_Win_free(MPID_Win **win_ptr)
 
 
 #undef FUNCNAME
+#define FUNCNAME MPIDI_SHM_Win_free
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_SHM_Win_free(MPID_Win **win_ptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_SHM_WIN_FREE);
+
+    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_SHM_WIN_FREE);
+
+    /* Free memory allocated by the default shared memory window
+       implementation.  Note that this implementation works only for
+       MPI_COMM_SELF and does not map a shared segment. */
+
+    MPIU_Free((*win_ptr)->base);
+    MPIU_Free((*win_ptr)->shm_base_addrs);
+
+    mpi_errno = MPIDI_Win_free(win_ptr);
+    if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+
+ fn_exit:
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_SHM_WIN_FREE);
+    return mpi_errno;
+    /* --BEGIN ERROR HANDLING-- */
+ fn_fail:
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
+}
+
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_Win_shared_query
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_Win_shared_query(MPID_Win *win_ptr, int target_rank, MPI_Aint *size,
+                           int *disp_unit, void *baseptr)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_WIN_SHARED_QUERY);
+    MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_WIN_SHARED_QUERY);
+
+    *(void**) baseptr = win_ptr->shm_base_addrs[0];
+    *size             = win_ptr->size;
+    *disp_unit        = win_ptr->disp_unit;
+
+ fn_exit:
+    MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_WIN_SHARED_QUERY);
+    return mpi_errno;
+    /* --BEGIN ERROR HANDLING-- */
+ fn_fail:
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
+}
+
+
+#undef FUNCNAME
 #define FUNCNAME MPIDI_Put
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
@@ -121,53 +182,69 @@ int MPIDI_Put(const void *origin_addr, int origin_count, MPI_Datatype
 {
     int mpi_errno = MPI_SUCCESS;
     int dt_contig ATTRIBUTE((unused)), rank, predefined;
-    MPIDI_RMA_ops *new_ptr;
     MPID_Datatype *dtp;
     MPI_Aint dt_true_lb ATTRIBUTE((unused));
     MPIDI_msg_sz_t data_sz;
-    MPIU_CHKPMEM_DECL(1);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_PUT);
         
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_PUT);
 
+    if (target_rank == MPI_PROC_NULL) {
+        goto fn_exit;
+    }
+
+    if (win_ptr->epoch_state == MPIDI_EPOCH_NONE && win_ptr->fence_issued) {
+        win_ptr->epoch_state = MPIDI_EPOCH_FENCE;
+    }
+
+    MPIU_ERR_CHKANDJUMP(win_ptr->epoch_state == MPIDI_EPOCH_NONE,
+                        mpi_errno, MPI_ERR_RMA_SYNC, "**rmasync");
+
     MPIDI_Datatype_get_info(origin_count, origin_datatype,
 			    dt_contig, data_sz, dtp,dt_true_lb); 
     
-    if ((data_sz == 0) || (target_rank == MPI_PROC_NULL))
-    {
+    if (data_sz == 0) {
 	goto fn_exit;
     }
 
     rank = win_ptr->myrank;
     
     /* If the put is a local operation, do it here */
-    if (target_rank == rank)
+    if (target_rank == rank || win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED)
     {
-	mpi_errno = MPIR_Localcopy(origin_addr, origin_count, origin_datatype,
-				   (char *) win_ptr->base + win_ptr->disp_unit *
-				   target_disp, target_count, target_datatype); 
+        void *base;
+        int disp_unit;
+
+        if (win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
+            base = win_ptr->shm_base_addrs[target_rank];
+            disp_unit = win_ptr->disp_units[target_rank];
+        }
+        else {
+            base = win_ptr->base;
+            disp_unit = win_ptr->disp_unit;
+        }
+
+        mpi_errno = MPIR_Localcopy(origin_addr, origin_count, origin_datatype,
+                                   (char *) base + disp_unit * target_disp,
+                                   target_count, target_datatype);
         if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     }
     else
     {
+        MPIDI_RMA_Ops_list_t *ops_list = MPIDI_CH3I_RMA_Get_ops_list(win_ptr, target_rank);
+        MPIDI_RMA_Op_t *new_ptr = NULL;
+
 	/* queue it up */
-	/* FIXME: For short operations, should we use a (per-thread) pool? */
-	MPIU_INSTR_DURATION_START(rmaqueue_alloc);
-	MPIU_CHKPMEM_MALLOC(new_ptr, MPIDI_RMA_ops *, sizeof(MPIDI_RMA_ops), 
-			    mpi_errno, "RMA operation entry");
-	MPIU_INSTR_DURATION_END(rmaqueue_alloc);
-	if (win_ptr->rma_ops_list_tail) 
-	    win_ptr->rma_ops_list_tail->next = new_ptr;
-	else
-	    win_ptr->rma_ops_list_head = new_ptr;
-	win_ptr->rma_ops_list_tail = new_ptr;
+        MPIU_INSTR_DURATION_START(rmaqueue_alloc);
+        mpi_errno = MPIDI_CH3I_RMA_Ops_alloc_tail(ops_list, &new_ptr);
+        MPIU_INSTR_DURATION_END(rmaqueue_alloc);
+        if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
 	MPIU_INSTR_DURATION_START(rmaqueue_set);
 	/* FIXME: For contig and very short operations, use a streamlined op */
-	new_ptr->next = NULL;  
 	new_ptr->type = MPIDI_RMA_PUT;
         /* Cast away const'ness for the origin address, as the
-         * MPIDI_RMA_ops structure is used for both PUT and GET like
+         * MPIDI_RMA_Op_t structure is used for both PUT and GET like
          * operations */
 	new_ptr->origin_addr = (void *) origin_addr;
 	new_ptr->origin_count = origin_count;
@@ -200,7 +277,6 @@ int MPIDI_Put(const void *origin_addr, int origin_count, MPI_Datatype
 
     /* --BEGIN ERROR HANDLING-- */
   fn_fail:
-    MPIU_CHKPMEM_REAP();
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
@@ -219,49 +295,64 @@ int MPIDI_Get(void *origin_addr, int origin_count, MPI_Datatype
     MPIDI_msg_sz_t data_sz;
     int dt_contig ATTRIBUTE((unused)), rank, predefined;
     MPI_Aint dt_true_lb ATTRIBUTE((unused));
-    MPIDI_RMA_ops *new_ptr;
     MPID_Datatype *dtp;
-    MPIU_CHKPMEM_DECL(1);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_GET);
         
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_GET);
 
+    if (target_rank == MPI_PROC_NULL) {
+        goto fn_exit;
+    }
+
+    if (win_ptr->epoch_state == MPIDI_EPOCH_NONE && win_ptr->fence_issued) {
+        win_ptr->epoch_state = MPIDI_EPOCH_FENCE;
+    }
+
+    MPIU_ERR_CHKANDJUMP(win_ptr->epoch_state == MPIDI_EPOCH_NONE,
+                        mpi_errno, MPI_ERR_RMA_SYNC, "**rmasync");
+
     MPIDI_Datatype_get_info(origin_count, origin_datatype,
 			    dt_contig, data_sz, dtp, dt_true_lb); 
 
-    if ((data_sz == 0) || (target_rank == MPI_PROC_NULL))
-    {
+    if (data_sz == 0) {
 	goto fn_exit;
     }
 
     rank = win_ptr->myrank;
     
     /* If the get is a local operation, do it here */
-    if (target_rank == rank)
+    if (target_rank == rank || win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED)
     {
-	mpi_errno = MPIR_Localcopy((char *) win_ptr->base +
-				   win_ptr->disp_unit * target_disp,
-				   target_count, target_datatype,
-				   origin_addr, origin_count,
-				   origin_datatype);  
+        void *base;
+        int disp_unit;
+
+        if (win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
+            base = win_ptr->shm_base_addrs[target_rank];
+            disp_unit = win_ptr->disp_units[target_rank];
+        }
+        else {
+            base = win_ptr->base;
+            disp_unit = win_ptr->disp_unit;
+        }
+
+        mpi_errno = MPIR_Localcopy((char *) base + disp_unit * target_disp,
+                                   target_count, target_datatype, origin_addr,
+                                   origin_count, origin_datatype);
         if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
     }
     else
     {
+        MPIDI_RMA_Ops_list_t *ops_list = MPIDI_CH3I_RMA_Get_ops_list(win_ptr, target_rank);
+        MPIDI_RMA_Op_t *new_ptr = NULL;
+
 	/* queue it up */
-	MPIU_INSTR_DURATION_START(rmaqueue_alloc);
-	MPIU_CHKPMEM_MALLOC(new_ptr, MPIDI_RMA_ops *, sizeof(MPIDI_RMA_ops), 
-			    mpi_errno, "RMA operation entry");
-	MPIU_INSTR_DURATION_END(rmaqueue_alloc);
-	if (win_ptr->rma_ops_list_tail) 
-	    win_ptr->rma_ops_list_tail->next = new_ptr;
-	else
-	    win_ptr->rma_ops_list_head = new_ptr;
-	win_ptr->rma_ops_list_tail = new_ptr;
-            
+        MPIU_INSTR_DURATION_START(rmaqueue_alloc);
+        mpi_errno = MPIDI_CH3I_RMA_Ops_alloc_tail(ops_list, &new_ptr);
+        MPIU_INSTR_DURATION_END(rmaqueue_alloc);
+        if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
+
 	MPIU_INSTR_DURATION_START(rmaqueue_set);
 	/* FIXME: For contig and very short operations, use a streamlined op */
-	new_ptr->next = NULL;  
 	new_ptr->type = MPIDI_RMA_GET;
 	new_ptr->origin_addr = origin_addr;
 	new_ptr->origin_count = origin_count;
@@ -294,7 +385,6 @@ int MPIDI_Get(void *origin_addr, int origin_count, MPI_Datatype
 
     /* --BEGIN ERROR HANDLING-- */
   fn_fail:
-    MPIU_CHKPMEM_REAP();
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
@@ -314,19 +404,27 @@ int MPIDI_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype
     MPIDI_msg_sz_t data_sz;
     int dt_contig ATTRIBUTE((unused)), rank, origin_predefined, target_predefined;
     MPI_Aint dt_true_lb ATTRIBUTE((unused));
-    MPIDI_RMA_ops *new_ptr;
     MPID_Datatype *dtp;
     MPIU_CHKLMEM_DECL(2);
-    MPIU_CHKPMEM_DECL(1);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_ACCUMULATE);
     
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_ACCUMULATE);
 
+    if (target_rank == MPI_PROC_NULL) {
+        goto fn_exit;
+    }
+
+    if (win_ptr->epoch_state == MPIDI_EPOCH_NONE && win_ptr->fence_issued) {
+        win_ptr->epoch_state = MPIDI_EPOCH_FENCE;
+    }
+
+    MPIU_ERR_CHKANDJUMP(win_ptr->epoch_state == MPIDI_EPOCH_NONE,
+                        mpi_errno, MPI_ERR_RMA_SYNC, "**rmasync");
+
     MPIDI_Datatype_get_info(origin_count, origin_datatype,
 			    dt_contig, data_sz, dtp, dt_true_lb);  
     
-    if ((data_sz == 0) || (target_rank == MPI_PROC_NULL))
-    {
+    if (data_sz == 0) {
 	goto fn_exit;
     }
 
@@ -336,16 +434,30 @@ int MPIDI_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype
     MPIDI_CH3I_DATATYPE_IS_PREDEFINED(target_datatype, target_predefined);
 
     /* Do =! rank first (most likely branch?) */
-    if (target_rank == rank)
+    if (target_rank == rank || win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED)
     {
-	MPI_User_function *uop;
+        MPI_User_function *uop;
+        void *base;
+        int disp_unit, shm_op = 0;
+
+        if (win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
+            shm_op = 1;
+            base = win_ptr->shm_base_addrs[target_rank];
+            disp_unit = win_ptr->disp_units[target_rank];
+        }
+        else {
+            base = win_ptr->base;
+            disp_unit = win_ptr->disp_unit;
+        }
 	
 	if (op == MPI_REPLACE)
 	{
-	    mpi_errno = MPIR_Localcopy(origin_addr, origin_count, 
-				origin_datatype,
-				(char *) win_ptr->base + win_ptr->disp_unit *
-				target_disp, target_count, target_datatype); 
+            if (shm_op) MPIDI_CH3I_SHM_MUTEX_LOCK(win_ptr);
+            mpi_errno = MPIR_Localcopy(origin_addr, origin_count,
+                                       origin_datatype,
+                                       (char *) base + disp_unit * target_disp,
+                                       target_count, target_datatype);
+            if (shm_op) MPIDI_CH3I_SHM_MUTEX_UNLOCK(win_ptr);
             if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 	    goto fn_exit;
 	}
@@ -361,8 +473,10 @@ int MPIDI_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype
 	{    
             /* Cast away const'ness for origin_address in order to
              * avoid changing the prototype for MPI_User_function */
-	    (*uop)((void *) origin_addr, (char *) win_ptr->base + win_ptr->disp_unit *
-		   target_disp, &target_count, &target_datatype);
+            if (shm_op) MPIDI_CH3I_SHM_MUTEX_LOCK(win_ptr);
+            (*uop)((void *) origin_addr, (char *) base + disp_unit*target_disp,
+                   &target_count, &target_datatype);
+            if (shm_op) MPIDI_CH3I_SHM_MUTEX_UNLOCK(win_ptr);
 	}
 	else
 	{
@@ -401,8 +515,10 @@ int MPIDI_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype
 	    if (target_predefined) { 
 		/* target predefined type, origin derived datatype */
 
-		(*uop)(tmp_buf, (char *) win_ptr->base + win_ptr->disp_unit *
-		   target_disp, &target_count, &target_datatype);
+                if (shm_op) MPIDI_CH3I_SHM_MUTEX_LOCK(win_ptr);
+                (*uop)(tmp_buf, (char *) base + disp_unit * target_disp,
+                       &target_count, &target_datatype);
+                if (shm_op) MPIDI_CH3I_SHM_MUTEX_UNLOCK(win_ptr);
 	    }
 	    else {
 	    
@@ -423,10 +539,10 @@ int MPIDI_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype
 		MPID_Segment_pack_vector(segp, first, &last, dloop_vec, &vec_len);
 		
 		source_buf = (tmp_buf != NULL) ? tmp_buf : origin_addr;
-		target_buf = (char *) win_ptr->base + 
-		    win_ptr->disp_unit * target_disp;
+		target_buf = (char *) base + disp_unit * target_disp;
 		type = dtp->eltype;
 		type_size = MPID_Datatype_get_basic_size(type);
+                if (shm_op) MPIDI_CH3I_SHM_MUTEX_LOCK(win_ptr);
 		for (i=0; i<vec_len; i++)
 		{
 		    count = (dloop_vec[i].DLOOP_VECTOR_LEN)/type_size;
@@ -434,6 +550,7 @@ int MPIDI_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype
 			   (char *)target_buf + MPIU_PtrToAint(dloop_vec[i].DLOOP_VECTOR_BUF),
 			   &count, &type);
 		}
+                if (shm_op) MPIDI_CH3I_SHM_MUTEX_UNLOCK(win_ptr);
 		
 		MPID_Segment_free(segp);
 	    }
@@ -441,25 +558,22 @@ int MPIDI_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype
     }
     else
     {
+        MPIDI_RMA_Ops_list_t *ops_list = MPIDI_CH3I_RMA_Get_ops_list(win_ptr, target_rank);
+        MPIDI_RMA_Op_t *new_ptr = NULL;
+
 	/* queue it up */
-	MPIU_INSTR_DURATION_START(rmaqueue_alloc);
-	MPIU_CHKPMEM_MALLOC(new_ptr, MPIDI_RMA_ops *, sizeof(MPIDI_RMA_ops), 
-			    mpi_errno, "RMA operation entry");
-	MPIU_INSTR_DURATION_END(rmaqueue_alloc);
-	if (win_ptr->rma_ops_list_tail) 
-	    win_ptr->rma_ops_list_tail->next = new_ptr;
-	else
-	    win_ptr->rma_ops_list_head = new_ptr;
-	win_ptr->rma_ops_list_tail = new_ptr;
+        MPIU_INSTR_DURATION_START(rmaqueue_alloc);
+        mpi_errno = MPIDI_CH3I_RMA_Ops_alloc_tail(ops_list, &new_ptr);
+        MPIU_INSTR_DURATION_END(rmaqueue_alloc);
+        if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
 	/* If predefined and contiguous, use a simplified element */
 	if (origin_predefined && target_predefined && enableShortACC) {
 	    MPIU_INSTR_DURATION_START(rmaqueue_set);
-	    new_ptr->next = NULL;
 	    new_ptr->type = MPIDI_RMA_ACC_CONTIG;
 	    /* Only the information needed for the contig/predefined acc */
             /* Cast away const'ness for origin_address as
-             * MPIDI_RMA_ops contain both PUT and GET like ops */
+             * MPIDI_RMA_Op_t contain both PUT and GET like ops */
 	    new_ptr->origin_addr = (void *) origin_addr;
 	    new_ptr->origin_count = origin_count;
 	    new_ptr->origin_datatype = origin_datatype;
@@ -473,9 +587,8 @@ int MPIDI_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype
 	}
 
 	MPIU_INSTR_DURATION_START(rmaqueue_set);
-	new_ptr->next = NULL;  
 	new_ptr->type = MPIDI_RMA_ACCUMULATE;
-        /* Cast away const'ness for origin_address as MPIDI_RMA_ops
+        /* Cast away const'ness for origin_address as MPIDI_RMA_Op_t
          * contain both PUT and GET like ops */
 	new_ptr->origin_addr = (void *) origin_addr;
 	new_ptr->origin_count = origin_count;
@@ -508,7 +621,6 @@ int MPIDI_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype
 
     /* --BEGIN ERROR HANDLING-- */
   fn_fail:
-    MPIU_CHKPMEM_REAP();
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -14,6 +14,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpiinfo.h"
 #include "datatype.h"
 #include "mpi_init.h"
 #ifdef HAVE_CRTDBG_H
@@ -54,7 +55,7 @@ MPIU_DLL_SPEC MPI_Fint *MPI_F_STATUS_IGNORE = 0;
 MPIU_DLL_SPEC MPI_Fint *MPI_F_STATUSES_IGNORE = 0;
 
 /* This will help force the load of initinfo.o, which contains data about
-   how MPICH2 was configured. */
+   how MPICH was configured. */
 extern const char MPIR_Version_device[];
 
 /* Make sure the Fortran symbols are initialized unless it will cause problems
@@ -89,7 +90,7 @@ static int assert_hook( int reportType, char *message, int *returnValue )
     return TRUE;
 }
 
-/* MPICH2 dll entry point */
+/* MPICH dll entry point */
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
     BOOL result = TRUE;
@@ -259,6 +260,7 @@ int MPIR_Init_thread(int * argc, char ***argv, int required, int * provided)
     int has_env;
     int thread_provided;
     int exit_init_cs_on_failure = 0;
+    MPID_Info *info_ptr;
 
     /* For any code in the device that wants to check for runtime 
        decisions on the value of isThreaded, set a provisional
@@ -415,6 +417,17 @@ int MPIR_Init_thread(int * argc, char ***argv, int required, int * provided)
     MPIU_THREAD_CS_ENTER(INIT,required);
     exit_init_cs_on_failure = 1;
 
+    /* create MPI_INFO_NULL object */
+    /* FIXME: Currently this info object is empty, we need to add data to this
+       as defined by the standard. */
+    info_ptr = MPID_Info_builtin + 1;
+    info_ptr->handle = MPI_INFO_ENV;
+    MPIU_Object_set_ref(info_ptr, 1);
+    MPIU_THREAD_MPI_OBJ_INIT(info_ptr);
+    info_ptr->next  = NULL;
+    info_ptr->key   = NULL;
+    info_ptr->value = NULL;
+    
     mpi_errno = MPID_Init(argc, argv, required, &thread_provided, 
 			  &has_args, &has_env);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -428,6 +441,11 @@ int MPIR_Init_thread(int * argc, char ***argv, int required, int * provided)
 
     /* Assert: tag_ub is at least the minimum asked for in the MPI spec */
     MPIU_Assert( MPIR_Process.attrs.tag_ub >= 32767 );
+
+    /* very nasty bugs will occur if this does not hold */
+#if defined(HAVE_FORTRAN_BINDING)
+    MPIU_Assert(sizeof(MPI_Status) == MPIF_STATUS_SIZE*sizeof(MPI_Fint));
+#endif
 
     /* Capture the level of thread support provided */
     MPIR_ThreadInfo.thread_provided = thread_provided;
@@ -503,12 +521,12 @@ fn_fail:
 /*@
    MPI_Init_thread - Initialize the MPI execution environment
 
-   Input Parameters:
+Input Parameters:
 +  argc - Pointer to the number of arguments 
 .  argv - Pointer to the argument vector
 -  required - Level of desired thread support
 
-   Output Parameter:
+Output Parameters:
 .  provided - Level of provided thread support
 
    Command line arguments:

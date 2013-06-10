@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -14,7 +14,7 @@
  * MPIU_Timer_init to describe your states
  * to the logging library.
  * MPIU_Timer_init is probably found in:
- * mpich2/src/util/timing/timer.c
+ * mpich/src/util/timing/timer.c
  */
 
 enum MPID_TIMER_STATE

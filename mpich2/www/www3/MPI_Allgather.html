@@ -9,7 +9,7 @@
 Gathers data from all tasks and distribute the combined data to all tasks 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Allgather(MPICH2_CONST void *sendbuf, int sendcount, MPI_Datatype sendtype,
+int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                   void *recvbuf, int recvcount, MPI_Datatype recvtype,
                   MPI_Comm comm)
 </PRE>
@@ -28,7 +28,7 @@ int MPI_Allgather(MPICH2_CONST void *sendbuf, int sendcount, MPI_Datatype sendty
 <DT><B>comm </B><DD>communicator (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>recvbuf </B> <DD> address of receive buffer (choice) 
 </DL>
 <P>

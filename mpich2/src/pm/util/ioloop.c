@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*  
  *  (C) 2004 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -55,7 +55,7 @@ static int maxFD = -1;
 /*@ 
   MPIE_IORegister - Register a handler for an FD
 
-  Input Parameters:
+Input Parameters:
 
   Notes:
   Keeps track of the largest fd seen (in 'maxFD').
@@ -90,7 +90,7 @@ int MPIE_IORegister( int fd, int rdwr,
 /*@ 
   MPIE_IODeregister - Remove a handler for an FD
 
-  Input Parameters:
+Input Parameters:
 . fd - fd to deregister  
   @*/
 int MPIE_IODeregister( int fd )
@@ -127,7 +127,7 @@ int MPIE_IODeregister( int fd )
 /*@
   MPIE_IOLoop - Handle all registered I/O
 
-  Input Parameters:
+Input Parameters:
 .  timeoutSeconds - Seconds until this routine should return with a 
    timeout error.  If negative, no timeout.  If 0, return immediatedly
    after a nonblocking check for I/O.
@@ -238,7 +238,7 @@ void TimeoutInit( int seconds )
 #ifdef HAVE_TIME
     time_t t;
     t = time( NULL );
-    end_time = seconds + t;
+    end_time = seconds + (int)t;
 #elif defined(HAVE_GETTIMEOFDAY)
     struct timeval tp;
     gettimeofday( &tp, NULL );
@@ -264,7 +264,7 @@ int TimeoutGetRemaining( void )
 #ifdef HAVE_TIME
     time_t t;
     t = time( NULL );
-    time_left = end_time - t;
+    time_left = end_time - (int)t;
 #elif defined(HAVE_GETTIMEOFDAY)
     struct timeval tp;
     gettimeofday( &tp, NULL );

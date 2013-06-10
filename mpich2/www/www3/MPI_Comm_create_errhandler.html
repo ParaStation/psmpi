@@ -9,14 +9,14 @@
 Create a communicator error handler 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Comm_create_errhandler(MPI_Comm_errhandler_function *function, 
+int MPI_Comm_create_errhandler(MPI_Comm_errhandler_function *comm_errhandler_fn,
                                MPI_Errhandler *errhandler)
 </PRE>
-<H2>Input Parameter</H2>
-<DL><DT><B>function </B> <DD> user defined error handling procedure (function) 
+<H2>Input Parameters</H2>
+<DL><DT><B>comm_errhandler_fn </B> <DD> user defined error handling procedure (function)
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>errhandler </B> <DD> MPI error handler (handle) 
 </DL>
 <P>

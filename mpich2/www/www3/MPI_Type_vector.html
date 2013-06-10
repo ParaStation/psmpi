@@ -12,8 +12,8 @@ Creates a vector (strided) datatype
 int MPI_Type_vector(int count,
                    int blocklength,
                    int stride, 
-                   MPI_Datatype old_type,
-                   MPI_Datatype *newtype_p)
+                   MPI_Datatype oldtype,
+                   MPI_Datatype *newtype)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -22,13 +22,13 @@ int MPI_Type_vector(int count,
 <DT><B>blocklength </B><DD>number of elements in each block 
 (nonnegative integer)
 
-<DT><B>stride </B><DD>number of elements between start of each block (integer) 
+<DT><B>stride </B><DD>number of elements between start of each block (integer)
 
-<DT><B>oldtype </B><DD>old datatype (handle) 
+<DT><B>oldtype </B><DD>old datatype (handle)
 </DL>
 <P>
-<H2>Output Parameter</H2>
-<DL><DT><B>newtype_p </B> <DD> new datatype (handle) 
+<H2>Output Parameters</H2>
+<DL><DT><B>newtype </B> <DD> new datatype (handle)
 </DL>
 <P>
 <H2>Thread and Interrupt Safety</H2>

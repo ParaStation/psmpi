@@ -9,8 +9,8 @@
 Returns the shifted source and destination ranks, given a  shift direction and amount 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source, 
-                  int *dest)
+int MPI_Cart_shift(MPI_Comm comm, int direction, int disp, int *rank_source,
+                  int *rank_dest)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -18,14 +18,14 @@ int MPI_Cart_shift(MPI_Comm comm, int direction, int displ, int *source,
 
 <DT><B>direction </B><DD>coordinate dimension of shift (integer) 
 
-<DT><B>displ </B><DD>displacement (&gt; 0: upwards shift, &lt; 0: downwards shift) (integer) 
+<DT><B>disp </B><DD>displacement (&gt; 0: upwards shift, &lt; 0: downwards shift) (integer)
 </DL>
 <P>
 <H2>Output Parameters</H2>
 <DL>
-<DT><B>source </B><DD>rank of source process (integer) 
+<DT><B>rank_source </B><DD>rank of source process (integer)
 
-<DT><B>dest </B><DD>rank of destination process (integer) 
+<DT><B>rank_dest </B><DD>rank of destination process (integer)
 </DL>
 <P>
 <H2>Notes</H2>

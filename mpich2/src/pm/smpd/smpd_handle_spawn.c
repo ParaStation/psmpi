@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -379,7 +379,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 			env_val++;
 			MPIU_Str_add_string_arg(&cur_env_loc, &env_maxlen, env_key, env_val);
 			/* Check for special environment variables */
-			if (strcmp(env_val, "MPICH2_CHANNEL") == 0)
+			if (strcmp(env_val, "MPICH_CHANNEL") == 0)
 			{
 			    env_channel_specified = SMPD_TRUE;
 			}
@@ -498,7 +498,7 @@ int smpd_handle_spawn_command(smpd_context_t *context)
 	    }
 	    else if (smpd_process.env_channel[0] != '\0')
 	    {
-		    MPIU_Str_add_string_arg(&cur_env_loc, &env_maxlen, "MPICH2_CHANNEL", smpd_process.env_channel);
+		    MPIU_Str_add_string_arg(&cur_env_loc, &env_maxlen, "MPICH_CHANNEL", smpd_process.env_channel);
             if(smpd_process.env_netmod[0] != '\0')
             {
                 MPIU_Str_add_string_arg(&cur_env_loc, &env_maxlen, "MPICH_NEMESIS_NETMOD", smpd_process.env_netmod);

@@ -22,7 +22,7 @@ int MPI_Keyval_create(MPI_Copy_function *copy_fn,
 <DT><B>extra_state </B><DD>Extra state for callback functions 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>keyval </B> <DD> key value for future access (integer) 
 </DL>
 <P>
@@ -32,7 +32,7 @@ Key values are global (available for any and all communicators).
 There are subtle differences between C and Fortran that require that the
 copy_fn be written in the same language that <TT>MPI_Keyval_create
 </TT>is called from.
-This should not be a problem for most users; only programers using both
+This should not be a problem for most users; only programmers using both
 Fortran and C in the same program need to be sure that they follow this rule.
 <P>
 <H2>Thread and Interrupt Safety</H2>

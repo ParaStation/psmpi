@@ -72,7 +72,7 @@
  * synchronization.
  *
  * So for the moment, we only provide a minimal set of annotations that seems to
- * be both common between the tools and useful in MPICH2.
+ * be both common between the tools and useful in MPICH.
  */
 
 #define MPL_VG_THREAD_INVALID  0
@@ -115,16 +115,18 @@
 #endif
 
 /* This is only a modest subset of all of the available client requests defined
-   in the valgrind headers.  As MPICH2 is modified to use more of them, this
+   in the valgrind headers.  As MPICH is modified to use more of them, this
    list should be expanded appropriately. */
 #if defined(MPL_VG_AVAILABLE)
 #  if defined(VALGRIND_MAKE_MEM_DEFINED)
 /* this valgrind is version 3.2.0 or later */
-#  define MPL_VG_MAKE_MEM_DEFINED(addr_,len_)         VALGRIND_MAKE_MEM_DEFINED((addr_),(len_))
-#  define MPL_VG_MAKE_MEM_NOACCESS(addr_,len_)        VALGRIND_MAKE_MEM_NOACCESS((addr_),(len_))
-#  define MPL_VG_MAKE_MEM_UNDEFINED(addr_,len_)       VALGRIND_MAKE_MEM_UNDEFINED((addr_),(len_))
-#  define MPL_VG_CHECK_MEM_IS_DEFINED(addr_,len_)     VALGRIND_CHECK_MEM_IS_DEFINED((addr_),(len_))
-#  define MPL_VG_CHECK_MEM_IS_ADDRESSABLE(addr_,len_) VALGRIND_CHECK_MEM_IS_ADDRESSABLE((addr_),(len_))
+/* tt#1784: do not add extra parens around the VALGRIND_... macros, since
+ * valgrind-3.6.0 incorrectly includes a ";" at the end of the macro */
+#  define MPL_VG_MAKE_MEM_DEFINED(addr_,len_)         do { (void) VALGRIND_MAKE_MEM_DEFINED((addr_),(len_)); } while (0)
+#  define MPL_VG_MAKE_MEM_NOACCESS(addr_,len_)        do { (void) VALGRIND_MAKE_MEM_NOACCESS((addr_),(len_)); } while (0)
+#  define MPL_VG_MAKE_MEM_UNDEFINED(addr_,len_)       do { (void) VALGRIND_MAKE_MEM_UNDEFINED((addr_),(len_)); } while (0)
+#  define MPL_VG_CHECK_MEM_IS_DEFINED(addr_,len_)     do { (void) VALGRIND_CHECK_MEM_IS_DEFINED((addr_),(len_)); } while (0)
+#  define MPL_VG_CHECK_MEM_IS_ADDRESSABLE(addr_,len_) do { (void) VALGRIND_CHECK_MEM_IS_ADDRESSABLE((addr_),(len_)); } while (0)
 #  else
 /* this is an older version of valgrind.  Use the older (subtly misleading) names */
 #    define MPL_VG_MAKE_MEM_DEFINED(addr_,len_)         VALGRIND_MAKE_READABLE((addr_),(len_))
@@ -133,7 +135,7 @@
 #    define MPL_VG_CHECK_MEM_IS_DEFINED(addr_,len_)     VALGRIND_CHECK_READABLE((addr_),(len_))
 #    define MPL_VG_CHECK_MEM_IS_ADDRESSABLE(addr_,len_) VALGRIND_CHECK_WRITABLE((addr_),(len_))
 #  endif
-#  define MPL_VG_CREATE_BLOCK(addr_,len_,desc_)       VALGRIND_CREATE_BLOCK((addr_),(len_),(desc_))
+#  define MPL_VG_CREATE_BLOCK(addr_,len_,desc_)       do { (void) VALGRIND_CREATE_BLOCK((addr_),(len_),(desc_)); } while (0)
 #  define MPL_VG_RUNNING_ON_VALGRIND()                RUNNING_ON_VALGRIND
 #  define MPL_VG_PRINTF_BACKTRACE                     VALGRIND_PRINTF_BACKTRACE
 

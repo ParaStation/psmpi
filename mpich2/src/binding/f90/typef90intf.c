@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_create_f90_integer( MPI_Fint *, MP
 /* Prototypes for the Fortran interfaces */
 #include "mpif90type.h"
 FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_integer_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
-    *ierr = MPI_Type_create_f90_integer( *v1, (MPI_Datatype *)(v2) );
+    *ierr = MPI_Type_create_f90_integer( (int)*v1, (MPI_Datatype *)(v2) );
 }

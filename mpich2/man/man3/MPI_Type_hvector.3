@@ -1,13 +1,13 @@
-.TH MPI_Type_hvector 3 "9/20/2012" " " "MPI"
+.TH MPI_Type_hvector 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Type_hvector \-  type_hvector 
 .SH SYNOPSIS
 .nf
 int MPI_Type_hvector(int count,
-                    int blocklen,
+                    int blocklength,
                     MPI_Aint stride,
-                    MPI_Datatype old_type,
-                    MPI_Datatype *newtype_p)
+                    MPI_Datatype oldtype,
+                    MPI_Datatype *newtype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -32,11 +32,11 @@ int MPI_Type_hvector(int count,
 - old datatype (handle) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
-.B newtype_p 
-- new datatype (handle) 
+.B newtype 
+- new datatype (handle)
 .PD 1
 
 .SH NOTES

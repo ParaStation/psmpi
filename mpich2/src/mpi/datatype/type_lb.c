@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -50,7 +50,7 @@ void MPIR_Type_lb_impl(MPI_Datatype datatype, MPI_Aint *displacement)
 Input Parameters:
 . datatype - datatype (handle)
 
-Output Parameter:
+Output Parameters:
 . displacement - displacement of lower bound from origin,
                              in bytes (address integer)
 

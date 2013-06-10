@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_set_errhandler( MPI_Fint *, MPI_Fi
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_file_set_errhandler_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
-    *ierr = MPI_File_set_errhandler( MPI_File_f2c(*v1), *v2 );
+    *ierr = MPI_File_set_errhandler( MPI_File_f2c(*v1), (MPI_Errhandler)*v2 );
 }

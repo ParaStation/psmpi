@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IMPROBE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_improbe__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_improbe( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_improbe_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IMPROBE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_improbe__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_improbe( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_improbe_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_IMPROBE = PMPIX_IMPROBE
-#pragma weak mpix_improbe__ = PMPIX_IMPROBE
-#pragma weak mpix_improbe_ = PMPIX_IMPROBE
-#pragma weak mpix_improbe = PMPIX_IMPROBE
+#pragma weak MPI_IMPROBE = PMPI_IMPROBE
+#pragma weak mpi_improbe__ = PMPI_IMPROBE
+#pragma weak mpi_improbe_ = PMPI_IMPROBE
+#pragma weak mpi_improbe = PMPI_IMPROBE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_IMPROBE = pmpix_improbe__
-#pragma weak mpix_improbe__ = pmpix_improbe__
-#pragma weak mpix_improbe_ = pmpix_improbe__
-#pragma weak mpix_improbe = pmpix_improbe__
+#pragma weak MPI_IMPROBE = pmpi_improbe__
+#pragma weak mpi_improbe__ = pmpi_improbe__
+#pragma weak mpi_improbe_ = pmpi_improbe__
+#pragma weak mpi_improbe = pmpi_improbe__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_IMPROBE = pmpix_improbe_
-#pragma weak mpix_improbe__ = pmpix_improbe_
-#pragma weak mpix_improbe_ = pmpix_improbe_
-#pragma weak mpix_improbe = pmpix_improbe_
+#pragma weak MPI_IMPROBE = pmpi_improbe_
+#pragma weak mpi_improbe__ = pmpi_improbe_
+#pragma weak mpi_improbe_ = pmpi_improbe_
+#pragma weak mpi_improbe = pmpi_improbe_
 #else
-#pragma weak MPIX_IMPROBE = pmpix_improbe
-#pragma weak mpix_improbe__ = pmpix_improbe
-#pragma weak mpix_improbe_ = pmpix_improbe
-#pragma weak mpix_improbe = pmpix_improbe
+#pragma weak MPI_IMPROBE = pmpi_improbe
+#pragma weak mpi_improbe__ = pmpi_improbe
+#pragma weak mpi_improbe_ = pmpi_improbe
+#pragma weak mpi_improbe = pmpi_improbe
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_improbe_( MPI_Fint *, MPI_Fint *, MPI_F
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IMPROBE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IMPROBE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_IMPROBE = PMPIX_IMPROBE
+#pragma weak MPI_IMPROBE = PMPI_IMPROBE
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_improbe__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_improbe__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_improbe__ = pmpix_improbe__
+#pragma weak mpi_improbe__ = pmpi_improbe__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_improbe( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_improbe( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_improbe = pmpix_improbe
+#pragma weak mpi_improbe = pmpi_improbe
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_improbe_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_improbe_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_improbe_ = pmpix_improbe_
+#pragma weak mpi_improbe_ = pmpi_improbe_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_IMPROBE  MPIX_IMPROBE
+#pragma _HP_SECONDARY_DEF PMPI_IMPROBE  MPI_IMPROBE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_improbe__  mpix_improbe__
+#pragma _HP_SECONDARY_DEF pmpi_improbe__  mpi_improbe__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_improbe  mpix_improbe
+#pragma _HP_SECONDARY_DEF pmpi_improbe  mpi_improbe
 #else
-#pragma _HP_SECONDARY_DEF pmpix_improbe_  mpix_improbe_
+#pragma _HP_SECONDARY_DEF pmpi_improbe_  mpi_improbe_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_IMPROBE as PMPIX_IMPROBE
+#pragma _CRI duplicate MPI_IMPROBE as PMPI_IMPROBE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_improbe__ as pmpix_improbe__
+#pragma _CRI duplicate mpi_improbe__ as pmpi_improbe__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_improbe as pmpix_improbe
+#pragma _CRI duplicate mpi_improbe as pmpi_improbe
 #else
-#pragma _CRI duplicate mpix_improbe_ as pmpix_improbe_
+#pragma _CRI duplicate mpi_improbe_ as pmpi_improbe_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_improbe_( MPI_Fint *, MPI_Fint *, MPI_F
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IMPROBE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_improbe__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_improbe( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_improbe_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IMPROBE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_improbe__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_improbe( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_improbe_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_improbe__ = MPIX_IMPROBE
-#pragma weak mpix_improbe_ = MPIX_IMPROBE
-#pragma weak mpix_improbe = MPIX_IMPROBE
+#pragma weak mpi_improbe__ = MPI_IMPROBE
+#pragma weak mpi_improbe_ = MPI_IMPROBE
+#pragma weak mpi_improbe = MPI_IMPROBE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_IMPROBE = mpix_improbe__
-#pragma weak mpix_improbe_ = mpix_improbe__
-#pragma weak mpix_improbe = mpix_improbe__
+#pragma weak MPI_IMPROBE = mpi_improbe__
+#pragma weak mpi_improbe_ = mpi_improbe__
+#pragma weak mpi_improbe = mpi_improbe__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_IMPROBE = mpix_improbe_
-#pragma weak mpix_improbe__ = mpix_improbe_
-#pragma weak mpix_improbe = mpix_improbe_
+#pragma weak MPI_IMPROBE = mpi_improbe_
+#pragma weak mpi_improbe__ = mpi_improbe_
+#pragma weak mpi_improbe = mpi_improbe_
 #else
-#pragma weak MPIX_IMPROBE = mpix_improbe
-#pragma weak mpix_improbe__ = mpix_improbe
-#pragma weak mpix_improbe_ = mpix_improbe
+#pragma weak MPI_IMPROBE = mpi_improbe
+#pragma weak mpi_improbe__ = mpi_improbe
+#pragma weak mpi_improbe_ = mpi_improbe
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_improbe_( MPI_Fint *, MPI_Fint *, MPI_F
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_IMPROBE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IMPROBE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_improbe__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_improbe__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_improbe_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_improbe_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_improbe( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_improbe( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_improbe__ = PMPIX_IMPROBE
-#pragma weak pmpix_improbe_ = PMPIX_IMPROBE
-#pragma weak pmpix_improbe = PMPIX_IMPROBE
+#pragma weak pmpi_improbe__ = PMPI_IMPROBE
+#pragma weak pmpi_improbe_ = PMPI_IMPROBE
+#pragma weak pmpi_improbe = PMPI_IMPROBE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_IMPROBE = pmpix_improbe__
-#pragma weak pmpix_improbe_ = pmpix_improbe__
-#pragma weak pmpix_improbe = pmpix_improbe__
+#pragma weak PMPI_IMPROBE = pmpi_improbe__
+#pragma weak pmpi_improbe_ = pmpi_improbe__
+#pragma weak pmpi_improbe = pmpi_improbe__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_IMPROBE = pmpix_improbe_
-#pragma weak pmpix_improbe__ = pmpix_improbe_
-#pragma weak pmpix_improbe = pmpix_improbe_
+#pragma weak PMPI_IMPROBE = pmpi_improbe_
+#pragma weak pmpi_improbe__ = pmpi_improbe_
+#pragma weak pmpi_improbe = pmpi_improbe_
 #else
-#pragma weak PMPIX_IMPROBE = pmpix_improbe
-#pragma weak pmpix_improbe__ = pmpix_improbe
-#pragma weak pmpix_improbe_ = pmpix_improbe
+#pragma weak PMPI_IMPROBE = pmpi_improbe
+#pragma weak pmpi_improbe__ = pmpi_improbe
+#pragma weak pmpi_improbe_ = pmpi_improbe
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_improbe_ PMPIX_IMPROBE
+#define mpi_improbe_ PMPI_IMPROBE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_improbe_ pmpix_improbe__
+#define mpi_improbe_ pmpi_improbe__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_improbe_ pmpix_improbe
+#define mpi_improbe_ pmpi_improbe
 #else
-#define mpix_improbe_ pmpix_improbe_
+#define mpi_improbe_ pmpi_improbe_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Improbe
-#define MPIX_Improbe PMPIX_Improbe 
+#undef MPI_Improbe
+#define MPI_Improbe PMPI_Improbe 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_improbe_ MPIX_IMPROBE
+#define mpi_improbe_ MPI_IMPROBE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_improbe_ mpix_improbe__
+#define mpi_improbe_ mpi_improbe__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_improbe_ mpix_improbe
+#define mpi_improbe_ mpi_improbe
 /* Else leave name alone */
 #endif
 
@@ -184,7 +184,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_improbe( MPI_Fint *, MPI_Fint *, MPI_F
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_improbe_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *ierr ){
+FORT_DLL_SPEC void FORT_CALL mpi_improbe_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *ierr ){
     int l4;
 
 #ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
@@ -192,6 +192,6 @@ FORT_DLL_SPEC void FORT_CALL mpix_improbe_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fin
 #endif
 
     if (v6 == MPI_F_STATUS_IGNORE) { v6 = (MPI_Fint*)MPI_STATUS_IGNORE; }
-    *ierr = MPIX_Improbe( *v1, *v2, (MPI_Comm)(*v3), &l4, (MPIX_Message *)(v5), (MPI_Status *)v6 );
+    *ierr = MPI_Improbe( (int)*v1, (int)*v2, (MPI_Comm)(*v3), &l4, (MPI_Message *)(v5), (MPI_Status *)v6 );
     if (*ierr == MPI_SUCCESS) *v4 = MPIR_TO_FLOG(l4);
 }

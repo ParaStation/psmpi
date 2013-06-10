@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -52,6 +52,7 @@ static int MPIDI_CH3i_Progress_test(void)
 {
     MPIDU_Sock_event_t event;
     int mpi_errno = MPI_SUCCESS;
+    int made_progress;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_TEST);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_TEST);
@@ -83,6 +84,10 @@ static int MPIDI_CH3i_Progress_test(void)
     }
 #   endif
     
+    /* make progress on NBC schedules */
+    mpi_errno = MPIDU_Sched_progress(&made_progress);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
     mpi_errno = MPIDU_Sock_wait(MPIDI_CH3I_sock_set, 0, &event);
 
     if (mpi_errno == MPI_SUCCESS)
@@ -264,7 +269,7 @@ static int MPIDI_CH3i_Progress_wait(MPID_Progress_state * progress_state)
 int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
+    MPIDI_CH3I_VC *vcch = &vc->ch;
 
     MPIU_DBG_CONNSTATECHANGE(vc,vcch->conn,CONN_STATE_CLOSING);
     vcch->conn->state = CONN_STATE_CLOSING;
@@ -742,7 +747,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 static inline int connection_pop_sendq_req(MPIDI_CH3I_Connection_t * conn)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)conn->vc->channel_private;
+    MPIDI_CH3I_VC *vcch = &conn->vc->ch;
     MPIDI_STATE_DECL(MPID_STATE_CONNECTION_POP_SENDQ_REQ);
 
 
@@ -907,3 +912,8 @@ int MPIDI_CH3I_Progress( int blocking, MPID_Progress_state *state )
 
     return mpi_errno;
 }
+
+/* A convenience dummy symbol so that the PETSc folks can configure test to
+ * ensure that they have a working version of MPICH ch3:sock.  Please don't
+ * delete it without consulting them. */
+int MPIDI_CH3I_sock_fixed_nbc_progress = TRUE;

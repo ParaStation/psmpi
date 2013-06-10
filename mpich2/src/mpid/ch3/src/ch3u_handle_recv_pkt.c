@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -6,6 +6,7 @@
 
 #include "mpidimpl.h"
 #include "mpidrma.h"
+#include "mpidi_recvq_statistics.h"
 
 /*
  * This file contains the dispatch routine called by the ch3 progress 
@@ -271,6 +272,9 @@ int MPIDI_CH3U_Receive_data_unexpected(MPID_Request * rreq, char *buf, MPIDI_msg
         *buflen = 0;
         *complete = FALSE;
     }
+
+    if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG)
+        MPIR_T_ADD(RECVQ_STATISTICS, MPIDI_CH3I_unexpected_recvq_buffer_size, rreq->dev.tmpbuf_sz);
 
     rreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_UnpackUEBufComplete;
 
@@ -578,6 +582,10 @@ int MPIDI_CH3_PktHandler_Init( MPIDI_CH3_PktHandler_Fcn *pktArray[],
 	MPIDI_CH3_PktHandler_Lock;
     pktArray[MPIDI_CH3_PKT_LOCK_GRANTED] =
 	MPIDI_CH3_PktHandler_LockGranted;
+    pktArray[MPIDI_CH3_PKT_UNLOCK] =
+        MPIDI_CH3_PktHandler_Unlock;
+    pktArray[MPIDI_CH3_PKT_FLUSH] =
+        MPIDI_CH3_PktHandler_Flush;
     pktArray[MPIDI_CH3_PKT_PT_RMA_DONE] = 
 	MPIDI_CH3_PktHandler_PtRMADone;
     pktArray[MPIDI_CH3_PKT_LOCK_PUT_UNLOCK] = 
@@ -590,14 +598,16 @@ int MPIDI_CH3_PktHandler_Init( MPIDI_CH3_PktHandler_Fcn *pktArray[],
 	MPIDI_CH3_PktHandler_Accumulate_Immed;
     pktArray[MPIDI_CH3_PKT_CAS] =
         MPIDI_CH3_PktHandler_CAS;
-    pktArray[MPIDI_CH3_PKT_CAS_UNLOCK] =
-        MPIDI_CH3_PktHandler_CAS;
     pktArray[MPIDI_CH3_PKT_CAS_RESP] =
         MPIDI_CH3_PktHandler_CASResp;
     pktArray[MPIDI_CH3_PKT_FOP] =
         MPIDI_CH3_PktHandler_FOP;
     pktArray[MPIDI_CH3_PKT_FOP_RESP] =
         MPIDI_CH3_PktHandler_FOPResp;
+    pktArray[MPIDI_CH3_PKT_GET_ACCUM] =
+        MPIDI_CH3_PktHandler_Accumulate;
+    pktArray[MPIDI_CH3_PKT_GET_ACCUM_RESP] =
+        MPIDI_CH3_PktHandler_Get_AccumResp;
     /* End of default RMA operations */
 
  fn_fail:

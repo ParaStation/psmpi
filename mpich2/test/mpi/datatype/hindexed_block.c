@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -11,7 +11,7 @@
 #include <string.h>
 #endif
 
-#if !defined(USE_STRICT_MPI) && defined(MPICH2)
+#if !defined(USE_STRICT_MPI) && defined(MPICH)
 #define TEST_HINDEXED_BLOCK 1
 #endif
 
@@ -85,7 +85,7 @@ int hindexed_block_contig_test(void)
     int size, int_size;
     MPI_Aint extent;
 
-    err = MPIX_Type_create_hindexed_block(count, 1, &disp, MPI_INT, &newtype);
+    err = MPI_Type_create_hindexed_block(count, 1, &disp, MPI_INT, &newtype);
     if (err != MPI_SUCCESS) {
         if (verbose) {
             fprintf(stderr, "error creating struct type in hindexed_block_contig_test()\n");
@@ -208,7 +208,7 @@ int hindexed_block_vector_test(void)
     for (i = 0; i < count; i++)
         disp[i] *= extent;
 
-    err = MPIX_Type_create_hindexed_block(count, 1, disp, vectype, &newtype);
+    err = MPI_Type_create_hindexed_block(count, 1, disp, vectype, &newtype);
     if (err != MPI_SUCCESS) {
         if (verbose) {
             fprintf(stderr,

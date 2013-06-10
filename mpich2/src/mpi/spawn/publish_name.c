@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -32,7 +32,7 @@
 /*@
    MPI_Publish_name - Publish a service name for use with MPI_Comm_connect
 
- Input Parameters:
+Input Parameters:
 + service_name - a service name to associate with the port (string) 
 . info - implementation-specific information (handle) 
 - port_name - a port name (string) 
@@ -51,7 +51,7 @@ The maximum size string that may be supplied for 'port_name' is
 .N MPI_ERR_INFO
 .N MPI_ERR_OTHER
 @*/
-int MPI_Publish_name(MPICH2_CONST char *service_name, MPI_Info info, MPICH2_CONST char *port_name)
+int MPI_Publish_name(const char *service_name, MPI_Info info, const char *port_name)
 {
     static const char FCNAME[] = "MPI_Publish_name";
     int mpi_errno = MPI_SUCCESS;

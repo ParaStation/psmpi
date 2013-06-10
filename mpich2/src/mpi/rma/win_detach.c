@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,35 +6,42 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
-/* -- Begin Profiling Symbol Block for routine MPIX_Win_detach */
+/* -- Begin Profiling Symbol Block for routine MPI_Win_detach */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPIX_Win_detach = PMPIX_Win_detach
+#pragma weak MPI_Win_detach = PMPI_Win_detach
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIX_Win_detach  MPIX_Win_detach
+#pragma _HP_SECONDARY_DEF PMPI_Win_detach  MPI_Win_detach
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPIX_Win_detach as PMPIX_Win_detach
+#pragma _CRI duplicate MPI_Win_detach as PMPI_Win_detach
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#undef MPIX_Win_detach
-#define MPIX_Win_detach PMPIX_Win_detach
+#undef MPI_Win_detach
+#define MPI_Win_detach PMPI_Win_detach
 
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPIX_Win_detach
+#define FUNCNAME MPI_Win_detach
 
 /*@
-   MPIX_Win_detach - Detach memory from a dynamic window
+MPI_Win_detach - Detach memory from a dynamic window
 
- Input Parameters:
-+ base - initial address of memory to be detached 
-- win - window object used for communication (handle) 
+
+Detaches a previously attached memory region beginning at base. The arguments
+base and win must match the arguments passed to a previous call to
+'MPI_Win_attach'.
+
+Input Parameters:
++ base - initial address of memory to be detached
+- win - window object used for communication (handle)
+
+Notes:
+Memory also becomes detached when the associated dynamic memory window is freed.
 
 .N ThreadSafe
 
@@ -47,18 +54,20 @@
 .N MPI_ERR_RANK
 .N MPI_ERR_TYPE
 .N MPI_ERR_WIN
+
+.seealso: MPI_Win_create_dynamic MPI_Win_attach
 @*/
-int MPIX_Win_detach(MPI_Win win, const void *base)
+int MPI_Win_detach(MPI_Win win, const void *base)
 {
-    static const char FCNAME[] = "MPIX_Win_detach";
+    static const char FCNAME[] = "MPI_Win_detach";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIX_WIN_DETACH);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_DETACH);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPIX_WIN_DETACH);
+    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_DETACH);
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -98,7 +107,7 @@ int MPIX_Win_detach(MPI_Win win, const void *base)
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPIX_WIN_DETACH);
+    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_DETACH);
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
@@ -107,7 +116,7 @@ int MPIX_Win_detach(MPI_Win win, const void *base)
 #   ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno = MPIR_Err_create_code(
-            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpix_win_detach", "**mpix_win_detach %W %p",
+            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_win_detach", "**mpi_win_detach %W %p",
             win, base);
     }
 #   endif

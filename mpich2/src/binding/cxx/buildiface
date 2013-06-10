@@ -103,7 +103,7 @@ $routine_list = "";
 foreach $_ (@ARGV) {
     if (/--?feature=(.*)/) {
 	foreach $feature (split(/:/,$1)) {
-	    print STDERR "Processing feature $feature\n" if $gDebug;
+	    print "Processing feature $feature\n" if $gDebug;
 	    # Feature values are foo=on,off
 	    ($name,$value) = split(/=/,$feature);
 	    if ($value eq "on") { $value = 1; } 
@@ -287,10 +287,11 @@ $specialReturnType{"cart-Dup"} = "Cartcomm";
 $specialReturnType{"cart-Sub"} = "Cartcomm";
 $specialReturnType{"cart-Split"} = "Cartcomm";
 
+# Create_struct, Pack, and Unpack are handled through definitions elsewhere
 %class_mpi1dtype = ( 'Create_contiguous' => 'MPI_Datatype',
 		     'Create_vector' => 'MPI_Datatype', 
 		     'Create_indexed' => 'MPI_Datatype', 
- 		     'Create_struct' => 'static:5:4',
+# 		     'Create_struct' => 'static:5:4',
 		     'Get_size' => 2, 
 		     'Commit' => 0,
 		     'Free' => 0, 
@@ -395,7 +396,7 @@ $specialReturnType{"intra-Dup"} = "Intracomm";
 #
 # Here are the MPI-2 methods
 # WARNING: These are incomplete.  They primarily define only the
-# MPI-2 routines implemented by MPICH2.
+# MPI-2 routines implemented by MPICH.
 %class_mpi2base = ( 'Alloc_mem' => '3;void *:2',
 		    'Free_mem' => '0', 
 		    'Open_port' => '1',
@@ -1148,7 +1149,7 @@ typedef int MPI_File;\
         $mpiclass = "$mpilevel$class";
         $class_hash = "class_$mpiclass";
 	foreach $routine (keys(%$class_hash)) {
-	    print STDERR "processing $routine\n" if $gDebug;
+	    print "processing $routine\n" if $gDebug;
 
 	    # info describes the return parameter and any special
 	    # processing for this routine.
@@ -1317,7 +1318,7 @@ sub printDefineChecks {
 #ifdef __GNUC__ 
 # if __GNUC__ >= \@GNUCXX_VERSION\@ 
 #  if __GNUC_MINOR__ > 2 && \@GNUCXX_MINORVERSION\@ == 2 
-#  error 'Please use the same version of GCC and g++ for compiling MPICH2 and user MPI programs'
+#  error 'Please use the same version of GCC and g++ for compiling MPICH and user MPI programs'
 #  endif
 # endif     
 #endif\n";
@@ -1423,7 +1424,7 @@ sub print_args {
     }
 
     # Special case: if the only parm is "void", remove it from the list
-    print STDERR "Nparms = $#parms, parms = " . join(',',@parms) . "\n" if $gDebug;
+    print "Nparms = $#parms, parms = " . join(',',@parms) . "\n" if $gDebug;
     if ($#parms == 0 && $parms[0] eq "void") {
 	&debugPrint( $routine, "Setting nparms to -1" );
 	$#parms = -1;
@@ -1447,6 +1448,7 @@ sub print_args {
     }
 
     # Output the list
+    print "special args at: $special_args\n" if $gDebug;
     print $OUTFD "( ";
     foreach $parm (@parms) {
 	$pos_check = ":" . $count . ":";
@@ -1476,6 +1478,12 @@ sub print_args {
 	    else { print $OUTFD ", "; }
 	    
 	    if ($parm =~/\[/) {
+		print "Processing array argument ...\n" if $gDebug;
+		$qualifier = "";
+		if ($parm =~ /^\s*const\s+(.*)/) {
+		    $qualifier = "const ";
+		    $parm = $1;
+		}
 		# Argument type is array, so we need to 
 		#  a) place parameter correctly
 		# Split into raw type and []
@@ -1496,7 +1504,7 @@ sub print_args {
 		if ($extrabracks =~ /(\[[\d\s]*\])/) {
 		    $otherdims = $1;
 		}
-		print $OUTFD "$basetype v$count\[\]$otherdims";
+		print $OUTFD "$qualifier$basetype v$count\[\]$otherdims";
 	    }
 	    elsif ($parm =~ /\.\.\./) {
 		# Special case for varargs.  Only ints!
@@ -1648,23 +1656,45 @@ sub print_attr {
 sub clean_args {
     my $newargs = "";
     my $comma = "";
+    my $qualifier = "";
     for $parm (split(',',$args)) {
+        $saveparm = $parm;
+	$qualifier = "";
 	# Remove any leading or trailing spaces
-	$parm =~ s/^MPICH2_CONST\s//;  # Remove MPICH2_CONST if present
+	#$parm =~ s/^const\s//;  # Remove const if present
+	# In MPI-2, we needed to remove const in a few places.
+	# In MPI-3, we need to preserve the const, since these values
+	# are used to perform the necessary casts
 	$parm =~ s/^\s*//;
 	$parm =~ s/\s*$//;
+	# First, strip off (but remember!) any qualifiers.  These
+	# could be const or restrict, though for MPI, only restrict 
+	# is used.
+	if ($parm =~ /^(const\s+)(.*)/) {
+	    $qualifier = $1;
+	    $parm     = $2;
+	}
 	# Handle parameters with parameter names
-	# First if handles "int foo", second handles "int *foo"
+	# Handle these cases:
+	#    <type> name
+	#    <type> *name
+	#    <type> name[]
 	if ( ($parm =~ /^([A-Za-z0-9_]+)\s+[A-Za-z0-9_]+$/) ) {
 	    $parm = $1;
 	}
 	elsif ( ($parm =~ /^([A-Za-z0-9_]+\s*\*)\s*[A-Za-z0-9_]+$/) ) {
 	    $parm = $1;
 	}
+	elsif ( ($parm =~ /^([A-Za-z0-9_]+\s)\s*[A-Za-z0-9_]+\s*(\[\])(\[3\])?$/) ) {
+	    $parm = "$1$2$3";
+	}
+	# Restore qualifier, if any
+	$parm = $qualifier.$parm;
+        print "$saveparm -> $parm\n" if $gDebug;
 	$newargs .= "$comma$parm";
 	$comma = ",";
     }
-    print STDERR "$newargs\n" if $gDebug;
+    print "$newargs\n" if $gDebug;
     $args = $newargs;
 }
 
@@ -1861,7 +1891,7 @@ extern Datatype TWOINTEGER;
     # Modes for comm_split_type
     foreach $int (SHARED) {
 	print $OUTFD "${extern}const int COMM_TYPE_$int";
-	if ($giveValue) { print $OUTFD " = MPIX_COMM_TYPE_$int;\n"; }
+	if ($giveValue) { print $OUTFD " = MPI_COMM_TYPE_$int;\n"; }
 	else            { print $OUTFD ";\n"; }
     }
 
@@ -1869,15 +1899,9 @@ extern Datatype TWOINTEGER;
     foreach $int (CONTIGUOUS, DARRAY, DUP, F90_COMPLEX, F90_INTEGER, 
 		  F90_REAL, HINDEXED_INTEGER, HINDEXED, HVECTOR_INTEGER,
 		  HVECTOR, INDEXED_BLOCK, INDEXED, NAMED, RESIZED, 
-		  STRUCT_INTEGER, STRUCT, SUBARRAY, VECTOR) {
+		  STRUCT_INTEGER, STRUCT, SUBARRAY, VECTOR, HINDEXED_BLOCK) {
 	print $OUTFD "${extern}const int COMBINER_$int";
 	if ($giveValue) { print $OUTFD " = MPI_COMBINER_$int;\n"; }
-	else            { print $OUTFD ";\n"; }
-    }
-    # FIXME: Merge with the above list when it's no longer MPIX_
-    foreach $int (HINDEXED_BLOCK) {
-	print $OUTFD "${extern}const int COMBINER_$int";
-	if ($giveValue) { print $OUTFD " = MPIX_COMBINER_$int;\n"; }
 	else            { print $OUTFD ";\n"; }
     }
 
@@ -1931,17 +1955,19 @@ int _mpi_lineno = __LINE__;
 // header isn't C++ clean.  Instead, we just include a definition
 // for size_t.  If this is not the correct size, then edit this line
 // (Note that this is needed only when memory tracing is enabled)
+// FIXME: determine whether the type definition is needed, and include the
+// correct definition.
 typedef unsigned int size_t;
-extern \"C\" void *MPIU_trmalloc( unsigned int, int, const char [] );
+extern \"C\" void *MPIU_trmalloc( size_t, int, const char [] );
 extern \"C\" void MPIU_trfree( void *, int, const char [] );
 extern \"C\" void MPIU_trdump( void *, int );
 void *operator new(size_t size) {
-    void *p = MPIU_trmalloc( (unsigned int) size, _mpi_lineno, __FILE__ );
+    void *p = MPIU_trmalloc( size, _mpi_lineno, __FILE__ );
     return p;}
 void operator delete(void *p) {
     MPIU_trfree( p, _mpi_lineno, __FILE__ );}
 void *operator new[]( size_t size) {
-    void *p = MPIU_trmalloc( (unsigned int) size, _mpi_lineno, __FILE__ );
+    void *p = MPIU_trmalloc( size, _mpi_lineno, __FILE__ );
     return p;}
 void operator delete[](void *p) {
     MPIU_trfree( p, _mpi_lineno, __FILE__ );}
@@ -2101,7 +2127,7 @@ void operator delete[](void *p) {
      print $OUTFD "\
     }\n";
 
-    print $OUTFD "Aint Get_address( void *ptr )
+    print $OUTFD "Aint Get_address( const void *ptr )
     {
     MPI_Aint a;\n";
      &printCoverageStart( $OUTFD, "Get_address", 2 );
@@ -3256,6 +3282,7 @@ sub ReadInterface {
 	    else {
 		# Clear variables
 		$clean_up = "";
+   		print "$routine_name:\n" if $gDebug;
 		&clean_args;
 		$mpi_routine{$routine_name} = $args;
 		print "Saving $routine_name ( $args )\n" if $gDebug;
@@ -3673,8 +3700,13 @@ sub PrintRoutineDefNoStatus {
     ($cArgs, $Croutine) = &GetCArgs( $class, $routine );
 
     $SavecArgs = $cArgs;
+    # Also remove MPI_Status [] (Waitall/some; Testall/some)
+    $cArgs =~ s/,\s*MPI_Status\s*\[\]//g;
+    $cArgs =~ s/\s*MPI_Status\s*\[\]\s*,//g;
+    # Remove MPI_Status and MPI_Status *
     $cArgs =~ s/,\s*MPI_Status\s*\*?//g;
     $cArgs =~ s/\s*MPI_Status\s*\*?\s*,//g;
+    
 
     &PrintMethodDef( $OUTFD, $class, $routine, $arginfo, $cArgs );    
     
@@ -3818,8 +3850,8 @@ sub GetCArgs {
     $mpi_routine_name = $routine;
     if ($args eq "") {
 	# Check for an alternate name
-	print STDERR "Checking for $class-$routine\n" if $gDebug;
-	print STDERR "Trial = $trial_name\n" if $gDebug;
+	print "Checking for $class-$routine\n" if $gDebug;
+	print "Trial = $trial_name\n" if $gDebug;
 	if (defined($mpi_routine{$trial_name})) {
 	    $mpi_routine_name = $trial_name;
 	    $args = $mpi_routine{$mpi_routine_name};
@@ -4072,7 +4104,7 @@ sub const_in_methoddecl {
 	}
 	else {
 	    print $OUTFD "const $lparm v$count";
-	    print "const added to $lparm, argument $count for $routine(class $class)\n" if $debug;
+	    print "const added to $lparm, argument $count for $routine(class $class)\n" if $gDebug;
 	}
     }
 }
@@ -4080,7 +4112,7 @@ sub const_in_methoddecl {
 sub const_in_call {
     my $count = $_[0];
     my $lparm = $parm;
-    if ($lparm =~ /(\w*)\s*\[\]/) {
+    if ($lparm =~ /^\s*([\w\s]+)\s*\[\]/) {
 	my $basetype = $1;
 	# ISO C++ forbids casting to an array type, but we can
 	# cast to a pointer
@@ -4763,7 +4795,7 @@ sub ReadFuncSpec {
 		    $argnum ++;
 		}
 		else {
-		    print STDERR "I'm confused!\n";
+		    print STDERR "Input line from $filename not recognized: $line\n";
 		    last;
 		}
 	    }
@@ -4802,7 +4834,7 @@ sub ReadFuncSpec {
 		    }
 		    my $oldval = $$classVar{$routine};
 		    if ($oldval ne $newval) {
-			print STDERR "Changing $classVar\{$routine\} from $oldval to $newval\n" if $gDebug;
+			print "Changing $classVar\{$routine\} from $oldval to $newval\n" if $gDebug;
 		    }
 		}
 		$$classVar{$routine} = $funcops . $specialPos;

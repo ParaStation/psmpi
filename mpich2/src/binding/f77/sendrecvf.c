@@ -191,5 +191,5 @@ FORT_DLL_SPEC void FORT_CALL mpi_sendrecv_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3
 #endif
 
     if (v12 == MPI_F_STATUS_IGNORE) { v12 = (MPI_Fint*)MPI_STATUS_IGNORE; }
-    *ierr = MPI_Sendrecv( v1, *v2, (MPI_Datatype)(*v3), *v4, *v5, v6, *v7, (MPI_Datatype)(*v8), *v9, *v10, (MPI_Comm)(*v11), (MPI_Status *)v12 );
+    *ierr = MPI_Sendrecv( v1, (int)*v2, (MPI_Datatype)(*v3), (int)*v4, (int)*v5, v6, (int)*v7, (MPI_Datatype)(*v8), (int)*v9, (int)*v10, (MPI_Comm)(*v11), (MPI_Status *)v12 );
 }

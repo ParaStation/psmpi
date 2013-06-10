@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -34,12 +34,12 @@
   MPI_Pack_external_size - Returns the upper bound on the amount of
   space needed to pack a message using MPI_Pack_external.
 
-   Input Parameters:
+Input Parameters:
 + datarep - data representation (string)
 . incount - number of input data items (integer)
 - datatype - datatype of each input data item (handle)
 
-   Output Parameters:
+Output Parameters:
 . size - output buffer size, in bytes (address integer)
 
 .N ThreadSafe
@@ -51,7 +51,7 @@
 .N MPI_ERR_TYPE
 .N MPI_ERR_ARG
 @*/
-int MPI_Pack_external_size(MPICH2_CONST char *datarep,
+int MPI_Pack_external_size(const char datarep[],
 			   int incount,
 			   MPI_Datatype datatype,
 			   MPI_Aint *size)

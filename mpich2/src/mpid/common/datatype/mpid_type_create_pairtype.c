@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -34,10 +34,10 @@
   This function is different from the other MPID_Type_create functions in that
   it fills in an already- allocated MPID_Datatype.  This is important for
   allowing configure-time determination of the MPI type values (these types
-  are stored in the "direct" space, for those familiar with how MPICH2 deals
+  are stored in the "direct" space, for those familiar with how MPICH deals
   with type allocation).
 
-  Input Parameters:
+Input Parameters:
 + type - name of pair type (e.g. MPI_FLOAT_INT)
 - new_dtp - pointer to previously allocated datatype structure, which is
             filled in by this function

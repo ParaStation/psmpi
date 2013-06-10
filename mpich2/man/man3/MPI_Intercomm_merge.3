@@ -1,4 +1,4 @@
-.TH MPI_Intercomm_merge 3 "9/20/2012" " " "MPI"
+.TH MPI_Intercomm_merge 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Intercomm_merge \-  Creates an intracommuncator from an intercommunicator 
 .SH SYNOPSIS
@@ -8,7 +8,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 .SH INPUT PARAMETERS
 .PD 0
 .TP
-.B comm 
+.B intercomm 
 - Intercommunicator (handle)
 .PD 1
 .PD 0
@@ -23,10 +23,10 @@ this value to false.  If all processes in the intercommunicator provide
 the same value, the choice of which group is ordered first is arbitrary.
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
-.B comm_out 
+.B newintracomm 
 - Created intracommunicator (handle)
 .PD 1
 
@@ -70,14 +70,12 @@ All MPI objects (e.g.,
 in Fortran.
 
 .SH ALGORITHM
-.nr e 1 1
-
-\\neAllocate contexts
-\\neLocal and remote group leaders swap high values
-\\neDetermine the high value.
-\\neMerge the two groups and make the intra-communicator
-.rr e
-
+b
+Allocate contexts
+Local and remote group leaders swap high values
+Determine the high value.
+Merge the two groups and make the intra-communicator
+e
 
 .SH ERRORS
 

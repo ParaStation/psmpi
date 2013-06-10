@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -34,10 +34,10 @@
 
 MPI_Comm_test_inter - Tests to see if a comm is an inter-communicator
 
-Input Parameter:
+Input Parameters:
 . comm - communicator to test (handle) 
 
-Output Parameter:
+Output Parameters:
 . flag - true if this is an inter-communicator(logical) 
 
 .N SignalSafe

@@ -1,22 +1,22 @@
-.TH MPI_Type_set_attr 3 "9/26/2012" " " "MPI"
+.TH MPI_Type_set_attr 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Type_set_attr \-  Stores attribute value associated with a key 
 .SH SYNOPSIS
 .nf
-int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
+int MPI_Type_set_attr(MPI_Datatype datatype, int type_keyval, void *attribute_val)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
-.B type 
-- MPI Datatype to which attribute will be attached (handle) 
+.B datatype 
+- MPI Datatype to which attribute will be attached (handle)
 .PD 1
 .PD 0
 .TP
-.B keyval 
+.B type_keyval 
 - key value, as returned by  
 .I MPI_Type_create_keyval
-(integer) 
+(integer)
 .PD 1
 .PD 0
 .TP

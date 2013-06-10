@@ -186,7 +186,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_iwrite( MPI_Fint *, void*, MPI_Fin
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_file_iwrite_ ( MPI_Fint *v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPIO_Request*v5, MPI_Fint *ierr ){
 #ifdef MPI_MODE_RDONLY
-    *ierr = MPI_File_iwrite( MPI_File_f2c(*v1), v2, *v3, (MPI_Datatype)(*v4), v5 );
+    *ierr = MPI_File_iwrite( MPI_File_f2c(*v1), v2, (int)*v3, (MPI_Datatype)(*v4), v5 );
 #else
 *ierr = MPI_ERR_INTERN;
 #endif

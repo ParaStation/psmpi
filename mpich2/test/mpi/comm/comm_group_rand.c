@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2003 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -42,9 +42,9 @@ int main(int argc, char **argv)
 
         MPI_Group_incl(full_group, count, ranks, &sub_group);
 
-#if !defined(USE_STRICT_MPI) && defined(MPICH2)
+#if !defined(USE_STRICT_MPI) && defined(MPICH)
         if (included[rank]) {
-            MPIX_Comm_create_group(MPI_COMM_WORLD, sub_group, 0, &comm);
+            MPI_Comm_create_group(MPI_COMM_WORLD, sub_group, 0, &comm);
             MPI_Barrier(comm);
             MPI_Comm_free(&comm);
         }

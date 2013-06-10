@@ -1,7 +1,7 @@
 # -*- shell-script -*-
 #
 # Copyright © 2009      CNRS
-# Copyright © 2009-2010 inria.  All rights reserved.
+# Copyright © 2009-2013 Inria.  All rights reserved.
 # Copyright © 2009, 2011-2012      Université Bordeaux 1
 # Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 #
@@ -147,6 +147,13 @@ AS_IF([test "$hwloc_mode" = "standalone"],
        HWLOC_SETUP_UTILS
        HWLOC_SETUP_TESTS])
 
+cat <<EOF
+
+###
+### Performing final hwloc configuration
+###
+EOF
+
 # Run the AM_CONDITIONALs
 HWLOC_DO_AM_CONDITIONALS
 
@@ -159,8 +166,23 @@ LIBS="$HWLOC_EMBEDDED_LIBS $LIBS"
 # Compiler support -- we don't need that stuff.
 AM_ENABLE_SHARED
 AM_DISABLE_STATIC
-AM_PROG_LIBTOOL([win32-dll])
+AM_PROG_LIBTOOL([dlopen win32-dll])
 LT_LANG([C])
+LT_CONFIG_LTDL_DIR([src/libltdl])
+LTDL_INIT([recursive convenience])
+AC_CONFIG_FILES([src/libltdl/Makefile])
+
+# Workarounds for libtool LT_CONFIG_H bug
+#CPPFLAGS="$CPPFLAGS -I$HWLOC_top_builddir"
+AC_CONFIG_COMMANDS_PRE([LT_CONFIG_H=`expr "$LT_CONFIG_H" : '.*/\(.*\)'`])
+
+# Add libltdl static-build dependencies to hwloc.pc
+if test "x$hwloc_have_plugins" = xyes; then
+  if test "x$with_included_ltdl" = xno; then
+    HWLOC_LIBS_PRIVATE="$HWLOC_LIBS_PRIVATE $LIBLTDL"
+  fi
+  HWLOC_LIBS_PRIVATE="$HWLOC_LIBS_PRIVATE $lt_cv_dlopen_libs"
+fi
 
 ## Enable creation of libtool-style versioning or no versioning
 AC_ARG_ENABLE(versioning,
@@ -174,7 +196,6 @@ else
 fi
 export libhwloc_so_versionflags
 AC_SUBST(libhwloc_so_versionflags)
-
 
 # Party on
 AC_OUTPUT
@@ -194,6 +215,16 @@ append_env() {
     eval "[$]1=\"$new_value\""
 }
 
+# Warn about PCI support
+if test x$hwloc_warn_may_use_libpci = xyes; then
+  echo
+  echo "***********************************************************************"
+  echo "PCI support could not be enabled because libpciaccess is not available."
+  echo "libpci could be used instead but hwloc may be tainted by the GPL"
+  echo "license of pciutils. Add --enable-libpci to enable it."
+  echo "***********************************************************************"
+fi
+
 # Show which optional support we'll be building
 hwloc_xml_status=basic
 AS_IF([test "$hwloc_libxml2_happy" = "yes"], [hwloc_xml_status=full])
@@ -207,6 +238,7 @@ Hwloc optional build support status (more details can be found above):
 Probe / display PCI devices: $hwloc_pci_happy
 Graphical output (Cairo):    $hwloc_cairo_happy
 XML input / output:          $hwloc_xml_status
+Plugin support:              $hwloc_have_plugins
 EOF
 
 # Linux specific support

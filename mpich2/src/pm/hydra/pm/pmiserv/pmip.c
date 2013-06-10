@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -26,7 +26,6 @@ static HYD_status init_params(void)
     HYD_pmcd_pmip.system_global.pmi_id_map.non_filler_start = -1;
 
     HYD_pmcd_pmip.system_global.global_process_count = -1;
-    HYD_pmcd_pmip.system_global.jobid = NULL;
     HYD_pmcd_pmip.system_global.pmi_fd = NULL;
     HYD_pmcd_pmip.system_global.pmi_rank = -1;
     HYD_pmcd_pmip.system_global.pmi_process_mapping = NULL;
@@ -48,7 +47,7 @@ static HYD_status init_params(void)
     HYD_pmcd_pmip.local.pgid = -1;
     HYD_pmcd_pmip.local.iface_ip_env_name = NULL;
     HYD_pmcd_pmip.local.hostname = NULL;
-    HYD_pmcd_pmip.local.spawner_kvs_name = NULL;
+    HYD_pmcd_pmip.local.spawner_kvsname = NULL;
     HYD_pmcd_pmip.local.proxy_core_count = -1;
     HYD_pmcd_pmip.local.proxy_process_count = -1;
     HYD_pmcd_pmip.local.ckpoint_prefix_list = NULL;
@@ -68,9 +67,6 @@ static void cleanup_params(void)
     HYDU_finalize_user_global(&HYD_pmcd_pmip.user_global);
 
     /* System global */
-    if (HYD_pmcd_pmip.system_global.jobid)
-        HYDU_FREE(HYD_pmcd_pmip.system_global.jobid);
-
     if (HYD_pmcd_pmip.system_global.pmi_fd)
         HYDU_FREE(HYD_pmcd_pmip.system_global.pmi_fd);
 
@@ -113,8 +109,8 @@ static void cleanup_params(void)
     if (HYD_pmcd_pmip.local.hostname)
         HYDU_FREE(HYD_pmcd_pmip.local.hostname);
 
-    if (HYD_pmcd_pmip.local.spawner_kvs_name)
-        HYDU_FREE(HYD_pmcd_pmip.local.spawner_kvs_name);
+    if (HYD_pmcd_pmip.local.spawner_kvsname)
+        HYDU_FREE(HYD_pmcd_pmip.local.spawner_kvsname);
 
     if (HYD_pmcd_pmip.local.ckpoint_prefix_list) {
         for (i = 0; HYD_pmcd_pmip.local.ckpoint_prefix_list[i]; i++)
@@ -195,7 +191,7 @@ int main(int argc, char **argv)
 
     status = HYDU_sock_write(HYD_pmcd_pmip.upstream.control,
                              &HYD_pmcd_pmip.local.id, sizeof(HYD_pmcd_pmip.local.id), &sent,
-                             &closed);
+                             &closed, HYDU_SOCK_COMM_MSGWAIT);
     HYDU_ERR_POP(status, "unable to send the proxy ID to the server\n");
     if (closed)
         goto fn_fail;
@@ -264,14 +260,15 @@ int main(int argc, char **argv)
     HYD_pmcd_init_header(&hdr);
     hdr.cmd = EXIT_STATUS;
     status =
-        HYDU_sock_write(HYD_pmcd_pmip.upstream.control, &hdr, sizeof(hdr), &sent, &closed);
+        HYDU_sock_write(HYD_pmcd_pmip.upstream.control, &hdr, sizeof(hdr), &sent, &closed,
+                        HYDU_SOCK_COMM_MSGWAIT);
     HYDU_ERR_POP(status, "unable to send EXIT_STATUS command upstream\n");
     HYDU_ASSERT(!closed, status);
 
     status = HYDU_sock_write(HYD_pmcd_pmip.upstream.control,
                              HYD_pmcd_pmip.downstream.exit_status,
                              HYD_pmcd_pmip.local.proxy_process_count * sizeof(int), &sent,
-                             &closed);
+                             &closed, HYDU_SOCK_COMM_MSGWAIT);
     HYDU_ERR_POP(status, "unable to return exit status upstream\n");
     HYDU_ASSERT(!closed, status);
 

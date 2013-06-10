@@ -1,9 +1,9 @@
-.TH MPI_Cart_map 3 "9/20/2012" " " "MPI"
+.TH MPI_Cart_map 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Cart_map \-  Maps process to Cartesian topology information  
 .SH SYNOPSIS
 .nf
-int MPI_Cart_map(MPI_Comm comm_old, int ndims, MPICH2_CONST int *dims, MPICH2_CONST int *periods,
+int MPI_Cart_map(MPI_Comm comm, int ndims, const int dims[], const int periods[],
                 int *newrank)
 .fi
 .SH INPUT PARAMETERS
@@ -34,7 +34,7 @@ specifying the periodicity
 specification in each coordinate direction 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B newrank 

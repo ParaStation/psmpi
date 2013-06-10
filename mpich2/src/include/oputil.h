@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2009 by Argonne National Laboratory.
@@ -287,7 +287,7 @@ typedef struct {
     MPIR_OP_TYPE_MACRO_HAVE_UINT32_T(MPI_UINT32_T, uint32_t, mpir_typename_uint32_t)                                  \
     MPIR_OP_TYPE_MACRO_HAVE_UINT64_T(MPI_UINT64_T, uint64_t, mpir_typename_uint64_t)                                  \
 /* The MPI Standard doesn't include these types in the C integer group for
-   predefined operations but MPICH2 supports them when possible. */
+   predefined operations but MPICH supports them when possible. */
 #define MPIR_OP_TYPE_GROUP_C_INTEGER_EXTRA      \
     MPIR_OP_TYPE_MACRO(MPI_CHAR, char, mpir_typename_char)
 
@@ -295,9 +295,10 @@ typedef struct {
 #define MPIR_OP_TYPE_GROUP_FORTRAN_INTEGER                                            \
     MPIR_OP_TYPE_MACRO_HAVE_FORTRAN(MPI_INTEGER, MPI_Fint, mpir_typename_integer)     \
     MPIR_OP_TYPE_MACRO(MPI_AINT, MPI_Aint, mpir_typename_aint)                        \
-    MPIR_OP_TYPE_MACRO(MPI_OFFSET, MPI_Offset, mpir_typename_offset)
+    MPIR_OP_TYPE_MACRO(MPI_OFFSET, MPI_Offset, mpir_typename_offset)                  \
+    MPIR_OP_TYPE_MACRO(MPI_COUNT, MPI_Count, mpir_typename_count)
 /* The MPI Standard doesn't include these types in the Fortran integer group for
-   predefined operations but MPICH2 supports them when possible. */
+   predefined operations but MPICH supports them when possible. */
 #define MPIR_OP_TYPE_GROUP_FORTRAN_INTEGER_EXTRA                                                      \
     MPIR_OP_TYPE_MACRO_HAVE_FORTRAN(MPI_CHARACTER, char, mpir_typename_character)                     \
     MPIR_OP_TYPE_MACRO_HAVE_INTEGER1_CTYPE(MPI_INTEGER1, MPIR_INTEGER1_CTYPE, mpir_typename_integer1) \
@@ -316,7 +317,7 @@ typedef struct {
     MPIR_OP_TYPE_MACRO_HAVE_FORTRAN(MPI_DOUBLE_PRECISION, MPIR_FC_DOUBLE_CTYPE, mpir_typename_double_precision)       \
     MPIR_OP_TYPE_MACRO_HAVE_LONG_DOUBLE(MPI_LONG_DOUBLE, long double, mpir_typename_long_double)                      \
 /* The MPI Standard doesn't include these types in the floating point group for
-   predefined operations but MPICH2 supports them when possible. */
+   predefined operations but MPICH supports them when possible. */
 #define MPIR_OP_TYPE_GROUP_FLOATING_POINT_EXTRA                                               \
     MPIR_OP_TYPE_MACRO_HAVE_REAL4_CTYPE(MPI_REAL4, MPIR_REAL4_CTYPE, mpir_typename_real4)     \
     MPIR_OP_TYPE_MACRO_HAVE_REAL8_CTYPE(MPI_REAL8, MPIR_REAL8_CTYPE, mpir_typename_real8)     \

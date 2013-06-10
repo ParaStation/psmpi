@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_IALLGATHERV = PMPIX_IALLGATHERV
-#pragma weak mpix_iallgatherv__ = PMPIX_IALLGATHERV
-#pragma weak mpix_iallgatherv_ = PMPIX_IALLGATHERV
-#pragma weak mpix_iallgatherv = PMPIX_IALLGATHERV
+#pragma weak MPI_IALLGATHERV = PMPI_IALLGATHERV
+#pragma weak mpi_iallgatherv__ = PMPI_IALLGATHERV
+#pragma weak mpi_iallgatherv_ = PMPI_IALLGATHERV
+#pragma weak mpi_iallgatherv = PMPI_IALLGATHERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_IALLGATHERV = pmpix_iallgatherv__
-#pragma weak mpix_iallgatherv__ = pmpix_iallgatherv__
-#pragma weak mpix_iallgatherv_ = pmpix_iallgatherv__
-#pragma weak mpix_iallgatherv = pmpix_iallgatherv__
+#pragma weak MPI_IALLGATHERV = pmpi_iallgatherv__
+#pragma weak mpi_iallgatherv__ = pmpi_iallgatherv__
+#pragma weak mpi_iallgatherv_ = pmpi_iallgatherv__
+#pragma weak mpi_iallgatherv = pmpi_iallgatherv__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_IALLGATHERV = pmpix_iallgatherv_
-#pragma weak mpix_iallgatherv__ = pmpix_iallgatherv_
-#pragma weak mpix_iallgatherv_ = pmpix_iallgatherv_
-#pragma weak mpix_iallgatherv = pmpix_iallgatherv_
+#pragma weak MPI_IALLGATHERV = pmpi_iallgatherv_
+#pragma weak mpi_iallgatherv__ = pmpi_iallgatherv_
+#pragma weak mpi_iallgatherv_ = pmpi_iallgatherv_
+#pragma weak mpi_iallgatherv = pmpi_iallgatherv_
 #else
-#pragma weak MPIX_IALLGATHERV = pmpix_iallgatherv
-#pragma weak mpix_iallgatherv__ = pmpix_iallgatherv
-#pragma weak mpix_iallgatherv_ = pmpix_iallgatherv
-#pragma weak mpix_iallgatherv = pmpix_iallgatherv
+#pragma weak MPI_IALLGATHERV = pmpi_iallgatherv
+#pragma weak mpi_iallgatherv__ = pmpi_iallgatherv
+#pragma weak mpi_iallgatherv_ = pmpi_iallgatherv
+#pragma weak mpi_iallgatherv = pmpi_iallgatherv
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_iallgatherv_( void*, MPI_Fint *, MPI_Fi
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_IALLGATHERV = PMPIX_IALLGATHERV
+#pragma weak MPI_IALLGATHERV = PMPI_IALLGATHERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_iallgatherv__ = pmpix_iallgatherv__
+#pragma weak mpi_iallgatherv__ = pmpi_iallgatherv__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_iallgatherv = pmpix_iallgatherv
+#pragma weak mpi_iallgatherv = pmpi_iallgatherv
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_iallgatherv_ = pmpix_iallgatherv_
+#pragma weak mpi_iallgatherv_ = pmpi_iallgatherv_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_IALLGATHERV  MPIX_IALLGATHERV
+#pragma _HP_SECONDARY_DEF PMPI_IALLGATHERV  MPI_IALLGATHERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_iallgatherv__  mpix_iallgatherv__
+#pragma _HP_SECONDARY_DEF pmpi_iallgatherv__  mpi_iallgatherv__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_iallgatherv  mpix_iallgatherv
+#pragma _HP_SECONDARY_DEF pmpi_iallgatherv  mpi_iallgatherv
 #else
-#pragma _HP_SECONDARY_DEF pmpix_iallgatherv_  mpix_iallgatherv_
+#pragma _HP_SECONDARY_DEF pmpi_iallgatherv_  mpi_iallgatherv_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_IALLGATHERV as PMPIX_IALLGATHERV
+#pragma _CRI duplicate MPI_IALLGATHERV as PMPI_IALLGATHERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_iallgatherv__ as pmpix_iallgatherv__
+#pragma _CRI duplicate mpi_iallgatherv__ as pmpi_iallgatherv__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_iallgatherv as pmpix_iallgatherv
+#pragma _CRI duplicate mpi_iallgatherv as pmpi_iallgatherv
 #else
-#pragma _CRI duplicate mpix_iallgatherv_ as pmpix_iallgatherv_
+#pragma _CRI duplicate mpi_iallgatherv_ as pmpi_iallgatherv_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_iallgatherv_( void*, MPI_Fint *, MPI_Fi
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_iallgatherv__ = MPIX_IALLGATHERV
-#pragma weak mpix_iallgatherv_ = MPIX_IALLGATHERV
-#pragma weak mpix_iallgatherv = MPIX_IALLGATHERV
+#pragma weak mpi_iallgatherv__ = MPI_IALLGATHERV
+#pragma weak mpi_iallgatherv_ = MPI_IALLGATHERV
+#pragma weak mpi_iallgatherv = MPI_IALLGATHERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_IALLGATHERV = mpix_iallgatherv__
-#pragma weak mpix_iallgatherv_ = mpix_iallgatherv__
-#pragma weak mpix_iallgatherv = mpix_iallgatherv__
+#pragma weak MPI_IALLGATHERV = mpi_iallgatherv__
+#pragma weak mpi_iallgatherv_ = mpi_iallgatherv__
+#pragma weak mpi_iallgatherv = mpi_iallgatherv__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_IALLGATHERV = mpix_iallgatherv_
-#pragma weak mpix_iallgatherv__ = mpix_iallgatherv_
-#pragma weak mpix_iallgatherv = mpix_iallgatherv_
+#pragma weak MPI_IALLGATHERV = mpi_iallgatherv_
+#pragma weak mpi_iallgatherv__ = mpi_iallgatherv_
+#pragma weak mpi_iallgatherv = mpi_iallgatherv_
 #else
-#pragma weak MPIX_IALLGATHERV = mpix_iallgatherv
-#pragma weak mpix_iallgatherv__ = mpix_iallgatherv
-#pragma weak mpix_iallgatherv_ = mpix_iallgatherv
+#pragma weak MPI_IALLGATHERV = mpi_iallgatherv
+#pragma weak mpi_iallgatherv__ = mpi_iallgatherv
+#pragma weak mpi_iallgatherv_ = mpi_iallgatherv
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_iallgatherv_( void*, MPI_Fint *, MPI_Fi
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_iallgatherv__ = PMPIX_IALLGATHERV
-#pragma weak pmpix_iallgatherv_ = PMPIX_IALLGATHERV
-#pragma weak pmpix_iallgatherv = PMPIX_IALLGATHERV
+#pragma weak pmpi_iallgatherv__ = PMPI_IALLGATHERV
+#pragma weak pmpi_iallgatherv_ = PMPI_IALLGATHERV
+#pragma weak pmpi_iallgatherv = PMPI_IALLGATHERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_IALLGATHERV = pmpix_iallgatherv__
-#pragma weak pmpix_iallgatherv_ = pmpix_iallgatherv__
-#pragma weak pmpix_iallgatherv = pmpix_iallgatherv__
+#pragma weak PMPI_IALLGATHERV = pmpi_iallgatherv__
+#pragma weak pmpi_iallgatherv_ = pmpi_iallgatherv__
+#pragma weak pmpi_iallgatherv = pmpi_iallgatherv__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_IALLGATHERV = pmpix_iallgatherv_
-#pragma weak pmpix_iallgatherv__ = pmpix_iallgatherv_
-#pragma weak pmpix_iallgatherv = pmpix_iallgatherv_
+#pragma weak PMPI_IALLGATHERV = pmpi_iallgatherv_
+#pragma weak pmpi_iallgatherv__ = pmpi_iallgatherv_
+#pragma weak pmpi_iallgatherv = pmpi_iallgatherv_
 #else
-#pragma weak PMPIX_IALLGATHERV = pmpix_iallgatherv
-#pragma weak pmpix_iallgatherv__ = pmpix_iallgatherv
-#pragma weak pmpix_iallgatherv_ = pmpix_iallgatherv
+#pragma weak PMPI_IALLGATHERV = pmpi_iallgatherv
+#pragma weak pmpi_iallgatherv__ = pmpi_iallgatherv
+#pragma weak pmpi_iallgatherv_ = pmpi_iallgatherv
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_iallgatherv_ PMPIX_IALLGATHERV
+#define mpi_iallgatherv_ PMPI_IALLGATHERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_iallgatherv_ pmpix_iallgatherv__
+#define mpi_iallgatherv_ pmpi_iallgatherv__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_iallgatherv_ pmpix_iallgatherv
+#define mpi_iallgatherv_ pmpi_iallgatherv
 #else
-#define mpix_iallgatherv_ pmpix_iallgatherv_
+#define mpi_iallgatherv_ pmpi_iallgatherv_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Iallgatherv
-#define MPIX_Iallgatherv PMPIX_Iallgatherv 
+#undef MPI_Iallgatherv
+#define MPI_Iallgatherv PMPI_Iallgatherv 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_iallgatherv_ MPIX_IALLGATHERV
+#define mpi_iallgatherv_ MPI_IALLGATHERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_iallgatherv_ mpix_iallgatherv__
+#define mpi_iallgatherv_ mpi_iallgatherv__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_iallgatherv_ mpix_iallgatherv
+#define mpi_iallgatherv_ mpi_iallgatherv
 /* Else leave name alone */
 #endif
 
@@ -184,11 +184,11 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_iallgatherv( void*, MPI_Fint *, MPI_Fi
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_iallgatherv_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, void*v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *v8, MPI_Fint *v9, MPI_Fint *ierr ){
+FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, void*v4, MPI_Fint v5[], MPI_Fint v6[], MPI_Fint *v7, MPI_Fint *v8, MPI_Fint *v9, MPI_Fint *ierr ){
 
 #ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
 #endif
     if (v1 == MPIR_F_MPI_IN_PLACE) v1 = MPI_IN_PLACE;
-    *ierr = MPIX_Iallgatherv( v1, *v2, (MPI_Datatype)(*v3), v4, v5, v6, (MPI_Datatype)(*v7), (MPI_Comm)(*v8), (MPI_Request *)(v9) );
+    *ierr = MPI_Iallgatherv( v1, (int)*v2, (MPI_Datatype)(*v3), v4, v5, v6, (MPI_Datatype)(*v7), (MPI_Comm)(*v8), (MPI_Request *)(v9) );
 }

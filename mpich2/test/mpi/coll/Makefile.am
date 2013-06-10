@@ -52,6 +52,7 @@ noinst_PROGRAMS =      \
     gather             \
     gather2            \
     iallred            \
+    ibarrier           \
     icallgather        \
     icallgatherv       \
     icallreduce        \
@@ -99,6 +100,7 @@ noinst_PROGRAMS =      \
     scatter3           \
     scattern           \
     scatterv           \
+    uoplong            \
     nballtoall1        \
     nbredscat          \
     nbredscat3	       \

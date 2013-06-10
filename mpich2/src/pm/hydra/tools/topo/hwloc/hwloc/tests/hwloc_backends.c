@@ -1,5 +1,5 @@
 /*
- * Copyright © 2011 inria.  All rights reserved.
+ * Copyright © 2012-2013 Inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
@@ -24,10 +24,12 @@ int main(void)
   char xmlfile[] = "hwloc_backends.tmpxml.XXXXXX";
   int xmlbufok = 0, xmlfileok = 0;
   hwloc_obj_t sw;
+  int err;
 
   printf("trying to export topology to XML buffer and file for later...\n");
   hwloc_topology_init(&topology1);
   hwloc_topology_load(topology1);
+  assert(hwloc_topology_is_thissystem(topology1));
   if (hwloc_topology_export_xmlbuffer(topology1, &xmlbuf, &xmlbuflen) < 0)
     printf("XML buffer export failed (%s), ignoring\n", strerror(errno));
   else
@@ -49,39 +51,74 @@ int main(void)
     printf("switching to xmlbuffer...\n");
     assert(!hwloc_topology_set_xmlbuffer(topology2, xmlbuf, xmlbuflen));
   }
-  printf("switching to synthetic...\n");
-  hwloc_topology_set_synthetic(topology2, "machine:2 node:3 cache:2 pu:4");
   printf("switching to custom...\n");
   hwloc_topology_set_custom(topology2);
-  printf("switching sysfs fsroot...\n");
+  printf("switching to synthetic...\n");
+  hwloc_topology_set_synthetic(topology2, "machine:2 node:3 cache:2 pu:4");
+  printf("switching sysfs fsroot to // ...\n");
+  hwloc_topology_set_fsroot(topology2, "//"); /* valid path that won't be recognized as '/' */
+  printf("switching sysfs fsroot to / ...\n");
   hwloc_topology_set_fsroot(topology2, "/");
+  hwloc_topology_destroy(topology2);
 
   if (xmlfileok) {
     printf("switching to xml and loading...\n");
+    hwloc_topology_init(&topology2);
     assert(!hwloc_topology_set_xml(topology2, xmlfile));
     hwloc_topology_load(topology2);
+    hwloc_topology_check(topology2);
+    assert(!hwloc_topology_is_thissystem(topology2));
+    hwloc_topology_destroy(topology2);
   }
+
   if (xmlbufok) {
     printf("switching to xmlbuffer and loading...\n");
+    hwloc_topology_init(&topology2);
     assert(!hwloc_topology_set_xmlbuffer(topology2, xmlbuf, xmlbuflen));
     hwloc_topology_load(topology2);
+    hwloc_topology_check(topology2);
+    assert(!hwloc_topology_is_thissystem(topology2));
+    hwloc_topology_destroy(topology2);
   }
-  printf("switching to synthetic and loading...\n");
-  hwloc_topology_set_synthetic(topology2, "machine:2 node:3 cache:2 pu:4");
-  hwloc_topology_load(topology2);
+
   printf("switching to custom and loading...\n");
+  hwloc_topology_init(&topology2);
   hwloc_topology_set_custom(topology2);
   sw = hwloc_custom_insert_group_object_by_parent(topology2, hwloc_get_root_obj(topology2), 0);
   assert(sw);
   hwloc_custom_insert_topology(topology2, sw, topology1, NULL);
   hwloc_topology_load(topology2);
-  printf("switching sysfs fsroot and loading...\n");
-  hwloc_topology_set_fsroot(topology2, "/");
+  hwloc_topology_check(topology2);
+  assert(!hwloc_topology_is_thissystem(topology2));
+  hwloc_topology_destroy(topology2);
+
+  printf("switching to synthetic and loading...\n");
+  hwloc_topology_init(&topology2);
+  hwloc_topology_set_synthetic(topology2, "machine:2 node:3 cache:2 pu:4");
   hwloc_topology_load(topology2);
+  hwloc_topology_check(topology2);
+  assert(!hwloc_topology_is_thissystem(topology2));
+  hwloc_topology_destroy(topology2);
+
+  printf("switching sysfs fsroot to // and loading...\n");
+  hwloc_topology_init(&topology2);
+  err = hwloc_topology_set_fsroot(topology2, "//"); /* '//' isn't recognized as the normal fsroot on Linux, and it fails and falls back to normal topology on !Linux */
+  hwloc_topology_load(topology2);
+  hwloc_topology_check(topology2);
+  assert(!hwloc_topology_is_thissystem(topology2) == !err);
+  hwloc_topology_destroy(topology2);
+
+  printf("switching sysfs fsroot to / and loading...\n");
+  hwloc_topology_init(&topology2);
+  err = hwloc_topology_set_fsroot(topology2, "/");
+  hwloc_topology_load(topology2);
+  hwloc_topology_check(topology2);
+  assert(hwloc_topology_is_thissystem(topology2)); /* '/' is recognized as the normal fsroot on Linux, and it fails and falls back to normal topology on !Linux */
+  hwloc_topology_destroy(topology2);
 
   printf("switching to synthetic...\n");
+  hwloc_topology_init(&topology2);
   hwloc_topology_set_synthetic(topology2, "machine:2 node:3 cache:2 pu:4");
-
   hwloc_topology_destroy(topology2);
 
 

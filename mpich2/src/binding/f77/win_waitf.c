@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_wait( MPI_Fint *, MPI_Fint * );
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_win_wait_ ( MPI_Fint *v1, MPI_Fint *ierr ){
-    *ierr = MPI_Win_wait( *v1 );
+    *ierr = MPI_Win_wait( (MPI_Win)*v1 );
 }

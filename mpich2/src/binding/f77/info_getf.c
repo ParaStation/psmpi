@@ -198,7 +198,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_info_get_ ( MPI_Fint *v1, char *v2 FORT_MIXED_L
         p2[li] = 0; 
     }
     p4 = (char *)MPIU_Malloc( d4 + 1 );
-    *ierr = MPI_Info_get( (MPI_Info)(*v1), p2, *v3, p4, &l5 );
+    *ierr = MPI_Info_get( (MPI_Info)(*v1), p2, (int)*v3, p4, &l5 );
 
     if (l5 && !*ierr) {char *p = v4, *pc=p4;
         while (*pc) {*p++ = *pc++;}

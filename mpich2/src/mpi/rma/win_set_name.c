@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -31,7 +31,7 @@
 /*@
    MPI_Win_set_name - Set the print name for an MPI RMA window
 
-   Input Parameters:
+Input Parameters:
 + win - window whose identifier is to be set (handle) 
 - win_name - the character string which is remembered as the name (string) 
 
@@ -45,7 +45,7 @@
 .N MPI_ERR_OTHER
 .N MPI_ERR_ARG
 @*/
-int MPI_Win_set_name(MPI_Win win, MPICH2_CONST char *win_name)
+int MPI_Win_set_name(MPI_Win win, const char *win_name)
 {
     static const char FCNAME[] = "MPI_Win_set_name";
     int mpi_errno = MPI_SUCCESS;

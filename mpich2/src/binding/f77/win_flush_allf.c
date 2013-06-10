@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_WIN_FLUSH_ALL( MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_flush_all__( MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_flush_all( MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_flush_all_( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_FLUSH_ALL( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_flush_all__( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_flush_all( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_flush_all_( MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_WIN_FLUSH_ALL = PMPIX_WIN_FLUSH_ALL
-#pragma weak mpix_win_flush_all__ = PMPIX_WIN_FLUSH_ALL
-#pragma weak mpix_win_flush_all_ = PMPIX_WIN_FLUSH_ALL
-#pragma weak mpix_win_flush_all = PMPIX_WIN_FLUSH_ALL
+#pragma weak MPI_WIN_FLUSH_ALL = PMPI_WIN_FLUSH_ALL
+#pragma weak mpi_win_flush_all__ = PMPI_WIN_FLUSH_ALL
+#pragma weak mpi_win_flush_all_ = PMPI_WIN_FLUSH_ALL
+#pragma weak mpi_win_flush_all = PMPI_WIN_FLUSH_ALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_WIN_FLUSH_ALL = pmpix_win_flush_all__
-#pragma weak mpix_win_flush_all__ = pmpix_win_flush_all__
-#pragma weak mpix_win_flush_all_ = pmpix_win_flush_all__
-#pragma weak mpix_win_flush_all = pmpix_win_flush_all__
+#pragma weak MPI_WIN_FLUSH_ALL = pmpi_win_flush_all__
+#pragma weak mpi_win_flush_all__ = pmpi_win_flush_all__
+#pragma weak mpi_win_flush_all_ = pmpi_win_flush_all__
+#pragma weak mpi_win_flush_all = pmpi_win_flush_all__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_WIN_FLUSH_ALL = pmpix_win_flush_all_
-#pragma weak mpix_win_flush_all__ = pmpix_win_flush_all_
-#pragma weak mpix_win_flush_all_ = pmpix_win_flush_all_
-#pragma weak mpix_win_flush_all = pmpix_win_flush_all_
+#pragma weak MPI_WIN_FLUSH_ALL = pmpi_win_flush_all_
+#pragma weak mpi_win_flush_all__ = pmpi_win_flush_all_
+#pragma weak mpi_win_flush_all_ = pmpi_win_flush_all_
+#pragma weak mpi_win_flush_all = pmpi_win_flush_all_
 #else
-#pragma weak MPIX_WIN_FLUSH_ALL = pmpix_win_flush_all
-#pragma weak mpix_win_flush_all__ = pmpix_win_flush_all
-#pragma weak mpix_win_flush_all_ = pmpix_win_flush_all
-#pragma weak mpix_win_flush_all = pmpix_win_flush_all
+#pragma weak MPI_WIN_FLUSH_ALL = pmpi_win_flush_all
+#pragma weak mpi_win_flush_all__ = pmpi_win_flush_all
+#pragma weak mpi_win_flush_all_ = pmpi_win_flush_all
+#pragma weak mpi_win_flush_all = pmpi_win_flush_all
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_win_flush_all_( MPI_Fint *, MPI_Fint * 
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_WIN_FLUSH_ALL( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_FLUSH_ALL( MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_WIN_FLUSH_ALL = PMPIX_WIN_FLUSH_ALL
+#pragma weak MPI_WIN_FLUSH_ALL = PMPI_WIN_FLUSH_ALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_flush_all__( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_flush_all__( MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_win_flush_all__ = pmpix_win_flush_all__
+#pragma weak mpi_win_flush_all__ = pmpi_win_flush_all__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_flush_all( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_flush_all( MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_win_flush_all = pmpix_win_flush_all
+#pragma weak mpi_win_flush_all = pmpi_win_flush_all
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_flush_all_( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_flush_all_( MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_win_flush_all_ = pmpix_win_flush_all_
+#pragma weak mpi_win_flush_all_ = pmpi_win_flush_all_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_WIN_FLUSH_ALL  MPIX_WIN_FLUSH_ALL
+#pragma _HP_SECONDARY_DEF PMPI_WIN_FLUSH_ALL  MPI_WIN_FLUSH_ALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_win_flush_all__  mpix_win_flush_all__
+#pragma _HP_SECONDARY_DEF pmpi_win_flush_all__  mpi_win_flush_all__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_win_flush_all  mpix_win_flush_all
+#pragma _HP_SECONDARY_DEF pmpi_win_flush_all  mpi_win_flush_all
 #else
-#pragma _HP_SECONDARY_DEF pmpix_win_flush_all_  mpix_win_flush_all_
+#pragma _HP_SECONDARY_DEF pmpi_win_flush_all_  mpi_win_flush_all_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_WIN_FLUSH_ALL as PMPIX_WIN_FLUSH_ALL
+#pragma _CRI duplicate MPI_WIN_FLUSH_ALL as PMPI_WIN_FLUSH_ALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_win_flush_all__ as pmpix_win_flush_all__
+#pragma _CRI duplicate mpi_win_flush_all__ as pmpi_win_flush_all__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_win_flush_all as pmpix_win_flush_all
+#pragma _CRI duplicate mpi_win_flush_all as pmpi_win_flush_all
 #else
-#pragma _CRI duplicate mpix_win_flush_all_ as pmpix_win_flush_all_
+#pragma _CRI duplicate mpi_win_flush_all_ as pmpi_win_flush_all_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_win_flush_all_( MPI_Fint *, MPI_Fint * 
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_WIN_FLUSH_ALL( MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_flush_all__( MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_flush_all( MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_flush_all_( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_FLUSH_ALL( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_flush_all__( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_flush_all( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_flush_all_( MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_win_flush_all__ = MPIX_WIN_FLUSH_ALL
-#pragma weak mpix_win_flush_all_ = MPIX_WIN_FLUSH_ALL
-#pragma weak mpix_win_flush_all = MPIX_WIN_FLUSH_ALL
+#pragma weak mpi_win_flush_all__ = MPI_WIN_FLUSH_ALL
+#pragma weak mpi_win_flush_all_ = MPI_WIN_FLUSH_ALL
+#pragma weak mpi_win_flush_all = MPI_WIN_FLUSH_ALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_WIN_FLUSH_ALL = mpix_win_flush_all__
-#pragma weak mpix_win_flush_all_ = mpix_win_flush_all__
-#pragma weak mpix_win_flush_all = mpix_win_flush_all__
+#pragma weak MPI_WIN_FLUSH_ALL = mpi_win_flush_all__
+#pragma weak mpi_win_flush_all_ = mpi_win_flush_all__
+#pragma weak mpi_win_flush_all = mpi_win_flush_all__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_WIN_FLUSH_ALL = mpix_win_flush_all_
-#pragma weak mpix_win_flush_all__ = mpix_win_flush_all_
-#pragma weak mpix_win_flush_all = mpix_win_flush_all_
+#pragma weak MPI_WIN_FLUSH_ALL = mpi_win_flush_all_
+#pragma weak mpi_win_flush_all__ = mpi_win_flush_all_
+#pragma weak mpi_win_flush_all = mpi_win_flush_all_
 #else
-#pragma weak MPIX_WIN_FLUSH_ALL = mpix_win_flush_all
-#pragma weak mpix_win_flush_all__ = mpix_win_flush_all
-#pragma weak mpix_win_flush_all_ = mpix_win_flush_all
+#pragma weak MPI_WIN_FLUSH_ALL = mpi_win_flush_all
+#pragma weak mpi_win_flush_all__ = mpi_win_flush_all
+#pragma weak mpi_win_flush_all_ = mpi_win_flush_all
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_win_flush_all_( MPI_Fint *, MPI_Fint * 
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_WIN_FLUSH_ALL( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_FLUSH_ALL( MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_win_flush_all__( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_flush_all__( MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_win_flush_all_( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_flush_all_( MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_win_flush_all( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_flush_all( MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_win_flush_all__ = PMPIX_WIN_FLUSH_ALL
-#pragma weak pmpix_win_flush_all_ = PMPIX_WIN_FLUSH_ALL
-#pragma weak pmpix_win_flush_all = PMPIX_WIN_FLUSH_ALL
+#pragma weak pmpi_win_flush_all__ = PMPI_WIN_FLUSH_ALL
+#pragma weak pmpi_win_flush_all_ = PMPI_WIN_FLUSH_ALL
+#pragma weak pmpi_win_flush_all = PMPI_WIN_FLUSH_ALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_WIN_FLUSH_ALL = pmpix_win_flush_all__
-#pragma weak pmpix_win_flush_all_ = pmpix_win_flush_all__
-#pragma weak pmpix_win_flush_all = pmpix_win_flush_all__
+#pragma weak PMPI_WIN_FLUSH_ALL = pmpi_win_flush_all__
+#pragma weak pmpi_win_flush_all_ = pmpi_win_flush_all__
+#pragma weak pmpi_win_flush_all = pmpi_win_flush_all__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_WIN_FLUSH_ALL = pmpix_win_flush_all_
-#pragma weak pmpix_win_flush_all__ = pmpix_win_flush_all_
-#pragma weak pmpix_win_flush_all = pmpix_win_flush_all_
+#pragma weak PMPI_WIN_FLUSH_ALL = pmpi_win_flush_all_
+#pragma weak pmpi_win_flush_all__ = pmpi_win_flush_all_
+#pragma weak pmpi_win_flush_all = pmpi_win_flush_all_
 #else
-#pragma weak PMPIX_WIN_FLUSH_ALL = pmpix_win_flush_all
-#pragma weak pmpix_win_flush_all__ = pmpix_win_flush_all
-#pragma weak pmpix_win_flush_all_ = pmpix_win_flush_all
+#pragma weak PMPI_WIN_FLUSH_ALL = pmpi_win_flush_all
+#pragma weak pmpi_win_flush_all__ = pmpi_win_flush_all
+#pragma weak pmpi_win_flush_all_ = pmpi_win_flush_all
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_win_flush_all_ PMPIX_WIN_FLUSH_ALL
+#define mpi_win_flush_all_ PMPI_WIN_FLUSH_ALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_win_flush_all_ pmpix_win_flush_all__
+#define mpi_win_flush_all_ pmpi_win_flush_all__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_win_flush_all_ pmpix_win_flush_all
+#define mpi_win_flush_all_ pmpi_win_flush_all
 #else
-#define mpix_win_flush_all_ pmpix_win_flush_all_
+#define mpi_win_flush_all_ pmpi_win_flush_all_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Win_flush_all
-#define MPIX_Win_flush_all PMPIX_Win_flush_all 
+#undef MPI_Win_flush_all
+#define MPI_Win_flush_all PMPI_Win_flush_all 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_win_flush_all_ MPIX_WIN_FLUSH_ALL
+#define mpi_win_flush_all_ MPI_WIN_FLUSH_ALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_win_flush_all_ mpix_win_flush_all__
+#define mpi_win_flush_all_ mpi_win_flush_all__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_win_flush_all_ mpix_win_flush_all
+#define mpi_win_flush_all_ mpi_win_flush_all
 /* Else leave name alone */
 #endif
 
@@ -184,6 +184,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_win_flush_all( MPI_Fint *, MPI_Fint * 
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_win_flush_all_ ( MPI_Fint *v1, MPI_Fint *ierr ){
-    *ierr = MPIX_Win_flush_all( *v1 );
+FORT_DLL_SPEC void FORT_CALL mpi_win_flush_all_ ( MPI_Fint *v1, MPI_Fint *ierr ){
+    *ierr = MPI_Win_flush_all( (MPI_Win)*v1 );
 }

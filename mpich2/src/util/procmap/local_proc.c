@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -84,6 +84,8 @@ int MPIU_Find_local_and_external(MPID_Comm *comm, int *local_size_p, int *local_
        node to the list. */
     
     /* these two will be realloc'ed later to the appropriate size (currently unknown) */
+    /* FIXME: realloc doesn't guarantee that the allocated area will be 
+       shrunk - so using realloc is not an appropriate strategy. */
     MPIU_CHKPMEM_MALLOC (external_ranks, int *, sizeof(int) * comm->remote_size, mpi_errno, "external_ranks");
     MPIU_CHKPMEM_MALLOC (local_ranks, int *, sizeof(int) * comm->remote_size, mpi_errno, "local_ranks");
 
@@ -221,7 +223,7 @@ fn_fail:
 /* maps rank r in comm_ptr to the rank of the leader for r's node in
    comm_ptr->node_roots_comm and returns this value.
   
-   This function does NOT use mpich2 error handling.
+   This function does NOT use mpich error handling.
  */
 #undef FUNCNAME
 #define FUNCNAME MPIU_Get_internode_rank
@@ -242,7 +244,7 @@ int MPIU_Get_internode_rank(MPID_Comm *comm_ptr, int r)
 /* maps rank r in comm_ptr to the rank in comm_ptr->node_comm or -1 if r is not
    a member of comm_ptr->node_comm.
   
-   This function does NOT use mpich2 error handling.
+   This function does NOT use mpich error handling.
  */
 #undef FUNCNAME
 #define FUNCNAME MPIU_Get_intranode_rank

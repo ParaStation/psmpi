@@ -16,7 +16,7 @@
 static UT_array *all_pvars = NULL;
 
 /* Called by lower-level initialization code to add pvars to the global list.
- * Will cause the value returned by MPIX_T_pvar_get_num to be incremented and
+ * Will cause the value returned by MPI_T_pvar_get_num to be incremented and
  * sets up that new index to work with get_info, handle_alloc, etc. */
 int MPIR_T_pvar_add(const char *name,
                     enum MPIR_T_verbosity_t verbosity,
@@ -133,17 +133,19 @@ int MPIR_T_finalize_pvars(void)
  */
 void MPIU_Tool_strncpy(char *dst, const char *src, int *len)
 {
-    MPIU_Assert(len);
-    MPIU_Assert(*len >= 0);
+    /* std. says to ignore str arg if len arg is NULL (MPI-3, p.563) */
+    if (len) {
+        MPIU_Assert(*len >= 0);
 
-    if (!dst || !len) {
-        /* just return the space needed to hold src, including the terminator */
-        *len = strlen(src);
-    }
-    else {
-        /* MPL_strncpy will always terminate the string */
-        MPL_strncpy(dst, src, *len);
-        *len = strlen(dst);
+        if (!dst || !*len) {
+            /* just return the space needed to hold src, including the terminator */
+            *len = strlen(src) + 1;
+        }
+        else {
+            /* MPL_strncpy will always terminate the string */
+            MPL_strncpy(dst, src, *len);
+            *len = strlen(dst) + 1;
+        }
     }
 }
 

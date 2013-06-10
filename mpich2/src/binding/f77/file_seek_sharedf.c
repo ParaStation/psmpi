@@ -186,7 +186,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_seek_shared( MPI_Fint *, MPI_Offse
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_file_seek_shared_ ( MPI_Fint *v1, MPI_Offset *v2, MPI_Fint *v3, MPI_Fint *ierr ){
 #ifdef MPI_MODE_RDONLY
-    *ierr = MPI_File_seek_shared( MPI_File_f2c(*v1), *v2, *v3 );
+    *ierr = MPI_File_seek_shared( MPI_File_f2c(*v1), (MPI_Offset)*v2, (int)*v3 );
 #else
 *ierr = MPI_ERR_INTERN;
 #endif

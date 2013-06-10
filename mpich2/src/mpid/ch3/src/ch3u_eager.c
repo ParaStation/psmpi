@@ -1,10 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
 #include "mpidimpl.h"
+#include "mpidi_recvq_statistics.h"
 
 /*
  * Send an eager message.  To optimize for the important, short contiguous
@@ -387,7 +388,7 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 		/* user buffer is not contiguous.  Use the segment
 		   code to unpack it, handling various errors and 
 		   exceptional cases */
-		/* FIXME: The MPICH2 tests do not exercise this branch */
+		/* FIXME: The MPICH tests do not exercise this branch */
 		/* printf( "Surprise!\n" ); fflush(stdout);*/
 		rreq->dev.segment_ptr = MPID_Segment_alloc( );
                 MPIU_ERR_CHKANDJUMP1((rreq->dev.segment_ptr == NULL), mpi_errno, MPI_ERR_OTHER, "**nomem", "**nomem %s", "MPID_Segment_alloc");
@@ -435,6 +436,7 @@ int MPIDI_CH3_PktHandler_EagerShortSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
                a buffer that we've allocated). */
 	    /* printf( "Allocating into tmp\n" ); fflush(stdout); */
 	    recv_data_sz = rreq->dev.recv_data_sz;
+            MPIR_T_ADD(RECVQ_STATISTICS, MPIDI_CH3I_unexpected_recvq_buffer_size, recv_data_sz);
 	    rreq->dev.tmpbuf = MPIU_Malloc(recv_data_sz);
 	    if (!rreq->dev.tmpbuf) {
 		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");

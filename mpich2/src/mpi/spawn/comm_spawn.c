@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -31,7 +31,7 @@
 /*@
    MPI_Comm_spawn - Spawn up to maxprocs instances of a single MPI application
 
-   Input Parameters:
+Input Parameters:
 + command - name of program to be spawned (string, significant only at root) 
 . argv - arguments to command (array of strings, significant only at root) 
 . maxprocs - maximum number of processes to start (integer, significant only 
@@ -41,7 +41,7 @@
 . root - rank of process in which previous arguments are examined (integer) 
 - comm - intracommunicator containing group of spawning processes (handle) 
 
-   Output Parameters:
+Output Parameters:
 + intercomm - intercommunicator between original group and the 
    newly spawned group (handle) 
 - array_of_errcodes - one code per process (array of integer) 
@@ -57,7 +57,7 @@
 .N MPI_ERR_INFO
 .N MPI_ERR_SPAWN
 @*/
-int MPI_Comm_spawn(MPICH2_CONST char *command, char *argv[], int maxprocs, MPI_Info info,
+int MPI_Comm_spawn(const char *command, char *argv[], int maxprocs, MPI_Info info,
 		   int root, MPI_Comm comm, MPI_Comm *intercomm,
 		   int array_of_errcodes[])
 {

@@ -187,7 +187,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_get_attr( MPI_Fint *, MPI_Fint *, v
 FORT_DLL_SPEC void FORT_CALL mpi_win_get_attr_ ( MPI_Fint *v1, MPI_Fint *v2, void*v3, MPI_Fint *v4, MPI_Fint *ierr ){
     void *attrv3;
     int l4;
-   *ierr = MPIR_WinGetAttr( *v1, *v2, &attrv3, &l4, MPIR_ATTR_AINT );
+   *ierr = MPIR_WinGetAttr( (MPI_Win)*v1, (int)*v2, &attrv3, &l4, MPIR_ATTR_AINT );
 
     if ((int)*ierr || !l4) {
         *(MPI_Aint*)v3 = 0;

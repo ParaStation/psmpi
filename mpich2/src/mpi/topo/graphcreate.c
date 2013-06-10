@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -144,7 +144,7 @@ Input Parameters:
 . edges - array of integers describing graph edges (see below) 
 - reorder - ranking may be reordered (true) or not (false) (logical) 
 
-Output Parameter:
+Output Parameters:
 . comm_graph - communicator with graph topology added (handle) 
 
 Notes:
@@ -165,8 +165,8 @@ We ignore the 'reorder' info currently.
 .N MPI_ERR_ARG
 
 @*/
-int MPI_Graph_create(MPI_Comm comm_old, int nnodes, MPICH2_CONST int *indx,
-                     MPICH2_CONST int *edges, int reorder, MPI_Comm *comm_graph)
+int MPI_Graph_create(MPI_Comm comm_old, int nnodes, const int indx[],
+                     const int edges[], int reorder, MPI_Comm *comm_graph)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;

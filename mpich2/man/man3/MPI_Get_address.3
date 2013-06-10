@@ -1,18 +1,18 @@
-.TH MPI_Get_address 3 "9/20/2012" " " "MPI"
+.TH MPI_Get_address 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Get_address \-  Get the address of a location in memory 
 .SH SYNOPSIS
 .nf
-int MPI_Get_address(MPICH2_CONST void *location, MPI_Aint *address)
+int MPI_Get_address(const void *location, MPI_Aint *address)
 .fi
-.SH INPUT PARAMETER
+.SH INPUT PARAMETERS
 .PD 0
 .TP
 .B location 
 - location in caller memory (choice)
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B address 

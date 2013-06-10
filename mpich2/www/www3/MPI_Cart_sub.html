@@ -9,7 +9,7 @@
 Partitions a communicator into subgroups which  form lower-dimensional cartesian subgrids 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Cart_sub(MPI_Comm comm, MPICH2_CONST int *remain_dims, MPI_Comm *comm_new)
+int MPI_Cart_sub(MPI_Comm comm, const int remain_dims[], MPI_Comm *newcomm)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -20,7 +20,7 @@ dimension is kept in the subgrid (true) or is dropped (false) (logical
 vector) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>newcomm </B> <DD> communicator containing the subgrid that includes the calling 
 process (handle) 
 </DL>

@@ -48,7 +48,7 @@ $within_fint = 0;        # This is set to 1 while generating code for the
                          # do_fint branch
 %fintToHandle = ( 'int' => 1, 'MPI_Request' => 1, 'MPI_Group' => 1, 
 		  'MPI_Win' => 1, 'MPI_Info' => 1, 'MPI_Errhandler' => 1, 
-		  'MPI_File' => 1, 'MPI_Op' => 1, 'MPIX_Message' => 1 );
+		  'MPI_File' => 1, 'MPI_Op' => 1, 'MPI_Message' => 1 );
 
 @arg_addresses = ();
 #
@@ -174,10 +174,12 @@ foreach $_ (@ARGV) {
 	   'MPI_Op' => 'MPI_Fint *',
 	   'MPI_Info' => 'MPI_Fint *',
 	   'MPI_Errhandler' => 'MPI_Fint *',
-	   'MPIX_Message' => 'MPI_Fint *',
+	   'MPI_Message' => 'MPI_Fint *',
 	   'MPI_Aint' => 'MPI_Fint *',   # Should be MPIR_FAint
 	   'MPI_FAintp' => 'MPI_Aint *', # Used to force an MPI_Aint*
 	   'MPI_Offset' => 'MPI_Offset *', # Should be MPIR_FOint
+	   'MPI_Count' => 'MPI_Count *', # Should be MPIR_FCint?
+	   'MPI_Count*' => 'MPI_Count *', # Should be MPIR_FCint?
 	   'int' => 'MPI_Fint *',
 	   'int[]' => 'MPI_Fint',        # no * because we'll use array form
 	   'int[][3]' => 'MPI_Fint',     # no * because we'll use array form
@@ -188,12 +190,15 @@ foreach $_ (@ARGV) {
 	   'MPI_Win*' => 'MPI_Fint *', 
 	   'MPI_Group*' => 'MPI_Fint *',
 	   'MPI_Request*' => 'MPI_Fint *',
-	   'MPIX_Message*' => 'MPI_Fint *',
+	   'MPI_Request[]' => 'MPI_Fint',
+	   'MPI_Message*' => 'MPI_Fint *',
 	   'MPI_Aint*' => 'MPI_Fint *',   # Should be MPIR_FAint
+	   'MPI_Count*' => 'MPI_Count *',
 	   'int *' => 'MPI_Fint *',
 	   'int*' => 'MPI_Fint *',         # Catch missing space
 	   'MPI_Op*' => 'MPI_Fint *',
 	   'MPI_Status*' => 'MPI_Fint *',
+	   'MPI_Status[]' => 'MPI_Fint',
 	   'MPI_Info*' => 'MPI_Fint *',
 	   'MPI_Info[]' => 'MPI_Fint',
 	   'MPI_Errhandler*' => 'MPI_Fint *',
@@ -230,10 +235,12 @@ foreach $_ (@ARGV) {
 	     'get-5' => 'MPI_Aint *',
 	     'alloc_mem-1' => 'MPI_Aint *',
              'win_shared_query-3' => 'MPI_Aint *',
+	     #'status_set_elements_x-3' => 'MPI_Count *',
 	    );
 
 %argsneedcast = ( 'MPI_Request *' => '(MPI_Request *)(ARG)',
 		  'MPI_Status *'  => '(MPI_Status *)(ARG)',
+		  'MPI_Status []' => '(MPI_Status [])(ARG)',
 		  'MPI_File' => 'MPI_File_f2c(ARG)',
 		  'MPI_Comm' => '(MPI_Comm)(ARG)',
 		  'MPI_Comm *' => '(MPI_Comm *)(ARG)',
@@ -241,12 +248,12 @@ foreach $_ (@ARGV) {
                   'MPI_Datatype *' => '(MPI_Datatype *)(ARG)',
 		  'MPI_Info *' => '(MPI_Info *)(ARG)',
 		  'MPI_Info' => '(MPI_Info)(ARG)',
-		  'MPIX_Message *' => '(MPIX_Message *)(ARG)',
+		  'MPI_Message *' => '(MPI_Message *)(ARG)',
 		  'int [][3]' => '(int (*)[3])(ARG)'
 );
 
 ##
-## For implementations other than MPICH2, we'll need to consider using
+## For implementations other than MPICH, we'll need to consider using
 ## MPI_C2f_<name> and MPI_F2c_<name>, as in 
 ## 'MPI_Info' => 'MPI_F2c_info(ARG)'
 ##
@@ -456,16 +463,17 @@ foreach $_ (@ARGV) {
                 'Alltoall-1' => 'in:inplace',
     'Alltoallv' => '1:2:3:6:7',
                 'Alltoallv-1' => 'in:inplace',
-                'Alltoallv-2' => 'in:fint2int_array:_commsize(*v9)',
-                'Alltoallv-3' => 'in:fint2int_array:_commsize',
+                'Alltoallv-2' => 'in:fint2intinplace_array:_commsize(*v9)',
+                'Alltoallv-3' => 'in:fint2intinplace_array:_commsize',
                 'Alltoallv-6' => 'in:fint2int_array:_commsize',
                 'Alltoallv-7' => 'in:fint2int_array:_commsize',
     'Alltoallw' => '1:2:3:4:6:7:8',
                 'Alltoallw-1' => 'in:inplace',
-                'Alltoallw-2' => 'in:fint2int_array:_commsize(*v9)',
-                'Alltoallw-3' => 'in:fint2int_array:_commsize',
+                'Alltoallw-2' => 'in:fint2intinplace_array:_commsize(*v9)',
+                'Alltoallw-3' => 'in:fint2intinplace_array:_commsize',
                 'Alltoallw-6' => 'in:fint2int_array:_commsize',
                 'Alltoallw-7' => 'in:fint2int_array:_commsize',
+# FIXME: -4 needs inplace
                 'Alltoallw-4' => 'in:handle_array:_commsize:MPI_Datatype',
                 'Alltoallw-8' => 'in:handle_array:_commsize:MPI_Datatype',
   
@@ -513,11 +521,15 @@ foreach $_ (@ARGV) {
                   'Graph_create-6' => 'out:handle::MPI_Comm',
     'Graph_get' => '4:5', 'Graph_get-4' => 'out:fint2int_array:*v2',
                   'Graph_get-5' => 'out:fint2int_array:*v3',
+    'Graph_map' => '3:4', 'Graph_map-3' => 'in:fint2int_array:*v2',
+                   'Graph_map-4' => 'in:fint2int_array:*v2',
     'Graph_neighbors' => '4',
                 'Graph_neighbors-4' => 'out:fint2int_array:*v3',
     'Comm_create' => '3', 'Comm_create-3' => 'out:handle::MPI_Comm',
     'Comm_create_group' => '4', 'Comm_create_group-4' => 'out:handle::MPI_Comm',
     'Comm_dup' => '2', 'Comm_dup-2' => 'out:handle::MPI_Comm',
+    'Comm_dup_with_info' => '3', 
+              'Comm_dup_with_info-3' => 'out:handle::MPI_Comm',
     'Comm_idup' => '2', 'Comm_idup-2' => 'out:handle::MPI_Comm',
     'Comm_split' => '4', 'Comm_split-4' => 'out:handle::MPI_Comm',
     'Comm_split_type' => '5', 'Comm_split_type-5' => 'out:handle::MPI_Comm',
@@ -551,6 +563,7 @@ foreach $_ (@ARGV) {
                  'Group_translate_ranks-3' => 'in:fint2int_array:*v2',
                  'Group_translate_ranks-5' => 'out:fint2int_array:*v2',
     'Get_processor_name' => '1', 'Get_processor_name-1' => 'out:blankpad',
+    'Get_library_version' => '1', 'Get_library_version-1' => 'out:blankpad',
     'Error_string' => '2', 'Error_string-2' => 'out:blankpad',
     'Errhandler_free' => '1', 
                'Errhandler_free-1' => 'inout:handle::MPI_Errhandler', 
@@ -644,6 +657,8 @@ foreach $_ (@ARGV) {
       'Status_set_cancelled-2' => 'in:logical',
     'Status_set_elements' => '1',
       'Status_set_elements-1' => 'out:status',
+    'Status_set_elements_x' => '1', 
+      'Status_set_elements_x-1' => 'out:status',
     'Type_contiguous' => '2:3', 
                   'Type_contiguous-2' => 'in:handle::MPI_Datatype',
                   'Type_contiguous-3' => 'out:handle::MPI_Datatype',
@@ -679,6 +694,8 @@ foreach $_ (@ARGV) {
     'Type_match_size' => '3', 'Type_match_size-3' => 'out:handle::MPI_Datatype',
     'Get_elements' => 1, 
                   'Get_elements-1' => 'in:status',
+    'Get_elements_x' => 1,
+                  'Get_elements_x-1' => 'in:status',
     
     'Type_create_hvector' => '3:5', 'Type_create_hvector-3' => 'in:aintToVal',
                   'Type_create_hvector-5' => 'out:handle::MPI_Datatype',
@@ -856,6 +873,36 @@ foreach $_ (@ARGV) {
                 'Ialltoallw-7' => 'in:fint2int_array:_commsize',
                 'Ialltoallw-4' => 'in:handle_array:_commsize:MPI_Datatype',
                 'Ialltoallw-8' => 'in:handle_array:_commsize:MPI_Datatype',
+    'Neighbor_allgatherv' => '5:6', 
+                'Neighbor_allgatherv-5' => 'in:fint2int_array:_commsize(*v8)',
+                'Neighbor_allgatherv-6' => 'in:fint2int_array:_commsize',
+    'Neighbor_alltoallv' => '2:3:6:7',
+                'Neighbor_alltoallv-2' => 'in:fint2int_array:_commsize(*v9)',
+                'Neighbor_alltoallv-3' => 'in:fint2int_array:_commsize',
+                'Neighbor_alltoallv-6' => 'in:fint2int_array:_commsize',
+                'Neighbor_alltoallv-7' => 'in:fint2int_array:_commsize',
+    'Neighbor_alltoallw' => '2:4:6:8',
+                'Neighbor_alltoallw-2' => 'in:fint2int_array:_commsize(*v9)',
+                'Neighbor_alltoallw-4' => 'in:handle_array:_commsize:MPI_Datatype',
+                'Neighbor_alltoallw-6' => 'in:fint2int_array:_commsize',
+                'Neighbor_alltoallw-8' => 'in:handle_array:_commsize:MPI_Datatype',
+    'Ineighbor_allgatherv' => '5:6', 
+                'Ineighbor_allgatherv-5' => 'in:fint2int_array:_commsize(*v8)',
+                'Ineighbor_allgatherv-6' => 'in:fint2int_array:_commsize',
+    'Ineighbor_alltoallv' => '2:3:6:7',
+                'Ineighbor_alltoallv-2' => 'in:fint2int_array:_commsize(*v9)',
+                'Ineighbor_alltoallv-3' => 'in:fint2int_array:_commsize',
+                'Ineighbor_alltoallv-6' => 'in:fint2int_array:_commsize',
+                'Ineighbor_alltoallv-7' => 'in:fint2int_array:_commsize',
+    'Ineighbor_alltoallw' => '2:4:6:8',
+                'Ineighbor_alltoallw-2' => 'in:fint2int_array:_commsize(*v9)',
+                'Ineighbor_alltoallw-4' => 'in:handle_array:_commsize:MPI_Datatype',
+                'Ineighbor_alltoallw-6' => 'in:fint2int_array:_commsize',
+                'Ineighbor_alltoallw-8' => 'in:handle_array:_commsize:MPI_Datatype',
+    'Type_create_hindexed_block' => '4:5', 
+                  'Type_create_hindexed_block-4' => 'in:handle::MPI_Datatype',
+                  'Type_create_hindexed_block-5' => 'out:handle::MPI_Datatype',
+    
     );
 
 # 
@@ -902,7 +949,7 @@ if ($build_prototypes) {
 if ( -s "../../mpi/romio/include/mpio.h.in" && $build_io) { 
     %skipBlocks = ( 'HAVE_MPI_DARRAY_SUBARRAY' => 1, 
  	 	    'HAVE_MPI_INFO' => 1,
-		    'MPICH2' => 1 );
+		    'MPICH' => 1 );
     &ReadAndProcessInterface( "../../mpi/romio/include/mpio.h.in", 1 );
     %skipBlocks = ();
 }
@@ -976,7 +1023,7 @@ EOT
     &AddFwrapDefs;
     print MAKEFD <<EOT;
 # FIXME tension here: MPIFLIBNAME is always "mpich", so we don't want to
-# clobber flags set by other parts of MPICH2, and we don't want to re-add that
+# clobber flags set by other parts of MPICH, and we don't want to re-add that
 # lib to the lib_LTLIBRARIES list
 #lib_LTLIBRARIES += lib/lib\@MPIFLIBNAME\@.la
 #lib_lib\@MPIFLIBNAME\@_la_SOURCES = \$(mpi_f77_sources) src/binding/f77/setbot.c src/binding/f77/setbotf.f src/binding/f77/fdebug.c
@@ -995,7 +1042,7 @@ noinst_HEADERS += src/binding/f77/fproto.h src/binding/f77/mpi_fortimpl.h
 
 if BUILD_PROFILING_LIB
 # FIXME tension here: PMPIFLIBNAME is always "pmpich", so we don't want to
-# clobber flags set by other parts of MPICH2, and we don't want to re-add that
+# clobber flags set by other parts of MPICH, and we don't want to re-add that
 # lib to the lib_LTLIBRARIES list
 #lib_LTLIBRARIES += lib/lib\@PMPIFLIBNAME\@.la
 #lib_lib\@PMPIFLIBNAME\@_la_SOURCES += \$(mpi_f77_sources)
@@ -1351,10 +1398,6 @@ sub print_args {
 	    $parm =~ s/restrict\s+//;
 	    $arg_qualifiers[$count] .= "restrict ";
 	}
-	if ($parm =~ /^MPICH2_CONST\s+/) {
-	    $parm =~ s/MPICH2_CONST\s+//g;
-	    $arg_qualifiers[$count] .= "MPICH2_CONST ";
-	}
 	# Remove arg names from array types
 	if ($parm =~ /(\w+)\s+(\w+)\s*\[\]/) {
 	    # Assume that this is <type> <name>[]; convert to
@@ -1374,7 +1417,7 @@ sub print_args {
 	# This handles routines that have special declaration requirements
 	# for particular arguments
 	if (defined($declarg{"$routine-$count"})) {
-	    print "    Using declarg{$routine} for this parm\n" if $debug;
+	    print "    Using declarg{$routine-$count} for this parameter ($parm)\n" if $debug;
 	    $parm = $declarg{"$routine-$count"};
 	    if ($prototype_only) {
 		print $OUTFD "$argsep$parm";
@@ -1383,7 +1426,7 @@ sub print_args {
 		print $OUTFD "$argsep$parm v$count";
 	    }
 	}
-	elsif ($parm =~ /char\s*\*/) {
+	elsif ($parm =~ /char\s*\*/ || $parm =~ /char\s*\[\s*\]/) {
 	    # char's go out at char *v FORT_MIXED_LEN(d) 
 	    # and FORT_END_LEN(d) at the end
 	    # (even if an array, because at the Fortran level, it
@@ -1532,7 +1575,6 @@ sub print_call_args {
 
     foreach $parm (@parms) {
 	$parm =~ s/^const\s+//;  # Remove const if present
-	$parm =~ s/^MPICH2_CONST\s+//;  # Remove MPICH2_CONST if present
 	# Remove variable name if present in an array arg
 	if ($parm =~ /(.*)\s+(\w+)\[\]/) {
 	    $parm = "$1 \[\]";
@@ -1603,7 +1645,9 @@ sub print_call_args {
 		}
 		else {
 		    if ($arg_addresses[$count] > 0) {
-		    print $OUTFD "*";
+			print "Adding ($parm) for $parm\n" if $debug;
+			print $OUTFD "($parm)";
+			print $OUTFD "*";
 		    }
 		    print $OUTFD "v$count";
 		}
@@ -1728,24 +1772,42 @@ sub unweighted_in_ftoc {
     my $count = $_[0];
     &specialInitStatement( $OUTFD );
     if ($within_fint) {
-	print $OUTFD "    if (v$count == MPIR_F_MPI_UNWEIGHTED) l$count = MPI_UNWEIGHTED;
+        print $OUTFD <<EOT;
+    if (v$count == MPIR_F_MPI_UNWEIGHTED) {
+        l$count = MPI_UNWEIGHTED;
+    }
+    else if (v$count == MPIR_F_MPI_WEIGHTS_EMPTY) {
+        l$count = MPI_WEIGHTS_EMPTY;
+    }
     else {
         int li;
         l$count = (int *)$malloc( $Array_size * sizeof(int) );
-        for (li=0; li<$Array_size; li++) l$count\[li\] = v$count\[li\];
-    }\n";
+        for (li=0; li<$Array_size; li++) l$count\[li\] = (int)v$count\[li\];
+    }
+EOT
 	$clean_up .= "    if (l$count != MPI_UNWEIGHTED) {$free(l$count);}\n";
     }
     else {
-	print $OUTFD "    if (v$count == MPIR_F_MPI_UNWEIGHTED) v$count = MPI_UNWEIGHTED;\n";
+        print $OUTFD "    if      (v$count == MPIR_F_MPI_UNWEIGHTED) v$count = MPI_UNWEIGHTED;\n";
+        print $OUTFD "    else if (v$count == MPIR_F_MPI_WEIGHTS_EMPTY) v$count = MPI_WEIGHTS_EMPTY;\n";
     }
 }
 sub unweighted_out_ftoc {
     my $count = $_[0];
     &specialInitStatement( $OUTFD );
     if ($within_fint) {
-	print $OUTFD "    if (v$count == MPIR_F_MPI_UNWEIGHTED) { l$count = MPI_UNWEIGHTED; }\n    else { l$count = (int *)$malloc( $Array_size * sizeof(int) ); }\n";
-	$clean_up .= "    if (l$count != MPI_UNWEIGHTED) {$free(l$count);}\n";
+        print $OUTFD <<EOT;
+    if (v$count == MPIR_F_MPI_UNWEIGHTED) {
+        l$count = MPI_UNWEIGHTED;
+    }
+    else if (v$count == MPIR_F_MPI_WEIGHTS_EMPTY) {
+        l$count = MPI_WEIGHTS_EMPTY;
+    }
+    else {
+        l$count = (int *)$malloc( $Array_size * sizeof(int) );
+    }
+EOT
+        $clean_up .= "    if (l$count != MPI_UNWEIGHTED && l$count != MPI_WEIGHTS_EMPTY) {$free(l$count);}\n";
     }
 }
 sub unweighted_in_decl {
@@ -1779,11 +1841,12 @@ sub unweighted_out_ctof {
     my $outvar  = $_[1];
 
     if ($within_fint) {
+        # MPI_WEIGHTS_EMPTY should never be an output value from the MPI library
 	print $OUTFD "
     if ($coutvar != MPI_UNWEIGHTED && $errparmlval == MPI_SUCCESS) {
 	int li;
         for (li=0; li<$Array_size; li++) {
-            $outvar\[li\] = $coutvar\[li\];
+            $outvar\[li\] = (MPI_Fint)$coutvar\[li\];
         }
     }
 ";
@@ -1844,12 +1907,12 @@ sub logical_array_in_ftoc {
     if ($Array_size eq "_cartdim") {
 	$ActSize = "_ctsize";
 	print $OUTFD "    {int _topotype;
-    PMPI_Topo_test( *v1, &_topotype );
+    PMPI_Topo_test( (MPI_Comm)*v1, &_topotype );
     if (_topotype != MPI_CART) {
         _ctsize = 0;
     }
     else 
-        PMPI_Cartdim_get( *v1, &_ctsize );
+        PMPI_Cartdim_get( (MPI_Comm)*v1, &_ctsize );
     }\n";
     }
     print $OUTFD "\
@@ -1955,7 +2018,7 @@ sub index_array_ctof {
 	print $OUTFD "\
     {int li;
      for (li=0; li<$ActSize; li++) {
-        if ($coutvar\[li\] >= 0) $outvar\[li\] = $coutvar\[li\] + 1;
+        if ($coutvar\[li\] >= 0) $outvar\[li\] = (MPI_Fint)$coutvar\[li\] + 1;
      }
     }
 ";
@@ -2275,18 +2338,18 @@ sub attrint_ctof {
     my $cvar = $_[1];
     my $flagarg = 4; # get from option
     # The strange cast is due to the following:
-    # The MPICH2 attribute code returns an int in the void *.  In
+    # The MPICH attribute code returns an int in the void *.  In
     # little-endian, a cast to an int is all that's necessary.  In 
     # big-endian, to interpret the first sizeof(int) bytes as an int,
     # we must first cast as pointer to int, then dereference it.
-    # We must use "int" because the MPICH2 code incorrectly uses int
-    # instead of MPI_Fint.
+    # This has been patched to use a consistent int choice with
+    # what is used in comm_get_attr.c
     print $OUTFD "
     if ((int)*ierr || !l$flagarg) {
         *(MPI_Fint*)$cvar = 0;
     }
     else {
-        *(MPI_Fint*)$cvar = (MPI_Fint)*(int *)&attr$cvar;
+        *(MPI_Fint*)$cvar = (MPI_Fint)(MPIR_Pint)attr$cvar;
     }\n";
 }
 
@@ -2313,7 +2376,7 @@ sub attrint_out_arg {
 # FIXME: This is no longer correct if the BlueGene definition for MPI_Aint
 # is used (as an integer big enough for an MPI_Offset and larger than
 # sizeof(void*), since this stores the result into the argument.  The
-# definitions here and in the MPICH2 attribute code must match.
+# definitions here and in the MPICH attribute code must match.
 #in:addraint
 #out:attraint:4
 sub addraint_ftoc {
@@ -2374,10 +2437,17 @@ sub status_out_fnulltoc {
     my $count = $_[0];
     # Cast MPI_STATUS_IGNORE back to an MPI_Fint (we'll re-cast it back
     # to (MPI_Status *) in the call to the C version of the routine)
+    # MPI 3.0, page 30 states that the MPI_ERROR field is not modified
+    # unless there is an MPI_ERR_IN_STATUS_RETURN.  This means that in the
+    # case where we must pass a temp for the status value, we must 
+    # copy the ERROR value to ensure that it is not changed.  Another
+    # option would be to specialize this update for the err_in_status
+    # return, but this is easier for now.
     &specialInitStatement( $OUTFD );
     if ($within_fint) {
 	print $OUTFD "\
-    if (v$count == MPI_F_STATUS_IGNORE) { l$count = MPI_STATUS_IGNORE; }\n";
+    if (v$count == MPI_F_STATUS_IGNORE) { l$count = MPI_STATUS_IGNORE; }
+    else { l$count->MPI_ERROR = (int)(v$count\[2\]); }\n";
     }
     else {
 	print $OUTFD "\
@@ -2463,7 +2533,7 @@ sub errcodesignore_out_ftoc {
     if (_esize < 0 && $coutvar != MPI_ERRCODES_IGNORE) {
         int li;
         _esize = 0;
-        for (li=0; li<$arrLen; li++) { _esize += $array\[li\];}
+        for (li=0; li<$arrLen; li++) { _esize += (int)$array\[li\];}
     }\n";
 	    }
 	}
@@ -2489,7 +2559,7 @@ sub errcodesignore_out_ctof {
 "    if ($coutvar != MPI_ERRCODES_IGNORE) {
         int li;
         for (li=0; li<$asize; li++) {
-            $outvar\[li\] = $coutvar\[li\];
+            $outvar\[li\] = (int)$coutvar\[li\];
         }
     }\n";
 	$clean_up .= "        $free($coutvar);\n";
@@ -2657,7 +2727,7 @@ sub fint2int_array_in_ftoc {
 		my $comm = $1;
 		print $OUTFD "
     if (_csize < 0) {
-        PMPI_Comm_size( $comm, &_csize );
+        PMPI_Comm_size( (MPI_Comm)$comm, &_csize );
     }\n";
 	    }
 	}
@@ -2669,14 +2739,14 @@ sub fint2int_array_in_ftoc {
     if (_ssize < 0) {
         int li;
         _ssize = 0; 
-        for (li=0; li<$arraylen; li++) _ssize += $array\[li\];
+        for (li=0; li<$arraylen; li++) _ssize += (int)$array\[li\];
     }\n";
 	    }
 	}    
 	elsif ($Array_size =~ /_cartdim/) {
 	    $asize = "_ctsize";
 	    print $OUTFD "\
-    if (_ctsize < 0) { PMPI_Cartdim_get( *v1, &_ctsize ); }\n";
+    if (_ctsize < 0) { PMPI_Cartdim_get( (MPI_Comm)*v1, &_ctsize ); }\n";
 	}
 	# Check for the special case of an array index element as the
 	# array size
@@ -2688,7 +2758,7 @@ sub fint2int_array_in_ftoc {
     if ($extraCondition$asize > 0) {int li;
      $coutvar = (int *)$malloc( $asize * sizeof(int) );
      for (li=0; li<$asize; li++) {
-        $coutvar\[li\] = $outvar\[li\];
+        $coutvar\[li\] = (int)$outvar\[li\];
      }
     }
 ";
@@ -2717,7 +2787,7 @@ sub fint2int_array_out_ftoc {
 	}
 	elsif ($Array_size eq "_cartdim") {
 	    $asize = "_ctsize";
-	    print $OUTFD "    PMPI_Cartdim_get( *v1, &_ctsize );\n";
+	    print $OUTFD "    PMPI_Cartdim_get( (MPI_Comm)*v1, &_ctsize );\n";
 	}
 
 	print $OUTFD "\
@@ -2738,14 +2808,14 @@ sub fint2int_array_out_ctof {
 		my $comm = $1;
 		print $OUTFD "
     if (_csize < 0) {
-        PMPI_Comm_size( $comm, &_csize );
+        PMPI_Comm_size( (MPI_Comm)$comm, &_csize );
     }\n";
 	    }
 	}
 	print $OUTFD "\
     if ($errparmlval == MPI_SUCCESS) {int li;
      for (li=0; li<$asize; li++) {
-        $outvar\[li\] = $coutvar\[li\];
+        $outvar\[li\] = (int)$coutvar\[li\];
      }
     }\n";
     }
@@ -2819,6 +2889,84 @@ sub fint2int_array_inout_arg {
 	print $OUTFD "v$count";
     }
 }
+# ---
+# This is a special version of the fint2int array processing that 
+# skips if MPI_IN_PLACE selected for v1 (we assume v1 for now)
+# Array args can use the global $Array_size and $Array_typedef if necessary
+sub fint2intinplace_array_in_ftoc {
+    my $count = $_[0];
+    if ($within_fint) {
+	my $coutvar = "l$count";
+	my $outvar  = "v$count";
+	my $asize = $Array_size;
+	if ($Array_size =~ /_commsize/) {
+	    $asize = "_csize";
+	    if ($Array_size =~ /_commsize\((.*)\)/) {
+		my $comm = $1;
+		print $OUTFD "
+    if (_csize < 0) {
+        PMPI_Comm_size( (MPI_Comm)$comm, &_csize );
+    }\n";
+	    }
+	}
+	elsif ($Array_size =~ /_sum/) {
+	    $asize = "_ssize";
+	    if ($Array_size =~ /_sum\((.*),(.*)\)/) {
+		my $array = $1, $arraylen = $2;
+		print $OUTFD "
+    if (_ssize < 0) {
+        int li;
+        _ssize = 0; 
+        for (li=0; li<$arraylen; li++) _ssize += (int)$array\[li\];
+    }\n";
+	    }
+	}    
+	elsif ($Array_size =~ /_cartdim/) {
+	    $asize = "_ctsize";
+	    print $OUTFD "\
+    if (_ctsize < 0) { PMPI_Cartdim_get( (MPI_Comm)*v1, &_ctsize ); }\n";
+	}
+	# Check for the special case of an array index element as the
+	# array size
+	my $extraCondition = "";
+	if ($asize =~ /\[(.*)\]/) {
+	    $extraCondition = "($1 >= 0) && ";
+	}
+	print $OUTFD "\
+    if ($extraCondition$asize > 0 && v1 != MPI_IN_PLACE) {int li;
+     $coutvar = (int *)$malloc( $asize * sizeof(int) );
+     for (li=0; li<$asize; li++) {
+        $coutvar\[li\] = (int)$outvar\[li\];
+     }
+    }
+";
+	$clean_up .= "     if ($coutvar) { $free( $coutvar ); }\n";
+    }
+}
+sub fint2intinplace_array_in_decl {
+    my $count = $_[0];
+    if ($within_fint) {
+	print $OUTFD "    int *l$count=0;\n";
+	if ($Array_size =~ /_commsize\(/) {
+	    print $OUTFD "    int _csize=-1;\n";
+	}
+	elsif ($Array_size =~ /_sum\(/) {
+	    print $OUTFD "    int _ssize=-1;\n";
+	}
+	elsif ($Array_size eq "_cartdim") {
+	    print $OUTFD "    int _ctsize=-1;\n";
+	}
+    }
+}
+sub fint2intinplace_array_in_arg {
+    my $count = $_[0];
+    if ($within_fint) {
+	print $OUTFD "l$count";
+    }
+    else {
+	print $OUTFD "v$count";
+    }
+}
 #
 # This is a special version for the range include/exclude arguments, 
 # which have a C type of int [][3].  This eliminates a warning message
@@ -2841,7 +2989,7 @@ sub fint2int_rangearray_in_ftoc {
     if ($extraCondition$asize > 0) {int li;
      $coutvar = (int *)$malloc( $asize * sizeof(int) );
      for (li=0; li<$asize; li++) {
-        $coutvar\[li\] = $outvar\[li\];
+        $coutvar\[li\] = (int)$outvar\[li\];
      }
     }
 ";
@@ -3104,7 +3252,7 @@ sub chararray_ftoc {
       char *ptmp;\n";
     if ($Array_size) {
 	print $OUTFD "\
-      asize$count = $Array_size + 1;\n";
+      asize$count = (int)$Array_size + 1;\n";
     }
     else {
 	print $OUTFD "\
@@ -3210,7 +3358,8 @@ sub chararray2_ftoc {
            They are terminated by an empty entry. */
         /* Find the first entry in the Fortran array for this row */
         char *p = v$count + k * d$count;
-        int arglen = 0, argcnt=0, i;
+        ssize_t arglen = 0;
+        int argcnt=0, i;
         char **pargs, *pdata;
         for (argcnt=0; 1; argcnt ++) {
             char *pin = p + d$count - 1; /* Move to the end of the
@@ -3404,7 +3553,7 @@ sub setF90Type_keyval {
     if ($within_fint) { $argname = "l$argnum"; }
     print $FD "\
     if (*ierr == MPI_SUCCESS) {
-         MPIR_Keyval_set_proxy( $argname, MPIR_Type_copy_attr_f90_proxy, MPIR_Type_delete_attr_f90_proxy );
+         MPIR_Keyval_set_proxy( (int)$argname, MPIR_Type_copy_attr_f90_proxy, MPIR_Type_delete_attr_f90_proxy );
     }\n";
 }
 sub setF90Comm_keyval {
@@ -3415,7 +3564,7 @@ sub setF90Comm_keyval {
     if ($within_fint) { $argname = "l$argnum"; }
     print $FD "\
     if (*ierr == MPI_SUCCESS) {
-         MPIR_Keyval_set_proxy( $argname, MPIR_Comm_copy_attr_f90_proxy, MPIR_Comm_delete_attr_f90_proxy );
+         MPIR_Keyval_set_proxy( (int)$argname, MPIR_Comm_copy_attr_f90_proxy, MPIR_Comm_delete_attr_f90_proxy );
     }\n";
 }
 sub setF90Win_keyval {
@@ -3426,7 +3575,7 @@ sub setF90Win_keyval {
     if ($within_fint) { $argname = "l$argnum"; }
     print $FD "\
     if (*ierr == MPI_SUCCESS) {
-         MPIR_Keyval_set_proxy( $argname, MPIR_Win_copy_attr_f90_proxy, MPIR_Win_delete_attr_f90_proxy );
+         MPIR_Keyval_set_proxy( (int)$argname, MPIR_Win_copy_attr_f90_proxy, MPIR_Win_delete_attr_f90_proxy );
     }\n";
 }
 sub setF77greq {
@@ -3531,7 +3680,7 @@ sub print_special_decls {
 if ( -s "../../mpi/romio/include/mpio.h.in" && $build_io) { 
     %skipBlocks = ( 'HAVE_MPI_DARRAY_SUBARRAY' => 1, 
 		   'HAVE_MPI_INFO' => 1,
-		    'MPICH2' => 1 );
+		    'MPICH' => 1 );
     &ReadInterfaceForDefinitions( "../../mpi/romio/include/mpio.h.in" );
     %skipBlocks = ();
 }
@@ -3562,7 +3711,7 @@ if ($write_mpif) {
     # FIXME: The offsets for the status elements are hardwired.  If they
     # change in mpi.h.in, they need to change here as well.
     print MPIFFD "       INTEGER MPI_SOURCE, MPI_TAG, MPI_ERROR\n";
-    print MPIFFD "       PARAMETER (MPI_SOURCE=3,MPI_TAG=4,MPI_ERROR=5)\n";
+    print MPIFFD "       PARAMETER (MPI_SOURCE=1,MPI_TAG=2,MPI_ERROR=3)\n";
     print MPIFFD "       INTEGER MPI_STATUS_SIZE\n";
     print MPIFFD "       PARAMETER (MPI_STATUS_SIZE=\@MPI_STATUS_SIZE\@)\n";
     # Temporary until configure handles these.  Define as arrays to keep
@@ -3597,16 +3746,21 @@ if ($write_mpif) {
     foreach $key (IDENT,CONGRUENT,SIMILAR,UNEQUAL) {
 	&print_mpif_int( "MPI_$key" );
     }
+    # Window flavor and model
+    foreach $key (FLAVOR_CREATE,FLAVOR_ALLOCATE,FLAVOR_DYNAMIC,FLAVOR_SHARED,
+	          SEPARATE, UNIFIED) {
+	&print_mpif_int( "MPI_WIN_$key" );
+    }
     # Collective operations
-    foreach $key (MAX, MIN, SUM, PROD, LAND, BAND, LOR, BOR, LXOR, BXOR, MINLOC, MAXLOC, REPLACE ) {
+    foreach $key (MAX, MIN, SUM, PROD, LAND, BAND, LOR, BOR, LXOR, BXOR, MINLOC, MAXLOC, REPLACE, NO_OP ) {
 	&print_mpif_int( "MPI_$key" );
     }
     # Objects
-    foreach $key ('COMM_WORLD', 'COMM_SELF', 'GROUP_EMPTY', 'COMM_NULL', 'WIN_NULL', 'FILE_NULL', 'GROUP_NULL', 'OP_NULL', 'DATATYPE_NULL', 'REQUEST_NULL', 'ERRHANDLER_NULL', 'INFO_NULL', ) {
+    foreach $key ('COMM_WORLD', 'COMM_SELF', 'GROUP_EMPTY', 'COMM_NULL', 'WIN_NULL', 'FILE_NULL', 'GROUP_NULL', 'OP_NULL', 'DATATYPE_NULL', 'REQUEST_NULL', 'ERRHANDLER_NULL', 'INFO_NULL', 'INFO_ENV' ) {
 	&print_mpif_int( "MPI_$key" );
     }
     # Attributes
-    foreach $key (TAG_UB, HOST, IO, WTIME_IS_GLOBAL, UNIVERSE_SIZE, LASTUSEDCODE, APPNUM, WIN_BASE, WIN_SIZE, WIN_DISP_UNIT ) {
+    foreach $key (TAG_UB, HOST, IO, WTIME_IS_GLOBAL, UNIVERSE_SIZE, LASTUSEDCODE, APPNUM, WIN_BASE, WIN_SIZE, WIN_DISP_UNIT, WIN_CREATE_FLAVOR, WIN_MODEL ) {
 	# Special cast:  The Fortran versions of these attributes have 
 	# value 1 greater than the C versions
 	$attrval = $mpidef{"MPI_$key"};
@@ -3619,7 +3773,7 @@ if ($write_mpif) {
 	&print_mpif_int( "MPI_$key" );
     } 
     # String sizes
-    # See MPI-2 2.6.2 and 4.12.9; the constants for string lenghts are
+    # See MPI-2 2.6.2 and 4.12.9; the constants for string lengths are
     # defined as one less than the C/C++ version
 
     # Missing - max processor name!
@@ -3628,7 +3782,8 @@ if ($write_mpif) {
     # Other maximum values
     foreach $key (MAX_ERROR_STRING, MAX_PORT_NAME, 
 		  MAX_OBJECT_NAME, MAX_INFO_KEY, MAX_INFO_VAL,
-		  MAX_PROCESSOR_NAME, MAX_DATAREP_STRING ) {
+		  MAX_PROCESSOR_NAME, MAX_DATAREP_STRING, 
+		  MAX_LIBRARY_VERSION_STRING ) {
 	&print_mpif_int( "MPI_$key", -1 );
     }
     
@@ -3655,10 +3810,14 @@ if ($write_mpif) {
     #
     # Datatypes
     # These are determined and set at configure time
-    foreach $key (COMPLEX, DOUBLE_COMPLEX, LOGICAL, REAL, DOUBLE_PRECISION, INTEGER, '2INTEGER', '2COMPLEX', '2DOUBLE_PRECISION', '2REAL', '2DOUBLE_COMPLEX', CHARACTER) {
+    foreach $key (COMPLEX, DOUBLE_COMPLEX, LOGICAL, REAL, DOUBLE_PRECISION, INTEGER, '2INTEGER', '2DOUBLE_PRECISION', '2REAL', CHARACTER) {
 	print MPIFFD "       INTEGER MPI_$key\n";
 	print MPIFFD "       PARAMETER (MPI_$key=\@MPI_$key\@)\n";
     }
+    # 2COMPLEX and 2DOUBLE_COMPLEX were defined in MPI 1 and removed in 
+    # MPI 1.1.  Don't define them for the Fortran interface.
+    #foreach $key ('2COMPLEX', '2DOUBLE_COMPLEX') {
+    #}
     # Value of MPI_BYTE from top level configure!
     $mpidef{"MPI_BYTE"} = hex "0x4c00010d";
     foreach $key (BYTE, UB, LB, PACKED) {
@@ -3681,9 +3840,13 @@ if ($write_mpif) {
     #
     # Fortran 90 types
     # MPI_INTEGER_KIND added in MPI 2.2
-    print MPIFFD "       INTEGER MPI_ADDRESS_KIND, MPI_OFFSET_KIND, MPI_INTEGER_KIND\n";
+    print MPIFFD "       INTEGER MPI_ADDRESS_KIND\n";
     print MPIFFD "       PARAMETER (MPI_ADDRESS_KIND=\@ADDRESS_KIND\@)\n";
+    print MPIFFD "       INTEGER MPI_OFFSET_KIND\n";
     print MPIFFD "       PARAMETER (MPI_OFFSET_KIND=\@OFFSET_KIND\@)\n";
+    print MPIFFD "       INTEGER MPI_COUNT_KIND\n";
+    print MPIFFD "       PARAMETER (MPI_COUNT_KIND=\@COUNT_KIND\@)\n";
+    print MPIFFD "       INTEGER MPI_INTEGER_KIND\n";
     print MPIFFD "       PARAMETER (MPI_INTEGER_KIND=\@INTEGER_KIND\@)\n";
     # 
     # C Types.  Note that we need to convert the C hex constant
@@ -3705,16 +3868,22 @@ if ($write_mpif) {
 	print MPIFFD "       INTEGER MPI_$key\n";
 	print MPIFFD "       PARAMETER (MPI_$key=\@MPI_F77_$key\@)\n";
     }
+    # C types added in MPI 3.0
+    foreach $key (qw(COUNT
+                     CXX_BOOL
+                     CXX_FLOAT_COMPLEX
+                     CXX_DOUBLE_COMPLEX
+                     CXX_LONG_DOUBLE_COMPLEX))
+    {
+	print MPIFFD "       INTEGER MPI_$key\n";
+	print MPIFFD "       PARAMETER (MPI_$key=\@MPI_F77_$key\@)\n";
+    }
     # Datatype combiners
     foreach $key (NAMED, DUP, CONTIGUOUS, VECTOR, HVECTOR_INTEGER, HVECTOR, 
                   INDEXED, HINDEXED_INTEGER, HINDEXED, INDEXED_BLOCK, 
                   STRUCT_INTEGER, STRUCT, SUBARRAY, DARRAY, F90_REAL,
-                  F90_COMPLEX, F90_INTEGER, RESIZED) {
+                  F90_COMPLEX, F90_INTEGER, RESIZED, HINDEXED_BLOCK) {
 	&print_mpif_int( "MPI_COMBINER_$key" );
-    }
-    # FIXME: Merge with the above list when it's no longer MPIX_
-    foreach $key (HINDEXED_BLOCK) {
-	&print_mpif_int( "MPIX_COMBINER_$key" );
     }
     # Typeclasses
     foreach $key (REAL, INTEGER, COMPLEX) {
@@ -3728,10 +3897,10 @@ if ($write_mpif) {
 
     # comm_split_types
     foreach $type (SHARED) {
-	&print_mpif_int( "MPIX_COMM_TYPE_$type" );
+	&print_mpif_int( "MPI_COMM_TYPE_$type" );
     }
-    &print_mpif_int( "MPIX_MESSAGE_NULL" );
-    &print_mpif_int( "MPIX_MESSAGE_NO_PROC" );
+    &print_mpif_int( "MPI_MESSAGE_NULL" );
+    &print_mpif_int( "MPI_MESSAGE_NO_PROC" );
 
     # Thread values
     foreach my $threadlevel (SINGLE, FUNNELED, SERIALIZED, MULTIPLE) {
@@ -3760,9 +3929,16 @@ if ($write_mpif) {
 	&print_mpif_int( "MPI_DISPLACEMENT_CURRENT", 0,
 			 "\@FORTRAN_MPI_OFFSET\@" );
     }
+    #
+    # Fortran08 capability
+    foreach $f08feature (SUBARRAYS_SUPPORTED, ASYNC_PROTECTS_NONBLOCKING) {
+	print MPIFFD "       LOGICAL MPI_$f08feature\n";
+	print MPIFFD "       PARAMETER(MPI_$f08feature=.FALSE.)\n";
+    }
     # 
     # Finally, the special symbols
     print MPIFFD "       INTEGER MPI_BOTTOM, MPI_IN_PLACE, MPI_UNWEIGHTED\n";
+    print MPIFFD "       INTEGER MPI_WEIGHTS_EMPTY\n";
 
     # And the external names.  This are necessary to 
     # ensure that these are passed as routines, not implicitly-defined 
@@ -3787,7 +3963,7 @@ if ($write_mpif) {
     # to be used with such compilers, those compilers allow the
     # use of the non-standard real*8 to force exactly 8 bytes.
     # WARNING: REAL*8 is not standard and must not be used here. 
-    # Instead, the top level configure (in mpich2/configure) will
+    # Instead, the top level configure (in mpich/configure) will
     # replace DOUBLE PRECISION with REAL*8 where the Fortran compiler 
     # supports it.  
     print MPIFFD "       DOUBLE PRECISION MPI_WTIME, MPI_WTICK\n";
@@ -3832,9 +4008,10 @@ if ($write_mpif) {
        COMMON /MPIFCMB6/ MPI_ERRCODES_IGNORE
        COMMON /MPIFCMB7/ MPI_ARGVS_NULL, PADS_A
        COMMON /MPIFCMB8/ MPI_ARGV_NULL, PADS_B
+       COMMON /MPIFCMB9/ MPI_WEIGHTS_EMPTY
        SAVE /MPIFCMB1/,/MPIFCMB2/
        SAVE /MPIFCMB3/,/MPIFCMB4/,/MPIFCMB5/,/MPIFCMB6/
-       SAVE /MPIFCMB7/,/MPIFCMB8/\n";
+       SAVE /MPIFCMB7/,/MPIFCMB8/,/MPIFCMB9/\n";
 
     close( MPIFFD );
     &ReplaceIfDifferent( "mpif.h.in", "mpif.h.in.new" );
@@ -3940,14 +4117,14 @@ sub build_specials {
 #ifndef HAVE_FINT_IS_INT
     int l2;
     mpirinitf_(); MPIR_F_NeedInit = 0;
-    *ierr = MPI_Init_thread( 0, 0, *v1, &l2 );
+    *ierr = MPI_Init_thread( 0, 0, (int)*v1, &l2 );
     *v2 = (MPI_Fint)l2;
 #else
 ";
     }
     # See the discussion on MPIR_F_NeedInit at the head of this file
     print $OUTFD "    mpirinitf_(); MPIR_F_NeedInit = 0;\n";
-    print $OUTFD "    *ierr = MPI_Init_thread( 0, 0, *v1, v2 );\n";
+    print $OUTFD "    *ierr = MPI_Init_thread( 0, 0, (int)*v1, v2 );\n";
     if ($do_fint) {
 	print $OUTFD "#endif\n";
     }
@@ -4144,9 +4321,9 @@ MPIR_Comm_copy_attr_f77_proxy(
 
     ((F77_CopyFunction*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
 
-    *flag = fflag;
+    *flag = MPIR_FROM_FLOG(fflag);
     *new_value = MPI_AINT_CAST_TO_VOID_PTR ((MPI_Aint) fnew);
-    return ierr;
+    return (int)ierr;
 }
 
 
@@ -4172,7 +4349,7 @@ MPIR_Comm_delete_attr_f77_proxy(
     MPI_Fint* fextra  = (MPI_Fint*)extra_state;
 
     ((F77_DeleteFunction*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
-    return ierr;
+    return (int)ierr;
 }
 
 
@@ -4185,7 +4362,7 @@ MPIR_Comm_delete_attr_f77_proxy(
         *ierr = MPI_Comm_create_keyval( v1, v2, &l3, v4 );
         if (!*ierr) {
 	    *v3 = l3;
-            MPIR_Keyval_set_proxy(*v3, MPIR_Comm_copy_attr_f77_proxy, MPIR_Comm_delete_attr_f77_proxy);
+            MPIR_Keyval_set_proxy((int)*v3, MPIR_Comm_copy_attr_f77_proxy, MPIR_Comm_delete_attr_f77_proxy);
         }
 }\n";
     close ($OUTFD);
@@ -4326,7 +4503,7 @@ MPIR_Comm_delete_attr_f77_proxy(
 #undef FUNCNAME
 #define FUNCNAME MPI_Status_f2c
 
-int MPI_Status_f2c( MPICH2_CONST MPI_Fint *f_status, MPI_Status *c_status )
+int MPI_Status_f2c( const MPI_Fint *f_status, MPI_Status *c_status )
 {
     int mpi_errno = MPI_SUCCESS;\n";
     &specialInitStatement( $OUTFD );
@@ -4342,11 +4519,12 @@ print $OUTFD "\
 #ifdef HAVE_FINT_IS_INT
     *c_status = *(MPI_Status *)	f_status;
 #else
-    c_status->count      = f_status\[0\];
-    c_status->cancelled  = f_status\[1\];
-    c_status->MPI_SOURCE = f_status\[2\];
-    c_status->MPI_TAG    = f_status\[3\];
-    c_status->MPI_ERROR  = f_status\[4\];
+    c_status->MPI_SOURCE = (int)f_status\[0\];
+    c_status->MPI_TAG    = (int)f_status\[1\];
+    c_status->MPI_ERROR  = (int)f_status\[2\];
+    c_status->count      = *(MPI_Count *)(f_status+3);
+    c_status->cancelled  = (int)f_status\[3+(sizeof(MPI_Count)+sizeof(MPI_Fint)-1)/sizeof(MPI_Fint)\];
+    /* no need to copy abi_slush_fund field */
 #endif\n";
     }
     else {
@@ -4400,7 +4578,7 @@ print $OUTFD "\
 #undef FUNCNAME
 #define FUNCNAME MPI_Status_c2f
 
-int MPI_Status_c2f( MPICH2_CONST MPI_Status *c_status, MPI_Fint *f_status )
+int MPI_Status_c2f( const MPI_Status *c_status, MPI_Fint *f_status )
 {
     int mpi_errno = MPI_SUCCESS;
     if (c_status == MPI_STATUS_IGNORE ||
@@ -4415,13 +4593,12 @@ int MPI_Status_c2f( MPICH2_CONST MPI_Status *c_status, MPI_Fint *f_status )
 #ifdef HAVE_FINT_IS_INT
     *(MPI_Status *)f_status = *c_status;
 #else
-    f_status\[0\]   = c_status->count;
-    f_status\[1\]   = c_status->cancelled;
-    f_status\[2\] = c_status->MPI_SOURCE;
-    f_status\[3\] = c_status->MPI_TAG;
-    f_status\[4\] = c_status->MPI_ERROR;
+    f_status\[0\] = (MPI_Fint)c_status->MPI_SOURCE;
+    f_status\[1\] = (MPI_Fint)c_status->MPI_TAG;
+    f_status\[2\] = (MPI_Fint)c_status->MPI_ERROR;
+    *(MPI_Count*)(f_status+3) = c_status->count;
+    f_status\[3+(sizeof(MPI_Count)+sizeof(MPI_Fint)-1)/sizeof(MPI_Fint)\] = (MPI_Fint)c_status->cancelled;
 #endif\n";
-    #    printf( \"c_status = %d, %d, %d\\n\", c_status->MPI_SOURCE, c_status->MPI_TAG, c_status->MPI_ERROR );
     }
     else {
         print $OUTFD "    *(MPI_Status *)f_status = *c_status;\n";
@@ -4554,15 +4731,15 @@ sub ReadAndProcessInterface {
                 $args =~ s/MPICH_ATTR[A-Z_]*\([^)]*\)//g;
                 $args =~ s/\)\s*;//g;
                 $args =~ s/[\r\n]*//g;
-		$args =~ s/MPICH2_CONST\s//g;
+		$args =~ s/const\s//g;
                 # remove qualifiers from args
 	    ### TEMP - REMEMBER const because we may need it later
                 #$args =~ s/\s*const\s+//g;
                 # Convert MPIO_Request to MPI_Request (temporary)
 	    #	    $args =~ s/MPIO_Request/MPI_Request/g;
 	    
-		### TEMP: REMOVED MPICH2_CONST
-		#$args =~ s/MPICH2_CONST\s*//g;
+		### TEMP: REMOVED const
+		#$args =~ s/const\s*//g;
                 # Get the name of the Fortran routine (without the prefix).  
                 # Normally, the name is just the lower-case version, but
                 # some libraries (such as NetCDF) use "real" in Fortran
@@ -4750,9 +4927,12 @@ sub ReadInterfaceForDefinitions {
 	    # Eat until we find the closing right brace
 	    $enum_line = $1;
 	    while (! ($enum_line =~ /}/)) { 
-	        $enum_line .= <MPIFD>; 
+	        my $newline = <MPIFD>;
+	        $newline =~ s/\r*\n//;
+	        $enum_line .= $newline;
                 $linecount++;
             }
+	    print "Handling enum $enum_line...\n" if $debug;
 	    # Now process for names and values
 	    while (($enum_line =~ /\s*(MPI[X]*_[A-Z_0-9]*)\s*=\s*([a-fx0-9]*)(.*)/)) {
 		$mpidef{$1} = $2;
@@ -5090,9 +5270,9 @@ MPIR_Type_copy_attr_f90_proxy(
 
     ((F90_CopyFunction*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
 
-    *flag = fflag;
+    *flag = MPIR_FROM_FLOG(fflag);
     *new_value = MPI_AINT_CAST_TO_VOID_PTR (fnew);
-    return ierr;
+    return (int)ierr;
 }
 
 
@@ -5118,7 +5298,7 @@ MPIR_Type_delete_attr_f90_proxy(
     MPI_Aint* fextra  = (MPI_Aint*)extra_state;
 
     ((F90_DeleteFunction*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
-    return ierr;
+    return (int)ierr;
 }\n";
 }
 
@@ -5154,9 +5334,9 @@ MPIR_Comm_copy_attr_f90_proxy(
 
     ((F90_CopyFunction*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
 
-    *flag = fflag;
+    *flag = MPIR_FROM_FLOG(fflag);
     *new_value = MPI_AINT_CAST_TO_VOID_PTR (fnew);
-    return ierr;
+    return (int)ierr;
 }
 
 
@@ -5182,7 +5362,7 @@ MPIR_Comm_delete_attr_f90_proxy(
     MPI_Aint* fextra  = (MPI_Aint*)extra_state;
 
     ((F90_DeleteFunction*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
-    return ierr;
+    return (int)ierr;
 }\n";
 }
 
@@ -5218,9 +5398,9 @@ MPIR_Win_copy_attr_f90_proxy(
 
     ((F90_CopyFunction*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
 
-    *flag = fflag;
+    *flag = MPIR_FROM_FLOG(fflag);
     *new_value = MPI_AINT_CAST_TO_VOID_PTR (fnew);
-    return ierr;
+    return (int)ierr;
 }
 
 
@@ -5246,7 +5426,7 @@ MPIR_Win_delete_attr_f90_proxy(
     MPI_Aint* fextra  = (MPI_Aint*)extra_state;
 
     ((F90_DeleteFunction*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
-    return ierr;
+    return (int)ierr;
 }\n";
 }
 #
@@ -5328,7 +5508,7 @@ sub print_fint_to_int_decls {
     }
 
     foreach $parm (@parms) {
-	$parm =~ s/^MPICH2_CONST\s//;  # Remove MPICH2_CONST if present
+	$parm =~ s/^const\s//;  # Remove const if present
 	$parm =~ s/^const\s//;  # Remove const if present
 	# Remove variable name if present in an array arg
 	if ($parm =~ /(.*)\s+(\w+)\[\]/) {
@@ -5378,7 +5558,7 @@ sub print_int_to_fint {
 
     foreach $parm (@parms) {
 	$parm =~ s/^const\s//;  # Remove const if present
-	$parm =~ s/^MPICH2_CONST\s+//;  # Remove MPICH2_CONST if present
+	$parm =~ s/^const\s+//;  # Remove const if present
 	# Remove variable name if present in an array arg
 	if ($parm =~ /(.*)\s+(\w+)\[\]/) {
 	    $parm = "$1 \[\]";

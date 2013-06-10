@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_ISCATTERV( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscatterv__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscatterv( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscatterv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv_( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_ISCATTERV = PMPIX_ISCATTERV
-#pragma weak mpix_iscatterv__ = PMPIX_ISCATTERV
-#pragma weak mpix_iscatterv_ = PMPIX_ISCATTERV
-#pragma weak mpix_iscatterv = PMPIX_ISCATTERV
+#pragma weak MPI_ISCATTERV = PMPI_ISCATTERV
+#pragma weak mpi_iscatterv__ = PMPI_ISCATTERV
+#pragma weak mpi_iscatterv_ = PMPI_ISCATTERV
+#pragma weak mpi_iscatterv = PMPI_ISCATTERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_ISCATTERV = pmpix_iscatterv__
-#pragma weak mpix_iscatterv__ = pmpix_iscatterv__
-#pragma weak mpix_iscatterv_ = pmpix_iscatterv__
-#pragma weak mpix_iscatterv = pmpix_iscatterv__
+#pragma weak MPI_ISCATTERV = pmpi_iscatterv__
+#pragma weak mpi_iscatterv__ = pmpi_iscatterv__
+#pragma weak mpi_iscatterv_ = pmpi_iscatterv__
+#pragma weak mpi_iscatterv = pmpi_iscatterv__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_ISCATTERV = pmpix_iscatterv_
-#pragma weak mpix_iscatterv__ = pmpix_iscatterv_
-#pragma weak mpix_iscatterv_ = pmpix_iscatterv_
-#pragma weak mpix_iscatterv = pmpix_iscatterv_
+#pragma weak MPI_ISCATTERV = pmpi_iscatterv_
+#pragma weak mpi_iscatterv__ = pmpi_iscatterv_
+#pragma weak mpi_iscatterv_ = pmpi_iscatterv_
+#pragma weak mpi_iscatterv = pmpi_iscatterv_
 #else
-#pragma weak MPIX_ISCATTERV = pmpix_iscatterv
-#pragma weak mpix_iscatterv__ = pmpix_iscatterv
-#pragma weak mpix_iscatterv_ = pmpix_iscatterv
-#pragma weak mpix_iscatterv = pmpix_iscatterv
+#pragma weak MPI_ISCATTERV = pmpi_iscatterv
+#pragma weak mpi_iscatterv__ = pmpi_iscatterv
+#pragma weak mpi_iscatterv_ = pmpi_iscatterv
+#pragma weak mpi_iscatterv = pmpi_iscatterv
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_iscatterv_( void*, MPI_Fint *, MPI_Fint
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_ISCATTERV( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_ISCATTERV = PMPIX_ISCATTERV
+#pragma weak MPI_ISCATTERV = PMPI_ISCATTERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscatterv__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_iscatterv__ = pmpix_iscatterv__
+#pragma weak mpi_iscatterv__ = pmpi_iscatterv__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscatterv( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_iscatterv = pmpix_iscatterv
+#pragma weak mpi_iscatterv = pmpi_iscatterv
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscatterv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv_( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_iscatterv_ = pmpix_iscatterv_
+#pragma weak mpi_iscatterv_ = pmpi_iscatterv_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_ISCATTERV  MPIX_ISCATTERV
+#pragma _HP_SECONDARY_DEF PMPI_ISCATTERV  MPI_ISCATTERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_iscatterv__  mpix_iscatterv__
+#pragma _HP_SECONDARY_DEF pmpi_iscatterv__  mpi_iscatterv__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_iscatterv  mpix_iscatterv
+#pragma _HP_SECONDARY_DEF pmpi_iscatterv  mpi_iscatterv
 #else
-#pragma _HP_SECONDARY_DEF pmpix_iscatterv_  mpix_iscatterv_
+#pragma _HP_SECONDARY_DEF pmpi_iscatterv_  mpi_iscatterv_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_ISCATTERV as PMPIX_ISCATTERV
+#pragma _CRI duplicate MPI_ISCATTERV as PMPI_ISCATTERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_iscatterv__ as pmpix_iscatterv__
+#pragma _CRI duplicate mpi_iscatterv__ as pmpi_iscatterv__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_iscatterv as pmpix_iscatterv
+#pragma _CRI duplicate mpi_iscatterv as pmpi_iscatterv
 #else
-#pragma _CRI duplicate mpix_iscatterv_ as pmpix_iscatterv_
+#pragma _CRI duplicate mpi_iscatterv_ as pmpi_iscatterv_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_iscatterv_( void*, MPI_Fint *, MPI_Fint
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_ISCATTERV( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscatterv__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscatterv( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscatterv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv_( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_iscatterv__ = MPIX_ISCATTERV
-#pragma weak mpix_iscatterv_ = MPIX_ISCATTERV
-#pragma weak mpix_iscatterv = MPIX_ISCATTERV
+#pragma weak mpi_iscatterv__ = MPI_ISCATTERV
+#pragma weak mpi_iscatterv_ = MPI_ISCATTERV
+#pragma weak mpi_iscatterv = MPI_ISCATTERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_ISCATTERV = mpix_iscatterv__
-#pragma weak mpix_iscatterv_ = mpix_iscatterv__
-#pragma weak mpix_iscatterv = mpix_iscatterv__
+#pragma weak MPI_ISCATTERV = mpi_iscatterv__
+#pragma weak mpi_iscatterv_ = mpi_iscatterv__
+#pragma weak mpi_iscatterv = mpi_iscatterv__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_ISCATTERV = mpix_iscatterv_
-#pragma weak mpix_iscatterv__ = mpix_iscatterv_
-#pragma weak mpix_iscatterv = mpix_iscatterv_
+#pragma weak MPI_ISCATTERV = mpi_iscatterv_
+#pragma weak mpi_iscatterv__ = mpi_iscatterv_
+#pragma weak mpi_iscatterv = mpi_iscatterv_
 #else
-#pragma weak MPIX_ISCATTERV = mpix_iscatterv
-#pragma weak mpix_iscatterv__ = mpix_iscatterv
-#pragma weak mpix_iscatterv_ = mpix_iscatterv
+#pragma weak MPI_ISCATTERV = mpi_iscatterv
+#pragma weak mpi_iscatterv__ = mpi_iscatterv
+#pragma weak mpi_iscatterv_ = mpi_iscatterv
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_iscatterv_( void*, MPI_Fint *, MPI_Fint
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_ISCATTERV( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_iscatterv__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_iscatterv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iscatterv_( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_iscatterv( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_iscatterv__ = PMPIX_ISCATTERV
-#pragma weak pmpix_iscatterv_ = PMPIX_ISCATTERV
-#pragma weak pmpix_iscatterv = PMPIX_ISCATTERV
+#pragma weak pmpi_iscatterv__ = PMPI_ISCATTERV
+#pragma weak pmpi_iscatterv_ = PMPI_ISCATTERV
+#pragma weak pmpi_iscatterv = PMPI_ISCATTERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_ISCATTERV = pmpix_iscatterv__
-#pragma weak pmpix_iscatterv_ = pmpix_iscatterv__
-#pragma weak pmpix_iscatterv = pmpix_iscatterv__
+#pragma weak PMPI_ISCATTERV = pmpi_iscatterv__
+#pragma weak pmpi_iscatterv_ = pmpi_iscatterv__
+#pragma weak pmpi_iscatterv = pmpi_iscatterv__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_ISCATTERV = pmpix_iscatterv_
-#pragma weak pmpix_iscatterv__ = pmpix_iscatterv_
-#pragma weak pmpix_iscatterv = pmpix_iscatterv_
+#pragma weak PMPI_ISCATTERV = pmpi_iscatterv_
+#pragma weak pmpi_iscatterv__ = pmpi_iscatterv_
+#pragma weak pmpi_iscatterv = pmpi_iscatterv_
 #else
-#pragma weak PMPIX_ISCATTERV = pmpix_iscatterv
-#pragma weak pmpix_iscatterv__ = pmpix_iscatterv
-#pragma weak pmpix_iscatterv_ = pmpix_iscatterv
+#pragma weak PMPI_ISCATTERV = pmpi_iscatterv
+#pragma weak pmpi_iscatterv__ = pmpi_iscatterv
+#pragma weak pmpi_iscatterv_ = pmpi_iscatterv
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_iscatterv_ PMPIX_ISCATTERV
+#define mpi_iscatterv_ PMPI_ISCATTERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_iscatterv_ pmpix_iscatterv__
+#define mpi_iscatterv_ pmpi_iscatterv__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_iscatterv_ pmpix_iscatterv
+#define mpi_iscatterv_ pmpi_iscatterv
 #else
-#define mpix_iscatterv_ pmpix_iscatterv_
+#define mpi_iscatterv_ pmpi_iscatterv_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Iscatterv
-#define MPIX_Iscatterv PMPIX_Iscatterv 
+#undef MPI_Iscatterv
+#define MPI_Iscatterv PMPI_Iscatterv 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_iscatterv_ MPIX_ISCATTERV
+#define mpi_iscatterv_ MPI_ISCATTERV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_iscatterv_ mpix_iscatterv__
+#define mpi_iscatterv_ mpi_iscatterv__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_iscatterv_ mpix_iscatterv
+#define mpi_iscatterv_ mpi_iscatterv
 /* Else leave name alone */
 #endif
 
@@ -184,11 +184,11 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_iscatterv( void*, MPI_Fint *, MPI_Fint
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_iscatterv_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, void*v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *v8, MPI_Fint *v9, MPI_Fint *v10, MPI_Fint *ierr ){
+FORT_DLL_SPEC void FORT_CALL mpi_iscatterv_ ( void*v1, MPI_Fint v2[], MPI_Fint v3[], MPI_Fint *v4, void*v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *v8, MPI_Fint *v9, MPI_Fint *v10, MPI_Fint *ierr ){
 
 #ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
 #endif
     if (v5 == MPIR_F_MPI_IN_PLACE) v5 = MPI_IN_PLACE;
-    *ierr = MPIX_Iscatterv( v1, v2, v3, (MPI_Datatype)(*v4), v5, *v6, (MPI_Datatype)(*v7), *v8, (MPI_Comm)(*v9), (MPI_Request *)(v10) );
+    *ierr = MPI_Iscatterv( v1, v2, v3, (MPI_Datatype)(*v4), v5, (int)*v6, (MPI_Datatype)(*v7), (int)*v8, (MPI_Comm)(*v9), (MPI_Request *)(v10) );
 }

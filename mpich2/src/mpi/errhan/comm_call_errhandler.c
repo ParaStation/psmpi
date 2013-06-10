@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -34,7 +34,7 @@
    MPI_Comm_call_errhandler - Call the error handler installed on a 
    communicator
 
- Input Parameters:
+Input Parameters:
 + comm - communicator with error handler (handle) 
 - errorcode - error code (integer) 
 

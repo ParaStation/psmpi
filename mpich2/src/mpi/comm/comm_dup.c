@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -74,10 +74,10 @@ int MPIR_Comm_dup_impl(MPID_Comm *comm_ptr, MPID_Comm **newcomm_ptr)
 MPI_Comm_dup - Duplicates an existing communicator with all its cached
                information
 
-Input Parameter:
+Input Parameters:
 . comm - Communicator to be duplicated (handle) 
 
-Output Parameter:
+Output Parameters:
 . newcomm - A new communicator over the same group as 'comm' but with a new
   context. See notes.  (handle) 
 

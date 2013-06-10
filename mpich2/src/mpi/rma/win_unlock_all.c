@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,35 +6,41 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
-/* -- Begin Profiling Symbol Block for routine MPIX_Win_unlock_all */
+/* -- Begin Profiling Symbol Block for routine MPI_Win_unlock_all */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPIX_Win_unlock_all = PMPIX_Win_unlock_all
+#pragma weak MPI_Win_unlock_all = PMPI_Win_unlock_all
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIX_Win_unlock_all  MPIX_Win_unlock_all
+#pragma _HP_SECONDARY_DEF PMPI_Win_unlock_all  MPI_Win_unlock_all
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPIX_Win_unlock_all as PMPIX_Win_unlock_all
+#pragma _CRI duplicate MPI_Win_unlock_all as PMPI_Win_unlock_all
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#undef MPIX_Win_unlock_all
-#define MPIX_Win_unlock_all PMPIX_Win_unlock_all
+#undef MPI_Win_unlock_all
+#define MPI_Win_unlock_all PMPI_Win_unlock_all
 
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPIX_Win_unlock_all
+#define FUNCNAME MPI_Win_unlock_all
 
 /*@
-   MPIX_Win_unlock_all - Completes an RMA access epoch all processes on the
-   given window
+MPI_Win_unlock_all - Completes an RMA access epoch at all processes on the given window.
 
-   Input Parameters:
-. win - window object (handle) 
+
+Completes a shared RMA access epoch started by a call to
+'MPI_Win_lock_all'. RMA operations issued during this epoch will
+have completed both at the origin and at the target when the call returns.
+
+Input Parameters:
+. win - window object (handle)
+
+Notes:
+This call is not collective.
 
 .N ThreadSafe
 
@@ -46,19 +52,19 @@
 .N MPI_ERR_WIN
 .N MPI_ERR_OTHER
 
-.seealso: MPIX_Win_lock_all
+.seealso: MPI_Win_lock_all
 @*/
-int MPIX_Win_unlock_all(MPI_Win win)
+int MPI_Win_unlock_all(MPI_Win win)
 {
-    static const char FCNAME[] = "MPIX_Win_unlock_all";
+    static const char FCNAME[] = "MPI_Win_unlock_all";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIX_WIN_UNLOCK_ALL);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_UNLOCK_ALL);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPIX_WIN_UNLOCK_ALL);
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_UNLOCK_ALL);
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -84,18 +90,7 @@ int MPIX_Win_unlock_all(MPI_Win win)
             /* If win_ptr is not valid, it will be reset to null */
             if (mpi_errno) goto fn_fail;
 
-            /* Test that the rank we are unlocking is the rank that we locked */
-            if (win_ptr->lockRank != MPID_WIN_STATE_LOCKED_ALL) {
-                if (win_ptr->lockRank == MPID_WIN_STATE_UNLOCKED) {
-                    MPIU_ERR_SET(mpi_errno,MPI_ERR_RANK,"**winunlockwithoutlock");
-                }
-                else {
-                    MPIU_ERR_SET2(mpi_errno,MPI_ERR_RANK,
-                    "**mismatchedlockrank", 
-                    "**mismatchedlockrank %d %d", MPID_WIN_STATE_LOCKED_ALL, win_ptr->lockRank );
-                }
-                if (mpi_errno) goto fn_fail;
-            }
+            /* TODO: Test that the rank we are unlocking is the rank that we locked */
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -105,14 +100,11 @@ int MPIX_Win_unlock_all(MPI_Win win)
     
     mpi_errno = MPIU_RMA_CALL(win_ptr,Win_unlock_all(win_ptr));
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-    /* Clear the lockRank on success with the unlock */
-    /* FIXME: Should this always be cleared, even on failure? */
-    win_ptr->lockRank = MPID_WIN_STATE_UNLOCKED;
 
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPIX_WIN_UNLOCK_ALL);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_UNLOCK_ALL);
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
@@ -121,8 +113,8 @@ int MPIX_Win_unlock_all(MPI_Win win)
 #   ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno = MPIR_Err_create_code(
-            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpix_win_unlock_all", 
-            "**mpix_win_unlock_all %W", win);
+            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_win_unlock_all",
+            "**mpi_win_unlock_all %W", win);
     }
 #   endif
     mpi_errno = MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );

@@ -197,7 +197,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_file_open_ ( MPI_Fint *v1, char *v2 FORT_MIXED_
         for (li=0; li<(p-v2); li++) { p2[li] = v2[li]; }
         p2[li] = 0; 
     }
-    *ierr = MPI_File_open( (MPI_Comm)(*v1), p2, *v3, (MPI_Info)(*v4), &l5 );
+    *ierr = MPI_File_open( (MPI_Comm)(*v1), p2, (int)*v3, (MPI_Info)(*v4), &l5 );
     *v5 = MPI_File_c2f(l5);
     MPIU_Free( p2 );
 #else

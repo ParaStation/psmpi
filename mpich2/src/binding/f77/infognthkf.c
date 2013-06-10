@@ -187,7 +187,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_info_get_nthkey( MPI_Fint *, MPI_Fint *
 FORT_DLL_SPEC void FORT_CALL mpi_info_get_nthkey_ ( MPI_Fint *v1, MPI_Fint *v2, char *v3 FORT_MIXED_LEN(d3), MPI_Fint *ierr FORT_END_LEN(d3) ){
     char *p3;
     p3 = (char *)MPIU_Malloc( d3 + 1 );
-    *ierr = MPI_Info_get_nthkey( (MPI_Info)(*v1), *v2, p3 );
+    *ierr = MPI_Info_get_nthkey( (MPI_Info)(*v1), (int)*v2, p3 );
 
     if (!*ierr) {char *p = v3, *pc=p3;
         while (*pc) {*p++ = *pc++;}

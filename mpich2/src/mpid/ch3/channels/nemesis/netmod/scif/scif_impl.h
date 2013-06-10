@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2006 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -37,7 +37,7 @@ typedef struct {
 } MPID_nem_scif_vc_area;
 
 /* macro for scif private in VC */
-#define VC_SCIF(vc) ((MPID_nem_scif_vc_area *)VC_CH((vc))->netmod_area.padding)
+#define VC_SCIF(vc) ((MPID_nem_scif_vc_area *)vc->ch.netmod_area.padding)
 
 typedef struct {
     uint64_t seqno;

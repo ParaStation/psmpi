@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -35,10 +35,10 @@
 MPI_Comm_remote_size - Determines the size of the remote group 
                        associated with an inter-communictor
 
-Input Parameter:
+Input Parameters:
 . comm - communicator (handle) 
 
-Output Parameter:
+Output Parameters:
 . size - number of processes in the remote group of 'comm'  (integer) 
 
 .N SignalSafe

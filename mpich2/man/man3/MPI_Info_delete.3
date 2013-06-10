@@ -1,9 +1,9 @@
-.TH MPI_Info_delete 3 "9/20/2012" " " "MPI"
+.TH MPI_Info_delete 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Info_delete \-  Deletes a (key,value) pair from info 
 .SH SYNOPSIS
 .nf
-int MPI_Info_delete( MPI_Info info, MPICH2_CONST char *key )
+int MPI_Info_delete( MPI_Info info, const char *key )
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -90,4 +90,4 @@ possible.
 - No error; MPI routine completed successfully.
 .PD 1
 .SH LOCATION
-src/util/info/info_delete.c
+src/mpi/info/info_delete.c

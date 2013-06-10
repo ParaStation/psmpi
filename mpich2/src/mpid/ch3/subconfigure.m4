@@ -1,9 +1,9 @@
 [#] start of __file__
-dnl MPICH2_SUBCFG_BEFORE=src/mpid/common/sched
-dnl MPICH2_SUBCFG_BEFORE=src/mpid/common/datatype
-dnl MPICH2_SUBCFG_BEFORE=src/mpid/common/thread
+dnl MPICH_SUBCFG_BEFORE=src/mpid/common/sched
+dnl MPICH_SUBCFG_BEFORE=src/mpid/common/datatype
+dnl MPICH_SUBCFG_BEFORE=src/mpid/common/thread
 
-dnl _PREREQ handles the former role of mpich2prereq, setup_device, etc
+dnl _PREREQ handles the former role of mpichprereq, setup_device, etc
 [#] expansion is: PAC_SUBCFG_PREREQ_[]PAC_SUBCFG_AUTO_SUFFIX
 AC_DEFUN([PAC_SUBCFG_PREREQ_]PAC_SUBCFG_AUTO_SUFFIX,[
 AM_CONDITIONAL([BUILD_CH3],[test "$device_name" = "ch3"])
@@ -195,20 +195,6 @@ else
     AC_MSG_ERROR([
 The ch3 devies was selected yet a set of working OpenPA headers
 were not found.  Please check the OpenPA configure step for errors.])
-fi
-
-AC_CACHE_CHECK([whether CPP accepts variable length argument lists],
-pac_cv_have_cpp_varargs,[
-AC_TRY_COMPILE([
-#include <stdio.h>
-#define MY_PRINTF(rank, fmt, args...)  printf("%d: " fmt, rank, ## args)
-],[
-MY_PRINTF(0, "hello");
-MY_PRINTF(1, "world %d", 3);
-], pac_cv_have_cpp_varargs=yes, pac_cv_have_cpp_varargs=no)
-])
-if test $pac_cv_have_cpp_varargs = "yes" ; then
-    AC_DEFINE(HAVE_CPP_VARARGS,,[Define if CPP supports macros with a variable number arguments])
 fi
 
 AC_C_BIGENDIAN

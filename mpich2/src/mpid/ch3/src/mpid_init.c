@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -30,48 +30,22 @@ char *MPIDI_DBG_parent_str = "?";
 
 int MPIDI_Use_pmi2_api = 0;
 
-static int InitPG( int *argc_p, char ***argv_p,
+static int init_pg( int *argc_p, char ***argv_p,
 		   int *has_args, int *has_env, int *has_parent, 
 		   int *pg_rank_p, MPIDI_PG_t **pg_p );
-static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2);
-static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg );
-
+static int pg_compare_ids(void * id1, void * id2);
+static int pg_destroy(MPIDI_PG_t * pg );
+static int set_eager_threshold(MPID_Comm *comm_ptr, MPID_Info *info, void *state);
 
 MPIDI_Process_t MPIDI_Process = { NULL };
 MPIDI_CH3U_SRBuf_element_t * MPIDI_CH3U_SRBuf_pool = NULL;
 MPIDI_CH3U_Win_fns_t MPIDI_CH3U_Win_fns = { NULL };
 
+
 #undef FUNCNAME
-#define FUNCNAME split_type
+#define FUNCNAME finalize_failed_procs_group
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
-static int split_type(MPID_Comm * comm_ptr, int stype, int key,
-                      MPID_Info *info_ptr, MPID_Comm ** newcomm_ptr)
-{
-    MPID_Node_id_t id;
-    MPIR_Rank_t nid;
-    int mpi_errno = MPI_SUCCESS;
-
-    mpi_errno = MPID_Get_node_id(comm_ptr, comm_ptr->rank, &id);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-
-    nid = id;
-    mpi_errno = MPIR_Comm_split_impl(comm_ptr, nid, key, newcomm_ptr);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-
-  fn_exit:
-    return mpi_errno;
-
-    /* --BEGIN ERROR HANDLING-- */
-  fn_fail:
-    goto fn_exit;
-    /* --END ERROR HANDLING-- */
-}
-
-static MPID_CommOps comm_fns = {
-    split_type
-};
-
 static int finalize_failed_procs_group(void *param)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -82,6 +56,31 @@ static int finalize_failed_procs_group(void *param)
     
  fn_fail:
     return mpi_errno;
+}
+
+#undef FUNCNAME
+#define FUNCNAME set_eager_threshold
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+static int set_eager_threshold(MPID_Comm *comm_ptr, MPID_Info *info, void *state)
+{
+    int mpi_errno = MPI_SUCCESS;
+    char *endptr;
+    MPID_MPI_STATE_DECL(MPID_STATE_MPIDI_CH3_SET_EAGER_THRESHOLD);
+
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_SET_EAGER_THRESHOLD);
+
+    comm_ptr->ch.eager_max_msg_sz = strtol(info->value, &endptr, 0);
+
+    MPIU_ERR_CHKANDJUMP1(*endptr, mpi_errno, MPI_ERR_ARG,
+                         "**infohintparse", "**infohintparse %s",
+                         info->key);
+
+ fn_exit:
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPIDI_CH3_SET_EAGER_THRESHOLD);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 
@@ -134,7 +133,7 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
     /*
      * Perform channel-independent PMI initialization
      */
-    mpi_errno = InitPG( argc, argv, 
+    mpi_errno = init_pg( argc, argv,
 			has_args, has_env, &has_parent, &pg_rank, &pg );
     if (mpi_errno) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|ch3_init");
@@ -161,9 +160,6 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
     mpi_errno = MPIDU_Ftb_init();
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-    /* Override split_type */
-    MPID_Comm_fns = &comm_fns;
-    
     /* Initialize Window functions table with defaults, then call the channel's
        init function. */
     MPIDI_Win_fns_init(&MPIDI_CH3U_Win_fns);
@@ -296,7 +292,7 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, 
 				"**ch3|get_parent_port");
 	}
-	MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"Parent port is %s\n", parent_port);
+	MPIU_DBG_MSG_S(CH3_CONNECT,VERBOSE,"Parent port is %s", parent_port);
 	    
 	mpi_errno = MPID_Comm_connect(parent_port, NULL, 0, 
 				      MPIR_Process.comm_world, &comm);
@@ -326,6 +322,11 @@ int MPID_Init(int *argc, char ***argv, int requested, int *provided,
 	    MPICH_THREAD_LEVEL : requested;
     }
 
+    mpi_errno = MPIR_Comm_register_hint("eager_rendezvous_threshold",
+                                        set_eager_threshold,
+                                        NULL);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_INIT);
     return mpi_errno;
@@ -351,7 +352,7 @@ int MPID_InitCompleted( void )
  * process group structures.
  * 
  */
-static int InitPG( int *argc, char ***argv, 
+static int init_pg( int *argc, char ***argv,
 		   int *has_args, int *has_env, int *has_parent, 
 		   int *pg_rank_p, MPIDI_PG_t **pg_p )
 {
@@ -481,7 +482,7 @@ static int InitPG( int *argc, char ***argv,
      * Initialize the process group tracking subsystem
      */
     mpi_errno = MPIDI_PG_Init(argc, argv, 
-			     MPIDI_CH3I_PG_Compare_ids, MPIDI_CH3I_PG_Destroy);
+			     pg_compare_ids, pg_destroy);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**dev|pg_init");
     }
@@ -581,13 +582,13 @@ int MPIDI_CH3I_BCFree( char *bc_val )
 
 /* FIXME: The PG code should supply these, since it knows how the 
    pg_ids and other data are represented */
-static int MPIDI_CH3I_PG_Compare_ids(void * id1, void * id2)
+static int pg_compare_ids(void * id1, void * id2)
 {
     return (strcmp((char *) id1, (char *) id2) == 0) ? TRUE : FALSE;
 }
 
 
-static int MPIDI_CH3I_PG_Destroy(MPIDI_PG_t * pg)
+static int pg_destroy(MPIDI_PG_t * pg)
 {
     if (pg->id != NULL)
     { 

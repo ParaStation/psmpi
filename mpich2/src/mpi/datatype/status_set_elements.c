@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -33,7 +33,7 @@
 /*@
    MPI_Status_set_elements - Set the number of elements in a status
 
-   Input Parameters:
+Input Parameters:
 + status - status to associate count with (Status) 
 . datatype - datatype associated with count (handle) 
 - count - number of elements to associate with status (integer) 
@@ -51,7 +51,6 @@ int MPI_Status_set_elements(MPI_Status *status, MPI_Datatype datatype,
 			    int count)
 {
     int mpi_errno = MPI_SUCCESS;
-    int size;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_STATUS_SET_ELEMENTS);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -80,21 +79,17 @@ int MPI_Status_set_elements(MPI_Status *status, MPI_Datatype datatype,
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ... */
-    
-    MPID_Datatype_get_size_macro(datatype, size);
-    /* FIXME: The device may want something else here */
-    status->count = count * size;
+
+    mpi_errno = MPIR_Status_set_elements_x_impl(status, datatype, (MPI_Count)count);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     /* ... end of body of routine ... */
 
-#ifdef HAVE_ERROR_CHECKING
   fn_exit:
-#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_STATUS_SET_ELEMENTS);
     return mpi_errno;
-    
+
     /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_CHECKING
   fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
@@ -104,6 +99,5 @@ int MPI_Status_set_elements(MPI_Status *status, MPI_Datatype datatype,
     }
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     goto fn_exit;
-#   endif
     /* --END ERROR HANDLING-- */
 }

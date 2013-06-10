@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_IDUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_idup__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_idup( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_idup_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_IDUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_idup__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_idup( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_idup_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_COMM_IDUP = PMPIX_COMM_IDUP
-#pragma weak mpix_comm_idup__ = PMPIX_COMM_IDUP
-#pragma weak mpix_comm_idup_ = PMPIX_COMM_IDUP
-#pragma weak mpix_comm_idup = PMPIX_COMM_IDUP
+#pragma weak MPI_COMM_IDUP = PMPI_COMM_IDUP
+#pragma weak mpi_comm_idup__ = PMPI_COMM_IDUP
+#pragma weak mpi_comm_idup_ = PMPI_COMM_IDUP
+#pragma weak mpi_comm_idup = PMPI_COMM_IDUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_COMM_IDUP = pmpix_comm_idup__
-#pragma weak mpix_comm_idup__ = pmpix_comm_idup__
-#pragma weak mpix_comm_idup_ = pmpix_comm_idup__
-#pragma weak mpix_comm_idup = pmpix_comm_idup__
+#pragma weak MPI_COMM_IDUP = pmpi_comm_idup__
+#pragma weak mpi_comm_idup__ = pmpi_comm_idup__
+#pragma weak mpi_comm_idup_ = pmpi_comm_idup__
+#pragma weak mpi_comm_idup = pmpi_comm_idup__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_COMM_IDUP = pmpix_comm_idup_
-#pragma weak mpix_comm_idup__ = pmpix_comm_idup_
-#pragma weak mpix_comm_idup_ = pmpix_comm_idup_
-#pragma weak mpix_comm_idup = pmpix_comm_idup_
+#pragma weak MPI_COMM_IDUP = pmpi_comm_idup_
+#pragma weak mpi_comm_idup__ = pmpi_comm_idup_
+#pragma weak mpi_comm_idup_ = pmpi_comm_idup_
+#pragma weak mpi_comm_idup = pmpi_comm_idup_
 #else
-#pragma weak MPIX_COMM_IDUP = pmpix_comm_idup
-#pragma weak mpix_comm_idup__ = pmpix_comm_idup
-#pragma weak mpix_comm_idup_ = pmpix_comm_idup
-#pragma weak mpix_comm_idup = pmpix_comm_idup
+#pragma weak MPI_COMM_IDUP = pmpi_comm_idup
+#pragma weak mpi_comm_idup__ = pmpi_comm_idup
+#pragma weak mpi_comm_idup_ = pmpi_comm_idup
+#pragma weak mpi_comm_idup = pmpi_comm_idup
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_comm_idup_( MPI_Fint *, MPI_Fint *, MPI
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_IDUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_IDUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_COMM_IDUP = PMPIX_COMM_IDUP
+#pragma weak MPI_COMM_IDUP = PMPI_COMM_IDUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_idup__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_idup__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_comm_idup__ = pmpix_comm_idup__
+#pragma weak mpi_comm_idup__ = pmpi_comm_idup__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_idup( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_idup( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_comm_idup = pmpix_comm_idup
+#pragma weak mpi_comm_idup = pmpi_comm_idup
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_idup_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_idup_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_comm_idup_ = pmpix_comm_idup_
+#pragma weak mpi_comm_idup_ = pmpi_comm_idup_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_COMM_IDUP  MPIX_COMM_IDUP
+#pragma _HP_SECONDARY_DEF PMPI_COMM_IDUP  MPI_COMM_IDUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_comm_idup__  mpix_comm_idup__
+#pragma _HP_SECONDARY_DEF pmpi_comm_idup__  mpi_comm_idup__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_comm_idup  mpix_comm_idup
+#pragma _HP_SECONDARY_DEF pmpi_comm_idup  mpi_comm_idup
 #else
-#pragma _HP_SECONDARY_DEF pmpix_comm_idup_  mpix_comm_idup_
+#pragma _HP_SECONDARY_DEF pmpi_comm_idup_  mpi_comm_idup_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_COMM_IDUP as PMPIX_COMM_IDUP
+#pragma _CRI duplicate MPI_COMM_IDUP as PMPI_COMM_IDUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_comm_idup__ as pmpix_comm_idup__
+#pragma _CRI duplicate mpi_comm_idup__ as pmpi_comm_idup__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_comm_idup as pmpix_comm_idup
+#pragma _CRI duplicate mpi_comm_idup as pmpi_comm_idup
 #else
-#pragma _CRI duplicate mpix_comm_idup_ as pmpix_comm_idup_
+#pragma _CRI duplicate mpi_comm_idup_ as pmpi_comm_idup_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_comm_idup_( MPI_Fint *, MPI_Fint *, MPI
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_IDUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_idup__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_idup( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_idup_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_IDUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_idup__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_idup( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_idup_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_comm_idup__ = MPIX_COMM_IDUP
-#pragma weak mpix_comm_idup_ = MPIX_COMM_IDUP
-#pragma weak mpix_comm_idup = MPIX_COMM_IDUP
+#pragma weak mpi_comm_idup__ = MPI_COMM_IDUP
+#pragma weak mpi_comm_idup_ = MPI_COMM_IDUP
+#pragma weak mpi_comm_idup = MPI_COMM_IDUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_COMM_IDUP = mpix_comm_idup__
-#pragma weak mpix_comm_idup_ = mpix_comm_idup__
-#pragma weak mpix_comm_idup = mpix_comm_idup__
+#pragma weak MPI_COMM_IDUP = mpi_comm_idup__
+#pragma weak mpi_comm_idup_ = mpi_comm_idup__
+#pragma weak mpi_comm_idup = mpi_comm_idup__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_COMM_IDUP = mpix_comm_idup_
-#pragma weak mpix_comm_idup__ = mpix_comm_idup_
-#pragma weak mpix_comm_idup = mpix_comm_idup_
+#pragma weak MPI_COMM_IDUP = mpi_comm_idup_
+#pragma weak mpi_comm_idup__ = mpi_comm_idup_
+#pragma weak mpi_comm_idup = mpi_comm_idup_
 #else
-#pragma weak MPIX_COMM_IDUP = mpix_comm_idup
-#pragma weak mpix_comm_idup__ = mpix_comm_idup
-#pragma weak mpix_comm_idup_ = mpix_comm_idup
+#pragma weak MPI_COMM_IDUP = mpi_comm_idup
+#pragma weak mpi_comm_idup__ = mpi_comm_idup
+#pragma weak mpi_comm_idup_ = mpi_comm_idup
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_comm_idup_( MPI_Fint *, MPI_Fint *, MPI
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_COMM_IDUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_IDUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_idup__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_idup__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_idup_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_idup_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_idup( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_idup( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_comm_idup__ = PMPIX_COMM_IDUP
-#pragma weak pmpix_comm_idup_ = PMPIX_COMM_IDUP
-#pragma weak pmpix_comm_idup = PMPIX_COMM_IDUP
+#pragma weak pmpi_comm_idup__ = PMPI_COMM_IDUP
+#pragma weak pmpi_comm_idup_ = PMPI_COMM_IDUP
+#pragma weak pmpi_comm_idup = PMPI_COMM_IDUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_COMM_IDUP = pmpix_comm_idup__
-#pragma weak pmpix_comm_idup_ = pmpix_comm_idup__
-#pragma weak pmpix_comm_idup = pmpix_comm_idup__
+#pragma weak PMPI_COMM_IDUP = pmpi_comm_idup__
+#pragma weak pmpi_comm_idup_ = pmpi_comm_idup__
+#pragma weak pmpi_comm_idup = pmpi_comm_idup__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_COMM_IDUP = pmpix_comm_idup_
-#pragma weak pmpix_comm_idup__ = pmpix_comm_idup_
-#pragma weak pmpix_comm_idup = pmpix_comm_idup_
+#pragma weak PMPI_COMM_IDUP = pmpi_comm_idup_
+#pragma weak pmpi_comm_idup__ = pmpi_comm_idup_
+#pragma weak pmpi_comm_idup = pmpi_comm_idup_
 #else
-#pragma weak PMPIX_COMM_IDUP = pmpix_comm_idup
-#pragma weak pmpix_comm_idup__ = pmpix_comm_idup
-#pragma weak pmpix_comm_idup_ = pmpix_comm_idup
+#pragma weak PMPI_COMM_IDUP = pmpi_comm_idup
+#pragma weak pmpi_comm_idup__ = pmpi_comm_idup
+#pragma weak pmpi_comm_idup_ = pmpi_comm_idup
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_comm_idup_ PMPIX_COMM_IDUP
+#define mpi_comm_idup_ PMPI_COMM_IDUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_comm_idup_ pmpix_comm_idup__
+#define mpi_comm_idup_ pmpi_comm_idup__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_comm_idup_ pmpix_comm_idup
+#define mpi_comm_idup_ pmpi_comm_idup
 #else
-#define mpix_comm_idup_ pmpix_comm_idup_
+#define mpi_comm_idup_ pmpi_comm_idup_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Comm_idup
-#define MPIX_Comm_idup PMPIX_Comm_idup 
+#undef MPI_Comm_idup
+#define MPI_Comm_idup PMPI_Comm_idup 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_comm_idup_ MPIX_COMM_IDUP
+#define mpi_comm_idup_ MPI_COMM_IDUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_comm_idup_ mpix_comm_idup__
+#define mpi_comm_idup_ mpi_comm_idup__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_comm_idup_ mpix_comm_idup
+#define mpi_comm_idup_ mpi_comm_idup
 /* Else leave name alone */
 #endif
 
@@ -184,6 +184,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_idup( MPI_Fint *, MPI_Fint *, MPI
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_comm_idup_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *ierr ){
-    *ierr = MPIX_Comm_idup( (MPI_Comm)(*v1), (MPI_Comm *)(v2), (MPI_Request *)(v3) );
+FORT_DLL_SPEC void FORT_CALL mpi_comm_idup_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *ierr ){
+    *ierr = MPI_Comm_idup( (MPI_Comm)(*v1), (MPI_Comm *)(v2), (MPI_Request *)(v3) );
 }

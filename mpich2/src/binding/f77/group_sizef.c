@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_group_size( MPI_Fint *, MPI_Fint *, MPI
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_group_size_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
-    *ierr = MPI_Group_size( *v1, v2 );
+    *ierr = MPI_Group_size( (MPI_Group)*v1, v2 );
 }

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -71,7 +71,7 @@ void MPID_Attr_free(MPID_Attribute *attr_ptr)
 
   Even though there are separate keyvals for communicators, types, and files,
   we can use the same function because the handle for these is always an int
-  in MPICH2.  
+  in MPICH.  
 
   Note that this simply invokes the attribute delete function.  It does not
   remove the attribute from the list of attributes.
@@ -125,7 +125,7 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 
   Even though there are separate keyvals for communicators, types, and files,
   we can use the same function because the handle for these is always an int
-  in MPICH2.
+  in MPICH.
 
   Note that this simply invokes the attribute copy function.
 */

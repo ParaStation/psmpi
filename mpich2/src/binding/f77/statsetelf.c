@@ -191,5 +191,5 @@ FORT_DLL_SPEC void FORT_CALL mpi_status_set_elements_ ( MPI_Fint *v1, MPI_Fint *
 #endif
 
     if (v1 == MPI_F_STATUS_IGNORE) { v1 = (MPI_Fint*)MPI_STATUS_IGNORE; }
-    *ierr = MPI_Status_set_elements( (MPI_Status *)v1, (MPI_Datatype)(*v2), *v3 );
+    *ierr = MPI_Status_set_elements( (MPI_Status *)v1, (MPI_Datatype)(*v2), (int)*v3 );
 }

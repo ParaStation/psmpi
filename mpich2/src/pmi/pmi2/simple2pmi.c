@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2007 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -503,7 +503,7 @@ cmd=spawn;thrid=string;ncmds=count;preputcount=n;ppkey0=name;ppval0=string;...;\
     freepairs(pairs_p, npairs);
     pairs_p = NULL;
 
-    /* XXX DJG TODO release any upper level MPICH2 critical sections */
+    /* XXX DJG TODO release any upper level MPICH critical sections */
     rc = PMIi_ReadCommandExp(PMI2_fd, &resp_cmd, "spawn-response", &spawn_rc, &errmsg);
     if (rc != 0) { return PMI2_FAIL; }
 

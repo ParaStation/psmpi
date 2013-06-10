@@ -140,6 +140,7 @@ hwloc_solaris_set_thisthread_cpubind(hwloc_topology_t topology, hwloc_const_bitm
 static int
 hwloc_solaris_get_sth_cpubind(hwloc_topology_t topology, idtype_t idtype, id_t id, hwloc_bitmap_t hwloc_set, int flags __hwloc_attribute_unused)
 {
+  processorid_t binding;
   int depth = hwloc_get_type_depth(topology, HWLOC_OBJ_NODE);
   int n;
   int i;
@@ -149,15 +150,21 @@ hwloc_solaris_get_sth_cpubind(hwloc_topology_t topology, idtype_t idtype, id_t i
     return -1;
   }
 
+  /* first check if processor_bind() was used to bind to a single processor rather than to an lgroup */
+  if ( processor_bind(idtype, id, PBIND_QUERY, &binding) == 0 && binding != PBIND_NONE ) {
+    hwloc_bitmap_only(hwloc_set, binding);
+    return 0;
+  }
+
+  /* if not, check lgroups */
   hwloc_bitmap_zero(hwloc_set);
   n = hwloc_get_nbobjs_by_depth(topology, depth);
-
   for (i = 0; i < n; i++) {
     hwloc_obj_t obj = hwloc_get_obj_by_depth(topology, depth, i);
     lgrp_affinity_t aff = lgrp_affinity_get(idtype, id, obj->os_index);
 
     if (aff == LGRP_AFF_STRONG)
-      hwloc_bitmap_or(hwloc_set, hwloc_set, obj->cpuset);      
+      hwloc_bitmap_or(hwloc_set, hwloc_set, obj->cpuset);
   }
 
   if (hwloc_bitmap_iszero(hwloc_set))
@@ -374,7 +381,7 @@ browse(struct hwloc_topology *topology, lgrp_cookie_t cookie, lgrp_id_t lgrp, hw
     obj->memory.page_types_len = 2;
     obj->memory.page_types = malloc(2*sizeof(*obj->memory.page_types));
     memset(obj->memory.page_types, 0, 2*sizeof(*obj->memory.page_types));
-    obj->memory.page_types[0].size = getpagesize();
+    obj->memory.page_types[0].size = hwloc_getpagesize();
 #ifdef HAVE__SC_LARGE_PAGESIZE
     obj->memory.page_types[1].size = sysconf(_SC_LARGE_PAGESIZE);
 #endif
@@ -708,45 +715,89 @@ hwloc_look_kstat(struct hwloc_topology *topology)
 }
 #endif /* LIBKSTAT */
 
-void
-hwloc_look_solaris(struct hwloc_topology *topology)
+static int
+hwloc_look_solaris(struct hwloc_backend *backend)
 {
+  struct hwloc_topology *topology = backend->topology;
   unsigned nbprocs = hwloc_fallback_nbprocessors (topology);
+  int alreadypus = 0;
+
+  if (topology->levels[0][0]->cpuset)
+    /* somebody discovered things */
+    return 0;
+
+  hwloc_alloc_obj_cpusets(topology->levels[0][0]);
+
 #ifdef HAVE_LIBLGRP
   hwloc_look_lgrp(topology);
 #endif /* HAVE_LIBLGRP */
 #ifdef HAVE_LIBKSTAT
   nbprocs = 0;
-  if (hwloc_look_kstat(topology))
-    return;
+  if (hwloc_look_kstat(topology) > 0)
+    alreadypus = 1;
 #endif /* HAVE_LIBKSTAT */
-  hwloc_setup_pu_level(topology, nbprocs);
+  if (!alreadypus)
+    hwloc_setup_pu_level(topology, nbprocs);
 
   hwloc_obj_add_info(topology->levels[0][0], "Backend", "Solaris");
+  if (topology->is_thissystem)
+    hwloc_add_uname_info(topology);
+  return 1;
 }
 
 void
-hwloc_set_solaris_hooks(struct hwloc_topology *topology)
+hwloc_set_solaris_hooks(struct hwloc_binding_hooks *hooks,
+			struct hwloc_topology_support *support __hwloc_attribute_unused)
 {
-  topology->set_proc_cpubind = hwloc_solaris_set_proc_cpubind;
-  topology->set_thisproc_cpubind = hwloc_solaris_set_thisproc_cpubind;
-  topology->set_thisthread_cpubind = hwloc_solaris_set_thisthread_cpubind;
+  hooks->set_proc_cpubind = hwloc_solaris_set_proc_cpubind;
+  hooks->set_thisproc_cpubind = hwloc_solaris_set_thisproc_cpubind;
+  hooks->set_thisthread_cpubind = hwloc_solaris_set_thisthread_cpubind;
 #ifdef HAVE_LIBLGRP
-  topology->get_proc_cpubind = hwloc_solaris_get_proc_cpubind;
-  topology->get_thisproc_cpubind = hwloc_solaris_get_thisproc_cpubind;
-  topology->get_thisthread_cpubind = hwloc_solaris_get_thisthread_cpubind;
-  topology->set_proc_membind = hwloc_solaris_set_proc_membind;
-  topology->set_thisproc_membind = hwloc_solaris_set_thisproc_membind;
-  topology->set_thisthread_membind = hwloc_solaris_set_thisthread_membind;
-  topology->get_proc_membind = hwloc_solaris_get_proc_membind;
-  topology->get_thisproc_membind = hwloc_solaris_get_thisproc_membind;
-  topology->get_thisthread_membind = hwloc_solaris_get_thisthread_membind;
+  hooks->get_proc_cpubind = hwloc_solaris_get_proc_cpubind;
+  hooks->get_thisproc_cpubind = hwloc_solaris_get_thisproc_cpubind;
+  hooks->get_thisthread_cpubind = hwloc_solaris_get_thisthread_cpubind;
+  hooks->set_proc_membind = hwloc_solaris_set_proc_membind;
+  hooks->set_thisproc_membind = hwloc_solaris_set_thisproc_membind;
+  hooks->set_thisthread_membind = hwloc_solaris_set_thisthread_membind;
+  hooks->get_proc_membind = hwloc_solaris_get_proc_membind;
+  hooks->get_thisproc_membind = hwloc_solaris_get_thisproc_membind;
+  hooks->get_thisthread_membind = hwloc_solaris_get_thisthread_membind;
 #endif /* HAVE_LIBLGRP */
 #ifdef MADV_ACCESS_LWP 
-  topology->set_area_membind = hwloc_solaris_set_area_membind;
-  topology->support.membind->firsttouch_membind = 1;
-  topology->support.membind->bind_membind = 1;
-  topology->support.membind->interleave_membind = 1;
-  topology->support.membind->nexttouch_membind = 1;
+  hooks->set_area_membind = hwloc_solaris_set_area_membind;
+  support->membind->firsttouch_membind = 1;
+  support->membind->bind_membind = 1;
+  support->membind->interleave_membind = 1;
+  support->membind->nexttouch_membind = 1;
 #endif
 }
+
+static struct hwloc_backend *
+hwloc_solaris_component_instantiate(struct hwloc_disc_component *component,
+				    const void *_data1 __hwloc_attribute_unused,
+				    const void *_data2 __hwloc_attribute_unused,
+				    const void *_data3 __hwloc_attribute_unused)
+{
+  struct hwloc_backend *backend;
+  backend = hwloc_backend_alloc(component);
+  if (!backend)
+    return NULL;
+  backend->discover = hwloc_look_solaris;
+  return backend;
+}
+
+static struct hwloc_disc_component hwloc_solaris_disc_component = {
+  HWLOC_DISC_COMPONENT_TYPE_CPU,
+  "solaris",
+  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
+  hwloc_solaris_component_instantiate,
+  50,
+  NULL
+};
+
+const struct hwloc_component hwloc_solaris_component = {
+  HWLOC_COMPONENT_ABI,
+  HWLOC_COMPONENT_TYPE_DISC,
+  0,
+  &hwloc_solaris_disc_component
+};

@@ -14,7 +14,7 @@ EXTRA_DIST = testlist
 # avoid having to write many "foo_SOURCES = foo.f90" lines
 AM_DEFAULT_SOURCE_EXT = .f90
 
-noinst_PROGRAMS = uallreducef90 exscanf90 alltoallwf90 inplacef90 allredint8f90 allredopttf90 reducelocalf90 alltoallvf90 redscatf90 split_typef90 nonblockingf90 vw_inplacef90 red_scat_blockf90
+noinst_PROGRAMS = uallreducef90 exscanf90 alltoallwf90 inplacef90 allredint8f90 allredopttf90 reducelocalf90 alltoallvf90 redscatf90 split_typef90 nonblockingf90 vw_inplacef90 red_scat_blockf90 nonblocking_inpf90
 
 if MAINTAINER_MODE
 

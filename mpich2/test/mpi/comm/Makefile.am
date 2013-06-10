@@ -16,6 +16,7 @@ noinst_PROGRAMS =     \
     commcreate1       \
     dup               \
     dupic             \
+    dup_with_info     \
     ic1               \
     ic2               \
     commname          \
@@ -33,5 +34,5 @@ noinst_PROGRAMS =     \
     comm_group_half   \
     comm_group_rand   \
     probe-intercomm   \
-    comm_idup
-
+    comm_idup         \
+    comm_info

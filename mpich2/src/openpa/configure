@@ -13475,6 +13475,86 @@ fi
 
 if test "$with_atomic_primitives" = "auto"                 || \
    test "$with_atomic_primitives" = "auto_allow_emulation" || \
+   test "$with_atomic_primitives" = "opa_gcc_arm.h"
+then
+    checked_specified_primitive=yes
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for support for gcc ARM atomics" >&5
+$as_echo_n "checking for support for gcc ARM atomics... " >&6; }
+    SAVE_CFLAGS="$CFLAGS"
+    CFLAGS="$CFLAGS -I${srcdir}/src"
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+/* end confdefs.h.  */
+
+#define OPA_SIZEOF_INT SIZEOF_INT
+#define OPA_SIZEOF_VOID_P SIZEOF_VOID_P
+#ifndef _opa_inline
+#define _opa_inline inline
+#endif
+#ifndef _opa_restrict
+#define _opa_restrict restrict
+#endif
+#ifndef _opa_const
+#define _opa_const const
+#endif
+#ifdef HAVE_GCC_ATTRIBUTE
+#define OPA_HAVE_GCC_ATTRIBUTE 1
+#endif
+#include "opa_util.h" /* for OPA_ATTRIBUTE and friends */
+#include "primitives/opa_gcc_arm.h"
+
+int
+main ()
+{
+
+    OPA_int_t a, b;
+    int c;
+
+    OPA_store_int(&a, 0);
+    OPA_store_int(&b, 1);
+    c = OPA_load_int(&a);
+
+    OPA_add_int(&a, 10);
+    OPA_incr_int(&a);
+    OPA_decr_int(&a);
+
+    c = OPA_decr_and_test_int(&a);
+    c = OPA_fetch_and_add_int(&a, 10);
+    c = OPA_fetch_and_incr_int(&a);
+    c = OPA_fetch_and_decr_int(&a);
+
+    c = OPA_cas_int(&a, 10, 11);
+    c = OPA_swap_int(&a, OPA_load_int(&b));
+
+    OPA_write_barrier();
+    OPA_read_barrier();
+    OPA_read_write_barrier();
+
+  ;
+  return 0;
+}
+
+_ACEOF
+if ac_fn_c_try_link "$LINENO"; then :
+
+$as_echo "#define HAVE_GCC_AND_ARM_ASM 1" >>confdefs.h
+
+        non_emulated_primitives_available=yes
+        { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+rm -f core conftest.err conftest.$ac_objext \
+    conftest$ac_exeext conftest.$ac_ext
+    CFLAGS="$SAVE_CFLAGS"
+fi
+
+
+if test "$with_atomic_primitives" = "auto"                 || \
+   test "$with_atomic_primitives" = "auto_allow_emulation" || \
    test "$with_atomic_primitives" = "opa_gcc_sicortex.h"
 then
     checked_specified_primitive=yes

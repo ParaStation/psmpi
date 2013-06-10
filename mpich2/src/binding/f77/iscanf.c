@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_ISCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_ISCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_ISCAN = PMPIX_ISCAN
-#pragma weak mpix_iscan__ = PMPIX_ISCAN
-#pragma weak mpix_iscan_ = PMPIX_ISCAN
-#pragma weak mpix_iscan = PMPIX_ISCAN
+#pragma weak MPI_ISCAN = PMPI_ISCAN
+#pragma weak mpi_iscan__ = PMPI_ISCAN
+#pragma weak mpi_iscan_ = PMPI_ISCAN
+#pragma weak mpi_iscan = PMPI_ISCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_ISCAN = pmpix_iscan__
-#pragma weak mpix_iscan__ = pmpix_iscan__
-#pragma weak mpix_iscan_ = pmpix_iscan__
-#pragma weak mpix_iscan = pmpix_iscan__
+#pragma weak MPI_ISCAN = pmpi_iscan__
+#pragma weak mpi_iscan__ = pmpi_iscan__
+#pragma weak mpi_iscan_ = pmpi_iscan__
+#pragma weak mpi_iscan = pmpi_iscan__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_ISCAN = pmpix_iscan_
-#pragma weak mpix_iscan__ = pmpix_iscan_
-#pragma weak mpix_iscan_ = pmpix_iscan_
-#pragma weak mpix_iscan = pmpix_iscan_
+#pragma weak MPI_ISCAN = pmpi_iscan_
+#pragma weak mpi_iscan__ = pmpi_iscan_
+#pragma weak mpi_iscan_ = pmpi_iscan_
+#pragma weak mpi_iscan = pmpi_iscan_
 #else
-#pragma weak MPIX_ISCAN = pmpix_iscan
-#pragma weak mpix_iscan__ = pmpix_iscan
-#pragma weak mpix_iscan_ = pmpix_iscan
-#pragma weak mpix_iscan = pmpix_iscan
+#pragma weak MPI_ISCAN = pmpi_iscan
+#pragma weak mpi_iscan__ = pmpi_iscan
+#pragma weak mpi_iscan_ = pmpi_iscan
+#pragma weak mpi_iscan = pmpi_iscan
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_iscan_( void*, void*, MPI_Fint *, MPI_F
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_ISCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_ISCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_ISCAN = PMPIX_ISCAN
+#pragma weak MPI_ISCAN = PMPI_ISCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_iscan__ = pmpix_iscan__
+#pragma weak mpi_iscan__ = pmpi_iscan__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_iscan = pmpix_iscan
+#pragma weak mpi_iscan = pmpi_iscan
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_iscan_ = pmpix_iscan_
+#pragma weak mpi_iscan_ = pmpi_iscan_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_ISCAN  MPIX_ISCAN
+#pragma _HP_SECONDARY_DEF PMPI_ISCAN  MPI_ISCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_iscan__  mpix_iscan__
+#pragma _HP_SECONDARY_DEF pmpi_iscan__  mpi_iscan__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_iscan  mpix_iscan
+#pragma _HP_SECONDARY_DEF pmpi_iscan  mpi_iscan
 #else
-#pragma _HP_SECONDARY_DEF pmpix_iscan_  mpix_iscan_
+#pragma _HP_SECONDARY_DEF pmpi_iscan_  mpi_iscan_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_ISCAN as PMPIX_ISCAN
+#pragma _CRI duplicate MPI_ISCAN as PMPI_ISCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_iscan__ as pmpix_iscan__
+#pragma _CRI duplicate mpi_iscan__ as pmpi_iscan__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_iscan as pmpix_iscan
+#pragma _CRI duplicate mpi_iscan as pmpi_iscan
 #else
-#pragma _CRI duplicate mpix_iscan_ as pmpix_iscan_
+#pragma _CRI duplicate mpi_iscan_ as pmpi_iscan_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_iscan_( void*, void*, MPI_Fint *, MPI_F
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_ISCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_iscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_ISCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_iscan__ = MPIX_ISCAN
-#pragma weak mpix_iscan_ = MPIX_ISCAN
-#pragma weak mpix_iscan = MPIX_ISCAN
+#pragma weak mpi_iscan__ = MPI_ISCAN
+#pragma weak mpi_iscan_ = MPI_ISCAN
+#pragma weak mpi_iscan = MPI_ISCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_ISCAN = mpix_iscan__
-#pragma weak mpix_iscan_ = mpix_iscan__
-#pragma weak mpix_iscan = mpix_iscan__
+#pragma weak MPI_ISCAN = mpi_iscan__
+#pragma weak mpi_iscan_ = mpi_iscan__
+#pragma weak mpi_iscan = mpi_iscan__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_ISCAN = mpix_iscan_
-#pragma weak mpix_iscan__ = mpix_iscan_
-#pragma weak mpix_iscan = mpix_iscan_
+#pragma weak MPI_ISCAN = mpi_iscan_
+#pragma weak mpi_iscan__ = mpi_iscan_
+#pragma weak mpi_iscan = mpi_iscan_
 #else
-#pragma weak MPIX_ISCAN = mpix_iscan
-#pragma weak mpix_iscan__ = mpix_iscan
-#pragma weak mpix_iscan_ = mpix_iscan
+#pragma weak MPI_ISCAN = mpi_iscan
+#pragma weak mpi_iscan__ = mpi_iscan
+#pragma weak mpi_iscan_ = mpi_iscan
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_iscan_( void*, void*, MPI_Fint *, MPI_F
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_ISCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_ISCAN( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_iscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iscan__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_iscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iscan_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_iscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iscan( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_iscan__ = PMPIX_ISCAN
-#pragma weak pmpix_iscan_ = PMPIX_ISCAN
-#pragma weak pmpix_iscan = PMPIX_ISCAN
+#pragma weak pmpi_iscan__ = PMPI_ISCAN
+#pragma weak pmpi_iscan_ = PMPI_ISCAN
+#pragma weak pmpi_iscan = PMPI_ISCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_ISCAN = pmpix_iscan__
-#pragma weak pmpix_iscan_ = pmpix_iscan__
-#pragma weak pmpix_iscan = pmpix_iscan__
+#pragma weak PMPI_ISCAN = pmpi_iscan__
+#pragma weak pmpi_iscan_ = pmpi_iscan__
+#pragma weak pmpi_iscan = pmpi_iscan__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_ISCAN = pmpix_iscan_
-#pragma weak pmpix_iscan__ = pmpix_iscan_
-#pragma weak pmpix_iscan = pmpix_iscan_
+#pragma weak PMPI_ISCAN = pmpi_iscan_
+#pragma weak pmpi_iscan__ = pmpi_iscan_
+#pragma weak pmpi_iscan = pmpi_iscan_
 #else
-#pragma weak PMPIX_ISCAN = pmpix_iscan
-#pragma weak pmpix_iscan__ = pmpix_iscan
-#pragma weak pmpix_iscan_ = pmpix_iscan
+#pragma weak PMPI_ISCAN = pmpi_iscan
+#pragma weak pmpi_iscan__ = pmpi_iscan
+#pragma weak pmpi_iscan_ = pmpi_iscan
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_iscan_ PMPIX_ISCAN
+#define mpi_iscan_ PMPI_ISCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_iscan_ pmpix_iscan__
+#define mpi_iscan_ pmpi_iscan__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_iscan_ pmpix_iscan
+#define mpi_iscan_ pmpi_iscan
 #else
-#define mpix_iscan_ pmpix_iscan_
+#define mpi_iscan_ pmpi_iscan_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Iscan
-#define MPIX_Iscan PMPIX_Iscan 
+#undef MPI_Iscan
+#define MPI_Iscan PMPI_Iscan 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_iscan_ MPIX_ISCAN
+#define mpi_iscan_ MPI_ISCAN
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_iscan_ mpix_iscan__
+#define mpi_iscan_ mpi_iscan__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_iscan_ mpix_iscan
+#define mpi_iscan_ mpi_iscan
 /* Else leave name alone */
 #endif
 
@@ -184,11 +184,11 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_iscan( void*, void*, MPI_Fint *, MPI_F
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_iscan_ ( void*v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *ierr ){
+FORT_DLL_SPEC void FORT_CALL mpi_iscan_ ( void*v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *ierr ){
 
 #ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
 #endif
     if (v1 == MPIR_F_MPI_IN_PLACE) v1 = MPI_IN_PLACE;
-    *ierr = MPIX_Iscan( v1, v2, *v3, (MPI_Datatype)(*v4), *v5, (MPI_Comm)(*v6), (MPI_Request *)(v7) );
+    *ierr = MPI_Iscan( v1, v2, (int)*v3, (MPI_Datatype)(*v4), (MPI_Op)*v5, (MPI_Comm)(*v6), (MPI_Request *)(v7) );
 }

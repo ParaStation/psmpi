@@ -1,11 +1,11 @@
-.TH MPI_Type_create_hindexed 3 "9/20/2012" " " "MPI"
+.TH MPI_Type_create_hindexed 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Type_create_hindexed \-  Create a datatype for an indexed datatype with displacements in bytes 
 .SH SYNOPSIS
 .nf
 int MPI_Type_create_hindexed(int count,
-                           MPICH2_CONST int blocklengths[],
-                           MPICH2_CONST MPI_Aint displacements[],
+                           const int array_of_blocklengths[],
+                           const MPI_Aint array_of_displacements[],
                            MPI_Datatype oldtype,
                            MPI_Datatype *newtype)
 .fi
@@ -14,16 +14,16 @@ int MPI_Type_create_hindexed(int count,
 .TP
 .B count 
 - number of blocks --- also number of entries in
-displacements and blocklengths (integer)
+array_of_displacements and array_of_blocklengths (integer)
 .PD 1
 .PD 0
 .TP
-.B blocklengths 
+.B array_of_blocklengths 
 - number of elements in each block (array of nonnegative integers)
 .PD 1
 .PD 0
 .TP
-.B displacements 
+.B array_of_displacements 
 - byte displacement of each block (array of address integers)
 .PD 1
 .PD 0
@@ -32,7 +32,7 @@ displacements and blocklengths (integer)
 - old datatype (handle)
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B newtype 

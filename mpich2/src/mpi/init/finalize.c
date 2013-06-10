@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -212,7 +212,7 @@ int MPI_Finalize( void )
     if (mpi_errno) {
 	MPIU_ERR_POP(mpi_errno);
     }
-    
+
     /* Call the low-priority (post Finalize) callbacks */
     MPIR_Call_finalize_callbacks( 0, MPIR_FINALIZE_CALLBACK_PRIO-1 );
 
@@ -227,7 +227,7 @@ int MPI_Finalize( void )
        finalize callbacks */
 
     /* FIXME The init/finalize paths in general need a big overhaul in order
-     * to account for the new MPIX_T_ code. */
+     * to account for the new MPI_T_ code. */
     if (!MPIR_T_is_initialized()) {
         MPIR_T_finalize_pvars();
 

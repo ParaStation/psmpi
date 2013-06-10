@@ -9,7 +9,7 @@
 Tests for completion of any previdously initiated  requests 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Testany(int count, MPI_Request array_of_requests[], int *index, 
+int MPI_Testany(int count, MPI_Request array_of_requests[], int *indx,
                int *flag, MPI_Status *status)
 </PRE>
 <H2>Input Parameters</H2>
@@ -21,7 +21,7 @@ int MPI_Testany(int count, MPI_Request array_of_requests[], int *index,
 <P>
 <H2>Output Parameters</H2>
 <DL>
-<DT><B>index </B><DD>index of operation that completed, or <TT>MPI_UNDEFINED</TT>  if none 
+<DT><B>indx </B><DD>index of operation that completed, or <TT>MPI_UNDEFINED</TT>  if none
 completed (integer) 
 
 <DT><B>flag </B><DD>true if one of the operations is complete (logical) 

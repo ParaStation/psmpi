@@ -9,7 +9,7 @@
 Combines values from all processes and distributes the result back to all processes 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Allreduce(MPICH2_CONST void *sendbuf, void *recvbuf, int count,
+int MPI_Allreduce(const void *sendbuf, void *recvbuf, int count,
                   MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -25,7 +25,7 @@ int MPI_Allreduce(MPICH2_CONST void *sendbuf, void *recvbuf, int count,
 <DT><B>comm </B><DD>communicator (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>recvbuf </B> <DD> starting address of receive buffer (choice) 
 </DL>
 <P>

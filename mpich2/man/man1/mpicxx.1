@@ -1,4 +1,4 @@
-.TH mpicxx 1 "11/2/2007" " " "MPI"
+.TH mpicxx 1 "4/24/2013" " " "MPI"
 .SH NAME
 mpicxx \-  Compiles and links MPI programs written in C++ 
 .SH DESCRIPTION
@@ -14,7 +14,7 @@ as it provides the necessary libraries.
 .TP
 .B -show      
 - Show the commands that would be used without
-runnning them
+running them
 .PD 1
 .PD 0
 .TP
@@ -58,15 +58,6 @@ mpicxx.
 .B -profile=name 
 - Use the MPI profiling given by name.  See below for
 details
-.PD 1
-.PD 0
-.TP
-.B -mpe=name  
-- Use an MPE profiling library.  The behavior is similar
-to using 
-.I -profile=mpe_name.conf
-\&.
-
 .PD 1
 .PD 0
 .TP
@@ -126,8 +117,8 @@ exceptions; if you use the
 environment variable or the
 .I -cxx=name
 command-line argument to override the choice of compiler
-and encounter problems, try reconfiguring MPICH2 with the new compiler,
-and installing MPICH2 in a separate location.  See the installation manual
+and encounter problems, try reconfiguring MPICH with the new compiler,
+and installing MPICH in a separate location.  See the installation manual
 for more details.
 
 .SH EXAMPLES

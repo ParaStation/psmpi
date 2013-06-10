@@ -191,5 +191,5 @@ FORT_DLL_SPEC void FORT_CALL mpi_probe_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *
 #endif
 
     if (v4 == MPI_F_STATUS_IGNORE) { v4 = (MPI_Fint*)MPI_STATUS_IGNORE; }
-    *ierr = MPI_Probe( *v1, *v2, (MPI_Comm)(*v3), (MPI_Status *)v4 );
+    *ierr = MPI_Probe( (int)*v1, (int)*v2, (MPI_Comm)(*v3), (MPI_Status *)v4 );
 }

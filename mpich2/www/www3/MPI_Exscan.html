@@ -9,7 +9,7 @@
 Computes the exclusive scan (partial reductions) of data on a  collection of processes 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Exscan(MPICH2_CONST void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+int MPI_Exscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
                MPI_Op op, MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -25,7 +25,7 @@ int MPI_Exscan(MPICH2_CONST void *sendbuf, void *recvbuf, int count, MPI_Datatyp
 <DT><B>comm </B><DD>communicator (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>recvbuf </B> <DD> starting address of receive buffer (choice) 
 </DL>
 <P>

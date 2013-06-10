@@ -1,9 +1,9 @@
-.TH MPI_Attr_get 3 "9/20/2012" " " "MPI"
+.TH MPI_Attr_get 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Attr_get \-  Retrieves attribute value by key 
 .SH SYNOPSIS
 .nf
-int MPI_Attr_get(MPI_Comm comm, int keyval, void *attr_value, int *flag)
+int MPI_Attr_get(MPI_Comm comm, int keyval, void *attribute_val, int *flag)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -20,10 +20,10 @@ int MPI_Attr_get(MPI_Comm comm, int keyval, void *attr_value, int *flag)
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
-.B attr_value 
+.B attribute_val 
 - attribute value, unless 
 .I flag
-= false 
+= false
 .PD 1
 .PD 0
 .TP
@@ -41,8 +41,8 @@ The notes for C and Fortran below explain why.
 
 .SH NOTES FOR C
 Even though the 
-.I attr_value
-arguement is declared as 
+.I attribute_val
+argument is declared as 
 .I void *
 , it is
 really the address of a void pointer (i.e., a 
@@ -97,7 +97,7 @@ All MPI objects (e.g.,
 in Fortran.
 
 The 
-.I attr_value
+.I attribute_val
 in Fortran is a pointer to a Fortran integer, not
 a pointer to a 
 .I void *

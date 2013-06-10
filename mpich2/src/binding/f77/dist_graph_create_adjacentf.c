@@ -190,8 +190,10 @@ FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create_adjacent_ ( MPI_Fint *v1, MPI
 #ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
 #endif
-    if (v4 == MPIR_F_MPI_UNWEIGHTED) v4 = MPI_UNWEIGHTED;
-    if (v7 == MPIR_F_MPI_UNWEIGHTED) v7 = MPI_UNWEIGHTED;
+    if      (v4 == MPIR_F_MPI_UNWEIGHTED) v4 = MPI_UNWEIGHTED;
+    else if (v4 == MPIR_F_MPI_WEIGHTS_EMPTY) v4 = MPI_WEIGHTS_EMPTY;
+    if      (v7 == MPIR_F_MPI_UNWEIGHTED) v7 = MPI_UNWEIGHTED;
+    else if (v7 == MPIR_F_MPI_WEIGHTS_EMPTY) v7 = MPI_WEIGHTS_EMPTY;
     l9 = MPIR_FROM_FLOG(*v9);
-    *ierr = MPI_Dist_graph_create_adjacent( (MPI_Comm)(*v1), *v2, v3, v4, *v5, v6, v7, (MPI_Info)(*v8), l9, (MPI_Comm *)(v10) );
+    *ierr = MPI_Dist_graph_create_adjacent( (MPI_Comm)(*v1), (int)*v2, v3, v4, (int)*v5, v6, v7, (MPI_Info)(*v8), l9, (MPI_Comm *)(v10) );
 }

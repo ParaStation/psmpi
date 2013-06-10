@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -54,7 +54,7 @@ Output Parameters:
 .N MPI_ERR_ARG
 @*/
 int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, 
-                  int *indx, int *edges)
+                  int indx[], int edges[])
 {
     static const char FCNAME[] = "MPI_Graph_get";
     int mpi_errno = MPI_SUCCESS;

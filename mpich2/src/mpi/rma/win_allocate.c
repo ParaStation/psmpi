@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,42 +6,51 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
-/* -- Begin Profiling Symbol Block for routine MPIX_Win_allocate */
+/* -- Begin Profiling Symbol Block for routine MPI_Win_allocate */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPIX_Win_allocate = PMPIX_Win_allocate
+#pragma weak MPI_Win_allocate = PMPI_Win_allocate
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIX_Win_allocate  MPIX_Win_allocate
+#pragma _HP_SECONDARY_DEF PMPI_Win_allocate  MPI_Win_allocate
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPIX_Win_allocate as PMPIX_Win_allocate
+#pragma _CRI duplicate MPI_Win_allocate as PMPI_Win_allocate
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#undef MPIX_Win_allocate
-#define MPIX_Win_allocate PMPIX_Win_allocate
+#undef MPI_Win_allocate
+#define MPI_Win_allocate PMPI_Win_allocate
 
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPIX_Win_allocate
+#define FUNCNAME MPI_Win_allocate
 
 /*@
-   MPIX_Win_allocate - Create and allocate an MPI Window object for one-sided communication
+MPI_Win_allocate - Create and allocate an MPI Window object for one-sided communication.
 
-   Input Parameters:
-+ base - initial address of window (choice) 
-. size - size of window in bytes (nonnegative integer) 
-. disp_unit - local unit size for displacements, in bytes (positive integer) 
-. info - info argument (handle) 
-- comm - communicator (handle) 
 
-  Output Parameter:
+This is a collective call executed by all processes in the group of comm. On
+each process, it allocates memory of at least size bytes, returns a pointer to
+it, and returns a window object that can be used by all processes in comm to
+perform RMA operations. The returned memory consists of size bytes local to
+each process, starting at address baseptr and is associated with the window as
+if the user called 'MPI_Win_create' on existing memory. The size argument may be
+different at each process and size = 0 is valid; however, a library might
+allocate and expose more memory in order to create a fast, globally symmetric
+allocation.
+
+Input Parameters:
+. size - size of window in bytes (nonnegative integer)
+. disp_unit - local unit size for displacements, in bytes (positive integer)
+. info - info argument (handle)
+- comm - communicator (handle)
+
+Output Parameters:
 . baseptr - base address of the window in local memory
-. win - window object returned by the call (handle) 
+. win - window object returned by the call (handle)
 
 .N ThreadSafe
 .N Fortran
@@ -53,21 +62,23 @@
 .N MPI_ERR_INFO
 .N MPI_ERR_OTHER
 .N MPI_ERR_SIZE
+
+.seealso MPI_Win_allocate_shared MPI_Win_create MPI_Win_create_dynamic MPI_Win_free
 @*/
-int MPIX_Win_allocate(MPI_Aint size, int disp_unit, MPI_Info info, 
+int MPI_Win_allocate(MPI_Aint size, int disp_unit, MPI_Info info, 
                   MPI_Comm comm, void *baseptr, MPI_Win *win)
 {
-    static const char FCNAME[] = "MPIX_Win_allocate";
+    static const char FCNAME[] = "MPI_Win_allocate";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
     MPID_Comm *comm_ptr = NULL;
     MPID_Info *info_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIX_WIN_ALLOCATE);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_ALLOCATE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPIX_WIN_ALLOCATE);
+    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_ALLOCATE);
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -131,7 +142,6 @@ int MPIX_Win_allocate(MPI_Aint size, int disp_unit, MPI_Info info,
     /* Initialize a few fields that have specific defaults */
     win_ptr->name[0]    = 0;
     win_ptr->errhandler = 0;
-    win_ptr->lockRank   = MPID_WIN_STATE_UNLOCKED;
 
     /* return the handle of the window object to the user */
     MPIU_OBJ_PUBLISH_HANDLE(*win, win_ptr->handle);
@@ -139,7 +149,7 @@ int MPIX_Win_allocate(MPI_Aint size, int disp_unit, MPI_Info info,
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPIX_WIN_ALLOCATE);
+    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_ALLOCATE);
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
@@ -148,8 +158,8 @@ int MPIX_Win_allocate(MPI_Aint size, int disp_unit, MPI_Info info,
 #   ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno = MPIR_Err_create_code(
-            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpix_win_allocate", 
-            "**mpix_win_allocate %d %d %I %C %p %p", size, disp_unit, info, comm, baseptr, win);
+            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_win_allocate",
+            "**mpi_win_allocate %d %d %I %C %p %p", size, disp_unit, info, comm, baseptr, win);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

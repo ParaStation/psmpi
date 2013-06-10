@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_MRECV( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_mrecv__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_mrecv( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_mrecv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_MRECV( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_mrecv__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_mrecv( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_mrecv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_MRECV = PMPIX_MRECV
-#pragma weak mpix_mrecv__ = PMPIX_MRECV
-#pragma weak mpix_mrecv_ = PMPIX_MRECV
-#pragma weak mpix_mrecv = PMPIX_MRECV
+#pragma weak MPI_MRECV = PMPI_MRECV
+#pragma weak mpi_mrecv__ = PMPI_MRECV
+#pragma weak mpi_mrecv_ = PMPI_MRECV
+#pragma weak mpi_mrecv = PMPI_MRECV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_MRECV = pmpix_mrecv__
-#pragma weak mpix_mrecv__ = pmpix_mrecv__
-#pragma weak mpix_mrecv_ = pmpix_mrecv__
-#pragma weak mpix_mrecv = pmpix_mrecv__
+#pragma weak MPI_MRECV = pmpi_mrecv__
+#pragma weak mpi_mrecv__ = pmpi_mrecv__
+#pragma weak mpi_mrecv_ = pmpi_mrecv__
+#pragma weak mpi_mrecv = pmpi_mrecv__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_MRECV = pmpix_mrecv_
-#pragma weak mpix_mrecv__ = pmpix_mrecv_
-#pragma weak mpix_mrecv_ = pmpix_mrecv_
-#pragma weak mpix_mrecv = pmpix_mrecv_
+#pragma weak MPI_MRECV = pmpi_mrecv_
+#pragma weak mpi_mrecv__ = pmpi_mrecv_
+#pragma weak mpi_mrecv_ = pmpi_mrecv_
+#pragma weak mpi_mrecv = pmpi_mrecv_
 #else
-#pragma weak MPIX_MRECV = pmpix_mrecv
-#pragma weak mpix_mrecv__ = pmpix_mrecv
-#pragma weak mpix_mrecv_ = pmpix_mrecv
-#pragma weak mpix_mrecv = pmpix_mrecv
+#pragma weak MPI_MRECV = pmpi_mrecv
+#pragma weak mpi_mrecv__ = pmpi_mrecv
+#pragma weak mpi_mrecv_ = pmpi_mrecv
+#pragma weak mpi_mrecv = pmpi_mrecv
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_mrecv_( void*, MPI_Fint *, MPI_Fint *, 
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_MRECV( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_MRECV( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_MRECV = PMPIX_MRECV
+#pragma weak MPI_MRECV = PMPI_MRECV
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_mrecv__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_mrecv__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_mrecv__ = pmpix_mrecv__
+#pragma weak mpi_mrecv__ = pmpi_mrecv__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_mrecv( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_mrecv( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_mrecv = pmpix_mrecv
+#pragma weak mpi_mrecv = pmpi_mrecv
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_mrecv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_mrecv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_mrecv_ = pmpix_mrecv_
+#pragma weak mpi_mrecv_ = pmpi_mrecv_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_MRECV  MPIX_MRECV
+#pragma _HP_SECONDARY_DEF PMPI_MRECV  MPI_MRECV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_mrecv__  mpix_mrecv__
+#pragma _HP_SECONDARY_DEF pmpi_mrecv__  mpi_mrecv__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_mrecv  mpix_mrecv
+#pragma _HP_SECONDARY_DEF pmpi_mrecv  mpi_mrecv
 #else
-#pragma _HP_SECONDARY_DEF pmpix_mrecv_  mpix_mrecv_
+#pragma _HP_SECONDARY_DEF pmpi_mrecv_  mpi_mrecv_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_MRECV as PMPIX_MRECV
+#pragma _CRI duplicate MPI_MRECV as PMPI_MRECV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_mrecv__ as pmpix_mrecv__
+#pragma _CRI duplicate mpi_mrecv__ as pmpi_mrecv__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_mrecv as pmpix_mrecv
+#pragma _CRI duplicate mpi_mrecv as pmpi_mrecv
 #else
-#pragma _CRI duplicate mpix_mrecv_ as pmpix_mrecv_
+#pragma _CRI duplicate mpi_mrecv_ as pmpi_mrecv_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_mrecv_( void*, MPI_Fint *, MPI_Fint *, 
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_MRECV( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_mrecv__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_mrecv( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_mrecv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_MRECV( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_mrecv__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_mrecv( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_mrecv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_mrecv__ = MPIX_MRECV
-#pragma weak mpix_mrecv_ = MPIX_MRECV
-#pragma weak mpix_mrecv = MPIX_MRECV
+#pragma weak mpi_mrecv__ = MPI_MRECV
+#pragma weak mpi_mrecv_ = MPI_MRECV
+#pragma weak mpi_mrecv = MPI_MRECV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_MRECV = mpix_mrecv__
-#pragma weak mpix_mrecv_ = mpix_mrecv__
-#pragma weak mpix_mrecv = mpix_mrecv__
+#pragma weak MPI_MRECV = mpi_mrecv__
+#pragma weak mpi_mrecv_ = mpi_mrecv__
+#pragma weak mpi_mrecv = mpi_mrecv__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_MRECV = mpix_mrecv_
-#pragma weak mpix_mrecv__ = mpix_mrecv_
-#pragma weak mpix_mrecv = mpix_mrecv_
+#pragma weak MPI_MRECV = mpi_mrecv_
+#pragma weak mpi_mrecv__ = mpi_mrecv_
+#pragma weak mpi_mrecv = mpi_mrecv_
 #else
-#pragma weak MPIX_MRECV = mpix_mrecv
-#pragma weak mpix_mrecv__ = mpix_mrecv
-#pragma weak mpix_mrecv_ = mpix_mrecv
+#pragma weak MPI_MRECV = mpi_mrecv
+#pragma weak mpi_mrecv__ = mpi_mrecv
+#pragma weak mpi_mrecv_ = mpi_mrecv
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_mrecv_( void*, MPI_Fint *, MPI_Fint *, 
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_MRECV( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_MRECV( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_mrecv__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_mrecv__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_mrecv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_mrecv_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_mrecv( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_mrecv( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_mrecv__ = PMPIX_MRECV
-#pragma weak pmpix_mrecv_ = PMPIX_MRECV
-#pragma weak pmpix_mrecv = PMPIX_MRECV
+#pragma weak pmpi_mrecv__ = PMPI_MRECV
+#pragma weak pmpi_mrecv_ = PMPI_MRECV
+#pragma weak pmpi_mrecv = PMPI_MRECV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_MRECV = pmpix_mrecv__
-#pragma weak pmpix_mrecv_ = pmpix_mrecv__
-#pragma weak pmpix_mrecv = pmpix_mrecv__
+#pragma weak PMPI_MRECV = pmpi_mrecv__
+#pragma weak pmpi_mrecv_ = pmpi_mrecv__
+#pragma weak pmpi_mrecv = pmpi_mrecv__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_MRECV = pmpix_mrecv_
-#pragma weak pmpix_mrecv__ = pmpix_mrecv_
-#pragma weak pmpix_mrecv = pmpix_mrecv_
+#pragma weak PMPI_MRECV = pmpi_mrecv_
+#pragma weak pmpi_mrecv__ = pmpi_mrecv_
+#pragma weak pmpi_mrecv = pmpi_mrecv_
 #else
-#pragma weak PMPIX_MRECV = pmpix_mrecv
-#pragma weak pmpix_mrecv__ = pmpix_mrecv
-#pragma weak pmpix_mrecv_ = pmpix_mrecv
+#pragma weak PMPI_MRECV = pmpi_mrecv
+#pragma weak pmpi_mrecv__ = pmpi_mrecv
+#pragma weak pmpi_mrecv_ = pmpi_mrecv
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_mrecv_ PMPIX_MRECV
+#define mpi_mrecv_ PMPI_MRECV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_mrecv_ pmpix_mrecv__
+#define mpi_mrecv_ pmpi_mrecv__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_mrecv_ pmpix_mrecv
+#define mpi_mrecv_ pmpi_mrecv
 #else
-#define mpix_mrecv_ pmpix_mrecv_
+#define mpi_mrecv_ pmpi_mrecv_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Mrecv
-#define MPIX_Mrecv PMPIX_Mrecv 
+#undef MPI_Mrecv
+#define MPI_Mrecv PMPI_Mrecv 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_mrecv_ MPIX_MRECV
+#define mpi_mrecv_ MPI_MRECV
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_mrecv_ mpix_mrecv__
+#define mpi_mrecv_ mpi_mrecv__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_mrecv_ mpix_mrecv
+#define mpi_mrecv_ mpi_mrecv
 /* Else leave name alone */
 #endif
 
@@ -184,12 +184,12 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_mrecv( void*, MPI_Fint *, MPI_Fint *, 
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_mrecv_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *ierr ){
+FORT_DLL_SPEC void FORT_CALL mpi_mrecv_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *ierr ){
 
 #ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
 #endif
 
     if (v5 == MPI_F_STATUS_IGNORE) { v5 = (MPI_Fint*)MPI_STATUS_IGNORE; }
-    *ierr = MPIX_Mrecv( v1, *v2, (MPI_Datatype)(*v3), (MPIX_Message *)(v4), (MPI_Status *)v5 );
+    *ierr = MPI_Mrecv( v1, (int)*v2, (MPI_Datatype)(*v3), (MPI_Message *)(v4), (MPI_Status *)v5 );
 }

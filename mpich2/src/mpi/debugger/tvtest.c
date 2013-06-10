@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*  
  *  (C) 2005 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -313,7 +313,7 @@ static void dbgrI_get_type_sizes( mqs_process *process,
     ts->long_long_size = sizeof(long long);
     ts->pointer_size   = sizeof(void *);
 }
-/* This is a hack that knows exactly the names used in dll_mpich2.c */
+/* This is a hack that knows exactly the names used in dll_mpich.c */
 /* Note that if loc is null, don't save the address */
 static int dbgrI_find_function( mqs_image *image, char *name, 
 				 mqs_lang_code lang, mqs_taddr_t *loc )

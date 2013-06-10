@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,35 +6,39 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
-/* -- Begin Profiling Symbol Block for routine MPIX_Win_flush */
+/* -- Begin Profiling Symbol Block for routine MPI_Win_flush */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPIX_Win_flush = PMPIX_Win_flush
+#pragma weak MPI_Win_flush = PMPI_Win_flush
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIX_Win_flush  MPIX_Win_flush
+#pragma _HP_SECONDARY_DEF PMPI_Win_flush  MPI_Win_flush
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPIX_Win_flush as PMPIX_Win_flush
+#pragma _CRI duplicate MPI_Win_flush as PMPI_Win_flush
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#undef MPIX_Win_flush
-#define MPIX_Win_flush PMPIX_Win_flush
+#undef MPI_Win_flush
+#define MPI_Win_flush PMPI_Win_flush
 
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPIX_Win_flush
+#define FUNCNAME MPI_Win_flush
 
 /*@
-   MPIX_Win_flush - Comple all outstanding RMA operations at the given target
+MPI_Win_flush - Complete all outstanding RMA operations at the given target.
 
-   Input Parameters:
-+ rank - rank of window (nonnegative integer) 
-- win - window object (handle) 
+
+'MPI_Win_flush' completes all outstanding RMA operations initiated by the calling
+process to the target rank on the specified window. The operations are
+completed both at the origin and at the target.
+
+Input Parameters:
++ rank - rank of window (nonnegative integer)
+- win - window object (handle)
 
 .N ThreadSafe
 
@@ -46,19 +50,19 @@
 .N MPI_ERR_WIN
 .N MPI_ERR_OTHER
 
-.seealso: MPI_Win_lock
+.seealso: MPI_Win_flush_all MPI_Win_flush_local MPI_Win_flush_local_all MPI_Win_lock MPI_Win_lock_all
 @*/
-int MPIX_Win_flush(int rank, MPI_Win win)
+int MPI_Win_flush(int rank, MPI_Win win)
 {
-    static const char FCNAME[] = "MPIX_Win_flush";
+    static const char FCNAME[] = "MPI_Win_flush";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIX_WIN_FLUSH);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_FLUSH);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPIX_WIN_FLUSH);
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_FLUSH);
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -103,7 +107,7 @@ int MPIX_Win_flush(int rank, MPI_Win win)
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPIX_WIN_FLUSH);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_FLUSH);
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
@@ -112,8 +116,8 @@ int MPIX_Win_flush(int rank, MPI_Win win)
 #   ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno = MPIR_Err_create_code(
-            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpix_win_flush", 
-            "**mpix_win_flush %d %W", rank, win);
+            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_win_flush",
+            "**mpi_win_flush %d %W", rank, win);
     }
 #   endif
     mpi_errno = MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );

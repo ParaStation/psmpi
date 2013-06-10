@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -34,7 +34,7 @@
 MPI_Graphdims_get - Retrieves graph topology information associated with a 
                     communicator
 
-Input Parameter:
+Input Parameters:
 . comm - communicator for group with graph structure (handle) 
 
 Output Parameters:

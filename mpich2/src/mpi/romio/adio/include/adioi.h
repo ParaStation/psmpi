@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /* 
  *
  *   Copyright (C) 1997 University of Chicago. 
@@ -115,7 +115,7 @@ typedef struct ADIOI_Fl_node {
 #endif
 typedef struct ADIOI_AIO_req_str {
 	/* very wierd: if this MPI_Request is a pointer, some C++ compilers
-	 * will clobber it when the MPICH2 C++ bindings are used */
+	 * will clobber it when the MPICH C++ bindings are used */
 	MPI_Request req;
 	MPI_Offset nbytes;
 	/* should probably make this a union */
@@ -561,6 +561,7 @@ int ADIOI_End_call(MPI_Comm comm, int keyval, void *attribute_val, void *extra_s
 int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, int nbytes);
 int ADIOI_Uses_generic_read(ADIO_File fd);
 int ADIOI_Uses_generic_write(ADIO_File fd);
+int ADIOI_Err_create_code(const char *myname, const char *filename, int my_errno);
 
 
 int ADIOI_FAKE_IODone(ADIO_Request *request, ADIO_Status *status,
@@ -814,7 +815,7 @@ int  ADIOI_MPE_iwrite_a;
 int  ADIOI_MPE_iwrite_b;
 #endif
 
-#ifdef ROMIO_INSIDE_MPICH2
+#ifdef ROMIO_INSIDE_MPICH
 /* Assert that this MPI_Aint value can be cast to a ptr value without problem.*/
 /* Basic idea is the value should be unchanged after casting 
    (no loss of (meaningful) high order bytes in 8 byte MPI_Aint 

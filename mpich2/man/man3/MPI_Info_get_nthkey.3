@@ -1,4 +1,4 @@
-.TH MPI_Info_get_nthkey 3 "9/20/2012" " " "MPI"
+.TH MPI_Info_get_nthkey 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Info_get_nthkey \-  Returns the nth defined key in info 
 .SH SYNOPSIS
@@ -24,7 +24,7 @@ int MPI_Info_get_nthkey( MPI_Info info, int n, char *key )
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
-.B keys 
+.B key 
 - key (string).  The maximum number of characters is 
 .I MPI_MAX_INFO_KEY
 \&.
@@ -123,4 +123,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-src/util/info/info_getnth.c
+src/mpi/info/info_getnth.c

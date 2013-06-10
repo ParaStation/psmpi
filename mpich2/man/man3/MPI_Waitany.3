@@ -1,9 +1,9 @@
-.TH MPI_Waitany 3 "9/20/2012" " " "MPI"
+.TH MPI_Waitany 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Waitany \-  Waits for any specified MPI Request to complete 
 .SH SYNOPSIS
 .nf
-int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, 
+int MPI_Waitany(int count, MPI_Request array_of_requests[], int *indx,
                MPI_Status *status)
 .fi
 .SH INPUT PARAMETERS
@@ -21,7 +21,7 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
-.B index 
+.B indx 
 - index of handle for operation that completed (integer).  In the
 range 
 .I 0
@@ -48,7 +48,7 @@ to
 If all of the requests are 
 .I MPI_REQUEST_NULL
 , then 
-.I index
+.I indx
 is returned as
 .I MPI_UNDEFINED
 , and 

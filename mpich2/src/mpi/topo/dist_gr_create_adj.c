@@ -50,7 +50,7 @@ Input Parameters:
 . info - hints on optimization and interpretation of weights (handle)
 - reorder - the ranks may be reordered (true) or not (false) (logical)
 
-Output Parameter:
+Output Parameters:
 . comm_dist_graph - communicator with distributed graph topology (handle)
 
 .N ThreadSafe
@@ -63,10 +63,10 @@ Output Parameter:
 .N MPI_ERR_OTHER
 @*/
 int MPI_Dist_graph_create_adjacent(MPI_Comm comm_old,
-                                   int indegree, MPICH2_CONST int sources[],
-                                   MPICH2_CONST int sourceweights[],
-                                   int outdegree, MPICH2_CONST int destinations[],
-                                   MPICH2_CONST int destweights[],
+                                   int indegree, const int sources[],
+                                   const int sourceweights[],
+                                   int outdegree, const int destinations[],
+                                   const int destweights[],
                                    MPI_Info info, int reorder, MPI_Comm *comm_dist_graph)
 {
     int       mpi_errno = MPI_SUCCESS;

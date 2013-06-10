@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -210,7 +210,7 @@ PMPI_LOCAL int MPIR_ChooseFactors( int nfactors, Factors factors[],
     return 0;
 }
 
-int MPIR_Dims_create( int nnodes, int ndims, int *dims )
+int MPIR_Dims_create( int nnodes, int ndims, int dims[] )
 {
     Factors factors[MAX_FACTORS];
     int chosen[MAX_DIMS];
@@ -365,11 +365,11 @@ int MPIR_Dims_create( int nnodes, int ndims, int *dims )
 /*@
     MPI_Dims_create - Creates a division of processors in a cartesian grid
 
- Input Parameters:
+Input Parameters:
 + nnodes - number of nodes in a grid (integer) 
 - ndims - number of cartesian dimensions (integer) 
 
- In/Out Parameter:   
+Input/Output Parameters:
 . dims - integer array of size  'ndims' specifying the number of nodes in each 
  dimension.  A value of 0 indicates that 'MPI_Dims_create' should fill in a
  suitable value.
@@ -381,7 +381,7 @@ int MPIR_Dims_create( int nnodes, int ndims, int *dims )
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Dims_create(int nnodes, int ndims, int *dims)
+int MPI_Dims_create(int nnodes, int ndims, int dims[])
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_DIMS_CREATE);

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -38,12 +38,12 @@ MPID_NS_Handle MPIR_Namepub = 0;
 /*@
    MPI_Lookup_name - Lookup a port given a service name
 
-   Input Parameters:
+Input Parameters:
 + service_name - a service name (string) 
 - info - implementation-specific information (handle) 
 
 
-   Output Parameter:
+Output Parameters:
 .  port_name - a port name (string) 
 
 Notes:
@@ -61,7 +61,7 @@ If the 'service_name' is found, MPI copies the associated value into
 .N MPI_ERR_OTHER
 .N MPI_ERR_ARG
 @*/
-int MPI_Lookup_name(MPICH2_CONST char *service_name, MPI_Info info, char *port_name)
+int MPI_Lookup_name(const char *service_name, MPI_Info info, char *port_name)
 {
     static const char FCNAME[] = "MPI_Lookup_name";
     int mpi_errno = MPI_SUCCESS;

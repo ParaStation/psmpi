@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -84,15 +84,15 @@ int MPIR_Type_create_struct_impl(int count,
    MPI_Type_create_struct - Create an MPI datatype from a general set of
    datatypes, displacements, and block sizes
 
-   Input Parameters:
+Input Parameters:
 + count - number of blocks (integer) --- also number of entries in arrays
   array_of_types, array_of_displacements and array_of_blocklengths
-. array_of_blocklength - number of elements in each block (array of integer)
+. array_of_blocklengths - number of elements in each block (array of integer)
 . array_of_displacements - byte displacement of each block (array of address integer)
 - array_of_types - type of elements in each block (array of handles to
   datatype objects)
 
-   Output Parameter:
+Output Parameters:
 . newtype - new datatype (handle)
 
 .N ThreadSafe
@@ -105,9 +105,9 @@ int MPIR_Type_create_struct_impl(int count,
 .N MPI_ERR_TYPE
 @*/
 int MPI_Type_create_struct(int count,
-			   MPICH2_CONST int array_of_blocklengths[],
-			   MPICH2_CONST MPI_Aint array_of_displacements[],
-			   MPICH2_CONST MPI_Datatype array_of_types[],
+			   const int array_of_blocklengths[],
+			   const MPI_Aint array_of_displacements[],
+			   const MPI_Datatype array_of_types[],
 			   MPI_Datatype *newtype)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -152,7 +152,7 @@ int MPI_Type_create_struct(int count,
 
     mpi_errno = MPIR_Type_create_struct_impl(count, array_of_blocklengths, array_of_displacements,
                                              array_of_types, newtype);
-    if (mpi_errno) goto fn_exit;
+    if (mpi_errno) goto fn_fail;
         
     /* ... end of body of routine ... */
 

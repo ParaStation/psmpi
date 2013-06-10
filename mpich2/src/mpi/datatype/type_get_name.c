@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -111,6 +111,7 @@ static mpi_names_t mpi_names[] = {
     /* address/offset types */
     type_name_entry(MPI_AINT),
     type_name_entry(MPI_OFFSET),
+    type_name_entry(MPI_COUNT),
 
     { 0, (char *) 0 },  /* Sentinel used to indicate the last element */
 };
@@ -170,7 +171,7 @@ int MPIR_Datatype_init_names(void)
 	    }
 
 	    MPIU_DBG_MSG_FMT(DATATYPE,VERBOSE,(MPIU_DBG_FDEST,
-		   "mpi_names[%d].name = %p\n", i, mpi_names[i].name));
+		   "mpi_names[%d].name = %p", i, mpi_names[i].name));
 
 	    MPIU_Strncpy(datatype_ptr->name, mpi_names[i].name,
 			 MPI_MAX_OBJECT_NAME);
@@ -205,10 +206,10 @@ int MPIR_Datatype_init_names(void)
 /*@
    MPI_Type_get_name - Get the print name for a datatype
 
-   Input Parameter:
-. type - datatype whose name is to be returned (handle)
+Input Parameters:
+. datatype - datatype whose name is to be returned (handle)
 
-   Output Parameters:
+Output Parameters:
 + type_name - the name previously stored on the datatype, or a empty string
   if no such name exists (string)
 - resultlen - length of returned name (integer)

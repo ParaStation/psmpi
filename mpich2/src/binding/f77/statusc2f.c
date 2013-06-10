@@ -35,7 +35,7 @@
 #undef FUNCNAME
 #define FUNCNAME MPI_Status_c2f
 
-int MPI_Status_c2f( MPICH2_CONST MPI_Status *c_status, MPI_Fint *f_status )
+int MPI_Status_c2f( const MPI_Status *c_status, MPI_Fint *f_status )
 {
     int mpi_errno = MPI_SUCCESS;
     if (c_status == MPI_STATUS_IGNORE ||

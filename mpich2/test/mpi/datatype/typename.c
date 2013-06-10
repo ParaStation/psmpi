@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2003 by Argonne National Laboratory.
@@ -114,6 +114,12 @@ static mpi_names_t mpi_names[] = {
 #if MTEST_HAVE_MIN_MPI_VERSION(2,2)
     /* added in MPI-2.2 */
     { MPI_C_LONG_DOUBLE_COMPLEX, "MPI_C_LONG_DOUBLE_COMPLEX" },
+    { MPI_AINT,  "MPI_AINT"  },
+    { MPI_OFFSET, "MPI_OFFSET" },
+#endif
+#if MTEST_HAVE_MIN_MPI_VERSION(3,0)
+    /* added in MPI 3 */
+    { MPI_COUNT, "MPI_COUNT" },
 #endif
     { 0, (char *)0 },  /* Sentinal used to indicate the last element */
 };

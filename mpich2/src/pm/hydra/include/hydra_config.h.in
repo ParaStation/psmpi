@@ -45,6 +45,9 @@
 /* Define to 1 if you have the `cpuset_setaffinity' function. */
 #undef HAVE_CPUSET_SETAFFINITY
 
+/* Define to 1 if you have the `cpuset_setid' function. */
+#undef HAVE_CPUSET_SETID
+
 /* Define to 1 if you have the declaration of `CTL_HW', and to 0 if you don't.
    */
 #undef HAVE_DECL_CTL_HW
@@ -88,6 +91,14 @@
 /* Define to 1 if you have the declaration of `_SC_NPROC_ONLN', and to 0 if
    you don't. */
 #undef HAVE_DECL__SC_NPROC_ONLN
+
+/* Define to 1 if you have the declaration of `_SC_PAGESIZE', and to 0 if you
+   don't. */
+#undef HAVE_DECL__SC_PAGESIZE
+
+/* Define to 1 if you have the declaration of `_SC_PAGE_SIZE', and to 0 if you
+   don't. */
+#undef HAVE_DECL__SC_PAGE_SIZE
 
 /* Define to 1 if you have the <dirent.h> header file. */
 #undef HAVE_DIRENT_H
@@ -539,6 +550,9 @@
 /* Define to 1 if you have the `libpci' library. */
 #undef HWLOC_HAVE_LIBPCI
 
+/* Define to 1 if you have the `libpciaccess' library. */
+#undef HWLOC_HAVE_LIBPCIACCESS
+
 /* Define to 1 if you have the `libxml2' library. */
 #undef HWLOC_HAVE_LIBXML2
 
@@ -561,8 +575,15 @@
 /* Define to 1 if `libpci' has the `pci_find_cap' function. */
 #undef HWLOC_HAVE_PCI_FIND_CAP
 
+/* Define to 1 if the hwloc library should support dynamically-loaded plugins
+   */
+#undef HWLOC_HAVE_PLUGINS
+
 /* `Define to 1 if you have pthread_getthrds_np' */
 #undef HWLOC_HAVE_PTHREAD_GETTHRDS_NP
+
+/* Define to 1 if pthread mutexes are available */
+#undef HWLOC_HAVE_PTHREAD_MUTEX
 
 /* Define to 1 if glibc provides a prototype of sched_setaffinity() */
 #undef HWLOC_HAVE_SCHED_SETAFFINITY

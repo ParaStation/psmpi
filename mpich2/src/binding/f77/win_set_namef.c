@@ -195,6 +195,6 @@ FORT_DLL_SPEC void FORT_CALL mpi_win_set_name_ ( MPI_Fint *v1, char *v2 FORT_MIX
         for (li=0; li<(p-v2); li++) { p2[li] = v2[li]; }
         p2[li] = 0; 
     }
-    *ierr = MPI_Win_set_name( *v1, p2 );
+    *ierr = MPI_Win_set_name( (MPI_Win)*v1, p2 );
     MPIU_Free( p2 );
 }

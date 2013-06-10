@@ -1,9 +1,9 @@
-.TH MPI_Reduce_scatter_block 3 "9/20/2012" " " "MPI"
+.TH MPI_Reduce_scatter_block 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Reduce_scatter_block \-  Combines values and scatters the results 
 .SH SYNOPSIS
 .nf
-int MPI_Reduce_scatter_block(MPICH2_CONST void *sendbuf, void *recvbuf, 
+int MPI_Reduce_scatter_block(const void *sendbuf, void *recvbuf, 
                              int recvcount, 
                              MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 .fi
@@ -34,7 +34,7 @@ int MPI_Reduce_scatter_block(MPICH2_CONST void *sendbuf, void *recvbuf,
 - communicator (handle) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B recvbuf 

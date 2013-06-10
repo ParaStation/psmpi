@@ -15,17 +15,19 @@ int MPI_Type_get_envelope(MPI_Datatype datatype,
                         int *num_datatypes,
                         int *combiner)
 </PRE>
-<H2>Arguments</H2>
+<H2>Input Parameters</H2>
+<DL><DT><B>datatype </B> <DD> datatype to access (handle)
+</DL>
+<P>
+<H2>Output Parameters</H2>
 <DL>
-<DT><B>MPI_Datatype datatype </B><DD>datatype
+<DT><B>num_integers </B><DD>number of input integers used in the call constructing combiner (non-negative integer)
 
-<DT><B>int *num_integers </B><DD>num integers
+<DT><B>num_addresses </B><DD>number of input addresses used in the call constructing combiner (non-negative integer)
 
-<DT><B>int *num_addresses </B><DD>num addresses
+<DT><B>num_datatypes </B><DD>number of input datatypes used in the call constructing combiner (non-negative integer)
 
-<DT><B>int *num_datatypes </B><DD>num datatypes
-
-<DT><B>int *combiner </B><DD>combiner
+<DT><B>combiner </B><DD>combiner (state)
 </DL>
 <P>
 <H2>Notes</H2>

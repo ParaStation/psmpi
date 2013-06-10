@@ -1,4 +1,4 @@
-.TH MPI_File_iwrite 3 "7/3/2012" " " "MPI"
+.TH MPI_File_iwrite 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_File_iwrite \-  Nonblocking write using individual file pointer 
 .SH SYNOPSIS
@@ -7,7 +7,7 @@ MPI_File_iwrite \-  Nonblocking write using individual file pointer
 #include "mpiu_greq.h"
 #endif
 
-int MPI_File_iwrite(MPI_File mpi_fh, MPICH2_CONST void *buf, int count,
+int MPI_File_iwrite(MPI_File fh, const void *buf, int count,
                    MPI_Datatype datatype, MPI_Request *request)
 .fi
 .SH INPUT PARAMETERS

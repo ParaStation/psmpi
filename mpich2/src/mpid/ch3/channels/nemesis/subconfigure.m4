@@ -1,6 +1,6 @@
 [#] start of __file__
 dnl
-dnl _PREREQ handles the former role of mpich2prereq, setup_device, etc
+dnl _PREREQ handles the former role of mpichprereq, setup_device, etc
 AC_DEFUN([PAC_SUBCFG_PREREQ_]PAC_SUBCFG_AUTO_SUFFIX,[
 AM_CONDITIONAL([BUILD_CH3_NEMESIS],[test "X$device_name" = "Xch3" -a "X$channel_name" = "Xnemesis"])
 AM_COND_IF([BUILD_CH3_NEMESIS],[
@@ -92,9 +92,7 @@ AC_CHECK_HEADERS(signal.h)
 AC_CHECK_FUNCS(signal)
 
 # Check for netmod relevant headers and libraries
-PAC_SET_HEADER_LIB_PATH(gm)
 PAC_SET_HEADER_LIB_PATH(mx)
-PAC_SET_HEADER_LIB_PATH(elan)
 PAC_SET_HEADER_LIB_PATH(scif)
 
 nemesis_nets_dirs=""

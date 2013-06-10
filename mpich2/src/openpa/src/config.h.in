@@ -17,6 +17,9 @@
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
+/* define to 1 if we have support for gcc ARM atomics */
+#undef HAVE_GCC_AND_ARM_ASM
+
 /* define to 1 if we have support for gcc ia64 primitives */
 #undef HAVE_GCC_AND_IA64_ASM
 

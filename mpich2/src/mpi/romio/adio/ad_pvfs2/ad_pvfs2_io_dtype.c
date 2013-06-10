@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*-
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*-
  * vim: ts=8 sts=4 sw=4 noexpandtab
  *
  *   Copyright (C) 2006 University of Chicago. 
@@ -342,7 +342,7 @@ int convert_mpi_pvfs2_dtype(MPI_Datatype *mpi_dtype,
 		fprintf(stderr, "convert_mpi_pvfs2_dtype: "
 			"INDEXED_BLOCK is unsupported\n"); 
 		break;
-	    case MPIX_COMBINER_HINDEXED_BLOCK:
+	    case MPI_COMBINER_HINDEXED_BLOCK:
 		/* No native PVFS2 support for this operation currently */
 		ADIOI_Free(old_pvfs_dtype);
 		fprintf(stderr, "convert_mpi_pvfs2_dtype: "

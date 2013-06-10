@@ -1,4 +1,4 @@
-.TH MPI_Comm_get_attr 3 "9/20/2012" " " "MPI"
+.TH MPI_Comm_get_attr 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Comm_get_attr \-  Retrieves attribute value by key 
 .SH SYNOPSIS
@@ -14,17 +14,17 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val,
 .PD 1
 .PD 0
 .TP
-.B keyval 
-- key value (integer) 
+.B comm_keyval 
+- key value (integer)
 .PD 1
 
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
-.B attr_value 
+.B attribute_val 
 - attribute value, unless 
 .I flag
-= false 
+= false
 .PD 1
 .PD 0
 .TP
@@ -44,7 +44,7 @@ why.
 .SH NOTES FOR C
 Even though the 
 .I attr_value
-arguement is declared as 
+argument is declared as 
 .I void *
 , it is
 really the address of a void pointer.  See the rationale in the

@@ -1,11 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
-#ifndef MPICH2_FTB_H_INCLUDED
-#define MPICH2_FTB_H_INCLUDED
+#ifndef MPICH_FTB_H_INCLUDED
+#define MPICH_FTB_H_INCLUDED
 
 /* FTB events we can throw */
 #define MPIDU_FTB_EV_OTHER         "FTB_MPICH_OTHER"
@@ -31,4 +31,4 @@ void MPIDU_Ftb_finalize(void);
 #define MPIDU_Ftb_finalize() do {} while(0)
 #endif /* ENABLE_FTB */
 
-#endif /* MPICH2_FTB_H_INCLUDED */
+#endif /* MPICH_FTB_H_INCLUDED */

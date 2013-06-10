@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -50,7 +50,7 @@ void MPIR_Grequest_complete_impl(MPID_Request *request_ptr)
 /*@
    MPI_Grequest_complete - Notify MPI that a user-defined request is complete
 
-   Input Parameter:
+Input Parameters:
 .  request - Generalized request to mark as complete
 
 .N ThreadSafe

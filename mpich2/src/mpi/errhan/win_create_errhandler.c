@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -32,10 +32,10 @@
    MPI_Win_create_errhandler - Create an error handler for use with MPI window
    objects
 
-   Input Parameter:
-. function - user defined error handling procedure (function) 
+Input Parameters:
+. win_errhandler_fn - user defined error handling procedure (function)
 
-   Output Parameter:
+Output Parameters:
 . errhandler - MPI error handler (handle) 
 
 .N ThreadSafe
@@ -46,7 +46,7 @@
 .N MPI_SUCCESS
 .N MPI_ERR_OTHER
 @*/
-int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *function, 
+int MPI_Win_create_errhandler(MPI_Win_errhandler_function *win_errhandler_fn,
 			      MPI_Errhandler *errhandler)
 {
     static const char FCNAME[] = "MPI_Win_create_errhandler";
@@ -64,7 +64,7 @@ int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *function,
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_ARGNULL(function, "function", mpi_errno);
+	    MPIR_ERRTEST_ARGNULL(win_errhandler_fn, "win_errhandler_fn", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(errhandler, "errhandler", mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
@@ -79,7 +79,7 @@ int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *function,
     errhan_ptr->language = MPID_LANG_C;
     errhan_ptr->kind	 = MPID_WIN;
     MPIU_Object_set_ref(errhan_ptr,1);
-    errhan_ptr->errfn.C_Win_Handler_function = function;
+    errhan_ptr->errfn.C_Win_Handler_function = win_errhandler_fn;
 
     MPIU_OBJ_PUBLISH_HANDLE(*errhandler, errhan_ptr->handle);
     /* ... end of body of routine ... */
@@ -95,7 +95,7 @@ int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *function,
     {
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_win_create_errhandler", 
-	    "**mpi_win_create_errhandler %p %p", function, errhandler);
+	    "**mpi_win_create_errhandler %p %p", win_errhandler_fn, errhandler);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );

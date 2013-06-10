@@ -199,7 +199,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_type_struct_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_
 #else 
     l3 = v3;
 #endif
-    *ierr = MPI_Type_struct( *v1, v2, l3, (MPI_Datatype *)(v4), (MPI_Datatype *)(v5) );
+    *ierr = MPI_Type_struct( (int)*v1, v2, l3, (MPI_Datatype *)(v4), (MPI_Datatype *)(v5) );
 
 #ifdef HAVE_AINT_LARGER_THAN_FINT
     if (l3) { MPIU_Free(l3); }

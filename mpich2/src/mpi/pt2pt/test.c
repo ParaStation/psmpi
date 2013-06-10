@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -81,10 +81,10 @@ int MPIR_Test_impl(MPI_Request *request, int *flag, MPI_Status *status)
 /*@
     MPI_Test  - Tests for the completion of a request
 
-Input Parameter:
+Input Parameters:
 . request - MPI request (handle) 
 
-Output Parameter:
+Output Parameters:
 + flag - true if operation completed (logical) 
 - status - status object (Status).  May be 'MPI_STATUS_IGNORE'.
 

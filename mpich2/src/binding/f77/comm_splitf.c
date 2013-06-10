@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_split( MPI_Fint *, MPI_Fint *, MPI
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_comm_split_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *ierr ){
-    *ierr = MPI_Comm_split( (MPI_Comm)(*v1), *v2, *v3, (MPI_Comm *)(v4) );
+    *ierr = MPI_Comm_split( (MPI_Comm)(*v1), (int)*v2, (int)*v3, (MPI_Comm *)(v4) );
 }

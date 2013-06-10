@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -33,9 +33,9 @@
 /*@
    MPI_Comm_set_name - Sets the print name for a communicator
 
-   Input Parameters:
-+  MPI_Comm comm - communicator to name (handle)
--  char *comm_name - Name for communicator
+Input Parameters:
++  comm - communicator to name (handle)
+-  comm_name - Name for communicator
 
 .N ThreadSafeNoUpdate
 
@@ -45,7 +45,7 @@
 .N MPI_SUCCESS
 .N MPI_ERR_COMM
 @*/
-int MPI_Comm_set_name(MPI_Comm comm, MPICH2_CONST char *comm_name)
+int MPI_Comm_set_name(MPI_Comm comm, const char *comm_name)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;

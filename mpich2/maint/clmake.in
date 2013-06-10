@@ -38,12 +38,15 @@ $rootSrcDir = "";
 	      "[A-Za-z0-9_\/-]*\/icc",
 	      "[A-Za-z0-9_\/-]*\/install-sh",
 	      "/usr/bin/ar", "mkdir",
+              "/bin/mkdir",
+              "/.*bin/mkdir",
 	      "/usr/ucb/ld",
 	      "mpicc", "mpicxx",
 	      "compiling ROMIO in", 
 	      "Make completed",
 	      "echo", "cat",
 	      "CC", "CCLD", "AR", "RANLIB", "LIBTOOL", "MV", 
+              "MOD", "GEN", "F77", "FC", "CXXLD", "CXX", "FCLD",
 	      "CP", # "terse" make versions
 	      "\\(?cd",
 	      "\\(\\s*cd",
@@ -53,11 +56,16 @@ $rootSrcDir = "";
 	      "PATH=\"\\\$PATH.*\\sldconfig\\s",
 	      "building profiling interface in directory",
 	      "/usr/bin/install",
+              "/.*bin/install",
+              ".*confdb/install-sh",
 	      "Copying Upshot",
 	      "Cleaning directory",
 	      "[*][*][*][*] Making .*\.\.\.\.",
-	      "Making .*\.\.\.\.",        # mpe writes this
-	      "Making upshot", "\\s*\$", );
+	      "Making .* in .*",
+	      "Making upshot", "\\s*\$",
+              "ld: warning: directory not found for option '-L\\S*src/mpl'",
+              "ld: warning: directory not found for option '-L\\S*src/openpa/src'",
+);
 
 # OtherNoise is an array of patterns that describe blocks of
 # text that we'd like to skip.  The initial use it to handle 
@@ -181,7 +189,7 @@ while ($line = <>) {
     else {
 	$is_command = 0;
 	foreach $cmdname (@commands) {
-	    if ($line =~ /^\s*$cmdname[^\w]/) {
+	    if ($line =~ /^\s*$cmdname\W/) {
 		$is_command = 1;
 		$cmdline = $line;
 		last;

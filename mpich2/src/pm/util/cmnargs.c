@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*  
  *  (C) 2003 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -62,13 +62,13 @@ static int ReadConfigFile( const char *, ProcessUniverse * );
 
 /*@ MPIE_Args - Process the arguments for mpiexec.  
   
-    Input Parameters:
+Input Parameters:
 +   argc,argv - Argument count and vector
 .   ProcessArg - Routine that is called with any unrecognized argument.  
     Returns 0 if the argument is successfully handled, non-zero otherwise.   
 -   extraData - Pointer passed to 'ProcessArg' routine
 
-    Output Parameter:
+Output Parameters:
 .   mypUniv - The elements of the 'ProcessUniverse' structure are filled in.
 
     Notes:
@@ -185,7 +185,7 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *mypUniv,
 		mpiexec_usage( "Missing argument to -configfile" );
 	    optionCmdline = 1;
 	} 
-/* Here begins the MPICH2 mpiexec extension for singleton init */	
+/* Here begins the MPICH mpiexec extension for singleton init */	
  	else if ( strncmp( argv[i], "-pmi_args", 8 ) == 0) {
 	    if (i+4 < argc ) {
 		mypUniv->fromSingleton   = 1;
@@ -199,7 +199,7 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *mypUniv,
 		mpiexec_usage( "Missing argument to -pmi_args" );
 	    optionArgs = 1;
 	}
-/* Here begin the MPICH2 mpiexec common extensions for 
+/* Here begin the MPICH mpiexec common extensions for 
     -usize n   - Universe size
     -l         - label stdout/err
     -maxtime n - set a timelimit of n seconds
@@ -250,7 +250,7 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *mypUniv,
 			   channame );
 	    MPIE_Putenv( mypUniv->worlds, envstring );
 	}
-/* End of the MPICH2 mpiexec common extentions */
+/* End of the MPICH mpiexec common extentions */
 
 	else if (argv[i][0] != '-') {
 	    exename = argv[i];
@@ -369,7 +369,7 @@ int MPIE_Args( int argc, char *argv[], ProcessUniverse *mypUniv,
 /*@
   MPIE_CheckEnv - Check the environment for parameters and default values
 
-  Output Parameter:
+Output Parameters:
 . mypUniv - Process universe structure; some fields are set (see notes)
 
   Notes:
@@ -440,7 +440,7 @@ const char *MPIE_ArgDescription( void )
 /*@ MPIE_PrintProcessUniverse - Debugging routine used to print out the 
     results from MPIE_Args
     
-    Input Parameters:
+Input Parameters:
 +   fp - File for output
 -   mypUniv - Process Univers
  @*/
@@ -460,7 +460,7 @@ void MPIE_PrintProcessUniverse( FILE *fp, ProcessUniverse *mypUniv )
 
 /*@ MPIE_PrintProcessWorld - Print a ProcessWorld structure
     
-    Input Parameters:
+Input Parameters:
 +   fp - File for output
 -   pWorld - Process World
  @*/

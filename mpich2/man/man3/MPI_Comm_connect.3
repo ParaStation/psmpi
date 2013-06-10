@@ -1,9 +1,9 @@
-.TH MPI_Comm_connect 3 "9/20/2012" " " "MPI"
+.TH MPI_Comm_connect 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Comm_connect \-  Make a request to form a new intercommunicator 
 .SH SYNOPSIS
 .nf
-int MPI_Comm_connect(MPICH2_CONST char *port_name, MPI_Info info, int root, MPI_Comm comm,
+int MPI_Comm_connect(const char *port_name, MPI_Info info, int root, MPI_Comm comm,
                      MPI_Comm *newcomm)
 .fi
 .SH INPUT PARAMETERS
@@ -28,7 +28,7 @@ int MPI_Comm_connect(MPICH2_CONST char *port_name, MPI_Info info, int root, MPI_
 - intracommunicator over which call is collective (handle) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B newcomm 

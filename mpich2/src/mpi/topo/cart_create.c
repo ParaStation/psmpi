@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -217,7 +217,7 @@ Input Parameters:
   periodic (true) or not (false) in each dimension 
 - reorder - ranking may be reordered (true) or not (false) (logical) 
 
-Output Parameter:
+Output Parameters:
 . comm_cart - communicator with new cartesian topology (handle) 
 
 Algorithm:
@@ -233,8 +233,8 @@ We ignore 'reorder' info currently.
 .N MPI_ERR_DIMS
 .N MPI_ERR_ARG
 @*/
-int MPI_Cart_create(MPI_Comm comm_old, int ndims, MPICH2_CONST int *dims,
-                    MPICH2_CONST int *periods, int reorder, MPI_Comm *comm_cart)
+int MPI_Cart_create(MPI_Comm comm_old, int ndims, const int dims[],
+                    const int periods[], int reorder, MPI_Comm *comm_cart)
 {
     int       mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;

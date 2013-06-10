@@ -9,7 +9,7 @@
 Determines process rank in communicator given Cartesian location 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Cart_rank(MPI_Comm comm, MPICH2_CONST int *coords, int *rank)
+int MPI_Cart_rank(MPI_Comm comm, const int coords[], int *rank)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -20,7 +20,7 @@ the Cartesian topology associated with <TT>comm</TT>) specifying the cartesian
 coordinates of a process 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>rank </B> <DD> rank of specified process (integer) 
 </DL>
 <P>

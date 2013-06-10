@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -28,7 +28,7 @@
 #define FUNCNAME MPIR_Cart_rank_impl
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-void MPIR_Cart_rank_impl(MPIR_Topology *cart_ptr, const int *coords, int *rank)
+void MPIR_Cart_rank_impl(MPIR_Topology *cart_ptr, const int coords[], int *rank)
 {
     int i, ndims, coord, multiplier;
 
@@ -68,7 +68,7 @@ Input Parameters:
     the Cartesian topology associated with 'comm') specifying the cartesian 
   coordinates of a process 
 
-Output Parameter:
+Output Parameters:
 . rank - rank of specified process (integer) 
 
 Notes:
@@ -86,7 +86,7 @@ Notes:
 .N MPI_ERR_RANK
 .N MPI_ERR_ARG
 @*/
-int MPI_Cart_rank(MPI_Comm comm, MPICH2_CONST int *coords, int *rank)
+int MPI_Cart_rank(MPI_Comm comm, const int coords[], int *rank)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;

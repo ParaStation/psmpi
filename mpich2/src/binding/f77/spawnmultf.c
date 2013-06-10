@@ -196,7 +196,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_ ( MPI_Fint *v1, char *v2 F
     { int i;
       char *ptmp;
 
-      asize2 = *v1 + 1;
+      asize2 = (int)*v1 + 1;
 
       p2 = (char **)MPIU_Malloc( asize2 * sizeof(char *) );
       ptmp    = (char *)MPIU_Malloc( asize2 * (d2 + 1) );
@@ -235,7 +235,8 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_ ( MPI_Fint *v1, char *v2 F
            They are terminated by an empty entry. */
         /* Find the first entry in the Fortran array for this row */
         char *p = v3 + k * d3;
-        int arglen = 0, argcnt=0, i;
+        ssize_t arglen = 0;
+        int argcnt=0, i;
         char **pargs, *pdata;
         for (argcnt=0; 1; argcnt ++) {
             char *pin = p + d3 - 1; /* Move to the end of the
@@ -281,7 +282,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_ ( MPI_Fint *v1, char *v2 F
     }
 
     if ((MPI_Fint*)v9 == MPI_F_ERRCODES_IGNORE) { v9 = (MPI_Fint *)MPI_ERRCODES_IGNORE; }
-    *ierr = MPI_Comm_spawn_multiple( *v1, p2, p3, v4, (MPI_Info *)(v5), *v6, (MPI_Comm)(*v7), (MPI_Comm *)(v8), (int *)v9 );
+    *ierr = MPI_Comm_spawn_multiple( (int)*v1, p2, p3, v4, (MPI_Info *)(v5), (int)*v6, (MPI_Comm)(*v7), (MPI_Comm *)(v8), (int *)v9 );
     MPIU_Free( p2[0] );
     MPIU_Free( p2 );
     if (v3 != (char *)MPI_ARGVS_NULL) { 

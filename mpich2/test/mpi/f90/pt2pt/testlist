@@ -2,4 +2,4 @@
 statusesf90 1
 greqf90 1
 allpairf90 2
-mprobef90 2 strict=false
+mprobef90 2 mpiversion=3.0

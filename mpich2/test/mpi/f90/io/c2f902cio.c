@@ -1,5 +1,5 @@
 /* This file created from test/mpi/f77/io/c2f2cio.c with f77tof90 */
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.

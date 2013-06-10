@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -10,17 +10,6 @@
 #include "mpidimpl.h"
 #include "ch3usock.h"
 
-/* Define the channel-private data structures; these are overlaid on the
-   channel_private scratchpads */
-typedef struct MPIDI_CH3I_VC
-{
-    struct MPID_Request * sendq_head;
-    struct MPID_Request * sendq_tail;
-    MPIDI_CH3I_VC_state_t state;
-    struct MPIDU_Sock *sock;
-    struct MPIDI_CH3I_Connection * conn;
-}
-MPIDI_CH3I_VC;
 
 /* This is all socket connection definitions */
 
@@ -85,5 +74,12 @@ MPIDI_CH3I_VC;
 int MPIDI_CH3I_Progress_init(void);
 int MPIDI_CH3I_Progress_finalize(void);
 int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t *);
+
+/* Shared memory window atomic/accumulate mutex implementation */
+
+#define MPIDI_CH3I_SHM_MUTEX_LOCK(win_ptr)
+#define MPIDI_CH3I_SHM_MUTEX_UNLOCK(win_ptr)
+#define MPIDI_CH3I_SHM_MUTEX_INIT(win_ptr)
+#define MPIDI_CH3I_SHM_MUTEX_DESTROY(win_ptr)
 
 #endif /* !defined(MPICH_MPIDI_CH3_IMPL_H_INCLUDED) */

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -36,7 +36,8 @@ MPI_Group_size - Returns the size of a group
 
 Input Parameters:
 + group - group (handle) 
-Output Parameter:
+
+Output Parameters:
 - size - number of processes in the group (integer) 
 
 .N SignalSafe

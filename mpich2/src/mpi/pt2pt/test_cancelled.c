@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -32,10 +32,10 @@
 /*@
   MPI_Test_cancelled - Tests to see if a request was cancelled
 
-Input Parameter:
+Input Parameters:
 . status - status object (Status) 
 
-Output Parameter:
+Output Parameters:
 . flag - true if the request was cancelled, false otherwise (logical) 
 
 .N ThreadSafe
@@ -46,7 +46,7 @@ Output Parameter:
 .N MPI_SUCCESS
 .N MPI_ERR_ARG
 @*/
-int MPI_Test_cancelled(MPICH2_CONST MPI_Status *status, int *flag)
+int MPI_Test_cancelled(const MPI_Status *status, int *flag)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TEST_CANCELLED);

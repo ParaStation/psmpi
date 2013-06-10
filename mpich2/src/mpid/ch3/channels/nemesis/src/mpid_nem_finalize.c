@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2006 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -9,6 +9,8 @@
 #ifndef USE_PMI2_API
 #include "pmi.h"
 #endif
+
+#include "mpidi_nem_statistics.h"
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_finalize
@@ -24,7 +26,7 @@ int MPID_nem_finalize(void)
     /* this test is not the right one */
 /*     MPIU_Assert(MPID_nem_queue_empty( MPID_nem_mem_region.RecvQ[MPID_nem_mem_region.rank])); */
 
-    /* these are allocated in MPID_nem_mpich2_init, not MPID_nem_init */
+    /* these are allocated in MPID_nem_mpich_init, not MPID_nem_init */
     MPIU_Free(MPID_nem_recv_seqno);
     MPIU_Free(MPID_nem_fboxq_elem_list);
 
@@ -54,6 +56,10 @@ int MPID_nem_finalize(void)
     my_papi_close();
 #endif /*PAPI_MONITOR */
     
+#if ENABLE_NEM_STATISTICS
+    MPIU_Free(MPID_nem_fbox_fall_back_to_queue_count);
+#endif
+
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_FINALIZE);
     return mpi_errno;

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,41 +6,60 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Win_allocate_shared */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPIX_Win_allocate_shared = PMPIX_Win_allocate_shared
+#pragma weak MPI_Win_allocate_shared = PMPI_Win_allocate_shared
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIX_Win_allocate_shared  MPIX_Win_allocate_shared
+#pragma _HP_SECONDARY_DEF PMPI_Win_allocate_shared  MPI_Win_allocate_shared
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPIX_Win_allocate_shared as PMPIX_Win_allocate_shared
+#pragma _CRI duplicate MPI_Win_allocate_shared as PMPI_Win_allocate_shared
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#undef MPIX_Win_allocate_shared
-#define MPIX_Win_allocate_shared PMPIX_Win_allocate_shared
+#undef MPI_Win_allocate_shared
+#define MPI_Win_allocate_shared PMPI_Win_allocate_shared
 
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPIX_Win_allocate_shared
+#define FUNCNAME MPI_Win_allocate_shared
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 
 /*@
-   MPIX_Win_allocate_shared - Create an MPI Window object for one-sided communication
-   and allocate memory at each process.
+MPI_Win_allocate_shared - Create an MPI Window object for one-sided
+communication and shared memory access, and allocate memory at each process.
 
-   Input Parameters:
+This is a collective call executed by all processes in the group of comm. On
+each process i, it allocates memory of at least size bytes that is shared among
+all processes in comm, and returns a pointer to the locally allocated segment
+in baseptr that can be used for load/store accesses on the calling process. The
+locally allocated memory can be the target of load/store accesses by remote
+processes; the base pointers for other processes can be queried using the
+function 'MPI_Win_shared_query'.
+
+The call also returns a window object that can be used by all processes in comm
+to perform RMA operations. The size argument may be different at each process
+and size = 0 is valid. It is the user''s responsibility to ensure that the
+communicator comm represents a group of processes that can create a shared
+memory segment that can be accessed by all processes in the group. The
+allocated memory is contiguous across process ranks unless the info key
+alloc_shared_noncontig is specified. Contiguous across process ranks means that
+the first address in the memory segment of process i is consecutive with the
+last address in the memory segment of process i − 1.  This may enable the user
+to calculate remote address offsets with local information only.
+
+Input Parameters:
 . size - size of window in bytes (nonnegative integer)
+. disp_unit - local unit size for displacements, in bytes (positive integer)
 . info - info argument (handle)
 - comm - communicator (handle)
 
-  Output Parameter:
+Output Parameters:
 . baseptr - initial address of window (choice)
 - win - window object returned by the call (handle)
 
@@ -54,20 +73,22 @@
 .N MPI_ERR_INFO
 .N MPI_ERR_OTHER
 .N MPI_ERR_SIZE
+
+.seealso: MPI_Win_allocate MPI_Win_create MPI_Win_create_dynamic MPI_Win_free MPI_Win_shared_query
 @*/
-int MPIX_Win_allocate_shared(MPI_Aint size, int disp_unit, MPI_Info info, MPI_Comm comm,
+int MPI_Win_allocate_shared(MPI_Aint size, int disp_unit, MPI_Info info, MPI_Comm comm,
                              void *baseptr, MPI_Win *win)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
     MPID_Comm *comm_ptr = NULL;
     MPID_Info *info_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIX_WIN_ALLOCATE_SHARED);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_ALLOCATE_SHARED);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
 
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPIX_WIN_ALLOCATE_SHARED);
+    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_WIN_ALLOCATE_SHARED);
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -119,7 +140,6 @@ int MPIX_Win_allocate_shared(MPI_Aint size, int disp_unit, MPI_Info info, MPI_Co
     /* Initialize a few fields that have specific defaults */
     win_ptr->name[0]    = 0;
     win_ptr->errhandler = 0;
-    win_ptr->lockRank   = MPID_WIN_STATE_UNLOCKED;
 
     /* return the handle of the window object to the user */
     MPIU_OBJ_PUBLISH_HANDLE(*win, win_ptr->handle);
@@ -127,7 +147,7 @@ int MPIX_Win_allocate_shared(MPI_Aint size, int disp_unit, MPI_Info info, MPI_Co
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPIX_WIN_ALLOCATE_SHARED);
+    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_WIN_ALLOCATE_SHARED);
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 

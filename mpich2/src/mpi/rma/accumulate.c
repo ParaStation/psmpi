@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Accumulate */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -33,7 +32,7 @@
    MPI_Accumulate - Accumulate data into the target process using remote 
    memory access 
 
-   Input Parameters:
+Input Parameters:
 + origin_addr - initial address of buffer (choice) 
 . origin_count - number of entries in buffer (nonnegative integer) 
 . origin_datatype - datatype of each buffer entry (handle) 
@@ -58,8 +57,10 @@ predefined datatype (e.g., all 'MPI_INT' or all 'MPI_DOUBLE_PRECISION').
 .N MPI_ERR_RANK
 .N MPI_ERR_TYPE
 .N MPI_ERR_WIN
+
+.seealso: MPI_Raccumulate
 @*/
-int MPI_Accumulate(MPICH2_CONST void *origin_addr, int origin_count, MPI_Datatype
+int MPI_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype
                    origin_datatype, int target_rank, MPI_Aint
                    target_disp, int target_count, MPI_Datatype
                    target_datatype, MPI_Op op, MPI_Win win) 
@@ -103,7 +104,7 @@ int MPI_Accumulate(MPICH2_CONST void *origin_addr, int origin_count, MPI_Datatyp
 	    MPIR_ERRTEST_DATATYPE(origin_datatype, "origin_datatype", mpi_errno);
 	    MPIR_ERRTEST_COUNT(target_count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(target_datatype, "target_datatype", mpi_errno);
-            if (win_ptr->create_flavor != MPIX_WIN_FLAVOR_DYNAMIC)
+            if (win_ptr->create_flavor != MPI_WIN_FLAVOR_DYNAMIC)
                 MPIR_ERRTEST_DISP(target_disp, mpi_errno);
 
             if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN)
@@ -130,7 +131,7 @@ int MPI_Accumulate(MPICH2_CONST void *origin_addr, int origin_count, MPI_Datatyp
 
 	    comm_ptr = win_ptr->comm_ptr;
 	    MPIR_ERRTEST_SEND_RANK(comm_ptr, target_rank, mpi_errno);
-            MPIR_ERRTEST_OP(op, mpi_errno);
+            MPIR_ERRTEST_OP_ACC(op, mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -138,8 +139,6 @@ int MPI_Accumulate(MPICH2_CONST void *origin_addr, int origin_count, MPI_Datatyp
 
     /* ... body of routine ...  */
     
-    if (target_rank == MPI_PROC_NULL) goto fn_exit;
-
     mpi_errno = MPIU_RMA_CALL(win_ptr,Accumulate(origin_addr, origin_count, 
 					 origin_datatype,
 					 target_rank, target_disp, target_count,

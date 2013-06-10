@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*  
  *  (C) 2004 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -45,11 +45,11 @@ typedef struct realModel {
    MPI_Type_create_f90_complex - Return a predefined type that matches 
    the specified range
 
-   Input Arguments:
+Input Parameters:
 +  precision - Number of decimal digits in mantissa
 -  range - Decimal range desired
 
-   Output Arguments:
+Output Parameters:
 .  newtype - A predefine MPI Datatype that matches the range.
 
    Notes:

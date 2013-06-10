@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_RACCUMULATE( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_raccumulate__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_raccumulate( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_raccumulate_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_RACCUMULATE( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_raccumulate__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_raccumulate( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_raccumulate_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_RACCUMULATE = PMPIX_RACCUMULATE
-#pragma weak mpix_raccumulate__ = PMPIX_RACCUMULATE
-#pragma weak mpix_raccumulate_ = PMPIX_RACCUMULATE
-#pragma weak mpix_raccumulate = PMPIX_RACCUMULATE
+#pragma weak MPI_RACCUMULATE = PMPI_RACCUMULATE
+#pragma weak mpi_raccumulate__ = PMPI_RACCUMULATE
+#pragma weak mpi_raccumulate_ = PMPI_RACCUMULATE
+#pragma weak mpi_raccumulate = PMPI_RACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_RACCUMULATE = pmpix_raccumulate__
-#pragma weak mpix_raccumulate__ = pmpix_raccumulate__
-#pragma weak mpix_raccumulate_ = pmpix_raccumulate__
-#pragma weak mpix_raccumulate = pmpix_raccumulate__
+#pragma weak MPI_RACCUMULATE = pmpi_raccumulate__
+#pragma weak mpi_raccumulate__ = pmpi_raccumulate__
+#pragma weak mpi_raccumulate_ = pmpi_raccumulate__
+#pragma weak mpi_raccumulate = pmpi_raccumulate__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_RACCUMULATE = pmpix_raccumulate_
-#pragma weak mpix_raccumulate__ = pmpix_raccumulate_
-#pragma weak mpix_raccumulate_ = pmpix_raccumulate_
-#pragma weak mpix_raccumulate = pmpix_raccumulate_
+#pragma weak MPI_RACCUMULATE = pmpi_raccumulate_
+#pragma weak mpi_raccumulate__ = pmpi_raccumulate_
+#pragma weak mpi_raccumulate_ = pmpi_raccumulate_
+#pragma weak mpi_raccumulate = pmpi_raccumulate_
 #else
-#pragma weak MPIX_RACCUMULATE = pmpix_raccumulate
-#pragma weak mpix_raccumulate__ = pmpix_raccumulate
-#pragma weak mpix_raccumulate_ = pmpix_raccumulate
-#pragma weak mpix_raccumulate = pmpix_raccumulate
+#pragma weak MPI_RACCUMULATE = pmpi_raccumulate
+#pragma weak mpi_raccumulate__ = pmpi_raccumulate
+#pragma weak mpi_raccumulate_ = pmpi_raccumulate
+#pragma weak mpi_raccumulate = pmpi_raccumulate
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_raccumulate_( void*, MPI_Fint *, MPI_Fi
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_RACCUMULATE( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_RACCUMULATE( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_RACCUMULATE = PMPIX_RACCUMULATE
+#pragma weak MPI_RACCUMULATE = PMPI_RACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_raccumulate__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_raccumulate__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_raccumulate__ = pmpix_raccumulate__
+#pragma weak mpi_raccumulate__ = pmpi_raccumulate__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_raccumulate( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_raccumulate( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_raccumulate = pmpix_raccumulate
+#pragma weak mpi_raccumulate = pmpi_raccumulate
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_raccumulate_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_raccumulate_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_raccumulate_ = pmpix_raccumulate_
+#pragma weak mpi_raccumulate_ = pmpi_raccumulate_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_RACCUMULATE  MPIX_RACCUMULATE
+#pragma _HP_SECONDARY_DEF PMPI_RACCUMULATE  MPI_RACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_raccumulate__  mpix_raccumulate__
+#pragma _HP_SECONDARY_DEF pmpi_raccumulate__  mpi_raccumulate__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_raccumulate  mpix_raccumulate
+#pragma _HP_SECONDARY_DEF pmpi_raccumulate  mpi_raccumulate
 #else
-#pragma _HP_SECONDARY_DEF pmpix_raccumulate_  mpix_raccumulate_
+#pragma _HP_SECONDARY_DEF pmpi_raccumulate_  mpi_raccumulate_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_RACCUMULATE as PMPIX_RACCUMULATE
+#pragma _CRI duplicate MPI_RACCUMULATE as PMPI_RACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_raccumulate__ as pmpix_raccumulate__
+#pragma _CRI duplicate mpi_raccumulate__ as pmpi_raccumulate__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_raccumulate as pmpix_raccumulate
+#pragma _CRI duplicate mpi_raccumulate as pmpi_raccumulate
 #else
-#pragma _CRI duplicate mpix_raccumulate_ as pmpix_raccumulate_
+#pragma _CRI duplicate mpi_raccumulate_ as pmpi_raccumulate_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_raccumulate_( void*, MPI_Fint *, MPI_Fi
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_RACCUMULATE( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_raccumulate__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_raccumulate( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_raccumulate_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_RACCUMULATE( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_raccumulate__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_raccumulate( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_raccumulate_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_raccumulate__ = MPIX_RACCUMULATE
-#pragma weak mpix_raccumulate_ = MPIX_RACCUMULATE
-#pragma weak mpix_raccumulate = MPIX_RACCUMULATE
+#pragma weak mpi_raccumulate__ = MPI_RACCUMULATE
+#pragma weak mpi_raccumulate_ = MPI_RACCUMULATE
+#pragma weak mpi_raccumulate = MPI_RACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_RACCUMULATE = mpix_raccumulate__
-#pragma weak mpix_raccumulate_ = mpix_raccumulate__
-#pragma weak mpix_raccumulate = mpix_raccumulate__
+#pragma weak MPI_RACCUMULATE = mpi_raccumulate__
+#pragma weak mpi_raccumulate_ = mpi_raccumulate__
+#pragma weak mpi_raccumulate = mpi_raccumulate__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_RACCUMULATE = mpix_raccumulate_
-#pragma weak mpix_raccumulate__ = mpix_raccumulate_
-#pragma weak mpix_raccumulate = mpix_raccumulate_
+#pragma weak MPI_RACCUMULATE = mpi_raccumulate_
+#pragma weak mpi_raccumulate__ = mpi_raccumulate_
+#pragma weak mpi_raccumulate = mpi_raccumulate_
 #else
-#pragma weak MPIX_RACCUMULATE = mpix_raccumulate
-#pragma weak mpix_raccumulate__ = mpix_raccumulate
-#pragma weak mpix_raccumulate_ = mpix_raccumulate
+#pragma weak MPI_RACCUMULATE = mpi_raccumulate
+#pragma weak mpi_raccumulate__ = mpi_raccumulate
+#pragma weak mpi_raccumulate_ = mpi_raccumulate
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_raccumulate_( void*, MPI_Fint *, MPI_Fi
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_RACCUMULATE( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_RACCUMULATE( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_raccumulate__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_raccumulate__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_raccumulate_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_raccumulate_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_raccumulate( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_raccumulate( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_raccumulate__ = PMPIX_RACCUMULATE
-#pragma weak pmpix_raccumulate_ = PMPIX_RACCUMULATE
-#pragma weak pmpix_raccumulate = PMPIX_RACCUMULATE
+#pragma weak pmpi_raccumulate__ = PMPI_RACCUMULATE
+#pragma weak pmpi_raccumulate_ = PMPI_RACCUMULATE
+#pragma weak pmpi_raccumulate = PMPI_RACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_RACCUMULATE = pmpix_raccumulate__
-#pragma weak pmpix_raccumulate_ = pmpix_raccumulate__
-#pragma weak pmpix_raccumulate = pmpix_raccumulate__
+#pragma weak PMPI_RACCUMULATE = pmpi_raccumulate__
+#pragma weak pmpi_raccumulate_ = pmpi_raccumulate__
+#pragma weak pmpi_raccumulate = pmpi_raccumulate__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_RACCUMULATE = pmpix_raccumulate_
-#pragma weak pmpix_raccumulate__ = pmpix_raccumulate_
-#pragma weak pmpix_raccumulate = pmpix_raccumulate_
+#pragma weak PMPI_RACCUMULATE = pmpi_raccumulate_
+#pragma weak pmpi_raccumulate__ = pmpi_raccumulate_
+#pragma weak pmpi_raccumulate = pmpi_raccumulate_
 #else
-#pragma weak PMPIX_RACCUMULATE = pmpix_raccumulate
-#pragma weak pmpix_raccumulate__ = pmpix_raccumulate
-#pragma weak pmpix_raccumulate_ = pmpix_raccumulate
+#pragma weak PMPI_RACCUMULATE = pmpi_raccumulate
+#pragma weak pmpi_raccumulate__ = pmpi_raccumulate
+#pragma weak pmpi_raccumulate_ = pmpi_raccumulate
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_raccumulate_ PMPIX_RACCUMULATE
+#define mpi_raccumulate_ PMPI_RACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_raccumulate_ pmpix_raccumulate__
+#define mpi_raccumulate_ pmpi_raccumulate__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_raccumulate_ pmpix_raccumulate
+#define mpi_raccumulate_ pmpi_raccumulate
 #else
-#define mpix_raccumulate_ pmpix_raccumulate_
+#define mpi_raccumulate_ pmpi_raccumulate_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Raccumulate
-#define MPIX_Raccumulate PMPIX_Raccumulate 
+#undef MPI_Raccumulate
+#define MPI_Raccumulate PMPI_Raccumulate 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_raccumulate_ MPIX_RACCUMULATE
+#define mpi_raccumulate_ MPI_RACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_raccumulate_ mpix_raccumulate__
+#define mpi_raccumulate_ mpi_raccumulate__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_raccumulate_ mpix_raccumulate
+#define mpi_raccumulate_ mpi_raccumulate
 /* Else leave name alone */
 #endif
 
@@ -184,6 +184,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_raccumulate( void*, MPI_Fint *, MPI_Fi
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_raccumulate_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *v8, MPI_Fint *v9, MPI_Fint *v10, MPI_Fint *ierr ){
-    *ierr = MPIX_Raccumulate( v1, *v2, (MPI_Datatype)(*v3), *v4, *v5, *v6, (MPI_Datatype)(*v7), *v8, *v9, (MPI_Request *)(v10) );
+FORT_DLL_SPEC void FORT_CALL mpi_raccumulate_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *v8, MPI_Fint *v9, MPI_Fint *v10, MPI_Fint *ierr ){
+    *ierr = MPI_Raccumulate( v1, (int)*v2, (MPI_Datatype)(*v3), (int)*v4, (MPI_Aint)*v5, (int)*v6, (MPI_Datatype)(*v7), (MPI_Op)*v8, (MPI_Win)*v9, (MPI_Request *)(v10) );
 }

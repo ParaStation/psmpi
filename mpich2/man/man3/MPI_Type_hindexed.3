@@ -1,37 +1,37 @@
-.TH MPI_Type_hindexed 3 "9/20/2012" " " "MPI"
+.TH MPI_Type_hindexed 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Type_hindexed \-  Creates an indexed datatype with offsets in bytes 
 .SH SYNOPSIS
 .nf
 int MPI_Type_hindexed(int count,
-                     MPICH2_CONST int blocklens[],
-                     MPICH2_CONST MPI_Aint indices[],
-                     MPI_Datatype old_type,
+                     const int *array_of_blocklengths,
+                     const MPI_Aint *array_of_displacements,
+                     MPI_Datatype oldtype,
                      MPI_Datatype *newtype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
 .B count 
-- number of blocks -- also number of entries in indices and blocklens
+- number of blocks -- also number of entries in array_of_displacements and array_of_blocklengths
 .PD 1
 .PD 0
 .TP
-.B blocklens 
-- number of elements in each block (array of nonnegative integers) 
+.B array_of_blocklengths 
+- number of elements in each block (array of nonnegative integers)
 .PD 1
 .PD 0
 .TP
-.B indices 
-- byte displacement of each block (array of MPI_Aint) 
+.B array_of_displacements 
+- byte displacement of each block (array of MPI_Aint)
 .PD 1
 .PD 0
 .TP
-.B old_type 
-- old datatype (handle) 
+.B oldtype 
+- old datatype (handle)
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B newtype 
@@ -80,35 +80,26 @@ All MPI objects (e.g.,
 .I INTEGER
 in Fortran.
 
-The indices are displacements, and are based on a zero origin.  A common error
+The array_of_displacements are displacements, and are based on a zero origin.  A common error
 is to do something like to following
 .nf
 integer a(100)
-integer blens(10), indices(10)
+integer array_of_blocklengths(10), array_of_displacements(10)
 do i=1,10
-blens(i)   = 1
-10       indices(i) = (1 + (i-1)*10) * sizeofint
-call MPI_TYPE_HINDEXED(10,blens,indices,MPI_INTEGER,newtype,ierr)
+array_of_blocklengths(i)   = 1
+10       array_of_displacements(i) = (1 + (i-1)*10) * sizeofint
+call MPI_TYPE_HINDEXED(10,array_of_blocklengths,array_of_displacements,MPI_INTEGER,newtype,ierr)
 call MPI_TYPE_COMMIT(newtype,ierr)
 call MPI_SEND(a,1,newtype,...)
 .fi
 
-expecting this to send 
-.I a(1),a(11),...
-because the indices have values
-.I 1,11,...
-\&.
-Because these are 
+expecting this to send "a(1),a(11),..." because the array_of_displacements have values
+"1,11,...".   Because these are 
 .B displacements
-from the beginning of 
-.I a
-,
-it actually sends 
-.I a(1+1),a(1+11),...
-\&.
+from the beginning of "a",
+it actually sends "a(1+1),a(1+11),...".
 
-
-If you wish to consider the displacements as indices into a Fortran array,
+If you wish to consider the displacements as array_of_displacements into a Fortran array,
 consider declaring the Fortran array with a zero origin
 .nf
 integer a(0:99)

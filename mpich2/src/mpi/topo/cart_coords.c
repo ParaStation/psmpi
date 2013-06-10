@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -38,7 +38,7 @@ Input Parameters:
 . rank - rank of a process within group of 'comm' (integer) 
 - maxdims - length of vector 'coords' in the calling program (integer) 
 
-Output Parameter:
+Output Parameters:
 . coords - integer array (of size 'ndims') containing the Cartesian 
   coordinates of specified process (integer) 
 
@@ -53,7 +53,7 @@ Output Parameter:
 .N MPI_ERR_DIMS
 .N MPI_ERR_ARG
 @*/
-int MPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int *coords)
+int MPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int coords[])
 {
     static const char FCNAME[] = "MPI_Cart_coords";
     int mpi_errno = MPI_SUCCESS;

@@ -9,7 +9,7 @@
 Retrieves attribute value by key 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Attr_get(MPI_Comm comm, int keyval, void *attr_value, int *flag)
+int MPI_Attr_get(MPI_Comm comm, int keyval, void *attribute_val, int *flag)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -20,7 +20,7 @@ int MPI_Attr_get(MPI_Comm comm, int keyval, void *attr_value, int *flag)
 <P>
 <H2>Output Parameters</H2>
 <DL>
-<DT><B>attr_value </B><DD>attribute value, unless <TT>flag</TT> = false 
+<DT><B>attribute_val </B><DD>attribute value, unless <TT>flag</TT> = false
 
 <DT><B>flag </B><DD>true if an attribute value was extracted;  false if no attribute is
 associated with the key 
@@ -31,7 +31,7 @@ Attributes must be extracted from the same language as they were inserted
 in with <TT>MPI_ATTR_PUT</TT>.  The notes for C and Fortran below explain why.
 <P>
 <H2>Notes for C</H2>
-Even though the <TT>attr_value</TT> arguement is declared as <TT>void *</TT>, it is
+Even though the <TT>attribute_val</TT> argument is declared as <TT>void *</TT>, it is
 really the address of a void pointer (i.e., a <TT>void **</TT>).  Using
 a <TT>void *</TT>, however, is more in keeping with C idiom and allows the
 pointer to be passed without additional casts.
@@ -62,7 +62,7 @@ in C.  In Fortran, MPI routines are subroutines, and are invoked with the
 All MPI objects (e.g., <TT>MPI_Datatype</TT>, <TT>MPI_Comm</TT>) are of type <TT>INTEGER
 </TT>in Fortran.
 <P>
-The <TT>attr_value</TT> in Fortran is a pointer to a Fortran integer, not
+The <TT>attribute_val</TT> in Fortran is a pointer to a Fortran integer, not
 a pointer to a <TT>void *</TT>.
 <P>
 <H2>Errors</H2>

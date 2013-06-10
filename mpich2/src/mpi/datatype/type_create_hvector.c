@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -32,13 +32,13 @@
    MPI_Type_create_hvector - Create a datatype with a constant stride given
      in bytes
 
-   Input Parameters:
+Input Parameters:
 + count - number of blocks (nonnegative integer)
 . blocklength - number of elements in each block (nonnegative integer)
 . stride - number of bytes between start of each block (address integer)
 - oldtype - old datatype (handle)
 
-   Output Parameter:
+Output Parameters:
 . newtype - new datatype (handle)
 
 .N ThreadSafe

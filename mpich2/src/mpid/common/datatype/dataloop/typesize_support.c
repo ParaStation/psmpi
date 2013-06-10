@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,10 +6,10 @@
  */
 
 /* Notes:
- * - Not used my MPICH2
+ * - Not used my MPICH
  * - "alignsz" value for non-structs is based simply on element
  *   size. This seems nonintuitive, but so far is working for
- *   MPICH2. If we start to get weird alignment problems with
+ *   MPICH. If we start to get weird alignment problems with
  *   complex structs of non-basics, that would be a place to look.
  * - Depends on configure tests that define (if available):
  *   HAVE_LONG_LONG_INT
@@ -33,7 +33,7 @@ static int DLOOP_Structalign_long_double_max(void);
 static int DLOOP_Structalign_double_position(void);
 static int DLOOP_Structalign_llint_position(void);
 
-/* LB/UB calculation helper macros, from MPICH2 */
+/* LB/UB calculation helper macros, from MPICH */
 
 /* DLOOP_DATATYPE_CONTIG_LB_UB()
  *
@@ -192,7 +192,7 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
 	 combiner == MPI_COMBINER_HVECTOR_INTEGER ||
 	 combiner == MPI_COMBINER_HVECTOR ||
 	 combiner == MPI_COMBINER_INDEXED_BLOCK ||
-	 combiner == MPIX_COMBINER_HINDEXED_BLOCK ||
+	 combiner == MPI_COMBINER_HINDEXED_BLOCK ||
 	 combiner == MPI_COMBINER_INDEXED ||
 	 combiner == MPI_COMBINER_HINDEXED_INTEGER ||
 	 combiner == MPI_COMBINER_STRUCT_INTEGER ||
@@ -297,7 +297,7 @@ void PREPEND_PREFIX(Type_calc_footprint)(MPI_Datatype type,
 	    tfp->true_ub = max_ub + (true_ub - ub);
 	    tfp->extent  = tfp->ub - tfp->lb;
 	    break;
-	case MPIX_COMBINER_HINDEXED_BLOCK:
+	case MPI_COMBINER_HINDEXED_BLOCK:
 	    /* prime min_lb and max_ub */
 	    DLOOP_DATATYPE_BLOCK_LB_UB(ints[1] /* blklen */,
 				       (DLOOP_Offset) ints[2] /* disp */,
@@ -630,7 +630,7 @@ static int DLOOP_Named_type_alignsize(MPI_Datatype type, MPI_Aint disp)
 
 /* INTERNAL STRUCT ALIGNMENT TESTS BELOW */
 
-/* from MPICH2 PAC_C_MAX_INTEGER_ALIGN test:
+/* from MPICH PAC_C_MAX_INTEGER_ALIGN test:
  *
  * Tests for max C struct integer alignment. Note that this is for *all*
  * integer types.
@@ -724,7 +724,7 @@ static int DLOOP_Structalign_integer_max()
     return 8;
 }
 
-/* from MPICH2 PAC_C_MAX_FP_ALIGN test:
+/* from MPICH PAC_C_MAX_FP_ALIGN test:
  *
  * Checks for max C struct floating point alignment. Note that
  * in this test we are *only* testing float types, whereas in
@@ -765,7 +765,7 @@ static int DLOOP_Structalign_float_max()
     return 16;
 }
 
-/* from MPICH2 PAC_C_MAX_DOUBLE_FP_ALIGN test:
+/* from MPICH PAC_C_MAX_DOUBLE_FP_ALIGN test:
  *
  * Determines maximum struct alignment with floats and doubles.
  *
@@ -801,7 +801,7 @@ static int DLOOP_Structalign_double_max()
     return 8;
 }
 
-/* from MPICH2 PAC_C_MAX_LONGDOUBLE_FP_ALIGN test:
+/* from MPICH PAC_C_MAX_LONGDOUBLE_FP_ALIGN test:
  *
  * Determines maximum alignment of structs with long doubles.
  *
@@ -850,7 +850,7 @@ static int DLOOP_Structalign_long_double_max()
 }
 
 
-/* from MPICH2 PAC_C_DOUBLE_POS_ALIGN test:
+/* from MPICH PAC_C_DOUBLE_POS_ALIGN test:
  *
  * Test for odd struct alignment rule that only applies max. padding when
  * double value is at front of type.
@@ -874,7 +874,7 @@ static int DLOOP_Structalign_double_position()
     else                       return 0;
 }
 
-/* from MPICH2 PAC_C_LLINT_POS_ALIGN test:
+/* from MPICH PAC_C_LLINT_POS_ALIGN test:
  * Test for odd struct alignment rule that only applies max.
  * padding when long long int value is at front of type.
  *

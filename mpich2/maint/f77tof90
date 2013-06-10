@@ -1,4 +1,4 @@
-#! /Users/goodell/perl5/perlbrew/perls/perl-5.14.2/bin/perl -w
+#! /usr/bin/perl -w
 # -*- Mode: perl; -*-
 #
 # f77tof90 indir outdir [ Makefile-template [Make-Append] ]

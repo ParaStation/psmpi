@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -33,7 +33,7 @@
    MPI_Win_delete_attr - Deletes an attribute value associated with a key on 
    a datatype
 
-   Input Parameters:
+Input Parameters:
 + win - window from which the attribute is deleted (handle) 
 - win_keyval - key value (integer) 
 

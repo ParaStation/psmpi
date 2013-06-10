@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -82,7 +82,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 	case MPI_COMBINER_HVECTOR_INTEGER:
 	case MPI_COMBINER_HVECTOR:
 	case MPI_COMBINER_INDEXED_BLOCK:
-	case MPIX_COMBINER_HINDEXED_BLOCK:
+	case MPI_COMBINER_HINDEXED_BLOCK:
 	case MPI_COMBINER_INDEXED:
 	case MPI_COMBINER_HINDEXED_INTEGER:
 	case MPI_COMBINER_HINDEXED:
@@ -207,7 +207,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 							 dldepth_p,
 							 flag);
 	    break;
-	case MPIX_COMBINER_HINDEXED_BLOCK:
+	case MPI_COMBINER_HINDEXED_BLOCK:
             disps = (MPI_Aint *) DLOOP_Malloc(ints[0] * sizeof(MPI_Aint));
             for (i = 0; i < ints[0]; i++)
                 disps[i] = aints[i];
@@ -383,8 +383,8 @@ static void DLOOP_Dataloop_create_named(MPI_Datatype type,
      * note: not dealing with MPI_2INT because size == extent
      *       in all cases for that type.
      *
-     * note: MPICH2 always precreates these, so we will never call
-     *       Dataloop_create_pairtype() from here in the MPICH2
+     * note: MPICH always precreates these, so we will never call
+     *       Dataloop_create_pairtype() from here in the MPICH
      *       case.
      */
     if (type == MPI_FLOAT_INT || type == MPI_DOUBLE_INT ||

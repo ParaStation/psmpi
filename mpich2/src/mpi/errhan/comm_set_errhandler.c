@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -60,7 +60,7 @@ void MPIR_Comm_set_errhandler_impl(MPID_Comm *comm_ptr, MPID_Errhandler *errhand
 /*@
    MPI_Comm_set_errhandler - Set the error handler for a communicator
 
-   Input Parameters:
+Input Parameters:
 + comm - communicator (handle) 
 - errhandler - new error handler for communicator (handle) 
 

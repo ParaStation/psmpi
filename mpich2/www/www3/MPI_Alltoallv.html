@@ -9,9 +9,9 @@
 Sends data from all to all processes; each process may  send a different amount of data and provide displacements for the input and output data. 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Alltoallv(MPICH2_CONST void *sendbuf, MPICH2_CONST int *sendcnts,
-                  MPICH2_CONST int *sdispls, MPI_Datatype sendtype, void *recvbuf,
-                  MPICH2_CONST int *recvcnts, MPICH2_CONST int *rdispls, MPI_Datatype recvtype,
+int MPI_Alltoallv(const void *sendbuf, const int *sendcounts,
+                  const int *sdispls, MPI_Datatype sendtype, void *recvbuf,
+                  const int *recvcounts, const int *rdispls, MPI_Datatype recvtype,
                   MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -40,7 +40,7 @@ which to place the incoming data from process  <TT>i</TT>
 <DT><B>comm </B><DD>communicator (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>recvbuf </B> <DD> address of receive buffer (choice) 
 </DL>
 <P>

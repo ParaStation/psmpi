@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -129,7 +129,7 @@ int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set,
 	char addrString[64];
 	MPIDU_Sock_AddrToStr( ifaddr, addrString, sizeof(addrString) );
 	MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST,
-			      "Connecting to %s:%d\n", addrString, port )); 
+			      "Connecting to %s:%d", addrString, port )); 
 	})
 
     do

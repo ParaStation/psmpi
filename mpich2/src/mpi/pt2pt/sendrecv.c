@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -62,7 +62,7 @@ Output Parameters:
 .N MPI_ERR_RANK
 
 @*/
-int MPI_Sendrecv(MPICH2_CONST void *sendbuf, int sendcount, MPI_Datatype sendtype,
+int MPI_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 		 int dest, int sendtag,
 		 void *recvbuf, int recvcount, MPI_Datatype recvtype,
 		 int source, int recvtag,

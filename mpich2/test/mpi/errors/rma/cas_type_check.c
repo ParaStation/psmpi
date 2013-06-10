@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2003 by Argonne National Laboratory.
@@ -8,13 +8,6 @@
 #include <stdio.h>
 #include <assert.h>
 #include "mpitest.h"
-
-/* MPI-3 is not yet standardized -- allow MPI-3 routines to be switched off.
- */
-
-#if !defined(USE_STRICT_MPI) && defined(MPICH2)
-#  define TEST_MPI3_ROUTINES 1
-#endif
 
 #define CAS_CHECK_TYPE(c_type, mpi_type, expected_err)  \
 do {                                                    \
@@ -31,7 +24,7 @@ do {                                                    \
     MPI_Win_set_errhandler( win, MPI_ERRORS_RETURN );   \
                                                         \
     MPI_Win_fence( MPI_MODE_NOPRECEDE, win );           \
-    err = MPIX_Compare_and_swap( &val, &cmp_val, &res,  \
+    err = MPI_Compare_and_swap( &val, &cmp_val, &res,  \
                                  mpi_type, 0, 0, win ); \
     MPI_Error_class( err, &err_class );                 \
     assert( err_class == expected_err );                \
@@ -49,8 +42,6 @@ int main( int argc, char *argv[] )
     MPI_Init( &argc, &argv );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
 
-#ifdef TEST_MPI3_ROUTINES
-
     /* C Integer */
     CAS_CHECK_TYPE(signed char,         MPI_SIGNED_CHAR,        MPI_SUCCESS);
     CAS_CHECK_TYPE(short,               MPI_SHORT,              MPI_SUCCESS);
@@ -66,10 +57,7 @@ int main( int argc, char *argv[] )
     /* Multilanguage Types */
     CAS_CHECK_TYPE(MPI_Aint,            MPI_AINT,               MPI_SUCCESS);
     CAS_CHECK_TYPE(MPI_Offset,          MPI_OFFSET,             MPI_SUCCESS);
-    /* TODO: MPI_Count support needed */
-    /*
     CAS_CHECK_TYPE(MPI_Count,           MPI_COUNT,              MPI_SUCCESS);
-    */
 
     /* Byte */
     CAS_CHECK_TYPE(char,                MPI_BYTE,               MPI_SUCCESS);
@@ -94,8 +82,6 @@ int main( int argc, char *argv[] )
         CAS_CHECK_TYPE(long double,         MPI_LONG_DOUBLE,        MPI_ERR_TYPE);
     }
 #endif
-
-#endif /* TEST_MPI3_ROUTINES */
 
     if (rank == 0) printf(" No Errors\n");
     MPI_Finalize();

@@ -12,21 +12,63 @@ Create an MPI Window object for one-sided communication
 int MPI_Win_create(void *base, MPI_Aint size, int disp_unit, MPI_Info info, 
                   MPI_Comm comm, MPI_Win *win)
 </PRE>
+<P>
+This is a collective call executed by all processes in the group of comm. It
+returns a window object that can be used by these processes to perform RMA
+operations. Each process specifies a window of existing memory that it exposes
+to RMA accesses by the processes in the group of comm. The window consists of
+size bytes, starting at address base. In C, base is the starting address of a
+memory region. In Fortran, one can pass the first element of a memory region or
+a whole array, which must be 'simply contiguous' (for 'simply contiguous', see
+also MPI 3.0, Section 17.1.12 on page 626). A process may elect to expose no
+memory by specifying size = 0.
+<P>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>base </B><DD>initial address of window (choice) 
+<DT><B>base </B><DD>initial address of window (choice)
 
-<DT><B>size </B><DD>size of window in bytes (nonnegative integer) 
+<DT><B>size </B><DD>size of window in bytes (nonnegative integer)
 
-<DT><B>disp_unit </B><DD>local unit size for displacements, in bytes (positive integer) 
+<DT><B>disp_unit </B><DD>local unit size for displacements, in bytes (positive integer)
 
-<DT><B>info </B><DD>info argument (handle) 
+<DT><B>info </B><DD>info argument (handle)
 
-<DT><B>comm </B><DD>communicator (handle) 
+<DT><B>comm </B><DD>communicator (handle)
 </DL>
 <P>
-<H2>Output Parameter</H2>
-<DL><DT><B>win </B> <DD> window object returned by the call (handle) 
+<H2>Output Parameters</H2>
+<DL><DT><B>win </B> <DD> window object returned by the call (handle)
+</DL>
+<P>
+<H2>Notes</H2>
+<P>
+The displacement unit argument is provided to facilitate address arithmetic in
+RMA operations: the target displacement argument of an RMA operation is scaled
+by the factor disp_unit specified by the target process, at window creation.
+<P>
+The info argument provides optimization hints to the runtime about the expected
+usage pattern of the window. The following info keys are predefined.
+<P>
+<DL><DT><B>no_locks </B> <DD> If set to true, then the implementation may assume that passive
+target synchronization (i.e., <TT>MPI_Win_lock</TT>, <TT>MPI_Win_lock_all</TT>) will not be used on
+the given window. This implies that this window is not used for 3-party
+communication, and RMA can be implemented with no (less) asynchronous agent
+activity at this process.
+</DL>
+<P>
+<DL><DT><B>accumulate_ordering </B> <DD> Controls the ordering of accumulate operations at the
+target.  The argument string should contain a comma-separated list of the
+following read/write ordering rules, where e.g. "raw" means read-after-write:
+"rar,raw,war,waw".
+</DL>
+<P>
+<DL><DT><B>accumulate_ops </B> <DD> If set to same_op, the implementation will assume that all
+concurrent accumulate calls to the same target address will use the same
+operation. If set to same_op_no_op, then the implementation will assume that
+all concurrent accumulate calls to the same target address will use the same
+operation or <TT>MPI_NO_OP</TT>. This can eliminate the need to protect access for
+certain operation types where the hardware can guarantee atomicity. The default
+is same_op_no_op.
 </DL>
 <P>
 <H2>Thread and Interrupt Safety</H2>
@@ -76,5 +118,8 @@ about this error code.
 </DL>
 <DL><DT><B>MPI_ERR_SIZE </B> <DD> 
 </DL>
-<P><B>Location:</B>src/mpi/rma/win_create.c<P>
+<P>
+<H2>See Also</H2>
+ MPI_Win_allocate MPI_Win_allocate_shared MPI_Win_create_dynamic MPI_Win_free
+<BR><P><B>Location:</B>src/mpi/rma/win_create.c<P>
 </BODY></HTML>

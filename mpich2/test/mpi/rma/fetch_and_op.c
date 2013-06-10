@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2012 by Argonne National Laboratory.
@@ -10,28 +10,9 @@
 #include <assert.h>
 #include <mpi.h>
 #include "mpitest.h"
-
-/* MPI-3 is not yet standardized -- allow MPI-3 routines to be switched off.
- */
-
-#if !defined(USE_STRICT_MPI) && defined(MPICH2)
-#  define TEST_MPI3_ROUTINES 1
-#endif
-
-static const int SQ_LIMIT = 10;
-static       int SQ_COUNT = 0;
-
-#define SQUELCH(X)                      \
-  do {                                  \
-    if (SQ_COUNT < SQ_LIMIT || verbose) { \
-      SQ_COUNT++;                       \
-      X                                 \
-    }                                   \
-  } while (0)
+#include "squelch.h"
 
 #define ITER 100
-
-const int verbose = 0;
 
 #if defined (FOP_TYPE_CHAR)
 #  define TYPE_C   char
@@ -96,8 +77,6 @@ int main(int argc, char **argv) {
 
     MPI_Win_create(val_ptr, sizeof(TYPE_C)*nproc, sizeof(TYPE_C), MPI_INFO_NULL, MPI_COMM_WORLD, &win);
 
-#ifdef TEST_MPI3_ROUTINES
-
     /* Test self communication */
 
     reset_vars(val_ptr, res_ptr, win);
@@ -105,7 +84,7 @@ int main(int argc, char **argv) {
     for (i = 0; i < ITER; i++) {
         TYPE_C one = 1, result = -1;
         MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank, 0, win);
-        MPIX_Fetch_and_op(&one, &result, TYPE_MPI, rank, 0, MPI_SUM, win);
+        MPI_Fetch_and_op(&one, &result, TYPE_MPI, rank, 0, MPI_SUM, win);
         MPI_Win_unlock(rank, win);
     }
 
@@ -123,7 +102,7 @@ int main(int argc, char **argv) {
     for (i = 0; i < ITER; i++) {
         TYPE_C one = 1, result = -1;
         MPI_Win_lock(MPI_LOCK_EXCLUSIVE, (rank+1)%nproc, 0, win);
-        MPIX_Fetch_and_op(&one, &result, TYPE_MPI, (rank+1)%nproc, 0, MPI_SUM, win);
+        MPI_Fetch_and_op(&one, &result, TYPE_MPI, (rank+1)%nproc, 0, MPI_SUM, win);
         MPI_Win_unlock((rank+1)%nproc, win);
         if ( CMP(result, i) ) {
             SQUELCH( printf("%d->%d -- NEIGHBOR[%d]: expected result "TYPE_FMT", got "TYPE_FMT"\n", (rank+1)%nproc, rank, i, (TYPE_C) i, result); );
@@ -148,7 +127,7 @@ int main(int argc, char **argv) {
         for (i = 0; i < ITER; i++) {
             TYPE_C one = 1, result;
             MPI_Win_lock(MPI_LOCK_EXCLUSIVE, 0, 0, win);
-            MPIX_Fetch_and_op(&one, &result, TYPE_MPI, 0, 0, MPI_SUM, win);
+            MPI_Fetch_and_op(&one, &result, TYPE_MPI, 0, 0, MPI_SUM, win);
             MPI_Win_unlock(0, win);
         }
     }
@@ -164,7 +143,7 @@ int main(int argc, char **argv) {
     }
     MPI_Win_unlock(rank, win);
 
-    /* Test all-to-all communication */
+    /* Test all-to-all communication (fence) */
 
     reset_vars(val_ptr, res_ptr, win);
 
@@ -174,7 +153,7 @@ int main(int argc, char **argv) {
         MPI_Win_fence(MPI_MODE_NOPRECEDE, win);
         for (j = 0; j < nproc; j++) {
             TYPE_C rank_cnv = (TYPE_C) rank;
-            MPIX_Fetch_and_op(&rank_cnv, &res_ptr[j], TYPE_MPI, j, rank, MPI_SUM, win);
+            MPI_Fetch_and_op(&rank_cnv, &res_ptr[j], TYPE_MPI, j, rank, MPI_SUM, win);
             res_ptr[j] = i*rank;
         }
         MPI_Win_fence(MPI_MODE_NOSUCCEED, win);
@@ -182,7 +161,7 @@ int main(int argc, char **argv) {
 
         for (j = 0; j < nproc; j++) {
             if ( CMP(res_ptr[j], i*rank) ) {
-                SQUELCH( printf("%d->%d -- ALL-TO-ALL[%d]: expected result "TYPE_FMT", got "TYPE_FMT"\n", rank, j, i, (TYPE_C) i*rank, res_ptr[j]); );
+                SQUELCH( printf("%d->%d -- ALL-TO-ALL (FENCE) [%d]: expected result "TYPE_FMT", got "TYPE_FMT"\n", rank, j, i, (TYPE_C) i*rank, res_ptr[j]); );
                 errors++;
             }
         }
@@ -192,13 +171,130 @@ int main(int argc, char **argv) {
     MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank, 0, win);
     for (i = 0; i < nproc; i++) {
         if ( CMP(val_ptr[i], ITER*i) ) {
-            SQUELCH( printf("%d->%d -- ALL-TO-ALL: expected "TYPE_FMT", got "TYPE_FMT"\n", i, rank, (TYPE_C) ITER*i, val_ptr[i]); );
+            SQUELCH( printf("%d->%d -- ALL-TO-ALL (FENCE): expected "TYPE_FMT", got "TYPE_FMT"\n", i, rank, (TYPE_C) ITER*i, val_ptr[i]); );
             errors++;
         }
     }
     MPI_Win_unlock(rank, win);
 
-#endif /* TEST_MPI3_ROUTINES */
+    /* Test all-to-all communication (lock-all) */
+
+    reset_vars(val_ptr, res_ptr, win);
+
+    for (i = 0; i < ITER; i++) {
+        int j;
+
+        MPI_Win_lock_all(0, win);
+        for (j = 0; j < nproc; j++) {
+            TYPE_C rank_cnv = (TYPE_C) rank;
+            MPI_Fetch_and_op(&rank_cnv, &res_ptr[j], TYPE_MPI, j, rank, MPI_SUM, win);
+            res_ptr[j] = i*rank;
+        }
+        MPI_Win_unlock_all(win);
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        for (j = 0; j < nproc; j++) {
+            if ( CMP(res_ptr[j], i*rank) ) {
+                SQUELCH( printf("%d->%d -- ALL-TO-ALL (LOCK-ALL) [%d]: expected result "TYPE_FMT", got "TYPE_FMT"\n", rank, j, i, (TYPE_C) i*rank, res_ptr[j]); );
+                errors++;
+            }
+        }
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank, 0, win);
+    for (i = 0; i < nproc; i++) {
+        if ( CMP(val_ptr[i], ITER*i) ) {
+            SQUELCH( printf("%d->%d -- ALL-TO-ALL (LOCK-ALL): expected "TYPE_FMT", got "TYPE_FMT"\n", i, rank, (TYPE_C) ITER*i, val_ptr[i]); );
+            errors++;
+        }
+    }
+    MPI_Win_unlock(rank, win);
+
+    /* Test all-to-all communication (lock-all+flush) */
+
+    reset_vars(val_ptr, res_ptr, win);
+
+    for (i = 0; i < ITER; i++) {
+        int j;
+
+        MPI_Win_lock_all(0, win);
+        for (j = 0; j < nproc; j++) {
+            TYPE_C rank_cnv = (TYPE_C) rank;
+            MPI_Fetch_and_op(&rank_cnv, &res_ptr[j], TYPE_MPI, j, rank, MPI_SUM, win);
+            res_ptr[j] = i*rank;
+            MPI_Win_flush(j, win);
+        }
+        MPI_Win_unlock_all(win);
+        MPI_Barrier(MPI_COMM_WORLD);
+
+        for (j = 0; j < nproc; j++) {
+            if ( CMP(res_ptr[j], i*rank) ) {
+                SQUELCH( printf("%d->%d -- ALL-TO-ALL (LOCK-ALL+FLUSH) [%d]: expected result "TYPE_FMT", got "TYPE_FMT"\n", rank, j, i, (TYPE_C) i*rank, res_ptr[j]); );
+                errors++;
+            }
+        }
+    }
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank, 0, win);
+    for (i = 0; i < nproc; i++) {
+        if ( CMP(val_ptr[i], ITER*i) ) {
+            SQUELCH( printf("%d->%d -- ALL-TO-ALL (LOCK-ALL+FLUSH): expected "TYPE_FMT", got "TYPE_FMT"\n", i, rank, (TYPE_C) ITER*i, val_ptr[i]); );
+            errors++;
+        }
+    }
+    MPI_Win_unlock(rank, win);
+
+    /* Test NO_OP (neighbor communication) */
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    reset_vars(val_ptr, res_ptr, win);
+
+    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank, 0, win);
+    for (i = 0; i < nproc; i++)
+        val_ptr[i] = (TYPE_C) rank;
+    MPI_Win_unlock(rank, win);
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    for (i = 0; i < ITER; i++) {
+        int target = (rank+1) % nproc;
+
+        MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, win);
+        MPI_Fetch_and_op(NULL, res_ptr, TYPE_MPI, target, 0, MPI_NO_OP, win);
+        MPI_Win_unlock(target, win);
+
+        if (res_ptr[0] != (TYPE_C) target) {
+            SQUELCH( printf("%d->%d -- NOP[%d]: expected "TYPE_FMT", got "TYPE_FMT"\n",
+                            target, rank, i, (TYPE_C) target, res_ptr[0]); );
+            errors++;
+        }
+    }
+
+    /* Test NO_OP (self communication) */
+
+    MPI_Barrier(MPI_COMM_WORLD);
+    reset_vars(val_ptr, res_ptr, win);
+
+    MPI_Win_lock(MPI_LOCK_EXCLUSIVE, rank, 0, win);
+    for (i = 0; i < nproc; i++)
+        val_ptr[i] = (TYPE_C) rank;
+    MPI_Win_unlock(rank, win);
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    for (i = 0; i < ITER; i++) {
+        int target = rank;
+
+        MPI_Win_lock(MPI_LOCK_EXCLUSIVE, target, 0, win);
+        MPI_Fetch_and_op(NULL, res_ptr, TYPE_MPI, target, 0, MPI_NO_OP, win);
+        MPI_Win_unlock(target, win);
+
+        if (res_ptr[0] != (TYPE_C) target) {
+            SQUELCH( printf("%d->%d -- NOP_SELF[%d]: expected "TYPE_FMT", got "TYPE_FMT"\n",
+                            target, rank, i, (TYPE_C) target, res_ptr[0]); );
+            errors++;
+        }
+    }
 
     MPI_Win_free(&win);
 

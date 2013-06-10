@@ -11499,12 +11499,17 @@ if test "$enable_strict_done" != "yes" ; then
     #       compare it to 0 later to see if it was updated.  Also when using strtod()
     #       one needs to compare the return value with 0 to see whether a conversion
     #       was performed.
+    #   -Werror-implicit-function-declaration -- implicit function declarations
+    #       should never be tolerated.  This also ensures that we get quick
+    #       compilation failures rather than later link failures that usually
+    #       come from a function name typo.
     # the embedded newlines in this string are safe because we evaluate each
     # argument in the for-loop below and append them to the CFLAGS with a space
     # as the separator instead
     pac_common_strict_flags="
         -Wall
         -Wextra
+        -Wshorten-64-to-32
         -Wno-missing-field-initializers
         -Wstrict-prototypes
         -Wmissing-prototypes
@@ -11531,6 +11536,7 @@ if test "$enable_strict_done" != "yes" ; then
         -Wvariadic-macros
         -Wno-format-zero-length
 	-Wno-type-limits
+        -Werror-implicit-function-declaration
     "
 
     enable_c89=yes
@@ -11907,7 +11913,7 @@ $as_echo_n "checking whether C compiler option $flag works with an invalid proto
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-        void main(){ return 0; }
+                                                                                                int main(int argc, char **argv){ int foo, bar = 0; foo += 1; return foo; }
 
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
@@ -12953,7 +12959,7 @@ rm -f core conftest.err conftest.$ac_objext \
 # only within a single object file!  This tests that case.
 # Note that there is an extern int PFoo declaration before the
 # pragma.  Some compilers require this in order to make the weak symbol
-# extenally visible.
+# externally visible.
 if test "$has_pragma_weak" = yes ; then
 
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext

@@ -12,6 +12,7 @@ include $(top_srcdir)/src/mpi/datatype/Makefile.mk
 include $(top_srcdir)/src/mpi/debugger/Makefile.mk
 include $(top_srcdir)/src/mpi/errhan/Makefile.mk
 include $(top_srcdir)/src/mpi/group/Makefile.mk
+include $(top_srcdir)/src/mpi/info/Makefile.mk
 include $(top_srcdir)/src/mpi/init/Makefile.mk
 include $(top_srcdir)/src/mpi/misc/Makefile.mk
 include $(top_srcdir)/src/mpi/pt2pt/Makefile.mk
@@ -40,7 +41,7 @@ endif BUILD_PROFILING_LIB
 # $(top_builddir)/bin/mpicc that can't handle more than one include dir.
 #
 # Using a symlink allows us to avoid trying to capture the full dependency chain
-# of MPICH2/mpio.h --> ROMIO/mpio.h --> ROMIO/mpio.h.in --> ROMIO/config.status --> ...MORE_AUTOTOOLS...
+# of MPICH/mpio.h --> ROMIO/mpio.h --> ROMIO/mpio.h.in --> ROMIO/config.status --> ...MORE_AUTOTOOLS...
 BUILT_SOURCES += $(top_builddir)/src/include/mpio.h
 $(top_builddir)/src/include/mpio.h: $(top_builddir)/src/mpi/romio/include/mpio.h
 	if test ! -h $(top_builddir)/src/include/mpio.h ; then \

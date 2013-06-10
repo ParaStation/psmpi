@@ -186,5 +186,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_init_thread( MPI_Fint *, MPI_Fint *, MP
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_init_thread_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
     mpirinitf_(); MPIR_F_NeedInit = 0;
-    *ierr = MPI_Init_thread( 0, 0, *v1, v2 );
+    *ierr = MPI_Init_thread( 0, 0, (int)*v1, v2 );
 }

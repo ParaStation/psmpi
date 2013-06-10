@@ -10,9 +10,9 @@ Create an MPI datatype from a general set of datatypes, displacements, and block
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Type_create_struct(int count,
-                         MPICH2_CONST int array_of_blocklengths[],
-                         MPICH2_CONST MPI_Aint array_of_displacements[],
-                         MPICH2_CONST MPI_Datatype array_of_types[],
+                         const int array_of_blocklengths[],
+                         const MPI_Aint array_of_displacements[],
+                         const MPI_Datatype array_of_types[],
                          MPI_Datatype *newtype)
 </PRE>
 <H2>Input Parameters</H2>
@@ -20,7 +20,7 @@ int MPI_Type_create_struct(int count,
 <DT><B>count </B><DD>number of blocks (integer) --- also number of entries in arrays
 array_of_types, array_of_displacements and array_of_blocklengths
 
-<DT><B>array_of_blocklength </B><DD>number of elements in each block (array of integer)
+<DT><B>array_of_blocklengths </B><DD>number of elements in each block (array of integer)
 
 <DT><B>array_of_displacements </B><DD>byte displacement of each block (array of address integer)
 
@@ -28,7 +28,7 @@ array_of_types, array_of_displacements and array_of_blocklengths
 datatype objects)
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>newtype </B> <DD> new datatype (handle)
 </DL>
 <P>

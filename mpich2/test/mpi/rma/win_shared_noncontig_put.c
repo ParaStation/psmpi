@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2012 by Argonne National Laboratory.
@@ -10,13 +10,6 @@
 #include <assert.h>
 #include <mpi.h>
 #include "mpitest.h"
-
-/* MPI-3 is not yet standardized -- allow MPI-3 routines to be switched off.
- */
-
-#if !defined(USE_STRICT_MPI) && defined(MPICH2)
-#  define TEST_MPI3_ROUTINES 1
-#endif
 
 #define ELEM_PER_PROC 10000
 
@@ -40,16 +33,14 @@ int main(int argc, char **argv) {
     MPI_Info_create(&alloc_shared_info);
     MPI_Info_set(alloc_shared_info, "alloc_shared_noncontig", "true");
 
-#ifdef TEST_MPI3_ROUTINES
-
-    MPIX_Comm_split_type(MPI_COMM_WORLD, MPIX_COMM_TYPE_SHARED, rank, MPI_INFO_NULL, &shm_comm);
+    MPI_Comm_split_type(MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, rank, MPI_INFO_NULL, &shm_comm);
 
     MPI_Comm_rank(shm_comm, &shm_rank);
     MPI_Comm_size(shm_comm, &shm_nproc);
 
     /* Allocate ELEM_PER_PROC integers on each even rank process */
     my_size = (shm_rank % 2 == 0) ? sizeof(int)*ELEM_PER_PROC : 0;
-    MPIX_Win_allocate_shared(my_size, sizeof(int), alloc_shared_info,
+    MPI_Win_allocate_shared(my_size, sizeof(int), alloc_shared_info,
                              shm_comm, &my_base, &shm_win);
 
     for (i = 0; i < ELEM_PER_PROC; i++) {
@@ -69,7 +60,7 @@ int main(int argc, char **argv) {
         int      *base;
         MPI_Aint  size;
 
-        MPIX_Win_shared_query(shm_win, i, &size, &disp_unit, &base);
+        MPI_Win_shared_query(shm_win, i, &size, &disp_unit, &base);
 
         if (i % 2 == 0) {
             assert(size == ELEM_PER_PROC * sizeof(int));
@@ -89,8 +80,6 @@ int main(int argc, char **argv) {
 
     MPI_Win_free(&shm_win);
     MPI_Comm_free(&shm_comm);
-
-#endif /* TEST_MPI3_ROUTINES */
 
     MPI_Info_free(&alloc_shared_info);
 

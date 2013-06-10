@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -28,13 +28,13 @@
 #define FUNCNAME MPIR_Group_translate_ranks_impl
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_Group_translate_ranks_impl(MPID_Group *gp1, int n, const int *ranks1,
-                                    MPID_Group *gp2, int *ranks2)
+int MPIR_Group_translate_ranks_impl(MPID_Group *gp1, int n, const int ranks1[],
+                                    MPID_Group *gp2, int ranks2[])
 {
     int mpi_errno = MPI_SUCCESS;
     int i, g2_idx, l1_pid, l2_pid;
 
-    MPIU_DBG_MSG_S(OTHER,VERBOSE,"gp2->is_local_dense_monotonic=%s\n", (gp2->is_local_dense_monotonic ? "TRUE" : "FALSE"));
+    MPIU_DBG_MSG_S(OTHER,VERBOSE,"gp2->is_local_dense_monotonic=%s", (gp2->is_local_dense_monotonic ? "TRUE" : "FALSE"));
 
     /* Initialize the output ranks */
     for (i=0; i<n; i++)
@@ -114,13 +114,13 @@ fn_fail:
  MPI_Group_translate_ranks - Translates the ranks of processes in one group to 
                              those in another group
 
-  Input Parameters:
+Input Parameters:
 + group1 - group1 (handle) 
 . n - number of ranks in  'ranks1' and 'ranks2'  arrays (integer) 
 . ranks1 - array of zero or more valid ranks in 'group1' 
 - group2 - group2 (handle) 
 
-  Output Parameter:
+Output Parameters:
 . ranks2 - array of corresponding ranks in group2,  'MPI_UNDEFINED'  when no 
   correspondence exists. 
 
@@ -134,8 +134,8 @@ fn_fail:
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Group_translate_ranks(MPI_Group group1, int n, MPICH2_CONST int *ranks1,
-			      MPI_Group group2, int *ranks2)
+int MPI_Group_translate_ranks(MPI_Group group1, int n, const int ranks1[],
+			      MPI_Group group2, int ranks2[])
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Group *group_ptr1 = NULL;

@@ -5,8 +5,8 @@
  */
 /* automatically generated
  *   by:   ./maint/genparams
- *   at:   Mon Oct  8 14:01:08 2012
- *   from: src/util/param/params.yml (md5sum dabefd4ebb90a37693fa984f8332424f)
+ *   at:   Wed Apr 24 10:08:33 2013
+ *   from: src/util/param/params.yml (md5sum 91c960f4c6f9b5a91b7c68ea79732d69)
  *
  * DO NOT EDIT!!!
  */
@@ -32,7 +32,7 @@ struct MPIR_Param_category_t MPIR_Param_categories[MPIR_PARAM_NUM_CATEGORIES] = 
       "intranode communication parameters" },
     { MPIR_PARAM_CATEGORY_ID_developer,
       "developer",
-      "useful for developers working on MPICH2 itself" },
+      "useful for developers working on MPICH itself" },
     { MPIR_PARAM_CATEGORY_ID_memory,
       "memory",
       "affects memory allocation and usage, including MPI object handles" },
@@ -51,6 +51,9 @@ struct MPIR_Param_category_t MPIR_Param_categories[MPIR_PARAM_NUM_CATEGORIES] = 
     { MPIR_PARAM_CATEGORY_ID_threads,
       "threads",
       "multi-threading parameters" },
+    { MPIR_PARAM_CATEGORY_ID_ch3,
+      "ch3",
+      "parameters that control behavior of ch3" },
     { MPIR_PARAM_CATEGORY_ID_nemesis,
       "nemesis",
       "parameters that control behavior of the ch3:nemesis channel" },
@@ -141,6 +144,14 @@ struct MPIR_Param_t MPIR_Param_params[MPIR_PARAM_NUM_PARAMS] = {
       "RMA_NREQUEST_NEW_THRESHOLD",
       "Threshold for the number of new requests since the last attempt to complete pending requests.  Higher values can increase performance,  but may run the risk of exceeding the available number of requests or other internal resources.",
       { MPIR_PARAM_TYPE_INT, 128, 0.0, "", {0,0} }, &MPIR_PARAM_RMA_NREQUEST_NEW_THRESHOLD },
+    { MPIR_PARAM_ID_RMA_LOCK_IMMED,
+      "RMA_LOCK_IMMED",
+      "Issue a request for the passive target RMA lock immediately.  Default behavior is to defer the lock request until the call to MPI_Win_unlock.",
+      { MPIR_PARAM_TYPE_BOOLEAN, 0, 0.0, "", {0,0} }, &MPIR_PARAM_RMA_LOCK_IMMED },
+    { MPIR_PARAM_ID_RMA_MERGE_LOCK_OP_UNLOCK,
+      "RMA_MERGE_LOCK_OP_UNLOCK",
+      "Enable/disable an optimization that merges lock, op, and unlock messages, for single-operation passive target epochs.",
+      { MPIR_PARAM_TYPE_BOOLEAN, 1, 0.0, "", {0,0} }, &MPIR_PARAM_RMA_MERGE_LOCK_OP_UNLOCK },
     { MPIR_PARAM_ID_NOLOCAL,
       "NOLOCAL",
       "If true, force all processes to operate as though all processes are located on another node.  For example, this disables shared memory communication hierarchical collectives.",
@@ -155,7 +166,7 @@ struct MPIR_Param_t MPIR_Param_params[MPIR_PARAM_NUM_PARAMS] = {
       { MPIR_PARAM_TYPE_INT, 1000, 0.0, "", {0,0} }, &MPIR_PARAM_POLLS_BEFORE_YIELD },
     { MPIR_PARAM_ID_MEMDUMP,
       "MEMDUMP",
-      "If true, list any memory that was allocated by MPICH2 and that remains allocated when MPI_Finalize completes.",
+      "If true, list any memory that was allocated by MPICH and that remains allocated when MPI_Finalize completes.",
       { MPIR_PARAM_TYPE_BOOLEAN, 1, 0.0, "", {0,0} }, &MPIR_PARAM_MEMDUMP },
     { MPIR_PARAM_ID_PROCTABLE_SIZE,
       "PROCTABLE_SIZE",
@@ -167,7 +178,7 @@ struct MPIR_Param_t MPIR_Param_params[MPIR_PARAM_NUM_PARAMS] = {
       { MPIR_PARAM_TYPE_BOOLEAN, 1, 0.0, "", {0,0} }, &MPIR_PARAM_PROCTABLE_PRINT },
     { MPIR_PARAM_ID_ERROR_CHECKING,
       "ERROR_CHECKING",
-      "If true, perform checks for errors, typically to verify valid inputs to MPI routines.  Only effective when MPICH2 is configured with --enable-error-checking=runtime .",
+      "If true, perform checks for errors, typically to verify valid inputs to MPI routines.  Only effective when MPICH is configured with --enable-error-checking=runtime .",
       { MPIR_PARAM_TYPE_BOOLEAN, 1, 0.0, "", {0,0} }, &MPIR_PARAM_ERROR_CHECKING },
     { MPIR_PARAM_ID_PRINT_ERROR_STACK,
       "PRINT_ERROR_STACK",
@@ -199,7 +210,7 @@ struct MPIR_Param_t MPIR_Param_params[MPIR_PARAM_NUM_PARAMS] = {
       { MPIR_PARAM_TYPE_INT, 10, 0.0, "", {0,0} }, &MPIR_PARAM_HOST_LOOKUP_RETRIES },
     { MPIR_PARAM_ID_SHM_EAGER_MAX_SZ,
       "SHM_EAGER_MAX_SZ",
-      "This parameter controls the message size at which Nemesis  switches from eager to rendezvous mode.  If this parameter  is set to -1, then Nemesis will choose an appropriate value.",
+      "This parameter controls the message size at which Nemesis  switches from eager to rendezvous mode for shared memory. If this parameter is set to -1, then Nemesis will choose an appropriate value.",
       { MPIR_PARAM_TYPE_INT, -1, 0.0, "", {0,0} }, &MPIR_PARAM_SHM_EAGER_MAX_SZ },
     { MPIR_PARAM_ID_SHM_READY_EAGER_MAX_SZ,
       "SHM_READY_EAGER_MAX_SZ",
@@ -209,6 +220,10 @@ struct MPIR_Param_t MPIR_Param_params[MPIR_PARAM_NUM_PARAMS] = {
       "COMM_OVERRIDES",
       "If set to false, communication override functionality will be disabled for netmods that provide the override feature.  Some netmods may not honor this flag.",
       { MPIR_PARAM_TYPE_BOOLEAN, 1, 0.0, "", {0,0} }, &MPIR_PARAM_COMM_OVERRIDES },
+    { MPIR_PARAM_ID_CH3_EAGER_MAX_MSG_SIZE,
+      "CH3_EAGER_MAX_MSG_SIZE",
+      "This parameter controls the message size at which CH3 switches from eager to rendezvous mode.",
+      { MPIR_PARAM_TYPE_INT, 131072, 0.0, "", {0,0} }, &MPIR_PARAM_CH3_EAGER_MAX_MSG_SIZE },
     { MPIR_PARAM_ID_DEBUG_HOLD,
       "DEBUG_HOLD",
       "If true, causes processes to wait in MPI_Init and MPI_Initthread for a debugger to be attached.  Once the debugger has attached, the variable 'hold' should be set to 0 in order to allow the process to continue (e.g., in gdb, \"set hold=0\").",
@@ -223,11 +238,11 @@ struct MPIR_Param_t MPIR_Param_params[MPIR_PARAM_NUM_PARAMS] = {
       { MPIR_PARAM_TYPE_BOOLEAN, 0, 0.0, "", {0,0} }, &MPIR_PARAM_ENABLE_COLL_FT_RET },
     { MPIR_PARAM_ID_ABORT_ON_LEAKED_HANDLES,
       "ABORT_ON_LEAKED_HANDLES",
-      "If true, MPI will call MPI_Abort at MPI_Finalize if any MPI object handles have been leaked.  For example, if MPI_Comm_dup is called without calling a corresponding MPI_Comm_free.  For uninteresting reasons, enabling this option may prevent all known object leaks from being reported.  MPICH2 must have been configure with \"--enable-g=handlealloc\" or better in order for this functionality to work.",
+      "If true, MPI will call MPI_Abort at MPI_Finalize if any MPI object handles have been leaked.  For example, if MPI_Comm_dup is called without calling a corresponding MPI_Comm_free.  For uninteresting reasons, enabling this option may prevent all known object leaks from being reported.  MPICH must have been configure with \"--enable-g=handlealloc\" or better in order for this functionality to work.",
       { MPIR_PARAM_TYPE_BOOLEAN, 0, 0.0, "", {0,0} }, &MPIR_PARAM_ABORT_ON_LEAKED_HANDLES },
     { MPIR_PARAM_ID_PORT_RANGE,
       "PORT_RANGE",
-      "The MPICH_PORT_RANGE environment variable allows you to specify the range of TCP ports to be used by the process manager and the MPICH2 library. The format of this variable is <low>:<high>.",
+      "The MPICH_PORT_RANGE environment variable allows you to specify the range of TCP ports to be used by the process manager and the MPICH library. The format of this variable is <low>:<high>.",
       { MPIR_PARAM_TYPE_RANGE, -1, 0.0, "", {0,0} }, &MPIR_PARAM_PORT_RANGE },
     { MPIR_PARAM_ID_CTXID_EAGER_SIZE,
       "CTXID_EAGER_SIZE",
@@ -256,6 +271,8 @@ int MPIR_PARAM_COMM_SPLIT_USE_QSORT = 1;
 int MPIR_PARAM_RMA_ACC_IMMED = 1;
 int MPIR_PARAM_RMA_NREQUEST_THRESHOLD = 4000;
 int MPIR_PARAM_RMA_NREQUEST_NEW_THRESHOLD = 128;
+int MPIR_PARAM_RMA_LOCK_IMMED = 0;
+int MPIR_PARAM_RMA_MERGE_LOCK_OP_UNLOCK = 1;
 int MPIR_PARAM_NOLOCAL = 0;
 int MPIR_PARAM_ODD_EVEN_CLIQUES = 0;
 int MPIR_PARAM_POLLS_BEFORE_YIELD = 1000;
@@ -273,6 +290,7 @@ int MPIR_PARAM_HOST_LOOKUP_RETRIES = 10;
 int MPIR_PARAM_SHM_EAGER_MAX_SZ = -1;
 int MPIR_PARAM_SHM_READY_EAGER_MAX_SZ = -2;
 int MPIR_PARAM_COMM_OVERRIDES = 1;
+int MPIR_PARAM_CH3_EAGER_MAX_MSG_SIZE = 131072;
 int MPIR_PARAM_DEBUG_HOLD = 0;
 int MPIR_PARAM_ENABLE_CKPOINT = 0;
 int MPIR_PARAM_ENABLE_COLL_FT_RET = 0;
@@ -361,8 +379,8 @@ int MPIR_Param_init_params(void)
     rc = MPL_env2int("MPIR_PARAM_GATHER_INTER_SHORT_MSG_SIZE", &(MPIR_PARAM_GATHER_INTER_SHORT_MSG_SIZE));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_GATHER_INTER_SHORT_MSG_SIZE");
 
-    rc = MPL_env2int("MPICH2_GATHERV_MIN_PROCS", &(MPIR_PARAM_GATHERV_INTER_SSEND_MIN_PROCS));
-    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH2_GATHERV_MIN_PROCS");
+    rc = MPL_env2int("MPICH_GATHERV_MIN_PROCS", &(MPIR_PARAM_GATHERV_INTER_SSEND_MIN_PROCS));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_GATHERV_MIN_PROCS");
     rc = MPL_env2int("MPICH_GATHERV_INTER_SSEND_MIN_PROCS", &(MPIR_PARAM_GATHERV_INTER_SSEND_MIN_PROCS));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_GATHERV_INTER_SSEND_MIN_PROCS");
     rc = MPL_env2int("MPIR_PARAM_GATHERV_INTER_SSEND_MIN_PROCS", &(MPIR_PARAM_GATHERV_INTER_SSEND_MIN_PROCS));
@@ -397,6 +415,16 @@ int MPIR_Param_init_params(void)
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_RMA_NREQUEST_NEW_THRESHOLD");
     rc = MPL_env2int("MPIR_PARAM_RMA_NREQUEST_NEW_THRESHOLD", &(MPIR_PARAM_RMA_NREQUEST_NEW_THRESHOLD));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_RMA_NREQUEST_NEW_THRESHOLD");
+
+    rc = MPL_env2bool("MPICH_RMA_LOCK_IMMED", &(MPIR_PARAM_RMA_LOCK_IMMED));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_RMA_LOCK_IMMED");
+    rc = MPL_env2bool("MPIR_PARAM_RMA_LOCK_IMMED", &(MPIR_PARAM_RMA_LOCK_IMMED));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_RMA_LOCK_IMMED");
+
+    rc = MPL_env2bool("MPICH_RMA_MERGE_LOCK_OP_UNLOCK", &(MPIR_PARAM_RMA_MERGE_LOCK_OP_UNLOCK));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_RMA_MERGE_LOCK_OP_UNLOCK");
+    rc = MPL_env2bool("MPIR_PARAM_RMA_MERGE_LOCK_OP_UNLOCK", &(MPIR_PARAM_RMA_MERGE_LOCK_OP_UNLOCK));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_RMA_MERGE_LOCK_OP_UNLOCK");
 
     rc = MPL_env2bool("MPICH_NO_LOCAL", &(MPIR_PARAM_NOLOCAL));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_NO_LOCAL");
@@ -526,6 +554,11 @@ int MPIR_Param_init_params(void)
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_COMM_OVERRIDES");
     rc = MPL_env2bool("MPIR_PARAM_COMM_OVERRIDES", &(MPIR_PARAM_COMM_OVERRIDES));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_COMM_OVERRIDES");
+
+    rc = MPL_env2int("MPICH_CH3_EAGER_MAX_MSG_SIZE", &(MPIR_PARAM_CH3_EAGER_MAX_MSG_SIZE));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_CH3_EAGER_MAX_MSG_SIZE");
+    rc = MPL_env2int("MPIR_PARAM_CH3_EAGER_MAX_MSG_SIZE", &(MPIR_PARAM_CH3_EAGER_MAX_MSG_SIZE));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_CH3_EAGER_MAX_MSG_SIZE");
 
     rc = MPL_env2bool("MPICH_DEBUG_HOLD", &(MPIR_PARAM_DEBUG_HOLD));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_DEBUG_HOLD");

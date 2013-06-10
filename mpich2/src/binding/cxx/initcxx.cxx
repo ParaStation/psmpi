@@ -19,17 +19,19 @@ int _mpi_lineno = __LINE__;
 // header isn't C++ clean.  Instead, we just include a definition
 // for size_t.  If this is not the correct size, then edit this line
 // (Note that this is needed only when memory tracing is enabled)
+// FIXME: determine whether the type definition is needed, and include the
+// correct definition.
 typedef unsigned int size_t;
-extern "C" void *MPIU_trmalloc( unsigned int, int, const char [] );
+extern "C" void *MPIU_trmalloc( size_t, int, const char [] );
 extern "C" void MPIU_trfree( void *, int, const char [] );
 extern "C" void MPIU_trdump( void *, int );
 void *operator new(size_t size) {
-    void *p = MPIU_trmalloc( (unsigned int) size, _mpi_lineno, __FILE__ );
+    void *p = MPIU_trmalloc( size, _mpi_lineno, __FILE__ );
     return p;}
 void operator delete(void *p) {
     MPIU_trfree( p, _mpi_lineno, __FILE__ );}
 void *operator new[]( size_t size) {
-    void *p = MPIU_trmalloc( (unsigned int) size, _mpi_lineno, __FILE__ );
+    void *p = MPIU_trmalloc( size, _mpi_lineno, __FILE__ );
     return p;}
 void operator delete[](void *p) {
     MPIU_trfree( p, _mpi_lineno, __FILE__ );}
@@ -241,7 +243,7 @@ const int MODE_NOPRECEDE = MPI_MODE_NOPRECEDE;
 const int MODE_NOPUT = MPI_MODE_NOPUT;
 const int MODE_NOSTORE = MPI_MODE_NOSTORE;
 const int MODE_NOSUCCEED = MPI_MODE_NOSUCCEED;
-const int COMM_TYPE_SHARED = MPIX_COMM_TYPE_SHARED;
+const int COMM_TYPE_SHARED = MPI_COMM_TYPE_SHARED;
 const int COMBINER_CONTIGUOUS = MPI_COMBINER_CONTIGUOUS;
 const int COMBINER_DARRAY = MPI_COMBINER_DARRAY;
 const int COMBINER_DUP = MPI_COMBINER_DUP;
@@ -260,7 +262,7 @@ const int COMBINER_STRUCT_INTEGER = MPI_COMBINER_STRUCT_INTEGER;
 const int COMBINER_STRUCT = MPI_COMBINER_STRUCT;
 const int COMBINER_SUBARRAY = MPI_COMBINER_SUBARRAY;
 const int COMBINER_VECTOR = MPI_COMBINER_VECTOR;
-const int COMBINER_HINDEXED_BLOCK = MPIX_COMBINER_HINDEXED_BLOCK;
+const int COMBINER_HINDEXED_BLOCK = MPI_COMBINER_HINDEXED_BLOCK;
 const int THREAD_FUNNELED = MPI_THREAD_FUNNELED;
 const int THREAD_MULTIPLE = MPI_THREAD_MULTIPLE;
 const int THREAD_SERIALIZED = MPI_THREAD_SERIALIZED;
@@ -348,7 +350,7 @@ void Get_error_string( int errcode, char *name, int &resultlen )
     MPIX_CALLWORLD( MPI_Error_string( errcode, name, &resultlen ) );
 
     }
-Aint Get_address( void *ptr )
+Aint Get_address( const void *ptr )
     {
     MPI_Aint a;
 

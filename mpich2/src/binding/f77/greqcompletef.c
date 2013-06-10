@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_grequest_complete( MPI_Fint *, MPI_Fint
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_grequest_complete_ ( MPI_Fint *v1, MPI_Fint *ierr ){
-    *ierr = MPI_Grequest_complete( *v1 );
+    *ierr = MPI_Grequest_complete( (MPI_Request)*v1 );
 }

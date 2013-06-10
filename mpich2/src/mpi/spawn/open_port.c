@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -37,11 +37,11 @@ int MPIR_Open_port_impl(MPID_Info *info_ptr, char *port_name)
    MPI_Open_port - Establish an address that can be used to establish 
    connections between groups of MPI processes
 
- Input Parameter:
+Input Parameters:
 . info - implementation-specific information on how to establish a 
    port for 'MPI_Comm_accept' (handle) 
 
- Output Parameter:
+Output Parameters:
 . port_name - newly established port (string) 
 
 Notes:

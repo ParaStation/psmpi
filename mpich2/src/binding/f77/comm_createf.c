@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_create( MPI_Fint *, MPI_Fint *, MP
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_comm_create_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *ierr ){
-    *ierr = MPI_Comm_create( (MPI_Comm)(*v1), *v2, (MPI_Comm *)(v3) );
+    *ierr = MPI_Comm_create( (MPI_Comm)(*v1), (MPI_Group)*v2, (MPI_Comm *)(v3) );
 }

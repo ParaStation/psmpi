@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,6 +6,7 @@
  */
 
 #include "mpiimpl.h"
+#include <limits.h>
 
 /* -- Begin Profiling Symbol Block for routine MPI_Type_size */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -36,7 +37,7 @@
 Input Parameters:
 . datatype - datatype (handle) 
 
-Output Parameter:
+Output Parameters:
 . size - datatype size (integer) 
 
 .N SignalSafe
@@ -52,6 +53,7 @@ int MPI_Type_size(MPI_Datatype datatype, int *size)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
+    MPI_Count size_x = MPI_UNDEFINED;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_SIZE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -94,7 +96,12 @@ int MPI_Type_size(MPI_Datatype datatype, int *size)
 
     /* ... body of routine ...  */
 
-    MPID_Datatype_get_size_macro(datatype, *size);
+    mpi_errno = MPIR_Type_size_x_impl(datatype, &size_x);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    MPIU_Assert(size_x >= 0);
+    /* handle overflow: see MPI-3 p.104 */
+    *size = (size_x > INT_MAX) ? MPI_UNDEFINED : (int)size_x;
 
     /* ... end of body of routine ... */
 
@@ -103,7 +110,6 @@ int MPI_Type_size(MPI_Datatype datatype, int *size)
     return mpi_errno;
 
     /* --BEGIN ERROR HANDLING-- */
-#   ifdef HAVE_ERROR_CHECKING
   fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
@@ -113,6 +119,5 @@ int MPI_Type_size(MPI_Datatype datatype, int *size)
     }
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     goto fn_exit;
-#   endif
     /* --END ERROR HANDLING-- */
 }

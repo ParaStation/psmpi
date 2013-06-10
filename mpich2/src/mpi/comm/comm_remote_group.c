@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -76,10 +76,10 @@ int MPIR_Comm_remote_group_impl(MPID_Comm *comm_ptr, MPID_Group **group_ptr)
 MPI_Comm_remote_group - Accesses the remote group associated with 
                         the given inter-communicator
 
-Input Parameter:
+Input Parameters:
 . comm - Communicator (must be an intercommunicator) (handle)
 
-Output Parameter:
+Output Parameters:
 . group - remote group of communicator (handle)
 
 Notes:

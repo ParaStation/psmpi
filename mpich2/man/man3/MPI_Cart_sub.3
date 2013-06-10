@@ -1,9 +1,9 @@
-.TH MPI_Cart_sub 3 "9/20/2012" " " "MPI"
+.TH MPI_Cart_sub 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Cart_sub \-  Partitions a communicator into subgroups which  form lower-dimensional cartesian subgrids 
 .SH SYNOPSIS
 .nf
-int MPI_Cart_sub(MPI_Comm comm, MPICH2_CONST int *remain_dims, MPI_Comm *comm_new)
+int MPI_Cart_sub(MPI_Comm comm, const int remain_dims[], MPI_Comm *newcomm)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -23,7 +23,7 @@ dimension is kept in the subgrid (true) or is dropped (false) (logical
 vector) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B newcomm 

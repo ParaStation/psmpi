@@ -9,7 +9,7 @@
 Reduces values on all processes to a single value 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Reduce(MPICH2_CONST void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
                MPI_Op op, int root, MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -27,7 +27,7 @@ int MPI_Reduce(MPICH2_CONST void *sendbuf, void *recvbuf, int count, MPI_Datatyp
 <DT><B>comm </B><DD>communicator (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>recvbuf </B> <DD> address of receive buffer (choice, 
 significant only at <TT>root</TT>) 
 </DL>

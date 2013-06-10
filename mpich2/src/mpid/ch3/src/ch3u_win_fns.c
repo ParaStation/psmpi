@@ -1,10 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
 #include "mpidimpl.h"
+#include "mpiinfo.h"
 #include "mpidrma.h"
 
 #ifdef USE_MPIU_INSTR
@@ -51,6 +52,9 @@ int MPIDI_CH3U_Win_create_gather( void *base, MPI_Aint size, int disp_unit,
 
     comm_size = (*win_ptr)->comm_ptr->local_size;
     rank      = (*win_ptr)->comm_ptr->rank;
+
+    /* RMA handlers should be set before calling this function */
+    mpi_errno = (*win_ptr)->RMAFns.Win_set_info(*win_ptr, info);
 
     MPIU_INSTR_DURATION_START(wincreate_allgather);
     /* allocate memory for the base addresses, disp_units, and
@@ -218,17 +222,54 @@ int MPIDI_CH3U_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info
                                   void **base_ptr, MPID_Win **win_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPID_Comm *comm_self_ptr = NULL;
+    MPID_Group *group_comm, *group_self;
+    int result;
+    MPIU_CHKPMEM_DECL(1);
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3U_WIN_ALLOCATE_SHARED);
 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_WIN_ALLOCATE_SHARED);
 
-    MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**notimpl");
+#ifdef HAVE_ERROR_CHECKING
+    /* The baseline CH3 implementation only works with MPI_COMM_SELF */
+    MPID_Comm_get_ptr( MPI_COMM_SELF, comm_self_ptr );
+
+    mpi_errno = MPIR_Comm_group_impl(comm_ptr, &group_comm);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    mpi_errno = MPIR_Comm_group_impl(comm_self_ptr, &group_self);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    mpi_errno = MPIR_Group_compare_impl(group_comm, group_self, &result);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    mpi_errno = MPIR_Group_free_impl(group_comm);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    mpi_errno = MPIR_Group_free_impl(group_self);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    if (result != MPI_IDENT) {
+        MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_RMA_SHARED, "**ch3|win_shared_comm");
+    }
+#endif
+
+    mpi_errno = MPIDI_CH3U_Win_allocate(size, disp_unit, info, comm_ptr,
+                                        base_ptr, win_ptr);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    MPIU_CHKPMEM_MALLOC((*win_ptr)->shm_base_addrs, void **,
+                        1 /* comm_size */ * sizeof(void *),
+                        mpi_errno, "(*win_ptr)->shm_base_addrs");
+
+    (*win_ptr)->shm_base_addrs[0] = *base_ptr;
+
+    /* Register the shared memory window free function, which will free the
+       memory allocated here. */
+    (*win_ptr)->RMAFns.Win_free = MPIDI_SHM_Win_free;
 
 fn_exit:
     MPIDI_RMA_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_WIN_ALLOCATE_SHARED);
     return mpi_errno;
     /* --BEGIN ERROR HANDLING-- */
 fn_fail:
+    MPIU_CHKPMEM_REAP();
     goto fn_exit;
     /* --END ERROR HANDLING-- */
 }
@@ -269,4 +310,98 @@ fn_fail:
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
     /* --END ERROR HANDLING-- */
+}
+
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_Win_set_info
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_Win_set_info(MPID_Win *win, MPID_Info *info)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_WIN_SET_INFO);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_WIN_SET_INFO);
+
+    /* No op, info arguments are ignored by default */
+
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_WIN_SET_INFO);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
+}
+
+
+#undef FUNCNAME
+#define FUNCNAME MPIDI_Win_get_info
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+int MPIDI_Win_get_info(MPID_Win *win, MPID_Info **info_used)
+{
+    int mpi_errno = MPI_SUCCESS;
+    MPIDI_STATE_DECL(MPID_STATE_MPIDI_WIN_GET_INFO);
+
+    MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_WIN_GET_INFO);
+
+    /* Allocate an empty info object */
+    mpi_errno = MPIU_Info_alloc(info_used);
+    if (mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
+
+    /* Populate the predefined info keys */
+    if (win->info_args.no_locks)
+        mpi_errno = MPIR_Info_set_impl(*info_used, "no_locks", "true");
+    else
+        mpi_errno = MPIR_Info_set_impl(*info_used, "no_locks", "");
+
+    if (mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
+
+    {
+#define BUFSIZE 32
+        char buf[BUFSIZE];
+        int c = 0;
+        if (win->info_args.accumulate_ordering & MPIDI_ACC_ORDER_RAR)
+            c += snprintf(buf+c, BUFSIZE-c, "%srar", (c > 0) ? "," : "");
+        if (win->info_args.accumulate_ordering & MPIDI_ACC_ORDER_RAW)
+            c += snprintf(buf+c, BUFSIZE-c, "%sraw", (c > 0) ? "," : "");
+        if (win->info_args.accumulate_ordering & MPIDI_ACC_ORDER_WAR)
+            c += snprintf(buf+c, BUFSIZE-c, "%swar", (c > 0) ? "," : "");
+        if (win->info_args.accumulate_ordering & MPIDI_ACC_ORDER_WAW)
+            c += snprintf(buf+c, BUFSIZE-c, "%swaw", (c > 0) ? "," : "");
+
+        MPIR_Info_set_impl(*info_used, "accumulate_ordering", buf);
+        if (mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
+#undef BUFSIZE
+    }
+
+    if (win->info_args.accumulate_ordering == MPIDI_ACC_OPS_SAME_OP)
+        mpi_errno = MPIR_Info_set_impl(*info_used, "accumulate_ops", "same_op");
+    else
+        mpi_errno = MPIR_Info_set_impl(*info_used, "accumulate_ops", "same_op_no_op");
+
+    if (mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
+
+    if (win->create_flavor == MPI_WIN_FLAVOR_SHARED) {
+        if (win->info_args.alloc_shared_noncontig)
+            mpi_errno = MPIR_Info_set_impl(*info_used, "alloc_shared_noncontig", "true");
+        else
+            mpi_errno = MPIR_Info_set_impl(*info_used, "alloc_shared_noncontig", "");
+
+        if (mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
+    }
+    else if (win->create_flavor == MPI_WIN_FLAVOR_ALLOCATE) {
+        if (win->info_args.same_size)
+            mpi_errno = MPIR_Info_set_impl(*info_used, "same_size", "true");
+        else
+            mpi_errno = MPIR_Info_set_impl(*info_used, "same_size", "");
+
+        if (mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
+    }
+
+ fn_exit:
+    MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_WIN_GET_INFO);
+    return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }

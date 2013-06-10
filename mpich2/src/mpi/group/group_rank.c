@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -37,7 +37,7 @@ MPI_Group_rank - Returns the rank of this process in the given group
 Input Parameters:
 . group - group (handle) 
 
-Output Parameter:
+Output Parameters:
 . rank - rank of the calling process in group, or 'MPI_UNDEFINED'  if the 
 process is not a member (integer) 
 

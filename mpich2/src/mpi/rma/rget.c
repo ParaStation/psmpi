@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,44 +6,51 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
-/* -- Begin Profiling Symbol Block for routine MPIX_Rget */
+/* -- Begin Profiling Symbol Block for routine MPI_Rget */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPIX_Rget = PMPIX_Rget
+#pragma weak MPI_Rget = PMPI_Rget
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIX_Rget  MPIX_Rget
+#pragma _HP_SECONDARY_DEF PMPI_Rget  MPI_Rget
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPIX_Rget as PMPIX_Rget
+#pragma _CRI duplicate MPI_Rget as PMPI_Rget
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#undef MPIX_Rget
-#define MPIX_Rget PMPIX_Rget
+#undef MPI_Rget
+#define MPI_Rget PMPI_Rget
 
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPIX_Rget
+#define FUNCNAME MPI_Rget
 
 /*@
-   MPIX_Rget - Get data from a memory window on a remote process
+MPI_Rget - Get data from a memory window on a remote process
 
- Input Parameters:
+
+'MPI_Rget' is similar to 'MPI_Get', except that it allocates a communication
+request object and associates it with the request handle (the argument request)
+that can be used to wait or test for completion. The completion of an 'MPI_Rget'
+operation indicates that the data is available in the origin buffer. If
+origin_addr points to memory attached to a window, then the data becomes
+available in the private copy of this window.
+
+Input Parameters:
 + origin_addr - Address of the buffer in which to receive the data
-. origin_count - number of entries in origin buffer (nonnegative integer) 
-. origin_datatype - datatype of each entry in origin buffer (handle) 
-. target_rank - rank of target (nonnegative integer) 
-. target_disp - displacement from window start to the beginning of the 
-  target buffer (nonnegative integer) 
-. target_count - number of entries in target buffer (nonnegative integer) 
-. target_datatype - datatype of each entry in target buffer (handle) 
-- win - window object used for communication (handle) 
+. origin_count - number of entries in origin buffer (nonnegative integer)
+. origin_datatype - datatype of each entry in origin buffer (handle)
+. target_rank - rank of target (nonnegative integer)
+. target_disp - displacement from window start to the beginning of the
+  target buffer (nonnegative integer)
+. target_count - number of entries in target buffer (nonnegative integer)
+. target_datatype - datatype of each entry in target buffer (handle)
+- win - window object used for communication (handle)
 
- Output Parameter:
+Output Parameters:
 . request - RMA request (handle)
 
 .N ThreadSafe
@@ -57,22 +64,24 @@
 .N MPI_ERR_RANK
 .N MPI_ERR_TYPE
 .N MPI_ERR_WIN
+
+.seealso: MPI_Get
 @*/
-int MPIX_Rget(void *origin_addr, int origin_count, MPI_Datatype
+int MPI_Rget(void *origin_addr, int origin_count, MPI_Datatype
             origin_datatype, int target_rank, MPI_Aint target_disp,
             int target_count, MPI_Datatype target_datatype, MPI_Win
             win, MPI_Request *request)
 {
-    static const char FCNAME[] = "MPIX_Rget";
+    static const char FCNAME[] = "MPI_Rget";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
     MPID_Request *request_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIX_RGET);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_RGET);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPIX_RGET);
+    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_RGET);
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -103,7 +112,7 @@ int MPIX_Rget(void *origin_addr, int origin_count, MPI_Datatype
             MPIR_ERRTEST_DATATYPE(origin_datatype, "origin_datatype", mpi_errno);
             MPIR_ERRTEST_COUNT(target_count, mpi_errno);
             MPIR_ERRTEST_DATATYPE(target_datatype, "target_datatype", mpi_errno);
-            if (win_ptr->create_flavor != MPIX_WIN_FLAVOR_DYNAMIC)
+            if (win_ptr->create_flavor != MPI_WIN_FLAVOR_DYNAMIC)
                 MPIR_ERRTEST_DISP(target_disp, mpi_errno);
 
             if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN)
@@ -138,8 +147,6 @@ int MPIX_Rget(void *origin_addr, int origin_count, MPI_Datatype
 
     /* ... body of routine ...  */
     
-    if (target_rank == MPI_PROC_NULL) goto fn_exit;
-
     mpi_errno = MPIU_RMA_CALL(win_ptr,
                               Rget(origin_addr, origin_count, origin_datatype,
                                   target_rank, target_disp, target_count,
@@ -151,7 +158,7 @@ int MPIX_Rget(void *origin_addr, int origin_count, MPI_Datatype
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPIX_RGET);
+    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_RGET);
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
@@ -160,7 +167,7 @@ int MPIX_Rget(void *origin_addr, int origin_count, MPI_Datatype
 #   ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno = MPIR_Err_create_code(
-            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpix_rget", "**mpix_rget %p %d %D %d %d %d %D %W %p",
+            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_rget", "**mpi_rget %p %d %D %d %d %d %D %W %p",
             origin_addr, origin_count, origin_datatype, target_rank, target_disp, target_count, target_datatype, win, request);
     }
 #   endif

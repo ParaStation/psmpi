@@ -55,6 +55,13 @@
 /* Define if FTB is enabled */
 #undef ENABLE_FTB
 
+/* Define to 1 to enable nemesis-related MPI_T performance variables */
+#undef ENABLE_NEM_STATISTICS
+
+/* Define to 1 to enable message receive queue-related MPI_T performance
+   variables */
+#undef ENABLE_RECVQ_STATISTICS
+
 /* The value of false in Fortran */
 #undef F77_FALSE_VALUE
 
@@ -149,9 +156,6 @@
 
 /* Define to 1 if you have the <complex.h> header file. */
 #undef HAVE_COMPLEX_H
-
-/* Define if CPP supports macros with a variable number arguments */
-#undef HAVE_CPP_VARARGS
 
 /* Define if CPU_SET and CPU_ZERO defined */
 #undef HAVE_CPU_SET_MACROS
@@ -294,14 +298,8 @@
 /* Define to 1 if you have the `cr' library (-lcr). */
 #undef HAVE_LIBCR
 
-/* Define to 1 if you have the `elan' library (-lelan). */
-#undef HAVE_LIBELAN
-
 /* Define to 1 if you have the `ftb' library (-lftb). */
 #undef HAVE_LIBFTB
-
-/* Define to 1 if you have the `gm' library (-lgm). */
-#undef HAVE_LIBGM
 
 /* Define to 1 if you have the `myriexpress' library (-lmyriexpress). */
 #undef HAVE_LIBMYRIEXPRESS
@@ -788,6 +786,12 @@
 /* Size of an MPI_STATUS, in Fortran, in Fortran integers */
 #undef MPIF_STATUS_SIZE
 
+/* limits.h _MAX constant for MPI_Aint */
+#undef MPIR_AINT_MAX
+
+/* limits.h _MAX constant for MPI_Count */
+#undef MPIR_COUNT_MAX
+
 /* a C type used to compute C++ bool reductions */
 #undef MPIR_CXX_BOOL_CTYPE
 
@@ -823,6 +827,9 @@
 
 /* C type to use for MPI_INTEGER8 */
 #undef MPIR_INTEGER8_CTYPE
+
+/* limits.h _MAX constant for MPI_Offset */
+#undef MPIR_OFFSET_MAX
 
 /* MPIR_PINT_FMT_DEC_SPEC is the format specifier for printing Pint as a
    decimal */
@@ -1096,6 +1103,10 @@
 /* Define if file should be used for name publisher */
 #undef USE_FILE_FOR_NAMEPUB
 
+/* Define if the length of a CHARACTER*(*) string in Fortran should be passed
+   as size_t instead of int */
+#undef USE_FORT_STR_LEN_SIZET
+
 /* Define to use ='s and spaces in the string utilities. */
 #undef USE_HUMAN_READABLE_TOKENS
 
@@ -1279,7 +1290,7 @@
 
 /* Include nopackage.h to undef autoconf-defined macros that cause conflicts in
  * subpackages.  This should not be necessary, but some packages are too
- * tightly intertwined right now (such as ROMIO and the MPICH2 core) */
+ * tightly intertwined right now (such as ROMIO and the MPICH core) */
 #include "nopackage.h"
 
 #endif /* !defined(MPICHCONF_H_INCLUDED) */

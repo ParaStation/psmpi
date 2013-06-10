@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2003 by Argonne National Laboratory.
@@ -28,12 +28,9 @@ int main(int argc, char **argv)
     MPI_Win_create(&counter, sizeof(int), sizeof(int), MPI_INFO_NULL,
                    MPI_COMM_WORLD, &win);
 
-/* Allow MPI-3 functionality tests to be switched off. */
-#if !defined(USE_STRICT_MPI) && defined(MPICH2)
-
     for (i = 0; i < NITER; i++) {
         MPI_Win_lock(MPI_LOCK_SHARED, rank, 0, win);
-        MPIX_Get_accumulate(&acc_val, 1, MPI_INT, &out_val, 1, MPI_INT,
+        MPI_Get_accumulate(&acc_val, 1, MPI_INT, &out_val, 1, MPI_INT,
                             rank, 0, 1, MPI_INT, MPI_SUM, win);
         MPI_Win_unlock(rank, win);
 
@@ -44,11 +41,9 @@ int main(int argc, char **argv)
         }
     }
 
-#endif
-
     MPI_Win_free(&win);
 
-    if (errors == 0)
+    if (errors == 0 && rank == 0)
         printf(" No errors\n");
 
     MPI_Finalize();

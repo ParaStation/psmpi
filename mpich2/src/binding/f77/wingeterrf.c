@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_get_errhandler( MPI_Fint *, MPI_Fin
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_win_get_errhandler_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
-    *ierr = MPI_Win_get_errhandler( *v1, v2 );
+    *ierr = MPI_Win_get_errhandler( (MPI_Win)*v1, v2 );
 }

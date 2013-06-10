@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -127,7 +127,7 @@ Input Parameters:
 . cancel_fn - callback function invoked when request is cancelled (function) 
 - extra_state - Extra state passed to the above functions.
 
-Output Parameter:
+Output Parameters:
 .  request - Generalized request (handle)
 
  Notes on the callback functions:
@@ -372,9 +372,9 @@ int MPIX_Grequest_class_allocate(MPIX_Grequest_class greq_class,
 #undef FUNCNAME
 #define FUNCNAME MPIX_Grequest_start
 
-int MPIX_Grequest_start( MPI_Grequest_query_function *query_fn, 
-			MPI_Grequest_free_function *free_fn, 
-			MPI_Grequest_cancel_function *cancel_fn, 
+int MPIX_Grequest_start( MPI_Grequest_query_function *query_fn,
+			MPI_Grequest_free_function *free_fn,
+			MPI_Grequest_cancel_function *cancel_fn,
 			MPIX_Grequest_poll_function *poll_fn,
 			MPIX_Grequest_wait_function *wait_fn,
 			void *extra_state, MPI_Request *request )
@@ -383,14 +383,39 @@ int MPIX_Grequest_start( MPI_Grequest_query_function *query_fn,
     MPID_Request *lrequest_ptr;
 
     *request = MPI_REQUEST_NULL;
-    mpi_errno = MPIR_Grequest_start_impl(query_fn, free_fn, cancel_fn, extra_state, &lrequest_ptr);
+    mpi_errno = MPIX_Grequest_start_impl(query_fn, free_fn, cancel_fn, poll_fn, wait_fn, extra_state, &lrequest_ptr);
 
-    if (mpi_errno == MPI_SUCCESS)
-    {
+    if (mpi_errno == MPI_SUCCESS) {
         *request = lrequest_ptr->handle;
-        lrequest_ptr->greq_fns->poll_fn = poll_fn;
-        lrequest_ptr->greq_fns->wait_fn = wait_fn;
     }
 
     return mpi_errno;
 }
+
+
+#ifndef MPICH_MPI_FROM_PMPI
+
+#undef FUNCNAME
+#define FUNCNAME MPIX_Grequest_start_impl
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPIX_Grequest_start_impl( MPI_Grequest_query_function *query_fn,
+                              MPI_Grequest_free_function *free_fn,
+                              MPI_Grequest_cancel_function *cancel_fn,
+                              MPIX_Grequest_poll_function *poll_fn,
+                              MPIX_Grequest_wait_function *wait_fn,
+                              void *extra_state, MPID_Request **request )
+{
+    int mpi_errno;
+
+    mpi_errno = MPIR_Grequest_start_impl(query_fn, free_fn, cancel_fn, extra_state, request);
+
+    if (mpi_errno == MPI_SUCCESS) {
+        (*request)->greq_fns->poll_fn = poll_fn;
+        (*request)->greq_fns->wait_fn = wait_fn;
+    }
+
+    return mpi_errno;
+}
+
+#endif /* MPICH_MPI_FROM_PMPI */

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -33,10 +33,10 @@
 /*@
     MPI_Address - Gets the address of a location in memory
 
-Input Parameter:
+Input Parameters:
 . location - location in caller memory (choice)
 
-Output Parameter:
+Output Parameters:
 . address - address of location (address integer)
 
     Note:
@@ -57,7 +57,7 @@ The replacement for this routine is 'MPI_Get_address'.
 .N MPI_SUCCESS
 .N MPI_ERR_OTHER
 @*/
-int MPI_Address(MPICH2_CONST void *location, MPI_Aint *address)
+int MPI_Address(const void *location, MPI_Aint *address)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ADDRESS);

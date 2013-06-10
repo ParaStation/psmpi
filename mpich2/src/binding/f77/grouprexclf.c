@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_group_range_excl( MPI_Fint *, MPI_Fint 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_group_range_excl_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint v3[], MPI_Fint *v4, MPI_Fint *ierr ){
-    *ierr = MPI_Group_range_excl( *v1, *v2, (int (*)[3]) v3, (MPI_Group *)(v4) );
+    *ierr = MPI_Group_range_excl( (MPI_Group)*v1, (int)*v2, (int (*)[3]) v3, (MPI_Group *)(v4) );
 }

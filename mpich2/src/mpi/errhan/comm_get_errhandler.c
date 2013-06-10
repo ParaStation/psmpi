@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -49,10 +49,10 @@ void MPIR_Comm_get_errhandler_impl(MPID_Comm *comm_ptr, MPID_Errhandler **errhan
 /*@
    MPI_Comm_get_errhandler - Get the error handler attached to a communicator
 
-   Input Parameter:
+Input Parameters:
 . comm - communicator (handle) 
 
-   Output Parameter:
+Output Parameters:
 . errhandler - handler currently associated with communicator (handle) 
 
 .N ThreadSafeNoUpdate

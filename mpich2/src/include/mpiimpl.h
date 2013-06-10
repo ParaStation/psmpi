@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*  
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -59,6 +59,37 @@
 #endif
 #endif
 
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
+#endif
+
+#if defined(HAVE_LONG_LONG_INT)
+/* tt#1776: some platforms have "long long" but not a LLONG_MAX/ULLONG_MAX,
+ * usually because some feature test macro has turned them off in glibc's
+ * features.h header b/c we are not in a >=C99 mode.  Use well-defined unsigned
+ * integer overflow to determine ULLONG_MAX, and assume two's complement for
+ * determining LLONG_MAX (already assumed elsewhere in MPICH). */
+#ifndef ULLONG_MIN
+#define ULLONG_MIN (0) /* trivial */
+#endif
+#ifndef ULLONG_MAX
+#define ULLONG_MAX ((unsigned long long)0 - 1)
+#endif
+#ifndef LLONG_MAX
+/* slightly tricky (values in binary):
+ * - put a 1 in the second-to-msb digit                   (0100...0000)
+ * - sub 1, giving all 1s starting at third-to-msb digit  (0011...1111)
+ * - shift left 1                                         (0111...1110)
+ * - add 1, yielding all 1s in positive space             (0111...1111) */
+#define LLONG_MAX (((((long long) 1 << (sizeof(long long) * CHAR_BIT - 2)) - 1 ) << 1) + 1)
+#endif
+#ifndef LLONG_MIN
+/* (1000...0000) is the most negative value in a twos-complement representation,
+ * which is the bitwise complement of the most positive value */
+#define LLONG_MIN (~LLONG_MAX)
+#endif
+#endif /* defined(HAVE_LONG_LONG_INT) */
+
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
 #endif
@@ -116,7 +147,7 @@ int usleep(useconds_t usec);
 /* 
    Include the implementation definitions (e.g., error reporting, thread
    portability)
-   More detailed documentation is contained in the MPICH2 and ADI3 manuals.
+   More detailed documentation is contained in the MPICH and ADI3 manuals.
  */
 /* FIXME: ... to do ... */
 #include "mpitypedefs.h"
@@ -171,7 +202,7 @@ static MPIU_DBG_INLINE_KEYWORD void MPIUI_Memcpy(void * dst, const void * src, s
    FIXME: Document all of these macros
 
    NOTE: These macros and values are deprecated.  See 
-   www.mcs.anl.gov/mpi/mpich2/developer/design/debugmsg.htm for 
+   www.mcs.anl.gov/mpi/mpich/developer/design/debugmsg.htm for 
    the new design (only partially implemented at this time).
    
    The implementation is in mpidbg.h
@@ -417,7 +448,7 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_File_get_ptr(a,ptr)       MPID_Get_ptr(File,a,ptr)
 #define MPID_Errhandler_get_ptr(a,ptr) MPID_Getb_ptr(Errhandler,a,0x3,ptr)
 #define MPID_Op_get_ptr(a,ptr)         MPID_Getb_ptr(Op,a,0x000000ff,ptr)
-#define MPID_Info_get_ptr(a,ptr)       MPID_Get_ptr(Info,a,ptr)
+#define MPID_Info_get_ptr(a,ptr)       MPID_Getb_ptr(Info,a,0x03ffffff,ptr)
 #define MPID_Win_get_ptr(a,ptr)        MPID_Get_ptr(Win,a,ptr)
 #define MPID_Request_get_ptr(a,ptr)    MPID_Get_ptr(Request,a,ptr)
 #define MPID_Grequest_class_get_ptr(a,ptr) MPID_Get_ptr(Grequest_class,a,ptr)
@@ -584,6 +615,8 @@ typedef struct MPID_Info {
 } MPID_Info;
 extern MPIU_Object_alloc_t MPID_Info_mem;
 /* Preallocated info objects */
+#define MPID_INFO_N_BUILTIN 2
+extern MPID_Info MPID_Info_builtin[MPID_INFO_N_BUILTIN];
 extern MPID_Info MPID_Info_direct[];
 /* ------------------------------------------------------------------------- */
 
@@ -792,7 +825,7 @@ extern MPID_Errhandler MPID_Errhandler_direct[];
   field of the 'keyval'.
 
   Because 'MPI_Comm', 'MPI_Win', and 'MPI_Datatype' are all 'int's in 
-  MPICH2, we use a single C copy function rather than have separate
+  MPICH, we use a single C copy function rather than have separate
   ones for the Communicator, Window, and Datatype attributes.
 
   There are no corresponding typedefs for the Fortran functions.  The 
@@ -838,7 +871,7 @@ typedef struct MPID_Copy_function {
   field of the 'keyval'.
 
   Because 'MPI_Comm', 'MPI_Win', and 'MPI_Datatype' are all 'int's in 
-  MPICH2, we use a single C delete function rather than have separate
+  MPICH, we use a single C delete function rather than have separate
   ones for the Communicator, Window, and Datatype attributes.
 
   There are no corresponding typedefs for the Fortran functions.  The 
@@ -1198,9 +1231,11 @@ typedef struct MPID_Comm {
                                               implementing the collective 
                                               routines */
     struct MPID_TopoOps  *topo_fns; /* Pointer to a table of functions
-				       implementting the topology routines
-				    */
+				       implementting the topology routines */
     int next_sched_tag;             /* used by the NBC schedule code to allocate tags */
+
+    MPID_Info *info;                /* Hints to the communicator */
+
 #ifdef MPID_HAS_HETERO
     int is_hetero;
 #endif
@@ -1255,6 +1290,8 @@ static inline int MPIR_Comm_release(MPID_Comm * comm_ptr, int isDisconnect)
 */
 int MPIR_Comm_release_always(MPID_Comm *comm_ptr, int isDisconnect);
 
+/* applies the specified info chain to the specified communicator */
+int MPIR_Comm_apply_hints(MPID_Comm *comm_ptr, MPID_Info *info_ptr);
 
 /* Preallocated comm objects.  There are 3: comm_world, comm_self, and 
    a private (non-user accessible) dup of comm world that is provided 
@@ -1522,6 +1559,31 @@ MPID_Progress_state;
 /* end of mpirma.h (in src/mpi/rma?) */
 /* ------------------------------------------------------------------------- */
 
+/*
+ * To provide more flexibility in the handling of RMA operations, we provide
+ * these options:
+ *
+ *  Statically defined ADI routines
+ *      MPID_Put etc, provided by the ADI
+ *  Dynamically defined routines
+ *      A function table is used, initialized during window creation
+ *
+ * Which of these is used is selected by the device.  If USE_MPID_RMA_TABLE is
+ * defined, then the function table is used.  Otherwise, the calls turn into
+ * MPID_<Rma operation>, e.g., MPID_Put or MPID_Win_create.
+ */
+
+/* We need to export this header file (at least the struct) to the
+   device, so that it can implement the init routine. */
+#ifdef USE_MPID_RMA_TABLE
+#define MPIU_RMA_CALL(winptr,funccall) (winptr)->RMAFns.funccall
+
+#else
+/* Just use the MPID_<fcn> version of the function */
+#define MPIU_RMA_CALL(winptr,funccall) MPID_##funccall
+
+#endif /* USE_MPID_RMA_TABLE */
+
 /* Windows */
 #ifdef USE_MPID_RMA_TABLE
 struct MPID_Win;
@@ -1549,6 +1611,9 @@ typedef struct MPID_RMA_Ops {
     int (*Win_attach)(struct MPID_Win *, void *, MPI_Aint);
     int (*Win_detach)(struct MPID_Win *, const void *);
     int (*Win_shared_query)(struct MPID_Win *, int, MPI_Aint *, int *, void *);
+
+    int (*Win_set_info)(struct MPID_Win *, MPID_Info *);
+    int (*Win_get_info)(struct MPID_Win *, MPID_Info **);
 
     int (*Win_lock_all)(int, struct MPID_Win *);
     int (*Win_unlock_all)(struct MPID_Win *);
@@ -1623,23 +1688,18 @@ typedef struct MPID_RMA_Ops {
   S*/
 typedef struct MPID_Win {
     MPIU_OBJECT_HEADER; /* adds handle and ref_count fields */
-    int fence_cnt;     /* 0 = no fence has been called; 
-                          1 = fence has been called */ 
     MPID_Errhandler *errhandler;  /* Pointer to the error handler structure */
     void *base;
     MPI_Aint    size;        
     int          disp_unit;      /* Displacement unit of *local* window */
     MPID_Attribute *attributes;
     MPID_Group *start_group_ptr; /* group passed in MPI_Win_start */
-    int start_assert;            /* assert passed to MPI_Win_start */
     MPID_Comm *comm_ptr;         /* Pointer to comm of window (dup) */
     int         myrank;          /* Rank of this process in comm (used to 
 				    detect operations on self) */
-    int lockRank;                /* If within an MPI_Win_lock epoch, 
-				    the rank that we locked */
 #ifdef USE_THREADED_WINDOW_CODE
     /* These were causing compilation errors.  We need to figure out how to
-       integrate threads into MPICH2 before including these fields. */
+       integrate threads into MPICH before including these fields. */
     /* FIXME: The test here should be within a test for threaded support */
 #ifdef HAVE_PTHREAD_H
     pthread_t wait_thread_id; /* id of thread handling MPI_Win_wait */
@@ -1678,12 +1738,6 @@ typedef struct MPID_Win {
 extern MPIU_Object_alloc_t MPID_Win_mem;
 /* Preallocated win objects */
 extern MPID_Win MPID_Win_direct[];
-
-enum MPID_Win_lock_states { 
-    /* LOCKED = 0, 1, ... */
-    MPID_WIN_STATE_UNLOCKED   = -1,
-    MPID_WIN_STATE_LOCKED_ALL = -2
-};
 
 /* ------------------------------------------------------------------------- */
 /* also in mpirma.h ?*/
@@ -2102,7 +2156,7 @@ typedef struct MPICH_PerProcess_t {
 extern MPICH_PerProcess_t MPIR_Process;
 
 /* ------------------------------------------------------------------------- */
-/* In MPICH2, each function has an "enter" and "exit" macro.  These can be 
+/* In MPICH, each function has an "enter" and "exit" macro.  These can be 
  * used to add various features to each function at compile time, or they
  * can be set to empty to provide the fastest possible production version.
  *
@@ -2419,7 +2473,7 @@ int MPIR_Grequest_waitall(int count, MPID_Request * const *  request_ptrs);
   line arguments are used to control the behavior of the implementation. 
   Many of these values must be determined at the time that 'MPID_Init' 
   is called.  These all should be considered in the context of the 
-  parameter routines described in the MPICH2 Design Document.
+  parameter routines described in the MPICH Design Document.
 
   Are there recommended environment variable names?  For example, in ADI-2,
   there are many debugging options that are part of the common device.
@@ -3230,6 +3284,8 @@ int MPID_Win_shared_query(MPID_Win *win, int rank, MPI_Aint *size, int *disp_uni
 int MPID_Win_create_dynamic(MPID_Info *info, MPID_Comm *comm, MPID_Win **win);
 int MPID_Win_attach(MPID_Win *win, void *base, MPI_Aint size);
 int MPID_Win_detach(MPID_Win *win, const void *base);
+int MPID_Win_get_info(MPID_Win *win, MPID_Info **info_used);
+int MPID_Win_set_info(MPID_Win *win, MPID_Info *info);
 
 int MPID_Get_accumulate(const void *origin_addr, int origin_count,
                         MPI_Datatype origin_datatype, void *result_addr, int result_count,
@@ -3443,8 +3499,8 @@ enum MPIR_T_pvar_impl_kind {
 };
 
 /* These are descriptors that lower level intialization code creates and feeds
- * into the overall MPIX_T_pvar_ system in order to permit the upper level code
- * to implement MPIX_T_pvar_{get_num,get_info,handle_alloc}. */
+ * into the overall MPI_T_pvar_ system in order to permit the upper level code
+ * to implement MPI_T_pvar_{get_num,get_info,handle_alloc}. */
 struct MPIR_T_pvar_info {
     int idx; /* pvar index value for pvar_get_info and friends */
 
@@ -3498,7 +3554,7 @@ struct MPIR_T_pvar_hnd_vtable {
 };
 
 /* Called by lower-level initialization code to add pvars to the global list.
- * Will cause the value returned by MPIX_T_pvar_get_num to be incremented and
+ * Will cause the value returned by MPI_T_pvar_get_num to be incremented and
  * sets up that new index to work with get_info, handle_alloc, etc. */
 int MPIR_T_pvar_add(const char *name,
                     enum MPIR_T_verbosity_t verbosity,
@@ -4170,36 +4226,43 @@ int MPIR_Iexscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype dat
 int MPIR_Ialltoallw_intra(const void *sendbuf, const int *sendcounts, const int *sdispls, const MPI_Datatype *sendtypes, void *recvbuf, const int *recvcounts, const int *rdispls, const MPI_Datatype *recvtypes, MPID_Comm *comm_ptr, MPID_Sched_t s);
 int MPIR_Ialltoallw_inter(const void *sendbuf, const int *sendcounts, const int *sdispls, const MPI_Datatype *sendtypes, void *recvbuf, const int *recvcounts, const int *rdispls, const MPI_Datatype *recvtypes, MPID_Comm *comm_ptr, MPID_Sched_t s);
 
-/* begin impl functions for MPI_T (MPIX_T_ right now) */
+/* begin impl functions for MPI_T (MPI_T_ right now) */
 int MPIR_T_init_thread_impl(int required, int *provided);
 int MPIR_T_finalize_impl(void);
-int MPIR_T_enum_get_info_impl(MPIX_T_enum enumtype, int num, char *name, int *name_len);
-int MPIR_T_enum_get_item_impl(MPIX_T_enum enumtype, int num, int *value, char *name, int *name_len);
+int MPIR_T_enum_get_info_impl(MPI_T_enum enumtype, int *num, char *name, int *name_len);
+int MPIR_T_enum_get_item_impl(MPI_T_enum enumtype, int num, int *value, char *name, int *name_len);
 int MPIR_T_cvar_get_num_impl(int *num_cvar);
-int MPIR_T_cvar_get_info_impl(int cvar_index, char *name, int *name_len, int *verbosity, MPI_Datatype *datatype, MPIX_T_enum *enumtype, char *desc, int *desc_len, int *binding, int *scope);
-int MPIR_T_cvar_handle_alloc_impl(int cvar_index, void *obj_handle, MPIX_T_cvar_handle *handle, int *count);
-int MPIR_T_cvar_handle_free_impl(MPIX_T_cvar_handle *handle);
-int MPIR_T_cvar_read_impl(MPIX_T_cvar_handle handle, void *buf);
-int MPIR_T_cvar_write_impl(MPIX_T_cvar_handle handle, void *buf);
+int MPIR_T_cvar_get_info_impl(int cvar_index, char *name, int *name_len, int *verbosity, MPI_Datatype *datatype, MPI_T_enum *enumtype, char *desc, int *desc_len, int *binding, int *scope);
+int MPIR_T_cvar_handle_alloc_impl(int cvar_index, void *obj_handle, MPI_T_cvar_handle *handle, int *count);
+int MPIR_T_cvar_handle_free_impl(MPI_T_cvar_handle *handle);
+int MPIR_T_cvar_read_impl(MPI_T_cvar_handle handle, void *buf);
+int MPIR_T_cvar_write_impl(MPI_T_cvar_handle handle, void *buf);
 int MPIR_T_pvar_get_num_impl(int *num_pvar);
-int MPIR_T_pvar_get_info_impl(int pvar_index, char *name, int *name_len, int *verbosity, int *var_class, MPI_Datatype *datatype, MPIX_T_enum *enumtype, char *desc, int *desc_len, int *binding, int *readonly, int *continuous, int *atomic);
-int MPIR_T_pvar_session_create_impl(MPIX_T_pvar_session *session);
-int MPIR_T_pvar_session_free_impl(MPIX_T_pvar_session *session);
-int MPIR_T_pvar_handle_alloc_impl(MPIX_T_pvar_session session, int pvar_index, void *obj_handle, MPIX_T_pvar_handle *handle, int *count);
-int MPIR_T_pvar_handle_free_impl(MPIX_T_pvar_session session, MPIX_T_pvar_handle *handle);
-int MPIR_T_pvar_start_impl(MPIX_T_pvar_session session, MPIX_T_pvar_handle handle);
-int MPIR_T_pvar_stop_impl(MPIX_T_pvar_session session, MPIX_T_pvar_handle handle);
-int MPIR_T_pvar_read_impl(MPIX_T_pvar_session session, MPIX_T_pvar_handle handle, void *buf);
-int MPIR_T_pvar_write_impl(MPIX_T_pvar_session session, MPIX_T_pvar_handle handle, void *buf);
-int MPIR_T_pvar_reset_impl(MPIX_T_pvar_session session, MPIX_T_pvar_handle handle);
-int MPIR_T_pvar_readreset_impl(MPIX_T_pvar_session session, MPIX_T_pvar_handle handle, void *buf);
+int MPIR_T_pvar_get_info_impl(int pvar_index, char *name, int *name_len, int *verbosity, int *var_class, MPI_Datatype *datatype, MPI_T_enum *enumtype, char *desc, int *desc_len, int *binding, int *readonly, int *continuous, int *atomic);
+int MPIR_T_pvar_session_create_impl(MPI_T_pvar_session *session);
+int MPIR_T_pvar_session_free_impl(MPI_T_pvar_session *session);
+int MPIR_T_pvar_handle_alloc_impl(MPI_T_pvar_session session, int pvar_index, void *obj_handle, MPI_T_pvar_handle *handle, int *count);
+int MPIR_T_pvar_handle_free_impl(MPI_T_pvar_session session, MPI_T_pvar_handle *handle);
+int MPIR_T_pvar_start_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle);
+int MPIR_T_pvar_stop_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle);
+int MPIR_T_pvar_read_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, void *buf);
+int MPIR_T_pvar_write_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, void *buf);
+int MPIR_T_pvar_reset_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle);
+int MPIR_T_pvar_readreset_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, void *buf);
 int MPIR_T_category_get_num_impl(int *num_cat);
 int MPIR_T_category_get_info_impl(int cat_index, char *name, int *name_len, char *desc, int *desc_len, int *num_controlvars, int *num_pvars, int *num_categories);
 int MPIR_T_category_get_cvars_impl(int cat_index, int len, int indices[]);
-int MPIR_T_category_get_pvars_impl(int cat_index[], int len, int indices[]);
+int MPIR_T_category_get_pvars_impl(int cat_index, int len, int indices[]);
 int MPIR_T_category_get_categories_impl(int cat_index, int len, int indices[]);
 int MPIR_T_category_changed_impl(int *stamp);
-/* end impl functions for MPI_T (MPIX_T_ right now) */
+/* end impl functions for MPI_T (MPI_T_ right now) */
+
+/* MPI-3 "large count" impl routines */
+int MPIR_Get_elements_x_impl(const MPI_Status *status, MPI_Datatype datatype, MPI_Count *elements);
+int MPIR_Status_set_elements_x_impl(MPI_Status *status, MPI_Datatype datatype, MPI_Count count);
+void MPIR_Type_get_extent_x_impl(MPI_Datatype datatype, MPI_Count *lb, MPI_Count *extent);
+void MPIR_Type_get_true_extent_x_impl(MPI_Datatype datatype, MPI_Count *true_lb, MPI_Count *true_extent);
+int MPIR_Type_size_x_impl(MPI_Datatype datatype, MPI_Count *size);
 
 int MPIR_T_is_initialized(void);
 
@@ -4216,6 +4279,10 @@ int MPIR_Comm_init(MPID_Comm *);
 
 /* Miscellaneous */
 void MPIU_SetTimeout( int );
+
+/* Communicator info hint functions */
+typedef int (*MPIR_Comm_hint_fn_t)(MPID_Comm *, MPID_Info *, void *);
+int MPIR_Comm_register_hint(const char *hint_key, MPIR_Comm_hint_fn_t fn, void *state);
 
 #if defined(HAVE_VSNPRINTF) && defined(NEEDS_VSNPRINTF_DECL) && !defined(vsnprintf)
 int vsnprintf(char *str, size_t size, const char *format, va_list ap);
@@ -4251,6 +4318,8 @@ void MPIR_Info_get_impl(MPID_Info *info_ptr, const char *key, int valuelen, char
 void MPIR_Info_get_nkeys_impl(MPID_Info *info_ptr, int *nkeys);
 int MPIR_Info_get_nthkey_impl(MPID_Info *info, int n, char *key);
 void MPIR_Info_get_valuelen_impl(MPID_Info *info_ptr, const char *key, int *valuelen, int *flag);
+int MPIR_Info_set_impl(MPID_Info *info_ptr, const char *key, const char *value);
+int MPIR_Info_dup_impl(MPID_Info *info_ptr, MPID_Info **new_info_ptr);
 int MPIR_Comm_delete_attr_impl(MPID_Comm *comm_ptr, MPID_Keyval *keyval_ptr);
 int MPIR_Comm_create_keyval_impl(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
                                  MPI_Comm_delete_attr_function *comm_delete_attr_fn,
@@ -4262,6 +4331,9 @@ int MPIR_Comm_connect_impl(const char * port_name, MPID_Info * info_ptr, int roo
 int MPIR_Comm_create_errhandler_impl(MPI_Comm_errhandler_function *function,
                                      MPI_Errhandler *errhandler);
 int MPIR_Comm_dup_impl(MPID_Comm *comm_ptr, MPID_Comm **newcomm_ptr);
+int MPIR_Comm_dup_with_info_impl(MPID_Comm *comm_ptr, MPID_Info *info_ptr, MPID_Comm **newcomm_ptr);
+int MPIR_Comm_get_info_impl(MPID_Comm *comm_ptr, MPID_Info **info_ptr);
+int MPIR_Comm_set_info_impl(MPID_Comm *comm_ptr, MPID_Info *info_ptr);
 int MPIR_Comm_free_impl(MPID_Comm * comm_ptr);
 void MPIR_Comm_free_keyval_impl(int keyval);
 void MPIR_Comm_get_errhandler_impl(MPID_Comm *comm_ptr, MPID_Errhandler **errhandler_ptr);
@@ -4295,6 +4367,12 @@ int MPIR_Grequest_start_impl(MPI_Grequest_query_function *query_fn,
                              MPI_Grequest_free_function *free_fn,
                              MPI_Grequest_cancel_function *cancel_fn,
                              void *extra_state, MPID_Request **request_ptr);
+int MPIX_Grequest_start_impl(MPI_Grequest_query_function *,
+                             MPI_Grequest_free_function *,
+                             MPI_Grequest_cancel_function *,
+                             MPIX_Grequest_poll_function *,
+                             MPIX_Grequest_wait_function *, void *,
+                             MPID_Request **);
 int MPIR_Graph_map_impl(const MPID_Comm *comm_ptr, int nnodes,
                         const int indx[], const int edges[], int *newrank);
 int MPIR_Type_commit_impl(MPI_Datatype *datatype);
@@ -4370,6 +4448,15 @@ static inline int MPIR_Request_complete_fastpath(MPI_Request *request, MPID_Requ
     /* avoid normal fn_exit/fn_fail jump pattern to reduce jumps and compiler confusion */
     return mpi_errno;
 }
+
+extern const char MPIR_Version_string[];
+extern const char MPIR_Version_date[];
+extern const char MPIR_Version_configure[];
+extern const char MPIR_Version_device[];
+extern const char MPIR_Version_CC[];
+extern const char MPIR_Version_CXX[];
+extern const char MPIR_Version_F77[];
+extern const char MPIR_Version_FC[];
 
 /* avoid conflicts in source files with old-style "char FCNAME[]" vars */
 #undef FUNCNAME

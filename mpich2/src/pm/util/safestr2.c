@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -10,7 +10,7 @@
 /* 
  * This file contains two of the routines from the "safe" versions of the 
  * various string routines in src/util/mem/safestr.c .  These are duplicated
- * here because the MPICH2 utility routines can no longer be used by other
+ * here because the MPICH utility routines can no longer be used by other
  * applications.
  */
 
@@ -30,11 +30,11 @@
  */
 /*@ MPIU_Strncpy - Copy a string with a maximum length
   
-    Input Parameters:
+Input Parameters:
 +   instr - String to copy
 -   maxlen - Maximum total length of 'outstr'
 
-    Output Parameter:
+Output Parameters:
 .   outstr - String to copy into
 
     Notes:
@@ -85,11 +85,11 @@ int MPIU_Strncpy( char *dest, const char *src, size_t n )
    any null, which is always added to the end of the line */
 /*@ MPIU_Strnapp - Append to a string with a maximum length
 
-    Input Parameters:
+Input Parameters:
 +   instr - String to copy
 -   maxlen - Maximum total length of 'outstr'
 
-    Output Parameter:
+Output Parameters:
 .   outstr - String to copy into
 
     Notes:

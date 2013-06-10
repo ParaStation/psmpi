@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -32,7 +32,7 @@
 /*@
    MPI_Win_free_keyval - Frees an attribute key for MPI RMA windows
 
-   Input Parameter:
+Input Parameters:
 . win_keyval - key value (integer) 
 
 .N ThreadSafe

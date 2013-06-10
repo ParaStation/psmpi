@@ -2,7 +2,7 @@
     See COPYRIGHT in top-level directory.
 
 This file lists the various environment variables available to change the
-behavior of the MPICH2 library.  These are intended to be used by advanced
+behavior of the MPICH library.  These are intended to be used by advanced
 users.
 ---------------------------------------------------------------------------
 
@@ -91,7 +91,7 @@ MPICH_GATHER_INTER_SHORT_MSG_SIZE
 
 MPICH_GATHERV_INTER_SSEND_MIN_PROCS
     Aliases: MPIR_PARAM_GATHERV_INTER_SSEND_MIN_PROCS
-             MPICH2_GATHERV_MIN_PROCS
+             MPICH_GATHERV_MIN_PROCS
     Description: Use Ssend (synchronous send) for intercommunicator
         MPI_Gatherv if the "group B" size is >= this value.  Specifying
         "-1" always avoids using Ssend.  For backwards compatibility,
@@ -138,6 +138,19 @@ MPICH_RMA_NREQUEST_NEW_THRESHOLD
         number of requests or other internal resources.
     Default: 128
 
+MPICH_RMA_LOCK_IMMED
+    Aliases: MPIR_PARAM_RMA_LOCK_IMMED
+    Description: Issue a request for the passive target RMA lock
+        immediately.  Default behavior is to defer the lock request until
+        the call to MPI_Win_unlock.
+    Default: 0
+
+MPICH_RMA_MERGE_LOCK_OP_UNLOCK
+    Aliases: MPIR_PARAM_RMA_MERGE_LOCK_OP_UNLOCK
+    Description: Enable/disable an optimization that merges lock, op, and
+        unlock messages, for single-operation passive target epochs.
+    Default: 1
+
 MPICH_NOLOCAL
     Aliases: MPICH_NO_LOCAL
              MPIR_PARAM_NOLOCAL
@@ -166,7 +179,7 @@ MPICH_POLLS_BEFORE_YIELD
 
 MPICH_MEMDUMP
     Aliases: MPIR_PARAM_MEMDUMP
-    Description: If true, list any memory that was allocated by MPICH2 and
+    Description: If true, list any memory that was allocated by MPICH and
         that remains allocated when MPI_Finalize completes.
     Default: 1
 
@@ -186,7 +199,7 @@ MPICH_PROCTABLE_PRINT
 MPICH_ERROR_CHECKING
     Aliases: MPIR_PARAM_ERROR_CHECKING
     Description: If true, perform checks for errors, typically to verify
-        valid inputs to MPI routines.  Only effective when MPICH2 is
+        valid inputs to MPI routines.  Only effective when MPICH is
         configured with --enable-error-checking=runtime .
     Default: 1
 
@@ -241,8 +254,9 @@ MPICH_HOST_LOOKUP_RETRIES
 MPICH_SHM_EAGER_MAX_SZ
     Aliases: MPIR_PARAM_SHM_EAGER_MAX_SZ
     Description: This parameter controls the message size at which Nemesis 
-        switches from eager to rendezvous mode.  If this parameter  is set
-        to -1, then Nemesis will choose an appropriate value.
+        switches from eager to rendezvous mode for shared memory. If this
+        parameter is set to -1, then Nemesis will choose an appropriate
+        value.
     Default: -1
 
 MPICH_SHM_READY_EAGER_MAX_SZ
@@ -260,6 +274,12 @@ MPICH_COMM_OVERRIDES
         be disabled for netmods that provide the override feature.  Some
         netmods may not honor this flag.
     Default: 1
+
+MPICH_CH3_EAGER_MAX_MSG_SIZE
+    Aliases: MPIR_PARAM_CH3_EAGER_MAX_MSG_SIZE
+    Description: This parameter controls the message size at which CH3
+        switches from eager to rendezvous mode.
+    Default: 131072
 
 MPICH_DEBUG_HOLD
     Aliases: MPIR_PARAM_DEBUG_HOLD
@@ -291,7 +311,7 @@ MPICH_ABORT_ON_LEAKED_HANDLES
         MPI object handles have been leaked.  For example, if MPI_Comm_dup
         is called without calling a corresponding MPI_Comm_free.  For
         uninteresting reasons, enabling this option may prevent all known
-        object leaks from being reported.  MPICH2 must have been configure
+        object leaks from being reported.  MPICH must have been configure
         with "--enable-g=handlealloc" or better in order for this
         functionality to work.
     Default: 0
@@ -302,8 +322,7 @@ MPICH_PORT_RANGE
              MPIR_PARAM_PORTRANGE
     Description: The MPICH_PORT_RANGE environment variable allows you to
         specify the range of TCP ports to be used by the process manager
-        and the MPICH2 library. The format of this variable is
-        <low>:<high>.
+        and the MPICH library. The format of this variable is <low>:<high>.
     Default: {0,0}
 
 MPICH_CTXID_EAGER_SIZE
@@ -318,6 +337,6 @@ MPICH_CTXID_EAGER_SIZE
 
 Automatically generated
   by:   ./maint/genparams
-  at:   Mon Oct  8 14:01:08 2012
-  from: src/util/param/params.yml (md5sum dabefd4ebb90a37693fa984f8332424f)
+  at:   Wed Apr 24 10:08:33 2013
+  from: src/util/param/params.yml (md5sum 91c960f4c6f9b5a91b7c68ea79732d69)
 

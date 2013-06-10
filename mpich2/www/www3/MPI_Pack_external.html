@@ -9,12 +9,12 @@
 Packs a datatype into contiguous memory, using the external32 format 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Pack_external(MPICH2_CONST char *datarep,
-                     MPICH2_CONST void *inbuf,
+int MPI_Pack_external(const char datarep[],
+                     const void *inbuf,
                      int incount,
                      MPI_Datatype datatype,
                      void *outbuf,
-                     MPI_Aint outcount,
+                     MPI_Aint outsize,
                      MPI_Aint *position)
 </PRE>
 <H2>Input Parameters</H2>
@@ -27,14 +27,14 @@ int MPI_Pack_external(MPICH2_CONST char *datarep,
 
 <DT><B>datatype </B><DD>datatype of each input data item (handle)
 
-<DT><B>outcount </B><DD>output buffer size, in bytes (address integer)
+<DT><B>outsize </B><DD>output buffer size, in bytes (address integer)
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>outbuf </B> <DD> output buffer start (choice)
 </DL>
 <P>
-<H2>Input/Output Parameter</H2>
+<H2>Input/Output Parameters</H2>
 <DL><DT><B>position </B> <DD> current position in buffer, in bytes (address integer)
 </DL>
 <P>

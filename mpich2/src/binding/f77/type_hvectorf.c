@@ -187,5 +187,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_hvector( MPI_Fint *, MPI_Fint *, M
 FORT_DLL_SPEC void FORT_CALL mpi_type_hvector_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint * v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *ierr ){
     MPI_Aint l3;
     l3 = (MPI_Aint)*v3;
-    *ierr = MPI_Type_hvector( *v1, *v2, l3, (MPI_Datatype)(*v4), (MPI_Datatype *)(v5) );
+    *ierr = MPI_Type_hvector( (int)*v1, (int)*v2, l3, (MPI_Datatype)(*v4), (MPI_Datatype *)(v5) );
 }

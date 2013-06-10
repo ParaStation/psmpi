@@ -1,11 +1,12 @@
 <dir>
-<file name="ptl_recv.c" info="1349306463"/>
-<file name="ptl_poll.c" info="1349306463"/>
-<file name="ptl_init.c" info="1349306463"/>
-<file name="ptl_probe.c" info="1349306463"/>
-<file name="ptl_impl.h" info="1349304611"/>
-<file name="ptl_send.c" info="1349306463"/>
-<file name="ptl_pack_byte.c" info="1349304611"/>
+<file name="ptl_recv.c" info="1366812300"/>
+<file name="ptl_poll.c" info="1366812300"/>
+<file name="ptl_send.c" info="1366812300"/>
+<file name="ptl_pack_byte.c" info="1366812300"/>
+<file name="ptl_probe.c" info="1366812300"/>
+<file name="ptl_init.c" info="1366812300"/>
+<file name="ptl_impl.h" info="1366812300"/>
+<file name="ptl_nm.c" info="1366812300"/>
 </dir>
 <data>
 <fileinfo name="ptl_recv.c">
@@ -27,39 +28,7 @@ MPID_STATE_MPID_NEM_PTL_POLL_FINALIZE MPID_nem_ptl_poll_finalize
 MPID_STATE_APPEND_OVERFLOW append_overflow
 MPID_STATE_MPID_NEM_PTL_POLL MPID_nem_ptl_poll
 </fileinfo>
-<fileinfo name="ptl_init.c">
-MPID_STATE_PTL_INIT ptl_init
-MPID_STATE_PTL_FINALIZE ptl_finalize
-MPID_STATE_GET_BUSINESS_CARD get_business_card
-MPID_STATE_CONNECT_TO_ROOT connect_to_root
-MPID_STATE_VC_INIT vc_init
-MPID_STATE_MPID_NEM_PTL_GET_ID_FROM_BC MPID_nem_ptl_get_id_from_bc
-MPID_STATE_VC_TERMINATE vc_terminate
-MPID_NEM_PTL_VC_TERMINATED MPID_nem_ptl_vc_terminated
-</fileinfo>
-<fileinfo name="ptl_probe.c">
-MPID_STATE_HANDLE_PROBE handle_probe
-MPID_STATE_MPID_NEM_PTL_IPROBE MPID_nem_ptl_iprobe
-MPID_STATE_MPID_NEM_PTL_IMPROBE MPID_nem_ptl_improbe
-MPID_STATE_MPID_NEM_PTL_ANYSOURCE_IPROBE MPID_nem_ptl_anysource_iprobe
-MPID_STATE_MPID_NEM_PTL_ANYSOURCE_IMPROBE MPID_nem_ptl_anysource_improbe
-</fileinfo>
-<fileinfo name="ptl_impl.h">
-</fileinfo>
 <fileinfo name="ptl_send.c">
-MPID_STATE_MPID_NEM_PTL_SEND_INIT MPID_nem_ptl_send_init
-MPID_STATE_MPID_NEM_PTL_SEND_FINALIZE MPID_nem_ptl_send_finalize
-MPID_STATE_INIT_ID init_id
-MPID_STATE_MPID_NEM_PTL_SENDQ_COMPLETE_WITH_ERROR MPID_nem_ptl_sendq_complete_with_error
-MPID_STATE_SAVE_IOV save_iov
-MPID_STATE_SEND_PKT send_pkt
-MPID_STATE_SEND_NONCONTIG_PKT send_noncontig_pkt
-MPID_STATE_ENQUEUE_REQUEST enqueue_request
-MPID_STATE_MPID_NEM_PTL_SENDNONCONTIG MPID_nem_ptl_SendNoncontig
-MPID_STATE_MPID_NEM_PTL_ISTARTCONTIGMSG MPID_nem_ptl_iStartContigMsg
-MPID_STATE_MPID_NEM_PTL_ISENDCONTIG MPID_nem_ptl_iSendContig
-MPID_STATE_SEND_QUEUED send_queued
-MPID_STATE_MPID_NEM_PTL_EV_SEND_HANDLER MPID_nem_ptl_ev_send_handler
 MPID_STATE_HANDLER_SEND_COMPLETE handler_send_complete
 MPID_STATE_HANDLER_LARGE handler_large
 MPID_STATE_HANDLER_PACK_CHUNK handler_pack_chunk
@@ -73,5 +42,40 @@ MPID_STATE_MPID_NEM_PTL_CANCEL_SEND MPID_nem_ptl_cancel_send
 <fileinfo name="ptl_pack_byte.c">
 MPID_STATE_MPI_NEM_PTL_PACK_BYTE MPI_nem_ptl_pack_byte
 MPID_STATE_MPID_NEM_PTL_UNPACK_BYTE MPID_nem_ptl_unpack_byte
+</fileinfo>
+<fileinfo name="ptl_probe.c">
+MPID_STATE_HANDLE_PROBE handle_probe
+MPID_STATE_MPID_NEM_PTL_IPROBE MPID_nem_ptl_iprobe
+MPID_STATE_MPID_NEM_PTL_IMPROBE MPID_nem_ptl_improbe
+MPID_STATE_MPID_NEM_PTL_ANYSOURCE_IPROBE MPID_nem_ptl_anysource_iprobe
+MPID_STATE_MPID_NEM_PTL_ANYSOURCE_IMPROBE MPID_nem_ptl_anysource_improbe
+</fileinfo>
+<fileinfo name="ptl_init.c">
+MPID_STATE_PTL_INIT ptl_init
+MPID_STATE_PTL_FINALIZE ptl_finalize
+MPID_STATE_GET_BUSINESS_CARD get_business_card
+MPID_STATE_CONNECT_TO_ROOT connect_to_root
+MPID_STATE_VC_INIT vc_init
+MPID_STATE_MPID_NEM_PTL_GET_ID_FROM_BC MPID_nem_ptl_get_id_from_bc
+MPID_STATE_VC_TERMINATE vc_terminate
+MPID_NEM_PTL_VC_TERMINATED MPID_nem_ptl_vc_terminated
+MPID_STATE_MPID_NEM_PTL_INIT_ID MPID_nem_ptl_init_id
+</fileinfo>
+<fileinfo name="ptl_impl.h">
+</fileinfo>
+<fileinfo name="ptl_nm.c">
+MPID_STATE_MPID_NEM_PTL_NM_INIT MPID_nem_ptl_nm_init
+MPID_STATE_MPID_NEM_PTL_NM_FINALIZE MPID_nem_ptl_nm_finalize
+MPID_STATE_MPID_NEM_PTL_SENDQ_COMPLETE_WITH_ERROR MPID_nem_ptl_sendq_complete_with_error
+MPID_STATE_SAVE_IOV save_iov
+MPID_STATE_SEND_PKT send_pkt
+MPID_STATE_SEND_NONCONTIG_PKT send_noncontig_pkt
+MPID_STATE_ENQUEUE_REQUEST enqueue_request
+MPID_STATE_MPID_NEM_PTL_SENDNONCONTIG MPID_nem_ptl_SendNoncontig
+MPID_STATE_MPID_NEM_PTL_ISTARTCONTIGMSG MPID_nem_ptl_iStartContigMsg
+MPID_STATE_MPID_NEM_PTL_ISENDCONTIG MPID_nem_ptl_iSendContig
+MPID_STATE_SEND_QUEUED send_queued
+HANDLE_ACK handle_ack
+MPID_STATE_MPID_NEM_PTL_NM_EVENT_HANDLER MPID_nem_ptl_nm_event_handler
 </fileinfo>
 </data>

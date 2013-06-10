@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -29,6 +29,5 @@ HYD_status HYDT_bscd_pbs_launcher_finalize(void);
 
 HYD_status HYDT_bscd_pbs_query_native_int(int *ret);
 HYD_status HYDT_bscd_pbs_query_node_list(struct HYD_node **node_list);
-HYD_status HYDT_bscd_pbs_query_jobid(char **jobid);
 
 #endif /* PBS_H_INCLUDED */

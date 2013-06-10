@@ -124,7 +124,7 @@ Input Parameters:
 . datatype - data type of elements in the buffers (handle)
 - op - reduction operation (handle)
 
-Output Parameter:
+Output Parameters:
 . inoutbuf - address of input-output buffer (choice)
 
 .N ThreadSafe
@@ -140,7 +140,7 @@ Output Parameter:
 .N MPI_ERR_BUFFER
 .N MPI_ERR_BUFFER_ALIAS
 @*/
-int MPI_Reduce_local(MPICH2_CONST void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype, MPI_Op op)
+int MPI_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype, MPI_Op op)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Op *op_ptr;
@@ -170,6 +170,8 @@ int MPI_Reduce_local(MPICH2_CONST void *inbuf, void *inoutbuf, int count, MPI_Da
             if (count != 0) {
                 MPIR_ERRTEST_ALIAS_COLL(inbuf, inoutbuf, mpi_errno);
             }
+            MPIR_ERRTEST_NAMED_BUF_INPLACE(inbuf, "inbuf", count, mpi_errno);
+            MPIR_ERRTEST_NAMED_BUF_INPLACE(inoutbuf, "inoutbuf", count, mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }

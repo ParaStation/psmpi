@@ -9,11 +9,11 @@
 Removes an existing buffer (for use in MPI_Bsend etc) 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Buffer_detach(void *buffer, int *size)
+int MPI_Buffer_detach(void *buffer_addr, int *size)
 </PRE>
 <H2>Output Parameters</H2>
 <DL>
-<DT><B>buffer </B><DD>initial buffer address (choice) 
+<DT><B>buffer_addr </B><DD>initial buffer address (choice)
 
 <DT><B>size </B><DD>buffer size, in bytes (integer) 
 </DL>

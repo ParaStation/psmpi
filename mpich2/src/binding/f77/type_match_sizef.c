@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_match_size( MPI_Fint *, MPI_Fint *
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_type_match_size_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *ierr ){
-    *ierr = MPI_Type_match_size( *v1, *v2, (MPI_Datatype *)(v3) );
+    *ierr = MPI_Type_match_size( (int)*v1, (int)*v2, (MPI_Datatype *)(v3) );
 }

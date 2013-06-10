@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,34 +6,40 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
-/* -- Begin Profiling Symbol Block for routine MPIX_Win_sync */
+/* -- Begin Profiling Symbol Block for routine MPI_Win_sync */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPIX_Win_sync = PMPIX_Win_sync
+#pragma weak MPI_Win_sync = PMPI_Win_sync
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIX_Win_sync  MPIX_Win_sync
+#pragma _HP_SECONDARY_DEF PMPI_Win_sync  MPI_Win_sync
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPIX_Win_sync as PMPIX_Win_sync
+#pragma _CRI duplicate MPI_Win_sync as PMPI_Win_sync
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#undef MPIX_Win_sync
-#define MPIX_Win_sync PMPIX_Win_sync
+#undef MPI_Win_sync
+#define MPI_Win_sync PMPI_Win_sync
 
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPIX_Win_sync
+#define FUNCNAME MPI_Win_sync
 
 /*@
-   MPIX_Win_sync - Synchronize public and private copies of the given window
+MPI_Win_sync - Synchronize public and private copies of the given window.
 
-   Input Parameters:
-. win - window object (handle) 
+
+The call 'MPI_Win_sync' synchronizes the private and public window copies of win.
+For the purposes of synchronizing the private and public window, 'MPI_Win_sync'
+has the effect of ending and reopening an access and exposure epoch on the
+window (note that it does not actually end an epoch or complete any pending MPI
+RMA operations).
+
+Input Parameters:
+. win - window object (handle)
 
 .N ThreadSafe
 
@@ -45,19 +51,19 @@
 .N MPI_ERR_WIN
 .N MPI_ERR_OTHER
 
-.seealso: MPI_Win_lock
+.seealso: MPI_Win_flush MPI_Win_flush_all MPI_Win_flush_local MPI_Win_flush_local_all
 @*/
-int MPIX_Win_sync(MPI_Win win)
+int MPI_Win_sync(MPI_Win win)
 {
-    static const char FCNAME[] = "MPIX_Win_sync";
+    static const char FCNAME[] = "MPI_Win_sync";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIX_WIN_SYNC);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_SYNC);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPIX_WIN_SYNC);
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_WIN_SYNC);
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -95,7 +101,7 @@ int MPIX_Win_sync(MPI_Win win)
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPIX_WIN_SYNC);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SYNC);
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
@@ -104,8 +110,8 @@ int MPIX_Win_sync(MPI_Win win)
 #   ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno = MPIR_Err_create_code(
-            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpix_win_sync", 
-            "**mpix_win_sync %W", win);
+            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_win_sync",
+            "**mpi_win_sync %W", win);
     }
 #   endif
     mpi_errno = MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );

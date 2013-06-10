@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -363,12 +363,12 @@ HYD_status HYD_pmcd_pmi_fill_in_exec_launch_info(struct HYD_pg *pg)
 
         pg_scratch = (struct HYD_pmcd_pmi_pg_scratch *) pg->pg_scratch;
         proxy->exec_launch_info[arg++] = HYDU_strdup("--pmi-kvsname");
-        proxy->exec_launch_info[arg++] = HYDU_strdup(pg_scratch->kvs->kvs_name);
+        proxy->exec_launch_info[arg++] = HYDU_strdup(pg_scratch->kvs->kvsname);
 
         if (pg->spawner_pg) {
             pg_scratch = (struct HYD_pmcd_pmi_pg_scratch *) pg->spawner_pg->pg_scratch;
             proxy->exec_launch_info[arg++] = HYDU_strdup("--pmi-spawner-kvsname");
-            proxy->exec_launch_info[arg++] = HYDU_strdup(pg_scratch->kvs->kvs_name);
+            proxy->exec_launch_info[arg++] = HYDU_strdup(pg_scratch->kvs->kvsname);
         }
 
         proxy->exec_launch_info[arg++] = HYDU_strdup("--pmi-process-mapping");
@@ -554,6 +554,8 @@ HYD_status HYD_pmcd_pmi_alloc_pg_scratch(struct HYD_pg *pg)
 
     status = HYD_pmcd_pmi_allocate_kvs(&pg_scratch->kvs, pg->pgid);
     HYDU_ERR_POP(status, "unable to allocate kvs space\n");
+
+    pg_scratch->keyval_dist_count = 0;
 
   fn_exit:
     HYDU_FUNC_EXIT();

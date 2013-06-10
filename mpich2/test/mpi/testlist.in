@@ -9,11 +9,12 @@ errhan
 group
 info
 init
+mpi_t
 pt2pt
 @rmadir@
 @spawndir@
 topo
-@perfdir@
+#@perfdir@
 @iodir@
 @f77dir@
 @cxxdir@

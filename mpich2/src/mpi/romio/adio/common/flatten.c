@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
@@ -454,7 +454,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
         /* FIXME: using the same code as indexed_block for
          * hindexed_block doesn't look correct.  Needs to be carefully
          * looked into. */
-    case MPIX_COMBINER_HINDEXED_BLOCK:
+    case MPI_COMBINER_HINDEXED_BLOCK:
     case MPI_COMBINER_INDEXED_BLOCK:
     #ifdef FLATTEN_DEBUG 
     DBG_FPRINTF(stderr,"ADIOI_Flatten:: MPI_COMBINER_INDEXED_BLOCK\n");
@@ -734,7 +734,7 @@ void ADIOI_Flatten(MPI_Datatype datatype, ADIOI_Flatlist_node *flat,
 int ADIOI_Count_contiguous_blocks(MPI_Datatype datatype, int *curr_index)
 {
 #ifdef HAVE_MPIR_TYPE_GET_CONTIG_BLOCKS
-    /* MPICH2 can get us this value without all the envelope/contents calls */
+    /* MPICH can get us this value without all the envelope/contents calls */
     int blks;
     MPIR_Type_get_contig_blocks(datatype, &blks);
     *curr_index = blks;

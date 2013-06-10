@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_WIN_ALLOCATE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_allocate__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_allocate( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_allocate_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_WIN_ALLOCATE = PMPIX_WIN_ALLOCATE
-#pragma weak mpix_win_allocate__ = PMPIX_WIN_ALLOCATE
-#pragma weak mpix_win_allocate_ = PMPIX_WIN_ALLOCATE
-#pragma weak mpix_win_allocate = PMPIX_WIN_ALLOCATE
+#pragma weak MPI_WIN_ALLOCATE = PMPI_WIN_ALLOCATE
+#pragma weak mpi_win_allocate__ = PMPI_WIN_ALLOCATE
+#pragma weak mpi_win_allocate_ = PMPI_WIN_ALLOCATE
+#pragma weak mpi_win_allocate = PMPI_WIN_ALLOCATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_WIN_ALLOCATE = pmpix_win_allocate__
-#pragma weak mpix_win_allocate__ = pmpix_win_allocate__
-#pragma weak mpix_win_allocate_ = pmpix_win_allocate__
-#pragma weak mpix_win_allocate = pmpix_win_allocate__
+#pragma weak MPI_WIN_ALLOCATE = pmpi_win_allocate__
+#pragma weak mpi_win_allocate__ = pmpi_win_allocate__
+#pragma weak mpi_win_allocate_ = pmpi_win_allocate__
+#pragma weak mpi_win_allocate = pmpi_win_allocate__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_WIN_ALLOCATE = pmpix_win_allocate_
-#pragma weak mpix_win_allocate__ = pmpix_win_allocate_
-#pragma weak mpix_win_allocate_ = pmpix_win_allocate_
-#pragma weak mpix_win_allocate = pmpix_win_allocate_
+#pragma weak MPI_WIN_ALLOCATE = pmpi_win_allocate_
+#pragma weak mpi_win_allocate__ = pmpi_win_allocate_
+#pragma weak mpi_win_allocate_ = pmpi_win_allocate_
+#pragma weak mpi_win_allocate = pmpi_win_allocate_
 #else
-#pragma weak MPIX_WIN_ALLOCATE = pmpix_win_allocate
-#pragma weak mpix_win_allocate__ = pmpix_win_allocate
-#pragma weak mpix_win_allocate_ = pmpix_win_allocate
-#pragma weak mpix_win_allocate = pmpix_win_allocate
+#pragma weak MPI_WIN_ALLOCATE = pmpi_win_allocate
+#pragma weak mpi_win_allocate__ = pmpi_win_allocate
+#pragma weak mpi_win_allocate_ = pmpi_win_allocate
+#pragma weak mpi_win_allocate = pmpi_win_allocate
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_win_allocate_( MPI_Fint *, MPI_Fint *, 
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_WIN_ALLOCATE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_WIN_ALLOCATE = PMPIX_WIN_ALLOCATE
+#pragma weak MPI_WIN_ALLOCATE = PMPI_WIN_ALLOCATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_allocate__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_win_allocate__ = pmpix_win_allocate__
+#pragma weak mpi_win_allocate__ = pmpi_win_allocate__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_allocate( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_win_allocate = pmpix_win_allocate
+#pragma weak mpi_win_allocate = pmpi_win_allocate
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_allocate_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_win_allocate_ = pmpix_win_allocate_
+#pragma weak mpi_win_allocate_ = pmpi_win_allocate_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_WIN_ALLOCATE  MPIX_WIN_ALLOCATE
+#pragma _HP_SECONDARY_DEF PMPI_WIN_ALLOCATE  MPI_WIN_ALLOCATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_win_allocate__  mpix_win_allocate__
+#pragma _HP_SECONDARY_DEF pmpi_win_allocate__  mpi_win_allocate__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_win_allocate  mpix_win_allocate
+#pragma _HP_SECONDARY_DEF pmpi_win_allocate  mpi_win_allocate
 #else
-#pragma _HP_SECONDARY_DEF pmpix_win_allocate_  mpix_win_allocate_
+#pragma _HP_SECONDARY_DEF pmpi_win_allocate_  mpi_win_allocate_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_WIN_ALLOCATE as PMPIX_WIN_ALLOCATE
+#pragma _CRI duplicate MPI_WIN_ALLOCATE as PMPI_WIN_ALLOCATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_win_allocate__ as pmpix_win_allocate__
+#pragma _CRI duplicate mpi_win_allocate__ as pmpi_win_allocate__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_win_allocate as pmpix_win_allocate
+#pragma _CRI duplicate mpi_win_allocate as pmpi_win_allocate
 #else
-#pragma _CRI duplicate mpix_win_allocate_ as pmpix_win_allocate_
+#pragma _CRI duplicate mpi_win_allocate_ as pmpi_win_allocate_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_win_allocate_( MPI_Fint *, MPI_Fint *, 
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_WIN_ALLOCATE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_allocate__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_allocate( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_allocate_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_win_allocate__ = MPIX_WIN_ALLOCATE
-#pragma weak mpix_win_allocate_ = MPIX_WIN_ALLOCATE
-#pragma weak mpix_win_allocate = MPIX_WIN_ALLOCATE
+#pragma weak mpi_win_allocate__ = MPI_WIN_ALLOCATE
+#pragma weak mpi_win_allocate_ = MPI_WIN_ALLOCATE
+#pragma weak mpi_win_allocate = MPI_WIN_ALLOCATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_WIN_ALLOCATE = mpix_win_allocate__
-#pragma weak mpix_win_allocate_ = mpix_win_allocate__
-#pragma weak mpix_win_allocate = mpix_win_allocate__
+#pragma weak MPI_WIN_ALLOCATE = mpi_win_allocate__
+#pragma weak mpi_win_allocate_ = mpi_win_allocate__
+#pragma weak mpi_win_allocate = mpi_win_allocate__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_WIN_ALLOCATE = mpix_win_allocate_
-#pragma weak mpix_win_allocate__ = mpix_win_allocate_
-#pragma weak mpix_win_allocate = mpix_win_allocate_
+#pragma weak MPI_WIN_ALLOCATE = mpi_win_allocate_
+#pragma weak mpi_win_allocate__ = mpi_win_allocate_
+#pragma weak mpi_win_allocate = mpi_win_allocate_
 #else
-#pragma weak MPIX_WIN_ALLOCATE = mpix_win_allocate
-#pragma weak mpix_win_allocate__ = mpix_win_allocate
-#pragma weak mpix_win_allocate_ = mpix_win_allocate
+#pragma weak MPI_WIN_ALLOCATE = mpi_win_allocate
+#pragma weak mpi_win_allocate__ = mpi_win_allocate
+#pragma weak mpi_win_allocate_ = mpi_win_allocate
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_win_allocate_( MPI_Fint *, MPI_Fint *, 
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_WIN_ALLOCATE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_ALLOCATE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_win_allocate__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_win_allocate_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_win_allocate( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_win_allocate__ = PMPIX_WIN_ALLOCATE
-#pragma weak pmpix_win_allocate_ = PMPIX_WIN_ALLOCATE
-#pragma weak pmpix_win_allocate = PMPIX_WIN_ALLOCATE
+#pragma weak pmpi_win_allocate__ = PMPI_WIN_ALLOCATE
+#pragma weak pmpi_win_allocate_ = PMPI_WIN_ALLOCATE
+#pragma weak pmpi_win_allocate = PMPI_WIN_ALLOCATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_WIN_ALLOCATE = pmpix_win_allocate__
-#pragma weak pmpix_win_allocate_ = pmpix_win_allocate__
-#pragma weak pmpix_win_allocate = pmpix_win_allocate__
+#pragma weak PMPI_WIN_ALLOCATE = pmpi_win_allocate__
+#pragma weak pmpi_win_allocate_ = pmpi_win_allocate__
+#pragma weak pmpi_win_allocate = pmpi_win_allocate__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_WIN_ALLOCATE = pmpix_win_allocate_
-#pragma weak pmpix_win_allocate__ = pmpix_win_allocate_
-#pragma weak pmpix_win_allocate = pmpix_win_allocate_
+#pragma weak PMPI_WIN_ALLOCATE = pmpi_win_allocate_
+#pragma weak pmpi_win_allocate__ = pmpi_win_allocate_
+#pragma weak pmpi_win_allocate = pmpi_win_allocate_
 #else
-#pragma weak PMPIX_WIN_ALLOCATE = pmpix_win_allocate
-#pragma weak pmpix_win_allocate__ = pmpix_win_allocate
-#pragma weak pmpix_win_allocate_ = pmpix_win_allocate
+#pragma weak PMPI_WIN_ALLOCATE = pmpi_win_allocate
+#pragma weak pmpi_win_allocate__ = pmpi_win_allocate
+#pragma weak pmpi_win_allocate_ = pmpi_win_allocate
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_win_allocate_ PMPIX_WIN_ALLOCATE
+#define mpi_win_allocate_ PMPI_WIN_ALLOCATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_win_allocate_ pmpix_win_allocate__
+#define mpi_win_allocate_ pmpi_win_allocate__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_win_allocate_ pmpix_win_allocate
+#define mpi_win_allocate_ pmpi_win_allocate
 #else
-#define mpix_win_allocate_ pmpix_win_allocate_
+#define mpi_win_allocate_ pmpi_win_allocate_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Win_allocate
-#define MPIX_Win_allocate PMPIX_Win_allocate 
+#undef MPI_Win_allocate
+#define MPI_Win_allocate PMPI_Win_allocate 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_win_allocate_ MPIX_WIN_ALLOCATE
+#define mpi_win_allocate_ MPI_WIN_ALLOCATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_win_allocate_ mpix_win_allocate__
+#define mpi_win_allocate_ mpi_win_allocate__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_win_allocate_ mpix_win_allocate
+#define mpi_win_allocate_ mpi_win_allocate
 /* Else leave name alone */
 #endif
 
@@ -184,6 +184,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_win_allocate( MPI_Fint *, MPI_Fint *, 
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_win_allocate_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, void*v5, MPI_Fint *v6, MPI_Fint *ierr ){
-    *ierr = MPIX_Win_allocate( *v1, *v2, (MPI_Info)(*v3), (MPI_Comm)(*v4), v5, v6 );
+FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, void*v5, MPI_Fint *v6, MPI_Fint *ierr ){
+    *ierr = MPI_Win_allocate( (MPI_Aint)*v1, (int)*v2, (MPI_Info)(*v3), (MPI_Comm)(*v4), v5, v6 );
 }

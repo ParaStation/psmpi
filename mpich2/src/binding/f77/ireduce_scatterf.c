@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IREDUCE_SCATTER( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ireduce_scatter__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ireduce_scatter( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ireduce_scatter_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IREDUCE_SCATTER( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ireduce_scatter__( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ireduce_scatter( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ireduce_scatter_( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_IREDUCE_SCATTER = PMPIX_IREDUCE_SCATTER
-#pragma weak mpix_ireduce_scatter__ = PMPIX_IREDUCE_SCATTER
-#pragma weak mpix_ireduce_scatter_ = PMPIX_IREDUCE_SCATTER
-#pragma weak mpix_ireduce_scatter = PMPIX_IREDUCE_SCATTER
+#pragma weak MPI_IREDUCE_SCATTER = PMPI_IREDUCE_SCATTER
+#pragma weak mpi_ireduce_scatter__ = PMPI_IREDUCE_SCATTER
+#pragma weak mpi_ireduce_scatter_ = PMPI_IREDUCE_SCATTER
+#pragma weak mpi_ireduce_scatter = PMPI_IREDUCE_SCATTER
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_IREDUCE_SCATTER = pmpix_ireduce_scatter__
-#pragma weak mpix_ireduce_scatter__ = pmpix_ireduce_scatter__
-#pragma weak mpix_ireduce_scatter_ = pmpix_ireduce_scatter__
-#pragma weak mpix_ireduce_scatter = pmpix_ireduce_scatter__
+#pragma weak MPI_IREDUCE_SCATTER = pmpi_ireduce_scatter__
+#pragma weak mpi_ireduce_scatter__ = pmpi_ireduce_scatter__
+#pragma weak mpi_ireduce_scatter_ = pmpi_ireduce_scatter__
+#pragma weak mpi_ireduce_scatter = pmpi_ireduce_scatter__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_IREDUCE_SCATTER = pmpix_ireduce_scatter_
-#pragma weak mpix_ireduce_scatter__ = pmpix_ireduce_scatter_
-#pragma weak mpix_ireduce_scatter_ = pmpix_ireduce_scatter_
-#pragma weak mpix_ireduce_scatter = pmpix_ireduce_scatter_
+#pragma weak MPI_IREDUCE_SCATTER = pmpi_ireduce_scatter_
+#pragma weak mpi_ireduce_scatter__ = pmpi_ireduce_scatter_
+#pragma weak mpi_ireduce_scatter_ = pmpi_ireduce_scatter_
+#pragma weak mpi_ireduce_scatter = pmpi_ireduce_scatter_
 #else
-#pragma weak MPIX_IREDUCE_SCATTER = pmpix_ireduce_scatter
-#pragma weak mpix_ireduce_scatter__ = pmpix_ireduce_scatter
-#pragma weak mpix_ireduce_scatter_ = pmpix_ireduce_scatter
-#pragma weak mpix_ireduce_scatter = pmpix_ireduce_scatter
+#pragma weak MPI_IREDUCE_SCATTER = pmpi_ireduce_scatter
+#pragma weak mpi_ireduce_scatter__ = pmpi_ireduce_scatter
+#pragma weak mpi_ireduce_scatter_ = pmpi_ireduce_scatter
+#pragma weak mpi_ireduce_scatter = pmpi_ireduce_scatter
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_ireduce_scatter_( void*, void*, MPI_Fin
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IREDUCE_SCATTER( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IREDUCE_SCATTER( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_IREDUCE_SCATTER = PMPIX_IREDUCE_SCATTER
+#pragma weak MPI_IREDUCE_SCATTER = PMPI_IREDUCE_SCATTER
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_ireduce_scatter__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ireduce_scatter__( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_ireduce_scatter__ = pmpix_ireduce_scatter__
+#pragma weak mpi_ireduce_scatter__ = pmpi_ireduce_scatter__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_ireduce_scatter( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ireduce_scatter( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_ireduce_scatter = pmpix_ireduce_scatter
+#pragma weak mpi_ireduce_scatter = pmpi_ireduce_scatter
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_ireduce_scatter_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ireduce_scatter_( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_ireduce_scatter_ = pmpix_ireduce_scatter_
+#pragma weak mpi_ireduce_scatter_ = pmpi_ireduce_scatter_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_IREDUCE_SCATTER  MPIX_IREDUCE_SCATTER
+#pragma _HP_SECONDARY_DEF PMPI_IREDUCE_SCATTER  MPI_IREDUCE_SCATTER
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_ireduce_scatter__  mpix_ireduce_scatter__
+#pragma _HP_SECONDARY_DEF pmpi_ireduce_scatter__  mpi_ireduce_scatter__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_ireduce_scatter  mpix_ireduce_scatter
+#pragma _HP_SECONDARY_DEF pmpi_ireduce_scatter  mpi_ireduce_scatter
 #else
-#pragma _HP_SECONDARY_DEF pmpix_ireduce_scatter_  mpix_ireduce_scatter_
+#pragma _HP_SECONDARY_DEF pmpi_ireduce_scatter_  mpi_ireduce_scatter_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_IREDUCE_SCATTER as PMPIX_IREDUCE_SCATTER
+#pragma _CRI duplicate MPI_IREDUCE_SCATTER as PMPI_IREDUCE_SCATTER
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_ireduce_scatter__ as pmpix_ireduce_scatter__
+#pragma _CRI duplicate mpi_ireduce_scatter__ as pmpi_ireduce_scatter__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_ireduce_scatter as pmpix_ireduce_scatter
+#pragma _CRI duplicate mpi_ireduce_scatter as pmpi_ireduce_scatter
 #else
-#pragma _CRI duplicate mpix_ireduce_scatter_ as pmpix_ireduce_scatter_
+#pragma _CRI duplicate mpi_ireduce_scatter_ as pmpi_ireduce_scatter_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_ireduce_scatter_( void*, void*, MPI_Fin
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IREDUCE_SCATTER( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ireduce_scatter__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ireduce_scatter( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ireduce_scatter_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IREDUCE_SCATTER( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ireduce_scatter__( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ireduce_scatter( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ireduce_scatter_( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_ireduce_scatter__ = MPIX_IREDUCE_SCATTER
-#pragma weak mpix_ireduce_scatter_ = MPIX_IREDUCE_SCATTER
-#pragma weak mpix_ireduce_scatter = MPIX_IREDUCE_SCATTER
+#pragma weak mpi_ireduce_scatter__ = MPI_IREDUCE_SCATTER
+#pragma weak mpi_ireduce_scatter_ = MPI_IREDUCE_SCATTER
+#pragma weak mpi_ireduce_scatter = MPI_IREDUCE_SCATTER
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_IREDUCE_SCATTER = mpix_ireduce_scatter__
-#pragma weak mpix_ireduce_scatter_ = mpix_ireduce_scatter__
-#pragma weak mpix_ireduce_scatter = mpix_ireduce_scatter__
+#pragma weak MPI_IREDUCE_SCATTER = mpi_ireduce_scatter__
+#pragma weak mpi_ireduce_scatter_ = mpi_ireduce_scatter__
+#pragma weak mpi_ireduce_scatter = mpi_ireduce_scatter__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_IREDUCE_SCATTER = mpix_ireduce_scatter_
-#pragma weak mpix_ireduce_scatter__ = mpix_ireduce_scatter_
-#pragma weak mpix_ireduce_scatter = mpix_ireduce_scatter_
+#pragma weak MPI_IREDUCE_SCATTER = mpi_ireduce_scatter_
+#pragma weak mpi_ireduce_scatter__ = mpi_ireduce_scatter_
+#pragma weak mpi_ireduce_scatter = mpi_ireduce_scatter_
 #else
-#pragma weak MPIX_IREDUCE_SCATTER = mpix_ireduce_scatter
-#pragma weak mpix_ireduce_scatter__ = mpix_ireduce_scatter
-#pragma weak mpix_ireduce_scatter_ = mpix_ireduce_scatter
+#pragma weak MPI_IREDUCE_SCATTER = mpi_ireduce_scatter
+#pragma weak mpi_ireduce_scatter__ = mpi_ireduce_scatter
+#pragma weak mpi_ireduce_scatter_ = mpi_ireduce_scatter
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_ireduce_scatter_( void*, void*, MPI_Fin
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_IREDUCE_SCATTER( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IREDUCE_SCATTER( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_ireduce_scatter__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ireduce_scatter__( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_ireduce_scatter_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ireduce_scatter_( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_ireduce_scatter( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ireduce_scatter( void*, void*, MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_ireduce_scatter__ = PMPIX_IREDUCE_SCATTER
-#pragma weak pmpix_ireduce_scatter_ = PMPIX_IREDUCE_SCATTER
-#pragma weak pmpix_ireduce_scatter = PMPIX_IREDUCE_SCATTER
+#pragma weak pmpi_ireduce_scatter__ = PMPI_IREDUCE_SCATTER
+#pragma weak pmpi_ireduce_scatter_ = PMPI_IREDUCE_SCATTER
+#pragma weak pmpi_ireduce_scatter = PMPI_IREDUCE_SCATTER
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_IREDUCE_SCATTER = pmpix_ireduce_scatter__
-#pragma weak pmpix_ireduce_scatter_ = pmpix_ireduce_scatter__
-#pragma weak pmpix_ireduce_scatter = pmpix_ireduce_scatter__
+#pragma weak PMPI_IREDUCE_SCATTER = pmpi_ireduce_scatter__
+#pragma weak pmpi_ireduce_scatter_ = pmpi_ireduce_scatter__
+#pragma weak pmpi_ireduce_scatter = pmpi_ireduce_scatter__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_IREDUCE_SCATTER = pmpix_ireduce_scatter_
-#pragma weak pmpix_ireduce_scatter__ = pmpix_ireduce_scatter_
-#pragma weak pmpix_ireduce_scatter = pmpix_ireduce_scatter_
+#pragma weak PMPI_IREDUCE_SCATTER = pmpi_ireduce_scatter_
+#pragma weak pmpi_ireduce_scatter__ = pmpi_ireduce_scatter_
+#pragma weak pmpi_ireduce_scatter = pmpi_ireduce_scatter_
 #else
-#pragma weak PMPIX_IREDUCE_SCATTER = pmpix_ireduce_scatter
-#pragma weak pmpix_ireduce_scatter__ = pmpix_ireduce_scatter
-#pragma weak pmpix_ireduce_scatter_ = pmpix_ireduce_scatter
+#pragma weak PMPI_IREDUCE_SCATTER = pmpi_ireduce_scatter
+#pragma weak pmpi_ireduce_scatter__ = pmpi_ireduce_scatter
+#pragma weak pmpi_ireduce_scatter_ = pmpi_ireduce_scatter
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_ireduce_scatter_ PMPIX_IREDUCE_SCATTER
+#define mpi_ireduce_scatter_ PMPI_IREDUCE_SCATTER
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_ireduce_scatter_ pmpix_ireduce_scatter__
+#define mpi_ireduce_scatter_ pmpi_ireduce_scatter__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_ireduce_scatter_ pmpix_ireduce_scatter
+#define mpi_ireduce_scatter_ pmpi_ireduce_scatter
 #else
-#define mpix_ireduce_scatter_ pmpix_ireduce_scatter_
+#define mpi_ireduce_scatter_ pmpi_ireduce_scatter_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Ireduce_scatter
-#define MPIX_Ireduce_scatter PMPIX_Ireduce_scatter 
+#undef MPI_Ireduce_scatter
+#define MPI_Ireduce_scatter PMPI_Ireduce_scatter 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_ireduce_scatter_ MPIX_IREDUCE_SCATTER
+#define mpi_ireduce_scatter_ MPI_IREDUCE_SCATTER
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_ireduce_scatter_ mpix_ireduce_scatter__
+#define mpi_ireduce_scatter_ mpi_ireduce_scatter__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_ireduce_scatter_ mpix_ireduce_scatter
+#define mpi_ireduce_scatter_ mpi_ireduce_scatter
 /* Else leave name alone */
 #endif
 
@@ -184,11 +184,11 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_ireduce_scatter( void*, void*, MPI_Fin
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_ireduce_scatter_ ( void*v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *ierr ){
+FORT_DLL_SPEC void FORT_CALL mpi_ireduce_scatter_ ( void*v1, void*v2, MPI_Fint v3[], MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *ierr ){
 
 #ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
 #endif
     if (v1 == MPIR_F_MPI_IN_PLACE) v1 = MPI_IN_PLACE;
-    *ierr = MPIX_Ireduce_scatter( v1, v2, v3, (MPI_Datatype)(*v4), *v5, (MPI_Comm)(*v6), (MPI_Request *)(v7) );
+    *ierr = MPI_Ireduce_scatter( v1, v2, v3, (MPI_Datatype)(*v4), (MPI_Op)*v5, (MPI_Comm)(*v6), (MPI_Request *)(v7) );
 }

@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IBCAST( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibcast__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibcast( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibcast_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IBCAST( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibcast__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibcast( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibcast_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_IBCAST = PMPIX_IBCAST
-#pragma weak mpix_ibcast__ = PMPIX_IBCAST
-#pragma weak mpix_ibcast_ = PMPIX_IBCAST
-#pragma weak mpix_ibcast = PMPIX_IBCAST
+#pragma weak MPI_IBCAST = PMPI_IBCAST
+#pragma weak mpi_ibcast__ = PMPI_IBCAST
+#pragma weak mpi_ibcast_ = PMPI_IBCAST
+#pragma weak mpi_ibcast = PMPI_IBCAST
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_IBCAST = pmpix_ibcast__
-#pragma weak mpix_ibcast__ = pmpix_ibcast__
-#pragma weak mpix_ibcast_ = pmpix_ibcast__
-#pragma weak mpix_ibcast = pmpix_ibcast__
+#pragma weak MPI_IBCAST = pmpi_ibcast__
+#pragma weak mpi_ibcast__ = pmpi_ibcast__
+#pragma weak mpi_ibcast_ = pmpi_ibcast__
+#pragma weak mpi_ibcast = pmpi_ibcast__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_IBCAST = pmpix_ibcast_
-#pragma weak mpix_ibcast__ = pmpix_ibcast_
-#pragma weak mpix_ibcast_ = pmpix_ibcast_
-#pragma weak mpix_ibcast = pmpix_ibcast_
+#pragma weak MPI_IBCAST = pmpi_ibcast_
+#pragma weak mpi_ibcast__ = pmpi_ibcast_
+#pragma weak mpi_ibcast_ = pmpi_ibcast_
+#pragma weak mpi_ibcast = pmpi_ibcast_
 #else
-#pragma weak MPIX_IBCAST = pmpix_ibcast
-#pragma weak mpix_ibcast__ = pmpix_ibcast
-#pragma weak mpix_ibcast_ = pmpix_ibcast
-#pragma weak mpix_ibcast = pmpix_ibcast
+#pragma weak MPI_IBCAST = pmpi_ibcast
+#pragma weak mpi_ibcast__ = pmpi_ibcast
+#pragma weak mpi_ibcast_ = pmpi_ibcast
+#pragma weak mpi_ibcast = pmpi_ibcast
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_ibcast_( void*, MPI_Fint *, MPI_Fint *,
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IBCAST( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IBCAST( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_IBCAST = PMPIX_IBCAST
+#pragma weak MPI_IBCAST = PMPI_IBCAST
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibcast__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibcast__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_ibcast__ = pmpix_ibcast__
+#pragma weak mpi_ibcast__ = pmpi_ibcast__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibcast( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibcast( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_ibcast = pmpix_ibcast
+#pragma weak mpi_ibcast = pmpi_ibcast
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibcast_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibcast_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_ibcast_ = pmpix_ibcast_
+#pragma weak mpi_ibcast_ = pmpi_ibcast_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_IBCAST  MPIX_IBCAST
+#pragma _HP_SECONDARY_DEF PMPI_IBCAST  MPI_IBCAST
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_ibcast__  mpix_ibcast__
+#pragma _HP_SECONDARY_DEF pmpi_ibcast__  mpi_ibcast__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_ibcast  mpix_ibcast
+#pragma _HP_SECONDARY_DEF pmpi_ibcast  mpi_ibcast
 #else
-#pragma _HP_SECONDARY_DEF pmpix_ibcast_  mpix_ibcast_
+#pragma _HP_SECONDARY_DEF pmpi_ibcast_  mpi_ibcast_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_IBCAST as PMPIX_IBCAST
+#pragma _CRI duplicate MPI_IBCAST as PMPI_IBCAST
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_ibcast__ as pmpix_ibcast__
+#pragma _CRI duplicate mpi_ibcast__ as pmpi_ibcast__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_ibcast as pmpix_ibcast
+#pragma _CRI duplicate mpi_ibcast as pmpi_ibcast
 #else
-#pragma _CRI duplicate mpix_ibcast_ as pmpix_ibcast_
+#pragma _CRI duplicate mpi_ibcast_ as pmpi_ibcast_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_ibcast_( void*, MPI_Fint *, MPI_Fint *,
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IBCAST( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibcast__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibcast( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibcast_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IBCAST( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibcast__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibcast( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibcast_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_ibcast__ = MPIX_IBCAST
-#pragma weak mpix_ibcast_ = MPIX_IBCAST
-#pragma weak mpix_ibcast = MPIX_IBCAST
+#pragma weak mpi_ibcast__ = MPI_IBCAST
+#pragma weak mpi_ibcast_ = MPI_IBCAST
+#pragma weak mpi_ibcast = MPI_IBCAST
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_IBCAST = mpix_ibcast__
-#pragma weak mpix_ibcast_ = mpix_ibcast__
-#pragma weak mpix_ibcast = mpix_ibcast__
+#pragma weak MPI_IBCAST = mpi_ibcast__
+#pragma weak mpi_ibcast_ = mpi_ibcast__
+#pragma weak mpi_ibcast = mpi_ibcast__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_IBCAST = mpix_ibcast_
-#pragma weak mpix_ibcast__ = mpix_ibcast_
-#pragma weak mpix_ibcast = mpix_ibcast_
+#pragma weak MPI_IBCAST = mpi_ibcast_
+#pragma weak mpi_ibcast__ = mpi_ibcast_
+#pragma weak mpi_ibcast = mpi_ibcast_
 #else
-#pragma weak MPIX_IBCAST = mpix_ibcast
-#pragma weak mpix_ibcast__ = mpix_ibcast
-#pragma weak mpix_ibcast_ = mpix_ibcast
+#pragma weak MPI_IBCAST = mpi_ibcast
+#pragma weak mpi_ibcast__ = mpi_ibcast
+#pragma weak mpi_ibcast_ = mpi_ibcast
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_ibcast_( void*, MPI_Fint *, MPI_Fint *,
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_IBCAST( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IBCAST( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_ibcast__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ibcast__( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_ibcast_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ibcast_( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_ibcast( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ibcast( void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_ibcast__ = PMPIX_IBCAST
-#pragma weak pmpix_ibcast_ = PMPIX_IBCAST
-#pragma weak pmpix_ibcast = PMPIX_IBCAST
+#pragma weak pmpi_ibcast__ = PMPI_IBCAST
+#pragma weak pmpi_ibcast_ = PMPI_IBCAST
+#pragma weak pmpi_ibcast = PMPI_IBCAST
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_IBCAST = pmpix_ibcast__
-#pragma weak pmpix_ibcast_ = pmpix_ibcast__
-#pragma weak pmpix_ibcast = pmpix_ibcast__
+#pragma weak PMPI_IBCAST = pmpi_ibcast__
+#pragma weak pmpi_ibcast_ = pmpi_ibcast__
+#pragma weak pmpi_ibcast = pmpi_ibcast__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_IBCAST = pmpix_ibcast_
-#pragma weak pmpix_ibcast__ = pmpix_ibcast_
-#pragma weak pmpix_ibcast = pmpix_ibcast_
+#pragma weak PMPI_IBCAST = pmpi_ibcast_
+#pragma weak pmpi_ibcast__ = pmpi_ibcast_
+#pragma weak pmpi_ibcast = pmpi_ibcast_
 #else
-#pragma weak PMPIX_IBCAST = pmpix_ibcast
-#pragma weak pmpix_ibcast__ = pmpix_ibcast
-#pragma weak pmpix_ibcast_ = pmpix_ibcast
+#pragma weak PMPI_IBCAST = pmpi_ibcast
+#pragma weak pmpi_ibcast__ = pmpi_ibcast
+#pragma weak pmpi_ibcast_ = pmpi_ibcast
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_ibcast_ PMPIX_IBCAST
+#define mpi_ibcast_ PMPI_IBCAST
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_ibcast_ pmpix_ibcast__
+#define mpi_ibcast_ pmpi_ibcast__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_ibcast_ pmpix_ibcast
+#define mpi_ibcast_ pmpi_ibcast
 #else
-#define mpix_ibcast_ pmpix_ibcast_
+#define mpi_ibcast_ pmpi_ibcast_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Ibcast
-#define MPIX_Ibcast PMPIX_Ibcast 
+#undef MPI_Ibcast
+#define MPI_Ibcast PMPI_Ibcast 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_ibcast_ MPIX_IBCAST
+#define mpi_ibcast_ MPI_IBCAST
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_ibcast_ mpix_ibcast__
+#define mpi_ibcast_ mpi_ibcast__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_ibcast_ mpix_ibcast
+#define mpi_ibcast_ mpi_ibcast
 /* Else leave name alone */
 #endif
 
@@ -184,6 +184,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_ibcast( void*, MPI_Fint *, MPI_Fint *,
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_ibcast_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *ierr ){
-    *ierr = MPIX_Ibcast( v1, *v2, (MPI_Datatype)(*v3), *v4, (MPI_Comm)(*v5), (MPI_Request *)(v6) );
+FORT_DLL_SPEC void FORT_CALL mpi_ibcast_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *ierr ){
+    *ierr = MPI_Ibcast( v1, (int)*v2, (MPI_Datatype)(*v3), (int)*v4, (MPI_Comm)(*v5), (MPI_Request *)(v6) );
 }

@@ -9,8 +9,8 @@
 Gathers together values from a group of processes 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Gather(MPICH2_CONST void *sendbuf, int sendcnt, MPI_Datatype sendtype,
-               void *recvbuf, int recvcnt, MPI_Datatype recvtype,
+int MPI_Gather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+               void *recvbuf, int recvcount, MPI_Datatype recvtype,
                int root, MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -32,7 +32,7 @@ significant only at root)
 <DT><B>comm </B><DD>communicator (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>recvbuf </B> <DD> address of receive buffer (choice, significant only at <TT>root</TT>) 
 </DL>
 <P>

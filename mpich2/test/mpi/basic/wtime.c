@@ -1,11 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpi.h"
 #include <stdio.h>
-#include <unistd.h>
+#include "mpitest.h"
 
 int main(int argc, char *argv[])
 {
@@ -16,7 +16,7 @@ int main(int argc, char *argv[])
 	MPI_Comm_rank(MPI_COMM_WORLD, &i);
 
 	dStart = MPI_Wtime();
-	sleep(1);
+    MTestSleep(1);
 	dFinish = MPI_Wtime();
 	dDuration = dFinish - dStart;
 

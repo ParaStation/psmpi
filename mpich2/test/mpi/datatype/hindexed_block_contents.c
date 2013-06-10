@@ -5,17 +5,13 @@
  */
 
 /* test based on a bug report from Lisandro Dalcin:
- * http://lists.mcs.anl.gov/pipermail/mpich2-dev/2012-October/000978.html */
+ * http://lists.mcs.anl.gov/pipermail/mpich-dev/2012-October/000978.html */
 
 #include <mpi.h>
 #include <stdlib.h>
 #include <stdio.h>
 /* USE_STRICT_MPI may be defined in mpitestconf.h */
 #include "mpitestconf.h"
-
-#if !defined(USE_STRICT_MPI) && defined(MPICH2)
-#  define TEST_MPI3_ROUTINES 1
-#endif
 
 /* assert-like macro that bumps the err count and emits a message */
 #define check(x_)                                                                 \
@@ -40,9 +36,8 @@ int main(int argc, char **argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 
-#ifdef TEST_MPI3_ROUTINES
     if (!rank) {
-        MPIX_Type_create_hindexed_block(count, blocklength,
+        MPI_Type_create_hindexed_block(count, blocklength,
                                         displacements, MPI_INT,
                                         &t);
         MPI_Type_commit(&t);
@@ -69,7 +64,6 @@ int main(int argc, char **argv)
 
         MPI_Type_free(&t);
     }
-#endif /* defined(TEST_MPI3_ROUTINES) */
 
     if (rank == 0) {
         if (errs) {

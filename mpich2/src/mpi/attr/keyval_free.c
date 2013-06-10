@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -33,7 +33,7 @@
 
 MPI_Keyval_free - Frees an attribute key for communicators
 
-Input Parameter:
+Input Parameters:
 . keyval - Frees the integer key value (integer) 
 
 Note:

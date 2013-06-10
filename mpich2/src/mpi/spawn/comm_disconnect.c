@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -31,7 +31,7 @@
 /*@
    MPI_Comm_disconnect - Disconnect from a communicator
 
-   Input Parameter:
+Input Parameters:
 .  comm - communicator (handle) 
 
 Notes:

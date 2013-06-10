@@ -5,7 +5,7 @@
 #
 
 # workaround to suppress deprecated module warnings in python2.6
-# see https://trac.mcs.anl.gov/projects/mpich2/ticket/362 for tracking
+# see https://trac.mpich.org/projects/mpich/ticket/362 for tracking
 import warnings
 warnings.filterwarnings('ignore', '.*the md5 module is deprecated.*', DeprecationWarning)
 warnings.filterwarnings('ignore', '.*the popen2 module is deprecated.*', DeprecationWarning)
@@ -1279,7 +1279,7 @@ class MPDConClientSock(MPDSock):
                     print '    mpd &'
                     print 'and you will be able to run jobs just on this host.'
                     print 'For more details on starting mpds on a set of hosts, see'
-                    print 'the MPICH2 Installation Guide.'
+                    print 'the MPICH Installation Guide.'
                     sys.exit(-1)
                 msgToSend = { 'cmd' : 'con_init' }
                 self.sock.send_dict_msg(msgToSend)
@@ -1308,7 +1308,7 @@ class MPDConClientSock(MPDSock):
             print '    mpd &'
             print 'and you will be able to run jobs just on this host.'
             print 'For more details on starting mpds on a set of hosts, see'
-            print 'the MPICH2 Installation Guide.'
+            print 'the MPICH Installation Guide.'
             sys.exit(-1)
 
 class MPDParmDB(dict):

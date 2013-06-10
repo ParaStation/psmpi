@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -39,7 +39,7 @@ int MPIR_async_thread_initialized = 0;
 /*@
    MPI_Init - Initialize the MPI execution environment
 
-   Input Parameters:
+Input Parameters:
 +  argc - Pointer to the number of arguments 
 -  argv - Pointer to the argument vector
 

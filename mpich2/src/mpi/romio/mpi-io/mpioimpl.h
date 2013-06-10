@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /* 
  *
  *   Copyright (C) 1997 University of Chicago. 
@@ -14,8 +14,9 @@
 
 #include "adio.h"
 #include "mpio.h"
+#include "mpiu_external32.h"
 
-#ifdef ROMIO_INSIDE_MPICH2
+#ifdef ROMIO_INSIDE_MPICH
 #include "glue_romio.h"
 
 #define MPIU_THREAD_CS_ENTER(name_,ctx_) MPIU_THREAD_CS_ENTER_##name_(ctx_)
@@ -23,19 +24,26 @@
 #define MPIU_THREAD_CS_ENTER_ALLFUNC(ctx_) MPIR_Ext_cs_enter_allfunc()
 #define MPIU_THREAD_CS_EXIT_ALLFUNC(ctx_) MPIR_Ext_cs_exit_allfunc()
 
-#else /* not ROMIO_INSIDE_MPICH2 */
+/* committed datatype checking support in ROMIO */
+#define MPIO_DATATYPE_ISCOMMITTED(dtype_, err_)        \
+    do {                                               \
+        err_ =  MPIR_Ext_datatype_iscommitted(dtype_); \
+    } while (0)
+
+#else /* not ROMIO_INSIDE_MPICH */
 /* Any MPI implementation that wishes to follow the thread-safety and
-   error reporting features provided by MPICH2 must implement these 
+   error reporting features provided by MPICH must implement these 
    four functions.  Defining these as empty should not change the behavior 
    of correct programs */
 #define MPIU_THREAD_CS_ENTER(x,y)
 #define MPIU_THREAD_CS_EXIT(x,y)
+#define MPIO_DATATYPE_ISCOMMITTED(dtype_, err_) do {} while (0)
 #ifdef HAVE_WINDOWS_H
 #define MPIU_UNREFERENCED_ARG(a) a
 #else
 #define MPIU_UNREFERENCED_ARG(a)
 #endif
-#endif /* ROMIO_INSIDE_MPICH2 */
+#endif /* ROMIO_INSIDE_MPICH */
 
 /* info is a linked list of these structures */
 struct MPIR_Info {

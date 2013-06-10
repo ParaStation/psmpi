@@ -1,10 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2010 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 /* 
- * Test of reduce scatter with large data (needed in MPICH2 to trigger the
+ * Test of reduce scatter with large data (needed in MPICH to trigger the
  * long-data algorithm)
  *
  * Each processor contributes its rank + the index to the reduction, 

@@ -187,13 +187,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_attr_get( MPI_Fint *, MPI_Fint *, void*
 FORT_DLL_SPEC void FORT_CALL mpi_attr_get_ ( MPI_Fint *v1, MPI_Fint *v2, void*v3, MPI_Fint *v4, MPI_Fint *ierr ){
     void *attrv3;
     int l4;
-   *ierr = MPIR_CommGetAttr_fort( (MPI_Comm)(*v1), *v2, &attrv3, &l4, MPIR_ATTR_INT );
+   *ierr = MPIR_CommGetAttr_fort( (MPI_Comm)(*v1), (int)*v2, &attrv3, &l4, MPIR_ATTR_INT );
 
     if ((int)*ierr || !l4) {
         *(MPI_Fint*)v3 = 0;
     }
     else {
-        *(MPI_Fint*)v3 = (MPI_Fint)*(int *)&attrv3;
+        *(MPI_Fint*)v3 = (MPI_Fint)(MPIR_Pint)attrv3;
     }
     if (*ierr == MPI_SUCCESS) *v4 = MPIR_TO_FLOG(l4);
 }

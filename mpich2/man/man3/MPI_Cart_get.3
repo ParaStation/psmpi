@@ -1,10 +1,10 @@
-.TH MPI_Cart_get 3 "9/20/2012" " " "MPI"
+.TH MPI_Cart_get 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Cart_get \-  Retrieves Cartesian topology information associated with a  communicator 
 .SH SYNOPSIS
 .nf
-int MPI_Cart_get(MPI_Comm comm, int maxdims, int *dims, int *periods, 
-                 int *coords)
+int MPI_Cart_get(MPI_Comm comm, int maxdims, int dims[], int periods[],
+                 int coords[])
 .fi
 .SH INPUT PARAMETERS
 .PD 0

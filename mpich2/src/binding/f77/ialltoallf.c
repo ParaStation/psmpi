@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IALLTOALL( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ialltoall__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ialltoall( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ialltoall_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IALLTOALL( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ialltoall__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ialltoall( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ialltoall_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_IALLTOALL = PMPIX_IALLTOALL
-#pragma weak mpix_ialltoall__ = PMPIX_IALLTOALL
-#pragma weak mpix_ialltoall_ = PMPIX_IALLTOALL
-#pragma weak mpix_ialltoall = PMPIX_IALLTOALL
+#pragma weak MPI_IALLTOALL = PMPI_IALLTOALL
+#pragma weak mpi_ialltoall__ = PMPI_IALLTOALL
+#pragma weak mpi_ialltoall_ = PMPI_IALLTOALL
+#pragma weak mpi_ialltoall = PMPI_IALLTOALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_IALLTOALL = pmpix_ialltoall__
-#pragma weak mpix_ialltoall__ = pmpix_ialltoall__
-#pragma weak mpix_ialltoall_ = pmpix_ialltoall__
-#pragma weak mpix_ialltoall = pmpix_ialltoall__
+#pragma weak MPI_IALLTOALL = pmpi_ialltoall__
+#pragma weak mpi_ialltoall__ = pmpi_ialltoall__
+#pragma weak mpi_ialltoall_ = pmpi_ialltoall__
+#pragma weak mpi_ialltoall = pmpi_ialltoall__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_IALLTOALL = pmpix_ialltoall_
-#pragma weak mpix_ialltoall__ = pmpix_ialltoall_
-#pragma weak mpix_ialltoall_ = pmpix_ialltoall_
-#pragma weak mpix_ialltoall = pmpix_ialltoall_
+#pragma weak MPI_IALLTOALL = pmpi_ialltoall_
+#pragma weak mpi_ialltoall__ = pmpi_ialltoall_
+#pragma weak mpi_ialltoall_ = pmpi_ialltoall_
+#pragma weak mpi_ialltoall = pmpi_ialltoall_
 #else
-#pragma weak MPIX_IALLTOALL = pmpix_ialltoall
-#pragma weak mpix_ialltoall__ = pmpix_ialltoall
-#pragma weak mpix_ialltoall_ = pmpix_ialltoall
-#pragma weak mpix_ialltoall = pmpix_ialltoall
+#pragma weak MPI_IALLTOALL = pmpi_ialltoall
+#pragma weak mpi_ialltoall__ = pmpi_ialltoall
+#pragma weak mpi_ialltoall_ = pmpi_ialltoall
+#pragma weak mpi_ialltoall = pmpi_ialltoall
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_ialltoall_( void*, MPI_Fint *, MPI_Fint
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IALLTOALL( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IALLTOALL( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_IALLTOALL = PMPIX_IALLTOALL
+#pragma weak MPI_IALLTOALL = PMPI_IALLTOALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_ialltoall__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ialltoall__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_ialltoall__ = pmpix_ialltoall__
+#pragma weak mpi_ialltoall__ = pmpi_ialltoall__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_ialltoall( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ialltoall( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_ialltoall = pmpix_ialltoall
+#pragma weak mpi_ialltoall = pmpi_ialltoall
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_ialltoall_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ialltoall_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_ialltoall_ = pmpix_ialltoall_
+#pragma weak mpi_ialltoall_ = pmpi_ialltoall_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_IALLTOALL  MPIX_IALLTOALL
+#pragma _HP_SECONDARY_DEF PMPI_IALLTOALL  MPI_IALLTOALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_ialltoall__  mpix_ialltoall__
+#pragma _HP_SECONDARY_DEF pmpi_ialltoall__  mpi_ialltoall__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_ialltoall  mpix_ialltoall
+#pragma _HP_SECONDARY_DEF pmpi_ialltoall  mpi_ialltoall
 #else
-#pragma _HP_SECONDARY_DEF pmpix_ialltoall_  mpix_ialltoall_
+#pragma _HP_SECONDARY_DEF pmpi_ialltoall_  mpi_ialltoall_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_IALLTOALL as PMPIX_IALLTOALL
+#pragma _CRI duplicate MPI_IALLTOALL as PMPI_IALLTOALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_ialltoall__ as pmpix_ialltoall__
+#pragma _CRI duplicate mpi_ialltoall__ as pmpi_ialltoall__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_ialltoall as pmpix_ialltoall
+#pragma _CRI duplicate mpi_ialltoall as pmpi_ialltoall
 #else
-#pragma _CRI duplicate mpix_ialltoall_ as pmpix_ialltoall_
+#pragma _CRI duplicate mpi_ialltoall_ as pmpi_ialltoall_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_ialltoall_( void*, MPI_Fint *, MPI_Fint
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IALLTOALL( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ialltoall__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ialltoall( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ialltoall_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IALLTOALL( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ialltoall__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ialltoall( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ialltoall_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_ialltoall__ = MPIX_IALLTOALL
-#pragma weak mpix_ialltoall_ = MPIX_IALLTOALL
-#pragma weak mpix_ialltoall = MPIX_IALLTOALL
+#pragma weak mpi_ialltoall__ = MPI_IALLTOALL
+#pragma weak mpi_ialltoall_ = MPI_IALLTOALL
+#pragma weak mpi_ialltoall = MPI_IALLTOALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_IALLTOALL = mpix_ialltoall__
-#pragma weak mpix_ialltoall_ = mpix_ialltoall__
-#pragma weak mpix_ialltoall = mpix_ialltoall__
+#pragma weak MPI_IALLTOALL = mpi_ialltoall__
+#pragma weak mpi_ialltoall_ = mpi_ialltoall__
+#pragma weak mpi_ialltoall = mpi_ialltoall__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_IALLTOALL = mpix_ialltoall_
-#pragma weak mpix_ialltoall__ = mpix_ialltoall_
-#pragma weak mpix_ialltoall = mpix_ialltoall_
+#pragma weak MPI_IALLTOALL = mpi_ialltoall_
+#pragma weak mpi_ialltoall__ = mpi_ialltoall_
+#pragma weak mpi_ialltoall = mpi_ialltoall_
 #else
-#pragma weak MPIX_IALLTOALL = mpix_ialltoall
-#pragma weak mpix_ialltoall__ = mpix_ialltoall
-#pragma weak mpix_ialltoall_ = mpix_ialltoall
+#pragma weak MPI_IALLTOALL = mpi_ialltoall
+#pragma weak mpi_ialltoall__ = mpi_ialltoall
+#pragma weak mpi_ialltoall_ = mpi_ialltoall
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_ialltoall_( void*, MPI_Fint *, MPI_Fint
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_IALLTOALL( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IALLTOALL( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_ialltoall__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ialltoall__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_ialltoall_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ialltoall_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_ialltoall( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ialltoall( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_ialltoall__ = PMPIX_IALLTOALL
-#pragma weak pmpix_ialltoall_ = PMPIX_IALLTOALL
-#pragma weak pmpix_ialltoall = PMPIX_IALLTOALL
+#pragma weak pmpi_ialltoall__ = PMPI_IALLTOALL
+#pragma weak pmpi_ialltoall_ = PMPI_IALLTOALL
+#pragma weak pmpi_ialltoall = PMPI_IALLTOALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_IALLTOALL = pmpix_ialltoall__
-#pragma weak pmpix_ialltoall_ = pmpix_ialltoall__
-#pragma weak pmpix_ialltoall = pmpix_ialltoall__
+#pragma weak PMPI_IALLTOALL = pmpi_ialltoall__
+#pragma weak pmpi_ialltoall_ = pmpi_ialltoall__
+#pragma weak pmpi_ialltoall = pmpi_ialltoall__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_IALLTOALL = pmpix_ialltoall_
-#pragma weak pmpix_ialltoall__ = pmpix_ialltoall_
-#pragma weak pmpix_ialltoall = pmpix_ialltoall_
+#pragma weak PMPI_IALLTOALL = pmpi_ialltoall_
+#pragma weak pmpi_ialltoall__ = pmpi_ialltoall_
+#pragma weak pmpi_ialltoall = pmpi_ialltoall_
 #else
-#pragma weak PMPIX_IALLTOALL = pmpix_ialltoall
-#pragma weak pmpix_ialltoall__ = pmpix_ialltoall
-#pragma weak pmpix_ialltoall_ = pmpix_ialltoall
+#pragma weak PMPI_IALLTOALL = pmpi_ialltoall
+#pragma weak pmpi_ialltoall__ = pmpi_ialltoall
+#pragma weak pmpi_ialltoall_ = pmpi_ialltoall
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_ialltoall_ PMPIX_IALLTOALL
+#define mpi_ialltoall_ PMPI_IALLTOALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_ialltoall_ pmpix_ialltoall__
+#define mpi_ialltoall_ pmpi_ialltoall__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_ialltoall_ pmpix_ialltoall
+#define mpi_ialltoall_ pmpi_ialltoall
 #else
-#define mpix_ialltoall_ pmpix_ialltoall_
+#define mpi_ialltoall_ pmpi_ialltoall_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Ialltoall
-#define MPIX_Ialltoall PMPIX_Ialltoall 
+#undef MPI_Ialltoall
+#define MPI_Ialltoall PMPI_Ialltoall 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_ialltoall_ MPIX_IALLTOALL
+#define mpi_ialltoall_ MPI_IALLTOALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_ialltoall_ mpix_ialltoall__
+#define mpi_ialltoall_ mpi_ialltoall__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_ialltoall_ mpix_ialltoall
+#define mpi_ialltoall_ mpi_ialltoall
 /* Else leave name alone */
 #endif
 
@@ -184,11 +184,11 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_ialltoall( void*, MPI_Fint *, MPI_Fint
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_ialltoall_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, void*v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *v8, MPI_Fint *ierr ){
+FORT_DLL_SPEC void FORT_CALL mpi_ialltoall_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, void*v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *v8, MPI_Fint *ierr ){
 
 #ifndef HAVE_MPI_F_INIT_WORKS_WITH_C
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
 #endif
     if (v1 == MPIR_F_MPI_IN_PLACE) v1 = MPI_IN_PLACE;
-    *ierr = MPIX_Ialltoall( v1, *v2, (MPI_Datatype)(*v3), v4, *v5, (MPI_Datatype)(*v6), (MPI_Comm)(*v7), (MPI_Request *)(v8) );
+    *ierr = MPI_Ialltoall( v1, (int)*v2, (MPI_Datatype)(*v3), v4, (int)*v5, (MPI_Datatype)(*v6), (MPI_Comm)(*v7), (MPI_Request *)(v8) );
 }

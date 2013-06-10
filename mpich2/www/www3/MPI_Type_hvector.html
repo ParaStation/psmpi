@@ -10,10 +10,10 @@ type_hvector
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Type_hvector(int count,
-                    int blocklen,
+                    int blocklength,
                     MPI_Aint stride,
-                    MPI_Datatype old_type,
-                    MPI_Datatype *newtype_p)
+                    MPI_Datatype oldtype,
+                    MPI_Datatype *newtype)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -27,8 +27,8 @@ int MPI_Type_hvector(int count,
 <DT><B>oldtype </B><DD>old datatype (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
-<DL><DT><B>newtype_p </B> <DD> new datatype (handle) 
+<H2>Output Parameters</H2>
+<DL><DT><B>newtype </B> <DD> new datatype (handle)
 </DL>
 <P>
 <H2>Notes</H2>

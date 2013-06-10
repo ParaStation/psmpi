@@ -10,9 +10,9 @@ Create a datatype for a subarray of a regular, multidimensional array
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Type_create_subarray(int ndims,
-                           MPICH2_CONST int array_of_sizes[],
-                           MPICH2_CONST int array_of_subsizes[],
-                           MPICH2_CONST int array_of_starts[],
+                           const int array_of_sizes[],
+                           const int array_of_subsizes[],
+                           const int array_of_starts[],
                            int order,
                            MPI_Datatype oldtype,
                            MPI_Datatype *newtype)
@@ -35,7 +35,7 @@ the subarray (array of positive integers)
 <DT><B>oldtype </B><DD>array element datatype (handle)
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>newtype </B> <DD> new datatype (handle)
 </DL>
 <P>

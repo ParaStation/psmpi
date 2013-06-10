@@ -1,10 +1,10 @@
-.TH MPI_Gatherv 3 "9/20/2012" " " "MPI"
+.TH MPI_Gatherv 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Gatherv \-  Gathers into specified locations from all processes in a group 
 .SH SYNOPSIS
 .nf
-int MPI_Gatherv(MPICH2_CONST void *sendbuf, int sendcnt, MPI_Datatype sendtype,
-                void *recvbuf, MPICH2_CONST int *recvcnts, MPICH2_CONST int *displs,
+int MPI_Gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                void *recvbuf, const int *recvcounts, const int *displs,
                 MPI_Datatype recvtype, int root, MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
@@ -62,7 +62,7 @@ at root)
 - communicator (handle) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B recvbuf 

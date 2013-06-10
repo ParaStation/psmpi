@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_create_hvector( MPI_Fint *, MPI_Fi
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_type_create_hvector_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Aint * v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *ierr ){
-    *ierr = MPI_Type_create_hvector( *v1, *v2, *v3, (MPI_Datatype)(*v4), (MPI_Datatype *)(v5) );
+    *ierr = MPI_Type_create_hvector( (int)*v1, (int)*v2, *v3, (MPI_Datatype)(*v4), (MPI_Datatype *)(v5) );
 }

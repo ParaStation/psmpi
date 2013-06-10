@@ -7,10 +7,10 @@ AC_CONFIG_AUX_DIR(../../../confdb)
 m4_include([../../../maint/version.m4])
 dnl 2nd arg is intentionally underquoted
 AC_INIT([MPD],
-        MPICH2_VERSION_m4,
-        [mpich-discuss@mcs.anl.gov],
+        MPICH_VERSION_m4,
+        [discuss@mpich.org],
         [mpd],
-        [http://www.mcs.anl.gov/research/projects/mpich2/])
+        [http://www.mpich.org/])
 
 # Autoconf header:
 rm -f ${srcdir}/mpdconf.h mpdconf.h
@@ -25,7 +25,7 @@ AH_TOP([/* -*- Mode: C; c-basic-offset:4 ; -*- */
 ])
 AH_BOTTOM([#endif])
 
-AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.12.3 silent-rules subdir-objects no-installinfo no-installman])
+AM_INIT_AUTOMAKE([-Wall -Werror -Wno-portability-recursive foreign 1.12.3 silent-rules subdir-objects no-installinfo no-installman])
 # first_pm_name is set and exported by the top level configure
 AM_CONDITIONAL([PRIMARY_PM_MPD],[test "X$first_pm_name" = "Xmpd"])
 

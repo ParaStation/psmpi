@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -6,6 +6,7 @@
 #include "mpi.h" 
 #include "stdio.h"
 #include "mpitest.h"
+#include "squelch.h"
 
 /* tests put and get with post/start/complete/wait on 2 processes */
 
@@ -50,7 +51,7 @@ int main(int argc, char *argv[])
 
             for (i=0; i<SIZE1; i++)
                 if (B[i] != (-4)*(i+SIZE1)) {
-                    printf("Get Error: B[i] is %d, should be %d\n", B[i], (-4)*(i+SIZE1));
+                    SQUELCH( printf("Get Error: B[i] is %d, should be %d\n", B[i], (-4)*(i+SIZE1)); );
                     errs++;
                 }
         }
@@ -64,7 +65,7 @@ int main(int argc, char *argv[])
 
             for (i=0; i<SIZE1; i++) {
                 if (B[i] != i) {
-                    printf("Put Error: B[i] is %d, should be %d\n", B[i], i);
+                    SQUELCH( printf("Put Error: B[i] is %d, should be %d\n", B[i], i); );
                     errs++;
                 }
             }

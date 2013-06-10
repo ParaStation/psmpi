@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_CREATE_GROUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_create_group__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_create_group( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_create_group_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_CREATE_GROUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_group__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_group( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_group_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_COMM_CREATE_GROUP = PMPIX_COMM_CREATE_GROUP
-#pragma weak mpix_comm_create_group__ = PMPIX_COMM_CREATE_GROUP
-#pragma weak mpix_comm_create_group_ = PMPIX_COMM_CREATE_GROUP
-#pragma weak mpix_comm_create_group = PMPIX_COMM_CREATE_GROUP
+#pragma weak MPI_COMM_CREATE_GROUP = PMPI_COMM_CREATE_GROUP
+#pragma weak mpi_comm_create_group__ = PMPI_COMM_CREATE_GROUP
+#pragma weak mpi_comm_create_group_ = PMPI_COMM_CREATE_GROUP
+#pragma weak mpi_comm_create_group = PMPI_COMM_CREATE_GROUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_COMM_CREATE_GROUP = pmpix_comm_create_group__
-#pragma weak mpix_comm_create_group__ = pmpix_comm_create_group__
-#pragma weak mpix_comm_create_group_ = pmpix_comm_create_group__
-#pragma weak mpix_comm_create_group = pmpix_comm_create_group__
+#pragma weak MPI_COMM_CREATE_GROUP = pmpi_comm_create_group__
+#pragma weak mpi_comm_create_group__ = pmpi_comm_create_group__
+#pragma weak mpi_comm_create_group_ = pmpi_comm_create_group__
+#pragma weak mpi_comm_create_group = pmpi_comm_create_group__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_COMM_CREATE_GROUP = pmpix_comm_create_group_
-#pragma weak mpix_comm_create_group__ = pmpix_comm_create_group_
-#pragma weak mpix_comm_create_group_ = pmpix_comm_create_group_
-#pragma weak mpix_comm_create_group = pmpix_comm_create_group_
+#pragma weak MPI_COMM_CREATE_GROUP = pmpi_comm_create_group_
+#pragma weak mpi_comm_create_group__ = pmpi_comm_create_group_
+#pragma weak mpi_comm_create_group_ = pmpi_comm_create_group_
+#pragma weak mpi_comm_create_group = pmpi_comm_create_group_
 #else
-#pragma weak MPIX_COMM_CREATE_GROUP = pmpix_comm_create_group
-#pragma weak mpix_comm_create_group__ = pmpix_comm_create_group
-#pragma weak mpix_comm_create_group_ = pmpix_comm_create_group
-#pragma weak mpix_comm_create_group = pmpix_comm_create_group
+#pragma weak MPI_COMM_CREATE_GROUP = pmpi_comm_create_group
+#pragma weak mpi_comm_create_group__ = pmpi_comm_create_group
+#pragma weak mpi_comm_create_group_ = pmpi_comm_create_group
+#pragma weak mpi_comm_create_group = pmpi_comm_create_group
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_comm_create_group_( MPI_Fint *, MPI_Fin
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_CREATE_GROUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_CREATE_GROUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_COMM_CREATE_GROUP = PMPIX_COMM_CREATE_GROUP
+#pragma weak MPI_COMM_CREATE_GROUP = PMPI_COMM_CREATE_GROUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_create_group__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_group__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_comm_create_group__ = pmpix_comm_create_group__
+#pragma weak mpi_comm_create_group__ = pmpi_comm_create_group__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_create_group( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_group( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_comm_create_group = pmpix_comm_create_group
+#pragma weak mpi_comm_create_group = pmpi_comm_create_group
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_create_group_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_group_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_comm_create_group_ = pmpix_comm_create_group_
+#pragma weak mpi_comm_create_group_ = pmpi_comm_create_group_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_COMM_CREATE_GROUP  MPIX_COMM_CREATE_GROUP
+#pragma _HP_SECONDARY_DEF PMPI_COMM_CREATE_GROUP  MPI_COMM_CREATE_GROUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_comm_create_group__  mpix_comm_create_group__
+#pragma _HP_SECONDARY_DEF pmpi_comm_create_group__  mpi_comm_create_group__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_comm_create_group  mpix_comm_create_group
+#pragma _HP_SECONDARY_DEF pmpi_comm_create_group  mpi_comm_create_group
 #else
-#pragma _HP_SECONDARY_DEF pmpix_comm_create_group_  mpix_comm_create_group_
+#pragma _HP_SECONDARY_DEF pmpi_comm_create_group_  mpi_comm_create_group_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_COMM_CREATE_GROUP as PMPIX_COMM_CREATE_GROUP
+#pragma _CRI duplicate MPI_COMM_CREATE_GROUP as PMPI_COMM_CREATE_GROUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_comm_create_group__ as pmpix_comm_create_group__
+#pragma _CRI duplicate mpi_comm_create_group__ as pmpi_comm_create_group__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_comm_create_group as pmpix_comm_create_group
+#pragma _CRI duplicate mpi_comm_create_group as pmpi_comm_create_group
 #else
-#pragma _CRI duplicate mpix_comm_create_group_ as pmpix_comm_create_group_
+#pragma _CRI duplicate mpi_comm_create_group_ as pmpi_comm_create_group_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_comm_create_group_( MPI_Fint *, MPI_Fin
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_CREATE_GROUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_create_group__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_create_group( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_create_group_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_CREATE_GROUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_group__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_group( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_create_group_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_comm_create_group__ = MPIX_COMM_CREATE_GROUP
-#pragma weak mpix_comm_create_group_ = MPIX_COMM_CREATE_GROUP
-#pragma weak mpix_comm_create_group = MPIX_COMM_CREATE_GROUP
+#pragma weak mpi_comm_create_group__ = MPI_COMM_CREATE_GROUP
+#pragma weak mpi_comm_create_group_ = MPI_COMM_CREATE_GROUP
+#pragma weak mpi_comm_create_group = MPI_COMM_CREATE_GROUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_COMM_CREATE_GROUP = mpix_comm_create_group__
-#pragma weak mpix_comm_create_group_ = mpix_comm_create_group__
-#pragma weak mpix_comm_create_group = mpix_comm_create_group__
+#pragma weak MPI_COMM_CREATE_GROUP = mpi_comm_create_group__
+#pragma weak mpi_comm_create_group_ = mpi_comm_create_group__
+#pragma weak mpi_comm_create_group = mpi_comm_create_group__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_COMM_CREATE_GROUP = mpix_comm_create_group_
-#pragma weak mpix_comm_create_group__ = mpix_comm_create_group_
-#pragma weak mpix_comm_create_group = mpix_comm_create_group_
+#pragma weak MPI_COMM_CREATE_GROUP = mpi_comm_create_group_
+#pragma weak mpi_comm_create_group__ = mpi_comm_create_group_
+#pragma weak mpi_comm_create_group = mpi_comm_create_group_
 #else
-#pragma weak MPIX_COMM_CREATE_GROUP = mpix_comm_create_group
-#pragma weak mpix_comm_create_group__ = mpix_comm_create_group
-#pragma weak mpix_comm_create_group_ = mpix_comm_create_group
+#pragma weak MPI_COMM_CREATE_GROUP = mpi_comm_create_group
+#pragma weak mpi_comm_create_group__ = mpi_comm_create_group
+#pragma weak mpi_comm_create_group_ = mpi_comm_create_group
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_comm_create_group_( MPI_Fint *, MPI_Fin
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_COMM_CREATE_GROUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_CREATE_GROUP( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_create_group__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_create_group__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_create_group_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_create_group_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_create_group( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_create_group( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_comm_create_group__ = PMPIX_COMM_CREATE_GROUP
-#pragma weak pmpix_comm_create_group_ = PMPIX_COMM_CREATE_GROUP
-#pragma weak pmpix_comm_create_group = PMPIX_COMM_CREATE_GROUP
+#pragma weak pmpi_comm_create_group__ = PMPI_COMM_CREATE_GROUP
+#pragma weak pmpi_comm_create_group_ = PMPI_COMM_CREATE_GROUP
+#pragma weak pmpi_comm_create_group = PMPI_COMM_CREATE_GROUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_COMM_CREATE_GROUP = pmpix_comm_create_group__
-#pragma weak pmpix_comm_create_group_ = pmpix_comm_create_group__
-#pragma weak pmpix_comm_create_group = pmpix_comm_create_group__
+#pragma weak PMPI_COMM_CREATE_GROUP = pmpi_comm_create_group__
+#pragma weak pmpi_comm_create_group_ = pmpi_comm_create_group__
+#pragma weak pmpi_comm_create_group = pmpi_comm_create_group__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_COMM_CREATE_GROUP = pmpix_comm_create_group_
-#pragma weak pmpix_comm_create_group__ = pmpix_comm_create_group_
-#pragma weak pmpix_comm_create_group = pmpix_comm_create_group_
+#pragma weak PMPI_COMM_CREATE_GROUP = pmpi_comm_create_group_
+#pragma weak pmpi_comm_create_group__ = pmpi_comm_create_group_
+#pragma weak pmpi_comm_create_group = pmpi_comm_create_group_
 #else
-#pragma weak PMPIX_COMM_CREATE_GROUP = pmpix_comm_create_group
-#pragma weak pmpix_comm_create_group__ = pmpix_comm_create_group
-#pragma weak pmpix_comm_create_group_ = pmpix_comm_create_group
+#pragma weak PMPI_COMM_CREATE_GROUP = pmpi_comm_create_group
+#pragma weak pmpi_comm_create_group__ = pmpi_comm_create_group
+#pragma weak pmpi_comm_create_group_ = pmpi_comm_create_group
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_comm_create_group_ PMPIX_COMM_CREATE_GROUP
+#define mpi_comm_create_group_ PMPI_COMM_CREATE_GROUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_comm_create_group_ pmpix_comm_create_group__
+#define mpi_comm_create_group_ pmpi_comm_create_group__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_comm_create_group_ pmpix_comm_create_group
+#define mpi_comm_create_group_ pmpi_comm_create_group
 #else
-#define mpix_comm_create_group_ pmpix_comm_create_group_
+#define mpi_comm_create_group_ pmpi_comm_create_group_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Comm_create_group
-#define MPIX_Comm_create_group PMPIX_Comm_create_group 
+#undef MPI_Comm_create_group
+#define MPI_Comm_create_group PMPI_Comm_create_group 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_comm_create_group_ MPIX_COMM_CREATE_GROUP
+#define mpi_comm_create_group_ MPI_COMM_CREATE_GROUP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_comm_create_group_ mpix_comm_create_group__
+#define mpi_comm_create_group_ mpi_comm_create_group__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_comm_create_group_ mpix_comm_create_group
+#define mpi_comm_create_group_ mpi_comm_create_group
 /* Else leave name alone */
 #endif
 
@@ -184,6 +184,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_create_group( MPI_Fint *, MPI_Fin
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_comm_create_group_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *ierr ){
-    *ierr = MPIX_Comm_create_group( (MPI_Comm)(*v1), *v2, *v3, (MPI_Comm *)(v4) );
+FORT_DLL_SPEC void FORT_CALL mpi_comm_create_group_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *ierr ){
+    *ierr = MPI_Comm_create_group( (MPI_Comm)(*v1), (MPI_Group)*v2, (int)*v3, (MPI_Comm *)(v4) );
 }

@@ -23,7 +23,9 @@ noinst_PROGRAMS =           \
     contents                \
     contig-zero-count       \
     contigstruct            \
+    cxx-types               \
     darray-pack             \
+    darray-cyclic           \
     gaddress                \
     get-elements            \
     get-elements-pairtype   \
@@ -32,6 +34,7 @@ noinst_PROGRAMS =           \
     hindexed_block          \
     hindexed_block_contents \
     indexed-misc            \
+    large-count             \
     lbub                    \
     localpack               \
     longdouble              \

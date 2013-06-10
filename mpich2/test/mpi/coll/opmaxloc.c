@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2003 by Argonne National Laboratory.
@@ -11,12 +11,12 @@
 #include "mpitest.h"
 
 /*
-static char MTEST_Descrip[] = "Test MPI_MAXLOC operations on datatypes dupported by MPICH2";
+static char MTEST_Descrip[] = "Test MPI_MAXLOC operations on datatypes dupported by MPICH";
 */
 
 /*
  * This test looks at the handling of char and types that  are not required 
- * integers (e.g., long long).  MPICH2 allows
+ * integers (e.g., long long).  MPICH allows
  * these as well.  A strict MPI test should not include this test.
  *
  * The rule on max loc is that if there is a tie in the value, the minimum

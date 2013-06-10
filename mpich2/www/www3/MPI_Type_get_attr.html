@@ -9,12 +9,12 @@
 Retrieves attribute value by key 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Type_get_attr(MPI_Datatype type, int type_keyval, void *attribute_val, 
+int MPI_Type_get_attr(MPI_Datatype datatype, int type_keyval, void *attribute_val,
                      int *flag)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>type </B><DD>datatype to which the attribute is attached (handle) 
+<DT><B>datatype </B><DD>datatype to which the attribute is attached (handle)
 
 <DT><B>type_keyval </B><DD>key value (integer) 
 </DL>
@@ -32,7 +32,7 @@ in with <TT>MPI_Type_set_attr</TT>.  The notes for C and Fortran below explain
 why.
 <P>
 <H2>Notes for C</H2>
-Even though the <TT>attr_value</TT> arguement is declared as <TT>void *</TT>, it is
+Even though the <TT>attr_value</TT> argument is declared as <TT>void *</TT>, it is
 really the address of a void pointer.  See the rationale in the
 standard for more details.
 <P>

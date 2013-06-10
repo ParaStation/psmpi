@@ -17,12 +17,15 @@
 #define mpirinitc2_ mpirinitc2
 #endif
 /* These functions are called from Fortran so only need prototypes in 
-   this file.  Note that the last argument is a character array, so
+   this file.  Note that the second-to-last argument is a character array, so
    we need to include the elements of the Fortran character "dope vector".
 */
-FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *, void *, void *, void *, void *,
-                                         void *, void * FORT_MIXED_LEN_DECL 
-                                         FORT_END_LEN_DECL );
+FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *si, void *ssi,
+                                         void *bt, void *ip,
+                                         void *uw, void *ecsi,
+                                         void *asn FORT_MIXED_LEN(d1),
+                                         void *we
+                                         FORT_END_LEN(d1));
 FORT_DLL_SPEC void FORT_CALL mpirinitc2_( char * FORT_MIXED_LEN_DECL 
                                           FORT_END_LEN_DECL );
 
@@ -61,13 +64,15 @@ void *MPI_F_STATUSES_IGNORE = 0;
 */
 MPI_Fint  *MPI_F_ERRCODES_IGNORE = 0;
 void *MPI_F_ARGVS_NULL      = 0;
+void *MPIR_F_MPI_WEIGHTS_EMPTY = 0;
 #endif
 
 FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *si, void *ssi,
                                          void *bt, void *ip, 
                                          void *uw, void *ecsi, 
-                                         void *asn FORT_MIXED_LEN(d1) 
-                                         FORT_END_LEN(d1) )
+                                         void *asn FORT_MIXED_LEN(d1),
+                                         void *we
+                                         FORT_END_LEN(d1))
 {
     MPI_F_STATUS_IGNORE   = (MPI_Fint *) si;
     MPI_F_STATUSES_IGNORE = (MPI_Fint *) ssi;
@@ -76,6 +81,7 @@ FORT_DLL_SPEC void FORT_CALL mpirinitc_( void *si, void *ssi,
     MPIR_F_MPI_UNWEIGHTED = uw;
     MPI_F_ERRCODES_IGNORE = (MPI_Fint *)ecsi;
     MPI_F_ARGVS_NULL      = asn;
+    MPIR_F_MPI_WEIGHTS_EMPTY = we;
 }
 /* Initialize the Fortran ARGV_NULL to a blank.  Using this routine
    avoids potential problems with string manipulation routines that
@@ -195,6 +201,18 @@ extern mpif_cmblk8_t   MPIFCMB8_ __attribute__ ((alias("mpifcmb8r")));
 extern mpif_cmblk8_t _Cmpifcmb8  __attribute__ ((alias("mpifcmb8r")));
 extern mpif_cmblk8_t   mpifcmb8  __attribute__ ((alias("mpifcmb8r")));
 extern mpif_cmblk8_t   mpifcmb8_ __attribute__ ((alias("mpifcmb8r")));
+
+struct mpif_cmblk9_t_ {
+    MPI_Fint MPIF_WEIGHTS_EMPTY;
+};
+typedef struct mpif_cmblk9_t_ mpif_cmblk9_t;
+mpif_cmblk9_t mpifcmb9r @CMB_1INT_ALIGNMENT@ = {0};
+extern mpif_cmblk9_t _CMPIFCMB9  __attribute__ ((alias("mpifcmb9r")));
+extern mpif_cmblk9_t   MPIFCMB9  __attribute__ ((alias("mpifcmb9r")));
+extern mpif_cmblk9_t   MPIFCMB9_ __attribute__ ((alias("mpifcmb9r")));
+extern mpif_cmblk9_t _Cmpifcmb9  __attribute__ ((alias("mpifcmb9r")));
+extern mpif_cmblk9_t   mpifcmb9  __attribute__ ((alias("mpifcmb9r")));
+extern mpif_cmblk9_t   mpifcmb9_ __attribute__ ((alias("mpifcmb9r")));
 
 #endif
 

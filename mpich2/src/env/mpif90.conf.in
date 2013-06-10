@@ -11,7 +11,6 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 sysconfdir=@sysconfdir@
 includedir=@includedir@
-modincdir=@modincdir@
 libdir=@libdir@
 
 # Default settings for compiler, flags, and libraries
@@ -33,4 +32,4 @@ FCEXT="@FCEXT@"
 FCFLAGS="@WRAPPER_FCFLAGS@"
 LDFLAGS="@WRAPPER_LDFLAGS@"
 LIBS="@WRAPPER_LIBS@"
-MPICH2_VERSION="@MPICH2_VERSION@"
+MPICH_VERSION="@MPICH_VERSION@"

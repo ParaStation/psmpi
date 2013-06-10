@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -32,10 +32,10 @@
 /*@
    MPI_Add_error_code - Add and MPI error code to an MPI error class
 
-   Input Parameter:
+Input Parameters:
 .  errorclass - Error class to add an error code.
 
-   Output Parameter:
+Output Parameters:
 .  errorcode - New error code for this error class.
 
 .N ThreadSafe

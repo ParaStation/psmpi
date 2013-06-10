@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -54,7 +54,7 @@ void MPIR_Comm_free_keyval_impl(int keyval)
 /*@
    MPI_Comm_free_keyval - Frees an attribute key for communicators
 
-Input Parameter:
+Input Parameters:
 . comm_keyval - Frees the integer key value (integer) 
 
    Notes:

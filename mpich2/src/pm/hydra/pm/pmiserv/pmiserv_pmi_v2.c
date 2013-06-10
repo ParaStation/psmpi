@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -33,12 +33,12 @@ static HYD_status cmd_response(int fd, int pid, char *cmd)
     hdr.pid = pid;
     hdr.pmi_version = 2;
     hdr.buflen = 6 + strlen(cmd);
-    status = HYDU_sock_write(fd, &hdr, sizeof(hdr), &sent, &closed);
+    status = HYDU_sock_write(fd, &hdr, sizeof(hdr), &sent, &closed, HYDU_SOCK_COMM_MSGWAIT);
     HYDU_ERR_POP(status, "unable to send PMI_RESPONSE header to proxy\n");
     HYDU_ASSERT(!closed, status);
 
     HYDU_snprintf(cmdlen, 7, "%6u", (unsigned) strlen(cmd));
-    status = HYDU_sock_write(fd, cmdlen, 6, &sent, &closed);
+    status = HYDU_sock_write(fd, cmdlen, 6, &sent, &closed, HYDU_SOCK_COMM_MSGWAIT);
     HYDU_ERR_POP(status, "error writing PMI line\n");
     HYDU_ASSERT(!closed, status);
 
@@ -46,7 +46,7 @@ static HYD_status cmd_response(int fd, int pid, char *cmd)
         HYDU_dump(stdout, "PMI response to fd %d pid %d: %s\n", fd, pid, cmd);
     }
 
-    status = HYDU_sock_write(fd, cmd, strlen(cmd), &sent, &closed);
+    status = HYDU_sock_write(fd, cmd, strlen(cmd), &sent, &closed, HYDU_SOCK_COMM_MSGWAIT);
     HYDU_ERR_POP(status, "error writing PMI line\n");
     HYDU_ASSERT(!closed, status);
 
@@ -738,7 +738,7 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
         }
         cmd_str[i++] = HYDU_strdup("rc=0;");
         cmd_str[i++] = HYDU_strdup("jobid=");
-        cmd_str[i++] = HYDU_strdup(pg_scratch->kvs->kvs_name);
+        cmd_str[i++] = HYDU_strdup(pg_scratch->kvs->kvsname);
         cmd_str[i++] = HYDU_strdup(";");
         cmd_str[i++] = HYDU_strdup("nerrs=0;");
         cmd_str[i++] = NULL;

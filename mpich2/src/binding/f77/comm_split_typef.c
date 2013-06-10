@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_SPLIT_TYPE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_split_type__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_split_type( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_split_type_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPLIT_TYPE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_split_type__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_split_type( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_split_type_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_COMM_SPLIT_TYPE = PMPIX_COMM_SPLIT_TYPE
-#pragma weak mpix_comm_split_type__ = PMPIX_COMM_SPLIT_TYPE
-#pragma weak mpix_comm_split_type_ = PMPIX_COMM_SPLIT_TYPE
-#pragma weak mpix_comm_split_type = PMPIX_COMM_SPLIT_TYPE
+#pragma weak MPI_COMM_SPLIT_TYPE = PMPI_COMM_SPLIT_TYPE
+#pragma weak mpi_comm_split_type__ = PMPI_COMM_SPLIT_TYPE
+#pragma weak mpi_comm_split_type_ = PMPI_COMM_SPLIT_TYPE
+#pragma weak mpi_comm_split_type = PMPI_COMM_SPLIT_TYPE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_COMM_SPLIT_TYPE = pmpix_comm_split_type__
-#pragma weak mpix_comm_split_type__ = pmpix_comm_split_type__
-#pragma weak mpix_comm_split_type_ = pmpix_comm_split_type__
-#pragma weak mpix_comm_split_type = pmpix_comm_split_type__
+#pragma weak MPI_COMM_SPLIT_TYPE = pmpi_comm_split_type__
+#pragma weak mpi_comm_split_type__ = pmpi_comm_split_type__
+#pragma weak mpi_comm_split_type_ = pmpi_comm_split_type__
+#pragma weak mpi_comm_split_type = pmpi_comm_split_type__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_COMM_SPLIT_TYPE = pmpix_comm_split_type_
-#pragma weak mpix_comm_split_type__ = pmpix_comm_split_type_
-#pragma weak mpix_comm_split_type_ = pmpix_comm_split_type_
-#pragma weak mpix_comm_split_type = pmpix_comm_split_type_
+#pragma weak MPI_COMM_SPLIT_TYPE = pmpi_comm_split_type_
+#pragma weak mpi_comm_split_type__ = pmpi_comm_split_type_
+#pragma weak mpi_comm_split_type_ = pmpi_comm_split_type_
+#pragma weak mpi_comm_split_type = pmpi_comm_split_type_
 #else
-#pragma weak MPIX_COMM_SPLIT_TYPE = pmpix_comm_split_type
-#pragma weak mpix_comm_split_type__ = pmpix_comm_split_type
-#pragma weak mpix_comm_split_type_ = pmpix_comm_split_type
-#pragma weak mpix_comm_split_type = pmpix_comm_split_type
+#pragma weak MPI_COMM_SPLIT_TYPE = pmpi_comm_split_type
+#pragma weak mpi_comm_split_type__ = pmpi_comm_split_type
+#pragma weak mpi_comm_split_type_ = pmpi_comm_split_type
+#pragma weak mpi_comm_split_type = pmpi_comm_split_type
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_comm_split_type_( MPI_Fint *, MPI_Fint 
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_SPLIT_TYPE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPLIT_TYPE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_COMM_SPLIT_TYPE = PMPIX_COMM_SPLIT_TYPE
+#pragma weak MPI_COMM_SPLIT_TYPE = PMPI_COMM_SPLIT_TYPE
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_split_type__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_split_type__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_comm_split_type__ = pmpix_comm_split_type__
+#pragma weak mpi_comm_split_type__ = pmpi_comm_split_type__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_split_type( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_split_type( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_comm_split_type = pmpix_comm_split_type
+#pragma weak mpi_comm_split_type = pmpi_comm_split_type
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_split_type_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_split_type_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_comm_split_type_ = pmpix_comm_split_type_
+#pragma weak mpi_comm_split_type_ = pmpi_comm_split_type_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_COMM_SPLIT_TYPE  MPIX_COMM_SPLIT_TYPE
+#pragma _HP_SECONDARY_DEF PMPI_COMM_SPLIT_TYPE  MPI_COMM_SPLIT_TYPE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_comm_split_type__  mpix_comm_split_type__
+#pragma _HP_SECONDARY_DEF pmpi_comm_split_type__  mpi_comm_split_type__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_comm_split_type  mpix_comm_split_type
+#pragma _HP_SECONDARY_DEF pmpi_comm_split_type  mpi_comm_split_type
 #else
-#pragma _HP_SECONDARY_DEF pmpix_comm_split_type_  mpix_comm_split_type_
+#pragma _HP_SECONDARY_DEF pmpi_comm_split_type_  mpi_comm_split_type_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_COMM_SPLIT_TYPE as PMPIX_COMM_SPLIT_TYPE
+#pragma _CRI duplicate MPI_COMM_SPLIT_TYPE as PMPI_COMM_SPLIT_TYPE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_comm_split_type__ as pmpix_comm_split_type__
+#pragma _CRI duplicate mpi_comm_split_type__ as pmpi_comm_split_type__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_comm_split_type as pmpix_comm_split_type
+#pragma _CRI duplicate mpi_comm_split_type as pmpi_comm_split_type
 #else
-#pragma _CRI duplicate mpix_comm_split_type_ as pmpix_comm_split_type_
+#pragma _CRI duplicate mpi_comm_split_type_ as pmpi_comm_split_type_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_comm_split_type_( MPI_Fint *, MPI_Fint 
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_SPLIT_TYPE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_split_type__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_split_type( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_comm_split_type_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPLIT_TYPE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_split_type__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_split_type( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_split_type_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_comm_split_type__ = MPIX_COMM_SPLIT_TYPE
-#pragma weak mpix_comm_split_type_ = MPIX_COMM_SPLIT_TYPE
-#pragma weak mpix_comm_split_type = MPIX_COMM_SPLIT_TYPE
+#pragma weak mpi_comm_split_type__ = MPI_COMM_SPLIT_TYPE
+#pragma weak mpi_comm_split_type_ = MPI_COMM_SPLIT_TYPE
+#pragma weak mpi_comm_split_type = MPI_COMM_SPLIT_TYPE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_COMM_SPLIT_TYPE = mpix_comm_split_type__
-#pragma weak mpix_comm_split_type_ = mpix_comm_split_type__
-#pragma weak mpix_comm_split_type = mpix_comm_split_type__
+#pragma weak MPI_COMM_SPLIT_TYPE = mpi_comm_split_type__
+#pragma weak mpi_comm_split_type_ = mpi_comm_split_type__
+#pragma weak mpi_comm_split_type = mpi_comm_split_type__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_COMM_SPLIT_TYPE = mpix_comm_split_type_
-#pragma weak mpix_comm_split_type__ = mpix_comm_split_type_
-#pragma weak mpix_comm_split_type = mpix_comm_split_type_
+#pragma weak MPI_COMM_SPLIT_TYPE = mpi_comm_split_type_
+#pragma weak mpi_comm_split_type__ = mpi_comm_split_type_
+#pragma weak mpi_comm_split_type = mpi_comm_split_type_
 #else
-#pragma weak MPIX_COMM_SPLIT_TYPE = mpix_comm_split_type
-#pragma weak mpix_comm_split_type__ = mpix_comm_split_type
-#pragma weak mpix_comm_split_type_ = mpix_comm_split_type
+#pragma weak MPI_COMM_SPLIT_TYPE = mpi_comm_split_type
+#pragma weak mpi_comm_split_type__ = mpi_comm_split_type
+#pragma weak mpi_comm_split_type_ = mpi_comm_split_type
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_comm_split_type_( MPI_Fint *, MPI_Fint 
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_COMM_SPLIT_TYPE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_SPLIT_TYPE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_split_type__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_split_type__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_split_type_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_split_type_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_split_type( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_split_type( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_comm_split_type__ = PMPIX_COMM_SPLIT_TYPE
-#pragma weak pmpix_comm_split_type_ = PMPIX_COMM_SPLIT_TYPE
-#pragma weak pmpix_comm_split_type = PMPIX_COMM_SPLIT_TYPE
+#pragma weak pmpi_comm_split_type__ = PMPI_COMM_SPLIT_TYPE
+#pragma weak pmpi_comm_split_type_ = PMPI_COMM_SPLIT_TYPE
+#pragma weak pmpi_comm_split_type = PMPI_COMM_SPLIT_TYPE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_COMM_SPLIT_TYPE = pmpix_comm_split_type__
-#pragma weak pmpix_comm_split_type_ = pmpix_comm_split_type__
-#pragma weak pmpix_comm_split_type = pmpix_comm_split_type__
+#pragma weak PMPI_COMM_SPLIT_TYPE = pmpi_comm_split_type__
+#pragma weak pmpi_comm_split_type_ = pmpi_comm_split_type__
+#pragma weak pmpi_comm_split_type = pmpi_comm_split_type__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_COMM_SPLIT_TYPE = pmpix_comm_split_type_
-#pragma weak pmpix_comm_split_type__ = pmpix_comm_split_type_
-#pragma weak pmpix_comm_split_type = pmpix_comm_split_type_
+#pragma weak PMPI_COMM_SPLIT_TYPE = pmpi_comm_split_type_
+#pragma weak pmpi_comm_split_type__ = pmpi_comm_split_type_
+#pragma weak pmpi_comm_split_type = pmpi_comm_split_type_
 #else
-#pragma weak PMPIX_COMM_SPLIT_TYPE = pmpix_comm_split_type
-#pragma weak pmpix_comm_split_type__ = pmpix_comm_split_type
-#pragma weak pmpix_comm_split_type_ = pmpix_comm_split_type
+#pragma weak PMPI_COMM_SPLIT_TYPE = pmpi_comm_split_type
+#pragma weak pmpi_comm_split_type__ = pmpi_comm_split_type
+#pragma weak pmpi_comm_split_type_ = pmpi_comm_split_type
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_comm_split_type_ PMPIX_COMM_SPLIT_TYPE
+#define mpi_comm_split_type_ PMPI_COMM_SPLIT_TYPE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_comm_split_type_ pmpix_comm_split_type__
+#define mpi_comm_split_type_ pmpi_comm_split_type__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_comm_split_type_ pmpix_comm_split_type
+#define mpi_comm_split_type_ pmpi_comm_split_type
 #else
-#define mpix_comm_split_type_ pmpix_comm_split_type_
+#define mpi_comm_split_type_ pmpi_comm_split_type_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Comm_split_type
-#define MPIX_Comm_split_type PMPIX_Comm_split_type 
+#undef MPI_Comm_split_type
+#define MPI_Comm_split_type PMPI_Comm_split_type 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_comm_split_type_ MPIX_COMM_SPLIT_TYPE
+#define mpi_comm_split_type_ MPI_COMM_SPLIT_TYPE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_comm_split_type_ mpix_comm_split_type__
+#define mpi_comm_split_type_ mpi_comm_split_type__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_comm_split_type_ mpix_comm_split_type
+#define mpi_comm_split_type_ mpi_comm_split_type
 /* Else leave name alone */
 #endif
 
@@ -184,6 +184,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_split_type( MPI_Fint *, MPI_Fint 
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_comm_split_type_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *ierr ){
-    *ierr = MPIX_Comm_split_type( (MPI_Comm)(*v1), *v2, *v3, (MPI_Info)(*v4), (MPI_Comm *)(v5) );
+FORT_DLL_SPEC void FORT_CALL mpi_comm_split_type_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *ierr ){
+    *ierr = MPI_Comm_split_type( (MPI_Comm)(*v1), (int)*v2, (int)*v3, (MPI_Info)(*v4), (MPI_Comm *)(v5) );
 }

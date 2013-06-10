@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -250,9 +250,9 @@ HYD_status HYDU_sock_read(int fd, void *buf, int maxlen, int *recvd, int *closed
             *recvd += tmp;
         }
 
-        if (flag != HYDU_SOCK_COMM_MSGWAIT || *recvd == maxlen)
+        if (flag == HYDU_SOCK_COMM_NONE || *recvd == maxlen)
             break;
-    };
+    }
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -262,7 +262,8 @@ HYD_status HYDU_sock_read(int fd, void *buf, int maxlen, int *recvd, int *closed
     goto fn_exit;
 }
 
-HYD_status HYDU_sock_write(int fd, const void *buf, int maxlen, int *sent, int *closed)
+HYD_status HYDU_sock_write(int fd, const void *buf, int maxlen, int *sent, int *closed,
+                           enum HYDU_sock_comm_flag flag)
 {
     int tmp;
     HYD_status status = HYD_SUCCESS;
@@ -274,19 +275,28 @@ HYD_status HYDU_sock_write(int fd, const void *buf, int maxlen, int *sent, int *
     *sent = 0;
     *closed = 0;
     while (1) {
-        do {
-            tmp = write(fd, (char *) buf + *sent, maxlen - *sent);
-        } while (tmp < 0 && (errno == EINTR || errno == EAGAIN));
-
-        if (tmp < 0 || tmp == 0) {
-            *closed = 1;
-            goto fn_exit;
+        tmp = write(fd, (char *) buf + *sent, maxlen - *sent);
+        if (tmp <= 0) {
+            if (errno == EAGAIN) {
+                if (flag == HYDU_SOCK_COMM_NONE)
+                    goto fn_exit;
+                else
+                    continue;
+            }
+            else if (errno == ECONNRESET) {
+                *closed = 1;
+                goto fn_exit;
+            }
+            HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "write error (%s)\n",
+                                HYDU_strerror(errno));
         }
-        *sent += tmp;
+        else {
+            *sent += tmp;
+        }
 
-        if (*sent == maxlen)
+        if (flag == HYDU_SOCK_COMM_NONE || *sent == maxlen)
             break;
-    };
+    }
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -296,7 +306,7 @@ HYD_status HYDU_sock_write(int fd, const void *buf, int maxlen, int *sent, int *
     goto fn_exit;
 }
 
-static HYD_status set_nonblock(int fd)
+HYD_status HYDU_sock_set_nonblock(int fd)
 {
     int flags;
     HYD_status status = HYD_SUCCESS;
@@ -333,10 +343,10 @@ static HYD_status alloc_fwd_hash(struct fwd_hash **fwd_hash, int in, int out)
 
     (*fwd_hash)->next = NULL;
 
-    status = set_nonblock(in);
+    status = HYDU_sock_set_nonblock(in);
     HYDU_ERR_POP(status, "unable to set out-socket to non-blocking\n");
 
-    status = set_nonblock(out);
+    status = HYDU_sock_set_nonblock(out);
     HYDU_ERR_POP(status, "unable to set out-socket to non-blocking\n");
 
   fn_exit:
@@ -403,7 +413,7 @@ HYD_status HYDU_sock_forward_stdio(int in, int out, int *closed)
         /* there is data in the buffer, send it out first */
         status =
             HYDU_sock_write(out, fwd_hash->buf + fwd_hash->buf_offset, fwd_hash->buf_count,
-                            &count, closed);
+                            &count, closed, HYDU_SOCK_COMM_MSGWAIT);
         HYDU_ERR_POP(status, "write error\n");
 
         if (!*closed) {
@@ -417,7 +427,7 @@ HYD_status HYDU_sock_forward_stdio(int in, int out, int *closed)
     while (*closed && fwd_hash->buf_count) {
         status =
             HYDU_sock_write(out, fwd_hash->buf + fwd_hash->buf_offset, fwd_hash->buf_count,
-                            &count, closed);
+                            &count, closed, HYDU_SOCK_COMM_MSGWAIT);
         HYDU_ERR_POP(status, "write error\n");
 
         if (!*closed) {

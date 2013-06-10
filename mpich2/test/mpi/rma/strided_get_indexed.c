@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -20,31 +20,18 @@
 #include <math.h>
 #include <mpi.h>
 #include "mpitest.h"
+#include "squelch.h"
 
 #define XDIM 8
 #define YDIM 1024
 #define SUB_XDIM 8
 #define SUB_YDIM 256
 
-static const int SQ_LIMIT = 10;
-static       int SQ_COUNT = 0;
-
-#define SQUELCH(X)                      \
-  do {                                  \
-    if (SQ_COUNT < SQ_LIMIT) {          \
-      SQ_COUNT++;                       \
-      X                                 \
-    }                                   \
-  } while (0)
-
-static int verbose = 0;
-
 int main(int argc, char **argv) {
     int i, j, rank, nranks, peer, bufsize, errors;
     double *win_buf, *loc_buf;
     MPI_Win buf_win;
 
-    MPI_Aint idx_loc[SUB_YDIM];
     int idx_rem[SUB_YDIM];
     int blk_len[SUB_YDIM];
     MPI_Datatype loc_type, rem_type;
@@ -58,9 +45,6 @@ int main(int argc, char **argv) {
     MPI_Alloc_mem(bufsize, MPI_INFO_NULL, &win_buf);
     MPI_Alloc_mem(bufsize, MPI_INFO_NULL, &loc_buf);
 
-    if (rank == 0)
-        if (verbose) printf("MPI RMA Strided Get Test:\n");
-
     for (i = 0; i < XDIM*YDIM; i++) {
         *(win_buf + i) =  1.0 + rank;
         *(loc_buf + i) = -1.0;
@@ -73,7 +57,6 @@ int main(int argc, char **argv) {
     /* Build the datatype */
 
     for (i = 0; i < SUB_YDIM; i++) {
-      MPI_Get_address(&loc_buf[i*XDIM], &idx_loc[i]);
       idx_rem[i] = i*XDIM;
       blk_len[i] = SUB_XDIM;
     }

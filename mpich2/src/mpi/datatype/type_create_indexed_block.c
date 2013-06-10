@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -86,13 +86,13 @@ int MPIR_Type_create_indexed_block_impl(int count,
    MPI_Type_create_indexed_block - Create an indexed
      datatype with constant-sized blocks
 
-   Input Parameters:
+Input Parameters:
 + count - length of array of displacements (integer) 
 . blocklength - size of block (integer) 
 . array_of_displacements - array of displacements (array of integer) 
 - oldtype - old datatype (handle) 
 
-    Output Parameter:
+Output Parameters:
 . newtype - new datatype (handle) 
 
 Notes:
@@ -107,9 +107,9 @@ is to do something like the following
     call MPI_TYPE_COMMIT(newtype,ierr)
     call MPI_SEND(a,1,newtype,...)
 .ve
-expecting this to send 'a(1),a(11),...' because the indices have values 
-'1,11,...'.   Because these are `displacements` from the beginning of 'a',
-it actually sends 'a(1+1),a(1+11),...'.
+expecting this to send "a(1),a(11),..." because the indices have values
+"1,11,...".   Because these are `displacements` from the beginning of "a",
+it actually sends "a(1+1),a(1+11),...".
 
 If you wish to consider the displacements as indices into a Fortran array,
 consider declaring the Fortran array with a zero origin
@@ -128,7 +128,7 @@ consider declaring the Fortran array with a zero origin
 @*/
 int MPI_Type_create_indexed_block(int count,
 				  int blocklength,
-				  MPICH2_CONST int array_of_displacements[],
+				  const int array_of_displacements[],
 				  MPI_Datatype oldtype,
 				  MPI_Datatype *newtype)
 {

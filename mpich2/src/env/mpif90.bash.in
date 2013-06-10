@@ -8,7 +8,7 @@
 # This script knows the default flags and libraries, and can handle
 # alternative C compilers and the associated flags and libraries.
 # The important terms are:
-#    includedir, libdir - Directories containing an *installed* mpich2
+#    includedir, libdir - Directories containing an *installed* mpich
 #    prefix, execprefix - Often used to define includedir and libdir
 #    FC                 - Fortran 90 compiler
 #    WRAPPER_FCFLAGS    - Any special flags needed to compile 
@@ -32,7 +32,6 @@ prefix=@prefix@
 exec_prefix=@exec_prefix@
 sysconfdir=@sysconfdir@
 includedir=@includedir@
-modincdir=@modincdir@
 libdir=@libdir@
 
 # Default settings for compiler, flags, and libraries
@@ -56,7 +55,7 @@ FCEXT="@FCEXT@"
 FCFLAGS="@WRAPPER_FCFLAGS@"
 LDFLAGS="@WRAPPER_LDFLAGS@"
 LIBS="@WRAPPER_LIBS@ @FC_OTHER_LIBS@"
-MPICH2_VERSION="@MPICH2_VERSION@"
+MPICH_VERSION="@MPICH_VERSION@"
 
 enable_wrapper_rpath="@enable_wrapper_rpath@"
 @fc_shlib_conf@
@@ -156,7 +155,7 @@ for arg in "$@" ; do
     ;;
     -v)
     # Pass this argument to the compiler as well.
-    echo "mpif90 for MPICH2 version $MPICH2_VERSION"
+    echo "mpif90 for MPICH version $MPICH_VERSION"
     # if there is only 1 argument, it must be -v.
     if [ "$#" -eq "1" ] ; then
         linking=no
@@ -167,14 +166,6 @@ for arg in "$@" ; do
     # a special case, lib<name>.so or lib<name>.la may be used
     # if the library is in $libdir
     profConf=`echo A$arg | sed -e 's/A-profile=//g'`
-    addarg=no
-    # Loading the profConf file is handled below
-    ;;
-    -mpe=*)
-    # Pass the name of a profiling configuration; this is a special
-    # case for the MPE libs.  See -profile
-    profConf=`echo A$arg | sed -e 's/A-mpe=//g'`
-    profConf="mpe_$profConf"
     addarg=no
     # Loading the profConf file is handled below
     ;;
@@ -318,15 +309,14 @@ fi
 
 # Handle the specification of the directory containing the modules
 # For now, these are in the includedir (no choice argument supported)
-moduledir=$modincdir
 modulelib="@MPILIBNAME@f90"
 if [ -n "$FCMODINCSPEC" ] ; then
     newarg=`echo A"$FCMODINCSPEC" | \
-	sed -e 's/^A//' -e 's%<dir>%'"$moduledir%g" -e 's/<file>/mpi/g'`
+	sed -e 's/^A//' -e 's%<dir>%'"$includedir%g" -e 's/<file>/mpi/g'`
     FCMODDIRS="$newarg"
     FCMODLIBS="-l$modulelib"
 elif [ -n "$FCMODINC" ] ; then
-    FCMODDIRS="${FCMODINC}$moduledir"
+    FCMODDIRS="${FCMODINC}$includedir"
     FCMODLIBS="-l$modulelib"
 fi
 

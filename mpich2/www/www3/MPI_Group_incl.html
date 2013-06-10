@@ -9,7 +9,7 @@
 Produces a group by reordering an existing group and taking only listed members 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Group_incl(MPI_Group group, int n, MPICH2_CONST int *ranks, MPI_Group *newgroup)
+int MPI_Group_incl(MPI_Group group, int n, const int ranks[], MPI_Group *newgroup)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -21,7 +21,7 @@ int MPI_Group_incl(MPI_Group group, int n, MPICH2_CONST int *ranks, MPI_Group *n
 integers) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>newgroup </B> <DD> new group derived from above, in the order defined by <TT>ranks</TT> 
 (handle) 
 </DL>

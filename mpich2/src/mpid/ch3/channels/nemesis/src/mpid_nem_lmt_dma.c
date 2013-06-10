@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2010 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -54,7 +54,7 @@ static void free_status_index(int index)
 }
 
 
-/* Opens the knem device and sets knem_fd accordingly.  Uses mpich2 errhandling
+/* Opens the knem device and sets knem_fd accordingly.  Uses mpich errhandling
    conventions. */
 #undef FUNCNAME
 #define FUNCNAME open_knem_dev

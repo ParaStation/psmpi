@@ -9,6 +9,5 @@ include $(top_srcdir)/Makefile_f90.mtest
 
 EXTRA_DIST = testlist
 
-# nothing tested in here for now...
-SUBDIRS = 
-
+SUBDIRS = errhan
+DIST_SUBDIRS = errhan

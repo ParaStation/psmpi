@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_IBARRIER = PMPIX_IBARRIER
-#pragma weak mpix_ibarrier__ = PMPIX_IBARRIER
-#pragma weak mpix_ibarrier_ = PMPIX_IBARRIER
-#pragma weak mpix_ibarrier = PMPIX_IBARRIER
+#pragma weak MPI_IBARRIER = PMPI_IBARRIER
+#pragma weak mpi_ibarrier__ = PMPI_IBARRIER
+#pragma weak mpi_ibarrier_ = PMPI_IBARRIER
+#pragma weak mpi_ibarrier = PMPI_IBARRIER
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_IBARRIER = pmpix_ibarrier__
-#pragma weak mpix_ibarrier__ = pmpix_ibarrier__
-#pragma weak mpix_ibarrier_ = pmpix_ibarrier__
-#pragma weak mpix_ibarrier = pmpix_ibarrier__
+#pragma weak MPI_IBARRIER = pmpi_ibarrier__
+#pragma weak mpi_ibarrier__ = pmpi_ibarrier__
+#pragma weak mpi_ibarrier_ = pmpi_ibarrier__
+#pragma weak mpi_ibarrier = pmpi_ibarrier__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_IBARRIER = pmpix_ibarrier_
-#pragma weak mpix_ibarrier__ = pmpix_ibarrier_
-#pragma weak mpix_ibarrier_ = pmpix_ibarrier_
-#pragma weak mpix_ibarrier = pmpix_ibarrier_
+#pragma weak MPI_IBARRIER = pmpi_ibarrier_
+#pragma weak mpi_ibarrier__ = pmpi_ibarrier_
+#pragma weak mpi_ibarrier_ = pmpi_ibarrier_
+#pragma weak mpi_ibarrier = pmpi_ibarrier_
 #else
-#pragma weak MPIX_IBARRIER = pmpix_ibarrier
-#pragma weak mpix_ibarrier__ = pmpix_ibarrier
-#pragma weak mpix_ibarrier_ = pmpix_ibarrier
-#pragma weak mpix_ibarrier = pmpix_ibarrier
+#pragma weak MPI_IBARRIER = pmpi_ibarrier
+#pragma weak mpi_ibarrier__ = pmpi_ibarrier
+#pragma weak mpi_ibarrier_ = pmpi_ibarrier
+#pragma weak mpi_ibarrier = pmpi_ibarrier
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_IBARRIER = PMPIX_IBARRIER
+#pragma weak MPI_IBARRIER = PMPI_IBARRIER
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_ibarrier__ = pmpix_ibarrier__
+#pragma weak mpi_ibarrier__ = pmpi_ibarrier__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_ibarrier = pmpix_ibarrier
+#pragma weak mpi_ibarrier = pmpi_ibarrier
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_ibarrier_ = pmpix_ibarrier_
+#pragma weak mpi_ibarrier_ = pmpi_ibarrier_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_IBARRIER  MPIX_IBARRIER
+#pragma _HP_SECONDARY_DEF PMPI_IBARRIER  MPI_IBARRIER
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_ibarrier__  mpix_ibarrier__
+#pragma _HP_SECONDARY_DEF pmpi_ibarrier__  mpi_ibarrier__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_ibarrier  mpix_ibarrier
+#pragma _HP_SECONDARY_DEF pmpi_ibarrier  mpi_ibarrier
 #else
-#pragma _HP_SECONDARY_DEF pmpix_ibarrier_  mpix_ibarrier_
+#pragma _HP_SECONDARY_DEF pmpi_ibarrier_  mpi_ibarrier_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_IBARRIER as PMPIX_IBARRIER
+#pragma _CRI duplicate MPI_IBARRIER as PMPI_IBARRIER
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_ibarrier__ as pmpix_ibarrier__
+#pragma _CRI duplicate mpi_ibarrier__ as pmpi_ibarrier__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_ibarrier as pmpix_ibarrier
+#pragma _CRI duplicate mpi_ibarrier as pmpi_ibarrier
 #else
-#pragma _CRI duplicate mpix_ibarrier_ as pmpix_ibarrier_
+#pragma _CRI duplicate mpi_ibarrier_ as pmpi_ibarrier_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_ibarrier__ = MPIX_IBARRIER
-#pragma weak mpix_ibarrier_ = MPIX_IBARRIER
-#pragma weak mpix_ibarrier = MPIX_IBARRIER
+#pragma weak mpi_ibarrier__ = MPI_IBARRIER
+#pragma weak mpi_ibarrier_ = MPI_IBARRIER
+#pragma weak mpi_ibarrier = MPI_IBARRIER
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_IBARRIER = mpix_ibarrier__
-#pragma weak mpix_ibarrier_ = mpix_ibarrier__
-#pragma weak mpix_ibarrier = mpix_ibarrier__
+#pragma weak MPI_IBARRIER = mpi_ibarrier__
+#pragma weak mpi_ibarrier_ = mpi_ibarrier__
+#pragma weak mpi_ibarrier = mpi_ibarrier__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_IBARRIER = mpix_ibarrier_
-#pragma weak mpix_ibarrier__ = mpix_ibarrier_
-#pragma weak mpix_ibarrier = mpix_ibarrier_
+#pragma weak MPI_IBARRIER = mpi_ibarrier_
+#pragma weak mpi_ibarrier__ = mpi_ibarrier_
+#pragma weak mpi_ibarrier = mpi_ibarrier_
 #else
-#pragma weak MPIX_IBARRIER = mpix_ibarrier
-#pragma weak mpix_ibarrier__ = mpix_ibarrier
-#pragma weak mpix_ibarrier_ = mpix_ibarrier
+#pragma weak MPI_IBARRIER = mpi_ibarrier
+#pragma weak mpi_ibarrier__ = mpi_ibarrier
+#pragma weak mpi_ibarrier_ = mpi_ibarrier
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_ibarrier__ = PMPIX_IBARRIER
-#pragma weak pmpix_ibarrier_ = PMPIX_IBARRIER
-#pragma weak pmpix_ibarrier = PMPIX_IBARRIER
+#pragma weak pmpi_ibarrier__ = PMPI_IBARRIER
+#pragma weak pmpi_ibarrier_ = PMPI_IBARRIER
+#pragma weak pmpi_ibarrier = PMPI_IBARRIER
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_IBARRIER = pmpix_ibarrier__
-#pragma weak pmpix_ibarrier_ = pmpix_ibarrier__
-#pragma weak pmpix_ibarrier = pmpix_ibarrier__
+#pragma weak PMPI_IBARRIER = pmpi_ibarrier__
+#pragma weak pmpi_ibarrier_ = pmpi_ibarrier__
+#pragma weak pmpi_ibarrier = pmpi_ibarrier__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_IBARRIER = pmpix_ibarrier_
-#pragma weak pmpix_ibarrier__ = pmpix_ibarrier_
-#pragma weak pmpix_ibarrier = pmpix_ibarrier_
+#pragma weak PMPI_IBARRIER = pmpi_ibarrier_
+#pragma weak pmpi_ibarrier__ = pmpi_ibarrier_
+#pragma weak pmpi_ibarrier = pmpi_ibarrier_
 #else
-#pragma weak PMPIX_IBARRIER = pmpix_ibarrier
-#pragma weak pmpix_ibarrier__ = pmpix_ibarrier
-#pragma weak pmpix_ibarrier_ = pmpix_ibarrier
+#pragma weak PMPI_IBARRIER = pmpi_ibarrier
+#pragma weak pmpi_ibarrier__ = pmpi_ibarrier
+#pragma weak pmpi_ibarrier_ = pmpi_ibarrier
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_ibarrier_ PMPIX_IBARRIER
+#define mpi_ibarrier_ PMPI_IBARRIER
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_ibarrier_ pmpix_ibarrier__
+#define mpi_ibarrier_ pmpi_ibarrier__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_ibarrier_ pmpix_ibarrier
+#define mpi_ibarrier_ pmpi_ibarrier
 #else
-#define mpix_ibarrier_ pmpix_ibarrier_
+#define mpi_ibarrier_ pmpi_ibarrier_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Ibarrier
-#define MPIX_Ibarrier PMPIX_Ibarrier 
+#undef MPI_Ibarrier
+#define MPI_Ibarrier PMPI_Ibarrier 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_ibarrier_ MPIX_IBARRIER
+#define mpi_ibarrier_ MPI_IBARRIER
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_ibarrier_ mpix_ibarrier__
+#define mpi_ibarrier_ mpi_ibarrier__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_ibarrier_ mpix_ibarrier
+#define mpi_ibarrier_ mpi_ibarrier
 /* Else leave name alone */
 #endif
 
@@ -184,6 +184,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_ibarrier( MPI_Fint *, MPI_Fint *, MPI_
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_ibarrier_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
-    *ierr = MPIX_Ibarrier( (MPI_Comm)(*v1), (MPI_Request *)(v2) );
+FORT_DLL_SPEC void FORT_CALL mpi_ibarrier_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
+    *ierr = MPI_Ibarrier( (MPI_Comm)(*v1), (MPI_Request *)(v2) );
 }

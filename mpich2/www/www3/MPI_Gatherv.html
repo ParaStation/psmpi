@@ -9,8 +9,8 @@
 Gathers into specified locations from all processes in a group 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Gatherv(MPICH2_CONST void *sendbuf, int sendcnt, MPI_Datatype sendtype,
-                void *recvbuf, MPICH2_CONST int *recvcnts, MPICH2_CONST int *displs,
+int MPI_Gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                void *recvbuf, const int *recvcounts, const int *displs,
                 MPI_Datatype recvtype, int root, MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -38,7 +38,7 @@ at root)
 <DT><B>comm </B><DD>communicator (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>recvbuf </B> <DD> address of receive buffer (choice, significant only at <TT>root</TT>) 
 </DL>
 <P>

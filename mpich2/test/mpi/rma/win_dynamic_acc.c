@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2012 by Argonne National Laboratory.
@@ -10,13 +10,6 @@
 #include <assert.h>
 #include <mpi.h>
 #include "mpitest.h"
-
-/* MPI-3 is not yet standardized -- allow MPI-3 routines to be switched off.
- */
-
-#if !defined(USE_STRICT_MPI) && defined(MPICH2)
-#  define TEST_MPI3_ROUTINES 1
-#endif
 
 #define ITER 100
 
@@ -40,10 +33,8 @@ int main(int argc, char **argv) {
     MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL, val_ptrs, 1, MPI_AINT,
                   MPI_COMM_WORLD);
 
-#ifdef TEST_MPI3_ROUTINES
-
-    MPIX_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, &dyn_win);
-    MPIX_Win_attach(dyn_win, &one, sizeof(int));
+    MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, &dyn_win);
+    MPI_Win_attach(dyn_win, &one, sizeof(int));
 
     for (i = 0; i < ITER; i++) {
             MPI_Win_fence(MPI_MODE_NOPRECEDE, dyn_win);
@@ -59,10 +50,8 @@ int main(int argc, char **argv) {
         printf("%d -- Got %d, expected %d\n", rank, val, ITER);
     }
 
-    MPIX_Win_detach(dyn_win, &one);
+    MPI_Win_detach(dyn_win, &one);
     MPI_Win_free(&dyn_win);
-
-#endif /* TEST_MPI3_ROUTINES */
 
     MPI_Reduce(&errors, &all_errors, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
 

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -8,21 +8,21 @@
 #include "mpiimpl.h"
 #include "mpicomm.h"
 
-/* -- Begin Profiling Symbol Block for routine MPIX_Comm_split_type */
+/* -- Begin Profiling Symbol Block for routine MPI_Comm_split_type */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPIX_Comm_split_type = PMPIX_Comm_split_type
+#pragma weak MPI_Comm_split_type = PMPI_Comm_split_type
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIX_Comm_split_type  MPIX_Comm_split_type
+#pragma _HP_SECONDARY_DEF PMPI_Comm_split_type  MPI_Comm_split_type
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPIX_Comm_split_type as PMPIX_Comm_split_type
+#pragma _CRI duplicate MPI_Comm_split_type as PMPI_Comm_split_type
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#undef MPIX_Comm_split_type
-#define MPIX_Comm_split_type PMPIX_Comm_split_type
+#undef MPI_Comm_split_type
+#define MPI_Comm_split_type PMPI_Comm_split_type
 #endif
 
 #undef FUNCNAME
@@ -34,11 +34,16 @@ int MPIR_Comm_split_type_impl(MPID_Comm * comm_ptr, int split_type, int key,
 {
     int mpi_errno = MPI_SUCCESS;
 
-    MPIU_Assert(split_type == MPIX_COMM_TYPE_SHARED);
+    /* Only MPI_COMM_TYPE_SHARED and MPI_UNDEFINED are supported */
+    MPIU_Assert(split_type == MPI_COMM_TYPE_SHARED || split_type == MPI_UNDEFINED);
 
     if (MPID_Comm_fns == NULL || MPID_Comm_fns->split_type == NULL) {
-        /* Default implementation is to just return MPI_COMM_SELF */
-        mpi_errno = MPIR_Comm_split_impl(comm_ptr, comm_ptr->rank, key, newcomm_ptr);
+        int color = (split_type == MPI_COMM_TYPE_SHARED) ? comm_ptr->rank : MPI_UNDEFINED;
+
+        /* The default implementation is to either pass MPI_UNDEFINED
+         * or the local rank as the color (in which case a dup of
+         * MPI_COMM_SELF is returned) */
+        mpi_errno = MPIR_Comm_split_impl(comm_ptr, color, key, newcomm_ptr);
     }
     else {
         mpi_errno =
@@ -55,20 +60,20 @@ int MPIR_Comm_split_type_impl(MPID_Comm * comm_ptr, int split_type, int key,
 
 
 #undef FUNCNAME
-#define FUNCNAME MPIX_Comm_split_type
+#define FUNCNAME MPI_Comm_split_type
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
 
-MPIX_Comm_split_type - Creates new communicators based on split types and keys
+MPI_Comm_split_type - Creates new communicators based on split types and keys
 
 Input Parameters:
 + comm - communicator (handle)
 . split_type - type of processes to be grouped together (nonnegative integer).
-. key - control of rank assigment (integer)
+. key - control of rank assignment (integer)
 - info - hints to improve communicator creation (handle)
 
-Output Parameter:
+Output Parameters:
 . newcomm - new communicator (handle)
 
 Notes:
@@ -85,8 +90,8 @@ Notes:
 
 .seealso: MPI_Comm_free
 @*/
-int MPIX_Comm_split_type(MPI_Comm comm, int split_type, int key, MPI_Info info,
-                         MPI_Comm * newcomm)
+int MPI_Comm_split_type(MPI_Comm comm, int split_type, int key, MPI_Info info,
+                        MPI_Comm * newcomm)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL, *newcomm_ptr;

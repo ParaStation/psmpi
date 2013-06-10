@@ -84,7 +84,7 @@ extern int free(void *);
 #define ALREADY_FREED  0x0f0e0d9c
 
 typedef struct TRSPACE {
-    unsigned long size;
+    size_t size;
     int id;
     int lineno;
     int freed_lineno;
@@ -106,9 +106,13 @@ typedef union TrSPACE {
  * This package maintains some state about itself.  These globals hold
  * this information.
  */
+#define TRHEAD_PRESENTINAL ((TRSPACE *)0xbacdef01)
+#define TRHEAD_POSTSENTINAL ((TRSPACE *)0x10fedcba)
 static int world_rank = -1;
-static volatile long allocated = 0, frags = 0;
-static TRSPACE *volatile TRhead = 0;
+static volatile size_t allocated = 0;
+static volatile long   frags = 0;
+static TRSPACE *volatile TRhead[3] = 
+    { TRHEAD_PRESENTINAL, 0, TRHEAD_POSTSENTINAL };
 static volatile int TRid = 0;
 static volatile int TRidSet = 0;
 static volatile int TRlevel = 0;
@@ -120,10 +124,10 @@ static int TRdebugLevel = 0;
 #define TR_FREE   0x2
 
 /* Used to keep track of allocations */
-static volatile long TRMaxMem = 0;
-static volatile long TRMaxMemId = 0;
+static volatile size_t TRMaxMem = 0;
+static volatile int    TRMaxMemId = 0;
 /* Used to limit allocation */
-static volatile long TRMaxMemAllow = 0;
+static volatile size_t TRMaxMemAllow = 0;
 
 /*
  * Printing of addresses.
@@ -178,13 +182,18 @@ void MPL_trinit(int rank)
         TRDefaultByte = 0;
         TRFreedByte = 0;
     }
+    s = getenv("MPL_TRMEM_TRACELEVEL");
+    if (s && *s) {
+        int l = atoi(s);
+        TRlevel = l;
+    }
 
 }
 
 /*+C
     MPL_trmalloc - Malloc with tracing
 
-    Input Parameters:
+Input Parameters:
 +   a   - number of bytes to allocate
 .   lineno - line number where used.  Use __LINE__ for this
 -   fname  - file name where used.  Use __FILE__ for this
@@ -193,26 +202,24 @@ void MPL_trinit(int rank)
     double aligned pointer to requested storage, or null if not
     available.
  +*/
-void *MPL_trmalloc(unsigned int a, int lineno, const char fname[])
+void *MPL_trmalloc(size_t a, int lineno, const char fname[])
 {
     TRSPACE *head;
     char *new = NULL;
     unsigned long *nend;
-    unsigned int nsize;
+    size_t nsize;
     int l;
 
     if (TRdebugLevel > 0) {
-        char buf[256];
-        MPL_snprintf(buf, 256,
-                     "Invalid MALLOC arena detected at line %d in %s\n", lineno, fname);
-        if (MPL_trvalid(buf))
+        if (MPL_trvalid2( "Invalid MALLOC arena detected at line %d in %s\n", 
+                          lineno, fname))
             goto fn_exit;
     }
 
     nsize = a;
     if (nsize & TR_ALIGN_MASK)
         nsize += (TR_ALIGN_BYTES - (nsize & TR_ALIGN_MASK));
-    if ((allocated + (long) nsize > TRMaxMemAllow) && TRMaxMemAllow) {
+    if ((allocated + nsize > TRMaxMemAllow) && TRMaxMemAllow) {
         /* Return a null when memory would be exhausted */
         /* This is only called when additional debugging is enabled,
          * so the fact that this does not go through the regular error
@@ -221,7 +228,7 @@ void *MPL_trmalloc(unsigned int a, int lineno, const char fname[])
         goto fn_exit;
     }
 
-    new = malloc((unsigned) (nsize + sizeof(TrSPACE) + sizeof(unsigned long)));
+    new = (char *)malloc(nsize + sizeof(TrSPACE) + sizeof(unsigned long));
     if (!new)
         goto fn_exit;
 
@@ -229,13 +236,17 @@ void *MPL_trmalloc(unsigned int a, int lineno, const char fname[])
     head = (TRSPACE *) new;
     new += sizeof(TrSPACE);
 
-    if (TRhead) {
-        MPL_VG_MAKE_MEM_DEFINED(&TRhead->prev, sizeof(TRhead->prev));
-        TRhead->prev = head;
-        MPL_VG_MAKE_MEM_NOACCESS(&TRhead->prev, sizeof(TRhead->prev));
+    if (TRhead[0] != TRHEAD_PRESENTINAL || TRhead[2] != TRHEAD_POSTSENTINAL) {
+        MPL_error_printf("TRhead corrupted - likely memory overwrite.\n");
+        goto fn_exit;
     }
-    head->next = TRhead;
-    TRhead = head;
+    if (TRhead[1]) {
+        MPL_VG_MAKE_MEM_DEFINED(&TRhead[1]->prev, sizeof(TRhead[1]->prev));
+        TRhead[1]->prev = head;
+        MPL_VG_MAKE_MEM_NOACCESS(&TRhead[1]->prev, sizeof(TRhead[1]->prev));
+    }
+    head->next = TRhead[1];
+    TRhead[1] = head;
     head->prev = 0;
     head->size = nsize;
     head->id = TRid;
@@ -258,8 +269,8 @@ void *MPL_trmalloc(unsigned int a, int lineno, const char fname[])
     if (TRlevel & TR_MALLOC) {
         /* Note that %08p (what we'd like to use) isn't accepted by
          * all compilers */
-        MPL_error_printf("[%d] Allocating %d bytes at %8p in %s:%d\n",
-                         world_rank, a, new, fname, lineno);
+        MPL_error_printf("[%d] Allocating %ld(%ld) bytes at %8p in %s[%d]\n",
+                         world_rank, (long)a, (long)nsize, new, fname, lineno);
     }
 
     /* Without these macros valgrind actually catches far fewer errors when
@@ -276,7 +287,7 @@ void *MPL_trmalloc(unsigned int a, int lineno, const char fname[])
 /*+C
    MPL_trfree - Free with tracing
 
-   Input Parameters:
+Input Parameters:
 +  a    - pointer to a block allocated with trmalloc
 .  line - line in file where called
 -  file - Name of file where called
@@ -284,55 +295,54 @@ void *MPL_trmalloc(unsigned int a, int lineno, const char fname[])
 void MPL_trfree(void *a_ptr, int line, const char file[])
 {
     TRSPACE *head;
-    char *ahead;
-    char *a = (char *) a_ptr;
     unsigned long *nend;
-    int l, nset;
+    size_t nset;
+    int l;
     char hexstring[MAX_ADDRESS_CHARS];
 
 /* Don't try to handle empty blocks */
-    if (!a)
+    if (!a_ptr)
         return;
 
     if (TRdebugLevel > 0) {
-        if (MPL_trvalid("Invalid MALLOC arena detected by FREE"))
+        if (MPL_trvalid2("Invalid MALLOC arena detected by FREE at line %d in %s\n", line, file ))
             return;
     }
 
-    ahead = a;
-    a = a - sizeof(TrSPACE);
-    head = (TRSPACE *) a;
+    head = (TRSPACE *) ( ((char *)a_ptr) - sizeof(TrSPACE) );
 
     /* We need to mark the memory as defined before performing our own error
      * checks or valgrind will flag the trfree function as erroneous.  The real
      * free() at the end of this function will mark the whole block as NOACCESS
      * again.  See the corresponding block in the trmalloc function for more
      * info. */
-    MPL_VG_MAKE_MEM_DEFINED(a, sizeof(TrSPACE));
+    MPL_VG_MAKE_MEM_DEFINED(head, sizeof(TrSPACE));
 
     if (head->cookie != COOKIE_VALUE) {
         /* Damaged header */
         /* Note that %08p (what we'd like to use) isn't accepted by
          * all compilers */
-        MPL_error_printf("[%d] Block at address %8p is corrupted; cannot free;\n"
+        addrToHex( a_ptr, hexstring );
+        MPL_error_printf("[%d] Block at address %s is corrupted; cannot free;\n"
                          "may be block not allocated with MPL_trmalloc or MALLOC\n"
-                         "called in %s at line %d\n", world_rank, a, file, line);
+                         "called in %s at line %d\n", world_rank, hexstring, file, line);
         return;
     }
-    nend = (unsigned long *) (ahead + head->size);
+    nend = (unsigned long *) ((char *)a_ptr + head->size);
 /* Check that nend is properly aligned */
     if ((sizeof(long) == 4 && ((long) nend & 0x3) != 0) ||
         (sizeof(long) == 8 && ((long) nend & 0x7) != 0)) {
+        addrToHex( a_ptr, hexstring );
         MPL_error_printf
-            ("[%d] Block at address %lx is corrupted (invalid address or header)\n"
-             "called in %s at line %d\n", world_rank, (long) a + sizeof(TrSPACE), file, line);
+            ("[%d] Block at address %s is corrupted (invalid address or header)\n"
+             "called in %s at line %d\n", world_rank, hexstring, file, line);
         return;
     }
 
     MPL_VG_MAKE_MEM_DEFINED(nend, sizeof(*nend));
     if (*nend != COOKIE_VALUE) {
         if (*nend == ALREADY_FREED) {
-            addrToHex((char *) a + sizeof(TrSPACE), hexstring);
+            addrToHex(a_ptr, hexstring);
             if (TRidSet) {
                 MPL_error_printf
                     ("[%d] Block [id=%d(%lu)] at address %s was already freed\n", world_rank,
@@ -352,7 +362,7 @@ void MPL_trfree(void *a_ptr, int line, const char file[])
         }
         else {
             /* Damaged tail */
-            addrToHex(a, hexstring);
+            addrToHex(a_ptr, hexstring);
             if (TRidSet) {
                 MPL_error_printf
                     ("[%d] Block [id=%d(%lu)] at address %s is corrupted (probably write past end)\n",
@@ -364,8 +374,10 @@ void MPL_trfree(void *a_ptr, int line, const char file[])
                      world_rank, hexstring);
             }
             head->fname[TR_FNAME_LEN - 1] = 0;  /* Just in case */
-            MPL_error_printf("[%d] Block allocated in %s[%d]\n",
+            MPL_error_printf("[%d] Block being freed allocated in %s[%d]\n",
                              world_rank, head->fname, head->lineno);
+            MPL_error_printf("[%d] Block cookie should be %lx but was %lx\n",
+                             world_rank, (long)COOKIE_VALUE, *nend );
         }
     }
 /* Mark the location freed */
@@ -383,7 +395,7 @@ void MPL_trfree(void *a_ptr, int line, const char file[])
         MPL_VG_MAKE_MEM_NOACCESS(&head->prev->next, sizeof(head->prev->next));
     }
     else {
-        TRhead = head->next;
+        TRhead[1] = head->next;
     }
 
     if (head->next) {
@@ -393,8 +405,8 @@ void MPL_trfree(void *a_ptr, int line, const char file[])
     }
 
     if (TRlevel & TR_FREE) {
-        addrToHex((char *) a + sizeof(TrSPACE), hexstring);
-        MPL_error_printf("[%d] Freeing %lu bytes at %s in %s:%d\n",
+        addrToHex(a_ptr, hexstring);
+        MPL_error_printf("[%d] Freeing %lu bytes at %s in %s[%d]\n",
                          world_rank, head->size, hexstring, file, line);
     }
 
@@ -403,23 +415,28 @@ void MPL_trfree(void *a_ptr, int line, const char file[])
      * help catch access to already freed data
      */
     /* FIXME why do we skip the first few ints? [goodell@] */
-    nset = head->size - 2 * sizeof(int);
-    if (nset > 0) {
+    /* Answer lost in time.  Probably because in some case, the
+       first few bytes provided useful information in tracking down
+       a problem. */
+    if (head->size > 2*sizeof(int)) {
+        /* Now that nset is size_t, it might be defined as unsigned,
+           so we can't compare nset - 2*sizeof(int) against zero */
+        nset = head->size - 2 * sizeof(int);
         /* If an upper layer (like the handle allocation code) ever used the
          * MPL_VG_MAKE_MEM_NOACCESS macro on part/all of the data we gave
          * them then our memset will elicit "invalid write" errors from
          * valgrind.  Mark it as accessible but undefined here to prevent this. */
-        MPL_VG_MAKE_MEM_UNDEFINED(ahead + 2 * sizeof(int), nset);
-        memset(ahead + 2 * sizeof(int), TRFreedByte, nset);
+        MPL_VG_MAKE_MEM_UNDEFINED((char *)a_ptr + 2 * sizeof(int), nset);
+        memset((char *)a_ptr + 2 * sizeof(int), TRFreedByte, nset);
     }
-    free(a);
+    free(head);
 }
 
 /*+C
    MPL_trvalid - test the allocated blocks for validity.  This can be used to
    check for memory overwrites.
 
-   Input Parameter:
+Input Parameters:
 .  str - string to write out only if an error is detected.
 
    Return value:
@@ -442,24 +459,38 @@ $   Block at address %lx is corrupted
 
    No output is generated if there are no problems detected.
 +*/
-int MPL_trvalid(const char str[])
+int MPL_trvalid( const char str[] )
+{
+    return MPL_trvalid2( str, -1, (const char *)0 );
+}
+
+int MPL_trvalid2(const char str[], int line, const char file[] )
 {
     TRSPACE *head;
     TRSPACE *next;
-    char *a;
+    char    *a;
     unsigned long *nend;
     int errs = 0;
     char hexstring[MAX_ADDRESS_CHARS];
 
-    head = TRhead;
+    if (TRhead[0] != TRHEAD_PRESENTINAL || TRhead[2] != TRHEAD_POSTSENTINAL) {
+        MPL_error_printf("TRhead corrupted - likely memory overwrite.\n");
+        errs++;
+        goto fn_exit;
+    }
+    head = TRhead[1];
     while (head) {
         /* mark defined before accessing head contents */
         MPL_VG_MAKE_MEM_DEFINED(head, sizeof(*head));
         if (head->cookie != COOKIE_VALUE) {
-            if (!errs)
-                MPL_error_printf("%s\n", str);
+            if (!errs) {
+                if (line > 0) 
+                    MPL_error_printf(str, line, file);
+                else 
+                    MPL_error_printf( "%s\n", str );
+            }
             errs++;
-            addrToHex(head, hexstring);
+            addrToHex(head+1, hexstring);
             MPL_error_printf
                 ("[%d] Block at address %s is corrupted (invalid cookie in head)\n",
                  world_rank, hexstring);
@@ -469,16 +500,24 @@ int MPL_trvalid(const char str[])
              * SEGV or BUS  */
             goto fn_exit;
         }
-        /* FIXME why is this +1 here? */
-        a = (char *) (((TrSPACE *) head) + 1);
+        /* Get the address of the first byte of the memory, which begins
+           just after the end of the header.  We must use the full header 
+           (TrSPACE) rather than the struct with the data (TRSPACE) because
+           the full header is padded to ensure correct byte alignment with
+           the data */
+        a    = (char *)( (TrSPACE *)head + 1 );
         nend = (unsigned long *) (a + head->size);
 
         /* mark defined before accessing nend contents */
         MPL_VG_MAKE_MEM_DEFINED(nend, sizeof(*nend));
 
         if (nend[0] != COOKIE_VALUE) {
-            if (!errs)
-                MPL_error_printf("%s\n", str);
+            if (!errs) {
+                if (line > 0) 
+                    MPL_error_printf(str, line, file);
+                else 
+                    MPL_error_printf( "%s\n", str );
+            }
             errs++;
             head->fname[TR_FNAME_LEN - 1] = 0;  /* Just in case */
             addrToHex(a, hexstring);
@@ -494,6 +533,8 @@ int MPL_trvalid(const char str[])
             }
             MPL_error_printf("[%d] Block allocated in %s[%d]\n",
                              world_rank, head->fname, head->lineno);
+            MPL_error_printf("[%d] Block cookie should be %lx but was %lx\n",
+                             world_rank, (long)COOKIE_VALUE, *nend );
         }
 
         /* set both regions back to NOACCESS */
@@ -525,7 +566,7 @@ void MPL_trspace(int *space, int *fr)
 /*+C
   MPL_trdump - Dump the allocated memory blocks to a file
 
-  Input Parameter:
+Input Parameters:
 +  fp  - file pointer.  If fp is NULL, stderr is assumed.
 -  minid - Only print allocated memory blocks whose id is at least 'minid'
 
@@ -538,7 +579,11 @@ void MPL_trdump(FILE * fp, int minid)
 
     if (fp == 0)
         fp = stderr;
-    head = TRhead;
+    if (TRhead[0] != TRHEAD_PRESENTINAL || TRhead[2] != TRHEAD_POSTSENTINAL) {
+        MPL_error_printf("TRhead corrupted - likely memory overwrite.\n");
+        return;
+    }
+    head = TRhead[1];
     while (head) {
         MPL_VG_MAKE_MEM_DEFINED(head, sizeof(*head));
         if (head->id >= minid) {
@@ -585,7 +630,7 @@ static int IntCompare(TRINFO * a, TRINFO * b)
 }
 
 static volatile FILE *TRFP = 0;
- /*ARGSUSED*/ static void PrintSum(TRINFO ** a, VISIT order, int level)
+static void PrintSum(TRINFO ** a, VISIT order, int level)
 {
     if (order == postorder || order == leaf)
         fprintf(TRFP, "[%d]%s[%d] has %d\n", (*a)->id, (*a)->fname, (*a)->lineno, (*a)->size);
@@ -594,7 +639,7 @@ static volatile FILE *TRFP = 0;
 /*+C
   MPL_trSummary - Summarize the allocate memory blocks by id
 
-  Input Parameter:
+Input Parameters:
 +  fp  - file pointer.  If fp is NULL, stderr is assumed.
 -  minid - Only print allocated memory blocks whose id is at least 'minid'
 
@@ -611,7 +656,11 @@ void MPL_trSummary(FILE * fp, int minid)
     if (fp == 0)
         fp = stderr;
     root = 0;
-    head = TRhead;
+    if (TRhead[0] != TRHEAD_PRESENTINAL || TRhead[2] != TRHEAD_POSTSENTINAL) {
+        MPL_error_printf("TRhead corrupted - likely memory overwrite.\n");
+        return;
+    }
+    head = TRhead[1];
     key = nspace;
     while (head) {
         if (head->id >= minid) {
@@ -646,8 +695,8 @@ void MPL_trSummary(FILE * fp, int minid)
 {
     if (fp == 0)
         fp = stderr;
-    fprintf(fp, "# [%d] The maximum space allocated was %ld bytes [%ld]\n",
-            world_rank, TRMaxMem, TRMaxMemId);
+    fprintf(fp, "# [%d] The maximum space allocated was %lu bytes [%d]\n",
+            world_rank, (unsigned long)TRMaxMem, TRMaxMemId);
 }
 #endif
 
@@ -664,7 +713,7 @@ void MPL_trid(int id)
 /*+C
   MPL_trlevel - Set the level of output to be used by the tracing routines
 
-  Input Parameters:
+Input Parameters:
 . level = 0 - notracing
 . level = 1 - trace mallocs
 . level = 2 - trace frees
@@ -682,7 +731,7 @@ void MPL_trlevel(int level)
     MPL_trDebugLevel - set the level of debugging for the space management
     routines
 
-    Input Parameter:
+Input Parameters:
 .   level - level of debugging.  Currently, either 0 (no checking) or 1
     (use MPL_trvalid at each MPL_trmalloc or MPL_trfree).
 +*/
@@ -694,7 +743,7 @@ void MPL_trDebugLevel(int level)
 /*+C
     MPL_trcalloc - Calloc with tracing
 
-    Input Parameters:
+Input Parameters:
 .   nelem  - number of elements to allocate
 .   elsize - size of each element
 .   lineno - line number where used.  Use __LINE__ for this
@@ -704,11 +753,11 @@ void MPL_trDebugLevel(int level)
     Double aligned pointer to requested storage, or null if not
     available.
  +*/
-void *MPL_trcalloc(unsigned int nelem, unsigned int elsize, int lineno, const char fname[])
+void *MPL_trcalloc(size_t nelem, size_t elsize, int lineno, const char fname[])
 {
     void *p;
 
-    p = MPL_trmalloc((unsigned) (nelem * elsize), lineno, fname);
+    p = MPL_trmalloc(nelem * elsize, lineno, fname);
     if (p) {
         memset(p, 0, nelem * elsize);
     }
@@ -718,7 +767,7 @@ void *MPL_trcalloc(unsigned int nelem, unsigned int elsize, int lineno, const ch
 /*+C
     MPL_trrealloc - Realloc with tracing
 
-    Input Parameters:
+Input Parameters:
 .   p      - pointer to old storage
 .   size   - number of bytes to allocate
 .   lineno - line number where used.  Use __LINE__ for this
@@ -729,22 +778,20 @@ void *MPL_trcalloc(unsigned int nelem, unsigned int elsize, int lineno, const ch
     available.  This implementation ALWAYS allocates new space and copies
     the contents into the new space.
  +*/
-void *MPL_trrealloc(void *p, int size, int lineno, const char fname[])
+void *MPL_trrealloc(void *p, size_t size, int lineno, const char fname[])
 {
     void *pnew;
-    char *pa;
-    int nsize;
+    size_t nsize;
     TRSPACE *head = 0;
     char hexstring[MAX_ADDRESS_CHARS];
 
 /* We should really use the size of the old block... */
     if (p) {
-        pa = (char *) p;
-        head = (TRSPACE *) (pa - sizeof(TrSPACE));
+        head = (TRSPACE *) ((char *)p - sizeof(TrSPACE));
         MPL_VG_MAKE_MEM_DEFINED(head, sizeof(*head));   /* mark defined before accessing contents */
         if (head->cookie != COOKIE_VALUE) {
             /* Damaged header */
-            addrToHex(pa, hexstring);
+            addrToHex(p, hexstring);
             MPL_error_printf("[%d] Block at address %s is corrupted; cannot realloc;\n"
                              "may be block not allocated with MPL_trmalloc or MALLOC\n",
                              world_rank, hexstring);
@@ -762,17 +809,18 @@ void *MPL_trrealloc(void *p, int size, int lineno, const char fname[])
         return NULL;
     }
 
-    pnew = MPL_trmalloc((unsigned) size, lineno, fname);
+    pnew = MPL_trmalloc(size, lineno, fname);
 
     if (p && pnew) {
         nsize = size;
-        if (head->size < (unsigned long) nsize)
-            nsize = (int) (head->size);
+        if (head->size < nsize)
+            nsize = head->size;
         memcpy(pnew, p, nsize);
         MPL_trfree(p, lineno, fname);
     }
 
     /* Re-mark the head as NOACCESS before returning. */
+    /* FIXME: Note head is no longer valid after MPL_trfree above */
     if (head) {
         MPL_VG_MAKE_MEM_NOACCESS(head, sizeof(*head));
     }
@@ -785,7 +833,7 @@ void *MPL_trrealloc(void *p, int size, int lineno, const char fname[])
 /*+C
     MPL_trstrdup - Strdup with tracing
 
-    Input Parameters:
+Input Parameters:
 .   str    - string to duplicate
 .   lineno - line number where used.  Use __LINE__ for this
 .   fname  - file name where used.  Use __FILE__ for this
@@ -796,9 +844,9 @@ void *MPL_trrealloc(void *p, int size, int lineno, const char fname[])
 void *MPL_trstrdup(const char *str, int lineno, const char fname[])
 {
     void *p;
-    unsigned len = (unsigned) strlen(str) + 1;
+    size_t len = strlen(str) + 1;
 
-    p = MPL_trmalloc(len, lineno, (char *) fname);
+    p = MPL_trmalloc(len, lineno, fname);
     if (p) {
         memcpy(p, str, len);
     }
@@ -891,13 +939,17 @@ static void MPL_trSortBlocks(void)
     TRSPACE *head;
     int cnt;
 
-    head = TRhead;
+    if (TRhead[0] != TRHEAD_PRESENTINAL || TRhead[2] != TRHEAD_POSTSENTINAL) {
+        MPL_error_printf("TRhead corrupted - likely memory overwrite.\n");
+        return;
+    }
+    head = TRhead[1];
     cnt = 0;
     while (head) {
         cnt++;
         head = head->next;
     }
-    TRhead = MPL_trIsort(TRhead, cnt);
+    TRhead[1] = MPL_trIsort(TRhead[1], cnt);
 }
 
 /* Takes sorted input and dumps as an aggregate */
@@ -909,8 +961,13 @@ void MPL_trdumpGrouped(FILE * fp, int minid)
     if (fp == 0)
         fp = stderr;
 
+    if (TRhead[0] != TRHEAD_PRESENTINAL || TRhead[2] != TRHEAD_POSTSENTINAL) {
+        MPL_error_printf("TRhead corrupted - likely memory overwrite.\n");
+        return;
+    }
+
     MPL_trSortBlocks();
-    head = TRhead;
+    head = TRhead[1];
     cur = 0;
     while (head) {
         cur = head->next;
@@ -934,7 +991,7 @@ void MPL_trdumpGrouped(FILE * fp, int minid)
     fflush(fp);
 }
 
-void MPL_TrSetMaxMem(int size)
+void MPL_TrSetMaxMem(size_t size)
 {
     TRMaxMemAllow = size;
 }

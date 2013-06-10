@@ -5,7 +5,7 @@
  */
 
 /* This file contains glue code that ROMIO needs to call/use in order to access
- * certain internals of MPICH2.  This allows us stop using "mpiimpl.h" (and all
+ * certain internals of MPICH.  This allows us stop using "mpiimpl.h" (and all
  * the headers it includes) directly inside of ROMIO. */
 
 #include "mpiimpl.h"
@@ -37,7 +37,7 @@ int MPIR_Ext_assert_fail(const char *cond, const char *file_name, int line_num)
 
 /* These two routines export the ALLFUNC CS_ENTER/EXIT macros as functions so
  * that ROMIO can use them.  These routines only support the GLOBAL granularity
- * of MPICH2 threading; other accommodations must be made for finer-grained
+ * of MPICH threading; other accommodations must be made for finer-grained
  * threading strategies. */
 void MPIR_Ext_cs_enter_allfunc(void)
 {
@@ -49,4 +49,30 @@ void MPIR_Ext_cs_exit_allfunc(void)
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
 }
 
+/* will consider MPI_DATATYPE_NULL to be an error */
+#undef FUNCNAME
+#define FUNCNAME MPIR_Ext_datatype_iscommitted
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPIR_Ext_datatype_iscommitted(MPI_Datatype datatype)
+{
+    int mpi_errno = MPI_SUCCESS;
+
+    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
+        MPID_Datatype *datatype_ptr = NULL;
+        MPID_Datatype_get_ptr(datatype, datatype_ptr);
+
+        MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+        MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    }
+
+fn_fail:
+    return mpi_errno;
+}
 

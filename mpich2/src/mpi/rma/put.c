@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -7,7 +7,6 @@
 
 #include "mpiimpl.h"
 
-#include "rma.h"
 /* -- Begin Profiling Symbol Block for routine MPI_Put */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Put = PMPI_Put
@@ -32,7 +31,7 @@
 /*@
    MPI_Put - Put data into a memory window on a remote process
 
-   Input Parameters:
+Input Parameters:
 + origin_addr -initial address of origin buffer (choice) 
 . origin_count -number of entries in origin buffer (nonnegative integer) 
 . origin_datatype -datatype of each entry in origin buffer (handle) 
@@ -54,8 +53,10 @@
 .N MPI_ERR_RANK
 .N MPI_ERR_TYPE
 .N MPI_ERR_WIN
+
+.seealso: MPI_Rput
 @*/
-int MPI_Put(MPICH2_CONST void *origin_addr, int origin_count, MPI_Datatype
+int MPI_Put(const void *origin_addr, int origin_count, MPI_Datatype
             origin_datatype, int target_rank, MPI_Aint target_disp,
             int target_count, MPI_Datatype target_datatype, MPI_Win
             win)
@@ -99,7 +100,7 @@ int MPI_Put(MPICH2_CONST void *origin_addr, int origin_count, MPI_Datatype
 	    MPIR_ERRTEST_DATATYPE(origin_datatype, "origin_datatype", mpi_errno);
 	    MPIR_ERRTEST_COUNT(target_count, mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(target_datatype, "target_datatype", mpi_errno);
-            if (win_ptr->create_flavor != MPIX_WIN_FLAVOR_DYNAMIC)
+            if (win_ptr->create_flavor != MPI_WIN_FLAVOR_DYNAMIC)
                 MPIR_ERRTEST_DISP(target_disp, mpi_errno);
 
             if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN)
@@ -133,8 +134,6 @@ int MPI_Put(MPICH2_CONST void *origin_addr, int origin_count, MPI_Datatype
 
     /* ... body of routine ...  */
     
-    if (target_rank == MPI_PROC_NULL) goto fn_exit;
-
     mpi_errno = MPIU_RMA_CALL(win_ptr,
 			      Put(origin_addr, origin_count, origin_datatype,
 				  target_rank, target_disp, target_count,

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -12,7 +12,7 @@
 #ifndef DATALOOP_H
 #define DATALOOP_H
 
-/* This is specific to MPICH2 */
+/* This is specific to MPICH */
 #include "mpid_dataloop.h"
 #include "mpiimpl.h"
 

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2006 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -232,7 +232,7 @@ static int get_addr(MPIDI_VC_t * vc, struct scif_portID *addr)
 int MPID_nem_scif_vc_init(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_CH3I_VC *vc_ch = VC_CH(vc);
+    MPIDI_CH3I_VC *vc_ch = &vc->ch;
     MPID_nem_scif_vc_area *vc_scif = VC_SCIF(vc);
     int ret;
     size_t s;

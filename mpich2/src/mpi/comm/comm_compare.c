@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -38,7 +38,7 @@ Input Parameters:
 + comm1 - comm1 (handle) 
 - comm2 - comm2 (handle) 
 
-Output Parameter:
+Output Parameters:
 . result - integer which is 'MPI_IDENT' if the contexts and groups are the
 same, 'MPI_CONGRUENT' if different contexts but identical groups, 'MPI_SIMILAR'
 if different contexts but similar groups, and 'MPI_UNEQUAL' otherwise
@@ -75,6 +75,7 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_COMPARE);
 
 #   ifdef HAVE_ERROR_CHECKING
@@ -177,6 +178,7 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_COMPARE);
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
     
     /* --BEGIN ERROR HANDLING-- */

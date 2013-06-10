@@ -9,8 +9,8 @@
 Gathers data from all tasks and deliver the combined data to all tasks 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Allgatherv(MPICH2_CONST void *sendbuf, int sendcount, MPI_Datatype sendtype,
-                   void *recvbuf, MPICH2_CONST int *recvcounts, MPICH2_CONST int *displs,
+int MPI_Allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                   void *recvbuf, const int *recvcounts, const int *displs,
                    MPI_Datatype recvtype, MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -33,7 +33,7 @@ which to place the incoming data from process  <TT>i</TT>
 <DT><B>comm </B><DD>communicator (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>recvbuf </B> <DD> address of receive buffer (choice) 
 </DL>
 <P>

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2009 by Argonne National Laboratory.
@@ -7,7 +7,6 @@
 #include "mpi.h"
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include "mpitest.h"
 
 /*
@@ -49,7 +48,7 @@ int main( int argc, char *argv[] )
     else {
 	/* To improve the chance that the "faulted" processes will have
 	   exited, wait for 1 second */
-	sleep( 1 );
+        MTestSleep( 1 );
     }
     
     /* Can we still use newcomm? */

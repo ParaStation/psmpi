@@ -9,7 +9,7 @@
 Accept a request to form a new intercommunicator 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Comm_accept(MPICH2_CONST char *port_name, MPI_Info info, int root, MPI_Comm comm,
+int MPI_Comm_accept(const char *port_name, MPI_Info info, int root, MPI_Comm comm,
                     MPI_Comm *newcomm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -20,10 +20,10 @@ int MPI_Comm_accept(MPICH2_CONST char *port_name, MPI_Info info, int root, MPI_C
 
 <DT><B>root </B><DD>rank in comm of root node (integer) 
 
-<DT><B>IN </B><DD>comm intracommunicator over which call is collective (handle) 
+<DT><B>comm </B><DD>intracommunicator over which call is collective (handle)
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>newcomm </B> <DD> intercommunicator with client as remote group (handle) 
 </DL>
 <P>

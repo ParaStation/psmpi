@@ -186,6 +186,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_op_commutative( MPI_Fint *, MPI_Fint *,
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_op_commutative_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
     int l2;
-    *ierr = MPI_Op_commutative( *v1, &l2 );
+    *ierr = MPI_Op_commutative( (MPI_Op)*v1, &l2 );
     if (*ierr == MPI_SUCCESS) *v2 = MPIR_TO_FLOG(l2);
 }

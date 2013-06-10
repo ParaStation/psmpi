@@ -12,10 +12,10 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPI_CART_SUB( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_CART_SUB( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub__( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub_( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak MPI_CART_SUB = PMPI_CART_SUB
@@ -44,19 +44,19 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub_( MPI_Fint *, MPI_Fint *, MPI_F
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPI_CART_SUB( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_CART_SUB( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
 
 #pragma weak MPI_CART_SUB = PMPI_CART_SUB
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub__( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
 
 #pragma weak mpi_cart_sub__ = pmpi_cart_sub__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
 
 #pragma weak mpi_cart_sub = pmpi_cart_sub
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub_( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
 
 #pragma weak mpi_cart_sub_ = pmpi_cart_sub_
 #endif
@@ -90,10 +90,10 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub_( MPI_Fint *, MPI_Fint *, MPI_F
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPI_CART_SUB( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_CART_SUB( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub__( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub_( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak mpi_cart_sub__ = MPI_CART_SUB
@@ -120,16 +120,16 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_cart_sub_( MPI_Fint *, MPI_Fint *, MPI_F
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPI_CART_SUB( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_CART_SUB( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_sub__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_sub__( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_sub_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_sub_( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_sub( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_sub( MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint * );
 
 #endif
 
@@ -184,16 +184,16 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_sub( MPI_Fint *, MPI_Fint *, MPI_F
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpi_cart_sub_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *ierr ){
+FORT_DLL_SPEC void FORT_CALL mpi_cart_sub_ ( MPI_Fint *v1, MPI_Fint v2[], MPI_Fint *v3, MPI_Fint *ierr ){
     int _ctsize;
     int *l2=0;
     {int _topotype;
-    PMPI_Topo_test( *v1, &_topotype );
+    PMPI_Topo_test( (MPI_Comm)*v1, &_topotype );
     if (_topotype != MPI_CART) {
         _ctsize = 0;
     }
     else 
-        PMPI_Cartdim_get( *v1, &_ctsize );
+        PMPI_Cartdim_get( (MPI_Comm)*v1, &_ctsize );
     }
 
     if (_ctsize) {int li;

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -45,7 +45,7 @@ void MPIR_Type_free_impl(MPI_Datatype *datatype)
 /*@
     MPI_Type_free - Frees the datatype
 
-Input Parameter:
+Input Parameters:
 . datatype - datatype that is freed (handle) 
 
 Predefined types:

@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2011 inria.  All rights reserved.
- * Copyright © 2009-2011 Université Bordeaux 1
+ * Copyright © 2009-2012 Inria.  All rights reserved.
+ * Copyright © 2009-2011, 2013 Université Bordeaux 1
  * See COPYING in top-level directory.
  */
 
@@ -12,22 +12,105 @@
 #include <private/debug.h>
 #include <private/misc.h>
 
-#ifdef HWLOC_HAVE_LIBPCI
-
-#include <pci/pci.h>
 #include <stdio.h>
 #include <fcntl.h>
 #include <string.h>
 #include <assert.h>
 #include <stdarg.h>
 #include <setjmp.h>
-#ifdef HWLOC_LINUX_SYS
+
+#if (defined HWLOC_HAVE_LIBPCIACCESS) && (defined HWLOC_HAVE_LIBPCI)
+#error Cannot have both LIBPCI and LIBPCIACCESS enabled simultaneously
+#elif (!defined HWLOC_HAVE_LIBPCIACCESS) && (!defined HWLOC_HAVE_LIBPCI)
+#error Cannot have neither LIBPCI nor LIBPCIACCESS enabled simultaneously
 #endif
 
-#define CONFIG_SPACE_CACHESIZE 256
+#ifdef HWLOC_HAVE_LIBPCIACCESS
+#include <pciaccess.h>
+#else /* HWLOC_HAVE_LIBPCI */
+#include <pci/pci.h>
+#endif
+
+#ifndef PCI_HEADER_TYPE
+#define PCI_HEADER_TYPE 0x0e
+#endif
+#ifndef PCI_HEADER_TYPE_BRIDGE
+#define PCI_HEADER_TYPE_BRIDGE 1
+#endif
+
+#ifndef PCI_CLASS_DEVICE
+#define PCI_CLASS_DEVICE 0x0a
+#endif
+#ifndef PCI_CLASS_BRIDGE_PCI
+#define PCI_CLASS_BRIDGE_PCI 0x0604
+#endif
+
+#ifndef PCI_REVISION_ID
+#define PCI_REVISION_ID 0x08
+#endif
+
+#ifndef PCI_SUBSYSTEM_VENDOR_ID
+#define PCI_SUBSYSTEM_VENDOR_ID 0x2c
+#endif
+#ifndef PCI_SUBSYSTEM_ID
+#define PCI_SUBSYSTEM_ID 0x2e
+#endif
+
+#ifndef PCI_PRIMARY_BUS
+#define PCI_PRIMARY_BUS 0x18
+#endif
+#ifndef PCI_SECONDARY_BUS
+#define PCI_SECONDARY_BUS 0x19
+#endif
+#ifndef PCI_SUBORDINATE_BUS
+#define PCI_SUBORDINATE_BUS 0x1a
+#endif
+
+#ifndef PCI_EXP_LNKSTA
+#define PCI_EXP_LNKSTA 18
+#endif
+
+#ifndef PCI_EXP_LNKSTA_SPEED
+#define PCI_EXP_LNKSTA_SPEED 0x000f
+#endif
+#ifndef PCI_EXP_LNKSTA_WIDTH
+#define PCI_EXP_LNKSTA_WIDTH 0x03f0
+#endif
+
+#ifndef PCI_CAP_ID_EXP
+#define PCI_CAP_ID_EXP 0x10
+#endif
+
+#ifndef PCI_CAP_NORMAL
+#define PCI_CAP_NORMAL 1
+#endif
+
+#ifndef PCI_STATUS
+#define PCI_STATUS 0x06
+#endif
+
+#ifndef PCI_CAPABILITY_LIST
+#define PCI_CAPABILITY_LIST 0x34
+#endif
+
+#ifndef PCI_STATUS_CAP_LIST
+#define PCI_STATUS_CAP_LIST 0x10
+#endif
+
+#ifndef PCI_CAP_LIST_ID
+#define PCI_CAP_LIST_ID 0
+#endif
+
+#ifndef PCI_CAP_LIST_NEXT
+#define PCI_CAP_LIST_NEXT 1
+#endif
+
+#define CONFIG_SPACE_CACHESIZE_TRY 256
+#define CONFIG_SPACE_CACHESIZE 64
 
 static void
-hwloc_pci_traverse_print_cb(struct hwloc_topology *topology __hwloc_attribute_unused, struct hwloc_obj *pcidev, int depth __hwloc_attribute_unused)
+hwloc_pci_traverse_print_cb(void * cbdata __hwloc_attribute_unused,
+			    struct hwloc_obj *pcidev, int depth __hwloc_attribute_unused)
 {
   char busid[14];
   snprintf(busid, sizeof(busid), "%04x:%02x:%02x.%01x",
@@ -49,42 +132,44 @@ hwloc_pci_traverse_print_cb(struct hwloc_topology *topology __hwloc_attribute_un
 }
 
 static void
-hwloc_pci_traverse_setbridgedepth_cb(struct hwloc_topology *topology __hwloc_attribute_unused, struct hwloc_obj *pcidev, int depth)
+hwloc_pci_traverse_setbridgedepth_cb(void * cbdata __hwloc_attribute_unused,
+				     struct hwloc_obj *pcidev, int depth)
 {
   if (pcidev->type == HWLOC_OBJ_BRIDGE)
     pcidev->attr->bridge.depth = depth;
 }
 
 static void
-hwloc_pci_traverse_lookuposdevices_cb(struct hwloc_topology *topology, struct hwloc_obj *pcidev, int depth __hwloc_attribute_unused)
+hwloc_pci_traverse_lookuposdevices_cb(void * cbdata,
+				      struct hwloc_obj *pcidev, int depth __hwloc_attribute_unused)
 {
+  struct hwloc_backend *backend = cbdata;
+
   if (pcidev->type == HWLOC_OBJ_BRIDGE)
     return;
 
-#ifdef HWLOC_LINUX_SYS
-  hwloc_linuxfs_pci_lookup_osdevices(topology, pcidev);
-#endif
+  hwloc_backends_notify_new_object(backend, pcidev);
 }
 
 static void
-hwloc_pci__traverse(struct hwloc_topology *topology, struct hwloc_obj *root,
-		    void (*cb)(struct hwloc_topology *, struct hwloc_obj *, int depth),
+hwloc_pci__traverse(void * cbdata, struct hwloc_obj *root,
+		    void (*cb)(void * cbdata, struct hwloc_obj *, int depth),
 		    int depth)
 {
   struct hwloc_obj *child = root->first_child;
   while (child) {
-    cb(topology, child, depth);
+    cb(cbdata, child, depth);
     if (child->type == HWLOC_OBJ_BRIDGE)
-      hwloc_pci__traverse(topology, child, cb, depth+1);
+      hwloc_pci__traverse(cbdata, child, cb, depth+1);
     child = child->next_sibling;
   }
 }
 
 static void
-hwloc_pci_traverse(struct hwloc_topology *topology, struct hwloc_obj *root,
-		   void (*cb)(struct hwloc_topology *, struct hwloc_obj *, int depth))
+hwloc_pci_traverse(void * cbdata, struct hwloc_obj *root,
+		   void (*cb)(void * cbdata, struct hwloc_obj *, int depth))
 {
-  hwloc_pci__traverse(topology, root, cb, 0);
+  hwloc_pci__traverse(cbdata, root, cb, 0);
 }
 
 enum hwloc_pci_busid_comparison_e {
@@ -227,7 +312,8 @@ hwloc_pci_add_object(struct hwloc_obj *root, struct hwloc_obj *new)
 }
 
 static struct hwloc_obj *
-hwloc_pci_find_hostbridge_parent(struct hwloc_topology *topology, struct hwloc_obj *hostbridge, int *created)
+hwloc_pci_find_hostbridge_parent(struct hwloc_topology *topology, struct hwloc_backend *backend,
+				 struct hwloc_obj *hostbridge, int *created)
 {
   hwloc_bitmap_t cpuset = hwloc_bitmap_alloc();
   struct hwloc_obj *parent;
@@ -244,12 +330,10 @@ hwloc_pci_find_hostbridge_parent(struct hwloc_topology *topology, struct hwloc_o
     hwloc_debug("Overriding localcpus using %s in the environment\n", envname);
     hwloc_bitmap_sscanf(cpuset, env);
   } else {
-    /* get the hostbridge cpuset. it's not a PCI device, so we use its first child locality info */
-#ifdef HWLOC_LINUX_SYS
-    err = hwloc_linuxfs_get_pcidev_cpuset(topology, hostbridge->first_child, cpuset);
-#else
-    err = -1;
-#endif
+    /* get the hostbridge cpuset by acking the OS backend.
+     * it's not a PCI device, so we use its first child locality info.
+     */
+    err = hwloc_backends_get_obj_cpuset(backend, hostbridge->first_child, cpuset);
     if (err < 0)
       /* if we got nothing, assume the hostbridge is attached to the top of hierarchy */
       hwloc_bitmap_copy(cpuset, hwloc_topology_get_topology_cpuset(topology));
@@ -291,6 +375,7 @@ hwloc_pci_find_hostbridge_parent(struct hwloc_topology *topology, struct hwloc_o
   return parent;
 }
 
+#ifdef HWLOC_HAVE_LIBPCI
 /* Avoid letting libpci call exit(1) when no PCI bus is available. */
 static jmp_buf err_buf;
 static void
@@ -309,59 +394,151 @@ static void
 hwloc_pci_warning(char *msg __hwloc_attribute_unused, ...)
 {
 }
+#endif
 
-void
-hwloc_look_libpci(struct hwloc_topology *topology)
+#ifndef HWLOC_HAVE_PCI_FIND_CAP
+static unsigned
+hwloc_pci_find_cap(const unsigned char *config, size_t config_size, unsigned cap)
 {
-  struct pci_access *pciaccess;
-  struct pci_dev *pcidev;
+  unsigned char seen[256] = { 0 };
+  unsigned char ptr;
+
+  if (!(config[PCI_STATUS] & PCI_STATUS_CAP_LIST))
+    return 0;
+
+  for (ptr = config[PCI_CAPABILITY_LIST] & ~3;
+       ptr;
+       ptr = config[ptr + PCI_CAP_LIST_NEXT] & ~3) {
+    unsigned char id;
+
+    if (ptr >= config_size)
+      return 0;
+
+    /* Looped around! */
+    if (seen[ptr])
+      return 0;
+    seen[ptr] = 1;
+
+    id = config[ptr + PCI_CAP_LIST_ID];
+    if (id == cap)
+      return ptr;
+    if (id == 0xff)
+      break;
+
+    if (ptr + PCI_CAP_LIST_NEXT >= (unsigned char) config_size)
+      return 0;
+  }
+  return 0;
+}
+#endif
+
+static int
+hwloc_look_libpci(struct hwloc_backend *backend)
+{
+  struct hwloc_topology *topology = backend->topology;
   struct hwloc_obj fakehostbridge; /* temporary object covering the whole PCI hierarchy until its complete */
   unsigned current_hostbridge;
+#ifdef HWLOC_HAVE_LIBPCIACCESS
+  int ret;
+  struct pci_device_iterator *iter;
+  struct pci_device *pcidev;
+#else /* HWLOC_HAVE_LIBPCI */
+  struct pci_access *pciaccess;
+  struct pci_dev *pcidev;
+#endif
   int createdgroups = 0;
+
+  if (!(topology->flags & (HWLOC_TOPOLOGY_FLAG_IO_DEVICES|HWLOC_TOPOLOGY_FLAG_WHOLE_IO)))
+    return 0;
+
+  if (!topology->is_thissystem) {
+    hwloc_debug("%s", "\nno PCI detection (not thissystem)\n");
+    return 0;
+  }
 
   fakehostbridge.first_child = NULL;
   fakehostbridge.last_child = NULL;
 
   hwloc_debug("%s", "\nScanning PCI buses...\n");
 
+  /* initialize PCI scanning */
+#ifdef HWLOC_HAVE_LIBPCIACCESS
+  ret = pci_system_init();
+  if (ret) {
+    hwloc_debug("%s", "Can not initialize libpciaccess\n");
+    return -1;
+  }
+
+  iter = pci_slot_match_iterator_create(NULL);
+#else /* HWLOC_HAVE_LIBPCI */
   pciaccess = pci_alloc();
   pciaccess->error = hwloc_pci_error;
   pciaccess->warning = hwloc_pci_warning;
 
   if (setjmp(err_buf)) {
     pci_cleanup(pciaccess);
-    return;
+    return -1;
   }
 
   pci_init(pciaccess);
   pci_scan_bus(pciaccess);
+#endif
 
-  pcidev = pciaccess->devices;
-  while (pcidev) {
-    char name[128];
-    const char *resname;
-    u8 config_space_cache[CONFIG_SPACE_CACHESIZE];
+  /* iterate over devices */
+#ifdef HWLOC_HAVE_LIBPCIACCESS
+  for (pcidev = pci_device_next(iter);
+       pcidev;
+       pcidev = pci_device_next(iter))
+#else /* HWLOC_HAVE_LIBPCI */
+  for (pcidev = pciaccess->devices;
+       pcidev;
+       pcidev = pcidev->next)
+#endif
+  {
+    const char *vendorname, *devicename, *fullname;
+    unsigned char config_space_cache[CONFIG_SPACE_CACHESIZE_TRY];
+    unsigned config_space_cachesize = CONFIG_SPACE_CACHESIZE_TRY;
     struct hwloc_obj *obj;
     unsigned char headertype;
     unsigned os_index;
     unsigned isbridge;
     unsigned domain;
     unsigned device_class;
+    char name[128];
+    unsigned offset;
+#ifdef HWLOC_HAVE_PCI_FIND_CAP
+    struct pci_cap *cap;
+#endif
+#ifdef HWLOC_HAVE_LIBPCIACCESS
+    pciaddr_t got;
+#endif
 
     /* cache what we need of the config space */
-    pci_read_block(pcidev, 0, config_space_cache, CONFIG_SPACE_CACHESIZE);
+#ifdef HWLOC_HAVE_LIBPCIACCESS
+    pci_device_probe(pcidev);
+    pci_device_cfg_read(pcidev, config_space_cache, 0, CONFIG_SPACE_CACHESIZE_TRY, &got);
+    config_space_cachesize = got;
+#else /* HWLOC_HAVE_LIBPCI */
+    pci_read_block(pcidev, 0, config_space_cache, CONFIG_SPACE_CACHESIZE_TRY);
+#endif
 
-    /* read some fields that may not always be available */
-#ifdef HWLOC_HAVE_PCIDEV_DOMAIN
+    /* try to read the domain */
+#if (defined HWLOC_HAVE_LIBPCIACCESS) || (defined HWLOC_HAVE_PCIDEV_DOMAIN)
     domain = pcidev->domain;
 #else
     domain = 0; /* default domain number */
 #endif
+
+    /* try to read the device_class */
+#ifdef HWLOC_HAVE_LIBPCIACCESS
+    device_class = pcidev->device_class >> 8;
+#else /* HWLOC_HAVE_LIBPCI */
 #ifdef HWLOC_HAVE_PCIDEV_DEVICE_CLASS
     device_class = pcidev->device_class;
 #else
     HWLOC_BUILD_ASSERT(PCI_CLASS_DEVICE < CONFIG_SPACE_CACHESIZE);
     device_class = config_space_cache[PCI_CLASS_DEVICE] | (config_space_cache[PCI_CLASS_DEVICE+1] << 8);
+#endif
 #endif
 
     /* is this a bridge? */
@@ -390,15 +567,18 @@ hwloc_look_libpci(struct hwloc_topology *topology)
 
     obj->attr->pcidev.linkspeed = 0; /* unknown */
 #ifdef HWLOC_HAVE_PCI_FIND_CAP
-    {
-    struct pci_cap *cap = pci_find_cap(pcidev, PCI_CAP_ID_EXP, PCI_CAP_NORMAL);
-    if (cap) {
-      if (cap->addr + PCI_EXP_LNKSTA >= CONFIG_SPACE_CACHESIZE) {
-        fprintf(stderr, "cannot read PCI_EXP_LNKSTA cap at %d (only %d cached)\n", cap->addr + PCI_EXP_LNKSTA, CONFIG_SPACE_CACHESIZE);
+    cap = pci_find_cap(pcidev, PCI_CAP_ID_EXP, PCI_CAP_NORMAL);
+    offset = cap ? cap->addr : 0;
+#else
+    offset = hwloc_pci_find_cap(config_space_cache, config_space_cachesize, PCI_CAP_ID_EXP);
+#endif /* HWLOC_HAVE_PCI_FIND_CAP */
+    if (offset > 0) {
+      if (offset + PCI_EXP_LNKSTA + 4 >= config_space_cachesize) {
+        fprintf(stderr, "cannot read PCI_EXP_LNKSTA cap at %d (only %d cached)\n", offset + PCI_EXP_LNKSTA, CONFIG_SPACE_CACHESIZE);
       } else {
         unsigned linksta, speed, width;
         float lanespeed;
-        memcpy(&linksta, &config_space_cache[cap->addr + PCI_EXP_LNKSTA], 4);
+        memcpy(&linksta, &config_space_cache[offset + PCI_EXP_LNKSTA], 4);
         speed = linksta & PCI_EXP_LNKSTA_SPEED; /* PCIe generation */
         width = (linksta & PCI_EXP_LNKSTA_WIDTH) >> 4; /* how many lanes */
 	/* PCIe Gen1 = 2.5GT/s signal-rate per lane with 8/10 encoding    = 0.25GB/s data-rate per lane
@@ -409,8 +589,6 @@ hwloc_look_libpci(struct hwloc_topology *topology)
         obj->attr->pcidev.linkspeed = lanespeed * width / 8; /* GB/s */
       }
     }
-    }
-#endif /* HWLOC_HAVE_PCI_FIND_CAP */
 
     if (isbridge) {
       HWLOC_BUILD_ASSERT(PCI_PRIMARY_BUS < CONFIG_SPACE_CACHESIZE);
@@ -430,7 +608,10 @@ hwloc_look_libpci(struct hwloc_topology *topology)
  * of arguments, and supports the PCI_LOOKUP_NO_NUMBERS flag.
  */
 
-    resname = pci_lookup_name(pciaccess, name, sizeof(name),
+#ifdef HWLOC_HAVE_LIBPCIACCESS
+    vendorname = pci_device_get_vendor_name(pcidev);
+#else /* HWLOC_HAVE_LIBPCI */
+    vendorname = pci_lookup_name(pciaccess, name, sizeof(name),
 #if HAVE_DECL_PCI_LOOKUP_NO_NUMBERS
 			      PCI_LOOKUP_VENDOR|PCI_LOOKUP_NO_NUMBERS,
 			      pcidev->vendor_id
@@ -439,10 +620,14 @@ hwloc_look_libpci(struct hwloc_topology *topology)
 			      pcidev->vendor_id, 0, 0, 0
 #endif
 			      );
-    if (resname)
-      hwloc_obj_add_info(obj, "PCIVendor", resname);
+#endif /* HWLOC_HAVE_LIBPCI */
+    if (vendorname)
+      hwloc_obj_add_info(obj, "PCIVendor", vendorname);
 
-    resname = pci_lookup_name(pciaccess, name, sizeof(name),
+#ifdef HWLOC_HAVE_LIBPCIACCESS
+    devicename = pci_device_get_device_name(pcidev);
+#else /* HWLOC_HAVE_LIBPCI */
+    devicename = pci_lookup_name(pciaccess, name, sizeof(name),
 #if HAVE_DECL_PCI_LOOKUP_NO_NUMBERS
 			      PCI_LOOKUP_DEVICE|PCI_LOOKUP_NO_NUMBERS,
 			      pcidev->vendor_id, pcidev->device_id
@@ -451,10 +636,19 @@ hwloc_look_libpci(struct hwloc_topology *topology)
 			      pcidev->vendor_id, pcidev->device_id, 0, 0
 #endif
 			      );
-    if (resname)
-      hwloc_obj_add_info(obj, "PCIDevice", resname);
+#endif /* HWLOC_HAVE_LIBPCI */
+    if (devicename)
+      hwloc_obj_add_info(obj, "PCIDevice", devicename);
 
-    resname = pci_lookup_name(pciaccess, name, sizeof(name),
+#ifdef HWLOC_HAVE_LIBPCIACCESS
+    snprintf(name, sizeof(name), "%s%s%s",
+	     vendorname ? vendorname : "",
+	     vendorname && devicename ? " " : "",
+	     devicename ? devicename : "");
+    fullname = name;
+    obj->name = strdup(name);
+#else /* HWLOC_HAVE_LIBPCI */
+    fullname = pci_lookup_name(pciaccess, name, sizeof(name),
 #if HAVE_DECL_PCI_LOOKUP_NO_NUMBERS
 			      PCI_LOOKUP_VENDOR|PCI_LOOKUP_DEVICE|PCI_LOOKUP_NO_NUMBERS,
 			      pcidev->vendor_id, pcidev->device_id
@@ -463,32 +657,37 @@ hwloc_look_libpci(struct hwloc_topology *topology)
 			      pcidev->vendor_id, pcidev->device_id, 0, 0
 #endif
 			      );
-    if (resname)
-      obj->name = strdup(resname);
+    if (fullname)
+      obj->name = strdup(fullname);
     else
-      resname = "??";
-
+      fullname = "??";
+#endif /* HWLOC_HAVE_LIBPCI */
     hwloc_debug("  %04x:%02x:%02x.%01x %04x %04x:%04x %s\n",
 		domain, pcidev->bus, pcidev->dev, pcidev->func,
 		device_class, pcidev->vendor_id, pcidev->device_id,
-		resname);
+		fullname);
 
     hwloc_pci_add_object(&fakehostbridge, obj);
-    pcidev = pcidev->next;
   }
 
+  /* finalize device scanning */
+#ifdef HWLOC_HAVE_LIBPCIACCESS
+  pci_iterator_destroy(iter);
+  pci_system_cleanup();
+#else /* HWLOC_HAVE_LIBPCI */
   pci_cleanup(pciaccess);
+#endif
 
   hwloc_debug("%s", "\nPCI hierarchy after basic scan:\n");
-  hwloc_pci_traverse(topology, &fakehostbridge, hwloc_pci_traverse_print_cb);
+  hwloc_pci_traverse(NULL, &fakehostbridge, hwloc_pci_traverse_print_cb);
 
   if (!fakehostbridge.first_child)
     /* found nothing, exit */
-    return;
+    return 0;
 
   /* walk the hierarchy, set bridge depth and lookup OS devices */
-  hwloc_pci_traverse(topology, &fakehostbridge, hwloc_pci_traverse_setbridgedepth_cb);
-  hwloc_pci_traverse(topology, &fakehostbridge, hwloc_pci_traverse_lookuposdevices_cb);
+  hwloc_pci_traverse(NULL, &fakehostbridge, hwloc_pci_traverse_setbridgedepth_cb);
+  hwloc_pci_traverse(backend, &fakehostbridge, hwloc_pci_traverse_lookuposdevices_cb);
 
   /*
    * fakehostbridge lists all objects connected to any upstream bus in the machine.
@@ -538,12 +737,45 @@ hwloc_look_libpci(struct hwloc_topology *topology)
 		current_domain, current_bus, current_subordinate);
 
     /* attach the hostbridge where it belongs */
-    parent = hwloc_pci_find_hostbridge_parent(topology, hostbridge, &createdgroups);
+    parent = hwloc_pci_find_hostbridge_parent(topology, backend, hostbridge, &createdgroups);
     hwloc_insert_object_by_parent(topology, parent, hostbridge);
   }
 
   if (createdgroups)
     topology->next_group_depth++;
+
+  return 1;
 }
 
-#endif /* HWLOC_HAVE_LIBPCI */
+static struct hwloc_backend *
+hwloc_libpci_component_instantiate(struct hwloc_disc_component *component,
+				   const void *_data1 __hwloc_attribute_unused,
+				   const void *_data2 __hwloc_attribute_unused,
+				   const void *_data3 __hwloc_attribute_unused)
+{
+  struct hwloc_backend *backend;
+
+  /* thissystem may not be fully initialized yet, we'll check flags in discover() */
+
+  backend = hwloc_backend_alloc(component);
+  if (!backend)
+    return NULL;
+  backend->discover = hwloc_look_libpci;
+  return backend;
+}
+
+static struct hwloc_disc_component hwloc_libpci_disc_component = {
+  HWLOC_DISC_COMPONENT_TYPE_ADDITIONAL,
+  "libpci",
+  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
+  hwloc_libpci_component_instantiate,
+  20,
+  NULL
+};
+
+const struct hwloc_component hwloc_libpci_component = {
+  HWLOC_COMPONENT_ABI,
+  HWLOC_COMPONENT_TYPE_DISC,
+  0,
+  &hwloc_libpci_disc_component
+};

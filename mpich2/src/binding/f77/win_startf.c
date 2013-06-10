@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_start( MPI_Fint *, MPI_Fint *, MPI_
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_win_start_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *ierr ){
-    *ierr = MPI_Win_start( *v1, *v2, *v3 );
+    *ierr = MPI_Win_start( (MPI_Group)*v1, (int)*v2, (MPI_Win)*v3 );
 }

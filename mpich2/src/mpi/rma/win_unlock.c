@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Win_unlock */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -32,7 +31,7 @@
 /*@
    MPI_Win_unlock - Completes an RMA access epoch at the target process
 
-   Input Parameters:
+Input Parameters:
 + rank - rank of window (nonnegative integer) 
 - win - window object (handle) 
 
@@ -88,18 +87,8 @@ int MPI_Win_unlock(int rank, MPI_Win win)
 
 	    comm_ptr = win_ptr->comm_ptr;
             MPIR_ERRTEST_SEND_RANK(comm_ptr, rank, mpi_errno);
-	    /* Test that the rank we are unlocking is the rank that we locked */
-	    if (win_ptr->lockRank != rank) {
-		if (win_ptr->lockRank < 0) {
-		    MPIU_ERR_SET(mpi_errno,MPI_ERR_RANK,"**winunlockwithoutlock");
-		}
-		else {
-		    MPIU_ERR_SET2(mpi_errno,MPI_ERR_RANK,
-		    "**mismatchedlockrank", 
- 		    "**mismatchedlockrank %d %d", rank, win_ptr->lockRank );
-		}
-		if (mpi_errno) goto fn_fail;
-	    }
+
+            /* TODO: Test that the rank we are unlocking is a rank that we locked */
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -109,9 +98,6 @@ int MPI_Win_unlock(int rank, MPI_Win win)
     
     mpi_errno = MPIU_RMA_CALL(win_ptr,Win_unlock(rank, win_ptr));
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-    /* Clear the lockRank on success with the unlock */
-    /* FIXME: Should this always be cleared, even on failure? */
-    win_ptr->lockRank = MPID_WIN_STATE_UNLOCKED;
 
     /* ... end of body of routine ... */
 

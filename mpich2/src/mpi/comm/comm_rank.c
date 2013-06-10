@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -33,10 +33,10 @@
 
 MPI_Comm_rank - Determines the rank of the calling process in the communicator
 
-Input Argument:
+Input Parameters:
 . comm - communicator (handle) 
 
-Output Argument:
+Output Parameters:
 . rank - rank of the calling process in the group of 'comm'  (integer) 
 
 .N SignalSafe

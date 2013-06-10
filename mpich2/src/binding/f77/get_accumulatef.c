@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_GET_ACCUMULATE( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_get_accumulate__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_get_accumulate( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_get_accumulate_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ACCUMULATE( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_accumulate__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_accumulate( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_accumulate_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_GET_ACCUMULATE = PMPIX_GET_ACCUMULATE
-#pragma weak mpix_get_accumulate__ = PMPIX_GET_ACCUMULATE
-#pragma weak mpix_get_accumulate_ = PMPIX_GET_ACCUMULATE
-#pragma weak mpix_get_accumulate = PMPIX_GET_ACCUMULATE
+#pragma weak MPI_GET_ACCUMULATE = PMPI_GET_ACCUMULATE
+#pragma weak mpi_get_accumulate__ = PMPI_GET_ACCUMULATE
+#pragma weak mpi_get_accumulate_ = PMPI_GET_ACCUMULATE
+#pragma weak mpi_get_accumulate = PMPI_GET_ACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_GET_ACCUMULATE = pmpix_get_accumulate__
-#pragma weak mpix_get_accumulate__ = pmpix_get_accumulate__
-#pragma weak mpix_get_accumulate_ = pmpix_get_accumulate__
-#pragma weak mpix_get_accumulate = pmpix_get_accumulate__
+#pragma weak MPI_GET_ACCUMULATE = pmpi_get_accumulate__
+#pragma weak mpi_get_accumulate__ = pmpi_get_accumulate__
+#pragma weak mpi_get_accumulate_ = pmpi_get_accumulate__
+#pragma weak mpi_get_accumulate = pmpi_get_accumulate__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_GET_ACCUMULATE = pmpix_get_accumulate_
-#pragma weak mpix_get_accumulate__ = pmpix_get_accumulate_
-#pragma weak mpix_get_accumulate_ = pmpix_get_accumulate_
-#pragma weak mpix_get_accumulate = pmpix_get_accumulate_
+#pragma weak MPI_GET_ACCUMULATE = pmpi_get_accumulate_
+#pragma weak mpi_get_accumulate__ = pmpi_get_accumulate_
+#pragma weak mpi_get_accumulate_ = pmpi_get_accumulate_
+#pragma weak mpi_get_accumulate = pmpi_get_accumulate_
 #else
-#pragma weak MPIX_GET_ACCUMULATE = pmpix_get_accumulate
-#pragma weak mpix_get_accumulate__ = pmpix_get_accumulate
-#pragma weak mpix_get_accumulate_ = pmpix_get_accumulate
-#pragma weak mpix_get_accumulate = pmpix_get_accumulate
+#pragma weak MPI_GET_ACCUMULATE = pmpi_get_accumulate
+#pragma weak mpi_get_accumulate__ = pmpi_get_accumulate
+#pragma weak mpi_get_accumulate_ = pmpi_get_accumulate
+#pragma weak mpi_get_accumulate = pmpi_get_accumulate
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_get_accumulate_( void*, MPI_Fint *, MPI
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_GET_ACCUMULATE( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ACCUMULATE( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_GET_ACCUMULATE = PMPIX_GET_ACCUMULATE
+#pragma weak MPI_GET_ACCUMULATE = PMPI_GET_ACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_get_accumulate__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_accumulate__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_get_accumulate__ = pmpix_get_accumulate__
+#pragma weak mpi_get_accumulate__ = pmpi_get_accumulate__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_get_accumulate( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_accumulate( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_get_accumulate = pmpix_get_accumulate
+#pragma weak mpi_get_accumulate = pmpi_get_accumulate
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_get_accumulate_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_accumulate_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_get_accumulate_ = pmpix_get_accumulate_
+#pragma weak mpi_get_accumulate_ = pmpi_get_accumulate_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_GET_ACCUMULATE  MPIX_GET_ACCUMULATE
+#pragma _HP_SECONDARY_DEF PMPI_GET_ACCUMULATE  MPI_GET_ACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_get_accumulate__  mpix_get_accumulate__
+#pragma _HP_SECONDARY_DEF pmpi_get_accumulate__  mpi_get_accumulate__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_get_accumulate  mpix_get_accumulate
+#pragma _HP_SECONDARY_DEF pmpi_get_accumulate  mpi_get_accumulate
 #else
-#pragma _HP_SECONDARY_DEF pmpix_get_accumulate_  mpix_get_accumulate_
+#pragma _HP_SECONDARY_DEF pmpi_get_accumulate_  mpi_get_accumulate_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_GET_ACCUMULATE as PMPIX_GET_ACCUMULATE
+#pragma _CRI duplicate MPI_GET_ACCUMULATE as PMPI_GET_ACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_get_accumulate__ as pmpix_get_accumulate__
+#pragma _CRI duplicate mpi_get_accumulate__ as pmpi_get_accumulate__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_get_accumulate as pmpix_get_accumulate
+#pragma _CRI duplicate mpi_get_accumulate as pmpi_get_accumulate
 #else
-#pragma _CRI duplicate mpix_get_accumulate_ as pmpix_get_accumulate_
+#pragma _CRI duplicate mpi_get_accumulate_ as pmpi_get_accumulate_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_get_accumulate_( void*, MPI_Fint *, MPI
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_GET_ACCUMULATE( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_get_accumulate__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_get_accumulate( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_get_accumulate_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ACCUMULATE( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_accumulate__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_accumulate( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_accumulate_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_get_accumulate__ = MPIX_GET_ACCUMULATE
-#pragma weak mpix_get_accumulate_ = MPIX_GET_ACCUMULATE
-#pragma weak mpix_get_accumulate = MPIX_GET_ACCUMULATE
+#pragma weak mpi_get_accumulate__ = MPI_GET_ACCUMULATE
+#pragma weak mpi_get_accumulate_ = MPI_GET_ACCUMULATE
+#pragma weak mpi_get_accumulate = MPI_GET_ACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_GET_ACCUMULATE = mpix_get_accumulate__
-#pragma weak mpix_get_accumulate_ = mpix_get_accumulate__
-#pragma weak mpix_get_accumulate = mpix_get_accumulate__
+#pragma weak MPI_GET_ACCUMULATE = mpi_get_accumulate__
+#pragma weak mpi_get_accumulate_ = mpi_get_accumulate__
+#pragma weak mpi_get_accumulate = mpi_get_accumulate__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_GET_ACCUMULATE = mpix_get_accumulate_
-#pragma weak mpix_get_accumulate__ = mpix_get_accumulate_
-#pragma weak mpix_get_accumulate = mpix_get_accumulate_
+#pragma weak MPI_GET_ACCUMULATE = mpi_get_accumulate_
+#pragma weak mpi_get_accumulate__ = mpi_get_accumulate_
+#pragma weak mpi_get_accumulate = mpi_get_accumulate_
 #else
-#pragma weak MPIX_GET_ACCUMULATE = mpix_get_accumulate
-#pragma weak mpix_get_accumulate__ = mpix_get_accumulate
-#pragma weak mpix_get_accumulate_ = mpix_get_accumulate
+#pragma weak MPI_GET_ACCUMULATE = mpi_get_accumulate
+#pragma weak mpi_get_accumulate__ = mpi_get_accumulate
+#pragma weak mpi_get_accumulate_ = mpi_get_accumulate
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_get_accumulate_( void*, MPI_Fint *, MPI
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_GET_ACCUMULATE( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_GET_ACCUMULATE( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_get_accumulate__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_get_accumulate__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_get_accumulate_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_get_accumulate_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_get_accumulate( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_get_accumulate( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_get_accumulate__ = PMPIX_GET_ACCUMULATE
-#pragma weak pmpix_get_accumulate_ = PMPIX_GET_ACCUMULATE
-#pragma weak pmpix_get_accumulate = PMPIX_GET_ACCUMULATE
+#pragma weak pmpi_get_accumulate__ = PMPI_GET_ACCUMULATE
+#pragma weak pmpi_get_accumulate_ = PMPI_GET_ACCUMULATE
+#pragma weak pmpi_get_accumulate = PMPI_GET_ACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_GET_ACCUMULATE = pmpix_get_accumulate__
-#pragma weak pmpix_get_accumulate_ = pmpix_get_accumulate__
-#pragma weak pmpix_get_accumulate = pmpix_get_accumulate__
+#pragma weak PMPI_GET_ACCUMULATE = pmpi_get_accumulate__
+#pragma weak pmpi_get_accumulate_ = pmpi_get_accumulate__
+#pragma weak pmpi_get_accumulate = pmpi_get_accumulate__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_GET_ACCUMULATE = pmpix_get_accumulate_
-#pragma weak pmpix_get_accumulate__ = pmpix_get_accumulate_
-#pragma weak pmpix_get_accumulate = pmpix_get_accumulate_
+#pragma weak PMPI_GET_ACCUMULATE = pmpi_get_accumulate_
+#pragma weak pmpi_get_accumulate__ = pmpi_get_accumulate_
+#pragma weak pmpi_get_accumulate = pmpi_get_accumulate_
 #else
-#pragma weak PMPIX_GET_ACCUMULATE = pmpix_get_accumulate
-#pragma weak pmpix_get_accumulate__ = pmpix_get_accumulate
-#pragma weak pmpix_get_accumulate_ = pmpix_get_accumulate
+#pragma weak PMPI_GET_ACCUMULATE = pmpi_get_accumulate
+#pragma weak pmpi_get_accumulate__ = pmpi_get_accumulate
+#pragma weak pmpi_get_accumulate_ = pmpi_get_accumulate
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_get_accumulate_ PMPIX_GET_ACCUMULATE
+#define mpi_get_accumulate_ PMPI_GET_ACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_get_accumulate_ pmpix_get_accumulate__
+#define mpi_get_accumulate_ pmpi_get_accumulate__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_get_accumulate_ pmpix_get_accumulate
+#define mpi_get_accumulate_ pmpi_get_accumulate
 #else
-#define mpix_get_accumulate_ pmpix_get_accumulate_
+#define mpi_get_accumulate_ pmpi_get_accumulate_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Get_accumulate
-#define MPIX_Get_accumulate PMPIX_Get_accumulate 
+#undef MPI_Get_accumulate
+#define MPI_Get_accumulate PMPI_Get_accumulate 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_get_accumulate_ MPIX_GET_ACCUMULATE
+#define mpi_get_accumulate_ MPI_GET_ACCUMULATE
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_get_accumulate_ mpix_get_accumulate__
+#define mpi_get_accumulate_ mpi_get_accumulate__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_get_accumulate_ mpix_get_accumulate
+#define mpi_get_accumulate_ mpi_get_accumulate
 /* Else leave name alone */
 #endif
 
@@ -184,6 +184,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_get_accumulate( void*, MPI_Fint *, MPI
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_get_accumulate_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, void*v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *v8, MPI_Fint *v9, MPI_Fint *v10, MPI_Fint *v11, MPI_Fint *v12, MPI_Fint *ierr ){
-    *ierr = MPIX_Get_accumulate( v1, *v2, (MPI_Datatype)(*v3), v4, *v5, (MPI_Datatype)(*v6), *v7, *v8, *v9, (MPI_Datatype)(*v10), *v11, *v12 );
+FORT_DLL_SPEC void FORT_CALL mpi_get_accumulate_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, void*v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *v8, MPI_Fint *v9, MPI_Fint *v10, MPI_Fint *v11, MPI_Fint *v12, MPI_Fint *ierr ){
+    *ierr = MPI_Get_accumulate( v1, (int)*v2, (MPI_Datatype)(*v3), v4, (int)*v5, (MPI_Datatype)(*v6), (int)*v7, (MPI_Aint)*v8, (int)*v9, (MPI_Datatype)(*v10), (MPI_Op)*v11, (MPI_Win)*v12 );
 }

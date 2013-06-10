@@ -61,10 +61,68 @@ if test -d maint/hooks/pre ; then
     done
 fi
 
+########################################################################
+# This used to be an optionally installed hook to help with git-svn
+# versions of the old SVN repo.  Now that we are using git, this is our
+# mechanism that replaces relative svn:externals paths, such as for
+# "confdb" and "mpl". The basic plan is to delete the destdir and then
+# copy all of the files, warts and all, from the source directory to the
+# destination directory.
 echo
-echo "##################################"
+echo "####################################"
+echo "## Replicating confdb (and similar)"
+echo "####################################"
+echo
+
+sync_external () {
+    srcdir=$1
+    destdir=$2
+
+    echo "syncing '$srcdir' --> '$destdir'"
+
+    # deletion prevents creating 'confdb/confdb' situation, also cleans
+    # stray files that may have crept in somehow
+    rm -rf "$destdir"
+    cp -pPR "$srcdir" "$destdir"
+}
+
+confdb_dirs=
+confdb_dirs="${confdb_dirs} src/mpi/romio/confdb"
+confdb_dirs="${confdb_dirs} src/mpl/confdb"
+confdb_dirs="${confdb_dirs} src/pm/hydra/confdb"
+confdb_dirs="${confdb_dirs} src/pm/hydra/mpl/confdb"
+confdb_dirs="${confdb_dirs} test/mpi/confdb"
+confdb_dirs="${confdb_dirs} src/armci/m4"
+
+# hydra's copy of mpl
+sync_external src/mpl src/pm/hydra/mpl
+
+# all the confdb directories, by various names
+for destdir in $confdb_dirs ; do
+    sync_external confdb "$destdir"
+done
+
+# a couple of other random files
+if [ -f maint/version.m4 ] ; then
+    cp -pPR maint/version.m4 src/pm/hydra/version.m4
+    cp -pPR maint/version.m4 src/mpi/romio/version.m4
+fi
+
+# Now sanity check that some of the above sync was successful
+f="aclocal_cc.m4"
+for d in $confdb_dirs ; do
+    if [ -f "$d/$f" ] ; then :
+    else
+        error "expected to find '$f' in '$d'"
+        exit 1
+    fi
+done
+
+########################################################################
+echo
+echo "####################################"
 echo "## Checking user environment"
-echo "##################################"
+echo "####################################"
 echo
 
 ########################################################################
@@ -74,41 +132,6 @@ echo
 echo_n "Verifying the location of autogen.sh... "
 if [ ! -d maint -o ! -s maint/version.m4 ] ; then
     echo "must execute at top level directory for now"
-    exit 1
-fi
-echo "done"
-
-
-########################################################################
-## Version checks for svn in developer builds
-########################################################################
-
-# Sanity check that any relative path svn:externals are present.  An
-# SVN version >=1.5 is needed to understand the relative path
-# externals format.  Such externals are used in particular for mpl in
-# hydra and all non-root confdbs.
-#
-# Check for a particular file, not just the directory because several
-# autotools steps (such as libtoolize) will create the aux/macro dir.
-echo_n "Checking for svn checkout errors... "
-svn_externals_sanity_file="src/pm/hydra/version.m4"
-# Note that -e is not an available option for test in the Bourne shell, though
-# some systems that pretend that ksh is the same as sh will accept it.
-if test "!" -f $svn_externals_sanity_file ; then
-    cat <<EOT
-
-ERROR: The file '$svn_externals_sanity_file'
-is not present, indicating that you do not have a complete source tree.
-This is usually caused by checking out MPICH2 with an SVN client version
-less than v1.6.  Please check your SVN client version (with
-"svn --version") and use a newer version if necessary to obtain MPICH2.
-
-If you do have a modern SVN client and believe that you have reached
-this error case for some other reason, please file a ticket at:
-
-  https://trac.mcs.anl.gov/projects/mpich2/newticket
-
-EOT
     exit 1
 fi
 echo "done"
@@ -137,7 +160,7 @@ export do_build_configure
 MAKE=${MAKE-make}
 
 # external packages that require autogen.sh to be run for each of them
-externals="src/mpe2 src/pm/hydra src/mpi/romio src/armci src/pm/mpd src/openpa"
+externals="src/pm/hydra src/mpi/romio src/armci src/pm/mpd src/openpa"
 # amdirs are the directories that make use of autoreconf
 amdirs=". src/mpl src/util/logging/rlog"
 
@@ -250,7 +273,7 @@ for arg in "$@" ; do
                 [ -atvercheck=[yes|no] ] \\
                 [ --verbose-autoreconf ] \\
                 [ --do=stepname ] [ -distrib ]
-    Update the files in the MPICH2 build tree.  This file builds the 
+    Update the files in the MPICH build tree.  This file builds the 
     configure files, creates the Makefile.in files, extracts the error
     messages.
 
@@ -294,7 +317,7 @@ done
 ########################################################################
 
 if [ -z "$autotoolsdir" ] ; then
-    autotoolsdir=$MPICH2_AUTOTOOLS_DIR
+    autotoolsdir=$MPICH_AUTOTOOLS_DIR
 fi
 
 if [ -n "$autotoolsdir" ] ; then
@@ -618,7 +641,7 @@ fi
 echo_n "Updating the README... "
 . ./maint/Version
 if [ -f README.vin ] ; then
-    sed -e "s/%VERSION%/${MPICH2_VERSION}/g" README.vin > README
+    sed -e "s/%VERSION%/${MPICH_VERSION}/g" README.vin > README
     echo "done"
 else
     echo "error"
@@ -632,7 +655,7 @@ fi
 
 if [ "$do_smpdversion" = yes ] ; then
     echo_n "Creating src/pm/smpd/smpd_version.h... "
-    smpdVersion=${MPICH2_VERSION}
+    smpdVersion=${MPICH_VERSION}
     cat >src/pm/smpd/smpd_version.h <<EOF
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*  
@@ -842,6 +865,15 @@ if [ -x ./maint/f77tof90 -a $do_f77tof90 = "yes" ] ; then
         fi
         maint/f77tof90 $dir test/mpi/f90/$leafDir Makefile.am Makefile.ap
         echo "timestamp" > test/mpi/f90/$leafDir/Makefile.am-stamp
+    done
+    for dir in test/mpi/errors/f77/* ; do
+        if [ ! -d $dir ] ; then continue ; fi
+	leafDir=`basename $dir`
+        if [ ! -d test/mpi/errors/f90/$leafDir ] ; then
+	    mkdir test/mpi/errors/f90/$leafDir
+        fi
+        maint/f77tof90 $dir test/mpi/errors/f90/$leafDir Makefile.am Makefile.ap
+        echo "timestamp" > test/mpi/errors/f90/$leafDir/Makefile.am-stamp
     done
     echo "done"
 fi

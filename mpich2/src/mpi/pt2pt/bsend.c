@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -83,7 +83,7 @@ delivered.)
 
 .seealso: MPI_Buffer_attach, MPI_Ibsend, MPI_Bsend_init
 @*/
-int MPI_Bsend(MPICH2_CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 	      MPI_Comm comm)
 {
     static const char FCNAME[] = "MPI_Bsend";

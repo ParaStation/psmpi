@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -31,7 +31,7 @@
 /*@
    MPI_Comm_spawn_multiple - short description
 
-   Input Parameters:
+Input Parameters:
 + count - number of commands (positive integer, significant to MPI only at 
   root 
 . array_of_commands - programs to be executed (array of strings, significant 
@@ -45,7 +45,7 @@
 . root - rank of process in which previous arguments are examined (integer) 
 - comm - intracommunicator containing group of spawning processes (handle) 
 
-  Output Parameters:
+Output Parameters:
 + intercomm - intercommunicator between original group and newly spawned group
   (handle) 
 - array_of_errcodes - one error code per process (array of integer) 
@@ -60,8 +60,8 @@
 .N MPI_ERR_SPAWN
 @*/
 int MPI_Comm_spawn_multiple(int count, char *array_of_commands[],
-			    char **array_of_argv[], MPICH2_CONST int array_of_maxprocs[],
-			    MPICH2_CONST MPI_Info array_of_info[], int root, MPI_Comm comm,
+			    char **array_of_argv[], const int array_of_maxprocs[],
+			    const MPI_Info array_of_info[], int root, MPI_Comm comm,
 			    MPI_Comm *intercomm, int array_of_errcodes[])
 {
     static const char FCNAME[] = "MPI_Comm_spawn_multiple";
@@ -107,7 +107,7 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[],
 	    if (comm_ptr->rank == root) {
 		MPIR_ERRTEST_ARGNULL(array_of_commands, "array_of_commands", mpi_errno);
 		MPIR_ERRTEST_ARGNULL(array_of_maxprocs, "array_of_maxprocs", mpi_errno);
-		MPIR_ERRTEST_ARGNONPOS(count, "count", mpi_errno);
+		MPIR_ERRTEST_ARGNONPOS(count, "count", mpi_errno, MPI_ERR_COUNT);
 		for (i = 0; i < count; i++)
 		{
 		    MPIR_ERRTEST_INFO_OR_NULL(array_of_info[i], mpi_errno);

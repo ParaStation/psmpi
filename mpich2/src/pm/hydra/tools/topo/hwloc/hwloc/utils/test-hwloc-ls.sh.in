@@ -12,6 +12,9 @@ abs_top_builddir="@abs_top_builddir@"
 ls="$abs_top_builddir/utils/lstopo-no-graphics"
 abs_top_srcdir="@abs_top_srcdir@"
 
+HWLOC_PLUGINS_PATH=${abs_top_builddir}/src
+export HWLOC_PLUGINS_PATH
+
 : ${TMPDIR=/tmp}
 {
   tmp=`
@@ -35,10 +38,10 @@ $ls
   $ls --taskset -v > $tmp/test.taskset
   $ls --merge > $tmp/test.merge
 
-@HWLOC_HAVE_LIBPCI_TRUE@  $ls --no-io > $tmp/test.no-io
-@HWLOC_HAVE_LIBPCI_TRUE@  $ls --no-bridges > $tmp/test.no-bridges
-@HWLOC_HAVE_LIBPCI_TRUE@  $ls --whole-io > $tmp/test.whole-io
-@HWLOC_HAVE_LIBPCI_TRUE@  $ls -v --whole-io > $tmp/test.wholeio_verbose
+@HWLOC_HAVE_PCI_TRUE@  $ls --no-io > $tmp/test.no-io
+@HWLOC_HAVE_PCI_TRUE@  $ls --no-bridges > $tmp/test.no-bridges
+@HWLOC_HAVE_PCI_TRUE@  $ls --whole-io > $tmp/test.whole-io
+@HWLOC_HAVE_PCI_TRUE@  $ls -v --whole-io > $tmp/test.wholeio_verbose
 
   $ls --whole-system > $tmp/test.whole-system
   $ls --ps > $tmp/test.

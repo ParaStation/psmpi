@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -12,8 +12,9 @@ struct HYDT_dmxu_callback *HYDT_dmxu_cb_list = NULL;
 struct HYDT_dmxu_fns HYDT_dmxu_fns = { 0 };
 
 static int got_sigttin = 0;
+static int stdin_valid;
 
-#if defined(SIGTTIN) && defined(HAVE_ISATTY)
+#if defined(SIGTTIN)
 static void signal_cb(int sig)
 {
     HYDU_FUNC_ENTER();
@@ -25,7 +26,7 @@ static void signal_cb(int sig)
     HYDU_FUNC_EXIT();
     return;
 }
-#endif /* SIGTTIN and HAVE_ISATTY */
+#endif /* SIGTTIN */
 
 HYD_status HYDT_dmx_init(char **demux)
 {
@@ -62,6 +63,9 @@ HYD_status HYDT_dmx_init(char **demux)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
                             "cannot find an appropriate demux engine\n");
     }
+
+    status = HYDT_dmxu_fns.stdin_valid(&stdin_valid);
+    HYDU_ERR_POP(status, "error checking for stdin validity\n");
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -228,37 +232,44 @@ HYD_status HYDT_dmxi_stdin_valid(int *out)
      * that, we catch SIGTTIN and ignore it. But that causes the
      * read() call to return an error (with errno == EINTR) when we
      * are not attached to the terminal. */
-#if defined(SIGTTIN) && defined(HAVE_ISATTY)
-    if (isatty(STDIN_FILENO)) {
-        status = HYDU_set_signal(SIGTTIN, signal_cb);
-        HYDU_ERR_POP(status, "unable to set SIGTTIN\n");
-    }
-#endif /* SIGTTIN and HAVE_ISATTY */
 
-    /* FIXME: The below read() check for STDIN validity is somehow
-     * interfering in the case where the application is run in the
-     * background, but expects some STDIN. The correct behavior is to
-     * close the STDIN socket for the application in that
-     * case. However, this seems to hang. I'm still investigating this
-     * case. In the meanwhile, I have commented out this check. PLEASE
-     * DO NOT DELETE. All other cases dealing with STDIN seem to be
-     * working correctly. */
-#if 0
+    /*
+     * We need to allow for the following cases:
+     *
+     *  1. mpiexec -n 2 ./foo  --> type something on the terminal
+     *     Attached to terminal, and can read from stdin
+     *
+     *  2. mpiexec -n 2 ./foo &
+     *     Attached to terminal, but cannot read from stdin
+     *
+     *  3. mpiexec -n 2 ./foo < bar
+     *     Not attached to terminal, but can read from stdin
+     *
+     *  4. mpiexec -n 2 ./foo < /dev/null
+     *     Not attached to terminal, and can read from stdin
+     *
+     *  5. mpiexec -n 2 ./foo < bar &
+     *     Not attached to terminal, but can read from stdin
+     *
+     *  6. mpiexec -n 2 ./foo < /dev/null &
+     *     Not attached to terminal, and can read from stdin
+     */
+
+#if defined(SIGTTIN)
+    status = HYDU_set_signal(SIGTTIN, signal_cb);
+    HYDU_ERR_POP(status, "unable to set SIGTTIN\n");
+#endif /* SIGTTIN */
+
     ret = read(STDIN_FILENO, NULL, 0);
-#else
-    ret = 0;
-#endif
-    if (ret < 0 && errno == EINTR && got_sigttin)
-        *out = 0;
-    else
+    if (ret == 0)
         *out = 1;
+    else
+        *out = 0;
 
-#if defined(SIGTTIN) && defined(HAVE_ISATTY)
-    if (isatty(STDIN_FILENO)) {
-        status = HYDU_set_signal(SIGTTIN, SIG_IGN);
-        HYDU_ERR_POP(status, "unable to set SIGTTIN\n");
-    }
-#endif /* SIGTTIN and HAVE_ISATTY */
+#if defined(SIGTTIN)
+    status = HYDU_set_signal(SIGTTIN, SIG_IGN);
+    HYDU_ERR_POP(status, "unable to set SIGTTIN\n");
+#endif /* SIGTTIN */
 
   fn_exit:
     HYDU_FUNC_EXIT();
@@ -270,5 +281,7 @@ HYD_status HYDT_dmxi_stdin_valid(int *out)
 
 HYD_status HYDT_dmx_stdin_valid(int *out)
 {
-    return HYDT_dmxu_fns.stdin_valid(out);
+    *out = stdin_valid;
+
+    return HYD_SUCCESS;
 }

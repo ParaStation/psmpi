@@ -16,12 +16,12 @@ int MPI_Comm_get_attr(MPI_Comm comm, int comm_keyval, void *attribute_val,
 <DL>
 <DT><B>comm </B><DD>communicator to which attribute is attached (handle) 
 
-<DT><B>keyval </B><DD>key value (integer) 
+<DT><B>comm_keyval </B><DD>key value (integer)
 </DL>
 <P>
 <H2>Output Parameters</H2>
 <DL>
-<DT><B>attr_value </B><DD>attribute value, unless <TT>flag</TT> = false 
+<DT><B>attribute_val </B><DD>attribute value, unless <TT>flag</TT> = false
 
 <DT><B>flag </B><DD>true if an attribute value was extracted;  false if no attribute is
 associated with the key 
@@ -33,7 +33,7 @@ in with <TT>MPI_Comm_set_attr</TT>.  The notes for C and Fortran below explain
 why.
 <P>
 <H2>Notes for C</H2>
-Even though the <TT>attr_value</TT> arguement is declared as <TT>void *</TT>, it is
+Even though the <TT>attr_value</TT> argument is declared as <TT>void *</TT>, it is
 really the address of a void pointer.  See the rationale in the
 standard for more details.
 <P>

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*  
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -20,20 +20,20 @@
    This file is intended to provide both as an option.  The macros that 
    control the code for these are
 
-   MPICH2_STARTER_MPIEXEC
-   MPICH2_STARTER_RANK0
+   MPICH_STARTER_MPIEXEC
+   MPICH_STARTER_RANK0
  */
-#define MPICH2_STARTER_MPIEXEC
-/* #define MPICH2_STARTER_RANK0 */
+#define MPICH_STARTER_MPIEXEC
+/* #define MPICH_STARTER_RANK0 */
 
-#ifdef MPICH2_STARTER_RANK0
+#ifdef MPICH_STARTER_RANK0
 #define MPIU_PROCTABLE_NEEDED 1
 #define MPIU_BREAKPOINT_NEEDED 1
 #endif
 
 /* If MPIR_Breakpoint is not defined and called, the message queue information
    will not be properly displayed by the debugger. */
-/* I believe this was caused by a poor choice in the dll_mpich2.c file */
+/* I believe this was caused by a poor choice in the dll_mpich.c file */
 /* #define MPIU_BREAKPOINT_NEEDED 1 */
 
 #ifdef MPIU_BREAKPOINT_NEEDED
@@ -77,7 +77,7 @@ void *MPIR_Breakpoint(void);
  *
  * In MPICH1, the variables MPIR_debug_state, MPIR_debug_abort_string, 
  * MPIR_being_debugged, and MPIR_debug_gate where exported globally.  
- * In MPICH2, while these are global variables (so that the debugger can
+ * In MPICH, while these are global variables (so that the debugger can
  * find them easily), they are not explicitly exported or referenced outside
  * of a few routines.  In particular, MPID_Abort uses MPIR_DebuggerSetAborting
  * instead of directly accessing these variables.
@@ -144,7 +144,7 @@ static void SendqInit( void );
 static int SendqFreePool( void * );
 
 /*
- * If MPICH2 is built with the --enable-debugger option, MPI_Init and 
+ * If MPICH is built with the --enable-debugger option, MPI_Init and 
  * MPI_Init_thread will call MPIR_WaitForDebugger.  This ensures both that
  * the debugger can gather information on the MPI job before the MPI_Init
  * returns to the user and that the necessary symbols for providing 
@@ -161,7 +161,7 @@ void MPIR_WaitForDebugger( void )
     int size = MPIR_Process.comm_world->local_size;
     int i, maxsize;
 
-    /* FIXME: In MPICH2, the executables may not have the information
+    /* FIXME: In MPICH, the executables may not have the information
        on the other processes; this is part of the Process Manager Interface
        (PMI).  We need another way to provide this information to 
        a debugger */
@@ -240,29 +240,6 @@ void MPIR_WaitForDebugger( void )
     /* After we exit the MPIR_Breakpoint routine, the debugger may have
        set variables such as MPIR_being_debugged */
 
-#if 0
-    /* Check to see if we're not the master,
-     * and wait for the debugger to attach if we're 
-     * a slave. The debugger will reset the debug_gate.
-     * There is no code in the library which will do it !
-     * 
-     * THIS IS OLD CODE FROM MPICH1.  It is no longer needed for the 
-     * MPIEXEC is starter process mode.
-     */
-    if (MPIR_being_debugged && rank != 0) {
-	while (MPIR_debug_gate == 0) {
-	    /* Wait to be attached to, select avoids 
-	     * signaling and allows a smaller timeout than 
-	     * sleep(1)
-	     */
-	    struct timeval timeout;
-	    timeout.tv_sec  = 0;
-	    timeout.tv_usec = 250000;
-	    select( 0, (void *)0, (void *)0, (void *)0,
-		    &timeout );
-	}
-    }
-#endif
     /* Initialize the sendq support */
     SendqInit();
 

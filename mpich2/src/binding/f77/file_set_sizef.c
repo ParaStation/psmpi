@@ -186,7 +186,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_set_size( MPI_Fint *, MPI_Offset *
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_file_set_size_ ( MPI_Fint *v1, MPI_Offset *v2, MPI_Fint *ierr ){
 #ifdef MPI_MODE_RDONLY
-    *ierr = MPI_File_set_size( MPI_File_f2c(*v1), *v2 );
+    *ierr = MPI_File_set_size( MPI_File_f2c(*v1), (MPI_Offset)*v2 );
 #else
 *ierr = MPI_ERR_INTERN;
 #endif

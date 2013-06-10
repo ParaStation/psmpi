@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Alloc_mem */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -32,11 +31,11 @@
 /*@
    MPI_Alloc_mem - Allocate memory for message passing and RMA
 
-  Input Parameters:
+Input Parameters:
 + size - size of memory segment in bytes (nonnegative integer) 
 - info - info argument (handle) 
 
-  Output Parameter:
+Output Parameters:
 . baseptr - pointer to beginning of memory segment allocated 
 
    Notes:

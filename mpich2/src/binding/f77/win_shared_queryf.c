@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_WIN_SHARED_QUERY( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_shared_query__( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_shared_query( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_shared_query_( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_SHARED_QUERY( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_shared_query__( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_shared_query( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_shared_query_( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_WIN_SHARED_QUERY = PMPIX_WIN_SHARED_QUERY
-#pragma weak mpix_win_shared_query__ = PMPIX_WIN_SHARED_QUERY
-#pragma weak mpix_win_shared_query_ = PMPIX_WIN_SHARED_QUERY
-#pragma weak mpix_win_shared_query = PMPIX_WIN_SHARED_QUERY
+#pragma weak MPI_WIN_SHARED_QUERY = PMPI_WIN_SHARED_QUERY
+#pragma weak mpi_win_shared_query__ = PMPI_WIN_SHARED_QUERY
+#pragma weak mpi_win_shared_query_ = PMPI_WIN_SHARED_QUERY
+#pragma weak mpi_win_shared_query = PMPI_WIN_SHARED_QUERY
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_WIN_SHARED_QUERY = pmpix_win_shared_query__
-#pragma weak mpix_win_shared_query__ = pmpix_win_shared_query__
-#pragma weak mpix_win_shared_query_ = pmpix_win_shared_query__
-#pragma weak mpix_win_shared_query = pmpix_win_shared_query__
+#pragma weak MPI_WIN_SHARED_QUERY = pmpi_win_shared_query__
+#pragma weak mpi_win_shared_query__ = pmpi_win_shared_query__
+#pragma weak mpi_win_shared_query_ = pmpi_win_shared_query__
+#pragma weak mpi_win_shared_query = pmpi_win_shared_query__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_WIN_SHARED_QUERY = pmpix_win_shared_query_
-#pragma weak mpix_win_shared_query__ = pmpix_win_shared_query_
-#pragma weak mpix_win_shared_query_ = pmpix_win_shared_query_
-#pragma weak mpix_win_shared_query = pmpix_win_shared_query_
+#pragma weak MPI_WIN_SHARED_QUERY = pmpi_win_shared_query_
+#pragma weak mpi_win_shared_query__ = pmpi_win_shared_query_
+#pragma weak mpi_win_shared_query_ = pmpi_win_shared_query_
+#pragma weak mpi_win_shared_query = pmpi_win_shared_query_
 #else
-#pragma weak MPIX_WIN_SHARED_QUERY = pmpix_win_shared_query
-#pragma weak mpix_win_shared_query__ = pmpix_win_shared_query
-#pragma weak mpix_win_shared_query_ = pmpix_win_shared_query
-#pragma weak mpix_win_shared_query = pmpix_win_shared_query
+#pragma weak MPI_WIN_SHARED_QUERY = pmpi_win_shared_query
+#pragma weak mpi_win_shared_query__ = pmpi_win_shared_query
+#pragma weak mpi_win_shared_query_ = pmpi_win_shared_query
+#pragma weak mpi_win_shared_query = pmpi_win_shared_query
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_win_shared_query_( MPI_Fint *, MPI_Fint
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_WIN_SHARED_QUERY( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_SHARED_QUERY( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 
-#pragma weak MPIX_WIN_SHARED_QUERY = PMPIX_WIN_SHARED_QUERY
+#pragma weak MPI_WIN_SHARED_QUERY = PMPI_WIN_SHARED_QUERY
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_shared_query__( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_shared_query__( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 
-#pragma weak mpix_win_shared_query__ = pmpix_win_shared_query__
+#pragma weak mpi_win_shared_query__ = pmpi_win_shared_query__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_shared_query( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_shared_query( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 
-#pragma weak mpix_win_shared_query = pmpix_win_shared_query
+#pragma weak mpi_win_shared_query = pmpi_win_shared_query
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_shared_query_( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_shared_query_( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 
-#pragma weak mpix_win_shared_query_ = pmpix_win_shared_query_
+#pragma weak mpi_win_shared_query_ = pmpi_win_shared_query_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_WIN_SHARED_QUERY  MPIX_WIN_SHARED_QUERY
+#pragma _HP_SECONDARY_DEF PMPI_WIN_SHARED_QUERY  MPI_WIN_SHARED_QUERY
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_win_shared_query__  mpix_win_shared_query__
+#pragma _HP_SECONDARY_DEF pmpi_win_shared_query__  mpi_win_shared_query__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_win_shared_query  mpix_win_shared_query
+#pragma _HP_SECONDARY_DEF pmpi_win_shared_query  mpi_win_shared_query
 #else
-#pragma _HP_SECONDARY_DEF pmpix_win_shared_query_  mpix_win_shared_query_
+#pragma _HP_SECONDARY_DEF pmpi_win_shared_query_  mpi_win_shared_query_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_WIN_SHARED_QUERY as PMPIX_WIN_SHARED_QUERY
+#pragma _CRI duplicate MPI_WIN_SHARED_QUERY as PMPI_WIN_SHARED_QUERY
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_win_shared_query__ as pmpix_win_shared_query__
+#pragma _CRI duplicate mpi_win_shared_query__ as pmpi_win_shared_query__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_win_shared_query as pmpix_win_shared_query
+#pragma _CRI duplicate mpi_win_shared_query as pmpi_win_shared_query
 #else
-#pragma _CRI duplicate mpix_win_shared_query_ as pmpix_win_shared_query_
+#pragma _CRI duplicate mpi_win_shared_query_ as pmpi_win_shared_query_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_win_shared_query_( MPI_Fint *, MPI_Fint
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_WIN_SHARED_QUERY( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_shared_query__( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_shared_query( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_win_shared_query_( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_SHARED_QUERY( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_shared_query__( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_shared_query( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_shared_query_( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_win_shared_query__ = MPIX_WIN_SHARED_QUERY
-#pragma weak mpix_win_shared_query_ = MPIX_WIN_SHARED_QUERY
-#pragma weak mpix_win_shared_query = MPIX_WIN_SHARED_QUERY
+#pragma weak mpi_win_shared_query__ = MPI_WIN_SHARED_QUERY
+#pragma weak mpi_win_shared_query_ = MPI_WIN_SHARED_QUERY
+#pragma weak mpi_win_shared_query = MPI_WIN_SHARED_QUERY
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_WIN_SHARED_QUERY = mpix_win_shared_query__
-#pragma weak mpix_win_shared_query_ = mpix_win_shared_query__
-#pragma weak mpix_win_shared_query = mpix_win_shared_query__
+#pragma weak MPI_WIN_SHARED_QUERY = mpi_win_shared_query__
+#pragma weak mpi_win_shared_query_ = mpi_win_shared_query__
+#pragma weak mpi_win_shared_query = mpi_win_shared_query__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_WIN_SHARED_QUERY = mpix_win_shared_query_
-#pragma weak mpix_win_shared_query__ = mpix_win_shared_query_
-#pragma weak mpix_win_shared_query = mpix_win_shared_query_
+#pragma weak MPI_WIN_SHARED_QUERY = mpi_win_shared_query_
+#pragma weak mpi_win_shared_query__ = mpi_win_shared_query_
+#pragma weak mpi_win_shared_query = mpi_win_shared_query_
 #else
-#pragma weak MPIX_WIN_SHARED_QUERY = mpix_win_shared_query
-#pragma weak mpix_win_shared_query__ = mpix_win_shared_query
-#pragma weak mpix_win_shared_query_ = mpix_win_shared_query
+#pragma weak MPI_WIN_SHARED_QUERY = mpi_win_shared_query
+#pragma weak mpi_win_shared_query__ = mpi_win_shared_query
+#pragma weak mpi_win_shared_query_ = mpi_win_shared_query
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_win_shared_query_( MPI_Fint *, MPI_Fint
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_WIN_SHARED_QUERY( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_SHARED_QUERY( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_win_shared_query__( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_shared_query__( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_win_shared_query_( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_shared_query_( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_win_shared_query( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_shared_query( MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, void*, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_win_shared_query__ = PMPIX_WIN_SHARED_QUERY
-#pragma weak pmpix_win_shared_query_ = PMPIX_WIN_SHARED_QUERY
-#pragma weak pmpix_win_shared_query = PMPIX_WIN_SHARED_QUERY
+#pragma weak pmpi_win_shared_query__ = PMPI_WIN_SHARED_QUERY
+#pragma weak pmpi_win_shared_query_ = PMPI_WIN_SHARED_QUERY
+#pragma weak pmpi_win_shared_query = PMPI_WIN_SHARED_QUERY
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_WIN_SHARED_QUERY = pmpix_win_shared_query__
-#pragma weak pmpix_win_shared_query_ = pmpix_win_shared_query__
-#pragma weak pmpix_win_shared_query = pmpix_win_shared_query__
+#pragma weak PMPI_WIN_SHARED_QUERY = pmpi_win_shared_query__
+#pragma weak pmpi_win_shared_query_ = pmpi_win_shared_query__
+#pragma weak pmpi_win_shared_query = pmpi_win_shared_query__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_WIN_SHARED_QUERY = pmpix_win_shared_query_
-#pragma weak pmpix_win_shared_query__ = pmpix_win_shared_query_
-#pragma weak pmpix_win_shared_query = pmpix_win_shared_query_
+#pragma weak PMPI_WIN_SHARED_QUERY = pmpi_win_shared_query_
+#pragma weak pmpi_win_shared_query__ = pmpi_win_shared_query_
+#pragma weak pmpi_win_shared_query = pmpi_win_shared_query_
 #else
-#pragma weak PMPIX_WIN_SHARED_QUERY = pmpix_win_shared_query
-#pragma weak pmpix_win_shared_query__ = pmpix_win_shared_query
-#pragma weak pmpix_win_shared_query_ = pmpix_win_shared_query
+#pragma weak PMPI_WIN_SHARED_QUERY = pmpi_win_shared_query
+#pragma weak pmpi_win_shared_query__ = pmpi_win_shared_query
+#pragma weak pmpi_win_shared_query_ = pmpi_win_shared_query
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_win_shared_query_ PMPIX_WIN_SHARED_QUERY
+#define mpi_win_shared_query_ PMPI_WIN_SHARED_QUERY
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_win_shared_query_ pmpix_win_shared_query__
+#define mpi_win_shared_query_ pmpi_win_shared_query__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_win_shared_query_ pmpix_win_shared_query
+#define mpi_win_shared_query_ pmpi_win_shared_query
 #else
-#define mpix_win_shared_query_ pmpix_win_shared_query_
+#define mpi_win_shared_query_ pmpi_win_shared_query_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Win_shared_query
-#define MPIX_Win_shared_query PMPIX_Win_shared_query 
+#undef MPI_Win_shared_query
+#define MPI_Win_shared_query PMPI_Win_shared_query 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_win_shared_query_ MPIX_WIN_SHARED_QUERY
+#define mpi_win_shared_query_ MPI_WIN_SHARED_QUERY
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_win_shared_query_ mpix_win_shared_query__
+#define mpi_win_shared_query_ mpi_win_shared_query__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_win_shared_query_ mpix_win_shared_query
+#define mpi_win_shared_query_ mpi_win_shared_query
 /* Else leave name alone */
 #endif
 
@@ -184,6 +184,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_win_shared_query( MPI_Fint *, MPI_Fint
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_win_shared_query_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Aint * v3, MPI_Fint *v4, void*v5, MPI_Fint *ierr ){
-    *ierr = MPIX_Win_shared_query( *v1, *v2, v3, v4, v5 );
+FORT_DLL_SPEC void FORT_CALL mpi_win_shared_query_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Aint * v3, MPI_Fint *v4, void*v5, MPI_Fint *ierr ){
+    *ierr = MPI_Win_shared_query( (MPI_Win)*v1, (int)*v2, v3, v4, v5 );
 }

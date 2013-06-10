@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -85,7 +85,7 @@ Input Parameters:
 . indx - integer array specifying the graph structure, see 'MPI_GRAPH_CREATE' 
 - edges - integer array specifying the graph structure 
 
-Output Parameter:
+Output Parameters:
 . newrank - reordered rank of the calling process; 'MPI_UNDEFINED' if the 
 calling process does not belong to graph (integer) 
 
@@ -99,7 +99,7 @@ calling process does not belong to graph (integer)
 .N MPI_ERR_COMM
 .N MPI_ERR_ARG
 @*/
-int MPI_Graph_map(MPI_Comm comm_old, int nnodes, MPICH2_CONST int *indx, MPICH2_CONST int *edges,
+int MPI_Graph_map(MPI_Comm comm, int nnodes, const int indx[], const int edges[],
                   int *newrank)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -115,14 +115,14 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, MPICH2_CONST int *indx, MPICH2_
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_COMM(comm_old, mpi_errno);
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif
     
     /* Convert MPI object handles to object pointers */
-    MPID_Comm_get_ptr( comm_old, comm_ptr );
+    MPID_Comm_get_ptr( comm, comm_ptr );
 
     /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
@@ -136,7 +136,7 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, MPICH2_CONST int *indx, MPICH2_
 	    MPIR_ERRTEST_ARGNULL(newrank,"newrank",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(indx,"indx",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(edges,"edges",mpi_errno);
-	    MPIR_ERRTEST_ARGNONPOS(nnodes,"nnodes",mpi_errno);
+	    MPIR_ERRTEST_ARGNONPOS(nnodes,"nnodes",mpi_errno, MPI_ERR_ARG);
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -163,7 +163,7 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, MPICH2_CONST int *indx, MPICH2_
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
 	    "**mpi_graph_map",
-	    "**mpi_graph_map %C %d %p %p %p", comm_old, nnodes, indx, edges, 
+	    "**mpi_graph_map %C %d %p %p %p", comm, nnodes, indx, edges,
 	    newrank);
     }
 #   endif

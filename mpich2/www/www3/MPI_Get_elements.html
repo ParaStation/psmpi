@@ -9,7 +9,7 @@
 Returns the number of basic elements in a datatype 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Get_elements(MPICH2_CONST MPI_Status *status, MPI_Datatype datatype, int *elements)
+int MPI_Get_elements(const MPI_Status *status, MPI_Datatype datatype, int *count)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -18,7 +18,7 @@ int MPI_Get_elements(MPICH2_CONST MPI_Status *status, MPI_Datatype datatype, int
 <DT><B>datatype </B><DD>datatype used by receive operation (handle)
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>count </B> <DD> number of received basic elements (integer)
 </DL>
 <P>

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -143,12 +143,12 @@
         goto fn_fail;                                                   \
     }
 
-#define MPIR_ERRTEST_ARGNONPOS(arg,arg_name,err)                \
+#define MPIR_ERRTEST_ARGNONPOS(arg,arg_name,err,err_class)      \
     if ((arg) <= 0) {                                           \
         err = MPIR_Err_create_code(MPI_SUCCESS,                 \
                                    MPIR_ERR_RECOVERABLE,        \
                                    FCNAME, __LINE__,            \
-                                   MPI_ERR_ARG,                 \
+                                   err_class,                   \
                                    "**argnonpos",               \
                                    "**argnonpos %s %d",         \
                                    arg_name, arg );             \
@@ -245,6 +245,15 @@
         }                                                               \
     } while (0)
 
+#define MPIR_ERRTEST_WIN_FLAVOR(win_, flavor_, err_)                    \
+    do {                                                                \
+        if ((win_)->create_flavor != (flavor_)) {                       \
+            MPIU_ERR_SETANDSTMT1((err_), MPI_ERR_RMA_FLAVOR,            \
+                                goto fn_fail, "**winflavor",            \
+                                 "**winflavor %s", #flavor_);           \
+        }                                                               \
+    } while (0)
+
 #define MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf,count,err)                 \
     if (count > 0 && sendbuf == MPI_IN_PLACE) {                         \
         err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, \
@@ -265,6 +274,14 @@
                                     MPI_ERR_BUFFER, "**buf_inplace", 0 ); \
         goto fn_fail;                                                   \
     }
+
+#define MPIR_ERRTEST_NAMED_BUF_INPLACE(buf, bufname, count, err)       \
+    do {                                                               \
+        if (count > 0 && buf == MPI_IN_PLACE) {                        \
+            MPIU_ERR_SETANDJUMP1(err, MPI_ERR_BUFFER, "**buf_inplace", \
+                                 "**buf_inplace %s", bufname);         \
+        }                                                              \
+    } while (0)
 
 /*
  * Check that the triple (buf,count,datatype) does not specify a null
@@ -317,13 +334,47 @@
     }
 /* --END ERROR MACROS-- */
 
-#define MPIR_ERRTEST_OP(op,err)                                         \
-    if (op == MPI_OP_NULL) {                                            \
-        MPIU_ERR_SETANDSTMT(err,MPI_ERR_OP,goto fn_fail,"**opnull");    \
-    }                                                                   \
-    else {                                                              \
-        MPIR_ERRTEST_VALID_HANDLE(op,MPID_OP,err,MPI_ERR_OP,"**op");    \
-    }
+#define MPIR_ERRTEST_OP(op,err)                                                 \
+    do {                                                                        \
+        if (op == MPI_OP_NULL) {                                                \
+            MPIU_ERR_SETANDSTMT(err,MPI_ERR_OP,goto fn_fail,"**opnull");        \
+        }                                                                       \
+        else if (op == MPI_NO_OP || op == MPI_REPLACE) {                        \
+            MPIU_ERR_SETANDSTMT(err,MPI_ERR_OP,goto fn_fail,"**opnotallowed");  \
+        }                                                                       \
+        else {                                                                  \
+            MPIR_ERRTEST_VALID_HANDLE(op,MPID_OP,err,MPI_ERR_OP,"**op");        \
+        }                                                                       \
+    } while (0)
+
+#define MPIR_ERRTEST_OP_ACC(op,err)                                             \
+    do {                                                                        \
+        if (op == MPI_OP_NULL) {                                                \
+            MPIU_ERR_SETANDSTMT(err,MPI_ERR_OP,goto fn_fail,"**opnull");        \
+        }                                                                       \
+        else if (op == MPI_NO_OP) {                                             \
+            MPIU_ERR_SETANDSTMT(err,MPI_ERR_OP,goto fn_fail,"**opnotallowed");  \
+        }                                                                       \
+        else {                                                                  \
+            MPIR_ERRTEST_VALID_HANDLE(op,MPID_OP,err,MPI_ERR_OP,"**op");        \
+        }                                                                       \
+        if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) {                       \
+            MPIU_ERR_SETANDSTMT(err,MPI_ERR_OP,goto fn_fail,"**opnotpredefined"); \
+        }                                                                       \
+    } while (0)
+
+#define MPIR_ERRTEST_OP_GACC(op,err)                                            \
+    do {                                                                        \
+        if (op == MPI_OP_NULL) {                                                \
+            MPIU_ERR_SETANDSTMT(err,MPI_ERR_OP,goto fn_fail,"**opnull");        \
+        }                                                                       \
+        else {                                                                  \
+            MPIR_ERRTEST_VALID_HANDLE(op,MPID_OP,err,MPI_ERR_OP,"**op");        \
+        }                                                                       \
+        if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) {                       \
+            MPIU_ERR_SETANDSTMT(err,MPI_ERR_OP,goto fn_fail,"**opnotpredefined"); \
+        }                                                                       \
+    } while (0)
 
 #define MPIR_ERRTEST_GROUP(group,err)                                   \
     if (group == MPI_GROUP_NULL) {                                      \

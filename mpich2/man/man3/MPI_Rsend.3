@@ -1,9 +1,9 @@
-.TH MPI_Rsend 3 "9/20/2012" " " "MPI"
+.TH MPI_Rsend 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Rsend \-  Blocking ready send  
 .SH SYNOPSIS
 .nf
-int MPI_Rsend(MPICH2_CONST void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+int MPI_Rsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
               MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -44,9 +44,6 @@ struct HYDT_bsci_fns {
 
     /** \brief Query for node list information */
     HYD_status(*query_node_list) (struct HYD_node ** node_list);
-
-    /** \brief Query for job ID information */
-    HYD_status(*query_jobid) (char **jobid);
 
     /** \brief Finalize the RMK */
     HYD_status(*rmk_finalize) (void);
@@ -148,16 +145,6 @@ HYD_status HYDT_bsci_query_node_list(struct HYD_node **node_list);
 
 
 /**
- * \brief HYDT_bsci_query_jobid - Query for Job ID information
- *
- * \param[out] jobid       Job ID
- *
- * This function allows the upper layers to query the job ID.
- */
-HYD_status HYDT_bsci_query_jobid(char **jobid);
-
-
-/**
  * \brief HYDT_bsci_query_proxy_id - Query the ID of a proxy
  *
  * \param[out]  proxy_id    My proxy ID
@@ -213,6 +200,7 @@ HYD_status HYDT_bsci_rmk_ll_init(void);
 HYD_status HYDT_bsci_rmk_lsf_init(void);
 HYD_status HYDT_bsci_rmk_sge_init(void);
 HYD_status HYDT_bsci_rmk_pbs_init(void);
+HYD_status HYDT_bsci_rmk_cobalt_init(void);
 HYD_status HYDT_bsci_rmk_user_init(void);
 #endif /* HAVE_BSS_EXTERNAL */
 

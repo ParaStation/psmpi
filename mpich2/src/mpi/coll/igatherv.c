@@ -6,21 +6,21 @@
 
 #include "mpiimpl.h"
 
-/* -- Begin Profiling Symbol Block for routine MPIX_Igatherv */
+/* -- Begin Profiling Symbol Block for routine MPI_Igatherv */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPIX_Igatherv = PMPIX_Igatherv
+#pragma weak MPI_Igatherv = PMPI_Igatherv
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIX_Igatherv  MPIX_Igatherv
+#pragma _HP_SECONDARY_DEF PMPI_Igatherv  MPI_Igatherv
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPIX_Igatherv as PMPIX_Igatherv
+#pragma _CRI duplicate MPI_Igatherv as PMPI_Igatherv
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#undef MPIX_Igatherv
-#define MPIX_Igatherv PMPIX_Igatherv
+#undef MPI_Igatherv
+#define MPI_Igatherv PMPI_Igatherv
 
 /* any non-MPI functions go here, especially non-static ones */
 
@@ -28,7 +28,9 @@
 #define FUNCNAME MPIR_Igatherv
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_Igatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, const int *recvcounts, const int *displs, MPI_Datatype recvtype, int root, MPID_Comm *comm_ptr, MPID_Sched_t s)
+int MPIR_Igatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+                  const int recvcounts[], const int displs[], MPI_Datatype recvtype, int root,
+                  MPID_Comm *comm_ptr, MPID_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
     int i;
@@ -102,7 +104,9 @@ fn_fail:
 #define FUNCNAME MPIR_Igatherv_impl
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_Igatherv_impl(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, const int *recvcounts, const int *displs, MPI_Datatype recvtype, int root, MPID_Comm *comm_ptr, MPI_Request *request)
+int MPIR_Igatherv_impl(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+                       const int recvcounts[], const int displs[], MPI_Datatype recvtype,
+                       int root, MPID_Comm *comm_ptr, MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
     int tag = -1;
@@ -135,11 +139,11 @@ fn_fail:
 #endif /* MPICH_MPI_FROM_PMPI */
 
 #undef FUNCNAME
-#define FUNCNAME MPIX_Igatherv
+#define FUNCNAME MPI_Igatherv
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPIX_Igatherv - XXX description here
+MPI_Igatherv - XXX description here
 
 Input Parameters:
 + sendbuf - starting address of the send buffer (choice)
@@ -161,14 +165,16 @@ Output Parameters:
 
 .N Errors
 @*/
-int MPIX_Igatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, const int *recvcounts, const int *displs, MPI_Datatype recvtype, int root, MPI_Comm comm, MPI_Request *request)
+int MPI_Igatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+                 const int recvcounts[], const int displs[], MPI_Datatype recvtype, int root,
+                 MPI_Comm comm, MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIX_IGATHERV);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_IGATHERV);
 
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPID_MPI_FUNC_ENTER(MPID_STATE_MPIX_IGATHERV);
+    MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IGATHERV);
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -291,7 +297,7 @@ int MPIX_Igatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, voi
     /* ... end of body of routine ... */
 
 fn_exit:
-    MPID_MPI_FUNC_EXIT(MPID_STATE_MPIX_IGATHERV);
+    MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_IGATHERV);
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
@@ -301,7 +307,7 @@ fn_fail:
     {
         mpi_errno = MPIR_Err_create_code(
             mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-            "**mpix_igatherv", "**mpix_igatherv %p %d %D %p %p %p %D %d %C %p", sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm, request);
+            "**mpi_igatherv", "**mpi_igatherv %p %d %D %p %p %p %D %d %C %p", sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm, request);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm(comm_ptr, FCNAME, mpi_errno);

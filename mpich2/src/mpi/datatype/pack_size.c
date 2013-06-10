@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -50,7 +50,7 @@ Input Parameters:
 . datatype - datatype argument to packing call (handle) 
 - comm - communicator argument to packing call (handle) 
 
-Output Parameter:
+Output Parameters:
 . size - upper bound on size of packed message, in bytes (integer) 
 
 Notes:

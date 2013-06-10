@@ -32,10 +32,12 @@ mpi_sources +=                          \
     src/mpi/rma/win_flush_local_all.c   \
     src/mpi/rma/win_free.c              \
     src/mpi/rma/win_get_group.c         \
+    src/mpi/rma/win_get_info.c          \
     src/mpi/rma/win_get_name.c          \
     src/mpi/rma/win_lock.c              \
     src/mpi/rma/win_lock_all.c          \
     src/mpi/rma/win_post.c              \
+    src/mpi/rma/win_set_info.c          \
     src/mpi/rma/win_set_name.c          \
     src/mpi/rma/win_shared_query.c      \
     src/mpi/rma/win_start.c             \
@@ -44,8 +46,6 @@ mpi_sources +=                          \
     src/mpi/rma/win_unlock.c            \
     src/mpi/rma/win_unlock_all.c        \
     src/mpi/rma/win_wait.c
-
-noinst_HEADERS += src/mpi/rma/rma.h
 
 lib_lib@MPILIBNAME@_la_SOURCES += \
     src/mpi/rma/winutil.c         \

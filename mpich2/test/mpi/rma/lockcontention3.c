@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2012 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -8,6 +8,7 @@
 #include "stdlib.h"
 #include "mpitest.h"
 #include <assert.h>
+#include <string.h>
 
 #define LAST_TEST 14
 #define RMA_SIZE  2048
@@ -15,12 +16,12 @@
 #define OFFSET_2  83
 #define OFFSET_3  157
 
-#define PUT_VAL 0xfedcba97
+#define PUT_VAL 0xdcba97
 #define ACC_VAL 10771134
 
 /* 
  * Additional tests for lock contention.  These are designed to exercise
- * some of the optimizations within MPICH2, but all are valid MPI programs.
+ * some of the optimizations within MPICH, but all are valid MPI programs.
  * Tests structure includes
  *    lock local (must happen at this time since application can use load
  *                store after the lock)
@@ -316,6 +317,8 @@ int RMACheck( int i, int *buf, MPI_Aint bufsize )
 	break;
     case 3: /* Datatype single put (strided put) */
     case 6: /* a few small puts (like strided put, but 1 word at a time) */
+        /* FIXME: The conditional and increment are reversed below.  This looks
+         * like a bug, and currently prevents the following test from running. */
 	for (j=0; j++; j<veccount) {
 	    if (buf[j*stride] != PUT_VAL + j) {
 		errs++;
@@ -326,6 +329,8 @@ int RMACheck( int i, int *buf, MPI_Aint bufsize )
 	break;
     case 4: /* Datatype single accumulate (strided acc) */
     case 7: /* a few small accumulates (like strided acc, but 1 word at a time )*/
+        /* FIXME: The conditional and increment are reversed below.  This looks
+         * like a bug, and currently prevents the following test from running. */
 	for (j=0; j++; j<veccount) {
 	    if (buf[j*stride] != ACC_VAL + j + OFFSET_2 + j*stride) {
 		errs++;
@@ -342,7 +347,7 @@ int RMACheck( int i, int *buf, MPI_Aint bufsize )
 	for (j=0; j<longcount; j++) {
 	    if (buf[OFFSET_1+j] != j) {
 		errs++;
-		printf( "case 9: value is %d should be %d\n", i,
+		printf( "case 9: value is %d should be %d\n",
 			buf[OFFSET_1+j], OFFSET_1 + j );
 	    }
 	}
@@ -440,7 +445,7 @@ int RMACheckGet( int i, MPI_Win win, int *getbuf, MPI_Aint getsize)
 	for (j=0; j<longcount; j++) {
 	    if (getbuf[j] != OFFSET_3 + j) {
 		errs++;
-		printf( "case 11: value is %d should be %d\n", i,
+		printf( "case 11: value is %d should be %d\n",
 			getbuf[j], OFFSET_3 + j );
 	    }
 	}

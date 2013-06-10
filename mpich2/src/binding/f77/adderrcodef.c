@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_add_error_code( MPI_Fint *, MPI_Fint *,
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_add_error_code_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
-    *ierr = MPI_Add_error_code( *v1, v2 );
+    *ierr = MPI_Add_error_code( (int)*v1, v2 );
 }

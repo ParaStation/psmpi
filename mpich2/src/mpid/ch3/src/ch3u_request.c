@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -82,11 +82,12 @@ MPID_Request * MPID_Request_create(void)
 	   request for RMA operations */
 	req->dev.target_win_handle = MPI_WIN_NULL;
 	req->dev.source_win_handle = MPI_WIN_NULL;
-	req->dev.single_op_opt	   = 0;
 	req->dev.lock_queue_entry  = NULL;
 	req->dev.dtype_info	   = NULL;
 	req->dev.dataloop	   = NULL;
 	req->dev.iov_offset        = 0;
+        req->dev.flags             = MPIDI_CH3_PKT_FLAG_NONE;
+        req->dev.resp_request_handle = MPI_REQUEST_NULL;
 #ifdef MPIDI_CH3_REQUEST_INIT
 	MPIDI_CH3_REQUEST_INIT(req);
 #endif
@@ -650,7 +651,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 
 /* 
  * Export the function to set a request as completed for use by
- * the generalized request functions in mpich2/src/pt2pt/greq_complete.c
+ * the generalized request functions in mpich/src/pt2pt/greq_complete.c
  */
 void MPID_Request_set_completed( MPID_Request *req )
 {

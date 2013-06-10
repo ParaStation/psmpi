@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -30,13 +30,13 @@
  * Windows only mpi binding
  *
  * This file implements an mpi binding that calls another dynamically loaded mpi binding.
- * The environment variables MPI_DLL_NAME and MPICH2_CHANNEL control which library should be loaded.
- * The default library is mpich2.dll or mpich2d.dll.
+ * The environment variables MPI_DLL_NAME and MPICH_CHANNEL control which library should be loaded.
+ * The default library is mpich.dll or mpichd.dll.
  * A wrapper dll can also be named to replace only the MPI functions using the MPI_WRAP_DLL_NAME
  * environment variable.
  *
  * The motivation for this binding is to allow compiled mpi applications to be able
- * to use different implementations of mpich2 at run-time without re-linking the application.
+ * to use different implementations of mpich at run-time without re-linking the application.
  * This way mpiexec or the user can choose the best channel to use at run-time.
  *
  * For example, mpiexec may choose the shm channel for up to 8 processes on a single node
@@ -52,37 +52,37 @@
  * PMPI interface.
  *
  * The user can run a job and then decide to run the job again and produce a log file.  All that
- * needs to be done is specify the logged version of the mpich2 channel or a wrapper dll like mpe
+ * needs to be done is specify the logged version of the mpich channel or a wrapper dll like mpe
  * and a log file will be produced.
  * Examples:
  * mpiexec -n 4 cpi
- * mpiexec -env MPICH2_CHANNEL ib -n 4 cpi
- * mpiexec -env MPI_DLL_NAME mpich2p.dll -n 4 cpi
- * mpiexec -env MPI_WRAP_DLL_NAME mpich2mped.dll -n 4 cpi
- * mpiexec -env MPICH2_CHANNEL ib -env MPI_WRAP_DLL_NAME mpich2mped.dll -n 4 cpi
+ * mpiexec -env MPICH_CHANNEL ib -n 4 cpi
+ * mpiexec -env MPI_DLL_NAME mpichp.dll -n 4 cpi
+ * mpiexec -env MPI_WRAP_DLL_NAME mpichmped.dll -n 4 cpi
+ * mpiexec -env MPICH_CHANNEL ib -env MPI_WRAP_DLL_NAME mpichmped.dll -n 4 cpi
  *
  */
 
 #define MPI_ENV_DLL_NAME          "MPI_DLL_NAME"
 #define MPI_ENV_DLL_PATH          "MPI_DLL_PATH"
-#define MPI_ENV_CHANNEL_NAME      "MPICH2_CHANNEL"
+#define MPI_ENV_CHANNEL_NAME      "MPICH_CHANNEL"
 #define MPI_ENV_MPIWRAP_DLL_NAME  "MPI_WRAP_DLL_NAME"
 #ifdef _DEBUG
-#define MPI_DEFAULT_DLL_NAME      "mpich2nemesisd.dll"
-#define MPI_DEFAULT_WRAP_DLL_NAME "mpich2mped.dll"
-#define DLL_FORMAT_STRING         "mpich2%sd.dll"
+#define MPI_DEFAULT_DLL_NAME      "mpichnemesisd.dll"
+#define MPI_DEFAULT_WRAP_DLL_NAME "mpichmped.dll"
+#define DLL_FORMAT_STRING         "mpich%sd.dll"
 #else
-#define MPI_DEFAULT_DLL_NAME      "mpich2nemesis.dll"
-#define MPI_DEFAULT_WRAP_DLL_NAME "mpich2mpe.dll"
-#define DLL_FORMAT_STRING         "mpich2%s.dll"
+#define MPI_DEFAULT_DLL_NAME      "mpichnemesis.dll"
+#define MPI_DEFAULT_WRAP_DLL_NAME "mpichmpe.dll"
+#define DLL_FORMAT_STRING         "mpich%s.dll"
 #endif
 #define MAX_DLL_NAME              100
 
 /* FIXME: Remove dlls without a channel token string */
 #ifdef _DEBUG
-#define MPI_SOCK_CHANNEL_DLL_NAME   "mpich2d.dll"
+#define MPI_SOCK_CHANNEL_DLL_NAME   "mpichd.dll"
 #else
-#define MPI_SOCK_CHANNEL_DLL_NAME   "mpich2.dll"
+#define MPI_SOCK_CHANNEL_DLL_NAME   "mpich.dll"
 #endif
 
 MPIU_DLL_SPEC MPI_Fint *MPI_F_STATUS_IGNORE = 0;
@@ -393,7 +393,7 @@ static struct fn_table
     int (*MPI_Type_create_hindexed)(int, int [], MPI_Aint [], MPI_Datatype, MPI_Datatype *);
     int (*MPI_Type_create_hvector)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *);
     int (*MPI_Type_create_indexed_block)(int, int, int [], MPI_Datatype, MPI_Datatype *);
-    int (*MPIX_Type_create_hindexed_block)(int, int, const int [], MPI_Datatype, MPI_Datatype *);
+    int (*MPI_Type_create_hindexed_block)(int, int, const int [], MPI_Datatype, MPI_Datatype *);
     int (*MPI_Type_create_resized)(MPI_Datatype, MPI_Aint, MPI_Aint, MPI_Datatype *);
     int (*MPI_Type_create_struct)(int, int [], MPI_Aint [], MPI_Datatype [], MPI_Datatype *);
     int (*MPI_Type_create_subarray)(int, int [], int [], int [], int, MPI_Datatype, MPI_Datatype *);
@@ -709,7 +709,7 @@ static struct fn_table
     int (*PMPI_Type_create_hindexed)(int, int [], MPI_Aint [], MPI_Datatype, MPI_Datatype *);
     int (*PMPI_Type_create_hvector)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *);
     int (*PMPI_Type_create_indexed_block)(int, int, int [], MPI_Datatype, MPI_Datatype *);
-    int (*PMPIX_Type_create_hindexed_block)(int, int, const int [], MPI_Datatype, MPI_Datatype *);
+    int (*PMPI_Type_create_hindexed_block)(int, int, const int [], MPI_Datatype, MPI_Datatype *);
     int (*PMPI_Type_create_resized)(MPI_Datatype, MPI_Aint, MPI_Aint, MPI_Datatype *);
     int (*PMPI_Type_create_struct)(int, int [], MPI_Aint [], MPI_Datatype [], MPI_Datatype *);
     int (*PMPI_Type_create_subarray)(int, int [], int [], int [], int, MPI_Datatype, MPI_Datatype *);
@@ -1380,8 +1380,8 @@ static BOOL LoadFunctions(const char *dll_name, const char *wrapper_dll_name)
     if (fn.MPI_Type_create_hvector == NULL) fn.MPI_Type_create_hvector = (int (*)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "MPI_Type_create_hvector");
     fn.MPI_Type_create_indexed_block = (int (*)(int, int, int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_create_indexed_block");
     if (fn.MPI_Type_create_indexed_block == NULL) fn.MPI_Type_create_indexed_block = (int (*)(int, int, int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "MPI_Type_create_indexed_block");
-    fn.MPIX_Type_create_hindexed_block = (int (*)(int, int, const int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPIX_Type_create_hindexed_block");
-    if (fn.MPIX_Type_create_hindexed_block == NULL) fn.MPIX_Type_create_hindexed_block = (int (*)(int, int, const int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "MPIX_Type_create_hindexed_block");
+    fn.MPI_Type_create_hindexed_block = (int (*)(int, int, const int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_create_hindexed_block");
+    if (fn.MPI_Type_create_hindexed_block == NULL) fn.MPI_Type_create_hindexed_block = (int (*)(int, int, const int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "MPI_Type_create_hindexed_block");
     fn.MPI_Type_create_resized = (int (*)(MPI_Datatype, MPI_Aint, MPI_Aint, MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_create_resized");
     if (fn.MPI_Type_create_resized == NULL) fn.MPI_Type_create_resized = (int (*)(MPI_Datatype, MPI_Aint, MPI_Aint, MPI_Datatype *))GetProcAddress(hPMPIModule, "MPI_Type_create_resized");
     fn.MPI_Type_create_struct = (int (*)(int, int [], MPI_Aint [], MPI_Datatype [], MPI_Datatype *))GetProcAddress(hMPIModule, "MPI_Type_create_struct");
@@ -1705,7 +1705,7 @@ static BOOL LoadFunctions(const char *dll_name, const char *wrapper_dll_name)
     fn.PMPI_Type_create_hindexed = (int (*)(int, int [], MPI_Aint [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_hindexed");
     fn.PMPI_Type_create_hvector = (int (*)(int, int, MPI_Aint, MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_hvector");
     fn.PMPI_Type_create_indexed_block = (int (*)(int, int, int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_indexed_block");
-    fn.PMPIX_Type_create_hindexed_block = (int (*)(int, int, const int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPIX_Type_create_hindexed_block");
+    fn.PMPI_Type_create_hindexed_block = (int (*)(int, int, const int [], MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_hindexed_block");
     fn.PMPI_Type_create_resized = (int (*)(MPI_Datatype, MPI_Aint, MPI_Aint, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_resized");
     fn.PMPI_Type_create_struct = (int (*)(int, int [], MPI_Aint [], MPI_Datatype [], MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_struct");
     fn.PMPI_Type_create_subarray = (int (*)(int, int [], int [], int [], int, MPI_Datatype, MPI_Datatype *))GetProcAddress(hPMPIModule, "PMPI_Type_create_subarray");
@@ -1766,7 +1766,7 @@ BOOL LoadMPILibrary()
 	channel = getenv(MPI_ENV_CHANNEL_NAME);
 	if (channel != NULL)
 	{
-	    /* ignore the sock channel since it is the default and is not named mpich2sock.dll */
+	    /* ignore the sock channel since it is the default and is not named mpichsock.dll */
 	    if (strncmp(channel, "sock", 5))
 	    {
 		MPIU_Snprintf(name, MAX_DLL_NAME, DLL_FORMAT_STRING, channel);
@@ -1843,7 +1843,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 #define MPICH_CHECK_INIT(a) if ((fn. a) == NULL && LoadMPILibrary() == FALSE) return MPI_ERR_INTERN;
 #define MPICH_CHECK_INIT_VOID(a) if ((fn. a) == NULL && LoadMPILibrary() == FALSE) ExitProcess(MPI_ERR_INTERN);
 
-/* Extra exported internal functions to mpich2 */
+/* Extra exported internal functions to mpich */
 #undef FCNAME
 #define FCNAME MPIR_Err_create_code
 int MPIR_Err_create_code(int lastcode, int fatal, const char fcname[], int line, int error_class, const char generic_msg[], const char specific_msg[], ...)
@@ -2704,15 +2704,15 @@ int MPI_Type_create_indexed_block(int count,
 }
 
 #undef FCNAME
-#define FCNAME MPIX_Type_create_hindexed_block
-int MPIX_Type_create_hindexed_block(int count,
+#define FCNAME MPI_Type_create_hindexed_block
+int MPI_Type_create_hindexed_block(int count,
                                     int blocklength,
                                     const int array_of_displacements[],
                                     MPI_Datatype oldtype,
                                     MPI_Datatype *newtype)
 {
     MPICH_CHECK_INIT(FCNAME);
-    return fn.MPIX_Type_create_hindexed_block(count, blocklength, array_of_displacements, oldtype, newtype);
+    return fn.MPI_Type_create_hindexed_block(count, blocklength, array_of_displacements, oldtype, newtype);
 }
 
 #undef FCNAME
@@ -4621,26 +4621,26 @@ double MPI_Wtick()
 
 #undef FCNAME
 #define FCNAME MPI_Type_create_f90_integer
-int MPI_Type_create_f90_integer(int r, MPI_Datatype *newtype)
+int MPI_Type_create_f90_integer(int range, MPI_Datatype *newtype)
 {
     MPICH_CHECK_INIT(FCNAME);
-    return fn.MPI_Type_create_f90_integer(r, newtype);
+    return fn.MPI_Type_create_f90_integer(range, newtype);
 }
 
 #undef FCNAME
 #define FCNAME MPI_Type_create_f90_real
-int MPI_Type_create_f90_real(int p, int r, MPI_Datatype *newtype)
+int MPI_Type_create_f90_real(int precision, int range, MPI_Datatype *newtype)
 {
     MPICH_CHECK_INIT(FCNAME);
-    return fn.MPI_Type_create_f90_real(p, r, newtype);
+    return fn.MPI_Type_create_f90_real(precision, range, newtype);
 }
 
 #undef FCNAME
 #define FCNAME MPI_Type_create_f90_complex
-int MPI_Type_create_f90_complex(int p, int r, MPI_Datatype *newtype)
+int MPI_Type_create_f90_complex(int precision, int range, MPI_Datatype *newtype)
 {
     MPICH_CHECK_INIT(FCNAME);
-    return fn.MPI_Type_create_f90_complex(p, r, newtype);
+    return fn.MPI_Type_create_f90_complex(precision, range, newtype);
 }
 
 /* PMPI versions */
@@ -5345,15 +5345,15 @@ int PMPI_Type_create_indexed_block(int count,
 }
 
 #undef FCNAME
-#define FCNAME PMPIX_Type_create_hindexed_block
-int PMPIX_Type_create_hindexed_block(int count,
+#define FCNAME PMPI_Type_create_hindexed_block
+int PMPI_Type_create_hindexed_block(int count,
                                      int blocklength,
                                      const int array_of_displacements[],
                                      MPI_Datatype oldtype,
                                      MPI_Datatype *newtype)
 {
     MPICH_CHECK_INIT(FCNAME);
-    return fn.PMPIX_Type_create_hindexed_block(count, blocklength, array_of_displacements, oldtype, newtype);
+    return fn.PMPI_Type_create_hindexed_block(count, blocklength, array_of_displacements, oldtype, newtype);
 }
 
 #undef FCNAME

@@ -15,7 +15,7 @@ nodist_include_HEADERS += src/include/mpi.h
 ## important because they contain lots of info that is computed by configure.
 nodist_noinst_HEADERS +=     \
     src/include/glue_romio.h \
-    src/include/mpich2info.h \
+    src/include/mpichinfo.h \
     src/include/mpichconf.h  \
     src/include/mpichtimer.h
 
@@ -56,6 +56,7 @@ noinst_HEADERS +=                   \
     src/include/mpiu_ex.h           \
     src/include/mpiu_thread.h       \
     src/include/mpiu_utarray.h      \
+    src/include/mpiu_uthash.h       \
     src/include/mpiutil.h           \
     src/include/nopackage.h         \
     src/include/oputil.h            \
@@ -63,7 +64,8 @@ noinst_HEADERS +=                   \
     src/include/pmi2.h              \
     src/include/rlog.h              \
     src/include/rlog_macros.h       \
-    src/include/oputil.h
+    src/include/oputil.h            \
+    src/include/mpiinfo.h
 
 src/include/param_vals.h: src/util/param/params.yml
 	$(top_srcdir)/maint/genparams

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -37,7 +37,7 @@ Input Parameters:
 . delete_fn - Delete callback function for 'keyval' 
 - extra_state - Extra state for callback functions 
 
-Output Parameter:
+Output Parameters:
 . keyval - key value for future access (integer) 
 
 Notes:
@@ -46,7 +46,7 @@ Key values are global (available for any and all communicators).
 There are subtle differences between C and Fortran that require that the
 copy_fn be written in the same language that 'MPI_Keyval_create'
 is called from.
-This should not be a problem for most users; only programers using both 
+This should not be a problem for most users; only programmers using both
 Fortran and C in the same program need to be sure that they follow this rule.
 
 .N ThreadSafe

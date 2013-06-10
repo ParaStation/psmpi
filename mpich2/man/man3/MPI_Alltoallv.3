@@ -1,11 +1,11 @@
-.TH MPI_Alltoallv 3 "9/20/2012" " " "MPI"
+.TH MPI_Alltoallv 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Alltoallv \-  Sends data from all to all processes; each process may  send a different amount of data and provide displacements for the input and output data. 
 .SH SYNOPSIS
 .nf
-int MPI_Alltoallv(MPICH2_CONST void *sendbuf, MPICH2_CONST int *sendcnts,
-                  MPICH2_CONST int *sdispls, MPI_Datatype sendtype, void *recvbuf,
-                  MPICH2_CONST int *recvcnts, MPICH2_CONST int *rdispls, MPI_Datatype recvtype,
+int MPI_Alltoallv(const void *sendbuf, const int *sendcounts,
+                  const int *sdispls, MPI_Datatype sendtype, void *recvbuf,
+                  const int *recvcounts, const int *rdispls, MPI_Datatype recvtype,
                   MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
@@ -63,7 +63,7 @@ which to place the incoming data from process
 - communicator (handle) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B recvbuf 

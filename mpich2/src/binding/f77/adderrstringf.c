@@ -195,6 +195,6 @@ FORT_DLL_SPEC void FORT_CALL mpi_add_error_string_ ( MPI_Fint *v1, char *v2 FORT
         for (li=0; li<(p-v2); li++) { p2[li] = v2[li]; }
         p2[li] = 0; 
     }
-    *ierr = MPI_Add_error_string( *v1, p2 );
+    *ierr = MPI_Add_error_string( (int)*v1, p2 );
     MPIU_Free( p2 );
 }

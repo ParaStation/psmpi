@@ -1,10 +1,10 @@
-.TH MPI_Scatter 3 "9/20/2012" " " "MPI"
+.TH MPI_Scatter 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Scatter \-  Sends data from one process to all other processes in a  communicator 
 .SH SYNOPSIS
 .nf
-int MPI_Scatter(MPICH2_CONST void *sendbuf, int sendcnt, MPI_Datatype sendtype,
-               void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, 
+int MPI_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+               void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
                MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
@@ -53,7 +53,7 @@ only at
 - communicator (handle) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B recvbuf 

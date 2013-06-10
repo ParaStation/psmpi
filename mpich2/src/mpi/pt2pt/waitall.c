@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -229,7 +229,7 @@ Input Parameters:
 + count - list length (integer) 
 - array_of_requests - array of request handles (array of handles)
 
-Output Parameter:
+Output Parameters:
 . array_of_statuses - array of status objects (array of Statuses).  May be
   'MPI_STATUSES_IGNORE'.
 

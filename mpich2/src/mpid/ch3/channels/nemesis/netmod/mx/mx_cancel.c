@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2006 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -38,7 +38,7 @@ int MPID_nem_mx_cancel_send(MPIDI_VC_t *vc, MPID_Request *sreq)
     int mpi_errno = MPI_SUCCESS;
     int handled = FALSE;
    
-     if (!VC_CH(vc)->is_local)
+     if (!vc->ch.is_local)
      {
 	mx_request = &(REQ_FIELD(sreq,mx_request));
 	ret = mx_cancel(MPID_nem_mx_local_endpoint,mx_request,&result);

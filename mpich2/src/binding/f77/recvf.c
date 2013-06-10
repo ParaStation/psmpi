@@ -191,5 +191,5 @@ FORT_DLL_SPEC void FORT_CALL mpi_recv_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, MP
 #endif
 
     if (v7 == MPI_F_STATUS_IGNORE) { v7 = (MPI_Fint*)MPI_STATUS_IGNORE; }
-    *ierr = MPI_Recv( v1, *v2, (MPI_Datatype)(*v3), *v4, *v5, (MPI_Comm)(*v6), (MPI_Status *)v7 );
+    *ierr = MPI_Recv( v1, (int)*v2, (MPI_Datatype)(*v3), (int)*v4, (int)*v5, (MPI_Comm)(*v6), (MPI_Status *)v7 );
 }

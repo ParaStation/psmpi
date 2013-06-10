@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2011 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -39,10 +39,10 @@ int main(int argc, char *argv[])
     MPI_Group_excl(world_group, size / 2, excl, &even_group);
     MPI_Group_free(&world_group);
 
-#if !defined(USE_STRICT_MPI) && defined(MPICH2)
+#if !defined(USE_STRICT_MPI) && defined(MPICH)
     if (rank % 2 == 0) {
         /* Even processes create a group for themselves */
-        MPIX_Comm_create_group(MPI_COMM_WORLD, even_group, 0, &even_comm);
+        MPI_Comm_create_group(MPI_COMM_WORLD, even_group, 0, &even_comm);
         MPI_Barrier(even_comm);
         MPI_Comm_free(&even_comm);
     }

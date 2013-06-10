@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,53 +6,66 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
-/* -- Begin Profiling Symbol Block for routine MPIX_Rget_accumulate */
+/* -- Begin Profiling Symbol Block for routine MPI_Rget_accumulate */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPIX_Rget_accumulate = PMPIX_Rget_accumulate
+#pragma weak MPI_Rget_accumulate = PMPI_Rget_accumulate
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIX_Rget_accumulate  MPIX_Rget_accumulate
+#pragma _HP_SECONDARY_DEF PMPI_Rget_accumulate  MPI_Rget_accumulate
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPIX_Rget_accumulate as PMPIX_Rget_accumulate
+#pragma _CRI duplicate MPI_Rget_accumulate as PMPI_Rget_accumulate
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#undef MPIX_Rget_accumulate
-#define MPIX_Rget_accumulate PMPIX_Rget_accumulate
+#undef MPI_Rget_accumulate
+#define MPI_Rget_accumulate PMPI_Rget_accumulate
 
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPIX_Rget_accumulate
+#define FUNCNAME MPI_Rget_accumulate
 
 /*@
-   MPIX_Rget_accumulate - Accumulate data into the target process using remote 
-   memory access 
+MPI_Rget_accumulate - Perform an atomic, one-sided read-and-accumulate
+operation and return a request handle for the operation.
 
-   Input Parameters:
-+ origin_addr - initial address of buffer (choice) 
-. origin_count - number of entries in buffer (nonnegative integer) 
-. origin_datatype - datatype of each buffer entry (handle) 
+
+'MPI_Rget_accumulate' is similar to 'MPI_Get_accumulate', except that it allocates
+a communication request object and associates it with the request handle (the
+argument request) that can be used to wait or test for completion. The
+completion of an 'MPI_Rget_accumulate' operation indicates that the data is
+available in the result buffer and the origin buffer is free to be updated. It
+does not indicate that the operation has been completed at the target window.
+
+Input Parameters:
++ origin_addr - initial address of buffer (choice)
+. origin_count - number of entries in buffer (nonnegative integer)
+. origin_datatype - datatype of each buffer entry (handle)
 . result_addr - initial address of result buffer (choice)
 . result_count - number of entries in result buffer (non-negative integer)
 . result_datatype - datatype of each entry in result buffer (handle)
-. target_rank - rank of target (nonnegative integer) 
-. target_disp - displacement from start of window to beginning of target 
-  buffer (nonnegative integer)  
-. target_count - number of entries in target buffer (nonnegative integer) 
-. target_datatype - datatype of each entry in target buffer (handle) 
-. op - predefined reduce operation (handle) 
-- win - window object (handle) 
+. target_rank - rank of target (nonnegative integer)
+. target_disp - displacement from start of window to beginning of target
+  buffer (nonnegative integer)
+. target_count - number of entries in target buffer (nonnegative integer)
+. target_datatype - datatype of each entry in target buffer (handle)
+. op - predefined reduce operation (handle)
+- win - window object (handle)
 
-   Output Parameter:
+Output Parameters:
 . request - RMA request (handle)
 
-   Notes:
-The basic components of both the origin and target datatype must be the same 
+Notes:
+This operations is atomic with respect to other "accumulate" operations.
+
+The get and accumulate steps are executed atomically for each basic element in
+the datatype (see MPI 3.0 Section 11.7 for details). The predefined operation
+'MPI_REPLACE' provides fetch-and-set behavior.
+
+The basic components of both the origin and target datatype must be the same
 predefined datatype (e.g., all 'MPI_INT' or all 'MPI_DOUBLE_PRECISION').
 
 .N Fortran
@@ -64,23 +77,25 @@ predefined datatype (e.g., all 'MPI_INT' or all 'MPI_DOUBLE_PRECISION').
 .N MPI_ERR_RANK
 .N MPI_ERR_TYPE
 .N MPI_ERR_WIN
+
+.seealso: MPI_Get_accumulate MPI_Fetch_and_op
 @*/
-int MPIX_Rget_accumulate(const void *origin_addr, int origin_count,
+int MPI_Rget_accumulate(const void *origin_addr, int origin_count,
         MPI_Datatype origin_datatype, void *result_addr, int result_count,
         MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
         int target_count, MPI_Datatype target_datatype, MPI_Op op, MPI_Win win,
         MPI_Request *request)
 {
-    static const char FCNAME[] = "MPIX_Rget_accumulate";
+    static const char FCNAME[] = "MPI_Rget_accumulate";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
     MPID_Request *request_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIX_RGET_ACCUMULATE);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_RGET_ACCUMULATE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPIX_RGET_ACCUMULATE);
+    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_RGET_ACCUMULATE);
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -107,16 +122,21 @@ int MPIX_Rget_accumulate(const void *origin_addr, int origin_count,
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
             if (mpi_errno) goto fn_fail;
 
-            MPIR_ERRTEST_COUNT(origin_count, mpi_errno);
-            MPIR_ERRTEST_DATATYPE(origin_datatype, "origin_datatype", mpi_errno);
+            if (op != MPI_NO_OP) {
+                MPIR_ERRTEST_COUNT(origin_count, mpi_errno);
+                MPIR_ERRTEST_DATATYPE(origin_datatype, "origin_datatype", mpi_errno);
+                MPIR_ERRTEST_ARGNULL(origin_addr, "origin_addr", mpi_errno);
+            }
             MPIR_ERRTEST_COUNT(result_count, mpi_errno);
             MPIR_ERRTEST_DATATYPE(result_datatype, "result_datatype", mpi_errno);
+            MPIR_ERRTEST_ARGNULL(result_addr, "result_addr", mpi_errno);
             MPIR_ERRTEST_COUNT(target_count, mpi_errno);
             MPIR_ERRTEST_DATATYPE(target_datatype, "target_datatype", mpi_errno);
-            if (win_ptr->create_flavor != MPIX_WIN_FLAVOR_DYNAMIC)
+            if (win_ptr->create_flavor != MPI_WIN_FLAVOR_DYNAMIC)
                 MPIR_ERRTEST_DISP(target_disp, mpi_errno);
 
-            if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN)
+            if (op != MPI_NO_OP &&
+                HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN)
             {
                 MPID_Datatype *datatype_ptr = NULL;
                 
@@ -151,7 +171,7 @@ int MPIX_Rget_accumulate(const void *origin_addr, int origin_count,
 
             comm_ptr = win_ptr->comm_ptr;
             MPIR_ERRTEST_SEND_RANK(comm_ptr, target_rank, mpi_errno);
-            MPIR_ERRTEST_OP(op, mpi_errno);
+            MPIR_ERRTEST_OP_GACC(op, mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -159,8 +179,6 @@ int MPIX_Rget_accumulate(const void *origin_addr, int origin_count,
 
     /* ... body of routine ...  */
     
-    if (target_rank == MPI_PROC_NULL) goto fn_exit;
-
     mpi_errno = MPIU_RMA_CALL(win_ptr,Rget_accumulate(origin_addr, origin_count, 
                                          origin_datatype,
                                          result_addr, result_count,
@@ -175,7 +193,7 @@ int MPIX_Rget_accumulate(const void *origin_addr, int origin_count,
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPIX_RGET_ACCUMULATE);
+    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_RGET_ACCUMULATE);
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
@@ -184,8 +202,8 @@ int MPIX_Rget_accumulate(const void *origin_addr, int origin_count,
 #   ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno = MPIR_Err_create_code(
-            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpix_rget_accumulate",
-            "**mpix_rget_accumulate %p %d %D %p %d %D %d %d %d %D %O %W %p", origin_addr, origin_count, origin_datatype,
+            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_rget_accumulate",
+            "**mpi_rget_accumulate %p %d %D %p %d %D %d %d %d %D %O %W %p", origin_addr, origin_count, origin_datatype,
             result_addr, result_count, result_datatype,
             target_rank, target_disp, target_count, target_datatype, op, win, request);
     }

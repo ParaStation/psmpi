@@ -1,15 +1,15 @@
-.TH MPI_Type_set_name 3 "9/20/2012" " " "MPI"
+.TH MPI_Type_set_name 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Type_set_name \-  set datatype name 
 .SH SYNOPSIS
 .nf
-int MPI_Type_set_name(MPI_Datatype type, MPICH2_CONST char *type_name)
+int MPI_Type_set_name(MPI_Datatype datatype, const char *type_name)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
-.B type 
-- datatype whose identifier is to be set (handle) 
+.B datatype 
+- datatype whose identifier is to be set (handle)
 .PD 1
 .PD 0
 .TP

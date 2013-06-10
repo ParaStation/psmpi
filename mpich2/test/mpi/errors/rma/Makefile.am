@@ -15,5 +15,14 @@ EXTRA_DIST = testlist
 noinst_PROGRAMS =       \
     winerr              \
     winerr2             \
-    cas_type_check
+    cas_type_check      \
+    win_sync_unlock     \
+    win_sync_free_pt    \
+    win_sync_free_at    \
+    win_sync_complete   \
+    win_sync_lock_at    \
+    win_sync_lock_pt    \
+    win_sync_lock_fence \
+    win_sync_nested     \
+    win_sync_op
 

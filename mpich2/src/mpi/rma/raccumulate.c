@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,50 +6,57 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
-/* -- Begin Profiling Symbol Block for routine MPIX_Raccumulate */
+/* -- Begin Profiling Symbol Block for routine MPI_Raccumulate */
 #if defined(HAVE_PRAGMA_WEAK)
-#pragma weak MPIX_Raccumulate = PMPIX_Raccumulate
+#pragma weak MPI_Raccumulate = PMPI_Raccumulate
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
-#pragma _HP_SECONDARY_DEF PMPIX_Raccumulate  MPIX_Raccumulate
+#pragma _HP_SECONDARY_DEF PMPI_Raccumulate  MPI_Raccumulate
 #elif defined(HAVE_PRAGMA_CRI_DUP)
-#pragma _CRI duplicate MPIX_Raccumulate as PMPIX_Raccumulate
+#pragma _CRI duplicate MPI_Raccumulate as PMPI_Raccumulate
 #endif
 /* -- End Profiling Symbol Block */
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
 #ifndef MPICH_MPI_FROM_PMPI
-#undef MPIX_Raccumulate
-#define MPIX_Raccumulate PMPIX_Raccumulate
+#undef MPI_Raccumulate
+#define MPI_Raccumulate PMPI_Raccumulate
 
 #endif
 
 #undef FUNCNAME
-#define FUNCNAME MPIX_Raccumulate
+#define FUNCNAME MPI_Raccumulate
 
 /*@
-   MPIX_Raccumulate - Accumulate data into the target process using remote 
-   memory access 
+MPI_Raccumulate - Accumulate data into the target process using remote memory
+access and return a request handle for the operation.
 
-   Input Parameters:
-+ origin_addr - initial address of buffer (choice) 
-. origin_count - number of entries in buffer (nonnegative integer) 
-. origin_datatype - datatype of each buffer entry (handle) 
-. target_rank - rank of target (nonnegative integer) 
-. target_disp - displacement from start of window to beginning of target 
-  buffer (nonnegative integer)  
-. target_count - number of entries in target buffer (nonnegative integer) 
-. target_datatype - datatype of each entry in target buffer (handle) 
-. op - predefined reduce operation (handle) 
-- win - window object (handle) 
 
-   Output Parameter:
+'MPI_Raccumulate' is similar to 'MPI_Accumulate', except that it allocates a
+communication request object and associates it with the request handle (the
+argument request) that can be used to wait or test for completion.  The
+completion of an 'MPI_Raccumulate' operation indicates that the origin buffer is
+free to be updated. It does not indicate that the operation has completed at
+the target window.
+
+Input Parameters:
++ origin_addr - initial address of buffer (choice)
+. origin_count - number of entries in buffer (nonnegative integer)
+. origin_datatype - datatype of each buffer entry (handle)
+. target_rank - rank of target (nonnegative integer)
+. target_disp - displacement from start of window to beginning of target
+  buffer (nonnegative integer)
+. target_count - number of entries in target buffer (nonnegative integer)
+. target_datatype - datatype of each entry in target buffer (handle)
+. op - predefined reduce operation (handle)
+- win - window object (handle)
+
+Output Parameters:
 . request - RMA request (handle)
 
-   Notes:
-The basic components of both the origin and target datatype must be the same 
+Notes:
+The basic components of both the origin and target datatype must be the same
 predefined datatype (e.g., all 'MPI_INT' or all 'MPI_DOUBLE_PRECISION').
 
 .N Fortran
@@ -61,23 +68,25 @@ predefined datatype (e.g., all 'MPI_INT' or all 'MPI_DOUBLE_PRECISION').
 .N MPI_ERR_RANK
 .N MPI_ERR_TYPE
 .N MPI_ERR_WIN
+
+.seealso: MPI_Accumulate
 @*/
-int MPIX_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype
+int MPI_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype
                    origin_datatype, int target_rank, MPI_Aint
                    target_disp, int target_count, MPI_Datatype
                    target_datatype, MPI_Op op, MPI_Win win,
                    MPI_Request *request) 
 {
-    static const char FCNAME[] = "MPIX_Raccumulate";
+    static const char FCNAME[] = "MPI_Raccumulate";
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
     MPID_Request *request_ptr = NULL;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPIX_RACCUMULATE);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_RACCUMULATE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
-    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPIX_RACCUMULATE);
+    MPID_MPI_RMA_FUNC_ENTER(MPID_STATE_MPI_RACCUMULATE);
 
     /* Validate parameters, especially handles needing to be converted */
 #   ifdef HAVE_ERROR_CHECKING
@@ -108,7 +117,7 @@ int MPIX_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype
             MPIR_ERRTEST_DATATYPE(origin_datatype, "origin_datatype", mpi_errno);
             MPIR_ERRTEST_COUNT(target_count, mpi_errno);
             MPIR_ERRTEST_DATATYPE(target_datatype, "target_datatype", mpi_errno);
-            if (win_ptr->create_flavor != MPIX_WIN_FLAVOR_DYNAMIC)
+            if (win_ptr->create_flavor != MPI_WIN_FLAVOR_DYNAMIC)
                 MPIR_ERRTEST_DISP(target_disp, mpi_errno);
 
             if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN)
@@ -135,7 +144,7 @@ int MPIX_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype
 
             comm_ptr = win_ptr->comm_ptr;
             MPIR_ERRTEST_SEND_RANK(comm_ptr, target_rank, mpi_errno);
-            MPIR_ERRTEST_OP(op, mpi_errno);
+            MPIR_ERRTEST_OP_ACC(op, mpi_errno);
             MPIR_ERRTEST_ARGNULL(request, "request", mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
@@ -144,8 +153,6 @@ int MPIX_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype
 
     /* ... body of routine ...  */
     
-    if (target_rank == MPI_PROC_NULL) goto fn_exit;
-
     mpi_errno = MPIU_RMA_CALL(win_ptr,Raccumulate(origin_addr, origin_count, 
                                          origin_datatype,
                                          target_rank, target_disp, target_count,
@@ -157,7 +164,7 @@ int MPIX_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype
     /* ... end of body of routine ... */
 
   fn_exit:
-    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPIX_RACCUMULATE);
+    MPID_MPI_RMA_FUNC_EXIT(MPID_STATE_MPI_RACCUMULATE);
     MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
@@ -166,8 +173,8 @@ int MPIX_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype
 #   ifdef HAVE_ERROR_CHECKING
     {
         mpi_errno = MPIR_Err_create_code(
-            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpix_raccumulate",
-            "**mpix_raccumulate %p %d %D %d %d %d %D %O %W %p", origin_addr, origin_count, origin_datatype,
+            mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_raccumulate",
+            "**mpi_raccumulate %p %d %D %d %d %d %D %O %W %p", origin_addr, origin_count, origin_datatype,
             target_rank, target_disp, target_count, target_datatype, op, win, request);
     }
 #   endif

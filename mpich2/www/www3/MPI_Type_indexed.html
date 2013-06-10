@@ -10,24 +10,24 @@ Creates an indexed datatype
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Type_indexed(int count,
-                    MPICH2_CONST int blocklens[],
-                    MPICH2_CONST int indices[],
-                    MPI_Datatype old_type,
+                    const int *array_of_blocklengths,
+                    const int *array_of_displacements,
+                    MPI_Datatype oldtype,
                     MPI_Datatype *newtype)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>count </B><DD>number of blocks -- also number of entries in indices and blocklens
+<DT><B>count </B><DD>number of blocks -- also number of entries in array_of_displacements and array_of_blocklengths
 
-<DT><B>blocklens </B><DD>number of elements in each block (array of nonnegative integers) 
+<DT><B>array_of_blocklengths </B><DD>number of elements in each block (array of nonnegative integers)
 
-<DT><B>indices </B><DD>displacement of each block in multiples of old_type (array of 
+<DT><B>array_of_displacements </B><DD>displacement of each block in multiples of oldtype (array of
 integers)
 
-<DT><B>old_type </B><DD>old datatype (handle) 
+<DT><B>oldtype </B><DD>old datatype (handle)
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>newtype </B> <DD> new datatype (handle) 
 </DL>
 <P>
@@ -49,24 +49,24 @@ in C.  In Fortran, MPI routines are subroutines, and are invoked with the
 All MPI objects (e.g., <TT>MPI_Datatype</TT>, <TT>MPI_Comm</TT>) are of type <TT>INTEGER
 </TT>in Fortran.
 <P>
-The indices are displacements, and are based on a zero origin.  A common error
+The array_of_displacements are displacements, and are based on a zero origin.  A common error
 is to do something like to following
 <PRE>
     integer a(100)
-    integer blens(10), indices(10)
+    integer array_of_blocklengths(10), array_of_displacements(10)
     do i=1,10
-         blens(i)   = 1
-10       indices(i) = 1 + (i-1)*10
-    call MPI_TYPE_INDEXED(10,blens,indices,MPI_INTEGER,newtype,ierr)
+         array_of_blocklengths(i)   = 1
+10       array_of_displacements(i) = 1 + (i-1)*10
+    call MPI_TYPE_INDEXED(10,array_of_blocklengths,array_of_displacements,MPI_INTEGER,newtype,ierr)
     call MPI_TYPE_COMMIT(newtype,ierr)
     call MPI_SEND(a,1,newtype,...)
 </PRE>
 
-expecting this to send <TT>a(1),a(11),...</TT> because the indices have values
-<TT>1,11,...</TT>.   Because these are <EM>displacements</EM> from the beginning of <TT>a</TT>,
-it actually sends <TT>a(1+1),a(1+11),...</TT>.
+expecting this to send "a(1),a(11),..." because the array_of_displacements have values
+"1,11,...".   Because these are <EM>displacements</EM> from the beginning of "a",
+it actually sends "a(1+1),a(1+11),...".
 <P>
-If you wish to consider the displacements as indices into a Fortran array,
+If you wish to consider the displacements as array_of_displacements into a Fortran array,
 consider declaring the Fortran array with a zero origin
 <PRE>
     integer a(0:99)

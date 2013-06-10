@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*  
  *  (C) 2004 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -220,7 +220,7 @@ int main( int argc, char *argv[], char *envp[] )
 void mpiexec_usage( const char *msg )
 {
     if (msg) {
-	MPIU_Error_printf( msg );
+	MPIU_Error_printf( "%s", msg );
 	if (msg[strlen(msg)-1] != '\n') {
 	    MPIU_Error_printf( "\n" );
 	}

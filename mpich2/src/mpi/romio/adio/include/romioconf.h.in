@@ -62,7 +62,7 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
-/* Define if MPICH2 memory tracing macros defined */
+/* Define if MPICH memory tracing macros defined */
 #undef HAVE_MPIU_FUNCS
 
 /* Define if MPI combiners available */
@@ -198,7 +198,7 @@
    */
 #undef LT_OBJDIR
 
-/* Define if compiling within MPICH */
+/* Define if using MPICH */
 #undef MPICH
 
 /* Define if using HP MPI */
@@ -315,8 +315,8 @@
 /* Define for ROMIO with HFS */
 #undef ROMIO_HFS
 
-/* Define if compiling within MPICH2 */
-#undef ROMIO_INSIDE_MPICH2
+/* Define if compiling within MPICH */
+#undef ROMIO_INSIDE_MPICH
 
 /* Define for ROMIO with LUSTRE */
 #undef ROMIO_LUSTRE
@@ -411,7 +411,7 @@
 #undef u_short
 
 
-/* quash PACKAGE and PACKAGE_* vars, see MPICH2 top-level configure.ac for
+/* quash PACKAGE and PACKAGE_* vars, see MPICH top-level configure.ac for
  * more info */
 #include "nopackage.h"
 

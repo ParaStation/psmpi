@@ -1,11 +1,11 @@
-.TH MPI_Dist_graph_create 3 "7/3/2012" " " "MPI"
+.TH MPI_Dist_graph_create 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Dist_graph_create \-  MPI_DIST_GRAPH_CREATE returns a handle to a new communicator to which the distributed graph topology information is attached. 
 .SH SYNOPSIS
 .nf
-int MPI_Dist_graph_create(MPI_Comm comm_old, int n, MPICH2_CONST int sources[],
-                          MPICH2_CONST int degrees[], MPICH2_CONST int destinations[],
-                          MPICH2_CONST int weights[],
+int MPI_Dist_graph_create(MPI_Comm comm_old, int n, const int sources[],
+                          const int degrees[], const int destinations[],
+                          const int weights[],
                           MPI_Info info, int reorder, MPI_Comm *comm_dist_graph)
 .fi
 .SH INPUT PARAMETERS
@@ -55,7 +55,7 @@ integers or MPI_UNWEIGHTED)
 - the process may be reordered (true) or not (false) (logical)
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B comm_dist_graph 

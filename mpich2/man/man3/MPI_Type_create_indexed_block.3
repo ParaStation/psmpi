@@ -1,11 +1,11 @@
-.TH MPI_Type_create_indexed_block 3 "9/20/2012" " " "MPI"
+.TH MPI_Type_create_indexed_block 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Type_create_indexed_block \-  Create an indexed datatype with constant-sized blocks 
 .SH SYNOPSIS
 .nf
 int MPI_Type_create_indexed_block(int count,
                                int blocklength,
-                               MPICH2_CONST int array_of_displacements[],
+                               const int array_of_displacements[],
                                MPI_Datatype oldtype,
                                MPI_Datatype *newtype)
 .fi
@@ -31,7 +31,7 @@ int MPI_Type_create_indexed_block(int count,
 - old datatype (handle) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B newtype 
@@ -51,20 +51,11 @@ call MPI_TYPE_COMMIT(newtype,ierr)
 call MPI_SEND(a,1,newtype,...)
 .fi
 
-expecting this to send 
-.I a(1),a(11),...
-because the indices have values
-.I 1,11,...
-\&.
-Because these are 
+expecting this to send "a(1),a(11),..." because the indices have values
+"1,11,...".   Because these are 
 .B displacements
-from the beginning of 
-.I a
-,
-it actually sends 
-.I a(1+1),a(1+11),...
-\&.
-
+from the beginning of "a",
+it actually sends "a(1+1),a(1+11),...".
 
 If you wish to consider the displacements as indices into a Fortran array,
 consider declaring the Fortran array with a zero origin

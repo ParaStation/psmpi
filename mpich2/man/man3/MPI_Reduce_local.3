@@ -1,9 +1,9 @@
-.TH MPI_Reduce_local 3 "9/20/2012" " " "MPI"
+.TH MPI_Reduce_local 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Reduce_local \-  Applies a reduction operator to local arguments. 
 .SH SYNOPSIS
 .nf
-int MPI_Reduce_local(MPICH2_CONST void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype, MPI_Op op)
+int MPI_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype, MPI_Op op)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -27,7 +27,7 @@ int MPI_Reduce_local(MPICH2_CONST void *inbuf, void *inoutbuf, int count, MPI_Da
 - reduction operation (handle)
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B inoutbuf 

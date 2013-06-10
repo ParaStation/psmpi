@@ -9,8 +9,8 @@
 Sends data from one process to all other processes in a  communicator 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Scatter(MPICH2_CONST void *sendbuf, int sendcnt, MPI_Datatype sendtype,
-               void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, 
+int MPI_Scatter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+               void *recvbuf, int recvcount, MPI_Datatype recvtype, int root,
                MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -33,7 +33,7 @@ only at <TT>root</TT>)
 <DT><B>comm </B><DD>communicator (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>recvbuf </B> <DD> address of receive buffer (choice) 
 </DL>
 <P>

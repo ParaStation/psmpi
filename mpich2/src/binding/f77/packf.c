@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_pack( void*, MPI_Fint *, MPI_Fint *, vo
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_pack_ ( void*v1, MPI_Fint *v2, MPI_Fint *v3, void*v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *ierr ){
-    *ierr = MPI_Pack( v1, *v2, (MPI_Datatype)(*v3), v4, *v5, v6, (MPI_Comm)(*v7) );
+    *ierr = MPI_Pack( v1, (int)*v2, (MPI_Datatype)(*v3), v4, (int)*v5, v6, (MPI_Comm)(*v7) );
 }

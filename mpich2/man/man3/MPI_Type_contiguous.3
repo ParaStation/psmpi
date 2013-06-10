@@ -1,11 +1,11 @@
-.TH MPI_Type_contiguous 3 "9/20/2012" " " "MPI"
+.TH MPI_Type_contiguous 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPI_Type_contiguous \-  Creates a contiguous datatype 
 .SH SYNOPSIS
 .nf
 int MPI_Type_contiguous(int count,
-                      MPI_Datatype old_type,
-                      MPI_Datatype *new_type_p)
+                      MPI_Datatype oldtype,
+                      MPI_Datatype *newtype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -19,7 +19,7 @@ int MPI_Type_contiguous(int count,
 - old datatype (handle) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B newtype 

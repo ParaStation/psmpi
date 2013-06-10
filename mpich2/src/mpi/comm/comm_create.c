@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -109,7 +109,7 @@ int MPIR_Comm_create_calculate_mapping(MPID_Group  *group_ptr,
             /* This mapping is relative to comm world */
             MPIU_DBG_MSG_FMT(COMM,VERBOSE,
                              (MPIU_DBG_FDEST,
-                              "comm-create - mapping into world[%d] = %d\n",
+                              "comm-create - mapping into world[%d] = %d",
                               i, g_lpid ));
             if (g_lpid < wsize) {
                 mapping[i] = g_lpid;
@@ -178,7 +178,7 @@ fn_fail:
  *
  * mapping[i] is the index in the old vcr of index i in the new vcr */
 #undef FUNCNAME
-#define FUNCNAME MPIR_Comm_create_and_map_vcrt
+#define FUNCNAME MPIR_Comm_create_create_and_map_vcrt
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIR_Comm_create_create_and_map_vcrt(int         n,
@@ -504,7 +504,7 @@ Input Parameters:
 + comm - communicator (handle) 
 - group - group, which is a subset of the group of 'comm'  (handle) 
 
-Output Parameter:
+Output Parameters:
 . newcomm - new communicator (handle)
 
 .N ThreadSafe

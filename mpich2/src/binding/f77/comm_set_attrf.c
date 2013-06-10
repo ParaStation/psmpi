@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_set_attr( MPI_Fint *, MPI_Fint *, 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_comm_set_attr_ ( MPI_Fint *v1, MPI_Fint *v2, void*v3, MPI_Fint *ierr ){
-   *ierr = MPIR_CommSetAttr( (MPI_Comm)(*v1), *v2, (void *)(*(MPI_Aint *)v3), MPIR_ATTR_AINT );
+   *ierr = MPIR_CommSetAttr( (MPI_Comm)(*v1), (int)*v2, (void *)(*(MPI_Aint *)v3), MPIR_ATTR_AINT );
 }

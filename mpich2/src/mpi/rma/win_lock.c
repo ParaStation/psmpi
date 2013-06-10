@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Win_lock */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -32,7 +31,7 @@
 /*@
    MPI_Win_lock - Begin an RMA access epoch at the target process.
 
-   Input Parameters:
+Input Parameters:
 + lock_type - Indicates whether other processes may access the target 
    window at the same time (if 'MPI_LOCK_SHARED') or not ('MPI_LOCK_EXCLUSIVE')
 . rank - rank of locked window (nonnegative integer) 
@@ -122,15 +121,10 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
                 if (mpi_errno) goto fn_fail;
 	    }
 
-            /* Test if window is unlocked */
-            if (win_ptr->lockRank != MPID_WIN_STATE_UNLOCKED) {
-		MPIU_ERR_SET1(mpi_errno,MPI_ERR_OTHER, 
-			     "**lockwhilelocked", 
-			     "**lockwhilelocked %d", win_ptr->lockRank );
-                if (mpi_errno) goto fn_fail;
-	    }
 	    comm_ptr = win_ptr->comm_ptr;
             MPIR_ERRTEST_SEND_RANK(comm_ptr, rank, mpi_errno);
+
+            /* TODO: Test if window is unlocked */
 
             /* TODO: Validate that window is not in active mode */
         }
@@ -143,8 +137,6 @@ int MPI_Win_lock(int lock_type, int rank, int assert, MPI_Win win)
     mpi_errno = MPIU_RMA_CALL(win_ptr,
 			      Win_lock(lock_type, rank, assert, win_ptr));
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-    /* If the lock succeeded, remember which one with locked */
-    win_ptr->lockRank = rank;
 
     /* ... end of body of routine ... */
 

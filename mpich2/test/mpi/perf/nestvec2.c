@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2012 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -18,9 +18,12 @@
 #include <string.h>
 
 #include "mpitestconf.h"
+#ifdef HAVE_STDINT_H
+#include <stdint.h>
+#endif
 
-#ifdef MPICH2
-/* MPICH2 (as of 6/2012) packs the native bytes */
+#ifdef MPICH
+/* MPICH (as of 6/2012) packs the native bytes */
 #define PACK_IS_NATIVE
 #endif
 
@@ -71,9 +74,9 @@ int main( int argc, char **argv )
     MPI_Type_commit( &stype );
     MPI_Type_commit( &vtype );
 
-#if defined(MPICH2) && defined(PRINT_DATATYPE_INTERNALS)
+#if defined(MPICH) && defined(PRINT_DATATYPE_INTERNALS)
     /* To use MPIDU_Datatype_debug to print the datatype internals,
-       you must configure MPICH2 with --enable-g=log */
+       you must configure MPICH with --enable-g=log */
     if (verbose) {
 	printf( "Original struct datatype:\n" );
 	MPIDU_Datatype_debug( stype, 10 );

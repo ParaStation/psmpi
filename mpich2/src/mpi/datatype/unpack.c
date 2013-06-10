@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -112,10 +112,10 @@ Input Parameters:
 . datatype - datatype of each output data item (handle)
 - comm - communicator for packed message (handle)
 
-Output Parameter:
+Output Parameters:
 . outbuf - output buffer start (choice)
 
-Inout/Output Parameter:
+Inout/Output Parameters:
 . position - current position in bytes (integer)
 
 
@@ -132,7 +132,7 @@ Inout/Output Parameter:
 
 .seealso: MPI_Pack, MPI_Pack_size
 @*/
-int MPI_Unpack(MPICH2_CONST void *inbuf, int insize, int *position,
+int MPI_Unpack(const void *inbuf, int insize, int *position,
 	       void *outbuf, int outcount, MPI_Datatype datatype,
 	       MPI_Comm comm)
 {

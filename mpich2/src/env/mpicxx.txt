@@ -11,7 +11,7 @@
 
     Command line arguments:
 +  -show      - Show the commands that would be used without
-             runnning them
+                running them
 .  -help      - Give short help
 .  -cxx=name   - Use compiler 'name' instead of the default choice.  Use
                 this only if the compiler is compatible with the MPICH
@@ -27,8 +27,6 @@
                 mpicxx.
 .  -profile=name - Use the MPI profiling given by name.  See below for
                 details
-.  -mpe=name  - Use an MPE profiling library.  The behavior is similar
-                to using '-profile=mpe_name.conf'.
 .  -echo      - Show exactly what this program is doing.
                 This option should normally not be used.
 -  others     - are passed to the compiler or linker.  For example, '-c'
@@ -55,8 +53,8 @@
     compilers are compatible and may be used interchangably.  There are 
     exceptions; if you use the 'MPICH_CXX' environment variable or the 
     '-cxx=name' command-line argument to override the choice of compiler 
-    and encounter problems, try reconfiguring MPICH2 with the new compiler, 
-    and installing MPICH2 in a separate location.  See the installation manual 
+    and encounter problems, try reconfiguring MPICH with the new compiler, 
+    and installing MPICH in a separate location.  See the installation manual 
     for more details.
 
     Examples:

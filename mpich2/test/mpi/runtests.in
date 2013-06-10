@@ -47,7 +47,8 @@ $testIsStrict = "@MPI_IS_STRICT@";
 $MPIhasMPIX   = "@MPI_HAS_MPIX@";
 $np_arg  = "-n";         # Name of argument to specify the number of processes
 $err_count = 0;          # Number of programs that failed.
-$total_count = 0;        # Number of programs tested
+$total_run = 0;          # Number of programs tested
+$total_seen = 0;         # Number of programs considered for testing
 $np_default = 2;         # Default number of processes to use
 $np_max     = -1;        # Maximum number of processes to use (overrides any
                          # value in the test list files.  -1 is Infinity
@@ -69,6 +70,11 @@ $batchRun = 0;           # Set to true to batch the execution of the tests
                          # rather than build/run/check for each test)
 $testCount = 0;          # Used with batchRun to count tests.
 $batrundir = ".";        # Set to the directory into which to run the examples
+
+# TAP (Test Anything Protocol) output
+my $tapoutput = 0;
+my $tapfile = '';
+my $tapfullfile = '';
 
 $debug = 1;
 
@@ -178,6 +184,26 @@ foreach $_ (@ARGV) {
     elsif (/--?noxmlclose/) {
 	$closeXMLOutput = 0;
     }
+    elsif (/--?tapfile=(.*)/) {
+        $tapfile = $1;
+        if ($tapfile !~ m|^/|) {
+            $thisdir = `pwd`;
+            chomp $thisdir;
+            $tapfullfile = $thisdir . "/" . $tapfile ;
+        }
+        else {
+            $tapfullfile = $tapfile;
+        }
+        $tapoutput = 1;
+        open( TAPOUT, ">$tapfile" ) || die "Cannot open $tapfile\n";
+        my $date = `date "+%Y-%m-%d-%H-%M"`;
+        $date =~ s/\r?\n//;
+        print TAPOUT "TAP version 13\n";
+        print TAPOUT "# MPICH test suite results (TAP format)\n";
+        print TAPOUT "# date ${date}\n";
+        # we do not know at this point how many tests will be run, so do
+        # not print a test plan line like "1..450" until the very end
+    }
     else {
 	print STDERR "Unrecognized argument $_\n";
 	print STDERR "runtests [-tests=testfile] [-np=nprocesses] \
@@ -206,7 +232,13 @@ else {
 #
 # Process any files
 if ($listfiles eq "") {
-    &ProcessImplicitList;
+    if ($batchRun) {
+	print STDERR "An implicit list of tests is not permitted in batch mode\n";
+	exit(1);
+    } 
+    else {
+	&ProcessImplicitList;
+    }
 }
 elsif (-d $listfiles) { 
     print STDERR "Testing by directories not yet supported\n";
@@ -220,6 +252,11 @@ if ($xmloutput && $closeXMLOutput) {
     close XMLOUT; 
 }
 
+if ($tapoutput) {
+    print TAPOUT "1..$total_seen\n";
+    close TAPOUT;
+}
+
 # Output a summary:
 if ($batchRun) {
     print "Programs created along with a runtest.batch file in $batrundir\n";
@@ -227,13 +264,16 @@ if ($batchRun) {
 }
 else {
     if ($err_count) {
-	print "$err_count tests failed out of $total_count\n";
+	print "$err_count tests failed out of $total_run\n";
 	if ($xmloutput) {
 	    print "Details in $xmlfullfile\n";
 	}
     }
     else {
-	print " All $total_count tests passed!\n";
+	print " All $total_run tests passed!\n";
+    }
+    if ($tapoutput) {
+        print "TAP formatted results in $tapfullfile\n";
     }
 }
 #
@@ -323,6 +363,7 @@ sub RunList {
 	my $requiresMPIX   = "";
 	my $progEnv    = "";
 	my $mpiVersion = "";
+        my $xfail = "";
 	if ($#args >= 1) { $np = $args[1]; }
 	# Process the key=value arguments
 	for (my $i=2; $i <= $#args; $i++) {
@@ -356,11 +397,33 @@ sub RunList {
 		elsif ($key eq "mpix") {
 		    $requiresMPIX = $value
 		}
+                elsif ($key eq "xfail") {
+                    if ($value eq "") {
+                        print STDERR "\"xfail=\" requires an argument\n";
+                    }
+                    $xfail = $value;
+                }
 		else {
 		    print STDERR "Unrecognized key $key in $listfileSource\n";
 		}
 	    }
 	}
+
+	# skip empty lines
+	if ($programname eq "") { next; }
+
+	if ($np eq "") { $np = $np_default; }
+	if ($np_max > 0 && $np > $np_max) { $np = $np_max; }
+
+        # allows us to accurately output TAP test numbers without disturbing the
+        # original totals that have traditionally been reported
+        #
+        # These "unless" blocks are ugly, but permit us to honor skipping
+        # criteria for directories as well without counting directories as tests
+        # in our XML/TAP output.
+        unless (-d $programname) {
+            $total_seen++;
+        }
 
 	# If a minimum MPI version is specified, check against the
 	# available MPI.  If the version is unknown, we ignore this
@@ -368,40 +431,58 @@ sub RunList {
 	if ($mpiVersion ne "" && $MPIMajorVersion ne "unknown" &&
 	    $MPIMinorVersion ne "unknown") {
 	    my ($majorReq,$minorReq) = split(/\./,$mpiVersion);
-	    if ($majorReq > $MPIMajorVersion) { next; }
-	    if ($majorReq == $MPIMajorVersion &&
-		$minorReq > $MPIMinorVersion) { next; }
+            if ($majorReq > $MPIMajorVersion or
+                ($majorReq == $MPIMajorVersion && $minorReq > $MPIMinorVersion))
+            {
+                unless (-d $programname) {
+                    SkippedTest($programname, $np, $workdir, "requires MPI version $mpiVersion");
+                }
+                next;
+            }
 	}
 	# Check whether strict is required by MPI but not by the
 	# test (use strict=false for tests that use non-standard extensions)
-	if ($requiresStrict eq "false" && $testIsStrict eq "true") { next; }
+        if (lc($requiresStrict) eq "false" && lc($testIsStrict) eq "true") {
+            unless (-d $programname) {
+                SkippedTest($programname, $np, $workdir, "non-strict test, strict MPI mode requested");
+            }
+            next;
+        }
 
-	if ($requiresMPIX eq "true" && $MPIHasMPIX eq "false") { next; }
+        if (lc($testIsStrict) eq "true") {
+            # Strict MPI testing was requested, so assume that a non-MPICH MPI
+            # implementation is being tested and the "xfail" implementation
+            # assumptions do not hold.
+            $xfail = '';
+        }
 
-	if ($np eq "") { $np = $np_default; }
-	if ($np_max > 0 && $np > $np_max) { $np = $np_max; }
-	# skip empty lines
-	if ($programname eq "") { next; }
+        if (lc($requiresMPIX) eq "true" && lc($MPIHasMPIX) eq "no") {
+            unless (-d $programname) {
+                SkippedTest($programname, $np, $workdir, "tests MPIX extensions, MPIX testing disabled");
+            }
+            next;
+        }
+
 	if (-d $programname) {
 	    # If a directory, go into the that directory and 
 	    # look for a new list file
 	    &ProcessDir( $programname, $listfile );
 	}
 	else {
-	    $total_count++;
-	    if (&BuildMPIProgram( $programname ) == 0) {
+	    $total_run++;
+	    if (&BuildMPIProgram( $programname, $xfail ) == 0) {
 		if ($batchRun == 1) {
 		    &AddMPIProgram( $programname, $np, $ResultTest, 
 				    $InitForRun, $timeLimit, $progArgs,
-				    $progEnv, $mpiexecArgs );
+				    $progEnv, $mpiexecArgs, $xfail );
 		}
 		else {
 		    &RunMPIProgram( $programname, $np, $ResultTest, 
 				    $InitForRun, $timeLimit, $progArgs, 
-				    $progEnv, $mpiexecArgs );
+				    $progEnv, $mpiexecArgs, $xfail );
 		}
 	    }
-	    else {
+	    elsif ($xfail ne '') {
 		# We expected to run this program, so failure to build
 		# is an error
 		$found_error = 1;
@@ -420,6 +501,8 @@ sub RunList {
 sub ProcessImplicitList {
     # The default is to run every file in the current directory.
     # If there are no built programs, build and run every file
+    # WARNING: This assumes that anything executable should be run as
+    # an MPI test.
     $found_exec = 0;
     $found_src  = 0;
     open (PGMS, "ls -1 |" ) || die "Cannot list directory\n";
@@ -428,6 +511,9 @@ sub ProcessImplicitList {
 	$programname = $_;
 	if (-d $programname) { next; }  # Ignore directories
 	if ($programname eq "runtests") { next; } # Ignore self
+	if ($programname eq "checktests") { next; } # Ignore helper
+	if ($programname eq "configure") { next; } # Ignore configure script
+	if ($programname eq "config.status") { next; } # Ignore configure helper
 	if (-x $programname) { $found_exec++; }
 	if ($programname =~ /\.[cf]$/) { $found_src++; } 
     }
@@ -448,8 +534,8 @@ sub ProcessImplicitList {
 	    if (-d $programname) { next; }  # Ignore directories
 	    if ($programname eq "runtests") { next; } # Ignore self
 	    if (-x $programname) {
-		$total_count++;
-		&RunMPIProgram( $programname, $np_default, "", "", "", "", "", "" );
+		$total_run++;
+		&RunMPIProgram( $programname, $np_default, "", "", "", "", "", "", "" );
 	    }
 	}
 	close PGMS;
@@ -468,9 +554,9 @@ sub ProcessImplicitList {
 	    # Skip messages from ls about no files
 	    if (! -s $programname) { next; }
 	    $programname =~ s/\.c//;
-	    $total_count++;
-	    if (&BuildMPIProgram( $programname ) == 0) {
-		&RunMPIProgram( $programname, $np_default, "", "", "", "", "", "" );
+	    $total_run++;
+	    if (&BuildMPIProgram( $programname, "") == 0) {
+		&RunMPIProgram( $programname, $np_default, "", "", "", "", "", "", "" );
 	    }
 	    else {
 		# We expected to run this program, so failure to build
@@ -491,7 +577,7 @@ sub ProcessImplicitList {
 # If the 3rd arg is not present, the a default that simply checks that the
 # return status is 0 and that the output is " No Errors" is used.
 sub RunMPIProgram {
-    my ($programname,$np,$ResultTest,$InitForTest,$timeLimit,$progArgs,$progEnv,$mpiexecArgs) = @_;
+    my ($programname,$np,$ResultTest,$InitForTest,$timeLimit,$progArgs,$progEnv,$mpiexecArgs,$xfail) = @_;
     my $found_error   = 0;
     my $found_noerror = 0;
     my $inline = "";
@@ -584,18 +670,18 @@ sub RunMPIProgram {
 	}
     }
     if ($found_error) {
-	&RunTestFailed( $inline );
+	&RunTestFailed( $programname, $np, $curdir, $inline, $xfail );
     }
     else { 
-	&RunTestPassed;
+	&RunTestPassed( $programname, $np, $curdir, $xfail );
     }
-    &RunPostMsg;
+    &RunPostMsg( $programname, $np, $curdir );
 }
 
 # This version simply writes the mpiexec command out, with the output going
 # into a file, and recording the output status of the run.
 sub AddMPIProgram {
-    my ($programname,$np,$ResultTest,$InitForTest,$timeLimit,$progArgs,$progEnv,$mpiexecArgs) = @_;
+    my ($programname,$np,$ResultTest,$InitForTest,$timeLimit,$progArgs,$progEnv,$mpiexecArgs, $xfail) = @_;
 
     if (! -x $programname) {
 	print STDERR "Could not find $programname!";
@@ -625,7 +711,7 @@ sub AddMPIProgram {
 	&$InitForTest();
     }
 
-    # For non-MPICH2 versions of mpiexec, a timeout may require a different
+    # For non-MPICH versions of mpiexec, a timeout may require a different
     # environment variable or command line option (e.g., for Cray aprun, 
     # the option -t <sec> must be given, there is no environment variable 
     # to set the timeout.
@@ -663,7 +749,8 @@ sub AddMPIProgram {
 # 
 # Return value is 0 on success, non zero on failure
 sub BuildMPIProgram {
-    my $programname = $_[0];
+    my $programname = shift;
+    my $xfail = shift;
     my $rc = 0;
     if ($verbose) { print STDERR "making $programname\n"; }
     if (! -x $programname) { $remove_this_pgm = 1; }
@@ -681,8 +768,8 @@ sub BuildMPIProgram {
 	# in the summary file (which is otherwise written by the
 	# RunMPIProgram step)
 	&RunPreMsg( $programname, $np, $curdir );
-	&RunTestFailed( "Failed to build $programname; $output" );
-	&RunPostMsg;
+	&RunTestFailed( $programname, $np, $curdir, "Failed to build $programname; $output", $xfail );
+	&RunPostMsg( $programname, $np, $curdir );
     }
     return $rc;
 }
@@ -889,28 +976,95 @@ sub RunPreMsg {
     }
 }
 sub RunPostMsg {
+    my ($programname, $np, $workdir) = @_;
     if ($xmloutput) {
 	print XMLOUT "</MPITEST>$newline";
     }
 }
 sub RunTestPassed {
+    my ($programname, $np, $workdir, $xfail) = @_;
     if ($xmloutput) {
 	print XMLOUT "<STATUS>pass</STATUS>$newline";
     }
-}
-sub RunTestFailed {
-    my $output = $_[0];
-    $output =~ s/</\*AMP\*lt;/g;
-    $output =~ s/>/\*AMP\*gt;/g;
-    $output =~ s/&/\*AMP\*amp;/g;
-    $output =~ s/\*AMP\*/&/g;
-    # TODO: Also capture any non-printing characters (XML doesn't like them
-    # either).  
-    if ($xmloutput) {
-	print XMLOUT "<STATUS>fail</STATUS>$newline";
-	print XMLOUT "<TESTDIFF>$newline$output</TESTDIFF>$newline";
+    if ($tapoutput) {
+        my $xfailstr = '';
+        if ($xfail ne '') {
+            $xfailstr = " # TODO $xfail";
+        }
+        print TAPOUT "ok ${total_run} - $workdir/$programname ${np}${xfailstr}\n";
     }
 }
+sub RunTestFailed {
+    my $programname = shift;
+    my $np = shift;
+    my $workdir = shift;
+    my $output = shift;
+    my $xfail = shift;
+
+    if ($xmloutput) {
+        my $xout = $output;
+        # basic escapes that wreck the XML output
+        $xout =~ s/</\*AMP\*lt;/g;
+        $xout =~ s/>/\*AMP\*gt;/g;
+        $xout =~ s/&/\*AMP\*amp;/g;
+        $xout =~ s/\*AMP\*/&/g;
+        # TODO: Also capture any non-printing characters (XML doesn't like them
+        # either).
+	print XMLOUT "<STATUS>fail</STATUS>$newline";
+	print XMLOUT "<TESTDIFF>$newline$xout</TESTDIFF>$newline";
+    }
+
+    if ($tapoutput) {
+        my $xfailstr = '';
+        if ($xfail ne '') {
+            $xfailstr = " # TODO $xfail";
+        }
+        print TAPOUT "not ok ${total_run} - $workdir/$programname ${np}${xfailstr}\n";
+        print TAPOUT "  ---\n";
+        print TAPOUT "  Directory: $workdir\n";
+        print TAPOUT "  File: $programname\n";
+        print TAPOUT "  Num-procs: $np\n";
+        print TAPOUT "  Date: \"" . localtime . "\"\n";
+
+        # The following would be nice, but it leads to unfortunate formatting in
+        # the Jenkins web output for now.  Using comment lines instead, since
+        # they are easier to read/find in a browser.
+##        print TAPOUT "  Output: |\n";
+##        # using block literal format, requires that all chars are printable
+##        # UTF-8 (or UTF-16, but we won't encounter that)
+##        foreach my $line (split m/\r?\n/, $output) {
+##            chomp $line;
+##            # 4 spaces, 2 for TAP indent, 2 more for YAML block indent
+##            print TAPOUT "    $line\n";
+##        }
+
+        print TAPOUT "  ...\n";
+
+        # Alternative to the "Output:" YAML block literal above.  Do not put any
+        # spaces before the '#', this causes some TAP parsers (including Perl's
+        # TAP::Parser) to treat the line as "unknown" instead of a proper
+        # comment.
+        print TAPOUT "## Test output (expected 'No Errors'):\n";
+        foreach my $line (split m/\r?\n/, $output) {
+            chomp $line;
+            print TAPOUT "## $line\n";
+        }
+    }
+}
+
+sub SkippedTest {
+    my $programname = shift;
+    my $np = shift;
+    my $workdir = shift;
+    my $reason = shift;
+
+    # simply omit from the XML output
+
+    if ($tapoutput) {
+        print TAPOUT "ok ${total_seen} - $workdir/$programname $np  # SKIP $reason\n";
+    }
+}
+
 # ----------------------------------------------------------------------------
 # Alternate init routines
 sub InitQuickTimeout {

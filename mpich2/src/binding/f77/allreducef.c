@@ -190,5 +190,5 @@ FORT_DLL_SPEC void FORT_CALL mpi_allreduce_ ( void*v1, void*v2, MPI_Fint *v3, MP
     if (MPIR_F_NeedInit){ mpirinitf_(); MPIR_F_NeedInit = 0; }
 #endif
     if (v1 == MPIR_F_MPI_IN_PLACE) v1 = MPI_IN_PLACE;
-    *ierr = MPI_Allreduce( v1, v2, *v3, (MPI_Datatype)(*v4), *v5, (MPI_Comm)(*v6) );
+    *ierr = MPI_Allreduce( v1, v2, (int)*v3, (MPI_Datatype)(*v4), (MPI_Op)*v5, (MPI_Comm)(*v6) );
 }

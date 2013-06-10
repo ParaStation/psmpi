@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_FETCH_AND_OP = PMPIX_FETCH_AND_OP
-#pragma weak mpix_fetch_and_op__ = PMPIX_FETCH_AND_OP
-#pragma weak mpix_fetch_and_op_ = PMPIX_FETCH_AND_OP
-#pragma weak mpix_fetch_and_op = PMPIX_FETCH_AND_OP
+#pragma weak MPI_FETCH_AND_OP = PMPI_FETCH_AND_OP
+#pragma weak mpi_fetch_and_op__ = PMPI_FETCH_AND_OP
+#pragma weak mpi_fetch_and_op_ = PMPI_FETCH_AND_OP
+#pragma weak mpi_fetch_and_op = PMPI_FETCH_AND_OP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_FETCH_AND_OP = pmpix_fetch_and_op__
-#pragma weak mpix_fetch_and_op__ = pmpix_fetch_and_op__
-#pragma weak mpix_fetch_and_op_ = pmpix_fetch_and_op__
-#pragma weak mpix_fetch_and_op = pmpix_fetch_and_op__
+#pragma weak MPI_FETCH_AND_OP = pmpi_fetch_and_op__
+#pragma weak mpi_fetch_and_op__ = pmpi_fetch_and_op__
+#pragma weak mpi_fetch_and_op_ = pmpi_fetch_and_op__
+#pragma weak mpi_fetch_and_op = pmpi_fetch_and_op__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_FETCH_AND_OP = pmpix_fetch_and_op_
-#pragma weak mpix_fetch_and_op__ = pmpix_fetch_and_op_
-#pragma weak mpix_fetch_and_op_ = pmpix_fetch_and_op_
-#pragma weak mpix_fetch_and_op = pmpix_fetch_and_op_
+#pragma weak MPI_FETCH_AND_OP = pmpi_fetch_and_op_
+#pragma weak mpi_fetch_and_op__ = pmpi_fetch_and_op_
+#pragma weak mpi_fetch_and_op_ = pmpi_fetch_and_op_
+#pragma weak mpi_fetch_and_op = pmpi_fetch_and_op_
 #else
-#pragma weak MPIX_FETCH_AND_OP = pmpix_fetch_and_op
-#pragma weak mpix_fetch_and_op__ = pmpix_fetch_and_op
-#pragma weak mpix_fetch_and_op_ = pmpix_fetch_and_op
-#pragma weak mpix_fetch_and_op = pmpix_fetch_and_op
+#pragma weak MPI_FETCH_AND_OP = pmpi_fetch_and_op
+#pragma weak mpi_fetch_and_op__ = pmpi_fetch_and_op
+#pragma weak mpi_fetch_and_op_ = pmpi_fetch_and_op
+#pragma weak mpi_fetch_and_op = pmpi_fetch_and_op
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_fetch_and_op_( void*, void*, MPI_Fint *
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_FETCH_AND_OP = PMPIX_FETCH_AND_OP
+#pragma weak MPI_FETCH_AND_OP = PMPI_FETCH_AND_OP
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_fetch_and_op__ = pmpix_fetch_and_op__
+#pragma weak mpi_fetch_and_op__ = pmpi_fetch_and_op__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_fetch_and_op = pmpix_fetch_and_op
+#pragma weak mpi_fetch_and_op = pmpi_fetch_and_op
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_fetch_and_op_ = pmpix_fetch_and_op_
+#pragma weak mpi_fetch_and_op_ = pmpi_fetch_and_op_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_FETCH_AND_OP  MPIX_FETCH_AND_OP
+#pragma _HP_SECONDARY_DEF PMPI_FETCH_AND_OP  MPI_FETCH_AND_OP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_fetch_and_op__  mpix_fetch_and_op__
+#pragma _HP_SECONDARY_DEF pmpi_fetch_and_op__  mpi_fetch_and_op__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_fetch_and_op  mpix_fetch_and_op
+#pragma _HP_SECONDARY_DEF pmpi_fetch_and_op  mpi_fetch_and_op
 #else
-#pragma _HP_SECONDARY_DEF pmpix_fetch_and_op_  mpix_fetch_and_op_
+#pragma _HP_SECONDARY_DEF pmpi_fetch_and_op_  mpi_fetch_and_op_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_FETCH_AND_OP as PMPIX_FETCH_AND_OP
+#pragma _CRI duplicate MPI_FETCH_AND_OP as PMPI_FETCH_AND_OP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_fetch_and_op__ as pmpix_fetch_and_op__
+#pragma _CRI duplicate mpi_fetch_and_op__ as pmpi_fetch_and_op__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_fetch_and_op as pmpix_fetch_and_op
+#pragma _CRI duplicate mpi_fetch_and_op as pmpi_fetch_and_op
 #else
-#pragma _CRI duplicate mpix_fetch_and_op_ as pmpix_fetch_and_op_
+#pragma _CRI duplicate mpi_fetch_and_op_ as pmpi_fetch_and_op_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_fetch_and_op_( void*, void*, MPI_Fint *
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_fetch_and_op__ = MPIX_FETCH_AND_OP
-#pragma weak mpix_fetch_and_op_ = MPIX_FETCH_AND_OP
-#pragma weak mpix_fetch_and_op = MPIX_FETCH_AND_OP
+#pragma weak mpi_fetch_and_op__ = MPI_FETCH_AND_OP
+#pragma weak mpi_fetch_and_op_ = MPI_FETCH_AND_OP
+#pragma weak mpi_fetch_and_op = MPI_FETCH_AND_OP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_FETCH_AND_OP = mpix_fetch_and_op__
-#pragma weak mpix_fetch_and_op_ = mpix_fetch_and_op__
-#pragma weak mpix_fetch_and_op = mpix_fetch_and_op__
+#pragma weak MPI_FETCH_AND_OP = mpi_fetch_and_op__
+#pragma weak mpi_fetch_and_op_ = mpi_fetch_and_op__
+#pragma weak mpi_fetch_and_op = mpi_fetch_and_op__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_FETCH_AND_OP = mpix_fetch_and_op_
-#pragma weak mpix_fetch_and_op__ = mpix_fetch_and_op_
-#pragma weak mpix_fetch_and_op = mpix_fetch_and_op_
+#pragma weak MPI_FETCH_AND_OP = mpi_fetch_and_op_
+#pragma weak mpi_fetch_and_op__ = mpi_fetch_and_op_
+#pragma weak mpi_fetch_and_op = mpi_fetch_and_op_
 #else
-#pragma weak MPIX_FETCH_AND_OP = mpix_fetch_and_op
-#pragma weak mpix_fetch_and_op__ = mpix_fetch_and_op
-#pragma weak mpix_fetch_and_op_ = mpix_fetch_and_op
+#pragma weak MPI_FETCH_AND_OP = mpi_fetch_and_op
+#pragma weak mpi_fetch_and_op__ = mpi_fetch_and_op
+#pragma weak mpi_fetch_and_op_ = mpi_fetch_and_op
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_fetch_and_op_( void*, void*, MPI_Fint *
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_fetch_and_op__ = PMPIX_FETCH_AND_OP
-#pragma weak pmpix_fetch_and_op_ = PMPIX_FETCH_AND_OP
-#pragma weak pmpix_fetch_and_op = PMPIX_FETCH_AND_OP
+#pragma weak pmpi_fetch_and_op__ = PMPI_FETCH_AND_OP
+#pragma weak pmpi_fetch_and_op_ = PMPI_FETCH_AND_OP
+#pragma weak pmpi_fetch_and_op = PMPI_FETCH_AND_OP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_FETCH_AND_OP = pmpix_fetch_and_op__
-#pragma weak pmpix_fetch_and_op_ = pmpix_fetch_and_op__
-#pragma weak pmpix_fetch_and_op = pmpix_fetch_and_op__
+#pragma weak PMPI_FETCH_AND_OP = pmpi_fetch_and_op__
+#pragma weak pmpi_fetch_and_op_ = pmpi_fetch_and_op__
+#pragma weak pmpi_fetch_and_op = pmpi_fetch_and_op__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_FETCH_AND_OP = pmpix_fetch_and_op_
-#pragma weak pmpix_fetch_and_op__ = pmpix_fetch_and_op_
-#pragma weak pmpix_fetch_and_op = pmpix_fetch_and_op_
+#pragma weak PMPI_FETCH_AND_OP = pmpi_fetch_and_op_
+#pragma weak pmpi_fetch_and_op__ = pmpi_fetch_and_op_
+#pragma weak pmpi_fetch_and_op = pmpi_fetch_and_op_
 #else
-#pragma weak PMPIX_FETCH_AND_OP = pmpix_fetch_and_op
-#pragma weak pmpix_fetch_and_op__ = pmpix_fetch_and_op
-#pragma weak pmpix_fetch_and_op_ = pmpix_fetch_and_op
+#pragma weak PMPI_FETCH_AND_OP = pmpi_fetch_and_op
+#pragma weak pmpi_fetch_and_op__ = pmpi_fetch_and_op
+#pragma weak pmpi_fetch_and_op_ = pmpi_fetch_and_op
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_fetch_and_op_ PMPIX_FETCH_AND_OP
+#define mpi_fetch_and_op_ PMPI_FETCH_AND_OP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_fetch_and_op_ pmpix_fetch_and_op__
+#define mpi_fetch_and_op_ pmpi_fetch_and_op__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_fetch_and_op_ pmpix_fetch_and_op
+#define mpi_fetch_and_op_ pmpi_fetch_and_op
 #else
-#define mpix_fetch_and_op_ pmpix_fetch_and_op_
+#define mpi_fetch_and_op_ pmpi_fetch_and_op_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Fetch_and_op
-#define MPIX_Fetch_and_op PMPIX_Fetch_and_op 
+#undef MPI_Fetch_and_op
+#define MPI_Fetch_and_op PMPI_Fetch_and_op 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_fetch_and_op_ MPIX_FETCH_AND_OP
+#define mpi_fetch_and_op_ MPI_FETCH_AND_OP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_fetch_and_op_ mpix_fetch_and_op__
+#define mpi_fetch_and_op_ mpi_fetch_and_op__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_fetch_and_op_ mpix_fetch_and_op
+#define mpi_fetch_and_op_ mpi_fetch_and_op
 /* Else leave name alone */
 #endif
 
@@ -184,6 +184,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_fetch_and_op( void*, void*, MPI_Fint *
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_fetch_and_op_ ( void*v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *ierr ){
-    *ierr = MPIX_Fetch_and_op( v1, v2, (MPI_Datatype)(*v3), *v4, *v5, *v6, *v7 );
+FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_ ( void*v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *ierr ){
+    *ierr = MPI_Fetch_and_op( v1, v2, (MPI_Datatype)(*v3), (int)*v4, (MPI_Aint)*v5, (MPI_Op)*v6, (MPI_Win)*v7 );
 }

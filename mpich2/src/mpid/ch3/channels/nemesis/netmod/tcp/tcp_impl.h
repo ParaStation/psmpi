@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2006 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -47,7 +47,7 @@ typedef struct
 } MPID_nem_tcp_vc_area;
 
 /* macro for tcp private in VC */
-#define VC_TCP(vc) ((MPID_nem_tcp_vc_area *)VC_CH((vc))->netmod_area.padding)
+#define VC_TCP(vc) ((MPID_nem_tcp_vc_area *)vc->ch.netmod_area.padding)
 
 #define ASSIGN_SC_TO_VC(vc_tcp_, sc_) do {      \
         (vc_tcp_)->sc = (sc_);                  \
@@ -194,7 +194,7 @@ typedef enum MPIDI_nem_tcp_pkt_type {
 #ifdef ENABLE_CHECKPOINTING
 typedef struct MPIDI_nem_tcp_pkt_unpause
 {
-    MPID_nem_pkt_type_t type;
+    MPIDI_CH3_Pkt_type_t type;
     unsigned subtype;
 } MPIDI_nem_tcp_pkt_unpause_t;
 #endif

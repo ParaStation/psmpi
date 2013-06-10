@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -73,7 +73,7 @@ int main( int argc, char *argv[] )
     }
 
     /* this case should _not_ trigger an error, thanks to Kenneth Inghram for
-     * reporting this bug in MPICH2 */
+     * reporting this bug in MPICH */
     err = MPI_Reduce( ((rank == 0) ? MPI_IN_PLACE : buf), buf, 1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD );
     if (err) {
         errs++;

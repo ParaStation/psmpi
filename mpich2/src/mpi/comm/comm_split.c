@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -381,9 +381,9 @@ Input Parameters:
 + comm - communicator (handle) 
 . color - control of subset assignment (nonnegative integer).  Processes 
   with the same color are in the same new communicator 
-- key - control of rank assigment (integer)
+- key - control of rank assignment (integer)
 
-Output Parameter:
+Output Parameters:
 . newcomm - new communicator (handle) 
 
 Notes:

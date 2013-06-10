@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -21,10 +21,6 @@ int MPIDI_CH3_SHM_Win_shared_query(MPID_Win *win_ptr, int target_rank, MPI_Aint 
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPIDI_CH3_WIN_SHARED_QUERY);
 
     comm_size = win_ptr->comm_ptr->local_size;
-
-    if (win_ptr->create_flavor != MPIX_WIN_FLAVOR_SHARED) {
-        MPIU_ERR_SETANDJUMP(mpi_errno, MPIX_ERR_RMA_WRONG_FLAVOR, "**winflavor");
-    }
 
     /* Scan the sizes to locate the first process that allocated a nonzero
      * amount of space */
@@ -78,6 +74,21 @@ int MPIDI_CH3_SHM_Win_free(MPID_Win **win_ptr)
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
         MPIU_SHMW_Hnd_finalize(&(*win_ptr)->shm_segment_handle);
+    }
+
+    /* Free shared process mutex memory region */
+    if ((*win_ptr)->shm_mutex) {
+
+        if ((*win_ptr)->myrank == 0) {
+            MPIDI_CH3I_SHM_MUTEX_DESTROY(*win_ptr);
+        }
+
+        /* detach from shared memory segment */
+        mpi_errno = MPIU_SHMW_Seg_detach((*win_ptr)->shm_mutex_segment_handle, (char **)&(*win_ptr)->shm_mutex,
+                                         sizeof(MPIDI_CH3I_SHM_MUTEX));
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+        MPIU_SHMW_Hnd_finalize(&(*win_ptr)->shm_mutex_segment_handle);
     }
 
     mpi_errno = MPIDI_Win_free(win_ptr);

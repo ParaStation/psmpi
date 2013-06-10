@@ -47,7 +47,8 @@ mpi_f77_sources += src/binding/f77/sendf.c src/binding/f77/recvf.c \
 	src/binding/f77/gathervf.c src/binding/f77/scatterf.c \
 	src/binding/f77/scattervf.c src/binding/f77/allgatherf.c \
 	src/binding/f77/allgathervf.c src/binding/f77/alltoallf.c \
-	src/binding/f77/alltoallvf.c src/binding/f77/reducef.c \
+	src/binding/f77/alltoallvf.c src/binding/f77/alltoallwf.c \
+	src/binding/f77/exscanf.c src/binding/f77/reducef.c \
 	src/binding/f77/op_createf.c src/binding/f77/op_freef.c \
 	src/binding/f77/allreducef.c src/binding/f77/redscatf.c \
 	src/binding/f77/scanf.c src/binding/f77/group_sizef.c \
@@ -59,21 +60,22 @@ mpi_f77_sources += src/binding/f77/sendf.c src/binding/f77/recvf.c \
 	src/binding/f77/grouprexclf.c src/binding/f77/group_freef.c \
 	src/binding/f77/comm_sizef.c src/binding/f77/comm_rankf.c \
 	src/binding/f77/comm_comparef.c src/binding/f77/comm_dupf.c \
-	src/binding/f77/comm_createf.c src/binding/f77/comm_splitf.c \
-	src/binding/f77/comm_freef.c src/binding/f77/commtesticf.c \
-	src/binding/f77/commrsizef.c src/binding/f77/commrgroupf.c \
-	src/binding/f77/iccreatef.c src/binding/f77/icmergef.c \
-	src/binding/f77/keyval_freef.c src/binding/f77/attr_putf.c \
-	src/binding/f77/attr_getf.c src/binding/f77/attr_deletef.c \
-	src/binding/f77/topo_testf.c src/binding/f77/cart_createf.c \
-	src/binding/f77/dims_createf.c src/binding/f77/graph_createf.c \
-	src/binding/f77/graphdims_getf.c src/binding/f77/graph_getf.c \
-	src/binding/f77/cartdim_getf.c src/binding/f77/cart_getf.c \
-	src/binding/f77/cart_rankf.c src/binding/f77/cart_coordsf.c \
-	src/binding/f77/grfnbcountf.c src/binding/f77/grfnbrsf.c \
-	src/binding/f77/cart_shiftf.c src/binding/f77/cart_subf.c \
-	src/binding/f77/cart_mapf.c src/binding/f77/graph_mapf.c \
-	src/binding/f77/getpnamef.c src/binding/f77/get_versionf.c \
+	src/binding/f77/comm_dup_with_infof.c src/binding/f77/comm_createf.c \
+	src/binding/f77/comm_splitf.c src/binding/f77/comm_freef.c \
+	src/binding/f77/commtesticf.c src/binding/f77/commrsizef.c \
+	src/binding/f77/commrgroupf.c src/binding/f77/iccreatef.c \
+	src/binding/f77/icmergef.c src/binding/f77/keyval_freef.c \
+	src/binding/f77/attr_putf.c src/binding/f77/attr_getf.c \
+	src/binding/f77/attr_deletef.c src/binding/f77/topo_testf.c \
+	src/binding/f77/cart_createf.c src/binding/f77/dims_createf.c \
+	src/binding/f77/graph_createf.c src/binding/f77/graphdims_getf.c \
+	src/binding/f77/graph_getf.c src/binding/f77/cartdim_getf.c \
+	src/binding/f77/cart_getf.c src/binding/f77/cart_rankf.c \
+	src/binding/f77/cart_coordsf.c src/binding/f77/grfnbcountf.c \
+	src/binding/f77/grfnbrsf.c src/binding/f77/cart_shiftf.c \
+	src/binding/f77/cart_subf.c src/binding/f77/cart_mapf.c \
+	src/binding/f77/graph_mapf.c src/binding/f77/getpnamef.c \
+	src/binding/f77/get_versionf.c src/binding/f77/get_library_versionf.c \
 	src/binding/f77/errhcreatef.c src/binding/f77/errhsetf.c \
 	src/binding/f77/errhgetf.c src/binding/f77/errhfreef.c \
 	src/binding/f77/error_stringf.c src/binding/f77/error_classf.c \
@@ -84,7 +86,8 @@ mpi_f77_sources += src/binding/f77/sendf.c src/binding/f77/recvf.c \
 	src/binding/f77/comm_joinf.c src/binding/f77/comm_spawnf.c \
 	src/binding/f77/spawnmultf.c src/binding/f77/lookup_namef.c \
 	src/binding/f77/open_portf.c src/binding/f77/publish_namef.c \
-	src/binding/f77/unpubnamef.c src/binding/f77/accumulatef.c \
+	src/binding/f77/unpubnamef.c src/binding/f77/comm_set_infof.c \
+	src/binding/f77/comm_get_infof.c src/binding/f77/accumulatef.c \
 	src/binding/f77/getf.c src/binding/f77/putf.c \
 	src/binding/f77/win_completef.c src/binding/f77/win_createf.c \
 	src/binding/f77/win_fencef.c src/binding/f77/win_freef.c \
@@ -95,7 +98,8 @@ mpi_f77_sources += src/binding/f77/sendf.c src/binding/f77/recvf.c \
 	src/binding/f77/win_allocate_sharedf.c \
 	src/binding/f77/win_shared_queryf.c \
 	src/binding/f77/win_create_dynamicf.c src/binding/f77/win_attachf.c \
-	src/binding/f77/win_detachf.c src/binding/f77/get_accumulatef.c \
+	src/binding/f77/win_detachf.c src/binding/f77/win_get_infof.c \
+	src/binding/f77/win_set_infof.c src/binding/f77/get_accumulatef.c \
 	src/binding/f77/fetch_and_opf.c src/binding/f77/compare_and_swapf.c \
 	src/binding/f77/rputf.c src/binding/f77/rgetf.c \
 	src/binding/f77/raccumulatef.c src/binding/f77/rget_accumulatef.c \
@@ -103,7 +107,6 @@ mpi_f77_sources += src/binding/f77/sendf.c src/binding/f77/recvf.c \
 	src/binding/f77/win_flushf.c src/binding/f77/win_flush_allf.c \
 	src/binding/f77/win_flush_localf.c \
 	src/binding/f77/win_flush_local_allf.c src/binding/f77/win_syncf.c \
-	src/binding/f77/alltoallwf.c src/binding/f77/exscanf.c \
 	src/binding/f77/adderrclassf.c src/binding/f77/adderrcodef.c \
 	src/binding/f77/adderrstringf.c src/binding/f77/commcallerrf.c \
 	src/binding/f77/commnewkeyf.c src/binding/f77/commdelattrf.c \
@@ -167,25 +170,27 @@ mpi_f77_sources += src/binding/f77/sendf.c src/binding/f77/recvf.c \
 	src/binding/f77/neighbor_alltoallf.c \
 	src/binding/f77/neighbor_alltoallvf.c \
 	src/binding/f77/neighbor_alltoallwf.c \
-	src/binding/f77/comm_split_typef.c src/binding/f77/comm_create_groupf.c \
+	src/binding/f77/comm_split_typef.c src/binding/f77/get_elements_xf.c \
+	src/binding/f77/status_set_elements_xf.c \
+	src/binding/f77/type_get_extent_xf.c \
+	src/binding/f77/type_get_true_extent_xf.c \
+	src/binding/f77/type_size_xf.c src/binding/f77/comm_create_groupf.c \
 	src/binding/f77/comm_group_failedf.c \
 	src/binding/f77/comm_remote_group_failedf.c \
-	src/binding/f77/comm_reenable_anysourcef.c \
-	src/binding/f77/mutex_createf.c src/binding/f77/mutex_freef.c \
-	src/binding/f77/mutex_lockf.c src/binding/f77/mutex_unlockf.c \
-	src/binding/f77/file_openf.c src/binding/f77/file_closef.c \
-	src/binding/f77/file_deletef.c src/binding/f77/file_set_sizef.c \
-	src/binding/f77/file_preallocatef.c src/binding/f77/file_get_sizef.c \
-	src/binding/f77/file_get_groupf.c src/binding/f77/file_get_amodef.c \
-	src/binding/f77/file_set_infof.c src/binding/f77/file_get_infof.c \
-	src/binding/f77/file_set_viewf.c src/binding/f77/file_get_viewf.c \
-	src/binding/f77/file_read_atf.c src/binding/f77/file_read_at_allf.c \
-	src/binding/f77/file_write_atf.c src/binding/f77/file_write_at_allf.c \
-	src/binding/f77/file_iread_atf.c src/binding/f77/file_iwrite_atf.c \
-	src/binding/f77/file_readf.c src/binding/f77/file_read_allf.c \
-	src/binding/f77/file_writef.c src/binding/f77/file_write_allf.c \
-	src/binding/f77/file_ireadf.c src/binding/f77/file_iwritef.c \
-	src/binding/f77/file_seekf.c src/binding/f77/file_get_positionf.c \
+	src/binding/f77/comm_reenable_anysourcef.c src/binding/f77/file_openf.c \
+	src/binding/f77/file_closef.c src/binding/f77/file_deletef.c \
+	src/binding/f77/file_set_sizef.c src/binding/f77/file_preallocatef.c \
+	src/binding/f77/file_get_sizef.c src/binding/f77/file_get_groupf.c \
+	src/binding/f77/file_get_amodef.c src/binding/f77/file_set_infof.c \
+	src/binding/f77/file_get_infof.c src/binding/f77/file_set_viewf.c \
+	src/binding/f77/file_get_viewf.c src/binding/f77/file_read_atf.c \
+	src/binding/f77/file_read_at_allf.c src/binding/f77/file_write_atf.c \
+	src/binding/f77/file_write_at_allf.c src/binding/f77/file_iread_atf.c \
+	src/binding/f77/file_iwrite_atf.c src/binding/f77/file_readf.c \
+	src/binding/f77/file_read_allf.c src/binding/f77/file_writef.c \
+	src/binding/f77/file_write_allf.c src/binding/f77/file_ireadf.c \
+	src/binding/f77/file_iwritef.c src/binding/f77/file_seekf.c \
+	src/binding/f77/file_get_positionf.c \
 	src/binding/f77/file_get_byte_offsetf.c \
 	src/binding/f77/file_read_sharedf.c \
 	src/binding/f77/file_write_sharedf.c \
@@ -230,7 +235,7 @@ lib_lib@FWRAPNAME@_la_SOURCES = $(mpi_f77_sources)
 lib_lib@FWRAPNAME@_la_LDFLAGS = $(ABIVERSIONFLAGS)
 
 # FIXME tension here: MPIFLIBNAME is always "mpich", so we don't want to
-# clobber flags set by other parts of MPICH2, and we don't want to re-add that
+# clobber flags set by other parts of MPICH, and we don't want to re-add that
 # lib to the lib_LTLIBRARIES list
 #lib_LTLIBRARIES += lib/lib@MPIFLIBNAME@.la
 #lib_lib@MPIFLIBNAME@_la_SOURCES = $(mpi_f77_sources) src/binding/f77/setbot.c src/binding/f77/setbotf.f src/binding/f77/fdebug.c
@@ -249,7 +254,7 @@ noinst_HEADERS += src/binding/f77/fproto.h src/binding/f77/mpi_fortimpl.h
 
 if BUILD_PROFILING_LIB
 # FIXME tension here: PMPIFLIBNAME is always "pmpich", so we don't want to
-# clobber flags set by other parts of MPICH2, and we don't want to re-add that
+# clobber flags set by other parts of MPICH, and we don't want to re-add that
 # lib to the lib_LTLIBRARIES list
 #lib_LTLIBRARIES += lib/lib@PMPIFLIBNAME@.la
 #lib_lib@PMPIFLIBNAME@_la_SOURCES += $(mpi_f77_sources)

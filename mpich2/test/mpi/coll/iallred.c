@@ -3,12 +3,12 @@
 #include "mpi.h"
 #include "mpitest.h"
 
-/* Since MPICH2 is currently the only NBC implementation in existence, just use
+/* Since MPICH is currently the only NBC implementation in existence, just use
  * this quick-and-dirty #ifdef to decide whether to test the nonblocking
  * collectives.  Eventually we can add a configure option or configure test, or
  * the MPI-3 standard will be released and these can be gated on a MPI_VERSION
  * check */
-#if !defined(USE_STRICT_MPI) && defined(MPICH2)
+#if !defined(USE_STRICT_MPI) && defined(MPICH)
 #define TEST_NBC_ROUTINES 1
 #endif
 
@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     assert(size == 2);
 #if defined(TEST_NBC_ROUTINES)
-    MPIX_Iallreduce(&one,&isum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD,&request);
+    MPI_Iallreduce(&one,&isum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD,&request);
     MPI_Allreduce(&two,&sum,1,MPI_INT,MPI_SUM,MPI_COMM_WORLD);
     MPI_Wait(&request,MPI_STATUS_IGNORE);
 

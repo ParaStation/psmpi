@@ -12,31 +12,31 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_COMPARE_AND_SWAP( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_compare_and_swap__( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_compare_and_swap( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_compare_and_swap_( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMPARE_AND_SWAP( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_compare_and_swap__( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_compare_and_swap( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_compare_and_swap_( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak MPIX_COMPARE_AND_SWAP = PMPIX_COMPARE_AND_SWAP
-#pragma weak mpix_compare_and_swap__ = PMPIX_COMPARE_AND_SWAP
-#pragma weak mpix_compare_and_swap_ = PMPIX_COMPARE_AND_SWAP
-#pragma weak mpix_compare_and_swap = PMPIX_COMPARE_AND_SWAP
+#pragma weak MPI_COMPARE_AND_SWAP = PMPI_COMPARE_AND_SWAP
+#pragma weak mpi_compare_and_swap__ = PMPI_COMPARE_AND_SWAP
+#pragma weak mpi_compare_and_swap_ = PMPI_COMPARE_AND_SWAP
+#pragma weak mpi_compare_and_swap = PMPI_COMPARE_AND_SWAP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_COMPARE_AND_SWAP = pmpix_compare_and_swap__
-#pragma weak mpix_compare_and_swap__ = pmpix_compare_and_swap__
-#pragma weak mpix_compare_and_swap_ = pmpix_compare_and_swap__
-#pragma weak mpix_compare_and_swap = pmpix_compare_and_swap__
+#pragma weak MPI_COMPARE_AND_SWAP = pmpi_compare_and_swap__
+#pragma weak mpi_compare_and_swap__ = pmpi_compare_and_swap__
+#pragma weak mpi_compare_and_swap_ = pmpi_compare_and_swap__
+#pragma weak mpi_compare_and_swap = pmpi_compare_and_swap__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_COMPARE_AND_SWAP = pmpix_compare_and_swap_
-#pragma weak mpix_compare_and_swap__ = pmpix_compare_and_swap_
-#pragma weak mpix_compare_and_swap_ = pmpix_compare_and_swap_
-#pragma weak mpix_compare_and_swap = pmpix_compare_and_swap_
+#pragma weak MPI_COMPARE_AND_SWAP = pmpi_compare_and_swap_
+#pragma weak mpi_compare_and_swap__ = pmpi_compare_and_swap_
+#pragma weak mpi_compare_and_swap_ = pmpi_compare_and_swap_
+#pragma weak mpi_compare_and_swap = pmpi_compare_and_swap_
 #else
-#pragma weak MPIX_COMPARE_AND_SWAP = pmpix_compare_and_swap
-#pragma weak mpix_compare_and_swap__ = pmpix_compare_and_swap
-#pragma weak mpix_compare_and_swap_ = pmpix_compare_and_swap
-#pragma weak mpix_compare_and_swap = pmpix_compare_and_swap
+#pragma weak MPI_COMPARE_AND_SWAP = pmpi_compare_and_swap
+#pragma weak mpi_compare_and_swap__ = pmpi_compare_and_swap
+#pragma weak mpi_compare_and_swap_ = pmpi_compare_and_swap
+#pragma weak mpi_compare_and_swap = pmpi_compare_and_swap
 #endif
 
 
@@ -44,43 +44,43 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_compare_and_swap_( void*, void*, void*,
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_COMPARE_AND_SWAP( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMPARE_AND_SWAP( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak MPIX_COMPARE_AND_SWAP = PMPIX_COMPARE_AND_SWAP
+#pragma weak MPI_COMPARE_AND_SWAP = PMPI_COMPARE_AND_SWAP
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_compare_and_swap__( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_compare_and_swap__( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_compare_and_swap__ = pmpix_compare_and_swap__
+#pragma weak mpi_compare_and_swap__ = pmpi_compare_and_swap__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpix_compare_and_swap( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_compare_and_swap( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_compare_and_swap = pmpix_compare_and_swap
+#pragma weak mpi_compare_and_swap = pmpi_compare_and_swap
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpix_compare_and_swap_( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_compare_and_swap_( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
-#pragma weak mpix_compare_and_swap_ = pmpix_compare_and_swap_
+#pragma weak mpi_compare_and_swap_ = pmpi_compare_and_swap_
 #endif
 
 #elif defined(HAVE_PRAGMA_HP_SEC_DEF)
 #if defined(F77_NAME_UPPER)
-#pragma _HP_SECONDARY_DEF PMPIX_COMPARE_AND_SWAP  MPIX_COMPARE_AND_SWAP
+#pragma _HP_SECONDARY_DEF PMPI_COMPARE_AND_SWAP  MPI_COMPARE_AND_SWAP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_compare_and_swap__  mpix_compare_and_swap__
+#pragma _HP_SECONDARY_DEF pmpi_compare_and_swap__  mpi_compare_and_swap__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _HP_SECONDARY_DEF pmpix_compare_and_swap  mpix_compare_and_swap
+#pragma _HP_SECONDARY_DEF pmpi_compare_and_swap  mpi_compare_and_swap
 #else
-#pragma _HP_SECONDARY_DEF pmpix_compare_and_swap_  mpix_compare_and_swap_
+#pragma _HP_SECONDARY_DEF pmpi_compare_and_swap_  mpi_compare_and_swap_
 #endif
 
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #if defined(F77_NAME_UPPER)
-#pragma _CRI duplicate MPIX_COMPARE_AND_SWAP as PMPIX_COMPARE_AND_SWAP
+#pragma _CRI duplicate MPI_COMPARE_AND_SWAP as PMPI_COMPARE_AND_SWAP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma _CRI duplicate mpix_compare_and_swap__ as pmpix_compare_and_swap__
+#pragma _CRI duplicate mpi_compare_and_swap__ as pmpi_compare_and_swap__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#pragma _CRI duplicate mpix_compare_and_swap as pmpix_compare_and_swap
+#pragma _CRI duplicate mpi_compare_and_swap as pmpi_compare_and_swap
 #else
-#pragma _CRI duplicate mpix_compare_and_swap_ as pmpix_compare_and_swap_
+#pragma _CRI duplicate mpi_compare_and_swap_ as pmpi_compare_and_swap_
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
@@ -90,27 +90,27 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_compare_and_swap_( void*, void*, void*,
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
     defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPIX_COMPARE_AND_SWAP( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_compare_and_swap__( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_compare_and_swap( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpix_compare_and_swap_( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMPARE_AND_SWAP( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_compare_and_swap__( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_compare_and_swap( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_compare_and_swap_( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
-#pragma weak mpix_compare_and_swap__ = MPIX_COMPARE_AND_SWAP
-#pragma weak mpix_compare_and_swap_ = MPIX_COMPARE_AND_SWAP
-#pragma weak mpix_compare_and_swap = MPIX_COMPARE_AND_SWAP
+#pragma weak mpi_compare_and_swap__ = MPI_COMPARE_AND_SWAP
+#pragma weak mpi_compare_and_swap_ = MPI_COMPARE_AND_SWAP
+#pragma weak mpi_compare_and_swap = MPI_COMPARE_AND_SWAP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak MPIX_COMPARE_AND_SWAP = mpix_compare_and_swap__
-#pragma weak mpix_compare_and_swap_ = mpix_compare_and_swap__
-#pragma weak mpix_compare_and_swap = mpix_compare_and_swap__
+#pragma weak MPI_COMPARE_AND_SWAP = mpi_compare_and_swap__
+#pragma weak mpi_compare_and_swap_ = mpi_compare_and_swap__
+#pragma weak mpi_compare_and_swap = mpi_compare_and_swap__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak MPIX_COMPARE_AND_SWAP = mpix_compare_and_swap_
-#pragma weak mpix_compare_and_swap__ = mpix_compare_and_swap_
-#pragma weak mpix_compare_and_swap = mpix_compare_and_swap_
+#pragma weak MPI_COMPARE_AND_SWAP = mpi_compare_and_swap_
+#pragma weak mpi_compare_and_swap__ = mpi_compare_and_swap_
+#pragma weak mpi_compare_and_swap = mpi_compare_and_swap_
 #else
-#pragma weak MPIX_COMPARE_AND_SWAP = mpix_compare_and_swap
-#pragma weak mpix_compare_and_swap__ = mpix_compare_and_swap
-#pragma weak mpix_compare_and_swap_ = mpix_compare_and_swap
+#pragma weak MPI_COMPARE_AND_SWAP = mpi_compare_and_swap
+#pragma weak mpi_compare_and_swap__ = mpi_compare_and_swap
+#pragma weak mpi_compare_and_swap_ = mpi_compare_and_swap
 #endif
 
 #endif
@@ -120,62 +120,62 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_compare_and_swap_( void*, void*, void*,
 #if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPIX_COMPARE_AND_SWAP( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_COMPARE_AND_SWAP( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_compare_and_swap__( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_compare_and_swap__( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpix_compare_and_swap_( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_compare_and_swap_( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpix_compare_and_swap( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_compare_and_swap( void*, void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
 #if defined(F77_NAME_UPPER)
-#pragma weak pmpix_compare_and_swap__ = PMPIX_COMPARE_AND_SWAP
-#pragma weak pmpix_compare_and_swap_ = PMPIX_COMPARE_AND_SWAP
-#pragma weak pmpix_compare_and_swap = PMPIX_COMPARE_AND_SWAP
+#pragma weak pmpi_compare_and_swap__ = PMPI_COMPARE_AND_SWAP
+#pragma weak pmpi_compare_and_swap_ = PMPI_COMPARE_AND_SWAP
+#pragma weak pmpi_compare_and_swap = PMPI_COMPARE_AND_SWAP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#pragma weak PMPIX_COMPARE_AND_SWAP = pmpix_compare_and_swap__
-#pragma weak pmpix_compare_and_swap_ = pmpix_compare_and_swap__
-#pragma weak pmpix_compare_and_swap = pmpix_compare_and_swap__
+#pragma weak PMPI_COMPARE_AND_SWAP = pmpi_compare_and_swap__
+#pragma weak pmpi_compare_and_swap_ = pmpi_compare_and_swap__
+#pragma weak pmpi_compare_and_swap = pmpi_compare_and_swap__
 #elif defined(F77_NAME_LOWER_USCORE)
-#pragma weak PMPIX_COMPARE_AND_SWAP = pmpix_compare_and_swap_
-#pragma weak pmpix_compare_and_swap__ = pmpix_compare_and_swap_
-#pragma weak pmpix_compare_and_swap = pmpix_compare_and_swap_
+#pragma weak PMPI_COMPARE_AND_SWAP = pmpi_compare_and_swap_
+#pragma weak pmpi_compare_and_swap__ = pmpi_compare_and_swap_
+#pragma weak pmpi_compare_and_swap = pmpi_compare_and_swap_
 #else
-#pragma weak PMPIX_COMPARE_AND_SWAP = pmpix_compare_and_swap
-#pragma weak pmpix_compare_and_swap__ = pmpix_compare_and_swap
-#pragma weak pmpix_compare_and_swap_ = pmpix_compare_and_swap
+#pragma weak PMPI_COMPARE_AND_SWAP = pmpi_compare_and_swap
+#pragma weak pmpi_compare_and_swap__ = pmpi_compare_and_swap
+#pragma weak pmpi_compare_and_swap_ = pmpi_compare_and_swap
 #endif /* Test on name mapping */
 #endif /* Use multiple pragma weak */
 
 #ifdef F77_NAME_UPPER
-#define mpix_compare_and_swap_ PMPIX_COMPARE_AND_SWAP
+#define mpi_compare_and_swap_ PMPI_COMPARE_AND_SWAP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_compare_and_swap_ pmpix_compare_and_swap__
+#define mpi_compare_and_swap_ pmpi_compare_and_swap__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_compare_and_swap_ pmpix_compare_and_swap
+#define mpi_compare_and_swap_ pmpi_compare_and_swap
 #else
-#define mpix_compare_and_swap_ pmpix_compare_and_swap_
+#define mpi_compare_and_swap_ pmpi_compare_and_swap_
 #endif /* Test on name mapping */
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
-#undef MPIX_Compare_and_swap
-#define MPIX_Compare_and_swap PMPIX_Compare_and_swap 
+#undef MPI_Compare_and_swap
+#define MPI_Compare_and_swap PMPI_Compare_and_swap 
 
 #else
 
 #ifdef F77_NAME_UPPER
-#define mpix_compare_and_swap_ MPIX_COMPARE_AND_SWAP
+#define mpi_compare_and_swap_ MPI_COMPARE_AND_SWAP
 #elif defined(F77_NAME_LOWER_2USCORE)
-#define mpix_compare_and_swap_ mpix_compare_and_swap__
+#define mpi_compare_and_swap_ mpi_compare_and_swap__
 #elif !defined(F77_NAME_LOWER_USCORE)
-#define mpix_compare_and_swap_ mpix_compare_and_swap
+#define mpi_compare_and_swap_ mpi_compare_and_swap
 /* Else leave name alone */
 #endif
 
@@ -184,6 +184,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_compare_and_swap( void*, void*, void*,
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpix_compare_and_swap_ ( void*v1, void*v2, void*v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *ierr ){
-    *ierr = MPIX_Compare_and_swap( v1, v2, v3, (MPI_Datatype)(*v4), *v5, *v6, *v7 );
+FORT_DLL_SPEC void FORT_CALL mpi_compare_and_swap_ ( void*v1, void*v2, void*v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *ierr ){
+    *ierr = MPI_Compare_and_swap( v1, v2, v3, (MPI_Datatype)(*v4), (int)*v5, (MPI_Aint)*v6, (MPI_Win)*v7 );
 }

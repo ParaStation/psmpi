@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2003 by Argonne National Laboratory.
@@ -19,16 +19,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>
 #include <mpi.h>
 #include <assert.h>
 #include "mpitest.h"
 
-/* MPI-3 is not yet standardized -- allow MPI-3 routines to be switched off.
- */
-
-#if !defined(USE_STRICT_MPI) && defined(MPICH2)
-#  define TEST_MPI3_ROUTINES 1
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
 #endif
 
 #define NUM_ELEMS 32
@@ -55,7 +51,6 @@ static llist_elem_t **my_elems = NULL;
 static int my_elems_size  = 0;
 static int my_elems_count = 0;
 
-#ifdef TEST_MPI3_ROUTINES
 /* Allocate a new shared linked list element */
 MPI_Aint alloc_elem(int value, MPI_Win win) {
     MPI_Aint disp;
@@ -65,7 +60,7 @@ MPI_Aint alloc_elem(int value, MPI_Win win) {
     MPI_Alloc_mem(sizeof(llist_elem_t), MPI_INFO_NULL, &elem_ptr);
     elem_ptr->value = value;
     elem_ptr->next  = nil;
-    MPIX_Win_attach(win, elem_ptr, sizeof(llist_elem_t));
+    MPI_Win_attach(win, elem_ptr, sizeof(llist_elem_t));
 
     /* Add the element to the list of local elements so we can free it later. */
     if (my_elems_size == my_elems_count) {
@@ -78,7 +73,6 @@ MPI_Aint alloc_elem(int value, MPI_Win win) {
     MPI_Get_address(elem_ptr, &disp);
     return disp;
 }
-#endif
 
 int main(int argc, char **argv) {
     int           procid, nproc, i;
@@ -90,9 +84,7 @@ int main(int argc, char **argv) {
     MPI_Comm_rank(MPI_COMM_WORLD, &procid);
     MPI_Comm_size(MPI_COMM_WORLD, &nproc);
 
-#ifdef TEST_MPI3_ROUTINES
-
-    MPIX_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, &llist_win);
+    MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, &llist_win);
 
     /* Process 0 creates the head node */
     if (procid == 0)
@@ -119,7 +111,7 @@ int main(int argc, char **argv) {
 
             MPI_Win_lock(MPI_LOCK_SHARED, tail_ptr.rank, MPI_MODE_NOCHECK, llist_win);
 
-            MPIX_Compare_and_swap((void*) &new_elem_ptr.rank, (void*) &nil.rank,
+            MPI_Compare_and_swap((void*) &new_elem_ptr.rank, (void*) &nil.rank,
                                   (void*) &next_tail_ptr.rank, MPI_INT, tail_ptr.rank,
                                   (MPI_Aint) &(((llist_elem_t*)tail_ptr.disp)->next.rank), llist_win);
 
@@ -132,7 +124,7 @@ int main(int argc, char **argv) {
 
                 MPI_Win_lock(MPI_LOCK_SHARED, tail_ptr.rank, MPI_MODE_NOCHECK, llist_win);
 
-                MPIX_Fetch_and_op(&new_elem_ptr.disp, &result, MPI_AINT, tail_ptr.rank,
+                MPI_Fetch_and_op(&new_elem_ptr.disp, &result, MPI_AINT, tail_ptr.rank,
                                   (MPI_Aint) &(((llist_elem_t*)tail_ptr.disp)->next.disp),
                                   MPI_REPLACE, llist_win);
 
@@ -160,9 +152,9 @@ int main(int argc, char **argv) {
 
                     MPI_Win_lock(MPI_LOCK_SHARED, tail_ptr.rank, MPI_MODE_NOCHECK, llist_win);
 
-                    MPIX_Fetch_and_op(NULL, &next_tail_ptr.disp, MPI_AINT, tail_ptr.rank,
+                    MPI_Fetch_and_op(NULL, &next_tail_ptr.disp, MPI_AINT, tail_ptr.rank,
                                       (MPI_Aint) &(((llist_elem_t*)tail_ptr.disp)->next.disp),
-                                      MPIX_NO_OP, llist_win);
+                                      MPI_NO_OP, llist_win);
 
                     MPI_Win_unlock(tail_ptr.rank, llist_win);
                 } while (next_tail_ptr.disp == nil.disp);
@@ -244,11 +236,6 @@ int main(int argc, char **argv) {
     /* Free all the elements in the list */
     for ( ; my_elems_count > 0; my_elems_count--)
         MPI_Free_mem(my_elems[my_elems_count-1]);
-
-#else /* ! TEST_MPI3_ROUTINES */
-    if (procid == 0)
-        printf(" No Errors\n");
-#endif
 
     MPI_Finalize();
     return 0;

@@ -1,21 +1,21 @@
-.TH MPIX_Comm_remote_group_failed 3 "9/20/2012" " " "MPI"
+.TH MPIX_Comm_remote_group_failed 3 "4/24/2013" " " "MPI"
 .SH NAME
 MPIX_Comm_remote_group_failed \-  Accesses the group associated with given communicator 
 .SH SYNOPSIS
 .nf
 int MPIX_Comm_remote_group_failed(MPI_Comm comm, MPI_Group *failed_group)
 .fi
-.SH INPUT PARAMETER
+.SH INPUT PARAMETERS
 .PD 0
 .TP
 .B comm 
 - Communicator (handle)
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
-.B group 
+.B failed_group 
 - Group of failed processes communicator (handle)
 .PD 1
 

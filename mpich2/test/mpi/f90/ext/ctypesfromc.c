@@ -1,5 +1,5 @@
 /* This file created from test/mpi/f77/ext/ctypesfromc.c with f77tof90 */
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2008 by Argonne National Laboratory.

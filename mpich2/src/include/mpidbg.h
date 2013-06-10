@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*  
  *  (C) 2005 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -10,8 +10,8 @@
 #include "mpibase.h"
 /*
  * Multilevel debugging and tracing macros.
- * The design is discussed at 
- * http://www-unix.mcs.anl.gov/mpi/mpich2/developer/design/debugmsg.htm
+ * The design is discussed at
+ * http://wiki.mpich.org/mpich/index.php/Debug_Event_Logging
  *
  * Basically, this provide a way to place debugging messages into
  * groups (called *classes*), with levels of detail, and arbitrary

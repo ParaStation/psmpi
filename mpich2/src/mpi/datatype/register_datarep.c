@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -32,7 +32,7 @@
    MPI_Register_datarep - Register a set of user-provided data conversion 
    functions
 
-   Input Parameters:
+Input Parameters:
 + datarep - data representation identifier (string) 
 . read_conversion_fn - function invoked to convert from file representation to native representation (function) 
 . write_conversion_fn - function invoked to convert from native representation to file representation (function) 

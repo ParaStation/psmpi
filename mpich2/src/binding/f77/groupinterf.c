@@ -185,5 +185,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_group_intersection( MPI_Fint *, MPI_Fin
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_group_intersection_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *ierr ){
-    *ierr = MPI_Group_intersection( *v1, *v2, v3 );
+    *ierr = MPI_Group_intersection( (MPI_Group)*v1, (MPI_Group)*v2, v3 );
 }
