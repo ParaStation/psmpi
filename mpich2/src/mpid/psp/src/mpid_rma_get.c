@@ -3,7 +3,9 @@
  *
  * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
  *
- * All rights reserved.
+ * This file may be distributed under the terms of the Q Public License
+ * as defined in the file LICENSE.QPL included in the packaging of this
+ * file.
  *
  * Author:	Jens Hauke <hauke@par-tec.com>
  */
@@ -55,6 +57,7 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 {
 	MPID_PSP_Datatype_info dt_info;
 	MPID_Win_rank_info *ri = win_ptr->rank_info + target_rank;
+	char *target_buf;
 #if 0
 	fprintf(stderr, "int MPID_Get(origin_addr: %p, origin_count: %d, origin_datatype: %08x,"
 		" target_rank: %d, target_disp: %d, target_count: %d, target_datatype: %08x,"
@@ -66,7 +69,7 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 	/* Datatype */
 	MPID_PSP_Datatype_get_info(target_datatype, &dt_info);
 
-	char *target_buf = (char *) ri->base_addr + ri->disp_unit * target_disp;
+	target_buf = (char *) ri->base_addr + ri->disp_unit * target_disp;
 
 	if (0 && MPID_PSP_Datatype_is_contig(&dt_info)) { /* ToDo: reenable pscom buildin rma_write */
 /*

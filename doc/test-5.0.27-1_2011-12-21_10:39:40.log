@@ -1,0 +1,166 @@
+phoenix
+Name        : pscom
+Version     : 5.0.37
+Release     : 1_12_gc328f61
+Architecture: x86_64
+Install Date: Wed 21 Dec 2011 10:20:36 AM CET
+Group       : System/Development/Libraries
+Size        : 768819
+License     : Proprietary
+Signature   : (none)
+Source RPM  : pscom-5.0.37-1_12_gc328f61.src.rpm
+Build Date  : Wed 21 Dec 2011 10:20:09 AM CET
+Build Host  : phoenix
+Relocations : (not relocatable)
+Packager    : support@par-tec.de
+Vendor      : ParTec Cluster Competence Center GmbH, Munich, Germany
+Summary     : ParaStation Cluster Communication drivers and libraries
+Description :
+ParaStation Cluster Communication drivers and libraries.
+Name        : psmgmt
+Version     : 5.0.36
+Release     : 2
+Architecture: x86_64
+Install Date: Fri 16 Dec 2011 12:54:05 PM CET
+Group       : Productivity/Clustering/Computing
+Size        : 1761920
+License     : Proprietary
+Signature   : (none)
+Source RPM  : psmgmt-5.0.36-2.src.rpm
+Build Date  : Fri 16 Dec 2011 12:52:00 PM CET
+Build Host  : phoenix
+Relocations : (not relocatable)
+Packager    : support@par-tec.de
+Vendor      : ParTec Cluster Competence Center GmbH, Munich, Germany
+Summary     : ParaStation Process Management
+Description :
+The ParaStation Process Management Layer.
+5.0.27-1
+make[1]: Entering directory `/home/hauke/repo/psmpi2/build/mpich2'
+(cd test && make testing)
+make[2]: Entering directory `/home/hauke/repo/psmpi2/build/mpich2/test'
+(NOXMLCLOSE=YES && export NOXMLCLOSE && cd mpi && make testing)
+make[3]: Entering directory `/home/hauke/repo/psmpi2/build/mpich2/test/mpi'
+./runtests -srcdir=/home/hauke/repo/psmpi2/mpich2/test/mpi -tests=testlist \
+	   -mpiexec=/opt/parastation/bin/mpiexec \
+	   -xmlfile=summary.xml
+Looking in ./testlist
+Processing directory attr
+Looking in ./attr/testlist
+Processing directory coll
+Looking in ./coll/testlist
+Processing directory comm
+Looking in ./comm/testlist
+Processing directory datatype
+Looking in ./datatype/testlist
+Processing directory errhan
+Looking in ./errhan/testlist
+Processing directory group
+Looking in ./group/testlist
+Processing directory info
+Looking in ./info/testlist
+Processing directory init
+Looking in ./init/testlist
+Processing directory pt2pt
+Looking in ./pt2pt/testlist
+Processing directory rma
+Looking in ./rma/testlist
+Processing directory spawn
+Looking in ./spawn/testlist
+Processing directory topo
+Looking in ./topo/testlist
+Processing directory io
+Looking in ./io/testlist
+Processing directory f77
+Looking in ./f77/testlist
+Processing directory attr
+Looking in ./f77/attr/testlist
+Processing directory coll
+Looking in ./f77/coll/testlist
+Processing directory datatype
+Looking in ./f77/datatype/testlist
+Processing directory pt2pt
+Looking in ./f77/pt2pt/testlist
+Processing directory info
+Looking in ./f77/info/testlist
+Processing directory spawn
+Looking in ./f77/spawn/testlist
+Processing directory io
+Looking in ./f77/io/testlist
+Processing directory rma
+Looking in ./f77/rma/testlist
+Processing directory init
+Looking in ./f77/init/testlist
+Processing directory comm
+Looking in ./f77/comm/testlist
+Processing directory ext
+Looking in ./f77/ext/testlist
+Processing directory topo
+Looking in ./f77/topo/testlist
+Processing directory cxx
+Looking in ./cxx/testlist
+Processing directory attr
+Looking in ./cxx/attr/testlist
+Processing directory pt2pt
+Looking in ./cxx/pt2pt/testlist
+Processing directory comm
+Looking in ./cxx/comm/testlist
+Processing directory coll
+Looking in ./cxx/coll/testlist
+Processing directory errhan
+Looking in ./cxx/errhan/testlist
+Processing directory init
+Looking in ./cxx/init/testlist
+Processing directory info
+Looking in ./cxx/info/testlist
+Processing directory datatype
+Looking in ./cxx/datatype/testlist
+Processing directory io
+Looking in ./cxx/io/testlist
+Processing directory spawn
+Looking in ./cxx/spawn/testlist
+Processing directory rma
+Looking in ./cxx/rma/testlist
+Processing directory f90
+Looking in ./f90/testlist
+Processing directory attr
+Looking in ./f90/attr/testlist
+Processing directory coll
+Looking in ./f90/coll/testlist
+Processing directory comm
+Looking in ./f90/comm/testlist
+Processing directory ext
+Looking in ./f90/ext/testlist
+Processing directory info
+Looking in ./f90/info/testlist
+Processing directory init
+Looking in ./f90/init/testlist
+Processing directory io
+Looking in ./f90/io/testlist
+Processing directory misc
+Looking in ./f90/misc/testlist
+Processing directory pt2pt
+Looking in ./f90/pt2pt/testlist
+Processing directory datatype
+Looking in ./f90/datatype/testlist
+Processing directory f90types
+Looking in ./f90/f90types/testlist
+Processing directory rma
+Looking in ./f90/rma/testlist
+Processing directory spawn
+Looking in ./f90/spawn/testlist
+Processing directory timer
+Looking in ./f90/timer/testlist
+Processing directory topo
+Looking in ./f90/topo/testlist
+53 tests failed out of 584
+Details in /home/hauke/repo/psmpi2/build/mpich2/test/mpi/summary.xml
+make[3]: Leaving directory `/home/hauke/repo/psmpi2/build/mpich2/test/mpi'
+(XMLFILE=../mpi/summary.xml && XMLCONTINUE=YES && \
+export XMLFILE && export XMLCONTINUE && \
+cd commands && make testing)
+make[3]: Entering directory `/home/hauke/repo/psmpi2/build/mpich2/test/commands'
+make[3]: Nothing to be done for `testing'.
+make[3]: Leaving directory `/home/hauke/repo/psmpi2/build/mpich2/test/commands'
+make[2]: Leaving directory `/home/hauke/repo/psmpi2/build/mpich2/test'
+make[1]: Leaving directory `/home/hauke/repo/psmpi2/build/mpich2'

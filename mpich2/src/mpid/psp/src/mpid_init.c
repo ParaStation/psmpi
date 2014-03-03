@@ -3,7 +3,9 @@
  *
  * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
  *
- * All rights reserved.
+ * This file may be distributed under the terms of the Q Public License
+ * as defined in the file LICENSE.QPL included in the packaging of this
+ * file.
  *
  * Author:	Jens Hauke <hauke@par-tec.com>
  */
@@ -176,7 +178,7 @@ int do_connect(pscom_socket_t *socket, int pg_rank, int dest, char *dest_addr)
 		PRINTERROR("Connecting %s to %s (rank %d to %d) failed : %s",
 			   pscom_listen_socket_str(socket),
 			   dest_addr, pg_rank, dest, pscom_err_str(rc));
-		return -1; // error
+		return -1; /* error */
 	}
 	grank2con_set(dest, con);
 
@@ -201,6 +203,8 @@ void i_version_check(char *pg_id, int pg_rank, const char *ver)
 	if (pg_rank != 0) {
 		char val[100] = "unknown";
 		int pmi_errno = PMI_KVS_Get(pg_id, "i_version", val, sizeof(val));
+
+		assert(pmi_errno == PMI_SUCCESS);
 
 		if (strcmp(val, ver)) {
 			fprintf(stderr,
@@ -254,9 +258,6 @@ int InitPortConnections(void) {
 		char val[100];
 		unsigned long guard_pmi_value = MAGIC_PMI_VALUE;
 
-		pscom_connection_t *con;
-		pscom_err_t rc;
-
 		if (i != pg_rank) {
 			snprintf(key, sizeof(key), "psp%d", i);
 			checked_PMI_KVS_Get(pg_id, key, val, sizeof(val));
@@ -301,8 +302,6 @@ int InitPortConnections(void) {
 		}
 	}
 
-	PMICALL(PMI_Barrier());
-
 	/* ToDo: */
 	pscom_stop_listen(socket);
 
@@ -334,14 +333,13 @@ int InitPscomConnections(void) {
 	char key[50];
 	unsigned long guard_pmi_key = MAGIC_PMI_KEY;
 	int i;
-	struct InitMsg init_msg;
 	int mpi_errno = MPI_SUCCESS;
 
 	pscom_socket_t *socket = MPIDI_Process.socket;
 	int pg_rank = MPIDI_Process.my_pg_rank;
 	int pg_size = MPIDI_Process.my_pg_size;
 	char *pg_id = MPIDI_Process.pg_id;
-	const char *listen_socket;
+	char *listen_socket;
 	char **psp_port = NULL;
 
 	/* Distribute my contact information */
@@ -368,8 +366,6 @@ int InitPscomConnections(void) {
 	for (i = 0; i < pg_size; i++) {
 		char val[100];
 		unsigned long guard_pmi_value = MAGIC_PMI_VALUE;
-		pscom_connection_t *con;
-		pscom_err_t rc;
 
 		if (i != pg_rank) {
 			snprintf(key, sizeof(key), "pscom%d", i);
@@ -406,8 +402,6 @@ int InitPscomConnections(void) {
 
 		grank2con_set(i, con);
 	}
-
-	PMICALL(PMI_Barrier());
 
 	pscom_stop_listen(socket);
  fn_exit:
@@ -447,7 +441,7 @@ int MPID_Init(int *argc, char ***argv,
 	int mpi_errno = MPI_SUCCESS;
 	int pg_rank, pg_size, pg_id_sz;
 	int appnum = -1;
-	int universe_size;
+	/* int universe_size; */
 	int has_parent;
 	pscom_socket_t *socket;
 	pscom_err_t rc;
@@ -562,10 +556,10 @@ int MPID_Init(int *argc, char ***argv,
 	MPIDI_Process.pg_id = pg_id;
 
 	if (!MPIDI_Process.env.enable_ondemand) {
-		// Create and establish all connections
+		/* Create and establish all connections */
 		if (InitPortConnections() != MPI_SUCCESS) goto fn_fail;
 	} else {
-		// Create all connections as "on demand" connections.
+		/* Create all connections as "on demand" connections. */
 		if (InitPscomConnections() != MPI_SUCCESS) goto fn_fail;
 	}
 

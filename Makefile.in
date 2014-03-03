@@ -39,7 +39,7 @@ test testing:
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
 	  $(MAKE) -C mpich2 testing; \
 	  cp mpich2/test/mpi/summary.xml $${_LOGNAME}.xml; \
-	) | tee -a $${_LOGNAME}.log; \
+	) 2>&1 | tee -a $${_LOGNAME}.log; \
 	echo -e "\nSummary written to $${_LOGNAME}*"
 else
 

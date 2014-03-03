@@ -3,7 +3,9 @@
  *
  * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
  *
- * All rights reserved.
+ * This file may be distributed under the terms of the Q Public License
+ * as defined in the file LICENSE.QPL included in the packaging of this
+ * file.
  *
  * Author:	Jens Hauke <hauke@par-tec.com>
  */
@@ -384,6 +386,8 @@ typedef struct MPID_Win_rank_info
 */
 void MPID_PSP_rma_cleanup(void);
 
+int MPID_PSP_comm_create_hook(struct MPID_Comm * comm);
+int MPID_PSP_comm_destroy_hook(struct MPID_Comm * comm);
 
 #define HAVE_DEV_COMM_HOOK
 #define MPID_Dev_comm_create_hook(comm) MPID_PSP_comm_create_hook(comm)

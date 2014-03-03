@@ -3,7 +3,9 @@
  *
  * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
  *
- * All rights reserved.
+ * This file may be distributed under the terms of the Q Public License
+ * as defined in the file LICENSE.QPL included in the packaging of this
+ * file.
  *
  * Author:	Jens Hauke <hauke@par-tec.com>
  */
@@ -58,6 +60,9 @@ void MPID_PSP_Request_free(MPID_Request *req)
 static inline
 void MPID_PSP_Request_init(MPID_Request *req)
 {
+	struct MPID_DEV_Request_common *creq;
+	pscom_request_t *preq;
+
 	if (!req) return;
 
 	/* MPID_Request_construct(req); no need?*/
@@ -73,8 +78,8 @@ void MPID_PSP_Request_init(MPID_Request *req)
 	req->status.cancelled = FALSE;
 	req->comm = NULL;
 
-	struct MPID_DEV_Request_common *creq = &req->dev.kind.common;
-	pscom_request_t *preq = creq->pscom_req;
+	creq = &req->dev.kind.common;
+	preq = creq->pscom_req;
 
 	preq->connection = NULL;
 	preq->socket = NULL;

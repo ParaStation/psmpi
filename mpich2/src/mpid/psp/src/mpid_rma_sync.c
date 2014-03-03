@@ -3,7 +3,9 @@
  *
  * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
  *
- * All rights reserved.
+ * This file may be distributed under the terms of the Q Public License
+ * as defined in the file LICENSE.QPL included in the packaging of this
+ * file.
  *
  * Author:	Jens Hauke <hauke@par-tec.com>
  */
@@ -179,7 +181,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 	}
 	if (req_any) {
 		/* cancel and free the any_source dummy request */
-		int rc = pscom_cancel_recv(req_any);
+		pscom_cancel_recv(req_any);
 		assert(pscom_req_is_done(req_any));
 		pscom_request_free(req_any);
 	}
@@ -193,16 +195,16 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 
 int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 {
-	if (win_ptr->ranks_post) {
-		/* Error: win_post already called */
-		return MPI_ERR_ARG;
-	}
-
 	int *ranks;
 	int ranks_sz = group_ptr->size;
 	int i;
 	int dummy;
 	int mpi_errno = MPI_SUCCESS;
+
+	if (win_ptr->ranks_post) {
+		/* Error: win_post already called */
+		return MPI_ERR_ARG;
+	}
 
 	ranks = get_group_ranks(win_ptr->comm_ptr, group_ptr);
 	for (i = 0; i < ranks_sz; i++) {
@@ -235,15 +237,16 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 
 int MPID_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 {
-	if (win_ptr->ranks_start) {
-		/* Error: win_start already called */
-		return MPI_ERR_ARG;
-	}
 	int *ranks;
 	int ranks_sz = group_ptr->size;
 	int i;
 	int dummy;
 	int mpi_errno = MPI_SUCCESS;
+
+	if (win_ptr->ranks_start) {
+		/* Error: win_start already called */
+		return MPI_ERR_ARG;
+	}
 
 	ranks = get_group_ranks(win_ptr->comm_ptr, group_ptr);
 	for (i = 0; i < ranks_sz; i++) {
@@ -277,6 +280,12 @@ int MPID_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 
 int MPID_Win_complete(MPID_Win *win_ptr)
 {
+	int *ranks = win_ptr->ranks_start;
+	int ranks_sz = win_ptr->ranks_start_sz;
+	int i;
+	int dummy;
+	int mpi_errno = MPI_SUCCESS;
+
 	if (!win_ptr->ranks_start) {
 		return MPI_ERR_ARG;
 	}
@@ -285,12 +294,6 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 	while (win_ptr->rma_local_pending_cnt) {
 		MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
 	}
-
-	int *ranks = win_ptr->ranks_start;
-	int ranks_sz = win_ptr->ranks_start_sz;
-	int i;
-	int dummy;
-	int mpi_errno = MPI_SUCCESS;
 
 	for (i = 0; i < ranks_sz; i++) {
 		int rank = ranks[i];
@@ -323,15 +326,15 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 
 int MPID_Win_wait(MPID_Win *win_ptr)
 {
-	if (!win_ptr->ranks_post) {
-		return MPI_ERR_ARG;
-	}
-
 	int *ranks = win_ptr->ranks_post;
 	int ranks_sz = win_ptr->ranks_post_sz;
 	int i;
 	int dummy;
 	int mpi_errno = MPI_SUCCESS;
+
+	if (!win_ptr->ranks_post) {
+		return MPI_ERR_ARG;
+	}
 
 	for (i = 0; i < ranks_sz; i++) {
 		int rank = ranks[i];
@@ -366,15 +369,15 @@ int MPID_Win_wait(MPID_Win *win_ptr)
 
 int MPID_Win_test(MPID_Win *win_ptr, int *flag)
 {
-	if (!win_ptr->ranks_post) {
-		return MPI_ERR_ARG;
-	}
-
 	int *ranks = win_ptr->ranks_post;
 	int ranks_sz = win_ptr->ranks_post_sz;
 	int i;
 	int mpi_errno = MPI_SUCCESS;
 	int ret_flag = 1;
+
+	if (!win_ptr->ranks_post) {
+		return MPI_ERR_ARG;
+	}
 
 	for (i = 0; i < ranks_sz; i++) {
 		int rank = ranks[i];

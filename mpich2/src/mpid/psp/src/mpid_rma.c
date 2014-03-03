@@ -3,7 +3,9 @@
  *
  * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
  *
- * All rights reserved.
+ * This file may be distributed under the terms of the Q Public License
+ * as defined in the file LICENSE.QPL included in the packaging of this
+ * file.
  *
  * Author:	Jens Hauke <hauke@par-tec.com>
  */
@@ -158,8 +160,8 @@ fn_fail:
 #define FCNAME "MPID_Win_free"
 int MPID_Win_free(MPID_Win **_win_ptr)
 {
-	int mpi_errno=MPI_SUCCESS, total_pt_rma_puts_accs, i, *recvcnts, comm_size;
-	MPID_Comm *comm_ptr;
+	int mpi_errno = MPI_SUCCESS /*, total_pt_rma_puts_accs, i, *recvcnts, comm_size */;
+	/* MPID_Comm *comm_ptr; */
 	MPID_Win *win_ptr = *_win_ptr;
 
 	MPIU_CHKLMEM_DECL(1);

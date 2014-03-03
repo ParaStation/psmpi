@@ -1,3 +1,9 @@
+2013-06-20  Jens Hauke  <hauke@par-tec.com>	-	5.0.28-1
+
+	* Fix a race with PMI in MPI_Init on overbooked nodes
+
+	* Fix rarely hanging MPI_Finalize when using psm connections.
+
 2011-12-16  Jens Hauke  <hauke@par-tec.com>	-	5.0.27-1
 
 	* Update to mpich2 version 1.4.1p1

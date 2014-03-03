@@ -3,7 +3,9 @@
  *
  * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
  *
- * All rights reserved.
+ * This file may be distributed under the terms of the Q Public License
+ * as defined in the file LICENSE.QPL included in the packaging of this
+ * file.
  *
  * Author:	Jens Hauke <hauke@par-tec.com>
  */
@@ -144,7 +146,5 @@ const char *mpid_msgtype_str(enum MPID_PSP_MSGTYPE msg_type);
   END DATATYPE SECTION
   --------------------*/
 
-void MPID_PSP_comm_create_hook(MPID_Comm * comm);
-void MPID_PSP_comm_destroy_hook(MPID_Comm * comm);
 
 #endif /* _MPIDIMPL_H_ */

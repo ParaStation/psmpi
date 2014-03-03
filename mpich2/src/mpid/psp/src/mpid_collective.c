@@ -3,7 +3,9 @@
  *
  * Copyright (C) 2008-2010 ParTec Cluster Competence Center GmbH, Munich
  *
- * All rights reserved.
+ * This file may be distributed under the terms of the Q Public License
+ * as defined in the file LICENSE.QPL included in the packaging of this
+ * file.
  *
  * Author:	Jens Hauke <hauke@par-tec.com>
  */
@@ -42,9 +44,10 @@ int MPID_PSP_Bcast_send(void *buffer, int count, MPI_Datatype datatype, int root
 			MPID_Comm *comm_ptr)
 {
 	MPID_PSP_packed_msg_t msg;
-	pscom_socket_t *sock = MPIDI_Process.socket; /* ToDo: get socket from comm? */
 	int ret;
+#ifdef USE_POST_BCAST
 	pscom_request_t *req;
+#endif
 
 	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg);
 	if (unlikely(ret != MPI_SUCCESS)) goto err_create_packed_msg;
@@ -83,9 +86,10 @@ int MPID_PSP_Bcast_recv(void *buffer, int count, MPI_Datatype datatype, int root
 			MPID_Comm *comm_ptr)
 {
 	MPID_PSP_packed_msg_t msg;
-	pscom_socket_t *sock = MPIDI_Process.socket; /* ToDo: get socket from comm? */
 	int ret;
+#ifdef USE_POST_BCAST
 	pscom_request_t *req;
+#endif
 
 	ret = MPID_PSP_packed_msg_prepare(buffer, count, datatype, &msg);
 	if (unlikely(ret != MPI_SUCCESS)) goto err_create_packed_msg;
@@ -247,28 +251,30 @@ void MPID_PSP_CollectiveInit(MPID_Comm * comm /* probably MPI_COMM_WORLD */)
 }
 
 
-void MPID_PSP_comm_create_hook(MPID_Comm * comm)
+int MPID_PSP_comm_create_hook(MPID_Comm * comm)
 {
 	comm->group = NULL;
 
-	if (!MPIDI_Process.env.enable_collectives) return;
+	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
 
 	comm->coll_fns = &mpid_psp_collective_functions;
 
 	group_init(comm);
 
 	D(printf("%s (comm:%p(%s, id:%08x, size:%u))\n",
-		 __func__, comm, comm->name, comm->context_id, comm->local_size);)
+		 __func__, comm, comm->name, comm->context_id, comm->local_size););
+	return MPI_SUCCESS;
 }
 
 
-void MPID_PSP_comm_destroy_hook(MPID_Comm * comm)
+int MPID_PSP_comm_destroy_hook(MPID_Comm * comm)
 {
-	if (!MPIDI_Process.env.enable_collectives) return;
+	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
 
 	/* ToDo: Use comm Barrier before cleanup! */
 
 	group_cleanup(comm);
 
-	D(printf("%s\n", __func__);)
+	D(printf("%s\n", __func__););
+	return MPI_SUCCESS;
 }

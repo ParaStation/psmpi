@@ -3,7 +3,9 @@
  *
  * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
  *
- * All rights reserved.
+ * This file may be distributed under the terms of the Q Public License
+ * as defined in the file LICENSE.QPL included in the packaging of this
+ * file.
  *
  * Author:	Jens Hauke <hauke@par-tec.com>
  */
@@ -46,7 +48,7 @@ void MPID_DEV_Request_release_ref(MPID_Request *req, MPID_Request_kind_t kind)
 	MPIU_Object_release_ref(req, &ref_count);
 
 	if (ref_count == 0) {
-		// assert(kind == req->kind);
+		/* assert(kind == req->kind); */
 
 		switch (kind) {
 		case MPID_REQUEST_RECV:

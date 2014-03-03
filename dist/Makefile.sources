@@ -10,6 +10,7 @@ PKG_NAME=psmpi2
 SOURCE_FILES= \
 .gitignore \
 ChangeLog \
+LICENSE.QPL \
 Makefile.in \
 configure \
 configure.ac \

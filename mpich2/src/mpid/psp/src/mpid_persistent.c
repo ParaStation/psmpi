@@ -3,7 +3,9 @@
  *
  * Copyright (C) 2006-2010 ParTec Cluster Competence Center GmbH, Munich
  *
- * All rights reserved.
+ * This file may be distributed under the terms of the Q Public License
+ * as defined in the file LICENSE.QPL included in the packaging of this
+ * file.
  *
  * Author:	Jens Hauke <hauke@par-tec.com>
  */
@@ -33,7 +35,7 @@ int MPID_PSP_persistent_init(const void *buf, int count, MPI_Datatype datatype, 
 	if (unlikely(!req)) goto err_request_recv_create;
 
 	req->partner_request = NULL;
-	_MPID_Request_set_completed(req); // an inactive persistent request is a completed request.
+	_MPID_Request_set_completed(req); /* an inactive persistent request is a completed request. */
 
 	preq = &req->dev.kind.persistent;
 
@@ -140,7 +142,7 @@ int MPID_Start(MPID_Request *req)
 /*
 	printf("#%d ps--- %s() called\n", MPIDI_Process.my_pg_rank, __func__);
 */
-	assert(req->partner_request == NULL); // assure inactive persistent request!
+	assert(req->partner_request == NULL); /* assure inactive persistent request! */
 
 	mpi_errno = preq->call(preq->buf, preq->count, preq->datatype, preq->rank,
 			       preq->tag, preq->comm, preq->context_offset,
