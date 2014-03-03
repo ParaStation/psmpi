@@ -1,3 +1,17 @@
+2014-03-03  Jens Hauke  <hauke@par-tec.com>	-	5.0.29-1
+
+2014-01-15  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix datatype-related memory leaks
+
+	* Fix RMA-related memory leaks
+
+	* Fix memory leaks in MPI_Finalize
+
+2014-01-08  Carsten Clauss <clauss@par-tec.com>
+
+	* Fix RMA-related deadlocks
+
 2013-06-20  Jens Hauke  <hauke@par-tec.com>	-	5.0.28-1
 
 	* Fix a race with PMI in MPI_Init on overbooked nodes

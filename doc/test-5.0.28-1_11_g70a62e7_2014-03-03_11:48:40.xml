@@ -1,7 +1,7 @@
 <?xml version='1.0' ?>
 <?xml-stylesheet href="TestResults.xsl" type="text/xsl" ?>
 <MPITESTRESULTS>
-<DATE>2011-11-09-12-49</DATE>
+<DATE>2014-03-03-11-48</DATE>
 <MPISOURCE></MPISOURCE>
 <MPITEST>
 <NAME>attrt</NAME>
@@ -1279,10 +1279,7 @@
 <NAME>timeout</NAME>
 <NP>2</NP>
 <WORKDIR>./init</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-PSIlogger: Maximum runtime of 10 seconds elapsed.
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>version</NAME>
@@ -1529,15 +1526,6 @@ Failed to cancel a persistent bsend request
 <STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
-<NAME>large_message</NAME>
-<NP>3</NP>
-<WORKDIR>./pt2pt</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-PSIlogger: Maximum runtime of 180 seconds elapsed.
-</TESTDIFF>
-</MPITEST>
-<MPITEST>
 <NAME>winname</NAME>
 <NP>2</NP>
 <WORKDIR>./rma</WORKDIR>
@@ -1577,10 +1565,7 @@ PSIlogger: Maximum runtime of 180 seconds elapsed.
 <NAME>adlb_mimic1</NAME>
 <NP>3</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-PSIlogger: Maximum runtime of 180 seconds elapsed.
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>accfence2</NAME>
@@ -1676,19 +1661,13 @@ PSIlogger: Maximum runtime of 180 seconds elapsed.
 <NAME>lockcontention2</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-PSIlogger: Maximum runtime of 180 seconds elapsed.
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>lockcontention2</NAME>
 <NP>8</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-PSIlogger: Maximum runtime of 180 seconds elapsed.
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>transpose4</NAME>
@@ -1700,19 +1679,13 @@ PSIlogger: Maximum runtime of 180 seconds elapsed.
 <NAME>fetchandadd</NAME>
 <NP>7</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-PSIlogger: Maximum runtime of 180 seconds elapsed.
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>fetchandadd_tree</NAME>
 <NP>7</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-PSIlogger: Maximum runtime of 180 seconds elapsed.
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>wintest</NAME>
@@ -1760,19 +1733,13 @@ PSIlogger: Maximum runtime of 180 seconds elapsed.
 <NAME>fetchandadd_am</NAME>
 <NP>7</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-PSIlogger: Maximum runtime of 180 seconds elapsed.
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>fetchandadd_tree_am</NAME>
 <NP>7</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-PSIlogger: Maximum runtime of 180 seconds elapsed.
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>accfence2_am</NAME>
@@ -1826,10 +1793,7 @@ PSIlogger: Maximum runtime of 180 seconds elapsed.
 <NAME>mixedsync</NAME>
 <NP>4</NP>
 <WORKDIR>./rma</WORKDIR>
-<STATUS>fail</STATUS>
-<TESTDIFF>
-PSIlogger: Maximum runtime of 180 seconds elapsed.
-</TESTDIFF>
+<STATUS>pass</STATUS>
 </MPITEST>
 <MPITEST>
 <NAME>epochtest</NAME>
@@ -1923,8 +1887,8 @@ PSIlogger: Maximum runtime of 180 seconds elapsed.
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawn1", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff39b30990, errors=0x7fff39b30940) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawn1", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fffb9ad4ab0, errors=0x7fffb9ad4ac0) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -1935,8 +1899,8 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawn1", argv=(nil), maxprocs=2, MPI_
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawn2", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff12162b10, errors=0x7fff12162ab0) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawn2", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff7daf09c0, errors=0x7fff7daf09e0) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -1947,8 +1911,8 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawn2", argv=(nil), maxprocs=2, MPI_
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="spawninfo1", argv=(nil), maxprocs=2, info=0x9c000000, root=0, MPI_COMM_WORLD, intercomm=0x7fff65f40980, errors=0x7fff65f40930) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="spawninfo1", argv=(nil), maxprocs=2, info=0x9c000000, root=0, MPI_COMM_WORLD, intercomm=0x7fffc5965e00, errors=0x7fffc5965e20) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -1959,8 +1923,8 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="spawninfo1", argv=(nil), maxprocs=2, in
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn_multiple: Unsupported file operation , error stack:
-MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x7fffb7cffab0, argvs=(nil), maxprocs=0x7fffb7cffac0, infos=0x7fffb7cffae0, root=0, MPI_COMM_WORLD, intercomm=0x7fffb7cffb30, errors=0x7fffb7cffad0) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x7fffc0b2d5e0, argvs=(nil), maxprocs=0x7fffc0b2d5b0, infos=0x7fffc0b2d5d0, root=0, MPI_COMM_WORLD, intercomm=0x7fffc0b2d5a0, errors=0x7fffc0b2d5c0) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -1971,8 +1935,8 @@ MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x7fffb7cffa
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnintra", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fffe84edff0, errors=0x7fffe84edfa0) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnintra", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff00308b80, errors=0x7fff00308bd0) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -1984,11 +1948,11 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnintra", argv=(nil), maxprocs=2, 
 Warning: MPID_Comm_spawn_multiple() not implemented
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnintra", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff1cb0cdb0, errors=0x7fff1cb0cd60) failed
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnintra", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fffe81598d0, errors=0x7fffe8159920) failed
+
 (unknown)(): Unsupported file operation Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnintra", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff6472ab70, errors=0x7fff6472ab20) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 1 exited with status 1.
-PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnintra", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff187c5df0, errors=0x7fff187c5e40) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -1999,8 +1963,8 @@ PSIlogger: Child with rank 0 exited with status 1.
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnargv", argv=0x7fff8a288440, maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff8a288500, errors=0x7fff8a2884c0) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnargv", argv=0x7fffb61b2cb0, maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fffb61b2c60, errors=0x7fffb61b2c80) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2011,8 +1975,8 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnargv", argv=0x7fff8a288440, maxp
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnmanyarg", argv=0x7fff3e9b4e20, maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff3e9b8e6c, errors=0x7fff3e9b8e20) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnmanyarg", argv=0x7fffd9e34e10, maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fffd9e34de0, errors=0x7fffd9e34e00) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2022,13 +1986,13 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnmanyarg", argv=0x7fff3e9b4e20, m
 <STATUS>fail</STATUS>
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
-Fatal error in MPI_Comm_spawn_multiple: Unsupported file operation , error stack:
-MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x6063f0, argvs=(nil), maxprocs=0x606400, infos=0x606408, root=0, MPI_COMM_WORLD, intercomm=0x7fff2314f8c0, errors=0x7fff2314f8b0) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn_multiple: Unsupported file operation , error stack:
-MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x6063f0, argvs=(nil), maxprocs=0x606400, infos=0x606408, root=0, MPI_COMM_WORLD, intercomm=0x7fffc9e43850, errors=0x7fffc9e43840) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 1 exited with status 1.
+MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x606220, argvs=(nil), maxprocs=0x606230, infos=0x606238, root=0, MPI_COMM_WORLD, intercomm=0x7fffddfa0940, errors=0x7fffddfa09b0) failed
+
+(unknown)(): Unsupported file operation Fatal error in MPI_Comm_spawn_multiple: Unsupported file operation , error stack:
+MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x606220, argvs=(nil), maxprocs=0x606230, infos=0x606238, root=0, MPI_COMM_WORLD, intercomm=0x7fffe049d600, errors=0x7fffe049d670) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2039,9 +2003,9 @@ MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x6063f0, ar
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 MPI_Comm_spawn failed: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="spaconacc", argv=0x7fff00bc14d0, maxprocs=1, info=0x9c000000, root=0, MPI_COMM_SELF, intercomm=0x7fff00bc14fc, errors=(nil)) failed
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="spaconacc", argv=0x7fff4b2837f0, maxprocs=1, info=0x9c000000, root=0, MPI_COMM_SELF, intercomm=0x7fff4b2837dc, errors=(nil)) failed
 (unknown)(): Unsupported file operation 
-application called MPI_Abort(MPI_COMM_WORLD, 1006716972) - process 0PSIlogger: Child with rank 0 exited with status 44.
+application called MPI_Abort(MPI_COMM_WORLD, 1006717484) - process 0
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2052,8 +2016,8 @@ application called MPI_Abort(MPI_COMM_WORLD, 1006716972) - process 0PSIlogger: C
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="spaconacc2", argv=0x7fffa5ebe4b0, maxprocs=1, info=0x9c000000, root=0, MPI_COMM_SELF, intercomm=0x7fffa5ebe4dc, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="spaconacc2", argv=0x7fffa55905d0, maxprocs=1, info=0x9c000000, root=0, MPI_COMM_SELF, intercomm=0x7fffa55905bc, errors=(nil)) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2062,14 +2026,14 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="spaconacc2", argv=0x7fffa5ebe4b0, maxpr
 <WORKDIR>./spawn</WORKDIR>
 <STATUS>fail</STATUS>
 <TESTDIFF>
-MPI_Open_port failed: Unsupported file operation , error stack:
-PMPI_Open_port(123): MPI_Open_port(MPI_INFO_NULL, port=0x7fffb9d6da20) failed
-(unknown)(): Unsupported file operation 
 Warning: MPID_Open_port() not implemented
-application called MPI_Abort(MPI_COMM_WORLD, 469865772) - process 0PSIlogger: Child with rank 0 exited with status 44.
-Fatal error in MPI_Recv: Other MPI error, error stack:
-MPI_Recv(186)......: MPI_Recv(buf=0x7fff39f7ddd0, count=256, MPI_CHAR, src=0, tag=0, MPI_COMM_WORLD, status=0x7fff39f7ded0) failed
-mpid_irecv_done(98): read from socket failed - request state:recv(pde)donePSIlogger: Child with rank 1 exited with status 1.
+MPI_Open_port failed: Unsupported file operation , error stack:
+PMPI_Open_port(123): MPI_Open_port(MPI_INFO_NULL, port=0x7fff1f679920) failed
+(unknown)(): Unsupported file operation 
+
+application called MPI_Abort(MPI_COMM_WORLD, 201430828) - process 0Fatal error in MPI_Recv: Other MPI error, error stack:
+MPI_Recv(186).......: MPI_Recv(buf=0x7fffbdee5c40, count=256, MPI_CHAR, src=0, tag=0, MPI_COMM_WORLD, status=0x7fffbdee5c20) failed
+mpid_irecv_done(100): read from socket failed - request state:recv(pde)done
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2080,16 +2044,16 @@ mpid_irecv_done(98): read from socket failed - request state:recv(pde)donePSIlog
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spaiccreate", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_SELF, intercomm=0x7fffcca270c0, errors=0x7fffcca270a0) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
-Fatal error in PMPI_Intercomm_create: Other MPI error, error stack:
-PMPI_Intercomm_create(577)....: MPI_Intercomm_create(MPI_COMM_WORLD, local_leader=0, MPI_COMM_NULL, remote_leader=0, tag=123, newintercomm=0x7fffe895d488) failed
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spaiccreate", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_SELF, intercomm=0x7fff60dab100, errors=0x7fff60dab130) failed
+
+(unknown)(): Unsupported file operation Fatal error in PMPI_Intercomm_create: Other MPI error, error stack:
+PMPI_Intercomm_create(577)....: MPI_Intercomm_create(MPI_COMM_WORLD, local_leader=0, MPI_COMM_NULL, remote_leader=0, tag=123, newintercomm=0x7fffd36ebc4c) failed
 PMPI_Intercomm_create(439)....: 
-MPIR_Get_contextid(521).......: 
-MPIR_Get_contextid_sparse(563): 
+MPIR_Get_contextid(528).......: 
+MPIR_Get_contextid_sparse(570): 
 MPIR_Allreduce_impl(712)......: 
 MPIR_Allreduce_intra(357).....: 
-mpid_irecv_done(98)...........: read from socket failed - request state:recv(pde)donePSIlogger: Child with rank 1 exited with status 1.
+mpid_irecv_done(100)..........: read from socket failed - request state:recv(pde)done
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2100,8 +2064,8 @@ mpid_irecv_done(98)...........: read from socket failed - request state:recv(pde
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./taskmaster", argv=(nil), maxprocs=1, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x954920, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./taskmaster", argv=(nil), maxprocs=1, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x1d5abe0, errors=(nil)) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2111,13 +2075,13 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./taskmaster", argv=(nil), maxprocs=1, 
 <STATUS>fail</STATUS>
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
-Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./taskmaster", argv=(nil), maxprocs=1, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x23c1ab0, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./taskmaster", argv=(nil), maxprocs=1, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x1119ab0, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 1 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./taskmaster", argv=(nil), maxprocs=1, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0xef4da0, errors=(nil)) failed
+
+(unknown)(): Unsupported file operation Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./taskmaster", argv=(nil), maxprocs=1, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x1e6fda0, errors=(nil)) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2127,14 +2091,14 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./taskmaster", argv=(nil), maxprocs=1, 
 <STATUS>fail</STATUS>
 <TESTDIFF>
 Warning: MPID_Open_port() not implemented
-Error in MPI_Comm_join 671694892
+Error in MPI_Comm_join 606764
 Error in MPI_Sendrecv on new communicator
 Warning: MPID_Open_port() not implemented
-Error in MPI_Comm_join 403259436
+Error in MPI_Comm_join 604586540
 Error in MPI_Sendrecv on new communicator
 Error in MPI_Comm_disconnect
-Error in MPI_Comm_disconnect
  Found 2054 errors
+Error in MPI_Comm_disconnect
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2145,16 +2109,8 @@ Error in MPI_Comm_disconnect
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect_reconnect", argv=0x7fffed754dd0, maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_Warning: MPID_Comm_spawn_multiple() not implemented
-WORLD, intercomm=0x7fffed754ca0, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 1 exited with status 1.
-Warning: MPID_Comm_spawn_multiple() not implemented
-Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect_reconnect", argv=0x7fff779ab0c0, maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff779aaf90, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
-Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect_reconnect", argv=0x7fff8846b930, maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff8846b800, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 2 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect_reconnect", argv=0x7fff1d183030, maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff1d182de0, errors=(nil)) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2165,16 +2121,8 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect_reconnect", argv=0x7fff884
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="disconnect_reconnect2", argv=0x7ffffe94e790, maxprocs=3, info=0x9c000000, root=0, MPI_COMM_WORLD, intercomm=0x7ffffe94e7c8, errors=(nil)) failWarning: MPID_Comm_spawn_multiple() not implemented
-Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="disconnect_reconnect2", argv=0x7fffd8f0b8a0, maxprocs=3, info=0x9c000000, root=0, MPI_COMMed
-(unknown)(): Unsupported file operation _WORLD, intercomm=0x7fffd8f0b8d8, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
-PSIlogger: Child with rank 1 exited with status 1.
-Warning: MPID_Comm_spawn_multiple() not implemented
-Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="disconnect_reconnect2", argv=0x7fff889e6d20, maxprocs=3, info=0x9c000000, root=0, MPI_COMM_WORLD, intercomm=0x7fff889e6d58, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 2 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="disconnect_reconnect2", argv=0x7fffc7c50c00, maxprocs=3, info=0x9c000000, root=0, MPI_COMM_WORLD, intercomm=0x7fffc7c50be8, errors=(nil)) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2185,16 +2133,8 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="disconnect_reconnect2", argv=0x7fff889e
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect_reconnect3", argv=0x7fffae34ab30, maxprocs=4, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fffae34aa04, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
-Warning: MPID_Comm_spawn_multiple() not implemented
-Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect_reconnect3", argv=0x7fff83d329a0, maxprocs=4, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff83d32874, errors=(nil)) failed
-(unknown)(): Unsupported file operation Warning: MPID_Comm_spawn_multiple() not implemented
-Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect_reconnect3", argv=0x7fffffa22cc0, maxprocs=4, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fffffa22b94, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 1 exited with status 1.
-PSIlogger: Child with rank 2 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect_reconnect3", argv=0x7fff48bdcf10, maxprocs=4, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff48bdccc4, errors=(nil)) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2205,14 +2145,14 @@ PSIlogger: Child with rank 2 exited with status 1.
 <TESTDIFF>
 Warning: MPID_Open_port() not implemented
 Fatal error in PMPI_Open_port: Unsupported file operation , error stack:
-PMPI_Open_port(123): MPI_Open_port(MPI_INFO_NULL, port=0x7fff5fb26750) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
-Fatal error in MPI_Recv: Other MPI error, error stack:
-MPI_Recv(186)......: MPI_Recv(buf=0x7fff05a8eb90, count=256, MPI_CHAR, src=0, tag=0, MPI_COMM_WORLD, status=0x7fff05a8ed90) failed
-mpid_irecv_done(98): read from socket failed - request state:recv(pde)donePSIlogger: Child with rank 1 exited with status 1.
-Fatal error in MPI_Recv: Other MPI error, error stack:
-MPI_Recv(186)......: MPI_Recv(buf=0x7fff2fdd5b30, count=256, MPI_CHAR, src=0, tag=0, MPI_COMM_WORLD, status=0x7fff2fdd5c30) failed
-mpid_irecv_done(98): read from socket failed - request state:recv(pde)donePSIlogger: Child with rank 2 exited with status 1.
+PMPI_Open_port(123): MPI_Open_port(MPI_INFO_NULL, port=0x7fff4fc0b800) failed
+
+(unknown)(): Unsupported file operation Fatal error in MPI_Recv: Other MPI error, error stack:
+MPI_Recv(186).......: MPI_Recv(buf=0x7fff5a150830, count=256, MPI_CHAR, src=0, tag=0, MPI_COMM_WORLD, status=0x7fff5a150810) failed
+
+mpid_irecv_done(100): read from socket failed - request state:recv(pde)doneFatal error in MPI_Recv: Other MPI error, error stack:
+MPI_Recv(186).......: MPI_Recv(buf=0x7fff80b4d430, count=256, MPI_CHAR, src=0, tag=0, MPI_COMM_WORLD, status=0x7fff80b4d310) failed
+mpid_irecv_done(100): read from socket failed - request state:recv(pde)done
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2223,17 +2163,11 @@ mpid_irecv_done(98): read from socket failed - request state:recv(pde)donePSIlog
 <TESTDIFF>
 Warning: MPID_Open_port() not implemented
 Fatal error in PMPI_Open_port: Unsupported file operation , error stack:
-PMPI_Open_port(123): MPI_Open_port(MPI_INFO_NULL, port=0x7fffe9477800) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
-Fatal error in MPI_Recv: Other MPI error, error stack:
-MPI_Recv(186)......: MPI_Recv(buf=0x7fff24678290, count=256, MPI_CHAR, src=0, tag=0, MPI_COMM_WORLD, status=0x7fff24678590) failed
-mpid_irecv_done(98): read from socket failed - request state:recv(pde)donePSIlogger: Child with rank 1 exited with status 1.
-Fatal error in MPI_Recv: Other MPI error, error stack:
-MPI_Recv(186)......: MPI_Recv(buf=0x7fffb180a470, count=256, MPI_CHAR, src=0, tag=0, MPI_COMM_WORLD, status=0x7fffb180a670) failed
-mpid_irecv_done(98): read from socket failed - request state:recv(pde)donePSIlogger: Child with rank 2 exited with status 1.
-Fatal error in MPI_Recv: Other MPI error, error stack:
-MPI_Recv(186)......: MPI_Recv(buf=0x7fff9c3bc180, count=256, MPI_CHAR, src=0, tag=0, MPI_COMM_WORLD, status=0x7fff9c3bc280) failed
-mpid_irecv_done(98): read from socket failed - request state:recv(pde)donePSIlogger: Child with rank 3 exited with status 1.
+PMPI_Open_port(123): MPI_Open_port(MPI_INFO_NULL, port=0x7fffcd133540) failed
+
+(unknown)(): Unsupported file operation Fatal error in MPI_Recv: Other MPI error, error stack:
+MPI_Recv(186).......: MPI_Recv(buf=0x7fffdd4a22a0, count=256, MPI_CHAR, src=0, tag=0, MPI_COMM_WORLD, status=0x7fffdd4a2180) failed
+mpid_irecv_done(100): read from socket failed - request state:recv(pde)done
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2243,17 +2177,9 @@ mpid_irecv_done(98): read from socket failed - request state:recv(pde)donePSIlog
 <STATUS>fail</STATUS>
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
-Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect", argv=(nil), maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0xFatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect", argv=(nil), maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fffa600a660, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
-7fff106f6050, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 1 exited with status 1.
-Warning: MPID_Comm_spawn_multiple() not implemented
-Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect", argv=(nil), maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fffea924510, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 2 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect", argv=(nil), maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff98cd5da0, errors=(nil)) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2264,16 +2190,8 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect", argv=(nil), maxprocs=3, 
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect2", argv=(nil), maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fffe30782d0, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
-Warning: MPID_Comm_spawn_multiple() not implemented
-Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect2", argv=(nil), maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff0b8f6130, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 2 exited with status 1.
-Warning: MPID_Comm_spawn_multiple() not implemented
-Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect2", argv=(nil), maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff51fee040, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 1 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect2", argv=(nil), maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fffe6e05170, errors=(nil)) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2283,17 +2201,17 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect2", argv=(nil), maxprocs=3,
 <STATUS>fail</STATUS>
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
-Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect3", argv=(nil), maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff5b264ec0, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+Warning: MPID_Comm_spawn_multiple() not implemented
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect3", argv=(nil), maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7ffff5808530, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 2 exited with status 1.
-Warning: MPID_Comm_spawn_multiple() not implemented
-Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect3", argv=(nil), maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff873b9610, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 1 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect3", argv=(nil), maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fffae5a0660, errors=(nil)) failed
+
+(unknown)(): Unsupported file operation Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect3", argv=(nil), maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff5284a740, errors=(nil)) failed
+
+(unknown)(): Unsupported file operation Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect3", argv=(nil), maxprocs=3, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff984f3c00, errors=(nil)) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2304,8 +2222,8 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./disconnect3", argv=(nil), maxprocs=3,
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./concurrent_spawns", argv=0x7fff58e81ca0, maxprocs=1, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff58e81ce0, errors=(nil)) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./concurrent_spawns", argv=0x7fff6482ccb0, maxprocs=1, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff6482cc80, errors=(nil)) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2316,11 +2234,8 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./concurrent_spawns", argv=0x7fff58e81c
 <TESTDIFF>
 Warning: MPID_Open_port() not implemented
 Fatal error in PMPI_Open_port: Unsupported file operation , error stack:
-PMPI_Open_port(123): MPI_Open_port(MPI_INFO_NULL, port=0x1bb47b0) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
-Fatal error in MPI_Recv: Other MPI error, error stack:
-MPI_Recv(186)......: MPI_Recv(buf=0x10727b0, count=256, MPI_CHAR, src=0, tag=0, MPI_COMM_WORLD, status=0x1) failed
-mpid_irecv_done(98): read from socket failed - request state:recv(pde)donePSIlogger: Child with rank 2 exited with status 1.
+PMPI_Open_port(123): MPI_Open_port(MPI_INFO_NULL, port=0x11c3140) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2637,8 +2552,8 @@ mpid_irecv_done(98): read from socket failed - request state:recv(pde)donePSIlog
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnf", argv=0x1dee580, maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff7f768200, errors=0x7fff7f768210) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnf", argv=0xdc2740, maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7ffffe2e7c60, errors=0x7ffffe2e7c70) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2649,8 +2564,8 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnf", argv=0x1dee580, maxprocs=2, 
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnargvf", argv=0x75ce90, maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff76312ba0, errors=0x7fff76312bb0) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnargvf", argv=0x1645c20, maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff62c10960, errors=0x7fff62c10970) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2660,15 +2575,15 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnargvf", argv=0x75ce90, maxprocs=
 <STATUS>fail</STATUS>
 <TESTDIFF>
 Warning: MPID_Open_port() not implemented
-Fatal error in PMPI_Open_port: Unsupported file operation , error stack:
-PMPI_Open_port(123): MPI_Open_port(MPI_INFO_NULL, port=0x175b660) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
 Fatal error in PMPI_Barrier: Other MPI error, error stack:
 PMPI_Barrier(425).....: MPI_Barrier(MPI_COMM_WORLD) failed
 MPIR_Barrier_impl(331): Failure during collective
 MPIR_Barrier_impl(313): 
 MPIR_Barrier_intra(83): 
-mpid_irecv_done(98)...: read from socket failed - request state:recv(pde)donePSIlogger: Child with rank 1 exited with status 1.
+
+mpid_irecv_done(100)..: read from socket failed - request state:recv(pde)doneFatal error in PMPI_Open_port: Unsupported file operation , error stack:
+PMPI_Open_port(123): MPI_Open_port(MPI_INFO_NULL, port=0x1ae6060) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2679,8 +2594,8 @@ mpid_irecv_done(98)...: read from socket failed - request state:recv(pde)donePSI
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn_multiple: Unsupported file operation , error stack:
-MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x1c4c7a0, argvs=0x1c4c580, maxprocs=0x7fff68ef8e90, infos=0x7fff68ef8ea0, root=0, MPI_COMM_WORLD, intercomm=0x7fff68ef8e9c, errors=0x7fff68ef8ec0) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x1d79720, argvs=0x1d79740, maxprocs=0x7fff9d789270, infos=0x7fff9d789280, root=0, MPI_COMM_WORLD, intercomm=0x7fff9d78927c, errors=0x7fff9d7892a0) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -2690,13 +2605,13 @@ MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x1c4c7a0, a
 <STATUS>fail</STATUS>
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
+Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn_multiple: Unsupported file operation , error stack:
-MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x1c097a0, argvs=(nil), maxprocs=0x7fff5e02eb90, infos=0x7fff5e02eba0, root=0, MPI_COMM_WORLD, intercomm=0Warning: MPID_Comm_spawn_multiple() not implemented
-Fatal error in MPI_Comm_spawn_multiple: Unsupported file operation , error stack:
-MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x11a97a0, argvs=(nil), maxprocs=0x7fff9576fa20, infosx7fff5e02eb9c, errors=0x7fff5e02ebc0) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
-=0x7fff9576fa30, root=0, MPI_COMM_WORLD, intercomm=0x7fff9576fa2c, errors=0x7fff9576fa50) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 1 exited with status 1.
+MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x147f720, argvs=(nil), maxprocs=0x7fffcc998f30, infos=0x7fffcc998f40, root=0, MPI_COMM_WORLD, intercomm=0x7fffcc998f3c, errors=0x7fffcc998f60) failed
+
+(unknown)(): Unsupported file operation Fatal error in MPI_Comm_spawn_multiple: Unsupported file operation , error stack:
+MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x1081720, argvs=(nil), maxprocs=0x7fff2458b7d0, infos=0x7fff2458b7e0, root=0, MPI_COMM_WORLD, intercomm=0x7fff2458b7dc, errors=0x7fff2458b800) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -3379,8 +3294,8 @@ MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x11a97a0, a
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnintrax", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff88ceac28, errors=0x7fff88ceabf0) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnintrax", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7ffff3202d88, errors=0x7ffff3202d50) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -3390,13 +3305,13 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnintrax", argv=(nil), maxprocs=2,
 <STATUS>fail</STATUS>
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
-Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnintrax", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnintrax", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff4a809e58, errors=0x7fff4a809e20) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
-x7fff174b8f48, errors=0x7fff174b8f10) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 1 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnintrax", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff691142a8, errors=0x7fff69114270) failed
+
+(unknown)(): Unsupported file operation Warning: MPID_Comm_spawn_multiple() not implemented
+Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnintrax", argv=(nil), maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff3d24eb78, errors=0x7fff3d24eb40) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -3407,8 +3322,8 @@ x7fff174b8f48, errors=0x7fff174b8f10) failed
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnargvx", argv=0x7ffff728a1c0, maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7ffff728a298, errors=0x7ffff728a260) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnargvx", argv=0x7ffffdd75590, maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7ffffdd75648, errors=0x7ffffdd75610) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -3419,11 +3334,11 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnargvx", argv=0x7ffff728a1c0, max
 <TESTDIFF>
 Warning: MPID_Open_port() not implemented
 Fatal error in PMPI_Open_port: Unsupported file operation , error stack:
-PMPI_Open_port(123): MPI_Open_port(MPI_INFO_NULL, port=0x7fff599bc080) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
-Fatal error in MPI_Recv: Other MPI error, error stack:
-MPI_Recv(186)......: MPI_Recv(buf=0x7fff6f169370, count=256, MPI_CHAR, src=0, tag=0, MPI_COMM_WORLD, status=0x1) failed
-mpid_irecv_done(98): read from socket failed - request state:recv(pde)donePSIlogger: Child with rank 1 exited with status 1.
+PMPI_Open_port(123): MPI_Open_port(MPI_INFO_NULL, port=0x7fff01c6fe10) failed
+
+(unknown)(): Unsupported file operation Fatal error in MPI_Recv: Other MPI error, error stack:
+MPI_Recv(186).......: MPI_Recv(buf=0x7fff15046250, count=256, MPI_CHAR, src=0, tag=0, MPI_COMM_WORLD, status=0x1) failed
+mpid_irecv_done(100): read from socket failed - request state:recv(pde)done
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -3842,8 +3757,8 @@ mpid_irecv_done(98): read from socket failed - request state:recv(pde)donePSIlog
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnf90", argv=0x128a590, maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff48c42930, errors=0x7fff48c42940) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnf90", argv=0x1467740, maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fff490de390, errors=0x7fff490de3a0) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -3854,8 +3769,8 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnf90", argv=0x128a590, maxprocs=2
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn: Unsupported file operation , error stack:
-MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnargvf90", argv=0x1a93ea0, maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fffae1c9fb0, errors=0x7fffae1c9fc0) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnargvf90", argv=0x20b2c20, maxprocs=2, MPI_INFO_NULL, root=0, MPI_COMM_WORLD, intercomm=0x7fffb217dad0, errors=0x7fffb217dae0) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -3866,14 +3781,14 @@ MPI_Comm_spawn(144): MPI_Comm_spawn(cmd="./spawnargvf90", argv=0x1a93ea0, maxpro
 <TESTDIFF>
 Warning: MPID_Open_port() not implemented
 Fatal error in PMPI_Open_port: Unsupported file operation , error stack:
-PMPI_Open_port(123): MPI_Open_port(MPI_INFO_NULL, port=0x1361670) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
-Fatal error in PMPI_Barrier: Other MPI error, error stack:
+PMPI_Open_port(123): MPI_Open_port(MPI_INFO_NULL, port=0x804060) failed
+
+(unknown)(): Unsupported file operation Fatal error in PMPI_Barrier: Other MPI error, error stack:
 PMPI_Barrier(425).....: MPI_Barrier(MPI_COMM_WORLD) failed
 MPIR_Barrier_impl(331): Failure during collective
 MPIR_Barrier_impl(313): 
 MPIR_Barrier_intra(83): 
-mpid_irecv_done(98)...: read from socket failed - request state:recv(pde)donePSIlogger: Child with rank 1 exited with status 1.
+mpid_irecv_done(100)..: read from socket failed - request state:recv(pde)done
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -3884,8 +3799,8 @@ mpid_irecv_done(98)...: read from socket failed - request state:recv(pde)donePSI
 <TESTDIFF>
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn_multiple: Unsupported file operation , error stack:
-MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x175f7b0, argvs=0x175f590, maxprocs=0x7fff28de38f0, infos=0x7fff28de3900, root=0, MPI_COMM_WORLD, intercomm=0x7fff28de38fc, errors=0x7fff28de3920) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
+MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0xb44720, argvs=0xb44740, maxprocs=0x7fff524506b0, infos=0x7fff524506c0, root=0, MPI_COMM_WORLD, intercomm=0x7fff524506bc, errors=0x7fff524506e0) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>
@@ -3897,11 +3812,11 @@ MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x175f7b0, a
 Warning: MPID_Comm_spawn_multiple() not implemented
 Warning: MPID_Comm_spawn_multiple() not implemented
 Fatal error in MPI_Comm_spawn_multiple: Unsupported file operation , error stack:
-MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x15a17b0, argvs=(nil), maxprocs=0x7fff5d24da60, infos=0x7fff5d24da70, root=0, MPI_COMM_WORLD, intercomm=0x7fff5d24da6c, errors=0x7fff5d24da90) failed
+MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x1539720, argvs=(nil), maxprocs=0x7fff364f8360, infos=0x7fff364f8370, root=0, MPI_COMM_WORLD, intercomm=0x7fff364f836c, errors=0x7fff364f8390) failed
+
 (unknown)(): Unsupported file operation Fatal error in MPI_Comm_spawn_multiple: Unsupported file operation , error stack:
-MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0xd217b0, argvs=(nil), maxprocs=0x7fff7b08c960, infos=0x7fff7b08c970, root=0, MPI_COMM_WORLD, intercomm=0x7fff7b08c96c, errors=0x7fff7b08c990) failed
-(unknown)(): Unsupported file operation PSIlogger: Child with rank 0 exited with status 1.
-PSIlogger: Child with rank 1 exited with status 1.
+MPI_Comm_spawn_multiple(160): MPI_Comm_spawn_multiple(count=2, cmds=0x12b7720, argvs=(nil), maxprocs=0x7fff93ab8980, infos=0x7fff93ab8990, root=0, MPI_COMM_WORLD, intercomm=0x7fff93ab898c, errors=0x7fff93ab89b0) failed
+(unknown)(): Unsupported file operation 
 </TESTDIFF>
 </MPITEST>
 <MPITEST>

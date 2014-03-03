@@ -182,6 +182,9 @@ void MPID_req_queue_cleanup(void)
 	Dprintf("Requestqueue queue_len: %d", req_queue_cnt);
 
 	while ((req = prep_req_dequeue())) {
+		struct MPID_DEV_Request_common *creq = &req->dev.kind.common;
+		pscom_request_free(creq->pscom_req);
+		creq->pscom_req = NULL;
 		MPID_PSP_Request_free(req);
 	}
 

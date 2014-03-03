@@ -1,17 +1,15 @@
-For 5.0.26-1_51_gcc8f5b6 on master:
+For 5.0.28-1_11_g70a62e7 on master:
 
-50 tests failed out of 584
+42 tests failed out of 584
 
 Issue #1: (32 tests)
       MPID_Comm_spawn_multiple() not implemented
 Issue #2: (8 tests)
       MPID_Open_port() not implemented
-Issue #3: (8 tests)
-      rma failed with 180sec timeout
-Issue #4: (2 tests)
+Issue #3: (2 tests)
       Failing cancel for sends of kind send, bsend, isend and ibsend
 
-./pt2pt/scancel: #4
+./pt2pt/scancel: #3
 	Failed to cancel an Isend request
 	Failed to cancel an Ibsend request
 	Failed to cancel an Isend request
@@ -21,7 +19,7 @@ Issue #4: (2 tests)
 	Failed to cancel an Isend request
 	Failed to cancel an Ibsend request
 	 Found 8 errors
-./pt2pt/pscancel: #4
+./pt2pt/pscancel: #3
 	Failed to cancel a persistent send request
 	Failed to cancel a persistent bsend request
 	Failed to cancel a persistent send request
@@ -31,22 +29,6 @@ Issue #4: (2 tests)
 	Failed to cancel a persistent send request
 	Failed to cancel a persistent bsend request
 	 Found 8 errors
-./rma/adlb_mimic1: #3
-	PSIlogger: Maximum runtime of 180 seconds elapsed.
-./rma/lockcontention2 np=4 #3
-	PSIlogger: Maximum runtime of 180 seconds elapsed.
-./rma/lockcontention2 np=8 #3
-	PSIlogger: Maximum runtime of 180 seconds elapsed.
-./rma/fetchandadd: #3
-	PSIlogger: Maximum runtime of 180 seconds elapsed.
-./rma/fetchandadd_tree: #3
-	PSIlogger: Maximum runtime of 180 seconds elapsed.
-./rma/fetchandadd_am: #3
-	PSIlogger: Maximum runtime of 180 seconds elapsed.
-./rma/fetchandadd_tree_am: #3
-	PSIlogger: Maximum runtime of 180 seconds elapsed.
-./rma/mixedsync: #3
-	PSIlogger: Maximum runtime of 180 seconds elapsed.
 ./spawn/spawn1: #1
 	Warning: MPID_Comm_spawn_multiple() not implemented
 ./spawn/spawn2: #1

@@ -33,7 +33,7 @@ test testing:
 	export PSI_OVERBOOK=1; \
 	export PSI_LOG_SILENT=1; \
 	export PSP_SCHED_YIELD=1; \
-	export LD_LIBRARY_PATH=$(TOP_BUILDDIR)/mpich2/lib; \
+	export LD_LIBRARY_PATH=$(TOP_BUILDDIR)/mpich2/lib:/opt/parastation/lib64; \
 	export _LOGNAME=$(SRCDIR)/doc/test-$$($(SRCDIR)/scripts/vcversion -r $(SRCDIR))_$$(date +%F_%T); \
 	( cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(TOP_BUILDDIR)/mpich2); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
@@ -73,8 +73,8 @@ install_mpich2:
 	set -x; \
 	for l in $(prefix)/lib/lib*.so.3; do \
 	    test -f "$$l" || { echo "Error: Missing $$l!"; exit 1; }; \
-	    ln -s "$${l##*/}" "$${l%.3}.1.1"; \
-	    ln -s "$${l##*/}" "$${l%.3}.1.2"; \
+	    ln -sf "$${l##*/}" "$${l%.3}.1.1"; \
+	    ln -sf "$${l##*/}" "$${l%.3}.1.2"; \
 	done
 ifeq ($(ENABLE_MPD),false)
 # remove installed mpd files
@@ -110,7 +110,7 @@ ifneq ($(fixpath),)
 	mv __tmp__version $@
 endif
 
-$(prefix)/ChangeLog: ChangeLog
+$(prefix)/ChangeLog: $(SRCDIR)/ChangeLog
 	cp -a "$<" "$@"
 
 ####################################################

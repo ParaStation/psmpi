@@ -118,8 +118,9 @@ void MPID_PSP_packed_msg_cleanup(MPID_PSP_packed_msg_t *msg)
 static inline
 void MPID_PSP_packed_msg_cleanup_datatype(MPID_PSP_packed_msg_t *msg, MPI_Datatype datatype)
 {
+	MPID_PSP_Datatype_release(datatype);
+
 	if (msg->tmp_buf) {
-		MPID_PSP_Datatype_release(datatype);
 		MPIU_Free(msg->tmp_buf);
 		msg->tmp_buf = NULL;
 	}

@@ -12,6 +12,7 @@
 %{?_with_threading: %define threading yes}
 
 %{!?subname: %{?confset: %define subname %{confset}}}
+%{expand:%define buildForSuSE %(if [ -e /etc/SuSE-release ]; then echo 1; else echo 0; fi)}
 
 Summary:   ParaStation MPI2
 Vendor:    ParTec Cluster Competence Center GmbH, Munich, Germany
@@ -37,6 +38,13 @@ ParaStation MPI2. Based on MPICH2 using the ParaStation communication library ps
 %{?threading: Threading support: MPI_THREAD_MULTIPLE}
 MPICH2 is a freely available, portable implementation of MPI2, the Standard for message-passing libraries.
 http://www-unix.mcs.anl.gov/mpi/mpich/
+
+# on recent Red Hat systems, debug_package is inserted automatically,
+# so don't insert it again
+%if %buildForSuSE
+%debug_package
+%endif
+
 %prep
 
 cat <<DOK

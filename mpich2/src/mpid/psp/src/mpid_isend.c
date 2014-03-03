@@ -243,7 +243,13 @@ void MPID_PSP_RecvCtrl(int tag, int context_id, int src_rank, pscom_connection_t
 	xhead->_reserved_ = 0;
 	xhead->src_rank = src_rank;
 
-	req->connection = con;
+	if(src_rank != MPI_ANY_SOURCE) {
+		req->connection = con;
+	} else {
+		req->connection = NULL;
+		req->socket = MPIDI_Process.socket;
+	}
+
 	req->ops.recv_accept = accept_ctrl;
 	req->data = NULL;
 	req->data_len = 0;

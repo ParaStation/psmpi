@@ -16,24 +16,68 @@
 #include "mpid_psp_request.h"
 
 static
+int _accept_never(pscom_request_t *request,
+		  pscom_connection_t *connection,
+		  pscom_header_net_t *header_net)
+{
+	return 0;
+}
+
+pscom_request_t *dummy_req_any_source_for_rma = NULL;
+
+static
 void MPID_PSP_rma_init(void)
 {
 	assert(MPIDI_Process.socket != NULL);
 
 	MPID_enable_receive_dispach();
+
+	if (!dummy_req_any_source_for_rma) {
+		/* Post a dummy ANY_SOURCE receive to listen on all
+		   connections for incoming RMA messages. */
+		dummy_req_any_source_for_rma = pscom_request_create(0, 0);
+		dummy_req_any_source_for_rma->xheader_len = 0;
+		dummy_req_any_source_for_rma->data_len = 0;
+		dummy_req_any_source_for_rma->connection = NULL;
+		dummy_req_any_source_for_rma->socket = MPIDI_Process.socket; /* ToDo: get socket from comm? */
+		dummy_req_any_source_for_rma->ops.recv_accept = _accept_never;
+		pscom_post_recv(dummy_req_any_source_for_rma);
+	}
 }
 
+static
+void MPID_PSP_rma_fini()
+{
+	if (dummy_req_any_source_for_rma) {
+		/* cancel and free the any_source dummy request */
+		pscom_cancel_recv(dummy_req_any_source_for_rma);
+		assert(pscom_req_is_done(dummy_req_any_source_for_rma));
+		pscom_request_free(dummy_req_any_source_for_rma);
+		dummy_req_any_source_for_rma = NULL;
+	}
+}
+
+static int rma_init_counter = 0;
 
 static
 void MPID_PSP_rma_check_init(void)
 {
-	static int initialized = 0;
-	if (!initialized) {
+	if (rma_init_counter == 0) {
 		MPID_PSP_rma_init();
-		initialized = 1;
 	}
+	rma_init_counter++;
 }
 
+static
+void MPID_PSP_rma_check_fini()
+{
+	assert(rma_init_counter > 0);
+
+	if(rma_init_counter == 1) {
+		MPID_PSP_rma_fini();
+	}
+	rma_init_counter--;
+}
 
 typedef struct MPID_Wincreate_msg
 {
@@ -214,6 +258,9 @@ int MPID_Win_free(MPID_Win **_win_ptr)
 	/* check whether refcount needs to be decremented here as in group_free */
 	MPIU_Handle_obj_free(&MPID_Win_mem, win_ptr);
 	(*_win_ptr) = win_ptr;
+
+	/* check whether this was the last active window */
+	MPID_PSP_rma_check_fini();
 
 fn_exit:
 	MPIU_CHKLMEM_FREEALL();

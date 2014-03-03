@@ -33,6 +33,7 @@ void sig_finalize_timeout(int signo)
 
 int MPID_Finalize(void)
 {
+	unsigned int i;
 	MPIDI_STATE_DECL(MPID_STATE_MPID_FINALIZE);
 	MPIDI_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
 /* ToDo: */
@@ -64,6 +65,30 @@ int MPID_Finalize(void)
 
 /*	fprintf(stderr, "%d PMI_Finalize\n", MPIDI_Process.my_pg_rank); */
 	PMI_Finalize();
+
+	/* Cleanup standard comm's */
+#ifdef MPID_NEEDS_ICOMM_WORLD
+	/* psp don't need icomm. But this might change? */
+	MPIR_Comm_release_always(MPIR_Process.icomm_world, 0);
+#endif
+	MPIR_Comm_release_always(MPIR_Process.comm_self, 0);
+	MPIR_Comm_release_always(MPIR_Process.comm_world, 0);
+
+	/* in case of leak checking, we have to reset the
+	   context_mask[] bit of icomm_world if we don't
+	   want to get a leaked context ID detected:
+	*/
+
+	/* Cleanups */
+	for (i = 0; i < MPIDI_Process.my_pg_size; i++) {
+		pscom_close_connection(MPIDI_Process.grank2con[i]);
+	}
+
+	MPIU_Free(MPIDI_Process.grank2con);
+	MPIDI_Process.grank2con = NULL;
+
+	MPIU_Free(MPIDI_Process.pg_id);
+	MPIDI_Process.pg_id = NULL;
 
 	MPIDI_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);
 	return MPI_SUCCESS;

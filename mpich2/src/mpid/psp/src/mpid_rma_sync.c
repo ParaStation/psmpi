@@ -128,6 +128,16 @@ void MPID_PSP_rma_cleanup(void)
 {
 	cleanup_array_1();
 	cleanup_array_123();
+
+	extern pscom_request_t *dummy_req_any_source_for_rma;
+
+	if (dummy_req_any_source_for_rma) {
+		/* cancel and free the any_source dummy request */
+		pscom_cancel_recv(dummy_req_any_source_for_rma);
+		assert(pscom_req_is_done(dummy_req_any_source_for_rma));
+		pscom_request_free(dummy_req_any_source_for_rma);
+		dummy_req_any_source_for_rma = NULL;
+	}
 }
 
 
@@ -148,7 +158,6 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 	int * recvcnts;
 	unsigned int total_rma_puts_accs;
 	int errflag = 0;
-	pscom_request_t *req_any = NULL;
 
 	comm_ptr = win_ptr->comm_ptr;
 	comm_size = comm_ptr->local_size;
@@ -165,25 +174,7 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 	while ((win_ptr->rma_puts_accs_received != total_rma_puts_accs) ||
 	       win_ptr->rma_local_pending_cnt) {
 
-		if (!req_any) {
-			/* Post a dummy ANY_SOURCE receive to listen on all
-			   connections for incoming RMA messages. */
-			req_any = pscom_request_create(0, 0);
-			req_any->xheader_len = 0;
-			req_any->data_len = 0;
-			req_any->connection = NULL;
-			req_any->socket = MPIDI_Process.socket; /* ToDo: get socket from comm? */
-			req_any->ops.recv_accept = _accept_never;
-			pscom_post_recv(req_any);
-		}
-
 		MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
-	}
-	if (req_any) {
-		/* cancel and free the any_source dummy request */
-		pscom_cancel_recv(req_any);
-		assert(pscom_req_is_done(req_any));
-		pscom_request_free(req_any);
 	}
 
 	return MPIR_Barrier_impl(comm_ptr, &errflag);
@@ -217,6 +208,9 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 			       MPID_CONTEXT_INTRA_PT2PT, &sreq);
 		if (rc != MPI_SUCCESS) {
 			mpi_errno = rc;
+		}
+		if (sreq) {
+			MPID_Request_release(sreq);
 		}
 	}
 
@@ -260,6 +254,9 @@ int MPID_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 			       MPID_CONTEXT_INTRA_PT2PT, &status, &rreq);
 		if (rc != MPI_SUCCESS) {
 			mpi_errno = rc;
+		}
+		if (rreq) {
+			MPID_Request_release(rreq);
 		}
 	}
 
@@ -306,6 +303,9 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 		if (rc != MPI_SUCCESS) {
 			mpi_errno = rc;
 		}
+		if (sreq) {
+			MPID_Request_release(sreq);
+		}
 	}
 
 	if (DEBUG_START_POST) { /* Debug: */
@@ -348,6 +348,9 @@ int MPID_Win_wait(MPID_Win *win_ptr)
 		if (rc != MPI_SUCCESS) {
 			/* Set mpi_errno, but stay in the loop and receive all other TAG_COMPLETE's */
 			mpi_errno = rc;
+		}
+		if (rreq) {
+			MPID_Request_release(rreq);
 		}
 	}
 

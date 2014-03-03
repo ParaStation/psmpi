@@ -3,7 +3,7 @@
 AC_INIT([psmpi2],[],[hauke@par-tec.com])
 AC_CONFIG_SRCDIR([configure.ac])
 
-AC_CONFIG_AUX_DIR(["scripts"])
+AC_CONFIG_AUX_DIR([scripts])
 AC_CANONICAL_TARGET([])
 
 # AC_PROG_INSTALL
@@ -155,6 +155,20 @@ case $CONFSET in
 	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
 	;;
 "pgi")
+	echo "Using confset=pgi"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
+	CONF_OPS="$CONF_OPS --enable-f77"
+	CONF_OPS="$CONF_OPS --enable-fc"
+	CONF_OPS="$CONF_OPS --enable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
+	CONF_OPS="$CONF_OPS --enable-shared"
+
+	CONF_OPS="$CONF_OPS CC=pgcc CXX=pgc++ FC=pgf90"
+	CONF_OPS="$CONF_OPS CFLAGS=-O3"
+	;;
+"pgi_pgCC")
 	echo "Using confset=pgi"
 	CONF_OPS="--with-device=psp"
 	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"

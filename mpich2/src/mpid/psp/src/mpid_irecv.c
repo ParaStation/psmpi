@@ -148,7 +148,7 @@ void MPID_do_recv_cancel_data_request_ack(pscom_request_t *cancel_req)
 	MPID_PSCOM_XHeader_t *xhead = &cancel_req->xheader.user.common;
 
 	cancel_req->ops.recv_accept = cb_accept_cancel_data;
-	cancel_req->ops.io_done = pscom_request_free;
+	cancel_req->ops.io_done = NULL; /* delay pscom_request_free() / see below! */
 
 	pscom_post_recv(cancel_req);
 
@@ -158,10 +158,16 @@ void MPID_do_recv_cancel_data_request_ack(pscom_request_t *cancel_req)
 		   cancel the cancel.
 		*/
 		pscom_cancel_recv(cancel_req);
+		pscom_request_free(cancel_req);
 	} else {
 		/* send cancel ack */
 		MPID_PSP_SendCtrl(xhead->tag, xhead->context_id, MPI_PROC_NULL,
 				  cancel_req->connection, MPID_PSP_MSGTYPE_CANCEL_DATA_ACK);
+		if (pscom_req_is_done(cancel_req)) {
+			pscom_request_free(cancel_req);
+		} else {
+			cancel_req->ops.io_done = pscom_request_free;
+		}
 	}
 }
 
@@ -238,7 +244,7 @@ void prepare_recvreq(MPID_Request *req, int tag, MPID_Comm * comm, int context_o
 	pscom_request_t *preq = rreq->common.pscom_req;
 
 	rreq->tag = tag;
-	rreq->context_id = comm->context_id + context_offset;
+	rreq->context_id = comm->recvcontext_id + context_offset;
 
 	preq->ops.recv_accept = cb_accept_data;
 	preq->xheader_len = sizeof(MPID_PSCOM_XHeader_Send_t);
