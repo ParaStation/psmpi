@@ -199,6 +199,86 @@ static HYD_status fn_put(int fd, int pid, int pgid, char *args[])
     goto fn_exit;
 }
 
+static HYD_status fn_get(int fd, int pid, int pgid, char *args[])
+{
+    int i;
+    struct HYD_proxy *proxy;
+    struct HYD_pmcd_pmi_pg_scratch *pg_scratch;
+    struct HYD_pmcd_pmi_kvs_pair *run;
+    char *kvsname, *key, *val;
+    char *tmp[HYD_NUM_TMP_STRINGS], *cmd;
+    struct HYD_pmcd_token *tokens;
+    int token_count;
+    HYD_status status = HYD_SUCCESS;
+
+    HYDU_FUNC_ENTER();
+
+    status = HYD_pmcd_pmi_args_to_tokens(args, &tokens, &token_count);
+    HYDU_ERR_POP(status, "unable to convert args to tokens\n");
+
+    kvsname = HYD_pmcd_pmi_find_token_keyval(tokens, token_count, "kvsname");
+    HYDU_ERR_CHKANDJUMP(status, kvsname == NULL, HYD_INTERNAL_ERROR,
+                        "unable to find token: kvsname\n");
+
+    key = HYD_pmcd_pmi_find_token_keyval(tokens, token_count, "key");
+    HYDU_ERR_CHKANDJUMP(status, key == NULL, HYD_INTERNAL_ERROR, "unable to find token: key\n");
+
+    proxy = HYD_pmcd_pmi_find_proxy(fd);
+    HYDU_ASSERT(proxy, status);
+
+    pg_scratch = (struct HYD_pmcd_pmi_pg_scratch *) proxy->pg->pg_scratch;
+
+    val = NULL;
+    if (!strcmp(key, "PMI_dead_processes")) {
+        val = pg_scratch->dead_processes;
+        goto found_val;
+    }
+
+    if (strcmp(pg_scratch->kvs->kvsname, kvsname))
+        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
+                            "kvsname (%s) does not match this group's kvs space (%s)\n",
+                            kvsname, pg_scratch->kvs->kvsname);
+
+    /* Try to find the key */
+    for (run = pg_scratch->kvs->key_pair; run; run = run->next) {
+        if (!strcmp(run->key, key)) {
+            val = run->val;
+            break;
+        }
+    }
+
+  found_val:
+    i = 0;
+    tmp[i++] = HYDU_strdup("cmd=get_result rc=");
+    if (val) {
+        tmp[i++] = HYDU_strdup("0 msg=success value=");
+        tmp[i++] = HYDU_strdup(val);
+    }
+    else {
+        tmp[i++] = HYDU_strdup("-1 msg=key_");
+        tmp[i++] = HYDU_strdup(key);
+        tmp[i++] = HYDU_strdup("_not_found value=unknown");
+    }
+    tmp[i++] = HYDU_strdup("\n");
+    tmp[i++] = NULL;
+
+    status = HYDU_str_alloc_and_join(tmp, &cmd);
+    HYDU_ERR_POP(status, "unable to join strings\n");
+    HYDU_free_strlist(tmp);
+
+    status = cmd_response(fd, pid, cmd);
+    HYDU_ERR_POP(status, "error writing PMI line\n");
+    HYDU_FREE(cmd);
+
+  fn_exit:
+    HYD_pmcd_pmi_free_tokens(tokens, token_count);
+    HYDU_FUNC_EXIT();
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
 static char *mcmd_args[MAX_PMI_ARGS] = { NULL };
 
 static int mcmd_num_args = 0;
@@ -242,8 +322,9 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
 
     int token_count, i, j, k, new_pgid, total_spawns;
     int argcnt, num_segments;
-    char *control_port, *proxy_args[HYD_NUM_TMP_STRINGS] = { NULL };
-    char *tmp[HYD_NUM_TMP_STRINGS];
+    struct HYD_string_stash proxy_stash;
+    char *control_port;
+    struct HYD_string_stash stash;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -251,6 +332,10 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
     for (i = 0; args[i]; i++)
         mcmd_args[mcmd_num_args++] = HYDU_strdup(args[i]);
     mcmd_args[mcmd_num_args] = NULL;
+
+    /* Initialize the proxy stash, so it can be freed if we jump to
+     * exit */
+    HYD_STRING_STASH_INIT(proxy_stash);
 
     status = HYD_pmcd_pmi_args_to_tokens(mcmd_args, &tokens, &token_count);
     HYDU_ERR_POP(status, "unable to convert args to tokens\n");
@@ -398,15 +483,12 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
         if (path == NULL)
             execname = HYDU_strdup(val);
         else {
-            i = 0;
-            tmp[i++] = HYDU_strdup(path);
-            tmp[i++] = HYDU_strdup("/");
-            tmp[i++] = HYDU_strdup(val);
-            tmp[i++] = NULL;
+            HYD_STRING_STASH_INIT(stash);
+            HYD_STRING_STASH(stash, HYDU_strdup(path), status);
+            HYD_STRING_STASH(stash, HYDU_strdup("/"), status);
+            HYD_STRING_STASH(stash, HYDU_strdup(val), status);
 
-            status = HYDU_str_alloc_and_join(tmp, &execname);
-            HYDU_ERR_POP(status, "error while joining strings\n");
-            HYDU_free_strlist(tmp);
+            HYD_STRING_SPIT(stash, execname, status);
         }
 
         i = 0;
@@ -502,27 +584,24 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
     /* Go to the last PG */
     for (pg = &HYD_server_info.pg_list; pg->next; pg = pg->next);
 
-    status = HYD_pmcd_pmi_fill_in_proxy_args(proxy_args, control_port, new_pgid);
+    status = HYD_pmcd_pmi_fill_in_proxy_args(&proxy_stash, control_port, new_pgid);
     HYDU_ERR_POP(status, "unable to fill in proxy arguments\n");
     HYDU_FREE(control_port);
 
     status = HYD_pmcd_pmi_fill_in_exec_launch_info(pg);
     HYDU_ERR_POP(status, "unable to fill in executable arguments\n");
 
-    status = HYDT_bsci_launch_procs(proxy_args, pg->proxy_list, NULL);
+    status = HYDT_bsci_launch_procs(proxy_stash.strlist, pg->proxy_list, NULL);
     HYDU_ERR_POP(status, "launcher cannot launch processes\n");
 
     {
-        char *cmd_str[HYD_NUM_TMP_STRINGS], *cmd;
+        char *cmd;
 
-        i = 0;
-        cmd_str[i++] = HYDU_strdup("cmd=spawn_result rc=0");
-        cmd_str[i++] = HYDU_strdup("\n");
-        cmd_str[i++] = NULL;
+        HYD_STRING_STASH_INIT(stash);
+        HYD_STRING_STASH(stash, HYDU_strdup("cmd=spawn_result rc=0"), status);
+        HYD_STRING_STASH(stash, HYDU_strdup("\n"), status);
 
-        status = HYDU_str_alloc_and_join(cmd_str, &cmd);
-        HYDU_ERR_POP(status, "unable to join strings\n");
-        HYDU_free_strlist(cmd_str);
+        HYD_STRING_SPIT(stash, cmd, status);
 
         status = cmd_response(fd, pid, cmd);
         HYDU_ERR_POP(status, "error writing PMI line\n");
@@ -535,7 +614,7 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
 
   fn_exit:
     HYD_pmcd_pmi_free_tokens(tokens, token_count);
-    HYDU_free_strlist(proxy_args);
+    HYD_STRING_STASH_FREE(proxy_stash);
     if (segment_list)
         HYDU_FREE(segment_list);
     HYDU_FUNC_EXIT();
@@ -547,8 +626,9 @@ static HYD_status fn_spawn(int fd, int pid, int pgid, char *args[])
 
 static HYD_status fn_publish_name(int fd, int pid, int pgid, char *args[])
 {
-    char *tmp[HYD_NUM_TMP_STRINGS], *cmd, *val;
-    int i, token_count;
+    struct HYD_string_stash stash;
+    char *cmd, *val;
+    int token_count;
     struct HYD_pmcd_token *tokens;
     char *name, *port;
     int success = 0;
@@ -570,16 +650,16 @@ static HYD_status fn_publish_name(int fd, int pid, int pgid, char *args[])
     status = HYD_pmcd_pmi_publish(name, port, &success);
     HYDU_ERR_POP(status, "error publishing service\n");
 
-    i = 0;
+    HYD_STRING_STASH_INIT(stash);
     if (success)
-        tmp[i++] = HYDU_strdup("cmd=publish_result info=ok rc=0 msg=success\n");
+        HYD_STRING_STASH(stash, HYDU_strdup("cmd=publish_result info=ok rc=0 msg=success\n"),
+                         status);
     else
-        tmp[i++] = HYDU_strdup("cmd=publish_result info=ok rc=1 msg=key_already_present\n");
-    tmp[i++] = NULL;
+        HYD_STRING_STASH(stash,
+                         HYDU_strdup("cmd=publish_result info=ok rc=1 msg=key_already_present\n"),
+                         status);
 
-    status = HYDU_str_alloc_and_join(tmp, &cmd);
-    HYDU_ERR_POP(status, "unable to join strings\n");
-    HYDU_free_strlist(tmp);
+    HYD_STRING_SPIT(stash, cmd, status);
 
     status = cmd_response(fd, pid, cmd);
     HYDU_ERR_POP(status, "send command failed\n");
@@ -595,8 +675,9 @@ static HYD_status fn_publish_name(int fd, int pid, int pgid, char *args[])
 
 static HYD_status fn_unpublish_name(int fd, int pid, int pgid, char *args[])
 {
-    char *tmp[HYD_NUM_TMP_STRINGS], *cmd, *name;
-    int i, token_count;
+    struct HYD_string_stash stash;
+    char *cmd, *name;
+    int token_count;
     struct HYD_pmcd_token *tokens;
     int success = 0;
     HYD_status status = HYD_SUCCESS;
@@ -612,16 +693,16 @@ static HYD_status fn_unpublish_name(int fd, int pid, int pgid, char *args[])
     status = HYD_pmcd_pmi_unpublish(name, &success);
     HYDU_ERR_POP(status, "error unpublishing service\n");
 
-    i = 0;
+    HYD_STRING_STASH_INIT(stash);
     if (success)
-        tmp[i++] = HYDU_strdup("cmd=unpublish_result info=ok rc=0 msg=success\n");
+        HYD_STRING_STASH(stash, HYDU_strdup("cmd=unpublish_result info=ok rc=0 msg=success\n"),
+                         status);
     else
-        tmp[i++] = HYDU_strdup("cmd=unpublish_result info=ok rc=1 msg=service_not_found\n");
-    tmp[i++] = NULL;
+        HYD_STRING_STASH(stash,
+                         HYDU_strdup("cmd=unpublish_result info=ok rc=1 msg=service_not_found\n"),
+                         status);
 
-    status = HYDU_str_alloc_and_join(tmp, &cmd);
-    HYDU_ERR_POP(status, "unable to join strings\n");
-    HYDU_free_strlist(tmp);
+    HYD_STRING_SPIT(stash, cmd, status);
 
     status = cmd_response(fd, pid, cmd);
     HYDU_ERR_POP(status, "send command failed\n");
@@ -637,8 +718,9 @@ static HYD_status fn_unpublish_name(int fd, int pid, int pgid, char *args[])
 
 static HYD_status fn_lookup_name(int fd, int pid, int pgid, char *args[])
 {
-    char *tmp[HYD_NUM_TMP_STRINGS], *cmd, *name, *value;
-    int i, token_count;
+    struct HYD_string_stash stash;
+    char *cmd, *name, *value;
+    int token_count;
     struct HYD_pmcd_token *tokens;
     HYD_status status = HYD_SUCCESS;
 
@@ -653,21 +735,18 @@ static HYD_status fn_lookup_name(int fd, int pid, int pgid, char *args[])
     status = HYD_pmcd_pmi_lookup(name, &value);
     HYDU_ERR_POP(status, "error while looking up service\n");
 
-    i = 0;
-    tmp[i++] = HYDU_strdup("cmd=lookup_result");
+    HYD_STRING_STASH_INIT(stash);
+    HYD_STRING_STASH(stash, HYDU_strdup("cmd=lookup_result"), status);
     if (value) {
-        tmp[i++] = HYDU_strdup(" port=");
-        tmp[i++] = HYDU_strdup(value);
-        tmp[i++] = HYDU_strdup(" info=ok rc=0 msg=success\n");
+        HYD_STRING_STASH(stash, HYDU_strdup(" port="), status);
+        HYD_STRING_STASH(stash, HYDU_strdup(value), status);
+        HYD_STRING_STASH(stash, HYDU_strdup(" info=ok rc=0 msg=success\n"), status);
     }
     else {
-        tmp[i++] = HYDU_strdup(" rc=1 msg=service_not_found\n");
+        HYD_STRING_STASH(stash, HYDU_strdup(" rc=1 msg=service_not_found\n"), status);
     }
-    tmp[i++] = NULL;
 
-    status = HYDU_str_alloc_and_join(tmp, &cmd);
-    HYDU_ERR_POP(status, "unable to join strings\n");
-    HYDU_free_strlist(tmp);
+    HYD_STRING_SPIT(stash, cmd, status);
 
     status = cmd_response(fd, pid, cmd);
     HYDU_ERR_POP(status, "send command failed\n");
@@ -685,6 +764,7 @@ static HYD_status fn_lookup_name(int fd, int pid, int pgid, char *args[])
 static struct HYD_pmcd_pmi_handle pmi_v1_handle_fns_foo[] = {
     {"barrier_in", fn_barrier_in},
     {"put", fn_put},
+    {"get", fn_get},
     {"spawn", fn_spawn},
     {"publish_name", fn_publish_name},
     {"unpublish_name", fn_unpublish_name},

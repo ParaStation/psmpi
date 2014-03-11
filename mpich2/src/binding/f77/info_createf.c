@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_info_create_( MPI_Fint *, MPI_Fint * );
 #else
 #pragma _CRI duplicate mpi_info_create_ as pmpi_info_create_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_INFO_CREATE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_INFO_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_INFO_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_INFO_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_INFO_CREATE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_INFO_CREATE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_INFO_CREATE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_INFO_CREATE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_INFO_CREATE( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_create__( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_info_create( MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_info_create_( MPI_Fint *, MPI_Fint * );
 #pragma weak mpi_info_create__ = mpi_info_create
 #pragma weak mpi_info_create_ = mpi_info_create
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_INFO_CREATE( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_INFO_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_INFO_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_INFO_CREATE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_INFO_CREATE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_info_create__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create__( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_info_create__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_info_create__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_INFO_CREATE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_info_create_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_info_create_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create_( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_info_create_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_INFO_CREATE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_info_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_info_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_info_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_info_create( MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_INFO_CREATE( MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_info_create( MPI_Fint *, MPI_Fint * );
 #pragma weak pmpi_info_create__ = pmpi_info_create
 #pragma weak pmpi_info_create_ = pmpi_info_create
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_create__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_INFO_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_create_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_INFO_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_create( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_INFO_CREATE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_INFO_CREATE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_create_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_create( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_INFO_CREATE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_create__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_create( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_INFO_CREATE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_create__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_info_create_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_info_create")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_info_create_ PMPI_INFO_CREATE

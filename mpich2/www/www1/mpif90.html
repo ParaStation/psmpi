@@ -34,7 +34,7 @@ multiple compilers.
 can be used to see what options and include paths are
 used by mpif90.
 
-<DT><B>-link_info </B><DD>Show the steps for linking a program.  This optoin 
+<DT><B>-link_info </B><DD>Show the steps for linking a program.  This option
 can be used to see what options and libraries are used by
 mpif90.
 
@@ -44,9 +44,9 @@ details
 <DT><B>-echo      </B><DD>Show exactly what this program is doing.
 This option should normally not be used.
 
-<DT><B>others     </B><DD>are passed to the compiler or linker.  For example, <TT>-c
-</TT>causes files to be compiled, <TT>-g</TT> selects compilation with
-debugging on most systems, and <TT>-o name</TT> causes linking 
+<DT><B>others     </B><DD>are passed to the compiler or linker.  For example, <TT>\-c
+</TT>causes files to be compiled, <TT>\-g</TT> selects compilation with
+debugging on most systems, and <TT>\-o name</TT> causes linking
 with the output executable given the name <TT>name</TT>.
 </DL>
 <P>
@@ -63,7 +63,7 @@ lengths for basic data objects (such as <TT>long double</TT>) and that
 uses compatible run-time libraries.  On many systems, the various
 compilers are compatible and may be used interchangably.  There are
 exceptions; if you use the <TT>MPICH_F90</TT> environment variable or the
-<TT>-f90=name</TT> command-line argument to override the choice of compiler
+<TT>\-f90=name</TT> command-line argument to override the choice of compiler
 and encounter problems, try reconfiguring MPICH with the new compiler
 and installing MPICH in a separate location.  See the installation manual
 for more details.
@@ -71,24 +71,24 @@ for more details.
 <H2>Examples</H2>
 To compile a single file <TT>foo.f</TT>, use
 <PRE>
-   mpif90 -c foo.f 
+   mpif90 \-c foo.f
 </PRE>
 
 <P>
 To link the output and make an executable, use
 <PRE>
-   mpif90 -o foo foo.o
+   mpif90 \-o foo foo.o
 </PRE>
 
 Combining compilation and linking in a single command
 <PRE>
-   mpif90 -o foo foo.f
+   mpif90 \-o foo foo.f
 </PRE>
 
 is a convenient way to build simple programs.
 <P>
 <H2>Selecting a Profiling Library</H2>
-The <TT>-profile=name</TT> argument allows you to specify an MPI profiling
+The <TT>\-profile=name</TT> argument allows you to specify an MPI profiling
 library to be used.  <TT>name</TT> can have two forms:
 <P>
 <BR>A library in the same directory as the MPI library
@@ -114,16 +114,16 @@ you could create the file <TT>myprof.conf</TT> with the lines
 </DL>
 <P>
 <PRE>
-    PROFILE_PRELIB="-L/usr/local/myprof/lib -lmyprof"
-    PROFILE_INCPATHS="-I/usr/local/myprof/include"
+    PROFILE_PRELIB="\-L/usr/local/myprof/lib \-lmyprof"
+    PROFILE_INCPATHS="\-I/usr/local/myprof/include"
 </PRE>
 
 and place it in the sysconfdir directory (this directory is set at
 configure time when MPICH is built).  Then using the command-line
-argument <TT>-profile=myprof</TT> will cause these
+argument <TT>\-profile=myprof</TT> will cause these
 definitions to be added to the relevant compile commands.
 <P>
 <H2>See Also</H2>
  mpicc, mpicxx, mpif90, mpiexec
-<BR><P><B>Location:</B>src/env/mpif90.txt<P>
+<BR><P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/env/mpif90.txt<P>
 </BODY></HTML>

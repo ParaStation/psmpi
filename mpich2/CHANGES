@@ -1,4 +1,59 @@
 ===============================================================================
+                               Changes in 3.1
+===============================================================================
+
+ # Implement runtime compatibility with MPICH-derived implementations as per
+   the ABI Compatibility Initiative (see www.mpich.org/abi for more
+   information).
+
+ # Integrated MPICH-PAMI code base for Blue Gene/Q and other IBM
+   platforms.
+
+ # Several improvements to the SCIF netmod.  (code contribution from
+   Intel).
+
+ # Major revamp of the MPI_T interface added in MPI-3.
+
+ # Added environment variables to control a lot more capabilities for
+   collectives.  See the README.envvar file for more information.
+
+ # Allow non-blocking collectives and fault tolerance at the same
+   time. The option MPIR_PARAM_ENABLE_COLL_FT_RET has been deprecated as
+   it is no longer necessary.
+
+ # Improvements to MPI_WIN_ALLOCATE to internally allocate shared
+   memory between processes on the same node.
+
+ # Performance improvements for MPI RMA operations on shared memory
+   for MPI_WIN_ALLOCATE and MPI_WIN_ALLOCATE_SHARED.
+
+ # Enable shared library builds by default.
+
+ # Upgraded hwloc to 1.8.
+
+ # Several improvements to the Hydra-SLURM integration.
+
+ # Several improvements to the Hydra process binding code.  See the
+   Hydra wiki page for more information:
+   http://wiki.mpich.org/mpich/index.php/Using_the_Hydra_Process_Manager
+
+ # MPICH now supports operations on very large datatypes (those that describe
+   more than 32 bits of data).  This work also allows MPICH to fully support
+   MPI-3's introduction of MPI_Count.
+
+ # Several other minor bug fixes, memory leak fixes, and code cleanup.
+
+   A full list of changes is available at the following link:
+
+     http://git.mpich.org/mpich.git/shortlog/v3.0.4..v3.1
+
+   A full list of bugs that have been fixed is available at the
+   following link:
+
+     https://trac.mpich.org/projects/mpich/query?status=closed&group=resolution&milestone=mpich-3.1
+
+
+===============================================================================
                                Changes in 3.0.4
 ===============================================================================
 

@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2012 inria.  All rights reserved.
+ * Copyright © 2009-2013 inria.  All rights reserved.
  * Copyright © 2009-2011 Université Bordeaux 1
  * Copyright © 2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -10,10 +10,8 @@
  * \brief Macros to help interaction between hwloc and glibc scheduling routines.
  *
  * Applications that use both hwloc and glibc scheduling routines such as
- * sched_getaffinity may want to include this file so as to ease conversion
- * between their respective types.
- *
- * \note Topology \p topology must match the current machine.
+ * sched_getaffinity() or pthread_attr_setaffinity_np() may want to include
+ * this file so as to ease conversion between their respective types.
  */
 
 #ifndef HWLOC_GLIBC_SCHED_H
@@ -36,7 +34,13 @@ extern "C" {
 #ifdef HWLOC_HAVE_CPU_SET
 
 
-/** \defgroup hwlocality_glibc_sched Helpers for manipulating glibc sched affinity
+/** \defgroup hwlocality_glibc_sched Interoperability with glibc sched affinity
+ *
+ * This interface offers ways to convert between hwloc cpusets and glibc cpusets
+ * such as those manipulated by sched_getaffinity() or pthread_attr_setaffinity_np().
+ *
+ * \note Topology \p topology must match the current machine.
+ *
  * @{
  */
 

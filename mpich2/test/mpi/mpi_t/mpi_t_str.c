@@ -48,7 +48,9 @@ int main(int argc, char **argv)
     int bind;
     int scope;
     int provided;
-    MPI_T_enum enumtype;
+
+    /* Init'ed to a garbage value, to trigger MPI_T bugs easily if there are. */
+    MPI_T_enum enumtype = (MPI_T_enum)0x31415926; 
 
     MPI_Init(&argc, &argv);
     MPI_T_init_thread(MPI_THREAD_SINGLE, &provided);
@@ -99,10 +101,12 @@ int main(int argc, char **argv)
 
         /* not much of a string test, just need a quick spot to stick a test for
          * the existence of the correct MPI_T prototype (tt#1727) */
-        if (enumtype != MPI_T_ENUM_NULL) {
+        /* Include test that enumtype is defined */
+        if (dtype == MPI_INT && enumtype != MPI_T_ENUM_NULL) {
             int num_enumtype = -1;
             name_len = STR_SZ;
-            MPI_T_enum_get_info(enumtype, &num_enumtype, name, name_len);
+            MPI_T_enum_get_info(enumtype, &num_enumtype, name, &name_len);
+            check(num_enumtype >= 0);
         }
     }
 

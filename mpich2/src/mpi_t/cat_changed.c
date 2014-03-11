@@ -21,25 +21,6 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #undef MPI_T_category_changed
 #define MPI_T_category_changed PMPI_T_category_changed
-
-/* any non-MPI functions go here, especially non-static ones */
-
-#undef FUNCNAME
-#define FUNCNAME MPIR_T_category_changed_impl
-#undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_T_category_changed_impl(int *stamp)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    /* TODO implement this function */
-
-fn_exit:
-    return mpi_errno;
-fn_fail:
-    goto fn_exit;
-}
-
 #endif /* MPICH_MPI_FROM_PMPI */
 
 #undef FUNCNAME
@@ -47,47 +28,37 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_T_category_changed - XXX description here
+MPI_T_category_changed - Get the timestamp indicating the last change to the categories
 
 Output Parameters:
 . stamp - a virtual time stamp to indicate the last change to the categories (integer)
 
+Notes:
+If two subsequent calls to this routine return the same timestamp, it is guaranteed that
+the category information has not changed between the two calls. If the timestamp retrieved
+from the second call is higher, then some categories have been added or expanded.
+
 .N ThreadSafe
 
-.N Fortran
-
 .N Errors
+.N MPI_SUCCESS
+.N MPI_T_ERR_NOT_INITIALIZED
 @*/
 int MPI_T_category_changed(int *stamp)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_CATEGORY_CHANGED);
 
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_CATEGORY_CHANGED);
+    MPIR_ERRTEST_MPIT_INITIALIZED(mpi_errno);
+    MPIR_T_THREAD_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_T_CATEGORY_CHANGED);
 
-    /* Validate parameters, especially handles needing to be converted */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS
-        {
-
-            /* TODO more checks may be appropriate */
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
-    /* Convert MPI object handles to object pointers */
-
-    /* Validate parameters and objects (post conversion) */
+    /* Validate parameters */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS
         {
             MPIR_ERRTEST_ARGNULL(stamp, "stamp", mpi_errno);
-            /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
         }
         MPID_END_ERROR_CHECKS
     }
@@ -95,14 +66,13 @@ int MPI_T_category_changed(int *stamp)
 
     /* ... body of routine ...  */
 
-    mpi_errno = MPIR_T_category_changed_impl(stamp);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    *stamp = cat_stamp;
 
     /* ... end of body of routine ... */
 
 fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_T_CATEGORY_CHANGED);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPIR_T_THREAD_CS_EXIT();
     return mpi_errno;
 
 fn_fail:

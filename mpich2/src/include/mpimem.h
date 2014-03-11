@@ -145,7 +145,7 @@ void MPIU_trinit(int);
 void *MPIU_trmalloc(size_t, int, const char []);
 void MPIU_trfree(void *, int, const char []);
 int MPIU_trvalid(const char []);
-void MPIU_trspace(int *, int *);
+void MPIU_trspace(size_t *, size_t *);
 void MPIU_trid(int);
 void MPIU_trlevel(int);
 void MPIU_trDebugLevel(int);
@@ -368,7 +368,7 @@ if (pointer_) { \
 
 /* Persistent memory that we may want to recover if something goes wrong */
 #define MPIU_CHKPMEM_DECL(n_) \
- void *(mpiu_chkpmem_stk_[n_]);\
+ void *(mpiu_chkpmem_stk_[n_]) = { NULL };     \
  int mpiu_chkpmem_stk_sp_=0;\
  MPIU_AssertDeclValue(const int mpiu_chkpmem_stk_sz_,n_)
 #define MPIU_CHKPMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,stmt_) \
@@ -426,7 +426,7 @@ if (pointer_) { \
     void *realloc_tmp_ = MPIU_Realloc((ptr_), (size_)); \
     if ((size_) && !realloc_tmp_) { \
         MPIU_Free(ptr_); \
-        MPIU_ERR_SETANDJUMP2(rc_,MPIU_CHKMEM_ISFATAL,"**nomem2","**nomem2 %d %s",(size_),MPIU_QUOTE(ptr_)); \
+        MPIU_ERR_SETANDJUMP2(rc_,MPI_ERR_OTHER,"**nomem2","**nomem2 %d %s",(size_),MPIU_QUOTE(ptr_)); \
     } \
     (ptr_) = realloc_tmp_; \
 } while (0)
@@ -434,7 +434,7 @@ if (pointer_) { \
 #define MPIU_REALLOC_ORJUMP(ptr_,size_,rc_) do { \
     void *realloc_tmp_ = MPIU_Realloc((ptr_), (size_)); \
     if (size_) \
-        MPIU_ERR_CHKANDJUMP2(!realloc_tmp_,rc_,MPIU_CHKMEM_ISFATAL,"**nomem2","**nomem2 %d %s",(size_),MPIU_QUOTE(ptr_)); \
+        MPIU_ERR_CHKANDJUMP2(!realloc_tmp_,rc_,MPI_ERR_OTHER,"**nomem2","**nomem2 %d %s",(size_),MPIU_QUOTE(ptr_)); \
     (ptr_) = realloc_tmp_; \
 } while (0)
 

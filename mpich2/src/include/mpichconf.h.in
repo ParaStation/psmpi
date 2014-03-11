@@ -56,11 +56,14 @@
 #undef ENABLE_FTB
 
 /* Define to 1 to enable nemesis-related MPI_T performance variables */
-#undef ENABLE_NEM_STATISTICS
+#undef ENABLE_PVAR_NEM
 
 /* Define to 1 to enable message receive queue-related MPI_T performance
    variables */
-#undef ENABLE_RECVQ_STATISTICS
+#undef ENABLE_PVAR_RECVQ
+
+/* Define to 1 to enable rma-related MPI_T performance variables */
+#undef ENABLE_PVAR_RMA
 
 /* The value of false in Fortran */
 #undef F77_FALSE_VALUE
@@ -142,6 +145,9 @@
 /* Define to 1 if you have the `bindprocessor' function. */
 #undef HAVE_BINDPROCESSOR
 
+/* Define to 1 if the compiler supports __builtin_expect. */
+#undef HAVE_BUILTIN_EXPECT
+
 /* define if the compiler defines __FUNC__ */
 #undef HAVE_CAP__FUNC__
 
@@ -187,9 +193,6 @@
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
-
-/* Define if you have the dlopen function. */
-#undef HAVE_DLOPEN
 
 /* Controls how alignment of doubles is performed, separate from other FP
    values */
@@ -298,8 +301,14 @@
 /* Define to 1 if you have the `cr' library (-lcr). */
 #undef HAVE_LIBCR
 
+/* Define to 1 if you have the `dcfa' library (-ldcfa). */
+#undef HAVE_LIBDCFA
+
 /* Define to 1 if you have the `ftb' library (-lftb). */
 #undef HAVE_LIBFTB
+
+/* Define to 1 if you have the `ibverbs' library (-libverbs). */
+#undef HAVE_LIBIBVERBS
 
 /* Define to 1 if you have the `myriexpress' library (-lmyriexpress). */
 #undef HAVE_LIBMYRIEXPRESS
@@ -332,17 +341,8 @@
 /* Define to 1 if you have the `mach_absolute_time' function. */
 #undef HAVE_MACH_ABSOLUTE_TIME
 
-/* Define to 1 if you have the <mach-o/dyld.h> header file. */
-#undef HAVE_MACH_O_DYLD_H
-
 /* Define if C99-style variable argument list macro functionality */
 #undef HAVE_MACRO_VA_ARGS
-
-/* Define to 1 if you have the <malloc.h> header file. */
-#undef HAVE_MALLOC_H
-
-/* Define to 1 if you have the <math.h> header file. */
-#undef HAVE_MATH_H
 
 /* Controls byte alignment of structs with doubles */
 #undef HAVE_MAX_DOUBLE_FP_ALIGNMENT
@@ -360,15 +360,6 @@
 /* Controls byte alignment of structures (for aligning allocated structures)
    */
 #undef HAVE_MAX_STRUCT_ALIGNMENT
-
-/* Define to 1 if you have the `MD5' function. */
-#undef HAVE_MD5
-
-/* Define if you have the md5_calc function. */
-#undef HAVE_MD5_CALC
-
-/* Define to 1 if you have the <md5.h> header file. */
-#undef HAVE_MD5_H
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -417,14 +408,23 @@
 /* Define if the Fortran types are not available in C */
 #undef HAVE_NO_FORTRAN_MPI_TYPES_IN_C
 
-/* Define to 1 if you have the `NSLinkModule' function. */
-#undef HAVE_NSLINKMODULE
-
-/* Define to 1 if you have the <openssl/md5.h> header file. */
-#undef HAVE_OPENSSL_MD5_H
-
 /* Define is the OSX thread affinity policy macros defined */
 #undef HAVE_OSX_THREAD_AFFINITY
+
+/* Define if PAMI_CLIENT_MEMORY_OPTIMIZE is defined in pami.h */
+#undef HAVE_PAMI_CLIENT_MEMORY_OPTIMIZE
+
+/* Define if PAMI_CLIENT_NONCONTIG is defined in pami.h */
+#undef HAVE_PAMI_CLIENT_NONCONTIG
+
+/* Define if PAMI_GEOMETRY_MEMORY_OPTIMIZE is defined in pami.h */
+#undef HAVE_PAMI_GEOMETRY_MEMORY_OPTIMIZE
+
+/* Define if PAMI_GEOMETRY_NONCONTIG is defined in pami.h */
+#undef HAVE_PAMI_GEOMETRY_NONCONTIG
+
+/* Define if PAMI_IN_PLACE is defined in pami.h */
+#undef HAVE_PAMI_IN_PLACE
 
 /* Define to 1 if you have the <poll.h> header file. */
 #undef HAVE_POLL_H
@@ -474,10 +474,6 @@
 /* Define if ROMIO is enabled */
 #undef HAVE_ROMIO
 
-/* Define if MPI supports MPI_THREAD_MULTIPLE with a runtime check for thread
-   level */
-#undef HAVE_RUNTIME_THREADCHECK
-
 /* Define to 1 if you have the `sched_getaffinity' function. */
 #undef HAVE_SCHED_GETAFFINITY
 
@@ -495,9 +491,6 @@
 
 /* Define to 1 if you have the `select' function. */
 #undef HAVE_SELECT
-
-/* Define to 1 if you have the `setenv' function. */
-#undef HAVE_SETENV
 
 /* Define to 1 if you have the `setitimer' function. */
 #undef HAVE_SETITIMER
@@ -622,7 +615,7 @@
 /* Define to 1 if you have the <sys/shm.h> header file. */
 #undef HAVE_SYS_SHM_H
 
-/* Define if you have the <sys/socket.h> header file. */
+/* Define to 1 if you have the <sys/socket.h> header file. */
 #undef HAVE_SYS_SOCKET_H
 
 /* Define to 1 if you have the <sys/sockio.h> header file. */
@@ -642,12 +635,6 @@
 
 /* Define to 1 if you have the <sys/un.h> header file. */
 #undef HAVE_SYS_UN_H
-
-/* Define to 1 if you have the <sys/wait.h> header file. */
-#undef HAVE_SYS_WAIT_H
-
-/* Define to 1 if you have the <termios.h> header file. */
-#undef HAVE_TERMIOS_H
 
 /* Define to 1 if you have the <thread.h> header file. */
 #undef HAVE_THREAD_H
@@ -708,6 +695,9 @@
 
 /* Define to 1 if you have the <wait.h> header file. */
 #undef HAVE_WAIT_H
+
+/* Attribute style weak pragma */
+#undef HAVE_WEAK_ATTRIBUTE
 
 /* Define to 1 if you have the `yield' function. */
 #undef HAVE_YIELD
@@ -770,6 +760,12 @@
 
 /* Define to enable multirail support in newmad module */
 #undef MPID_MAD_MODULE_MULTIRAIL
+
+/* Release date of the IB netmod */
+#undef MPID_NEM_IB_RELEASE_DATE
+
+/* Version of the IB netmod */
+#undef MPID_NEM_IB_VERSION
 
 /* Define to turn on the inlining optimizations in Nemesis code */
 #undef MPID_NEM_INLINE
@@ -851,6 +847,9 @@
    decimal */
 #undef MPIR_UPINT_FMT_DEC_SPEC
 
+/* MPIR_Ucount is an unsigned MPI_Count-sized integer */
+#undef MPIR_Ucount
+
 /* MPIR_Upint is an unsigned pointer-sized integer */
 #undef MPIR_Upint
 
@@ -891,6 +890,9 @@
 /* Define if gethostname needs a declaration */
 #undef NEEDS_GETHOSTNAME_DECL
 
+/* Define if getsid needs a declaration */
+#undef NEEDS_GETSID_DECL
+
 /* Define if mkstemp needs a declaration */
 #undef NEEDS_MKSTEMP_DECL
 
@@ -927,9 +929,6 @@
 /* Define if vsnprintf needs a declaration */
 #undef NEEDS_VSNPRINTF_DECL
 
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
-
 /* Name of package */
 #undef PACKAGE
 
@@ -950,6 +949,9 @@
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
+
+/* Define if PAMI_IN_PLACE is not defined in pami.h */
+#undef PAMI_IN_PLACE
 
 /* Define to turn on the prefetching optimization in Nemesis code */
 #undef PREFETCH_CELL
@@ -1119,9 +1121,6 @@
 /* Define if we have sysv shared memory */
 #undef USE_MMAP_SHM
 
-/* Define this to enable internal instrumentation */
-#undef USE_MPIU_INSTR
-
 /* Define if mpiexec should create a new process group session */
 #undef USE_NEW_SESSION
 
@@ -1138,9 +1137,6 @@
    is allowed */
 #undef USE_PMI_PORT
 
-/* define if the file descriptor for stdin cannot be passed to poll */
-#undef USE_PTHREAD_STDIN_REDIRECTION
-
 /* Define to use sched_yield to yield processor */
 #undef USE_SCHED_YIELD_FOR_YIELD
 
@@ -1155,9 +1151,6 @@
 
 /* Define to use sleep to yield processor */
 #undef USE_SLEEP_FOR_YIELD
-
-/* define to enable SMP/multi-core aware collectives */
-#undef USE_SMP_COLLECTIVES
 
 /* Define it the socket verify macros should be enabled */
 #undef USE_SOCK_VERIFY

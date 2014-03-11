@@ -94,6 +94,7 @@ AC_CHECK_FUNCS(signal)
 # Check for netmod relevant headers and libraries
 PAC_SET_HEADER_LIB_PATH(mx)
 PAC_SET_HEADER_LIB_PATH(scif)
+PAC_SET_HEADER_LIB_PATH(ib)
 
 nemesis_nets_dirs=""
 nemesis_nets_strings=""
@@ -318,6 +319,7 @@ AC_ARG_ENABLE(nemesis-lock-free-queues,
 if test "$enable_nemesis_lock_free_queues" = "yes" ; then
     AC_DEFINE(MPID_NEM_USE_LOCK_FREE_QUEUES, 1, [Define to enable lock-free communication queues])
 fi
+
 
 AC_SUBST(device_name)
 AC_SUBST(channel_name)

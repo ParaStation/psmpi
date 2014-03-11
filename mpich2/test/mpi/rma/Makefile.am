@@ -69,6 +69,7 @@ noinst_PROGRAMS =          \
     rmazero                \
     mixedsync              \
     manyrma2		   \
+    manyrma3		   \
     selfrma                \
     strided_acc_onelock    \
     strided_putget_indexed \
@@ -83,6 +84,8 @@ noinst_PROGRAMS =          \
     win_shared             \
     win_shared_noncontig   \
     win_shared_noncontig_put \
+    win_zero               \
+    win_large_shm          \
     win_dynamic_acc        \
     get_acc_local          \
     compare_and_swap       \
@@ -110,10 +113,15 @@ noinst_PROGRAMS =          \
     flush                  \
     reqops                 \
     req_example            \
+    req_example_shm        \
     win_info               \
     pscw_ordering          \
     mutex_bench            \
-    mutex_bench_shared
+    mutex_bench_shared     \
+    mutex_bench_shm        \
+    rma-contig             \
+    badrma                 \
+    nb_test
 
 strided_acc_indexed_LDADD       = $(LDADD) -lm
 strided_acc_onelock_LDADD       = $(LDADD) -lm
@@ -156,9 +164,14 @@ get_accumulate_long_derived_SOURCES   = get_accumulate.c
 get_accumulate_double_derived_SOURCES = get_accumulate.c
 get_accumulate_int_derived_SOURCES      = get_accumulate.c
 
+req_example_shm_CPPFLAGS         = -DUSE_WIN_ALLOC_SHM $(AM_CPPFLAGS)
+req_example_shm_SOURCES          = req_example.c
+
 mutex_bench_SOURCES              = mutex_bench.c mcs-mutex.c mcs-mutex.h
 mutex_bench_shared_CPPFLAGS      = -DUSE_WIN_SHARED $(AM_CPPFLAGS)
 mutex_bench_shared_SOURCES       = mutex_bench.c mcs-mutex.c mcs-mutex.h
+mutex_bench_shm_CPPFLAGS         = -DUSE_WIN_ALLOC_SHM $(AM_CPPFLAGS)
+mutex_bench_shm_SOURCES          = mutex_bench.c mcs-mutex.c mcs-mutex.h
 
 linked_list_bench_lock_shr_nocheck_SOURCES  = linked_list_bench_lock_shr.c
 linked_list_bench_lock_shr_nocheck_CPPFLAGS = -DUSE_MODE_NOCHECK $(AM_CPPFLAGS)

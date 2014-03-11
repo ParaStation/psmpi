@@ -40,8 +40,8 @@ int MPIR_Ibcast_binomial(void *buffer, int count, MPI_Datatype datatype, int roo
     int mpi_errno = MPI_SUCCESS;
     int mask;
     int comm_size, rank;
-    int type_size, is_contig, is_homogeneous;
-    int nbytes;
+    int is_contig, is_homogeneous;
+    MPI_Aint nbytes, type_size;
     int relative_rank;
     int src, dst;
     void *tmp_buf = NULL;
@@ -291,8 +291,8 @@ fn_fail:
 */
 /* It would be nice to just call:
  * ----8<----
- * comm_ptr->coll_fns->Iscatter(...);
- * comm_ptr->coll_fns->Iallgather(...);
+ * comm_ptr->coll_fns->Iscatter_sched(...);
+ * comm_ptr->coll_fns->Iallgather_sched(...);
  * ----8<----
  *
  * But that results in inefficient additional memory allocation and copies
@@ -317,7 +317,7 @@ int MPIR_Ibcast_scatter_rec_dbl_allgather(void *buffer, int count, MPI_Datatype 
     int rank, comm_size, dst;
     int relative_rank, mask;
     int scatter_size, nbytes, curr_size, incoming_count;
-    int type_size, j, k, i, tmp_mask, is_contig, is_homogeneous;
+    int type_size, j, k, i, tmp_mask, is_contig, is_homogeneous ATTRIBUTE((unused));
     int relative_dst, dst_tree_root, my_tree_root, send_offset;
     int recv_offset, tree_root, nprocs_completed, offset;
     MPID_Datatype *dtp;
@@ -556,7 +556,7 @@ int MPIR_Ibcast_scatter_ring_allgather(void *buffer, int count, MPI_Datatype dat
 {
     int mpi_errno = MPI_SUCCESS;
     int comm_size, rank;
-    int is_contig, is_homogeneous, type_size, nbytes;
+    int is_contig, is_homogeneous ATTRIBUTE((unused)), type_size, nbytes;
     int scatter_size;
     int i, j, jnext, left, right;
     MPI_Aint true_extent, true_lb;
@@ -669,11 +669,11 @@ fn_fail:
 int MPIR_Ibcast_SMP(void *buffer, int count, MPI_Datatype datatype, int root, MPID_Comm *comm_ptr, MPID_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
-    int type_size, is_homogeneous;
+    int is_homogeneous;
+    MPI_Aint type_size;
 
-#if !defined(USE_SMP_COLLECTIVES)
-    MPID_Abort(comm_ptr, MPI_ERR_OTHER, 1, "SMP collectives are disabled!");
-#endif
+    if (!MPIR_CVAR_ENABLE_SMP_COLLECTIVES || !MPIR_CVAR_ENABLE_SMP_BCAST)
+        MPID_Abort(comm_ptr, MPI_ERR_OTHER, 1, "SMP collectives are disabled!");
     MPIU_Assert(MPIR_Comm_is_node_aware(comm_ptr));
 
     is_homogeneous = 1;
@@ -685,11 +685,11 @@ int MPIR_Ibcast_SMP(void *buffer, int count, MPI_Datatype datatype, int root, MP
     MPIU_Assert(is_homogeneous); /* we don't handle the hetero case yet */
     if (comm_ptr->node_comm) {
         MPIU_Assert(comm_ptr->node_comm->coll_fns);
-        MPIU_Assert(comm_ptr->node_comm->coll_fns->Ibcast);
+        MPIU_Assert(comm_ptr->node_comm->coll_fns->Ibcast_sched);
     }
     if (comm_ptr->node_roots_comm) {
         MPIU_Assert(comm_ptr->node_roots_comm->coll_fns);
-        MPIU_Assert(comm_ptr->node_roots_comm->coll_fns->Ibcast);
+        MPIU_Assert(comm_ptr->node_roots_comm->coll_fns->Ibcast_sched);
     }
 
     /* MPI_Type_size() might not give the accurate size of the packed
@@ -724,7 +724,7 @@ int MPIR_Ibcast_SMP(void *buffer, int count, MPI_Datatype datatype, int root, MP
     /* perform the internode broadcast */
     if (comm_ptr->node_roots_comm != NULL)
     {
-        mpi_errno = comm_ptr->node_roots_comm->coll_fns->Ibcast(buffer, count, datatype,
+        mpi_errno = comm_ptr->node_roots_comm->coll_fns->Ibcast_sched(buffer, count, datatype,
                                                                 MPIU_Get_internode_rank(comm_ptr, root),
                                                                 comm_ptr->node_roots_comm, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -735,7 +735,7 @@ int MPIR_Ibcast_SMP(void *buffer, int count, MPI_Datatype datatype, int root, MP
     /* perform the intranode broadcast on all except for the root's node */
     if (comm_ptr->node_comm != NULL)
     {
-        mpi_errno = comm_ptr->node_comm->coll_fns->Ibcast(buffer, count, datatype, 0, comm_ptr->node_comm, s);
+        mpi_errno = comm_ptr->node_comm->coll_fns->Ibcast_sched(buffer, count, datatype, 0, comm_ptr->node_comm, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
 
@@ -755,7 +755,8 @@ fn_fail:
 int MPIR_Ibcast_intra(void *buffer, int count, MPI_Datatype datatype, int root, MPID_Comm *comm_ptr, MPID_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
-    int comm_size, is_homogeneous, type_size, nbytes;
+    int comm_size, is_homogeneous ATTRIBUTE((unused));
+    MPI_Aint type_size, nbytes;
 
     MPIU_Assert(comm_ptr->comm_kind == MPID_INTRACOMM);
 
@@ -771,15 +772,15 @@ int MPIR_Ibcast_intra(void *buffer, int count, MPI_Datatype datatype, int root, 
     nbytes = type_size * count;
 
     /* simplistic implementation for now */
-    if ((nbytes < MPIR_PARAM_BCAST_SHORT_MSG_SIZE) ||
-        (comm_size < MPIR_PARAM_BCAST_MIN_PROCS))
+    if ((nbytes < MPIR_CVAR_BCAST_SHORT_MSG_SIZE) ||
+        (comm_size < MPIR_CVAR_BCAST_MIN_PROCS))
     {
         mpi_errno = MPIR_Ibcast_binomial(buffer, count, datatype, root, comm_ptr, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
-    else /* (nbytes >= MPIR_PARAM_BCAST_SHORT_MSG_SIZE) && (comm_size >= MPIR_PARAM_BCAST_MIN_PROCS) */
+    else /* (nbytes >= MPIR_CVAR_BCAST_SHORT_MSG_SIZE) && (comm_size >= MPIR_CVAR_BCAST_MIN_PROCS) */
     {
-        if ((nbytes < MPIR_PARAM_BCAST_LONG_MSG_SIZE) && (MPIU_is_pof2(comm_size, NULL))) {
+        if ((nbytes < MPIR_CVAR_BCAST_LONG_MSG_SIZE) && (MPIU_is_pof2(comm_size, NULL))) {
             mpi_errno = MPIR_Ibcast_scatter_rec_dbl_allgather(buffer, count, datatype, root, comm_ptr, s);
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         }
@@ -838,8 +839,8 @@ int MPIR_Ibcast_inter(void *buffer, int count, MPI_Datatype datatype, int root, 
 
         /* now do the usual broadcast on this intracommunicator
            with rank 0 as root. */
-        MPIU_Assert(comm_ptr->local_comm->coll_fns && comm_ptr->local_comm->coll_fns->Ibcast);
-        mpi_errno = comm_ptr->local_comm->coll_fns->Ibcast(buffer, count, datatype, root, comm_ptr->local_comm, s);
+        MPIU_Assert(comm_ptr->local_comm->coll_fns && comm_ptr->local_comm->coll_fns->Ibcast_sched);
+        mpi_errno = comm_ptr->local_comm->coll_fns->Ibcast_sched(buffer, count, datatype, root, comm_ptr->local_comm, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
 
@@ -856,20 +857,31 @@ fn_fail:
 int MPIR_Ibcast_impl(void *buffer, int count, MPI_Datatype datatype, int root, MPID_Comm *comm_ptr, MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
-    int tag = -1;
     MPID_Request *reqp = NULL;
+    int tag = -1;
     MPID_Sched_t s = MPID_SCHED_NULL;
 
     *request = MPI_REQUEST_NULL;
+
+    MPIU_Assert(comm_ptr->coll_fns != NULL);
+    if (comm_ptr->coll_fns->Ibcast_req != NULL) {
+        /* --BEGIN USEREXTENSION-- */
+        mpi_errno = comm_ptr->coll_fns->Ibcast_req(buffer, count, datatype, root, comm_ptr, &reqp);
+        if (reqp) {
+            *request = reqp->handle;
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            goto fn_exit;
+        }
+        /* --END USEREXTENSION-- */
+    }
 
     mpi_errno = MPID_Sched_next_tag(comm_ptr, &tag);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     mpi_errno = MPID_Sched_create(&s);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-    MPIU_Assert(comm_ptr->coll_fns != NULL);
-    MPIU_Assert(comm_ptr->coll_fns->Ibcast != NULL);
-    mpi_errno = comm_ptr->coll_fns->Ibcast(buffer, count, datatype, root, comm_ptr, s);
+    MPIU_Assert(comm_ptr->coll_fns->Ibcast_sched != NULL);
+    mpi_errno = comm_ptr->coll_fns->Ibcast_sched(buffer, count, datatype, root, comm_ptr, s);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     mpi_errno = MPID_Sched_start(&s, comm_ptr, tag, &reqp);
@@ -890,7 +902,8 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_Ibcast - XXX description here
+MPI_Ibcast - Broadcasts a message from the process with rank "root" to
+             all other processes of the communicator in a nonblocking way
 
 Input/Output Parameters:
 . buffer - starting address of buffer (choice)

@@ -46,10 +46,6 @@
 #if (MPICH_THREAD_LEVEL != MPI_THREAD_MULTIPLE)
 #error MPICH_THREAD_LEVEL should be MPI_THREAD_MULTIPLE
 #endif
-#ifndef HAVE_RUNTIME_THREADCHECK
-#error Need HAVE_RUNTIME_THREADCHECK
-#endif
-
 
 #define MPIU_THREAD_CS_INIT     ({ MPIDI_Mutex_initialize(); })
 #define MPIU_THREAD_CS_FINALIZE
@@ -100,8 +96,8 @@
 #define MPIU_THREAD_CS_INITFLAG_EXIT(_context)
 #define MPIU_THREAD_CS_MEMALLOC_ENTER(_context)
 #define MPIU_THREAD_CS_MEMALLOC_EXIT(_context)
-#define MPIU_THREAD_CS_MPI_OBJ_ENTER(_context)
-#define MPIU_THREAD_CS_MPI_OBJ_EXIT(_context)
+#define MPIU_THREAD_CS_MPI_OBJ_ENTER(_context)      MPIDI_CS_ENTER(5)
+#define MPIU_THREAD_CS_MPI_OBJ_EXIT(_context)       MPIDI_CS_EXIT(5)
 #define MPIU_THREAD_CS_MSGQUEUE_ENTER(_context)
 #define MPIU_THREAD_CS_MSGQUEUE_EXIT(_context)
 #define MPIU_THREAD_CS_PAMI_ENTER(_context)
@@ -111,19 +107,55 @@
 
 #elif MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT
 
-#define MPIDI_CS_ENTER(m) ({                     MPIDI_Mutex_acquire(m); })
-#define MPIDI_CS_EXIT(m)  ({ MPIDI_Mutex_sync(); MPIDI_Mutex_release(m); })
-#define MPIDI_CS_YIELD(m) ({ MPIDI_Mutex_sync(); MPIDI_Mutex_release(m); MPIDI_Mutex_acquire(m); })
-#define MPIDI_CS_TRY(m)   ({ (0==MPIDI_Mutex_try_acquire(m)); })
-#define MPIDI_CS_SCHED_YIELD(m) ({ MPIDI_Mutex_sync(); MPIDI_Mutex_release(m); sched_yield(); MPIDI_Mutex_acquire(m); })
+#define MPIDI_CS_ENTER(m)                               \
+    do {                                                \
+        if (likely(MPIR_ThreadInfo.isThreaded)) {       \
+            MPIDI_Mutex_acquire(m);                     \
+        }                                               \
+    } while (0)
+
+#define MPIDI_CS_EXIT(m)                                \
+    do {                                                \
+        if (likely(MPIR_ThreadInfo.isThreaded)) {       \
+            MPIDI_Mutex_sync();                         \
+            MPIDI_Mutex_release(m);                     \
+        }                                               \
+    } while (0)
+
+#define MPIDI_CS_YIELD(m)                               \
+    do {                                                \
+        if (likely(MPIR_ThreadInfo.isThreaded)) {       \
+            MPIDI_Mutex_sync();                         \
+            MPIDI_Mutex_release(m);                     \
+            MPIDI_Mutex_acquire(m);                     \
+        }                                               \
+    } while (0)
+
+#define MPIDI_CS_TRY(m)                                 \
+    do {                                                \
+        if (likely(MPIR_ThreadInfo.isThreaded)) {       \
+            MPIDI_Mutex_try_acquire(m);                 \
+        }                                               \
+    } while (0)
+
+#define MPIDI_CS_SCHED_YIELD(m)                         \
+    do {                                                \
+        if (likely(MPIR_ThreadInfo.isThreaded)) {       \
+            MPIDI_Mutex_sync();                         \
+            MPIDI_Mutex_release(m);                     \
+            sched_yield();                              \
+            MPIDI_Mutex_acquire(m);                     \
+        }                                               \
+    } while (0)
 
 #define MPIU_THREAD_CS_ALLFUNC_ENTER(_context)
 #define MPIU_THREAD_CS_ALLFUNC_EXIT(_context)
 #define MPIU_THREAD_CS_ALLFUNC_YIELD(_context)
 #define MPIU_THREAD_CS_ALLFUNC_SCHED_YIELD(_context)
 #define MPIU_THREAD_CS_ALLFUNC_TRY(_context)        (0)
-#define MPIU_THREAD_CS_INIT_ENTER(_context)         MPIDI_Mutex_acquire(0)
-#define MPIU_THREAD_CS_INIT_EXIT(_context)          MPIDI_Mutex_release(0)
+
+#define MPIU_THREAD_CS_INIT_ENTER(_context)         MPIDI_CS_ENTER(0)
+#define MPIU_THREAD_CS_INIT_EXIT(_context)          MPIDI_CS_EXIT(0)
 
 #define MPIU_THREAD_CS_CONTEXTID_ENTER(_context)    MPIDI_CS_ENTER(0)
 #define MPIU_THREAD_CS_CONTEXTID_EXIT(_context)     MPIDI_CS_EXIT (0)

@@ -6,9 +6,6 @@
 
 #include "mpiimpl.h"
 
-/* defined in mpit_init_thread.c */
-extern int MPIR_T_init_balance;
-
 /* -- Begin Profiling Symbol Block for routine MPI_T_finalize */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_T_finalize = PMPI_T_finalize
@@ -27,27 +24,143 @@ extern int MPIR_T_init_balance;
 
 /* any non-MPI functions go here, especially non-static ones */
 
-#undef FUNCNAME
-#define FUNCNAME MPIR_T_finalize_impl
-#undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_T_finalize_impl(void)
+static void MPIR_T_enum_env_finalize(void)
 {
-    int mpi_errno = MPI_SUCCESS;
+    int i, j;
+    MPIR_T_enum_t *e;
+    enum_item_t *item;
 
-    --MPIR_T_init_balance;
-    MPIU_Assert(MPIR_T_init_balance >= 0);
-    if (MPIR_T_init_balance == 0 && MPIR_Process.initialized != MPICH_WITHIN_MPI) {
-        MPIR_T_finalize_pvars();
+    if (enum_table) {
+        /* Free all entries */
+        for (i = 0; i < utarray_len(enum_table); i++) {
+            e = (MPIR_T_enum_t *)utarray_eltptr(enum_table, i);
+            MPIU_Free((void *)e->name);
 
-        mpi_errno = MPIR_Param_finalize();
-        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            /* Free items in this enum */
+            for (j = 0; j < utarray_len(e->items); j++) {
+                item = (enum_item_t *)utarray_eltptr(e->items, j);
+                MPIU_Free((void *)item->name);
+            }
+
+            utarray_free(e->items);
+        }
+
+        /* Free enum_table itself */
+        utarray_free(enum_table);
+        enum_table = NULL;
+    }
+}
+
+static void MPIR_T_cat_env_finalize(void)
+{
+    int i;
+    cat_table_entry_t *cat;
+
+    if (cat_table) {
+        /* Free all entries */
+        for (i = 0; i < utarray_len(cat_table); i++) {
+            cat = (cat_table_entry_t *)utarray_eltptr(cat_table, i);
+            MPIU_Free((void *)cat->name);
+            MPIU_Free((void *)cat->desc);
+            utarray_free(cat->cvar_indices);
+            utarray_free(cat->pvar_indices);
+            utarray_free(cat->subcat_indices);
+        }
+
+        /* Free cat_table itself */
+        utarray_free(cat_table);
+        cat_table = NULL;
     }
 
-fn_exit:
-    return mpi_errno;
-fn_fail:
-    goto fn_exit;
+    if (cat_hash) {
+        name2index_hash_t *current, *tmp;
+        /* Free all entries */
+        HASH_ITER(hh, cat_hash, current, tmp) {
+            HASH_DEL(cat_hash, current);
+            MPIU_Free(current);
+        }
+
+        /* Free cat_hash itself */
+        HASH_CLEAR(hh, cat_hash);
+        cat_hash = NULL;
+    }
+}
+
+
+static void MPIR_T_cvar_env_finalize(void)
+{
+    int i;
+    cvar_table_entry_t *cvar;
+
+    MPIR_T_cvar_finalize();
+
+    if (cvar_table) {
+        /* Free all entries */
+        for (i = 0; i < utarray_len(cvar_table); i++) {
+            cvar = (cvar_table_entry_t *)utarray_eltptr(cvar_table, i);
+            MPIU_Free((void *)cvar->name);
+            MPIU_Free((void *)cvar->desc);
+        }
+
+        /* Free pvar_table itself */
+        utarray_free(cvar_table);
+        cvar_table = NULL;
+    }
+
+    if (cvar_hash) {
+        name2index_hash_t *current, *tmp;
+        /* Free all entries */
+        HASH_ITER(hh, cvar_hash, current, tmp) {
+            HASH_DEL(cvar_hash, current);
+            MPIU_Free(current);
+        }
+
+        /* Free cvar_hash itself */
+        HASH_CLEAR(hh, cvar_hash);
+        cvar_hash = NULL;
+    }
+}
+
+static void MPIR_T_pvar_env_finalize(void)
+{
+    int i;
+    pvar_table_entry_t *pvar;
+
+    if (pvar_table) {
+        /* Free all entries */
+        for (i = 0; i < utarray_len(pvar_table); i++) {
+            pvar = (pvar_table_entry_t *)utarray_eltptr(pvar_table, i);
+            MPIU_Free((void *)pvar->name);
+            MPIU_Free((void *)pvar->desc);
+        }
+
+        /* Free pvar_table itself */
+        utarray_free(pvar_table);
+        pvar_table = NULL;
+    }
+
+    for (i = 0; i < MPIR_T_PVAR_CLASS_NUMBER; i++) {
+        if (pvar_hashs[i]) {
+            name2index_hash_t *current, *tmp;
+            /* Free all entries */
+            HASH_ITER(hh, pvar_hashs[i], current, tmp) {
+                HASH_DEL(pvar_hashs[i], current);
+                MPIU_Free(current);
+            }
+
+            /* Free pvar_hashs[i] itself */
+            HASH_CLEAR(hh, pvar_hashs[i]);
+            pvar_hashs[i] = NULL;
+        }
+    }
+}
+
+void MPIR_T_env_finalize(void)
+{
+    MPIR_T_enum_env_finalize();
+    MPIR_T_cvar_env_finalize();
+    MPIR_T_pvar_env_finalize();
+    MPIR_T_cat_env_finalize();
 }
 
 #endif /* MPICH_MPI_FROM_PMPI */
@@ -57,59 +170,55 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_T_finalize - XXX description here
+MPI_T_finalize - Finalize the MPI tool information interface
+
+Notes:
+This routine may be called as often as the corresponding MPI_T_init_thread() routine
+up to the current point of execution. Calling it more times returns a corresponding
+error code. As long as the number of calls to MPI_T_finalize() is smaller than the
+number of calls to MPI_T_init_thread() up to the current point of execution, the MPI
+tool information interface remains initialized and calls to its routines are permissible.
+Further, additional calls to MPI_T_init_thread() after one or more calls to MPI_T_finalize()
+are permissible. Once MPI_T_finalize() is called the same number of times as the routine
+MPI_T_init_thread() up to the current point of execution, the MPI tool information
+interface is no longer initialized. The interface can be reinitialized by subsequent calls
+to MPI_T_init_thread().
+
+At the end of the program execution, unless MPI_Abort() is called, an application must
+have called MPI_T_init_thread() and MPI_T_finalize() an equal number of times.
 
 .N ThreadSafe
 
-.N Fortran
-
 .N Errors
+.N MPI_SUCCESS
+.N MPI_T_ERR_NOT_INITIALIZED
+
+.seealso MPI_T_init_thread
 @*/
 int MPI_T_finalize(void)
 {
     int mpi_errno = MPI_SUCCESS;
+
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_FINALIZE);
-
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_T_FINALIZE);
-
-    /* Validate parameters, especially handles needing to be converted */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS
-        {
-
-            /* TODO more checks may be appropriate */
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
-    /* Convert MPI object handles to object pointers */
-
-    /* Validate parameters and objects (post conversion) */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS
-        {
-            /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS
-    }
-#   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
 
-    mpi_errno = MPIR_T_finalize_impl();
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    --MPIR_T_init_balance;
+    if (MPIR_T_init_balance < 0) {
+        mpi_errno = MPI_T_ERR_NOT_INITIALIZED;
+        goto fn_fail;
+    }
+
+    if (MPIR_T_init_balance == 0) {
+        MPIR_T_THREAD_CS_FINALIZE();
+        MPIR_T_env_finalize();
+    }
 
     /* ... end of body of routine ... */
 
 fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_T_FINALIZE);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
 
 fn_fail:

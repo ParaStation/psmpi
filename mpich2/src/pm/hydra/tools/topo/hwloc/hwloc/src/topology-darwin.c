@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009 CNRS
  * Copyright © 2009-2012 Inria.  All rights reserved.
- * Copyright © 2009-2012 Université Bordeaux 1
+ * Copyright © 2009-2013 Université Bordeaux 1
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -182,7 +182,6 @@ hwloc_look_darwin(struct hwloc_backend *backend)
       for (i = 0; i < n && cacheconfig[i]; i++)
         hwloc_debug(" %"PRIu64"(%"PRIu64"kB)", cacheconfig[i], cachesize[i] / 1024);
 
-      cacheconfig[i] = cacheconfig32[i];
       /* Now we know how many caches there are */
       n = i;
       hwloc_debug("\n%u cache levels\n", n - 1);
@@ -238,7 +237,7 @@ hwloc_look_darwin(struct hwloc_backend *backend)
 	    obj->memory.page_types_len = 2;
 	    obj->memory.page_types = malloc(2*sizeof(*obj->memory.page_types));
 	    memset(obj->memory.page_types, 0, 2*sizeof(*obj->memory.page_types));
-	    obj->memory.page_types[0].size = getpagesize();
+	    obj->memory.page_types[0].size = hwloc_getpagesize();
 #ifdef HAVE__SC_LARGE_PAGESIZE
 	    obj->memory.page_types[1].size = sysconf(_SC_LARGE_PAGESIZE);
 #endif

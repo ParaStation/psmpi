@@ -344,11 +344,6 @@
            MODULE PROCEDURE MPI_PUT_T
         END INTERFACE MPI_PUT
 
-        PUBLIC :: MPI_FINALIZE
-        INTERFACE MPI_FINALIZE
-           MODULE PROCEDURE MPI_FINALIZE_T
-        END INTERFACE MPI_FINALIZE
-
         PUBLIC :: MPI_WIN_SHARED_QUERY
         INTERFACE MPI_WIN_SHARED_QUERY
            MODULE PROCEDURE MPI_WIN_SHARED_QUERY_T
@@ -671,1627 +666,1792 @@
 
         CONTAINS
 
-        SUBROUTINE MPI_FILE_READ_AT_ALL_BEGIN_T(v0,v1,v2,v3,v4,ierror)
-        INTEGER v0
-        INTEGER(KIND=MPI_OFFSET_KIND) v1
-        <type> v2<dims>
-        INTEGER v3
-        INTEGER v4
+      SUBROUTINE MPI_FILE_READ_AT_ALL_BEGIN_T(fh,offset,buf,count,datatype,&
+                  ierror)
+        INTEGER fh
+        INTEGER(KIND=MPI_OFFSET_KIND) offset
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
         INTEGER ierror
         EXTERNAL MPI_FILE_READ_AT_ALL_BEGIN
-        CALL MPI_FILE_READ_AT_ALL_BEGIN(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_FILE_READ_AT_ALL_BEGIN_T
+        CALL MPI_FILE_READ_AT_ALL_BEGIN(fh,offset,buf,count,datatype,&
+                    ierror)
+      END SUBROUTINE MPI_FILE_READ_AT_ALL_BEGIN_T
 
-        SUBROUTINE MPI_IREDUCE_SCATTER_BLOCK_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        <type1> v1<dims1>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_IREDUCE_SCATTER_BLOCK_T(sendbuf,recvbuf,recvcount,&
+                  datatype,op,comm,request,ierror)
+        <type> sendbuf<dims>
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER datatype
+        INTEGER op
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IREDUCE_SCATTER_BLOCK
-        CALL MPI_IREDUCE_SCATTER_BLOCK(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_IREDUCE_SCATTER_BLOCK_T
+        CALL MPI_IREDUCE_SCATTER_BLOCK(sendbuf,recvbuf,recvcount,&
+                    datatype,op,comm,request,ierror)
+      END SUBROUTINE MPI_IREDUCE_SCATTER_BLOCK_T
 
-        SUBROUTINE MPI_WIN_ATTACH_T(v0,v1,v2,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER(KIND=MPI_ADDRESS_KIND) v2
+      SUBROUTINE MPI_WIN_ATTACH_T(win,base,size,ierror)
+        INTEGER win
+        <type> base<dims>
+        INTEGER(KIND=MPI_ADDRESS_KIND) size
         INTEGER ierror
         EXTERNAL MPI_WIN_ATTACH
-        CALL MPI_WIN_ATTACH(v0,v1,v2,ierror)
-        END SUBROUTINE MPI_WIN_ATTACH_T
+        CALL MPI_WIN_ATTACH(win,base,size,ierror)
+      END SUBROUTINE MPI_WIN_ATTACH_T
 
-        SUBROUTINE MPI_INEIGHBOR_ALLTOALL_T(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
+      SUBROUTINE MPI_INEIGHBOR_ALLTOALL_T(sendbuf,sendcount,sendtype,recvbuf,&
+                  recvcount,recvtype,comm,request,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER recvtype
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_INEIGHBOR_ALLTOALL
-        CALL MPI_INEIGHBOR_ALLTOALL(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        END SUBROUTINE MPI_INEIGHBOR_ALLTOALL_T
+        CALL MPI_INEIGHBOR_ALLTOALL(sendbuf,sendcount,sendtype,recvbuf,&
+                    recvcount,recvtype,comm,request,ierror)
+      END SUBROUTINE MPI_INEIGHBOR_ALLTOALL_T
 
-        SUBROUTINE MPI_ALLREDUCE_T(v0,v1,v2,v3,v4,v5,ierror)
-        <type> v0<dims>
-        <type1> v1<dims1>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
+      SUBROUTINE MPI_ALLREDUCE_T(sendbuf,recvbuf,count,datatype,op,comm,ierror)
+        <type> sendbuf<dims>
+        <type1> recvbuf<dims1>
+        INTEGER count
+        INTEGER datatype
+        INTEGER op
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_ALLREDUCE
-        CALL MPI_ALLREDUCE(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_ALLREDUCE_T
+        CALL MPI_ALLREDUCE(sendbuf,recvbuf,count,datatype,op,comm,ierror)
+      END SUBROUTINE MPI_ALLREDUCE_T
 
-        SUBROUTINE MPI_SENDRECV_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        <type1> v5<dims1>
-        INTEGER v6
-        INTEGER v7
-        INTEGER v8
-        INTEGER v9
-        INTEGER v10
-        INTEGER v11(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_SENDRECV_T(sendbuf,sendcount,sendtype,dest,sendtag,&
+                  recvbuf,recvcount,recvtype,source,recvtag,comm,status,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        INTEGER dest
+        INTEGER sendtag
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER recvtype
+        INTEGER source
+        INTEGER recvtag
+        INTEGER comm
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_SENDRECV
-        CALL MPI_SENDRECV(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,ierror)
-        END SUBROUTINE MPI_SENDRECV_T
+        CALL MPI_SENDRECV(sendbuf,sendcount,sendtype,dest,sendtag,&
+                    recvbuf,recvcount,recvtype,source,recvtag,comm,status,&
+                    ierror)
+      END SUBROUTINE MPI_SENDRECV_T
 
-        SUBROUTINE MPI_NEIGHBOR_ALLTOALLV_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        <type> v0<dims>
-        INTEGER v1(*)
-        INTEGER v2(*)
-        INTEGER v3
-        <type1> v4<dims1>
-        INTEGER v5(*)
-        INTEGER v6(*)
-        INTEGER v7
-        INTEGER v8
+      SUBROUTINE MPI_NEIGHBOR_ALLTOALLV_T(sendbuf,sendcounts,sdispls,sendtype,&
+                  recvbuf,recvcounts,rdispls,recvtype,comm,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcounts(*)
+        INTEGER sdispls(*)
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER rdispls(*)
+        INTEGER recvtype
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_NEIGHBOR_ALLTOALLV
-        CALL MPI_NEIGHBOR_ALLTOALLV(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        END SUBROUTINE MPI_NEIGHBOR_ALLTOALLV_T
+        CALL MPI_NEIGHBOR_ALLTOALLV(sendbuf,sendcounts,sdispls,sendtype,&
+                    recvbuf,recvcounts,rdispls,recvtype,comm,ierror)
+      END SUBROUTINE MPI_NEIGHBOR_ALLTOALLV_T
 
-        SUBROUTINE MPI_NEIGHBOR_ALLTOALL_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_NEIGHBOR_ALLTOALL_T(sendbuf,sendcount,sendtype,recvbuf,&
+                  recvcount,recvtype,comm,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER recvtype
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_NEIGHBOR_ALLTOALL
-        CALL MPI_NEIGHBOR_ALLTOALL(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_NEIGHBOR_ALLTOALL_T
+        CALL MPI_NEIGHBOR_ALLTOALL(sendbuf,sendcount,sendtype,recvbuf,&
+                    recvcount,recvtype,comm,ierror)
+      END SUBROUTINE MPI_NEIGHBOR_ALLTOALL_T
 
-        SUBROUTINE MPI_FILE_READ_ORDERED_T(v0,v1,v2,v3,v4,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_READ_ORDERED_T(fh,buf,count,datatype,status,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_READ_ORDERED
-        CALL MPI_FILE_READ_ORDERED(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_FILE_READ_ORDERED_T
+        CALL MPI_FILE_READ_ORDERED(fh,buf,count,datatype,status,ierror)
+      END SUBROUTINE MPI_FILE_READ_ORDERED_T
 
-        SUBROUTINE MPI_TYPE_GET_ATTR_T(v0,v1,v2,v3,ierror)
-        INTEGER v0
-        INTEGER v1
-        <type> v2<dims>
-        LOGICAL v3
+      SUBROUTINE MPI_TYPE_GET_ATTR_T(datatype,type_keyval,attribute_val,flag,&
+                  ierror)
+        INTEGER datatype
+        INTEGER type_keyval
+        <type> attribute_val<dims>
+        LOGICAL flag
         INTEGER ierror
         EXTERNAL MPI_TYPE_GET_ATTR
-        CALL MPI_TYPE_GET_ATTR(v0,v1,v2,v3,ierror)
-        END SUBROUTINE MPI_TYPE_GET_ATTR_T
+        CALL MPI_TYPE_GET_ATTR(datatype,type_keyval,attribute_val,flag,&
+                    ierror)
+      END SUBROUTINE MPI_TYPE_GET_ATTR_T
 
-        SUBROUTINE MPI_RGET_ACCUMULATE_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER(KIND=MPI_ADDRESS_KIND) v7
-        INTEGER v8
-        INTEGER v9
-        INTEGER v10
-        INTEGER v11
-        INTEGER v12
+      SUBROUTINE MPI_RGET_ACCUMULATE_T(origin_addr,origin_count,&
+                  origin_datatype,result_addr,result_count,result_datatype,&
+                  target_rank,target_disp,target_count,target_datatype,op,win,&
+                  request,ierror)
+        <type> origin_addr<dims>
+        INTEGER origin_count
+        INTEGER origin_datatype
+        <type1> result_addr<dims1>
+        INTEGER result_count
+        INTEGER result_datatype
+        INTEGER target_rank
+        INTEGER(KIND=MPI_ADDRESS_KIND) target_disp
+        INTEGER target_count
+        INTEGER target_datatype
+        INTEGER op
+        INTEGER win
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_RGET_ACCUMULATE
-        CALL MPI_RGET_ACCUMULATE(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,v12,ierror)
-        END SUBROUTINE MPI_RGET_ACCUMULATE_T
+        CALL MPI_RGET_ACCUMULATE(origin_addr,origin_count,&
+                    origin_datatype,result_addr,result_count,result_datatype,&
+                    target_rank,target_disp,target_count,target_datatype,op,&
+                    win,request,ierror)
+      END SUBROUTINE MPI_RGET_ACCUMULATE_T
 
-        SUBROUTINE MPI_IBCAST_T(v0,v1,v2,v3,v4,v5,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
+      SUBROUTINE MPI_IBCAST_T(buffer,count,datatype,root,comm,request,ierror)
+        <type> buffer<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER root
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IBCAST
-        CALL MPI_IBCAST(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_IBCAST_T
+        CALL MPI_IBCAST(buffer,count,datatype,root,comm,request,ierror)
+      END SUBROUTINE MPI_IBCAST_T
 
-        SUBROUTINE MPI_FILE_READ_ORDERED_END_T(v0,v1,v2,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_READ_ORDERED_END_T(fh,buf,status,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_READ_ORDERED_END
-        CALL MPI_FILE_READ_ORDERED_END(v0,v1,v2,ierror)
-        END SUBROUTINE MPI_FILE_READ_ORDERED_END_T
+        CALL MPI_FILE_READ_ORDERED_END(fh,buf,status,ierror)
+      END SUBROUTINE MPI_FILE_READ_ORDERED_END_T
 
-        SUBROUTINE MPI_WIN_DETACH_T(v0,v1,ierror)
-        INTEGER v0
-        <type> v1<dims>
+      SUBROUTINE MPI_WIN_DETACH_T(win,base,ierror)
+        INTEGER win
+        <type> base<dims>
         INTEGER ierror
         EXTERNAL MPI_WIN_DETACH
-        CALL MPI_WIN_DETACH(v0,v1,ierror)
-        END SUBROUTINE MPI_WIN_DETACH_T
+        CALL MPI_WIN_DETACH(win,base,ierror)
+      END SUBROUTINE MPI_WIN_DETACH_T
 
-        SUBROUTINE MPI_SEND_T(v0,v1,v2,v3,v4,v5,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
+      SUBROUTINE MPI_SEND_T(buf,count,datatype,dest,tag,comm,ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER dest
+        INTEGER tag
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_SEND
-        CALL MPI_SEND(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_SEND_T
+        CALL MPI_SEND(buf,count,datatype,dest,tag,comm,ierror)
+      END SUBROUTINE MPI_SEND_T
 
-        SUBROUTINE MPI_FILE_WRITE_T(v0,v1,v2,v3,v4,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_WRITE_T(fh,buf,count,datatype,status,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_WRITE
-        CALL MPI_FILE_WRITE(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_FILE_WRITE_T
+        CALL MPI_FILE_WRITE(fh,buf,count,datatype,status,ierror)
+      END SUBROUTINE MPI_FILE_WRITE_T
 
-        SUBROUTINE MPI_FILE_WRITE_ORDERED_BEGIN_T(v0,v1,v2,v3,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
+      SUBROUTINE MPI_FILE_WRITE_ORDERED_BEGIN_T(fh,buf,count,datatype,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
         INTEGER ierror
         EXTERNAL MPI_FILE_WRITE_ORDERED_BEGIN
-        CALL MPI_FILE_WRITE_ORDERED_BEGIN(v0,v1,v2,v3,ierror)
-        END SUBROUTINE MPI_FILE_WRITE_ORDERED_BEGIN_T
+        CALL MPI_FILE_WRITE_ORDERED_BEGIN(fh,buf,count,datatype,ierror)
+      END SUBROUTINE MPI_FILE_WRITE_ORDERED_BEGIN_T
 
-        SUBROUTINE MPI_PACK_EXTERNAL_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        CHARACTER (LEN=*) v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
-        <type1> v4<dims1>
-        INTEGER(KIND=MPI_ADDRESS_KIND) v5
-        INTEGER(KIND=MPI_ADDRESS_KIND) v6
+      SUBROUTINE MPI_PACK_EXTERNAL_T(datarep,inbuf,incount,datatype,outbuf,&
+                  outsize,position,ierror)
+        CHARACTER (LEN=*) datarep
+        <type> inbuf<dims>
+        INTEGER incount
+        INTEGER datatype
+        <type1> outbuf<dims1>
+        INTEGER(KIND=MPI_ADDRESS_KIND) outsize
+        INTEGER(KIND=MPI_ADDRESS_KIND) position
         INTEGER ierror
         EXTERNAL MPI_PACK_EXTERNAL
-        CALL MPI_PACK_EXTERNAL(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_PACK_EXTERNAL_T
+        CALL MPI_PACK_EXTERNAL(datarep,inbuf,incount,datatype,outbuf,&
+                    outsize,position,ierror)
+      END SUBROUTINE MPI_PACK_EXTERNAL_T
 
-        SUBROUTINE MPI_WIN_CREATE_KEYVAL_T(v0,v1,v2,v3,ierror)
-        EXTERNAL v0
-        EXTERNAL v1
-        INTEGER v2
-        <type> v3<dims>
+      SUBROUTINE MPI_WIN_CREATE_KEYVAL_T(win_copy_attr_fn,win_delete_attr_fn,&
+                  win_keyval,extra_state,ierror)
+        EXTERNAL win_copy_attr_fn
+        EXTERNAL win_delete_attr_fn
+        INTEGER win_keyval
+        <type> extra_state<dims>
         INTEGER ierror
         EXTERNAL MPI_WIN_CREATE_KEYVAL
-        CALL MPI_WIN_CREATE_KEYVAL(v0,v1,v2,v3,ierror)
-        END SUBROUTINE MPI_WIN_CREATE_KEYVAL_T
+        CALL MPI_WIN_CREATE_KEYVAL(win_copy_attr_fn,win_delete_attr_fn,&
+                    win_keyval,extra_state,ierror)
+      END SUBROUTINE MPI_WIN_CREATE_KEYVAL_T
 
-        SUBROUTINE MPI_FILE_WRITE_ALL_END_T(v0,v1,v2,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_WRITE_ALL_END_T(fh,buf,status,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_WRITE_ALL_END
-        CALL MPI_FILE_WRITE_ALL_END(v0,v1,v2,ierror)
-        END SUBROUTINE MPI_FILE_WRITE_ALL_END_T
+        CALL MPI_FILE_WRITE_ALL_END(fh,buf,status,ierror)
+      END SUBROUTINE MPI_FILE_WRITE_ALL_END_T
 
-        SUBROUTINE MPI_FILE_READ_ORDERED_BEGIN_T(v0,v1,v2,v3,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
+      SUBROUTINE MPI_FILE_READ_ORDERED_BEGIN_T(fh,buf,count,datatype,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
         INTEGER ierror
         EXTERNAL MPI_FILE_READ_ORDERED_BEGIN
-        CALL MPI_FILE_READ_ORDERED_BEGIN(v0,v1,v2,v3,ierror)
-        END SUBROUTINE MPI_FILE_READ_ORDERED_BEGIN_T
+        CALL MPI_FILE_READ_ORDERED_BEGIN(fh,buf,count,datatype,ierror)
+      END SUBROUTINE MPI_FILE_READ_ORDERED_BEGIN_T
 
-        SUBROUTINE MPI_BSEND_INIT_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_BSEND_INIT_T(buf,count,datatype,dest,tag,comm,request,&
+                  ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER dest
+        INTEGER tag
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_BSEND_INIT
-        CALL MPI_BSEND_INIT(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_BSEND_INIT_T
+        CALL MPI_BSEND_INIT(buf,count,datatype,dest,tag,comm,request,&
+                    ierror)
+      END SUBROUTINE MPI_BSEND_INIT_T
 
-        SUBROUTINE MPI_FILE_WRITE_AT_ALL_END_T(v0,v1,v2,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_WRITE_AT_ALL_END_T(fh,buf,status,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_WRITE_AT_ALL_END
-        CALL MPI_FILE_WRITE_AT_ALL_END(v0,v1,v2,ierror)
-        END SUBROUTINE MPI_FILE_WRITE_AT_ALL_END_T
+        CALL MPI_FILE_WRITE_AT_ALL_END(fh,buf,status,ierror)
+      END SUBROUTINE MPI_FILE_WRITE_AT_ALL_END_T
 
-        SUBROUTINE MPI_COMM_GET_ATTR_T(v0,v1,v2,v3,ierror)
-        INTEGER v0
-        INTEGER v1
-        <type> v2<dims>
-        LOGICAL v3
+      SUBROUTINE MPI_COMM_GET_ATTR_T(comm,comm_keyval,attribute_val,flag,&
+                  ierror)
+        INTEGER comm
+        INTEGER comm_keyval
+        <type> attribute_val<dims>
+        LOGICAL flag
         INTEGER ierror
         EXTERNAL MPI_COMM_GET_ATTR
-        CALL MPI_COMM_GET_ATTR(v0,v1,v2,v3,ierror)
-        END SUBROUTINE MPI_COMM_GET_ATTR_T
+        CALL MPI_COMM_GET_ATTR(comm,comm_keyval,attribute_val,flag,&
+                    ierror)
+      END SUBROUTINE MPI_COMM_GET_ATTR_T
 
-        SUBROUTINE MPI_FILE_IWRITE_AT_T(v0,v1,v2,v3,v4,v5,ierror)
-        INTEGER v0
-        INTEGER(KIND=MPI_OFFSET_KIND) v1
-        <type> v2<dims>
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
+      SUBROUTINE MPI_FILE_IWRITE_AT_T(fh,offset,buf,count,datatype,request,&
+                  ierror)
+        INTEGER fh
+        INTEGER(KIND=MPI_OFFSET_KIND) offset
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_FILE_IWRITE_AT
-        CALL MPI_FILE_IWRITE_AT(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_FILE_IWRITE_AT_T
+        CALL MPI_FILE_IWRITE_AT(fh,offset,buf,count,datatype,request,&
+                    ierror)
+      END SUBROUTINE MPI_FILE_IWRITE_AT_T
 
-        SUBROUTINE MPI_FILE_WRITE_ALL_T(v0,v1,v2,v3,v4,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_WRITE_ALL_T(fh,buf,count,datatype,status,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_WRITE_ALL
-        CALL MPI_FILE_WRITE_ALL(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_FILE_WRITE_ALL_T
+        CALL MPI_FILE_WRITE_ALL(fh,buf,count,datatype,status,ierror)
+      END SUBROUTINE MPI_FILE_WRITE_ALL_T
 
-        SUBROUTINE MPI_REDUCE_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        <type1> v1<dims1>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_REDUCE_T(sendbuf,recvbuf,count,datatype,op,root,comm,&
+                  ierror)
+        <type> sendbuf<dims>
+        <type1> recvbuf<dims1>
+        INTEGER count
+        INTEGER datatype
+        INTEGER op
+        INTEGER root
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_REDUCE
-        CALL MPI_REDUCE(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_REDUCE_T
+        CALL MPI_REDUCE(sendbuf,recvbuf,count,datatype,op,root,comm,&
+                    ierror)
+      END SUBROUTINE MPI_REDUCE_T
 
-        SUBROUTINE MPI_WIN_SET_ATTR_T(v0,v1,v2,ierror)
-        INTEGER v0
-        INTEGER v1
-        <type> v2<dims>
+      SUBROUTINE MPI_WIN_SET_ATTR_T(win,win_keyval,attribute_val,ierror)
+        INTEGER win
+        INTEGER win_keyval
+        <type> attribute_val<dims>
         INTEGER ierror
         EXTERNAL MPI_WIN_SET_ATTR
-        CALL MPI_WIN_SET_ATTR(v0,v1,v2,ierror)
-        END SUBROUTINE MPI_WIN_SET_ATTR_T
+        CALL MPI_WIN_SET_ATTR(win,win_keyval,attribute_val,ierror)
+      END SUBROUTINE MPI_WIN_SET_ATTR_T
 
-        SUBROUTINE MPI_FILE_WRITE_ORDERED_T(v0,v1,v2,v3,v4,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_WRITE_ORDERED_T(fh,buf,count,datatype,status,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_WRITE_ORDERED
-        CALL MPI_FILE_WRITE_ORDERED(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_FILE_WRITE_ORDERED_T
+        CALL MPI_FILE_WRITE_ORDERED(fh,buf,count,datatype,status,ierror)
+      END SUBROUTINE MPI_FILE_WRITE_ORDERED_T
 
-        SUBROUTINE MPI_FILE_READ_ALL_END_T(v0,v1,v2,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_READ_ALL_END_T(fh,buf,status,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_READ_ALL_END
-        CALL MPI_FILE_READ_ALL_END(v0,v1,v2,ierror)
-        END SUBROUTINE MPI_FILE_READ_ALL_END_T
+        CALL MPI_FILE_READ_ALL_END(fh,buf,status,ierror)
+      END SUBROUTINE MPI_FILE_READ_ALL_END_T
 
-        SUBROUTINE MPI_GET_ACCUMULATE_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER(KIND=MPI_ADDRESS_KIND) v7
-        INTEGER v8
-        INTEGER v9
-        INTEGER v10
-        INTEGER v11
+      SUBROUTINE MPI_GET_ACCUMULATE_T(origin_addr,origin_count,origin_datatype,&
+                  result_addr,result_count,result_datatype,target_rank,&
+                  target_disp,target_count,target_datatype,op,win,ierror)
+        <type> origin_addr<dims>
+        INTEGER origin_count
+        INTEGER origin_datatype
+        <type1> result_addr<dims1>
+        INTEGER result_count
+        INTEGER result_datatype
+        INTEGER target_rank
+        INTEGER(KIND=MPI_ADDRESS_KIND) target_disp
+        INTEGER target_count
+        INTEGER target_datatype
+        INTEGER op
+        INTEGER win
         INTEGER ierror
         EXTERNAL MPI_GET_ACCUMULATE
-        CALL MPI_GET_ACCUMULATE(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,v10,v11,ierror)
-        END SUBROUTINE MPI_GET_ACCUMULATE_T
+        CALL MPI_GET_ACCUMULATE(origin_addr,origin_count,origin_datatype,&
+                    result_addr,result_count,result_datatype,target_rank,&
+                    target_disp,target_count,target_datatype,op,win,ierror)
+      END SUBROUTINE MPI_GET_ACCUMULATE_T
 
-        SUBROUTINE MPI_RECV_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_RECV_T(buf,count,datatype,source,tag,comm,status,ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER source
+        INTEGER tag
+        INTEGER comm
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_RECV
-        CALL MPI_RECV(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_RECV_T
+        CALL MPI_RECV(buf,count,datatype,source,tag,comm,status,ierror)
+      END SUBROUTINE MPI_RECV_T
 
-        SUBROUTINE MPI_GET_T(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER(KIND=MPI_ADDRESS_KIND) v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
+      SUBROUTINE MPI_GET_T(origin_addr,origin_count,origin_datatype,&
+                  target_rank,target_disp,target_count,target_datatype,win,&
+                  ierror)
+        <type> origin_addr<dims>
+        INTEGER origin_count
+        INTEGER origin_datatype
+        INTEGER target_rank
+        INTEGER(KIND=MPI_ADDRESS_KIND) target_disp
+        INTEGER target_count
+        INTEGER target_datatype
+        INTEGER win
         INTEGER ierror
         EXTERNAL MPI_GET
-        CALL MPI_GET(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        END SUBROUTINE MPI_GET_T
+        CALL MPI_GET(origin_addr,origin_count,origin_datatype,&
+                    target_rank,target_disp,target_count,target_datatype,win,&
+                    ierror)
+      END SUBROUTINE MPI_GET_T
 
-        SUBROUTINE MPI_WIN_ALLOCATE_T(v0,v1,v2,v3,v4,v5,ierror)
-        INTEGER(KIND=MPI_ADDRESS_KIND) v0
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        <type> v4<dims>
-        INTEGER v5
+      SUBROUTINE MPI_WIN_ALLOCATE_T(size,disp_unit,info,comm,baseptr,win,&
+                  ierror)
+        INTEGER(KIND=MPI_ADDRESS_KIND) size
+        INTEGER disp_unit
+        INTEGER info
+        INTEGER comm
+        <type> baseptr<dims>
+        INTEGER win
         INTEGER ierror
         EXTERNAL MPI_WIN_ALLOCATE
-        CALL MPI_WIN_ALLOCATE(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_WIN_ALLOCATE_T
+        CALL MPI_WIN_ALLOCATE(size,disp_unit,info,comm,baseptr,win,&
+                    ierror)
+      END SUBROUTINE MPI_WIN_ALLOCATE_T
 
-        SUBROUTINE MPI_FILE_READ_AT_ALL_END_T(v0,v1,v2,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_READ_AT_ALL_END_T(fh,buf,status,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_READ_AT_ALL_END
-        CALL MPI_FILE_READ_AT_ALL_END(v0,v1,v2,ierror)
-        END SUBROUTINE MPI_FILE_READ_AT_ALL_END_T
+        CALL MPI_FILE_READ_AT_ALL_END(fh,buf,status,ierror)
+      END SUBROUTINE MPI_FILE_READ_AT_ALL_END_T
 
-        SUBROUTINE MPI_ALLOC_MEM_T(v0,v1,v2,ierror)
-        INTEGER(KIND=MPI_ADDRESS_KIND) v0
-        INTEGER v1
-        <type> v2<dims>
+      SUBROUTINE MPI_ALLOC_MEM_T(size,info,baseptr,ierror)
+        INTEGER(KIND=MPI_ADDRESS_KIND) size
+        INTEGER info
+        <type> baseptr<dims>
         INTEGER ierror
         EXTERNAL MPI_ALLOC_MEM
-        CALL MPI_ALLOC_MEM(v0,v1,v2,ierror)
-        END SUBROUTINE MPI_ALLOC_MEM_T
+        CALL MPI_ALLOC_MEM(size,info,baseptr,ierror)
+      END SUBROUTINE MPI_ALLOC_MEM_T
 
-        SUBROUTINE MPI_REDUCE_SCATTER_T(v0,v1,v2,v3,v4,v5,ierror)
-        <type> v0<dims>
-        <type1> v1<dims1>
-        INTEGER v2(*)
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
+      SUBROUTINE MPI_REDUCE_SCATTER_T(sendbuf,recvbuf,recvcounts,datatype,op,&
+                  comm,ierror)
+        <type> sendbuf<dims>
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER datatype
+        INTEGER op
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_REDUCE_SCATTER
-        CALL MPI_REDUCE_SCATTER(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_REDUCE_SCATTER_T
+        CALL MPI_REDUCE_SCATTER(sendbuf,recvbuf,recvcounts,datatype,op,&
+                    comm,ierror)
+      END SUBROUTINE MPI_REDUCE_SCATTER_T
 
-        SUBROUTINE MPI_FILE_READ_AT_ALL_T(v0,v1,v2,v3,v4,v5,ierror)
-        INTEGER v0
-        INTEGER(KIND=MPI_OFFSET_KIND) v1
-        <type> v2<dims>
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_READ_AT_ALL_T(fh,offset,buf,count,datatype,status,&
+                  ierror)
+        INTEGER fh
+        INTEGER(KIND=MPI_OFFSET_KIND) offset
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_READ_AT_ALL
-        CALL MPI_FILE_READ_AT_ALL(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_FILE_READ_AT_ALL_T
+        CALL MPI_FILE_READ_AT_ALL(fh,offset,buf,count,datatype,status,&
+                    ierror)
+      END SUBROUTINE MPI_FILE_READ_AT_ALL_T
 
-        SUBROUTINE MPI_IALLREDUCE_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        <type1> v1<dims1>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_IALLREDUCE_T(sendbuf,recvbuf,count,datatype,op,comm,&
+                  request,ierror)
+        <type> sendbuf<dims>
+        <type1> recvbuf<dims1>
+        INTEGER count
+        INTEGER datatype
+        INTEGER op
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IALLREDUCE
-        CALL MPI_IALLREDUCE(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_IALLREDUCE_T
+        CALL MPI_IALLREDUCE(sendbuf,recvbuf,count,datatype,op,comm,&
+                    request,ierror)
+      END SUBROUTINE MPI_IALLREDUCE_T
 
-        SUBROUTINE MPI_GET_ADDRESS_T(v0,v1,ierror)
-        <type> v0<dims>
-        INTEGER(KIND=MPI_ADDRESS_KIND) v1
+      SUBROUTINE MPI_GET_ADDRESS_T(location,address,ierror)
+        <type> location<dims>
+        INTEGER(KIND=MPI_ADDRESS_KIND) address
         INTEGER ierror
         EXTERNAL MPI_GET_ADDRESS
-        CALL MPI_GET_ADDRESS(v0,v1,ierror)
-        END SUBROUTINE MPI_GET_ADDRESS_T
+        CALL MPI_GET_ADDRESS(location,address,ierror)
+      END SUBROUTINE MPI_GET_ADDRESS_T
 
-        SUBROUTINE MPI_IGATHERV_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4(*)
-        INTEGER v5(*)
-        INTEGER v6
-        INTEGER v7
-        INTEGER v8
-        INTEGER v9
+      SUBROUTINE MPI_IGATHERV_T(sendbuf,sendcount,sendtype,recvbuf,recvcounts,&
+                  displs,recvtype,root,comm,request,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER displs(*)
+        INTEGER recvtype
+        INTEGER root
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IGATHERV
-        CALL MPI_IGATHERV(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,ierror)
-        END SUBROUTINE MPI_IGATHERV_T
+        CALL MPI_IGATHERV(sendbuf,sendcount,sendtype,recvbuf,recvcounts,&
+                    displs,recvtype,root,comm,request,ierror)
+      END SUBROUTINE MPI_IGATHERV_T
 
-        SUBROUTINE MPI_FILE_IREAD_SHARED_T(v0,v1,v2,v3,v4,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
+      SUBROUTINE MPI_FILE_IREAD_SHARED_T(fh,buf,count,datatype,request,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_FILE_IREAD_SHARED
-        CALL MPI_FILE_IREAD_SHARED(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_FILE_IREAD_SHARED_T
+        CALL MPI_FILE_IREAD_SHARED(fh,buf,count,datatype,request,ierror)
+      END SUBROUTINE MPI_FILE_IREAD_SHARED_T
 
-        SUBROUTINE MPI_FILE_WRITE_AT_T(v0,v1,v2,v3,v4,v5,ierror)
-        INTEGER v0
-        INTEGER(KIND=MPI_OFFSET_KIND) v1
-        <type> v2<dims>
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_WRITE_AT_T(fh,offset,buf,count,datatype,status,&
+                  ierror)
+        INTEGER fh
+        INTEGER(KIND=MPI_OFFSET_KIND) offset
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_WRITE_AT
-        CALL MPI_FILE_WRITE_AT(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_FILE_WRITE_AT_T
+        CALL MPI_FILE_WRITE_AT(fh,offset,buf,count,datatype,status,&
+                    ierror)
+      END SUBROUTINE MPI_FILE_WRITE_AT_T
 
-        SUBROUTINE MPI_NEIGHBOR_ALLGATHER_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_NEIGHBOR_ALLGATHER_T(sendbuf,sendcount,sendtype,recvbuf,&
+                  recvcount,recvtype,comm,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER recvtype
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_NEIGHBOR_ALLGATHER
-        CALL MPI_NEIGHBOR_ALLGATHER(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_NEIGHBOR_ALLGATHER_T
+        CALL MPI_NEIGHBOR_ALLGATHER(sendbuf,sendcount,sendtype,recvbuf,&
+                    recvcount,recvtype,comm,ierror)
+      END SUBROUTINE MPI_NEIGHBOR_ALLGATHER_T
 
-        SUBROUTINE MPI_PACK_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_PACK_T(inbuf,incount,datatype,outbuf,outsize,position,&
+                  comm,ierror)
+        <type> inbuf<dims>
+        INTEGER incount
+        INTEGER datatype
+        <type1> outbuf<dims1>
+        INTEGER outsize
+        INTEGER position
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_PACK
-        CALL MPI_PACK(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_PACK_T
+        CALL MPI_PACK(inbuf,incount,datatype,outbuf,outsize,position,&
+                    comm,ierror)
+      END SUBROUTINE MPI_PACK_T
 
-        SUBROUTINE MPI_ALLGATHERV_T(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4(*)
-        INTEGER v5(*)
-        INTEGER v6
-        INTEGER v7
+      SUBROUTINE MPI_ALLGATHERV_T(sendbuf,sendcount,sendtype,recvbuf,&
+                  recvcounts,displs,recvtype,comm,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER displs(*)
+        INTEGER recvtype
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_ALLGATHERV
-        CALL MPI_ALLGATHERV(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        END SUBROUTINE MPI_ALLGATHERV_T
+        CALL MPI_ALLGATHERV(sendbuf,sendcount,sendtype,recvbuf,&
+                    recvcounts,displs,recvtype,comm,ierror)
+      END SUBROUTINE MPI_ALLGATHERV_T
 
-        SUBROUTINE MPI_ALLTOALLW_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        <type> v0<dims>
-        INTEGER v1(*)
-        INTEGER v2(*)
-        INTEGER v3(*)
-        <type1> v4<dims1>
-        INTEGER v5(*)
-        INTEGER v6(*)
-        INTEGER v7(*)
-        INTEGER v8
+      SUBROUTINE MPI_ALLTOALLW_T(sendbuf,sendcounts,sdispls,sendtypes,recvbuf,&
+                  recvcounts,rdispls,recvtypes,comm,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcounts(*)
+        INTEGER sdispls(*)
+        INTEGER sendtypes(*)
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER rdispls(*)
+        INTEGER recvtypes(*)
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_ALLTOALLW
-        CALL MPI_ALLTOALLW(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        END SUBROUTINE MPI_ALLTOALLW_T
+        CALL MPI_ALLTOALLW(sendbuf,sendcounts,sdispls,sendtypes,recvbuf,&
+                    recvcounts,rdispls,recvtypes,comm,ierror)
+      END SUBROUTINE MPI_ALLTOALLW_T
 
-        SUBROUTINE MPI_ATTR_GET_T(v0,v1,v2,v3,ierror)
-        INTEGER v0
-        INTEGER v1
-        <type> v2<dims>
-        LOGICAL v3
+      SUBROUTINE MPI_ATTR_GET_T(comm,keyval,attribute_val,flag,ierror)
+        INTEGER comm
+        INTEGER keyval
+        <type> attribute_val<dims>
+        LOGICAL flag
         INTEGER ierror
         EXTERNAL MPI_ATTR_GET
-        CALL MPI_ATTR_GET(v0,v1,v2,v3,ierror)
-        END SUBROUTINE MPI_ATTR_GET_T
+        CALL MPI_ATTR_GET(comm,keyval,attribute_val,flag,ierror)
+      END SUBROUTINE MPI_ATTR_GET_T
 
-        SUBROUTINE MPI_RPUT_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER(KIND=MPI_ADDRESS_KIND) v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
-        INTEGER v8
+      SUBROUTINE MPI_RPUT_T(origin_addr,origin_count,origin_datatype,&
+                  target_rank,target_disp,target_count,target_datatype,win,&
+                  request,ierror)
+        <type> origin_addr<dims>
+        INTEGER origin_count
+        INTEGER origin_datatype
+        INTEGER target_rank
+        INTEGER(KIND=MPI_ADDRESS_KIND) target_disp
+        INTEGER target_count
+        INTEGER target_datatype
+        INTEGER win
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_RPUT
-        CALL MPI_RPUT(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        END SUBROUTINE MPI_RPUT_T
+        CALL MPI_RPUT(origin_addr,origin_count,origin_datatype,&
+                    target_rank,target_disp,target_count,target_datatype,win,&
+                    request,ierror)
+      END SUBROUTINE MPI_RPUT_T
 
-        SUBROUTINE MPI_TYPE_SET_ATTR_T(v0,v1,v2,ierror)
-        INTEGER v0
-        INTEGER v1
-        <type> v2<dims>
+      SUBROUTINE MPI_TYPE_SET_ATTR_T(datatype,type_keyval,attribute_val,ierror)
+        INTEGER datatype
+        INTEGER type_keyval
+        <type> attribute_val<dims>
         INTEGER ierror
         EXTERNAL MPI_TYPE_SET_ATTR
-        CALL MPI_TYPE_SET_ATTR(v0,v1,v2,ierror)
-        END SUBROUTINE MPI_TYPE_SET_ATTR_T
+        CALL MPI_TYPE_SET_ATTR(datatype,type_keyval,attribute_val,ierror)
+      END SUBROUTINE MPI_TYPE_SET_ATTR_T
 
-        SUBROUTINE MPI_FILE_IREAD_AT_T(v0,v1,v2,v3,v4,v5,ierror)
-        INTEGER v0
-        INTEGER(KIND=MPI_OFFSET_KIND) v1
-        <type> v2<dims>
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
+      SUBROUTINE MPI_FILE_IREAD_AT_T(fh,offset,buf,count,datatype,request,&
+                  ierror)
+        INTEGER fh
+        INTEGER(KIND=MPI_OFFSET_KIND) offset
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_FILE_IREAD_AT
-        CALL MPI_FILE_IREAD_AT(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_FILE_IREAD_AT_T
+        CALL MPI_FILE_IREAD_AT(fh,offset,buf,count,datatype,request,&
+                    ierror)
+      END SUBROUTINE MPI_FILE_IREAD_AT_T
 
-        SUBROUTINE MPI_BCAST_T(v0,v1,v2,v3,v4,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
+      SUBROUTINE MPI_BCAST_T(buffer,count,datatype,root,comm,ierror)
+        <type> buffer<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER root
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_BCAST
-        CALL MPI_BCAST(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_BCAST_T
+        CALL MPI_BCAST(buffer,count,datatype,root,comm,ierror)
+      END SUBROUTINE MPI_BCAST_T
 
-        SUBROUTINE MPI_FILE_IWRITE_T(v0,v1,v2,v3,v4,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
+      SUBROUTINE MPI_FILE_IWRITE_T(fh,buf,count,datatype,request,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_FILE_IWRITE
-        CALL MPI_FILE_IWRITE(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_FILE_IWRITE_T
+        CALL MPI_FILE_IWRITE(fh,buf,count,datatype,request,ierror)
+      END SUBROUTINE MPI_FILE_IWRITE_T
 
-        SUBROUTINE MPI_ISSEND_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_ISSEND_T(buf,count,datatype,dest,tag,comm,request,ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER dest
+        INTEGER tag
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_ISSEND
-        CALL MPI_ISSEND(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_ISSEND_T
+        CALL MPI_ISSEND(buf,count,datatype,dest,tag,comm,request,ierror)
+      END SUBROUTINE MPI_ISSEND_T
 
-        SUBROUTINE MPI_FILE_READ_ALL_T(v0,v1,v2,v3,v4,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_READ_ALL_T(fh,buf,count,datatype,status,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_READ_ALL
-        CALL MPI_FILE_READ_ALL(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_FILE_READ_ALL_T
+        CALL MPI_FILE_READ_ALL(fh,buf,count,datatype,status,ierror)
+      END SUBROUTINE MPI_FILE_READ_ALL_T
 
-        SUBROUTINE MPI_SCATTER_T(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
+      SUBROUTINE MPI_SCATTER_T(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                  recvtype,root,comm,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER recvtype
+        INTEGER root
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_SCATTER
-        CALL MPI_SCATTER(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        END SUBROUTINE MPI_SCATTER_T
+        CALL MPI_SCATTER(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                    recvtype,root,comm,ierror)
+      END SUBROUTINE MPI_SCATTER_T
 
-        SUBROUTINE MPI_GATHER_T(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
+      SUBROUTINE MPI_GATHER_T(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                  recvtype,root,comm,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER recvtype
+        INTEGER root
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_GATHER
-        CALL MPI_GATHER(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        END SUBROUTINE MPI_GATHER_T
+        CALL MPI_GATHER(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                    recvtype,root,comm,ierror)
+      END SUBROUTINE MPI_GATHER_T
 
-        SUBROUTINE MPI_IEXSCAN_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        <type1> v1<dims1>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_IEXSCAN_T(sendbuf,recvbuf,count,datatype,op,comm,request,&
+                  ierror)
+        <type> sendbuf<dims>
+        <type1> recvbuf<dims1>
+        INTEGER count
+        INTEGER datatype
+        INTEGER op
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IEXSCAN
-        CALL MPI_IEXSCAN(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_IEXSCAN_T
+        CALL MPI_IEXSCAN(sendbuf,recvbuf,count,datatype,op,comm,request,&
+                    ierror)
+      END SUBROUTINE MPI_IEXSCAN_T
 
-        SUBROUTINE MPI_KEYVAL_CREATE_T(v0,v1,v2,v3,ierror)
-        EXTERNAL v0
-        EXTERNAL v1
-        INTEGER v2
-        <type> v3<dims>
+      SUBROUTINE MPI_KEYVAL_CREATE_T(copy_fn,delete_fn,keyval,extra_state,&
+                  ierror)
+        EXTERNAL copy_fn
+        EXTERNAL delete_fn
+        INTEGER keyval
+        <type> extra_state<dims>
         INTEGER ierror
         EXTERNAL MPI_KEYVAL_CREATE
-        CALL MPI_KEYVAL_CREATE(v0,v1,v2,v3,ierror)
-        END SUBROUTINE MPI_KEYVAL_CREATE_T
+        CALL MPI_KEYVAL_CREATE(copy_fn,delete_fn,keyval,extra_state,&
+                    ierror)
+      END SUBROUTINE MPI_KEYVAL_CREATE_T
 
-        SUBROUTINE MPI_BSEND_T(v0,v1,v2,v3,v4,v5,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
+      SUBROUTINE MPI_BSEND_T(buf,count,datatype,dest,tag,comm,ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER dest
+        INTEGER tag
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_BSEND
-        CALL MPI_BSEND(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_BSEND_T
+        CALL MPI_BSEND(buf,count,datatype,dest,tag,comm,ierror)
+      END SUBROUTINE MPI_BSEND_T
 
-        SUBROUTINE MPI_BUFFER_DETACH_T(v0,v1,ierror)
-        <type> v0<dims>
-        INTEGER v1
+      SUBROUTINE MPI_BUFFER_DETACH_T(buffer_addr,size,ierror)
+        <type> buffer_addr<dims>
+        INTEGER size
         INTEGER ierror
         EXTERNAL MPI_BUFFER_DETACH
-        CALL MPI_BUFFER_DETACH(v0,v1,ierror)
-        END SUBROUTINE MPI_BUFFER_DETACH_T
+        CALL MPI_BUFFER_DETACH(buffer_addr,size,ierror)
+      END SUBROUTINE MPI_BUFFER_DETACH_T
 
-        SUBROUTINE MPI_ATTR_PUT_T(v0,v1,v2,ierror)
-        INTEGER v0
-        INTEGER v1
-        <type> v2<dims>
+      SUBROUTINE MPI_ATTR_PUT_T(comm,keyval,attribute_val,ierror)
+        INTEGER comm
+        INTEGER keyval
+        <type> attribute_val<dims>
         INTEGER ierror
         EXTERNAL MPI_ATTR_PUT
-        CALL MPI_ATTR_PUT(v0,v1,v2,ierror)
-        END SUBROUTINE MPI_ATTR_PUT_T
+        CALL MPI_ATTR_PUT(comm,keyval,attribute_val,ierror)
+      END SUBROUTINE MPI_ATTR_PUT_T
 
-        SUBROUTINE MPI_FILE_READ_ALL_BEGIN_T(v0,v1,v2,v3,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
+      SUBROUTINE MPI_FILE_READ_ALL_BEGIN_T(fh,buf,count,datatype,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
         INTEGER ierror
         EXTERNAL MPI_FILE_READ_ALL_BEGIN
-        CALL MPI_FILE_READ_ALL_BEGIN(v0,v1,v2,v3,ierror)
-        END SUBROUTINE MPI_FILE_READ_ALL_BEGIN_T
+        CALL MPI_FILE_READ_ALL_BEGIN(fh,buf,count,datatype,ierror)
+      END SUBROUTINE MPI_FILE_READ_ALL_BEGIN_T
 
-        SUBROUTINE MPI_INEIGHBOR_ALLTOALLV_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,ierror)
-        <type> v0<dims>
-        INTEGER v1(*)
-        INTEGER v2(*)
-        INTEGER v3
-        <type1> v4<dims1>
-        INTEGER v5(*)
-        INTEGER v6(*)
-        INTEGER v7
-        INTEGER v8
-        INTEGER v9
+      SUBROUTINE MPI_INEIGHBOR_ALLTOALLV_T(sendbuf,sendcounts,sdispls,sendtype,&
+                  recvbuf,recvcounts,rdispls,recvtype,comm,request,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcounts(*)
+        INTEGER sdispls(*)
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER rdispls(*)
+        INTEGER recvtype
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_INEIGHBOR_ALLTOALLV
-        CALL MPI_INEIGHBOR_ALLTOALLV(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,ierror)
-        END SUBROUTINE MPI_INEIGHBOR_ALLTOALLV_T
+        CALL MPI_INEIGHBOR_ALLTOALLV(sendbuf,sendcounts,sdispls,sendtype,&
+                    recvbuf,recvcounts,rdispls,recvtype,comm,request,ierror)
+      END SUBROUTINE MPI_INEIGHBOR_ALLTOALLV_T
 
-        SUBROUTINE MPI_TYPE_CREATE_KEYVAL_T(v0,v1,v2,v3,ierror)
-        EXTERNAL v0
-        EXTERNAL v1
-        INTEGER v2
-        <type> v3<dims>
+      SUBROUTINE MPI_TYPE_CREATE_KEYVAL_T(type_copy_attr_fn,&
+                  type_delete_attr_fn,type_keyval,extra_state,ierror)
+        EXTERNAL type_copy_attr_fn
+        EXTERNAL type_delete_attr_fn
+        INTEGER type_keyval
+        <type> extra_state<dims>
         INTEGER ierror
         EXTERNAL MPI_TYPE_CREATE_KEYVAL
-        CALL MPI_TYPE_CREATE_KEYVAL(v0,v1,v2,v3,ierror)
-        END SUBROUTINE MPI_TYPE_CREATE_KEYVAL_T
+        CALL MPI_TYPE_CREATE_KEYVAL(type_copy_attr_fn,&
+                    type_delete_attr_fn,type_keyval,extra_state,ierror)
+      END SUBROUTINE MPI_TYPE_CREATE_KEYVAL_T
 
-        SUBROUTINE MPI_FILE_WRITE_SHARED_T(v0,v1,v2,v3,v4,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_WRITE_SHARED_T(fh,buf,count,datatype,status,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_WRITE_SHARED
-        CALL MPI_FILE_WRITE_SHARED(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_FILE_WRITE_SHARED_T
+        CALL MPI_FILE_WRITE_SHARED(fh,buf,count,datatype,status,ierror)
+      END SUBROUTINE MPI_FILE_WRITE_SHARED_T
 
-        SUBROUTINE MPI_IBSEND_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_IBSEND_T(buf,count,datatype,dest,tag,comm,request,ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER dest
+        INTEGER tag
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IBSEND
-        CALL MPI_IBSEND(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_IBSEND_T
+        CALL MPI_IBSEND(buf,count,datatype,dest,tag,comm,request,ierror)
+      END SUBROUTINE MPI_IBSEND_T
 
-        SUBROUTINE MPI_PUT_T(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER(KIND=MPI_ADDRESS_KIND) v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
+      SUBROUTINE MPI_PUT_T(origin_addr,origin_count,origin_datatype,&
+                  target_rank,target_disp,target_count,target_datatype,win,&
+                  ierror)
+        <type> origin_addr<dims>
+        INTEGER origin_count
+        INTEGER origin_datatype
+        INTEGER target_rank
+        INTEGER(KIND=MPI_ADDRESS_KIND) target_disp
+        INTEGER target_count
+        INTEGER target_datatype
+        INTEGER win
         INTEGER ierror
         EXTERNAL MPI_PUT
-        CALL MPI_PUT(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        END SUBROUTINE MPI_PUT_T
+        CALL MPI_PUT(origin_addr,origin_count,origin_datatype,&
+                    target_rank,target_disp,target_count,target_datatype,win,&
+                    ierror)
+      END SUBROUTINE MPI_PUT_T
 
-        SUBROUTINE MPI_FINALIZE_T(v0,ierror)
-        <type> v0<dims>
-        INTEGER ierror
-        EXTERNAL MPI_FINALIZE
-        CALL MPI_FINALIZE(v0,ierror)
-        END SUBROUTINE MPI_FINALIZE_T
-
-        SUBROUTINE MPI_WIN_SHARED_QUERY_T(v0,v1,v2,v3,v4,ierror)
-        INTEGER v0
-        INTEGER v1
-        INTEGER(KIND=MPI_ADDRESS_KIND) v2
-        INTEGER v3
-        <type> v4<dims>
+      SUBROUTINE MPI_WIN_SHARED_QUERY_T(win,rank,size,disp_unit,baseptr,ierror)
+        INTEGER win
+        INTEGER rank
+        INTEGER(KIND=MPI_ADDRESS_KIND) size
+        INTEGER disp_unit
+        <type> baseptr<dims>
         INTEGER ierror
         EXTERNAL MPI_WIN_SHARED_QUERY
-        CALL MPI_WIN_SHARED_QUERY(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_WIN_SHARED_QUERY_T
+        CALL MPI_WIN_SHARED_QUERY(win,rank,size,disp_unit,baseptr,ierror)
+      END SUBROUTINE MPI_WIN_SHARED_QUERY_T
 
-        SUBROUTINE MPI_WIN_CREATE_T(v0,v1,v2,v3,v4,v5,ierror)
-        <type> v0<dims>
-        INTEGER(KIND=MPI_ADDRESS_KIND) v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
+      SUBROUTINE MPI_WIN_CREATE_T(base,size,disp_unit,info,comm,win,ierror)
+        <type> base<dims>
+        INTEGER(KIND=MPI_ADDRESS_KIND) size
+        INTEGER disp_unit
+        INTEGER info
+        INTEGER comm
+        INTEGER win
         INTEGER ierror
         EXTERNAL MPI_WIN_CREATE
-        CALL MPI_WIN_CREATE(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_WIN_CREATE_T
+        CALL MPI_WIN_CREATE(base,size,disp_unit,info,comm,win,ierror)
+      END SUBROUTINE MPI_WIN_CREATE_T
 
-        SUBROUTINE MPI_IREDUCE_T(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        <type> v0<dims>
-        <type1> v1<dims1>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
+      SUBROUTINE MPI_IREDUCE_T(sendbuf,recvbuf,count,datatype,op,root,comm,&
+                  request,ierror)
+        <type> sendbuf<dims>
+        <type1> recvbuf<dims1>
+        INTEGER count
+        INTEGER datatype
+        INTEGER op
+        INTEGER root
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IREDUCE
-        CALL MPI_IREDUCE(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        END SUBROUTINE MPI_IREDUCE_T
+        CALL MPI_IREDUCE(sendbuf,recvbuf,count,datatype,op,root,comm,&
+                    request,ierror)
+      END SUBROUTINE MPI_IREDUCE_T
 
-        SUBROUTINE MPI_NEIGHBOR_ALLGATHERV_T(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4(*)
-        INTEGER v5(*)
-        INTEGER v6
-        INTEGER v7
+      SUBROUTINE MPI_NEIGHBOR_ALLGATHERV_T(sendbuf,sendcount,sendtype,recvbuf,&
+                  recvcounts,displs,recvtype,comm,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER displs(*)
+        INTEGER recvtype
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_NEIGHBOR_ALLGATHERV
-        CALL MPI_NEIGHBOR_ALLGATHERV(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        END SUBROUTINE MPI_NEIGHBOR_ALLGATHERV_T
+        CALL MPI_NEIGHBOR_ALLGATHERV(sendbuf,sendcount,sendtype,recvbuf,&
+                    recvcounts,displs,recvtype,comm,ierror)
+      END SUBROUTINE MPI_NEIGHBOR_ALLGATHERV_T
 
-        SUBROUTINE MPI_ALLTOALL_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_ALLTOALL_T(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                  recvtype,comm,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER recvtype
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_ALLTOALL
-        CALL MPI_ALLTOALL(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_ALLTOALL_T
+        CALL MPI_ALLTOALL(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                    recvtype,comm,ierror)
+      END SUBROUTINE MPI_ALLTOALL_T
 
-        SUBROUTINE MPI_ISEND_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_ISEND_T(buf,count,datatype,dest,tag,comm,request,ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER dest
+        INTEGER tag
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_ISEND
-        CALL MPI_ISEND(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_ISEND_T
+        CALL MPI_ISEND(buf,count,datatype,dest,tag,comm,request,ierror)
+      END SUBROUTINE MPI_ISEND_T
 
-        SUBROUTINE MPI_REDUCE_LOCAL_T(v0,v1,v2,v3,v4,ierror)
-        <type> v0<dims>
-        <type1> v1<dims1>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
+      SUBROUTINE MPI_REDUCE_LOCAL_T(inbuf,inoutbuf,count,datatype,op,ierror)
+        <type> inbuf<dims>
+        <type1> inoutbuf<dims1>
+        INTEGER count
+        INTEGER datatype
+        INTEGER op
         INTEGER ierror
         EXTERNAL MPI_REDUCE_LOCAL
-        CALL MPI_REDUCE_LOCAL(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_REDUCE_LOCAL_T
+        CALL MPI_REDUCE_LOCAL(inbuf,inoutbuf,count,datatype,op,ierror)
+      END SUBROUTINE MPI_REDUCE_LOCAL_T
 
-        SUBROUTINE MPI_IGATHER_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
-        INTEGER v8
+      SUBROUTINE MPI_IGATHER_T(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                  recvtype,root,comm,request,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER recvtype
+        INTEGER root
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IGATHER
-        CALL MPI_IGATHER(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        END SUBROUTINE MPI_IGATHER_T
+        CALL MPI_IGATHER(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                    recvtype,root,comm,request,ierror)
+      END SUBROUTINE MPI_IGATHER_T
 
-        SUBROUTINE MPI_FILE_IWRITE_SHARED_T(v0,v1,v2,v3,v4,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
+      SUBROUTINE MPI_FILE_IWRITE_SHARED_T(fh,buf,count,datatype,request,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_FILE_IWRITE_SHARED
-        CALL MPI_FILE_IWRITE_SHARED(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_FILE_IWRITE_SHARED_T
+        CALL MPI_FILE_IWRITE_SHARED(fh,buf,count,datatype,request,ierror)
+      END SUBROUTINE MPI_FILE_IWRITE_SHARED_T
 
-        SUBROUTINE MPI_MRECV_T(v0,v1,v2,v3,v4,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_MRECV_T(buf,count,datatype,message,status,ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER message
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_MRECV
-        CALL MPI_MRECV(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_MRECV_T
+        CALL MPI_MRECV(buf,count,datatype,message,status,ierror)
+      END SUBROUTINE MPI_MRECV_T
 
-        SUBROUTINE MPI_IALLTOALL_T(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
+      SUBROUTINE MPI_IALLTOALL_T(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                  recvtype,comm,request,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER recvtype
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IALLTOALL
-        CALL MPI_IALLTOALL(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        END SUBROUTINE MPI_IALLTOALL_T
+        CALL MPI_IALLTOALL(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                    recvtype,comm,request,ierror)
+      END SUBROUTINE MPI_IALLTOALL_T
 
-        SUBROUTINE MPI_IALLTOALLV_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,ierror)
-        <type> v0<dims>
-        INTEGER v1(*)
-        INTEGER v2(*)
-        INTEGER v3
-        <type1> v4<dims1>
-        INTEGER v5(*)
-        INTEGER v6(*)
-        INTEGER v7
-        INTEGER v8
-        INTEGER v9
+      SUBROUTINE MPI_IALLTOALLV_T(sendbuf,sendcounts,sdispls,sendtype,recvbuf,&
+                  recvcounts,rdispls,recvtype,comm,request,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcounts(*)
+        INTEGER sdispls(*)
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER rdispls(*)
+        INTEGER recvtype
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IALLTOALLV
-        CALL MPI_IALLTOALLV(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,ierror)
-        END SUBROUTINE MPI_IALLTOALLV_T
+        CALL MPI_IALLTOALLV(sendbuf,sendcounts,sdispls,sendtype,recvbuf,&
+                    recvcounts,rdispls,recvtype,comm,request,ierror)
+      END SUBROUTINE MPI_IALLTOALLV_T
 
-        SUBROUTINE MPI_UNPACK_EXTERNAL_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        CHARACTER (LEN=*) v0
-        <type> v1<dims>
-        INTEGER(KIND=MPI_ADDRESS_KIND) v2
-        INTEGER(KIND=MPI_ADDRESS_KIND) v3
-        <type1> v4<dims1>
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_UNPACK_EXTERNAL_T(datarep,inbuf,insize,position,outbuf,&
+                  outcount,datatype,ierror)
+        CHARACTER (LEN=*) datarep
+        <type> inbuf<dims>
+        INTEGER(KIND=MPI_ADDRESS_KIND) insize
+        INTEGER(KIND=MPI_ADDRESS_KIND) position
+        <type1> outbuf<dims1>
+        INTEGER outcount
+        INTEGER datatype
         INTEGER ierror
         EXTERNAL MPI_UNPACK_EXTERNAL
-        CALL MPI_UNPACK_EXTERNAL(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_UNPACK_EXTERNAL_T
+        CALL MPI_UNPACK_EXTERNAL(datarep,inbuf,insize,position,outbuf,&
+                    outcount,datatype,ierror)
+      END SUBROUTINE MPI_UNPACK_EXTERNAL_T
 
-        SUBROUTINE MPI_SSEND_T(v0,v1,v2,v3,v4,v5,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
+      SUBROUTINE MPI_SSEND_T(buf,count,datatype,dest,tag,comm,ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER dest
+        INTEGER tag
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_SSEND
-        CALL MPI_SSEND(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_SSEND_T
+        CALL MPI_SSEND(buf,count,datatype,dest,tag,comm,ierror)
+      END SUBROUTINE MPI_SSEND_T
 
-        SUBROUTINE MPI_ALLGATHER_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_ALLGATHER_T(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                  recvtype,comm,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER recvtype
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_ALLGATHER
-        CALL MPI_ALLGATHER(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_ALLGATHER_T
+        CALL MPI_ALLGATHER(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                    recvtype,comm,ierror)
+      END SUBROUTINE MPI_ALLGATHER_T
 
-        SUBROUTINE MPI_IRECV_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_IRECV_T(buf,count,datatype,source,tag,comm,request,ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER source
+        INTEGER tag
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IRECV
-        CALL MPI_IRECV(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_IRECV_T
+        CALL MPI_IRECV(buf,count,datatype,source,tag,comm,request,ierror)
+      END SUBROUTINE MPI_IRECV_T
 
-        SUBROUTINE MPI_RSEND_T(v0,v1,v2,v3,v4,v5,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
+      SUBROUTINE MPI_RSEND_T(buf,count,datatype,dest,tag,comm,ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER dest
+        INTEGER tag
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_RSEND
-        CALL MPI_RSEND(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_RSEND_T
+        CALL MPI_RSEND(buf,count,datatype,dest,tag,comm,ierror)
+      END SUBROUTINE MPI_RSEND_T
 
-        SUBROUTINE MPI_FILE_READ_SHARED_T(v0,v1,v2,v3,v4,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_READ_SHARED_T(fh,buf,count,datatype,status,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_READ_SHARED
-        CALL MPI_FILE_READ_SHARED(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_FILE_READ_SHARED_T
+        CALL MPI_FILE_READ_SHARED(fh,buf,count,datatype,status,ierror)
+      END SUBROUTINE MPI_FILE_READ_SHARED_T
 
-        SUBROUTINE MPI_ADDRESS_T(v0,v1,ierror)
-        <type> v0<dims>
-        INTEGER(KIND=MPI_ADDRESS_KIND) v1
+      SUBROUTINE MPI_ADDRESS_T(location,address,ierror)
+        <type> location<dims>
+        INTEGER(KIND=MPI_ADDRESS_KIND) address
         INTEGER ierror
         EXTERNAL MPI_ADDRESS
-        CALL MPI_ADDRESS(v0,v1,ierror)
-        END SUBROUTINE MPI_ADDRESS_T
+        CALL MPI_ADDRESS(location,address,ierror)
+      END SUBROUTINE MPI_ADDRESS_T
 
-        SUBROUTINE MPI_FILE_WRITE_ORDERED_END_T(v0,v1,v2,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_WRITE_ORDERED_END_T(fh,buf,status,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_WRITE_ORDERED_END
-        CALL MPI_FILE_WRITE_ORDERED_END(v0,v1,v2,ierror)
-        END SUBROUTINE MPI_FILE_WRITE_ORDERED_END_T
+        CALL MPI_FILE_WRITE_ORDERED_END(fh,buf,status,ierror)
+      END SUBROUTINE MPI_FILE_WRITE_ORDERED_END_T
 
-        SUBROUTINE MPI_FILE_WRITE_ALL_BEGIN_T(v0,v1,v2,v3,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
+      SUBROUTINE MPI_FILE_WRITE_ALL_BEGIN_T(fh,buf,count,datatype,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
         INTEGER ierror
         EXTERNAL MPI_FILE_WRITE_ALL_BEGIN
-        CALL MPI_FILE_WRITE_ALL_BEGIN(v0,v1,v2,v3,ierror)
-        END SUBROUTINE MPI_FILE_WRITE_ALL_BEGIN_T
+        CALL MPI_FILE_WRITE_ALL_BEGIN(fh,buf,count,datatype,ierror)
+      END SUBROUTINE MPI_FILE_WRITE_ALL_BEGIN_T
 
-        SUBROUTINE MPI_SENDRECV_REPLACE_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
-        INTEGER v8(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_SENDRECV_REPLACE_T(buf,count,datatype,dest,sendtag,source,&
+                  recvtag,comm,status,ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER dest
+        INTEGER sendtag
+        INTEGER source
+        INTEGER recvtag
+        INTEGER comm
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_SENDRECV_REPLACE
-        CALL MPI_SENDRECV_REPLACE(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        END SUBROUTINE MPI_SENDRECV_REPLACE_T
+        CALL MPI_SENDRECV_REPLACE(buf,count,datatype,dest,sendtag,source,&
+                    recvtag,comm,status,ierror)
+      END SUBROUTINE MPI_SENDRECV_REPLACE_T
 
-        SUBROUTINE MPI_RGET_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER(KIND=MPI_ADDRESS_KIND) v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
-        INTEGER v8
+      SUBROUTINE MPI_RGET_T(origin_addr,origin_count,origin_datatype,&
+                  target_rank,target_disp,target_count,target_datatype,win,&
+                  request,ierror)
+        <type> origin_addr<dims>
+        INTEGER origin_count
+        INTEGER origin_datatype
+        INTEGER target_rank
+        INTEGER(KIND=MPI_ADDRESS_KIND) target_disp
+        INTEGER target_count
+        INTEGER target_datatype
+        INTEGER win
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_RGET
-        CALL MPI_RGET(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        END SUBROUTINE MPI_RGET_T
+        CALL MPI_RGET(origin_addr,origin_count,origin_datatype,&
+                    target_rank,target_disp,target_count,target_datatype,win,&
+                    request,ierror)
+      END SUBROUTINE MPI_RGET_T
 
-        SUBROUTINE MPI_FETCH_AND_OP_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        <type1> v1<dims1>
-        INTEGER v2
-        INTEGER v3
-        INTEGER(KIND=MPI_ADDRESS_KIND) v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_FETCH_AND_OP_T(origin_addr,result_addr,datatype,&
+                  target_rank,target_disp,op,win,ierror)
+        <type> origin_addr<dims>
+        <type1> result_addr<dims1>
+        INTEGER datatype
+        INTEGER target_rank
+        INTEGER(KIND=MPI_ADDRESS_KIND) target_disp
+        INTEGER op
+        INTEGER win
         INTEGER ierror
         EXTERNAL MPI_FETCH_AND_OP
-        CALL MPI_FETCH_AND_OP(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_FETCH_AND_OP_T
+        CALL MPI_FETCH_AND_OP(origin_addr,result_addr,datatype,&
+                    target_rank,target_disp,op,win,ierror)
+      END SUBROUTINE MPI_FETCH_AND_OP_T
 
-        SUBROUTINE MPI_ALLTOALLV_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        <type> v0<dims>
-        INTEGER v1(*)
-        INTEGER v2(*)
-        INTEGER v3
-        <type1> v4<dims1>
-        INTEGER v5(*)
-        INTEGER v6(*)
-        INTEGER v7
-        INTEGER v8
+      SUBROUTINE MPI_ALLTOALLV_T(sendbuf,sendcounts,sdispls,sendtype,recvbuf,&
+                  recvcounts,rdispls,recvtype,comm,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcounts(*)
+        INTEGER sdispls(*)
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER rdispls(*)
+        INTEGER recvtype
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_ALLTOALLV
-        CALL MPI_ALLTOALLV(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        END SUBROUTINE MPI_ALLTOALLV_T
+        CALL MPI_ALLTOALLV(sendbuf,sendcounts,sdispls,sendtype,recvbuf,&
+                    recvcounts,rdispls,recvtype,comm,ierror)
+      END SUBROUTINE MPI_ALLTOALLV_T
 
-        SUBROUTINE MPI_IALLTOALLW_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,ierror)
-        <type> v0<dims>
-        INTEGER v1(*)
-        INTEGER v2(*)
-        INTEGER v3(*)
-        <type1> v4<dims1>
-        INTEGER v5(*)
-        INTEGER v6(*)
-        INTEGER v7(*)
-        INTEGER v8
-        INTEGER v9
+      SUBROUTINE MPI_IALLTOALLW_T(sendbuf,sendcounts,sdispls,sendtypes,recvbuf,&
+                  recvcounts,rdispls,recvtypes,comm,request,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcounts(*)
+        INTEGER sdispls(*)
+        INTEGER sendtypes(*)
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER rdispls(*)
+        INTEGER recvtypes(*)
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IALLTOALLW
-        CALL MPI_IALLTOALLW(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,ierror)
-        END SUBROUTINE MPI_IALLTOALLW_T
+        CALL MPI_IALLTOALLW(sendbuf,sendcounts,sdispls,sendtypes,recvbuf,&
+                    recvcounts,rdispls,recvtypes,comm,request,ierror)
+      END SUBROUTINE MPI_IALLTOALLW_T
 
-        SUBROUTINE MPI_FILE_READ_T(v0,v1,v2,v3,v4,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_READ_T(fh,buf,count,datatype,status,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_READ
-        CALL MPI_FILE_READ(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_FILE_READ_T
+        CALL MPI_FILE_READ(fh,buf,count,datatype,status,ierror)
+      END SUBROUTINE MPI_FILE_READ_T
 
-        SUBROUTINE MPI_IREDUCE_SCATTER_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        <type1> v1<dims1>
-        INTEGER v2(*)
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_IREDUCE_SCATTER_T(sendbuf,recvbuf,recvcounts,datatype,op,&
+                  comm,request,ierror)
+        <type> sendbuf<dims>
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER datatype
+        INTEGER op
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IREDUCE_SCATTER
-        CALL MPI_IREDUCE_SCATTER(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_IREDUCE_SCATTER_T
+        CALL MPI_IREDUCE_SCATTER(sendbuf,recvbuf,recvcounts,datatype,op,&
+                    comm,request,ierror)
+      END SUBROUTINE MPI_IREDUCE_SCATTER_T
 
-        SUBROUTINE MPI_FREE_MEM_T(v0,ierror)
-        <type> v0<dims>
+      SUBROUTINE MPI_FREE_MEM_T(base,ierror)
+        <type> base<dims>
         INTEGER ierror
         EXTERNAL MPI_FREE_MEM
-        CALL MPI_FREE_MEM(v0,ierror)
-        END SUBROUTINE MPI_FREE_MEM_T
+        CALL MPI_FREE_MEM(base,ierror)
+      END SUBROUTINE MPI_FREE_MEM_T
 
-        SUBROUTINE MPI_BUFFER_ATTACH_T(v0,v1,ierror)
-        <type> v0<dims>
-        INTEGER v1
+      SUBROUTINE MPI_BUFFER_ATTACH_T(buffer,size,ierror)
+        <type> buffer<dims>
+        INTEGER size
         INTEGER ierror
         EXTERNAL MPI_BUFFER_ATTACH
-        CALL MPI_BUFFER_ATTACH(v0,v1,ierror)
-        END SUBROUTINE MPI_BUFFER_ATTACH_T
+        CALL MPI_BUFFER_ATTACH(buffer,size,ierror)
+      END SUBROUTINE MPI_BUFFER_ATTACH_T
 
-        SUBROUTINE MPI_SSEND_INIT_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_SSEND_INIT_T(buf,count,datatype,dest,tag,comm,request,&
+                  ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER dest
+        INTEGER tag
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_SSEND_INIT
-        CALL MPI_SSEND_INIT(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_SSEND_INIT_T
+        CALL MPI_SSEND_INIT(buf,count,datatype,dest,tag,comm,request,&
+                    ierror)
+      END SUBROUTINE MPI_SSEND_INIT_T
 
-        SUBROUTINE MPI_FILE_IREAD_T(v0,v1,v2,v3,v4,ierror)
-        INTEGER v0
-        <type> v1<dims>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
+      SUBROUTINE MPI_FILE_IREAD_T(fh,buf,count,datatype,request,ierror)
+        INTEGER fh
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_FILE_IREAD
-        CALL MPI_FILE_IREAD(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_FILE_IREAD_T
+        CALL MPI_FILE_IREAD(fh,buf,count,datatype,request,ierror)
+      END SUBROUTINE MPI_FILE_IREAD_T
 
-        SUBROUTINE MPI_NEIGHBOR_ALLTOALLW_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        <type> v0<dims>
-        INTEGER v1(*)
-        INTEGER(KIND=MPI_ADDRESS_KIND) v2(*)
-        INTEGER v3(*)
-        <type1> v4<dims1>
-        INTEGER v5(*)
-        INTEGER(KIND=MPI_ADDRESS_KIND) v6(*)
-        INTEGER v7(*)
-        INTEGER v8
+      SUBROUTINE MPI_NEIGHBOR_ALLTOALLW_T(sendbuf,sendcounts,sdispls,sendtypes,&
+                  recvbuf,recvcounts,rdispls,recvtypes,comm,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcounts(*)
+        INTEGER(KIND=MPI_ADDRESS_KIND) sdispls(*)
+        INTEGER sendtypes(*)
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER(KIND=MPI_ADDRESS_KIND) rdispls(*)
+        INTEGER recvtypes(*)
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_NEIGHBOR_ALLTOALLW
-        CALL MPI_NEIGHBOR_ALLTOALLW(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        END SUBROUTINE MPI_NEIGHBOR_ALLTOALLW_T
+        CALL MPI_NEIGHBOR_ALLTOALLW(sendbuf,sendcounts,sdispls,sendtypes,&
+                    recvbuf,recvcounts,rdispls,recvtypes,comm,ierror)
+      END SUBROUTINE MPI_NEIGHBOR_ALLTOALLW_T
 
-        SUBROUTINE MPI_IALLGATHERV_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4(*)
-        INTEGER v5(*)
-        INTEGER v6
-        INTEGER v7
-        INTEGER v8
+      SUBROUTINE MPI_IALLGATHERV_T(sendbuf,sendcount,sendtype,recvbuf,&
+                  recvcounts,displs,recvtype,comm,request,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER displs(*)
+        INTEGER recvtype
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IALLGATHERV
-        CALL MPI_IALLGATHERV(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        END SUBROUTINE MPI_IALLGATHERV_T
+        CALL MPI_IALLGATHERV(sendbuf,sendcount,sendtype,recvbuf,&
+                    recvcounts,displs,recvtype,comm,request,ierror)
+      END SUBROUTINE MPI_IALLGATHERV_T
 
-        SUBROUTINE MPI_ISCATTER_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
-        INTEGER v8
+      SUBROUTINE MPI_ISCATTER_T(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                  recvtype,root,comm,request,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER recvtype
+        INTEGER root
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_ISCATTER
-        CALL MPI_ISCATTER(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        END SUBROUTINE MPI_ISCATTER_T
+        CALL MPI_ISCATTER(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                    recvtype,root,comm,request,ierror)
+      END SUBROUTINE MPI_ISCATTER_T
 
-        SUBROUTINE MPI_UNPACK_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_UNPACK_T(inbuf,insize,position,outbuf,outcount,datatype,&
+                  comm,ierror)
+        <type> inbuf<dims>
+        INTEGER insize
+        INTEGER position
+        <type1> outbuf<dims1>
+        INTEGER outcount
+        INTEGER datatype
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_UNPACK
-        CALL MPI_UNPACK(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_UNPACK_T
+        CALL MPI_UNPACK(inbuf,insize,position,outbuf,outcount,datatype,&
+                    comm,ierror)
+      END SUBROUTINE MPI_UNPACK_T
 
-        SUBROUTINE MPI_IMRECV_T(v0,v1,v2,v3,v4,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
+      SUBROUTINE MPI_IMRECV_T(buf,count,datatype,message,request,ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER message
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IMRECV
-        CALL MPI_IMRECV(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_IMRECV_T
+        CALL MPI_IMRECV(buf,count,datatype,message,request,ierror)
+      END SUBROUTINE MPI_IMRECV_T
 
-        SUBROUTINE MPI_GREQUEST_START_T(v0,v1,v2,v3,v4,ierror)
-        EXTERNAL v0
-        EXTERNAL v1
-        EXTERNAL v2
-        <type> v3<dims>
-        INTEGER v4
+      SUBROUTINE MPI_GREQUEST_START_T(query_fn,free_fn,cancel_fn,extra_state,&
+                  request,ierror)
+        EXTERNAL query_fn
+        EXTERNAL free_fn
+        EXTERNAL cancel_fn
+        <type> extra_state<dims>
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_GREQUEST_START
-        CALL MPI_GREQUEST_START(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_GREQUEST_START_T
+        CALL MPI_GREQUEST_START(query_fn,free_fn,cancel_fn,extra_state,&
+                    request,ierror)
+      END SUBROUTINE MPI_GREQUEST_START_T
 
-        SUBROUTINE MPI_REGISTER_DATAREP_T(v0,v1,v2,v3,v4,ierror)
-        CHARACTER (LEN=*) v0
-        EXTERNAL v1
-        EXTERNAL v2
-        EXTERNAL v3
-        <type> v4<dims>
+      SUBROUTINE MPI_REGISTER_DATAREP_T(datarep,read_conversion_fn,&
+                  write_conversion_fn,dtype_file_extent_fn,extra_state,ierror)
+        CHARACTER (LEN=*) datarep
+        EXTERNAL read_conversion_fn
+        EXTERNAL write_conversion_fn
+        EXTERNAL dtype_file_extent_fn
+        <type> extra_state<dims>
         INTEGER ierror
         EXTERNAL MPI_REGISTER_DATAREP
-        CALL MPI_REGISTER_DATAREP(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_REGISTER_DATAREP_T
+        CALL MPI_REGISTER_DATAREP(datarep,read_conversion_fn,&
+                    write_conversion_fn,dtype_file_extent_fn,extra_state,&
+                    ierror)
+      END SUBROUTINE MPI_REGISTER_DATAREP_T
 
-        SUBROUTINE MPI_ISCAN_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        <type1> v1<dims1>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_ISCAN_T(sendbuf,recvbuf,count,datatype,op,comm,request,&
+                  ierror)
+        <type> sendbuf<dims>
+        <type1> recvbuf<dims1>
+        INTEGER count
+        INTEGER datatype
+        INTEGER op
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_ISCAN
-        CALL MPI_ISCAN(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_ISCAN_T
+        CALL MPI_ISCAN(sendbuf,recvbuf,count,datatype,op,comm,request,&
+                    ierror)
+      END SUBROUTINE MPI_ISCAN_T
 
-        SUBROUTINE MPI_FILE_WRITE_AT_ALL_BEGIN_T(v0,v1,v2,v3,v4,ierror)
-        INTEGER v0
-        INTEGER(KIND=MPI_OFFSET_KIND) v1
-        <type> v2<dims>
-        INTEGER v3
-        INTEGER v4
+      SUBROUTINE MPI_FILE_WRITE_AT_ALL_BEGIN_T(fh,offset,buf,count,datatype,&
+                  ierror)
+        INTEGER fh
+        INTEGER(KIND=MPI_OFFSET_KIND) offset
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
         INTEGER ierror
         EXTERNAL MPI_FILE_WRITE_AT_ALL_BEGIN
-        CALL MPI_FILE_WRITE_AT_ALL_BEGIN(v0,v1,v2,v3,v4,ierror)
-        END SUBROUTINE MPI_FILE_WRITE_AT_ALL_BEGIN_T
+        CALL MPI_FILE_WRITE_AT_ALL_BEGIN(fh,offset,buf,count,datatype,&
+                    ierror)
+      END SUBROUTINE MPI_FILE_WRITE_AT_ALL_BEGIN_T
 
-        SUBROUTINE MPI_INEIGHBOR_ALLGATHER_T(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
+      SUBROUTINE MPI_INEIGHBOR_ALLGATHER_T(sendbuf,sendcount,sendtype,recvbuf,&
+                  recvcount,recvtype,comm,request,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER recvtype
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_INEIGHBOR_ALLGATHER
-        CALL MPI_INEIGHBOR_ALLGATHER(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        END SUBROUTINE MPI_INEIGHBOR_ALLGATHER_T
+        CALL MPI_INEIGHBOR_ALLGATHER(sendbuf,sendcount,sendtype,recvbuf,&
+                    recvcount,recvtype,comm,request,ierror)
+      END SUBROUTINE MPI_INEIGHBOR_ALLGATHER_T
 
-        SUBROUTINE MPI_EXSCAN_T(v0,v1,v2,v3,v4,v5,ierror)
-        <type> v0<dims>
-        <type1> v1<dims1>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
+      SUBROUTINE MPI_EXSCAN_T(sendbuf,recvbuf,count,datatype,op,comm,ierror)
+        <type> sendbuf<dims>
+        <type1> recvbuf<dims1>
+        INTEGER count
+        INTEGER datatype
+        INTEGER op
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_EXSCAN
-        CALL MPI_EXSCAN(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_EXSCAN_T
+        CALL MPI_EXSCAN(sendbuf,recvbuf,count,datatype,op,comm,ierror)
+      END SUBROUTINE MPI_EXSCAN_T
 
-        SUBROUTINE MPI_SCATTERV_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        <type> v0<dims>
-        INTEGER v1(*)
-        INTEGER v2(*)
-        INTEGER v3
-        <type1> v4<dims1>
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
-        INTEGER v8
+      SUBROUTINE MPI_SCATTERV_T(sendbuf,sendcounts,displs,sendtype,recvbuf,&
+                  recvcount,recvtype,root,comm,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcounts(*)
+        INTEGER displs(*)
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER recvtype
+        INTEGER root
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_SCATTERV
-        CALL MPI_SCATTERV(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        END SUBROUTINE MPI_SCATTERV_T
+        CALL MPI_SCATTERV(sendbuf,sendcounts,displs,sendtype,recvbuf,&
+                    recvcount,recvtype,root,comm,ierror)
+      END SUBROUTINE MPI_SCATTERV_T
 
-        SUBROUTINE MPI_SCAN_T(v0,v1,v2,v3,v4,v5,ierror)
-        <type> v0<dims>
-        <type1> v1<dims1>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
+      SUBROUTINE MPI_SCAN_T(sendbuf,recvbuf,count,datatype,op,comm,ierror)
+        <type> sendbuf<dims>
+        <type1> recvbuf<dims1>
+        INTEGER count
+        INTEGER datatype
+        INTEGER op
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_SCAN
-        CALL MPI_SCAN(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_SCAN_T
+        CALL MPI_SCAN(sendbuf,recvbuf,count,datatype,op,comm,ierror)
+      END SUBROUTINE MPI_SCAN_T
 
-        SUBROUTINE MPI_FILE_READ_AT_T(v0,v1,v2,v3,v4,v5,ierror)
-        INTEGER v0
-        INTEGER(KIND=MPI_OFFSET_KIND) v1
-        <type> v2<dims>
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_READ_AT_T(fh,offset,buf,count,datatype,status,ierror)
+        INTEGER fh
+        INTEGER(KIND=MPI_OFFSET_KIND) offset
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_READ_AT
-        CALL MPI_FILE_READ_AT(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_FILE_READ_AT_T
+        CALL MPI_FILE_READ_AT(fh,offset,buf,count,datatype,status,ierror)
+      END SUBROUTINE MPI_FILE_READ_AT_T
 
-        SUBROUTINE MPI_WIN_ALLOCATE_SHARED_T(v0,v1,v2,v3,v4,v5,ierror)
-        INTEGER(KIND=MPI_ADDRESS_KIND) v0
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        <type> v4<dims>
-        INTEGER v5
+      SUBROUTINE MPI_WIN_ALLOCATE_SHARED_T(size,disp_unit,info,comm,baseptr,&
+                  win,ierror)
+        INTEGER(KIND=MPI_ADDRESS_KIND) size
+        INTEGER disp_unit
+        INTEGER info
+        INTEGER comm
+        <type> baseptr<dims>
+        INTEGER win
         INTEGER ierror
         EXTERNAL MPI_WIN_ALLOCATE_SHARED
-        CALL MPI_WIN_ALLOCATE_SHARED(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_WIN_ALLOCATE_SHARED_T
+        CALL MPI_WIN_ALLOCATE_SHARED(size,disp_unit,info,comm,baseptr,&
+                    win,ierror)
+      END SUBROUTINE MPI_WIN_ALLOCATE_SHARED_T
 
-        SUBROUTINE MPI_RSEND_INIT_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_RSEND_INIT_T(buf,count,datatype,dest,tag,comm,request,&
+                  ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER dest
+        INTEGER tag
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_RSEND_INIT
-        CALL MPI_RSEND_INIT(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_RSEND_INIT_T
+        CALL MPI_RSEND_INIT(buf,count,datatype,dest,tag,comm,request,&
+                    ierror)
+      END SUBROUTINE MPI_RSEND_INIT_T
 
-        SUBROUTINE MPI_REDUCE_SCATTER_BLOCK_T(v0,v1,v2,v3,v4,v5,ierror)
-        <type> v0<dims>
-        <type1> v1<dims1>
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
+      SUBROUTINE MPI_REDUCE_SCATTER_BLOCK_T(sendbuf,recvbuf,recvcount,datatype,&
+                  op,comm,ierror)
+        <type> sendbuf<dims>
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER datatype
+        INTEGER op
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_REDUCE_SCATTER_BLOCK
-        CALL MPI_REDUCE_SCATTER_BLOCK(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_REDUCE_SCATTER_BLOCK_T
+        CALL MPI_REDUCE_SCATTER_BLOCK(sendbuf,recvbuf,recvcount,datatype,&
+                    op,comm,ierror)
+      END SUBROUTINE MPI_REDUCE_SCATTER_BLOCK_T
 
-        SUBROUTINE MPI_GATHERV_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4(*)
-        INTEGER v5(*)
-        INTEGER v6
-        INTEGER v7
-        INTEGER v8
+      SUBROUTINE MPI_GATHERV_T(sendbuf,sendcount,sendtype,recvbuf,recvcounts,&
+                  displs,recvtype,root,comm,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER displs(*)
+        INTEGER recvtype
+        INTEGER root
+        INTEGER comm
         INTEGER ierror
         EXTERNAL MPI_GATHERV
-        CALL MPI_GATHERV(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        END SUBROUTINE MPI_GATHERV_T
+        CALL MPI_GATHERV(sendbuf,sendcount,sendtype,recvbuf,recvcounts,&
+                    displs,recvtype,root,comm,ierror)
+      END SUBROUTINE MPI_GATHERV_T
 
-        SUBROUTINE MPI_WIN_GET_ATTR_T(v0,v1,v2,v3,ierror)
-        INTEGER v0
-        INTEGER v1
-        <type> v2<dims>
-        LOGICAL v3
+      SUBROUTINE MPI_WIN_GET_ATTR_T(win,win_keyval,attribute_val,flag,ierror)
+        INTEGER win
+        INTEGER win_keyval
+        <type> attribute_val<dims>
+        LOGICAL flag
         INTEGER ierror
         EXTERNAL MPI_WIN_GET_ATTR
-        CALL MPI_WIN_GET_ATTR(v0,v1,v2,v3,ierror)
-        END SUBROUTINE MPI_WIN_GET_ATTR_T
+        CALL MPI_WIN_GET_ATTR(win,win_keyval,attribute_val,flag,ierror)
+      END SUBROUTINE MPI_WIN_GET_ATTR_T
 
-        SUBROUTINE MPI_SEND_INIT_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_SEND_INIT_T(buf,count,datatype,dest,tag,comm,request,&
+                  ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER dest
+        INTEGER tag
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_SEND_INIT
-        CALL MPI_SEND_INIT(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_SEND_INIT_T
+        CALL MPI_SEND_INIT(buf,count,datatype,dest,tag,comm,request,&
+                    ierror)
+      END SUBROUTINE MPI_SEND_INIT_T
 
-        SUBROUTINE MPI_COMM_SET_ATTR_T(v0,v1,v2,ierror)
-        INTEGER v0
-        INTEGER v1
-        <type> v2<dims>
+      SUBROUTINE MPI_COMM_SET_ATTR_T(comm,comm_keyval,attribute_val,ierror)
+        INTEGER comm
+        INTEGER comm_keyval
+        <type> attribute_val<dims>
         INTEGER ierror
         EXTERNAL MPI_COMM_SET_ATTR
-        CALL MPI_COMM_SET_ATTR(v0,v1,v2,ierror)
-        END SUBROUTINE MPI_COMM_SET_ATTR_T
+        CALL MPI_COMM_SET_ATTR(comm,comm_keyval,attribute_val,ierror)
+      END SUBROUTINE MPI_COMM_SET_ATTR_T
 
-        SUBROUTINE MPI_IALLGATHER_T(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
+      SUBROUTINE MPI_IALLGATHER_T(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                  recvtype,comm,request,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER recvtype
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IALLGATHER
-        CALL MPI_IALLGATHER(v0,v1,v2,v3,v4,v5,v6,v7,ierror)
-        END SUBROUTINE MPI_IALLGATHER_T
+        CALL MPI_IALLGATHER(sendbuf,sendcount,sendtype,recvbuf,recvcount,&
+                    recvtype,comm,request,ierror)
+      END SUBROUTINE MPI_IALLGATHER_T
 
-        SUBROUTINE MPI_ACCUMULATE_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER(KIND=MPI_ADDRESS_KIND) v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
-        INTEGER v8
+      SUBROUTINE MPI_ACCUMULATE_T(origin_addr,origin_count,origin_datatype,&
+                  target_rank,target_disp,target_count,target_datatype,op,win,&
+                  ierror)
+        <type> origin_addr<dims>
+        INTEGER origin_count
+        INTEGER origin_datatype
+        INTEGER target_rank
+        INTEGER(KIND=MPI_ADDRESS_KIND) target_disp
+        INTEGER target_count
+        INTEGER target_datatype
+        INTEGER op
+        INTEGER win
         INTEGER ierror
         EXTERNAL MPI_ACCUMULATE
-        CALL MPI_ACCUMULATE(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        END SUBROUTINE MPI_ACCUMULATE_T
+        CALL MPI_ACCUMULATE(origin_addr,origin_count,origin_datatype,&
+                    target_rank,target_disp,target_count,target_datatype,op,&
+                    win,ierror)
+      END SUBROUTINE MPI_ACCUMULATE_T
 
-        SUBROUTINE MPI_COMM_CREATE_KEYVAL_T(v0,v1,v2,v3,ierror)
-        EXTERNAL v0
-        EXTERNAL v1
-        INTEGER v2
-        <type> v3<dims>
+      SUBROUTINE MPI_COMM_CREATE_KEYVAL_T(comm_copy_attr_fn,&
+                  comm_delete_attr_fn,comm_keyval,extra_state,ierror)
+        EXTERNAL comm_copy_attr_fn
+        EXTERNAL comm_delete_attr_fn
+        INTEGER comm_keyval
+        <type> extra_state<dims>
         INTEGER ierror
         EXTERNAL MPI_COMM_CREATE_KEYVAL
-        CALL MPI_COMM_CREATE_KEYVAL(v0,v1,v2,v3,ierror)
-        END SUBROUTINE MPI_COMM_CREATE_KEYVAL_T
+        CALL MPI_COMM_CREATE_KEYVAL(comm_copy_attr_fn,&
+                    comm_delete_attr_fn,comm_keyval,extra_state,ierror)
+      END SUBROUTINE MPI_COMM_CREATE_KEYVAL_T
 
-        SUBROUTINE MPI_RACCUMULATE_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER(KIND=MPI_ADDRESS_KIND) v4
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
-        INTEGER v8
-        INTEGER v9
+      SUBROUTINE MPI_RACCUMULATE_T(origin_addr,origin_count,origin_datatype,&
+                  target_rank,target_disp,target_count,target_datatype,op,win,&
+                  request,ierror)
+        <type> origin_addr<dims>
+        INTEGER origin_count
+        INTEGER origin_datatype
+        INTEGER target_rank
+        INTEGER(KIND=MPI_ADDRESS_KIND) target_disp
+        INTEGER target_count
+        INTEGER target_datatype
+        INTEGER op
+        INTEGER win
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_RACCUMULATE
-        CALL MPI_RACCUMULATE(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,ierror)
-        END SUBROUTINE MPI_RACCUMULATE_T
+        CALL MPI_RACCUMULATE(origin_addr,origin_count,origin_datatype,&
+                    target_rank,target_disp,target_count,target_datatype,op,&
+                    win,request,ierror)
+      END SUBROUTINE MPI_RACCUMULATE_T
 
-        SUBROUTINE MPI_IRSEND_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_IRSEND_T(buf,count,datatype,dest,tag,comm,request,ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER dest
+        INTEGER tag
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_IRSEND
-        CALL MPI_IRSEND(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_IRSEND_T
+        CALL MPI_IRSEND(buf,count,datatype,dest,tag,comm,request,ierror)
+      END SUBROUTINE MPI_IRSEND_T
 
-        SUBROUTINE MPI_RECV_INIT_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5
-        INTEGER v6
+      SUBROUTINE MPI_RECV_INIT_T(buf,count,datatype,source,tag,comm,request,&
+                  ierror)
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER source
+        INTEGER tag
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_RECV_INIT
-        CALL MPI_RECV_INIT(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_RECV_INIT_T
+        CALL MPI_RECV_INIT(buf,count,datatype,source,tag,comm,request,&
+                    ierror)
+      END SUBROUTINE MPI_RECV_INIT_T
 
-        SUBROUTINE MPI_COMPARE_AND_SWAP_T(v0,v1,v2,v3,v4,v5,v6,ierror)
-        <type> v0<dims>
-        <type1> v1<dims1>
-        <type2> v2<dims2>
-        INTEGER v3
-        INTEGER v4
-        INTEGER(KIND=MPI_ADDRESS_KIND) v5
-        INTEGER v6
+      SUBROUTINE MPI_COMPARE_AND_SWAP_T(origin_addr,compare_addr,result_addr,&
+                  datatype,target_rank,target_disp,win,ierror)
+        <type> origin_addr<dims>
+        <type1> compare_addr<dims1>
+        <type2> result_addr<dims2>
+        INTEGER datatype
+        INTEGER target_rank
+        INTEGER(KIND=MPI_ADDRESS_KIND) target_disp
+        INTEGER win
         INTEGER ierror
         EXTERNAL MPI_COMPARE_AND_SWAP
-        CALL MPI_COMPARE_AND_SWAP(v0,v1,v2,v3,v4,v5,v6,ierror)
-        END SUBROUTINE MPI_COMPARE_AND_SWAP_T
+        CALL MPI_COMPARE_AND_SWAP(origin_addr,compare_addr,result_addr,&
+                    datatype,target_rank,target_disp,win,ierror)
+      END SUBROUTINE MPI_COMPARE_AND_SWAP_T
 
-        SUBROUTINE MPI_INEIGHBOR_ALLGATHERV_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        <type> v0<dims>
-        INTEGER v1
-        INTEGER v2
-        <type1> v3<dims1>
-        INTEGER v4(*)
-        INTEGER v5(*)
-        INTEGER v6
-        INTEGER v7
-        INTEGER v8
+      SUBROUTINE MPI_INEIGHBOR_ALLGATHERV_T(sendbuf,sendcount,sendtype,recvbuf,&
+                  recvcounts,displs,recvtype,comm,request,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcount
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER displs(*)
+        INTEGER recvtype
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_INEIGHBOR_ALLGATHERV
-        CALL MPI_INEIGHBOR_ALLGATHERV(v0,v1,v2,v3,v4,v5,v6,v7,v8,ierror)
-        END SUBROUTINE MPI_INEIGHBOR_ALLGATHERV_T
+        CALL MPI_INEIGHBOR_ALLGATHERV(sendbuf,sendcount,sendtype,recvbuf,&
+                    recvcounts,displs,recvtype,comm,request,ierror)
+      END SUBROUTINE MPI_INEIGHBOR_ALLGATHERV_T
 
-        SUBROUTINE MPI_FILE_WRITE_AT_ALL_T(v0,v1,v2,v3,v4,v5,ierror)
-        INTEGER v0
-        INTEGER(KIND=MPI_OFFSET_KIND) v1
-        <type> v2<dims>
-        INTEGER v3
-        INTEGER v4
-        INTEGER v5(MPI_STATUS_SIZE)
+      SUBROUTINE MPI_FILE_WRITE_AT_ALL_T(fh,offset,buf,count,datatype,status,&
+                  ierror)
+        INTEGER fh
+        INTEGER(KIND=MPI_OFFSET_KIND) offset
+        <type> buf<dims>
+        INTEGER count
+        INTEGER datatype
+        INTEGER status(MPI_STATUS_SIZE)
         INTEGER ierror
         EXTERNAL MPI_FILE_WRITE_AT_ALL
-        CALL MPI_FILE_WRITE_AT_ALL(v0,v1,v2,v3,v4,v5,ierror)
-        END SUBROUTINE MPI_FILE_WRITE_AT_ALL_T
+        CALL MPI_FILE_WRITE_AT_ALL(fh,offset,buf,count,datatype,status,&
+                    ierror)
+      END SUBROUTINE MPI_FILE_WRITE_AT_ALL_T
 
-        SUBROUTINE MPI_INEIGHBOR_ALLTOALLW_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,ierror)
-        <type> v0<dims>
-        INTEGER v1(*)
-        INTEGER(KIND=MPI_ADDRESS_KIND) v2(*)
-        INTEGER v3(*)
-        <type1> v4<dims1>
-        INTEGER v5(*)
-        INTEGER(KIND=MPI_ADDRESS_KIND) v6(*)
-        INTEGER v7(*)
-        INTEGER v8
-        INTEGER v9
+      SUBROUTINE MPI_INEIGHBOR_ALLTOALLW_T(sendbuf,sendcounts,sdispls,&
+                  sendtypes,recvbuf,recvcounts,rdispls,recvtypes,comm,request,&
+                  ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcounts(*)
+        INTEGER(KIND=MPI_ADDRESS_KIND) sdispls(*)
+        INTEGER sendtypes(*)
+        <type1> recvbuf<dims1>
+        INTEGER recvcounts(*)
+        INTEGER(KIND=MPI_ADDRESS_KIND) rdispls(*)
+        INTEGER recvtypes(*)
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_INEIGHBOR_ALLTOALLW
-        CALL MPI_INEIGHBOR_ALLTOALLW(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,ierror)
-        END SUBROUTINE MPI_INEIGHBOR_ALLTOALLW_T
+        CALL MPI_INEIGHBOR_ALLTOALLW(sendbuf,sendcounts,sdispls,&
+                    sendtypes,recvbuf,recvcounts,rdispls,recvtypes,comm,&
+                    request,ierror)
+      END SUBROUTINE MPI_INEIGHBOR_ALLTOALLW_T
 
-        SUBROUTINE MPI_ISCATTERV_T(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,ierror)
-        <type> v0<dims>
-        INTEGER v1(*)
-        INTEGER v2(*)
-        INTEGER v3
-        <type1> v4<dims1>
-        INTEGER v5
-        INTEGER v6
-        INTEGER v7
-        INTEGER v8
-        INTEGER v9
+      SUBROUTINE MPI_ISCATTERV_T(sendbuf,sendcounts,displs,sendtype,recvbuf,&
+                  recvcount,recvtype,root,comm,request,ierror)
+        <type> sendbuf<dims>
+        INTEGER sendcounts(*)
+        INTEGER displs(*)
+        INTEGER sendtype
+        <type1> recvbuf<dims1>
+        INTEGER recvcount
+        INTEGER recvtype
+        INTEGER root
+        INTEGER comm
+        INTEGER request
         INTEGER ierror
         EXTERNAL MPI_ISCATTERV
-        CALL MPI_ISCATTERV(v0,v1,v2,v3,v4,v5,v6,v7,v8,v9,ierror)
-        END SUBROUTINE MPI_ISCATTERV_T
+        CALL MPI_ISCATTERV(sendbuf,sendcounts,displs,sendtype,recvbuf,&
+                    recvcount,recvtype,root,comm,request,ierror)
+      END SUBROUTINE MPI_ISCATTERV_T
 
-        END MODULE MPI_t1_s
+      END MODULE MPI_t1_s

@@ -26,7 +26,7 @@
 {								\
     (rreq_)->status.MPI_SOURCE = (pkt_)->match.parts.rank;	\
     (rreq_)->status.MPI_TAG = (pkt_)->match.parts.tag;		\
-    (rreq_)->status.count = (pkt_)->data_sz;			\
+    MPIR_STATUS_SET_COUNT((rreq_)->status, (pkt_)->data_sz);		\
     (rreq_)->dev.sender_req_id = (pkt_)->sender_req_id;		\
     (rreq_)->dev.recv_data_sz = (pkt_)->data_sz;		\
     MPIDI_Request_set_seqnum((rreq_), (pkt_)->seqnum);		\
@@ -132,7 +132,7 @@ int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t 
 		     "**truncate", "**truncate %d %d %d %d", 
 		     rreq->status.MPI_SOURCE, rreq->status.MPI_TAG, 
 		     rreq->dev.recv_data_sz, userbuf_sz );
-	rreq->status.count = userbuf_sz;
+	MPIR_STATUS_SET_COUNT(rreq->status, userbuf_sz);
 	data_sz = userbuf_sz;
     }
 
@@ -198,7 +198,7 @@ int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t 
                    mismatch between the datatype and the amount of
                    data received.  Throw away received data. */
                 MPIU_ERR_SET(rreq->status.MPI_ERROR, MPI_ERR_TYPE, "**dtypemismatch");
-                rreq->status.count = (int)rreq->dev.segment_first;
+                MPIR_STATUS_SET_COUNT(rreq->status, rreq->dev.segment_first);
                 *buflen = data_sz;
                 *complete = TRUE;
 		/* FIXME: Set OnDataAvail to 0?  If not, why not? */
@@ -274,7 +274,7 @@ int MPIDI_CH3U_Receive_data_unexpected(MPID_Request * rreq, char *buf, MPIDI_msg
     }
 
     if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG)
-        MPIR_T_ADD(RECVQ_STATISTICS, MPIDI_CH3I_unexpected_recvq_buffer_size, rreq->dev.tmpbuf_sz);
+        MPIR_T_PVAR_LEVEL_INC(RECVQ, unexpected_recvq_buffer_size, rreq->dev.tmpbuf_sz);
 
     rreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_UnpackUEBufComplete;
 
@@ -322,7 +322,7 @@ int MPIDI_CH3U_Post_data_receive_found(MPID_Request * rreq)
 		     "**truncate", "**truncate %d %d %d %d", 
 		     rreq->status.MPI_SOURCE, rreq->status.MPI_TAG, 
 		     rreq->dev.recv_data_sz, userbuf_sz );
-	rreq->status.count = userbuf_sz;
+	MPIR_STATUS_SET_COUNT(rreq->status, userbuf_sz);
 	data_sz = userbuf_sz;
     }
 

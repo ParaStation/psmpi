@@ -102,7 +102,7 @@ static HYD_status qsort_node_list(void)
     HYD_status status = HYD_SUCCESS;
 
     for (count = 0, node = HYD_server_info.node_list; node; node = node->next, count++)
-        /* skip */;
+        /* skip */ ;
 
     HYDU_MALLOC(node_list, struct HYD_node **, count * sizeof(struct HYD_node *), status);
     for (i = 0, node = HYD_server_info.node_list; node; node = node->next, i++)
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
     struct HYD_proxy *proxy;
     struct HYD_exec *exec;
     struct HYD_node *node;
-    int exit_status = 0, i, timeout, reset_rmk, global_core_count;
+    int exit_status = 0, i, timeout, user_provided_host_list, global_core_count;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -172,9 +172,14 @@ int main(int argc, char **argv)
                        HYD_server_info.user_global.enablex, HYD_server_info.user_global.debug);
     HYDU_ERR_POP(status, "unable to initialize the bootstrap server\n");
 
-    reset_rmk = 0;
+    user_provided_host_list = 0;
 
-    if (HYD_server_info.node_list == NULL) {
+    if (HYD_server_info.node_list) {
+        /* If we already have a host list at this point, it must have
+         * come from the user */
+        user_provided_host_list = 1;
+    }
+    else {
         /* Node list is not created yet. The user might not have
          * provided the host file. Query the RMK. */
         status = HYDT_bsci_query_node_list(&HYD_server_info.node_list);
@@ -184,13 +189,13 @@ int main(int argc, char **argv)
             char localhost[MAX_HOSTNAME_LEN] = { 0 };
 
             /* The RMK didn't give us anything back; use localhost */
-            status = HYDU_gethostname(localhost);
-            HYDU_ERR_POP(status, "unable to get local hostname\n");
+            if (gethostname(localhost, MAX_HOSTNAME_LEN) < 0)
+                HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "unable to get local hostname\n");
 
             status = HYDU_add_to_node_list(localhost, 1, &HYD_server_info.node_list);
             HYDU_ERR_POP(status, "unable to add to node list\n");
 
-            reset_rmk = 1;
+            user_provided_host_list = 1;
         }
     }
 
@@ -218,17 +223,23 @@ int main(int argc, char **argv)
     if (HYD_ui_mpich_info.ppn != -1) {
         for (node = HYD_server_info.node_list; node; node = node->next)
             node->core_count = HYD_ui_mpich_info.ppn;
-        reset_rmk = 1;
+
+        /* The user modified how we look at the lists of hosts, so we
+         * consider it a user-provided host list */
+        user_provided_host_list = 1;
     }
 
     /* The RMK returned a node list. See if the user requested us to
      * manipulate it in some way */
     if (HYD_ui_mpich_info.sort_order != NONE) {
         qsort_node_list();
-        reset_rmk = 1;
+
+        /* The user modified how we look at the lists of hosts, so we
+         * consider it a user-provided host list */
+        user_provided_host_list = 1;
     }
 
-    if (reset_rmk) {
+    if (user_provided_host_list) {
         /* Reassign node IDs to each node */
         for (node = HYD_server_info.node_list, i = 0; node; node = node->next, i++)
             node->node_id = i;
@@ -272,29 +283,23 @@ int main(int argc, char **argv)
     /* If the user didn't specify a local hostname, try to find one in
      * the list of nodes passed to us */
     if (HYD_server_info.localhost == NULL) {
-        /* See if the node list contains a remotely accessible localhost */
+        /* See if the node list contains a localhost */
         for (node = HYD_server_info.node_list; node; node = node->next) {
-            int is_local, remote_access;
+            int is_local;
 
             status = HYDU_sock_is_local(node->hostname, &is_local);
             HYDU_ERR_POP(status, "unable to check if %s is local\n", node->hostname);
 
-            if (is_local) {
-                status = HYDU_sock_remote_access(node->hostname, &remote_access);
-                HYDU_ERR_POP(status, "unable to check if %s is remotely accessible\n",
-                             node->hostname);
-
-                if (remote_access)
-                    break;
-            }
+            if (is_local)
+                break;
         }
 
         if (node)
             HYD_server_info.localhost = HYDU_strdup(node->hostname);
         else {
             HYDU_MALLOC(HYD_server_info.localhost, char *, MAX_HOSTNAME_LEN, status);
-            status = HYDU_gethostname(HYD_server_info.localhost);
-            HYDU_ERR_POP(status, "unable to get local hostname\n");
+            if (gethostname(HYD_server_info.localhost, MAX_HOSTNAME_LEN) < 0)
+                HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "unable to get local hostname\n");
         }
     }
 
@@ -311,7 +316,7 @@ int main(int argc, char **argv)
      * range. */
     if (MPL_env2str("MPIEXEC_PORTRANGE", (const char **) &HYD_server_info.port_range) ||
         MPL_env2str("MPIEXEC_PORT_RANGE", (const char **) &HYD_server_info.port_range) ||
-        MPL_env2str("MPICH_PORT_RANGE", (const char **) &HYD_server_info.port_range))
+        MPL_env2str("MPIR_CVAR_CH3_PORT_RANGE", (const char **) &HYD_server_info.port_range))
         HYD_server_info.port_range = HYDU_strdup(HYD_server_info.port_range);
 
     /* Add the stdout/stderr callback handlers */

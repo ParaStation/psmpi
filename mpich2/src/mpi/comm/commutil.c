@@ -17,6 +17,27 @@
 #define MPID_COMM_PREALLOC 8
 #endif
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+cvars:
+    - name        : MPIR_CVAR_CTXID_EAGER_SIZE
+      category    : THREADS
+      type        : int
+      default     : 2
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        The MPIR_CVAR_CTXID_EAGER_SIZE environment variable allows you to
+        specify how many words in the context ID mask will be set aside
+        for the eager allocation protocol.  If the application is running
+        out of context IDs, reducing this value may help.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
+
+
 /* Preallocated comm objects */
 /* initialized in initthread.c */
 MPID_Comm MPID_Comm_builtin[MPID_COMM_N_BUILTIN] = { {0} };
@@ -261,23 +282,23 @@ static int init_default_collops(void)
         ops->ref_count = 1; /* force existence until finalize time */
 
         /* intracomm default defaults... */
-        ops->Ibcast = &MPIR_Ibcast_intra;
-        ops->Ibarrier = &MPIR_Ibarrier_intra;
-        ops->Ireduce = &MPIR_Ireduce_intra;
-        ops->Ialltoall = &MPIR_Ialltoall_intra;
-        ops->Ialltoallv = &MPIR_Ialltoallv_intra;
-        ops->Ialltoallw = &MPIR_Ialltoallw_intra;
-        ops->Iallreduce = &MPIR_Iallreduce_intra;
-        ops->Igather = &MPIR_Igather_intra;
-        ops->Igatherv = &MPIR_Igatherv;
-        ops->Iscatter = &MPIR_Iscatter_intra;
-        ops->Iscatterv = &MPIR_Iscatterv;
-        ops->Ireduce_scatter = &MPIR_Ireduce_scatter_intra;
-        ops->Ireduce_scatter_block = &MPIR_Ireduce_scatter_block_intra;
-        ops->Iallgather = &MPIR_Iallgather_intra;
-        ops->Iallgatherv = &MPIR_Iallgatherv_intra;
-        ops->Iscan = &MPIR_Iscan_rec_dbl;
-        ops->Iexscan = &MPIR_Iexscan;
+        ops->Ibcast_sched = &MPIR_Ibcast_intra;
+        ops->Ibarrier_sched = &MPIR_Ibarrier_intra;
+        ops->Ireduce_sched = &MPIR_Ireduce_intra;
+        ops->Ialltoall_sched = &MPIR_Ialltoall_intra;
+        ops->Ialltoallv_sched = &MPIR_Ialltoallv_intra;
+        ops->Ialltoallw_sched = &MPIR_Ialltoallw_intra;
+        ops->Iallreduce_sched = &MPIR_Iallreduce_intra;
+        ops->Igather_sched = &MPIR_Igather_intra;
+        ops->Igatherv_sched = &MPIR_Igatherv;
+        ops->Iscatter_sched = &MPIR_Iscatter_intra;
+        ops->Iscatterv_sched = &MPIR_Iscatterv;
+        ops->Ireduce_scatter_sched = &MPIR_Ireduce_scatter_intra;
+        ops->Ireduce_scatter_block_sched = &MPIR_Ireduce_scatter_block_intra;
+        ops->Iallgather_sched = &MPIR_Iallgather_intra;
+        ops->Iallgatherv_sched = &MPIR_Iallgatherv_intra;
+        ops->Iscan_sched = &MPIR_Iscan_rec_dbl;
+        ops->Iexscan_sched = &MPIR_Iexscan;
         ops->Neighbor_allgather   = &MPIR_Neighbor_allgather_default;
         ops->Neighbor_allgatherv  = &MPIR_Neighbor_allgatherv_default;
         ops->Neighbor_alltoall    = &MPIR_Neighbor_alltoall_default;
@@ -294,10 +315,10 @@ static int init_default_collops(void)
             case MPID_HIERARCHY_FLAT:
                 break;
             case MPID_HIERARCHY_PARENT:
-                ops->Ibcast = &MPIR_Ibcast_SMP;
-                ops->Iscan = &MPIR_Iscan_SMP;
-                ops->Iallreduce = &MPIR_Iallreduce_SMP;
-                ops->Ireduce = &MPIR_Ireduce_SMP;
+                ops->Ibcast_sched = &MPIR_Ibcast_SMP;
+                ops->Iscan_sched = &MPIR_Iscan_SMP;
+                ops->Iallreduce_sched = &MPIR_Iallreduce_SMP;
+                ops->Ireduce_sched = &MPIR_Ireduce_SMP;
                 break;
             case MPID_HIERARCHY_NODE:
                 break;
@@ -323,21 +344,21 @@ static int init_default_collops(void)
         ops->ref_count = 1; /* force existence until finalize time */
 
         /* intercomm defaults */
-        ops->Ibcast = &MPIR_Ibcast_inter;
-        ops->Ibarrier = &MPIR_Ibarrier_inter;
-        ops->Ireduce = &MPIR_Ireduce_inter;
-        ops->Ialltoall = &MPIR_Ialltoall_inter;
-        ops->Ialltoallv = &MPIR_Ialltoallv_inter;
-        ops->Ialltoallw = &MPIR_Ialltoallw_inter;
-        ops->Iallreduce = &MPIR_Iallreduce_inter;
-        ops->Igather = &MPIR_Igather_inter;
-        ops->Igatherv = &MPIR_Igatherv;
-        ops->Iscatter = &MPIR_Iscatter_inter;
-        ops->Iscatterv = &MPIR_Iscatterv;
-        ops->Ireduce_scatter = &MPIR_Ireduce_scatter_inter;
-        ops->Ireduce_scatter_block = &MPIR_Ireduce_scatter_block_inter;
-        ops->Iallgather = &MPIR_Iallgather_inter;
-        ops->Iallgatherv = &MPIR_Iallgatherv_inter;
+        ops->Ibcast_sched = &MPIR_Ibcast_inter;
+        ops->Ibarrier_sched = &MPIR_Ibarrier_inter;
+        ops->Ireduce_sched = &MPIR_Ireduce_inter;
+        ops->Ialltoall_sched = &MPIR_Ialltoall_inter;
+        ops->Ialltoallv_sched = &MPIR_Ialltoallv_inter;
+        ops->Ialltoallw_sched = &MPIR_Ialltoallw_inter;
+        ops->Iallreduce_sched = &MPIR_Iallreduce_inter;
+        ops->Igather_sched = &MPIR_Igather_inter;
+        ops->Igatherv_sched = &MPIR_Igatherv;
+        ops->Iscatter_sched = &MPIR_Iscatter_inter;
+        ops->Iscatterv_sched = &MPIR_Iscatterv;
+        ops->Ireduce_scatter_sched = &MPIR_Ireduce_scatter_inter;
+        ops->Ireduce_scatter_block_sched = &MPIR_Ireduce_scatter_block_inter;
+        ops->Iallgather_sched = &MPIR_Iallgather_inter;
+        ops->Iallgatherv_sched = &MPIR_Iallgatherv_inter;
         /* scan and exscan are not valid for intercommunicators, leave them NULL */
         /* Ineighbor_all* routines are not valid for intercommunicators, leave
          * them NULL */
@@ -689,9 +710,14 @@ static void MPIR_Init_contextid(void)
     for (i=1; i<MPIR_MAX_CONTEXT_MASK; i++) {
 	context_mask[i] = 0xFFFFFFFF;
     }
-    /* the first three values are already used (comm_world, comm_self,
-       and the internal-only copy of comm_world) */
-    context_mask[0] = 0xFFFFFFF8; 
+    /* The first two values are already used (comm_world, comm_self).
+       The third value is also used for the internal-only copy of
+       comm_world, if needed by mpid. */
+#ifdef MPID_NEEDS_ICOMM_WORLD
+    context_mask[0] = 0xFFFFFFF8;
+#else
+    context_mask[0] = 0xFFFFFFFC;
+#endif
     initialize_context_mask = 0;
 
 #ifdef MPICH_DEBUG_HANDLEALLOC
@@ -863,7 +889,7 @@ int MPIR_Get_contextid_sparse_group(MPID_Comm *comm_ptr, MPID_Group *group_ptr, 
             int nfree = -1;
             int ntotal = -1;
             MPIR_ContextMaskStats(&nfree, &ntotal);
-            MPIU_ERR_SETANDJUMP3(mpi_errno, MPIR_ERR_RECOVERABLE,
+            MPIU_ERR_SETANDJUMP3(mpi_errno, MPI_ERR_OTHER,
                                  "**toomanycomm", "**toomanycomm %d %d %d",
                                  nfree, ntotal, ignore_id);
         }
@@ -874,7 +900,7 @@ int MPIR_Get_contextid_sparse_group(MPID_Comm *comm_ptr, MPID_Group *group_ptr, 
             int nfree = -1;
             int ntotal = -1;
             MPIR_ContextMaskStats(&nfree, &ntotal);
-            MPIU_ERR_SETANDJUMP3(mpi_errno, MPIR_ERR_RECOVERABLE,
+            MPIU_ERR_SETANDJUMP3(mpi_errno, MPI_ERR_OTHER,
                                  "**toomanycomm", "**toomanycomm %d %d %d",
                                  nfree, ntotal, ignore_id);
         }
@@ -976,8 +1002,8 @@ int MPIR_Get_contextid_sparse_group(MPID_Comm *comm_ptr, MPID_Group *group_ptr, 
         if (eager_nelem < 0) {
             /* Ensure that at least one word of deadlock-free context IDs is
                always set aside for the base protocol */
-            MPIU_Assert( MPIR_PARAM_CTXID_EAGER_SIZE >= 0 && MPIR_PARAM_CTXID_EAGER_SIZE < MPIR_MAX_CONTEXT_MASK-1 );
-            eager_nelem = MPIR_PARAM_CTXID_EAGER_SIZE;
+            MPIU_Assert( MPIR_CVAR_CTXID_EAGER_SIZE >= 0 && MPIR_CVAR_CTXID_EAGER_SIZE < MPIR_MAX_CONTEXT_MASK-1 );
+            eager_nelem = MPIR_CVAR_CTXID_EAGER_SIZE;
         }
 
         if (ignore_id) {
@@ -1130,6 +1156,8 @@ int MPIR_Get_contextid_sparse_group(MPID_Comm *comm_ptr, MPID_Group *group_ptr, 
             /* --BEGIN ERROR HANDLING-- */
             int nfree = 0;
             int ntotal = 0;
+            int minfree;
+
             if (own_mask) {
                 MPIU_THREAD_CS_ENTER(CONTEXTID,);
                 mask_in_use = 0;
@@ -1141,9 +1169,29 @@ int MPIR_Get_contextid_sparse_group(MPID_Comm *comm_ptr, MPID_Group *group_ptr, 
             }
 
             MPIR_ContextMaskStats(&nfree, &ntotal);
-            MPIU_ERR_SETANDJUMP3(mpi_errno, MPIR_ERR_RECOVERABLE,
-                                 "**toomanycommfrag", "**toomanycommfrag %d %d %d",
-                                 nfree, ntotal, ignore_id);
+            if (ignore_id)
+                minfree = INT_MAX;
+            else
+                minfree = nfree;
+
+            if (group_ptr != NULL) {
+                int coll_tag = tag | MPIR_Process.tagged_coll_mask; /* Shift tag into the tagged coll space */
+                mpi_errno = MPIR_Allreduce_group(MPI_IN_PLACE, &minfree, 1, MPI_INT, MPI_MIN,
+                                                 comm_ptr, group_ptr, coll_tag, &errflag);
+            } else {
+                mpi_errno = MPIR_Allreduce_impl(MPI_IN_PLACE, &minfree, 1, MPI_INT,
+                                                 MPI_MIN, comm_ptr, &errflag);
+            }
+
+            if (minfree > 0) {
+                MPIU_ERR_SETANDJUMP3(mpi_errno, MPI_ERR_OTHER,
+                                     "**toomanycommfrag", "**toomanycommfrag %d %d %d",
+                                     nfree, ntotal, ignore_id);
+            } else {
+                MPIU_ERR_SETANDJUMP3(mpi_errno, MPI_ERR_OTHER,
+                                     "**toomanycomm", "**toomanycomm %d %d %d",
+                                     nfree, ntotal, ignore_id);
+            }
             /* --END ERROR HANDLING-- */
         }
 
@@ -1192,7 +1240,7 @@ static int gcn_helper(MPID_Comm *comm, int tag, void *state)
         int nfree = -1;
         int ntotal = -1;
         MPIR_ContextMaskStats(&nfree, &ntotal);
-        MPIU_ERR_SETANDJUMP3(mpi_errno, MPIR_ERR_RECOVERABLE,
+        MPIU_ERR_SETANDJUMP3(mpi_errno, MPI_ERR_OTHER,
                              "**toomanycomm", "**toomanycomm %d %d %d",
                              nfree, ntotal, /*ignore_id=*/0);
     }
@@ -1224,8 +1272,6 @@ static int gcn_sch(MPID_Comm *comm_ptr, MPIR_Context_id_t *ctx0, MPIR_Context_id
 
     MPIU_Assert(comm_ptr->comm_kind == MPID_INTRACOMM);
 
-    MPIU_ERR_CHKANDJUMP(MPIU_ISTHREADED, mpi_errno, MPI_ERR_INTERN, "**notsuppmultithread");
-
     /* first do as much local setup as we can */
     if (initialize_context_mask) {
         MPIR_Init_contextid();
@@ -1236,7 +1282,7 @@ static int gcn_sch(MPID_Comm *comm_ptr, MPIR_Context_id_t *ctx0, MPIR_Context_id
     st->ctx1 = ctx1;
     MPIU_Memcpy(st->local_mask, context_mask, MPIR_MAX_CONTEXT_MASK * sizeof(uint32_t));
 
-    mpi_errno = comm_ptr->coll_fns->Iallreduce(MPI_IN_PLACE, st->local_mask, MPIR_MAX_CONTEXT_MASK,
+    mpi_errno = comm_ptr->coll_fns->Iallreduce_sched(MPI_IN_PLACE, st->local_mask, MPIR_MAX_CONTEXT_MASK,
                                                MPI_UINT32_T, MPI_BAND, comm_ptr, s);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
@@ -1342,7 +1388,7 @@ int MPIR_Get_intercomm_contextid_nonblock(MPID_Comm *comm_ptr, MPID_Comm *newcom
         MPID_SCHED_BARRIER(s);
     }
 
-    mpi_errno = lcomm->coll_fns->Ibcast(&newcommp->context_id, 1,
+    mpi_errno = lcomm->coll_fns->Ibcast_sched(&newcommp->context_id, 1,
                                         MPIR_CONTEXT_ID_T_DATATYPE, 0, lcomm, s);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
@@ -1410,8 +1456,8 @@ int MPIR_Get_intercomm_contextid( MPID_Comm *comm_ptr, MPIR_Context_id_t *contex
     remote_context_id = -1;
     if (comm_ptr->rank == 0) {
         mpi_errno = MPIC_Sendrecv( &mycontext_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, 0, tag,
-                                   &remote_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, 0, tag, 
-                                   comm_ptr->handle, MPI_STATUS_IGNORE );
+                                      &remote_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, 0, tag,
+                                      comm_ptr->handle, MPI_STATUS_IGNORE, &errflag );
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
 
@@ -1557,7 +1603,7 @@ int MPIR_Comm_copy( MPID_Comm *comm_ptr, int size, MPID_Comm **outcomm_ptr )
         int nfree = -1;
         int ntotal = -1;
         MPIR_ContextMaskStats(&nfree, &ntotal);
-        MPIU_ERR_SETANDJUMP3(mpi_errno, MPIR_ERR_RECOVERABLE,
+        MPIU_ERR_SETANDJUMP3(mpi_errno, MPI_ERR_OTHER,
                              "**toomanycomm", "**toomanycomm %d %d %d",
                              nfree, ntotal, /*ignore_id=*/0);
     }

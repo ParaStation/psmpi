@@ -295,6 +295,12 @@ extern MPIDI_Process_t MPIDI_Process;
 #define MPIDI_CH3_REQUEST_INIT(a_)
 #endif
 
+#ifdef HAVE_DEBUGGER_SUPPORT
+#define MPIDI_Request_clear_dbg(sreq_) ((sreq_)->dbg_next = NULL)
+#else
+#define MPIDI_Request_clear_dbg(sreq_)
+#endif
+
 /* FIXME: Why does a send request need the match information?
    Is that for debugging information?  In case the initial envelope
    cannot be sent? Ditto for the dev.user_buf, count, and datatype 
@@ -329,7 +335,7 @@ extern MPIDI_Process_t MPIDI_Process;
     (sreq_)->partner_request   = NULL;                          \
     MPIR_Comm_add_ref(comm);					\
     (sreq_)->status.MPI_ERROR	   = MPI_SUCCESS;               \
-    (sreq_)->status.cancelled	   = FALSE;		        \
+    MPIR_STATUS_SET_CANCEL_BIT((sreq_)->status, FALSE);	        \
     (sreq_)->dev.state = 0;                                     \
     (sreq_)->dev.cancel_pending = FALSE;                        \
     (sreq_)->dev.match.parts.rank = rank;			\
@@ -344,6 +350,7 @@ extern MPIDI_Process_t MPIDI_Process;
     (sreq_)->dev.OnFinal	   = NULL;                      \
     (sreq_)->dev.iov_count	   = 0;                         \
     (sreq_)->dev.iov_offset	   = 0;                         \
+    MPIDI_Request_clear_dbg(sreq_);                             \
 }
 
 /* This is the receive request version of MPIDI_Request_create_sreq */
@@ -366,7 +373,7 @@ extern MPIDI_Process_t MPIDI_Process;
     MPID_cc_set(&(rreq_)->cc, 1);                               \
     (rreq_)->cc_ptr		   = &(rreq_)->cc;              \
     (rreq_)->status.MPI_ERROR	   = MPI_SUCCESS;               \
-    (rreq_)->status.cancelled	   = FALSE;                     \
+    MPIR_STATUS_SET_CANCEL_BIT((rreq_)->status, FALSE);	        \
     (rreq_)->partner_request   = NULL;                          \
     (rreq_)->dev.state = 0;                                     \
     (rreq_)->dev.cancel_pending = FALSE;                        \
@@ -1106,7 +1113,8 @@ int MPIDI_CH3U_Comm_FinishPending( MPID_Comm * );
 typedef struct {
     int (*create)(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *, MPID_Win **);
     int (*allocate)(MPI_Aint, int, MPID_Info *, MPID_Comm *, void *, MPID_Win **);
-    int (*allocate_shared)(MPI_Aint, int, MPID_Info *, MPID_Comm *, void **, MPID_Win **);
+    int (*allocate_shared)(MPI_Aint, int, MPID_Info *, MPID_Comm *, void *, MPID_Win **);
+    int (*allocate_shm)(MPI_Aint, int, MPID_Info *, MPID_Comm *, void *, MPID_Win **);
     int (*create_dynamic)(MPID_Info *, MPID_Comm *, MPID_Win **);
 } MPIDI_CH3U_Win_fns_t;
 
@@ -1121,8 +1129,8 @@ int MPIDI_CH3U_Win_create(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
                          MPID_Win **);
 int MPIDI_CH3U_Win_allocate(MPI_Aint size, int disp_unit, MPID_Info *info,
                            MPID_Comm *comm, void *baseptr, MPID_Win **win);
-int MPIDI_CH3U_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info_ptr,
-                                   MPID_Comm *comm_ptr, void **baseptr, MPID_Win **win_ptr);
+int MPIDI_CH3U_Win_allocate_no_shm(MPI_Aint size, int disp_unit, MPID_Info *info,
+                                   MPID_Comm *comm_ptr, void *baseptr, MPID_Win **win_ptr);
 int MPIDI_CH3U_Win_create_dynamic(MPID_Info *info, MPID_Comm *comm, MPID_Win **win);
 
 
@@ -1210,7 +1218,6 @@ void *MPIDI_Alloc_mem(size_t size, MPID_Info *info_ptr);
 int MPIDI_Free_mem(void *ptr);
 
 /* internal */
-int MPIDI_SHM_Win_free(MPID_Win **);
 int MPIDI_CH3I_Release_lock(MPID_Win * win_ptr);
 int MPIDI_CH3I_Try_acquire_win_lock(MPID_Win * win_ptr, int requested_lock);
 int MPIDI_CH3I_Send_lock_granted_pkt(MPIDI_VC_t * vc, MPID_Win *win_ptr, int source_win_hdl);
@@ -1218,14 +1225,6 @@ int MPIDI_CH3I_Send_pt_rma_done_pkt(MPIDI_VC_t * vc, MPID_Win *win_ptr, int sour
 int MPIDI_CH3_Start_rma_op_target(MPID_Win *win_ptr, MPIDI_CH3_Pkt_flags_t flags);
 int MPIDI_CH3_Finish_rma_op_target(MPIDI_VC_t *vc, MPID_Win *win_ptr, int is_rma_update,
                                    MPIDI_CH3_Pkt_flags_t flags, MPI_Win source_win_handle);
-
-#define MPIDI_CH3I_DATATYPE_IS_PREDEFINED(type, predefined) \
-    if ((HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) || \
-        (type == MPI_FLOAT_INT) || (type == MPI_DOUBLE_INT) || \
-        (type == MPI_LONG_INT) || (type == MPI_SHORT_INT) || \
-	(type == MPI_LONG_DOUBLE_INT)) \
-        predefined = 1; \
-    else predefined = 0;
 
 int MPIDI_CH3I_Progress_finalize(void);
 
@@ -1734,7 +1733,7 @@ int MPIDI_CH3_PG_Destroy( struct MPIDI_PG *pg );
 @*/
 int MPIDI_CH3_VC_Destroy( struct MPIDI_VC *vc );
 
-/*@ MPIDI_CH3_InitComplete - Perform any channel-specific initialization 
+/*@ MPIDI_CH3_InitCompleted - Perform any channel-specific initialization
   actions after MPID_Init but before MPI_Init (or MPI_Initthread) returns
   @*/
 int MPIDI_CH3_InitCompleted( void );

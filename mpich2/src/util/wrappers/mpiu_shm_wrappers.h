@@ -301,7 +301,7 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 static inline int MPIU_SHMW_Hnd_deserialize(
-    MPIU_SHMW_Hnd_t hnd, const char *str_hnd, int str_hnd_len)
+    MPIU_SHMW_Hnd_t hnd, const char *str_hnd, size_t str_hnd_len)
 {
     int mpi_errno = MPI_SUCCESS;
     int rc = -1;
@@ -592,7 +592,7 @@ static inline int MPIU_SHMW_Seg_create_attach_templ(
     int offset, int flag)
 {
     int mpi_errno = MPI_SUCCESS;
-    int lhnd = -1, rc = -1;
+    MPIU_SHMW_Lhnd_t lhnd = -1, rc = -1;
 
     if(flag & MPIU_SHMW_FLAG_SHM_CREATE){
         char dev_shm_fname[] = "/dev/shm/mpich_shar_tmpXXXXXX";
@@ -610,12 +610,12 @@ static inline int MPIU_SHMW_Seg_create_attach_templ(
             MPIU_OSW_Strerror(MPIU_OSW_Get_errno()));
 
         MPIU_SHMW_Lhnd_set(hnd, lhnd);
-        rc = (int)lseek(lhnd, seg_sz - 1, SEEK_SET);
+        rc = (MPIU_SHMW_Lhnd_t)lseek(lhnd, seg_sz - 1, SEEK_SET);
         MPIU_ERR_CHKANDJUMP1((rc == -1), mpi_errno,
             MPI_ERR_OTHER, "**lseek", "**lseek %s",
             MPIU_OSW_Strerror(MPIU_OSW_Get_errno()));
 
-        MPIU_OSW_RETRYON_INTR((rc == -1), (rc = write(lhnd, "", 1)));
+        MPIU_OSW_RETRYON_INTR((rc == -1), (rc = (int)write(lhnd, "", 1)));
         MPIU_ERR_CHKANDJUMP((rc == -1), mpi_errno, MPI_ERR_OTHER,
             "**write");
 

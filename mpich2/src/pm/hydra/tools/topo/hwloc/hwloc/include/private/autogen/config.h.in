@@ -2,7 +2,7 @@
 
 /* -*- c -*-
  *
- * Copyright © 2009, 2012 CNRS, inria., Université Bordeaux 1  All rights reserved.
+ * Copyright © 2009, 2011, 2012 CNRS, inria., Université Bordeaux 1  All rights reserved.
  * Copyright © 2009 Cisco Systems, Inc.  All rights reserved.
  * $COPYRIGHT$
  * 
@@ -18,44 +18,20 @@
 #define HWLOC_CONFIGURE_H
 
 
-/* Define to 1 if you have the `argz_add' function. */
-#undef HAVE_ARGZ_ADD
-
-/* Define to 1 if you have the `argz_append' function. */
-#undef HAVE_ARGZ_APPEND
-
-/* Define to 1 if you have the `argz_count' function. */
-#undef HAVE_ARGZ_COUNT
-
-/* Define to 1 if you have the `argz_create_sep' function. */
-#undef HAVE_ARGZ_CREATE_SEP
-
-/* Define to 1 if you have the <argz.h> header file. */
-#undef HAVE_ARGZ_H
-
-/* Define to 1 if you have the `argz_insert' function. */
-#undef HAVE_ARGZ_INSERT
-
-/* Define to 1 if you have the `argz_next' function. */
-#undef HAVE_ARGZ_NEXT
-
-/* Define to 1 if you have the `argz_stringify' function. */
-#undef HAVE_ARGZ_STRINGIFY
-
 /* Define to 1 if the system has the type `CACHE_DESCRIPTOR'. */
 #undef HAVE_CACHE_DESCRIPTOR
 
 /* Define to 1 if the system has the type `CACHE_RELATIONSHIP'. */
 #undef HAVE_CACHE_RELATIONSHIP
 
-/* Define to 1 if you have the `closedir' function. */
-#undef HAVE_CLOSEDIR
-
 /* Define to 1 if you have the `clz' function. */
 #undef HAVE_CLZ
 
 /* Define to 1 if you have the `clzl' function. */
 #undef HAVE_CLZL
+
+/* Define to 1 if you have the <CL/cl_ext.h> header file. */
+#undef HAVE_CL_CL_EXT_H
 
 /* Define to 1 if you have the `cpuset_setaffinity' function. */
 #undef HAVE_CPUSET_SETAFFINITY
@@ -66,22 +42,19 @@
 /* Define to 1 if we have -lcuda */
 #undef HAVE_CUDA
 
-/* Define to 1 if we have -lcudart */
-#undef HAVE_CUDART
-
 /* Define to 1 if you have the <cuda.h> header file. */
 #undef HAVE_CUDA_H
 
 /* Define to 1 if you have the <cuda_runtime_api.h> header file. */
 #undef HAVE_CUDA_RUNTIME_API_H
 
+/* Define to 1 if you have the declaration of `CL_DEVICE_TOPOLOGY_AMD', and to
+   0 if you don't. */
+#undef HAVE_DECL_CL_DEVICE_TOPOLOGY_AMD
+
 /* Define to 1 if you have the declaration of `CTL_HW', and to 0 if you don't.
    */
 #undef HAVE_DECL_CTL_HW
-
-/* Define to 1 if you have the declaration of `cygwin_conv_path', and to 0 if
-   you don't. */
-#undef HAVE_DECL_CYGWIN_CONV_PATH
 
 /* Define to 1 if you have the declaration of `fabsf', and to 0 if you don't.
    */
@@ -90,6 +63,10 @@
 /* Define to 1 if you have the declaration of `HW_NCPU', and to 0 if you
    don't. */
 #undef HAVE_DECL_HW_NCPU
+
+/* Define to 1 if you have the declaration of
+   `nvmlDeviceGetMaxPcieLinkGeneration', and to 0 if you don't. */
+#undef HAVE_DECL_NVMLDEVICEGETMAXPCIELINKGENERATION
 
 /* Define to 1 if you have the declaration of `PCI_LOOKUP_NO_NUMBERS', and to
    0 if you don't. */
@@ -102,6 +79,10 @@
 /* Define to 1 if you have the declaration of `pthread_setaffinity_np', and to
    0 if you don't. */
 #undef HAVE_DECL_PTHREAD_SETAFFINITY_NP
+
+/* Define to 1 if you have the declaration of `strtoull', and to 0 if you
+   don't. */
+#undef HAVE_DECL_STRTOULL
 
 /* Define to 1 if you have the declaration of `_SC_LARGE_PAGESIZE', and to 0
    if you don't. */
@@ -134,26 +115,8 @@
 /* Define to 1 if you have the <dirent.h> header file. */
 #undef HAVE_DIRENT_H
 
-/* Define if you have the GNU dld library. */
-#undef HAVE_DLD
-
-/* Define to 1 if you have the <dld.h> header file. */
-#undef HAVE_DLD_H
-
-/* Define to 1 if you have the `dlerror' function. */
-#undef HAVE_DLERROR
-
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
-
-/* Define to 1 if you have the <dl.h> header file. */
-#undef HAVE_DL_H
-
-/* Define if you have the _dyld_func_lookup function. */
-#undef HAVE_DYLD
-
-/* Define to 1 if the system has the type `error_t'. */
-#undef HAVE_ERROR_T
 
 /* Define to 1 if you have the `ffs' function. */
 #undef HAVE_FFS
@@ -194,12 +157,6 @@
 /* Define to 1 if you have the <langinfo.h> header file. */
 #undef HAVE_LANGINFO_H
 
-/* Define if you have the libdl library or equivalent. */
-#undef HAVE_LIBDL
-
-/* Define if libdlloader will be built on this platform */
-#undef HAVE_LIBDLLOADER
-
 /* Define to 1 if we have -lgdi32 */
 #undef HAVE_LIBGDI32
 
@@ -221,17 +178,11 @@
 /* Define to 1 if the system has the type `LOGICAL_PROCESSOR_RELATIONSHIP'. */
 #undef HAVE_LOGICAL_PROCESSOR_RELATIONSHIP
 
-/* Define this if a modern libltdl is already installed */
-#undef HAVE_LTDL
-
 /* Define to 1 if you have the <mach/mach_host.h> header file. */
 #undef HAVE_MACH_MACH_HOST_H
 
 /* Define to 1 if you have the <mach/mach_init.h> header file. */
 #undef HAVE_MACH_MACH_INIT_H
-
-/* Define to 1 if you have the <mach-o/dyld.h> header file. */
-#undef HAVE_MACH_O_DYLD_H
 
 /* Define to 1 if you have the <malloc.h> header file. */
 #undef HAVE_MALLOC_H
@@ -241,6 +192,9 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define to 1 if we have -lmyriexpress */
+#undef HAVE_MYRIEXPRESS
 
 /* Define to 1 if you have the <myriexpress.h> header file. */
 #undef HAVE_MYRIEXPRESS_H
@@ -254,11 +208,14 @@
 /* Define to 1 if the system has the type `NUMA_NODE_RELATIONSHIP'. */
 #undef HAVE_NUMA_NODE_RELATIONSHIP
 
+/* Define to 1 if you have the <NVCtrl/NVCtrl.h> header file. */
+#undef HAVE_NVCTRL_NVCTRL_H
+
+/* Define to 1 if you have the <nvml.h> header file. */
+#undef HAVE_NVML_H
+
 /* Define to 1 if you have the `openat' function. */
 #undef HAVE_OPENAT
-
-/* Define to 1 if you have the `opendir' function. */
-#undef HAVE_OPENDIR
 
 /* Define to 1 if you have the <pci/pci.h> header file. */
 #undef HAVE_PCI_PCI_H
@@ -268,9 +225,6 @@
 
 /* Define to 1 if you have the `posix_memalign' function. */
 #undef HAVE_POSIX_MEMALIGN
-
-/* Define if libtool can extract symbol lists from object files. */
-#undef HAVE_PRELOADED_SYMBOLS
 
 /* Define to 1 if the system has the type `PROCESSOR_CACHE_TYPE'. */
 #undef HAVE_PROCESSOR_CACHE_TYPE
@@ -297,17 +251,11 @@
 /* Define to 1 if you have the `putwc' function. */
 #undef HAVE_PUTWC
 
-/* Define to 1 if you have the `readdir' function. */
-#undef HAVE_READDIR
-
 /* Define to 1 if the system has the type `RelationProcessorPackage'. */
 #undef HAVE_RELATIONPROCESSORPACKAGE
 
 /* Define to 1 if you have the `setlocale' function. */
 #undef HAVE_SETLOCALE
-
-/* Define if you have the shl_load function. */
-#undef HAVE_SHL_LOAD
 
 /* Define to 1 if you have the <stdint.h> header file. */
 #undef HAVE_STDINT_H
@@ -324,19 +272,13 @@
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
 
-/* Define to 1 if you have the `strlcat' function. */
-#undef HAVE_STRLCAT
-
-/* Define to 1 if you have the `strlcpy' function. */
-#undef HAVE_STRLCPY
-
 /* Define to 1 if you have the `strncasecmp' function. */
 #undef HAVE_STRNCASECMP
 
-/* Define to 1 if you have the `sysctl' function. */
+/* Define to '1' if sysctl is present and usable */
 #undef HAVE_SYSCTL
 
-/* Define to 1 if you have the `sysctlbyname' function. */
+/* Define to '1' if sysctlbyname is present and usable */
 #undef HAVE_SYSCTLBYNAME
 
 /* Define to 1 if the system has the type
@@ -349,9 +291,6 @@
 
 /* Define to 1 if you have the <sys/cpuset.h> header file. */
 #undef HAVE_SYS_CPUSET_H
-
-/* Define to 1 if you have the <sys/dl.h> header file. */
-#undef HAVE_SYS_DL_H
 
 /* Define to 1 if you have the <sys/lgrp_user.h> header file. */
 #undef HAVE_SYS_LGRP_USER_H
@@ -386,9 +325,6 @@
 /* Define to 1 if the system has the type `wchar_t'. */
 #undef HAVE_WCHAR_T
 
-/* This value is set to 1 to indicate that the system argz facility works */
-#undef HAVE_WORKING_ARGZ
-
 /* Define to 1 if you have the <X11/keysym.h> header file. */
 #undef HAVE_X11_KEYSYM_H
 
@@ -403,6 +339,9 @@
 
 /* Define to 1 on AIX */
 #undef HWLOC_AIX_SYS
+
+/* Define to 1 on BlueGene/Q */
+#undef HWLOC_BGQ_SYS
 
 /* Whether C compiler supports symbol visibility or not */
 #undef HWLOC_C_HAVE_VISIBILITY
@@ -494,6 +433,9 @@
 /* Define to 1 if the CPU_SET_S macro works */
 #undef HWLOC_HAVE_CPU_SET_S
 
+/* Define to 1 if you have the `cudart' SDK. */
+#undef HWLOC_HAVE_CUDART
+
 /* Define to 1 if function `clz' is declared by system headers */
 #undef HWLOC_HAVE_DECL_CLZ
 
@@ -524,8 +466,8 @@
 /* Define to 1 if you have the `flsl' function. */
 #undef HWLOC_HAVE_FLSL
 
-/* Define to 1 if you have the `libpci' library. */
-#undef HWLOC_HAVE_LIBPCI
+/* Define to 1 if you have the GL module components. */
+#undef HWLOC_HAVE_GL
 
 /* Define to 1 if you have the `libpciaccess' library. */
 #undef HWLOC_HAVE_LIBPCIACCESS
@@ -536,21 +478,33 @@
 /* Define to 1 if you have the `libxml2' library. */
 #undef HWLOC_HAVE_LIBXML2
 
+/* Define to 1 if building the Linux PCI component */
+#undef HWLOC_HAVE_LINUXPCI
+
 /* Define to 1 if mbind is available. */
 #undef HWLOC_HAVE_MBIND
 
 /* Define to 1 if migrate_pages is available. */
 #undef HWLOC_HAVE_MIGRATE_PAGES
 
+/* Define to 1 if you have the `NVML' library. */
+#undef HWLOC_HAVE_NVML
+
 /* Define to 1 if glibc provides the old prototype (without length) of
    sched_setaffinity() */
 #undef HWLOC_HAVE_OLD_SCHED_SETAFFINITY
 
-/* Define to 1 if struct pci_dev has a `device_class' field. */
+/* Define to 1 if you have the `OpenCL' library. */
+#undef HWLOC_HAVE_OPENCL
+
+/* Define to 1 if `libpci' struct pci_dev has a `device_class' field. */
 #undef HWLOC_HAVE_PCIDEV_DEVICE_CLASS
 
-/* Define to 1 if struct pci_dev has a `domain' field. */
+/* Define to 1 if `libpci' struct pci_dev has a `domain' field. */
 #undef HWLOC_HAVE_PCIDEV_DOMAIN
+
+/* Define to 1 if you have the pciutils `libpci' library. */
+#undef HWLOC_HAVE_PCIUTILS
 
 /* Define to 1 if `libpci' has the `pci_find_cap' function. */
 #undef HWLOC_HAVE_PCI_FIND_CAP
@@ -577,8 +531,8 @@
 /* Define to 1 if you have the `windows.h' header. */
 #undef HWLOC_HAVE_WINDOWS_H
 
-/* Define to 1 if X11 libraries are available. */
-#undef HWLOC_HAVE_X11
+/* Define to 1 if X11 headers including Xutil.h and keysym.h are available. */
+#undef HWLOC_HAVE_X11_KEYSYM
 
 /* Define to 1 if the _syscall3 macro works */
 #undef HWLOC_HAVE__SYSCALL3
@@ -592,17 +546,11 @@
 /* Define to 1 on Linux */
 #undef HWLOC_LINUX_SYS
 
-/* Major version of hwloc */
-#undef HWLOC_MAJOR_VERSION
-
-/* Minor version of hwloc */
-#undef HWLOC_MINOR_VERSION
+/* Define to 1 on *NETBSD */
+#undef HWLOC_NETBSD_SYS
 
 /* Define to 1 on OSF */
 #undef HWLOC_OSF_SYS
-
-/* Release version of hwloc */
-#undef HWLOC_RELEASE_VERSION
 
 /* The size of `unsigned int', as computed by sizeof */
 #undef HWLOC_SIZEOF_UNSIGNED_INT
@@ -637,40 +585,9 @@
 /* Define to 1 on x86_64 */
 #undef HWLOC_X86_64_ARCH
 
-/* Define if the OS needs help to load dependent libraries for dlopen(). */
-#undef LTDL_DLOPEN_DEPLIBS
-
-/* Define to the system default library search path. */
-#undef LT_DLSEARCH_PATH
-
-/* The archive extension */
-#undef LT_LIBEXT
-
-/* The archive prefix */
-#undef LT_LIBPREFIX
-
-/* Define to the extension used for runtime loadable modules, say, ".so". */
-#undef LT_MODULE_EXT
-
-/* Define to the name of the environment variable that determines the run-time
-   module search path. */
-#undef LT_MODULE_PATH_VAR
-
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
 #undef LT_OBJDIR
-
-/* Define to the shared library suffix, say, ".dylib". */
-#undef LT_SHARED_EXT
-
-/* Define to 1 if getpagesize needs a declaration */
-#undef NEEDS_GETPAGESIZE_DECL
-
-/* Define if dlsym() requires a leading underscore in symbol names. */
-#undef NEED_USCORE
-
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE
@@ -751,12 +668,6 @@
 
 /* Define to 1 if you need to in order for `stat' and other things to work. */
 #undef _POSIX_SOURCE
-
-/* Define so that glibc/gnulib argp.h does not typedef error_t. */
-#undef __error_t_defined
-
-/* Define to a type to use for `error_t' if it is not otherwise available. */
-#undef error_t
 
 /* Define this to the process ID type */
 #undef hwloc_pid_t

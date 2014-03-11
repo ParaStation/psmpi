@@ -172,7 +172,7 @@ static void ADIO_FileSysType_parentdir(const char *filename, char **dirnamep)
 	 * but this code doesn't care if the target is really there
 	 * or not.
 	 */
-	int namelen;
+	ssize_t namelen;
 	char *linkbuf;
 
 	linkbuf = ADIOI_Malloc(PATH_MAX+1);
@@ -204,12 +204,17 @@ static void ADIO_FileSysType_parentdir(const char *filename, char **dirnamep)
 }
 #endif /* ROMIO_NTFS */
 
-#ifdef ROMIO_BGL   /* BlueGene support for lockless i/o (necessary for PVFS.
+#if defined(ROMIO_BGL) || defined(ROMIO_BG)
+		    /* BlueGene support for lockless i/o (necessary for PVFS.
 		      possibly beneficial for others, unless data sieving
 		      writes desired) */
 
 /* BlueGene environment variables can override lockless selection.*/
+#ifdef ROMIO_BG
+extern void ad_bg_get_env_vars();
+#else
 extern void ad_bgl_get_env_vars();
+#endif
 extern long bglocklessmpio_f_type;
 
 static void check_for_lockless_exceptions(long stat_type, int *fstype)
@@ -257,12 +262,17 @@ static void ADIO_FileSysType_fncall(const char *filename, int *fstype, int *erro
 #endif
     static char myname[] = "ADIO_RESOLVEFILETYPE_FNCALL";
 
+/* NFS can get stuck and end up returing ESTALE "forever" */
+#define MAX_ESTALE_RETRY 10000
+    int retry_cnt;
+
     *error_code = MPI_SUCCESS;
 
 #ifdef ROMIO_HAVE_STRUCT_STATVFS_WITH_F_BASETYPE
+    retry_cnt=0;
     do {
 	err = statvfs(filename, &vfsbuf);
-    } while (err && (errno == ESTALE));
+    } while (err && (errno == ESTALE) && retry_cnt++ < MAX_ESTALE_RETRY);
 
     if (err) {
 	/* ENOENT may be returned in two cases:
@@ -317,9 +327,10 @@ static void ADIO_FileSysType_fncall(const char *filename, int *fstype, int *erro
 #endif /* STATVFS APPROACH */
 
 #ifdef HAVE_STRUCT_STATFS
+    retry_cnt = 0;
     do {
 	err = statfs(filename, &fsbuf);
-    } while (err && (errno == ESTALE));
+    } while (err && (errno == ESTALE) && retry_cnt++ < MAX_ESTALE_RETRY);
 
     if (err) {
 	if(errno == ENOENT) {
@@ -349,6 +360,16 @@ static void ADIO_FileSysType_fncall(const char *filename, int *fstype, int *erro
 	return;
     }
 # endif
+
+#ifdef ROMIO_BG
+/* The BlueGene generic ADIO is also a special case. */
+    ad_bg_get_env_vars();
+
+    *fstype = ADIO_BG;
+    check_for_lockless_exceptions(fsbuf.f_type, fstype);
+    *error_code = MPI_SUCCESS;
+    return;
+#endif
 
 #  ifdef ROMIO_BGL 
     /* BlueGene is a special case: all file systems are AD_BGL, except for
@@ -436,9 +457,10 @@ static void ADIO_FileSysType_fncall(const char *filename, int *fstype, int *erro
 #endif /* STATFS APPROACH */
 
 #ifdef ROMIO_HAVE_STRUCT_STAT_WITH_ST_FSTYPE
+    retry_cnt = 0;
     do {
 	err = stat(filename, &sbuf);
-    } while (err && (errno == ESTALE));
+    } while (err && (errno == ESTALE) && retry_cnt++ < MAX_ESTALE_RETRY);
 
     if (err) {
 	if(errno == ENOENT) {
@@ -578,6 +600,9 @@ static void ADIO_FileSysType_prefix(const char *filename, int *fstype, int *erro
     }
     else if (!strncmp(filename, "bgl:", 4) || !strncmp(filename, "BGL:", 4)) {
 	*fstype = ADIO_BGL;
+    }
+    else if (!strncmp(filename, "bg:", 3) || !strncmp(filename, "BG:", 3)) {
+	*fstype = ADIO_BG;
     }
     else if (!strncmp(filename, "bglockless:", 11) || 
 	    !strncmp(filename, "BGLOCKLESS:", 11)) {
@@ -826,6 +851,16 @@ void ADIO_ResolveFileType(MPI_Comm comm, const char *filename, int *fstype,
 	return;
 #else
 	*ops = &ADIO_BGL_operations;
+#endif
+    }
+    if (file_system == ADIO_BG) {
+#ifndef ROMIO_BG
+	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
+					myname, __LINE__, MPI_ERR_IO,
+					"**iofstypeunsupported", 0);
+	return;
+#else
+	*ops = &ADIO_BG_operations;
 #endif
     }
     if (file_system == ADIO_BGLOCKLESS) {

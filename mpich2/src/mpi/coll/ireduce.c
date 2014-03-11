@@ -226,7 +226,7 @@ fn_fail:
 int MPIR_Ireduce_redscat_gather(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPID_Comm *comm_ptr, MPID_Sched_t s)
 {
     int mpi_errno = MPI_SUCCESS;
-    int i, j, comm_size, rank, pof2, is_commutative;
+    int i, j, comm_size, rank, pof2, is_commutative ATTRIBUTE((unused));
     int rem, dst, newrank, newdst, mask, send_idx, recv_idx, last_idx;
     int send_cnt, recv_cnt, newroot, newdst_tree_root, newroot_tree_root;
     void *tmp_buf = NULL;
@@ -545,7 +545,7 @@ int MPIR_Ireduce_intra(const void *sendbuf, void *recvbuf, int count, MPI_Dataty
     while (pof2 <= comm_size) pof2 <<= 1;
     pof2 >>=1;
 
-    if ((count*type_size > MPIR_PARAM_REDUCE_SHORT_MSG_SIZE) &&
+    if ((count*type_size > MPIR_CVAR_REDUCE_SHORT_MSG_SIZE) &&
         (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) &&
         (count >= pof2))
     {
@@ -579,9 +579,8 @@ int MPIR_Ireduce_SMP(const void *sendbuf, void *recvbuf, int count, MPI_Datatype
     MPID_Comm *nrc;
     MPIR_SCHED_CHKPMEM_DECL(1);
 
-#if !defined(USE_SMP_COLLECTIVES)
-    MPID_Abort(comm_ptr, MPI_ERR_OTHER, 1, "SMP collectives are disabled!");
-#endif
+    if (!MPIR_CVAR_ENABLE_SMP_COLLECTIVES || !MPIR_CVAR_ENABLE_SMP_REDUCE)
+        MPID_Abort(comm_ptr, MPI_ERR_OTHER, 1, "SMP collectives are disabled!");
     MPIU_Assert(MPIR_Comm_is_node_aware(comm_ptr));
     MPIU_Assert(comm_ptr->comm_kind == MPID_INTRACOMM);
 
@@ -612,20 +611,20 @@ int MPIR_Ireduce_SMP(const void *sendbuf, void *recvbuf, int count, MPI_Datatype
 
     /* do the intranode reduce on all nodes other than the root's node */
     if (nc != NULL && MPIU_Get_intranode_rank(comm_ptr, root) == -1) {
-        MPIU_Assert(nc->coll_fns && nc->coll_fns->Ireduce);
-        mpi_errno = nc->coll_fns->Ireduce(sendbuf, tmp_buf, count, datatype, op, 0, nc, s);
+        MPIU_Assert(nc->coll_fns && nc->coll_fns->Ireduce_sched);
+        mpi_errno = nc->coll_fns->Ireduce_sched(sendbuf, tmp_buf, count, datatype, op, 0, nc, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         MPID_SCHED_BARRIER(s);
     }
 
     /* do the internode reduce to the root's node */
     if (nrc != NULL) {
-        MPIU_Assert(nrc->coll_fns && nrc->coll_fns->Ireduce);
+        MPIU_Assert(nrc->coll_fns && nrc->coll_fns->Ireduce_sched);
         if (nrc->rank != MPIU_Get_internode_rank(comm_ptr, root)) {
             /* I am not on root's node.  Use tmp_buf if we
                participated in the first reduce, otherwise use sendbuf */
             const void *buf = (nc == NULL ? sendbuf : tmp_buf);
-            mpi_errno = nrc->coll_fns->Ireduce(buf, NULL, count, datatype,
+            mpi_errno = nrc->coll_fns->Ireduce_sched(buf, NULL, count, datatype,
                                                op, MPIU_Get_internode_rank(comm_ptr, root),
                                                nrc, s);
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -636,7 +635,7 @@ int MPIR_Ireduce_SMP(const void *sendbuf, void *recvbuf, int count, MPI_Datatype
                 /* I am not the root though. I don't have a valid recvbuf.
                    Use tmp_buf as recvbuf. */
 
-                mpi_errno = nrc->coll_fns->Ireduce(sendbuf, tmp_buf, count, datatype,
+                mpi_errno = nrc->coll_fns->Ireduce_sched(sendbuf, tmp_buf, count, datatype,
                                                    op, MPIU_Get_internode_rank(comm_ptr, root),
                                                    nrc, s);
                 if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -648,7 +647,7 @@ int MPIR_Ireduce_SMP(const void *sendbuf, void *recvbuf, int count, MPI_Datatype
             else {
                 /* I am the root. in_place is automatically handled. */
 
-                mpi_errno = nrc->coll_fns->Ireduce(sendbuf, recvbuf, count, datatype,
+                mpi_errno = nrc->coll_fns->Ireduce_sched(sendbuf, recvbuf, count, datatype,
                                                    op, MPIU_Get_internode_rank(comm_ptr, root),
                                                    nrc, s);
                 if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -662,7 +661,7 @@ int MPIR_Ireduce_SMP(const void *sendbuf, void *recvbuf, int count, MPI_Datatype
 
     /* do the intranode reduce on the root's node */
     if (nc != NULL && MPIU_Get_intranode_rank(comm_ptr, root) != -1) {
-        mpi_errno = nc->coll_fns->Ireduce(sendbuf, recvbuf, count, datatype,
+        mpi_errno = nc->coll_fns->Ireduce_sched(sendbuf, recvbuf, count, datatype,
                                           op, MPIU_Get_intranode_rank(comm_ptr, root),
                                           nc, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -761,11 +760,25 @@ fn_fail:
 int MPIR_Ireduce_impl(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPID_Comm *comm_ptr, MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
-    int tag = -1;
     MPID_Request *reqp = NULL;
+    int tag = -1;
     MPID_Sched_t s = MPID_SCHED_NULL;
 
     *request = MPI_REQUEST_NULL;
+
+    MPIU_Assert(comm_ptr->coll_fns != NULL);
+    if (comm_ptr->coll_fns->Ireduce_req != NULL) {
+        /* --BEGIN USEREXTENSION-- */
+        mpi_errno = comm_ptr->coll_fns->Ireduce_req(sendbuf, recvbuf, count,
+                                                          datatype, op, root,
+                                                          comm_ptr, &reqp);
+        if (reqp) {
+            *request = reqp->handle;
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            goto fn_exit;
+        }
+        /* --END USEREXTENSION-- */
+    }
 
     mpi_errno = MPID_Sched_next_tag(comm_ptr, &tag);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -773,8 +786,8 @@ int MPIR_Ireduce_impl(const void *sendbuf, void *recvbuf, int count, MPI_Datatyp
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     MPIU_Assert(comm_ptr->coll_fns != NULL);
-    MPIU_Assert(comm_ptr->coll_fns->Ireduce != NULL);
-    mpi_errno = comm_ptr->coll_fns->Ireduce(sendbuf, recvbuf, count, datatype, op, root, comm_ptr, s);
+    MPIU_Assert(comm_ptr->coll_fns->Ireduce_sched != NULL);
+    mpi_errno = comm_ptr->coll_fns->Ireduce_sched(sendbuf, recvbuf, count, datatype, op, root, comm_ptr, s);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     mpi_errno = MPID_Sched_start(&s, comm_ptr, tag, &reqp);
@@ -795,7 +808,8 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_Ireduce - XXX description here
+MPI_Ireduce - Reduces values on all processes to a single value
+              in a nonblocking way
 
 Input Parameters:
 + sendbuf - address of the send buffer (choice)
@@ -815,7 +829,8 @@ Output Parameters:
 
 .N Errors
 @*/
-int MPI_Ireduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, int root, MPI_Comm comm, MPI_Request *request)
+int MPI_Ireduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+                MPI_Op op, int root, MPI_Comm comm, MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;

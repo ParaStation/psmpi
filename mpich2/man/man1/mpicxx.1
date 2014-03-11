@@ -1,4 +1,4 @@
-.TH mpicxx 1 "4/24/2013" " " "MPI"
+.TH mpicxx 1 "2/20/2014" " " "MPI"
 .SH NAME
 mpicxx \-  Compiles and links MPI programs written in C++ 
 .SH DESCRIPTION
@@ -49,7 +49,7 @@ used by mpicxx.
 .PD 0
 .TP
 .B -link_info 
-- Show the steps for linking a program.  This optoin 
+- Show the steps for linking a program.  This option
 can be used to see what options and libraries are used by
 mpicxx.
 .PD 1
@@ -69,13 +69,13 @@ This option should normally not be used.
 .TP
 .B others     
 - are passed to the compiler or linker.  For example, 
-.I -c
+.I \\-c
 causes files to be compiled, 
-.I -g
+.I \\-g
 selects compilation with
 debugging on most systems, and 
-.I -o name
-causes linking 
+.I \\-o name
+causes linking
 with the output executable given the name 
 .I name
 \&.
@@ -95,13 +95,13 @@ The environment variable
 .I MPICC_PROFILE
 specifies a profile library
 and has the same effect as if 
-.I -profile=$MPICC_PROFILE
+.I \\-profile=$MPICC_PROFILE
 were used as
 an argument to 
 .I mpicc
 \&.
 See the discussion of 
-.I -profile
+.I \\-profile
 below for more
 details.
 
@@ -115,7 +115,7 @@ compilers are compatible and may be used interchangably.  There are
 exceptions; if you use the 
 .I MPICH_CXX
 environment variable or the
-.I -cxx=name
+.I \\-cxx=name
 command-line argument to override the choice of compiler
 and encounter problems, try reconfiguring MPICH with the new compiler,
 and installing MPICH in a separate location.  See the installation manual
@@ -126,25 +126,25 @@ To compile a single file
 .I foo.c
 , use
 .nf
-mpicxx -c foo.cxx
+mpicxx \\-c foo.cxx
 .fi
 
 
 To link the output and make an executable, use
 .nf
-mpicxx -o foo foo.o
+mpicxx \\-o foo foo.o
 .fi
 
 Combining compilation and linking in a single command
 .nf
-mpicxx -o foo foo.cxx
+mpicxx \\-o foo foo.cxx
 .fi
 
 is a convenient way to build simple programs.
 
 .SH SELECTING A PROFILING LIBRARY
 The 
-.I -profile=name
+.I \\-profile=name
 argument allows you to specify an MPI profiling
 library to be used.  
 .I name
@@ -195,14 +195,14 @@ with the lines
 .PD 1
 
 .nf
-PROFILE_PRELIB="-L/usr/local/myprof/lib -lmyprof"
-PROFILE_INCPATHS="-I/usr/local/myprof/include"
+PROFILE_PRELIB="\\-L/usr/local/myprof/lib \\-lmyprof"
+PROFILE_INCPATHS="\\-I/usr/local/myprof/include"
 .fi
 
 and place it in the sysconfdir directory (this directory is set at
 configure time when MPICH is built).  Then using the command-line
 argument 
-.I -profile=myprof
+.I \\-profile=myprof
 will cause these
 definitions to be added to the relevant compile commands.
 
@@ -210,4 +210,4 @@ definitions to be added to the relevant compile commands.
 mpif77, mpicc, mpif90, mpiexec
 .br
 .SH LOCATION
-src/env/mpicxx.txt
+/tmp/gyCYfBi4J6/mpich-3.1/src/env/mpicxx.txt

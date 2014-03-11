@@ -7,6 +7,24 @@
 
 #include "mpiimpl.h"
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+cvars:
+    - name        : MPIR_CVAR_ALLGATHERV_PIPELINE_MSG_SIZE
+      category    : COLLECTIVE
+      type        : int
+      default     : 32768
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        The smallest message size that will be used for the pipelined, large-message,
+        ring algorithm in the MPI_Allgatherv implementation.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
+
 /* -- Begin Profiling Symbol Block for routine MPI_Allgatherv */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Allgatherv = PMPI_Allgatherv
@@ -112,7 +130,7 @@ int MPIR_Allgatherv_intra (
     MPID_Datatype_get_extent_macro( recvtype, recvtype_extent );
     MPID_Datatype_get_size_macro(recvtype, recvtype_size);
 
-    if ((total_count*recvtype_size < MPIR_PARAM_ALLGATHER_LONG_MSG_SIZE) &&
+    if ((total_count*recvtype_size < MPIR_CVAR_ALLGATHER_LONG_MSG_SIZE) &&
         !(comm_size & (comm_size - 1))) {
         /* Short or medium size message and power-of-two no. of processes. Use
          * recursive doubling algorithm */   
@@ -186,7 +204,7 @@ int MPIR_Allgatherv_intra (
                     for (j=0; j<dst_tree_root; j++)
                         recv_offset += recvcounts[j];
 
-                    mpi_errno = MPIC_Sendrecv_ft(((char *)tmp_buf + send_offset * recvtype_extent),
+                    mpi_errno = MPIC_Sendrecv(((char *)tmp_buf + send_offset * recvtype_extent),
                                                  curr_cnt, recvtype, dst,
                                                  MPIR_ALLGATHERV_TAG,  
                                                  ((char *)tmp_buf + recv_offset * recvtype_extent),
@@ -257,7 +275,7 @@ int MPIR_Allgatherv_intra (
                                 offset += recvcounts[j];
                             offset *= recvtype_extent;
 
-                            mpi_errno = MPIC_Send_ft(((char *)tmp_buf + offset),
+                            mpi_errno = MPIC_Send(((char *)tmp_buf + offset),
                                                      last_recv_cnt,
                                                      recvtype, dst,
                                                      MPIR_ALLGATHERV_TAG, comm, errflag);
@@ -281,7 +299,7 @@ int MPIR_Allgatherv_intra (
                             for (j=0; j<(my_tree_root+mask); j++)
                                 offset += recvcounts[j];
 
-                            mpi_errno = MPIC_Recv_ft(((char *)tmp_buf + offset * recvtype_extent),
+                            mpi_errno = MPIC_Recv(((char *)tmp_buf + offset * recvtype_extent),
                                                      total_count - offset, recvtype,
                                                      dst, MPIR_ALLGATHERV_TAG,
                                                      comm, &status, errflag);
@@ -388,7 +406,7 @@ int MPIR_Allgatherv_intra (
                 recv_offset *= nbytes;
                 
                 if (dst < comm_size) {
-                    mpi_errno = MPIC_Sendrecv_ft(((char *)tmp_buf + send_offset),
+                    mpi_errno = MPIC_Sendrecv(((char *)tmp_buf + send_offset),
                                                  curr_cnt, MPI_BYTE, dst,
                                                  MPIR_ALLGATHERV_TAG,  
                                                  ((char *)tmp_buf + recv_offset),
@@ -450,7 +468,7 @@ int MPIR_Allgatherv_intra (
                             (rank < tree_root + nprocs_completed)
                             && (dst >= tree_root + nprocs_completed)) {
                             
-                            mpi_errno = MPIC_Send_ft(((char *)tmp_buf + offset),
+                            mpi_errno = MPIC_Send(((char *)tmp_buf + offset),
                                                      last_recv_cnt, MPI_BYTE,
                                                      dst, MPIR_ALLGATHERV_TAG,
                                                      comm, errflag);
@@ -469,7 +487,7 @@ int MPIR_Allgatherv_intra (
                         else if ((dst < rank) && 
                                  (dst < tree_root + nprocs_completed) &&
                                  (rank >= tree_root + nprocs_completed)) {
-                            mpi_errno = MPIC_Recv_ft(((char *)tmp_buf + offset),
+                            mpi_errno = MPIC_Recv(((char *)tmp_buf + offset),
                                                      tmp_buf_size-offset, MPI_BYTE,
                                                      dst,
                                                      MPIR_ALLGATHERV_TAG,
@@ -510,7 +528,7 @@ int MPIR_Allgatherv_intra (
 
     }
 
-    else if (total_count*recvtype_size < MPIR_PARAM_ALLGATHER_SHORT_MSG_SIZE) {
+    else if (total_count*recvtype_size < MPIR_CVAR_ALLGATHER_SHORT_MSG_SIZE) {
         /* Short message and non-power-of-two no. of processes. Use
          * Bruck algorithm (see description above). */
  
@@ -551,7 +569,7 @@ int MPIR_Allgatherv_intra (
             src = (rank + pof2) % comm_size;
             dst = (rank - pof2 + comm_size) % comm_size;
             
-            mpi_errno = MPIC_Sendrecv_ft(tmp_buf, curr_cnt, recvtype, dst,
+            mpi_errno = MPIC_Sendrecv(tmp_buf, curr_cnt, recvtype, dst,
                                          MPIR_ALLGATHERV_TAG,
                                          ((char *)tmp_buf + curr_cnt*recvtype_extent),
                                          total_count - curr_cnt, recvtype,
@@ -580,7 +598,7 @@ int MPIR_Allgatherv_intra (
             for (i=0; i<rem; i++)
                 send_cnt += recvcounts[(rank+i)%comm_size];
 
-            mpi_errno = MPIC_Sendrecv_ft(tmp_buf, send_cnt, recvtype,
+            mpi_errno = MPIC_Sendrecv(tmp_buf, send_cnt, recvtype,
                                          dst, MPIR_ALLGATHERV_TAG,
                                          ((char *)tmp_buf + curr_cnt*recvtype_extent),
                                          total_count - curr_cnt, recvtype,
@@ -644,8 +662,8 @@ int MPIR_Allgatherv_intra (
 	for (i = 1; i < comm_size; i++)
 	    if (min > recvcounts[i])
                 min = recvcounts[i];
-	if (min * recvtype_extent < MPIR_PARAM_ALLGATHERV_PIPELINE_MSG_SIZE)
-	    min = MPIR_PARAM_ALLGATHERV_PIPELINE_MSG_SIZE / recvtype_extent;
+	if (min * recvtype_extent < MPIR_CVAR_ALLGATHERV_PIPELINE_MSG_SIZE)
+	    min = MPIR_CVAR_ALLGATHERV_PIPELINE_MSG_SIZE / recvtype_extent;
         /* Handle the case where the datatype extent is larger than
          * the pipeline size. */
         if (!min)
@@ -673,7 +691,7 @@ int MPIR_Allgatherv_intra (
 		 * consecutive processes contribute 0 bytes each. */
 	    }
 	    else if (!sendnow) { /* If there's no data to send, just do a recv call */
-		mpi_errno = MPIC_Recv_ft(rbuf, recvnow, recvtype, left, MPIR_ALLGATHERV_TAG, comm, &status, errflag);
+		mpi_errno = MPIC_Recv(rbuf, recvnow, recvtype, left, MPIR_ALLGATHERV_TAG, comm, &status, errflag);
                 if (mpi_errno) {
                     /* for communication errors, just record the error but continue */
                     *errflag = TRUE;
@@ -683,7 +701,7 @@ int MPIR_Allgatherv_intra (
 		torecv -= recvnow;
 	    }
 	    else if (!recvnow) { /* If there's no data to receive, just do a send call */
-		mpi_errno = MPIC_Send_ft(sbuf, sendnow, recvtype, right, MPIR_ALLGATHERV_TAG, comm, errflag);
+		mpi_errno = MPIC_Send(sbuf, sendnow, recvtype, right, MPIR_ALLGATHERV_TAG, comm, errflag);
                 if (mpi_errno) {
                     /* for communication errors, just record the error but continue */
                     *errflag = TRUE;
@@ -693,7 +711,7 @@ int MPIR_Allgatherv_intra (
 		tosend -= sendnow;
 	    }
 	    else { /* There's data to be sent and received */
-		mpi_errno = MPIC_Sendrecv_ft(sbuf, sendnow, recvtype, right, MPIR_ALLGATHERV_TAG, 
+		mpi_errno = MPIC_Sendrecv(sbuf, sendnow, recvtype, right, MPIR_ALLGATHERV_TAG,
                                              rbuf, recvnow, recvtype, left, MPIR_ALLGATHERV_TAG,
                                              comm, &status, errflag);
                 if (mpi_errno) {

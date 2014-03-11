@@ -120,6 +120,7 @@ static unsigned char TRDefaultByte = 0xda;
 static unsigned char TRFreedByte = 0xfc;
 #define MAX_TR_STACK 20
 static int TRdebugLevel = 0;
+static int TRSetBytes   = 0;
 #define TR_MALLOC 0x1
 #define TR_FREE   0x2
 
@@ -164,6 +165,10 @@ void MPL_trinit(int rank)
      * variables */
     /* these should properly only be "MPL_" parameters, but for backwards
      * compatibility we also support "MPICH_" parameters. */
+    s = getenv("MPICH_TRMEM_INIT");
+    if (s && *s && (strcmp(s, "YES") == 0 || strcmp(s, "yes") == 0)) {
+        TRSetBytes = 1;
+    }
     s = getenv("MPICH_TRMEM_VALIDATE");
     if (s && *s && (strcmp(s, "YES") == 0 || strcmp(s, "yes") == 0)) {
         TRdebugLevel = 1;
@@ -172,6 +177,10 @@ void MPL_trinit(int rank)
     if (s && *s && (strcmp(s, "YES") == 0 || strcmp(s, "yes") == 0)) {
         TRDefaultByte = 0;
         TRFreedByte = 0;
+    }
+    s = getenv("MPL_TRMEM_INIT");
+    if (s && *s && (strcmp(s, "YES") == 0 || strcmp(s, "yes") == 0)) {
+        TRSetBytes = 1;
     }
     s = getenv("MPL_TRMEM_VALIDATE");
     if (s && *s && (strcmp(s, "YES") == 0 || strcmp(s, "yes") == 0)) {
@@ -232,8 +241,11 @@ void *MPL_trmalloc(size_t a, int lineno, const char fname[])
     if (!new)
         goto fn_exit;
 
-    memset(new, TRDefaultByte, nsize + sizeof(TrSPACE) + sizeof(unsigned long));
-    head = (TRSPACE *) new;
+    if(TRSetBytes)
+      memset(new, TRDefaultByte, nsize + sizeof(TrSPACE) + sizeof(unsigned long));
+
+    /* Cast to (void*) to avoid false warnings about alignment issues */
+    head = (TRSPACE *) (void *)new;
     new += sizeof(TrSPACE);
 
     if (TRhead[0] != TRHEAD_PRESENTINAL || TRhead[2] != TRHEAD_POSTSENTINAL) {
@@ -256,7 +268,8 @@ void *MPL_trmalloc(size_t a, int lineno, const char fname[])
     MPL_strncpy(head->fname, fname, TR_FNAME_LEN);
     head->fname[TR_FNAME_LEN - 1] = 0;
     head->cookie = COOKIE_VALUE;
-    nend = (unsigned long *) (new + nsize);
+    /* Cast to (void*) to avoid false warning about alignment */
+    nend = (unsigned long *) (void *) (new + nsize);
     nend[0] = COOKIE_VALUE;
 
     allocated += nsize;
@@ -309,7 +322,9 @@ void MPL_trfree(void *a_ptr, int line, const char file[])
             return;
     }
 
-    head = (TRSPACE *) ( ((char *)a_ptr) - sizeof(TrSPACE) );
+    /* Alignment guaranteed by the way a_ptr was allocated.  Use
+       (void *) cast to suppress false warning about alignment issues */
+    head = (TRSPACE *) (void *) ( ((char *)a_ptr) - sizeof(TrSPACE) );
 
     /* We need to mark the memory as defined before performing our own error
      * checks or valgrind will flag the trfree function as erroneous.  The real
@@ -328,7 +343,8 @@ void MPL_trfree(void *a_ptr, int line, const char file[])
                          "called in %s at line %d\n", world_rank, hexstring, file, line);
         return;
     }
-    nend = (unsigned long *) ((char *)a_ptr + head->size);
+    /* Cast to (void*) to avoid false warning about alignment */
+    nend = (unsigned long *) (void *) ((char *)a_ptr + head->size);
 /* Check that nend is properly aligned */
     if ((sizeof(long) == 4 && ((long) nend & 0x3) != 0) ||
         (sizeof(long) == 8 && ((long) nend & 0x7) != 0)) {
@@ -346,7 +362,7 @@ void MPL_trfree(void *a_ptr, int line, const char file[])
             if (TRidSet) {
                 MPL_error_printf
                     ("[%d] Block [id=%d(%lu)] at address %s was already freed\n", world_rank,
-                     head->id, head->size, hexstring);
+                     head->id, (unsigned long)head->size, hexstring);
             }
             else {
                 MPL_error_printf("[%d] Block at address %s was already freed\n",
@@ -366,7 +382,7 @@ void MPL_trfree(void *a_ptr, int line, const char file[])
             if (TRidSet) {
                 MPL_error_printf
                     ("[%d] Block [id=%d(%lu)] at address %s is corrupted (probably write past end)\n",
-                     world_rank, head->id, head->size, hexstring);
+                     world_rank, head->id, (unsigned long)head->size, hexstring);
             }
             else {
                 MPL_error_printf
@@ -407,7 +423,8 @@ void MPL_trfree(void *a_ptr, int line, const char file[])
     if (TRlevel & TR_FREE) {
         addrToHex(a_ptr, hexstring);
         MPL_error_printf("[%d] Freeing %lu bytes at %s in %s[%d]\n",
-                         world_rank, head->size, hexstring, file, line);
+                         world_rank, (unsigned long)head->size, hexstring, 
+                         file, line);
     }
 
     /*
@@ -427,7 +444,8 @@ void MPL_trfree(void *a_ptr, int line, const char file[])
          * them then our memset will elicit "invalid write" errors from
          * valgrind.  Mark it as accessible but undefined here to prevent this. */
         MPL_VG_MAKE_MEM_UNDEFINED((char *)a_ptr + 2 * sizeof(int), nset);
-        memset((char *)a_ptr + 2 * sizeof(int), TRFreedByte, nset);
+        if(TRSetBytes)
+          memset((char *)a_ptr + 2 * sizeof(int), TRFreedByte, nset);
     }
     free(head);
 }
@@ -506,7 +524,8 @@ int MPL_trvalid2(const char str[], int line, const char file[] )
            the full header is padded to ensure correct byte alignment with
            the data */
         a    = (char *)( (TrSPACE *)head + 1 );
-        nend = (unsigned long *) (a + head->size);
+        /* Cast to (void*) to avoid false warning about alignment */
+        nend = (unsigned long *) (void *)(a + head->size);
 
         /* mark defined before accessing nend contents */
         MPL_VG_MAKE_MEM_DEFINED(nend, sizeof(*nend));
@@ -524,7 +543,7 @@ int MPL_trvalid2(const char str[], int line, const char file[] )
             if (TRidSet) {
                 MPL_error_printf
                     ("[%d] Block [id=%d(%lu)] at address %s is corrupted (probably write past end)\n",
-                     world_rank, head->id, head->size, hexstring);
+                     world_rank, head->id, (unsigned long)head->size, hexstring);
             }
             else {
                 MPL_error_printf
@@ -554,13 +573,13 @@ int MPL_trvalid2(const char str[], int line, const char file[] )
 .   space - number of bytes currently allocated
 .   frags - number of blocks currently allocated
  +*/
-void MPL_trspace(int *space, int *fr)
+void MPL_trspace(size_t *space, size_t *fr)
 {
     /* We use ints because systems without prototypes will usually
      * allow calls with ints instead of longs, leading to unexpected
      * behavior */
-    *space = (int) allocated;
-    *fr = (int) frags;
+    *space =  allocated;
+    *fr =  frags;
 }
 
 /*+C
@@ -574,7 +593,9 @@ Input Parameters:
 void MPL_trdump(FILE * fp, int minid)
 {
     TRSPACE *head;
+#ifdef VALGRIND_MAKE_MEM_NOACCESS
     TRSPACE *old_head;
+#endif
     char hexstring[MAX_ADDRESS_CHARS];
 
     if (fp == 0)
@@ -588,7 +609,8 @@ void MPL_trdump(FILE * fp, int minid)
         MPL_VG_MAKE_MEM_DEFINED(head, sizeof(*head));
         if (head->id >= minid) {
             addrToHex((char *) head + sizeof(TrSPACE), hexstring);
-            fprintf(fp, "[%d] %lu at [%s], ", world_rank, head->size, hexstring);
+            fprintf(fp, "[%d] %lu at [%s], ", world_rank, 
+                    (unsigned long)head->size, hexstring);
             head->fname[TR_FNAME_LEN - 1] = 0;  /* Be extra careful */
             if (TRidSet) {
                 /* For head->id >= 0, we can add code to map the id to
@@ -599,7 +621,9 @@ void MPL_trdump(FILE * fp, int minid)
                 fprintf(fp, "%s[%d]\n", head->fname, head->lineno);
             }
         }
+#ifdef VALGRIND_MAKE_MEM_NOACCESS
         old_head = head;
+#endif
         head = head->next;
         MPL_VG_MAKE_MEM_NOACCESS(old_head, sizeof(*old_head));
     }
@@ -785,9 +809,9 @@ void *MPL_trrealloc(void *p, size_t size, int lineno, const char fname[])
     TRSPACE *head = 0;
     char hexstring[MAX_ADDRESS_CHARS];
 
-/* We should really use the size of the old block... */
+    /* We should really use the size of the old block... */
     if (p) {
-        head = (TRSPACE *) ((char *)p - sizeof(TrSPACE));
+        head = (TRSPACE *) (void*) ((char *)p - sizeof(TrSPACE));
         MPL_VG_MAKE_MEM_DEFINED(head, sizeof(*head));   /* mark defined before accessing contents */
         if (head->cookie != COOKIE_VALUE) {
             /* Damaged header */

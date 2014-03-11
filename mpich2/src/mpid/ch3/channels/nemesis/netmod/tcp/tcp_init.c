@@ -21,6 +21,69 @@
 #include <signal.h>
 #endif
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+cvars:
+    - name        : MPIR_CVAR_CH3_INTERFACE_HOSTNAME
+      category    : CH3
+      alt-env     : MPIR_CVAR_INTERFACE_HOSTNAME
+      type        : string
+      default     : NULL
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        If non-NULL, this cvar specifies the IP address that
+        other processes should use when connecting to this process.
+        This cvar is mutually exclusive with the
+        MPIR_CVAR_CH3_NETWORK_IFACE cvar and it is an error to set them
+        both.
+
+    - name        : MPIR_CVAR_CH3_PORT_RANGE
+      category    : CH3
+      alt-env     : MPIR_CVAR_PORTRANGE, MPIR_CVAR_PORT_RANGE
+      type        : range
+      default     : "0:0"
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        The MPIR_CVAR_CH3_PORT_RANGE environment variable allows you to
+        specify the range of TCP ports to be used by the process
+        manager and the MPICH library. The format of this variable is
+        <low>:<high>.  To specify any available port, use 0:0.
+
+    - name        : MPIR_CVAR_NEMESIS_TCP_NETWORK_IFACE
+      category    : NEMESIS
+      alt-env     : MPIR_CVAR_NETWORK_IFACE
+      type        : string
+      default     : NULL
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If non-NULL, this cvar specifies which pseudo-ethernet
+        interface the tcp netmod should use (e.g., "eth1", "ib0").
+        Note, this is a Linux-specific cvar.
+        This cvar is mutually exclusive with the
+        MPIR_CVAR_CH3_INTERFACE_HOSTNAME cvar and it is an error to set
+        them both.
+
+    - name        : MPIR_CVAR_NEMESIS_TCP_HOST_LOOKUP_RETRIES
+      category    : NEMESIS
+      type        : int
+      default     : 10
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        This cvar controls the number of times to retry the
+        gethostbyname() function before giving up.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
+
 #define DBG_IFNAME 0
 
 #ifdef ENABLE_CHECKPOINTING
@@ -234,20 +297,21 @@ static int GetSockInterfaceAddr(int myRank, char *ifname, int maxIfname,
     MPIU_Assert(maxIfname);
     ifname[0] = '\0';
 
-    MPIU_ERR_CHKANDJUMP(MPIR_PARAM_INTERFACE_HOSTNAME && MPIR_PARAM_NETWORK_IFACE, mpi_errno, MPI_ERR_OTHER, "**ifname_and_hostname");
+    MPIU_ERR_CHKANDJUMP(MPIR_CVAR_CH3_INTERFACE_HOSTNAME && MPIR_CVAR_NEMESIS_TCP_NETWORK_IFACE, mpi_errno, MPI_ERR_OTHER, "**ifname_and_hostname");
     
     /* Set "not found" for ifaddr */
     ifaddr->len = 0;
 
     /* Check if user specified ethernet interface name, e.g., ib0, eth1 */
-    if (MPIR_PARAM_NETWORK_IFACE) {
+    if (MPIR_CVAR_NEMESIS_TCP_NETWORK_IFACE) {
 	int len;
-        mpi_errno = MPIDI_Get_IP_for_iface(MPIR_PARAM_NETWORK_IFACE, ifaddr, &ifaddrFound);
-        MPIU_ERR_CHKANDJUMP1(mpi_errno || !ifaddrFound, mpi_errno, MPI_ERR_OTHER, "**iface_notfound", "**iface_notfound %s", MPIR_PARAM_NETWORK_IFACE);
+        mpi_errno = MPIDI_Get_IP_for_iface(MPIR_CVAR_NEMESIS_TCP_NETWORK_IFACE, ifaddr, &ifaddrFound);
+        MPIU_ERR_CHKANDJUMP1(mpi_errno || !ifaddrFound, mpi_errno, MPI_ERR_OTHER, "**iface_notfound", "**iface_notfound %s", MPIR_CVAR_NEMESIS_TCP_NETWORK_IFACE);
         
         MPIU_DBG_MSG_FMT(CH3_CONNECT, VERBOSE, (MPIU_DBG_FDEST,
-                                                "ifaddrFound=TRUE ifaddr->type=%d ifaddr->len=%d ifaddr->ifaddr[0-3]=%#08x",
-                                                ifaddr->type, ifaddr->len, *((unsigned int *)ifaddr->ifaddr)));
+                                                "ifaddrFound=TRUE ifaddr->type=%d ifaddr->len=%d ifaddr->ifaddr[0-3]=%d.%d.%d.%d",
+                                                ifaddr->type, ifaddr->len, ifaddr->ifaddr[0], ifaddr->ifaddr[1], ifaddr->ifaddr[2],
+                                                ifaddr->ifaddr[3]));
 
         /* In this case, ifname is only used for debugging purposes */
 	mpi_errno = MPID_Get_processor_name(ifname, maxIfname, &len );
@@ -256,7 +320,7 @@ static int GetSockInterfaceAddr(int myRank, char *ifname, int maxIfname,
     }
 
     /* Check for a host name supplied through an environment variable */
-    ifname_string = MPIR_PARAM_INTERFACE_HOSTNAME;
+    ifname_string = MPIR_CVAR_CH3_INTERFACE_HOSTNAME;
     if (!ifname_string) {
 	/* See if there is a per-process name for the interfaces (e.g.,
 	   the process manager only delievers the same values for the 
@@ -305,7 +369,7 @@ static int GetSockInterfaceAddr(int myRank, char *ifname, int maxIfname,
     if (!ifaddrFound) {
         int i;
 	struct hostent *info = NULL;
-        for (i = 0; i < MPIR_PARAM_HOST_LOOKUP_RETRIES; ++i) {
+        for (i = 0; i < MPIR_CVAR_NEMESIS_TCP_HOST_LOOKUP_RETRIES; ++i) {
             info = gethostbyname( ifname_string );
             if (info || h_errno != TRY_AGAIN)
                 break;
@@ -558,11 +622,11 @@ int MPID_nem_tcp_bind (int sockfd)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_TCP_BIND);
    
-    MPIU_ERR_CHKANDJUMP(MPIR_PARAM_PORT_RANGE.low < 0 || MPIR_PARAM_PORT_RANGE.low > MPIR_PARAM_PORT_RANGE.high, mpi_errno, MPI_ERR_OTHER, "**badportrange");
+    MPIU_ERR_CHKANDJUMP(MPIR_CVAR_CH3_PORT_RANGE.low < 0 || MPIR_CVAR_CH3_PORT_RANGE.low > MPIR_CVAR_CH3_PORT_RANGE.high, mpi_errno, MPI_ERR_OTHER, "**badportrange");
 
     /* default MPICH_PORT_RANGE is {0,0} so bind will use any available port */
     ret = 0;
-    for (port = MPIR_PARAM_PORT_RANGE.low; port <= MPIR_PARAM_PORT_RANGE.high; ++port)
+    for (port = MPIR_CVAR_CH3_PORT_RANGE.low; port <= MPIR_CVAR_CH3_PORT_RANGE.high; ++port)
     {
         memset ((void *)&sin, 0, sizeof(sin));
         sin.sin_family      = AF_INET;
@@ -577,7 +641,7 @@ int MPID_nem_tcp_bind (int sockfd)
         MPIU_ERR_CHKANDJUMP3 (errno != EADDRINUSE && errno != EADDRNOTAVAIL, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", port, errno, MPIU_Strerror (errno));
     }
     /* check if an available port was found */
-    MPIU_ERR_CHKANDJUMP3 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", port, errno, MPIU_Strerror (errno));
+    MPIU_ERR_CHKANDJUMP3 (ret == -1, mpi_errno, MPI_ERR_OTHER, "**sock|poll|bind", "**sock|poll|bind %d %d %s", port-1, errno, MPIU_Strerror (errno));
 
  fn_exit:
 /*     if (ret == 0) */

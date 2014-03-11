@@ -32,7 +32,11 @@ int MPIR_T_pvar_readreset_impl(MPI_T_pvar_session session, MPI_T_pvar_handle han
 {
     int mpi_errno = MPI_SUCCESS;
 
-    /* TODO implement this function */
+    mpi_errno = MPIR_T_pvar_read_impl(session, handle, buf);
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+    mpi_errno = MPIR_T_pvar_reset_impl(session, handle);
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
 fn_exit:
     return mpi_errno;
@@ -47,7 +51,7 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_T_pvar_readreset - XXX description here
+MPI_T_pvar_readreset - Read the value of a performance variable and then reset it
 
 Input Parameters:
 + session - identifier of performance experiment session (handle)
@@ -58,40 +62,43 @@ Output Parameters:
 
 .N ThreadSafe
 
-.N Fortran
-
 .N Errors
+.N MPI_SUCCESS
+.N MPI_T_ERR_NOT_INITIALIZED
+.N MPI_T_ERR_INVALID_SESSION
+.N MPI_T_ERR_INVALID_HANDLE
+.N MPI_T_ERR_PVAR_NO_WRITE
+.N MPI_T_ERR_PVAR_NO_ATOMIC
 @*/
 int MPI_T_pvar_readreset(MPI_T_pvar_session session, MPI_T_pvar_handle handle, void *buf)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_PVAR_READRESET);
 
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_PVAR_READRESET);
+    MPIR_ERRTEST_MPIT_INITIALIZED(mpi_errno);
+    MPIR_T_THREAD_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_T_PVAR_READRESET);
 
-    /* Validate parameters, especially handles needing to be converted */
+    /* Validate parameters */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS
         {
+            MPIR_ERRTEST_PVAR_SESSION(session, mpi_errno);
+            MPIR_ERRTEST_PVAR_HANDLE(handle, mpi_errno);
+            MPIR_ERRTEST_ARGNULL(buf, "buf", mpi_errno);
+            if (handle == MPI_T_PVAR_ALL_HANDLES  || session != handle->session
+                || !MPIR_T_pvar_is_oncestarted(handle))
+            {
+                mpi_errno = MPI_T_ERR_INVALID_HANDLE;
+                goto fn_fail;
+            }
 
-            /* TODO more checks may be appropriate */
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
-    /* Convert MPI object handles to object pointers */
-
-    /* Validate parameters and objects (post conversion) */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS
-        {
-            /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+            if (!MPIR_T_pvar_is_atomic(handle))
+            {
+                mpi_errno = MPI_T_ERR_PVAR_NO_ATOMIC;
+                goto fn_fail;
+            }
         }
         MPID_END_ERROR_CHECKS
     }
@@ -100,13 +107,13 @@ int MPI_T_pvar_readreset(MPI_T_pvar_session session, MPI_T_pvar_handle handle, v
     /* ... body of routine ...  */
 
     mpi_errno = MPIR_T_pvar_readreset_impl(session, handle, buf);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
 
 fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_T_PVAR_READRESET);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPIR_T_THREAD_CS_EXIT();
     return mpi_errno;
 
 fn_fail:

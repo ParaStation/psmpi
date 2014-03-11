@@ -45,6 +45,7 @@ void usage(const char *callname __hwloc_attribute_unused, FILE *where)
   fprintf(where, "  --single                  Singlify the output to a single CPU\n");
   fprintf(where, "Input topology options:\n");
   fprintf(where, "  --restrict <cpuset>       Restrict the topology to processors listed in <cpuset>\n");
+  fprintf(where, "  --whole-system            Do not consider administration limitations\n");
   hwloc_utils_input_format_usage(where, 10);
   fprintf(where, "Miscellaneous options:\n");
   fprintf(where, "  -q --quiet                Hide non-fatal error messages\n");
@@ -109,6 +110,7 @@ hwloc_calc_output(hwloc_topology_t topology, const char *sep, hwloc_bitmap_t set
       unsigned idx;
       hwloc_obj_t obj = hwloc_get_first_largest_obj_inside_cpuset(topology, remaining);
       if (!obj) {
+        hwloc_bitmap_free(remaining);
         fprintf(stderr, "No object included in this cpuset\n");
         return EXIT_FAILURE;
       }
@@ -233,6 +235,11 @@ int main(int argc, char *argv[])
       if (!strcmp(argv[0], "-q") || !strcmp(argv[0], "--quiet")) {
         verbose--;
         goto next;
+      }
+      if (!strcmp (argv[0], "--whole-system")) {
+	flags |= HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
+	input_changed = 1;
+	goto next;
       }
       if (!strcmp(argv[0], "--help")) {
 	usage(callname, stdout);
@@ -393,14 +400,17 @@ int main(int argc, char *argv[])
       return EXIT_FAILURE;
     }
 
-    if (input_changed && input) {
-      /* only update the input when actually using it */
+    if (input_changed) {
+      /* flags or input was changed */
       hwloc_topology_destroy(topology);
       hwloc_topology_init(&topology);
       hwloc_topology_set_flags(topology, flags);
-      err = hwloc_utils_enable_input_format(topology, input, input_format, verbose, callname);
-      if (err)
-	return err;
+      if (input) {
+	/* only update the input when actually using it */
+	err = hwloc_utils_enable_input_format(topology, input, input_format, verbose, callname);
+	if (err)
+	  return err;
+      }
       hwloc_topology_load(topology);
       depth = hwloc_topology_get_depth(topology);
       input_changed = 0;
@@ -435,14 +445,17 @@ int main(int argc, char *argv[])
     size_t len = HWLOC_CALC_LINE_LEN;
     char * line = malloc(len);
 
-    if (input_changed && input) {
-      /* only update the input when actually using it */
+    if (input_changed) {
+      /* flags or input was changed */
       hwloc_topology_destroy(topology);
       hwloc_topology_init(&topology);
       hwloc_topology_set_flags(topology, flags);
-      err = hwloc_utils_enable_input_format(topology, input, input_format, verbose, callname);
-      if (err)
-        return err;
+      if (input) {
+	/* only update the input when actually using it */
+	err = hwloc_utils_enable_input_format(topology, input, input_format, verbose, callname);
+	if (err)
+	  return err;
+      }
       hwloc_topology_load(topology);
       depth = hwloc_topology_get_depth(topology);
       input_changed = 0;

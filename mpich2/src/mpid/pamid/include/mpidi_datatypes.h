@@ -31,10 +31,10 @@
 #ifdef MPIDI_STATISTICS
 #include <pami_ext_pe.h>
 #endif
-
 #include "mpidi_constants.h"
 #include "mpidi_platform.h"
 #include "pami.h"
+#include "mpidi_trace.h"
 
 #if (MPIU_HANDLE_ALLOCATION_METHOD == MPIU_HANDLE_ALLOCATION_THREAD_LOCAL) && defined(__BGQ__)
 struct MPID_Request;
@@ -45,6 +45,26 @@ typedef struct
 } MPIDI_RequestHandle_t;
 #endif
 
+#define MPIDI_PT2PT_LIMIT_SET(is_internal,is_immediate,is_local,value)		\
+  MPIDI_Process.pt2pt.limits_lookup[is_internal][is_immediate][is_local] = value\
+
+typedef struct
+{
+  unsigned remote;
+  unsigned local;
+} MPIDI_remote_and_local_limits_t;
+
+typedef struct
+{
+  MPIDI_remote_and_local_limits_t eager;
+  MPIDI_remote_and_local_limits_t immediate;
+} MPIDI_immediate_and_eager_limits_t;
+
+typedef struct
+{
+  MPIDI_immediate_and_eager_limits_t application;
+  MPIDI_immediate_and_eager_limits_t internal;
+} MPIDI_pt2pt_limits_t;
 
 /**
  * \brief MPI Process descriptor
@@ -54,13 +74,23 @@ typedef struct
 typedef struct
 {
   unsigned avail_contexts;
-  unsigned short_limit;
-  unsigned eager_limit;
-  unsigned eager_limit_local;
+  union
+  {
+    unsigned             limits_array[8];
+    unsigned             limits_lookup[2][2][2];
+    MPIDI_pt2pt_limits_t limits;
+  } pt2pt;
+  unsigned disable_internal_eager_scale; /**< The number of tasks at which point eager will be disabled */
+#if TOKEN_FLOW_CONTROL
+  unsigned long long mp_buf_mem;
+  unsigned long long mp_buf_mem_max;
+  unsigned is_token_flow_control_on;
+#endif
 #if (MPIDI_STATISTICS || MPIDI_PRINTENV)
   unsigned mp_infolevel;
   unsigned mp_statistics;     /* print pamid statistcs data                           */
   unsigned mp_printenv; ;     /* print env data                                       */
+  unsigned mp_interrupts; ;   /* interrupts                                           */
 #endif
 #ifdef RDMA_FAILOVER
   unsigned mp_s_use_pami_get; /* force the PAMI_Get path instead of PAMI_Rget         */
@@ -70,18 +100,24 @@ typedef struct
   MPIDI_RequestHandle_t request_handles[MPIDI_MAX_THREADS];
 #endif
 
+#if QUEUE_BINARY_SEARCH_SUPPORT
+  unsigned queue_binary_search_support_on;
+#endif
   unsigned verbose;        /**< The current level of verbosity for end-of-job stats. */
   unsigned statistics;     /**< The current level of stats collection.               */
   unsigned rma_pending;    /**< The max num outstanding requests during an RMA op    */
   unsigned shmem_pt2pt;    /**< Enable optimized shared memory point-to-point functions. */
-
+  unsigned smp_detect;
   pami_geometry_t world_geometry;
 
   struct
   {
-    unsigned collectives;  /**< Enable optimized collective functions. */
-    unsigned subcomms;
-    unsigned select_colls; /**< Enable collective selection */
+    unsigned collectives;       /**< Enable optimized collective functions. */
+    unsigned subcomms;          /**< Enable hardware optimized subcomm's */
+    unsigned select_colls;      /**< Enable collective selection */
+    unsigned auto_select_colls; /**< Enable automatic collective selection */
+    unsigned memory;            /**< Enable memory optimized subcomm's - See MPID_OPT_LVL_xxxx */
+    unsigned num_requests;      /**< Number of requests between flow control barriers */
   }
   optimized;
 
@@ -101,6 +137,12 @@ typedef struct
     } context_post;
   } perobj;                  /**< This structure is only used in the 'perobj' mpich lock mode. */
 
+  unsigned mpir_nbc;         /**< Enable MPIR_* non-blocking collectives implementations. */
+  int  numTasks;             /* total number of tasks on a job                            */
+#ifdef DYNAMIC_TASKING
+  struct MPIDI_PG_t * my_pg; /**< Process group I belong to */
+  int                 my_pg_rank; /**< Rank in process group */
+#endif
 } MPIDI_Process_t;
 
 
@@ -115,6 +157,14 @@ enum
     MPIDI_Protocols_WinCtrl,
     MPIDI_Protocols_WinAccum,
     MPIDI_Protocols_RVZ_zerobyte,
+    MPIDI_Protocols_WinGetAccum,
+    MPIDI_Protocols_WinGetAccumAck,
+#ifdef DYNAMIC_TASKING
+    MPIDI_Protocols_Dyntask,
+    MPIDI_Protocols_Dyntask_disconnect,
+#endif
+    MPIDI_Protocols_WinAtomic,
+    MPIDI_Protocols_WinAtomicAck,
     MPIDI_Protocols_COUNT,
   };
 
@@ -139,6 +189,7 @@ typedef enum
     MPIDI_CONTROL_CANCEL_ACKNOWLEDGE,
     MPIDI_CONTROL_CANCEL_NOT_ACKNOWLEDGE,
     MPIDI_CONTROL_RENDEZVOUS_ACKNOWLEDGE,
+    MPIDI_CONTROL_RETURN_TOKENS,
   } MPIDI_CONTROL;
 
 
@@ -181,11 +232,17 @@ typedef struct
       unsigned control:3;  /**< message type for control protocols */
       unsigned isSync:1;   /**< set for sync sends     */
       unsigned isRzv :1;   /**< use pt2pt rendezvous   */
+      unsigned    noRDMA:1;    /**< msg sent via shm or mem reg. fails */
+      unsigned    reserved:6;  /**< unused bits                        */
+      unsigned    tokens:4;    /** tokens need to be returned          */
     } __attribute__ ((__packed__));
   };
 
 #ifdef OUT_OF_ORDER_HANDLING
   unsigned    MPIseqno;    /**< match seqno            */
+#endif
+#if TOKEN_FLOW_CONTROL
+  unsigned    alltokens;   /* control:MPIDI_CONTROL_RETURN_TOKENS  */
 #endif
 } MPIDI_MsgInfo;
 
@@ -235,14 +292,14 @@ struct MPIDI_Request
   uint32_t             shm:16;
 #endif
 #ifdef MPIDI_TRACE
-  int   cur_nMsgs;
   int   partner_id;
   int   idx;
   int   PR_idx;
 #endif
+  struct MPIDI_Win_request   *win_req; /* anchor of request based rma handle so as to free it properly when wait is called */
 };
 
-
+typedef void* fast_query_t;
 /** \brief This defines the portion of MPID_Comm that is specific to the Device */
 struct MPIDI_Comm
 {
@@ -262,40 +319,32 @@ struct MPIDI_Comm
   char allgathers[4];
   char allgathervs[4];
   char scattervs[2];
-  char optgather, optscatter;
-
+  char optgather, optscatter, optreduce;
+  unsigned num_requests;
   /* These need to be freed at geom destroy, so we need to store them
    * inside the communicator struct until destroy time rather than
    * allocating pointers on the stack
    */
   /* For create_taskrange */
-  pami_geometry_range_t *ranges;
+  pami_geometry_range_t range;
   /* For create_tasklist/endpoints if we ever use it */
   pami_task_t *tasks;
   pami_endpoint_t *endpoints;
-   /* There are some protocols where the optimized protocol always works and
-    * is the best performance */
-   /* Assume we have small vs large cutoffs vs medium for some protocols */
-   pami_algorithm_t opt_protocol[PAMI_XFER_COUNT][2];
-   int must_query[PAMI_XFER_COUNT][2];
-   pami_metadata_t opt_protocol_md[PAMI_XFER_COUNT][2];
-   int cutoff_size[PAMI_XFER_COUNT][2];
-   /* Our best allreduce double protocol only works on 
-    * doubles and sum/min/max. Since that is a common
-    * occurance let's cache that protocol and call
-    * it without checking */
-   pami_algorithm_t cached_allred_dsmm; /*dsmm = double, sum/min/max */
-   pami_metadata_t cached_allred_dsmm_md;
-   int query_allred_dsmm; 
-
-   /* We have some integer optimized protocols that only work on
-    * sum/min/max but also have datasize/ppn <= 8k limitations */
-   /* Using Amith's protocol, these work on int/min/max/sum of SMALL messages */
-   pami_algorithm_t cached_allred_ismm;
-   pami_metadata_t cached_allred_ismm_md;
-   /* Because this only works at select message sizes, this will have to be
-    * nonzero */
-   int query_allred_ismm;
+  /* There are some protocols where the optimized protocol always works and
+   * is the best performance */
+  /* Assume we have small vs large cutoffs vs medium for some protocols */
+  pami_algorithm_t opt_protocol[PAMI_XFER_COUNT][2];
+  int must_query[PAMI_XFER_COUNT][2];
+  pami_metadata_t opt_protocol_md[PAMI_XFER_COUNT][2];
+  int cutoff_size[PAMI_XFER_COUNT][2];
+  /* Our best allreduce protocol always works on 
+   * doubles and sum/min/max. Since that is a common
+   * occurance let's cache that protocol and call
+   * it without checking.  Any other dt/op must be 
+   * checked */ 
+  pami_algorithm_t cached_allreduce;
+  pami_metadata_t cached_allreduce_md;
+  int query_cached_allreduce; 
 
   union tasks_descrip_t {
     /* For create_taskrange */
@@ -304,6 +353,12 @@ struct MPIDI_Comm
     pami_task_t *tasks;
     pami_endpoint_t *endpoints;
   } tasks_descriptor;
+#ifdef DYNAMIC_TASKING
+  int local_leader;
+  long long world_intercomm_cntr;
+  int *world_ids;      /* ids of worlds that composed this communicator (inter communicator created for dynamic tasking */
+#endif
+  fast_query_t collsel_fast_query;
 };
 
 
@@ -321,18 +376,52 @@ struct MPID_Win;
 /** \brief Forward declaration of the MPID_Group structure */
 struct MPID_Group;
 
+typedef enum
+  {
+    MPIDI_REQUEST_LOCK,
+    MPIDI_REQUEST_LOCKALL,
+  } MPIDI_LOCK_TYPE_t;
 
 struct MPIDI_Win_lock
 {
   struct MPIDI_Win_lock *next;
   unsigned               rank;
+  MPIDI_LOCK_TYPE_t      mtype;    /* MPIDI_REQUEST_LOCK or MPIDI_REQUEST_LOCKALL    */
   int                    type;
+  void                   *flagAddr;
 };
 struct MPIDI_Win_queue
 {
   struct MPIDI_Win_lock *head;
   struct MPIDI_Win_lock *tail;
 };
+
+typedef enum {
+    MPIDI_ACCU_ORDER_RAR = 1,
+    MPIDI_ACCU_ORDER_RAW = 2,
+    MPIDI_ACCU_ORDER_WAR = 4,
+    MPIDI_ACCU_ORDER_WAW = 8
+} MPIDI_Win_info_accumulate_ordering;
+
+typedef enum {
+    MPIDI_ACCU_SAME_OP,
+    MPIDI_ACCU_SAME_OP_NO_OP
+} MPIDI_Win_info_accumulate_ops;
+
+typedef struct MPIDI_Win_info_args {
+    int no_locks;
+    MPIDI_Win_info_accumulate_ordering accumulate_ordering;
+    MPIDI_Win_info_accumulate_ops      accumulate_ops;       /* default is same_op_no_op  */
+    int same_size;
+    int alloc_shared_noncontig;
+} MPIDI_Win_info_args;
+
+typedef struct workQ_t {
+   void *msgQ;
+   int  count;
+} workQ_t;
+
+
 /**
  * \brief Collective information related to a window
  *
@@ -343,28 +432,49 @@ struct MPIDI_Win_queue
  * The structure is allocated as an array sized for the window communicator.
  * Each entry in the array corresponds directly to the node of the same rank.
  */
-struct MPIDI_Win_info
+typedef struct MPIDI_Win_info
 {
   void             * base_addr;     /**< Node's exposure window base address                  */
   struct MPID_Win  * win;
   uint32_t           disp_unit;     /**< Node's exposure window displacement units            */
   pami_memregion_t   memregion;     /**< Memory region descriptor for each node               */
-#ifdef RDMA_FAILOVER
   uint32_t           memregion_used;
-#endif
-};
+} MPIDI_Win_info;
+
+typedef pthread_mutex_t MPIDI_SHM_MUTEX;
+
+typedef struct MPIDI_Win_shm_t
+{
+    int allocated;                  /* flag: TRUE iff this window has a shared memory
+                                                 region associated with it */
+    void *base_addr;                /* base address of shared memory region */
+    MPI_Aint segment_len;           /* size of shared memory region         */
+    uint32_t  shm_id;                /* shared memory id                    */
+    int       *shm_count;
+    MPIDI_SHM_MUTEX *mutex_lock;    /* shared memory windows -- lock for    */
+                                     /*     accumulate/atomic operations     */
+} MPIDI_Win_shm_t;
+
 /**
  * \brief Structure of PAMI extensions to MPID_Win structure
  */
 struct MPIDI_Win
 {
-  struct MPIDI_Win_info * info;    /**< allocated array of collective info             */
+  struct MPIDI_Win_info     *info;          /**< allocated array of collective info             */
+  MPIDI_Win_info_args info_args;
+  void             ** shm_base_addrs; /* base address shared by all process in comm      */
+  MPIDI_Win_shm_t  *shm;             /* shared memory info                             */
+  workQ_t work;
+  int   max_ctrlsends;
   struct MPIDI_Win_sync
   {
 #if 0
     /** \todo optimize some of the synchronization assertion */
     uint32_t assert; /**< MPI_MODE_* bits asserted at epoch start              */
 #endif
+
+    volatile int origin_epoch_type; /**< curretn epoch type for origin */
+    volatile int target_epoch_type; /**< curretn epoch type for target */
 
     /* These fields are reset by the sync functions */
     uint32_t          total;    /**< The number of PAMI requests that we know about (updated only by calling thread) */
@@ -381,6 +491,7 @@ struct MPIDI_Win
       struct
       {
         volatile unsigned locked;
+        volatile unsigned allLocked;
       } remote;
       struct
       {
@@ -390,7 +501,137 @@ struct MPIDI_Win
       } local;
     } lock;
   } sync;
+  int request_based;          /* flag for request based rma */
+  struct MPID_Request *rreq;  /* anchor of MPID_Request for request based rma */
 };
+
+/**
+ * \brief Structures and typedefs for collective selection extensions in PAMI
+ */
+
+typedef void* advisor_t;
+typedef void* advisor_table_t;
+typedef void* advisor_attribute_name_t;
+
+typedef union
+{
+  size_t         intval;
+  double         doubleval;
+  const char *   chararray;
+  const size_t * intarray;
+} advisor_attribute_value_t;
+
+typedef struct
+{
+  advisor_attribute_name_t  name;
+  advisor_attribute_value_t value;
+} advisor_configuration_t;
+
+typedef struct {
+   pami_xfer_type_t  *collectives;
+   size_t             num_collectives;
+   size_t            *procs_per_node;
+   size_t             num_procs_per_node;
+   size_t            *geometry_sizes;
+   size_t             num_geometry_sizes;
+   size_t            *message_sizes;
+   size_t             num_message_sizes;
+   int                iter;
+   int                verify;
+   int                verbose;
+   int                checkpoint;
+} advisor_params_t;
+
+typedef enum
+{
+  COLLSEL_ALGO = 0,      /* 'Always works' PAMI algorithm */
+  COLLSEL_QUERY_ALGO,    /* 'Must query' PAMI algorithm */
+  COLLSEL_EXTERNAL_ALGO, /* External algorithm */
+} advisor_algorithm_type_t;
+
+/* External algorithm callback function */
+typedef pami_result_t (*external_algorithm_fn)(pami_xfer_t *, void *);
+
+typedef struct
+{
+  external_algorithm_fn callback;
+  void                 *cookie;
+} external_algorithm_t;
+
+typedef struct
+{
+  union
+  {
+    pami_algorithm_t     internal;/* PAMI Algorithm */
+    external_algorithm_t external;/* External Algorithm */
+  } algorithm;
+  pami_metadata_t *metadata;
+  advisor_algorithm_type_t algorithm_type;
+} advisor_algorithm_t;
+
+
+typedef pami_result_t (*pami_extension_collsel_init)            (pami_client_t,
+                                                                 advisor_configuration_t [],
+                                                                 size_t,
+                                                                 pami_context_t [],
+                                                                 size_t,
+                                                                 advisor_t *);
+
+typedef pami_result_t (*pami_extension_collsel_destroy)         (advisor_t *);
+
+typedef int (*pami_extension_collsel_initialized)               (pami_client_t, advisor_t *);
+
+typedef pami_result_t (*pami_extension_collsel_table_load)      (advisor_t,
+                                                                 char *,
+                                                                 advisor_table_t *);
+
+typedef pami_result_t (*pami_extension_collsel_get_collectives) (advisor_table_t,
+                                                                 pami_xfer_type_t **,
+                                                                 unsigned          *);
+
+typedef pami_result_t (*pami_extension_collsel_register_algorithms) (advisor_table_t,
+                                                                     pami_geometry_t,
+                                                                     pami_xfer_type_t,
+                                                                     advisor_algorithm_t *,
+                                                                     size_t);
+
+typedef pami_result_t (*external_geometry_create_fn)(pami_geometry_range_t* task_slices,
+                                                     size_t           slice_count,
+                                                     pami_geometry_t *geometry,
+                                                     void           **cookie);
+
+typedef pami_result_t (*external_geometry_destroy_fn)(void *cookie);
+
+typedef pami_result_t (*external_register_algorithms_fn)(void *cookie,
+                                                         pami_xfer_type_t collective,
+                                                         advisor_algorithm_t **algorithms,
+                                                         size_t              *num_algorithms);
+
+typedef struct
+{
+  external_geometry_create_fn   geometry_create;
+  external_geometry_destroy_fn  geometry_destroy;
+  external_register_algorithms_fn register_algorithms;
+} external_geometry_ops_t;
+
+typedef pami_result_t (*pami_extension_collsel_table_generate)  (advisor_t,
+                                                                 char *,
+                                                                 advisor_params_t *,
+                                                                 external_geometry_ops_t *,
+                                                                 int);
+
+typedef pami_result_t (*pami_extension_collsel_query_create) (advisor_table_t  advisor_table,
+                                                              pami_geometry_t  geometry,
+                                                              fast_query_t    *query);
+
+typedef pami_result_t (*pami_extension_collsel_query_destroy) (fast_query_t *query);
+
+typedef int (*pami_extension_collsel_advise) (fast_query_t        fast_query,
+                                              pami_xfer_type_t    xfer_type,
+                                              size_t              message_size,
+                                              advisor_algorithm_t algorithms_optimized[],
+                                              size_t              max_algorithms);
+
 
 
 #endif

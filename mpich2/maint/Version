@@ -4,6 +4,6 @@
 # intentionally not managed by the makefile system and may not be up to date at
 # all times w.r.t. the version.m4 file.
 
-MPICH_VERSION=3.0.4
+MPICH_VERSION=3.1
 export MPICH_VERSION
 

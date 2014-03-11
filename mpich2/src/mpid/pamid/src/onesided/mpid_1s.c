@@ -27,12 +27,14 @@ MPIDI_Win_DoneCB(pami_context_t  context,
                  void          * cookie,
                  pami_result_t   result)
 {
+  int   target_rank;
   MPIDI_Win_request *req = (MPIDI_Win_request*)cookie;
+  target_rank = req->target.rank;
   ++req->win->mpid.sync.complete;
+  ++req->origin.completed;
 
   if ((req->buffer_free) && (req->type == MPIDI_WIN_REQUEST_GET))
     {
-      ++req->origin.completed;
       if (req->origin.completed == req->target.dt.num_contig)
         {
           int mpi_errno;
@@ -43,19 +45,33 @@ MPIDI_Win_DoneCB(pami_context_t  context,
                                      req->origin.count,
                                      req->origin.datatype);
           MPID_assert(mpi_errno == MPI_SUCCESS);
+#ifndef USE_PAMI_RDMA
+          MPIDI_Win_datatype_unmap(&req->target.dt);
+#endif
           MPID_Datatype_release(req->origin.dt.pointer);
           MPIU_Free(req->buffer);
+          MPIU_Free(req->user_buffer);
           req->buffer_free = 0;
         }
     }
 
-  if (req->win->mpid.sync.total == req->win->mpid.sync.complete)
+
+    if ((req->origin.completed == req->target.dt.num_contig) || 
+        ((req->type >= MPIDI_WIN_REQUEST_COMPARE_AND_SWAP) && 
+         (req->origin.completed == req->origin.dt.num_contig)))
     {
-      if (req->buffer_free)
-        MPIU_Free(req->buffer);
+      if(req->req_handle)
+          MPID_cc_set(req->req_handle->cc_ptr, 0);
+
+      if (req->buffer_free) {
+          MPIU_Free(req->buffer);
+          MPIU_Free(req->user_buffer);
+          req->buffer_free = 0;
+      }
       if (req->accum_headers)
-        MPIU_Free(req->accum_headers);
-      MPIU_Free(req);
+          MPIU_Free(req->accum_headers);
+      if (!((req->type > MPIDI_WIN_REQUEST_GET_ACCUMULATE) && (req->type <=MPIDI_WIN_REQUEST_RGET_ACCUMULATE)))
+          MPIU_Free(req);
     }
   MPIDI_Progress_signal();
 }

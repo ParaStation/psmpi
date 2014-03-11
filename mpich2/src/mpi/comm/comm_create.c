@@ -20,11 +20,8 @@
 
 /* prototypes to make the compiler happy in the case that PMPI_LOCAL expands to
  * nothing instead of "static" */
-PMPI_LOCAL int MPIR_Comm_create_intra(MPID_Comm *comm_ptr, MPID_Group *group_ptr,
-                                      MPID_Comm **newcomm_ptr);
 PMPI_LOCAL int MPIR_Comm_create_inter(MPID_Comm *comm_ptr, MPID_Group *group_ptr,
                                       MPID_Comm **newcomm_ptr);
-
 
 /* Define MPICH_MPI_FROM_PMPI if weak symbols are not supported to build
    the MPI routines */
@@ -213,8 +210,8 @@ fn_fail:
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /* comm create impl for intracommunicators, assumes that the standard error
  * checking has already taken place in the calling function */
-PMPI_LOCAL int MPIR_Comm_create_intra(MPID_Comm *comm_ptr, MPID_Group *group_ptr,
-                                      MPID_Comm **newcomm_ptr)
+int MPIR_Comm_create_intra(MPID_Comm *comm_ptr, MPID_Group *group_ptr,
+                           MPID_Comm **newcomm_ptr)
 {
     int mpi_errno = MPI_SUCCESS;
     MPIR_Context_id_t new_context_id = 0;
@@ -236,8 +233,8 @@ PMPI_LOCAL int MPIR_Comm_create_intra(MPID_Comm *comm_ptr, MPID_Group *group_ptr
        member of the group */
     /* In the multi-threaded case, MPIR_Get_contextid assumes that the
        calling routine already holds the single criticial section */
-    /* TODO should be converted to use MPIR_Get_contextid_sparse instead */
-    mpi_errno = MPIR_Get_contextid( comm_ptr, &new_context_id );
+    mpi_errno = MPIR_Get_contextid_sparse( comm_ptr, &new_context_id,
+                                           group_ptr->rank == MPI_UNDEFINED );
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     MPIU_Assert(new_context_id != 0);
 
@@ -281,7 +278,6 @@ PMPI_LOCAL int MPIR_Comm_create_intra(MPID_Comm *comm_ptr, MPID_Group *group_ptr
     }
     else {
         /* This process is not in the group */
-        MPIR_Free_contextid( new_context_id );
         new_context_id = 0;
     }
 
@@ -297,8 +293,9 @@ fn_fail:
         MPIR_Comm_release(*newcomm_ptr, 0/*isDisconnect*/);
         new_context_id = 0; /* MPIR_Comm_release frees the new ctx id */
     }
-    if (new_context_id != 0)
+    if (new_context_id != 0 && group_ptr->rank != MPI_UNDEFINED) {
         MPIR_Free_contextid(new_context_id);
+    }
     /* --END ERROR HANDLING-- */
     goto fn_exit;
 }
@@ -387,8 +384,8 @@ PMPI_LOCAL int MPIR_Comm_create_inter(MPID_Comm *comm_ptr, MPID_Group *group_ptr
         info[1] = group_ptr->size;
 
         mpi_errno = MPIC_Sendrecv(info, 2, MPI_INT, 0, 0,
-                                  rinfo, 2, MPI_INT, 0, 0,
-                                  comm, MPI_STATUS_IGNORE );
+                                     rinfo, 2, MPI_INT, 0, 0,
+                                     comm, MPI_STATUS_IGNORE, &errflag );
         if (mpi_errno) { MPIU_ERR_POP( mpi_errno ); }
         if (*newcomm_ptr != NULL) {
             (*newcomm_ptr)->context_id = rinfo[0];
@@ -401,8 +398,8 @@ PMPI_LOCAL int MPIR_Comm_create_inter(MPID_Comm *comm_ptr, MPID_Group *group_ptr
 
         /* Populate and exchange the ranks */
         mpi_errno = MPIC_Sendrecv( mapping, group_ptr->size, MPI_INT, 0, 0,
-                                   remote_mapping, remote_size, MPI_INT, 0, 0,
-                                   comm, MPI_STATUS_IGNORE );
+                                      remote_mapping, remote_size, MPI_INT, 0, 0,
+                                      comm, MPI_STATUS_IGNORE, &errflag );
         if (mpi_errno) { MPIU_ERR_POP( mpi_errno ); }
 
         /* Broadcast to the other members of the local group */

@@ -11,10 +11,11 @@ AC_CONFIG_SRCDIR([src/mplstr.c])
 
 AC_CONFIG_AUX_DIR(confdb)
 AC_CONFIG_MACRO_DIR(confdb)
-AM_INIT_AUTOMAKE([-Wall -Werror foreign 1.12.3])
+AM_INIT_AUTOMAKE([subdir-objects] [-Wall -Werror foreign 1.12.3])
 
 dnl must come before LT_INIT, which AC_REQUIREs AC_PROG_CC
 PAC_PROG_CC
+AM_PROG_CC_C_O
 
 AM_PROG_AR
 
@@ -22,8 +23,15 @@ LT_PREREQ([2.2.6])
 
 # Bug in libtool adds -O2 and -g by default
 PAC_PUSH_FLAG([CFLAGS])
-LT_INIT(disable-shared)
+LT_INIT()
 PAC_POP_FLAG([CFLAGS])
+
+# ----------------------------------------------------------------------------
+# Set default library names if names haven't already been provided
+AC_ARG_VAR([MPLLIBNAME],[can be used to override the name of the MPL library (default: "mpl")])
+MPLLIBNAME=${MPLLIBNAME:-"mpl"}
+AC_SUBST(MPLLIBNAME)
+export MPLLIBNAME
 
 if test -s "$srcdir/VERSION" ; then
    . $srcdir/VERSION
@@ -40,12 +48,13 @@ m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 AC_C_CONST
 AC_C_RESTRICT
+AC_C_INLINE
 
 PAC_C_MACRO_VA_ARGS
 
 # TODO: could add a --enable-embedded or similar to also control this
 AC_ARG_VAR([FROM_MPICH],[set to "yes" if building MPL inside of MPICH])
-AM_CONDITIONAL([MPL_EMBEDDED_MODE],[test "x$FROM_MPICH" = "xyes"])
+AM_CONDITIONAL([MPL_EMBEDDED_MODE],[test "x${FROM_MPICH}" = "xyes"])
 
 # support gcov test coverage information
 PAC_ENABLE_COVERAGE
@@ -62,7 +71,7 @@ if test "$pac_cv_have___typeof" = "yes" ; then
 fi
 
 dnl Check if the necessary headers are available
-AC_CHECK_HEADERS(stdio.h stdlib.h string.h stdarg.h ctype.h search.h)
+AC_CHECK_HEADERS(stdio.h stdlib.h string.h stdarg.h ctype.h search.h sys/types.h sys/uio.h)
 
 # A C99 compliant compiler should have inttypes.h for fixed-size int types
 AC_CHECK_HEADERS(inttypes.h stdint.h)

@@ -20,7 +20,7 @@
  * \brief ???
  */
 
-/*#define TRACE_ON */
+/* #define TRACE_ON */
 
 #include <mpidimpl.h>
 
@@ -45,8 +45,8 @@ int MPIDO_Scatter_bcast(void * sendbuf,
 {
   /* Pretty simple - bcast a temp buffer and copy our little chunk out */
   int contig, nbytes, rc;
-  int rank = comm_ptr->rank;
-  int size = comm_ptr->local_size;
+  const int rank = comm_ptr->rank;
+  const int size = comm_ptr->local_size;
   char *tempbuf = NULL;
 
   MPID_Datatype * dt_ptr;
@@ -83,7 +83,7 @@ int MPIDO_Scatter_bcast(void * sendbuf,
     }
   }
 
-   /* TODO: Needs to be a PAMI bcast */
+  /* Switch to comm->coll_fns->fn() */
   rc = MPIDO_Bcast(tempbuf, nbytes*size, MPI_CHAR, root, comm_ptr, mpierrno);
 
   if(rank == root && recvbuf == MPI_IN_PLACE)
@@ -108,15 +108,29 @@ int MPIDO_Scatter(const void *sendbuf,
                   MPID_Comm *comm_ptr,
                   int *mpierrno)
 {
+#ifndef HAVE_PAMI_IN_PLACE
+  if (sendbuf == MPI_IN_PLACE)
+  {
+    MPID_Abort (NULL, 0, 1, "'MPI_IN_PLACE' requries support for `PAMI_IN_PLACE`");
+    return -1;
+  }
+#endif
   MPID_Datatype * data_ptr;
   MPI_Aint true_lb = 0;
-/*  char *sbuf = sendbuf, *rbuf = recvbuf;*/
   int contig, nbytes = 0;
-  int rank = comm_ptr->rank;
+  const int rank = comm_ptr->rank;
   int success = 1;
   pami_type_t stype, rtype;
   int tmp;
-  char use_pami = !(comm_ptr->mpid.user_selected_type[PAMI_XFER_SCATTER] == MPID_COLL_USE_MPICH);
+#if ASSERT_LEVEL==0
+   /* We can't afford the tracing in ndebug/performance libraries */
+    const unsigned verbose = 0;
+#else
+    const unsigned verbose = (MPIDI_Process.verbose >= MPIDI_VERBOSE_DETAILS_ALL) && (rank == 0);
+#endif
+   const struct MPIDI_Comm* const mpid = &(comm_ptr->mpid);
+   const int selected_type = mpid->user_selected_type[PAMI_XFER_SCATTER];
+   char use_pami = !(selected_type == MPID_COLL_USE_MPICH);
 
   /* if (rank == root)
      We can't decide on just the root to use MPICH. Really need a pre-allreduce.
@@ -126,12 +140,12 @@ int MPIDO_Scatter(const void *sendbuf,
     if(MPIDI_Datatype_to_pami(sendtype, &stype, -1, NULL, &tmp) != MPI_SUCCESS)
       use_pami = 0;
   }
-  if(MPIDI_Datatype_to_pami(recvtype, &rtype, -1, NULL, &tmp) != MPI_SUCCESS)
+  if(recvbuf != MPI_IN_PLACE && (MPIDI_Datatype_to_pami(recvtype, &rtype, -1, NULL, &tmp) != MPI_SUCCESS))
     use_pami = 0;
 
   if(!use_pami)
   {
-    if(unlikely(MPIDI_Process.verbose >= MPIDI_VERBOSE_DETAILS_ALL && comm_ptr->rank == 0))
+    if(unlikely(verbose))
       fprintf(stderr,"Using MPICH scatter algorithm\n");
     MPIDI_Update_last_algorithm(comm_ptr, "SCATTER_MPICH");
     return MPIR_Scatter(sendbuf, sendcount, sendtype,
@@ -178,41 +192,41 @@ int MPIDO_Scatter(const void *sendbuf,
    pami_xfer_t scatter;
    MPIDI_Post_coll_t scatter_post;
    pami_algorithm_t my_scatter;
-   pami_metadata_t *my_scatter_md;
+   const pami_metadata_t *my_md = (pami_metadata_t *)NULL;
    volatile unsigned scatter_active = 1;
    int queryreq = 0;
 
-   if(comm_ptr->mpid.user_selected_type[PAMI_XFER_SCATTER] == MPID_COLL_OPTIMIZED)
+   if(selected_type == MPID_COLL_OPTIMIZED)
    {
       TRACE_ERR("Optimized scatter %s was selected\n",
-         comm_ptr->mpid.opt_protocol_md[PAMI_XFER_SCATTER][0].name);
-      my_scatter = comm_ptr->mpid.opt_protocol[PAMI_XFER_SCATTER][0];
-      my_scatter_md = &comm_ptr->mpid.opt_protocol_md[PAMI_XFER_SCATTER][0];
-      queryreq = comm_ptr->mpid.must_query[PAMI_XFER_SCATTER][0];
+         mpid->opt_protocol_md[PAMI_XFER_SCATTER][0].name);
+      my_scatter = mpid->opt_protocol[PAMI_XFER_SCATTER][0];
+      my_md = &mpid->opt_protocol_md[PAMI_XFER_SCATTER][0];
+      queryreq = mpid->must_query[PAMI_XFER_SCATTER][0];
    }
    else
    {
       TRACE_ERR("Optimized scatter %s was set by user\n",
-         comm_ptr->mpid.user_metadata[PAMI_XFER_SCATTER].name);
-      my_scatter = comm_ptr->mpid.user_selected[PAMI_XFER_SCATTER];
-      my_scatter_md = &comm_ptr->mpid.user_metadata[PAMI_XFER_SCATTER];
-      queryreq = comm_ptr->mpid.user_selected_type[PAMI_XFER_SCATTER];
+         mpid->user_metadata[PAMI_XFER_SCATTER].name);
+      my_scatter = mpid->user_selected[PAMI_XFER_SCATTER];
+      my_md = &mpid->user_metadata[PAMI_XFER_SCATTER];
+      queryreq = selected_type;
    }
  
    scatter.algorithm = my_scatter;
    scatter.cb_done = cb_scatter;
    scatter.cookie = (void *)&scatter_active;
-   scatter.cmd.xfer_scatter.root = MPID_VCR_GET_LPID(comm_ptr->vcr, root);
+   scatter.cmd.xfer_scatter.root = MPIDI_Task_to_endpoint(MPID_VCR_GET_LPID(comm_ptr->vcr, root), 0);
    scatter.cmd.xfer_scatter.sndbuf = (void *)sendbuf;
    scatter.cmd.xfer_scatter.stype = stype;
    scatter.cmd.xfer_scatter.stypecount = sendcount;
    if(recvbuf == MPI_IN_PLACE) 
    {
-     if(unlikely(MPIDI_Process.verbose >= MPIDI_VERBOSE_DETAILS_ALL))
+     if(unlikely(verbose))
        fprintf(stderr,"scatter MPI_IN_PLACE buffering\n");
      MPIDI_Datatype_get_info(sendcount, sendtype, contig,
                              nbytes, data_ptr, true_lb);
-     scatter.cmd.xfer_scatter.rcvbuf = (char *)sendbuf + nbytes*comm_ptr->rank;
+     scatter.cmd.xfer_scatter.rcvbuf = PAMI_IN_PLACE;
      scatter.cmd.xfer_scatter.rtype = stype;
      scatter.cmd.xfer_scatter.rtypecount = sendcount;
    }
@@ -228,16 +242,62 @@ int MPIDO_Scatter(const void *sendbuf,
    {
       metadata_result_t result = {0};
       TRACE_ERR("querying scatter protoocl %s, type was %d\n",
-         my_scatter_md->name, queryreq);
-      result = my_scatter_md->check_fn(&scatter);
-      TRACE_ERR("bitmask: %#X\n", result.bitmask);
-      if(!result.bitmask)
+         my_md->name, queryreq);
+      if(my_md->check_fn == NULL)
       {
-         fprintf(stderr,"query failed for %s\n", my_scatter_md->name);
+        /* process metadata bits */
+        if((!my_md->check_correct.values.inplace) && (recvbuf == MPI_IN_PLACE))
+           result.check.unspecified = 1;
+         if(my_md->check_correct.values.rangeminmax)
+         {
+           MPI_Aint data_true_lb;
+           MPID_Datatype *data_ptr;
+           int data_size, data_contig;
+           if(rank == root)
+             MPIDI_Datatype_get_info(sendcount, sendtype, data_contig, data_size, data_ptr, data_true_lb); 
+           else
+             MPIDI_Datatype_get_info(recvcount, recvtype, data_contig, data_size, data_ptr, data_true_lb); 
+           if((my_md->range_lo <= data_size) &&
+              (my_md->range_hi >= data_size))
+              ; /* ok, algorithm selected */
+           else
+           {
+              result.check.range = 1;
+              if(unlikely(verbose))
+              {   
+                 fprintf(stderr,"message size (%u) outside range (%zu<->%zu) for %s.\n",
+                         data_size,
+                         my_md->range_lo,
+                         my_md->range_hi,
+                         my_md->name);
+              }
+           }
+         }
+      }
+      else /* calling the check fn is sufficient */
+        result = my_md->check_fn(&scatter);
+      TRACE_ERR("bitmask: %#X\n", result.bitmask);
+      result.check.nonlocal = 0; /* #warning REMOVE THIS WHEN IMPLEMENTED */
+      if(result.bitmask)
+      {
+        if(unlikely(verbose))
+          fprintf(stderr,"query failed for %s\n", my_md->name);
+        MPIDI_Update_last_algorithm(comm_ptr, "SCATTER_MPICH");
+        return MPIR_Scatter(sendbuf, sendcount, sendtype,
+                            recvbuf, recvcount, recvtype,
+                            root, comm_ptr, mpierrno);
+      }
+      if(my_md->check_correct.values.asyncflowctl && !(--(comm_ptr->mpid.num_requests))) 
+      { 
+        comm_ptr->mpid.num_requests = MPIDI_Process.optimized.num_requests;
+        int tmpmpierrno;   
+        if(unlikely(verbose))
+          fprintf(stderr,"Query barrier required for %s\n", my_md->name);
+        MPIDO_Barrier(comm_ptr, &tmpmpierrno);
       }
    }
 
-   if(unlikely(MPIDI_Process.verbose >= MPIDI_VERBOSE_DETAILS_ALL && comm_ptr->rank == 0))
+   if(unlikely(verbose))
    {
       unsigned long long int threadID;
       MPIU_Thread_id_t tid;
@@ -245,10 +305,9 @@ int MPIDO_Scatter(const void *sendbuf,
       threadID = (unsigned long long int)tid;
       fprintf(stderr,"<%llx> Using protocol %s for scatter on %u\n", 
               threadID,
-              my_scatter_md->name,
+              my_md->name,
               (unsigned) comm_ptr->context_id);
    }
-   TRACE_ERR("%s scatter\n", MPIDI_Process.context_post.active>0?"Posting":"Invoking");
    MPIDI_Context_post(MPIDI_Context[0], &scatter_post.state,
                       MPIDI_Pami_post_wrapper, (void *)&scatter);
    TRACE_ERR("Waiting on active %d\n", scatter_active);
@@ -261,6 +320,225 @@ int MPIDO_Scatter(const void *sendbuf,
 }
 
 
+int MPIDO_Scatter_simple(const void *sendbuf,
+                  int sendcount,
+                  MPI_Datatype sendtype,
+                  void *recvbuf,
+                  int recvcount,
+                  MPI_Datatype recvtype,
+                  int root,
+                  MPID_Comm *comm_ptr,
+                  int *mpierrno)
+{
+#ifndef HAVE_PAMI_IN_PLACE
+  if (sendbuf == MPI_IN_PLACE)
+  {
+    MPID_Abort (NULL, 0, 1, "'MPI_IN_PLACE' requries support for `PAMI_IN_PLACE`");
+    return -1;
+  }
+#endif
+  MPID_Datatype * data_ptr;
+  const int rank = comm_ptr->rank;
+  int success = 1, snd_contig = 1, rcv_contig = 1;
+  void *snd_noncontig_buff = NULL, *rcv_noncontig_buff = NULL;
+  void *sbuf = NULL, *rbuf = NULL;
+  size_t send_size = 0;
+  size_t recv_size = 0;
+  MPI_Aint snd_true_lb = 0, rcv_true_lb = 0; 
+  int tmp;
+  int use_pami = 1;
+  MPID_Segment segment;
+  const struct MPIDI_Comm* const mpid = &(comm_ptr->mpid);
+  const int size = comm_ptr->local_size;
+
+  if (rank == root && sendtype != MPI_DATATYPE_NULL && sendcount >= 0)
+  {
+    MPIDI_Datatype_get_info(sendcount, sendtype, snd_contig,
+                            send_size, data_ptr, snd_true_lb);
+    if(MPIDI_Pamix_collsel_advise != NULL && mpid->collsel_fast_query != NULL)
+    {
+      advisor_algorithm_t advisor_algorithms[1];
+      int num_algorithms = MPIDI_Pamix_collsel_advise(mpid->collsel_fast_query, PAMI_XFER_SCATTER, send_size, advisor_algorithms, 1);
+      if(num_algorithms)
+      {
+        if(advisor_algorithms[0].algorithm_type == COLLSEL_EXTERNAL_ALGO)
+        {
+          return MPIR_Scatter(sendbuf, sendcount, sendtype,
+                            recvbuf, recvcount, recvtype,
+                            root, comm_ptr, mpierrno);
+        }
+      }
+    }
+  }
+
+  if (recvtype != MPI_DATATYPE_NULL && recvcount >= 0)
+  {
+    MPIDI_Datatype_get_info(recvcount, recvtype, rcv_contig,
+                            recv_size, data_ptr, rcv_true_lb);
+    if(MPIDI_Pamix_collsel_advise != NULL && mpid->collsel_fast_query != NULL)
+    {
+      advisor_algorithm_t advisor_algorithms[1];
+      int num_algorithms = MPIDI_Pamix_collsel_advise(mpid->collsel_fast_query, PAMI_XFER_SCATTER, recv_size, advisor_algorithms, 1);
+      if(num_algorithms)
+      {
+        if(advisor_algorithms[0].algorithm_type == COLLSEL_EXTERNAL_ALGO)
+        {
+          return MPIR_Scatter(sendbuf, sendcount, sendtype,
+                            recvbuf, recvcount, recvtype,
+                            root, comm_ptr, mpierrno);
+        }
+      }
+    }
+  }
+  sbuf = (char *)sendbuf + snd_true_lb;
+  rbuf = (char *)recvbuf + rcv_true_lb;
+  if (rank == root)
+  {
+    if (send_size)
+    {
+      sbuf = (char *)sendbuf + snd_true_lb;
+      if (!snd_contig)
+      {
+        snd_noncontig_buff = MPIU_Malloc(send_size * size);
+        sbuf = snd_noncontig_buff;
+        if(snd_noncontig_buff == NULL)
+        {
+           MPID_Abort(NULL, MPI_ERR_NO_SPACE, 1,
+              "Fatal:  Cannot allocate pack buffer");
+        }
+        DLOOP_Offset last = send_size * size;
+        MPID_Segment_init(sendbuf, sendcount * size, sendtype, &segment, 0);
+        MPID_Segment_pack(&segment, 0, &last, snd_noncontig_buff);
+      }
+    }
+    else
+      success = 0;
+
+    if (success && recvbuf != MPI_IN_PLACE)
+    {
+      if (recv_size)
+      {
+        rbuf = (char *)recvbuf + rcv_true_lb;
+        if (!rcv_contig)
+        {
+          rcv_noncontig_buff = MPIU_Malloc(recv_size);
+          rbuf = rcv_noncontig_buff;
+          if(rcv_noncontig_buff == NULL)
+          {
+             MPID_Abort(NULL, MPI_ERR_NO_SPACE, 1,
+                "Fatal:  Cannot allocate pack buffer");
+          }
+        }
+      }
+      else success = 0;
+    }
+  }
+
+  else
+  {
+    if (recv_size)/* Should this be send or recv? */
+    {
+      rbuf = (char *)recvbuf + rcv_true_lb;
+      if (!rcv_contig)
+      {
+        rcv_noncontig_buff = MPIU_Malloc(recv_size);
+        rbuf = rcv_noncontig_buff;
+        if(rcv_noncontig_buff == NULL)
+        {
+           MPID_Abort(NULL, MPI_ERR_NO_SPACE, 1,
+              "Fatal:  Cannot allocate pack buffer");
+        }
+      }
+    }
+    else
+      success = 0;
+  }
+  
+  if(!success)
+  {
+    MPIDI_Update_last_algorithm(comm_ptr, "SCATTER_MPICH");
+    return MPIR_Scatter(sendbuf, sendcount, sendtype,
+                        recvbuf, recvcount, recvtype,
+                        root, comm_ptr, mpierrno);
+  }
+
+   pami_xfer_t scatter;
+   MPIDI_Post_coll_t scatter_post;
+   const pami_metadata_t *my_scatter_md;
+   volatile unsigned scatter_active = 1;
+
+ 
+   scatter.algorithm = mpid->coll_algorithm[PAMI_XFER_SCATTER][0][0];
+   my_scatter_md = &mpid->coll_metadata[PAMI_XFER_SCATTER][0][0];
+
+   scatter.cb_done = cb_scatter;
+   scatter.cookie = (void *)&scatter_active;
+   scatter.cmd.xfer_scatter.root = MPIDI_Task_to_endpoint(MPID_VCR_GET_LPID(comm_ptr->vcr, root), 0);
+   scatter.cmd.xfer_scatter.sndbuf = (void *)sbuf;
+   scatter.cmd.xfer_scatter.stype = PAMI_TYPE_BYTE;
+   scatter.cmd.xfer_scatter.stypecount = send_size;
+   scatter.cmd.xfer_scatter.rcvbuf = (void *)rbuf;
+   scatter.cmd.xfer_scatter.rtype = PAMI_TYPE_BYTE;/* rtype is ignored when rcvbuf == PAMI_IN_PLACE */
+   scatter.cmd.xfer_scatter.rtypecount = recv_size;
+
+   if(recvbuf == MPI_IN_PLACE) 
+   {
+     scatter.cmd.xfer_scatter.rcvbuf = PAMI_IN_PLACE;
+   }
+
+
+   TRACE_ERR("%s scatter\n", MPIDI_Process.context_post.active>0?"Posting":"Invoking");
+   MPIDI_Context_post(MPIDI_Context[0], &scatter_post.state,
+                      MPIDI_Pami_post_wrapper, (void *)&scatter);
+   TRACE_ERR("Waiting on active %d\n", scatter_active);
+   MPID_PROGRESS_WAIT_WHILE(scatter_active);
+
+   if(!rcv_contig && rcv_noncontig_buff)
+   {
+      MPIR_Localcopy(rcv_noncontig_buff, recv_size, MPI_CHAR,
+                        recvbuf,         recvcount,     recvtype);
+      MPIU_Free(rcv_noncontig_buff);
+   }
+   if(!snd_contig)  MPIU_Free(snd_noncontig_buff);
+
+
+   TRACE_ERR("Leaving MPIDO_Scatter_optimized\n");
+
+   return MPI_SUCCESS;
+}
+
+
+int
+MPIDO_CSWrapper_scatter(pami_xfer_t *scatter,
+                        void        *comm)
+{
+   int mpierrno = 0;
+   MPID_Comm   *comm_ptr = (MPID_Comm*)comm;
+   MPI_Datatype sendtype, recvtype;
+   void *rbuf;
+   MPIDI_coll_check_in_place(scatter->cmd.xfer_scatter.rcvbuf, &rbuf);
+   int rc = MPIDI_Dtpami_to_dtmpi(  scatter->cmd.xfer_scatter.stype,
+                                   &sendtype,
+                                    NULL,
+                                    NULL);
+   if(rc == -1) return rc;
+
+   rc = MPIDI_Dtpami_to_dtmpi(  scatter->cmd.xfer_scatter.rtype,
+                               &recvtype,
+                                NULL,
+                                NULL);
+   if(rc == -1) return rc;
+
+   rc  =  MPIR_Scatter(scatter->cmd.xfer_scatter.sndbuf,
+                       scatter->cmd.xfer_scatter.stypecount, sendtype,
+                       rbuf,
+                       scatter->cmd.xfer_scatter.rtypecount, recvtype,
+                       scatter->cmd.xfer_scatter.root, comm_ptr, &mpierrno);
+   if(scatter->cb_done && rc == 0)
+     scatter->cb_done(NULL, scatter->cookie, PAMI_SUCCESS);
+   return rc;
+
+}
 
 #if 0 /* old glue-based scatter-via-bcast */
 
@@ -273,7 +551,7 @@ int MPIDO_Scatter(const void *sendbuf,
 
   if (!success)
   {
-    if(unlikely(MPIDI_Process.verbose >= MPIDI_VERBOSE_DETAILS_ALL && comm_ptr->rank == 0))
+    if(unlikely(verbose))
       fprintf(stderr,"Using MPICH scatter algorithm\n");
     return MPIR_Scatter(sendbuf, sendcount, sendtype,
                         recvbuf, recvcount, recvtype,

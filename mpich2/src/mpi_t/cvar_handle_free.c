@@ -21,26 +21,6 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #undef MPI_T_cvar_handle_free
 #define MPI_T_cvar_handle_free PMPI_T_cvar_handle_free
-
-/* any non-MPI functions go here, especially non-static ones */
-
-#undef FUNCNAME
-#define FUNCNAME MPIR_T_cvar_handle_free_impl
-#undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_T_cvar_handle_free_impl(MPI_T_cvar_handle *handle)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    MPIU_Free(*handle);
-    *handle = MPI_T_CVAR_HANDLE_NULL;
-
-fn_exit:
-    return mpi_errno;
-fn_fail:
-    goto fn_exit;
-}
-
 #endif /* MPICH_MPI_FROM_PMPI */
 
 #undef FUNCNAME
@@ -48,47 +28,33 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_T_cvar_handle_free - XXX description here
+MPI_T_cvar_handle_free - Free an existing handle for a control variable
 
 Input/Output Parameters:
 . handle - handle to be freed (handle)
 
 .N ThreadSafe
 
-.N Fortran
-
 .N Errors
+.N MPI_SUCCESS
+.N MPI_T_ERR_NOT_INITIALIZED
+.N MPI_T_ERR_INVALID_HANDLE
 @*/
 int MPI_T_cvar_handle_free(MPI_T_cvar_handle *handle)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_CVAR_HANDLE_FREE);
 
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_CVAR_HANDLE_FREE);
+    MPIR_ERRTEST_MPIT_INITIALIZED(mpi_errno);
+    MPIR_T_THREAD_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_T_CVAR_HANDLE_FREE);
 
-    /* Validate parameters, especially handles needing to be converted */
+    /* Validate parameters */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS
         {
-
-            /* TODO more checks may be appropriate */
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
-    /* Convert MPI object handles to object pointers */
-
-    /* Validate parameters and objects (post conversion) */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS
-        {
-            /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+            MPIR_ERRTEST_ARGNULL(handle, "handle", mpi_errno);
         }
         MPID_END_ERROR_CHECKS
     }
@@ -96,14 +62,15 @@ int MPI_T_cvar_handle_free(MPI_T_cvar_handle *handle)
 
     /* ... body of routine ...  */
 
-    mpi_errno = MPIR_T_cvar_handle_free_impl(handle);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    MPIR_T_cvar_handle_t *hnd = *handle;
+    MPIU_Free(hnd);
+    *handle = MPI_T_CVAR_HANDLE_NULL;
 
     /* ... end of body of routine ... */
 
 fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_T_CVAR_HANDLE_FREE);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPIR_T_THREAD_CS_EXIT();
     return mpi_errno;
 
 fn_fail:

@@ -310,7 +310,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
     }
     
 #ifdef ENABLE_CHECKPOINTING
-    if (MPIR_PARAM_ENABLE_CKPOINT) {
+    if (MPIR_CVAR_NEMESIS_ENABLE_CKPOINT) {
         if (MPIDI_nem_ckpt_start_checkpoint) {
             MPIDI_nem_ckpt_start_checkpoint = FALSE;
             mpi_errno = MPIDI_nem_ckpt_start();
@@ -350,11 +350,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
             /* check queue */
             if (MPID_nem_safe_to_block_recv() && is_blocking
 #ifdef MPICH_IS_THREADED
-#ifdef HAVE_RUNTIME_THREADCHECK
                 && !MPIR_ThreadInfo.isThreaded
-#else
-                && 0
-#endif
 #endif
                 )
             {
@@ -368,7 +364,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
 
             if (cell)
             {
-                char            *cell_buf    = (char *)cell->pkt.mpich.payload;
+                char            *cell_buf    = (char *)cell->pkt.mpich.p.payload;
                 MPIDI_msg_sz_t   payload_len = cell->pkt.mpich.datalen;
                 MPIDI_CH3_Pkt_t *pkt         = (MPIDI_CH3_Pkt_t *)cell_buf;
 
@@ -723,8 +719,8 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
 		
             while (n_iov && buflen >= iov->MPID_IOV_LEN)
             {
-                int iov_len = iov->MPID_IOV_LEN;
-		MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "        %d", iov_len);
+                size_t iov_len = iov->MPID_IOV_LEN;
+		MPIU_DBG_MSG_D(CH3_CHANNEL, VERBOSE, "        %d", (int)iov_len);
                 MPIU_Memcpy (iov->MPID_IOV_BUF, buf, iov_len);
 
                 buflen -= iov_len;
@@ -798,7 +794,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
 {                                                               \
     (rreq_)->status.MPI_SOURCE = (pkt_)->match.rank;            \
     (rreq_)->status.MPI_TAG = (pkt_)->match.tag;                \
-    (rreq_)->status.count = (pkt_)->data_sz;                    \
+    MPIR_STATUS_SET_COUNT((rreq_)->status, (pkt_)->data_sz);		\
     (rreq_)->dev.sender_req_id = (pkt_)->sender_req_id;         \
     (rreq_)->dev.recv_data_sz = (pkt_)->data_sz;                \
     MPIDI_Request_set_seqnum((rreq_), (pkt_)->seqnum);          \

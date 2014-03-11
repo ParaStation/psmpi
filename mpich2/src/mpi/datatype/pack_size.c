@@ -27,9 +27,9 @@
 #define FUNCNAME MPIR_Pack_size_impl
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-void MPIR_Pack_size_impl(int incount, MPI_Datatype datatype, int *size)
+void MPIR_Pack_size_impl(int incount, MPI_Datatype datatype, MPI_Aint *size)
 {
-    int typesize;
+    MPI_Aint typesize;
     MPID_Datatype_get_size_macro(datatype, typesize);
     *size = incount * typesize;
 }
@@ -74,8 +74,11 @@ int MPI_Pack_size(int incount,
 		  MPI_Comm comm,
 		  int *size)
 {
+#ifdef HAVE_ERROR_CHECKING
     MPID_Comm *comm_ptr = NULL;
+#endif
     int mpi_errno = MPI_SUCCESS;
+    MPI_Aint size_x = MPI_UNDEFINED;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PACK_SIZE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -93,11 +96,11 @@ int MPI_Pack_size(int incount,
     }
 #   endif /* HAVE_ERROR_CHECKING */
     
-    /* Convert MPI object handles to object pointers */
-    MPID_Comm_get_ptr( comm, comm_ptr );
-    
 #   ifdef HAVE_ERROR_CHECKING
     {
+        /* Convert MPI object handles to object pointers */
+        MPID_Comm_get_ptr( comm, comm_ptr );
+
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPID_Datatype *datatype_ptr = NULL;
@@ -124,8 +127,9 @@ int MPI_Pack_size(int incount,
 
     /* ... body of routine ... */
 
-    MPIR_Pack_size_impl(incount, datatype, size);
-    
+    MPIR_Pack_size_impl(incount, datatype, &size_x);
+    MPIU_Assign_trunc(*size, size_x, int);
+
     /* ... end of body of routine ... */
 
 #ifdef HAVE_ERROR_CHECKING

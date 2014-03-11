@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external_( char * FORT_MIXED_LEN_DE
 #else
 #pragma _CRI duplicate mpi_pack_external_ as pmpi_pack_external_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_PACK_EXTERNAL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external__( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_PACK_EXTERNAL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external_( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_PACK_EXTERNAL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_PACK_EXTERNAL")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external__( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external_( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external__( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external_( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external__( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external_( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external__( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external_( char * FORT_MIXED_LEN_DE
 #pragma weak mpi_pack_external__ = mpi_pack_external
 #pragma weak mpi_pack_external_ = mpi_pack_external
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external__( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("MPI_PACK_EXTERNAL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external_( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("MPI_PACK_EXTERNAL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("MPI_PACK_EXTERNAL")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_pack_external__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external__( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external_( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_pack_external__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_pack_external__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_pack_external_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external__( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_pack_external_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external_( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_pack_external_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_pack_external")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external__( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_pack_external")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external_( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_pack_external")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_pack_external( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_pack_external( char * FORT_MIXED_LEN_DE
 #pragma weak pmpi_pack_external__ = pmpi_pack_external
 #pragma weak pmpi_pack_external_ = pmpi_pack_external
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_pack_external__( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_PACK_EXTERNAL")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_pack_external_( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_PACK_EXTERNAL")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_pack_external( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_PACK_EXTERNAL")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_pack_external_( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_pack_external( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_pack_external__( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_pack_external( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_PACK_EXTERNAL( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_pack_external__( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_pack_external_( char * FORT_MIXED_LEN_DECL, void*, MPI_Fint *, MPI_Fint *, void*, MPI_Aint *, MPI_Aint *, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_pack_external")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_pack_external_ PMPI_PACK_EXTERNAL

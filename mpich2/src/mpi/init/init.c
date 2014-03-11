@@ -7,6 +7,47 @@
 #include "mpiimpl.h"
 #include "mpi_init.h"
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+categories:
+    - name        : THREADS
+      description : multi-threading cvars
+
+cvars:
+    - name        : MPIR_CVAR_ASYNC_PROGRESS
+      category    : THREADS
+      type        : boolean
+      default     : false
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If set to true, MPICH will initiate an additional thread to
+        make asynchronous progress on all communication operations
+        including point-to-point, collective, one-sided operations and
+        I/O.  Setting this variable will automatically increase the
+        thread-safety level to MPI_THREAD_MULTIPLE.  While this
+        improves the progress semantics, it might cause a small amount
+        of performance overhead for regular MPI operations.  The user
+        is encouraged to leave one or more hardware threads vacant in
+        order to prevent contention between the application threads
+        and the progress thread(s).  The impact of oversubscription is
+        highly system dependent but may be substantial in some cases,
+        hence this recommendation.
+
+    - name        : MPIR_CVAR_DEFAULT_THREAD_LEVEL
+      category    : THREADS
+      type        : string
+      default     : "MPI_THREAD_SINGLE"
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        Sets the default thread level to use when using MPI_INIT.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
 
 /* -- Begin Profiling Symbol Block for routine MPI_Init */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -54,6 +95,10 @@ Notes:
    external state of the program, such as opening files, reading standard
    input or writing to standard output.
 
+Notes for C:
+    As of MPI-2, 'MPI_Init' will accept NULL as input parameters. Doing so
+    will impact the values stored in 'MPI_INFO_ENV'.
+
 Notes for Fortran:
 The Fortran binding for 'MPI_Init' has only the error return
 .vb
@@ -71,7 +116,7 @@ int MPI_Init( int *argc, char ***argv )
 {
     static const char FCNAME[] = "MPI_Init";
     int mpi_errno = MPI_SUCCESS;
-    int rc;
+    int rc ATTRIBUTE((unused));
     int threadLevel, provided;
     MPID_MPI_INIT_STATE_DECL(MPID_STATE_MPI_INIT);
 
@@ -97,50 +142,47 @@ int MPI_Init( int *argc, char ***argv )
 
     /* ... body of routine ... */
 
-#if (MPICH_THREAD_LEVEL == MPI_THREAD_MULTIPLE)
-    /* If we support all thread levels, allow the use of an environment 
-       variable to set the default thread level */
-    {
-	const char *str = 0;
-	threadLevel = MPI_THREAD_SINGLE;
-	if (MPL_env2str( "MPICH_THREADLEVEL_DEFAULT", &str )) {
-	    if (strcmp(str,"MULTIPLE") == 0 || strcmp(str,"multiple") == 0) {
-		threadLevel = MPI_THREAD_MULTIPLE;
-	    }
-	    else if (strcmp(str,"SERIALIZED") == 0 || strcmp(str,"serialized") == 0) {
-		threadLevel = MPI_THREAD_SERIALIZED;
-	    }
-	    else if (strcmp(str,"FUNNELED") == 0 || strcmp(str,"funneled") == 0) {
-		threadLevel = MPI_THREAD_FUNNELED;
-	    }
-	    else if (strcmp(str,"SINGLE") == 0 || strcmp(str,"single") == 0) {
-		threadLevel = MPI_THREAD_SINGLE;
-	    }
-	    else {
-		MPIU_Error_printf( "Unrecognized thread level %s\n", str );
-		exit(1);
-	    }
-	}
+    /* Temporarily disable thread-safety.  This is needed because the
+     * mutexes are not initialized yet, and we don't want to
+     * accidentally use them before they are initialized.  We will
+     * reset this value once it is properly initialized. */
+#if defined MPICH_IS_THREADED
+    MPIR_ThreadInfo.isThreaded = 0;
+#endif /* MPICH_IS_THREADED */
+
+    MPIR_T_env_init();
+
+    if (!strcmp(MPIR_CVAR_DEFAULT_THREAD_LEVEL, "MPI_THREAD_MULTIPLE"))
+        threadLevel = MPI_THREAD_MULTIPLE;
+    else if (!strcmp(MPIR_CVAR_DEFAULT_THREAD_LEVEL, "MPI_THREAD_SERIALIZED"))
+        threadLevel = MPI_THREAD_SERIALIZED;
+    else if (!strcmp(MPIR_CVAR_DEFAULT_THREAD_LEVEL, "MPI_THREAD_FUNNELED"))
+        threadLevel = MPI_THREAD_FUNNELED;
+    else if (!strcmp(MPIR_CVAR_DEFAULT_THREAD_LEVEL, "MPI_THREAD_SINGLE"))
+        threadLevel = MPI_THREAD_SINGLE;
+    else {
+        MPIU_Error_printf("Unrecognized thread level %s\n", MPIR_CVAR_DEFAULT_THREAD_LEVEL);
+        exit(1);
     }
-#else 
-    threadLevel = MPI_THREAD_SINGLE;
-#endif
 
     /* If the user requested for asynchronous progress, request for
      * THREAD_MULTIPLE. */
-    rc = 0;
-    MPL_env2bool("MPICH_ASYNC_PROGRESS", &rc);
-    if (rc)
+    if (MPIR_CVAR_ASYNC_PROGRESS)
         threadLevel = MPI_THREAD_MULTIPLE;
 
     mpi_errno = MPIR_Init_thread( argc, argv, threadLevel, &provided );
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    if (rc && provided == MPI_THREAD_MULTIPLE) {
-        mpi_errno = MPIR_Init_async_thread();
-        if (mpi_errno) goto fn_fail;
+    if (MPIR_CVAR_ASYNC_PROGRESS) {
+        if (provided == MPI_THREAD_MULTIPLE) {
+            mpi_errno = MPIR_Init_async_thread();
+            if (mpi_errno) goto fn_fail;
 
-        MPIR_async_thread_initialized = 1;
+            MPIR_async_thread_initialized = 1;
+        }
+        else {
+            printf("WARNING: No MPI_THREAD_MULTIPLE support (needed for async progress)\n");
+        }
     }
 
     /* ... end of body of routine ... */

@@ -37,10 +37,6 @@ libdir=@libdir@
 # Determined by a combination of environment variables and tests within
 # configure (e.g., determining whehter -lsocket is needee)
 CC="@CC@"
-CFLAGS="@WRAPPER_CFLAGS@"
-CPPFLAGS="@WRAPPER_CPPFLAGS@"
-LDFLAGS="@WRAPPER_LDFLAGS@"
-LIBS="@WRAPPER_LIBS@"
 MPICH_VERSION="@MPICH_VERSION@"
 
 enable_wrapper_rpath="@enable_wrapper_rpath@"
@@ -198,13 +194,13 @@ fi
 # Derived variables.  These are assembled from variables set from the
 # default, environment, configuration file (if any) and command-line
 # options (if any)
-mpilibs="@LPMPILIBNAME@ -l@MPILIBNAME@"
 
+PROFILE_FOO=
 # Handle the case of a profile switch
 if [ -n "$profConf" ] ; then
     profConffile=
     if [ -s "$libdir/lib$profConf.a" -o -s "$libdir/lib$profConf.so" ] ; then
-	mpilibs="-l$profConf $mpilibs"
+	PROFILE_FOO="-l$profConf"
     elif [ -s "$sysconfdir/$profConf.conf" ] ; then
 	profConffile="$sysconfdir/$profConf.conf"
     elif [ -s "$profConf.conf" ] ; then
@@ -214,15 +210,6 @@ if [ -n "$profConf" ] ; then
     fi
     if [ -n "$profConffile" -a -s "$profConffile" ] ; then
 	. $profConffile
-	if [ -n "$PROFILE_INCPATHS" ] ; then
-	    CFLAGS="$PROFILE_INCPATHS $CFLAGS"
-        fi
-        if [ -n "$PROFILE_PRELIB" ] ; then
-	    mpilibs="$PROFILE_PRELIB $mpilibs"
-        fi
-        if [ -n "$PROFILE_POSTLIB" ] ; then
-	    mpilibs="$mpilibs $PROFILE_POSTLIB"
-        fi
     fi
 fi
 
@@ -245,27 +232,20 @@ if [ "$linking" = yes ] ; then
     # TODO configure and config.rpath are computing more sophisticated rpath
     # schemes than this simple one.  Consider updating this logic accordingly.
     if test "X$enable_wrapper_rpath" = "Xyes" ; then
-        eval mpilibs=\"${hardcode_libdir_flag_spec} \$mpilibs\"
+        eval rpath_flags=\"${hardcode_libdir_flag_spec}\"
+    else
+	rpath_flags=""
     fi
 
-    path_list=""
-    for path in "-L$libdir" ; do
-	found_path=0
-	for p in $path_list ; do
-	    if [ "$path" = "$p" ] ; then found_path=1 ; break ; fi
-	done
-	if [ "$found_path" = "0" ] ; then path_list="$path_list $path" ; fi
-    done
-
     if [ "$nativelinking" = yes ] ; then
-        $Show $CC $CPPFLAGS $CFLAGS $LDFLAGS $allargs -I$includedir
+        $Show $CC @WRAPPER_CPPFLAGS@ $PROFILE_INCPATHS @WRAPPER_CFLAGS@ @WRAPPER_LDFLAGS@ $allargs -I$includedir
         rc=$?
     else
-        $Show $CC $CPPFLAGS $CFLAGS $LDFLAGS $allargs -I$includedir ${path_list} $mpilibs $LIBS
+        $Show $CC @WRAPPER_CPPFLAGS@ $PROFILE_INCPATHS @WRAPPER_CFLAGS@ @WRAPPER_LDFLAGS@ $allargs -I$includedir -L$libdir $PROFILE_PRELIB $PROFILE_FOO $rpath_flags @LPMPILIBNAME@ -l@MPILIBNAME@ $PROFILE_POSTLIB @WRAPPER_LIBS@
         rc=$?
     fi
 else
-    $Show $CC $CPPFLAGS $CFLAGS $allargs -I$includedir
+    $Show $CC @WRAPPER_CPPFLAGS@ $PROFILE_INCPATHS @WRAPPER_CFLAGS@ $allargs -I$includedir
     rc=$?
 fi
 

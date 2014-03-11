@@ -47,24 +47,9 @@ Mathematics and Computer Science Division\\
 Argonne National Laboratory}
 
 \author{
-Pavan Balaji\\
-Wesley Bland\\
-James Dinan\\
-David Goodell\\
-William Gropp\\
-Rob Latham\\
-Antonio Pe$\tilde{n}$a\\
-Rajeev Thakur\\[2.0ex]
-\textbf{Past Contributors:}\\
-David Ashton\\
-Darius Buntinas\\
-Ralph Butler\\
-Anthony Chan\\
-Jayesh Krishna\\
-Ewing Lusk\\
-Guillaume Mercier\\
-Rob Ross\\
-Brian Toonen
+Pavan Balaji \and Wesley Bland \and William Gropp \and Rob Latham \and
+Huiwei Lu \and Antonio J. Pe\~na \and Ken Raffenetti \and Rajeev
+Thakur \and Junchao Zhang
 }
 
 \maketitle
@@ -297,120 +282,6 @@ extensions to mpiexec can be found at
 \url{http://wiki.mpich.org/mpich/index.php/Using\_the\_Hydra\_Process\_Manager}
 
 
-\subsection{Extensions for SMPD Process Management Environment}
-\label{sec:extensions-smpd}
-
-SMPD is an alternate process manager that runs on both Unix and Windows.
-It can launch jobs across both platforms if the binary formats match 
-(big/little endianness and size of C types-- \texttt{int},
-\texttt{long}, \texttt{void*}, etc).
-
-
-\subsubsection{\texttt{mpiexec} arguments for SMPD}
-\label{sec:mpiexec-smpd}
-
-\texttt{mpiexec} for smpd accepts the standard MPI \texttt{mpiexec}
-options.  Execute
-\begin{verbatim}
-    mpiexec
-\end{verbatim}
-or
-\begin{verbatim}
-    mpiexec -help2
-\end{verbatim}
-to print the usage options.  Typical usage:
-\begin{verbatim}
-    mpiexec -n 10 myapp.exe
-\end{verbatim}
-All options to \texttt{mpiexec}:
-\begin{description}
-\item[\texttt{-n x}]
-\item[\texttt{-np x}]\mbox{}\\
-  launch \texttt{x} processes
-\item[\texttt{-localonly x}]
-\item[\texttt{-np x -localonly}]\mbox{}\\
-  launch \texttt{x} processes on the local machine
-\item[\texttt{-machinefile filename}]\mbox{}\\
-  use a file to list the names of machines to launch on
-\item[\texttt{-host hostname}]\mbox{}\\
-  launch on the specified host.
-\item[\texttt{-hosts n host1 host2 ... hostn}]
-\item[\texttt{-hosts n host1 m1 host2 m2 ... hostn mn}]\mbox{}\\
-  launch on the specified hosts.
-  In the second version the number of processes = m1 + m2 + ... + mn
-\item[\texttt{-dir drive:$\backslash$my$\backslash$working$\backslash$directory}]
-\item[\texttt{-wdir /my/working/directory}]\mbox{}\\
-  launch processes with the specified working directory. (\texttt{-dir}
-  and \texttt{-wdir} are equivalent)
-\item[\texttt{-env var val}]\mbox{}\\
-  set environment variable before launching the processes
-%\item[\texttt{-nocolor}]\mbox{}\\
-%  don't use process specific output coloring
-%\item[\texttt{-nompi}]\mbox{}\\
-%  launch processes without the mpi startup mechanism
-\item[\texttt{-exitcodes}]\mbox{}\\
-  print the process exit codes when each process exits.
-\item[\texttt{-noprompt}]\mbox{}\\
-  prevent \texttt{mpiexec} from prompting for user credentials.  Instead errors will
-be printed and \texttt{mpiexec} will exit.
-\item[\texttt{-localroot}]\mbox{}\\
-  launch the root process directly from mpiexec if the host is local.
-  (This allows the root process to create windows and be debugged.)
-\item[\texttt{-port port}]
-\item[\texttt{-p port}]\mbox{}\\
-  specify the port that \texttt{smpd} is listening on.
-\item[\texttt{-phrase passphrase}]\mbox{}\\
-  specify the passphrase to authenticate connections to \texttt{smpd} with.
-\item[\texttt{-smpdfile filename}]\mbox{}\\
-  specify the file where the \texttt{smpd} options are stored including the 
-passphrase. (unix only option)
-%\item[\texttt{-soft Fortran90\_triple}]\mbox{}\\
-%  acceptable number of processes to launch up to maxprocs
-\item[\texttt{-path search\_path}]\mbox{}\\
-  search path for executable, ; separated
-% This will probably not be implemented.
-%\item[\texttt{-arch architecture}]\mbox{}\\
-%  sun, linux, rs6000, ...
-\item[\texttt{-timeout seconds}]\mbox{}\\
-  timeout for the job. 
-\end{description}
-Windows specific options:
-\begin{description}
-\item[\texttt{-map drive:$\backslash\backslash$host$\backslash$share}]\mbox{}\\
-  map a drive on all the nodes
-  this mapping will be removed when the processes exit
-\item[\texttt{-logon}]\mbox{}\\
-  prompt for user account and password
-\item[\texttt{-pwdfile filename}]\mbox{}\\
-  read the account and password from the file specified.
-
-  put the account on the first line and the password on the second
-%\item[\texttt{-nomapping}]\mbox{}\\
-%  don't try to map the current directory on the remote nodes
-\item[\texttt{-nopopup\_debug}]\mbox{}\\
-  disable the system popup dialog if the process crashes
-%\item[\texttt{-dbg}]\mbox{}\\
-%  catch unhandled exceptions
-\item[\texttt{-priority class[:level]}]\mbox{}\\
-  set the process startup priority class and optionally level.\mbox{}\\
-  class = 0,1,2,3,4   = idle, below, normal, above, high\mbox{}\\
-  level = 0,1,2,3,4,5 = idle, lowest, below, normal, above, highest\mbox{}\\
-  the default is -priority 2:3
-\item[\texttt{-register}]\mbox{}\\
-  encrypt a user name and password to the Windows registry.
-\item[\texttt{-remove}]\mbox{}\\
-  delete the encrypted credentials from the Windows registry.
-\item[\texttt{-validate [-host hostname]}]\mbox{}\\
-  validate the encrypted credentials for the current or specified host.
-\item[\texttt{-delegate}]\mbox{}\\
-  use passwordless delegation to launch processes.
-\item[\texttt{-impersonate}]\mbox{}\\
-  use passwordless authentication to launch processes.
-\item[\texttt{-plaintext}]\mbox{}\\
-  don't encrypt the data on the wire.
-\end{description}
-
-
 \subsection{Extensions for the gforker Process Management Environment}
 \label{sec:extensions-forker}
 \texttt{gforker} is a process management system for starting
@@ -543,6 +414,35 @@ utility called OSC mpiexec to launch MPICH jobs on PBS systems. More
 information about this can be found here:
 \url{http://www.osc.edu/~pw/mpiexec}
 
+
+\section{Specification of Implementation Details}
+\label{sec:specification}
+
+The MPI Standard defines a number of areas where a library is free to
+define its own specific behavior as long as such behavior is documented
+appropriately. This section provides that documentation for MPICH where
+necessary.
+
+\subsection{MPI Error Handlers for Communicators}
+\label{sec:errhandler}
+
+In Section 8.3.1 (Error Handlers for Communicators) of the MPI-3.0
+Standard~\cite{mpi-forum:mpi3},
+MPI defines an error handler callback function as
+
+\begin{verbatim}
+typedef void MPI_Comm_errhandler_function(MPI_Comm *, int *, ...);
+\end{verbatim}
+
+Where the first argument is the communicator in use, the second argument is
+the error code to be returned by the MPI routine that raised the error, and
+the remaining arguments to be implementation specific ``{\texttt varargs}''.
+MPICH does not provide any arguments as part of this list. So a callback
+function being provided to MPICH is sufficient if the header is
+
+\begin{verbatim}
+typedef void MPI_Comm_errhandler_function(MPI_Comm *, int *);
+\end{verbatim}
 
 \section{Debugging}
 \label{sec:debugging}
@@ -683,54 +583,6 @@ MPICH also includes a test suite for MPI functionality; this suite may
 be found in the \texttt{mpich/test/mpi} source directory and can be
 run with the command \texttt{make testing}.  This test suite should
 work with any MPI implementation, not just MPICH.
-
-\section{MPICH under Windows}
-\label{sec:windows}
-
-\subsection{Directories}
-\label{sec:windir}
-
-The default installation of MPICH is in
-\texttt{C:$\backslash$Program Files$\backslash$MPICH}. Under the installation
-directory are three sub-directories: \texttt{include}, \texttt{bin}, and
-\texttt{lib}.  The \texttt{include} and \texttt{lib} directories contain
-the header files and libraries necessary to compile MPI applications.  
-The \texttt{bin} directory contains the process manager, \texttt{smpd.exe},
-and the MPI job launcher, \texttt{mpiexec.exe}.  The dlls that implement
-MPICH are copied to the Windows system32 directory.
-
-\subsection{Compiling}
-\label{sec:wincompile}
-
-The libraries in the \texttt{lib} directory were compiled with MS Visual C++ .NET 2003
-and Intel Fortran 8.1.  These 
-compilers and any others that can link with the MS \texttt{.lib} files can be used to
-create user applications.  \texttt{gcc} and \texttt{g77} for \texttt{cygwin} can be used with the 
-\texttt{libmpich*.a} libraries.
-
-For MS Developer Studio users: Create a project and add
-\begin{verbatim}
-    C:\Program Files\MPICH\include
-\end{verbatim}
-to the include path and
-\begin{verbatim}
-    C:\Program Files\MPICH\lib
-\end{verbatim}
-to
-the library path.  Add \texttt{mpi.lib} and \texttt{cxx.lib} to the
-link command.  Add \texttt{cxxd.lib} to the Debug target link instead of
-\texttt{cxx.lib}.
-
-Intel Fortran 8 users should add \texttt{fmpich.lib} to the link command. 
-
-Cygwin users should use \texttt{libmpich.a} \texttt{libfmpichg.a}.
-
-\subsection{Running}
-\label{sec:winrun}
-
-MPI jobs are run from a command prompt using \texttt{mpiexec.exe}.  See
-Section~\ref{sec:extensions-smpd} on \texttt{mpiexec} for \texttt{smpd}
-for a description of the options to \texttt{mpiexec}.
 
 \clearpage
 \appendix

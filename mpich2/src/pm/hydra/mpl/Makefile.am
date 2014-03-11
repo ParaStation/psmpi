@@ -7,15 +7,15 @@
 ACLOCAL_AMFLAGS = -I confdb
 AM_CPPFLAGS = -I$(top_srcdir)/include -I$(top_builddir)/include
 
-lib_LTLIBRARIES = libmpl.la
-libmpl_la_SOURCES = src/mplstr.c src/mpltrmem.c src/mplenv.c
-libmpl_la_LDFLAGS = ${libmpl_so_versionflags}
+lib_LTLIBRARIES = lib@MPLLIBNAME@.la
+lib@MPLLIBNAME@_la_SOURCES = src/mplstr.c src/mpltrmem.c src/mplenv.c src/mplsock.c
+lib@MPLLIBNAME@_la_LDFLAGS = ${lib@MPLLIBNAME@_so_versionflags}
 
 MPL_TESTS = strsep
 TESTS = $(MPL_TESTS)
 check_PROGRAMS = $(MPL_TESTS)
 strsep_SOURCES = test/strsep.c
-strsep_LDADD = libmpl.la
+strsep_LDADD = lib@MPLLIBNAME@.la
 
 mpl_headers =              \
     include/mpl.h          \
@@ -24,7 +24,8 @@ mpl_headers =              \
     include/mplconfig.h    \
     include/mplenv.h       \
     include/mplstr.h       \
-    include/mpltrmem.h
+    include/mpltrmem.h     \
+    include/mplsock.h
 
 if MPL_EMBEDDED_MODE
 noinst_HEADERS = $(mpl_headers)

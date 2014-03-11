@@ -84,10 +84,6 @@ generated_io_sources = \
 
 EXTRA_DIST += ioharness.defn ioharness.tlt
 
-# clean up after the test programs
-clean-local:
-	-rm -f .iotest.txt.*
-
 # a parallel-safe scheme to generate the tests, see the automake-1.11.1 manual,
 # section 27.9 "Handling Tools That Produce Multiple Outputs" for an explanation
 # 
@@ -125,8 +121,10 @@ $(generated_io_sources): gen-src-stamp
 
 # just in case
 CLEANFILES += gen-src-tmp gen-src-stamp
+
+# clean up after the test programs
 clean-local:
-	rm -f .iotest.txt.*
+	-rm -f .iotest.txt.*
 
 DISTCLEANFILES = $(generated_io_sources)
 

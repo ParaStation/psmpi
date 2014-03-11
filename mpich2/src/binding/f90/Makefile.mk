@@ -38,7 +38,7 @@ if BUILD_F90_LIB
 # in a VPATH build)
 AM_FCFLAGS += @FCINCFLAG@src/binding/f90
 
-lib_LTLIBRARIES += lib/lib@MPILIBNAME@f90.la
+lib_LTLIBRARIES += lib/lib@FCWRAPNAME@.la
 
 # C source that implements both the C and the Fortran bindings for the type
 # creation routines.  These go into libmpich.la and will be built a second time
@@ -67,32 +67,32 @@ nodist_noinst_HEADERS += \
     src/binding/f90/mpif90model.h
 
 # actual f90 code that also gets compiled into modules
-lib_lib@MPILIBNAME@f90_la_LDFLAGS = $(ABIVERSIONFLAGS)
+lib_lib@FCWRAPNAME@_la_LDFLAGS = $(ABIVERSIONFLAGS)
 
 # cause any .$(MOD) files to be output in the f90 bindings directory instead of
 # the current directory
 AM_FCFLAGS += $(FCMODOUTFLAG)src/binding/f90
 
 # we "manually" build the f90 sources and add them with LIBADD
-lib_lib@MPILIBNAME@f90_la_SOURCES =
-lib_lib@MPILIBNAME@f90_la_LIBADD = \
+lib_lib@FCWRAPNAME@_la_SOURCES =
+lib_lib@FCWRAPNAME@_la_LIBADD = \
     src/binding/f90/mpi.lo \
     src/binding/f90/mpi_constants.lo \
     src/binding/f90/mpi_sizeofs.lo \
     src/binding/f90/mpi_base.lo
 
 # now force libtool FC rules/variables to be generated and cause FC linking to
-# be selected for lib/lib@MPILIBNAME@f90.la
-EXTRA_lib_lib@MPILIBNAME@f90_la_SOURCES = \
+# be selected for lib/lib@FCWRAPNAME@.la
+EXTRA_lib_lib@FCWRAPNAME@_la_SOURCES = \
     src/binding/f90/mpi.f90 \
     src/binding/f90/mpi_constants.f90
 
-nodist_EXTRA_lib_lib@MPILIBNAME@f90_la_SOURCES = \
+nodist_EXTRA_lib_lib@FCWRAPNAME@_la_SOURCES = \
     src/binding/f90/mpi_sizeofs.f90 \
     src/binding/f90/mpi_base.f90
 
 # FIXME: We may want to edit the mpif.h to convert Fortran77-specific
-# items (such as an integer*8 used for file offsets) into the 
+# items (such as an integer*8 used for file offsets) into the
 # corresponding Fortran 90 KIND type, to accomodate compilers that
 # reject non-standard features such as integer*8 (such as the Intel
 # Fortran compiler with -std95).
@@ -251,19 +251,19 @@ mpi_f90_modules = \
     src/binding/f90/$(MPIBASEMOD).$(MOD)
 
 # the modules are effectively precompiled headers for Fortran programs
-include_HEADERS += $(mpi_f90_modules)
+modinc_HEADERS = $(mpi_f90_modules)
 
 # We need a free-format version of mpif.h with no external commands,
-# including no wtime/wtick (removing MPI_WTICK also removes MPI_WTIME, 
+# including no wtime/wtick (removing MPI_WTICK also removes MPI_WTIME,
 # but leave MPI_WTIME_IS_GLOBAL).
-# Also allow REAL*8 or DOUBLE PRECISION for the MPI_WTIME/MPI_WTICK 
+# Also allow REAL*8 or DOUBLE PRECISION for the MPI_WTIME/MPI_WTICK
 # declarations
 src/binding/f90/mpifnoext.h: src/binding/f77/mpif.h
 	rm -f $@
 	sed -e 's/^C/\!/g' -e '/EXTERNAL/d' \
-		-e '/REAL\*8/d' \
-		-e '/DOUBLE PRECISION/d' \
-		-e '/MPI_WTICK/d' src/binding/f77/mpif.h > $@
+	-e '/REAL\*8/d' \
+	-e '/DOUBLE PRECISION/d' \
+	-e '/MPI_WTICK/d' src/binding/f77/mpif.h > $@
 
 CLEANFILES += src/binding/f90/mpifnoext.h
 

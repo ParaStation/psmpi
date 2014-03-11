@@ -51,11 +51,11 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
     ADIOI_Flatlist_node *flat_buf, *flat_file;
     ADIO_Offset i_offset, new_brd_size, brd_size, size;
     int i, j, k, st_index=0;
-    unsigned num, bufsize; 
+    MPI_Count num, bufsize;
     int n_etypes_in_filetype;
     ADIO_Offset n_filetypes, etype_in_filetype, st_n_filetypes, size_in_filetype;
     ADIO_Offset abs_off_in_filetype=0, new_frd_size, frd_size=0, st_frd_size;
-    int filetype_size, etype_size, buftype_size, partial_read;
+    MPI_Count filetype_size, etype_size, buftype_size, partial_read;
     MPI_Aint filetype_extent, buftype_extent; 
     int buf_count, buftype_is_contig, filetype_is_contig;
     ADIO_Offset userbuf_off, req_len, sum;
@@ -85,7 +85,7 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
     ADIOI_Datatype_iscontig(datatype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);
 
-    MPI_Type_size(fd->filetype, &filetype_size);
+    MPI_Type_size_x(fd->filetype, &filetype_size);
     if ( ! filetype_size ) {
 #ifdef HAVE_STATUS_SET_BYTES
 	MPIR_Status_set_bytes(status, datatype, 0);
@@ -95,7 +95,7 @@ void ADIOI_GEN_ReadStrided(ADIO_File fd, void *buf, int count,
     }
 
     MPI_Type_extent(fd->filetype, &filetype_extent);
-    MPI_Type_size(datatype, &buftype_size);
+    MPI_Type_size_x(datatype, &buftype_size);
     MPI_Type_extent(datatype, &buftype_extent);
     etype_size = fd->etype_size;
 

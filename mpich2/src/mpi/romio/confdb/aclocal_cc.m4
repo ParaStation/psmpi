@@ -11,7 +11,7 @@ AC_DEFUN([PAC_PROG_CC],[
         dnl developers notice this case.
         AC_BEFORE([$0],[AC_PROG_CC])
 	PAC_PUSH_FLAG([CFLAGS])
-	AC_PROG_CC([icc pgcc xlc xlC pathcc cc gcc clang])
+	AC_PROG_CC([icc pgcc xlc xlC pathcc gcc clang cc])
 	PAC_POP_FLAG([CFLAGS])
 ])
 dnl
@@ -338,9 +338,7 @@ if test -n "$pragma_extra_message" ; then
 fi
 dnl
 ])
-if test "$pac_cv_prog_c_weak_symbols" = "no" ; then
-    ifelse([$2],,:,[$2])
-else
+if test "$pac_cv_prog_c_weak_symbols" != "no" ; then
     case "$pac_cv_prog_c_weak_symbols" in
         "pragma weak") AC_DEFINE(HAVE_PRAGMA_WEAK,1,[Supports weak pragma])
         ;;
@@ -349,7 +347,6 @@ else
         "pragma _CRI") AC_DEFINE(HAVE_PRAGMA_CRI_DUP,1,[Cray style weak pragma])
         ;;
     esac
-    ifelse([$1],,:,[$1])
 fi
 AC_CACHE_CHECK([whether __attribute__ ((weak)) allowed],
 pac_cv_attr_weak,[
@@ -364,8 +361,21 @@ pac_cv_attr_weak_import=yes,pac_cv_attr_weak_import=no)])
 # Check if the alias option for weak attributes is allowed
 AC_CACHE_CHECK([whether __attribute__((weak,alias(...))) allowed],
 pac_cv_attr_weak_alias,[
+PAC_PUSH_FLAG([CFLAGS])
+# force an error exit if the weak attribute isn't understood
+CFLAGS=-Werror
 AC_TRY_COMPILE([int foo(int) __attribute__((weak,alias("__foo")));],[int a;],
-pac_cv_attr_weak_alias=yes,pac_cv_attr_weak_alias=no)])
+pac_cv_attr_weak_alias=yes,pac_cv_attr_weak_alias=no)
+# Restore original CFLAGS
+PAC_POP_FLAG([CFLAGS])])
+if test "$pac_cv_attr_weak_alias" = "yes" ; then
+    AC_DEFINE(HAVE_WEAK_ATTRIBUTE,1,[Attribute style weak pragma])
+fi
+if test "$pac_cv_prog_c_weak_symbols" = "no" -a "$pac_cv_attr_weak_alias" = "no" ; then
+    ifelse([$2],,:,[$2])
+else
+    ifelse([$1],,:,[$1])
+fi
 ])
 
 #
@@ -492,13 +502,20 @@ if test "$enable_strict_done" != "yes" ; then
     #       should never be tolerated.  This also ensures that we get quick
     #       compilation failures rather than later link failures that usually
     #       come from a function name typo.
+    #   -Wcast-align -- Casting alignment warnings.  This is an
+    #       important check, but is temporarily disabled, since it is
+    #       throwing too many (correct) warnings currently, causing us
+    #       to miss other warnings.
+    #   -Wshorten-64-to-32 -- Bad type-casting warnings.  This is an
+    #       important check, but is temporarily disabled, since it is
+    #       throwing too many (correct) warnings currently, causing us
+    #       to miss other warnings.
     # the embedded newlines in this string are safe because we evaluate each
     # argument in the for-loop below and append them to the CFLAGS with a space
     # as the separator instead
     pac_common_strict_flags="
         -Wall
         -Wextra
-        -Wshorten-64-to-32
         -Wno-missing-field-initializers
         -Wstrict-prototypes
         -Wmissing-prototypes
@@ -512,7 +529,6 @@ if test "$enable_strict_done" != "yes" ; then
         -Wno-endif-labels
         -Wpointer-arith
         -Wbad-function-cast
-        -Wcast-align
         -Wwrite-strings
         -Wno-sign-compare
         -Wold-style-definition
@@ -528,8 +544,8 @@ if test "$enable_strict_done" != "yes" ; then
         -Werror-implicit-function-declaration
     "
 
-    enable_c89=yes
-    enable_c99=no
+    enable_c89=no
+    enable_c99=yes
     enable_posix=2001
     enable_opt=yes
     flags="`echo $1 | sed -e 's/:/ /g' -e 's/,/ /g'`"
@@ -538,9 +554,11 @@ if test "$enable_strict_done" != "yes" ; then
 	     c89)
 		enable_strict_done="yes"
 		enable_c89=yes
+                enable_c99=no
 		;;
 	     c99)
 		enable_strict_done="yes"
+                enable_c89=no
 		enable_c99=yes
 		;;
 	     posix1995)
@@ -569,7 +587,7 @@ if test "$enable_strict_done" != "yes" ; then
 		;;
 	     all|yes)
 		enable_strict_done="yes"
-		enable_c89=yes
+		enable_c99=yes
 		enable_posix=2001
 		enable_opt=yes
 	        ;;
@@ -1197,25 +1215,22 @@ dnl Sets 'NEEDS_<funcname>_DECL' if 'funcname' is not declared by the
 dnl headerfiles.
 dnl
 dnl Approach:
-dnl Try to compile a program with the function, but passed with an incorrect
-dnl calling sequence.  If the compilation fails, then the declaration
-dnl is provided within the header files.  If the compilation succeeds,
-dnl the declaration is required.
+dnl Attempt to assign library function to function pointer.  If the function
+dnl is not declared in a header, this will fail.  Use a non-static global so
+dnl the compiler does not warn about an unused variable.
 dnl
-dnl We use a 'double' as the first argument to try and catch varargs
-dnl routines that may use an int or pointer as the first argument.
+dnl Simply calling the function is not enough because C89 compilers allow
+dnl calls to implicitly-defined functions.  Re-declaring a library function
+dnl with an incompatible prototype is also not sufficient because some
+dnl compilers (notably clang-3.2) only produce a warning in this case.
 dnl
-dnl There is one difficulty - if the compiler has been instructed to
-dnl fail on implicitly defined functions, then this test will always
-dnl fail.
-dnl 
 dnl D*/
 AC_DEFUN([PAC_FUNC_NEEDS_DECL],[
 AC_CACHE_CHECK([whether $2 needs a declaration],
 pac_cv_func_decl_$2,[
 AC_TRY_COMPILE([$1
-int $2(double, int, double, const char *);],[int a=$2(1.0,27,1.0,"foo");],
-pac_cv_func_decl_$2=yes,pac_cv_func_decl_$2=no)])
+void (*fptr)(void) = (void(*)(void))$2;],[],
+pac_cv_func_decl_$2=no,pac_cv_func_decl_$2=yes)])
 if test "$pac_cv_func_decl_$2" = "yes" ; then
 changequote(<<,>>)dnl
 define(<<PAC_FUNC_NAME>>, translit(NEEDS_$2_DECL, [a-z *], [A-Z__]))dnl
@@ -1620,19 +1635,47 @@ AC_DEFUN([PAC_STRUCT_ALIGNMENT],[
 	   pac_cv_struct_alignment="eight"
 	fi
 ])
-dnl
+
 dnl PAC_C_MACRO_VA_ARGS
 dnl
 dnl will AC_DEFINE([HAVE_MACRO_VA_ARGS]) if the compiler supports C99 variable
 dnl length argument lists in macros (#define foo(...) bar(__VA_ARGS__))
 AC_DEFUN([PAC_C_MACRO_VA_ARGS],[
     AC_MSG_CHECKING([for variable argument list macro functionality])
-    AC_LINK_IFELSE([AC_LANG_PROGRAM([
+
+    # check if the program links correctly
+    rm -f pac_test.log
+    PAC_LINK_IFELSE_LOG([pac_test.log],[AC_LANG_PROGRAM([
         #include <stdio.h>
         #define conftest_va_arg_macro(...) printf(__VA_ARGS__)
     ],
     [conftest_va_arg_macro("a test %d", 3);])],
-    [AC_DEFINE([HAVE_MACRO_VA_ARGS],[1],[Define if C99-style variable argument list macro functionality])
-     AC_MSG_RESULT([yes])],
-    [AC_MSG_RESULT([no])])
+    prog_links=yes,prog_links=no)
+
+    # If the program linked OK, make sure there were no warnings
+    if test "$prog_links" = "yes" -a "`cat pac_test.log`" = "" ; then
+       AC_DEFINE([HAVE_MACRO_VA_ARGS],[1],[Define if C99-style variable argument list macro functionality])
+       AC_MSG_RESULT([yes])
+    else
+       AC_MSG_RESULT([no])
+    fi
+    rm -f pac_test.log
 ])dnl
+
+# Will AC_DEFINE([HAVE_BUILTIN_EXPECT]) if the compiler supports __builtin_expect.
+AC_DEFUN([PAC_C_BUILTIN_EXPECT],[
+AC_MSG_CHECKING([if C compiler supports __builtin_expect])
+
+AC_TRY_LINK(, [
+    return __builtin_expect(1, 1) ? 1 : 0
+], [
+    have_builtin_expect=yes
+    AC_MSG_RESULT([yes])
+], [
+    have_builtin_expect=no
+    AC_MSG_RESULT([no])
+])
+if test x$have_builtin_expect = xyes ; then
+    AC_DEFINE([HAVE_BUILTIN_EXPECT], [1], [Define to 1 if the compiler supports __builtin_expect.])
+fi
+])

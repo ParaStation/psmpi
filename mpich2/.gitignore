@@ -102,6 +102,7 @@ old
 old*_pngs
 stamp-h1
 summary.xml
+summary.junit.xml
 summary.tap
 tags
 
@@ -159,6 +160,7 @@ Makefile.am-stamp
 /README.envvar
 /maint/extracterrmsgs
 /src/binding/f90/mpi_base.f90.in
+/src/binding/f90/mpi_constants.f90.in
 /src/env/mpixxx_opts.conf
 /src/mpi/romio/include/mpio.h
 /src/mpi/romio/include/mpiof.h
@@ -223,8 +225,8 @@ Makefile.am-stamp
 /src/binding/f90/Makefile.mk
 
 # MPICH2 parameter handling
-/src/include/mpich_param_vals.h
-/src/util/param/param_vals.c
+/src/include/mpich_cvars.h
+/src/util/cvar/mpich_cvars.c
 
 
 ################################################################################
@@ -447,6 +449,7 @@ Makefile.am-stamp
 /src/env/mpif90.conf
 /src/env/mpich2version
 /src/env/parkill
+/src/env/mpivars
 
 # /src/include/
 /src/include/mpi.h

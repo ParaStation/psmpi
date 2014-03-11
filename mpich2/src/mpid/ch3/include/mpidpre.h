@@ -237,6 +237,7 @@ struct MPIDI_Win_info_args {
     int accumulate_ops;
     int same_size;              /* valid flavor = allocate */
     int alloc_shared_noncontig; /* valid flavor = allocate shared */
+    int alloc_shm;              /* valid flavor = allocate */
 };
 
 struct MPIDI_RMA_op;            /* forward decl from mpidrma.h */
@@ -293,7 +294,10 @@ struct MPIDI_Win_target_state {
                            this state must be updated collectively (in   \
                            fence) to ensure that the fence state across  \
                            all processes remains consistent. */          \
+    MPID_Group *start_group_ptr; /* group passed in MPI_Win_start */     \
     int start_assert;   /* assert passed to MPI_Win_start */             \
+    int shm_allocated; /* flag: TRUE iff this window has a shared memory \
+                          region associated with it */                   \
 
 #ifdef MPIDI_CH3_WIN_DECL
 #define MPID_DEV_WIN_DECL \
@@ -329,7 +333,7 @@ typedef struct MPIDI_Request {
        iov_offset points to the current head element in the IOV */
     MPID_IOV iov[MPID_IOV_LIMIT];
     int iov_count;
-    int iov_offset;
+    size_t iov_offset;
 
     /* OnDataAvail is the action to take when data is now available.
        For example, when an operation described by an iov has 
@@ -370,7 +374,7 @@ typedef struct MPIDI_Request {
      * unexpected, exclusive access otherwise */
     int            recv_pending_count;
 
-    /* The next 8 are for RMA */
+    /* The next several fields are used to hold state for ongoing RMA operations */
     MPI_Op op;
     /* For accumulate, since data is first read into a tmp_buf */
     void *real_user_buf;

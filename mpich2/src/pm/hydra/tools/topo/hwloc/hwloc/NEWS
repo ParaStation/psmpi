@@ -1,6 +1,6 @@
 Copyright © 2009 CNRS
 Copyright © 2009-2013 Inria.  All rights reserved.
-Copyright © 2009-2012 Université Bordeaux 1
+Copyright © 2009-2013 Université Bordeaux 1
 Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
 
 $COPYRIGHT$
@@ -15,6 +15,164 @@ This file contains the main features as well as overviews of specific
 bug fixes (and other actions) for each version of hwloc since version
 0.9 (as initially released as "libtopology", then re-branded to "hwloc"
 in v0.9.1).
+
+
+Version 1.8.0
+-------------
+* New components
+  + Add the "linuxpci" component that always works on Linux even when
+    libpciaccess and libpci aren't available (and even with a modified
+    file-system root). By default the old "pci" component runs first
+    because "linuxpci" lacks device names (obj->name is always NULL).
+* API
+  + Add the topology difference API in hwloc/diff.h for manipulating
+    many similar topologies.
+  + Add hwloc_topology_dup() for duplicating an entire topology.
+  + hwloc.h and hwloc/helper.h have been reorganized to clarify the
+    documentation sections. The actual inline code has moved out of hwloc.h
+    into the new hwloc/inlines.h.
+  + Deprecated functions are now in hwloc/deprecated.h, and not in the
+    official documentation anymore.
+* Tools
+  + Add hwloc-diff and hwloc-patch tools together with the new diff API.
+  + Add hwloc-compress-dir to (de)compress an entire directory of XML files
+    using hwloc-diff and hwloc-patch.
+  + Object colors in the graphical output of lstopo may be changed by adding
+    a "lstopoStyle" info attribute. See CUSTOM COLORS in the lstopo(1) manpage
+    for details. Thanks to Jirka Hladky for discussing the idea.
+  + hwloc-gather-topology may now gather I/O-related files on Linux when
+    --io is given. Only the linuxpci component supports discovering I/O
+    objects from these extended tarballs.
+  + hwloc-annotate now supports --ri to remove/replace info attributes with
+    a given name.
+  + hwloc-info supports "root" and "all" special locations for dumping
+    information about the root object.
+  + lstopo now supports --append-legend to append custom lines of text
+    to the legend in the graphical output. Thanks to Jirka Hladky for
+    discussing the idea.
+  + hwloc-calc and friends have a more robust parsing of locations given
+    on the command-line and they report useful error messages about it.
+  + Add --whole-system to hwloc-bind, hwloc-calc, hwloc-distances and
+    hwloc-distrib, and add --restrict to hwloc-bind for uniformity among
+    tools.
+* Misc
+  + Calling hwloc_topology_load() or hwloc_topology_set_*() on an already
+    loaded topology now returns an error (deprecated since release 1.6.1).
+  + Fix the initialisation of cpusets and nodesets in Group objects added
+    when inserting PCI hostbridges.
+  + Never merge Group objects that were added explicitly by the user with
+    hwloc_custom_insert_group_object_by_parent().
+  + Add a sanity check during dynamic plugin loading to prevent some
+    crashes when hwloc is dynamically loaded by another plugin mechanisms.
+  + Add --with-hwloc-plugins-path to specify the install/load directories
+    of plugins.
+  + Add the MICSerialNumber info attribute to the root object when running
+    hwloc inside a Xeon Phi to match the same attribute in the MIC OS device
+    when running in the host.
+
+
+Version 1.7.2
+-------------
+* Do not create invalid block OS devices on very old Linux kernel such
+  as RHEL4 2.6.9.
+* Fix PCI subvendor/device IDs.
+* Fix the management of Misc objects inserted by parent.
+  Thanks to Jirka Hladky for reporting the problem.
+* Add a Port<n>State into attribute to OpenFabrics OS devices.
+* Add a MICSerialNumber info attribute to Xeon PHI/MIC OS devices.
+* Improve verbose error messages when failing to load from XML.
+
+
+Version 1.7.1
+-------------
+* Fix a failed assertion in the distance grouping code when loading a XML
+  file that already contains some groups.
+  Thanks to Laercio Lima Pilla for reporting the problem.
+* Remove unexpected Group objects when loading XML topologies with I/O
+  objects and NUMA distances.
+  Thanks to Elena Elkina for reporting the problem and testing patches.
+* Fix PCI link speed discovery when using libpciaccess.
+* Fix invalid libpciaccess virtual function device/vendor IDs when using
+  SR-IOV PCI devices on Linux.
+* Fix GL component build with old NVCtrl releases.
+  Thanks to Jirka Hladky for reporting the problem.
+* Fix embedding breakage caused by libltdl.
+  Thanks to Pavan Balaji for reporting the problem.
+* Always use the system-wide libltdl instead of shipping one inside hwloc.
+* Document issues when enabling plugins while embedding hwloc in another
+  project, in the documentation section Embedding hwloc in Other Software.
+* Add a FAQ entry "How to get useful topology information on NetBSD?"
+  in the documentation.
+* Somes fixes in the renaming code for embedding.
+* Miscellaneous minor build fixes.
+
+
+Version 1.7.0
+-------------
+* New operating system backends
+  + Add BlueGene/Q compute node kernel (CNK) support. See the FAQ in the
+    documentation for details. Thanks to Jeff Hammond, Christopher Samuel
+    and Erik Schnetter for their help.
+  + Add NetBSD support, thanks to Aleksej Saushev.
+* New I/O device discovery
+  + Add co-processor OS devices such as "mic0" for Intel Xeon Phi (MIC)
+    on Linux. Thanks to Jerome Vienne for helping.
+  + Add co-processor OS devices such as "cuda0" for NVIDIA CUDA-capable GPUs.
+  + Add co-processor OS devices such as "opencl0d0" for OpenCL GPU devices
+    on the AMD OpenCL implementation.
+  + Add GPU OS devices such as ":0.0" for NVIDIA X11 displays.
+  + Add GPU OS devices such as "nvml0" for NVIDIA GPUs.
+    Thanks to Marwan Abdellah and Stefan Eilemann for helping.
+  These new OS devices have some string info attributes such as CoProcType,
+  GPUModel, etc. to better identify them.
+  See the I/O Devices and Attributes documentation sections for details.
+* New components
+  + Add the "opencl", "cuda", "nvml" and "gl" components for I/O device
+    discovery.
+  + "nvml" also improves the discovery of NVIDIA GPU PCIe link speed.
+  All of these new components may be built as plugins. They may also be
+  disabled entirely by passing --disable-opencl/cuda/nvml/gl to configure.
+  See the I/O Devices, Components and Plugins, and FAQ documentation
+  sections for details.
+* API
+  + Add hwloc_topology_get_flags().
+  + Add hwloc/plugins.h for building external plugins.
+    See the Adding new discovery components and plugins section.
+* Interoperability
+  + Add hwloc/opencl.h, hwloc/nvml.h, hwloc/gl.h and hwloc/intel-mic.h
+    to retrieve the locality of OS devices that correspond to AMD OpenCL
+    GPU devices or indexes, to NVML devices or indexes, to NVIDIA X11
+    displays, or to Intel Xeon Phi (MIC) device indexes.
+  + Add new helpers in hwloc/cuda.h and hwloc/cudart.h to convert
+    between CUDA devices or indexes and hwloc OS devices.
+  + Add hwloc_ibv_get_device_osdev() and clarify the requirements
+    of the OpenFabrics Verbs helpers in hwloc/openfabrics-verbs.h.
+* Tools
+  + hwloc-info is not only a synonym of lstopo -s anymore, it also
+    dumps information about objects given on the command-line.
+* Documentation
+  + Add a section "Existing components and plugins".
+  + Add a list of common OS devices in section "Software devices".
+  + Add a new FAQ entry "Why is lstopo slow?" about lstopo slowness
+    issues because of GPUs.
+  + Clarify the documentation of inline helpers in hwloc/myriexpress.h
+    and hwloc/openfabrics-verbs.h.
+* Misc
+  + Improve cache detection on AIX.
+  + The HWLOC_COMPONENTS variable now excludes the components whose
+    names are prefixed with '-'.
+  + lstopo --ignore PU now works when displaying the topology in
+    graphical and textual mode (not when exporting to XML).
+  + Make sure I/O options always appear in lstopo usage, not only when
+    using pciutils/libpci.
+  + Remove some unneeded Linux specific includes from some interoperability
+    headers.
+  + Fix some inconsistencies in hwloc-distrib and hwloc-assembler-remote
+    manpages. Thanks to Guy Streeter for the report.
+  + Fix a memory leak on AIX when getting memory binding.
+  + Fix many small memory leaks on Linux.
+  + The `libpci' component is now called `pci' but the old name is still
+    accepted in the HWLOC_COMPONENTS variable for backward compatibility.
 
 
 Version 1.6.2
@@ -97,6 +255,26 @@ Version 1.6.0
   + Add a section about Synthetic topologies in the documentation.
 
 
+Version 1.5.2 (some of these changes are in v1.6.2 but not in v1.6)
+-------------
+* Use libpciaccess instead of pciutils/libpci by default for I/O discovery.
+  pciutils/libpci is only used if --enable-libpci is given to configure
+  because its GPL license may taint hwloc. See the Installation section
+  in the documentation for details.
+* Fix get_cpubind on Solaris when bound to a single PU with
+  processor_bind(). Thanks to Eugene Loh for reporting the problem
+  and providing a patch.
+* Fix some DIR descriptor leaks on Linux.
+* Fix I/O device lists when some were filtered out after a XML import.
+* Add missing Backend string info on Solaris in most cases.
+* Fix the removal of I/O objects when importing a I/O-enabled XML topology
+  without any I/O topology flag.
+* Fix the output of hwloc-calc -H --hierarchical when using logical
+  indexes in the output.
+* Fix the pkg-config output with --libs --static.
+  Thanks to Erik Schnetter for reporting one of the problems.
+
+
 Version 1.5.1
 -------------
 * Fix block OS device detection on Linux kernel 3.3 and later.
@@ -173,6 +351,20 @@ Version 1.5.0
   + Minor fixes to ease native builds on Windows.
   + Limit the number of retries when operating on all threads within a
     process on Linux if the list of threads is heavily getting modified.
+
+
+Version 1.4.3
+-------------
+* This release is only meant to fix the pciutils license issue when upgrading
+  to hwloc v1.5 or later is not possible. It contains several other minor
+  fixes but ignores many of them that are only in v1.5 or later.
+* Use libpciaccess instead of pciutils/libpci by default for I/O discovery.
+  pciutils/libpci is only used if --enable-libpci is given to configure
+  because its GPL license may taint hwloc. See the Installation section
+  in the documentation for details.
+* Fix PCIe 3.0 link speed computation.
+* Fix importing of escaped characters with the minimalistic XML backend.
+* Fix a memory leak in the x86 backend.
 
 
 Version 1.4.2
@@ -259,6 +451,17 @@ Version 1.4.0 (does not contain all v1.3.2 changes)
   + Improve visibility support detection. Thanks to Dave Love for providing
     the patch.
   + Remove references to internal symbols in the tools.
+
+
+Version 1.3.3
+-------------
+* This release is only meant to fix the pciutils license issue when upgrading
+  to hwloc v1.4 or later is not possible. It contains several other minor
+  fixes but ignores many of them that are only in v1.4 or later.
+* Use libpciaccess instead of pciutils/libpci by default for I/O discovery.
+  pciutils/libpci is only used if --enable-libpci is given to configure
+  because its GPL license may taint hwloc. See the Installation section
+  in the documentation for details.
 
 
 Version 1.3.2

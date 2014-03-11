@@ -13,7 +13,7 @@
 #
 
 AC_INIT([hwloc], 
-        [m4_normalize(esyscmd([config/hwloc_get_version.sh VERSION --base]))],
+        [m4_normalize(esyscmd([config/hwloc_get_version.sh VERSION --version]))],
         [http://www.open-mpi.org/projects/hwloc/], [hwloc])
 AC_PREREQ(2.63)
 AC_CONFIG_AUX_DIR(./config)
@@ -33,7 +33,7 @@ EOF
 AC_CANONICAL_TARGET
 
 # Init automake
-AM_INIT_AUTOMAKE([1.10 dist-bzip2 subdir-objects foreign tar-ustar -Wall -Werror])
+AM_INIT_AUTOMAKE([1.11 dist-bzip2 subdir-objects foreign tar-ustar parallel-tests -Wall -Werror])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
 
 # We want new Libtool.  None of that old stuff.  Pfft.    
@@ -50,29 +50,20 @@ AC_SUBST([CONFIGURE_DEPENDENCIES], ['$(top_srcdir)/VERSION'])
 # Get the version of hwloc that we are installing
 AC_MSG_CHECKING([for hwloc version])
 HWLOC_VERSION="`$srcdir/config/hwloc_get_version.sh $srcdir/VERSION`"
-HWLOC_MAJOR_VERSION="`$srcdir/config/hwloc_get_version.sh $srcdir/VERSION --major`"
-HWLOC_MINOR_VERSION="`$srcdir/config/hwloc_get_version.sh $srcdir/VERSION --minor`"
-HWLOC_RELEASE_VERSION="`$srcdir/config/hwloc_get_version.sh $srcdir/VERSION --release`"
-HWLOC_REPO_REV="`$srcdir/config/hwloc_get_version.sh $srcdir/VERSION --repo-rev`"
+if test "$?" != "0"; then
+    AC_MSG_ERROR([Cannot continue])
+fi
 HWLOC_RELEASE_DATE="`$srcdir/config/hwloc_get_version.sh $srcdir/VERSION --release-date`"
 AC_SUBST(HWLOC_VERSION)
-AC_SUBST(HWLOC_SVN_R)
 AC_SUBST(HWLOC_RELEASE_DATE)
-AC_DEFINE_UNQUOTED([HWLOC_MAJOR_VERSION], [$HWLOC_MAJOR_VERSION],
-    [Major version of hwloc])
-AC_DEFINE_UNQUOTED([HWLOC_MINOR_VERSION], [$HWLOC_MINOR_VERSION],
-    [Minor version of hwloc])
-AC_DEFINE_UNQUOTED([HWLOC_RELEASE_VERSION], [$HWLOC_RELEASE_VERSION],
-    [Release version of hwloc])
 AC_MSG_RESULT([$HWLOC_VERSION])
 
 # Override/fixup the version numbers set by AC_INIT, since on
 # developer builds, there's no good way to know what the version is
 # before running configure :(.  We only use the base version number
-# (ie, no svn r numbers) for the version set in AC_INIT.  This will
-# always match reality because we add the VERSION file (the only way
-# to change the major.minor.release{greek}) into the configure
-# dependencies.
+# for the version set in AC_INIT.  This will always match reality
+# because we add the VERSION file (the only way to change the
+# major.minor.release{greek}) into the configure dependencies.
 
 PACKAGE_VERSION="$HWLOC_VERSION"
 PACKAGE_STRING="${PACKAGE_NAME} ${PACKAGE_VERSION}"
@@ -86,7 +77,7 @@ AC_SUBST([libhwloc_so_version])
 # Setup the header file
 AH_TOP([/* -*- c -*-
  *
- * Copyright © 2009, 2012 CNRS, inria., Université Bordeaux 1  All rights reserved.
+ * Copyright © 2009, 2011, 2012 CNRS, inria., Université Bordeaux 1  All rights reserved.
  * Copyright © 2009 Cisco Systems, Inc.  All rights reserved.
  * $COPYRIGHT$
  * 
@@ -168,34 +159,8 @@ AM_ENABLE_SHARED
 AM_DISABLE_STATIC
 AM_PROG_LIBTOOL([dlopen win32-dll])
 LT_LANG([C])
-LT_CONFIG_LTDL_DIR([src/libltdl])
-LTDL_INIT([recursive convenience])
-AC_CONFIG_FILES([src/libltdl/Makefile])
 
-# Workarounds for libtool LT_CONFIG_H bug
-#CPPFLAGS="$CPPFLAGS -I$HWLOC_top_builddir"
-AC_CONFIG_COMMANDS_PRE([LT_CONFIG_H=`expr "$LT_CONFIG_H" : '.*/\(.*\)'`])
 
-# Add libltdl static-build dependencies to hwloc.pc
-if test "x$hwloc_have_plugins" = xyes; then
-  if test "x$with_included_ltdl" = xno; then
-    HWLOC_LIBS_PRIVATE="$HWLOC_LIBS_PRIVATE $LIBLTDL"
-  fi
-  HWLOC_LIBS_PRIVATE="$HWLOC_LIBS_PRIVATE $lt_cv_dlopen_libs"
-fi
-
-## Enable creation of libtool-style versioning or no versioning
-AC_ARG_ENABLE(versioning,
-        [AC_HELP_STRING([--enable-versioning],[Enable library versioning])],,
-        [enable_versioning=yes])
-
-if test "$enable_versioning" = "yes" ; then
-   libhwloc_so_versionflags="-version-info \$(libhwloc_so_version)"
-else
-   libhwloc_so_versionflags="-avoid-version"
-fi
-export libhwloc_so_versionflags
-AC_SUBST(libhwloc_so_versionflags)
 
 # Party on
 AC_OUTPUT
@@ -219,9 +184,17 @@ append_env() {
 if test x$hwloc_warn_may_use_libpci = xyes; then
   echo
   echo "***********************************************************************"
-  echo "PCI support could not be enabled because libpciaccess is not available."
+  if test "x$hwloc_linuxpci_happy" = "xyes"; then
+    echo "Full PCI support could not be enabled because libpciaccess is not available."
+  else
+    echo "PCI support could not be enabled because libpciaccess is not available."
+  fi
   echo "libpci could be used instead but hwloc may be tainted by the GPL"
   echo "license of pciutils. Add --enable-libpci to enable it."
+  if test "x$hwloc_linuxpci_happy" = "xyes"; then
+    echo "Only the Linux-specific PCI (linuxpci component) is enabled for now."
+    echo "It misses device names."
+  fi
   echo "***********************************************************************"
 fi
 
@@ -229,22 +202,46 @@ fi
 hwloc_xml_status=basic
 AS_IF([test "$hwloc_libxml2_happy" = "yes"], [hwloc_xml_status=full])
 
+# Prepare the I/O summary
+hwloc_probeio_list=
+if test "x$hwloc_pci_happy" = "xyes" -o "x$hwloc_linuxpci_happy" = "xyes"; then
+  test "x$hwloc_pci_happy" = "xyes" && hwloc_probepci_list="$hwloc_pci_lib"
+  test "x$hwloc_pci_happy$hwloc_linuxpci_happy" = "xyesyes" && hwloc_probepci_list="${hwloc_probepci_list}+"
+  test "x$hwloc_linuxpci_happy" = "xyes" && hwloc_probepci_list="${hwloc_probepci_list}linux"
+  hwloc_probeio_list="$hwloc_probeio_list PCI($hwloc_probepci_list)"
+fi
+test "x$hwloc_opencl_happy" = "xyes" && hwloc_probeio_list="$hwloc_probeio_list OpenCL"
+test "x$hwloc_have_cudart" = "xyes" && hwloc_probeio_list="$hwloc_probeio_list CUDA"
+test "x$hwloc_nvml_happy" = "xyes" && hwloc_probeio_list="$hwloc_probeio_list NVML"
+test "x$hwloc_gl_happy" = "xyes" && hwloc_probeio_list="$hwloc_probeio_list GL"
+# if anything but PCI, that anything will be useless
+test "x$hwloc_pci_happy" != "xyes" && test "x$hwloc_linuxpci_happy" != "xyes" \
+ && test "x$hwloc_probeio_list" != "x" && hwloc_probeio_list="$hwloc_probeio_list (cannot work without PCI)"
+# if nothing, say "no"
+test "x$hwloc_probeio_list" = "x" && hwloc_probeio_list=" no"
+
 # Beginning of generic support
 cat <<EOF
 
 -----------------------------------------------------------------------------
 Hwloc optional build support status (more details can be found above):
 
-Probe / display PCI devices: $hwloc_pci_happy
+Probe / display I/O devices:$hwloc_probeio_list
 Graphical output (Cairo):    $hwloc_cairo_happy
 XML input / output:          $hwloc_xml_status
-Plugin support:              $hwloc_have_plugins
 EOF
 
 # Linux specific support
 AS_IF([test "$hwloc_linux" = "yes"], [cat <<EOF
 libnuma memory support:      $hwloc_linux_libnuma_happy
 EOF])
+
+# Plugin support
+hwloc_plugin_summary=$hwloc_have_plugins
+test "x$hwloc_plugin_components" != "x" && hwloc_plugin_summary="yes ("`echo $hwloc_plugin_components`")" # echo removes the starting space
+cat <<EOF
+Plugin support:              $hwloc_plugin_summary
+EOF
 
 # End of generic support
 cat <<EOF

@@ -144,12 +144,11 @@ echo "done"
 # Default choices
 do_bindings=yes
 do_geterrmsgs=yes
-do_getparms=yes
+do_getcvars=yes
 do_f77=yes
 do_f77tof90=yes
 do_build_configure=yes
 do_genstates=yes
-do_smpdversion=yes
 do_atdir_check=no
 do_atver_check=yes
 do_subcfg_m4=yes
@@ -173,7 +172,7 @@ export autoreconf_args
 
 # List of steps that we will consider (We do not include depend
 # because the values for depend are not just yes/no)
-AllSteps="geterrmsgs bindings f77 f77tof90 build_configure genstates smpdversion getparms"
+AllSteps="geterrmsgs bindings f77 f77tof90 build_configure genstates getparms"
 stepsCleared=no
 
 for arg in "$@" ; do
@@ -650,24 +649,6 @@ fi
 
 
 ########################################################################
-## Update SMPD version
-########################################################################
-
-if [ "$do_smpdversion" = yes ] ; then
-    echo_n "Creating src/pm/smpd/smpd_version.h... "
-    smpdVersion=${MPICH_VERSION}
-    cat >src/pm/smpd/smpd_version.h <<EOF
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
-/*  
- *  (C) 2005 by Argonne National Laboratory.
- *      See COPYRIGHT in top-level directory.
- */
-#define SMPD_VERSION "$smpdVersion"
-EOF
-    echo "done"
-fi
-
-########################################################################
 ## Building subsys_include.m4
 ########################################################################
 if [ "X$do_subcfg_m4" = Xyes ] ; then
@@ -722,7 +703,7 @@ if [ $do_bindings = "yes" ] ; then
     if [ $build_cxx = "yes" ] ; then
 	echo_n "Building C++ interface... "
 	( cd src/binding/cxx && chmod a+x ./buildiface &&
-	  ./buildiface -nosep $otherarg )
+	  ./buildiface -nosep -initfile=cxx.vlist $otherarg )
 	echo "done"
     fi
 fi
@@ -841,13 +822,13 @@ fi
 echo "done"
 
 # new parameter code
-echo_n "Generating parameter handling code... "
-if test -x maint/genparams -a "$do_getparms" = "yes" ; then
-    if ./maint/genparams ; then
+echo_n "Extracting control variables (cvar) ... "
+if test -x maint/extractcvars -a "$do_getcvars" = "yes" ; then
+    if ./maint/extractcvars --dirs="`cat maint/cvardirs`"; then
         echo "done"
     else
         echo "failed"
-        error "unable to generate parameter handling code"
+        error "unable to extract control variables"
         exit 1
     fi
 else
@@ -863,8 +844,13 @@ if [ -x ./maint/f77tof90 -a $do_f77tof90 = "yes" ] ; then
         if [ ! -d test/mpi/f90/$leafDir ] ; then
 	    mkdir test/mpi/f90/$leafDir
         fi
-        maint/f77tof90 $dir test/mpi/f90/$leafDir Makefile.am Makefile.ap
-        echo "timestamp" > test/mpi/f90/$leafDir/Makefile.am-stamp
+        if maint/f77tof90 $dir test/mpi/f90/$leafDir Makefile.am Makefile.ap ; then
+            echo "timestamp" > test/mpi/f90/$leafDir/Makefile.am-stamp
+        else
+            echo "failed"
+            error "maint/f77tof90 $dir failed!"
+            exit 1
+        fi
     done
     for dir in test/mpi/errors/f77/* ; do
         if [ ! -d $dir ] ; then continue ; fi
@@ -872,8 +858,13 @@ if [ -x ./maint/f77tof90 -a $do_f77tof90 = "yes" ] ; then
         if [ ! -d test/mpi/errors/f90/$leafDir ] ; then
 	    mkdir test/mpi/errors/f90/$leafDir
         fi
-        maint/f77tof90 $dir test/mpi/errors/f90/$leafDir Makefile.am Makefile.ap
-        echo "timestamp" > test/mpi/errors/f90/$leafDir/Makefile.am-stamp
+        if maint/f77tof90 $dir test/mpi/errors/f90/$leafDir Makefile.am Makefile.ap ; then
+            echo "timestamp" > test/mpi/errors/f90/$leafDir/Makefile.am-stamp
+        else
+            echo "failed"
+            error "maint/f77tof90 $dir failed!"
+            exit 1
+        fi
     done
     echo "done"
 fi
@@ -903,6 +894,28 @@ if [ "$do_build_configure" = "yes" ] ; then
 	    echo "------------------------------------------------------------------------"
 	    echo "running $autoreconf in $amdir"
             (cd $amdir && $autoreconf $autoreconf_args) || exit 1
+            # Patching libtool.m4
+            # This works with libtool versions 2.4 - 2.4.2.
+            # Older versions are not supported to build mpich.
+            # Newer versions should have this patch already included.
+            # There is no need to patch if we're not going to use Fortran.
+            if [ $do_bindings = "yes" ] ; then
+                if [ -f $amdir/confdb/libtool.m4 ] ; then
+                    echo_n "Patching libtool.m4 for compatibility with nagfor shared libraries... "
+                    patch --forward -s -l $amdir/confdb/libtool.m4 maint/libtool.m4.patch
+                    if [ $? -eq 0 ] ; then
+                        # Remove possible leftovers, which don't imply a failure
+                        rm -f $amdir/confdb/libtool.m4.orig
+                        # Rebuild configure
+                        (cd $amdir && $autoconf -f) || exit 1
+                        # Reset libtool.m4 timestamps to avoid confusing make
+                        touch -r $amdir/confdb/ltversion.m4 $amdir/confdb/libtool.m4
+                        echo "done"
+                    else
+                        echo "failed"
+                    fi
+                fi
+            fi
 	fi
     done
 fi

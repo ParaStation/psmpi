@@ -509,6 +509,12 @@ int MPIU_Handle_free( void *((*)[]), int );
 #define MPID_Request_valid_ptr(ptr,err) MPID_Valid_ptr_class(Request,ptr,MPI_ERR_REQUEST,err)
 #define MPID_Keyval_valid_ptr(ptr,err) MPID_Valid_ptr_class(Keyval,ptr,MPI_ERR_KEYVAL,err)
 
+#define MPIR_DATATYPE_IS_PREDEFINED(type) \
+    ((HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) || \
+     (type == MPI_FLOAT_INT) || (type == MPI_DOUBLE_INT) || \
+     (type == MPI_LONG_INT) || (type == MPI_SHORT_INT) || \
+     (type == MPI_LONG_DOUBLE_INT))
+
 /* FIXME: 
    Generic pointer test.  This is applied to any address, not just one from
    an MPI object.
@@ -1418,6 +1424,7 @@ typedef enum MPID_Request_kind_t {
     MPID_UREQUEST,
     MPID_COLL_REQUEST,
     MPID_REQUEST_MPROBE, /* see NOTE-R1 */
+    MPID_WIN_REQUEST,
     MPID_LAST_REQUEST_KIND
 #ifdef MPID_DEV_REQUEST_KIND_DECL
     , MPID_DEV_REQUEST_KIND_DECL
@@ -1483,6 +1490,8 @@ typedef struct MPID_Request {
     /* User-defined request support via a "vtable".  Saves space in the already
      * bloated request for regular pt2pt and NBC requests. */
     struct MPID_Grequest_fns *greq_fns;
+
+    struct MPIR_Sendq *dbg_next;
 
     /* Other, device-specific information */
 #ifdef MPID_DEV_REQUEST_DECL
@@ -1693,10 +1702,7 @@ typedef struct MPID_Win {
     MPI_Aint    size;        
     int          disp_unit;      /* Displacement unit of *local* window */
     MPID_Attribute *attributes;
-    MPID_Group *start_group_ptr; /* group passed in MPI_Win_start */
     MPID_Comm *comm_ptr;         /* Pointer to comm of window (dup) */
-    int         myrank;          /* Rank of this process in comm (used to 
-				    detect operations on self) */
 #ifdef USE_THREADED_WINDOW_CODE
     /* These were causing compilation errors.  We need to figure out how to
        integrate threads into MPICH before including these fields. */
@@ -1978,51 +1984,96 @@ typedef struct MPID_Collops {
                            MPID_Comm *, int *);
 
     /* MPI-3 nonblocking collectives */
-    int (*Ibarrier)(MPID_Comm *comm_ptr, MPID_Sched_t s);
-    int (*Ibcast)(void *buffer, int count, MPI_Datatype datatype, int root,
+    int (*Ibarrier_sched)(MPID_Comm *comm_ptr, MPID_Sched_t s);
+    int (*Ibarrier_req)(MPID_Comm *comm_ptr, MPID_Request **request);
+    int (*Ibcast_sched)(void *buffer, int count, MPI_Datatype datatype, int root,
                   MPID_Comm *comm_ptr, MPID_Sched_t s);
-    int (*Igather)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+    int (*Ibcast_req)(void *buffer, int count, MPI_Datatype datatype, int root,
+                            MPID_Comm *comm_ptr, MPID_Request **request);
+    int (*Igather_sched)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
                    int recvcount, MPI_Datatype recvtype, int root, MPID_Comm *comm_ptr,
                    MPID_Sched_t s);
-    int (*Igatherv)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+    int (*Igather_req)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+                             int recvcount, MPI_Datatype recvtype, int root, MPID_Comm *comm_ptr,
+                             MPID_Request **request);
+    int (*Igatherv_sched)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
                     const int *recvcounts, const int *displs, MPI_Datatype recvtype, int root,
                     MPID_Comm *comm_ptr, MPID_Sched_t s);
-    int (*Iscatter)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+    int (*Igatherv_req)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+                              const int *recvcounts, const int *displs, MPI_Datatype recvtype, int root,
+                              MPID_Comm *comm_ptr, MPID_Request **request);
+    int (*Iscatter_sched)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
                     int recvcount, MPI_Datatype recvtype, int root, MPID_Comm *comm_ptr,
                     MPID_Sched_t s);
-    int (*Iscatterv)(const void *sendbuf, const int *sendcounts, const int *displs,
+    int (*Iscatter_req)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+                              int recvcount, MPI_Datatype recvtype, int root, MPID_Comm *comm_ptr,
+                              MPID_Request **request);
+    int (*Iscatterv_sched)(const void *sendbuf, const int *sendcounts, const int *displs,
                      MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype,
                      int root, MPID_Comm *comm_ptr, MPID_Sched_t s);
-    int (*Iallgather)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+    int (*Iscatterv_req)(const void *sendbuf, const int *sendcounts, const int *displs,
+                               MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                               int root, MPID_Comm *comm_ptr, MPID_Request **request);
+    int (*Iallgather_sched)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
                       int recvcount, MPI_Datatype recvtype, MPID_Comm *comm_ptr,
                       MPID_Sched_t s);
-    int (*Iallgatherv)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+    int (*Iallgather_req)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+                                int recvcount, MPI_Datatype recvtype, MPID_Comm *comm_ptr,
+                                MPID_Request **request);
+    int (*Iallgatherv_sched)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
                        const int *recvcounts, const int *displs, MPI_Datatype recvtype,
                        MPID_Comm *comm_ptr, MPID_Sched_t s);
-    int (*Ialltoall)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+    int (*Iallgatherv_req)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+                                 const int *recvcounts, const int *displs, MPI_Datatype recvtype,
+                                 MPID_Comm *comm_ptr, MPID_Request ** request);
+    int (*Ialltoall_sched)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
                      int recvcount, MPI_Datatype recvtype, MPID_Comm *comm_ptr,
                      MPID_Sched_t s);
-    int (*Ialltoallv)(const void *sendbuf, const int *sendcounts, const int *sdispls,
+    int (*Ialltoall_req)(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+                               int recvcount, MPI_Datatype recvtype, MPID_Comm *comm_ptr,
+                               MPID_Request **request);
+    int (*Ialltoallv_sched)(const void *sendbuf, const int *sendcounts, const int *sdispls,
                       MPI_Datatype sendtype, void *recvbuf, const int *recvcounts,
                       const int *rdispls, MPI_Datatype recvtype, MPID_Comm *comm_ptr,
                       MPID_Sched_t s);
-    int (*Ialltoallw)(const void *sendbuf, const int *sendcounts, const int *sdispls,
+    int (*Ialltoallv_req)(const void *sendbuf, const int *sendcounts, const int *sdispls,
+                                MPI_Datatype sendtype, void *recvbuf, const int *recvcounts,
+                                const int *rdispls, MPI_Datatype recvtype, MPID_Comm *comm_ptr,
+                                MPID_Request **request);
+    int (*Ialltoallw_sched)(const void *sendbuf, const int *sendcounts, const int *sdispls,
                       const MPI_Datatype *sendtypes, void *recvbuf, const int *recvcounts,
                       const int *rdispls, const MPI_Datatype *recvtypes,
                       MPID_Comm *comm_ptr, MPID_Sched_t s);
-    int (*Ireduce)(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op,
+    int (*Ialltoallw_req)(const void *sendbuf, const int *sendcounts, const int *sdispls,
+                                const MPI_Datatype *sendtypes, void *recvbuf, const int *recvcounts,
+                                const int *rdispls, const MPI_Datatype *recvtypes,
+                                MPID_Comm *comm_ptr, MPID_Request **request);
+    int (*Ireduce_sched)(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op,
                    int root, MPID_Comm *comm_ptr, MPID_Sched_t s);
-    int (*Iallreduce)(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+    int (*Ireduce_req)(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op,
+                   int root, MPID_Comm *comm_ptr, MPID_Request **request);
+    int (*Iallreduce_sched)(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
                       MPI_Op op, MPID_Comm *comm_ptr, MPID_Sched_t s);
-    int (*Ireduce_scatter)(const void *sendbuf, void *recvbuf, const int *recvcounts,
+    int (*Iallreduce_req)(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+                                MPI_Op op, MPID_Comm *comm_ptr, MPID_Request **request);
+    int (*Ireduce_scatter_sched)(const void *sendbuf, void *recvbuf, const int *recvcounts,
                            MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr, MPID_Sched_t s);
-    int (*Ireduce_scatter_block)(const void *sendbuf, void *recvbuf, int recvcount,
+    int (*Ireduce_scatter_req)(const void *sendbuf, void *recvbuf, const int *recvcounts,
+                                     MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr, MPID_Request **request);
+    int (*Ireduce_scatter_block_sched)(const void *sendbuf, void *recvbuf, int recvcount,
                                  MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr,
                                  MPID_Sched_t s);
-    int (*Iscan)(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op,
+    int (*Ireduce_scatter_block_req)(const void *sendbuf, void *recvbuf, int recvcount,
+                                           MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr,
+                                           MPID_Request **request);
+    int (*Iscan_sched)(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op,
                  MPID_Comm *comm_ptr, MPID_Sched_t s);
-    int (*Iexscan)(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op,
+    int (*Iscan_req)(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op,
+                           MPID_Comm *comm_ptr, MPID_Request **request);
+    int (*Iexscan_sched)(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op,
                    MPID_Comm *comm_ptr, MPID_Sched_t s);
+    int (*Iexscan_req)(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op,
+                             MPID_Comm *comm_ptr, MPID_Request **request);
 
     struct MPID_Collops *prev_coll_fns; /* when overriding this table, set this to point to the old table */
 
@@ -2227,11 +2278,8 @@ extern MPICH_PerProcess_t MPIR_Process;
 #include "mpierror.h"
 #include "mpierrs.h"
 
-/* Definitions for instrumentation (currently used within RMA code) */
-#include "mpiinstr.h"
-
-/* FIXME: This routine is only used within mpi/src/err/errutil.c and 
-   smpd.  We may not want to export it.  */
+/* FIXME: This routine is only used within mpi/src/err/errutil.c.  We
+ * may not want to export it.  */
 void MPIR_Err_print_stack(FILE *, int);
 
 /* ------------------------------------------------------------------------- */
@@ -2248,29 +2296,63 @@ void MPIR_Err_print_stack(FILE *, int);
    src/mpi/pt2pt? */
 /* ------------------------------------------------------------------------- */
 
+
+/* MPI_Status manipulation macros */
+#define MPIR_BITS_IN_INT (8 * SIZEOF_INT)
+
+/* We use bits from the "count_lo" and "count_hi_and_cancelled" fields
+ * to represent the 'count' and 'cancelled' objects.  The LSB of the
+ * "count_hi_and_cancelled" field represents the 'cancelled' object.
+ * The 'count' object is split between the "count_lo" and
+ * "count_hi_and_cancelled" fields, with the lower order bits going
+ * into the "count_lo" field, and the higher order bits goin into the
+ * "count_hi_and_cancelled" field.  This gives us 2N-1 bits for the
+ * 'count' object, where N is the size of int.  However, the value
+ * returned to the user is bounded by the definition on MPI_Count. */
+/* NOTE: The below code assumes that the count value is never
+ * negative.  For negative values, right-shifting can have weird
+ * implementation specific consequences. */
+#define MPIR_STATUS_SET_COUNT(status_, count_)                          \
+    {                                                                   \
+        (status_).count_lo = ((int) count_);                            \
+        (status_).count_hi_and_cancelled &= 1;                          \
+        (status_).count_hi_and_cancelled |= (int) ((MPIR_Ucount) count_ >> MPIR_BITS_IN_INT << 1); \
+    }
+
+#define MPIR_STATUS_GET_COUNT(status_)                                  \
+    ((MPI_Count) ((((MPIR_Ucount) (((unsigned int) (status_).count_hi_and_cancelled) >> 1)) << MPIR_BITS_IN_INT) + (unsigned int) (status_).count_lo))
+
+#define MPIR_STATUS_SET_CANCEL_BIT(status_, cancelled_)	\
+    {                                                   \
+        (status_).count_hi_and_cancelled &= ~1;         \
+        (status_).count_hi_and_cancelled |= cancelled_; \
+    }
+
+#define MPIR_STATUS_GET_CANCEL_BIT(status_)	((status_).count_hi_and_cancelled & 1)
+
 /* Do not set MPI_ERROR (only set if ERR_IN_STATUS is returned */
-#define MPIR_Status_set_empty(status_)			\
-{							\
-    if ((status_) != MPI_STATUS_IGNORE)			\
-    {							\
-	(status_)->MPI_SOURCE = MPI_ANY_SOURCE;		\
-	(status_)->MPI_TAG = MPI_ANY_TAG;		\
-	(status_)->count = 0;				\
-	(status_)->cancelled = FALSE;			\
-    }							\
-}
+#define MPIR_Status_set_empty(status_)                          \
+    {                                                           \
+        if ((status_) != MPI_STATUS_IGNORE)                     \
+        {                                                       \
+            (status_)->MPI_SOURCE = MPI_ANY_SOURCE;             \
+            (status_)->MPI_TAG = MPI_ANY_TAG;                   \
+            MPIR_STATUS_SET_COUNT(*(status_), 0);               \
+            MPIR_STATUS_SET_CANCEL_BIT(*(status_), FALSE);      \
+        }                                                       \
+    }
 /* See MPI 1.1, section 3.11, Null Processes */
 /* Do not set MPI_ERROR (only set if ERR_IN_STATUS is returned */
-#define MPIR_Status_set_procnull(status_)		\
-{							\
-    if ((status_) != MPI_STATUS_IGNORE)			\
-    {							\
-	(status_)->MPI_SOURCE = MPI_PROC_NULL;		\
-	(status_)->MPI_TAG = MPI_ANY_TAG;		\
-	(status_)->count = 0;				\
-	(status_)->cancelled = FALSE;			\
-    }							\
-}
+#define MPIR_Status_set_procnull(status_)                       \
+    {                                                           \
+        if ((status_) != MPI_STATUS_IGNORE)                     \
+        {                                                       \
+            (status_)->MPI_SOURCE = MPI_PROC_NULL;              \
+            (status_)->MPI_TAG = MPI_ANY_TAG;                   \
+            MPIR_STATUS_SET_COUNT(*(status_), 0);               \
+            MPIR_STATUS_SET_CANCEL_BIT(*(status_), FALSE);      \
+        }                                                       \
+    }
 
 #define MPIR_Request_extract_status(request_ptr_, status_)								\
 {															\
@@ -3256,11 +3338,11 @@ int MPID_Win_create(void *, MPI_Aint, int, MPID_Info *, MPID_Comm *,
                     MPID_Win **);
 int MPID_Win_free(MPID_Win **); 
 
-int MPID_Put(void *, int, MPI_Datatype, int, MPI_Aint, int,
+int MPID_Put(const void *, int, MPI_Datatype, int, MPI_Aint, int,
              MPI_Datatype, MPID_Win *); 
 int MPID_Get(void *, int, MPI_Datatype, int, MPI_Aint, int,
              MPI_Datatype, MPID_Win *);
-int MPID_Accumulate(void *, int, MPI_Datatype, int, MPI_Aint, int, 
+int MPID_Accumulate(const void *, int, MPI_Datatype, int, MPI_Aint, int, 
                     MPI_Datatype, MPI_Op, MPID_Win *);
 
 int MPID_Win_fence(int, MPID_Win *);
@@ -3465,116 +3547,8 @@ typedef struct MPID_Grequest_class {
 } MPID_Grequest_class;
 
 
-/* types and other internal defintions that must be kept out of mpi.h */
-
-/* forward decls */
-struct MPIR_T_pvar_info;
-
-struct MPIR_T_enum {
-    /* TODO replace this struct's contents with a real implementation once we
-     * actually have/support an enum type */
-    int dummy;
-};
-struct MPIR_T_cvar_handle {
-    struct MPIR_Param_t *p;
-};
-struct MPIR_T_pvar_session {
-    /* a utlist-managed list (see mpl_utlist.h) -- _must_ be initialized to NULL
-     * at alloc time or the macros won't work */
-    struct MPIR_T_pvar_handle *hlist;
-
-    /* TODO does anything else need to go in here at this stage? */
-};
-
-
-typedef int MPIR_T_pvar_handle_creator_fn(void *obj_handle,
-                                          struct MPIR_T_pvar_handle *handle,
-                                          int *countp);
-enum MPIR_T_pvar_impl_kind {
-    /* generic read/write impl is fine, just deref pointer */
-    MPIR_T_PVAR_IMPL_SIMPLE,
-
-    /* read/write are dispatched to callbacks to load/store variable values */
-    MPIR_T_PVAR_IMPL_CB
-};
-
-/* These are descriptors that lower level intialization code creates and feeds
- * into the overall MPI_T_pvar_ system in order to permit the upper level code
- * to implement MPI_T_pvar_{get_num,get_info,handle_alloc}. */
-struct MPIR_T_pvar_info {
-    int idx; /* pvar index value for pvar_get_info and friends */
-
-    /* fields for get_info */
-    char *name;
-    enum MPIR_T_verbosity_t verbosity;
-    enum MPIR_T_pvar_class_t varclass;
-    MPI_Datatype dtype;
-    struct MPIR_T_enum *etype;
-    char *desc;
-    enum MPIR_T_bind_t binding;
-    int readonly;
-    int continuous;
-    int atomic;
-
-    /* fields for handle_alloc */
-    enum MPIR_T_pvar_impl_kind impl_kind;
-    void *var_state;
-    MPIR_T_pvar_handle_creator_fn *create_fn;
-};
-
-struct MPIR_T_pvar_handle {
-    /* for linked list of handles attached to the pvar_session */
-    struct MPIR_T_pvar_handle *next;
-    struct MPIR_T_pvar_handle *prev;
-
-    struct MPIR_T_pvar_info *info;
-    struct MPIR_T_pvar_session *session;
-    int count;
-
-    int bytes; /* for _IMPL_SIMPLE */
-
-    /* for _IMPL_CB types this vtable prevents us from having to duplicate
-     * multiple sets of function pointers in each handle at the expense of an
-     * extra pointer indirection */
-    struct MPIR_T_pvar_hnd_vtable *vtable;
-    void *handle_state;
-    int free_handle_state; /* boolean -- true iff the "handle_state" pointer
-                            * should be freed when this handle is freed */
-};
-
-/* vtable structure for handle "objects".  Implements all major handle operations */
-struct MPIR_T_pvar_hnd_vtable {
-    int (*free)(struct MPIR_T_pvar_session *session, struct MPIR_T_pvar_handle *handle);
-    int (*start)(struct MPIR_T_pvar_session *session, struct MPIR_T_pvar_handle *handle);
-    int (*stop)(struct MPIR_T_pvar_session *session, struct MPIR_T_pvar_handle *handle);
-    int (*read)(struct MPIR_T_pvar_session *session, struct MPIR_T_pvar_handle *handle, void *buf);
-    int (*write)(struct MPIR_T_pvar_session *session, struct MPIR_T_pvar_handle *handle, void *buf);
-    int (*reset)(struct MPIR_T_pvar_session *session, struct MPIR_T_pvar_handle *handle);
-    int (*readreset)(struct MPIR_T_pvar_session *session, struct MPIR_T_pvar_handle *handle, void *buf);
-};
-
-/* Called by lower-level initialization code to add pvars to the global list.
- * Will cause the value returned by MPI_T_pvar_get_num to be incremented and
- * sets up that new index to work with get_info, handle_alloc, etc. */
-int MPIR_T_pvar_add(const char *name,
-                    enum MPIR_T_verbosity_t verbosity,
-                    enum MPIR_T_pvar_class_t varclass,
-                    MPI_Datatype dtype,
-                    struct MPIR_T_enum *enumtype,
-                    const char *desc,
-                    enum MPIR_T_bind_t bind,
-                    int readonly,
-                    int continuous,
-                    int atomic,
-                    enum MPIR_T_pvar_impl_kind impl_kind,
-                    void *var_state,
-                    MPIR_T_pvar_handle_creator_fn *create_fn,
-                    int *index_p);
-
-int MPIR_T_get_num_pvars(int *num);
-int MPIR_T_get_pvar_info_by_idx(int idx, struct MPIR_T_pvar_info **info_p);
-int MPIR_T_finalize_pvars(void);
-void MPIU_Tool_strncpy(char *dst, const char *src, int *len);
+/* Interfaces exposed by MPI_T */
+#include "mpit.h"
 
 /*TTopoOverview.tex
  *
@@ -3773,8 +3747,8 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr);
    file (mpiimpl.h). */
 #include "mpidpost.h"
 
-/* tunable parameter values */
-#include "mpich_param_vals.h"
+/* tunable cvar values */
+#include "mpich_cvars.h"
 
 /* Tags for point to point operations which implement collective and other
    internal operations */
@@ -3806,56 +3780,60 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr);
 #define MPIR_TOPO_A_TAG               26
 #define MPIR_TOPO_B_TAG               27
 #define MPIR_REDUCE_SCATTER_BLOCK_TAG 28
-#define MPIR_ERROR_TAG                29
-#define MPIR_FIRST_NBC_TAG            30
+#define MPIR_FIRST_NBC_TAG            29
+
+/* These macros must be used carefully. These macros will not work with
+ * negative tags. By definition, users are not to use negative tags and the
+ * only negative tag in MPICH is MPI_ANY_TAG which is checked seperately, but
+ * if there is a time where negative tags become more common, this setup won't
+ * work anymore. */
+
+/* This bitmask can be used to manually mask the tag space wherever it might
+ * be necessary to do so (for instance in the receive queue */
+#define MPIR_TAG_ERROR_BIT (1 << 30)
+
+/* This macro checks the value of the error bit in the MPI tag and returns 1
+ * if the tag is set and 0 if it is not. */
+#define MPIR_TAG_CHECK_ERROR_BIT(tag) ((MPIR_TAG_ERROR_BIT & tag) == MPIR_TAG_ERROR_BIT ? 1 : 0)
+
+/* This macro sets the value of the error bit in the MPI tag to 1 */
+#define MPIR_TAG_SET_ERROR_BIT(tag) (tag |= MPIR_TAG_ERROR_BIT)
+
+/* This macro clears the value of the error bit in the MPI tag */
+#define MPIR_TAG_CLEAR_ERROR_BIT(tag) (tag &= ~MPIR_TAG_ERROR_BIT)
+
+/* This macro masks the value of the error bit in the MPI tag */
+#define MPIR_TAG_MASK_ERROR_BIT(tag) (tag & ~MPIR_TAG_ERROR_BIT)
 
 /* These functions are used in the implementation of collective and
    other internal operations. They are wrappers around MPID send/recv
    functions. They do sends/receives by setting the context offset to
    MPID_CONTEXT_INTRA(INTER)_COLL. */
-int MPIC_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
-              MPI_Comm comm);
-int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
-              MPI_Comm comm, MPI_Status *status);
-int MPIC_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
-               MPI_Comm comm);
-int MPIC_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
-                  int dest, int sendtag, void *recvbuf, int recvcount,
-                  MPI_Datatype recvtype, int source, int recvtag,
-                  MPI_Comm comm, MPI_Status *status);
-int MPIC_Sendrecv_replace(void *buf, int count, MPI_Datatype type,
-                          int dest, int sendtag,
-                          int source, int recvtag,
-                          MPI_Comm comm, MPI_Status *status);
 int MPIR_Localcopy(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                    void *recvbuf, int recvcount, MPI_Datatype recvtype);
-int MPIC_Irecv(void *buf, int count, MPI_Datatype datatype, int
-               source, int tag, MPI_Comm comm, MPI_Request *request);
-int MPIC_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
-               MPI_Comm comm, MPI_Request *request);
 int MPIC_Wait(MPID_Request * request_ptr);
 int MPIC_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status);
 
 /* FT versions of te MPIC_ functions */
-int MPIC_Send_ft(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+int MPIC_Send(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
                  MPI_Comm comm, int *errflag);
-int MPIC_Recv_ft(void *buf, int count, MPI_Datatype datatype, int source, int tag,
+int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
                  MPI_Comm comm, MPI_Status *status, int *errflag);
-int MPIC_Ssend_ft(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+int MPIC_Ssend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
                   MPI_Comm comm, int *errflag);
-int MPIC_Sendrecv_ft(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+int MPIC_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                      int dest, int sendtag, void *recvbuf, int recvcount,
                      MPI_Datatype recvtype, int source, int recvtag,
                      MPI_Comm comm, MPI_Status *status, int *errflag);
-int MPIC_Sendrecv_replace_ft(void *buf, int count, MPI_Datatype datatype,
+int MPIC_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
                              int dest, int sendtag,
                              int source, int recvtag,
                              MPI_Comm comm, MPI_Status *status, int *errflag);
-int MPIC_Isend_ft(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+int MPIC_Isend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
                   MPI_Comm comm, MPI_Request *request, int *errflag);
-int MPIC_Irecv_ft(void *buf, int count, MPI_Datatype datatype, int source,
+int MPIC_Irecv(void *buf, int count, MPI_Datatype datatype, int source,
                   int tag, MPI_Comm comm, MPI_Request *request);
-int MPIC_Waitall_ft(int numreq, MPI_Request requests[], MPI_Status statuses[], int *errflag);
+int MPIC_Waitall(int numreq, MPI_Request requests[], MPI_Status statuses[], int *errflag);
 
 
 void MPIR_MAXF  ( void *, void *, int *, MPI_Datatype * ) ;
@@ -4076,6 +4054,8 @@ int MPIR_Reduce_local_impl(const void *inbuf, void *inoutbuf, int count, MPI_Dat
 int MPIR_Setup_intercomm_localcomm( MPID_Comm * );
 
 int MPIR_Comm_create( MPID_Comm ** );
+int MPIR_Comm_create_group(MPID_Comm * comm_ptr, MPID_Group * group_ptr, int tag,
+                           MPID_Comm ** newcomm);
 
 /* comm_create helper functions, used by both comm_create and comm_create_group */
 int MPIR_Comm_create_calculate_mapping(MPID_Group  *group_ptr,
@@ -4087,6 +4067,11 @@ int MPIR_Comm_create_create_and_map_vcrt(int n,
                                          MPID_VCR *mapping_vcr,
                                          MPID_VCRT *out_vcrt,
                                          MPID_VCR **out_vcr);
+
+/* implements the logic for MPI_Comm_create for intracommunicators only */
+int MPIR_Comm_create_intra(MPID_Comm *comm_ptr, MPID_Group *group_ptr,
+                           MPID_Comm **newcomm_ptr);
+
 
 int MPIR_Comm_commit( MPID_Comm * );
 
@@ -4227,18 +4212,9 @@ int MPIR_Ialltoallw_intra(const void *sendbuf, const int *sendcounts, const int 
 int MPIR_Ialltoallw_inter(const void *sendbuf, const int *sendcounts, const int *sdispls, const MPI_Datatype *sendtypes, void *recvbuf, const int *recvcounts, const int *rdispls, const MPI_Datatype *recvtypes, MPID_Comm *comm_ptr, MPID_Sched_t s);
 
 /* begin impl functions for MPI_T (MPI_T_ right now) */
-int MPIR_T_init_thread_impl(int required, int *provided);
-int MPIR_T_finalize_impl(void);
-int MPIR_T_enum_get_info_impl(MPI_T_enum enumtype, int *num, char *name, int *name_len);
-int MPIR_T_enum_get_item_impl(MPI_T_enum enumtype, int num, int *value, char *name, int *name_len);
-int MPIR_T_cvar_get_num_impl(int *num_cvar);
-int MPIR_T_cvar_get_info_impl(int cvar_index, char *name, int *name_len, int *verbosity, MPI_Datatype *datatype, MPI_T_enum *enumtype, char *desc, int *desc_len, int *binding, int *scope);
 int MPIR_T_cvar_handle_alloc_impl(int cvar_index, void *obj_handle, MPI_T_cvar_handle *handle, int *count);
-int MPIR_T_cvar_handle_free_impl(MPI_T_cvar_handle *handle);
 int MPIR_T_cvar_read_impl(MPI_T_cvar_handle handle, void *buf);
 int MPIR_T_cvar_write_impl(MPI_T_cvar_handle handle, void *buf);
-int MPIR_T_pvar_get_num_impl(int *num_pvar);
-int MPIR_T_pvar_get_info_impl(int pvar_index, char *name, int *name_len, int *verbosity, int *var_class, MPI_Datatype *datatype, MPI_T_enum *enumtype, char *desc, int *desc_len, int *binding, int *readonly, int *continuous, int *atomic);
 int MPIR_T_pvar_session_create_impl(MPI_T_pvar_session *session);
 int MPIR_T_pvar_session_free_impl(MPI_T_pvar_session *session);
 int MPIR_T_pvar_handle_alloc_impl(MPI_T_pvar_session session, int pvar_index, void *obj_handle, MPI_T_pvar_handle *handle, int *count);
@@ -4249,12 +4225,9 @@ int MPIR_T_pvar_read_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, 
 int MPIR_T_pvar_write_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, void *buf);
 int MPIR_T_pvar_reset_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle);
 int MPIR_T_pvar_readreset_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, void *buf);
-int MPIR_T_category_get_num_impl(int *num_cat);
-int MPIR_T_category_get_info_impl(int cat_index, char *name, int *name_len, char *desc, int *desc_len, int *num_controlvars, int *num_pvars, int *num_categories);
 int MPIR_T_category_get_cvars_impl(int cat_index, int len, int indices[]);
 int MPIR_T_category_get_pvars_impl(int cat_index, int len, int indices[]);
 int MPIR_T_category_get_categories_impl(int cat_index, int len, int indices[]);
-int MPIR_T_category_changed_impl(int *stamp);
 /* end impl functions for MPI_T (MPI_T_ right now) */
 
 /* MPI-3 "large count" impl routines */
@@ -4263,8 +4236,6 @@ int MPIR_Status_set_elements_x_impl(MPI_Status *status, MPI_Datatype datatype, M
 void MPIR_Type_get_extent_x_impl(MPI_Datatype datatype, MPI_Count *lb, MPI_Count *extent);
 void MPIR_Type_get_true_extent_x_impl(MPI_Datatype datatype, MPI_Count *true_lb, MPI_Count *true_extent);
 int MPIR_Type_size_x_impl(MPI_Datatype datatype, MPI_Count *size);
-
-int MPIR_T_is_initialized(void);
 
 /* random initializers */
 int MPIR_Group_init(void);
@@ -4302,7 +4273,7 @@ int MPIU_Get_intranode_rank(MPID_Comm *comm_ptr, int r);
 #define MPIR_Comm_size(comm_ptr) ((comm_ptr)->local_size)
 #define MPIR_Type_extent_impl(datatype, extent_ptr) MPID_Datatype_get_extent_macro(datatype, *(extent_ptr))
 #define MPIR_Type_size_impl(datatype, size) MPID_Datatype_get_size_macro(datatype, *(size))
-#define MPIR_Test_cancelled_impl(status, flag) *(flag) = (status)->cancelled
+#define MPIR_Test_cancelled_impl(status, flag) *(flag) = MPIR_STATUS_GET_CANCEL_BIT(*(status))
 
 /* MPIR_ functions.  These are versions of MPI_ functions appropriate for calling within MPI */
 int MPIR_Cancel_impl(MPID_Request *request_ptr);
@@ -4402,9 +4373,9 @@ int MPIR_Type_indexed_impl(int count, const int blocklens[], const int indices[]
 void MPIR_Type_free_impl(MPI_Datatype *datatype);
 int MPIR_Type_vector_impl(int count, int blocklength, int stride, MPI_Datatype old_type, MPI_Datatype *newtype_p);
 int MPIR_Type_struct_impl(int count, const int blocklens[], const MPI_Aint indices[], const MPI_Datatype old_types[], MPI_Datatype *newtype);
-int MPIR_Pack_impl(const void *inbuf, int incount, MPI_Datatype datatype, void *outbuf, int outcount, int *position);
-void MPIR_Pack_size_impl(int incount, MPI_Datatype datatype, int *size);
-int MPIR_Unpack_impl(const void *inbuf, int insize, int *position,
+int MPIR_Pack_impl(const void *inbuf, int incount, MPI_Datatype datatype, void *outbuf, MPI_Aint outcount, MPI_Aint *position);
+void MPIR_Pack_size_impl(int incount, MPI_Datatype datatype, MPI_Aint *size);
+int MPIR_Unpack_impl(const void *inbuf, MPI_Aint insize, MPI_Aint *position,
                      void *outbuf, int outcount, MPI_Datatype datatype);
 void MPIR_Type_lb_impl(MPI_Datatype datatype, MPI_Aint *displacement);
 int MPIR_Ibsend_impl(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,

@@ -12,6 +12,8 @@
 /errors/f90/errhan/Makefile.am
 /errors/f90/errhan/testlist
 /errors/f90/errhan/uerrhandf90.f90
+/errors/f90/io
+/errors/f90/testlist
 /errors/f77/errhan/addsize.h
 /errors/f77/errhan/iooffset.h
 /f90/coll/
@@ -21,6 +23,7 @@
 /f90/pt2pt/
 /f90/spawn/
 /f90/topo/
+/f90/profile
 /coll/gdb.script
 /coll/redscat2
 /coll/reduce_local
@@ -51,6 +54,7 @@
 /attr/attrerr
 /attr/attrerrcomm
 /attr/attrerrtype
+/attr/attrdeleteget
 /attr/attric
 /attr/attrorder
 /attr/attrordercomm
@@ -120,6 +124,7 @@
 /comm/dupic
 /comm/ctxalloc
 /cxx/testlist
+/cxx/topo/testlist
 /cxx/coll/uallreduce
 /cxx/coll/ureduce
 /cxx/coll/uscan
@@ -185,6 +190,7 @@
 /cxx/spawn/spawnintrax
 /cxx/spawn/spawnargvx
 /cxx/spawn/selfconaccx
+/datatype/testlist
 /datatype/segtest
 /datatype/typename
 /datatype/contents
@@ -213,6 +219,9 @@
 /errors/errhan/errcode
 /errors/errhan/adderr
 /errors/errhan/errring
+/errors/f77/io/iooffset.h
+/errors/f77/io/addsize.h
+/errors/f77/testlist
 /errors/group/rerr
 /errors/io/fileerrret
 /errors/pt2pt/proberank
@@ -439,6 +448,7 @@
 /pt2pt/errinstatwa
 /pt2pt/errinstatws
 /pt2pt/inactivereq
+/rma/testlist
 /rma/ircpi
 /rma/test1
 /rma/test2
@@ -471,6 +481,7 @@
 /threads/pt2pt/threaded_sr
 /threads/pt2pt/alltoall
 /threads/pt2pt/sendselfth
+/threads/mpi_t/mpit_threading
 /threads/spawn/threaded_sr
 /threads/spawn/alltoall
 /threads/spawn/sendselfth
@@ -548,6 +559,7 @@
 /comm/comm_group_half
 /comm/comm_group_rand
 /comm/comm_idup
+/comm/comm_idup_mul
 /comm/comm_info
 /comm/commcreate1
 /comm/ctxsplit
@@ -838,6 +850,7 @@
 /manual/spawntest_master
 /manual/testconnectserial
 /mpi_t/mpi_t_str
+/mpi_t/mpit_vars
 /perf/allredtrace
 /perf/commcreatep
 /perf/dtpack
@@ -991,3 +1004,7 @@
 /topo/graphcr
 /topo/graphcr2
 /topo/neighb_coll
+/impls/hydra/dummy
+/impls/hydra/proc_binding.sh
+/impls/mpich/testlist
+/impls/testlist

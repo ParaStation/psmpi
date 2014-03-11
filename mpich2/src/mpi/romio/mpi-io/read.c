@@ -70,10 +70,10 @@ int MPIOI_File_read(MPI_File fh,
 		    char *myname,
 		    MPI_Status *status)
 {
-    int error_code, bufsize, buftype_is_contig, filetype_is_contig;
-    int datatype_size;
+    int error_code, buftype_is_contig, filetype_is_contig;
+    MPI_Count datatype_size;
     ADIO_File adio_fh;
-    ADIO_Offset off;
+    ADIO_Offset off, bufsize;
     void *xbuf=NULL, *e32_buf=NULL;
 
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
@@ -95,7 +95,7 @@ int MPIOI_File_read(MPI_File fh,
     }
     /* --END ERROR HANDLING-- */
 
-    MPI_Type_size(datatype, &datatype_size);
+    MPI_Type_size_x(datatype, &datatype_size);
 
     /* --BEGIN ERROR HANDLING-- */
     MPIO_CHECK_COUNT_SIZE(adio_fh, count, datatype_size, myname, error_code);

@@ -41,7 +41,7 @@ Output Parameters:
 #include "mpiu_greq.h"
 #endif
 
-int MPI_File_iwrite(MPI_File fh, const void *buf, int count,
+int MPI_File_iwrite(MPI_File fh, ROMIO_CONST void *buf, int count,
 		    MPI_Datatype datatype, MPI_Request *request)
 {
     int error_code=MPI_SUCCESS;
@@ -80,10 +80,10 @@ int MPIOI_File_iwrite(MPI_File fh,
 		      char *myname,
 		      MPI_Request *request)
 {
-    int error_code, bufsize, buftype_is_contig, filetype_is_contig;
-    int datatype_size;
+    int error_code, buftype_is_contig, filetype_is_contig;
+    MPI_Count datatype_size;
     ADIO_Status status;
-    ADIO_Offset off;
+    ADIO_Offset off, bufsize;
     ADIO_File adio_fh;
     MPI_Offset nbytes=0;
 
@@ -104,7 +104,7 @@ int MPIOI_File_iwrite(MPI_File fh,
     }
     /* --END ERROR HANDLING-- */
 
-    MPI_Type_size(datatype, &datatype_size);
+    MPI_Type_size_x(datatype, &datatype_size);
 
     /* --BEGIN ERROR HANDLING-- */
     MPIO_CHECK_INTEGRAL_ETYPE(adio_fh, count, datatype_size, myname, error_code);

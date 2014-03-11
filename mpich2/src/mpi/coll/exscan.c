@@ -137,7 +137,7 @@ int MPIR_Exscan (
     /* adjust for potential negative lower bound in datatype */
     tmp_buf = (void *)((char*)tmp_buf - true_lb);
 
-    mpi_errno = MPIR_Localcopy((sendbuf == MPI_IN_PLACE ? recvbuf : sendbuf), count, datatype,
+    mpi_errno = MPIR_Localcopy((sendbuf == MPI_IN_PLACE ? (const void *)recvbuf : sendbuf), count, datatype,
                                partial_scan, count, datatype);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
@@ -150,7 +150,7 @@ int MPIR_Exscan (
         dst = rank ^ mask;
         if (dst < comm_size) {
             /* Send partial_scan to dst. Recv into tmp_buf */
-            mpi_errno = MPIC_Sendrecv_ft(partial_scan, count, datatype,
+            mpi_errno = MPIC_Sendrecv(partial_scan, count, datatype,
                                          dst, MPIR_EXSCAN_TAG, tmp_buf,
                                          count, datatype, dst,
                                          MPIR_EXSCAN_TAG, comm,

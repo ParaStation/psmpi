@@ -112,8 +112,8 @@ int MPIR_Ibarrier_inter(MPID_Comm *comm_ptr, MPID_Sched_t s)
     }
 
     /* do a barrier on the local intracommunicator */
-    MPIU_Assert(comm_ptr->local_comm->coll_fns && comm_ptr->local_comm->coll_fns->Ibarrier);
-    mpi_errno = comm_ptr->local_comm->coll_fns->Ibarrier(comm_ptr->local_comm, s);
+    MPIU_Assert(comm_ptr->local_comm->coll_fns && comm_ptr->local_comm->coll_fns->Ibarrier_sched);
+    mpi_errno = comm_ptr->local_comm->coll_fns->Ibarrier_sched(comm_ptr->local_comm, s);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     MPID_SCHED_BARRIER(s);
@@ -128,30 +128,30 @@ int MPIR_Ibarrier_inter(MPID_Comm *comm_ptr, MPID_Sched_t s)
 
     /* first broadcast from left to right group, then from right to
        left group */
-    MPIU_Assert(comm_ptr->coll_fns && comm_ptr->coll_fns->Ibcast);
+    MPIU_Assert(comm_ptr->coll_fns && comm_ptr->coll_fns->Ibcast_sched);
     if (comm_ptr->is_low_group) {
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
-        mpi_errno = comm_ptr->coll_fns->Ibcast(buf, 1, MPI_BYTE, root, comm_ptr, s);
+        mpi_errno = comm_ptr->coll_fns->Ibcast_sched(buf, 1, MPI_BYTE, root, comm_ptr, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
         MPID_SCHED_BARRIER(s);
 
         /* receive bcast from right */
         root = 0;
-        mpi_errno = comm_ptr->coll_fns->Ibcast(buf, 1, MPI_BYTE, root, comm_ptr, s);
+        mpi_errno = comm_ptr->coll_fns->Ibcast_sched(buf, 1, MPI_BYTE, root, comm_ptr, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
     else {
         /* receive bcast from left */
         root = 0;
-        mpi_errno = comm_ptr->coll_fns->Ibcast(buf, 1, MPI_BYTE, root, comm_ptr, s);
+        mpi_errno = comm_ptr->coll_fns->Ibcast_sched(buf, 1, MPI_BYTE, root, comm_ptr, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
         MPID_SCHED_BARRIER(s);
 
         /* bcast to left */
         root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
-        mpi_errno = comm_ptr->coll_fns->Ibcast(buf, 1, MPI_BYTE, root, comm_ptr, s);
+        mpi_errno = comm_ptr->coll_fns->Ibcast_sched(buf, 1, MPI_BYTE, root, comm_ptr, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
 
@@ -170,20 +170,31 @@ fn_fail:
 int MPIR_Ibarrier_impl(MPID_Comm *comm_ptr, MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
-    int tag = -1;
     MPID_Request *reqp = NULL;
+    int tag = -1;
     MPID_Sched_t s = MPID_SCHED_NULL;
 
     *request = MPI_REQUEST_NULL;
+
+    MPIU_Assert(comm_ptr->coll_fns != NULL);
+    if (comm_ptr->coll_fns->Ibarrier_req != NULL) {
+        /* --BEGIN USEREXTENSION-- */
+        mpi_errno = comm_ptr->coll_fns->Ibarrier_req(comm_ptr, &reqp);
+        if (reqp) {
+            *request = reqp->handle;
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            goto fn_exit;
+        }
+        /* --END USEREXTENSION-- */
+    }
 
     mpi_errno = MPID_Sched_next_tag(comm_ptr, &tag);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     mpi_errno = MPID_Sched_create(&s);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-    MPIU_Assert(comm_ptr->coll_fns != NULL);
-    MPIU_Assert(comm_ptr->coll_fns->Ibarrier != NULL);
-    mpi_errno = comm_ptr->coll_fns->Ibarrier(comm_ptr, s);
+    MPIU_Assert(comm_ptr->coll_fns->Ibarrier_sched != NULL);
+    mpi_errno = comm_ptr->coll_fns->Ibarrier_sched(comm_ptr, s);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     mpi_errno = MPID_Sched_start(&s, comm_ptr, tag, &reqp);
@@ -204,13 +215,24 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_Ibarrier - XXX description here
+MPI_Ibarrier - Notifies the process that it has reached the barrier and returns
+               immediately
 
 Input Parameters:
 . comm - communicator (handle)
 
 Output Parameters:
 . request - communication request (handle)
+
+Notes:
+MPI_Ibarrier is a nonblocking version of MPI_barrier. By calling MPI_Ibarrier,
+a process notifies that it has reached the barrier. The call returns
+immediately, independent of whether other processes have called MPI_Ibarrier.
+The usual barrier semantics are enforced at the corresponding completion
+operation (test or wait), which in the intra-communicator case will complete
+only after all other processes in the communicator have called MPI_Ibarrier. In
+the intercommunicator case, it will complete when all processes in the remote
+group have called MPI_Ibarrier.
 
 .N ThreadSafe
 

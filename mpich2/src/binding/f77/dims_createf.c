@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create_( MPI_Fint *, MPI_Fint *, MP
 #else
 #pragma _CRI duplicate mpi_dims_create_ as pmpi_dims_create_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIMS_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_DIMS_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_DIMS_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_DIMS_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_DIMS_CREATE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIMS_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIMS_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIMS_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_DIMS_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create_( MPI_Fint *, MPI_Fint *, MP
 #pragma weak mpi_dims_create__ = mpi_dims_create
 #pragma weak mpi_dims_create_ = mpi_dims_create
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIMS_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("MPI_DIMS_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("MPI_DIMS_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("MPI_DIMS_CREATE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIMS_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_dims_create__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_dims_create__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_dims_create__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIMS_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_dims_create_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_dims_create_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_dims_create_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIMS_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_dims_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_dims_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_dims_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dims_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_DIMS_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_dims_create( MPI_Fint *, MPI_Fint *, MP
 #pragma weak pmpi_dims_create__ = pmpi_dims_create
 #pragma weak pmpi_dims_create_ = pmpi_dims_create
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dims_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_DIMS_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dims_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_DIMS_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dims_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_DIMS_CREATE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_DIMS_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dims_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dims_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_DIMS_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dims_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dims_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_DIMS_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dims_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dims_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_dims_create")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_dims_create_ PMPI_DIMS_CREATE

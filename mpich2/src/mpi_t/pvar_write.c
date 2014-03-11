@@ -30,23 +30,8 @@
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIR_T_pvar_write_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, void *buf)
 {
-    int mpi_errno = MPI_SUCCESS;
-
-    MPIU_Assert(!handle->info->readonly);
-
-    /* the extra indirection through "info" might be too costly for some tools,
-     * consider moving this value to or caching it in the handle itself */
-    if (likely(handle->info->impl_kind == MPIR_T_PVAR_IMPL_SIMPLE)) {
-        MPIU_Memcpy(handle->handle_state, buf, handle->count * handle->bytes);
-    }
-    else {
-        MPIU_Assertp(FALSE); /* _IMPL_CB not yet implemented */
-    }
-
-fn_exit:
-    return mpi_errno;
-fn_fail:
-    goto fn_exit;
+    /* This function should never be called */
+    return MPI_ERR_INTERN;
 }
 
 #endif /* MPICH_MPI_FROM_PMPI */
@@ -56,25 +41,40 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_T_pvar_write - XXX description here
+MPI_T_pvar_write - Write a performance variable
 
 Input Parameters:
 + session - identifier of performance experiment session (handle)
 . handle - handle of a performance variable (handle)
 - buf - initial address of storage location for variable value (choice)
 
+Notes:
+The MPI_T_pvar_write() call attempts to write the value of the performance variable
+with the handle identified by the parameter handle in the session identified by the parameter
+session. The value to be written is passed in the buffer identified by the parameter buf. The
+user must ensure that the buffer is of the appropriate size to hold the entire value of the
+performance variable (based on the datatype and count returned by the corresponding previous
+calls to MPI_T_pvar_get_info() and MPI_T_pvar_handle_alloc(), respectively).
+
+The constant MPI_T_PVAR_ALL_HANDLES cannot be used as an argument for the function
+MPI_T_pvar_write().
+
 .N ThreadSafe
 
-.N Fortran
-
 .N Errors
+.N MPI_SUCCESS
+.N MPI_T_ERR_NOT_INITIALIZED
+.N MPI_T_ERR_INVALID_SESSION
+.N MPI_T_ERR_INVALID_HANDLE
+.N MPI_T_ERR_PVAR_NO_WRITE
 @*/
 int MPI_T_pvar_write(MPI_T_pvar_session session, MPI_T_pvar_handle handle, void *buf)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_PVAR_WRITE);
 
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_PVAR_WRITE);
+    MPIR_ERRTEST_MPIT_INITIALIZED(mpi_errno);
+    MPIR_T_THREAD_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_T_PVAR_WRITE);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -82,23 +82,13 @@ int MPI_T_pvar_write(MPI_T_pvar_session session, MPI_T_pvar_handle handle, void 
     {
         MPID_BEGIN_ERROR_CHECKS
         {
-
-            /* TODO more checks may be appropriate */
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
-    /* Convert MPI object handles to object pointers */
-
-    /* Validate parameters and objects (post conversion) */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS
-        {
-            /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+            MPIR_ERRTEST_PVAR_SESSION(session, mpi_errno);
+            MPIR_ERRTEST_PVAR_HANDLE(handle, mpi_errno);
+            MPIR_ERRTEST_ARGNULL(buf, "buf", mpi_errno);
+            if (handle == MPI_T_PVAR_ALL_HANDLES || handle->session != session) {
+                mpi_errno = MPI_T_ERR_INVALID_HANDLE;
+                goto fn_fail;
+            }
         }
         MPID_END_ERROR_CHECKS
     }
@@ -106,14 +96,23 @@ int MPI_T_pvar_write(MPI_T_pvar_session session, MPI_T_pvar_handle handle, void 
 
     /* ... body of routine ...  */
 
+    if (MPIR_T_pvar_is_readonly(handle)) {
+        mpi_errno = MPI_T_ERR_PVAR_NO_WRITE;
+        goto fn_fail;
+    } else {
+        /* We should never expose writable pvars */
+        mpi_errno = MPI_ERR_INTERN;
+        goto fn_fail;
+    }
+
     mpi_errno = MPIR_T_pvar_write_impl(session, handle, buf);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
 
 fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_T_PVAR_WRITE);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPIR_T_THREAD_CS_EXIT();
     return mpi_errno;
 
 fn_fail:

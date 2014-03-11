@@ -1,4 +1,4 @@
-.TH mpiexec 1 "4/24/2013" " " "MPI"
+.TH mpiexec 1 "2/20/2014" " " "MPI"
 .SH NAME
 mpiexec \-  Run an MPI program 
 .SH SYNOPSIS
@@ -23,7 +23,7 @@ the MPI program
 .I a.out
 on 4 processes:
 .nf
-mpiexec -n 4 a.out
+mpiexec \\-n 4 a.out
 .fi
 
 
@@ -70,10 +70,10 @@ of processes (see the MPI-2 specification for more details)
 .PD 0
 .TP
 .B -configfile <name> 
-- file containing specifications of host/program, 
+- file containing specifications of host/program,
 one per line, with # as a comment indicator, e.g., the usual
 mpiexec input, but with ":" replaced with a newline.  That is,
-the configfile contains lines with -soft, -n etc.
+the configfile contains lines with \\-soft, \\-n etc.
 .PD 1
 
 Additional arguments that are specific to the MPICH implementation
@@ -86,9 +86,9 @@ version of
 .I mpiexec
 creates all
 processes on the same system on which it is running; in that case, the
-.I -arch
+.I \\-arch
 and 
-.I -host
+.I \\-host
 options are ignored.
 
 The colon character (
@@ -102,7 +102,7 @@ on 4 processes and
 on 8 processes, use:
 
 .nf
-mpiexec -n 4 ocean : -n 8 air
+mpiexec \\-n 4 ocean : \\-n 8 air
 .fi
 
 
@@ -118,7 +118,7 @@ following arguments to
 .TP
 .B -np <num> 
 - A synonym for the standard 
-.I -n
+.I \\-n
 argument
 .PD 1
 .PD 0
@@ -136,11 +136,11 @@ the processes being run by
 .PD 0
 .TP
 .B -envnone 
-- Pass no environment variables (other than ones specified with 
+- Pass no environment variables (other than ones specified with
 other 
-.I -env
+.I \\-env
 or 
-.I -genv
+.I \\-genv
 arguments) to the processes being run by 
 .I mpiexec
 \&.
@@ -162,11 +162,11 @@ by commas), with their current values, to the processes being run by
 .TP
 .B -genv <name> <value> 
 - The 
-.I -genv
+.I \\-genv
 options have the same meaning as their
 corresponding 
-.I -env
-version, except they apply to all executables, not just 
+.I \\-env
+version, except they apply to all executables, not just
 the current executable (in the case that the colon syntax is used to specify
 multiple execuables).
 .PD 1
@@ -174,20 +174,20 @@ multiple execuables).
 .TP
 .B -genvnone 
 - Like 
-.I -envnone
+.I \\-envnone
 , but for all executables
 .PD 1
 .PD 0
 .TP
 .B -genvlist <list> 
 - Like 
-.I -envlist
+.I \\-envlist
 , but for all executables
 .PD 1
 .PD 0
 .TP
 .B -usize <n> 
-- Specify the value returned for the value of the attribute 
+- Specify the value returned for the value of the attribute
 .I MPI_UNIVERSE_SIZE
 \&.
 
@@ -199,7 +199,7 @@ multiple execuables).
 .I stdout
 and 
 .I stderr
-) with 
+) with
 the rank of the process
 .PD 1
 .PD 0
@@ -212,7 +212,7 @@ seconds.
 .PD 0
 .TP
 .B -exitinfo 
-- Provide more information on the reason each process exited if 
+- Provide more information on the reason each process exited if
 there is an abnormal exit
 .PD 1
 
@@ -320,4 +320,4 @@ processes created by
 
 
 .SH LOCATION
-src/env/mpiexec.txt
+/tmp/gyCYfBi4J6/mpich-3.1/src/env/mpiexec.txt

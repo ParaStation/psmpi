@@ -8,6 +8,27 @@
 #include "mpiimpl.h"
 #include "mpicomm.h"
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+categories:
+    - name        : COMMUNICATOR
+      description : cvars that control communicator construction and operation
+
+cvars:
+    - name        : MPIR_CVAR_COMM_SPLIT_USE_QSORT
+      category    : COMMUNICATOR
+      type        : boolean
+      default     : true
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        Use qsort(3) in the implementation of MPI_Comm_split instead of bubble sort.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
+
 /* -- Begin Profiling Symbol Block for routine MPI_Comm_split */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Comm_split = PMPI_Comm_split
@@ -67,7 +88,7 @@ static void MPIU_Sort_inttable( sorttype *keytable, int size )
 
 #if defined(HAVE_QSORT)
     /* temporary switch for profiling performance differences */
-    if (MPIR_PARAM_COMM_SPLIT_USE_QSORT)
+    if (MPIR_CVAR_COMM_SPLIT_USE_QSORT)
     {
         /* qsort isn't a stable sort, so we have to enforce stability by keeping
          * track of the original indices */
@@ -233,7 +254,7 @@ int MPIR_Comm_split_impl(MPID_Comm *comm_ptr, int color, int key, MPID_Comm **ne
 	if (comm_ptr->rank == 0) {
 	    mpi_errno = MPIC_Sendrecv( &new_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, 0, 0,
 				       &remote_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, 
-				       0, 0, comm_ptr->handle, MPI_STATUS_IGNORE );
+				       0, 0, comm_ptr->handle, MPI_STATUS_IGNORE, &errflag );
 	    if (mpi_errno) { MPIU_ERR_POP( mpi_errno ); }
 	    mpi_errno = MPIR_Bcast_impl( &remote_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, 0, local_comm_ptr, &errflag );
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);

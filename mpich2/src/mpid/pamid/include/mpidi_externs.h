@@ -33,8 +33,11 @@ extern pami_client_t  MPIDI_Client;
 extern pami_context_t MPIDI_Context[];
 
 extern MPIDI_Process_t MPIDI_Process;
-extern int MPIX_Statistics_write (FILE *);
-extern int MPIX_Statistics_zero ();
 
+extern advisor_table_t  MPIDI_Collsel_advisor_table;
+extern pami_extension_t MPIDI_Collsel_extension;
+extern advisor_params_t MPIDI_Collsel_advisor_params;
+extern char            *MPIDI_Collsel_output_file;
+extern pami_extension_collsel_advise MPIDI_Pamix_collsel_advise;
 
 #endif

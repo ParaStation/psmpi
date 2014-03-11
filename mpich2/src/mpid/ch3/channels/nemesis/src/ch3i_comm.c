@@ -5,6 +5,7 @@
  */
 
 #include "mpid_nem_impl.h"
+#undef utarray_oom
 #define utarray_oom() do { goto fn_oom; } while (0)
 #include "mpiu_utarray.h"
 
@@ -26,9 +27,6 @@ int MPIDI_CH3I_comm_create(MPID_Comm *comm, void *param)
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_COMM_CREATE);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_COMM_CREATE);
-
-    /* Use the VC's eager threshold by default. */
-    comm->ch.eager_max_msg_sz = -1;
 
 #ifndef ENABLED_SHM_COLLECTIVES
     goto fn_exit;

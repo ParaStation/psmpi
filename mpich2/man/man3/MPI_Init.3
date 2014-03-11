@@ -1,4 +1,4 @@
-.TH MPI_Init 3 "4/24/2013" " " "MPI"
+.TH MPI_Init 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Init \-  Initialize the MPI execution environment 
 .SH SYNOPSIS
@@ -37,6 +37,15 @@ In the MPICH implementation, you should do
 as little as possible.  In particular, avoid anything that changes the
 external state of the program, such as opening files, reading standard
 input or writing to standard output.
+
+.SH NOTES FOR C
+As of MPI-2, 
+.I MPI_Init
+will accept NULL as input parameters. Doing so
+will impact the values stored in 
+.I MPI_INFO_ENV
+\&.
+
 
 .SH NOTES FOR FORTRAN
 The Fortran binding for 
@@ -97,4 +106,4 @@ may only be called once in a program.
 MPI_Init_thread, MPI_Finalize
 .br
 .SH LOCATION
-src/mpi/init/init.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/init/init.c

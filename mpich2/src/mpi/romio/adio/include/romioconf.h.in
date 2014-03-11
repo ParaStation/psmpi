@@ -8,17 +8,12 @@
 #define ROMIOCONF_H_INCLUDED
 
 
-/* Define if no signotify */
-#undef AIO_SIGNOTIFY_NONE
-
-/* Define for AIX */
-#undef AIX
-
-/* Define if Cray */
-#undef CRAY
-
 /* Define if aio.h exists and can be compiled */
 #undef HAVE_AIO_H
+
+/* Define to 1 if you have the declaration of `MPI_COMBINER_HINDEXED_BLOCK',
+   and to 0 if you don't. */
+#undef HAVE_DECL_MPI_COMBINER_HINDEXED_BLOCK
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -62,8 +57,14 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* Set if MPI-IO prototypes use const qualifier */
+#undef HAVE_MPIIO_CONST
+
 /* Define if MPICH memory tracing macros defined */
 #undef HAVE_MPIU_FUNCS
+
+/* Define to 1 if you have the <mpix.h> header file. */
+#undef HAVE_MPIX_H
 
 /* Define if MPI combiners available */
 #undef HAVE_MPI_COMBINERS
@@ -80,17 +81,23 @@
 /* Define if supports long long int */
 #undef HAVE_MPI_LONG_LONG_INT
 
-/* Define for CRAY weak dup */
+/* Define to 1 if you have the `MPI_Status_set_elements_x' function. */
+#undef HAVE_MPI_STATUS_SET_ELEMENTS_X
+
+/* Define to 1 if you have the `MPI_Type_size_x' function. */
+#undef HAVE_MPI_TYPE_SIZE_X
+
+/* Define if multiple weak symbols may be defined */
+#undef HAVE_MULTIPLE_PRAGMA_WEAK
+
+/* Cray style weak pragma */
 #undef HAVE_PRAGMA_CRI_DUP
 
-/* Define for HP weak pragma */
+/* HP style weak pragma */
 #undef HAVE_PRAGMA_HP_SEC_DEF
 
-/* Define if pragma weak available */
+/* Supports weak pragma */
 #undef HAVE_PRAGMA_WEAK
-
-/* Define if pread64 available */
-#undef HAVE_PREAD64
 
 /* Define if PVFS_sys_create does not have layout parameter */
 #undef HAVE_PVFS2_CREATE_WITHOUT_LAYOUT
@@ -179,20 +186,17 @@
 /* Define to 1 if you have the `usleep' function. */
 #undef HAVE_USLEEP
 
+/* Attribute style weak pragma */
+#undef HAVE_WEAK_ATTRIBUTE
+
 /* Define if weak symbols available */
 #undef HAVE_WEAK_SYMBOLS
 
 /* Define to 1 if you have the <zoidfs.h> header file. */
 #undef HAVE_ZOIDFS_H
 
-/* Define for HPUX */
-#undef HPUX
-
 /* Define if int smaller than pointer */
 #undef INT_LT_POINTER
-
-/* Define if IRIX */
-#undef IRIX
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */
@@ -209,6 +213,9 @@
 
 /* Define if SGI MPI */
 #undef MPISGI
+
+/* Define to "MPI_Aint" if MPI does not provide MPI_Count */
+#undef MPI_Count
 
 /* Define if MPI_Offset is int */
 #undef MPI_OFFSET_IS_INT
@@ -363,17 +370,14 @@
 /* The size of `void *', as computed by sizeof. */
 #undef SIZEOF_VOID_P
 
-/* Define for SPPUX (Convex) */
-#undef SPPUX
-
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 
-/* Define for NEC SX4 */
-#undef SX4
-
 /* Define if performing coverage tests */
 #undef USE_COVERAGE
+
+/* Define if weak symbols should be used */
+#undef USE_WEAK_SYMBOLS
 
 /* Version number of package */
 #undef VERSION
@@ -383,6 +387,9 @@
 #ifndef __cplusplus
 #undef inline
 #endif
+
+/* Define to `long int' if <sys/types.h> does not define. */
+#undef off_t
 
 /* Define to the equivalent of the C99 'restrict' keyword, or to
    nothing if this is not supported.  Do not define if restrict is
@@ -397,6 +404,12 @@
 # define _Restrict
 # define __restrict__
 #endif
+
+/* Define to `unsigned int' if <sys/types.h> does not define. */
+#undef size_t
+
+/* Define to `int' if <sys/types.h> does not define. */
+#undef ssize_t
 
 /* Define to "unsigned char" if sys/types.h does not define. */
 #undef u_char

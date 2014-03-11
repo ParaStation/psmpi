@@ -266,7 +266,7 @@ int MPIR_Ialltoall_perm_sr(const void *sendbuf, int sendcount, MPI_Datatype send
     MPID_Datatype_get_extent_macro(sendtype, sendtype_extent);
     MPID_Datatype_get_extent_macro(recvtype, recvtype_extent);
 
-    bblock = MPIR_PARAM_ALLTOALL_THROTTLE;
+    bblock = MPIR_CVAR_ALLTOALL_THROTTLE;
     if (bblock == 0) bblock = comm_size;
 
     for (ii = 0; ii < comm_size; ii += bblock) {
@@ -417,13 +417,13 @@ int MPIR_Ialltoall_intra(const void *sendbuf, int sendcount, MPI_Datatype sendty
         mpi_errno = MPIR_Ialltoall_inplace(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm_ptr, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
-    else if ((nbytes <= MPIR_PARAM_ALLTOALL_SHORT_MSG_SIZE) && (comm_size >= 8)) {
+    else if ((nbytes <= MPIR_CVAR_ALLTOALL_SHORT_MSG_SIZE) && (comm_size >= 8)) {
         /* use the indexing algorithm by Jehoshua Bruck et al,
          * IEEE TPDS, Nov. 97 */
         mpi_errno = MPIR_Ialltoall_bruck(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm_ptr, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
-    else if (nbytes <= MPIR_PARAM_ALLTOALL_MEDIUM_MSG_SIZE) {
+    else if (nbytes <= MPIR_CVAR_ALLTOALL_MEDIUM_MSG_SIZE) {
         /* Medium-size message. Use isend/irecv with scattered
            destinations. Use Tony Ladd's modification to post only
            a small number of isends/irecvs at a time. */
@@ -518,11 +518,23 @@ fn_fail:
 int MPIR_Ialltoall_impl(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPID_Comm *comm_ptr, MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
-    int tag = -1;
     MPID_Request *reqp = NULL;
+    int tag = -1;
     MPID_Sched_t s = MPID_SCHED_NULL;
 
     *request = MPI_REQUEST_NULL;
+
+    MPIU_Assert(comm_ptr->coll_fns != NULL);
+    if (comm_ptr->coll_fns->Ialltoall_req != NULL) {
+        /* --BEGIN USEREXTENSION-- */
+        mpi_errno = comm_ptr->coll_fns->Ialltoall_req(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm_ptr, &reqp);
+        if (reqp) {
+            *request = reqp->handle;
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            goto fn_exit;
+        }
+        /* --END USEREXTENSION-- */
+    }
 
     mpi_errno = MPID_Sched_next_tag(comm_ptr, &tag);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -530,8 +542,8 @@ int MPIR_Ialltoall_impl(const void *sendbuf, int sendcount, MPI_Datatype sendtyp
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     MPIU_Assert(comm_ptr->coll_fns != NULL);
-    MPIU_Assert(comm_ptr->coll_fns->Ialltoall != NULL);
-    mpi_errno = comm_ptr->coll_fns->Ialltoall(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm_ptr, s);
+    MPIU_Assert(comm_ptr->coll_fns->Ialltoall_sched != NULL);
+    mpi_errno = comm_ptr->coll_fns->Ialltoall_sched(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm_ptr, s);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     mpi_errno = MPID_Sched_start(&s, comm_ptr, tag, &reqp);
@@ -552,7 +564,7 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_Ialltoall - XXX description here
+MPI_Ialltoall - Sends data from all to all processes in a nonblocking way
 
 Input Parameters:
 + sendbuf - starting address of the send buffer (choice)
@@ -572,7 +584,9 @@ Output Parameters:
 
 .N Errors
 @*/
-int MPI_Ialltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm, MPI_Request *request)
+int MPI_Ialltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                  void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                  MPI_Comm comm, MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;

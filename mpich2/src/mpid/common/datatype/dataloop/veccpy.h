@@ -54,25 +54,29 @@
 {								\
     type * l_src = (type *) src, * l_dest = (type *) dest;	\
     type * tmp_src = l_src;                                     \
-    register int _i, j, k;		                        \
+    register int k;                                             \
+    register unsigned long _i, j;                               \
     unsigned long total_count = count * nelms;                  \
-    const int l_stride = stride;				\
+    const DLOOP_Offset l_stride = stride;                       \
                                                                 \
+    DLOOP_Assert(stride <= INT_MAX);                            \
+    DLOOP_Assert(total_count <= INT_MAX);                       \
+    DLOOP_Assert(nelms <= INT_MAX);                             \
     if (nelms == 1) {                                           \
-        for (_i = total_count; _i; _i--) {			        \
+        for (_i = (int)total_count; _i; _i--) {                 \
             *l_dest++ = *l_src;				        \
             l_src += l_stride;                                  \
         }							\
     }                                                           \
     else if (nelms == 2) {                                      \
-        for (_i = total_count; _i; _i -= 2) {			\
+        for (_i = (int)total_count; _i; _i -= 2) {              \
             *l_dest++ = l_src[0];				\
             *l_dest++ = l_src[1];				\
             l_src += l_stride;                                  \
         }							\
     }                                                           \
     else if (nelms == 3) {                                      \
-        for (_i = total_count; _i; _i -= 3) {			\
+        for (_i = (int)total_count; _i; _i -= 3) {              \
             *l_dest++ = l_src[0];				\
             *l_dest++ = l_src[1];				\
             *l_dest++ = l_src[2];				\
@@ -80,7 +84,7 @@
         }							\
     }                                                           \
     else if (nelms == 4) {                                      \
-        for (_i = total_count; _i; _i -= 4) {			\
+        for (_i = (int)total_count; _i; _i -= 4) {              \
             *l_dest++ = l_src[0];				\
             *l_dest++ = l_src[1];				\
             *l_dest++ = l_src[2];				\
@@ -89,7 +93,7 @@
         }							\
     }                                                           \
     else if (nelms == 5) {                                      \
-        for (_i = total_count; _i; _i -= 5) {			\
+        for (_i = (int)total_count; _i; _i -= 5) {              \
             *l_dest++ = l_src[0];				\
             *l_dest++ = l_src[1];				\
             *l_dest++ = l_src[2];				\
@@ -99,7 +103,7 @@
         }							\
     }                                                           \
     else if (nelms == 6) {                                      \
-        for (_i = total_count; _i; _i -= 6) {			\
+        for (_i = (int)total_count; _i; _i -= 6) {              \
             *l_dest++ = l_src[0];				\
             *l_dest++ = l_src[1];				\
             *l_dest++ = l_src[2];				\
@@ -110,7 +114,7 @@
         }							\
     }                                                           \
     else if (nelms == 7) {                                      \
-        for (_i = total_count; _i; _i -= 7) {			\
+        for (_i = (int)total_count; _i; _i -= 7) {              \
             *l_dest++ = l_src[0];				\
             *l_dest++ = l_src[1];				\
             *l_dest++ = l_src[2];				\
@@ -122,7 +126,7 @@
         }							\
     }                                                           \
     else if (nelms == 8) {                                      \
-        for (_i = total_count; _i; _i -= 8) {			\
+        for (_i = (int)total_count; _i; _i -= 8) {              \
             *l_dest++ = l_src[0];				\
             *l_dest++ = l_src[1];				\
             *l_dest++ = l_src[2];				\
@@ -135,10 +139,10 @@
         }							\
     }                                                           \
     else {                                                      \
-        _i = total_count;                                        \
+        _i = (int)total_count;                                  \
         while (_i) {                                             \
             tmp_src = l_src;                                    \
-            j = nelms;                                          \
+            j = (int)nelms;                                     \
             while (j >= 8) {                                    \
                 *l_dest++ = tmp_src[0];				\
                 *l_dest++ = tmp_src[1];				\
@@ -166,25 +170,28 @@
 {								\
     type * l_src = (type *) src, * l_dest = (type *) dest;	\
     type * tmp_src = l_src;                                     \
-    register int _i, j, k;		                        \
-    unsigned long total_count = count * nelms;                  \
-    const int l_stride = stride;				\
+    register int k;                                                     \
+    register unsigned long _i, j, total_count = count * nelms;          \
+    const DLOOP_Offset l_stride = stride;				\
                                                                 \
+    DLOOP_Assert(stride <= INT_MAX);                            \
+    DLOOP_Assert(total_count <= INT_MAX);                       \
+    DLOOP_Assert(nelms <= INT_MAX);                             \
     if (nelms == 1) {                                           \
-        for (_i = total_count; _i; _i--) {			        \
+        for (_i = (int)total_count; _i; _i--) {                 \
             *l_dest++ = *l_src;				        \
             l_src = (type *) ((char *) l_src + l_stride);	\
         }							\
     }                                                           \
     else if (nelms == 2) {                                      \
-        for (_i = total_count; _i; _i -= 2) {			\
+        for (_i = (int)total_count; _i; _i -= 2) {              \
             *l_dest++ = l_src[0];				\
             *l_dest++ = l_src[1];				\
             l_src = (type *) ((char *) l_src + l_stride);	\
         }							\
     }                                                           \
     else if (nelms == 3) {                                      \
-        for (_i = total_count; _i; _i -= 3) {			\
+        for (_i = (int)total_count; _i; _i -= 3) {              \
             *l_dest++ = l_src[0];				\
             *l_dest++ = l_src[1];				\
             *l_dest++ = l_src[2];				\
@@ -192,7 +199,7 @@
         }							\
     }                                                           \
     else if (nelms == 4) {                                      \
-        for (_i = total_count; _i; _i -= 4) {			\
+        for (_i = (int)total_count; _i; _i -= 4) {              \
             *l_dest++ = l_src[0];				\
             *l_dest++ = l_src[1];				\
             *l_dest++ = l_src[2];				\
@@ -201,7 +208,7 @@
         }							\
     }                                                           \
     else if (nelms == 5) {                                      \
-        for (_i = total_count; _i; _i -= 5) {			\
+        for (_i = (int)total_count; _i; _i -= 5) {              \
             *l_dest++ = l_src[0];				\
             *l_dest++ = l_src[1];				\
             *l_dest++ = l_src[2];				\
@@ -211,7 +218,7 @@
         }							\
     }                                                           \
     else if (nelms == 6) {                                      \
-        for (_i = total_count; _i; _i -= 6) {			\
+        for (_i = (int)total_count; _i; _i -= 6) {              \
             *l_dest++ = l_src[0];				\
             *l_dest++ = l_src[1];				\
             *l_dest++ = l_src[2];				\
@@ -222,7 +229,7 @@
         }							\
     }                                                           \
     else if (nelms == 7) {                                      \
-        for (_i = total_count; _i; _i -= 7) {			\
+        for (_i = (int)total_count; _i; _i -= 7) {              \
             *l_dest++ = l_src[0];				\
             *l_dest++ = l_src[1];				\
             *l_dest++ = l_src[2];				\
@@ -234,7 +241,7 @@
         }							\
     }                                                           \
     else if (nelms == 8) {                                      \
-        for (_i = total_count; _i; _i -= 8) {			\
+        for (_i = (int)total_count; _i; _i -= 8) {              \
             *l_dest++ = l_src[0];				\
             *l_dest++ = l_src[1];				\
             *l_dest++ = l_src[2];				\
@@ -247,10 +254,10 @@
         }							\
     }                                                           \
     else {                                                      \
-        _i = total_count;                                        \
+        _i = (int)total_count;                                  \
         while (_i) {                                             \
             tmp_src = l_src;                                    \
-            j = nelms;                                          \
+            j = (int)nelms;                                     \
             while (j >= 8) {                                    \
                 *l_dest++ = tmp_src[0];				\
                 *l_dest++ = tmp_src[1];				\
@@ -278,25 +285,29 @@
 {								\
     type * l_src = (type *) src, * l_dest = (type *) dest;	\
     type * tmp_dest = l_dest;                                   \
-    register int _i, j, k;		                        \
+    register int k;                                             \
+    register unsigned long _i, j;                               \
     unsigned long total_count = count * nelms;                  \
-    const int l_stride = stride;				\
+    const DLOOP_Offset l_stride = stride;				\
                                                                 \
+    DLOOP_Assert(stride <= INT_MAX);                            \
+    DLOOP_Assert(total_count <= INT_MAX);                       \
+    DLOOP_Assert(nelms <= INT_MAX);                             \
     if (nelms == 1) {                                           \
-        for (_i = total_count; _i; _i--) {			        \
+        for (_i = (int)total_count; _i; _i--) {                 \
             *l_dest = *l_src++;				        \
             l_dest += l_stride;                                 \
         }							\
     }                                                           \
     else if (nelms == 2) {                                      \
-        for (_i = total_count; _i; _i -= 2) {			\
+        for (_i = (int)total_count; _i; _i -= 2) {              \
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest += l_stride;                                 \
         }							\
     }                                                           \
     else if (nelms == 3) {                                      \
-        for (_i = total_count; _i; _i -= 3) {			\
+        for (_i = (int)total_count; _i; _i -= 3) {              \
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -304,7 +315,7 @@
         }							\
     }                                                           \
     else if (nelms == 4) {                                      \
-        for (_i = total_count; _i; _i -= 4) {			\
+        for (_i = (int)total_count; _i; _i -= 4) {              \
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -313,7 +324,7 @@
         }							\
     }                                                           \
     else if (nelms == 5) {                                      \
-        for (_i = total_count; _i; _i -= 5) {			\
+        for (_i = (int)total_count; _i; _i -= 5) {              \
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -323,7 +334,7 @@
         }							\
     }                                                           \
     else if (nelms == 6) {                                      \
-        for (_i = total_count; _i; _i -= 6) {			\
+        for (_i = (int)total_count; _i; _i -= 6) {              \
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -334,7 +345,7 @@
         }							\
     }                                                           \
     else if (nelms == 7) {                                      \
-        for (_i = total_count; _i; _i -= 7) {			\
+        for (_i = (int)total_count; _i; _i -= 7) {              \
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -346,7 +357,7 @@
         }							\
     }                                                           \
     else if (nelms == 8) {                                      \
-        for (_i = total_count; _i; _i -= 8) {			\
+        for (_i = (int)total_count; _i; _i -= 8) {              \
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -359,10 +370,10 @@
         }							\
     }                                                           \
     else {                                                      \
-        _i = total_count;                                        \
+        _i = (int)total_count;                                  \
         while (_i) {                                             \
             tmp_dest = l_dest;                                  \
-            j = nelms;                                          \
+            j = (int)nelms;                                     \
             while (j >= 8) {                                    \
                 tmp_dest[0] = *l_src++;				\
                 tmp_dest[1] = *l_src++;				\
@@ -390,25 +401,29 @@
 {								\
     type * l_src = (type *) src, * l_dest = (type *) dest;	\
     type * tmp_dest = l_dest;                                   \
-    register int _i, j, k;		                        \
+    register int k;                                             \
+    register unsigned long _i, j;                               \
     unsigned long total_count = count * nelms;                  \
-    const int l_stride = stride;				\
+    const DLOOP_Offset l_stride = stride;                       \
                                                                 \
+    DLOOP_Assert(stride <= INT_MAX);                            \
+    DLOOP_Assert(total_count <= INT_MAX);                       \
+    DLOOP_Assert(nelms <= INT_MAX);                             \
     if (nelms == 1) {                                           \
-        for (_i = total_count; _i; _i--) {			        \
+        for (_i = (int)total_count; _i; _i--) {                 \
             *l_dest = *l_src++;				        \
             l_dest = (type *) ((char *) l_dest + l_stride);	\
         }							\
     }                                                           \
     else if (nelms == 2) {                                      \
-        for (_i = total_count; _i; _i -= 2) {			\
+        for (_i = (int)total_count; _i; _i -= 2) {              \
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest = (type *) ((char *) l_dest + l_stride);	\
         }							\
     }                                                           \
     else if (nelms == 3) {                                      \
-        for (_i = total_count; _i; _i -= 3) {			\
+        for (_i = (int)total_count; _i; _i -= 3) {              \
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -416,7 +431,7 @@
         }							\
     }                                                           \
     else if (nelms == 4) {                                      \
-        for (_i = total_count; _i; _i -= 4) {			\
+        for (_i = (int)total_count; _i; _i -= 4) {              \
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -425,7 +440,7 @@
         }							\
     }                                                           \
     else if (nelms == 5) {                                      \
-        for (_i = total_count; _i; _i -= 5) {			\
+        for (_i = (int)total_count; _i; _i -= 5) {              \
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -435,7 +450,7 @@
         }							\
     }                                                           \
     else if (nelms == 6) {                                      \
-        for (_i = total_count; _i; _i -= 6) {			\
+        for (_i = (int)total_count; _i; _i -= 6) {              \
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -446,7 +461,7 @@
         }							\
     }                                                           \
     else if (nelms == 7) {                                      \
-        for (_i = total_count; _i; _i -= 7) {			\
+        for (_i = (int)total_count; _i; _i -= 7) {              \
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -458,7 +473,7 @@
         }							\
     }                                                           \
     else if (nelms == 8) {                                      \
-        for (_i = total_count; _i; _i -= 8) {			\
+        for (_i = (int)total_count; _i; _i -= 8) {              \
             l_dest[0] = *l_src++;				\
             l_dest[1] = *l_src++;				\
             l_dest[2] = *l_src++;				\
@@ -471,10 +486,10 @@
         }							\
     }                                                           \
     else {                                                      \
-        _i = total_count;                                        \
+        _i = (int)total_count;                                  \
         while (_i) {                                             \
             tmp_dest = l_dest;                                  \
-            j = nelms;                                          \
+            j = (int)nelms;                                     \
             while (j >= 8) {                                    \
                 tmp_dest[0] = *l_src++;				\
                 tmp_dest[1] = *l_src++;				\

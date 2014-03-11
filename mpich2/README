@@ -1,4 +1,4 @@
-			MPICH Release 3.0.4
+			MPICH Release 3.1
 
 MPICH is a high-performance and widely portable implementation of the
 MPI-3.0 standard from the Argonne National Laboratory.  This release
@@ -12,9 +12,8 @@ in the doc/installguide/install.pdf and doc/userguide/user.pdf files
 respectively. Additional information regarding the contents of the
 release can be found in the CHANGES file in the top-level directory,
 and in the RELEASE_NOTES file, where certain restrictions are
-detailed. Finally, the MPICH web site,
-http://www.mcs.anl.gov/research/projects/mpich, contains information
-on bug fixes and new releases.
+detailed. Finally, the MPICH web site, http://www.mpich.org, contains
+information on bug fixes and new releases.
 
 
 1.  Getting Started
@@ -25,10 +24,9 @@ on bug fixes and new releases.
 6.  Alternate Configure Options
 7.  Testing the MPICH installation
 8.  Fault Tolerance
-9.  Environment Variables
-10. Developer Builds
-11. Installing MPICH on windows
-12. Multiple Fortran compiler support
+9.  Developer Builds
+10. Multiple Fortran compiler support
+11. ABI Compatibility
 
 
 -------------------------------------------------------------------------
@@ -42,7 +40,7 @@ shared memory), Hydra process management) of MPICH up and running.
 
 (a) You will need the following prerequisites.
 
-    - REQUIRED: This tar file mpich-3.0.4.tar.gz
+    - REQUIRED: This tar file mpich-3.1.tar.gz
 
     - REQUIRED: A C compiler (gcc is sufficient)
 
@@ -71,14 +69,14 @@ shared memory), Hydra process management) of MPICH up and running.
 
 (b) Unpack the tar file and go to the top level directory:
 
-      tar xzf mpich-3.0.4.tar.gz
-      cd mpich-3.0.4
+      tar xzf mpich-3.1.tar.gz
+      cd mpich-3.1
 
     If your tar doesn't accept the z option, use
 
-      gunzip mpich-3.0.4.tar.gz
-      tar xf mpich-3.0.4.tar
-      cd mpich-3.0.4
+      gunzip mpich-3.1.tar.gz
+      tar xf mpich-3.1.tar
+      cd mpich-3.1
 
 (c) Choose an installation directory, say
     /home/<USERNAME>/mpich-install, which is assumed to non-existent
@@ -187,7 +185,7 @@ shared memory), Hydra process management) of MPICH up and running.
     Now we will run an MPI job, using the mpiexec command as specified
     in the MPI standard. There are some examples in the install
     directory, which you have already put in your path, as well as in
-    the directory mpich-3.0.4/examples. One of them is the classic
+    the directory mpich-3.1/examples. One of them is the classic
     CPI example, which computes the value of pi by numerical
     integration in parallel.
 
@@ -236,29 +234,29 @@ see if the problem you are facing has a simple solution. Many common
 problems and their solutions are listed here.
 
 2. If you cannot find an answer on the FAQ page, look through previous
-email threads on the mpich-discuss mailing list archive
-(http://lists.mcs.anl.gov/pipermail/mpich-discuss/). It is likely
+email threads on the discuss@mpich.org mailing list archive
+(https://lists.mpich.org/mailman/listinfo/discuss). It is likely
 someone else had a similar problem, which has already been resolved
 before.
 
 3. If neither of the above steps work, please send an email to
-mpich-discuss@mcs.anl.gov. You need to subscribe to this list
-(https://lists.mcs.anl.gov/mailman/listinfo/mpich-discuss) before
-sending an email.
+discuss@mpich.org. You need to subscribe to this list
+(https://lists.mpich.org/mailman/listinfo/discuss) before sending an
+email.
 
 Your email should contain the following files.  ONCE AGAIN, PLEASE
 COMPRESS BEFORE SENDING, AS THE FILES CAN BE LARGE.  Note that,
 depending on which step the build failed, some of the files might not
 exist.
 
-    mpich-3.0.4/c.txt (generated in step 1(d) above)
-    mpich-3.0.4/m.txt (generated in step 1(e) above)
-    mpich-3.0.4/mi.txt (generated in step 1(f) above)
-    mpich-3.0.4/config.log (generated in step 1(d) above)
-    mpich-3.0.4/src/openpa/config.log (generated in step 1(d) above)
-    mpich-3.0.4/src/mpl/config.log (generated in step 1(d) above)
-    mpich-3.0.4/src/pm/hydra/config.log (generated in step 1(d) above)
-    mpich-3.0.4/src/pm/hydra/tools/topo/hwloc/hwloc/config.log (generated in step 1(d) above)
+    mpich-3.1/c.txt (generated in step 1(d) above)
+    mpich-3.1/m.txt (generated in step 1(e) above)
+    mpich-3.1/mi.txt (generated in step 1(f) above)
+    mpich-3.1/config.log (generated in step 1(d) above)
+    mpich-3.1/src/openpa/config.log (generated in step 1(d) above)
+    mpich-3.1/src/mpl/config.log (generated in step 1(d) above)
+    mpich-3.1/src/pm/hydra/config.log (generated in step 1(d) above)
+    mpich-3.1/src/pm/hydra/tools/topo/hwloc/hwloc/config.log (generated in step 1(d) above)
 
     DID WE MENTION? DO NOT FORGET TO COMPRESS THESE FILES!
 
@@ -275,9 +273,9 @@ application or benchmark and send that along in your bug report.
 
 4. If you have found a bug in MPICH, we request that you report it at
 our bug tracking system:
-(https://trac.mpich.org/projects/mpich/newticket). Even if you
-believe you have found a bug, we recommend you sending an email to
-mpich-discuss@mcs.anl.gov first.
+(https://trac.mpich.org/projects/mpich/newticket). Even if you believe
+you have found a bug, we recommend you sending an email to
+discuss@mpich.org first.
 
 
 -------------------------------------------------------------------------
@@ -361,6 +359,11 @@ Or to disable all compiler optimizations, one can do:
 
 For more details of --enable-fast, see the output of "configure
 --help".
+
+For performance testing, we recommend the following flags:
+
+  ./configure --enable-fast=O3,ndebug --disable-error-checking --without-timing \
+              --without-mpit-pvars
 
 
 Examples
@@ -477,6 +480,46 @@ shared memory has limits on the size of shared memory segments so
 using this for Nemesis may limit the number of processes that can be
 started on a single node.
 
+ib network module
+`````````````````
+The IB netmod provides support for InfiniBand on x86_64 platforms
+(including Xeon Phi). It can be built in the following
+configurations:
+
+1. InfiniBand Open Fabrics, x86_64 (host), Linux
+
+   For this mode, configure with the following option:
+
+       --with-device=ch3:nemesis:ib
+
+2. InfiniBand Open Fabrics, Xeon Phi, Intel MPSS Linux
+
+   For this mode, configure with the following options:
+
+       --with-device=ch3:nemesis:ib
+       --with-cross=<mpich-source>/src/mpid/ch3/channels/nemesis/netmod/ib/cross_values.txt
+       --host=x86_64-k1om-linux
+       --with-ib=/opt/intel/mic/ofed/card/usr
+       CC=icc CXX=icpc F77=ifort FC=ifort
+       CFLAGS=-mmic CXXFLAGS=-mmic FFLAGS=-mmic FCFLAGS=-mmic LDFLAGS=-mmic
+
+3. InfiniBand Open Fabrics, Xeon Phi, McKernel (developed by
+   University of Tokyo)
+
+   For this mode, configure with the following options:
+
+       --with-device=ch3:nemesis:ib
+       --with-cross=<mpich-source>/src/mpid/ch3/channels/nemesis/netmod/ib/cross_values.txt
+       --host=x86_64-k1om-linux
+       --with-ib=<mckernel-source>/attached
+       --disable-shared
+       CC=icc CXX=icpc F77=ifort FC=ifort
+       CFLAGS=-mmic CXXFLAGS=-mmic FFLAGS=-mmic FCFLAGS=-mmic LDFLAGS=-mmic
+
+    Note that shared builds are not supported for the third
+    configuration right now.
+
+
 sock channel
 ------------
 sock is the traditional TCP sockets based communication channel. It
@@ -493,19 +536,26 @@ pamid device
 This is the device used on the IBM Blue Gene/Q system.  The following
 configure options can be used:
 
-  ./configure --host=powerpc64-bgq-linux --target=powerpc64-bgq-linux --build=powerpc64-linux-gnu
-	      --with-device=pamid:BGQ --with-file-system=bg+bglockless --enable-timer-type=device
-	      --with-fwrapname=fmpich --with-cross=src/mpid/pamid/cross/bgq8
-	      --with-pm=none --enable-timing=no --disable-collchk
-	      --disable-graphics --disable-rlog --disable-sample --disable-rpath
-	      --with-aint-size=8 --with-assert-level=2 --enable-fast=O3
-	      --enable-error-messages --disable-debuginfo
-	      --enable-thread-cs=per-object --enable-handle-allocation=tls
-	      --enable-refcount=lock-free --disable-predefined-refcount
-	      CC=powerpc64-bgq-linux-gcc
-	      CXX=powerpc64-bgq-linux-g++
-	      F77=powerpc64-bgq-linux-gfortran
-	      FC=powerpc64-bgq-linux-gfortran
+  ./configure --host=powerpc64-bgq-linux                                \
+              --with-device=pamid:BGQ                                   \
+              --with-file-system=bg+bglockless
+
+The Blue Gene/Q cross compilers must either be in the $PATH, or
+explicitly specified using environment variables, before configure.
+For example:
+
+  PATH=$PATH:/bgsys/drivers/ppcfloor/gnu-linux/bin
+
+or
+
+  CC=/bgsys/drivers/ppcfloor/gnu-linux/bin/powerpc64-bgq-linux-gcc
+  CXX=...
+  ...
+
+There are several other configure options that are specific to building
+on a Blue Gene/Q system.  See the wiki page for more information:
+
+  https://wiki.mpich.org/mpich/index.php/BGQ
 
 -------------------------------------------------------------------------
 
@@ -522,16 +572,9 @@ http://wiki.mpich.org/mpich/index.php/Using_the_Hydra_Process_Manager
 mpd
 ---
 MPD was the traditional process manager in MPICH. The file
-mpich-3.0.4/src/pm/mpd/README has more information about
+mpich-3.1/src/pm/mpd/README has more information about
 interactive commands for managing the ring of MPDs. The MPD process
 manager is now deprecated.
-
-smpd
----- 
-SMPD is a process manager for interoperability between Microsoft
-Windows and UNIX, where some processes are running on Windows and
-others are running on a variant of UNIX. For more information, please
-see mpich-3.0.4/src/pm/smpd/README.
 
 gforker
 -------
@@ -563,133 +606,6 @@ build with the following configure options. A complete list of
 configuration options can be found using:
 
    ./configure --help
-
-However, for your convenience, we list a few important options here:
-
-Performance Options:
-
- --enable-fast - Turns off error checking and collection of internal
-                 timing information
-
- --enable-timing=no - Turns off just the collection of internal timing
-                      information
-
- --enable-ndebug - Turns on NDEBUG, which disables asserts. This is a
-                   subset of the optimizations provided by
-                   enable-fast, but is useful in environments where
-                   the user wishes to retain the debug symbols, e.g.,
-                   this can be combined with the --enable-g option.
-
-MPI Features:
-
-  --enable-romio - Build the ROMIO implementation of MPI-IO (enabled
-                   by default).
-
-  --with-file-system - When used with --enable-romio, specifies
-                       filesystems ROMIO should support. They can be
-                       specified by passing them in a '+'-delimited
-                       list: (e.g.,
-                       --with-file-system="pvfs+nfs+ufs").
-
-                       If you have installed version 2 of the PVFS
-                       file system, you can use the
-                       '--with-pvfs2=<prefix>' configure option to
-                       specify where libraries, headers, and utilities
-                       have been installed. If you have added the pvfs
-                       utilities to your PATH, then ROMIO will detect
-                       this and build support for PVFS automatically.
-
-  --enable-threads - Build MPICH with support for multi-threaded
-                     applications. Only the sock and nemesis channels
-                     support MPI_THREAD_MULTIPLE.
-
-  --with-thread-package - When used with --enable-threads, this option
-                          specifies the thread package to use.  This
-                          option defaults to "posix".  At the moment,
-                          only POSIX threads are supported on UNIX
-                          platforms.  We plan to support Solaris
-                          threads in the future.
-
-Language bindings:
-
-  --enable-f77 - Build the Fortran 77 bindings (enabled by default).
-
-  --enable-fc - Build the Fortran 90 bindings (enabled by default).
-
-  --enable-cxx - Build the C++ bindings (enabled by default).
-
-Shared library support:
-
-  --enable-shared - Enable shared library support.  Note that "rpath"
-                    linking is used by default in stock MPICH
-                    distributions.  Re-running ./autogen.sh with a
-                    patched libtool can eliminate rpath usage.  See
-                    http://wiki.debian.org/RpathIssue for more info.
-
-Cross compilation:
-
-  --with-cross=filename - Provide values for the tests that required
-                          running a program, such as the tests that
-                          configure uses to determine the sizes of the
-                          basic types.  This should be a fine in
-                          Bourne shell format containing variable
-                          assignment of the form
-
-                          CROSS_SIZEOF_INT=2
-
-                          for all of the CROSS_xxx variables.
-
-Error checking and reporting:
-
-  --enable-error-checking=level - Control the amount of error
-                                  checking. Currently, only "no" and
-                                  "all" is supported; all is the
-                                  default.
-
-  --enable-error-messages=level - Control the aount of detail in error
-                                  messages. By default, MPICH
-                                  provides instance-specific error
-                                  messages; but, with this option,
-                                  MPICH can be configured to provide
-                                  less detailed messages.  This may be
-                                  desirable on small systems, such as
-                                  clusters built from game consoles or
-                                  high-density massively parallel
-                                  systems.  This is still under active
-                                  development.
-
-Compilation options for development:
-
-  --enable-g=value - Controls the amount of debugging information
-                     collected by the code.  The most useful choice
-                     here is dbg, which compiles with -g.
-
-  --enable-coverage - An experimental option that enables GNU coverage
-                      analysis.
-
-  --with-logging=name - Select a logging library for recording the
-                        timings of the internal routines.  We have
-                        used this to understand the performance of the
-                        internals of MPICH.  More information on the
-                        logging options, capabilities and usage can be
-                        found in doc/logging/logging.pdf.
-
-  --enable-timer-type=name - Select the timer to use for MPI_Wtime and
-                             internal timestamps.  name may be one of:
-                     gethrtime        - Solaris timer (Solaris systems
-                                        only) 
-                     clock_gettime    - Posix timer (where available)
-                     gettimeofday     - Most Unix systems
-                     linux86_cycle    - Linux x86; returns cycle
-                                        counts, not time in seconds*
-                     linuxalpha_cycle - Like linux86_cycle, but for
-                                        Linux Alpha* 
-                     gcc_ia64_cycle   - IPF ar.itc timer*
-                     device           - The timer is provided by the device
-                 *Note that the cycle timers are intended to be used by
-                  MPICH developers for internal low-level timing.
-                  Normal users should not use these as they are not
-                  guaranteed to be accurate in certain situations.
 
 -------------------------------------------------------------------------
 
@@ -829,32 +745,8 @@ These instructions can also be found on the MPICH wiki:
 
 -------------------------------------------------------------------------
 
-9. Environment Variables
-========================
-
-MPICH provides several environment variables that have different
-purposes. Many of these environment variables are listed in the
-README.envvar file. Some more are listed below.
-
-  MPICH_ASYNC_PROGRESS - Initiates a spare thread to provide
-         asynchronous progress. This improves progress semantics for
-         all MPI operations including point-to-point, collective,
-         one-sided operations and I/O. Setting this variable would
-         increase the thread-safety level to
-         MPI_THREAD_MULTIPLE. While this improves the progress
-         semantics, it might cause a small amount of performance
-         overhead for regular MPI operations.
-
-               ************************************
-
-  MPICH_NAMEPUB_DIR - Allows the user to override where the publish
-         and lookup information is placed for connect/accept based
-         applications.
-
--------------------------------------------------------------------------
-
-10. Developer Builds
-====================
+9. Developer Builds
+===================
 For MPICH developers who want to directly work on the svn, there are
 a few additional steps involved (people using the release tarballs do
 not have to follow these steps). Details about these steps can be
@@ -863,86 +755,7 @@ http://wiki.mpich.org/mpich/index.php/Getting_And_Building_MPICH
 
 -------------------------------------------------------------------------
 
-11. Installing MPICH on Windows
-================================
-
-Here are the instructions for setting up MPICH on a Windows machine:
-
-(a) Install:
-    Microsoft Developer Studio 2003 or later
-    Intel Fortran 8.0 or later
-    cygwin
-	choose the dos file format option
-	install perl and svn
-
-(b) Checkout mpich:
-
-    Bring up a command prompt.
-    (replace "yourname" with your MCS login name):
-    svn co https://svn.mcs.anl.gov/repos/mpi/mpich2/trunk mpich
-
-(c) Generate *.h.in
-
-    Bring up a cygwin bash shell.
-    cd mpich
-    ./autogen.sh
-    exit
-
-(d) Execute winconfigure.wsf
-
-(e) Open Developer Studio
-
-    open mpich\mpich.sln
-    build the ch3sockDebug mpich solution
-    build the ch3sockDebug mpichs project
-    build the ch3sockRelease mpich solution
-    build the ch3sockRelease mpichs project
-    build the Debug mpich solution
-    build the Release mpich solution
-    build the fortDebug mpich solution
-    build the fortRelease mpich solution
-    build the gfortDebug mpich solution
-    build the gfortRelease mpich solution
-    build the sfortDebug mpich solution
-    build the sfortRelease mpich solution
-
-(f) Open a command prompt
-
-    cd to mpich\maint
-    execute "makegcclibs.bat"
-
-(g) Open another Developer Studio instance
-
-    open mpich\examples\examples.sln
-    build the Release target of the cpi project
-
-(h) Return to Developer Studio with the mpich solution
-
-    set the version numbers in the Installer project
-    build the Installer mpich solution
-
-(i) Test and distribute mpich\maint\ReleaseMSI\mpich.msi
-
-    mpich.msi can be renamed, eg mpich-1.1.msi
-
-(j) To install the launcher:
-
-    Copy smpd.exe to a local directory on all the nodes.
-    Log on to each node as an administrator and execute "smpd.exe -install"
-
-(k) Compile and run an MPI application:
-
-    Compile an mpi application.  Use mpi.h from mpich\src\include\win32
-    and mpi.lib in mpich\lib
-    
-    Place your executable along with the mpich dlls somewhere accessable
-    to all the machines.
-    
-    Execute a job by running something like: mpiexec -n 3 myapp.exe
-
--------------------------------------------------------------------------
-
-12. Multiple Fortran compiler support
+10. Multiple Fortran compiler support
 =====================================
 
 If the C compiler that is used to build MPICH libraries supports both
@@ -976,3 +789,80 @@ Fortran program compiled/linked by another fortran compiler, say
 pgf77, say through mpif77 -f77=pgf77.  As long as the Fortran program
 is linked without any errors by one of these compilers, the program
 shall be running fine.
+
+-------------------------------------------------------------------------
+
+11. ABI Compatibility
+=====================
+
+The MPICH ABI compatibility initiative was announced at SC 2014
+(http://www.mpich.org/abi).  As a part of this initiative, Argonne,
+Intel, IBM and Cray, have committed to maintaining ABI compatibility
+with each other.
+
+As a first step in this initiative, starting with version 3.1, MPICH
+is binary (ABI) compatible with Intel MPI 5.0.  This means you can
+build your program with one MPI implementation and run with the other.
+Specifically, binary-only applications that were built and distributed
+with one of these MPI implementations and now be executed with the
+other MPI implementation.
+
+Some setup is required to achieve this.  Below details how to
+accomplish this.
+
+To run an MPICH-built program with Intel:
+----------------------------------------
+
+1. The current MPI library names do not currently match.  This is
+   planned to be fixed in the future, but for now, you need to employ
+   some symbolic links in order for the linker to find the necessary
+   libraries correctly.  We recommend doing this in a separate
+   directory.
+
+   For applications built with the default Intel MPI configuration:
+
+   ln -s /path/to/intel/lib/libmpi.so libmpich.so.12
+   ln -s /path/to/intel/lib/libmpigc4.so libmpichcxx.so.12
+   ln -s /path/to/intel/lib/libmpigf.so libfmpich.so.12
+   ln -s /path/to/intel/lib/libmpigf.so libmpichf90.so.12
+   ln -s /path/to/intel/lib/libmpi.so libmpl.so.1
+   ln -s /path/to/intel/lib/libmpi.so libopa.so.1
+
+   For applications built with the debug configuration of Intel MPI:
+
+   ln -s /path/to/intel/lib/libmpi_dbg.so libmpich.so.12
+   ln -s /path/to/intel/lib/libmpigc4.so libmpichcxx.so.12
+   ln -s /path/to/intel/lib/libmpigf.so libfmpich.so.12
+   ln -s /path/to/intel/lib/libmpigf.so libmpichf90.so.12
+   ln -s /path/to/intel/lib/libmpi_dbg.so libmpl.so.1
+   ln -s /path/to/intel/lib/libmpi_dbg.so libopa.so.1
+
+2. Add directory to LD_LIBRARY_PATH
+
+   export LD_LIBRARY_PATH=/path/to/symlinks:$LD_LIBRARY_PATH
+
+3. For Fortran programs, you must also modify LD_PRELOAD
+
+   export LD_PRELOAD=/path/to/intel/lib/libmpi.so:/path/to/intel/lib/libmpigf.so:$LD_PRELOAD
+
+4. Run your program
+
+   /path/to/intel/bin/mpiexec <mpi_program>
+
+To run an Intel-built program with MPICH:
+----------------------------------------
+
+1. Create symlinks
+
+   ln -s /path/to/mpich/lib/libmpich.so libmpi.so.5
+   ln -s /path/to/mpich/lib/libmpich.so libmpi_dbg.so.5
+   ln -s /path/to/mpich/lib/libmpichcxx.so libmpigc4.so.5
+   ln -s /path/to/mpich/lib/libmpichf90.so libmpigf.so.5
+
+2. Modify LD_LIBRARY_PATH
+
+   export LD_LIBRARY_PATH=/path/to/symlinks:$LD_LIBRARY_PATH
+
+3. Run your program
+
+   /path/to/mpich/bin/mpiexec <mpi_program>

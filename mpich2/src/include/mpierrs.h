@@ -143,12 +143,12 @@
         goto fn_fail;                                                   \
     }
 
-#define MPIR_ERRTEST_ARGNONPOS(arg,arg_name,err,err_class)      \
+#define MPIR_ERRTEST_ARGNONPOS(arg,arg_name,err,errclass)      \
     if ((arg) <= 0) {                                           \
         err = MPIR_Err_create_code(MPI_SUCCESS,                 \
                                    MPIR_ERR_RECOVERABLE,        \
                                    FCNAME, __LINE__,            \
-                                   err_class,                   \
+                                   errclass,                    \
                                    "**argnonpos",               \
                                    "**argnonpos %s %d",         \
                                    arg_name, arg );             \
@@ -298,7 +298,7 @@
         int ferr = 0;							\
         if (HANDLE_GET_KIND(dtype) == HANDLE_KIND_BUILTIN) { ferr=1; }	\
         else {								\
-            int errsize;                                                \
+            MPI_Aint errsize;                                           \
             MPID_Datatype *errdtypeptr;					\
             MPID_Datatype_get_ptr(dtype,errdtypeptr);			\
             MPID_Datatype_get_size_macro(dtype,errsize);                \
@@ -499,6 +499,97 @@
             MPIU_ERR_SETANDSTMT(err_, MPI_ERR_KEYVAL,goto fn_fail, "**permattr"); \
         }                                                               \
     }
+
+#ifdef HAVE_ERROR_CHECKING
+#define MPIR_ERRTEST_MPIT_INITIALIZED(err_) \
+    do { \
+        if (!MPIR_T_is_initialized()) { \
+            MPIU_ERR_SETANDSTMT(err_, MPI_T_ERR_NOT_INITIALIZED, goto fn_fail, "**mpitinit"); \
+        } \
+    } while (0)
+#else
+#define MPIR_ERRTEST_MPIT_INITIALIZED(err_)
+#endif
+
+#define MPIR_ERRTEST_CAT_INDEX(index_,err_)  \
+    do {   \
+        if ((index_) < 0 || (index_) >= utarray_len(cat_table)) \
+        {  \
+            MPIU_ERR_SETANDSTMT(err_, MPI_T_ERR_INVALID_INDEX, goto fn_fail, "**catindex");  \
+        }  \
+    } while (0)
+
+#define MPIR_ERRTEST_ENUM_HANDLE(handle_, err_)  \
+    do {   \
+        if ((handle_) == MPI_T_ENUM_NULL)  \
+        {  \
+            MPIU_ERR_SETANDSTMT(err_, MPI_T_ERR_INVALID_HANDLE, goto fn_fail, "**enumhandlenull");  \
+        }  \
+        else if ((handle_)->kind != MPIR_T_ENUM_HANDLE) \
+        {  \
+            MPIU_ERR_SETANDSTMT(err_, MPI_T_ERR_INVALID_HANDLE, goto fn_fail, "**enumhandle"); \
+        }  \
+    } while (0)
+
+#define MPIR_ERRTEST_ENUM_ITEM(enum_, index_, err_)  \
+    do {   \
+        if ((index_) < 0 || (index_) >= utarray_len((enum_)->items)) \
+        {  \
+            MPIU_ERR_SETANDSTMT(err_, MPI_T_ERR_INVALID_ITEM, goto fn_fail, "**itemindex");  \
+        }  \
+    } while (0)
+
+#define MPIR_ERRTEST_CVAR_INDEX(index_,err_)  \
+    do {   \
+        if ((index_) < 0 || (index_) >= utarray_len(cvar_table)) \
+        {  \
+            MPIU_ERR_SETANDSTMT(err_, MPI_T_ERR_INVALID_INDEX, goto fn_fail, "**cvarindex");  \
+        }  \
+    } while (0)
+
+#define MPIR_ERRTEST_CVAR_HANDLE(handle_, err_)  \
+    do {   \
+        if ((handle_) == MPI_T_CVAR_HANDLE_NULL)  \
+        {  \
+            MPIU_ERR_SETANDSTMT(err_, MPI_T_ERR_INVALID_HANDLE, goto fn_fail, "**cvarhandlenull");  \
+        }  \
+        else if ((handle_)->kind != MPIR_T_CVAR_HANDLE) \
+        {  \
+            MPIU_ERR_SETANDSTMT(err_, MPI_T_ERR_INVALID_HANDLE, goto fn_fail, "**cvarhandle"); \
+        }  \
+    } while (0)
+
+#define MPIR_ERRTEST_PVAR_INDEX(index_,err_)  \
+    do {   \
+        if ((index_) < 0 || (index_) >= utarray_len(pvar_table)) \
+        {  \
+            MPIU_ERR_SETANDSTMT(err_, MPI_T_ERR_INVALID_INDEX, goto fn_fail, "**pvarindex");  \
+        }  \
+    } while (0)
+
+#define MPIR_ERRTEST_PVAR_HANDLE(handle_, err_) \
+    do {   \
+        if (handle_ == MPI_T_PVAR_HANDLE_NULL) \
+        {  \
+            MPIU_ERR_SETANDSTMT(err_,MPI_T_ERR_INVALID_HANDLE, goto fn_fail,"**pvarhandlenull"); \
+        }  \
+        else if ((handle_)->kind != MPIR_T_PVAR_HANDLE)  \
+        {  \
+            MPIU_ERR_SETANDSTMT(err_, MPI_T_ERR_INVALID_HANDLE, goto fn_fail, "**pvarhandle");  \
+        }  \
+    } while (0)
+
+#define MPIR_ERRTEST_PVAR_SESSION(session_,err_)  \
+    do {    \
+        if ((session_) == MPI_T_PVAR_SESSION_NULL)  \
+        {   \
+            MPIU_ERR_SETANDSTMT(err_,MPI_T_ERR_INVALID_SESSION, goto fn_fail,"**pvarsessionnull");  \
+        }   \
+        else if ((session_)->kind != MPIR_T_PVAR_SESSION) \
+        {   \
+            MPIU_ERR_SETANDSTMT(err_, MPI_T_ERR_INVALID_SESSION, goto fn_fail, "**pvarsession");  \
+        }   \
+    } while (0)
 
 /* some simple memcpy aliasing checks */
 #define MPIU_ERR_CHKMEMCPYANDSTMT(err_,stmt_,src_,dst_,len_) \

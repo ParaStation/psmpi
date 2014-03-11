@@ -1,11 +1,11 @@
 <dir>
-<file name="scif_finalize.c" info="1366812300"/>
-<file name="scifrw.c" info="1366812300"/>
-<file name="scifsm.c" info="1366812300"/>
-<file name="scifrw.h" info="1366812300"/>
-<file name="scif_init.c" info="1366812300"/>
-<file name="scif_impl.h" info="1366812300"/>
-<file name="scif_send.c" info="1366812300"/>
+<file name="scif_finalize.c" info="1392877287"/>
+<file name="scifrw.c" info="1392877287"/>
+<file name="scifsm.c" info="1392877287"/>
+<file name="scifrw.h" info="1392877287"/>
+<file name="scif_init.c" info="1392877287"/>
+<file name="scif_impl.h" info="1392877287"/>
+<file name="scif_send.c" info="1392877287"/>
 </dir>
 <data>
 <fileinfo name="scif_finalize.c">
@@ -20,6 +20,7 @@ MPID_STATE_STATE_COMMRDY_HANDLER state_commrdy_handler
 <fileinfo name="scifrw.h">
 </fileinfo>
 <fileinfo name="scif_init.c">
+MPID_NEM_SCIF_POST_INIT MPID_nem_scif_post_init
 MPID_STATE_MPID_NEM_SCIF_INIT MPID_nem_scif_init
 MPID_STATE_MPID_NEM_SCIF_GET_BUSINESS_CARD MPID_nem_scif_get_business_card
 MPID_STATE_MPID_NEM_SCIF_GET_ADDR_PORT_FROM_BC scif_addr_from_bc

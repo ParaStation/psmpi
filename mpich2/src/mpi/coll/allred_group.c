@@ -29,7 +29,7 @@ int MPIR_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
                                MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr,
                                MPID_Group *group_ptr, int tag, int *errflag)
 {
-    int type_size;
+    MPI_Aint type_size;
     int mpi_errno = MPI_SUCCESS;
     int mpi_errno_ret = MPI_SUCCESS;
     /* newrank is a rank in group_ptr */
@@ -90,7 +90,7 @@ int MPIR_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
     if (group_rank < 2*rem) {
         if (group_rank % 2 == 0) { /* even */
             to_comm_rank(cdst, group_rank+1);
-            mpi_errno = MPIC_Send_ft(recvbuf, count,
+            mpi_errno = MPIC_Send(recvbuf, count,
                                      datatype, cdst,
                                      tag, comm, errflag);
             if (mpi_errno) {
@@ -107,7 +107,7 @@ int MPIR_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
         }
         else { /* odd */
             to_comm_rank(csrc, group_rank-1);
-            mpi_errno = MPIC_Recv_ft(tmp_buf, count,
+            mpi_errno = MPIC_Recv(tmp_buf, count,
                                      datatype, csrc,
                                      tag, comm,
                                      MPI_STATUS_IGNORE, errflag);
@@ -141,7 +141,7 @@ int MPIR_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
        using recursive doubling in that case.) */
 
     if (newrank != -1) {
-        if ((count*type_size <= MPIR_PARAM_ALLREDUCE_SHORT_MSG_SIZE) ||
+        if ((count*type_size <= MPIR_CVAR_ALLREDUCE_SHORT_MSG_SIZE) ||
             (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) ||
             (count < pof2))
         {
@@ -155,7 +155,7 @@ int MPIR_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
 
                 /* Send the most current data, which is in recvbuf. Recv
                    into tmp_buf */
-                mpi_errno = MPIC_Sendrecv_ft(recvbuf, count, datatype,
+                mpi_errno = MPIC_Sendrecv(recvbuf, count, datatype,
                                              cdst, tag, tmp_buf,
                                              count, datatype, cdst,
                                              tag, comm,
@@ -234,7 +234,7 @@ int MPIR_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
                 }
 
                 /* Send data from recvbuf. Recv into tmp_buf */
-                mpi_errno = MPIC_Sendrecv_ft((char *) recvbuf +
+                mpi_errno = MPIC_Sendrecv((char *) recvbuf +
                                              disps[send_idx]*extent,
                                              send_cnt, datatype,
                                              cdst, tag,
@@ -300,7 +300,7 @@ int MPIR_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
                         recv_cnt += cnts[i];
                 }
 
-                mpi_errno = MPIC_Sendrecv_ft((char *) recvbuf +
+                mpi_errno = MPIC_Sendrecv((char *) recvbuf +
                                              disps[send_idx]*extent,
                                              send_cnt, datatype,
                                              cdst, tag,
@@ -329,13 +329,13 @@ int MPIR_Allreduce_group_intra(void *sendbuf, void *recvbuf, int count,
     if (group_rank < 2*rem) {
         if (group_rank % 2) { /* odd */
             to_comm_rank(cdst, group_rank-1);
-            mpi_errno = MPIC_Send_ft(recvbuf, count,
+            mpi_errno = MPIC_Send(recvbuf, count,
                                      datatype, cdst,
                                      tag, comm, errflag);
         }
         else { /* even */
             to_comm_rank(csrc, group_rank+1);
-            mpi_errno = MPIC_Recv_ft(recvbuf, count,
+            mpi_errno = MPIC_Recv(recvbuf, count,
                                      datatype, csrc,
                                      tag, comm,
                                      MPI_STATUS_IGNORE, errflag);

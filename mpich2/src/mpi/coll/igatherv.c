@@ -80,11 +80,11 @@ int MPIR_Igatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, voi
                irrelevant here. */
             comm_size = comm_ptr->local_size;
 
-            min_procs = MPIR_PARAM_GATHERV_INTER_SSEND_MIN_PROCS;
+            min_procs = MPIR_CVAR_GATHERV_INTER_SSEND_MIN_PROCS;
             if (min_procs == -1)
                 min_procs = comm_size + 1; /* Disable ssend */
             else if (min_procs == 0) /* backwards compatibility, use default value */
-                MPIR_PARAM_GET_DEFAULT_INT(GATHERV_INTER_SSEND_MIN_PROCS,&min_procs);
+                MPIR_CVAR_GET_DEFAULT_INT(GATHERV_INTER_SSEND_MIN_PROCS,&min_procs);
 
             if (comm_size >= min_procs)
                 mpi_errno = MPID_Sched_ssend(sendbuf, sendcount, sendtype, root, comm_ptr, s);
@@ -109,11 +109,25 @@ int MPIR_Igatherv_impl(const void *sendbuf, int sendcount, MPI_Datatype sendtype
                        int root, MPID_Comm *comm_ptr, MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
-    int tag = -1;
     MPID_Request *reqp = NULL;
+    int tag = -1;
     MPID_Sched_t s = MPID_SCHED_NULL;
 
     *request = MPI_REQUEST_NULL;
+
+    MPIU_Assert(comm_ptr->coll_fns != NULL);
+    if (comm_ptr->coll_fns->Igatherv_req != NULL) {
+        /* --BEGIN USEREXTENSION-- */
+        mpi_errno = comm_ptr->coll_fns->Igatherv_req(sendbuf, sendcount, sendtype,
+                                                           recvbuf, recvcounts, displs, recvtype,
+                                                           root, comm_ptr, &reqp);
+        if (reqp) {
+            *request = reqp->handle;
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            goto fn_exit;
+        }
+        /* --END USEREXTENSION-- */
+    }
 
     mpi_errno = MPID_Sched_next_tag(comm_ptr, &tag);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -121,8 +135,8 @@ int MPIR_Igatherv_impl(const void *sendbuf, int sendcount, MPI_Datatype sendtype
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     MPIU_Assert(comm_ptr->coll_fns != NULL);
-    MPIU_Assert(comm_ptr->coll_fns->Igatherv != NULL);
-    mpi_errno = comm_ptr->coll_fns->Igatherv(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm_ptr, s);
+    MPIU_Assert(comm_ptr->coll_fns->Igatherv_sched != NULL);
+    mpi_errno = comm_ptr->coll_fns->Igatherv_sched(sendbuf, sendcount, sendtype, recvbuf, recvcounts, displs, recvtype, root, comm_ptr, s);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     mpi_errno = MPID_Sched_start(&s, comm_ptr, tag, &reqp);
@@ -143,7 +157,8 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_Igatherv - XXX description here
+MPI_Igatherv - Gathers into specified locations from all processes in a group
+               in a nonblocking way
 
 Input Parameters:
 + sendbuf - starting address of the send buffer (choice)

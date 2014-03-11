@@ -12,7 +12,7 @@ dnl config.guess.  It also contains autoconf macro files.
 AC_CONFIG_AUX_DIR(confdb)
 AC_CONFIG_MACRO_DIR([confdb])
 
-AM_INIT_AUTOMAKE([-Wall -Werror foreign color-tests 1.12.3])
+AM_INIT_AUTOMAKE([-Wall -Werror foreign color-tests 1.12.3 subdir-objects])
 
 # automake 1.12 seems to require this, but automake 1.11 doesn't recognize it
 # must come before LT_INIT
@@ -22,8 +22,15 @@ LT_PREREQ([2.2.6])
 
 # Bug in libtool adds -O2 and -g by default
 save_cflags=$CFLAGS
-LT_INIT(disable-shared)
+LT_INIT()
 CFLAGS=$save_cflags
+
+# ----------------------------------------------------------------------------
+# Set default library names if names haven't already been provided
+AC_ARG_VAR([OPALIBNAME],[can be used to override the name of the OpenPA library (default: "opa")])
+OPALIBNAME=${OPALIBNAME:-"opa"}
+AC_SUBST(OPALIBNAME)
+export OPALIBNAME
 
 if test -s "$srcdir/VERSION" ; then
    . $srcdir/VERSION
@@ -65,6 +72,7 @@ else
 fi
 
 AC_PROG_CC
+AM_PROG_CC_C_O
 
 AC_HEADER_ASSERT
 # do we need intrin.h in here since it's a windows file?
@@ -153,7 +161,7 @@ AC_CHECK_SIZEOF([void *])
 AC_CHECK_SIZEOF([int])
 
 dnl Check for __attribute__ support.  This was originally taken from
-dnl the PAC_C_GNU_ATTRIBUTE macro in mpich2.
+dnl the PAC_C_GNU_ATTRIBUTE macro in mpich.
 dnl
 dnl We start by requiring Gcc.  Some other compilers accept __attribute__
 dnl but generate warning messages, or have different interpretations 
@@ -424,6 +432,12 @@ fi
 export libopa_so_versionflags
 AC_SUBST(libopa_so_versionflags)
 
+if test -z "$pkgconfigdir" ; then
+  # The default pkgconfig dir is under the lib dir
+  pkgconfigdir=$libdir/pkgconfig
+fi
+AC_SUBST(pkgconfigdir)
+export pkgconfigdir
 
 AC_CONFIG_FILES([Makefile src/Makefile test/Makefile openpa.pc])
 AC_OUTPUT

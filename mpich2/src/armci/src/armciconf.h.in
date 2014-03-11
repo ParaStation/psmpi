@@ -63,6 +63,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Attribute style weak pragma */
+#undef HAVE_WEAK_ATTRIBUTE
+
 /* define if the compiler defines __FUNCTION__ */
 #undef HAVE__FUNCTION__
 

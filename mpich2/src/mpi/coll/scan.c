@@ -150,7 +150,7 @@ static int MPIR_Scan_generic (
         dst = rank ^ mask;
         if (dst < comm_size) {
             /* Send partial_scan to dst. Recv into tmp_buf */
-            mpi_errno = MPIC_Sendrecv_ft(partial_scan, count, datatype,
+            mpi_errno = MPIC_Sendrecv(partial_scan, count, datatype,
                                          dst, MPIR_SCAN_TAG, tmp_buf,
                                          count, datatype, dst,
                                          MPIR_SCAN_TAG, comm,
@@ -299,7 +299,7 @@ int MPIR_Scan(
        reduced data of rank 1,2,3. */
     if (comm_ptr->node_roots_comm != NULL && comm_ptr->node_comm != NULL)
     {
-        mpi_errno = MPIC_Recv_ft(localfulldata, count, datatype, 
+        mpi_errno = MPIC_Recv(localfulldata, count, datatype,
                                  comm_ptr->node_comm->local_size - 1, MPIR_SCAN_TAG, 
                                  comm_ptr->node_comm->handle, &status, errflag);
         if (mpi_errno) {
@@ -313,7 +313,7 @@ int MPIR_Scan(
              comm_ptr->node_comm != NULL && 
              MPIU_Get_intranode_rank(comm_ptr, rank) == comm_ptr->node_comm->local_size - 1)
     {
-        mpi_errno = MPIC_Send_ft(recvbuf, count, datatype,
+        mpi_errno = MPIC_Send(recvbuf, count, datatype,
                                  0, MPIR_SCAN_TAG, comm_ptr->node_comm->handle, errflag);
         if (mpi_errno) {
             /* for communication errors, just record the error but continue */
@@ -345,7 +345,7 @@ int MPIR_Scan(
         if (MPIU_Get_internode_rank(comm_ptr, rank) != 
             comm_ptr->node_roots_comm->local_size-1)
         {
-            mpi_errno = MPIC_Send_ft(prefulldata, count, datatype,
+            mpi_errno = MPIC_Send(prefulldata, count, datatype,
                                      MPIU_Get_internode_rank(comm_ptr, rank) + 1,
                                      MPIR_SCAN_TAG, comm_ptr->node_roots_comm->handle, errflag);
             if (mpi_errno) {
@@ -357,7 +357,7 @@ int MPIR_Scan(
         }
         if (MPIU_Get_internode_rank(comm_ptr, rank) != 0)
         {
-            mpi_errno = MPIC_Recv_ft(tempbuf, count, datatype,
+            mpi_errno = MPIC_Recv(tempbuf, count, datatype,
                                      MPIU_Get_internode_rank(comm_ptr, rank) - 1, 
                                      MPIR_SCAN_TAG, comm_ptr->node_roots_comm->handle, 
                                      &status, errflag);

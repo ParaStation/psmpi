@@ -68,16 +68,16 @@ HYD_status HYDU_sock_listen(int *listen_fd, char *port_range, uint16_t * port)
      * being set is not a fatal error, so we ignore that
      * case. However, we do check for error cases, which means that
      * something bad has happened. */
-    if (setsockopt(*listen_fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one)) < 0)
+    if (setsockopt(*listen_fd, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(int)) < 0)
         HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "cannot set SO_REUSEADDR\n");
 
     for (i = low_port; i <= high_port; i++) {
-        memset((void *) &sa, 0, sizeof(sa));
+        memset((void *) &sa, 0, sizeof(struct sockaddr_in));
         sa.sin_family = AF_INET;
         sa.sin_port = htons(i);
         sa.sin_addr.s_addr = INADDR_ANY;
 
-        if (bind(*listen_fd, (struct sockaddr *) &sa, sizeof(sa)) < 0) {
+        if (bind(*listen_fd, (struct sockaddr *) &sa, sizeof(struct sockaddr_in)) < 0) {
             /* If the address is in use, we should try the next
              * port. Otherwise, it's an error. */
             if (errno != EADDRINUSE)
@@ -93,13 +93,12 @@ HYD_status HYDU_sock_listen(int *listen_fd, char *port_range, uint16_t * port)
         HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "no port to bind\n");
 
     if (listen(*listen_fd, SOMAXCONN) < 0)
-        HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "listen error (%s)\n",
-                            HYDU_strerror(errno));
+        HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "listen error (%s)\n", HYDU_strerror(errno));
 
     /* We asked for any port, so we need to find out which port we
      * actually got. */
     if (*port == 0) {
-        socklen_t sinlen = sizeof(sa);
+        socklen_t sinlen = sizeof(struct sockaddr_in);
 
         if (getsockname(*listen_fd, (struct sockaddr *) &sa, &sinlen) < 0)
             HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "getsockname error (%s)\n",
@@ -136,8 +135,7 @@ HYD_status HYDU_sock_connect(const char *host, uint16_t port, int *fd, int retri
     ht = gethostbyname(host);
     if (ht == NULL)
         HYDU_ERR_SETANDJUMP(status, HYD_INVALID_PARAM,
-                            "unable to get host address for %s (%s)\n", host,
-                            HYDU_herror(h_errno));
+                            "unable to get host address for %s (%s)\n", host, HYDU_herror(h_errno));
     memcpy(&sa.sin_addr, ht->h_addr_list[0], ht->h_length);
 
     /* Create a socket and set the required options */
@@ -151,7 +149,7 @@ HYD_status HYDU_sock_connect(const char *host, uint16_t port, int *fd, int retri
      * layer can decide what to do with the return status. */
     retry_count = 0;
     do {
-        ret = connect(*fd, (struct sockaddr *) &sa, sizeof(sa));
+        ret = connect(*fd, (struct sockaddr *) &sa, sizeof(struct sockaddr_in));
         if (ret < 0 && errno == ECONNREFUSED) {
             /* connection error; increase retry count and delay */
             retry_count++;
@@ -166,8 +164,8 @@ HYD_status HYDU_sock_connect(const char *host, uint16_t port, int *fd, int retri
     if (ret < 0) {
         char localhost[MAX_HOSTNAME_LEN] = { 0 };
 
-        status = HYDU_gethostname(localhost);
-        HYDU_ERR_POP(status, "unable to get local hostname\n");
+        if (gethostname(localhost, MAX_HOSTNAME_LEN) < 0)
+            HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "unable to get local hostname\n");
 
         HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR,
                             "unable to connect from \"%s\" to \"%s\" (%s)\n",
@@ -196,8 +194,7 @@ HYD_status HYDU_sock_accept(int listen_fd, int *fd)
 
     *fd = accept(listen_fd, 0, 0);
     if (*fd < 0)
-        HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "accept error (%s)\n",
-                            HYDU_strerror(errno));
+        HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "accept error (%s)\n", HYDU_strerror(errno));
 
     /* Disable nagle */
     if (setsockopt(*fd, IPPROTO_TCP, TCP_NODELAY, &one, sizeof(int)) < 0)
@@ -239,8 +236,7 @@ HYD_status HYDU_sock_read(int fd, void *buf, int maxlen, int *recvd, int *closed
         } while (tmp < 0 && errno == EINTR);
 
         if (tmp < 0) {
-            HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "read error (%s)\n",
-                                HYDU_strerror(errno));
+            HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "read error (%s)\n", HYDU_strerror(errno));
         }
         else if (tmp == 0) {
             *closed = 1;
@@ -287,8 +283,7 @@ HYD_status HYDU_sock_write(int fd, const void *buf, int maxlen, int *sent, int *
                 *closed = 1;
                 goto fn_exit;
             }
-            HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "write error (%s)\n",
-                                HYDU_strerror(errno));
+            HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "write error (%s)\n", HYDU_strerror(errno));
         }
         else {
             *sent += tmp;
@@ -463,14 +458,12 @@ HYD_status HYDU_sock_get_iface_ip(char *iface, char **ip)
             break;
 
     if (!ifa)
-        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "unable to find interface %s\n",
-                            iface);
+        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "unable to find interface %s\n", iface);
 
     sa = (struct sockaddr_in *) ifa->ifa_addr;
 #if defined HAVE_INET_NTOP
     (*ip) = HYDU_strdup((char *)
-                        inet_ntop(AF_INET, (const void *) &(sa->sin_addr), buf,
-                                  MAX_HOSTNAME_LEN));
+                        inet_ntop(AF_INET, (const void *) &(sa->sin_addr), buf, MAX_HOSTNAME_LEN));
 #else
     (*ip) = NULL;
 #endif /* HAVE_INET_NTOP */
@@ -495,128 +488,145 @@ HYD_status HYDU_sock_get_iface_ip(char *iface, char **ip)
     goto fn_exit;
 }
 
+#if defined(HAVE_GETIFADDRS) && defined (HAVE_INET_NTOP)
 HYD_status HYDU_sock_is_local(char *host, int *is_local)
 {
     struct hostent *ht;
-    char *ip1 = NULL, *ip2 = NULL;
-    char buf1[INET_ADDRSTRLEN], buf2[INET_ADDRSTRLEN];
-    struct sockaddr_in *sa_ptr, sa;
-
-#if defined(HAVE_GETIFADDRS)
+    char *host_ip = NULL, *local_ip = NULL, *lhost_ip = NULL;
+    char lhost[MAX_HOSTNAME_LEN];
+    struct sockaddr_in sa;
     struct ifaddrs *ifaddr, *ifa;
-#endif /* HAVE_GETIFADDRS */
-
-#if defined (HAVE_INET_NTOP)
-    int remote_access;
-#endif /* HAVE_INET_NTOP */
-
+    char buf[INET_ADDRSTRLEN];
     HYD_status status = HYD_SUCCESS;
 
     *is_local = 0;
 
-    /* If we are unable to resolve the remote host name, it need not
-     * be an error. It could mean that the user is using an alias for
-     * the hostname (e.g., an ssh config alias) */
+    /* Algorithm used:
+     *
+     * 1. Find the local host name
+     *    - If "host" matches the local host name, return.
+     * 2. Find the IP address associated with "host" and the IP the local host
+     *    resolves to.
+     *    - If these IPs match, return.
+     * 3. Find all local network IP addresses
+     *    - If the "host" IP address matches any of the local network IP
+     *      addresses, return.
+     */
+
+
+    /* STEP 1: If "host" matches the local host name, return */
+    if (gethostname(lhost, MAX_HOSTNAME_LEN) < 0) {
+        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "gethostname returned an error\n");
+    }
+    else if (!strcmp(lhost, host)) {
+        *is_local = 1;
+        goto fn_exit;
+    }
+
+
+    /* STEP 2: If the IP address associated with "host" and the IP address local
+     * host resolves to match, return */
+
+    if ((ht = gethostbyname(lhost)) == NULL) {
+        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "gethostbyname error on %s: %s\n",
+                            lhost, hstrerror(h_errno));
+    }
+
+    memset((char *) &sa, 0, sizeof(struct sockaddr_in));
+    memcpy(&sa.sin_addr, ht->h_addr_list[0], ht->h_length);
+
+    /* Find the IP address of the host */
+    lhost_ip = HYDU_strdup((char *) inet_ntop(AF_INET, (const void *) &sa.sin_addr, buf,
+                                              MAX_HOSTNAME_LEN));
+    HYDU_ASSERT(lhost_ip, status);
+
+    /* If we are unable to resolve the remote host name, it need not be an
+     * error. It could mean that the user is using an alias for the hostname
+     * (e.g., an ssh config alias) */
     if ((ht = gethostbyname(host)) == NULL)
         goto fn_exit;
 
     memset((char *) &sa, 0, sizeof(struct sockaddr_in));
     memcpy(&sa.sin_addr, ht->h_addr_list[0], ht->h_length);
 
-#if defined HAVE_INET_NTOP
-    ip1 = HYDU_strdup((char *) inet_ntop(AF_INET, (const void *) &sa.sin_addr, buf1,
-                                         MAX_HOSTNAME_LEN));
-    HYDU_ASSERT(ip1, status);
+    /* Find the IP address of the host */
+    host_ip = HYDU_strdup((char *) inet_ntop(AF_INET, (const void *) &sa.sin_addr, buf,
+                                             MAX_HOSTNAME_LEN));
+    HYDU_ASSERT(host_ip, status);
 
-    status = HYDU_sock_remote_access(ip1, &remote_access);
-    HYDU_ERR_POP(status, "unable to check if the IP is remotely accessible\n");
-
-    if (!remote_access) {
+    /* See if the IP address of the hostname we got matches the IP address
+     * to which the local host resolves */
+    if (!strcmp(lhost_ip, host_ip)) {
         *is_local = 1;
         goto fn_exit;
     }
-#else
-    goto fn_exit;
-#endif /* HAVE_INET_NTOP */
 
-#if defined(HAVE_GETIFADDRS)
-    /* Got the interface name; let's query for the IP address */
+
+    /* STEP 3: Find all local IP addresses and try to match the host IP
+     * with it. */
+
     if (getifaddrs(&ifaddr) == -1)
         HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "getifaddrs failed\n");
 
+    /* Find the IP addresses of all local interfaces */
     for (ifa = ifaddr; ifa; ifa = ifa->ifa_next) {
         if (ifa->ifa_addr && ifa->ifa_addr->sa_family == AF_INET) {
-            sa_ptr = (struct sockaddr_in *) ifa->ifa_addr;
+            struct sockaddr_in *sa_ptr = (struct sockaddr_in *) ifa->ifa_addr;
 
-#if defined HAVE_INET_NTOP
-            ip2 = HYDU_strdup((char *)
-                              inet_ntop(AF_INET, (const void *) &(sa_ptr->sin_addr), buf2,
-                                        MAX_HOSTNAME_LEN));
-            HYDU_ASSERT(ip2, status);
-#endif /* HAVE_INET_NTOP */
+            local_ip = HYDU_strdup((char *)
+                                   inet_ntop(AF_INET, (const void *) &(sa_ptr->sin_addr), buf,
+                                             MAX_HOSTNAME_LEN));
+            HYDU_ASSERT(local_ip, status);
 
-            if (!strcmp(ip1, ip2)) {
+            /* STEP 3: For each local IP address, see if it matches the "host"
+             * IP address */
+            if (!strcmp(host_ip, local_ip)) {
                 *is_local = 1;
                 freeifaddrs(ifaddr);
                 goto fn_exit;
             }
 
-            HYDU_FREE(ip2);
-            ip2 = NULL;
+            HYDU_FREE(local_ip);
+            local_ip = NULL;
         }
     }
 
     freeifaddrs(ifaddr);
-#endif
 
   fn_exit:
-    if (ip1)
-        HYDU_FREE(ip1);
-    if (ip2)
-        HYDU_FREE(ip2);
+    if (host_ip)
+        HYDU_FREE(host_ip);
+    if (local_ip)
+        HYDU_FREE(local_ip);
+    if (lhost_ip)
+        HYDU_FREE(lhost_ip);
     return status;
 
   fn_fail:
     goto fn_exit;
 }
-
-HYD_status HYDU_sock_remote_access(char *host, int *remote_access)
+#else
+HYD_status HYDU_sock_is_local(char *host, int *is_local)
 {
-    struct hostent *ht;
-    char *ip = NULL, buf[INET_ADDRSTRLEN];
-    struct sockaddr_in sa;
+    char lhost[MAX_HOSTNAME_LEN];
     HYD_status status = HYD_SUCCESS;
 
-    if ((ht = gethostbyname(host))) {
-        memset((char *) &sa, 0, sizeof(struct sockaddr_in));
-        memcpy(&sa.sin_addr, ht->h_addr_list[0], ht->h_length);
+    *is_local = 0;
 
-#if defined HAVE_INET_NTOP
-        ip = HYDU_strdup((char *) inet_ntop(AF_INET, (const void *) &sa.sin_addr, buf,
-                                            MAX_HOSTNAME_LEN));
-        HYDU_ASSERT(ip, status);
-#else
-        ip = HYDU_strdup(host);
-#endif
+    if (gethostname(lhost, MAX_HOSTNAME_LEN) < 0) {
+        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "gethostname returned an error\n");
     }
-    else {
-        ip = HYDU_strdup(host);
+    else if (!strcmp(lhost, host)) {
+        *is_local = 1;
     }
-
-    /* FIXME: Comparing the hostname to "127.*" does not seem like a
-     * good way of checking if a hostname is remotely accessible */
-    if (!MPL_strncmp(ip, "127.", strlen("127.")))
-        *remote_access = 0;
-    else
-        *remote_access = 1;
 
   fn_exit:
-    HYDU_FREE(ip);
     return status;
 
   fn_fail:
     goto fn_exit;
 }
+#endif /* HAVE_GETIFADDRS && HAVE_INET_NTOP */
 
 HYD_status
 HYDU_sock_create_and_listen_portstr(char *iface, char *hostname, char *port_range,
@@ -650,8 +660,8 @@ HYDU_sock_create_and_listen_portstr(char *iface, char *hostname, char *port_rang
     else {
         char localhost[MAX_HOSTNAME_LEN] = { 0 };
 
-        status = HYDU_gethostname(localhost);
-        HYDU_ERR_POP(status, "unable to get local hostname\n");
+        if (gethostname(localhost, MAX_HOSTNAME_LEN) < 0)
+            HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "unable to get local hostname\n");
 
         ip = HYDU_strdup(localhost);
     }

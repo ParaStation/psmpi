@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource_( MPI_Fint *, M
 #else
 #pragma _CRI duplicate mpix_comm_reenable_anysource_ as pmpix_comm_reenable_anysource_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_REENABLE_ANYSOURCE( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPIX_COMM_REENABLE_ANYSOURCE")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPIX_COMM_REENABLE_ANYSOURCE")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPIX_COMM_REENABLE_ANYSOURCE")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPIX_COMM_REENABLE_ANYSOURCE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_REENABLE_ANYSOURCE( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource__")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource__")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource__")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_REENABLE_ANYSOURCE( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource_")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource_")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource_")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_REENABLE_ANYSOURCE( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_REENABLE_ANYSOURCE( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource( MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource_( MPI_Fint *, M
 #pragma weak mpix_comm_reenable_anysource__ = mpix_comm_reenable_anysource
 #pragma weak mpix_comm_reenable_anysource_ = mpix_comm_reenable_anysource
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_REENABLE_ANYSOURCE( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPIX_COMM_REENABLE_ANYSOURCE")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPIX_COMM_REENABLE_ANYSOURCE")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPIX_COMM_REENABLE_ANYSOURCE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_REENABLE_ANYSOURCE( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpix_comm_reenable_anysource__")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpix_comm_reenable_anysource__")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpix_comm_reenable_anysource__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_REENABLE_ANYSOURCE( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpix_comm_reenable_anysource_")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpix_comm_reenable_anysource_")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpix_comm_reenable_anysource_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPIX_COMM_REENABLE_ANYSOURCE( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpix_comm_reenable_anysource")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpix_comm_reenable_anysource")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpix_comm_reenable_anysource")));
+extern FORT_DLL_SPEC void FORT_CALL mpix_comm_reenable_anysource( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPIX_COMM_REENABLE_ANYSOURCE( MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_reenable_anysource( MPI_Fint *, M
 #pragma weak pmpix_comm_reenable_anysource__ = pmpix_comm_reenable_anysource
 #pragma weak pmpix_comm_reenable_anysource_ = pmpix_comm_reenable_anysource
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_reenable_anysource__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPIX_COMM_REENABLE_ANYSOURCE")));
+extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_reenable_anysource_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPIX_COMM_REENABLE_ANYSOURCE")));
+extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_reenable_anysource( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPIX_COMM_REENABLE_ANYSOURCE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPIX_COMM_REENABLE_ANYSOURCE( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_reenable_anysource_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_reenable_anysource( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPIX_COMM_REENABLE_ANYSOURCE( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_reenable_anysource__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_reenable_anysource( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPIX_COMM_REENABLE_ANYSOURCE( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource")));
+extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_reenable_anysource__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource")));
+extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_reenable_anysource_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpix_comm_reenable_anysource")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpix_comm_reenable_anysource_ PMPIX_COMM_REENABLE_ANYSOURCE

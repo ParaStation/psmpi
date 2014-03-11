@@ -467,7 +467,7 @@ int MPIR_Iallreduce_intra(const void *sendbuf, void *recvbuf, int count, MPI_Dat
        datatypes to do the reduce-scatter is tricky, therefore
        using recursive doubling in that case.) */
 
-    if ((count*type_size <= MPIR_PARAM_ALLREDUCE_SHORT_MSG_SIZE) ||
+    if ((count*type_size <= MPIR_CVAR_ALLREDUCE_SHORT_MSG_SIZE) ||
         (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) ||
         (count < pof2))
     {
@@ -549,8 +549,8 @@ int MPIR_Iallreduce_inter(const void *sendbuf, void *recvbuf, int count, MPI_Dat
     }
     lcomm_ptr = comm_ptr->local_comm;
 
-    MPIU_Assert(lcomm_ptr->coll_fns && lcomm_ptr->coll_fns->Ibcast);
-    mpi_errno = lcomm_ptr->coll_fns->Ibcast(recvbuf, count, datatype, 0, lcomm_ptr, s);
+    MPIU_Assert(lcomm_ptr->coll_fns && lcomm_ptr->coll_fns->Ibcast_sched);
+    mpi_errno = lcomm_ptr->coll_fns->Ibcast_sched(recvbuf, count, datatype, 0, lcomm_ptr, s);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
 fn_exit:
@@ -571,9 +571,8 @@ int MPIR_Iallreduce_SMP(const void *sendbuf, void *recvbuf, int count, MPI_Datat
     MPID_Comm *nc;
     MPID_Comm *nrc;
 
-#if !defined(USE_SMP_COLLECTIVES)
-    MPID_Abort(comm_ptr, MPI_ERR_OTHER, 1, "SMP collectives are disabled!");
-#endif
+    if (!MPIR_CVAR_ENABLE_SMP_COLLECTIVES || !MPIR_CVAR_ENABLE_SMP_ALLREDUCE)
+        MPID_Abort(comm_ptr, MPI_ERR_OTHER, 1, "SMP collectives are disabled!");
     MPIU_Assert(MPIR_Comm_is_node_aware(comm_ptr));
 
     nc = comm_ptr->node_comm;
@@ -594,15 +593,15 @@ int MPIR_Iallreduce_SMP(const void *sendbuf, void *recvbuf, int count, MPI_Datat
         /* take care of the MPI_IN_PLACE case. For reduce,
            MPI_IN_PLACE is specified only on the root;
            for allreduce it is specified on all processes. */
-        MPIU_Assert(nc->coll_fns && nc->coll_fns->Ireduce);
+        MPIU_Assert(nc->coll_fns && nc->coll_fns->Ireduce_sched);
 
         if ((sendbuf == MPI_IN_PLACE) && (comm_ptr->node_comm->rank != 0)) {
             /* IN_PLACE and not root of reduce. Data supplied to this
                allreduce is in recvbuf. Pass that as the sendbuf to reduce. */
-            mpi_errno = nc->coll_fns->Ireduce(recvbuf, NULL, count, datatype, op, 0, nc, s);
+            mpi_errno = nc->coll_fns->Ireduce_sched(recvbuf, NULL, count, datatype, op, 0, nc, s);
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         } else {
-            mpi_errno = nc->coll_fns->Ireduce(sendbuf, recvbuf, count, datatype, op, 0, nc, s);
+            mpi_errno = nc->coll_fns->Ireduce_sched(sendbuf, recvbuf, count, datatype, op, 0, nc, s);
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         }
         MPID_SCHED_BARRIER(s);
@@ -618,16 +617,16 @@ int MPIR_Iallreduce_SMP(const void *sendbuf, void *recvbuf, int count, MPI_Datat
 
     /* now do an IN_PLACE allreduce among the local roots of all nodes */
     if (nrc != NULL) {
-        MPIU_Assert(nrc->coll_fns && nrc->coll_fns->Iallreduce);
-        mpi_errno = nrc->coll_fns->Iallreduce(MPI_IN_PLACE, recvbuf, count, datatype, op, nrc, s);
+        MPIU_Assert(nrc->coll_fns && nrc->coll_fns->Iallreduce_sched);
+        mpi_errno = nrc->coll_fns->Iallreduce_sched(MPI_IN_PLACE, recvbuf, count, datatype, op, nrc, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         MPID_SCHED_BARRIER(s);
     }
 
     /* now broadcast the result among local processes */
     if (comm_ptr->node_comm != NULL) {
-        MPIU_Assert(nc->coll_fns && nc->coll_fns->Ibcast);
-        mpi_errno = nc->coll_fns->Ibcast(recvbuf, count, datatype, 0, nc, s);
+        MPIU_Assert(nc->coll_fns && nc->coll_fns->Ibcast_sched);
+        mpi_errno = nc->coll_fns->Ibcast_sched(recvbuf, count, datatype, 0, nc, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         MPID_SCHED_BARRIER(s);
     }
@@ -646,11 +645,23 @@ fn_fail:
 int MPIR_Iallreduce_impl(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr, MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
-    int tag = -1;
     MPID_Request *reqp = NULL;
+    int tag = -1;
     MPID_Sched_t s = MPID_SCHED_NULL;
 
     *request = MPI_REQUEST_NULL;
+
+    MPIU_Assert(comm_ptr->coll_fns != NULL);
+    if (comm_ptr->coll_fns->Iallreduce_req != NULL) {
+        /* --BEGIN USEREXTENSION-- */
+        mpi_errno = comm_ptr->coll_fns->Iallreduce_req(sendbuf, recvbuf, count, datatype, op, comm_ptr, &reqp);
+        if (reqp) {
+            *request = reqp->handle;
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            goto fn_exit;
+        }
+        /* --END USEREXTENSION-- */
+    }
 
     mpi_errno = MPID_Sched_next_tag(comm_ptr, &tag);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -658,8 +669,8 @@ int MPIR_Iallreduce_impl(const void *sendbuf, void *recvbuf, int count, MPI_Data
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     MPIU_Assert(comm_ptr->coll_fns != NULL);
-    MPIU_Assert(comm_ptr->coll_fns->Iallreduce != NULL);
-    mpi_errno = comm_ptr->coll_fns->Iallreduce(sendbuf, recvbuf, count, datatype, op, comm_ptr, s);
+    MPIU_Assert(comm_ptr->coll_fns->Iallreduce_sched != NULL);
+    mpi_errno = comm_ptr->coll_fns->Iallreduce_sched(sendbuf, recvbuf, count, datatype, op, comm_ptr, s);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     mpi_errno = MPID_Sched_start(&s, comm_ptr, tag, &reqp);
@@ -680,7 +691,8 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_Iallreduce - XXX description here
+MPI_Iallreduce - Combines values from all processes and distributes the result
+                 back to all processes in a nonblocking way
 
 Input Parameters:
 + sendbuf - starting address of the send buffer (choice)
@@ -699,7 +711,9 @@ Output Parameters:
 
 .N Errors
 @*/
-int MPI_Iallreduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op, MPI_Comm comm, MPI_Request *request)
+int MPI_Iallreduce(const void *sendbuf, void *recvbuf, int count,
+                   MPI_Datatype datatype, MPI_Op op, MPI_Comm comm,
+                   MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;

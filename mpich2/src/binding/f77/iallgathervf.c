@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv_( void*, MPI_Fint *, MPI_Fin
 #else
 #pragma _CRI duplicate mpi_iallgatherv_ as pmpi_iallgatherv_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IALLGATHERV")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IALLGATHERV")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IALLGATHERV")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IALLGATHERV")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv_( void*, MPI_Fint *, MPI_Fin
 #pragma weak mpi_iallgatherv__ = mpi_iallgatherv
 #pragma weak mpi_iallgatherv_ = mpi_iallgatherv
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_IALLGATHERV")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_IALLGATHERV")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_IALLGATHERV")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iallgatherv__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iallgatherv__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iallgatherv__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iallgatherv_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iallgatherv_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iallgatherv_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iallgatherv")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iallgatherv")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iallgatherv")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_iallgatherv( void*, MPI_Fint *, MPI_Fin
 #pragma weak pmpi_iallgatherv__ = pmpi_iallgatherv
 #pragma weak pmpi_iallgatherv_ = pmpi_iallgatherv
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IALLGATHERV")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IALLGATHERV")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IALLGATHERV")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iallgatherv( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IALLGATHERV( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iallgatherv__( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iallgatherv_( void*, MPI_Fint *, MPI_Fint *, void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iallgatherv")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_iallgatherv_ PMPI_IALLGATHERV

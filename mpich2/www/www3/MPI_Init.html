@@ -29,6 +29,10 @@ as little as possible.  In particular, avoid anything that changes the
 external state of the program, such as opening files, reading standard
 input or writing to standard output.
 <P>
+<H2>Notes for C</H2>
+As of MPI-2, <TT>MPI_Init</TT> will accept NULL as input parameters. Doing so
+will impact the values stored in <TT>MPI_INFO_ENV</TT>.
+<P>
 <H2>Notes for Fortran</H2>
 The Fortran binding for <TT>MPI_Init</TT> has only the error return
 <PRE>
@@ -61,5 +65,5 @@ indicates that an attempt was made to call <TT>MPI_INIT</TT> a second time.
 <P>
 <H2>See Also</H2>
  MPI_Init_thread, MPI_Finalize
-<BR><P><B>Location:</B>src/mpi/init/init.c<P>
+<BR><P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/init/init.c<P>
 </BODY></HTML>

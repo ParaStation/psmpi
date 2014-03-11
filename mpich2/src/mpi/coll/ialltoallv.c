@@ -104,7 +104,7 @@ int MPIR_Ialltoallv_intra(const void *sendbuf, const int sendcounts[], const int
         MPID_SCHED_BARRIER(s);
     }
     else {
-        bblock = MPIR_PARAM_ALLTOALL_THROTTLE;
+        bblock = MPIR_CVAR_ALLTOALL_THROTTLE;
         if (bblock == 0)
             bblock = comm_size;
 
@@ -245,11 +245,23 @@ int MPIR_Ialltoallv_impl(const void *sendbuf, const int sendcounts[], const int 
                          MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
-    int tag = -1;
     MPID_Request *reqp = NULL;
+    int tag = -1;
     MPID_Sched_t s = MPID_SCHED_NULL;
 
     *request = MPI_REQUEST_NULL;
+
+    MPIU_Assert(comm_ptr->coll_fns != NULL);
+    if (comm_ptr->coll_fns->Ialltoallv_req != NULL) {
+        /* --BEGIN USEREXTENSION-- */
+        mpi_errno = comm_ptr->coll_fns->Ialltoallv_req(sendbuf, sendcounts, sdispls, sendtype, recvbuf, recvcounts, rdispls, recvtype, comm_ptr, &reqp);
+        if (reqp) {
+            *request = reqp->handle;
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            goto fn_exit;
+        }
+        /* --END USEREXTENSION-- */
+    }
 
     mpi_errno = MPID_Sched_next_tag(comm_ptr, &tag);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -257,8 +269,8 @@ int MPIR_Ialltoallv_impl(const void *sendbuf, const int sendcounts[], const int 
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     MPIU_Assert(comm_ptr->coll_fns != NULL);
-    MPIU_Assert(comm_ptr->coll_fns->Ialltoallv != NULL);
-    mpi_errno = comm_ptr->coll_fns->Ialltoallv(sendbuf, sendcounts, sdispls, sendtype, recvbuf, recvcounts, rdispls, recvtype, comm_ptr, s);
+    MPIU_Assert(comm_ptr->coll_fns->Ialltoallv_sched != NULL);
+    mpi_errno = comm_ptr->coll_fns->Ialltoallv_sched(sendbuf, sendcounts, sdispls, sendtype, recvbuf, recvcounts, rdispls, recvtype, comm_ptr, s);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     mpi_errno = MPID_Sched_start(&s, comm_ptr, tag, &reqp);
@@ -279,7 +291,9 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_Ialltoallv - XXX description here
+MPI_Ialltoallv - Sends data from all to all processes in a nonblocking way;
+   each process may send a different amount of data and provide displacements
+   for the input and output data.
 
 Input Parameters:
 + sendbuf - starting address of the send buffer (choice)

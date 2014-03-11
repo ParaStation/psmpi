@@ -6,29 +6,16 @@
  * See COPYING in top-level directory.
  */
 
-/* Misc internals routines.  */
+/* Misc macros and inlines.  */
 
 #ifndef HWLOC_PRIVATE_MISC_H
 #define HWLOC_PRIVATE_MISC_H
 
 #include <hwloc/autogen/config.h>
 #include <private/autogen/config.h>
-#include <private/private.h>
-
-
-/* On some systems, snprintf returns the size of written data, not the actually
- * required size.  hwloc_snprintf always report the actually required size. */
-int hwloc_snprintf(char *str, size_t size, const char *format, ...) __hwloc_attribute_format(printf, 3, 4);
-
-/* Check whether needle matches the beginning of haystack, at least n, and up
- * to a colon or \0 */
-HWLOC_DECLSPEC
-int hwloc_namecoloncmp(const char *haystack, const char *needle, size_t n);
 
 /* Compile-time assertion */
 #define HWLOC_BUILD_ASSERT(condition) ((void)sizeof(char[1 - 2*!(condition)]))
-
-
 
 #define HWLOC_BITS_PER_LONG (HWLOC_SIZEOF_UNSIGNED_LONG * 8)
 #define HWLOC_BITS_PER_INT (HWLOC_SIZEOF_UNSIGNED_INT * 8)
@@ -90,9 +77,9 @@ extern int ffs(int) __hwloc_attribute_const;
 
 /* no ffs or it is known to be broken */
 static __hwloc_inline int
-hwloc_ffsl(unsigned long x) __hwloc_attribute_const;
+hwloc_ffsl_manual(unsigned long x) __hwloc_attribute_const;
 static __hwloc_inline int
-hwloc_ffsl(unsigned long x)
+hwloc_ffsl_manual(unsigned long x)
 {
 	int i;
 
@@ -129,6 +116,8 @@ hwloc_ffsl(unsigned long x)
 
 	return i;
 }
+/* always define hwloc_ffsl as a macro, to avoid renaming breakage */
+#define hwloc_ffsl hwloc_ffsl_manual
 
 #elif defined(HWLOC_NEED_FFSL)
 
@@ -159,9 +148,9 @@ hwloc_ffs32(unsigned long x)
 
 /* Then make it 64 bit if longs are.  */
 static __hwloc_inline int
-hwloc_ffsl(unsigned long x) __hwloc_attribute_const;
+hwloc_ffsl_from_ffs32(unsigned long x) __hwloc_attribute_const;
 static __hwloc_inline int
-hwloc_ffsl(unsigned long x)
+hwloc_ffsl_from_ffs32(unsigned long x)
 {
 #if HWLOC_BITS_PER_LONG == 64
 	int low_ffs, hi_ffs;
@@ -179,6 +168,9 @@ hwloc_ffsl(unsigned long x)
 	return hwloc_ffs32(x);
 #endif
 }
+/* always define hwloc_ffsl as a macro, to avoid renaming breakage */
+#define hwloc_ffsl hwloc_ffsl_from_ffs32
+
 #endif
 
 /**
@@ -230,9 +222,9 @@ extern int clz(int) __hwloc_attribute_const;
 #else /* no fls implementation */
 
 static __hwloc_inline int
-hwloc_flsl(unsigned long x) __hwloc_attribute_const;
+hwloc_flsl_manual(unsigned long x) __hwloc_attribute_const;
 static __hwloc_inline int
-hwloc_flsl(unsigned long x)
+hwloc_flsl_manual(unsigned long x)
 {
 	int i = 0;
 
@@ -269,6 +261,8 @@ hwloc_flsl(unsigned long x)
 
 	return i;
 }
+/* always define hwloc_flsl as a macro, to avoid renaming breakage */
+#define hwloc_flsl hwloc_flsl_manual
 
 #endif
 
@@ -301,9 +295,9 @@ hwloc_fls32(unsigned long x)
 
 /* Then make it 64 bit if longs are.  */
 static __hwloc_inline int
-hwloc_flsl(unsigned long x) __hwloc_attribute_const;
+hwloc_flsl_from_fls32(unsigned long x) __hwloc_attribute_const;
 static __hwloc_inline int
-hwloc_flsl(unsigned long x)
+hwloc_flsl_from_fls32(unsigned long x)
 {
 #if HWLOC_BITS_PER_LONG == 64
 	int low_fls, hi_fls;
@@ -321,6 +315,9 @@ hwloc_flsl(unsigned long x)
 	return hwloc_fls32(x);
 #endif
 }
+/* always define hwloc_flsl as a macro, to avoid renaming breakage */
+#define hwloc_flsl hwloc_flsl_from_fls32
+
 #endif
 
 static __hwloc_inline int
@@ -353,5 +350,8 @@ hwloc_weight_long(unsigned long w)
 #endif /* HWLOC_BITS_PER_LONG == 64 */
 }
 
+#if !HAVE_DECL_STRTOULL
+unsigned long long int strtoull(const char *nptr, char **endptr, int base);
+#endif
 
 #endif /* HWLOC_PRIVATE_MISC_H */

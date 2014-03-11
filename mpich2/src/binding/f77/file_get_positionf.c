@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position_( MPI_Fint *, MPI_Offs
 #else
 #pragma _CRI duplicate mpi_file_get_position_ as pmpi_file_get_position_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_GET_POSITION( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("PMPI_FILE_GET_POSITION")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position__( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("PMPI_FILE_GET_POSITION")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position_( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("PMPI_FILE_GET_POSITION")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("PMPI_FILE_GET_POSITION")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_GET_POSITION( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position__( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position_( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_GET_POSITION( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position__( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position_( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_GET_POSITION( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position__( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position_( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_GET_POSITION( MPI_Fint *, MPI_Offset*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position__( MPI_Fint *, MPI_Offset*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position( MPI_Fint *, MPI_Offset*, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position_( MPI_Fint *, MPI_Offs
 #pragma weak mpi_file_get_position__ = mpi_file_get_position
 #pragma weak mpi_file_get_position_ = mpi_file_get_position
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_GET_POSITION( MPI_Fint *, MPI_Offset*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position__( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("MPI_FILE_GET_POSITION")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position_( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("MPI_FILE_GET_POSITION")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("MPI_FILE_GET_POSITION")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_GET_POSITION( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("mpi_file_get_position__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position__( MPI_Fint *, MPI_Offset*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position_( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("mpi_file_get_position__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("mpi_file_get_position__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_GET_POSITION( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("mpi_file_get_position_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position__( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("mpi_file_get_position_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position_( MPI_Fint *, MPI_Offset*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("mpi_file_get_position_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_GET_POSITION( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("mpi_file_get_position")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position__( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("mpi_file_get_position")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position_( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("mpi_file_get_position")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_get_position( MPI_Fint *, MPI_Offset*, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_FILE_GET_POSITION( MPI_Fint *, MPI_Offset*, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_position( MPI_Fint *, MPI_Offs
 #pragma weak pmpi_file_get_position__ = pmpi_file_get_position
 #pragma weak pmpi_file_get_position_ = pmpi_file_get_position
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_position__( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("PMPI_FILE_GET_POSITION")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_position_( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("PMPI_FILE_GET_POSITION")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_position( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("PMPI_FILE_GET_POSITION")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_FILE_GET_POSITION( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_position_( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_position( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_FILE_GET_POSITION( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_position__( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_position( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_FILE_GET_POSITION( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_position__( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_position_( MPI_Fint *, MPI_Offset*, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_get_position")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_file_get_position_ PMPI_FILE_GET_POSITION

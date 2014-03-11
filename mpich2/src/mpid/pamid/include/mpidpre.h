@@ -58,8 +58,17 @@
 #include "mpidi_hooks.h"
 #include "mpidi_thread.h"
 #include "mpidi_util.h"
-#ifdef MPIDI_TRACE
-#include "mpidi_trace.h"
+
+#ifdef DYNAMIC_TASKING
+#define HAVE_GPID_ROUTINES
 #endif
+
+#ifdef __BGQ__
+#define MPID_HANDLE_NUM_INDICES 256
+#endif /* __BGQ__ */
+
+#define MPID_MAX_SMP_BCAST_MSG_SIZE (16384)
+#define MPID_MAX_SMP_REDUCE_MSG_SIZE (16384)
+#define MPID_MAX_SMP_ALLREDUCE_MSG_SIZE (16384)
 
 #endif

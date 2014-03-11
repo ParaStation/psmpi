@@ -15,13 +15,15 @@ hwloc_fake_component_instantiate(struct hwloc_disc_component *component __hwloc_
 				 const void *_data2 __hwloc_attribute_unused,
 				 const void *_data3 __hwloc_attribute_unused)
 {
+  if (hwloc_plugin_check_namespace("fake", "hwloc_backend_alloc") < 0)
+    return NULL;
   if (getenv("HWLOC_DEBUG_FAKE_COMPONENT"))
     printf("fake component instantiated\n");
   return NULL;
 }
 
 static struct hwloc_disc_component hwloc_fake_disc_component = {
-  HWLOC_DISC_COMPONENT_TYPE_ADDITIONAL, /* so that it's always enabled when using the OS discovery */
+  HWLOC_DISC_COMPONENT_TYPE_MISC, /* so that it's always enabled when using the OS discovery */
   "fake",
   0, /* nothing to exclude */
   hwloc_fake_component_instantiate,

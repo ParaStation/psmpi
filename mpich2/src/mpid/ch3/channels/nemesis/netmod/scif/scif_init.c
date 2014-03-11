@@ -4,7 +4,7 @@
  *      See COPYRIGHT in top-level directory.
  *
  *  Portions of this code were written by Intel Corporation.
- *  Copyright (C) 2011-2012 Intel Corporation.  Intel provides this material
+ *  Copyright (C) 2011-2013 Intel Corporation.  Intel provides this material
  *  to Argonne National Laboratory subject to Software Grant and Corporate
  *  Contributor License Agreement dated February 8, 2012.
  */
@@ -42,12 +42,61 @@ static int listen_fd;
 static int listen_port;
 
 #undef FUNCNAME
+#define FUNCNAME MPID_nem_scif_post_init
+#undef FCNAME
+#define FCNAME MPIU_QUOTE(FUNCNAME)
+int MPID_nem_scif_post_init(void)
+{
+    int mpi_errno = MPI_SUCCESS, pmi_errno;
+    MPIDI_PG_t *my_pg = MPIDI_Process.my_pg;
+
+    int my_rank = MPIDI_CH3I_my_rank;
+    int i;
+    MPIDI_VC_t *vc;
+    scifconn_t *sc;
+    MPIDI_CH3I_VC *vc_ch;
+    MPID_nem_scif_vc_area *vc_scif;
+    size_t s;
+    int ret;
+    off_t offset;
+    int peer_rank;
+
+    MPIDI_STATE_DECL(MPID_NEM_SCIF_POST_INIT);
+    MPIDI_FUNC_ENTER(MPID_NEM_SCIF_POST_INIT);
+
+    for (i = 0; i < MPID_nem_scif_nranks; i++) {
+
+        vc = &my_pg->vct[i];
+        vc_ch = &vc->ch;
+
+        if (vc->pg_rank == MPID_nem_scif_myrank || vc_ch->is_local) {
+            continue;
+        }
+
+        /* restore some value which might be rewrited during MPID_nem_vc_init() */
+
+        vc->sendNoncontig_fn = MPID_nem_scif_SendNoncontig;
+        vc_ch->iStartContigMsg = MPID_nem_scif_iStartContigMsg;
+        vc_ch->iSendContig = MPID_nem_scif_iSendContig;
+
+    }
+
+  fn_exit:
+    MPIDI_FUNC_EXIT(MPID_NEM_SCIF_POST_INIT);
+    return mpi_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+
+#undef FUNCNAME
 #define FUNCNAME MPID_nem_scif_init
 #undef FCNAME
 #define FCNAME MPIDI_QUOTE(FUNCNAME)
 int MPID_nem_scif_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
+    int pmi_errno;
     int ret;
     int i;
     MPIU_CHKPMEM_DECL(2);
@@ -63,7 +112,7 @@ int MPID_nem_scif_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val
     MPID_nem_scif_myrank = pg_rank;
 
     /* set up listener socket */
-    if (MPID_nem_scif_myrank < MPID_nem_scif_nranks - 1) {
+    {
         listen_fd = scif_open();
         MPIU_ERR_CHKANDJUMP1(listen_fd == -1, mpi_errno, MPI_ERR_OTHER,
                              "**scif_open", "**scif_open %s", MPIU_Strerror(errno));
@@ -83,8 +132,7 @@ int MPID_nem_scif_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val
         MPIU_ERR_POP(mpi_errno);
 
     MPIU_CHKPMEM_MALLOC(MPID_nem_scif_conns, scifconn_t *,
-                        MPID_nem_scif_nranks * sizeof(scifconn_t), mpi_errno,
-                        "connection table");
+                        MPID_nem_scif_nranks * sizeof(scifconn_t), mpi_errno, "connection table");
     memset(MPID_nem_scif_conns, 0, MPID_nem_scif_nranks * sizeof(scifconn_t));
     for (i = 0; i < MPID_nem_scif_nranks; ++i)
         MPID_nem_scif_conns[i].fd = -1;
@@ -92,6 +140,12 @@ int MPID_nem_scif_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val
     MPIU_CHKPMEM_MALLOC(MPID_nem_scif_recv_buf, char *,
                         MPID_NEM_SCIF_RECV_MAX_PKT_LEN, mpi_errno, "SCIF temporary buffer");
     MPIU_CHKPMEM_COMMIT();
+    mpi_errno = MPID_nem_register_initcomp_cb(MPID_nem_scif_post_init);
+    if (mpi_errno)
+        MPIU_ERR_POP(mpi_errno);
+    pmi_errno = PMI_Barrier();
+    MPIU_ERR_CHKANDJUMP1(pmi_errno != PMI_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**pmi_barrier",
+                         "**pmi_barrier %d", pmi_errno);
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_SCIF_INIT);
@@ -120,18 +174,15 @@ int MPID_nem_scif_get_business_card(int my_rank, char **bc_val_p, int *val_max_s
     hostname[sizeof(hostname) - 1] = 0;
     gethostname(hostname, sizeof(hostname) - 1);
     str_errno =
-        MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p,
-                                MPIDI_CH3I_HOST_DESCRIPTION_KEY, hostname);
+        MPIU_Str_add_string_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_HOST_DESCRIPTION_KEY, hostname);
     if (str_errno) {
-        MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno,
-                            MPI_ERR_OTHER, "**buscard_len");
+        MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
         MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
 
     str_errno = MPIU_Str_add_int_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_PORT_KEY, listen_port);
     if (str_errno) {
-        MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno,
-                            MPI_ERR_OTHER, "**buscard_len");
+        MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
         MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
 
@@ -141,8 +192,7 @@ int MPID_nem_scif_get_business_card(int my_rank, char **bc_val_p, int *val_max_s
                          MPIU_Strerror(errno), errno);
     str_errno = MPIU_Str_add_int_arg(bc_val_p, val_max_sz_p, MPIDI_CH3I_NODE_KEY, self);
     if (str_errno) {
-        MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno,
-                            MPI_ERR_OTHER, "**buscard_len");
+        MPIU_ERR_CHKANDJUMP(str_errno == MPIU_STR_NOMEM, mpi_errno, MPI_ERR_OTHER, "**buscard_len");
         MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**buscard");
     }
 
@@ -179,20 +229,17 @@ static int scif_addr_from_bc(const char *business_card, uint16_t * addr, uint16_
     *port = (uint16_t) tmp;
     /* MPIU_STR_FAIL is not a valid MPI error code so we store the
      * result in ret instead of mpi_errno. */
-    MPIU_ERR_CHKANDJUMP(ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                        "**argstr_missingport");
+    MPIU_ERR_CHKANDJUMP(ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missingport");
 
     ret = MPIU_Str_get_int_arg(business_card, MPIDI_CH3I_NODE_KEY, &tmp);
     *addr = (uint16_t) tmp;
-    MPIU_ERR_CHKANDJUMP(ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER,
-                        "**argstr_missingnode");
+    MPIU_ERR_CHKANDJUMP(ret != MPIU_STR_SUCCESS, mpi_errno, MPI_ERR_OTHER, "**argstr_missingnode");
 
   fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_SCIF_GET_ADDR_PORT_FROM_BC);
     return mpi_errno;
   fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE,
-                     (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }
 
@@ -206,8 +253,7 @@ static int get_addr(MPIDI_VC_t * vc, struct scif_portID *addr)
 
     /* Allocate space for the business card */
     pmi_errno = PMI_KVS_Get_value_length_max(&val_max_sz);
-    MPIU_ERR_CHKANDJUMP1(pmi_errno, mpi_errno, MPI_ERR_OTHER, "**fail",
-                         "**fail %d", pmi_errno);
+    MPIU_ERR_CHKANDJUMP1(pmi_errno, mpi_errno, MPI_ERR_OTHER, "**fail", "**fail %d", pmi_errno);
     MPIU_CHKLMEM_MALLOC(bc, char *, val_max_sz, mpi_errno, "bc");
 
     mpi_errno = vc->pg->getConnInfo(vc->pg_rank, bc, val_max_sz, vc->pg);
@@ -232,31 +278,36 @@ static int get_addr(MPIDI_VC_t * vc, struct scif_portID *addr)
 int MPID_nem_scif_vc_init(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_CH3I_VC *vc_ch = &vc->ch;
-    MPID_nem_scif_vc_area *vc_scif = VC_SCIF(vc);
+    MPIDI_CH3I_VC *vc_ch;
+    MPID_nem_scif_vc_area *vc_scif;
     int ret;
     size_t s;
     scifconn_t *sc;
     off_t offset;
+    int peer_rank;
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_SCIF_VC_INIT);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_SCIF_VC_INIT);
 
-    vc->sendNoncontig_fn = MPID_nem_scif_SendNoncontig;
-    vc_ch->iStartContigMsg = MPID_nem_scif_iStartContigMsg;
-    vc_ch->iSendContig = MPID_nem_scif_iSendContig;
-
-    vc_ch->next = NULL;
-    vc_ch->prev = NULL;
-
-    ASSIGN_SC_TO_VC(vc_scif, NULL);
-    vc_scif->send_queue.head = vc_scif->send_queue.tail = NULL;
-    vc_scif->sc = sc = &MPID_nem_scif_conns[vc->pg_rank];
-    vc_scif->terminate = 0;
-    sc->vc = vc;
-
     /* do the connection */
     if (vc->pg_rank < MPID_nem_scif_myrank) {
+        vc_ch = &vc->ch;
+        vc_scif = VC_SCIF(vc);
+        vc->sendNoncontig_fn = MPID_nem_scif_SendNoncontig;
+        vc_ch->iStartContigMsg = MPID_nem_scif_iStartContigMsg;
+        vc_ch->iSendContig = MPID_nem_scif_iSendContig;
+
+        vc_ch->pkt_handler = NULL;      // pkt_handlers;
+        vc_ch->num_pkt_handlers = 0;    // MPIDI_NEM_SCIF_PKT_NUM_TYPES;
+        vc_ch->next = NULL;
+        vc_ch->prev = NULL;
+
+        ASSIGN_SC_TO_VC(vc_scif, NULL);
+        vc_scif->send_queue.head = vc_scif->send_queue.tail = NULL;
+        vc_scif->sc = sc = &MPID_nem_scif_conns[vc->pg_rank];
+        vc_scif->terminate = 0;
+        sc->vc = vc;
+
         sc->fd = scif_open();
         MPIU_ERR_CHKANDJUMP1(sc->fd == -1, mpi_errno, MPI_ERR_OTHER,
                              "**scif_open", "**scif_open %s", MPIU_Strerror(errno));
@@ -266,17 +317,52 @@ int MPID_nem_scif_vc_init(MPIDI_VC_t * vc)
         ret = scif_connect(sc->fd, &sc->addr);
         MPIU_ERR_CHKANDJUMP1(ret == -1, mpi_errno, MPI_ERR_OTHER,
                              "**scif_connect", "**scif_connect %s", MPIU_Strerror(errno));
+        s = scif_send(sc->fd, &MPID_nem_scif_myrank, sizeof(MPID_nem_scif_myrank), SCIF_SEND_BLOCK);
+        MPIU_ERR_CHKANDJUMP1(s != sizeof(MPID_nem_scif_myrank), mpi_errno, MPI_ERR_OTHER,
+                             "**scif_send", "**scif_send %s", MPIU_Strerror(errno));
     }
     else {
-        ret = scif_accept(listen_fd, &sc->addr, &sc->fd, SCIF_ACCEPT_SYNC);
+        struct scif_portID portID;
+        int fd;
+        // Can accept a connection from any peer, not necessary from vc->pg_rank.
+        // So we need to know the actual peer and adjust vc.
+        ret = scif_accept(listen_fd, &portID, &fd, SCIF_ACCEPT_SYNC);
         MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER,
                              "**scif_accept", "**scif_accept %s", MPIU_Strerror(errno));
+        s = scif_recv(fd, &peer_rank, sizeof(peer_rank), SCIF_RECV_BLOCK);
+        MPIU_ERR_CHKANDJUMP1(s != sizeof(peer_rank), mpi_errno, MPI_ERR_OTHER, "**scif_recv",
+                             "**scif_recv %s", MPIU_Strerror(errno));
+        // check and adjust vc
+        if (peer_rank != vc->pg_rank) {
+            // get another vc
+            MPIDI_PG_Get_vc(MPIDI_Process.my_pg, peer_rank, &vc);
+            // check another new corresponds to actual peer_rank
+            MPIU_ERR_CHKANDJUMP1(peer_rank != vc->pg_rank, mpi_errno, MPI_ERR_OTHER,
+                                 "**MPIDI_PG_Get_vc", "**MPIDI_PG_Get_vc %s",
+                                 "wrong vc after accept");
+        }
+        vc_ch = &vc->ch;
+        vc_scif = VC_SCIF(vc);
+
+        vc->sendNoncontig_fn = MPID_nem_scif_SendNoncontig;
+        vc_ch->iStartContigMsg = MPID_nem_scif_iStartContigMsg;
+        vc_ch->iSendContig = MPID_nem_scif_iSendContig;
+        vc_ch->pkt_handler = NULL;      // pkt_handlers;
+        vc_ch->num_pkt_handlers = 0;    // MPIDI_NEM_SCIF_PKT_NUM_TYPES;
+        vc_ch->next = NULL;
+        vc_ch->prev = NULL;
+        ASSIGN_SC_TO_VC(vc_scif, NULL);
+        vc_scif->send_queue.head = vc_scif->send_queue.tail = NULL;
+        vc_scif->sc = sc = &MPID_nem_scif_conns[vc->pg_rank];
+        vc_scif->terminate = 0;
+        sc->vc = vc;
+        sc->addr = portID;
+        sc->fd = fd;
     }
     MPIDI_CHANGE_VC_STATE(vc, ACTIVE);
     ret = MPID_nem_scif_init_shmsend(&sc->csend, sc->fd, vc->pg_rank);
     MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER,
-                         "**scif_init_shmsend", "**scif_init_shmsend %s",
-                         MPIU_Strerror(errno));
+                         "**scif_init_shmsend", "**scif_init_shmsend %s", MPIU_Strerror(errno));
 
     /* Exchange offsets */
     s = scif_send(sc->fd, &sc->csend.offset, sizeof(off_t), SCIF_SEND_BLOCK);
@@ -288,8 +374,7 @@ int MPID_nem_scif_vc_init(MPIDI_VC_t * vc)
 
     ret = MPID_nem_scif_init_shmrecv(&sc->crecv, sc->fd, offset, vc->pg_rank);
     MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER,
-                         "**scif_init_shmrecv", "**scif_init_shmrecv %s",
-                         MPIU_Strerror(errno));
+                         "**scif_init_shmrecv", "**scif_init_shmrecv %s", MPIU_Strerror(errno));
 
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_SCIF_VC_INIT);
 
@@ -379,7 +464,6 @@ int MPID_nem_scif_vc_terminated(MPIDI_VC_t * vc)
     MPIDI_FUNC_EXIT(MPID_NEM_SCIF_VC_TERMINATED);
     return mpi_errno;
   fn_fail:
-    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE,
-                     (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
+    MPIU_DBG_MSG_FMT(NEM_SOCK_DET, VERBOSE, (MPIU_DBG_FDEST, "failure. mpi_errno = %d", mpi_errno));
     goto fn_exit;
 }

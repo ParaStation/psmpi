@@ -2,6 +2,8 @@
 **argnonpos %s %d:Invalid value for %s; must be positive but is %d
 **argneg:Invalid argument; must be non-negative
 **argneg %s %d:Invalid value for %s, must be non-negative but is %d
+**argtoosmall:Invalid argument; value is too small
+**argtoosmall %s %d %d:Invalid argument for %s: value is %d but must be at least %d
 **countneg:Negative count
 **countneg %d:Negative count, value is %d
 **initialized:MPI not initialized. Call MPI_Init or MPI_Init_thread first
@@ -874,9 +876,9 @@ is too big (> MPIU_SHMW_GHND_SZ)
 
 **toomanynbc: too many outstanding nonblocking collectives detected
 
-**ifname_and_hostname:Only one of MPICH_INTERFACE_HOSTNAME and MPICH_NETWORK_IFACE environment variables are allowed, but both were set.
-**iface_notfound:The network interface specified in MPICH_NETWORK_IFACE was not found.
-**iface_notfound %s:The network interface, \"%s\", specified in MPICH_NETWORK_IFACE was not found.
+**ifname_and_hostname:Only one of MPIR_CVAR_CH3_INTERFACE_HOSTNAME and MPIR_CVAR_CH3_NETWORK_IFACE environment variables are allowed, but both were set.
+**iface_notfound:The network interface specified in MPIR_CVAR_CH3_NETWORK_IFACE was not found.
+**iface_notfound %s:The network interface, \"%s\", specified in MPIR_CVAR_CH3_NETWORK_IFACE was not found.
 
 **procnamefailed:Failed to get processor name
 
@@ -1590,6 +1592,8 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **scif_poll_send %s:scif_poll_send failed (scif_poll_send failed with error '%s')
 **poll error:poll error
 **loadsendiov:sendiov failed
+**MPIDI_PG_Get_vc:MPIDI_PG_Get_vc failed
+**MPIDI_PG_Get_vc %s:MPIDI_PG_Get_vc failed (MPIDI_PG_Get_vc failed with error '%s')
 
 # Datarep conversion function not supported by ROMIO (Temproary until implemented)
 **drconvnotsupported:Read and Write datarep conversions are currently not supported by MPI-IO

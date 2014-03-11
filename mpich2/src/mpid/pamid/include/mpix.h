@@ -78,6 +78,10 @@ extern "C" {
 
   /**
    * \brief Determine the rank-in-COMM_WORLD of the process associated with rank-in-comm
+   *
+   * Fortran interface:
+   *   MPIX_COMM_RANK2GLOBAL (INTEGER comm, INTEGER crank, INTEGER grank, INTEGER ierr)
+   *
    * \param[in]  comm  The communicator associated with the input rank
    * \param[in]  crank The rank-in-comm
    * \param[out] grank The rank-in-COMM_WORLD (AKA Global rank)
@@ -134,6 +138,157 @@ extern "C" {
     * Note: Max internal length is 100
     */
   int MPIX_Get_last_algorithm_name(MPI_Comm comm, char *protocol, int length);
+
+  /**
+   * \brief Create a communicator such that all nodes in the same
+   *        communicator are served by the same I/O node
+   *
+   * Fortran interface:
+   *   MPIX_PSET_SAME_COMM_CREATE(INTEGER pset_comm, INTEGER ierr)
+   *
+   * \note This is a collective operation on MPI_COMM_WORLD
+   *
+   * \param [out] pset_comm The new communicator
+   *
+   * \return MPI status code
+   */
+  int MPIX_Pset_same_comm_create (MPI_Comm *pset_comm);
+
+  /**
+   * \brief Create a communicator such that all nodes in the same
+   *        communicator are served by a different I/O node
+   *
+   * Fortran interface:
+   *   MPIX_PSET_DIFF_COMM_CREATE(INTEGER pset_comm, INTEGER ierr)
+   *
+   * \note This is a collective operation on MPI_COMM_WORLD
+   *
+   * \param [out] pset_comm The new communicator
+   *
+   * \return MPI status code
+   */
+  int MPIX_Pset_diff_comm_create (MPI_Comm *pset_comm);
+
+  /**
+   * \brief Create a communicator such that all nodes in the same
+   *        communicator are served by the same I/O node
+   *
+   * Fortran interface:
+   *   MPIX_PSET_SAME_COMM_CREATE (INTEGER parent_comm, INTEGER pset_comm, INTEGER ierr)
+   *
+   * \note This is a collective operation on the parent communicator.
+   *
+   * \param [in]  parent_comm The parent communicator
+   * \param [out] pset_comm   The new communicator
+   *
+   * \return MPI status code
+   */
+  int MPIX_Pset_same_comm_create_from_parent (MPI_Comm parent_comm, MPI_Comm *pset_comm);
+
+  /**
+   * \brief Create a communicator such that all nodes in the same
+   *        communicator are served by a different I/O node
+   *
+   * Fortran interface:
+   *   MPIX_PSET_DIFF_COMM_CREATE (INTEGER parent_comm, INTEGER pset_comm, INTEGER ierr)
+   *
+   * \note This is a collective operation on the parent communicator
+   *
+   * \param [in]  parent_comm The parent communicator
+   * \param [out] pset_comm   The new communicator
+   *
+   * \return MPI status code
+   */
+  int MPIX_Pset_diff_comm_create_from_parent (MPI_Comm parent_comm, MPI_Comm *pset_comm);
+
+  /**
+   * \brief Retrieve the identifier of the io node associated with the local compute node.
+   *
+   * The I/O node identifier is a unique number, yet it is not a monotonically
+   * increasing integer; such as a rank in a communicator. Multiple ranks, and
+   * multiple compute nodes, can be associated with the same I/O link.
+   *
+   * Fortran interface:
+   *   MPIX_IO_NODE_ID (INTEGER io_node_id)
+   *
+   * \note On BG/Q two 'bridge' compute nodes are connected to each io node;
+   *       each unique io node identifier will be associated with at most two
+   *       different io link identifiers.
+   *
+   * \return I/O node identifier
+   */
+  int MPIX_IO_node_id ();
+
+  /**
+   * \brief Retrieve the identifier of the io link associated with the local compute node.
+   *
+   * The I/O link identifier is a unique number, yet it is not a monotonically
+   * increasing integer; such as a rank in a communicator. Multiple ranks, and
+   * multiple compute nodes, can be associated with the same I/O link.
+   *
+   * Fortran interface:
+   *   MPIX_IO_LINK_ID (INTEGER io_link_id)
+   *
+   * \return I/O link identifier
+   */
+  int MPIX_IO_link_id ();
+
+  /**
+   * \brief Retrieve the number of hops to the io node associated with the local compute node.
+   *
+   * The distance to the I/O node is the number of hops on the torus from the
+   * local compute node to the associated I/O node. The 'torus' vs 'mesh'
+   * attribute of each dimention is considered when determining the distance.
+   *
+   * Fortran interface:
+   *   MPIX_IO_DISTANCE (INTEGER io_distance)
+   *
+   * \note On BG/Q the 'bridge' compute nodes are those nodes that are closest
+   *       to the I/O node and will have a distance of '1'.
+   *
+   * \return number of hops to the I/O node
+   */
+  int MPIX_IO_distance ();
+
+  /**
+   * \brief Retrieve information about the I/O node associated with the
+   *        local compute node.
+   *
+   * \deprecated This function has been replaced with MPIX_IO_link_id() and
+   *             MPIX_IO_distance()
+   *
+   * \see MPIX_IO_link_id
+   * \see MPIX_IO_distance
+   * \see MPIX_IO_node_id
+   *
+   * \param [out] io_node_route_id     The unique I/O node route identifier
+   * \param [out] distance_to_io_node  The number of hops to the I/O node
+   */
+  void MPIX_Pset_io_node (int *io_node_route_id, int *distance_to_io_node);
+
+  /**
+   * \brief Create a Cartesian communicator that exactly matches the partition
+   *
+   * This is a collective operation on MPI_COMM_WORLD, and will only run
+   * successfully on a full partition job (no -np)
+   *
+   * The communicator is created to match the size of each dimension, the
+   * physical coords on each node, and the torus/mesh link status.
+   *
+   * Because of MPICH dimension ordering, the associated arrays (i.e. coords,
+   * sizes, and periods) are in [a, b, c, d, e, t] order. Consequently, when
+   * using the default ABCDET mapping, the rank in cart_comm will match the rank
+   * in MPI_COMM_WORLD. However, when using a non-default mapping or a mapfile
+   * the ranks will be different.
+   *
+   * Fortran interface:
+   *   MPIX_CART_COMM_CREATE (INTEGER cart_comm, INTEGER ierr)
+   *
+   * \param [out] cart_comm The new Cartesian communicator
+   *
+   * \return MPI_SUCCESS or MPI_ERR_TOPOLOGY
+   */
+  int MPIX_Cart_comm_create (MPI_Comm *cart_comm);
 
 
 #if defined(__cplusplus)

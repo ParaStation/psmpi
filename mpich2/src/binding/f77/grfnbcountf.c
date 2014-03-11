@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count_( MPI_Fint *, MPI_
 #else
 #pragma _CRI duplicate mpi_graph_neighbors_count_ as pmpi_graph_neighbors_count_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GRAPH_NEIGHBORS_COUNT( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_GRAPH_NEIGHBORS_COUNT")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_GRAPH_NEIGHBORS_COUNT")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_GRAPH_NEIGHBORS_COUNT")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_GRAPH_NEIGHBORS_COUNT")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GRAPH_NEIGHBORS_COUNT( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GRAPH_NEIGHBORS_COUNT( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_GRAPH_NEIGHBORS_COUNT( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_GRAPH_NEIGHBORS_COUNT( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count_( MPI_Fint *, MPI_
 #pragma weak mpi_graph_neighbors_count__ = mpi_graph_neighbors_count
 #pragma weak mpi_graph_neighbors_count_ = mpi_graph_neighbors_count
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GRAPH_NEIGHBORS_COUNT( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_GRAPH_NEIGHBORS_COUNT")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_GRAPH_NEIGHBORS_COUNT")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_GRAPH_NEIGHBORS_COUNT")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GRAPH_NEIGHBORS_COUNT( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_graph_neighbors_count__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_graph_neighbors_count__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_graph_neighbors_count__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GRAPH_NEIGHBORS_COUNT( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_graph_neighbors_count_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_graph_neighbors_count_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_graph_neighbors_count_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_GRAPH_NEIGHBORS_COUNT( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_graph_neighbors_count")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_graph_neighbors_count")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_graph_neighbors_count")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_graph_neighbors_count( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_GRAPH_NEIGHBORS_COUNT( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_graph_neighbors_count( MPI_Fint *, MPI_
 #pragma weak pmpi_graph_neighbors_count__ = pmpi_graph_neighbors_count
 #pragma weak pmpi_graph_neighbors_count_ = pmpi_graph_neighbors_count
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_graph_neighbors_count__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_GRAPH_NEIGHBORS_COUNT")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_graph_neighbors_count_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_GRAPH_NEIGHBORS_COUNT")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_graph_neighbors_count( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_GRAPH_NEIGHBORS_COUNT")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_GRAPH_NEIGHBORS_COUNT( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_graph_neighbors_count_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_graph_neighbors_count( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_GRAPH_NEIGHBORS_COUNT( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_graph_neighbors_count__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_graph_neighbors_count( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_GRAPH_NEIGHBORS_COUNT( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_graph_neighbors_count__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_graph_neighbors_count_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_graph_neighbors_count")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_graph_neighbors_count_ PMPI_GRAPH_NEIGHBORS_COUNT

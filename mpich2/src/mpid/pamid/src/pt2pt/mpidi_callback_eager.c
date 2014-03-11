@@ -44,6 +44,11 @@ MPIDI_RecvCB(pami_context_t    context,
              pami_recv_t     * recv)
 {
   const MPIDI_MsgInfo *msginfo = (const MPIDI_MsgInfo *)_msginfo;
+#if TOKEN_FLOW_CONTROL
+  int          rettoks=0;
+  void         *uebuf;
+#endif
+  pami_task_t  source;
   if (recv == NULL)
     {
       if (msginfo->isSync)
@@ -72,6 +77,7 @@ MPIDI_RecvCB(pami_context_t    context,
   MPID_assert(msginfo_size == sizeof(MPIDI_MsgInfo));
 
   MPID_Request * rreq = NULL;
+  source=PAMIX_Endpoint_query(sender);
 
   /* -------------------- */
   /*  Match the request.  */
@@ -81,10 +87,18 @@ MPIDI_RecvCB(pami_context_t    context,
   unsigned context_id = msginfo->MPIctxt;
 
   MPIU_THREAD_CS_ENTER(MSGQUEUE,0);
+  if (TOKEN_FLOW_CONTROL_ON)
+    {
+      #if TOKEN_FLOW_CONTROL
+      MPIDI_Receive_tokens(msginfo,source);
+      #else
+      MPID_assert_always(0);
+      #endif
+    }
 #ifndef OUT_OF_ORDER_HANDLING
   rreq = MPIDI_Recvq_FDP(rank, tag, context_id);
 #else
-  rreq = MPIDI_Recvq_FDP(rank, PAMIX_Endpoint_query(sender), tag, context_id, msginfo->MPIseqno);
+  rreq = MPIDI_Recvq_FDP(rank, source, tag, context_id, msginfo->MPIseqno);
 #endif
 
   /* Match not found */
@@ -97,24 +111,56 @@ MPIDI_RecvCB(pami_context_t    context,
       MPIU_THREAD_CS_EXIT(MSGQUEUE,0);
       MPID_Request *newreq = MPIDI_Request_create2();
       MPID_assert(newreq != NULL);
+      if (TOKEN_FLOW_CONTROL_ON)
+        {
+          #if TOKEN_FLOW_CONTROL
+          MPIU_THREAD_CS_ENTER(MSGQUEUE,0);
+          #else
+          MPID_assert_always(0);
+          #endif
+        }
+
       if (sndlen)
       {
         newreq->mpid.uebuflen = sndlen;
-        newreq->mpid.uebuf = MPIU_Malloc(sndlen);
+        if (!(TOKEN_FLOW_CONTROL_ON))
+          {
+            newreq->mpid.uebuf = MPIU_Malloc(sndlen);
+            newreq->mpid.uebuf_malloc = mpiuMalloc ;
+          }
+        else
+          {
+            #if TOKEN_FLOW_CONTROL
+            newreq->mpid.uebuf = MPIDI_mm_alloc(sndlen);
+            newreq->mpid.uebuf_malloc = mpidiBufMM;
+            #else
+            MPID_assert_always(0);
+            #endif
+          }
         MPID_assert(newreq->mpid.uebuf != NULL);
-        newreq->mpid.uebuf_malloc = 1;
       }
-      MPIU_THREAD_CS_ENTER(MSGQUEUE,0);
+      if (!TOKEN_FLOW_CONTROL_ON)
+        {
+          MPIU_THREAD_CS_ENTER(MSGQUEUE,0);
+        }
 #ifndef OUT_OF_ORDER_HANDLING
       rreq = MPIDI_Recvq_FDP(rank, tag, context_id);
 #else
-      rreq = MPIDI_Recvq_FDP(rank, PAMIX_Endpoint_query(sender), tag, context_id, msginfo->MPIseqno);
+      rreq = MPIDI_Recvq_FDP(rank, source, tag, context_id, msginfo->MPIseqno);
 #endif
-      
+
       if (unlikely(rreq == NULL))
       {
         MPIDI_Callback_process_unexp(newreq, context, msginfo, sndlen, sender, sndbuf, recv, msginfo->isSync);
         int completed = MPID_Request_is_complete(newreq);
+        if (TOKEN_FLOW_CONTROL_ON)
+          {
+            #if TOKEN_FLOW_CONTROL
+            MPIDI_Token_cntr[sender].unmatched++;
+            #else
+            MPID_assert_always(0);
+            #endif
+          }
         MPIU_THREAD_CS_EXIT(MSGQUEUE,0);
         if (completed) MPID_Request_release(newreq);
         goto fn_exit_eager;
@@ -128,8 +174,17 @@ MPIDI_RecvCB(pami_context_t    context,
   else
     {
 #if (MPIDI_STATISTICS)
-        MPID_NSTAT(mpid_statp->earlyArrivalsMatched);
+      MPID_NSTAT(mpid_statp->earlyArrivalsMatched);
 #endif
+      if (TOKEN_FLOW_CONTROL_ON)
+        {
+          #if TOKEN_FLOW_CONTROL
+          MPIDI_Update_rettoks(source);
+          MPIDI_Must_return_tokens(context,source);
+          #else
+          MPID_assert_always(0);
+          #endif
+        }
       MPIU_THREAD_CS_EXIT(MSGQUEUE,0);
     }
 
@@ -142,12 +197,12 @@ MPIDI_RecvCB(pami_context_t    context,
   /* ---------------------- */
   rreq->status.MPI_SOURCE = rank;
   rreq->status.MPI_TAG    = tag;
-  rreq->status.count      = sndlen;
+  MPIR_STATUS_SET_COUNT(rreq->status, sndlen);
   MPIDI_Request_setCA          (rreq, MPIDI_CA_COMPLETE);
   MPIDI_Request_cpyPeerRequestH(rreq, msginfo);
   MPIDI_Request_setSync        (rreq, msginfo->isSync);
   MPIDI_Request_setRzv         (rreq, 0);
-
+  TRACE_SET_R_VAL(source,(rreq->mpid.PR_idx),len,sndlen);
   /* --------------------------------------- */
   /*  We have to fill in the callback info.  */
   /* --------------------------------------- */
@@ -163,7 +218,7 @@ MPIDI_RecvCB(pami_context_t    context,
   /* ----------------------------- */
 
   if (unlikely(msginfo->isSync))
-    MPIDI_SyncAck_post(context, rreq, PAMIX_Endpoint_query(sender));
+    MPIDI_SyncAck_post(context, rreq, source);
 
   /* ----------------------------------------- */
   /*  Calculate message length for reception.  */
@@ -219,21 +274,37 @@ MPIDI_RecvCB(pami_context_t    context,
       rreq->mpid.uebuflen = sndlen;
       if (sndlen)
         {
-          rreq->mpid.uebuf    = MPIU_Malloc(sndlen);
+          if (!TOKEN_FLOW_CONTROL_ON)
+            {
+              rreq->mpid.uebuf    = MPIU_Malloc(sndlen);
+              rreq->mpid.uebuf_malloc = mpiuMalloc;
+            }
+          else
+            {
+              #if TOKEN_FLOW_CONTROL
+              MPIDI_Alloc_lock(&rreq->mpid.uebuf,sndlen);
+              rreq->mpid.uebuf_malloc = mpidiBufMM;
+              #else
+              MPID_assert_always(0);
+              #endif
+            }
           MPID_assert(rreq->mpid.uebuf != NULL);
-          rreq->mpid.uebuf_malloc = 1;
         }
       /* -------------------------------------------------- */
       /*  Let PAMI know where to put the rest of the data.  */
       /* -------------------------------------------------- */
       recv->addr = rreq->mpid.uebuf;
     }
-#ifdef MPIDI_TRACE
-   MPIDI_In_cntr[(PAMIX_Endpoint_query(sender))].R[(rreq->mpid.idx)].comp_in_HH=2;
-   MPIDI_In_cntr[(PAMIX_Endpoint_query(sender))].R[(rreq->mpid.idx)].bufadd=rreq->mpid.userbuf;
-#endif
+   TRACE_SET_R_VAL(source,(rreq->mpid.idx),fl.f.comp_in_HH,2);
+   TRACE_SET_R_VAL(source,(rreq->mpid.idx),bufadd,rreq->mpid.userbuf);
 
  fn_exit_eager:
+#ifdef OUT_OF_ORDER_HANDLING
+  if (MPIDI_In_cntr[source].n_OutOfOrderMsgs > 0) {
+    MPIDI_Recvq_process_out_of_order_msgs(source, context);
+  }
+#endif
+
   /* ---------------------------------------- */
   /*  Signal that the recv has been started.  */
   /* ---------------------------------------- */

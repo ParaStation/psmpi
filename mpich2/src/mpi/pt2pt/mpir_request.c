@@ -70,10 +70,9 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 	{
 	    if (status != MPI_STATUS_IGNORE)
 	    {
-		status->cancelled = request_ptr->status.cancelled;
+		MPIR_STATUS_SET_CANCEL_BIT(*status, MPIR_STATUS_GET_CANCEL_BIT(request_ptr->status));
 	    }
 	    mpi_errno = request_ptr->status.MPI_ERROR;
-	    /* FIXME: are Ibsend requests added to the send queue? */
 	    MPIR_SENDQ_FORGET(request_ptr);
 	    MPID_Request_release(request_ptr);
 	    *request = MPI_REQUEST_NULL;
@@ -103,7 +102,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 		{
 		    if (status != MPI_STATUS_IGNORE)
 		    {
-			status->cancelled = prequest_ptr->status.cancelled;
+			MPIR_STATUS_SET_CANCEL_BIT(*status, MPIR_STATUS_GET_CANCEL_BIT(prequest_ptr->status));
 		    }
 		    mpi_errno = prequest_ptr->status.MPI_ERROR;
 		}
@@ -119,7 +118,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
                     }
                     if (status != MPI_STATUS_IGNORE)
                     {
-                        status->cancelled = prequest_ptr->status.cancelled;
+                        MPIR_STATUS_SET_CANCEL_BIT(*status, MPIR_STATUS_GET_CANCEL_BIT(prequest_ptr->status));
                     }
                     if (mpi_errno == MPI_SUCCESS)
                     {
@@ -132,10 +131,6 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
                     }
 		}
 
-		/* FIXME: MPIR_SENDQ_FORGET(request_ptr); -- it appears that
-		   persistent sends are not currently being added to the send
-		   queue.  should they be, or should this release be
-		   conditional? */
 		MPID_Request_release(prequest_ptr);
 	    }
 	    else
@@ -146,7 +141,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 		       error code available */
 		    if (status != MPI_STATUS_IGNORE)
 		    {
-			status->cancelled = FALSE;
+			MPIR_STATUS_SET_CANCEL_BIT(*status, FALSE);
 		    }
 		    mpi_errno = request_ptr->status.MPI_ERROR;
 		}
@@ -219,6 +214,7 @@ int MPIR_Request_complete(MPI_Request * request, MPID_Request * request_ptr,
 	}
 
         case MPID_COLL_REQUEST:
+        case MPID_WIN_REQUEST:
         {
             MPIR_Request_extract_status(request_ptr, status);
             MPID_Request_release(request_ptr);

@@ -1,5 +1,5 @@
 /*
- * Copyright © 2010-2012 Inria.  All rights reserved.
+ * Copyright © 2010-2013 Inria.  All rights reserved.
  * Copyright © 2011-2012 Université Bordeaux 1
  * Copyright © 2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -21,20 +21,6 @@
 void hwloc_distances_init(struct hwloc_topology *topology)
 {
   topology->first_osdist = topology->last_osdist = NULL;
-}
-
-/* called when reloading a topology.
- * keep initial parameters (from set_distances and environment),
- * but drop what was generated during previous load().
- */
-void hwloc_distances_clear(struct hwloc_topology *topology)
-{
-  struct hwloc_os_distances_s * osdist;
-  for(osdist = topology->first_osdist; osdist; osdist = osdist->next) {
-    /* remove final distance matrices, but keep physically-ordered ones */
-    free(osdist->objs);
-    osdist->objs = NULL;
-  }
 }
 
 /* called during topology destroy */
@@ -522,13 +508,17 @@ hwloc_distances__finalize_logical(struct hwloc_topology *topology,
       hwloc_bitmap_asprintf(&a, cpuset);
       hwloc_bitmap_asprintf(&b, nodeset);
       fprintf(stderr, "****************************************************************************\n");
-      fprintf(stderr, "* Hwloc has encountered an error when adding a distance matrix to the topology.\n");
+      fprintf(stderr, "* hwloc has encountered an error when adding a distance matrix to the topology.\n");
       fprintf(stderr, "*\n");
       fprintf(stderr, "* hwloc_distances__finalize_logical() could not find any object covering\n");
       fprintf(stderr, "* cpuset %s and nodeset %s\n", a, b);
       fprintf(stderr, "*\n");
       fprintf(stderr, "* Please report this error message to the hwloc user's mailing list,\n");
+#ifdef HWLOC_LINUX_SYS
       fprintf(stderr, "* along with the output from the hwloc-gather-topology.sh script.\n");
+#else
+      fprintf(stderr, "* along with any relevant topology information from your platform.\n");
+#endif
       fprintf(stderr, "****************************************************************************\n");
       free(a);
       free(b);
@@ -537,6 +527,9 @@ hwloc_distances__finalize_logical(struct hwloc_topology *topology,
     hwloc_bitmap_free(nodeset);
     return;
   }
+  /* don't attach to Misc objects */
+  while (root->type == HWLOC_OBJ_MISC)
+    root = root->parent;
   /* ideally, root has the exact cpuset and nodeset.
    * but ignoring or other things that remove objects may cause the object array to reduce */
   assert(hwloc_bitmap_isincluded(cpuset, root->cpuset));
@@ -660,7 +653,7 @@ static void hwloc_report_user_distance_error(const char *msg, int line)
 
     if (!reported && !hwloc_hide_errors()) {
         fprintf(stderr, "****************************************************************************\n");
-        fprintf(stderr, "* Hwloc has encountered what looks like an error from user-given distances.\n");
+        fprintf(stderr, "* hwloc has encountered what looks like an error from user-given distances.\n");
         fprintf(stderr, "*\n");
         fprintf(stderr, "* %s\n", msg);
         fprintf(stderr, "* Error occurred in topology.c line %d\n", line);
@@ -850,7 +843,7 @@ hwloc__groups_by_distances(struct hwloc_topology *topology,
       memset(&(groupsizes[0]), 0, sizeof(groupsizes[0]) * nbgroups);
       for(i=0; i<nbgroups; i++) {
           /* create the Group object */
-          hwloc_obj_t group_obj;
+          hwloc_obj_t group_obj, res_obj;
           group_obj = hwloc_alloc_setup_object(HWLOC_OBJ_GROUP, -1);
           group_obj->cpuset = hwloc_bitmap_alloc();
           group_obj->attr->group.depth = topology->next_group_depth;
@@ -868,9 +861,10 @@ hwloc__groups_by_distances(struct hwloc_topology *topology,
             }
           hwloc_debug_1arg_bitmap("adding Group object with %u objects and cpuset %s\n",
                                   groupsizes[i], group_obj->cpuset);
-          hwloc__insert_object_by_cpuset(topology, group_obj,
-					 fromuser ? hwloc_report_user_distance_error : hwloc_report_os_error);
-          groupobjs[i] = group_obj;
+          res_obj = hwloc__insert_object_by_cpuset(topology, group_obj,
+						   fromuser ? hwloc_report_user_distance_error : hwloc_report_os_error);
+	  /* res_obj may be different from group_objs if we got groups from XML import before grouping */
+          groupobjs[i] = res_obj;
       }
 
       /* factorize distances */
@@ -1003,7 +997,7 @@ hwloc_group_by_distances(struct hwloc_topology *topology)
        * this group will be merged into a regular object if the matrix isn't strangely incomplete
        */
       group_obj = hwloc_alloc_setup_object(HWLOC_OBJ_GROUP, -1);
-      group_obj->attr->group.depth = topology->next_group_depth++;
+      group_obj->attr->group.depth = (unsigned) -1;
       group_obj->cpuset = hwloc_bitmap_alloc();
       for(i=0; i<nbobjs; i++) {
 	/* assemble the group cpuset */

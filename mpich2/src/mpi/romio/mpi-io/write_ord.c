@@ -40,10 +40,12 @@ Output Parameters:
 
 .N fortran
 @*/
-int MPI_File_write_ordered(MPI_File fh, const void *buf, int count,
+int MPI_File_write_ordered(MPI_File fh, ROMIO_CONST void *buf, int count,
 			   MPI_Datatype datatype, MPI_Status *status)
 {
-    int error_code, datatype_size, nprocs, myrank, incr;
+    int error_code, nprocs, myrank;
+    ADIO_Offset incr;
+    MPI_Count datatype_size;
     int source, dest;
     static char myname[] = "MPI_FILE_WRITE_ORDERED";
     ADIO_Offset shared_fp;
@@ -61,7 +63,7 @@ int MPI_File_write_ordered(MPI_File fh, const void *buf, int count,
     MPIO_CHECK_DATATYPE(adio_fh, datatype, myname, error_code);
     /* --END ERROR HANDLING-- */
 
-    MPI_Type_size(datatype, &datatype_size);
+    MPI_Type_size_x(datatype, &datatype_size);
 
     /* --BEGIN ERROR HANDLING-- */
     MPIO_CHECK_INTEGRAL_ETYPE(adio_fh, count, datatype_size, myname, error_code);

@@ -9,6 +9,24 @@
     #include "strings.h"
 #endif
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+cvars:
+    - name        : MPIR_CVAR_NEMESIS_NETMOD
+      category    : NEMESIS
+      type        : string
+      default     : ""
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If non-empty, this cvar specifies which network module
+        should be used for communication.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
+
 /* initialize to prevent the compiler from generating common symbols */
 MPID_nem_netmod_funcs_t *MPID_nem_netmod_func = NULL;
 int MPID_nem_netmod_id = -1;
@@ -27,8 +45,8 @@ int MPID_nem_choose_netmod(void)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_CHOOSE_NETMOD);
 
-    MPIU_Assert(MPIR_PARAM_NEMESIS_NETMOD != NULL);
-    if (strcmp(MPIR_PARAM_NEMESIS_NETMOD, "") == 0)
+    MPIU_Assert(MPIR_CVAR_NEMESIS_NETMOD != NULL);
+    if (strcmp(MPIR_CVAR_NEMESIS_NETMOD, "") == 0)
     {
         /* netmod not specified, using the default */
         MPID_nem_netmod_func = MPID_nem_netmod_funcs[0];
@@ -41,7 +59,7 @@ int MPID_nem_choose_netmod(void)
 
     for (i = 0; i < MPID_nem_num_netmods; ++i)
     {
-        if (!MPIU_Strncasecmp(MPIR_PARAM_NEMESIS_NETMOD, MPID_nem_netmod_strings[i], MPID_NEM_MAX_NETMOD_STRING_LEN))
+        if (!MPIU_Strncasecmp(MPIR_CVAR_NEMESIS_NETMOD, MPID_nem_netmod_strings[i], MPID_NEM_MAX_NETMOD_STRING_LEN))
         {
             MPID_nem_netmod_func = MPID_nem_netmod_funcs[i];
             MPID_nem_netmod_id = i;
@@ -52,7 +70,7 @@ int MPID_nem_choose_netmod(void)
         }
     }
 
-    MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**invalid_netmod", "**invalid_netmod %s", MPIR_PARAM_NEMESIS_NETMOD);
+    MPIU_ERR_SETANDJUMP1(mpi_errno, MPI_ERR_OTHER, "**invalid_netmod", "**invalid_netmod %s", MPIR_CVAR_NEMESIS_NETMOD);
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_NEM_CHOOSE_NETMOD);

@@ -29,13 +29,17 @@ HYD_status HYDT_ckpoint_init(const char *user_ckpointlib, int user_ckpoint_num)
 
     if (user_ckpointlib)
         HYDT_ckpoint_info.ckpointlib = user_ckpointlib;
-    else if (MPL_env2str("HYDRA_CKPOINTLIB", (const char **) &HYDT_ckpoint_info.ckpointlib) ==
-             0)
+    else if (MPL_env2str("HYDRA_CKPOINTLIB", (const char **) &HYDT_ckpoint_info.ckpointlib) == 0)
+#ifdef HYDRA_DEFAULT_CKPOINTLIB
         HYDT_ckpoint_info.ckpointlib = HYDRA_DEFAULT_CKPOINTLIB;
-
-    /* If there is no default checkpointlib, we bail out */
-    if (HYDRA_DEFAULT_CKPOINTLIB == NULL)
+#else
+    {
+        /* If there is no default checkpointlib, we bail out */
+        HYDT_ckpoint_info.ckpointlib = NULL;
         goto fn_exit;
+    }
+#endif
+
 
     HYDT_ckpoint_info.ckpoint_num = (user_ckpoint_num == -1) ? 0 : user_ckpoint_num;
     in_ckpt = HYDT_CKPOINT_NONE;
@@ -79,7 +83,7 @@ static void *ckpoint_thread(void *arg)
 
   fn_exit:
     in_ckpt = HYDT_CKPOINT_FINISHED;
-    return (void *) status;
+    return (void *) (long) status;
 
   fn_fail:
     HYDT_ftb_publish("FTB_MPI_PROCS_CKPT_FAIL", ftb_event_payload);
@@ -114,8 +118,7 @@ HYD_status HYDT_ckpoint_checkpoint(int pgid, int id, const char *user_ckpoint_pr
      * join with it to free resources */
     if (in_ckpt == HYDT_CKPOINT_FINISHED) {
         ret = pthread_join(thread, NULL);
-        HYDU_ERR_CHKANDJUMP(status, ret, HYD_FAILURE, "pthread_join failed: %s.",
-                            strerror(ret));
+        HYDU_ERR_CHKANDJUMP(status, ret, HYD_FAILURE, "pthread_join failed: %s.", strerror(ret));
     }
 
     /* set state, and start the thread to do the checkpoint */

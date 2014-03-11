@@ -1,9 +1,9 @@
-.TH MPI_Register_datarep 3 "4/24/2013" " " "MPI"
+.TH MPI_Register_datarep 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Register_datarep \-  Register functions for user-defined data  representations 
 .SH SYNOPSIS
 .nf
-int MPI_Register_datarep(const char *datarep,
+int MPI_Register_datarep(ROMIO_CONST char *datarep,
                        MPI_Datarep_conversion_function *read_conversion_fn,
                        MPI_Datarep_conversion_function *write_conversion_fn,
                        MPI_Datarep_extent_function *dtype_file_extent_fn,
@@ -73,4 +73,4 @@ All MPI objects (e.g.,
 in Fortran.
 
 .SH LOCATION
-mpi-io/register_datarep.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/romio/mpi-io/register_datarep.c

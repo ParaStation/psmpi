@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_F
 #else
 #pragma _CRI duplicate mpi_ibarrier_ as pmpi_ibarrier_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IBARRIER")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IBARRIER")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IBARRIER")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IBARRIER")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_F
 #pragma weak mpi_ibarrier__ = mpi_ibarrier
 #pragma weak mpi_ibarrier_ = mpi_ibarrier
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_IBARRIER")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_IBARRIER")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_IBARRIER")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_ibarrier__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_ibarrier__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_ibarrier__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_ibarrier_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_ibarrier_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_ibarrier_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_ibarrier")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_ibarrier")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_ibarrier")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_F
 #pragma weak pmpi_ibarrier__ = pmpi_ibarrier
 #pragma weak pmpi_ibarrier_ = pmpi_ibarrier
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IBARRIER")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IBARRIER")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IBARRIER")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ibarrier( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IBARRIER( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ibarrier__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_ibarrier_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_ibarrier")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_ibarrier_ PMPI_IBARRIER

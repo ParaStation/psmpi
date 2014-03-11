@@ -21,25 +21,6 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #undef MPI_T_enum_get_item
 #define MPI_T_enum_get_item PMPI_T_enum_get_item
-
-/* any non-MPI functions go here, especially non-static ones */
-
-#undef FUNCNAME
-#define FUNCNAME MPIR_T_enum_get_item_impl
-#undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_T_enum_get_item_impl(MPI_T_enum enumtype, int indx, int *value, char *name, int *name_len)
-{
-    int mpi_errno = MPI_SUCCESS;
-
-    /* TODO implement this function */
-
-fn_exit:
-    return mpi_errno;
-fn_fail:
-    goto fn_exit;
-}
-
 #endif /* MPICH_MPI_FROM_PMPI */
 
 #undef FUNCNAME
@@ -47,7 +28,7 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_T_enum_get_item - XXX description here
+MPI_T_enum_get_item - Get the information about an item in an enumeration
 
 Input/Output Parameters:
 . name_len - length of the string and/or buffer for name (integer)
@@ -56,47 +37,38 @@ Input Parameters:
 . enumtype - enumeration to be queried (handle)
 
 Output Parameters:
-+ indx - number of the value to be queried in this enumeration (integer)
++ index - number of the value to be queried in this enumeration (integer)
 . value - variable value (integer)
 - name - buffer to return the string containing the name of the enumeration item (string)
 
 .N ThreadSafe
 
-.N Fortran
-
 .N Errors
+.N MPI_SUCCESS
+.N MPI_T_ERR_NOT_INITIALIZED
+.N MPI_T_ERR_INVALID_HANDLE
+.N MPI_T_ERR_INVALID_ITEM
 @*/
-int MPI_T_enum_get_item(MPI_T_enum enumtype, int indx, int *value, char *name, int *name_len)
+int MPI_T_enum_get_item(MPI_T_enum enumtype, int index, int *value, char *name, int *name_len)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_ENUM_GET_ITEM);
 
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_ENUM_GET_ITEM);
+    MPIR_ERRTEST_MPIT_INITIALIZED(mpi_errno);
+    MPIR_T_THREAD_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_T_ENUM_GET_ITEM);
 
-    /* Validate parameters, especially handles needing to be converted */
+    /* Validate parameters */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS
         {
-
-            /* TODO more checks may be appropriate */
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
-    /* Convert MPI object handles to object pointers */
-
-    /* Validate parameters and objects (post conversion) */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS
-        {
+            MPIR_ERRTEST_ENUM_HANDLE(enumtype, mpi_errno);
+            MPIR_ERRTEST_ENUM_ITEM(enumtype, index, mpi_errno);
             MPIR_ERRTEST_ARGNULL(value, "value", mpi_errno);
-            MPIR_ERRTEST_ARGNULL(name_len, "name_len", mpi_errno);
-            /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
+            /* Do not do TEST_ARGNULL for name or name_len, since this is
+             * permitted per MPI_T standard.
+             */
         }
         MPID_END_ERROR_CHECKS
     }
@@ -104,14 +76,15 @@ int MPI_T_enum_get_item(MPI_T_enum enumtype, int indx, int *value, char *name, i
 
     /* ... body of routine ...  */
 
-    mpi_errno = MPIR_T_enum_get_item_impl(enumtype, indx, value, name, name_len);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    enum_item_t *item = (enum_item_t *)utarray_eltptr(enumtype->items, index);
+    *value = item->value;
+    MPIR_T_strncpy(name, item->name, name_len);
 
     /* ... end of body of routine ... */
 
 fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_T_ENUM_GET_ITEM);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPIR_T_THREAD_CS_EXIT();
     return mpi_errno;
 
 fn_fail:
@@ -120,7 +93,8 @@ fn_fail:
     {
         mpi_errno = MPIR_Err_create_code(
             mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
-            "**mpi_t_enum_get_item", "**mpi_t_enum_get_item %p %d %p %p %p", enumtype, indx, value, name, name_len);
+            "**mpi_t_enum_get_item", "**mpi_t_enum_get_item %p %d %p %p %p",
+            enumtype, index, value, name, name_len);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);

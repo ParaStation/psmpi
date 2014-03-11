@@ -32,15 +32,33 @@
 int MPIR_T_pvar_handle_free_impl(MPI_T_pvar_session session, MPI_T_pvar_handle *handle)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIR_T_pvar_handle_t *hnd = *handle;
 
-    MPL_DL_DELETE(session->hlist, (*handle));
+    MPL_DL_DELETE(session->hlist, hnd);
 
-    if ((*handle)->free_handle_state && (*handle)->handle_state != NULL) {
-        MPIU_Free((*handle)->handle_state);
+    /* Unlink handle from pvar if it is a watermark */
+    if (MPIR_T_pvar_is_watermark(hnd)) {
+        MPIR_T_pvar_watermark_t *mark = (MPIR_T_pvar_watermark_t *)hnd->addr;
+        if (MPIR_T_pvar_is_first(hnd)) {
+            mark->first_used = 0;
+            mark->first_started = 0;
+        } else {
+            MPIU_Assert(mark->hlist);
+            if (mark->hlist == hnd) {
+                /* hnd happens to be the head */
+                mark->hlist = hnd->next2;
+                if (mark->hlist != NULL)
+                    mark->hlist->prev2 = mark->hlist;
+            } else {
+                hnd->prev2->next2 = hnd->next2;
+                if (hnd->next2 != NULL)
+                    hnd->next2->prev2 = hnd->prev2;
+            }
+        }
     }
-    MPIU_Free(*handle);
 
-    (*handle) = MPI_T_PVAR_HANDLE_NULL;
+    MPIU_Free(hnd);
+    *handle = MPI_T_PVAR_HANDLE_NULL;
 
 fn_exit:
     return mpi_errno;
@@ -55,7 +73,7 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_T_pvar_handle_free - XXX description here
+MPI_T_pvar_handle_free - Free an existing handle for a performance variable
 
 Input/Output Parameters:
 + session - identifier of performance experiment session (handle)
@@ -63,16 +81,19 @@ Input/Output Parameters:
 
 .N ThreadSafe
 
-.N Fortran
-
 .N Errors
+.N MPI_SUCCESS
+.N MPI_T_ERR_NOT_INITIALIZED
+.N MPI_T_ERR_INVALID_SESSION
+.N MPI_T_ERR_INVALID_HANDLE
 @*/
 int MPI_T_pvar_handle_free(MPI_T_pvar_session session, MPI_T_pvar_handle *handle)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_PVAR_HANDLE_FREE);
 
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_PVAR_HANDLE_FREE);
+    MPIR_ERRTEST_MPIT_INITIALIZED(mpi_errno);
+    MPIR_T_THREAD_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_T_PVAR_HANDLE_FREE);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -80,23 +101,16 @@ int MPI_T_pvar_handle_free(MPI_T_pvar_session session, MPI_T_pvar_handle *handle
     {
         MPID_BEGIN_ERROR_CHECKS
         {
+            MPIR_ERRTEST_ARGNULL(handle, "handle", mpi_errno);
+            if (*handle == MPI_T_PVAR_HANDLE_NULL) /* free NULL is OK */
+                goto fn_exit;
+            MPIR_ERRTEST_PVAR_SESSION(session, mpi_errno);
+            MPIR_ERRTEST_PVAR_HANDLE(*handle, mpi_errno);
 
-            /* TODO more checks may be appropriate */
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
-    /* Convert MPI object handles to object pointers */
-
-    /* Validate parameters and objects (post conversion) */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS
-        {
-            /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+            if ((*handle) == MPI_T_PVAR_ALL_HANDLES || (*handle)->session != session) {
+                mpi_errno = MPI_T_ERR_INVALID_HANDLE;
+                goto fn_fail;
+            }
         }
         MPID_END_ERROR_CHECKS
     }
@@ -111,7 +125,7 @@ int MPI_T_pvar_handle_free(MPI_T_pvar_session session, MPI_T_pvar_handle *handle
 
 fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_T_PVAR_HANDLE_FREE);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPIR_T_THREAD_CS_EXIT();
     return mpi_errno;
 
 fn_fail:

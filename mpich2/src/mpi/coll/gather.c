@@ -7,6 +7,37 @@
 
 #include "mpiimpl.h"
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+cvars:
+    - name        : MPIR_CVAR_GATHER_VSMALL_MSG_SIZE
+      category    : COLLECTIVE
+      type        : int
+      default     : 1024
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        use a temporary buffer for intracommunicator MPI_Gather if the send
+        buffer size is < this value (in bytes)
+        (See also: MPIR_CVAR_GATHER_INTER_SHORT_MSG_SIZE)
+
+    - name        : MPIR_CVAR_GATHER_INTER_SHORT_MSG_SIZE
+      category    : COLLECTIVE
+      type        : int
+      default     : 2048
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        use the short message algorithm for intercommunicator MPI_Gather if the
+        send buffer size is < this value (in bytes)
+        (See also: MPIR_CVAR_GATHER_VSMALL_MSG_SIZE)
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
+
 /* -- Begin Profiling Symbol Block for routine MPI_Gather */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Gather = PMPI_Gather
@@ -131,12 +162,12 @@ int MPIR_Gather_intra(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 
 	/* If the message is smaller than the threshold, we will copy
 	 * our message in there too */
-	if (nbytes < MPIR_PARAM_GATHER_VSMALL_MSG_SIZE) tmp_buf_size++;
+	if (nbytes < MPIR_CVAR_GATHER_VSMALL_MSG_SIZE) tmp_buf_size++;
 
 	tmp_buf_size *= nbytes;
 
 	/* For zero-ranked root, we don't need any temporary buffer */
-	if ((rank == root) && (!root || (nbytes >= MPIR_PARAM_GATHER_VSMALL_MSG_SIZE)))
+	if ((rank == root) && (!root || (nbytes >= MPIR_CVAR_GATHER_VSMALL_MSG_SIZE)))
 	    tmp_buf_size = 0;
 
 	if (tmp_buf_size) {
@@ -152,7 +183,7 @@ int MPIR_Gather_intra(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 		if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 	    }
         }
-	else if (tmp_buf_size && (nbytes < MPIR_PARAM_GATHER_VSMALL_MSG_SIZE))
+	else if (tmp_buf_size && (nbytes < MPIR_CVAR_GATHER_VSMALL_MSG_SIZE))
 	{
             /* copy from sendbuf into tmp_buf */
             mpi_errno = MPIR_Localcopy(sendbuf, sendcount, sendtype,
@@ -184,7 +215,7 @@ int MPIR_Gather_intra(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 			     * receive buffer, place it directly. This
 			     * should cover the case where the root is
 			     * rank 0. */
-			    mpi_errno = MPIC_Recv_ft(((char *)recvbuf +
+			    mpi_errno = MPIC_Recv(((char *)recvbuf +
                                                       (((rank + mask) % comm_size)*recvcount*extent)),
                                                      recvblks * recvcount, recvtype, src,
                                                      MPIR_GATHER_TAG, comm,
@@ -196,8 +227,8 @@ int MPIR_Gather_intra(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                                 MPIU_ERR_ADD(mpi_errno_ret, mpi_errno);
                             }
 			}
-			else if (nbytes < MPIR_PARAM_GATHER_VSMALL_MSG_SIZE) {
-			    mpi_errno = MPIC_Recv_ft(tmp_buf, recvblks * nbytes, MPI_BYTE,
+			else if (nbytes < MPIR_CVAR_GATHER_VSMALL_MSG_SIZE) {
+			    mpi_errno = MPIC_Recv(tmp_buf, recvblks * nbytes, MPI_BYTE,
                                                      src, MPIR_GATHER_TAG, comm, &status, errflag);
                             if (mpi_errno) {
                                 /* for communication errors, just record the error but continue */
@@ -220,7 +251,7 @@ int MPIR_Gather_intra(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 			    mpi_errno = MPIR_Type_commit_impl(&tmp_type);
                             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 			    
-			    mpi_errno = MPIC_Recv_ft(recvbuf, 1, tmp_type, src,
+			    mpi_errno = MPIC_Recv(recvbuf, 1, tmp_type, src,
                                                      MPIR_GATHER_TAG, comm, &status, errflag);
                             if (mpi_errno) {
                                 /* for communication errors, just record the error but continue */
@@ -242,11 +273,11 @@ int MPIR_Gather_intra(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 			if (relative_src + mask > comm_size)
 			    recvblks -= (relative_src + mask - comm_size);
 
-			if (nbytes < MPIR_PARAM_GATHER_VSMALL_MSG_SIZE)
+			if (nbytes < MPIR_CVAR_GATHER_VSMALL_MSG_SIZE)
 			    offset = mask * nbytes;
 			else
 			    offset = (mask - 1) * nbytes;
-			mpi_errno = MPIC_Recv_ft(((char *)tmp_buf + offset),
+			mpi_errno = MPIC_Recv(((char *)tmp_buf + offset),
                                                  recvblks * nbytes, MPI_BYTE, src,
                                                  MPIR_GATHER_TAG, comm,
                                                  &status, errflag);
@@ -268,7 +299,7 @@ int MPIR_Gather_intra(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 		if (!tmp_buf_size)
 		{
                     /* leaf nodes send directly from sendbuf */
-                    mpi_errno = MPIC_Send_ft(sendbuf, sendcount, sendtype, dst,
+                    mpi_errno = MPIC_Send(sendbuf, sendcount, sendtype, dst,
                                              MPIR_GATHER_TAG, comm, errflag);
                     if (mpi_errno) {
                         /* for communication errors, just record the error but continue */
@@ -277,8 +308,8 @@ int MPIR_Gather_intra(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                         MPIU_ERR_ADD(mpi_errno_ret, mpi_errno);
                     }
                 }
-                else if (nbytes < MPIR_PARAM_GATHER_VSMALL_MSG_SIZE) {
-		    mpi_errno = MPIC_Send_ft(tmp_buf, curr_cnt, MPI_BYTE, dst,
+                else if (nbytes < MPIR_CVAR_GATHER_VSMALL_MSG_SIZE) {
+		    mpi_errno = MPIC_Send(tmp_buf, curr_cnt, MPI_BYTE, dst,
                                              MPIR_GATHER_TAG, comm, errflag);
                     if (mpi_errno) {
                         /* for communication errors, just record the error but continue */
@@ -301,7 +332,7 @@ int MPIR_Gather_intra(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 		    mpi_errno = MPIR_Type_commit_impl(&tmp_type);
                     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
-		    mpi_errno = MPIC_Send_ft(MPI_BOTTOM, 1, tmp_type, dst,
+		    mpi_errno = MPIC_Send(MPI_BOTTOM, 1, tmp_type, dst,
                                              MPIR_GATHER_TAG, comm, errflag);
                     if (mpi_errno) {
                         /* for communication errors, just record the error but continue */
@@ -317,7 +348,7 @@ int MPIR_Gather_intra(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
             mask <<= 1;
         }
 
-        if ((rank == root) && root && (nbytes < MPIR_PARAM_GATHER_VSMALL_MSG_SIZE) && copy_blks)
+        if ((rank == root) && root && (nbytes < MPIR_CVAR_GATHER_VSMALL_MSG_SIZE) && copy_blks)
 	{
             /* reorder and copy from tmp_buf into recvbuf */
 	    mpi_errno = MPIR_Localcopy(tmp_buf,
@@ -372,7 +403,7 @@ int MPIR_Gather_intra(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                 if (src < comm_size)
 		{
                     src = (src + root) % comm_size;
-                    mpi_errno = MPIC_Recv_ft(((char *)tmp_buf + curr_cnt),
+                    mpi_errno = MPIC_Recv(((char *)tmp_buf + curr_cnt),
                                              tmp_buf_size-curr_cnt, MPI_BYTE, src,
                                              MPIR_GATHER_TAG, comm, 
                                              &status, errflag);
@@ -393,7 +424,7 @@ int MPIR_Gather_intra(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 	    {
                 dst = relative_rank ^ mask;
                 dst = (dst + root) % comm_size;
-                mpi_errno = MPIC_Send_ft(tmp_buf, curr_cnt, MPI_BYTE, dst,
+                mpi_errno = MPIC_Send(tmp_buf, curr_cnt, MPI_BYTE, dst,
                                          MPIR_GATHER_TAG, comm, errflag);
                 if (mpi_errno) {
                     /* for communication errors, just record the error but continue */
@@ -504,12 +535,12 @@ int MPIR_Gather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
         nbytes = sendtype_size * sendcount * local_size;
     }
 
-    if (nbytes < MPIR_PARAM_GATHER_INTER_SHORT_MSG_SIZE)
+    if (nbytes < MPIR_CVAR_GATHER_INTER_SHORT_MSG_SIZE)
     {
         if (root == MPI_ROOT)
 	{
             /* root receives data from rank 0 on remote group */
-            mpi_errno = MPIC_Recv_ft(recvbuf, recvcount*remote_size,
+            mpi_errno = MPIC_Recv(recvbuf, recvcount*remote_size,
                                      recvtype, 0, MPIR_GATHER_TAG, comm,
                                      &status, errflag);
             if (mpi_errno) {
@@ -560,7 +591,7 @@ int MPIR_Gather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
             
             if (rank == 0)
 	    {
-                mpi_errno = MPIC_Send_ft(tmp_buf, sendcount*local_size,
+                mpi_errno = MPIC_Send(tmp_buf, sendcount*local_size,
                                          sendtype, root,
                                          MPIR_GATHER_TAG, comm, errflag);
                 if (mpi_errno) {
@@ -583,7 +614,7 @@ int MPIR_Gather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 
             for (i=0; i<remote_size; i++)
 	    {
-                mpi_errno = MPIC_Recv_ft(((char *)recvbuf+recvcount*i*extent),
+                mpi_errno = MPIC_Recv(((char *)recvbuf+recvcount*i*extent),
                                          recvcount, recvtype, i,
                                          MPIR_GATHER_TAG, comm, &status, errflag);
                 if (mpi_errno) {
@@ -596,7 +627,7 @@ int MPIR_Gather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
         }
         else
 	{
-            mpi_errno = MPIC_Send_ft(sendbuf,sendcount,sendtype,root,
+            mpi_errno = MPIC_Send(sendbuf,sendcount,sendtype,root,
                                      MPIR_GATHER_TAG,comm, errflag);
             if (mpi_errno) {
                 /* for communication errors, just record the error but continue */

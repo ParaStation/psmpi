@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv_( void*, MPI_Fint [], MPI_Fint
 #else
 #pragma _CRI duplicate mpi_iscatterv_ as pmpi_iscatterv_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_ISCATTERV")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_ISCATTERV")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv_( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_ISCATTERV")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_ISCATTERV")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv_( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv_( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv_( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv_( void*, MPI_Fint [], MPI_Fint
 #pragma weak mpi_iscatterv__ = mpi_iscatterv
 #pragma weak mpi_iscatterv_ = mpi_iscatterv
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_ISCATTERV")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv_( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_ISCATTERV")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_ISCATTERV")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iscatterv__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv_( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iscatterv__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iscatterv__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iscatterv_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iscatterv_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv_( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iscatterv_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iscatterv")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iscatterv")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv_( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_iscatterv")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_iscatterv( void*, MPI_Fint [], MPI_Fint
 #pragma weak pmpi_iscatterv__ = pmpi_iscatterv
 #pragma weak pmpi_iscatterv_ = pmpi_iscatterv
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_ISCATTERV")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iscatterv_( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_ISCATTERV")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_ISCATTERV")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iscatterv_( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iscatterv( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_ISCATTERV( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iscatterv__( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_iscatterv_( void*, MPI_Fint [], MPI_Fint [], MPI_Fint *, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_iscatterv")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_iscatterv_ PMPI_ISCATTERV

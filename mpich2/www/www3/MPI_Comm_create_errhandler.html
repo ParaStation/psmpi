@@ -20,6 +20,11 @@ int MPI_Comm_create_errhandler(MPI_Comm_errhandler_function *comm_errhandler_fn,
 <DL><DT><B>errhandler </B> <DD> MPI error handler (handle) 
 </DL>
 <P>
+<H2>Error Handler</H2>
+The error handler function should be of the form
+<P>
+void MPI_Comm_errhandler_function(MPI_Comm *comm, int *rc);
+<P>
 <H2>Thread and Interrupt Safety</H2>
 <P>
 This routine is thread-safe.  This means that this routine may be
@@ -61,5 +66,5 @@ communicator in a call (not even allowed in <TT>MPI_Comm_rank</TT>).
 <DL><DT><B>MPI_ERR_OTHER </B> <DD> Other error; use <TT>MPI_Error_string</TT> to get more information
 about this error code. 
 </DL>
-<P><B>Location:</B>src/mpi/errhan/comm_create_errhandler.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/errhan/comm_create_errhandler.c<P>
 </BODY></HTML>

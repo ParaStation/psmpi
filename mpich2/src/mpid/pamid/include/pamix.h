@@ -26,11 +26,14 @@
 
 #include <pami.h>
 #include <mpidi_platform.h>
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
+typedef pami_result_t (*node_info_fn)(pami_task_t  task,
+                                      uint32_t    *node_id,
+                                      uint32_t    *offset,
+                                      uint32_t    *max_nodes);
 typedef struct
 {
   pami_extension_t progress;
@@ -42,6 +45,7 @@ typedef struct
     uint8_t          * base;
     uintptr_t          stride;
     uintptr_t          bitmask;
+    node_info_fn       node_info;
   } is_local_task;
 
 #if defined(__BGQ__)
@@ -75,6 +79,7 @@ PAMIX_Endpoint_query(pami_endpoint_t endpoint);
 
 typedef void (*pamix_progress_function) (pami_context_t context, void *cookie);
 #define PAMIX_CLIENT_ASYNC_GUARANTEE 1016
+#define ASYNC_PROGRESS_ALL  0x1111
 typedef enum
 {
   PAMIX_PROGRESS_ALL            =    0,
@@ -115,18 +120,18 @@ int PAMIX_Torus2task(size_t coords[], pami_task_t* task_id);
 #endif
 
 #ifdef PAMIX_IS_LOCAL_TASK
-#if defined(PAMIX_IS_LOCAL_TASK_STRIDE) && defined(PAMIX_IS_LOCAL_TASK_BITMASK)
+#if defined(PAMIX_IS_LOCAL_TASK_STRIDE) && defined(PAMIX_IS_LOCAL_TASK_SHIFT)
 #define PAMIX_Task_is_local(task_id)                                           \
-  (PAMIX_IS_LOCAL_TASK_BITMASK &                                               \
+  (((1UL << PAMIX_IS_LOCAL_TASK_SHIFT) &                                       \
     *(PAMIX_Extensions.is_local_task.base +                                    \
-    task_id * PAMIX_IS_LOCAL_TASK_STRIDE))
+    task_id * PAMIX_IS_LOCAL_TASK_STRIDE)) >> PAMIX_IS_LOCAL_TASK_SHIFT)
 #else
 #define PAMIX_Task_is_local(task_id)                                           \
-  (PAMIX_Extensions.is_local_task.base &&                                      \
+  ((PAMIX_Extensions.is_local_task.base &&                                     \
     (PAMIX_Extensions.is_local_task.bitmask &                                  \
       *(PAMIX_Extensions.is_local_task.base +                                  \
-        task_id * PAMIX_Extensions.is_local_task.stride)))
-#endif /* PAMIX_IS_LOCAL_TASK_STRIDE && PAMIX_IS_LOCAL_TASK_BITMASK */
+        task_id * PAMIX_Extensions.is_local_task.stride))) > 0)
+#endif /* PAMIX_IS_LOCAL_TASK_STRIDE && PAMIX_IS_LOCAL_TASK_SHIFT */
 #else
 #define PAMIX_Task_is_local(task_id) (0)
 #endif /* PAMIX_IS_LOCAL_TASK */

@@ -45,6 +45,10 @@ MPIDI_RecvRzvCB_impl(pami_context_t    context,
 
   MPID_Request * rreq = NULL;
   int found;
+  pami_task_t source;
+#if TOKEN_FLOW_CONTROL
+  int  rettoks=0;
+#endif
 
   /* -------------------- */
   /*  Match the request.  */
@@ -55,10 +59,11 @@ MPIDI_RecvRzvCB_impl(pami_context_t    context,
 
   MPID_Request *newreq = MPIDI_Request_create2();
   MPIU_THREAD_CS_ENTER(MSGQUEUE,0);
+  source = PAMIX_Endpoint_query(sender);
+  MPIDI_Receive_tokens(msginfo,source);
 #ifndef OUT_OF_ORDER_HANDLING
   rreq = MPIDI_Recvq_FDP_or_AEU(newreq, rank, tag, context_id, &found);
 #else
-  pami_task_t source = PAMIX_Endpoint_query(sender);
   rreq = MPIDI_Recvq_FDP_or_AEU(newreq, rank, source, tag, context_id, msginfo->MPIseqno, &found);
 #endif
   TRACE_ERR("RZV CB for req=%p remote-mr=0x%llx bytes=%zu (%sfound)\n",
@@ -72,9 +77,9 @@ MPIDI_RecvRzvCB_impl(pami_context_t    context,
   /* ---------------------- */
   rreq->status.MPI_SOURCE = rank;
   rreq->status.MPI_TAG    = tag;
-  rreq->status.count      = envelope->length;
+  MPIR_STATUS_SET_COUNT(rreq->status, envelope->length);
   MPIDI_Request_setPeerRank_comm(rreq, rank);
-  MPIDI_Request_setPeerRank_pami(rreq, PAMIX_Endpoint_query(sender));
+  MPIDI_Request_setPeerRank_pami(rreq, source);
   MPIDI_Request_cpyPeerRequestH (rreq, msginfo);
   MPIDI_Request_setSync         (rreq, msginfo->isSync);
   MPIDI_Request_setRzv          (rreq, 1);
@@ -106,12 +111,18 @@ MPIDI_RecvRzvCB_impl(pami_context_t    context,
       rreq->mpid.envelope.data   = envelope->data;
 #endif
       rreq->mpid.envelope.length = envelope->length;
-#ifdef MPIDI_TRACE
-      MPIDI_In_cntr[source].R[(rreq->mpid.idx)].req=rreq;
-      MPIDI_In_cntr[source].R[(rreq->mpid.idx)].rzv=1;
-      MPIDI_In_cntr[source].R[(rreq->mpid.idx)].rlen=envelope->length;
-      MPIDI_In_cntr[source].R[(rreq->mpid.idx)].sync=msginfo->isSync;
-#endif
+     TRACE_SET_R_VAL(source,(rreq->mpid.idx),req,rreq);
+     TRACE_SET_R_VAL(source,(rreq->mpid.idx),rlen,envelope->length);
+     TRACE_SET_R_VAL(source,(rreq->mpid.idx),fl.f.sync,msginfo->isSync);
+     TRACE_SET_R_BIT(source,(rreq->mpid.idx),fl.f.rzv);
+     if (TOKEN_FLOW_CONTROL_ON)
+       {
+         #if TOKEN_FLOW_CONTROL
+         MPIDI_Must_return_tokens(context,source);
+         #else
+         MPID_assert_always(0);
+         #endif
+       }
     }
   /* ----------------------------------------- */
   /* figure out target buffer for request data */
@@ -134,11 +145,9 @@ MPIDI_RecvRzvCB_impl(pami_context_t    context,
       else
         {
           MPIDI_RendezvousTransfer(context, rreq);
-#ifdef MPIDI_TRACE
-          MPIDI_In_cntr[source].R[(rreq->mpid.idx)].sync_com_in_HH=1;
-          MPIDI_In_cntr[source].R[(rreq->mpid.idx)].matchedInHH=1;
-          MPIDI_In_cntr[source].R[(rreq->mpid.idx)].bufadd=rreq->mpid.userbuf;
-#endif
+          TRACE_SET_R_BIT(source,(rreq->mpid.idx),fl.f.sync_com_in_HH);
+          TRACE_SET_R_BIT(source,(rreq->mpid.idx),fl.f.matchedInHH);
+          TRACE_SET_R_VAL(source,(rreq->mpid.idx),bufadd,rreq->mpid.userbuf);
         }
       MPID_Request_discard(newreq);
     }
@@ -166,7 +175,6 @@ MPIDI_RecvRzvCB_impl(pami_context_t    context,
 #endif
       MPIU_THREAD_CS_EXIT(MSGQUEUE,0);
     }
-
   /* ---------------------------------------- */
   /*  Signal that the recv has been started.  */
   /* ---------------------------------------- */

@@ -1,54 +1,54 @@
 <dir>
-<file name="ch3u_port.c" info="1366812300"/>
-<file name="mpid_comm_disconnect.c" info="1366812300"/>
-<file name="mpid_vc.c" info="1366812300"/>
-<file name="mpid_imrecv.c" info="1366812300"/>
-<file name="mpid_cancel_send.c" info="1366812300"/>
-<file name="ch3u_comm_spawn_multiple.c" info="1366812300"/>
-<file name="mpid_comm_group_failed.c" info="1366812300"/>
-<file name="mpid_recv.c" info="1366812300"/>
-<file name="ch3u_rma_sync.c" info="1366812300"/>
-<file name="mpid_irecv.c" info="1366812300"/>
-<file name="mpid_ssend.c" info="1366812300"/>
-<file name="mpid_startall.c" info="1366812300"/>
-<file name="ch3u_win_fns.c" info="1366812300"/>
-<file name="ch3u_handle_recv_pkt.c" info="1366812300"/>
-<file name="ch3u_rndv.c" info="1366812300"/>
-<file name="ch3u_handle_connection.c" info="1366812300"/>
-<file name="mpid_rsend.c" info="1366812300"/>
-<file name="mpid_rma.c" info="1366812300"/>
-<file name="ch3u_buffer.c" info="1366812300"/>
-<file name="ch3u_rma_acc_ops.c" info="1366812300"/>
-<file name="ch3u_rma_reqops.c" info="1366812300"/>
-<file name="mpid_port.c" info="1366812300"/>
-<file name="mpid_send.c" info="1366812300"/>
-<file name="mpid_mrecv.c" info="1366812300"/>
-<file name="ch3u_rma_ops.c" info="1366812300"/>
-<file name="ch3u_handle_send_req.c" info="1366812300"/>
-<file name="mpid_comm_reenable_anysource.c" info="1366812300"/>
-<file name="ch3u_recvq.c" info="1366812300"/>
-<file name="mpid_improbe.c" info="1366812300"/>
-<file name="ch3u_eager.c" info="1366812300"/>
-<file name="ch3u_comm.c" info="1366812300"/>
-<file name="mpidi_pg.c" info="1366812300"/>
-<file name="ch3u_handle_recv_req.c" info="1366812300"/>
-<file name="mpid_cancel_recv.c" info="1366812300"/>
-<file name="mpid_iprobe.c" info="1366812300"/>
-<file name="mpid_get_universe_size.c" info="1366812300"/>
-<file name="ch3u_request.c" info="1366812300"/>
-<file name="mpid_getpname.c" info="1366812300"/>
-<file name="mpid_isend.c" info="1366812300"/>
-<file name="mpid_irsend.c" info="1366812300"/>
-<file name="mpid_mprobe.c" info="1366812300"/>
-<file name="mpid_abort.c" info="1366812300"/>
-<file name="mpid_finalize.c" info="1366812300"/>
-<file name="mpid_probe.c" info="1366812300"/>
-<file name="mpidi_isend_self.c" info="1366812300"/>
-<file name="ch3u_eagersync.c" info="1366812300"/>
-<file name="mpid_init.c" info="1366812300"/>
-<file name="mpid_comm_spawn_multiple.c" info="1366812300"/>
-<file name="mpidi_printf.c" info="1366812300"/>
-<file name="mpid_issend.c" info="1366812300"/>
+<file name="ch3u_port.c" info="1392877287"/>
+<file name="mpid_comm_disconnect.c" info="1392877287"/>
+<file name="mpid_vc.c" info="1392877287"/>
+<file name="mpid_imrecv.c" info="1392877287"/>
+<file name="mpid_cancel_send.c" info="1392877287"/>
+<file name="ch3u_comm_spawn_multiple.c" info="1392877287"/>
+<file name="mpid_comm_group_failed.c" info="1392877287"/>
+<file name="mpid_recv.c" info="1392877287"/>
+<file name="ch3u_rma_sync.c" info="1392877287"/>
+<file name="mpid_irecv.c" info="1392877287"/>
+<file name="mpid_ssend.c" info="1392877287"/>
+<file name="mpid_startall.c" info="1392877287"/>
+<file name="ch3u_win_fns.c" info="1392877287"/>
+<file name="ch3u_handle_recv_pkt.c" info="1392877287"/>
+<file name="ch3u_rndv.c" info="1392877287"/>
+<file name="ch3u_handle_connection.c" info="1392877287"/>
+<file name="mpid_rsend.c" info="1392877287"/>
+<file name="mpid_rma.c" info="1392877287"/>
+<file name="ch3u_buffer.c" info="1392877287"/>
+<file name="ch3u_rma_acc_ops.c" info="1392877287"/>
+<file name="ch3u_rma_reqops.c" info="1392877287"/>
+<file name="mpid_port.c" info="1392877287"/>
+<file name="mpid_send.c" info="1392877287"/>
+<file name="mpid_mrecv.c" info="1392877287"/>
+<file name="ch3u_rma_ops.c" info="1392877287"/>
+<file name="ch3u_handle_send_req.c" info="1392877287"/>
+<file name="mpid_comm_reenable_anysource.c" info="1392877287"/>
+<file name="ch3u_recvq.c" info="1392877287"/>
+<file name="mpid_improbe.c" info="1392877287"/>
+<file name="ch3u_eager.c" info="1392877287"/>
+<file name="ch3u_comm.c" info="1392877287"/>
+<file name="mpidi_pg.c" info="1392877287"/>
+<file name="ch3u_handle_recv_req.c" info="1392877287"/>
+<file name="mpid_cancel_recv.c" info="1392877287"/>
+<file name="mpid_iprobe.c" info="1392877287"/>
+<file name="mpid_get_universe_size.c" info="1392877287"/>
+<file name="ch3u_request.c" info="1392877287"/>
+<file name="mpid_getpname.c" info="1392877287"/>
+<file name="mpid_isend.c" info="1392877287"/>
+<file name="mpid_irsend.c" info="1392877287"/>
+<file name="mpid_mprobe.c" info="1392877287"/>
+<file name="mpid_abort.c" info="1392877287"/>
+<file name="mpid_finalize.c" info="1392877287"/>
+<file name="mpid_probe.c" info="1392877287"/>
+<file name="mpidi_isend_self.c" info="1392877287"/>
+<file name="ch3u_eagersync.c" info="1392877287"/>
+<file name="mpid_init.c" info="1392877287"/>
+<file name="mpid_comm_spawn_multiple.c" info="1392877287"/>
+<file name="mpidi_printf.c" info="1392877287"/>
+<file name="mpid_issend.c" info="1392877287"/>
 </dir>
 <data>
 <fileinfo name="ch3u_port.c">
@@ -166,8 +166,8 @@ MPID_STATE_MPIDI_CH3U_WIN_CREATE MPIDI_CH3U_Win_create
 MPID_STATE_MPIDI_CH3U_WIN_CREATE_DYNAMIC MPIDI_CH3U_Win_create_dynamic
 MPID_STATE_MPIDI_WIN_ATTACH MPIDI_Win_attach
 MPID_STATE_MPIDI_WIN_DETACH MPIDI_Win_detach
-MPID_STATE_MPIDI_CH3U_WIN_ALLOCATE_SHARED MPIDI_CH3U_Win_allocate_shared
 MPID_STATE_MPIDI_CH3U_WIN_ALLOCATE MPIDI_CH3U_Win_allocate
+MPID_STATE_MPIDI_CH3U_WIN_ALLOCATE_NO_SHM MPIDI_CH3U_Win_allocate_no_shm
 MPID_STATE_MPIDI_WIN_SET_INFO MPIDI_Win_set_info
 MPID_STATE_MPIDI_WIN_GET_INFO MPIDI_Win_get_info
 </fileinfo>
@@ -234,7 +234,6 @@ MPID_STATE_MPID_SEND MPID_Send
 </fileinfo>
 <fileinfo name="ch3u_rma_ops.c">
 MPID_STATE_MPIDI_WIN_FREE MPIDI_Win_free
-MPID_STATE_MPIDI_SHM_WIN_FREE MPIDI_SHM_Win_free
 MPID_STATE_MPIDI_WIN_SHARED_QUERY MPIDI_Win_shared_query
 MPID_STATE_MPIDI_PUT MPIDI_Put
 MPID_STATE_MPIDI_GET MPIDI_Get

@@ -36,9 +36,7 @@ MPIDI_RecvMsg_Unexp(MPID_Request  * rreq,
   /* The recvnew callback will acknowledge the posted messages    */
   /* Recv functions will ack the messages that are unexpected     */
   /* ------------------------------------------------------------ */
-#ifdef MPIDI_TRACE
-  MPIDI_In_cntr[(rreq->mpid.partner_id)].R[(rreq->mpid.idx)].matchedInUQ=1;
-#endif
+  TRACE_SET_R_BIT((rreq->mpid.partner_id),(rreq->mpid.idx),fl.f.matchedInUQ);
 
   if (MPIDI_Request_isRzv(rreq))
     {
@@ -84,7 +82,7 @@ MPIDI_RecvMsg_Unexp(MPID_Request  * rreq,
       /* -------------------------------- */
       if (rreq->mpid.uebuf != NULL)
         {
-          if (likely(rreq->status.cancelled == FALSE))
+          if (likely(MPIR_STATUS_GET_CANCEL_BIT(rreq->status) == FALSE))
             {
               MPIDI_msg_sz_t _count=0;
               MPIDI_Buffer_copy(rreq->mpid.uebuf,
@@ -96,13 +94,13 @@ MPIDI_RecvMsg_Unexp(MPID_Request  * rreq,
                                 datatype,
                                 &_count,
                                 &rreq->status.MPI_ERROR);
-              rreq->status.count = _count;
+              MPIR_STATUS_SET_COUNT(rreq->status, _count);
             }
         }
       else
         {
           MPID_assert(rreq->mpid.uebuflen == 0);
-          rreq->status.count = 0;
+          MPIR_STATUS_SET_COUNT(rreq->status, 0);
         }
      }
      else
@@ -123,7 +121,7 @@ MPIDI_RecvMsg_Unexp(MPID_Request  * rreq,
           MPIDI_Request_uncomplete(rreq);
           MPIDI_Send_post(MPIDI_SyncAck_handoff, rreq);
         }
-      if(rreq->status.cancelled == FALSE)
+      if (MPIR_STATUS_GET_CANCEL_BIT(rreq->status) == FALSE)
         {
           MPIDI_Request_setCA(rreq, MPIDI_CA_UNPACK_UEBUF_AND_COMPLETE);
         }

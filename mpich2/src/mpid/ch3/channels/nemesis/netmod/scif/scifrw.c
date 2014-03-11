@@ -56,6 +56,8 @@ int MPID_nem_scif_init_shmsend(shmchan_t * csend, int ep, int rank)
     csend->pos = -1;
     csend->reg = 0;
     csend->rank = rank;
+    csend->dma_count = 0;
+    csend->dma_chdseqno = 0;
 
   fn_exit:
     return retval;
@@ -87,6 +89,29 @@ int MPID_nem_scif_init_shmrecv(shmchan_t * crecv, int ep, off_t offs, int rank)
     return retval;
 }
 
+void MPID_nem_scif_unregmem(int ep, shmchan_t * c)
+{
+    regmem_t *rp = c->reg, *prev = c->reg;
+    uint64_t lseqno = c->dma_chdseqno;
+
+    while (rp && c->dma_count) {
+        if (rp->seqno <= lseqno) {
+            scif_unregister(ep, rp->offset, rp->size);
+            prev->next = rp->next;
+            if (c->reg == rp) {
+                c->reg = rp->next;
+            }
+            free(rp);
+            --c->dma_count;
+            rp = prev->next;
+        }
+        else {
+            prev = rp;
+            rp = rp->next;
+        }
+    }
+}
+
 static regmem_t *regmem(int ep, shmchan_t * c, void *addr, size_t len)
 {
     regmem_t *rp;
@@ -108,16 +133,11 @@ static regmem_t *regmem(int ep, shmchan_t * c, void *addr, size_t len)
     base = (uint64_t) addr & ~(pagesize - 1);
     size = ((uint64_t) addr + len + pagesize - 1) & ~(pagesize - 1);
     size -= base;
-    for (rp = c->reg; rp != 0; rp = rp->next) {
-        if (base >= (uint64_t) rp->base && base < (uint64_t) rp->base + rp->size)
-            if (base + size <= (uint64_t) rp->base + rp->size)
-                return rp;
-    }
+
     rp = malloc(sizeof(regmem_t));
     rp->base = (char *) base;
     rp->size = size;
-    rp->offset = scif_register(ep, (void *) base, size, 0,
-                               SCIF_PROT_READ | SCIF_PROT_WRITE, 0);
+    rp->offset = scif_register(ep, (void *) base, size, 0, SCIF_PROT_READ | SCIF_PROT_WRITE, 0);
     if (rp->offset == SCIF_REGISTER_FAILED) {
         fprintf(stderr, "regmem failed: errno %d base 0x%lx size %ld\n", errno, base, size);
         free(rp);
@@ -158,20 +178,16 @@ static int dma_read(int ep, shmchan_t * c, void *recv_buf, off_t raddr, size_t m
 
     /* see if we can DMA into the destination */
     if (buflen >= msglen &&
-        ((off_t) recv_buf & (CACHE_LINESIZE - 1)) ==
-        ((raddr + c->pos) & (CACHE_LINESIZE - 1))) {
-        rp = regmem(ep, c, recv_buf, buflen);
-        if (rp == 0) {
-            retval = -1;
-            goto fn_exit;
-        }
-        locoffs = (char *) recv_buf - rp->base;
-        retval = scif_readfrom(ep, rp->offset + locoffs, buflen, raddr + c->pos, 0);
+        ((off_t) recv_buf & (CACHE_LINESIZE - 1)) == ((raddr + c->pos) & (CACHE_LINESIZE - 1))) {
+
+        retval = scif_vreadfrom(ep, recv_buf, buflen, raddr + c->pos, 0);
         if (retval < 0) {
-            fprintf(stderr, "scif_readfrom #1 returns %d, errno %d\n", retval, errno);
-            fprintf(stderr, "locoffs: 0x%lx raddr: 0x%lx buflen: %ld\n",
-                    rp->offset + locoffs, raddr + c->pos, buflen);
+            fprintf(stderr, "scif_vreadfrom #1 returns %d, errno %d\n", retval, errno);
+            fprintf(stderr, "recv_buf: %p raddr: 0x%lx buflen: %ld\n",
+                    recv_buf, raddr + c->pos, buflen);
         }
+        scif_fence_mark(ep, SCIF_FENCE_INIT_SELF, &mark);
+        scif_fence_wait(ep, mark);
         *did_dma = 1;
         goto fn_exit;
     }
@@ -184,20 +200,15 @@ static int dma_read(int ep, shmchan_t * c, void *recv_buf, off_t raddr, size_t m
         void *p;
         off_t offset;
         if (c->dmalen) {
-            scif_unregister(ep, c->dmaoffset, c->dmalen);
             free(c->dmabuf);
         }
         retval = posix_memalign(&p, pagesize, newbufsiz);
         if (retval != 0)
             goto fn_exit;
-        offset = scif_register(ep, p, newbufsiz, 0, SCIF_PROT_READ | SCIF_PROT_WRITE, 0);
-        if (offset == SCIF_REGISTER_FAILED) {
-            retval = errno;
-            free(p);
-        }
+
         c->dmabuf = p;
         c->dmalen = newbufsiz;
-        c->dmaoffset = offset;
+        c->dmaoffset = 0;
         c->dmastart = -1;
         c->dmaend = 0;
     }
@@ -213,7 +224,8 @@ static int dma_read(int ep, shmchan_t * c, void *recv_buf, off_t raddr, size_t m
     }
     locoffs = c->dmaoffset + c->dmastart;
     assert(c->pos == 0);
-    retval = scif_readfrom(ep, locoffs, msglen, raddr, 0);
+    retval = scif_vreadfrom(ep, c->dmabuf + c->dmastart, msglen, raddr, 0);
+    *did_dma = 1;
     scif_fence_mark(ep, SCIF_FENCE_INIT_SELF, &mark);
     scif_fence_wait(ep, mark);
     if (retval < 0)
@@ -276,7 +288,7 @@ static ssize_t getmsg(int ep, shmchan_t * c, void *recv_buf, size_t len, int *di
 }
 
 /* Read at most one message */
-#if 0
+
 static ssize_t do_scif_read(int ep, shmchan_t * c, void *recv_buf, size_t len, int *did_dma)
 {
     ssize_t retval = 0;
@@ -313,42 +325,6 @@ static ssize_t do_scif_read(int ep, shmchan_t * c, void *recv_buf, size_t len, i
   fn_exit:
     return nread;
 }
-#else
-static ssize_t do_scif_read(int ep, shmchan_t * c, void *recv_buf, size_t len, int *did_dma)
-{
-    ssize_t retval = 0;
-    size_t nread = 0;
-    uint64_t rseqno;
-
-    if (c->pos >= 0) {
-        /* partial message chunk left */
-        retval = getmsg(ep, c, (char *) recv_buf + nread, len - nread, did_dma);
-        if (retval < 0) {
-            nread = -1;
-            goto fn_exit;
-        }
-        nread += retval;
-        goto fn_exit;
-    }
-    /* Check if we have a message */
-    rseqno = *c->rseqno;
-    if (rseqno <= c->seqno) {
-        goto fn_exit;
-    }
-    /* Message is available */
-    ++c->seqno;
-    c->pos = 0;
-    retval = getmsg(ep, c, (char *) recv_buf + nread, len - nread, did_dma);
-    if (retval < 0) {
-        nread = -1;
-        goto fn_exit;
-    }
-    nread += retval;
-
-  fn_exit:
-    return nread;
-}
-#endif
 
 ssize_t MPID_nem_scif_read(int ep, shmchan_t * c, void *recv_buf, size_t len)
 {
@@ -386,6 +362,8 @@ ssize_t MPID_nem_scif_readv(int ep, shmchan_t * c, const struct iovec * iov, int
         if (retval == 0)
             break;
         nread += retval;
+        if (retval < iov[i].iov_len)
+            break;
     }
     if (retval > 0 && did_dma) {
         scif_fence_mark(ep, SCIF_FENCE_INIT_SELF, &mark);
@@ -423,6 +401,8 @@ ssize_t MPID_nem_scif_writev(int ep, shmchan_t * c, const struct iovec * iov, in
     size_t nwritten = 0;
     int did_dma = 0;
     int i;
+    int mark;
+    regmem_t *rp;
 
     for (i = 0; i < iov_cnt; ++i) {
         size_t len;
@@ -459,7 +439,7 @@ ssize_t MPID_nem_scif_writev(int ep, shmchan_t * c, const struct iovec * iov, in
         }
         else {
             did_dma = 1;
-            regmem_t *rp = regmem(ep, c, iov[i].iov_base, iovlen);
+            rp = regmem(ep, c, iov[i].iov_base, iovlen);
             if (rp == 0) {
                 nwritten = -1;
                 goto fn_exit;
@@ -470,6 +450,11 @@ ssize_t MPID_nem_scif_writev(int ep, shmchan_t * c, const struct iovec * iov, in
         c->curp += len;
         nwritten += iovlen;
         ++c->seqno;
+
+        if (did_dma) {
+            rp->seqno = c->seqno;
+            ++c->dma_count;
+        }
     }
   fn_exit:
 #if !defined(__MIC__)

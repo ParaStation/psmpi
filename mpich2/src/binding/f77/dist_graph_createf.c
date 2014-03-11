@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create_( MPI_Fint *, MPI_Fint
 #else
 #pragma _CRI duplicate mpi_dist_graph_create_ as pmpi_dist_graph_create_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIST_GRAPH_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_DIST_GRAPH_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_DIST_GRAPH_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_DIST_GRAPH_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_DIST_GRAPH_CREATE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIST_GRAPH_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIST_GRAPH_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIST_GRAPH_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_DIST_GRAPH_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create_( MPI_Fint *, MPI_Fint
 #pragma weak mpi_dist_graph_create__ = mpi_dist_graph_create
 #pragma weak mpi_dist_graph_create_ = mpi_dist_graph_create
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIST_GRAPH_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_DIST_GRAPH_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_DIST_GRAPH_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_DIST_GRAPH_CREATE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIST_GRAPH_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_dist_graph_create__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_dist_graph_create__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_dist_graph_create__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIST_GRAPH_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_dist_graph_create_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_dist_graph_create_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_dist_graph_create_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_DIST_GRAPH_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_dist_graph_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_dist_graph_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_dist_graph_create")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_dist_graph_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_DIST_GRAPH_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_dist_graph_create( MPI_Fint *, MPI_Fint
 #pragma weak pmpi_dist_graph_create__ = pmpi_dist_graph_create
 #pragma weak pmpi_dist_graph_create_ = pmpi_dist_graph_create
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dist_graph_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_DIST_GRAPH_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dist_graph_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_DIST_GRAPH_CREATE")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dist_graph_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_DIST_GRAPH_CREATE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_DIST_GRAPH_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dist_graph_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dist_graph_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_DIST_GRAPH_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dist_graph_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dist_graph_create( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_DIST_GRAPH_CREATE( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dist_graph_create__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_dist_graph_create_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_dist_graph_create")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_dist_graph_create_ PMPI_DIST_GRAPH_CREATE

@@ -2,17 +2,17 @@
 #-*-sh-*-
 
 #
-# Copyright © 2011 inria.  All rights reserved.
+# Copyright © 2011-2013 Inria.  All rights reserved.
 # See COPYING in top-level directory.
 #
 
-abs_top_builddir="@abs_top_builddir@"
+HWLOC_top_builddir="@HWLOC_top_builddir@"
 prefix="@prefix@"
 exec_prefix="@exec_prefix@"
 bindir="@bindir@"
 # this will be changed into $bindir/lstopo during make install
-locallstopo="$abs_top_builddir/utils/lstopo"
-assembler="$abs_top_builddir/utils/hwloc-assembler"
+locallstopo="$HWLOC_top_builddir/utils/lstopo"
+assembler="$HWLOC_top_builddir/utils/hwloc-assembler"
 
 force=0
 show=0
@@ -31,7 +31,7 @@ error()
 
 usage()
 {
-	echo "$0 |options] <output> <host1> <host2> ..."
+	echo "$0 [options] <output> <host1> <host2> ..."
 	echo "  Gathers the topology of remote hosts and assembles them into the"
 	echo "  <output> XML topology."
 	echo "Options:"
@@ -66,7 +66,7 @@ while test $# -gt 0 ; do
 		usage
 		exit 0
 		;;
-	--*)
+	-*)
 		error "Unrecognized option: $1"
 		usage
 		exit 1

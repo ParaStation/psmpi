@@ -7,6 +7,37 @@
 
 #include "mpiimpl.h"
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+cvars:
+    - name        : MPIR_CVAR_ALLGATHER_SHORT_MSG_SIZE
+      category    : COLLECTIVE
+      type        : int
+      default     : 81920
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        For MPI_Allgather and MPI_Allgatherv, the short message algorithm will
+        be used if the send buffer size is < this value (in bytes).
+        (See also: MPIR_CVAR_ALLGATHER_LONG_MSG_SIZE)
+
+    - name        : MPIR_CVAR_ALLGATHER_LONG_MSG_SIZE
+      category    : COLLECTIVE
+      type        : int
+      default     : 524288
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        For MPI_Allgather and MPI_Allgatherv, the long message algorithm will be
+        used if the send buffer size is >= this value (in bytes)
+        (See also: MPIR_CVAR_ALLGATHER_SHORT_MSG_SIZE)
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
+
 /* -- Begin Profiling Symbol Block for routine MPI_Allgather */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Allgather = PMPI_Allgather
@@ -121,7 +152,7 @@ int MPIR_Allgather_intra (
     MPIDU_ERR_CHECK_MULTIPLE_THREADS_ENTER( comm_ptr );
 
     tot_bytes = (MPI_Aint)recvcount * comm_size * type_size;
-    if ((tot_bytes < MPIR_PARAM_ALLGATHER_LONG_MSG_SIZE) && !(comm_size & (comm_size - 1))) {
+    if ((tot_bytes < MPIR_CVAR_ALLGATHER_LONG_MSG_SIZE) && !(comm_size & (comm_size - 1))) {
 
         /* Short or medium size message and power-of-two no. of processes. Use
          * recursive doubling algorithm */   
@@ -168,7 +199,7 @@ int MPIR_Allgather_intra (
                 recv_offset = dst_tree_root * recvcount * recvtype_extent;
                 
                 if (dst < comm_size) {
-                    mpi_errno = MPIC_Sendrecv_ft(((char *)recvbuf + send_offset),
+                    mpi_errno = MPIC_Sendrecv(((char *)recvbuf + send_offset),
                                                  curr_cnt, recvtype, dst,
                                                  MPIR_ALLGATHER_TAG,  
                                                  ((char *)recvbuf + recv_offset),
@@ -233,7 +264,7 @@ int MPIR_Allgather_intra (
                         if ((dst > rank) && 
                             (rank < tree_root + nprocs_completed)
                             && (dst >= tree_root + nprocs_completed)) {
-                            mpi_errno = MPIC_Send_ft(((char *)recvbuf + offset),
+                            mpi_errno = MPIC_Send(((char *)recvbuf + offset),
                                                      last_recv_cnt,
                                                      recvtype, dst,
                                                      MPIR_ALLGATHER_TAG, comm, errflag); 
@@ -252,7 +283,7 @@ int MPIR_Allgather_intra (
                         else if ((dst < rank) && 
                                  (dst < tree_root + nprocs_completed) &&
                                  (rank >= tree_root + nprocs_completed)) {
-                            mpi_errno = MPIC_Recv_ft(((char *)recvbuf + offset),  
+                            mpi_errno = MPIC_Recv(((char *)recvbuf + offset),
                                                      (comm_size - (my_tree_root + mask))*recvcount,
                                                      recvtype, dst,
                                                      MPIR_ALLGATHER_TAG,
@@ -336,7 +367,7 @@ int MPIR_Allgather_intra (
                 recv_offset = dst_tree_root * nbytes;
                 
                 if (dst < comm_size) {
-                    mpi_errno = MPIC_Sendrecv_ft(((char *)tmp_buf + send_offset),
+                    mpi_errno = MPIC_Sendrecv(((char *)tmp_buf + send_offset),
                                                  curr_cnt, MPI_BYTE, dst,
                                                  MPIR_ALLGATHER_TAG,  
                                                  ((char *)tmp_buf + recv_offset),
@@ -394,7 +425,7 @@ int MPIR_Allgather_intra (
                             (rank < tree_root + nprocs_completed)
                             && (dst >= tree_root + nprocs_completed)) {
                             
-                            mpi_errno = MPIC_Send_ft(((char *)tmp_buf + offset),
+                            mpi_errno = MPIC_Send(((char *)tmp_buf + offset),
                                                      last_recv_cnt, MPI_BYTE,
                                                      dst, MPIR_ALLGATHER_TAG,
                                                      comm, errflag);
@@ -413,7 +444,7 @@ int MPIR_Allgather_intra (
                         else if ((dst < rank) && 
                                  (dst < tree_root + nprocs_completed) &&
                                  (rank >= tree_root + nprocs_completed)) {
-                            mpi_errno = MPIC_Recv_ft(((char *)tmp_buf + offset),
+                            mpi_errno = MPIC_Recv(((char *)tmp_buf + offset),
                                                      tmp_buf_size - offset,
                                                      MPI_BYTE, dst,
                                                      MPIR_ALLGATHER_TAG,
@@ -446,7 +477,7 @@ int MPIR_Allgather_intra (
 #endif /* MPID_HAS_HETERO */
     }
 
-    else if (tot_bytes < MPIR_PARAM_ALLGATHER_SHORT_MSG_SIZE) {
+    else if (tot_bytes < MPIR_CVAR_ALLGATHER_SHORT_MSG_SIZE) {
         /* Short message and non-power-of-two no. of processes. Use
          * Bruck algorithm (see description above). */
 
@@ -489,7 +520,7 @@ int MPIR_Allgather_intra (
             src = (rank + pof2) % comm_size;
             dst = (rank - pof2 + comm_size) % comm_size;
             
-            mpi_errno = MPIC_Sendrecv_ft(tmp_buf, curr_cnt, recvtype, dst,
+            mpi_errno = MPIC_Sendrecv(tmp_buf, curr_cnt, recvtype, dst,
                                          MPIR_ALLGATHER_TAG,
                                          ((char *)tmp_buf + curr_cnt*recvtype_extent),
                                          curr_cnt, recvtype,
@@ -512,7 +543,7 @@ int MPIR_Allgather_intra (
             src = (rank + pof2) % comm_size;
             dst = (rank - pof2 + comm_size) % comm_size;
             
-            mpi_errno = MPIC_Sendrecv_ft(tmp_buf, rem * recvcount, recvtype,
+            mpi_errno = MPIC_Sendrecv(tmp_buf, rem * recvcount, recvtype,
                                          dst, MPIR_ALLGATHER_TAG,
                                          ((char *)tmp_buf + curr_cnt*recvtype_extent),
                                          rem * recvcount, recvtype,
@@ -571,7 +602,7 @@ int MPIR_Allgather_intra (
         j     = rank;
         jnext = left;
         for (i=1; i<comm_size; i++) {
-            mpi_errno = MPIC_Sendrecv_ft(((char *)recvbuf +
+            mpi_errno = MPIC_Sendrecv(((char *)recvbuf +
                                           j*recvcount*recvtype_extent), 
                                          recvcount, recvtype, right,
                                          MPIR_ALLGATHER_TAG, 

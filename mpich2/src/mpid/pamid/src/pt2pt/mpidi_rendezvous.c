@@ -66,7 +66,7 @@ MPIDI_RendezvousTransfer(pami_context_t   context,
     {
       rcvlen = dt_size;
       rreq->status.MPI_ERROR = MPI_ERR_TRUNCATE;
-      rreq->status.count = rcvlen;
+      MPIR_STATUS_SET_COUNT(rreq->status,  rcvlen);
     }
   else
     {
@@ -95,7 +95,7 @@ MPIDI_RendezvousTransfer(pami_context_t   context,
       MPID_assert(rcvbuf != NULL);
       rreq->mpid.uebuf    = rcvbuf;
       rreq->mpid.uebuflen = rcvlen;
-      rreq->mpid.uebuf_malloc = 1;
+      rreq->mpid.uebuf_malloc = mpiuMalloc;
     }
 
   /* ---------------------------------------------------------------- */

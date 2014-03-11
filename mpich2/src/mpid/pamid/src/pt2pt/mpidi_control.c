@@ -132,6 +132,9 @@ MPIDI_RecvRzvDoneCB_zerobyte(pami_context_t  context,
   MPIDI_Request_setControl(rreq, original_value);
 
   MPIDI_RecvDoneCB(context, rreq, PAMI_SUCCESS);
+  TRACE_SET_R_BIT(MPIDI_Request_getPeerRank_pami(rreq),(rreq->mpid.idx),fl.f.sync_com_in_HH);
+  TRACE_SET_R_BIT(MPIDI_Request_getPeerRank_pami(rreq),(rreq->mpid.idx),fl.f.matchedInHH);
+  TRACE_SET_R_VAL(MPIDI_Request_getPeerRank_pami(rreq),(rreq->mpid.idx),bufadd,rreq->mpid.userbuf);
   MPID_Request_release(rreq);
 }
 
@@ -221,10 +224,7 @@ MPIDI_RzvAck_proc_req(pami_context_t   context,
       MPID_assert(rc == PAMI_SUCCESS);
     }
 #endif
-#ifdef  MPIDI_TRACE
-  MPIDI_Out_cntr[(req->mpid.partner_id)].S[(req->mpid.idx)].recvAck=1;
-#endif
-
+  TRACE_SET_S_BIT(req->mpid.partner_id,(req->mpid.idx),fl.f.recvAck);
   MPIDI_SendDoneCB(context, req, PAMI_SUCCESS);
 }
 
@@ -323,7 +323,7 @@ MPIDI_CancelAck_proc(pami_context_t        context,
       MPID_assert(info->control == MPIDI_CONTROL_CANCEL_ACKNOWLEDGE);
       MPID_assert(req->mpid.cancel_pending == TRUE);
 
-      req->status.cancelled = TRUE;
+      MPIR_STATUS_SET_CANCEL_BIT(req->status, TRUE);
 
       /*
        * Rendezvous-Sends wait until a rzv ack is received to complete
@@ -397,6 +397,13 @@ MPIDI_ControlCB(pami_context_t    context,
     case MPIDI_CONTROL_RENDEZVOUS_ACKNOWLEDGE:
       MPIDI_RzvAck_proc(context, msginfo, senderrank);
       break;
+#if TOKEN_FLOW_CONTROL
+    case MPIDI_CONTROL_RETURN_TOKENS:
+      MPIU_THREAD_CS_ENTER(MSGQUEUE,0);
+      MPIDI_Token_cntr[sender].tokens += msginfo->alltokens;
+      MPIU_THREAD_CS_EXIT(MSGQUEUE,0);
+      break;
+#endif
     default:
       fprintf(stderr, "Bad msginfo type: 0x%08x  %d\n",
               msginfo->control,

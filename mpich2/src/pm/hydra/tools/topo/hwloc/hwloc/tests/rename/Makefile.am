@@ -1,46 +1,75 @@
-all-local:
-	@echo Existing targets: 'needed' and 'useless' (and 'restore' once done)
+all-local: needed useless
 
-prepare:
-	@echo
-	@echo "###############################"
-	@echo Enabling renaming in headers...
-	@echo
-	sed	-e '/^#define HWLOC_SYM_TRANSFORM 0/s/0/1/'			\
-		-e '/^#define HWLOC_SYM_PREFIX hwloc_/s/hwloc_/foobar_/1'	\
-		-e '/^#define HWLOC_SYM_PREFIX_CAPS HWLOC_/s/HWLOC_/FOOBAR_/2'	\
-		-i $(abs_top_builddir)/include/hwloc/autogen/config.h $(abs_top_builddir)/include/private/autogen/config.h
+TEST_CPPFLAGS =
+if HWLOC_HAVE_LINUX
+TEST_CPPFLAGS += -DHWLOC_TEST_RENAME_LINUX=1
+endif HWLOC_HAVE_LINUX
+if HWLOC_HAVE_LINUX_LIBNUMA
+TEST_CPPFLAGS += -DHWLOC_TEST_RENAME_LINUX_LIBNUMA=1
+endif HWLOC_HAVE_LINUX_LIBNUMA
+if HWLOC_HAVE_SCHED_SETAFFINITY
+TEST_CPPFLAGS += -DHWLOC_TEST_RENAME_GLIBC_SCHED=1
+endif HWLOC_HAVE_SCHED_SETAFFINITY
+if HWLOC_HAVE_LIBIBVERBS
+TEST_CPPFLAGS += -DHWLOC_TEST_RENAME_OPENFABRICS_VERBS=1
+endif HWLOC_HAVE_LIBIBVERBS
+if HWLOC_HAVE_MYRIEXPRESS
+TEST_CPPFLAGS += -DHWLOC_TEST_RENAME_MYRIEXPRESS=1
+endif HWLOC_HAVE_MYRIEXPRESS
+if HWLOC_HAVE_OPENCL
+TEST_CPPFLAGS += -DHWLOC_TEST_RENAME_OPENCL=1
+endif HWLOC_HAVE_OPENCL
+if HWLOC_HAVE_CUDA
+TEST_CPPFLAGS += -DHWLOC_TEST_RENAME_CUDA=1
+endif HWLOC_HAVE_CUDA
+if HWLOC_HAVE_CUDART
+TEST_CPPFLAGS += -DHWLOC_TEST_RENAME_CUDART=1
+endif HWLOC_HAVE_CUDART
+if HWLOC_HAVE_NVML
+TEST_CPPFLAGS += -DHWLOC_TEST_RENAME_NVML=1
+endif HWLOC_HAVE_NVML
 
-restore:
-	@echo
-	@echo "###############################"
-	@echo Restoring original headers...
-	@echo
-	sed	-e '/^#define HWLOC_SYM_TRANSFORM 1/s/1/0/'			\
-		-e '/^#define HWLOC_SYM_PREFIX foobar_/s/foobar_/hwloc_/1'	\
-		-e '/^#define HWLOC_SYM_PREFIX_CAPS FOOBAR_/s/FOOBAR_/HWLOC_/2'	\
-		-i $(abs_top_builddir)/include/hwloc/autogen/config.h $(abs_top_builddir)/include/private/autogen/config.h
+dirs:
+	mkdir -p include/hwloc/autogen include/private/autogen
 
-needed: prepare
-	@echo
-	@echo "###########################"
-	@echo Finding missing renaming...
-	@echo
-	cpp $(CPPFLAGS) $(srcdir)/main.c -I $(abs_top_srcdir)/include -I $(abs_top_builddir)/include \
-		| egrep -i '(^| |\*)hwloc_'
+include/hwloc/autogen/config.h: $(HWLOC_top_builddir)/include/hwloc/autogen/config.h
+	sed	-e 's/^#define HWLOC_SYM_TRANSFORM 0/#define HWLOC_SYM_TRANSFORM 1/'                    \
+		-e 's/^#define HWLOC_SYM_PREFIX hwloc_/#define HWLOC_SYM_PREFIX foobar_/'               \
+		-e 's/^#define HWLOC_SYM_PREFIX_CAPS HWLOC_/#define HWLOC_SYM_PREFIX_CAPS FOOBAR_/'     \
+		$(HWLOC_top_builddir)/include/hwloc/autogen/config.h > include/hwloc/autogen/config.h
 
-useless: prepare
-	@echo
-	@echo "###########################"
-	@echo Finding useless renaming...
-	@echo
-	grep '^#define' $(abs_top_srcdir)/include/hwloc/rename.h \
+include/private/autogen/config.h: $(HWLOC_top_builddir)/include/private/autogen/config.h
+	sed	-e 's/^#define HWLOC_SYM_TRANSFORM 0/#define HWLOC_SYM_TRANSFORM 1/'                    \
+		-e 's/^#define HWLOC_SYM_PREFIX hwloc_/#define HWLOC_SYM_PREFIX foobar_/'               \
+		-e 's/^#define HWLOC_SYM_PREFIX_CAPS HWLOC_/#define HWLOC_SYM_PREFIX_CAPS FOOBAR_/'     \
+		$(HWLOC_top_builddir)/include/private/autogen/config.h > include/private/autogen/config.h
+
+useless:
+	@echo "# Finding useless renaming"
+	@if grep '^#define' $(HWLOC_top_srcdir)/include/hwloc/rename.h \
 		| awk '{print $$2}' \
 		| egrep -v '(HWLOC_RENAME_H|HWLOC_MUNGE_NAME|HWLOC_NAME)' \
 		| while read name ; do \
-			grep $$name -rwH $(abs_top_srcdir)/include/ \
+			grep $$name -rwH $(HWLOC_top_srcdir)/include/ \
 			| grep -v rename.h: | grep -v .svn >/dev/null \
 			|| echo $$name; \
-			done
+			done \
+	 | grep '' ; then false ; else true ; fi
+	@echo "# done"
+
+# hwloc_uint64_t is ignored because it's always a typedef.
+# we have to manually concat a##b because some cpp let gcc do it (at least cpp 4.2.1 on OpenBSD 5.2).
+needed: dirs include/hwloc/autogen/config.h include/private/autogen/config.h
+	@echo "# Finding needed renaming"
+	@echo "# using $(TEST_CPPFLAGS)"
+	@if cpp $(CPPFLAGS) $(TEST_CPPFLAGS) -Iinclude -I$(HWLOC_top_srcdir)/include -I$(HWLOC_top_builddir)/include $(srcdir)/main.c \
+		| sed -e 's/foobar_ ##   hwloc_ ## /foobar_hwloc_/g' \
+		| sed -e 's/FOOBAR_ ##   hwloc_ ## /FOOBAR_hwloc_/g' \
+		| grep -vw hwloc_uint64_t \
+		| egrep -i '(^| |\*)hwloc_' ; then false ; else true ; fi
+	@echo "# done"
+
+clean-local:
+	rm -rf include
 
 EXTRA_DIST	=	main.c

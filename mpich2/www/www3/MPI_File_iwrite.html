@@ -13,7 +13,7 @@ Nonblocking write using individual file pointer
 #include "mpiu_greq.h"
 #endif
 
-int MPI_File_iwrite(MPI_File fh, const void *buf, int count,
+int MPI_File_iwrite(MPI_File fh, ROMIO_CONST void *buf, int count,
                    MPI_Datatype datatype, MPI_Request *request)
 </PRE>
 <H2>Input Parameters</H2>
@@ -39,5 +39,5 @@ in C.  In Fortran, MPI routines are subroutines, and are invoked with the
 <P>
 All MPI objects (e.g., <TT>MPI_Datatype</TT>, <TT>MPI_Comm</TT>) are of type <TT>INTEGER
 </TT>in Fortran.
-<P><B>Location:</B>mpi-io/iwrite.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/romio/mpi-io/iwrite.c<P>
 </BODY></HTML>

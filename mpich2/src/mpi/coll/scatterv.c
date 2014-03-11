@@ -99,7 +99,7 @@ int MPIR_Scatterv(const void *sendbuf, const int *sendcounts, const int *displs,
                     }
                 }
                 else {
-                    mpi_errno = MPIC_Isend_ft(((char *)sendbuf+displs[i]*extent), 
+                    mpi_errno = MPIC_Isend(((char *)sendbuf+displs[i]*extent),
                                               sendcounts[i], sendtype, i,
                                               MPIR_SCATTERV_TAG, comm, &reqarray[reqs++], errflag);
                     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -107,7 +107,7 @@ int MPIR_Scatterv(const void *sendbuf, const int *sendcounts, const int *displs,
             }
         }
         /* ... then wait for *all* of them to finish: */
-        mpi_errno = MPIC_Waitall_ft(reqs, reqarray, starray, errflag);
+        mpi_errno = MPIC_Waitall(reqs, reqarray, starray, errflag);
         if (mpi_errno && mpi_errno != MPI_ERR_IN_STATUS) MPIU_ERR_POP(mpi_errno);
         /* --BEGIN ERROR HANDLING-- */
         if (mpi_errno == MPI_ERR_IN_STATUS) {
@@ -128,7 +128,7 @@ int MPIR_Scatterv(const void *sendbuf, const int *sendcounts, const int *displs,
 
     else if (root != MPI_PROC_NULL) { /* non-root nodes, and in the intercomm. case, non-root nodes on remote side */
         if (recvcount) {
-            mpi_errno = MPIC_Recv_ft(recvbuf,recvcount,recvtype,root,
+            mpi_errno = MPIC_Recv(recvbuf,recvcount,recvtype,root,
                                      MPIR_SCATTERV_TAG,comm,MPI_STATUS_IGNORE, errflag);
             if (mpi_errno) {
                 /* for communication errors, just record the error but continue */

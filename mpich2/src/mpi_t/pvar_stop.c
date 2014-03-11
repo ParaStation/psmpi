@@ -5,6 +5,7 @@
  */
 
 #include "mpiimpl.h"
+#include "mpl_utlist.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_T_pvar_stop */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -30,9 +31,65 @@
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIR_T_pvar_stop_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle)
 {
-    int mpi_errno = MPI_SUCCESS;
+    int i, mpi_errno = MPI_SUCCESS;
+    MPIR_T_pvar_watermark_t *mark;
 
-    /* TODO implement this function */
+    MPIR_T_pvar_unset_started(handle);
+
+    /* Side-effect when pvar is SUM or WATERMARK */
+    if (MPIR_T_pvar_is_sum(handle)) {
+        /* Read the current value first */
+        if (handle->get_value == NULL) {
+            MPIU_Memcpy(handle->current, handle->addr, handle->bytes * handle->count);
+        } else {
+            handle->get_value(handle->addr, handle->obj_handle,
+                              handle->count, handle->current);
+        }
+
+        /* Substract offset from current, and accumulate the result to accum */
+        switch (handle->datatype) {
+        case MPI_UNSIGNED_LONG_LONG:
+            for (i = 0; i < handle->count; i++) {
+                ((unsigned long long *)handle->accum)[i] +=
+                    ((unsigned long long *)handle->current)[i]
+                    - ((unsigned long long *)handle->offset)[i];
+            }
+            break;
+        case MPI_DOUBLE:
+            for (i = 0; i < handle->count; i++) {
+                ((double *)handle->accum)[i] +=
+                    ((double *)handle->current)[i]
+                    - ((double *)handle->offset)[i];
+            }
+            break;
+        case MPI_UNSIGNED:
+            for (i = 0; i < handle->count; i++) {
+                ((unsigned *)handle->accum)[i] +=
+                    ((unsigned *)handle->current)[i]
+                    - ((unsigned *)handle->offset)[i];
+            }
+            break;
+        case MPI_UNSIGNED_LONG:
+            for (i = 0; i < handle->count; i++) {
+                ((unsigned long *)handle->accum)[i] +=
+                    ((unsigned long *)handle->current)[i]
+                    - ((unsigned long *)handle->offset)[i];
+            }
+            break;
+        default:
+            /* Code should never come here */
+            mpi_errno = MPI_ERR_INTERN; goto fn_fail;
+            break;
+        }
+
+    } else if (MPIR_T_pvar_is_watermark(handle)) {
+        /* When handle is first, clear the flag in pvar too */
+        if (MPIR_T_pvar_is_first(handle)) {
+            mark = (MPIR_T_pvar_watermark_t *)handle->addr;
+            MPIU_Assert(mark->first_used);
+            mark->first_started = FALSE;
+        }
+    }
 
 fn_exit:
     return mpi_errno;
@@ -47,24 +104,39 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_T_pvar_stop - XXX description here
+MPI_T_pvar_stop - Stop a performance variable
 
 Input Parameters:
 + session - identifier of performance experiment session (handle)
 - handle - handle of a performance variable (handle)
 
+Notes:
+This functions stops the performance variable with the handle identified by the parameter
+handle in the session identified by the parameter session.
+
+If the constant MPI_T_PVAR_ALL_HANDLES is passed in handle, the MPI implementation
+attempts to stop all variables within the session identified by the parameter session for
+which handles have been allocated. In this case, the routine returns MPI_SUCCESS if all
+variables are stopped successfully, otherwise MPI_T_ERR_PVAR_NO_STARTSTOP is returned.
+Continuous variables and variables that are already stopped are ignored when
+MPI_T_PVAR_ALL_HANDLES is specified.
+
 .N ThreadSafe
 
-.N Fortran
-
 .N Errors
+.N MPI_SUCCESS
+.N MPI_T_ERR_NOT_INITIALIZED
+.N MPI_T_ERR_INVALID_SESSION
+.N MPI_T_ERR_INVALID_HANDLE
+.N MPI_T_ERR_PVAR_NO_STARTSTOP
 @*/
 int MPI_T_pvar_stop(MPI_T_pvar_session session, MPI_T_pvar_handle handle)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_PVAR_STOP);
 
-    MPIU_THREAD_CS_ENTER(ALLFUNC,);
+    MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_PVAR_STOP);
+    MPIR_ERRTEST_MPIT_INITIALIZED(mpi_errno);
+    MPIR_T_THREAD_CS_ENTER();
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_T_PVAR_STOP);
 
     /* Validate parameters, especially handles needing to be converted */
@@ -72,23 +144,8 @@ int MPI_T_pvar_stop(MPI_T_pvar_session session, MPI_T_pvar_handle handle)
     {
         MPID_BEGIN_ERROR_CHECKS
         {
-
-            /* TODO more checks may be appropriate */
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
-        }
-        MPID_END_ERROR_CHECKS
-    }
-#   endif /* HAVE_ERROR_CHECKING */
-
-    /* Convert MPI object handles to object pointers */
-
-    /* Validate parameters and objects (post conversion) */
-#   ifdef HAVE_ERROR_CHECKING
-    {
-        MPID_BEGIN_ERROR_CHECKS
-        {
-            /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+            MPIR_ERRTEST_PVAR_SESSION(session, mpi_errno);
+            MPIR_ERRTEST_PVAR_HANDLE(handle, mpi_errno);
         }
         MPID_END_ERROR_CHECKS
     }
@@ -96,14 +153,38 @@ int MPI_T_pvar_stop(MPI_T_pvar_session session, MPI_T_pvar_handle handle)
 
     /* ... body of routine ...  */
 
-    mpi_errno = MPIR_T_pvar_stop_impl(session, handle);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    /* If handle is MPI_T_PVAR_ALL_HANDLES, dispatch the call.
+     * Otherwise, do correctness check, then go to impl.
+     */
+    if (handle == MPI_T_PVAR_ALL_HANDLES) {
+        MPIR_T_pvar_handle_t *hnd;
+        MPL_DL_FOREACH(session->hlist, hnd) {
+            if (!MPIR_T_pvar_is_continuous(hnd) && MPIR_T_pvar_is_started(hnd)) {
+                mpi_errno = MPIR_T_pvar_stop_impl(session, hnd);
+                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+            }
+        }
+    } else {
+        if (handle->session != session) {
+            mpi_errno = MPI_T_ERR_INVALID_HANDLE;
+            goto fn_fail;
+        }
+        if (MPIR_T_pvar_is_continuous(handle)) {
+            mpi_errno = MPI_T_ERR_PVAR_NO_STARTSTOP;
+            goto fn_fail;
+        }
+
+        if (MPIR_T_pvar_is_started(handle)) {
+            mpi_errno = MPIR_T_pvar_stop_impl(session, handle);
+            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+        }
+    }
 
     /* ... end of body of routine ... */
 
 fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_T_PVAR_STOP);
-    MPIU_THREAD_CS_EXIT(ALLFUNC,);
+    MPIR_T_THREAD_CS_EXIT();
     return mpi_errno;
 
 fn_fail:

@@ -453,13 +453,13 @@ int MPIR_Iallgather_intra(const void *sendbuf, int sendcount, MPI_Datatype sendt
     MPID_Datatype_get_size_macro(recvtype, recvtype_size);
     tot_bytes = (MPI_Aint)recvcount * comm_size * recvtype_size;
 
-    if ((tot_bytes < MPIR_PARAM_ALLGATHER_LONG_MSG_SIZE) && !(comm_size & (comm_size - 1))) {
+    if ((tot_bytes < MPIR_CVAR_ALLGATHER_LONG_MSG_SIZE) && !(comm_size & (comm_size - 1))) {
         /* Short or medium size message and power-of-two no. of processes. Use
          * recursive doubling algorithm */
         mpi_errno = MPIR_Iallgather_rec_dbl(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm_ptr, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
-    else if (tot_bytes < MPIR_PARAM_ALLGATHER_SHORT_MSG_SIZE) {
+    else if (tot_bytes < MPIR_CVAR_ALLGATHER_SHORT_MSG_SIZE) {
         /* Short message and non-power-of-two no. of processes. Use
          * Bruck algorithm (see description above). */
         mpi_errno = MPIR_Iallgather_bruck(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm_ptr, s);
@@ -521,8 +521,8 @@ int MPIR_Iallgather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendt
     newcomm_ptr = comm_ptr->local_comm;
 
     if (sendcount != 0) {
-        MPIU_Assert(newcomm_ptr->coll_fns && newcomm_ptr->coll_fns->Igather);
-        mpi_errno = newcomm_ptr->coll_fns->Igather(sendbuf, sendcount, sendtype,
+        MPIU_Assert(newcomm_ptr->coll_fns && newcomm_ptr->coll_fns->Igather_sched);
+        mpi_errno = newcomm_ptr->coll_fns->Igather_sched(sendbuf, sendcount, sendtype,
                                                    tmp_buf, sendcount, sendtype,
                                                    0, newcomm_ptr, s);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -531,12 +531,12 @@ int MPIR_Iallgather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendt
 
     /* first broadcast from left to right group, then from right to
        left group */
-    MPIU_Assert(comm_ptr->coll_fns && comm_ptr->coll_fns->Ibcast);
+    MPIU_Assert(comm_ptr->coll_fns && comm_ptr->coll_fns->Ibcast_sched);
     if (comm_ptr->is_low_group) {
         /* bcast to right*/
         if (sendcount != 0) {
             root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
-            mpi_errno = comm_ptr->coll_fns->Ibcast(tmp_buf, sendcount*local_size,
+            mpi_errno = comm_ptr->coll_fns->Ibcast_sched(tmp_buf, sendcount*local_size,
                                                    sendtype, root, comm_ptr, s);
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         }
@@ -546,7 +546,7 @@ int MPIR_Iallgather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendt
         /* receive bcast from right */
         if (recvcount != 0) {
             root = 0;
-            mpi_errno = comm_ptr->coll_fns->Ibcast(recvbuf, recvcount*remote_size,
+            mpi_errno = comm_ptr->coll_fns->Ibcast_sched(recvbuf, recvcount*remote_size,
                                                    recvtype, root, comm_ptr, s);
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         }
@@ -556,7 +556,7 @@ int MPIR_Iallgather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendt
         /* receive bcast from left */
         if (recvcount != 0) {
             root = 0;
-            mpi_errno = comm_ptr->coll_fns->Ibcast(recvbuf, recvcount*remote_size,
+            mpi_errno = comm_ptr->coll_fns->Ibcast_sched(recvbuf, recvcount*remote_size,
                                                    recvtype, root, comm_ptr, s);
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         }
@@ -566,7 +566,7 @@ int MPIR_Iallgather_inter(const void *sendbuf, int sendcount, MPI_Datatype sendt
         /* bcast to left */
         if (sendcount != 0) {
             root = (rank == 0) ? MPI_ROOT : MPI_PROC_NULL;
-            mpi_errno = comm_ptr->coll_fns->Ibcast(tmp_buf, sendcount*local_size,
+            mpi_errno = comm_ptr->coll_fns->Ibcast_sched(tmp_buf, sendcount*local_size,
                                                    sendtype, root, comm_ptr, s);
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         }
@@ -588,11 +588,23 @@ fn_fail:
 int MPIR_Iallgather_impl(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPID_Comm *comm_ptr, MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
-    int tag = -1;
     MPID_Request *reqp = NULL;
+    int tag = -1;
     MPID_Sched_t s = MPID_SCHED_NULL;
 
     *request = MPI_REQUEST_NULL;
+
+    MPIU_Assert(comm_ptr->coll_fns != NULL);
+    if (comm_ptr->coll_fns->Iallgather_req != NULL) {
+        /* --BEGIN USEREXTENSION-- */
+        mpi_errno = comm_ptr->coll_fns->Iallgather_req(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype,comm_ptr, &reqp);
+        if (reqp) {
+            *request = reqp->handle;
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+            goto fn_exit;
+        }
+        /* --END USEREXTENSION-- */
+    }
 
     mpi_errno = MPID_Sched_next_tag(comm_ptr, &tag);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -600,8 +612,8 @@ int MPIR_Iallgather_impl(const void *sendbuf, int sendcount, MPI_Datatype sendty
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     MPIU_Assert(comm_ptr->coll_fns != NULL);
-    MPIU_Assert(comm_ptr->coll_fns->Iallgather != NULL);
-    mpi_errno = comm_ptr->coll_fns->Iallgather(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm_ptr, s);
+    MPIU_Assert(comm_ptr->coll_fns->Iallgather_sched != NULL);
+    mpi_errno = comm_ptr->coll_fns->Iallgather_sched(sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, comm_ptr, s);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
     mpi_errno = MPID_Sched_start(&s, comm_ptr, tag, &reqp);
@@ -622,7 +634,8 @@ fn_fail:
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 /*@
-MPI_Iallgather - XXX description here
+MPI_Iallgather - Gathers data from all tasks and distribute the combined data
+                 to all tasks in a nonblocking way
 
 Input Parameters:
 + sendbuf - starting address of the send buffer (choice)
@@ -642,7 +655,9 @@ Output Parameters:
 
 .N Errors
 @*/
-int MPI_Iallgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype, MPI_Comm comm, MPI_Request *request)
+int MPI_Iallgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                   void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                   MPI_Comm comm, MPI_Request *request)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;

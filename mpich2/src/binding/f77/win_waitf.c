@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait_( MPI_Fint *, MPI_Fint * );
 #else
 #pragma _CRI duplicate mpi_win_wait_ as pmpi_win_wait_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_WAIT( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_WAIT")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_WAIT")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_WAIT")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_WAIT")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_WAIT( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_WAIT( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_WAIT( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_WAIT( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait__( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait( MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait_( MPI_Fint *, MPI_Fint * );
 #pragma weak mpi_win_wait__ = mpi_win_wait
 #pragma weak mpi_win_wait_ = mpi_win_wait
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_WAIT( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_WIN_WAIT")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_WIN_WAIT")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_WIN_WAIT")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_WAIT( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_wait__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait__( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_wait__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_wait__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_WAIT( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_wait_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_wait_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait_( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_wait_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_WAIT( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_wait")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_wait")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_wait")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_wait( MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_WAIT( MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_wait( MPI_Fint *, MPI_Fint * );
 #pragma weak pmpi_win_wait__ = pmpi_win_wait
 #pragma weak pmpi_win_wait_ = pmpi_win_wait
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_wait__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_WAIT")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_wait_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_WAIT")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_wait( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_WAIT")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_WAIT( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_wait_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_wait( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_WAIT( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_wait__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_wait( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_WAIT( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_wait__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_wait_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_wait")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_win_wait_ PMPI_WIN_WAIT

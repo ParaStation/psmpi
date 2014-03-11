@@ -31,6 +31,8 @@
 #include "mpidi_datatypes.h"
 #include "mpidi_externs.h"
 
+#define TOKEN_FLOW_CONTROL_ON (TOKEN_FLOW_CONTROL && MPIU_Token_on())
+
 #ifdef TRACE_ON
 #ifdef __GNUC__
 #define TRACE_ALL(fd, format, ...) fprintf(fd, "%s:%u (%d) " format, __FILE__, __LINE__, MPIR_Process.comm_world->rank, ##__VA_ARGS__)
@@ -45,6 +47,11 @@
 #define TRACE_ERR(format...)
 #endif
 
+#if TOKEN_FLOW_CONTROL
+#define MPIU_Token_on() (MPIDI_Process.is_token_flow_control_on)
+#else
+#define MPIU_Token_on() (0)
+#endif
 
 /**
  * \brief Gets significant info regarding the datatype
@@ -104,8 +111,28 @@ _dt_contig_out, _data_sz_out, _dt_ptr, _dt_true_lb)             \
 
 #define MPID_VCR_GET_LPID(vcr, index)           \
 ({                                              \
-  vcr[index];                                   \
+  vcr[index]->taskid;                           \
 })
+
+#ifdef __BGQ__
+/* BGQ just shares the MPICH vcr/tasklist.
+   This relies on the VCR being a simple task list which is asserted
+   in static_assertions() in mpid_init.c */
+#define MPID_VCR_GET_LPIDS(comm, taskids) taskids =  &((*comm->vcr)->taskid);
+#define MPID_VCR_FREE_LPIDS(taskids) 
+#else
+/* non-BGQ mallocs and copies the MPICH vcr/tasklist */
+#define MPID_VCR_GET_LPIDS(comm, taskids)                      \
+({                                                             \
+  int i;                                                       \
+  taskids=MPIU_Malloc((comm->local_size)*sizeof(pami_task_t)); \
+  MPID_assert(taskids != NULL);                                \
+  for(i=0; i<comm->local_size; i++)                            \
+    taskids[i] = comm->vcr[i]->taskid;                         \
+})
+#define MPID_VCR_FREE_LPIDS(taskids) MPIU_Free(taskids)
+
+#endif
 
 #define MPID_GPID_Get(comm_ptr, rank, gpid)             \
 ({                                                      \
