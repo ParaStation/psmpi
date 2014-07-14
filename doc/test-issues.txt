@@ -1,4 +1,4 @@
-For 5.0.28-1_214_g80131d4_master_3_1
+For 5.1.0-1 (master_3.1)
 
 with hydra mpiexec, confset=default
 
@@ -8,98 +8,19 @@ Issue #1: (1 test)
       9)
       large_type_sendrec np=2: running out of mem?
 
-Issue #2: (2 tests)
-      MPID_Win_allocate_shared: Assertion `mpi_errno == 0' faid
-
-Issue #3: (2 tests)
-	[mpiexec@phoenix] APPLICATION TIMED OUT
-	In spawn/..
-
-Other Issues: (12 test)
-
+Other Issues: (2 tests)
 
 from
-test-5.0.28-1_214_g80131d4_master_3_1_2014-03-20_12:56:59.log
+test-5.1.0-1_2014-07-14_13:50:34.log
 -------------------------------------------------
 ./datatype/large_type_sendrec np=2:		#1
 
 YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Killed (signal 9)
 -------------------------------------------------
-./rma/win_zero np=4:				#2
-win_zero: /home/hauke/repo/psmpi2/mpich2/src/mpid/psp/src/mpid_rma.c:818: MPID_Win_allocate_shared: Assertion `mpi_errno == 0' fai
-
--------------------------------------------------
-./rma/win_large_shm np=4:			#2
-win_large_shm: /home/hauke/repo/psmpi2/mpich2/src/mpid/psp/src/mpid_rma.c:818: MPID_Win_allocate_shared: Assertion `mpi_errno == 0' failed.
-
--------------------------------------------------
 ./rma/reqops np=4:
 3 - Got 1, expected 2
-
--------------------------------------------------
-./spawn/spawnintra np=2:			#3
-[mpiexec@phoenix] APPLICATION TIMED OUT
-
 -------------------------------------------------
 ./spawn/spaiccreate np=2:
 Fatal error in PMPI_Intercomm_create: Invalid communicator, error stack:
-
 -------------------------------------------------
-./cxx/spawn/spawnintrax np=2:			#3
-[mpiexec@phoenix] APPLICATION TIMED OUT
-
--------------------------------------------------
-./errors/pt2pt/truncmsg2 np=2:
-MPI_Recv succeeded with non-matching datatype signature
- Found 1 errors
-
--------------------------------------------------
-./errors/rma/win_sync_unlock np=2:
-0: Operation succeeded, when it should have failed
-1: Operation succeeded, when it should have failed
-
--------------------------------------------------
-./errors/rma/win_sync_free_pt np=2:
-0: Operation succeeded, when it should have failed
-1: Operation succeeded, when it should have failed
-
--------------------------------------------------
-./errors/rma/win_sync_free_at np=2:
-0: Operation succeeded, when it should have failed
-1: Operation succeeded, when it should have failed
-
--------------------------------------------------
-./errors/rma/win_sync_complete np=2:
-0: Expected MPI_ERR_RMA_SYNC, got:
-Invalid argument, error stack:
-MPI_Win_complete(103): MPI_Win_complete(win=0xa0000000) failed
-(unknown)(): Invalid argument
-
--------------------------------------------------
-./errors/rma/win_sync_lock_at np=2:
-0: Operation succeeded, when it should have failed
-1: Operation succeeded, when it should have failed
-
--------------------------------------------------
-./errors/rma/win_sync_lock_pt np=2:
-0: Operation succeeded, when it should have failed
-1: Operation succeeded, when it should have failed
-
--------------------------------------------------
-./errors/rma/win_sync_nested np=2:
-0: Expected MPI_ERR_RMA_SYNC, got:
-Invalid argument, error stack:
-MPI_Win_start(128): MPI_Win_start(group=0x88000000, assert=0, win=0xa0000000) failed
-(unknown)(): Invalid argument
-
--------------------------------------------------
-./errors/rma/win_sync_op np=2:
-0: Operation succeeded, when it should have failed
-1: Operation succeeded, when it should have failed
-
--------------------------------------------------
-./errors/spawn/badport np=2:
-Error:connecting 'myhost:27' : Invalid argument
-
--------------------------------------------------
-17 tests failed out of 793
+3 tests failed out of 801
