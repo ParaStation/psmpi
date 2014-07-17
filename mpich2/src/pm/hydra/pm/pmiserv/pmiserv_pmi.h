@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -37,6 +37,7 @@ struct HYD_pmcd_pmi_pg_scratch {
     int dead_process_count;
 
     struct HYD_pmcd_pmi_kvs *kvs;
+    int keyval_dist_count;      /* Number of keyvals distributed */
 };
 
 struct HYD_pmcd_pmi_publish {

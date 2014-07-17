@@ -1,24 +1,15 @@
-#							-*- Makefile -*-
-# Open ParaStation
+#                                                       -*- Makefile -*-
+# ParaStation
 #
 # Copyright (C) 2003 ParTec AG, Karlsruhe
 # Copyright (C) 2005-2010 ParTec Cluster Competence Center GmbH, Munich
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# This file may be distributed under the terms of the Q Public License
+# as defined in the file LICENSE.QPL included in the packaging of this
+# file.
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-# Authors:	Jens Hauke <hauke@par-tec.com>
-#		Thomas Moschny <moschny@par-tec.com>
+# Authors:      Jens Hauke <hauke@par-tec.com>
+#               Thomas Moschny <moschny@par-tec.com>
 #
 
 TOP_SRCDIR?= ..
@@ -34,7 +25,8 @@ VERSION:=$(shell cd $(TOP_SRCDIR) && scripts/vcversion --fmt version)
 RELEASE:=$(shell cd $(TOP_SRCDIR) && scripts/vcversion --fmt release)
 DISTNAME=$(PKG_NAME)-$(VERSION)-$(RELEASE)
 RPMBUILDDIR=/var/tmp/$(DISTNAME)-$(USER)
-RPMBUILDLOG=$(DISTNAME)$(shell echo $(CONFIGARGS)|tr " " "_").rpmbuild.log
+RPMBUILDLOG=$(PKG_NAME)$(shell echo -n $(CONFIGARGS)|tr -c "[0-9A-Za-z]" "_")-$(VERSION)-$(RELEASE).rpmbuild.log
+CHANGELOG=$(TOP_SRCDIR)/ChangeLog
 
 
 $(DISTNAME)/%: $(TOP_SRCDIR)/%
@@ -45,7 +37,8 @@ $(DISTNAME)/$(DISTNAME).spec: $(TOP_SRCDIR)/dist/$(PKG_NAME).spec.templ
 	mkdir -p $(DISTNAME)
 	sed ":t \
 		s,@VERSION\(_$(PKG_NAME)\)\?@,$(VERSION),;t t \
-		s,@RELEASE\(_$(PKG_NAME)\)\?@,$(RELEASE),;t t" $< > $@
+		s,@RELEASE\(_$(PKG_NAME)\)\?@,$(RELEASE),;t t \
+		/\%changelog/r $(CHANGELOG)" $< > $@
 
 $(DISTNAME)/VERSION:
 	echo $(VERSION)-$(RELEASE) > $@

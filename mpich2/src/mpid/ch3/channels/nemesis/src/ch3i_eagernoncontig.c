@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -37,7 +37,7 @@ int MPIDI_CH3I_SendNoncontig( MPIDI_VC_t *vc, MPID_Request *sreq, void *header, 
 
         MPIDI_DBG_PRINTF((55, FCNAME, "enqueuing"));
 
-	sreq->dev.pending_pkt = *(MPIDI_CH3_PktGeneric_t *)header;
+	sreq->dev.pending_pkt = *(MPIDI_CH3_Pkt_t *)header;
         sreq->ch.noncontig    = TRUE;
         sreq->ch.header_sz    = hdr_sz;
 	sreq->ch.vc           = vc;
@@ -49,9 +49,9 @@ int MPIDI_CH3I_SendNoncontig( MPIDI_VC_t *vc, MPID_Request *sreq, void *header, 
     }
 
     /* send as many cells of data as you can */
-    MPID_nem_mpich2_send_seg_header(sreq->dev.segment_ptr, &sreq->dev.segment_first, sreq->dev.segment_size, header, hdr_sz, vc, &again);
+    MPID_nem_mpich_send_seg_header(sreq->dev.segment_ptr, &sreq->dev.segment_first, sreq->dev.segment_size, header, hdr_sz, vc, &again);
     while(!again && sreq->dev.segment_first < sreq->dev.segment_size)
-        MPID_nem_mpich2_send_seg(sreq->dev.segment_ptr, &sreq->dev.segment_first, sreq->dev.segment_size, vc, &again);
+        MPID_nem_mpich_send_seg(sreq->dev.segment_ptr, &sreq->dev.segment_first, sreq->dev.segment_size, vc, &again);
 
     if (again)
     {
@@ -60,7 +60,7 @@ int MPIDI_CH3I_SendNoncontig( MPIDI_VC_t *vc, MPID_Request *sreq, void *header, 
         sreq->ch.vc = vc;
         if (sreq->dev.segment_first == 0) /* nothing was sent, save header */
         {
-            sreq->dev.pending_pkt = *(MPIDI_CH3_PktGeneric_t *)header;
+            sreq->dev.pending_pkt = *(MPIDI_CH3_Pkt_t *)header;
             sreq->ch.header_sz    = hdr_sz;
         }
         else

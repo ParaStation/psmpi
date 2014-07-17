@@ -35,10 +35,9 @@
 #undef FUNCNAME
 #define FUNCNAME MPI_Status_c2f
 
-int MPI_Status_c2f( MPI_Status *c_status, MPI_Fint *f_status )
+int MPI_Status_c2f( const MPI_Status *c_status, MPI_Fint *f_status )
 {
     int mpi_errno = MPI_SUCCESS;
-    /* This code assumes that the ints are the same size */
     if (c_status == MPI_STATUS_IGNORE ||
 	c_status == MPI_STATUSES_IGNORE) {
 	/* The call is erroneous (see 4.12.5 in MPI-2) */

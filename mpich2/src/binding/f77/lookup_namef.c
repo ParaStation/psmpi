@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name_( char * FORT_MIXED_LEN_DECL
 #else
 #pragma _CRI duplicate mpi_lookup_name_ as pmpi_lookup_name_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_LOOKUP_NAME( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_LOOKUP_NAME")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name__( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_LOOKUP_NAME")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name_( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_LOOKUP_NAME")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_LOOKUP_NAME")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_LOOKUP_NAME( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name__( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name_( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_LOOKUP_NAME( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name__( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name_( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_LOOKUP_NAME( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name__( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name_( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_LOOKUP_NAME( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name__( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name_( char * FORT_MIXED_LEN_DECL
 #pragma weak mpi_lookup_name__ = mpi_lookup_name
 #pragma weak mpi_lookup_name_ = mpi_lookup_name
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_LOOKUP_NAME( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name__( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("MPI_LOOKUP_NAME")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name_( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("MPI_LOOKUP_NAME")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("MPI_LOOKUP_NAME")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_LOOKUP_NAME( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_lookup_name__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name__( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name_( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_lookup_name__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_lookup_name__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_LOOKUP_NAME( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_lookup_name_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name__( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_lookup_name_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name_( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_lookup_name_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_LOOKUP_NAME( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_lookup_name")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name__( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_lookup_name")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name_( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_lookup_name")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_lookup_name( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_LOOKUP_NAME( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_lookup_name( char * FORT_MIXED_LEN_DECL
 #pragma weak pmpi_lookup_name__ = pmpi_lookup_name
 #pragma weak pmpi_lookup_name_ = pmpi_lookup_name
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_lookup_name__( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_LOOKUP_NAME")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_lookup_name_( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_LOOKUP_NAME")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_lookup_name( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_LOOKUP_NAME")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_LOOKUP_NAME( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_lookup_name_( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_lookup_name( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_LOOKUP_NAME( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_lookup_name__( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_lookup_name( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_LOOKUP_NAME( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_lookup_name__( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_lookup_name_( char * FORT_MIXED_LEN_DECL, MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_lookup_name")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_lookup_name_ PMPI_LOOKUP_NAME
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_lookup_name( char * FORT_MIXED_LEN_DECL
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Lookup_name
 #define MPI_Lookup_name PMPI_Lookup_name 
 

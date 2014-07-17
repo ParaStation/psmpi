@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /* 
  *
  *   Copyright (C) 2003 University of Chicago. 
@@ -50,13 +50,13 @@ int MPIO_Waitany(int count, MPIO_Request requests[], int *index,
     }
     if (i == count) {
 	*index = MPI_UNDEFINED;
-#ifdef MPICH2
+#ifdef MPICH
 	/* need to set empty status */
 	if (status != MPI_STATUS_IGNORE) {
 	    status->MPI_SOURCE = MPI_ANY_SOURCE;
 	    status->MPI_TAG    = MPI_ANY_TAG;
-	    status->count      = 0;
-	    status->cancelled  = 0;
+            MPIR_STATUS_SET_COUNT(*status, 0);
+            MPIR_STATUS_SET_CANCEL_BIT(*status, 0);
 	}
 #endif
 	err = MPI_SUCCESS;

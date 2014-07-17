@@ -9,7 +9,7 @@
 Make a request to form a new intercommunicator 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, 
+int MPI_Comm_connect(const char *port_name, MPI_Info info, int root, MPI_Comm comm,
                      MPI_Comm *newcomm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -23,7 +23,7 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm,
 <DT><B>comm </B><DD>intracommunicator over which call is collective (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>newcomm </B> <DD> intercommunicator with server as remote group (handle) 
 </DL>
 <P>
@@ -69,5 +69,5 @@ communicator in a call (not even allowed in <TT>MPI_Comm_rank</TT>).
 </DL>
 <DL><DT><B>MPI_ERR_PORT </B> <DD> 
 </DL>
-<P><B>Location:</B>comm_connect.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/spawn/comm_connect.c<P>
 </BODY></HTML>

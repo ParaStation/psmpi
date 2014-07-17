@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -218,7 +218,7 @@ int MPIDI_PG_Create(int vct_sz, void * pg_id, MPIDI_PG_t ** pg_ptr)
     /* We may first need to initialize the channel before calling the channel 
        VC init functions.  This routine may be a no-op; look in the 
        ch3_init.c file in each channel */
-    MPIU_CALL(MPIDI_CH3,PG_Init( pg ));
+    MPIDI_CH3_PG_Init(pg);
 
     /* These are now done in MPIDI_VC_Init */
 #if 0
@@ -317,7 +317,7 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 		   use.  Alternately, if the PG is able to recreate a VC, 
 		   and can thus free unused (or idle) VCs, it should be allowed
 		   to do so.  [wdg 2008-08-31] */
-                mpi_errno = MPIU_CALL(MPIDI_CH3,VC_Destroy(&(pg->vct[i])));
+                mpi_errno = MPIDI_CH3_VC_Destroy(&(pg->vct[i]));
                 if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
             }
 
@@ -331,7 +331,7 @@ int MPIDI_PG_Destroy(MPIDI_PG_t * pg)
 		    MPIU_Free(pg->connData);
 		}
 	    }
-	    mpi_errno = MPIU_CALL(MPIDI_CH3,PG_Destroy(pg));
+	    mpi_errno = MPIDI_CH3_PG_Destroy(pg);
 	    MPIU_Free(pg);
 
 	    goto fn_exit;
@@ -730,9 +730,9 @@ static int connToStringKVS( char **buf_p, int *slen, MPIDI_PG_t *pg )
     char *string = 0;
     char *pg_idStr = (char *)pg->id;      /* In the PMI/KVS space,
 					     the pg id is a string */
-    char buf[MPIDI_MAX_KVS_VALUE_LEN];
-    int   i, j, vallen, rc, mpi_errno = MPI_SUCCESS, len;
-    int   curSlen;
+    char   buf[MPIDI_MAX_KVS_VALUE_LEN];
+    int    i, j, rc, mpi_errno = MPI_SUCCESS, len;
+    size_t vallen, curSlen;
 
     /* Make an initial allocation of a string with an estimate of the
        needed space */
@@ -782,7 +782,7 @@ static int connToStringKVS( char **buf_p, int *slen, MPIDI_PG_t *pg )
 	if (len + vallen + 1 >= curSlen) {
 	    char *nstring = 0;
             curSlen += (pg->size - i) * (vallen + 1 );
-	    nstring = MPIU_Realloc( string, curSlen);
+	    nstring = MPIU_Realloc( string, curSlen );
 	    if (!nstring) {
 		MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**nomem");
 	    }
@@ -1194,7 +1194,8 @@ int MPIDI_PG_Close_VCs( void )
 
 	    if (vc->state == MPIDI_VC_STATE_ACTIVE ||
 		vc->state == MPIDI_VC_STATE_REMOTE_CLOSE) {
-		MPIDI_CH3U_VC_SendClose( vc, i );
+		mpi_errno = MPIDI_CH3U_VC_SendClose( vc, i );
+                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	    } else if (vc->state == MPIDI_VC_STATE_INACTIVE ||
                        vc->state == MPIDI_VC_STATE_MORIBUND) {
                 /* XXX DJG FIXME-MT should we be checking this? */
@@ -1222,8 +1223,11 @@ int MPIDI_PG_Close_VCs( void )
        connections are in fact closed (by the final progress loop that
        handles any close requests that this code generates) */
 
+ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_PG_CLOSE_VCS);
     return mpi_errno;
+ fn_fail:
+    goto fn_exit;
 }
 
 /*

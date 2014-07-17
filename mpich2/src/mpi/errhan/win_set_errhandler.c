@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -31,7 +31,7 @@
 /*@
    MPI_Win_set_errhandler - Set window error handler
 
-   Input Parameters:
+Input Parameters:
 + win - window (handle) 
 - errhandler - new error handler for window (handle) 
 
@@ -65,7 +65,6 @@ int MPI_Win_set_errhandler(MPI_Win win, MPI_Errhandler errhandler)
         {
 	    MPIR_ERRTEST_WIN(win, mpi_errno);
 	    MPIR_ERRTEST_ERRHANDLER(errhandler, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

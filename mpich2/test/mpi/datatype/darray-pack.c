@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -291,6 +291,9 @@ static int pack_and_unpack(char *typebuf,
 	return errs;
     }
 
+    /* FIXME: the pack size returned need not be the type_size - this will
+       only be true if the pack routine simply moves the bytes but does
+       no other transformations of the data */
     position = 0;
     err = MPI_Pack(typebuf,
 		   count,

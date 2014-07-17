@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -11,8 +11,7 @@
 
 HYD_status HYDTI_bscd_ll_query_node_count(int *count);
 
-HYD_status HYDT_bscd_ll_launch_procs(char **args, struct HYD_proxy *proxy_list,
-                                     int *control_fd);
+HYD_status HYDT_bscd_ll_launch_procs(char **args, struct HYD_proxy *proxy_list, int *control_fd);
 HYD_status HYDT_bscd_ll_query_proxy_id(int *proxy_id);
 HYD_status HYDT_bscd_ll_query_native_int(int *ret);
 HYD_status HYDT_bscd_ll_query_node_list(struct HYD_node **node_list);

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -17,6 +17,39 @@ static int exists(char *filename)
     return 1;
 }
 
+static HYD_status get_abs_wd(const char *wd, char **abs_wd)
+{
+    int ret;
+    char *cwd;
+    HYD_status status = HYD_SUCCESS;
+
+    if (wd == NULL) {
+        *abs_wd = NULL;
+        goto fn_exit;
+    }
+
+    if (wd[0] != '.') {
+        *abs_wd = (char *) wd;
+        goto fn_exit;
+    }
+
+    cwd = HYDU_getcwd();
+    ret = chdir(wd);
+    if (ret < 0)
+        HYDU_ERR_POP(status, "error calling chdir\n");
+
+    *abs_wd = HYDU_getcwd();
+    ret = chdir(cwd);
+    if (ret < 0)
+        HYDU_ERR_POP(status, "error calling chdir\n");
+
+  fn_exit:
+    return status;
+
+  fn_fail:
+    goto fn_exit;
+}
+
 HYD_status HYDU_find_in_path(const char *execname, char **path)
 {
     char *tmp[HYD_NUM_TMP_STRINGS], *path_loc = NULL, *test_loc, *user_path;
@@ -29,7 +62,8 @@ HYD_status HYDU_find_in_path(const char *execname, char **path)
         user_path = HYDU_strdup(user_path);
 
     if (user_path) {    /* If the PATH environment exists */
-        test_loc = HYDU_get_abs_wd(strtok(user_path, ";:"));
+        status = get_abs_wd(strtok(user_path, ";:"), &test_loc);
+        HYDU_ERR_POP(status, "error getting absolute working dir\n");
         do {
             tmp[0] = HYDU_strdup(test_loc);
             tmp[1] = HYDU_strdup("/");
@@ -54,7 +88,10 @@ HYD_status HYDU_find_in_path(const char *execname, char **path)
 
             HYDU_FREE(path_loc);
             path_loc = NULL;
-        } while ((test_loc = HYDU_get_abs_wd(strtok(NULL, ";:"))));
+
+            status = get_abs_wd(strtok(NULL, ";:"), &test_loc);
+            HYDU_ERR_POP(status, "error getting absolute working dir\n");
+        } while (test_loc);
     }
 
     /* There is either no PATH environment or we could not find the
@@ -100,10 +137,10 @@ static HYD_status match_arg(char ***argv_p, struct HYD_arg_match_table *match_ta
     m = match_table;
     while (m->handler_fn) {
         if (!strcasecmp(arg, m->arg)) {
-            if (**argv_p && HYD_IS_HELP(**argv_p)) {
+            if (**argv_p && (!strcmp(**argv_p, "-h") || !strcmp(**argv_p, "-help") ||
+                             !strcmp(**argv_p, "--help"))) {
                 if (m->help_fn == NULL) {
-                    HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
-                                        "No help message available\n");
+                    HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "No help message available\n");
                 }
                 else {
                     m->help_fn();
@@ -133,9 +170,6 @@ HYD_status HYDU_parse_array(char ***argv, struct HYD_arg_match_table *match_tabl
     HYD_status status = HYD_SUCCESS;
 
     while (**argv && ***argv == '-') {
-        if (HYD_IS_HELP(**argv)) {
-            HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "");
-        }
         status = match_arg(argv, match_table);
         HYDU_ERR_POP(status, "argument matching returned error\n");
     }
@@ -172,8 +206,7 @@ HYD_status HYDU_set_int(char *arg, int *var, int val)
 {
     HYD_status status = HYD_SUCCESS;
 
-    HYDU_ERR_CHKANDJUMP(status, *var != -1, HYD_INTERNAL_ERROR,
-                        "duplicate setting: %s\n", arg);
+    HYDU_ERR_CHKANDJUMP(status, *var != -1, HYD_INTERNAL_ERROR, "duplicate setting: %s\n", arg);
 
     *var = val;
 
@@ -222,22 +255,7 @@ char *HYDU_getcwd(void)
     goto fn_exit;
 }
 
-char *HYDU_get_abs_wd(const char *wd)
-{
-    char *cwd, *retdir;
-
-    if (wd[0] != '.')
-        return (char *) wd;
-
-    cwd = HYDU_getcwd();
-    chdir(wd);
-    retdir = HYDU_getcwd();
-    chdir(cwd);
-
-    return retdir;
-}
-
-HYD_status HYDU_process_mfile_token(char *token, int newline, struct HYD_node ** node_list)
+HYD_status HYDU_process_mfile_token(char *token, int newline, struct HYD_node **node_list)
 {
     int num_procs;
     char *hostname, *procs, *binding, *tmp, *user;
@@ -269,8 +287,7 @@ HYD_status HYDU_process_mfile_token(char *token, int newline, struct HYD_node **
 
             for (node = *node_list; node->next; node = node->next);
             if (node->user)
-                HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
-                                    "duplicate username setting\n");
+                HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "duplicate username setting\n");
 
             node->user = HYDU_strdup(user);
         }
@@ -299,8 +316,7 @@ HYD_status HYDU_parse_hostfile(const char *hostfile, struct HYD_node **node_list
     HYDU_FUNC_ENTER();
 
     if ((fp = fopen(hostfile, "r")) == NULL)
-        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR,
-                            "unable to open host file: %s\n", hostfile);
+        HYDU_ERR_SETANDJUMP(status, HYD_INTERNAL_ERROR, "unable to open host file: %s\n", hostfile);
 
     if (node_list)
         *node_list = NULL;
@@ -382,7 +398,7 @@ HYD_status HYDU_send_strlist(int fd, char **strlist)
 
     /* Check how many arguments we have */
     list_len = HYDU_strlist_lastidx(strlist);
-    status = HYDU_sock_write(fd, &list_len, sizeof(int), &sent, &closed);
+    status = HYDU_sock_write(fd, &list_len, sizeof(int), &sent, &closed, HYDU_SOCK_COMM_MSGWAIT);
     HYDU_ERR_POP(status, "unable to write data to proxy\n");
     HYDU_ASSERT(!closed, status);
 
@@ -390,11 +406,11 @@ HYD_status HYDU_send_strlist(int fd, char **strlist)
     for (i = 0; strlist[i]; i++) {
         len = strlen(strlist[i]) + 1;
 
-        status = HYDU_sock_write(fd, &len, sizeof(int), &sent, &closed);
+        status = HYDU_sock_write(fd, &len, sizeof(int), &sent, &closed, HYDU_SOCK_COMM_MSGWAIT);
         HYDU_ERR_POP(status, "unable to write data to proxy\n");
         HYDU_ASSERT(!closed, status);
 
-        status = HYDU_sock_write(fd, strlist[i], len, &sent, &closed);
+        status = HYDU_sock_write(fd, strlist[i], len, &sent, &closed, HYDU_SOCK_COMM_MSGWAIT);
         HYDU_ERR_POP(status, "unable to write data to proxy\n");
         HYDU_ASSERT(!closed, status);
     }

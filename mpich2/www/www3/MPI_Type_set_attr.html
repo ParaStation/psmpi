@@ -9,13 +9,13 @@
 Stores attribute value associated with a key 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Type_set_attr(MPI_Datatype type, int type_keyval, void *attribute_val)
+int MPI_Type_set_attr(MPI_Datatype datatype, int type_keyval, void *attribute_val)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>type </B><DD>MPI Datatype to which attribute will be attached (handle) 
+<DT><B>datatype </B><DD>MPI Datatype to which attribute will be attached (handle)
 
-<DT><B>keyval </B><DD>key value, as returned by  <TT>MPI_Type_create_keyval</TT> (integer) 
+<DT><B>type_keyval </B><DD>key value, as returned by  <TT>MPI_Type_create_keyval</TT> (integer)
 
 <DT><B>attribute_val </B><DD>attribute value 
 </DL>
@@ -60,5 +60,5 @@ MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 </DL>
 <DL><DT><B>MPI_ERR_KEYVAL </B> <DD> Invalid keyval
 </DL>
-<P><B>Location:</B>type_set_attr.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/attr/type_set_attr.c<P>
 </BODY></HTML>

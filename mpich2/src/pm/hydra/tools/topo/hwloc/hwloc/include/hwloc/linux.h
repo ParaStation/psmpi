@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2010 INRIA.  All rights reserved.
- * Copyright © 2009-2010 Université Bordeaux 1
+ * Copyright © 2009-2013 Inria.  All rights reserved.
+ * Copyright © 2009-2011 Université Bordeaux 1
  * See COPYING in top-level directory.
  */
 
@@ -24,9 +24,9 @@ extern "C" {
 #endif
 
 
-/** \defgroup hwlocality_linux Linux-only helpers
+/** \defgroup hwlocality_linux Linux-specific helpers
  *
- * This includes helpers for manipulating linux kernel cpumap files, and hwloc
+ * This includes helpers for manipulating Linux kernel cpumap files, and hwloc
  * equivalents of the Linux sched_setaffinity and sched_getaffinity system calls.
  *
  * @{
@@ -48,7 +48,7 @@ HWLOC_DECLSPEC int hwloc_linux_set_tid_cpubind(hwloc_topology_t topology, pid_t 
 
 /** \brief Get the current binding of thread \p tid
  *
- * The behavior is exactly the same as the Linux sched_setaffinity system call,
+ * The behavior is exactly the same as the Linux sched_getaffinity system call,
  * but uses a hwloc cpuset.
  */
 HWLOC_DECLSPEC int hwloc_linux_get_tid_cpubind(hwloc_topology_t topology, pid_t tid, hwloc_cpuset_t set);

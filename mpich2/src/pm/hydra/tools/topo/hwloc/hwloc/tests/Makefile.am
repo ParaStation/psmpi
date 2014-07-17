@@ -1,5 +1,5 @@
-# Copyright © 2009-2011 INRIA.  All rights reserved.
-# Copyright © 2009-2011 Université Bordeaux 1
+# Copyright © 2009-2013 Inria.  All rights reserved.
+# Copyright © 2009-2012 Université Bordeaux 1
 # Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
 
@@ -8,7 +8,7 @@ AM_CPPFLAGS = $(HWLOC_CPPFLAGS)
 AM_LDFLAGS = $(HWLOC_LDFLAGS)
 
 SUBDIRS = ports xml
-DIST_SUBDIRS = ports xml linux
+DIST_SUBDIRS = ports xml linux rename
 
 if HWLOC_HAVE_LINUX
 SUBDIRS += linux
@@ -16,8 +16,10 @@ endif HWLOC_HAVE_LINUX
 
 LDADD =
 
-if HWLOC_BUILD_TESTS
-check_PROGRAMS = hwloc_bitmap \
+LOG_COMPILER = $(builddir)/wrapper.sh
+
+check_PROGRAMS = hwloc_list_components \
+	hwloc_bitmap \
 	hwloc_bitmap_string \
 	hwloc_get_closest_objs \
 	hwloc_get_obj_covering_cpuset \
@@ -34,12 +36,22 @@ check_PROGRAMS = hwloc_bitmap \
 	hwloc_get_last_cpu_location \
 	hwloc_object_userdata \
 	hwloc_synthetic \
+	hwloc_custom \
+	hwloc_backends \
+	hwloc_pci_backend \
 	hwloc_is_thissystem \
 	hwloc_distances \
-	hwloc_set_distances \
 	hwloc_groups \
+	hwloc_groups2 \
 	hwloc_insert_misc \
-	hwloc_topology_restrict
+	hwloc_topology_restrict \
+	hwloc_topology_dup \
+	hwloc_topology_diff \
+	hwloc_obj_infos \
+	hwloc_iodevs \
+	xmlbuffer \
+	gl \
+	intel-mic
 
 if HWLOC_HAVE_LINUX_LIBNUMA
 check_PROGRAMS += linux-libnuma
@@ -57,6 +69,10 @@ if HWLOC_HAVE_MYRIEXPRESS
 check_PROGRAMS += myriexpress
 endif HWLOC_HAVE_MYRIEXPRESS
 
+if HWLOC_HAVE_OPENCL
+check_PROGRAMS += opencl
+endif HWLOC_HAVE_OPENCL
+
 if HWLOC_HAVE_CUDA
 check_PROGRAMS += cuda
 endif HWLOC_HAVE_CUDA
@@ -65,9 +81,9 @@ if HWLOC_HAVE_CUDART
 check_PROGRAMS += cudart
 endif HWLOC_HAVE_CUDART
 
-if HWLOC_HAVE_XML
-check_PROGRAMS += xmlbuffer
-endif HWLOC_HAVE_XML
+if HWLOC_HAVE_NVML
+check_PROGRAMS += nvml
+endif HWLOC_HAVE_NVML
 
 TESTS = $(check_PROGRAMS)
 
@@ -81,19 +97,20 @@ endif
 
 LDADD += $(HWLOC_top_builddir)/src/$(hwloc_lib)
 
-linux_libnuma_LDFLAGS = -lnuma
-openfabrics_verbs_LDFLAGS = -libverbs
-myriexpress_LDFLAGS = -lmyriexpress
-cuda_LDFLAGS = -lcuda
-cudart_LDFLAGS = -lcuda -lcudart
-xmlbuffer_LDFLAGS = $(HWLOC_XML_LIBS)
-if !HWLOC_HAVE_WINDOWS
-hwloc_bind_LDFLAGS = -lpthread
-endif !HWLOC_HAVE_WINDOWS
+linux_libnuma_LDADD = $(LDADD) -lnuma
+openfabrics_verbs_LDADD = $(LDADD) -libverbs
+myriexpress_LDADD = $(LDADD) -lmyriexpress
+opencl_LDADD = $(LDADD) -lOpenCL
+cuda_LDADD = $(LDADD) -lcuda
+cudart_LDADD = $(LDADD) -lcuda -lcudart
+nvml_LDADD = $(LDADD) -lnvidia-ml
+hwloc_bind_LDADD = $(LDADD)
+if HWLOC_HAVE_PTHREAD
+hwloc_bind_LDADD += -lpthread
+endif
 
-endif HWLOC_BUILD_TESTS
-
-# ship the embedded test code but don't actually enter it automatically
+# ship the embedded test code but don't actually let automake ever
+# look at it because we have another configure stuff in there
 EXTRA_DIST = 	embedded/autogen.sh \
 		embedded/configure.ac \
 		embedded/Makefile.am \

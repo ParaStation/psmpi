@@ -1,7 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
+ */
+/*      Warning - this test will fail for MPI_PROD & maybe MPI_SUM
+ *        if more than 10 MPI processes are used.  Loss of precision
+ *        will occur as the number of processors is increased.
  */
 
 #include "mpi.h"
@@ -276,6 +280,14 @@ struct double_test { double a; int b; };
 #define test_types_set_mpi_2_2_integer(op,post) do { } while (0)
 #endif
 
+#if MTEST_HAVE_MIN_MPI_VERSION(3,0)
+#define test_types_set_mpi_3_0_integer(op,post) do {                \
+        op##_test##post(MPI_Count, MPI_COUNT);                      \
+    } while (0)
+#else
+#define test_types_set_mpi_3_0_integer(op,post) do { } while (0)
+#endif
+
 #define test_types_set1(op, post)                                   \
     {                                                               \
         op##_test##post(int, MPI_INT);                              \
@@ -286,6 +298,7 @@ struct double_test { double a; int b; };
         op##_test##post(unsigned long, MPI_UNSIGNED_LONG);          \
         op##_test##post(unsigned char, MPI_UNSIGNED_CHAR);          \
         test_types_set_mpi_2_2_integer(op,post);                    \
+        test_types_set_mpi_3_0_integer(op,post);                    \
     }
 
 #define test_types_set2(op, post)               \
@@ -300,19 +313,40 @@ struct double_test { double a; int b; };
         op##_test##post(unsigned char, MPI_BYTE);                   \
     }
 
+/* Make sure that we test complex and double complex, even if long 
+   double complex is not available */
+#if defined(USE_LONG_DOUBLE_COMPLEX)
+
 #if MTEST_HAVE_MIN_MPI_VERSION(2,2) && defined(HAVE_FLOAT__COMPLEX) \
     && defined(HAVE_DOUBLE__COMPLEX) \
     && defined(HAVE_LONG_DOUBLE__COMPLEX)
-#define test_types_set4(op, post)                                         \
-    do {                                                                  \
-        op##_test##post(float _Complex, MPI_C_FLOAT_COMPLEX);             \
-        op##_test##post(double _Complex, MPI_C_DOUBLE_COMPLEX);           \
-        op##_test##post(long double _Complex, MPI_C_LONG_DOUBLE_COMPLEX); \
+#define test_types_set4(op, post)                                             \
+    do {                                                                      \
+        op##_test##post(float _Complex, MPI_C_FLOAT_COMPLEX);                 \
+        op##_test##post(double _Complex, MPI_C_DOUBLE_COMPLEX);               \
+        if (MPI_C_LONG_DOUBLE_COMPLEX != MPI_DATATYPE_NULL) {                 \
+            op##_test##post(long double _Complex, MPI_C_LONG_DOUBLE_COMPLEX); \
+        }                                                                     \
     } while (0)
 
 #else
 #define test_types_set4(op, post) do { } while (0)
 #endif
+#else
+
+#if MTEST_HAVE_MIN_MPI_VERSION(2,2) && defined(HAVE_FLOAT__COMPLEX) \
+    && defined(HAVE_DOUBLE__COMPLEX) 
+#define test_types_set4(op, post)                                         \
+    do {                                                                  \
+        op##_test##post(float _Complex, MPI_C_FLOAT_COMPLEX);             \
+        op##_test##post(double _Complex, MPI_C_DOUBLE_COMPLEX);           \
+    } while (0)
+
+#else
+#define test_types_set4(op, post) do { } while (0)
+#endif
+
+#endif /* defined(USE_LONG_DOUBLE_COMPLEX) */
 
 #if MTEST_HAVE_MIN_MPI_VERSION(2,2) && defined(HAVE__BOOL)
 #define test_types_set5(op, post)           \

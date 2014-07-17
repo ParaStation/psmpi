@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -19,14 +19,12 @@
 
 CPLUSPLUS_BEGIN
 
-/* config header file */
-#include "mpidu_sock_conf.h"
 /* Load just the utility definitions that we need */
 #include "mpichconf.h"
 #include "mpibase.h"
 #include "mpiutil.h"
 #include "mpitypedefs.h"
-#include "mpich_param_vals.h"
+#include "mpich_cvars.h"
 /* implementation specific header file */    
 #include "mpidu_socki.h"
 

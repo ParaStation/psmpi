@@ -34,8 +34,13 @@
 static
 int MPID_PSP_Barrier(MPID_Comm *comm_ptr, int *errflag)
 {
-	pscom_barrier(comm_ptr->group);
-	return MPI_SUCCESS;
+	if (comm_ptr->group) {
+		pscom_barrier(comm_ptr->group);
+		return MPI_SUCCESS;
+	} else {
+		/* Fallback to MPIch default Barrier */
+		return MPIR_Barrier(comm_ptr, errflag);
+	}
 }
 
 
@@ -175,13 +180,17 @@ void group_init(MPID_Comm *comm_ptr)
 		assert(connections[rank]);
 	}
 
-	sock = MPIDI_Process.socket; /* ToDo: get socket from comm? */
+	sock = comm_ptr->pscom_socket;
 
-	/* define pscom group */
-	group = pscom_group_open(sock,
-				 group_id, comm_ptr->rank,
-				 comm_size, connections);
-	assert(group);
+	if (sock) {
+		/* define pscom group */
+		group = pscom_group_open(sock,
+					 group_id, comm_ptr->rank,
+					 comm_size, connections);
+		assert(group);
+	} else {
+		group = NULL;
+	}
 	assert(!comm_ptr->group);
 	comm_ptr->group = group;
 
@@ -239,21 +248,27 @@ MPID_Collops mpid_psp_collective_functions = {
 };
 
 
-void MPID_PSP_CollectiveInit(MPID_Comm * comm /* probably MPI_COMM_WORLD */)
-{
-	if (!MPIDI_Process.env.enable_collectives) return;
-
-	D(printf("%s (comm:%p(%s, id:%08x, size:%u))\n",
-		 __func__, comm, comm->name, comm->context_id, comm->local_size);)
-
-	comm->coll_fns = &mpid_psp_collective_functions;
-	group_init(comm);
-}
-
-
 int MPID_PSP_comm_create_hook(MPID_Comm * comm)
 {
+	pscom_connection_t *con1st;
+	int i;
 	comm->group = NULL;
+
+	/* ToDo: Fixme! Hack: Use pscom_socket from the rank 0 connection. This will fail
+	   with mixed Intra and Inter communicator connections. */
+	con1st = MPID_PSCOM_rank2connection(comm, 0);
+	comm->pscom_socket = con1st ? con1st->socket : NULL;
+
+	/* Test if connections from different sockets are used ... */
+	for (i = 0; i < comm->local_size; i++) {
+		if (comm->pscom_socket && MPID_PSCOM_rank2connection(comm, i) &&
+		    (MPID_PSCOM_rank2connection(comm, i)->socket != comm->pscom_socket)) {
+			/* ... and disallow the usage of comm->pscom_socket in this case.
+			   This will disallow ANY_SOURCE receives on that communicator! */
+			comm->pscom_socket = NULL;
+			break;
+		}
+	}
 
 	if (!MPIDI_Process.env.enable_collectives) return MPI_SUCCESS;
 

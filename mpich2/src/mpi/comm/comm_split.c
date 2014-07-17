@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -7,6 +7,27 @@
 
 #include "mpiimpl.h"
 #include "mpicomm.h"
+
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+categories:
+    - name        : COMMUNICATOR
+      description : cvars that control communicator construction and operation
+
+cvars:
+    - name        : MPIR_CVAR_COMM_SPLIT_USE_QSORT
+      category    : COMMUNICATOR
+      type        : boolean
+      default     : true
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        Use qsort(3) in the implementation of MPI_Comm_split instead of bubble sort.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
 
 /* -- Begin Profiling Symbol Block for routine MPI_Comm_split */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -36,6 +57,7 @@ typedef struct sorttype {
     int orig_idx;
 } sorttype;
 
+#if defined(HAVE_QSORT)
 static int sorttype_compare(const void *v1, const void *v2) {
     const sorttype *s1 = v1;
     const sorttype *s2 = v2;
@@ -51,8 +73,11 @@ static int sorttype_compare(const void *v1, const void *v2) {
     else if (s1->orig_idx < s2->orig_idx)
         return -1;
 
+    /* --BEGIN ERROR HANDLING-- */
     return 0; /* should never happen */
+    /* --END ERROR HANDLING-- */
 }
+#endif
 
 /* Sort the entries in keytable into increasing order by key.  A stable
    sort should be used incase the key values are not unique. */
@@ -63,7 +88,7 @@ static void MPIU_Sort_inttable( sorttype *keytable, int size )
 
 #if defined(HAVE_QSORT)
     /* temporary switch for profiling performance differences */
-    if (MPIR_PARAM_COMM_SPLIT_USE_QSORT)
+    if (MPIR_CVAR_COMM_SPLIT_USE_QSORT)
     {
         /* qsort isn't a stable sort, so we have to enforce stability by keeping
          * track of the original indices */
@@ -74,6 +99,7 @@ static void MPIU_Sort_inttable( sorttype *keytable, int size )
     else
 #endif
     {
+        /* --BEGIN USEREXTENSION-- */
         /* fall through to insertion sort if qsort is unavailable/disabled */
         for (i = 1; i < size; ++i) {
             tmp = keytable[i];
@@ -91,6 +117,7 @@ static void MPIU_Sort_inttable( sorttype *keytable, int size )
             }
             keytable[j+1] = tmp;
         }
+        /* --END USEREXTENSION-- */
     }
 }
 
@@ -227,7 +254,7 @@ int MPIR_Comm_split_impl(MPID_Comm *comm_ptr, int color, int key, MPID_Comm **ne
 	if (comm_ptr->rank == 0) {
 	    mpi_errno = MPIC_Sendrecv( &new_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, 0, 0,
 				       &remote_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, 
-				       0, 0, comm_ptr->handle, MPI_STATUS_IGNORE );
+				       0, 0, comm_ptr->handle, MPI_STATUS_IGNORE, &errflag );
 	    if (mpi_errno) { MPIU_ERR_POP( mpi_errno ); }
 	    mpi_errno = MPIR_Bcast_impl( &remote_context_id, 1, MPIR_CONTEXT_ID_T_DATATYPE, 0, local_comm_ptr, &errflag );
             if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -347,8 +374,6 @@ int MPIR_Comm_split_impl(MPID_Comm *comm_ptr, int color, int key, MPID_Comm **ne
 	}
         MPIU_THREAD_CS_EXIT(MPI_OBJ, comm_ptr);
 
-        /* Notify the device of this new communicator */
-	MPID_Dev_comm_create_hook( *newcomm_ptr );
         mpi_errno = MPIR_Comm_commit(*newcomm_ptr);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
@@ -377,9 +402,9 @@ Input Parameters:
 + comm - communicator (handle) 
 . color - control of subset assignment (nonnegative integer).  Processes 
   with the same color are in the same new communicator 
-- key - control of rank assigment (integer)
+- key - control of rank assignment (integer)
 
-Output Parameter:
+Output Parameters:
 . newcomm - new communicator (handle) 
 
 Notes:
@@ -423,7 +448,6 @@ int MPI_Comm_split(MPI_Comm comm, int color, int key, MPI_Comm *newcomm)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }

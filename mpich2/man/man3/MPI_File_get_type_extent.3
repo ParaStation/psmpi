@@ -1,10 +1,9 @@
-.TH MPI_File_get_type_extent 3 "8/11/2010" " " "MPI"
+.TH MPI_File_get_type_extent 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_File_get_type_extent \-  Returns the extent of datatype in the file 
 .SH SYNOPSIS
 .nf
-int MPI_File_get_type_extent(MPI_File mpi_fh, MPI_Datatype datatype, 
-                             MPI_Aint *extent)
+int MPI_File_get_type_extent(MPI_File fh, MPI_Datatype datatype, MPI_Aint *extent)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -48,4 +47,4 @@ All MPI objects (e.g.,
 .I INTEGER
 in Fortran.
 .SH LOCATION
-get_extent.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/romio/mpi-io/get_extent.c

@@ -1,9 +1,9 @@
-.TH MPI_File_read 3 "12/9/2010" " " "MPI"
+.TH MPI_File_read 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_File_read \-  Read using individual file pointer 
 .SH SYNOPSIS
 .nf
-int MPI_File_read(MPI_File mpi_fh, void *buf, int count, 
+int MPI_File_read(MPI_File fh, void *buf, int count,
                   MPI_Datatype datatype, MPI_Status *status)
 .fi
 .SH INPUT PARAMETERS
@@ -58,4 +58,4 @@ All MPI objects (e.g.,
 .I INTEGER
 in Fortran.
 .SH LOCATION
-read.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/romio/mpi-io/read.c

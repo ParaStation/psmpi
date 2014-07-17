@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -25,7 +25,7 @@ void HYD_uiu_init_params(void)
     HYD_server_info.iface_ip_env_name = NULL;
 
     HYD_server_info.nameserver = NULL;
-    HYD_server_info.local_hostname = NULL;
+    HYD_server_info.localhost = NULL;
 
     HYD_server_info.stdout_cb = NULL;
     HYD_server_info.stderr_cb = NULL;
@@ -67,8 +67,8 @@ void HYD_uiu_free_params(void)
     if (HYD_server_info.nameserver)
         HYDU_FREE(HYD_server_info.nameserver);
 
-    if (HYD_server_info.local_hostname)
-        HYDU_FREE(HYD_server_info.local_hostname);
+    if (HYD_server_info.localhost)
+        HYDU_FREE(HYD_server_info.localhost);
 
     if (HYD_server_info.node_list)
         HYDU_free_node_list(HYD_server_info.node_list);
@@ -304,7 +304,7 @@ static HYD_status stdoe_cb(int _fd, int pgid, int proxy_id, int rank, void *_buf
     }
 
     if (HYD_ui_info.prepend_pattern == NULL) {
-        status = HYDU_sock_write(fd, buf, buflen, &sent, &closed);
+        status = HYDU_sock_write(fd, buf, buflen, &sent, &closed, HYDU_SOCK_COMM_MSGWAIT);
         HYDU_ERR_POP(status, "unable to write data to stdout/stderr\n");
         HYDU_ASSERT(!closed, status);
     }
@@ -318,10 +318,11 @@ static HYD_status stdoe_cb(int _fd, int pgid, int proxy_id, int rank, void *_buf
             if (buf[i] == '\n' || i == buflen - 1) {
                 if (prepend[0] != '\0') {       /* sock_write barfs on maxlen==0 */
                     status = HYDU_sock_write(fd, (const void *) prepend,
-                                             strlen(prepend), &sent, &closed);
+                                             strlen(prepend), &sent, &closed,
+                                             HYDU_SOCK_COMM_MSGWAIT);
                 }
                 status = HYDU_sock_write(fd, (const void *) &buf[mark], i - mark + 1,
-                                         &sent, &closed);
+                                         &sent, &closed, HYDU_SOCK_COMM_MSGWAIT);
                 HYDU_ERR_POP(status, "unable to write data to stdout/stderr\n");
                 HYDU_ASSERT(!closed, status);
                 mark = i + 1;

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -33,7 +33,7 @@
    MPI_Add_error_string - Associates an error string with an MPI error code or 
    class
 
-   Input Parameters:
+Input Parameters:
 + errorcode - error code or class (integer) 
 - string - text corresponding to errorcode (string) 
 
@@ -56,7 +56,7 @@ with this routine.
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Add_error_string(int errorcode, char *string)
+int MPI_Add_error_string(int errorcode, const char *string)
 {
     static const char FCNAME[] = "MPI_Add_error_string";
     int mpi_errno = MPI_SUCCESS;
@@ -73,7 +73,6 @@ int MPI_Add_error_string(int errorcode, char *string)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_ARGNULL(string,"string",mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

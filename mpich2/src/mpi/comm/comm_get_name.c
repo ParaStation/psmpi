@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -41,10 +41,10 @@ void MPIR_Comm_get_name_impl(MPID_Comm *comm_ptr, char *comm_name, int *resultle
 /*@
   MPI_Comm_get_name - Return the print name from the communicator
 
-  Input Parameter:
+Input Parameters:
 . comm - Communicator to get name of (handle)
 
-  Output Parameters:
+Output Parameters:
 + comm_name - On output, contains the name of the communicator.  It must
   be an array of size at least 'MPI_MAX_OBJECT_NAME'.
 - resultlen - Number of characters in name
@@ -77,7 +77,6 @@ int MPI_Comm_get_name(MPI_Comm comm, char *comm_name, int *resultlen)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -92,11 +91,11 @@ int MPI_Comm_get_name(MPI_Comm comm, char *comm_name, int *resultlen)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            if (mpi_errno) goto fn_fail;
 
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL( comm_name, "comm_name", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( resultlen, "resultlen", mpi_errno );
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

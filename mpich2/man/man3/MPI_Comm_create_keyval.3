@@ -1,4 +1,4 @@
-.TH MPI_Comm_create_keyval 3 "7/27/2010" " " "MPI"
+.TH MPI_Comm_create_keyval 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Comm_create_keyval \-  Create a new attribute key  
 .SH SYNOPSIS
@@ -10,14 +10,14 @@ int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
 .SH INPUT PARAMETERS
 .PD 0
 .TP
-.B copy_fn 
+.B comm_copy_attr_fn 
 - Copy callback function for 
 .I keyval
 
 .PD 1
 .PD 0
 .TP
-.B delete_fn 
+.B comm_delete_attr_fn 
 - Delete callback function for 
 .I keyval
 
@@ -28,7 +28,7 @@ int MPI_Comm_create_keyval(MPI_Comm_copy_attr_function *comm_copy_attr_fn,
 - Extra state for callback functions 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B comm_keyval 
@@ -59,7 +59,7 @@ There are subtle differences between C and Fortran that require that the
 copy_fn be written in the same language from which 
 .I MPI_Comm_create_keyval
 is called.
-This should not be a problem for most users; only programers using both
+This should not be a problem for most users; only programmers using both
 Fortran and C in the same program need to be sure that they follow this rule.
 
 
@@ -146,4 +146,4 @@ possible.
 MPI_Comm_free_keyval
 .br
 .SH LOCATION
-comm_create_keyval.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/attr/comm_create_keyval.c

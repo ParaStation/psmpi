@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /* 
  *
  *   Copyright (C) 1997 University of Chicago. 
@@ -77,6 +77,11 @@ extern struct ADIOI_Fns_struct ADIO_TESTFS_operations;
 #ifdef ROMIO_BGL
 extern struct ADIOI_Fns_struct ADIO_BGL_operations;
 /* prototypes are in adio/ad_bgl/ad_bgl.h */
+#endif
+
+#ifdef ROMIO_BG
+extern struct ADIOI_Fns_struct ADIO_BG_operations;
+/* prototypes are in adio/ad_bg/ad_bg.h */
 #endif
 
 #ifdef ROMIO_BGLOCKLESS

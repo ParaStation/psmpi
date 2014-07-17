@@ -1,10 +1,12 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
 #include "mpidimpl.h"
+#include "mpidrma.h"
+#include "mpidi_recvq_statistics.h"
 
 /*
  * This file contains the dispatch routine called by the ch3 progress 
@@ -24,7 +26,7 @@
 {								\
     (rreq_)->status.MPI_SOURCE = (pkt_)->match.parts.rank;	\
     (rreq_)->status.MPI_TAG = (pkt_)->match.parts.tag;		\
-    (rreq_)->status.count = (pkt_)->data_sz;			\
+    MPIR_STATUS_SET_COUNT((rreq_)->status, (pkt_)->data_sz);		\
     (rreq_)->dev.sender_req_id = (pkt_)->sender_req_id;		\
     (rreq_)->dev.recv_data_sz = (pkt_)->data_sz;		\
     MPIDI_Request_set_seqnum((rreq_), (pkt_)->seqnum);		\
@@ -130,7 +132,7 @@ int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t 
 		     "**truncate", "**truncate %d %d %d %d", 
 		     rreq->status.MPI_SOURCE, rreq->status.MPI_TAG, 
 		     rreq->dev.recv_data_sz, userbuf_sz );
-	rreq->status.count = userbuf_sz;
+	MPIR_STATUS_SET_COUNT(rreq->status, userbuf_sz);
 	data_sz = userbuf_sz;
     }
 
@@ -196,7 +198,7 @@ int MPIDI_CH3U_Receive_data_found(MPID_Request *rreq, char *buf, MPIDI_msg_sz_t 
                    mismatch between the datatype and the amount of
                    data received.  Throw away received data. */
                 MPIU_ERR_SET(rreq->status.MPI_ERROR, MPI_ERR_TYPE, "**dtypemismatch");
-                rreq->status.count = (int)rreq->dev.segment_first;
+                MPIR_STATUS_SET_COUNT(rreq->status, rreq->dev.segment_first);
                 *buflen = data_sz;
                 *complete = TRUE;
 		/* FIXME: Set OnDataAvail to 0?  If not, why not? */
@@ -271,6 +273,9 @@ int MPIDI_CH3U_Receive_data_unexpected(MPID_Request * rreq, char *buf, MPIDI_msg
         *complete = FALSE;
     }
 
+    if (MPIDI_Request_get_msg_type(rreq) == MPIDI_REQUEST_EAGER_MSG)
+        MPIR_T_PVAR_LEVEL_INC(RECVQ, unexpected_recvq_buffer_size, rreq->dev.tmpbuf_sz);
+
     rreq->dev.OnDataAvail = MPIDI_CH3_ReqHandler_UnpackUEBufComplete;
 
  fn_fail:
@@ -317,7 +322,7 @@ int MPIDI_CH3U_Post_data_receive_found(MPID_Request * rreq)
 		     "**truncate", "**truncate %d %d %d %d", 
 		     rreq->status.MPI_SOURCE, rreq->status.MPI_TAG, 
 		     rreq->dev.recv_data_sz, userbuf_sz );
-	rreq->status.count = userbuf_sz;
+	MPIR_STATUS_SET_COUNT(rreq->status, userbuf_sz);
 	data_sz = userbuf_sz;
     }
 
@@ -577,6 +582,10 @@ int MPIDI_CH3_PktHandler_Init( MPIDI_CH3_PktHandler_Fcn *pktArray[],
 	MPIDI_CH3_PktHandler_Lock;
     pktArray[MPIDI_CH3_PKT_LOCK_GRANTED] =
 	MPIDI_CH3_PktHandler_LockGranted;
+    pktArray[MPIDI_CH3_PKT_UNLOCK] =
+        MPIDI_CH3_PktHandler_Unlock;
+    pktArray[MPIDI_CH3_PKT_FLUSH] =
+        MPIDI_CH3_PktHandler_Flush;
     pktArray[MPIDI_CH3_PKT_PT_RMA_DONE] = 
 	MPIDI_CH3_PktHandler_PtRMADone;
     pktArray[MPIDI_CH3_PKT_LOCK_PUT_UNLOCK] = 
@@ -587,6 +596,18 @@ int MPIDI_CH3_PktHandler_Init( MPIDI_CH3_PktHandler_Fcn *pktArray[],
 	MPIDI_CH3_PktHandler_LockGetUnlock;
     pktArray[MPIDI_CH3_PKT_ACCUM_IMMED] = 
 	MPIDI_CH3_PktHandler_Accumulate_Immed;
+    pktArray[MPIDI_CH3_PKT_CAS] =
+        MPIDI_CH3_PktHandler_CAS;
+    pktArray[MPIDI_CH3_PKT_CAS_RESP] =
+        MPIDI_CH3_PktHandler_CASResp;
+    pktArray[MPIDI_CH3_PKT_FOP] =
+        MPIDI_CH3_PktHandler_FOP;
+    pktArray[MPIDI_CH3_PKT_FOP_RESP] =
+        MPIDI_CH3_PktHandler_FOPResp;
+    pktArray[MPIDI_CH3_PKT_GET_ACCUM] =
+        MPIDI_CH3_PktHandler_Accumulate;
+    pktArray[MPIDI_CH3_PKT_GET_ACCUM_RESP] =
+        MPIDI_CH3_PktHandler_Get_AccumResp;
     /* End of default RMA operations */
 
  fn_fail:

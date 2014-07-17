@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -83,9 +83,13 @@ void MPIR_MAXLOC(
 	MPI_Datatype *type )
 {
     int mpi_errno = MPI_SUCCESS;
-    int i, len = *Len, flen;
+    int i, len = *Len;
     
-    flen = len * 2; /* used for Fortran types */
+#ifdef HAVE_FORTRAN_BINDING
+#ifndef HAVE_NO_FORTRAN_MPI_TYPES_IN_C
+    int flen = len * 2; /* used for Fortran types */
+#endif
+#endif
 
     switch (*type) {
     /* first the C types */
@@ -101,9 +105,9 @@ void MPIR_MAXLOC(
     /* now the Fortran types */
 #ifdef HAVE_FORTRAN_BINDING
 #ifndef HAVE_NO_FORTRAN_MPI_TYPES_IN_C
-    case MPI_2INTEGER:          MPIR_MAXLOC_F_CASE(int);
-    case MPI_2REAL:             MPIR_MAXLOC_F_CASE(float);
-    case MPI_2DOUBLE_PRECISION: MPIR_MAXLOC_F_CASE(double);
+    case MPI_2INTEGER:          MPIR_MAXLOC_F_CASE(MPI_Fint);
+    case MPI_2REAL:             MPIR_MAXLOC_F_CASE(MPIR_FC_REAL_CTYPE);
+    case MPI_2DOUBLE_PRECISION: MPIR_MAXLOC_F_CASE(MPIR_FC_DOUBLE_CTYPE);
 #endif
 #endif
 	/* --BEGIN ERROR HANDLING-- */

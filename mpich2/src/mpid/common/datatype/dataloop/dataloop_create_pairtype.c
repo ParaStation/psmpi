@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -38,7 +38,7 @@
 @*/
 int PREPEND_PREFIX(Dataloop_create_pairtype)(MPI_Datatype type,
 					     DLOOP_Dataloop **dlp_p,
-					     int *dlsz_p,
+					     MPI_Aint *dlsz_p,
 					     int *dldepth_p,
 					     int flag)
 {

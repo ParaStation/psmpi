@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -7,7 +7,11 @@
 /* common header includes */
 #include <stdlib.h>
 #include "mpichconf.h" /* defines MPIU_THREAD_PACKAGE_NAME */
+#include "mpibase.h"
+#include "mpiutil.h" /* for HAS_NO_SYMBOLS_WARNING */
 #include "mpiu_thread.h"
+
+MPIU_SUPPRESS_OSX_HAS_NO_SYMBOLS_WARNING;
 
 /* This file currently implements these as a preprocessor if/elif/else sequence.
  * This has the upside of not doing #includes for .c files or (poorly

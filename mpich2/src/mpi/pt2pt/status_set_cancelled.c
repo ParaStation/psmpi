@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -61,7 +61,6 @@ int MPI_Status_set_cancelled(MPI_Status *status, int flag)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_ARGNULL( status, "status", mpi_errno );
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -69,7 +68,7 @@ int MPI_Status_set_cancelled(MPI_Status *status, int flag)
 
     /* ... body of routine ...  */
     
-    status->cancelled = flag ? TRUE : FALSE;
+    MPIR_STATUS_SET_CANCEL_BIT(*status, flag ? TRUE : FALSE);
 
     /* ... end of body of routine ... */
     

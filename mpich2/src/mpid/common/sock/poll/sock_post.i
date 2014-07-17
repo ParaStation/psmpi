@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -129,7 +129,7 @@ int MPIDU_Sock_post_connect_ifaddr( struct MPIDU_Sock_set * sock_set,
 	char addrString[64];
 	MPIDU_Sock_AddrToStr( ifaddr, addrString, sizeof(addrString) );
 	MPIU_DBG_MSG_FMT(CH3_CONNECT,TYPICAL,(MPIU_DBG_FDEST,
-			      "Connecting to %s:%d\n", addrString, port )); 
+			      "Connecting to %s:%d", addrString, port )); 
 	})
 
     do
@@ -333,10 +333,10 @@ int MPIDU_Sock_listen(struct MPIDU_Sock_set * sock_set, void * user_ptr,
 	int portnum;
 	/* see if we actually want to find values within a range */
 
-        MPIU_ERR_CHKANDJUMP(MPIR_PARAM_PORT_RANGE.low < 0 || MPIR_PARAM_PORT_RANGE.low > MPIR_PARAM_PORT_RANGE.high, mpi_errno, MPI_ERR_OTHER, "**badportrange");
+        MPIU_ERR_CHKANDJUMP(MPIR_CVAR_CH3_PORT_RANGE.low < 0 || MPIR_CVAR_CH3_PORT_RANGE.low > MPIR_CVAR_CH3_PORT_RANGE.high, mpi_errno, MPI_ERR_OTHER, "**badportrange");
 
         /* default MPICH_PORT_RANGE is {0,0} so bind will use any available port */
-        for (portnum = MPIR_PARAM_PORT_RANGE.low; portnum <= MPIR_PARAM_PORT_RANGE.high; ++portnum) {
+        for (portnum = MPIR_CVAR_CH3_PORT_RANGE.low; portnum <= MPIR_CVAR_CH3_PORT_RANGE.high; ++portnum) {
 	    memset( (void *)&addr, 0, sizeof(addr) );
 	    addr.sin_family      = AF_INET;
 	    addr.sin_addr.s_addr = htonl(INADDR_ANY);

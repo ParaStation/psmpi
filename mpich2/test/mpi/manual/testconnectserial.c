@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -11,6 +11,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include "mpitest.h"
 
 #include "connectstuff.h"
 
@@ -24,7 +25,9 @@ int main( int argc, char ** argv ) {
     int rankToAccept = 1;
 
     /* Debug - print out where we picked up the MPICH build from */
+#ifdef MPICHLIBSTR
     msg( "MPICH library taken from: %s\n", MPICHLIBSTR );
+#endif
 
     if( argc != 4 ) {
         printf( "Usage: %s <fname> <totalSize> <idx-1-based>\n", argv[0] );
@@ -117,7 +120,7 @@ int main( int argc, char ** argv ) {
     if( expectedRank == 0 ) {
 
         /* Cleanup on rank zero - delete some files */
-        sleep( 4 );
+        MTestSleep( 4 );
         unlink( actualFname );
         free( actualFname );
         unlink( globalFname );

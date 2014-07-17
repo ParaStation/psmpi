@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Alloc_mem */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -32,11 +31,11 @@
 /*@
    MPI_Alloc_mem - Allocate memory for message passing and RMA
 
-  Input Parameters:
+Input Parameters:
 + size - size of memory segment in bytes (nonnegative integer) 
 - info - info argument (handle) 
 
-  Output Parameter:
+Output Parameters:
 . baseptr - pointer to beginning of memory segment allocated 
 
    Notes:
@@ -78,14 +77,15 @@ int MPI_Alloc_mem(MPI_Aint size, MPI_Info info, void *baseptr)
         {
 	    MPIR_ERRTEST_ARGNEG(size, "size", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(baseptr, "baseptr", mpi_errno);
-            if (mpi_errno) goto fn_fail;
+            MPIR_ERRTEST_INFO_OR_NULL(info, mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
 
-    /* ... body of routine ...  */
     MPID_Info_get_ptr( info, info_ptr );
+
+    /* ... body of routine ...  */
 
     MPID_Ensure_Aint_fits_in_pointer(size);
     ap = MPID_Alloc_mem(size, info_ptr);

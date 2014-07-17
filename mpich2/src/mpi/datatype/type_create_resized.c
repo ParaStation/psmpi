@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -32,12 +32,12 @@
    MPI_Type_create_resized - Create a datatype with a new lower bound and
      extent from an existing datatype
 
-   Input Parameters:
+Input Parameters:
 + oldtype - input datatype (handle)
 . lb - new lower bound of datatype (address integer)
 - extent - new extent of datatype (address integer)
 
-   Output Parameter:
+Output Parameters:
 . newtype - output datatype (handle)
 
 .N ThreadSafe
@@ -73,7 +73,6 @@ int MPI_Type_create_resized(MPI_Datatype oldtype,
 	    MPID_Datatype *datatype_ptr = NULL;
 
 	    MPIR_ERRTEST_DATATYPE(oldtype, "datatype", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
             /* Validate datatype_ptr */
 	    MPID_Datatype_get_ptr(oldtype, datatype_ptr);

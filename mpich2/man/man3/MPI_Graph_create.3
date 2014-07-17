@@ -1,10 +1,10 @@
-.TH MPI_Graph_create 3 "8/31/2010" " " "MPI"
+.TH MPI_Graph_create 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Graph_create \-  Makes a new communicator to which topology information has been attached 
 .SH SYNOPSIS
 .nf
-int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *indx, int *edges, 
-                    int reorder, MPI_Comm *comm_graph)
+int MPI_Graph_create(MPI_Comm comm_old, int nnodes, const int indx[],
+                     const int edges[], int reorder, MPI_Comm *comm_graph)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -33,7 +33,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *indx, int *edges,
 - ranking may be reordered (true) or not (false) (logical) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B comm_graph 
@@ -143,4 +143,4 @@ identified by a specific error class (e.g.,
 .PD 1
 
 .SH LOCATION
-graphcreate.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/topo/graphcreate.c

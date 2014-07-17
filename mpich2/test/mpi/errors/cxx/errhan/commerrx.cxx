@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2011 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -33,7 +33,7 @@ int testCommCall( MPI::Comm &comm )
     }
     if (!sawException) {
 	int len;
-	char commname[MPI::MAX_OBJECT_NAME];
+	char commname[MPI_MAX_OBJECT_NAME];
 	comm.Get_name( commname, len );
 	std::cout << "Did not see MPI exception on invalid call on communicator " <<
 	    commname << "\n";

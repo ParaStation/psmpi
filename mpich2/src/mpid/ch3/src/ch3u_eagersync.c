@@ -74,7 +74,7 @@ int MPIDI_CH3_EagerSyncNoncontigSend( MPID_Request **sreq_p,
 	iov[1].MPID_IOV_LEN = data_sz;	
 	
 	MPIU_THREAD_CS_ENTER(CH3COMM,vc);
-	mpi_errno = MPIU_CALL(MPIDI_CH3,iSendv(vc, sreq, iov, 2));
+	mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, 2);
 	MPIU_THREAD_CS_EXIT(CH3COMM,vc);
 	/* --BEGIN ERROR HANDLING-- */
 	if (mpi_errno != MPI_SUCCESS)
@@ -146,7 +146,7 @@ int MPIDI_CH3_EagerSyncZero(MPID_Request **sreq_p, int rank, int tag,
     
     MPIU_DBG_MSGPKT(vc,tag,es_pkt->match.parts.context_id,rank,(MPIDI_msg_sz_t)0,"EagerSync0");
     MPIU_THREAD_CS_ENTER(CH3COMM,vc);
-    mpi_errno = MPIU_CALL(MPIDI_CH3,iSend(vc, sreq, es_pkt, sizeof(*es_pkt)));
+    mpi_errno = MPIDI_CH3_iSend(vc, sreq, es_pkt, sizeof(*es_pkt));
     MPIU_THREAD_CS_EXIT(CH3COMM,vc);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
@@ -178,8 +178,7 @@ int MPIDI_CH3_EagerSyncAck( MPIDI_VC_t *vc, MPID_Request *rreq )
     MPIDI_Pkt_init(esa_pkt, MPIDI_CH3_PKT_EAGER_SYNC_ACK);
     esa_pkt->sender_req_id = rreq->dev.sender_req_id;
     MPIU_THREAD_CS_ENTER(CH3COMM,vc);
-    mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), 
-					      &esa_req));
+    mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
     MPIU_THREAD_CS_EXIT(CH3COMM,vc);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_POP(mpi_errno);
@@ -202,7 +201,7 @@ int MPIDI_CH3_EagerSyncAck( MPIDI_VC_t *vc, MPID_Request *rreq )
 {								\
     (rreq_)->status.MPI_SOURCE = (pkt_)->match.parts.rank;	\
     (rreq_)->status.MPI_TAG = (pkt_)->match.parts.tag;		\
-    (rreq_)->status.count = (pkt_)->data_sz;			\
+    MPIR_STATUS_SET_COUNT((rreq_)->status, (pkt_)->data_sz);		\
     (rreq_)->dev.sender_req_id = (pkt_)->sender_req_id;		\
     (rreq_)->dev.recv_data_sz = (pkt_)->data_sz;		\
     MPIDI_Request_set_seqnum((rreq_), (pkt_)->seqnum);		\
@@ -279,8 +278,7 @@ int MPIDI_CH3_PktHandler_EagerSyncSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	esa_pkt->sender_req_id = rreq->dev.sender_req_id;
 	/* Because this is a packet handler, it is already within a CH3 CS */
 	/* MPIU_THREAD_CS_ENTER(CH3COMM,vc); */
-	mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsg(vc, esa_pkt, 
-						  sizeof(*esa_pkt), &esa_req));
+	mpi_errno = MPIDI_CH3_iStartMsg(vc, esa_pkt, sizeof(*esa_pkt), &esa_req);
 	/* MPIU_THREAD_CS_EXIT(CH3COMM,vc); */
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,

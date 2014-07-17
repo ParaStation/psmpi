@@ -1,10 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2010 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 /* 
- * Test of reduce scatter with large data (needed in MPICH2 to trigger the
+ * Test of reduce scatter with large data (needed in MPICH to trigger the
  * long-data algorithm)
  *
  * Each processor contributes its rank + the index to the reduction, 
@@ -74,7 +74,7 @@ int main( int argc, char **argv )
 	    err++;
 	    if (err < MAX_ERRORS) {
 		fprintf( stdout, "Did not get expected value for reduce scatter\n" );
-		fprintf( stdout, "[%d] Got recvbuf[%] = %d expected %d\n", 
+		fprintf( stdout, "[%d] Got recvbuf[%d] = %d expected %d\n",
 			 rank, i, recvbuf[i], sumval );
 	    }
 	}
@@ -86,7 +86,7 @@ int main( int argc, char **argv )
     sumval = size * rank + ((size - 1) * size)/2;
     /* recv'ed values for my process should be size * (rank + i) */
     for (i=0; i<mycount; i++) {
-	if (sendbuf[rank*mycount+i] != sumval) {
+	if (sendbuf[i] != sumval) {
 	    err++;
 	    if (err < MAX_ERRORS) {
 		fprintf( stdout, "Did not get expected value for reduce scatter (in place)\n" );

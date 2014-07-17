@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -34,12 +34,12 @@
   MPI_Pack_external_size - Returns the upper bound on the amount of
   space needed to pack a message using MPI_Pack_external.
 
-   Input Parameters:
+Input Parameters:
 + datarep - data representation (string)
 . incount - number of input data items (integer)
 - datatype - datatype of each input data item (handle)
 
-   Output Parameters:
+Output Parameters:
 . size - output buffer size, in bytes (address integer)
 
 .N ThreadSafe
@@ -51,13 +51,12 @@
 .N MPI_ERR_TYPE
 .N MPI_ERR_ARG
 @*/
-int MPI_Pack_external_size(char *datarep,
+int MPI_Pack_external_size(const char datarep[],
 			   int incount,
 			   MPI_Datatype datatype,
 			   MPI_Aint *size)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_Datatype *datatype_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PACK_EXTERNAL_SIZE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -70,22 +69,22 @@ int MPI_Pack_external_size(char *datarep,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COUNT(incount,mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif
-
-    /* Convert MPI object handles to object pointers */
-    MPID_Datatype_get_ptr(datatype, datatype_ptr);
 
     /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
+            MPID_Datatype *datatype_ptr = NULL;
+
+            /* Convert MPI object handles to object pointers */
+            MPID_Datatype_get_ptr(datatype, datatype_ptr);
+
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 	    /* If datatype_ptr is not valid, it will be reset to null */

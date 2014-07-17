@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -22,8 +22,7 @@
 #ifndef MPICH_MPI_FROM_PMPI
 /* The PMPI routine is built using a CPP macro to rename the MPI routine
    implemented below.  The MPI name must be undefined first to prevent any
-   conflicts with previous renamings, such as those put in place by the
-   globus device when it is building on top of a vendor MPI. */
+   conflicts with previous renamings. */
 #undef MPI_Foo
 #define MPI_Foo PMPI_Foo
 

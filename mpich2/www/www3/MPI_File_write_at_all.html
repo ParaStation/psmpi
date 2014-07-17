@@ -6,10 +6,10 @@
 </HEAD>
 <BODY BGCOLOR="FFFFFF">
 <A NAME="MPI_File_write_at_all"><H1>MPI_File_write_at_all</H1></A>
-Collective write using explict offset 
+Collective write using explicit offset 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_File_write_at_all(MPI_File mpi_fh, MPI_Offset offset, void *buf,
+int MPI_File_write_at_all(MPI_File fh, MPI_Offset offset, ROMIO_CONST void *buf,
                           int count, MPI_Datatype datatype, 
                           MPI_Status *status)
 </PRE>
@@ -38,5 +38,5 @@ in C.  In Fortran, MPI routines are subroutines, and are invoked with the
 <P>
 All MPI objects (e.g., <TT>MPI_Datatype</TT>, <TT>MPI_Comm</TT>) are of type <TT>INTEGER
 </TT>in Fortran.
-<P><B>Location:</B>write_atall.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/romio/mpi-io/write_atall.c<P>
 </BODY></HTML>

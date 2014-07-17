@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -233,8 +233,9 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
 			   int blocklength,
 			   int header)
 {
+#ifdef USE_DBG_LOGGING
     char *string;
-    int size;
+    MPI_Aint size;
     MPI_Aint extent, true_lb, true_ub, lb, ub, sticky_lb, sticky_ub;
 
     if (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) {
@@ -278,6 +279,7 @@ void MPIDI_Datatype_printf(MPI_Datatype type,
 		    (MPI_Aint) sticky_ub,
 		    (MPI_Aint) displacement,
 		    (int) blocklength));
+#endif
     return;
 }
 /* --END ERROR HANDLING-- */
@@ -395,6 +397,7 @@ char *MPIDU_Datatype_combiner_to_string(int combiner)
     static char c_hvector_integer[]  = "hvector_integer";
     static char c_hindexed_integer[] = "hindexed_integer";
     static char c_indexed_block[]    = "indexed_block";
+    static char c_hindexed_block[]   = "hindexed_block";
     static char c_struct_integer[]   = "struct_integer";
     static char c_subarray[]         = "subarray";
     static char c_darray[]           = "darray";
@@ -414,6 +417,7 @@ char *MPIDU_Datatype_combiner_to_string(int combiner)
     if (combiner == MPI_COMBINER_HVECTOR_INTEGER)  return c_hvector_integer;
     if (combiner == MPI_COMBINER_HINDEXED_INTEGER) return c_hindexed_integer;
     if (combiner == MPI_COMBINER_INDEXED_BLOCK)    return c_indexed_block;
+    if (combiner == MPI_COMBINER_HINDEXED_BLOCK)   return c_hindexed_block;
     if (combiner == MPI_COMBINER_STRUCT_INTEGER)   return c_struct_integer;
     if (combiner == MPI_COMBINER_SUBARRAY)         return c_subarray;
     if (combiner == MPI_COMBINER_DARRAY)           return c_darray;
@@ -430,7 +434,7 @@ void MPIDU_Datatype_debug(MPI_Datatype type,
 			  int array_ct)
 {
     int is_builtin;
-    MPID_Datatype *dtp;
+    MPID_Datatype *dtp ATTRIBUTE((unused));
 
     is_builtin = (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN);
 
@@ -455,8 +459,8 @@ void MPIDU_Datatype_debug(MPI_Datatype type,
     MPIU_Assert(dtp != NULL);
 
     MPIU_DBG_OUT_FMT(DATATYPE,(MPIU_DBG_FDEST,
-      "# Size = %d, Extent = " MPI_AINT_FMT_DEC_SPEC ", LB = " MPI_AINT_FMT_DEC_SPEC "%s, UB = " MPI_AINT_FMT_DEC_SPEC "%s, Extent = " MPI_AINT_FMT_DEC_SPEC ", Element Size = " MPI_AINT_FMT_DEC_SPEC " (%s), %s",
-		    (int) dtp->size,
+      "# Size = " MPI_AINT_FMT_DEC_SPEC ", Extent = " MPI_AINT_FMT_DEC_SPEC ", LB = " MPI_AINT_FMT_DEC_SPEC "%s, UB = " MPI_AINT_FMT_DEC_SPEC "%s, Extent = " MPI_AINT_FMT_DEC_SPEC ", Element Size = " MPI_AINT_FMT_DEC_SPEC " (%s), %s",
+		    (MPI_Aint) dtp->size,
 		    (MPI_Aint) dtp->extent,
 		    (MPI_Aint) dtp->lb,
 		    (dtp->has_sticky_lb) ? "(sticky)" : "",
@@ -633,6 +637,23 @@ void MPIDI_Datatype_contents_printf(MPI_Datatype type,
 					       acount);
 	    }
 	    __mpidi_datatype_free_and_return;
+	case MPI_COMBINER_SUBARRAY:
+	    MPIU_DBG_OUT_FMT(DATATYPE, (MPIU_DBG_FDEST,"# %ssubarray ct = %d:",
+			MPIDI_Datatype_depth_spacing(depth),
+			(int) ints[0]));
+	    for (i=0; i< acount && i < ints[0]; i++) {
+		MPIU_DBG_OUT_FMT(DATATYPE,(MPIU_DBG_FDEST,
+			    "# %s  sizes[%d] = %d subsizes[%d] = %d starts[%d] = %d\n",
+			    MPIDI_Datatype_depth_spacing(depth),
+			    i, (int)ints[i+1],
+			    i, (int)ints[i+ ints[0]+1],
+			    i, (int)ints[2*ints[0]+1]));
+	    }
+	    MPIDI_Datatype_contents_printf(*types,
+		    depth + 1,
+		    acount);
+	    __mpidi_datatype_free_and_return;
+
 	default:
 	    MPIU_DBG_OUT_FMT(DATATYPE,(MPIU_DBG_FDEST,"# %sunhandled combiner",
 			MPIDI_Datatype_depth_spacing(depth)));

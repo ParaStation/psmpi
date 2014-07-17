@@ -9,7 +9,7 @@
 Maps process to graph topology information 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *indx, int *edges,
+int MPI_Graph_map(MPI_Comm comm, int nnodes, const int indx[], const int edges[],
                   int *newrank)
 </PRE>
 <H2>Input Parameters</H2>
@@ -23,7 +23,7 @@ int MPI_Graph_map(MPI_Comm comm_old, int nnodes, int *indx, int *edges,
 <DT><B>edges </B><DD>integer array specifying the graph structure 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>newrank </B> <DD> reordered rank of the calling process; <TT>MPI_UNDEFINED</TT> if the 
 calling process does not belong to graph (integer) 
 </DL>
@@ -71,5 +71,5 @@ communicator in a call (not even allowed in <TT>MPI_Comm_rank</TT>).
 <DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
-<P><B>Location:</B>graph_map.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/topo/graph_map.c<P>
 </BODY></HTML>

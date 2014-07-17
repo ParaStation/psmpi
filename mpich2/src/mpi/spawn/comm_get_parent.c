@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -31,7 +31,7 @@
 /*@
    MPI_Comm_get_parent - Return the parent communicator for this process
 
-   Output Parameter:
+Output Parameters:
 . parent - the parent communicator (handle) 
 
    Notes:
@@ -73,7 +73,6 @@ int MPI_Comm_get_parent(MPI_Comm *parent)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_ARGNULL(parent, "parent", mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

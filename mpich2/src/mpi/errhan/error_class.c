@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -32,10 +32,10 @@
 /*@
    MPI_Error_class - Converts an error code into an error class
 
-Input Parameter:
+Input Parameters:
 . errorcode - Error code returned by an MPI routine 
 
-Output Parameter:
+Output Parameters:
 . errorclass - Error class associated with 'errorcode'
 
 .N SignalSafe
@@ -63,7 +63,6 @@ int MPI_Error_class(int errorcode, int *errorclass)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_ARGNULL(errorclass,"errorclass",mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

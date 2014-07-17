@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -14,11 +14,11 @@
 /*@
   MPID_Type_contiguous - create a contiguous datatype
 
-  Input Parameters:
+Input Parameters:
 + count - number of elements in the contiguous block
 - oldtype - type (using handle) of datatype on which vector is based
 
-  Output Parameters:
+Output Parameters:
 . newtype - handle of new contiguous datatype
 
   Return Value:
@@ -30,7 +30,7 @@ int MPID_Type_contiguous(int count,
 {
     int mpi_errno = MPI_SUCCESS;
     int is_builtin;
-    int el_sz;
+    MPI_Aint el_sz;
     MPI_Datatype el_type;
     MPID_Datatype *new_dtp;
 

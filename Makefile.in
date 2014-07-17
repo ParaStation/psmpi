@@ -15,10 +15,13 @@ TOP_BUILDDIR:=@TOP_BUILDDIR@
 CONFSET:=@CONFSET@
 export TOP_SRCDIR = $(SRCDIR)
 export CONFIGARGS:=@CONFIGARGS@
+exec_prefix=@exec_prefix@
 prefix=@prefix@
+libdir=@libdir@
+MODULEFILE=@MODULEFILE@
 ENABLE_MPD=@ENABLE_MPD@
-MPICH2_VERSION=@MPICH2_VERSION@
-MPICH2_RELEASE_DATE=@MPICH2_RELEASE_DATE@
+MPICH_VERSION=@MPICH_VERSION@
+MPICH_RELEASE_DATE=@MPICH_RELEASE_DATE@
 EXTRA_VERSION_INFO="@EXTRA_VERSION_INFO@"
 all:
 
@@ -28,17 +31,26 @@ ifneq ($(CONFSET),none)
 SUBDIRS += mpich2
 all: mpich2_all
 
+ifeq ($(ENABLE_MPD),false)
+MPIEXEC=/opt/parastation/bin/mpiexec
+else
+MPIEXEC=$(DESTDIR)$(prefix)/bin/mpiexec.hydra
+endif
+
 test testing:
-	export MPIEXEC=/opt/parastation/bin/mpiexec; \
+	export MPIEXEC=$(MPIEXEC); \
 	export PSI_OVERBOOK=1; \
 	export PSI_LOG_SILENT=1; \
 	export PSP_SCHED_YIELD=1; \
-	export LD_LIBRARY_PATH=$(TOP_BUILDDIR)/mpich2/lib:/opt/parastation/lib64; \
+	export MPIEXEC_UNIVERSE_SIZE=100; \
 	export _LOGNAME=$(SRCDIR)/doc/test-$$($(SRCDIR)/scripts/vcversion -r $(SRCDIR))_$$(date +%F_%T); \
-	( cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(TOP_BUILDDIR)/mpich2); \
+	( cd mpich2/test/mpi ; $(SRCDIR)/mpich2/test/mpi/configure --with-mpi=$(prefix) ); \
 	( hostname; rpm -qi pscom; rpm -qi psmgmt; $(SRCDIR)/scripts/vcversion -r $(SRCDIR); \
+	  echo $(MPIEXEC); \
 	  $(MAKE) -C mpich2 testing; \
 	  cp mpich2/test/mpi/summary.xml $${_LOGNAME}.xml; \
+	  cp mpich2/test/mpi/summary.tap $${_LOGNAME}.tap; \
+	  $(SRCDIR)/scripts/test-summary.sh $${_LOGNAME}.xml; \
 	) 2>&1 | tee -a $${_LOGNAME}.log; \
 	echo -e "\nSummary written to $${_LOGNAME}*"
 else
@@ -53,36 +65,34 @@ no_all:
 endif
 
 ########################################################
-install: install_mpich2 install_version $(prefix)/ChangeLog
+install: install_mpich2 modulefile install_version $(DESTDIR)$(prefix)/ChangeLog
 
 MPD_BIN += mpd mpdallexit mpdboot mpdcheck mpdchkpyver mpdcleanup mpdexit mpdgdbdrv
 MPD_BIN += mpdhelp mpdkilljob mpdlib mpdlistjobs mpdman mpdringtest mpdroot mpdrun
 MPD_BIN += mpdsigjob mpdtrace mpiexec mpirun
+MPD_BIN += mpiexec.hydra hydra_pmi_proxy hydra_persist hydra_nameserver
 MPD_FILES += $(MPD_BIN:%=bin/%) $(MPD_BIN:%=bin/%.py) $(MPD_BIN:%=bin/%.pyc) $(MPD_BIN:%=bin/%.pyo)
 MPD_FILES += share/man/man1/mpiexec.1 share/doc/www1/mpiexec.html
+LA_FILES += libmpichcxx.la libfmpich.la libmpl.la libopa.la libmpich.la libmpichf90.la
+
 
 install_mpich2:
-	$(MAKE) -C mpich2 install
-	$(RM) $(prefix)/sbin/mpeuninstall
-	$(RM) $(prefix)/sbin/mpecheckinstall
-	$(RM) $(prefix)/sbin/mpetestexec
-	$(RM) $(prefix)/sbin/mpetestexeclog
-	$(RM) $(prefix)/sbin/mpetestlink
-	@rmdir $(prefix)/sbin || echo ok
-# Hack: use lib*.so.3 when app needs lib*.so.1.1 or 1.2
-	set -x; \
-	for l in $(prefix)/lib/lib*.so.3; do \
-	    test -f "$$l" || { echo "Error: Missing $$l!"; exit 1; }; \
-	    ln -sf "$${l##*/}" "$${l%.3}.1.1"; \
-	    ln -sf "$${l##*/}" "$${l%.3}.1.2"; \
-	done
+	$(MAKE) ACLOCAL=/bin/true AUTOCONF=/bin/true AUTOHEADER=/bin/true AUTOMAKE=/bin/true -C mpich2 install 
+	$(RM) $(DESTDIR)$(prefix)/sbin/mpeuninstall
+	$(RM) $(DESTDIR)$(prefix)/sbin/mpecheckinstall
+	$(RM) $(DESTDIR)$(prefix)/sbin/mpetestexec
+	$(RM) $(DESTDIR)$(prefix)/sbin/mpetestexeclog
+	$(RM) $(DESTDIR)$(prefix)/sbin/mpetestlink
+	@rmdir $(DESTDIR)$(prefix)/sbin || echo ok
+# Remove libtool files	
+	$(RM) $(LA_FILES:%=$(DESTDIR)$(libdir)/%)
 ifeq ($(ENABLE_MPD),false)
 # remove installed mpd files
-	$(RM) $(MPD_FILES:%=$(prefix)/%)
+	$(RM) $(MPD_FILES:%=$(DESTDIR)$(prefix)/%)
 endif
 ifneq ($(fixpath),)
 #  sed optinon -i is not available in sed version 3.x !!!
-	find $(prefix) -type f -exec grep -q $(prefix) {} \; -print | while read i; do \
+	find $(DESTDIR)$(prefix) -type f -exec grep -q $(prefix) {} \; -print | while read i; do \
 	    if (file -b $$i | grep text >/dev/null) ; then \
 		echo Patch $$i; \
 		sed "s@$(prefix)@$(fixpath)@g" $$i > __tmp__; \
@@ -95,13 +105,14 @@ endif
 # Get Version
 VER:=$(shell cd $(TOP_SRCDIR) && scripts/vcversion)
 
-.PHONY install_version: $(prefix)/VERSION.psmpi2
+.PHONY install_version: $(DESTDIR)$(prefix)/VERSION.psmpi
 
-$(prefix)/VERSION.psmpi2:
+$(DESTDIR)$(prefix)/VERSION.psmpi:
 	mkdir -p $(dir $@)
 	echo "ParaStation $(VER) ($(shell date))" > $@
 	echo " config args: $(CONFIGARGS)" >> $@
-	echo " mpich2 version: $(MPICH2_VERSION) ($(MPICH2_RELEASE_DATE))" >> $@
+	echo " mpich version: $(MPICH_VERSION) ($(MPICH_RELEASE_DATE))" >> $@
+	echo " build host: $(shell hostname -s)" >> $@
 	test -z $(EXTRA_VERSION_INFO) || echo $(EXTRA_VERSION_INFO) >> $@
 ifneq ($(fixpath),)
 #  sed optinon -i is not available in sed version 3.x !!!
@@ -110,9 +121,17 @@ ifneq ($(fixpath),)
 	mv __tmp__version $@
 endif
 
-$(prefix)/ChangeLog: $(SRCDIR)/ChangeLog
+$(DESTDIR)$(prefix)/ChangeLog: $(SRCDIR)/ChangeLog
 	cp -a "$<" "$@"
 
+.PHONY modulefile: $(DESTDIR)$(MODULEFILE)
+
+$(DESTDIR)$(MODULEFILE):
+ifneq ($(fixpath),)
+	mkdir -p $(dir $@) && scripts/generate_modulefile.sh | sed "s@$(prefix)@$(fixpath)@g" > $@ || :
+else
+	mkdir -p $(dir $@) && scripts/generate_modulefile.sh > $@ || :
+endif
 ####################################################
 
 .PHONY: tar rpm srpm tag version
@@ -122,7 +141,7 @@ tar rpm srpm tag version:
 
 %_clean %_distclean %_all:
 	@echo "------------ $* ${@:$*_%=%} --------"
-	$(MAKE) -C $* ${@:$*_%=%} || :
+	$(MAKE) ACLOCAL=/bin/true AUTOCONF=/bin/true AUTOHEADER=/bin/true AUTOMAKE=/bin/true -C $* ${@:$*_%=%} || :
 
 clean:		$(SUBDIRS:=_clean)
 

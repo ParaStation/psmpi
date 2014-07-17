@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -32,7 +32,7 @@
 /*@
    MPI_Win_free_keyval - Frees an attribute key for MPI RMA windows
 
-   Input Parameter:
+Input Parameters:
 . win_keyval - key value (integer) 
 
 .N ThreadSafe
@@ -66,10 +66,8 @@ int MPI_Win_free_keyval(int *win_keyval)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_ARGNULL(*win_keyval, "win_keyval", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    MPIR_ERRTEST_KEYVAL(*win_keyval, MPID_WIN, "window", mpi_errno);
 	    MPIR_ERRTEST_KEYVAL_PERM(*win_keyval, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

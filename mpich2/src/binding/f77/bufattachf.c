@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach_( void*, MPI_Fint *, MPI_F
 #else
 #pragma _CRI duplicate mpi_buffer_attach_ as pmpi_buffer_attach_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_BUFFER_ATTACH( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_BUFFER_ATTACH")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach__( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_BUFFER_ATTACH")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach_( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_BUFFER_ATTACH")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_BUFFER_ATTACH")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_BUFFER_ATTACH( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach__( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach_( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_BUFFER_ATTACH( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach__( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach_( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_BUFFER_ATTACH( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach__( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach_( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_BUFFER_ATTACH( void*, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach__( void*, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach( void*, MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach_( void*, MPI_Fint *, MPI_F
 #pragma weak mpi_buffer_attach__ = mpi_buffer_attach
 #pragma weak mpi_buffer_attach_ = mpi_buffer_attach
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_BUFFER_ATTACH( void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach__( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_BUFFER_ATTACH")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach_( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_BUFFER_ATTACH")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_BUFFER_ATTACH")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_BUFFER_ATTACH( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_buffer_attach__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach__( void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach_( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_buffer_attach__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_buffer_attach__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_BUFFER_ATTACH( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_buffer_attach_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach__( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_buffer_attach_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach_( void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_buffer_attach_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_BUFFER_ATTACH( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_buffer_attach")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach__( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_buffer_attach")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach_( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_buffer_attach")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach( void*, MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_BUFFER_ATTACH( void*, MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_buffer_attach( void*, MPI_Fint *, MPI_F
 #pragma weak pmpi_buffer_attach__ = pmpi_buffer_attach
 #pragma weak pmpi_buffer_attach_ = pmpi_buffer_attach
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_buffer_attach__( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_BUFFER_ATTACH")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_buffer_attach_( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_BUFFER_ATTACH")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_buffer_attach( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_BUFFER_ATTACH")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_BUFFER_ATTACH( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_buffer_attach_( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_buffer_attach( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_BUFFER_ATTACH( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_buffer_attach__( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_buffer_attach( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_BUFFER_ATTACH( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_buffer_attach__( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_buffer_attach_( void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_buffer_attach")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_buffer_attach_ PMPI_BUFFER_ATTACH
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_buffer_attach( void*, MPI_Fint *, MPI_F
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Buffer_attach
 #define MPI_Buffer_attach PMPI_Buffer_attach 
 
@@ -187,5 +264,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_buffer_attach( void*, MPI_Fint *, MPI_F
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_buffer_attach_ ( void*v1, MPI_Fint *v2, MPI_Fint *ierr ){
-    *ierr = MPI_Buffer_attach( v1, *v2 );
+    *ierr = MPI_Buffer_attach( v1, (int)*v2 );
 }

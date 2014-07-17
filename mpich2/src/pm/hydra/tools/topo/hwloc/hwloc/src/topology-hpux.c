@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2010 INRIA.  All rights reserved.
- * Copyright © 2009-2010 Université Bordeaux 1
+ * Copyright © 2009-2012 Inria.  All rights reserved.
+ * Copyright © 2009-2010, 2013 Université Bordeaux 1
  * Copyright © 2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -18,7 +18,9 @@
 #include <private/autogen/config.h>
 
 #include <sys/types.h>
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 #include <string.h>
 #include <errno.h>
 #include <stdio.h>
@@ -159,18 +161,21 @@ hwloc_hpux_alloc_membind(hwloc_topology_t topology, size_t len, hwloc_const_node
 }
 #endif /* MAP_MEM_FIRST_TOUCH */
 
-void
-hwloc_look_hpux(struct hwloc_topology *topology)
+static int
+hwloc_look_hpux(struct hwloc_backend *backend)
 {
+  struct hwloc_topology *topology = backend->topology;
   int has_numa = sysconf(_SC_CCNUMA_SUPPORT) == 1;
   hwloc_obj_t *nodes = NULL, obj;
   spu_t currentcpu;
   ldom_t currentnode;
   int i, nbnodes = 0;
 
-#ifdef HAVE__SC_LARGE_PAGESIZE
-  topology->levels[0][0]->attr->machine.huge_page_size_kB = sysconf(_SC_LARGE_PAGESIZE);
-#endif
+  if (topology->levels[0][0]->cpuset)
+    /* somebody discovered things */
+    return 0;
+
+  hwloc_alloc_obj_cpusets(topology->levels[0][0]);
 
   if (has_numa) {
     nbnodes = mpctl(topology->flags & HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM ?
@@ -211,7 +216,8 @@ hwloc_look_hpux(struct hwloc_topology *topology)
     if (nodes) {
       /* Add this cpu to its node */
       currentnode = mpctl(MPC_SPUTOLDOM, currentcpu, 0);
-      if ((ldom_t) nodes[i]->os_index != currentnode)
+      /* Hopefully it's just the same as previous cpu */
+      if (i >= nbnodes || (ldom_t) nodes[i]->os_index != currentnode)
         for (i = 0; i < nbnodes; i++)
           if ((ldom_t) nodes[i]->os_index == currentnode)
             break;
@@ -239,24 +245,58 @@ hwloc_look_hpux(struct hwloc_topology *topology)
 
   topology->support.discovery->pu = 1;
 
-  hwloc_add_object_info(topology->levels[0][0], "Backend", "HP-UX");
+  hwloc_obj_add_info(topology->levels[0][0], "Backend", "HP-UX");
+  if (topology->is_thissystem)
+    hwloc_add_uname_info(topology);
+  return 1;
 }
 
 void
-hwloc_set_hpux_hooks(struct hwloc_topology *topology)
+hwloc_set_hpux_hooks(struct hwloc_binding_hooks *hooks,
+		     struct hwloc_topology_support *support __hwloc_attribute_unused)
 {
-  topology->set_proc_cpubind = hwloc_hpux_set_proc_cpubind;
-  topology->set_thisproc_cpubind = hwloc_hpux_set_thisproc_cpubind;
+  hooks->set_proc_cpubind = hwloc_hpux_set_proc_cpubind;
+  hooks->set_thisproc_cpubind = hwloc_hpux_set_thisproc_cpubind;
 #ifdef hwloc_thread_t
-  topology->set_thread_cpubind = hwloc_hpux_set_thread_cpubind;
-  topology->set_thisthread_cpubind = hwloc_hpux_set_thisthread_cpubind;
+  hooks->set_thread_cpubind = hwloc_hpux_set_thread_cpubind;
+  hooks->set_thisthread_cpubind = hwloc_hpux_set_thisthread_cpubind;
 #endif
 #ifdef MAP_MEM_FIRST_TOUCH
-  topology->alloc_membind = hwloc_hpux_alloc_membind;
-  topology->alloc = hwloc_alloc_mmap;
-  topology->free_membind = hwloc_free_mmap;
-  topology->support.membind->firsttouch_membind = 1;
-  topology->support.membind->bind_membind = 1;
-  topology->support.membind->interleave_membind = 1;
+  hooks->alloc_membind = hwloc_hpux_alloc_membind;
+  hooks->alloc = hwloc_alloc_mmap;
+  hooks->free_membind = hwloc_free_mmap;
+  support->membind->firsttouch_membind = 1;
+  support->membind->bind_membind = 1;
+  support->membind->interleave_membind = 1;
 #endif /* MAP_MEM_FIRST_TOUCH */
 }
+
+static struct hwloc_backend *
+hwloc_hpux_component_instantiate(struct hwloc_disc_component *component,
+				 const void *_data1 __hwloc_attribute_unused,
+				 const void *_data2 __hwloc_attribute_unused,
+				 const void *_data3 __hwloc_attribute_unused)
+{
+  struct hwloc_backend *backend;
+  backend = hwloc_backend_alloc(component);
+  if (!backend)
+    return NULL;
+  backend->discover = hwloc_look_hpux;
+  return backend;
+}
+
+static struct hwloc_disc_component hwloc_hpux_disc_component = {
+  HWLOC_DISC_COMPONENT_TYPE_CPU,
+  "hpux",
+  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
+  hwloc_hpux_component_instantiate,
+  50,
+  NULL
+};
+
+const struct hwloc_component hwloc_hpux_component = {
+  HWLOC_COMPONENT_ABI,
+  HWLOC_COMPONENT_TYPE_DISC,
+  0,
+  &hwloc_hpux_disc_component
+};

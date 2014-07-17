@@ -88,12 +88,13 @@ int MPID_Segment_contig_acc(DLOOP_Offset *blocks_p,
 }
 
 
+/* tm: see src/mpi/coll/opreplace.c
 static
 void MPIR_REPLACE(void *invec, void *inoutvec, int *Len, MPI_Datatype *type)
 {
 	memcpy(inoutvec, invec, *Len);
 }
-
+*/
 
 static inline
 MPI_User_function *get_op(MPI_Op op)

@@ -1,0 +1,2337 @@
+phoenix
+Name        : pscom
+Version     : 5.0.43
+Release     : 1_21_g9ab7382_extoll
+Architecture: x86_64
+Install Date: Mon 17 Feb 2014 04:37:46 PM CET
+Group       : System/Development/Libraries
+Size        : 715189
+License     : QPL
+Signature   : (none)
+Source RPM  : pscom-5.0.43-1_21_g9ab7382_extoll.src.rpm
+Build Date  : Mon 17 Feb 2014 04:37:33 PM CET
+Build Host  : phoenix
+Relocations : /opt/parastation 
+Packager    : support@par-tec.de
+Vendor      : ParTec Cluster Competence Center GmbH, Munich, Germany
+Summary     : ParaStation Cluster Communication drivers and libraries
+Description :
+ParaStation Cluster Communication drivers and libraries.
+Name        : psmgmt
+Version     : 5.0.45
+Release     : 0
+Architecture: x86_64
+Install Date: Tue 11 Mar 2014 11:51:35 AM CET
+Group       : Productivity/Clustering/Computing
+Size        : 2062848
+License     : QPL
+Signature   : (none)
+Source RPM  : psmgmt-5.0.45-0.src.rpm
+Build Date  : Tue 11 Mar 2014 11:50:16 AM CET
+Build Host  : phoenix
+Relocations : (not relocatable)
+Packager    : support@par-tec.de
+Vendor      : ParTec Cluster Competence Center GmbH, Munich, Germany
+Summary     : ParaStation Process Management
+Description :
+The ParaStation Process Management Layer.
+5.0.28-1_184_gd6ba913_master_3_0
+/home/hauke/repo/psmpi2/build/install/bin/mpiexec.hydra
+make[1]: Entering directory `/home/hauke/repo/psmpi2/build/mpich2'
+( cd test && make  testing )
+make[2]: Entering directory `/home/hauke/repo/psmpi2/build/mpich2/test'
+(NOXMLCLOSE=YES && export NOXMLCLOSE && cd mpi && make testing)
+make[3]: Entering directory `/home/hauke/repo/psmpi2/build/mpich2/test/mpi'
+./runtests -srcdir=/home/hauke/repo/psmpi2/mpich2/test/mpi -tests=testlist \
+	-mpiexec=/home/hauke/repo/psmpi2/build/install/bin/mpiexec.hydra -xmlfile=summary.xml \
+	-tapfile=summary.tap
+Looking in ./testlist
+Processing directory parastation
+Looking in ./parastation/testlist
+Processing directory attr
+Looking in ./attr/testlist
+Processing directory coll
+Looking in ./coll/testlist
+Processing directory comm
+Looking in ./comm/testlist
+Processing directory datatype
+Looking in ./datatype/testlist
+Processing directory errhan
+Looking in ./errhan/testlist
+Processing directory group
+Looking in ./group/testlist
+Processing directory info
+Looking in ./info/testlist
+Processing directory init
+Looking in ./init/testlist
+Some programs (version) may still be running:
+pids = 5954 11779 
+The executable (version) will not be removed.
+Processing directory mpi_t
+Looking in ./mpi_t/testlist
+Processing directory pt2pt
+Looking in ./pt2pt/testlist
+Unexpected output in scancel: Failed to cancel an Isend request
+Unexpected output in scancel: Failed to cancel an Ibsend request
+Unexpected output in scancel: Failed to cancel an Isend request
+Unexpected output in scancel: Failed to cancel an Ibsend request
+Unexpected output in scancel: Failed to cancel an Isend request
+Unexpected output in scancel: Failed to cancel an Ibsend request
+Unexpected output in scancel: Failed to cancel an Isend request
+Unexpected output in scancel: Failed to cancel an Ibsend request
+Unexpected output in scancel:  Found 8 errors
+Program scancel exited without No Errors
+Unexpected output in pscancel: Failed to cancel a persistent send request
+Unexpected output in pscancel: Failed to cancel a persistent bsend request
+Unexpected output in pscancel: Failed to cancel a persistent send request
+Unexpected output in pscancel: Failed to cancel a persistent bsend request
+Unexpected output in pscancel: Failed to cancel a persistent send request
+Unexpected output in pscancel: Failed to cancel a persistent bsend request
+Unexpected output in pscancel: Failed to cancel a persistent send request
+Unexpected output in pscancel: Failed to cancel a persistent bsend request
+Unexpected output in pscancel:  Found 8 errors
+Program pscancel exited without No Errors
+Processing directory rma
+Looking in ./rma/testlist
+Unexpected output in rmanull: 
+Unexpected output in rmanull: ===================================================================================
+Unexpected output in rmanull: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in rmanull: =   EXIT CODE: 11
+Unexpected output in rmanull: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in rmanull: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in rmanull: ===================================================================================
+Unexpected output in rmanull: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in rmanull: This typically refers to a problem with your application.
+Unexpected output in rmanull: Please see the FAQ page for debugging suggestions
+Program rmanull exited without No Errors
+Unexpected output in rmazero: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in rmazero: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in rmazero: Zero-byte op Get accumulate: Error class 44 (Unsupported file operation , error stack:
+Unexpected output in rmazero: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1ff8150, origin_count=0, MPI_INT, result_addr=0x1ff7d40, result_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, MPI_SUM, win=0xa0000000) failed
+Unexpected output in rmazero: (unknown)(): Unsupported file operation )
+Unexpected output in rmazero: Zero-byte op Get accumulate: Error class 44 (Unsupported file operation , error stack:
+Unexpected output in rmazero: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x248c150, origin_count=0, MPI_INT, result_addr=0x248bd40, result_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, MPI_SUM, win=0xa0000000) failed
+Unexpected output in rmazero: (unknown)(): Unsupported file operation )
+Unexpected output in rmazero: Zero-byte op Get accumulate: Error class 44 (Unsupported file operation , error stack:
+Unexpected output in rmazero: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1ff8150, origin_count=0, MPI_INT, result_addr=0x1ff7d40, result_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, MPI_SUM, win=0xa0000000) failed
+Unexpected output in rmazero: (unknown)(): Unsupported file operation )
+Unexpected output in rmazero: Zero-byte op Rput: Error class 44 (Unsupported file operation , error stack:
+Unexpected output in rmazero: MPI_Rput(172): MPI_Rput(origin_addr=0x1ff8150, origin_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, win=0xa0000000, request=0x7fff5dfbffdc) failed
+Unexpected output in rmazero: (unknown)(): Unsupported file operation )
+Unexpected output in rmazero: Warning: MPID_Rput() not implemented
+Unexpected output in rmazero: Fatal error in PMPI_Wait: Invalid MPI_Request, error stack:
+Unexpected output in rmazero: PMPI_Wait(180): MPI_Wait(request=0x7fff5dfbffdc, status=0x1) failed
+Unexpected output in rmazero: PMPI_Wait(133): Invalid MPI_Request
+Unexpected output in rmazero: ===================================================================================
+Unexpected output in rmazero: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in rmazero: =   EXIT CODE: 1
+Unexpected output in rmazero: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in rmazero: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in rmazero: ===================================================================================
+Program rmazero exited without No Errors
+Unexpected output in strided_putget_indexed_shared: Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in strided_putget_indexed_shared: Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in strided_putget_indexed_shared: Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in strided_putget_indexed_shared: Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in strided_putget_indexed_shared: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fffc096a190, win=0x7fffc096a180) failed
+Unexpected output in strided_putget_indexed_shared: (unknown)(): Unsupported file operation Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in strided_putget_indexed_shared: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff75338f10, win=0x7fff75338f00) failed
+Unexpected output in strided_putget_indexed_shared: (unknown)(): Unsupported file operation 
+Unexpected output in strided_putget_indexed_shared: ===================================================================================
+Unexpected output in strided_putget_indexed_shared: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in strided_putget_indexed_shared: =   EXIT CODE: 1
+Unexpected output in strided_putget_indexed_shared: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in strided_putget_indexed_shared: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in strided_putget_indexed_shared: ===================================================================================
+Program strided_putget_indexed_shared exited without No Errors
+Unexpected output in strided_getacc_indexed: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in strided_getacc_indexed: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in strided_getacc_indexed: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in strided_getacc_indexed: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x2092ce0, origin_count=1, dtype=USER<indexed>, result_addr=0x20a2cf0, result_count=1, dtype=USER<indexed>, target_rank=1, target_disp=0, target_count=1, dtype=USER<indexed>, MPI_REPLACE, win=0xa0000000) failed
+Unexpected output in strided_getacc_indexed: (unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in strided_getacc_indexed: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x2277ce0, origin_count=1, dtype=USER<indexed>, result_addr=0x2287cf0, result_count=1, dtype=USER<indexed>, target_rank=2, target_disp=0, target_count=1, dtype=USER<indexed>, MPI_REPLACE, win=0xa0000000) failed
+Unexpected output in strided_getacc_indexed: (unknown)(): Unsupported file operation 
+Unexpected output in strided_getacc_indexed: ===================================================================================
+Unexpected output in strided_getacc_indexed: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in strided_getacc_indexed: =   EXIT CODE: 1
+Unexpected output in strided_getacc_indexed: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in strided_getacc_indexed: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in strided_getacc_indexed: ===================================================================================
+Program strided_getacc_indexed exited without No Errors
+Unexpected output in strided_getacc_indexed_shared: Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in strided_getacc_indexed_shared: Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in strided_getacc_indexed_shared: Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in strided_getacc_indexed_shared: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff0cf57850, win=0x7fff0cf57840) failed
+Unexpected output in strided_getacc_indexed_shared: (unknown)(): Unsupported file operation Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in strided_getacc_indexed_shared: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fffc445af00, win=0x7fffc445aef0) failed
+Unexpected output in strided_getacc_indexed_shared: (unknown)(): Unsupported file operation 
+Unexpected output in strided_getacc_indexed_shared: ===================================================================================
+Unexpected output in strided_getacc_indexed_shared: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in strided_getacc_indexed_shared: =   EXIT CODE: 1
+Unexpected output in strided_getacc_indexed_shared: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in strided_getacc_indexed_shared: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in strided_getacc_indexed_shared: ===================================================================================
+Program strided_getacc_indexed_shared exited without No Errors
+Unexpected output in win_flavors: 2: MPI_Win_create - Error, bad flavor (0)
+Unexpected output in win_flavors: 2: MPI_Win_create - Error, bad model (0)
+Unexpected output in win_flavors: 3: MPI_Win_create - Error, bad flavor (0)
+Unexpected output in win_flavors: 3: MPI_Win_create - Error, bad model (0)
+Unexpected output in win_flavors: 0: MPI_Win_create - Error, bad flavor (0)
+Unexpected output in win_flavors: 0: MPI_Win_create - Error, bad model (0)
+Unexpected output in win_flavors: 1: MPI_Win_create - Error, bad flavor (0)
+Unexpected output in win_flavors: 1: MPI_Win_create - Error, bad model (0)
+Unexpected output in win_flavors: Warning: MPID_Win_allocate() not implemented
+Unexpected output in win_flavors: Warning: MPID_Win_allocate() not implemented
+Unexpected output in win_flavors: Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+Unexpected output in win_flavors: MPI_Win_allocate(161): MPI_Win_allocate(size=8, disp_unit=1, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff316871b0, win=0x7fff3168718c) failed
+Unexpected output in win_flavors: (unknown)(): Unsupported file operation Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+Unexpected output in win_flavors: MPI_Win_allocate(161): MPI_Win_allocate(size=0, disp_unit=1, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7ffff1676f00, win=0x7ffff1676edc) failed
+Unexpected output in win_flavors: (unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
+Unexpected output in win_flavors: Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+Unexpected output in win_flavors: MPI_Win_allocate(161): MPI_Win_allocate(size=24, disp_unit=1, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff9bb7e740, win=0x7fff9bb7e71c) failed
+Unexpected output in win_flavors: (unknown)(): Unsupported file operation 
+Unexpected output in win_flavors: ===================================================================================
+Unexpected output in win_flavors: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in win_flavors: =   EXIT CODE: 1
+Unexpected output in win_flavors: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in win_flavors: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in win_flavors: ===================================================================================
+Program win_flavors exited without No Errors
+Unexpected output in win_shared: Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in win_shared: Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in win_shared: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff795b9030, win=0x7fff795b9018) failed
+Unexpected output in win_shared: (unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in win_shared: Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in win_shared: Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in win_shared: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fffbccdc380, win=0x7fffbccdc368) failed
+Unexpected output in win_shared: (unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in win_shared: Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in win_shared: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff4e7bdbd0, win=0x7fff4e7bdbb8) failed
+Unexpected output in win_shared: (unknown)(): Unsupported file operation Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in win_shared: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff6a754050, win=0x7fff6a754038) failed
+Unexpected output in win_shared: (unknown)(): Unsupported file operation 
+Unexpected output in win_shared: ===================================================================================
+Unexpected output in win_shared: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in win_shared: =   EXIT CODE: 1
+Unexpected output in win_shared: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in win_shared: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in win_shared: ===================================================================================
+Program win_shared exited without No Errors
+Unexpected output in win_shared_noncontig: Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in win_shared_noncontig: Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in win_shared_noncontig: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fffb8ffae18, win=0x7fffb8ffadf8) failed
+Unexpected output in win_shared_noncontig: (unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in win_shared_noncontig: Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in win_shared_noncontig: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff6b86efe8, win=0x7fff6b86efc8) failed
+Unexpected output in win_shared_noncontig: (unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in win_shared_noncontig: Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in win_shared_noncontig: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff81de4f38, win=0x7fff81de4f18) failed
+Unexpected output in win_shared_noncontig: (unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in win_shared_noncontig: Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in win_shared_noncontig: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff1884d668, win=0x7fff1884d648) failed
+Unexpected output in win_shared_noncontig: (unknown)(): Unsupported file operation 
+Unexpected output in win_shared_noncontig: ===================================================================================
+Unexpected output in win_shared_noncontig: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in win_shared_noncontig: =   EXIT CODE: 1
+Unexpected output in win_shared_noncontig: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in win_shared_noncontig: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in win_shared_noncontig: ===================================================================================
+Program win_shared_noncontig exited without No Errors
+Unexpected output in win_shared_noncontig_put: Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in win_shared_noncontig_put: Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in win_shared_noncontig_put: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff854b1698, win=0x7fff854b1660) failed
+Unexpected output in win_shared_noncontig_put: (unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in win_shared_noncontig_put: Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in win_shared_noncontig_put: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff5e333968, win=0x7fff5e333930) failed
+Unexpected output in win_shared_noncontig_put: (unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in win_shared_noncontig_put: Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in win_shared_noncontig_put: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7ffff4bbf1a8, win=0x7ffff4bbf170) failed
+Unexpected output in win_shared_noncontig_put: (unknown)(): Unsupported file operation 
+Unexpected output in win_shared_noncontig_put: ===================================================================================
+Unexpected output in win_shared_noncontig_put: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in win_shared_noncontig_put: =   EXIT CODE: 1
+Unexpected output in win_shared_noncontig_put: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in win_shared_noncontig_put: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in win_shared_noncontig_put: ===================================================================================
+Program win_shared_noncontig_put exited without No Errors
+Unexpected output in win_dynamic_acc: Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in win_dynamic_acc: Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in win_dynamic_acc: Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+Unexpected output in win_dynamic_acc: MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff1f61425c) failed
+Unexpected output in win_dynamic_acc: (unknown)(): Unsupported file operation 
+Unexpected output in win_dynamic_acc: ===================================================================================
+Unexpected output in win_dynamic_acc: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in win_dynamic_acc: =   EXIT CODE: 1
+Unexpected output in win_dynamic_acc: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in win_dynamic_acc: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in win_dynamic_acc: ===================================================================================
+Program win_dynamic_acc exited without No Errors
+Unexpected output in get_acc_local: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_acc_local: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_acc_local: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x404e24, origin_count=1, MPI_INT, result_addr=0x7fff2efc15d4, result_count=1, MPI_INT, target_rank=0, target_disp=0, target_count=1, MPI_INT, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_acc_local: (unknown)(): Unsupported file operation 
+Unexpected output in get_acc_local: ===================================================================================
+Unexpected output in get_acc_local: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in get_acc_local: =   EXIT CODE: 1
+Unexpected output in get_acc_local: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in get_acc_local: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in get_acc_local: ===================================================================================
+Program get_acc_local exited without No Errors
+Unexpected output in linked_list: Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in linked_list: Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+Unexpected output in linked_list: MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff3c42005c) failed
+Unexpected output in linked_list: (unknown)(): Unsupported file operation 
+Unexpected output in linked_list: ===================================================================================
+Unexpected output in linked_list: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in linked_list: =   EXIT CODE: 1
+Unexpected output in linked_list: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in linked_list: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in linked_list: ===================================================================================
+Program linked_list exited without No Errors
+Unexpected output in linked_list_fop: Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in linked_list_fop: Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+Unexpected output in linked_list_fop: MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff62f8d71c) failed
+Unexpected output in linked_list_fop: (unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in linked_list_fop: Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+Unexpected output in linked_list_fop: MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffe86888ac) failed
+Unexpected output in linked_list_fop: (unknown)(): Unsupported file operation 
+Unexpected output in linked_list_fop: ===================================================================================
+Unexpected output in linked_list_fop: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in linked_list_fop: =   EXIT CODE: 1
+Unexpected output in linked_list_fop: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in linked_list_fop: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in linked_list_fop: ===================================================================================
+Program linked_list_fop exited without No Errors
+Unexpected output in compare_and_swap: Warning: MPID_Compare_and_swap() not implemented
+Unexpected output in compare_and_swap: Warning: MPID_Compare_and_swap() not implemented
+Unexpected output in compare_and_swap: Fatal error in MPI_Compare_and_swap: Unsupported file operation , error stack:
+Unexpected output in compare_and_swap: MPI_Compare_and_swap(149): MPI_Compare_and_swap(origin_addr=0x7fff56653d10, compare_addr=0x7fff56653cd0, result_addr=0x7fff56653d20, MPI_INT, target_rank=0, target_disp=0, win=0xa0000000) failed
+Unexpected output in compare_and_swap: (unknown)(): Unsupported file operation Warning: MPID_Compare_and_swap() not implemented
+Unexpected output in compare_and_swap: Fatal error in MPI_Compare_and_swap: Unsupported file operation , error stack:
+Unexpected output in compare_and_swap: MPI_Compare_and_swap(149): MPI_Compare_and_swap(origin_addr=0x7ffffdf8d390, compare_addr=0x7ffffdf8d350, result_addr=0x7ffffdf8d3a0, MPI_INT, target_rank=2, target_disp=0, win=0xa0000000) failed
+Unexpected output in compare_and_swap: (unknown)(): Unsupported file operation Fatal error in MPI_Compare_and_swap: Unsupported file operation , error stack:
+Unexpected output in compare_and_swap: MPI_Compare_and_swap(149): MPI_Compare_and_swap(origin_addr=0x7fff11ef33c0, compare_addr=0x7fff11ef3380, result_addr=0x7fff11ef33d0, MPI_INT, target_rank=3, target_disp=0, win=0xa0000000) failed
+Unexpected output in compare_and_swap: (unknown)(): Unsupported file operation 
+Unexpected output in compare_and_swap: ===================================================================================
+Unexpected output in compare_and_swap: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in compare_and_swap: =   EXIT CODE: 1
+Unexpected output in compare_and_swap: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in compare_and_swap: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in compare_and_swap: ===================================================================================
+Program compare_and_swap exited without No Errors
+Unexpected output in fetch_and_op_char: Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_char: Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_char: Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_char: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffa087e8a0, result_addr=0x7fffa087e8b0, MPI_CHAR, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_char: (unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_char: Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_char: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff0819e410, result_addr=0x7fff0819e420, MPI_CHAR, target_rank=3, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_char: (unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_char: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff5a996f70, result_addr=0x7fff5a996f80, MPI_CHAR, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_char: (unknown)(): Unsupported file operation 
+Unexpected output in fetch_and_op_char: ===================================================================================
+Unexpected output in fetch_and_op_char: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in fetch_and_op_char: =   EXIT CODE: 1
+Unexpected output in fetch_and_op_char: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in fetch_and_op_char: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in fetch_and_op_char: ===================================================================================
+Program fetch_and_op_char exited without No Errors
+Unexpected output in fetch_and_op_short: Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_short: Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_short: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff95719be0, result_addr=0x7fff95719bf0, MPI_SHORT, target_rank=0, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_short: (unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_short: Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_short: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff48834380, result_addr=0x7fff48834390, MPI_SHORT, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_short: (unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_short: Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_short: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff23d705c0, result_addr=0x7fff23d705d0, MPI_SHORT, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_short: (unknown)(): Unsupported file operation 
+Unexpected output in fetch_and_op_short: ===================================================================================
+Unexpected output in fetch_and_op_short: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in fetch_and_op_short: =   EXIT CODE: 1
+Unexpected output in fetch_and_op_short: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in fetch_and_op_short: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in fetch_and_op_short: ===================================================================================
+Program fetch_and_op_short exited without No Errors
+Unexpected output in fetch_and_op_int: Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_int: Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_int: Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_int: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff02a34880, result_addr=0x7fff02a34890, MPI_INT, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_int: (unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_int: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffe75674f0, result_addr=0x7fffe7567500, MPI_INT, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_int: (unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_int: Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_int: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff9c09eb80, result_addr=0x7fff9c09eb90, MPI_INT, target_rank=0, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_int: (unknown)(): Unsupported file operation 
+Unexpected output in fetch_and_op_int: ===================================================================================
+Unexpected output in fetch_and_op_int: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in fetch_and_op_int: =   EXIT CODE: 1
+Unexpected output in fetch_and_op_int: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in fetch_and_op_int: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in fetch_and_op_int: ===================================================================================
+Program fetch_and_op_int exited without No Errors
+Unexpected output in fetch_and_op_long: Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_long: Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_long: Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_long: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7ffffa69ae50, result_addr=0x7ffffa69ae60, MPI_LONG, target_rank=3, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_long: (unknown)(): Unsupported file operation 
+Unexpected output in fetch_and_op_long: ===================================================================================
+Unexpected output in fetch_and_op_long: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in fetch_and_op_long: =   EXIT CODE: 1
+Unexpected output in fetch_and_op_long: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in fetch_and_op_long: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in fetch_and_op_long: ===================================================================================
+Program fetch_and_op_long exited without No Errors
+Unexpected output in fetch_and_op_double: Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_double: Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_double: Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_double: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff9e8d8020, result_addr=0x7fff9e8d8030, MPI_DOUBLE, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_double: (unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_double: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff3ae2c7b0, result_addr=0x7fff3ae2c7c0, MPI_DOUBLE, target_rank=3, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_double: (unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_double: Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_double: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff429a8c70, result_addr=0x7fff429a8c80, MPI_DOUBLE, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_double: (unknown)(): Unsupported file operation 
+Unexpected output in fetch_and_op_double: ===================================================================================
+Unexpected output in fetch_and_op_double: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in fetch_and_op_double: =   EXIT CODE: 1
+Unexpected output in fetch_and_op_double: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in fetch_and_op_double: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in fetch_and_op_double: ===================================================================================
+Program fetch_and_op_double exited without No Errors
+Unexpected output in fetch_and_op_long_double: Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_long_double: Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_long_double: Warning: MPID_Fetch_and_op() not implemented
+Unexpected output in fetch_and_op_long_double: Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_long_double: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffb24b6bb0, result_addr=0x7fffb24b6bc0, MPI_LONG_DOUBLE, target_rank=0, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_long_double: (unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_long_double: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffc7a49500, result_addr=0x7fffc7a49510, MPI_LONG_DOUBLE, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_long_double: (unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+Unexpected output in fetch_and_op_long_double: MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffe467c240, result_addr=0x7fffe467c250, MPI_LONG_DOUBLE, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
+Unexpected output in fetch_and_op_long_double: (unknown)(): Unsupported file operation 
+Unexpected output in fetch_and_op_long_double: ===================================================================================
+Unexpected output in fetch_and_op_long_double: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in fetch_and_op_long_double: =   EXIT CODE: 1
+Unexpected output in fetch_and_op_long_double: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in fetch_and_op_long_double: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in fetch_and_op_long_double: ===================================================================================
+Program fetch_and_op_long_double exited without No Errors
+Unexpected output in get_accumulate_double: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_double: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_double: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_double: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x104e7d0, origin_count=5, MPI_DOUBLE, result_addr=0x1051d80, result_count=5, MPI_DOUBLE, target_rank=2, target_disp=0, target_count=5, MPI_DOUBLE, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_double: (unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_double: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_double: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xf667d0, origin_count=5, MPI_DOUBLE, result_addr=0xf69d80, result_count=5, MPI_DOUBLE, target_rank=3, target_disp=0, target_count=5, MPI_DOUBLE, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_double: (unknown)(): Unsupported file operation 
+Unexpected output in get_accumulate_double: ===================================================================================
+Unexpected output in get_accumulate_double: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in get_accumulate_double: =   EXIT CODE: 1
+Unexpected output in get_accumulate_double: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in get_accumulate_double: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in get_accumulate_double: ===================================================================================
+Program get_accumulate_double exited without No Errors
+Unexpected output in get_accumulate_double_derived: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_double_derived: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_double_derived: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_double_derived: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1c337d0, origin_count=5, dtype=USER<contig>, result_addr=0x1c36d80, result_count=5, dtype=USER<contig>, target_rank=0, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_double_derived: (unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_double_derived: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x22b47d0, origin_count=5, dtype=USER<contig>, result_addr=0x22b7d80, result_count=5, dtype=USER<contig>, target_rank=1, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_double_derived: (unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_double_derived: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_double_derived: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x132d7d0, origin_count=5, dtype=USER<contig>, result_addr=0x1330d80, result_count=5, dtype=USER<contig>, target_rank=3, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_double_derived: (unknown)(): Unsupported file operation 
+Unexpected output in get_accumulate_double_derived: ===================================================================================
+Unexpected output in get_accumulate_double_derived: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in get_accumulate_double_derived: =   EXIT CODE: 1
+Unexpected output in get_accumulate_double_derived: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in get_accumulate_double_derived: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in get_accumulate_double_derived: ===================================================================================
+Program get_accumulate_double_derived exited without No Errors
+Unexpected output in get_accumulate_int: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_int: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_int: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x9947d0, origin_count=5, MPI_INT, result_addr=0x997d30, result_count=5, MPI_INT, target_rank=0, target_disp=0, target_count=5, MPI_INT, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_int: (unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_int: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_int: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xe6e7d0, origin_count=5, MPI_INT, result_addr=0xe71d30, result_count=5, MPI_INT, target_rank=1, target_disp=0, target_count=5, MPI_INT, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_int: (unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_int: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_int: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xcdd7d0, origin_count=5, MPI_INT, result_addr=0xce0d30, result_count=5, MPI_INT, target_rank=3, target_disp=0, target_count=5, MPI_INT, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_int: (unknown)(): Unsupported file operation 
+Unexpected output in get_accumulate_int: ===================================================================================
+Unexpected output in get_accumulate_int: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in get_accumulate_int: =   EXIT CODE: 1
+Unexpected output in get_accumulate_int: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in get_accumulate_int: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in get_accumulate_int: ===================================================================================
+Program get_accumulate_int exited without No Errors
+Unexpected output in get_accumulate_int_derived: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_int_derived: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_int_derived: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_int_derived: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x10147d0, origin_count=5, dtype=USER<contig>, result_addr=0x1017d30, result_count=5, dtype=USER<contig>, target_rank=1, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_int_derived: (unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_int_derived: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x7df7d0, origin_count=5, dtype=USER<contig>, result_addr=0x7e2d30, result_count=5, dtype=USER<contig>, target_rank=2, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_int_derived: (unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_int_derived: 
+Unexpected output in get_accumulate_int_derived: ===================================================================================
+Unexpected output in get_accumulate_int_derived: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in get_accumulate_int_derived: =   EXIT CODE: 1
+Unexpected output in get_accumulate_int_derived: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in get_accumulate_int_derived: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in get_accumulate_int_derived: ===================================================================================
+Program get_accumulate_int_derived exited without No Errors
+Unexpected output in get_accumulate_long: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_long: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_long: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1e2a7d0, origin_count=5, MPI_LONG, result_addr=0x1e2dd80, result_count=5, MPI_LONG, target_rank=0, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_long: (unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_long: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_long: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x10077d0, origin_count=5, MPI_LONG, result_addr=0x100add0, result_count=5, MPI_LONG, target_rank=1, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_long: (unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_long: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_long: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1a6a7d0, origin_count=5, MPI_LONG, result_addr=0x1a6dd80, result_count=5, MPI_LONG, target_rank=2, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_long: (unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_long: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_long: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1c527d0, origin_count=5, MPI_LONG, result_addr=0x1c55d80, result_count=5, MPI_LONG, target_rank=3, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_long: (unknown)(): Unsupported file operation 
+Unexpected output in get_accumulate_long: ===================================================================================
+Unexpected output in get_accumulate_long: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in get_accumulate_long: =   EXIT CODE: 1
+Unexpected output in get_accumulate_long: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in get_accumulate_long: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in get_accumulate_long: ===================================================================================
+Program get_accumulate_long exited without No Errors
+Unexpected output in get_accumulate_long_derived: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_long_derived: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_long_derived: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xee27d0, origin_count=5, dtype=USER<contig>, result_addr=0xee5d80, result_count=5, dtype=USER<contig>, target_rank=0, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_long_derived: (unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_long_derived: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_long_derived: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xd3b7d0, origin_count=5, dtype=USER<contig>, result_addr=0xd3edd0, result_count=5, dtype=USER<contig>, target_rank=1, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_long_derived: (unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_long_derived: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_long_derived: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xa467d0, origin_count=5, dtype=USER<contig>, result_addr=0xa49d80, result_count=5, dtype=USER<contig>, target_rank=3, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_long_derived: (unknown)(): Unsupported file operation 
+Unexpected output in get_accumulate_long_derived: ===================================================================================
+Unexpected output in get_accumulate_long_derived: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in get_accumulate_long_derived: =   EXIT CODE: 1
+Unexpected output in get_accumulate_long_derived: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in get_accumulate_long_derived: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in get_accumulate_long_derived: ===================================================================================
+Program get_accumulate_long_derived exited without No Errors
+Unexpected output in get_accumulate_short: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_short: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_short: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_short: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xd8ed00, origin_count=5, MPI_SHORT, result_addr=0xd8ecd0, result_count=5, MPI_SHORT, target_rank=0, target_disp=0, target_count=5, MPI_SHORT, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_short: (unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_short: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x256ad00, origin_count=5, MPI_SHORT, result_addr=0x256acd0, result_count=5, MPI_SHORT, target_rank=1, target_disp=0, target_count=5, MPI_SHORT, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_short: (unknown)(): Unsupported file operation 
+Unexpected output in get_accumulate_short: ===================================================================================
+Unexpected output in get_accumulate_short: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in get_accumulate_short: =   EXIT CODE: 1
+Unexpected output in get_accumulate_short: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in get_accumulate_short: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in get_accumulate_short: ===================================================================================
+Program get_accumulate_short exited without No Errors
+Unexpected output in get_accumulate_short_derived: Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_short_derived: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_short_derived: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x2562d00, origin_count=5, dtype=USER<contig>, result_addr=0x2562cd0, result_count=5, dtype=USER<contig>, target_rank=0, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_short_derived: (unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_short_derived: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_short_derived: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x797d00, origin_count=5, dtype=USER<contig>, result_addr=0x797cd0, result_count=5, dtype=USER<contig>, target_rank=2, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_short_derived: (unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Unexpected output in get_accumulate_short_derived: Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+Unexpected output in get_accumulate_short_derived: MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1170d00, origin_count=5, dtype=USER<contig>, result_addr=0x1170cd0, result_count=5, dtype=USER<contig>, target_rank=3, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+Unexpected output in get_accumulate_short_derived: (unknown)(): Unsupported file operation 
+Unexpected output in get_accumulate_short_derived: ===================================================================================
+Unexpected output in get_accumulate_short_derived: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in get_accumulate_short_derived: =   EXIT CODE: 1
+Unexpected output in get_accumulate_short_derived: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in get_accumulate_short_derived: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in get_accumulate_short_derived: ===================================================================================
+Program get_accumulate_short_derived exited without No Errors
+Unexpected output in flush: Warning: MPID_Win_flush_all() not implemented
+Unexpected output in flush: Warning: MPID_Win_flush_all() not implemented
+Unexpected output in flush: Fatal error in MPI_Win_flush_all: Unsupported file operation , error stack:
+Unexpected output in flush: MPI_Win_flush_all(113): MPI_Win_flush_all(win=0xa0000000) failed
+Unexpected output in flush: (unknown)(): Unsupported file operation 
+Unexpected output in flush: ===================================================================================
+Unexpected output in flush: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in flush: =   EXIT CODE: 1
+Unexpected output in flush: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in flush: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in flush: ===================================================================================
+Program flush exited without No Errors
+Unexpected output in reqops: Warning: MPID_Win_lock_all() not implemented
+Unexpected output in reqops: Fatal error in MPI_Win_lock_all: Unsupported file operation , error stack:
+Unexpected output in reqops: MPI_Win_lock_all(147): MPI_Win_lock_all(assert=0, win=0xa0000000) failed
+Unexpected output in reqops: (unknown)(): Unsupported file operation 
+Unexpected output in reqops: ===================================================================================
+Unexpected output in reqops: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in reqops: =   EXIT CODE: 1
+Unexpected output in reqops: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in reqops: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in reqops: ===================================================================================
+Program reqops exited without No Errors
+Unexpected output in req_example: Warning: MPID_Win_allocate() not implemented
+Unexpected output in req_example: Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+Unexpected output in req_example: MPI_Win_allocate(161): MPI_Win_allocate(size=800000, disp_unit=8, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fffd4365598, win=0x7fffd4365590) failed
+Unexpected output in req_example: (unknown)(): Unsupported file operation 
+Unexpected output in req_example: ===================================================================================
+Unexpected output in req_example: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in req_example: =   EXIT CODE: 1
+Unexpected output in req_example: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in req_example: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in req_example: ===================================================================================
+Program req_example exited without No Errors
+Unexpected output in win_info: Warning: MPID_Win_allocate() not implemented
+Unexpected output in win_info: Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+Unexpected output in win_info: MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff2f809418, win=0x7fff2f809410) failed
+Unexpected output in win_info: (unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
+Unexpected output in win_info: Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+Unexpected output in win_info: MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff55990628, win=0x7fff55990620) failed
+Unexpected output in win_info: (unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
+Unexpected output in win_info: Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+Unexpected output in win_info: MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fffca24b2c8, win=0x7fffca24b2c0) failed
+Unexpected output in win_info: (unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
+Unexpected output in win_info: Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+Unexpected output in win_info: MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff63458458, win=0x7fff63458450) failed
+Unexpected output in win_info: (unknown)(): Unsupported file operation 
+Unexpected output in win_info: ===================================================================================
+Unexpected output in win_info: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in win_info: =   EXIT CODE: 1
+Unexpected output in win_info: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in win_info: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in win_info: ===================================================================================
+Program win_info exited without No Errors
+Unexpected output in linked_list_lockall: Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in linked_list_lockall: Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+Unexpected output in linked_list_lockall: MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff9df2746c) failed
+Unexpected output in linked_list_lockall: (unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in linked_list_lockall: Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+Unexpected output in linked_list_lockall: MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff30db8eec) failed
+Unexpected output in linked_list_lockall: (unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in linked_list_lockall: 
+Unexpected output in linked_list_lockall: ===================================================================================
+Unexpected output in linked_list_lockall: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in linked_list_lockall: =   EXIT CODE: 1
+Unexpected output in linked_list_lockall: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in linked_list_lockall: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in linked_list_lockall: ===================================================================================
+Program linked_list_lockall exited without No Errors
+Unexpected output in linked_list_bench_lock_all: Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in linked_list_bench_lock_all: Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+Unexpected output in linked_list_bench_lock_all: MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffdbe636b8) failed
+Unexpected output in linked_list_bench_lock_all: (unknown)(): Unsupported file operation 
+Unexpected output in linked_list_bench_lock_all: ===================================================================================
+Unexpected output in linked_list_bench_lock_all: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in linked_list_bench_lock_all: =   EXIT CODE: 1
+Unexpected output in linked_list_bench_lock_all: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in linked_list_bench_lock_all: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in linked_list_bench_lock_all: ===================================================================================
+Program linked_list_bench_lock_all exited without No Errors
+Unexpected output in linked_list_bench_lock_excl: Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in linked_list_bench_lock_excl: Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+Unexpected output in linked_list_bench_lock_excl: MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff3fbaf788) failed
+Unexpected output in linked_list_bench_lock_excl: (unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in linked_list_bench_lock_excl: Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+Unexpected output in linked_list_bench_lock_excl: MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffe2499488) failed
+Unexpected output in linked_list_bench_lock_excl: (unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in linked_list_bench_lock_excl: Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+Unexpected output in linked_list_bench_lock_excl: MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7ffff773db08) failed
+Unexpected output in linked_list_bench_lock_excl: (unknown)(): Unsupported file operation 
+Unexpected output in linked_list_bench_lock_excl: ===================================================================================
+Unexpected output in linked_list_bench_lock_excl: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in linked_list_bench_lock_excl: =   EXIT CODE: 1
+Unexpected output in linked_list_bench_lock_excl: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in linked_list_bench_lock_excl: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in linked_list_bench_lock_excl: ===================================================================================
+Program linked_list_bench_lock_excl exited without No Errors
+Unexpected output in linked_list_bench_lock_shr: Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in linked_list_bench_lock_shr: Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+Unexpected output in linked_list_bench_lock_shr: MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff511c37b8) failed
+Unexpected output in linked_list_bench_lock_shr: (unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in linked_list_bench_lock_shr: Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+Unexpected output in linked_list_bench_lock_shr: MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff52181a88) failed
+Unexpected output in linked_list_bench_lock_shr: (unknown)(): Unsupported file operation 
+Unexpected output in linked_list_bench_lock_shr: ===================================================================================
+Unexpected output in linked_list_bench_lock_shr: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in linked_list_bench_lock_shr: =   EXIT CODE: 1
+Unexpected output in linked_list_bench_lock_shr: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in linked_list_bench_lock_shr: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in linked_list_bench_lock_shr: ===================================================================================
+Program linked_list_bench_lock_shr exited without No Errors
+Unexpected output in linked_list_bench_lock_shr_nocheck: Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in linked_list_bench_lock_shr_nocheck: Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+Unexpected output in linked_list_bench_lock_shr_nocheck: MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffa69fb4b8) failed
+Unexpected output in linked_list_bench_lock_shr_nocheck: (unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in linked_list_bench_lock_shr_nocheck: Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+Unexpected output in linked_list_bench_lock_shr_nocheck: MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff0e810ff8) failed
+Unexpected output in linked_list_bench_lock_shr_nocheck: (unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Unexpected output in linked_list_bench_lock_shr_nocheck: Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+Unexpected output in linked_list_bench_lock_shr_nocheck: MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffb981dcb8) failed
+Unexpected output in linked_list_bench_lock_shr_nocheck: (unknown)(): Unsupported file operation 
+Unexpected output in linked_list_bench_lock_shr_nocheck: ===================================================================================
+Unexpected output in linked_list_bench_lock_shr_nocheck: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in linked_list_bench_lock_shr_nocheck: =   EXIT CODE: 1
+Unexpected output in linked_list_bench_lock_shr_nocheck: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in linked_list_bench_lock_shr_nocheck: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in linked_list_bench_lock_shr_nocheck: ===================================================================================
+Program linked_list_bench_lock_shr_nocheck exited without No Errors
+Unexpected output in mutex_bench: Warning: MPID_Win_allocate() not implemented
+Unexpected output in mutex_bench: Warning: MPID_Win_allocate() not implemented
+Unexpected output in mutex_bench: Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+Unexpected output in mutex_bench: MPI_Win_allocate(161): MPI_Win_allocate(size=8, disp_unit=4, MPI_INFO_NULL, comm=0x84000000, base=0x13907e0, win=0x13907d8) failed
+Unexpected output in mutex_bench: (unknown)(): Unsupported file operation Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+Unexpected output in mutex_bench: MPI_Win_allocate(161): MPI_Win_allocate(size=8, disp_unit=4, MPI_INFO_NULL, comm=0x84000000, base=0x23b97e0, win=0x23b97d8) failed
+Unexpected output in mutex_bench: (unknown)(): Unsupported file operation 
+Unexpected output in mutex_bench: ===================================================================================
+Unexpected output in mutex_bench: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in mutex_bench: =   EXIT CODE: 1
+Unexpected output in mutex_bench: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in mutex_bench: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in mutex_bench: ===================================================================================
+Program mutex_bench exited without No Errors
+Unexpected output in mutex_bench_shared: Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in mutex_bench_shared: Warning: MPID_Win_allocate_shared() not implemented
+Unexpected output in mutex_bench_shared: Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+Unexpected output in mutex_bench_shared: PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=8, MPI_INFO_NULL, comm=0x84000001, baseptr=0x194cf40, win=0x194cf38) failed
+Unexpected output in mutex_bench_shared: (unknown)(): Unsupported file operation 
+Unexpected output in mutex_bench_shared: ===================================================================================
+Unexpected output in mutex_bench_shared: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in mutex_bench_shared: =   EXIT CODE: 1
+Unexpected output in mutex_bench_shared: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in mutex_bench_shared: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in mutex_bench_shared: ===================================================================================
+Program mutex_bench_shared exited without No Errors
+Processing directory spawn
+Looking in ./spawn/testlist
+Unexpected output in spawnintra: [mpiexec@phoenix] APPLICATION TIMED OUT
+Unexpected output in spawnintra: [proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+Unexpected output in spawnintra: [proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
+Unexpected output in spawnintra: [proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+Unexpected output in spawnintra: [mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+Unexpected output in spawnintra: [mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+Unexpected output in spawnintra: [mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:188): launcher returned error waiting for completion
+Unexpected output in spawnintra: [mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
+Program spawnintra exited without No Errors
+Some programs (spawnintra) may still be running:
+pids = 29157 
+The executable (spawnintra) will not be removed.
+Unexpected output in spaiccreate: Fatal error in PMPI_Intercomm_create: Invalid communicator, error stack:
+Unexpected output in spaiccreate: PMPI_Intercomm_create(597).....: MPI_Intercomm_create(MPI_COMM_WORLD, local_leader=0, comm=0x84000000, remote_leader=0, tag=123, newintercomm=0x7fff22ed12dc) failed
+Unexpected output in spaiccreate: MPIR_Intercomm_create_impl(267): 
+Unexpected output in spaiccreate: MPIR_CheckDisjointLpids(86)....: Local and remote groups in MPI_Intercomm_create must not contain the same processes; both contain process 0Fatal error in PMPI_Intercomm_create: Other MPI error, error stack:
+Unexpected output in spaiccreate: PMPI_Intercomm_create(597)..........: MPI_Intercomm_create(MPI_COMM_WORLD, local_leader=0, MPI_COMM_NULL, remote_leader=0, tag=123, newintercomm=0x7fff5b3fb37c) failed
+Unexpected output in spaiccreate: MPIR_Intercomm_create_impl(295).....: 
+Unexpected output in spaiccreate: MPIR_Get_contextid(806).............: 
+Unexpected output in spaiccreate: MPIR_Get_contextid_sparse_group(864): 
+Unexpected output in spaiccreate: MPIR_Allreduce_impl(719)............: 
+Unexpected output in spaiccreate: MPIR_Allreduce_intra(362)...........: 
+Unexpected output in spaiccreate: mpid_irecv_done(100)................: read from socket failed - request state:recv(pde)done
+Unexpected output in spaiccreate: ===================================================================================
+Unexpected output in spaiccreate: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in spaiccreate: =   EXIT CODE: 1
+Unexpected output in spaiccreate: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in spaiccreate: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in spaiccreate: ===================================================================================
+Unexpected output in spaiccreate: [proxy:1:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+Unexpected output in spaiccreate: [proxy:1:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
+Unexpected output in spaiccreate: [proxy:1:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+Unexpected output in spaiccreate: [mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+Unexpected output in spaiccreate: [mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+Unexpected output in spaiccreate: [mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:217): launcher returned error waiting for completion
+Unexpected output in spaiccreate: [mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
+Program spaiccreate exited without No Errors
+Unexpected output in join: [mpiexec@phoenix] APPLICATION TIMED OUT
+Unexpected output in join: [proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+Unexpected output in join: [proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
+Unexpected output in join: [proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+Unexpected output in join: [mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+Unexpected output in join: [mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+Unexpected output in join: [mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:188): launcher returned error waiting for completion
+Unexpected output in join: [mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
+Program join exited without No Errors
+Processing directory topo
+Looking in ./topo/testlist
+Processing directory io
+Looking in ./io/testlist
+Processing directory f77
+Looking in ./f77/testlist
+Processing directory attr
+Looking in ./f77/attr/testlist
+Processing directory coll
+Looking in ./f77/coll/testlist
+Processing directory datatype
+Looking in ./f77/datatype/testlist
+Processing directory pt2pt
+Looking in ./f77/pt2pt/testlist
+Processing directory info
+Looking in ./f77/info/testlist
+Processing directory spawn
+Looking in ./f77/spawn/testlist
+Processing directory io
+Looking in ./f77/io/testlist
+Processing directory rma
+Looking in ./f77/rma/testlist
+Unexpected output in winscale1f: 
+Unexpected output in winscale1f: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in winscale1f: 
+Unexpected output in winscale1f: Backtrace for this error:
+Unexpected output in winscale1f: 
+Unexpected output in winscale1f: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in winscale1f: 
+Unexpected output in winscale1f: Backtrace for this error:
+Unexpected output in winscale1f: #0  0x7F01BD3F2037
+Unexpected output in winscale1f: #1  0x7F01BD3F2604
+Unexpected output in winscale1f: #2  0x378FA35CCF
+Unexpected output in winscale1f: #3  0x7F01BCF7F735
+Unexpected output in winscale1f: #4  0x7F01BDBABC63
+Unexpected output in winscale1f: #5  0x7F01BDC4032F
+Unexpected output in winscale1f: #6  0x7F01BDB9F879
+Unexpected output in winscale1f: #7  0x4015E8 in MAIN__ at winscale1f.f:?
+Unexpected output in winscale1f: #0  0x7F2E24F56037
+Unexpected output in winscale1f: #1  0x7F2E24F56604
+Unexpected output in winscale1f: #2  0x378FA35CCF
+Unexpected output in winscale1f: #3  0x7F2E24AE3735
+Unexpected output in winscale1f: #4  0x7F2E2570FC63
+Unexpected output in winscale1f: #5  0x7F2E257A432F
+Unexpected output in winscale1f: #6  0x7F2E25703879
+Unexpected output in winscale1f: #7  0x401649 in MAIN__ at winscale1f.f:?
+Unexpected output in winscale1f: 
+Unexpected output in winscale1f: ===================================================================================
+Unexpected output in winscale1f: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in winscale1f: =   EXIT CODE: 11
+Unexpected output in winscale1f: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in winscale1f: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in winscale1f: ===================================================================================
+Unexpected output in winscale1f: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in winscale1f: This typically refers to a problem with your application.
+Unexpected output in winscale1f: Please see the FAQ page for debugging suggestions
+Program winscale1f exited without No Errors
+Unexpected output in winfencef: 
+Unexpected output in winfencef: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in winfencef: 
+Unexpected output in winfencef: Backtrace for this error:
+Unexpected output in winfencef: 
+Unexpected output in winfencef: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in winfencef: 
+Unexpected output in winfencef: Backtrace for this error:
+Unexpected output in winfencef: #0  0x7F58B8F65037
+Unexpected output in winfencef: #1  0x7F58B8F65604
+Unexpected output in winfencef: #2  0x378FA35CCF
+Unexpected output in winfencef: #3  0x7F58B8AF2735
+Unexpected output in winfencef: #4  0x7F58B971EC63
+Unexpected output in winfencef: #5  0x7F58B97B332F
+Unexpected output in winfencef: #6  0x7F58B9712879
+Unexpected output in winfencef: #7  0x4012F6 in MAIN__ at winfencef.f:?
+Unexpected output in winfencef: 
+Unexpected output in winfencef: ===================================================================================
+Unexpected output in winfencef: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in winfencef: =   EXIT CODE: 11
+Unexpected output in winfencef: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in winfencef: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in winfencef: ===================================================================================
+Unexpected output in winfencef: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in winfencef: This typically refers to a problem with your application.
+Unexpected output in winfencef: Please see the FAQ page for debugging suggestions
+Program winfencef exited without No Errors
+Unexpected output in wingetf: 
+Unexpected output in wingetf: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in wingetf: 
+Unexpected output in wingetf: Backtrace for this error:
+Unexpected output in wingetf: 
+Unexpected output in wingetf: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in wingetf: 
+Unexpected output in wingetf: Backtrace for this error:
+Unexpected output in wingetf: #0  0x7F37E3628037
+Unexpected output in wingetf: #1  0x7F37E3628604
+Unexpected output in wingetf: #2  0x378FA35CCF
+Unexpected output in wingetf: #3  0x7F37E31B918B
+Unexpected output in wingetf: #4  0x7F37E31B4FDC
+Unexpected output in wingetf: #5  0x7F37E3DE17B6
+Unexpected output in wingetf: #6  0x7F37E3E7521F
+Unexpected output in wingetf: #7  0x7F37E3DD5839
+Unexpected output in wingetf: #8  0x401356 in MAIN__ at wingetf.f:?
+Unexpected output in wingetf: 
+Unexpected output in wingetf: ===================================================================================
+Unexpected output in wingetf: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in wingetf: =   EXIT CODE: 11
+Unexpected output in wingetf: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in wingetf: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in wingetf: ===================================================================================
+Unexpected output in wingetf: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in wingetf: This typically refers to a problem with your application.
+Unexpected output in wingetf: Please see the FAQ page for debugging suggestions
+Program wingetf exited without No Errors
+Unexpected output in winscale2f: 
+Unexpected output in winscale2f: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in winscale2f: 
+Unexpected output in winscale2f: Backtrace for this error:
+Unexpected output in winscale2f: #0  0x7FF2D20F1037
+Unexpected output in winscale2f: #1  0x7FF2D20F1604
+Unexpected output in winscale2f: #2  0x378FA35CCF
+Unexpected output in winscale2f: #3  0x7FF2D1C7E735
+Unexpected output in winscale2f: #4  0x7FF2D28AAC63
+Unexpected output in winscale2f: #5  0x7FF2D293F32F
+Unexpected output in winscale2f: #6  0x7FF2D289E879
+Unexpected output in winscale2f: #7  0x4015E8 in MAIN__ at winscale2f.f:?
+Unexpected output in winscale2f: 
+Unexpected output in winscale2f: ===================================================================================
+Unexpected output in winscale2f: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in winscale2f: =   EXIT CODE: 11
+Unexpected output in winscale2f: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in winscale2f: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in winscale2f: ===================================================================================
+Unexpected output in winscale2f: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in winscale2f: This typically refers to a problem with your application.
+Unexpected output in winscale2f: Please see the FAQ page for debugging suggestions
+Program winscale2f exited without No Errors
+Unexpected output in winaccf: 
+Unexpected output in winaccf: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in winaccf: 
+Unexpected output in winaccf: Backtrace for this error:
+Unexpected output in winaccf: 
+Unexpected output in winaccf: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in winaccf: 
+Unexpected output in winaccf: Backtrace for this error:
+Unexpected output in winaccf: #0  0x7FA252B4B037
+Unexpected output in winaccf: #1  0x7FA252B4B604
+Unexpected output in winaccf: #2  0x378FA35CCF
+Unexpected output in winaccf: #3  0x7FA2526D8735
+Unexpected output in winaccf: #4  0x7FA253303B5B
+Unexpected output in winaccf: #5  0x7FA2533970AF
+Unexpected output in winaccf: #6  0x7FA2532F87F4
+Unexpected output in winaccf: #7  0x401379 in MAIN__ at winaccf.f:?
+Unexpected output in winaccf: 
+Unexpected output in winaccf: ===================================================================================
+Unexpected output in winaccf: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in winaccf: =   EXIT CODE: 11
+Unexpected output in winaccf: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in winaccf: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in winaccf: ===================================================================================
+Unexpected output in winaccf: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in winaccf: This typically refers to a problem with your application.
+Unexpected output in winaccf: Please see the FAQ page for debugging suggestions
+Program winaccf exited without No Errors
+Processing directory init
+Looking in ./f77/init/testlist
+Processing directory comm
+Looking in ./f77/comm/testlist
+Processing directory ext
+Looking in ./f77/ext/testlist
+Processing directory topo
+Looking in ./f77/topo/testlist
+Processing directory cxx
+Looking in ./cxx/testlist
+Processing directory attr
+Looking in ./cxx/attr/testlist
+Processing directory pt2pt
+Looking in ./cxx/pt2pt/testlist
+Processing directory comm
+Looking in ./cxx/comm/testlist
+Processing directory coll
+Looking in ./cxx/coll/testlist
+Processing directory errhan
+Looking in ./cxx/errhan/testlist
+Processing directory init
+Looking in ./cxx/init/testlist
+Processing directory info
+Looking in ./cxx/info/testlist
+Processing directory datatype
+Looking in ./cxx/datatype/testlist
+Processing directory io
+Looking in ./cxx/io/testlist
+Processing directory spawn
+Looking in ./cxx/spawn/testlist
+Unexpected output in spawnintrax: [mpiexec@phoenix] APPLICATION TIMED OUT
+Unexpected output in spawnintrax: [proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+Unexpected output in spawnintrax: [proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
+Unexpected output in spawnintrax: [proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+Unexpected output in spawnintrax: [mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+Unexpected output in spawnintrax: [mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+Unexpected output in spawnintrax: [mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:188): launcher returned error waiting for completion
+Unexpected output in spawnintrax: [mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
+Program spawnintrax exited without No Errors
+Processing directory rma
+Looking in ./cxx/rma/testlist
+Unexpected output in winfencex: 
+Unexpected output in winfencex: ===================================================================================
+Unexpected output in winfencex: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in winfencex: =   EXIT CODE: 11
+Unexpected output in winfencex: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in winfencex: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in winfencex: ===================================================================================
+Unexpected output in winfencex: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in winfencex: This typically refers to a problem with your application.
+Unexpected output in winfencex: Please see the FAQ page for debugging suggestions
+Program winfencex exited without No Errors
+Unexpected output in winscale1x: 
+Unexpected output in winscale1x: ===================================================================================
+Unexpected output in winscale1x: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in winscale1x: =   EXIT CODE: 11
+Unexpected output in winscale1x: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in winscale1x: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in winscale1x: ===================================================================================
+Unexpected output in winscale1x: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in winscale1x: This typically refers to a problem with your application.
+Unexpected output in winscale1x: Please see the FAQ page for debugging suggestions
+Program winscale1x exited without No Errors
+Unexpected output in winscale2x: 
+Unexpected output in winscale2x: ===================================================================================
+Unexpected output in winscale2x: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in winscale2x: =   EXIT CODE: 11
+Unexpected output in winscale2x: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in winscale2x: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in winscale2x: ===================================================================================
+Unexpected output in winscale2x: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in winscale2x: This typically refers to a problem with your application.
+Unexpected output in winscale2x: Please see the FAQ page for debugging suggestions
+Program winscale2x exited without No Errors
+Processing directory f90
+Looking in ./f90/testlist
+Processing directory attr
+Looking in ./f90/attr/testlist
+Processing directory coll
+Looking in ./f90/coll/testlist
+Processing directory comm
+Looking in ./f90/comm/testlist
+Processing directory ext
+Looking in ./f90/ext/testlist
+Processing directory info
+Looking in ./f90/info/testlist
+Processing directory init
+Looking in ./f90/init/testlist
+Processing directory io
+Looking in ./f90/io/testlist
+Processing directory misc
+Looking in ./f90/misc/testlist
+Processing directory pt2pt
+Looking in ./f90/pt2pt/testlist
+Processing directory datatype
+Looking in ./f90/datatype/testlist
+Processing directory f90types
+Looking in ./f90/f90types/testlist
+Processing directory rma
+Looking in ./f90/rma/testlist
+Unexpected output in winscale1f90: 
+Unexpected output in winscale1f90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in winscale1f90: 
+Unexpected output in winscale1f90: Backtrace for this error:
+Unexpected output in winscale1f90: 
+Unexpected output in winscale1f90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in winscale1f90: 
+Unexpected output in winscale1f90: Backtrace for this error:
+Unexpected output in winscale1f90: #0  #0  0x7F069ACA6037
+Unexpected output in winscale1f90: #1  0x7F069ACA6604
+Unexpected output in winscale1f90: #2  0x378FA35CCF
+Unexpected output in winscale1f90: #3  0x7F069A833735
+Unexpected output in winscale1f90: #4  0x7F069B45EC63
+Unexpected output in winscale1f90: #5  0x7F069B4F332F
+Unexpected output in winscale1f90: #6  0x7F069B452879
+Unexpected output in winscale1f90: #7  0x401631 in MAIN__ at winscale1f90.f90:?
+Unexpected output in winscale1f90: 
+Unexpected output in winscale1f90: ===================================================================================
+Unexpected output in winscale1f90: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in winscale1f90: =   EXIT CODE: 11
+Unexpected output in winscale1f90: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in winscale1f90: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in winscale1f90: ===================================================================================
+Unexpected output in winscale1f90: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in winscale1f90: This typically refers to a problem with your application.
+Unexpected output in winscale1f90: Please see the FAQ page for debugging suggestions
+Program winscale1f90 exited without No Errors
+Unexpected output in winfencef90: 
+Unexpected output in winfencef90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in winfencef90: 
+Unexpected output in winfencef90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in winfencef90: 
+Unexpected output in winfencef90: Backtrace for this error:
+Unexpected output in winfencef90: 
+Unexpected output in winfencef90: Backtrace for this error:
+Unexpected output in winfencef90: #0  0x7FE23170C037
+Unexpected output in winfencef90: #1  0x7FE23170C604
+Unexpected output in winfencef90: #2  0x378FA35CCF
+Unexpected output in winfencef90: #3  0x7FE231299735
+Unexpected output in winfencef90: #0  0x7F5E04454037
+Unexpected output in winfencef90: #1  0x7F5E04454604
+Unexpected output in winfencef90: #2  0x#4  378FA35CCF
+Unexpected output in winfencef90: #3  0x7F5E03FE1735
+Unexpected output in winfencef90: 0x7FE231EC4C63
+Unexpected output in winfencef90: #5  0x7FE231F5932F
+Unexpected output in winfencef90: #6  0x7FE231EB8879
+Unexpected output in winfencef90: #7  0x401363 in MAIN__ at winfencef90.f90:?
+Unexpected output in winfencef90: #4  0x7F5E04C0CC63
+Unexpected output in winfencef90: #5  0x7F5E04CA132F
+Unexpected output in winfencef90: #6  0x7F5E04C00879
+Unexpected output in winfencef90: #7  
+Unexpected output in winfencef90: ===================================================================================
+Unexpected output in winfencef90: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in winfencef90: =   EXIT CODE: 11
+Unexpected output in winfencef90: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in winfencef90: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in winfencef90: ===================================================================================
+Unexpected output in winfencef90: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in winfencef90: This typically refers to a problem with your application.
+Unexpected output in winfencef90: Please see the FAQ page for debugging suggestions
+Program winfencef90 exited without No Errors
+Unexpected output in wingetf90: 
+Unexpected output in wingetf90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in wingetf90: 
+Unexpected output in wingetf90: Backtrace for this error:
+Unexpected output in wingetf90: 
+Unexpected output in wingetf90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in wingetf90: 
+Unexpected output in wingetf90: Backtrace for this error:
+Unexpected output in wingetf90: #0  0x7F9EF118E037
+Unexpected output in wingetf90: #1  0x7F9EF118E604
+Unexpected output in wingetf90: #2  0x378FA35CCF
+Unexpected output in wingetf90: #3  0x7F9EF0D1F18B
+Unexpected output in wingetf90: #4  0x7F9EF0D1AFDC
+Unexpected output in wingetf90: #5  0x7F9EF19467B6
+Unexpected output in wingetf90: #0  0x7FD870570037
+Unexpected output in wingetf90: #1  0x7FD870570604
+Unexpected output in wingetf90: #2  0x378FA35CCF
+Unexpected output in wingetf90: #3  0x7FD87010118B
+Unexpected output in wingetf90: #4  0x7FD8700FCFDC
+Unexpected output in wingetf90: #5  0x7FD870D287B6
+Unexpected output in wingetf90: #6  0x7FD870DBC21F
+Unexpected output in wingetf90: #7  0x7FD870D1C839
+Unexpected output in wingetf90: #8  0x401305 in MAIN__ at wingetf90.f90:?
+Unexpected output in wingetf90: #6  0x7F9EF19DA21F
+Unexpected output in wingetf90: #7  0x7F9EF193A839
+Unexpected output in wingetf90: #8  0x401362 in MAIN__ at wingetf90.f90:?
+Unexpected output in wingetf90: 
+Unexpected output in wingetf90: ===================================================================================
+Unexpected output in wingetf90: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in wingetf90: =   EXIT CODE: 11
+Unexpected output in wingetf90: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in wingetf90: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in wingetf90: ===================================================================================
+Unexpected output in wingetf90: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in wingetf90: This typically refers to a problem with your application.
+Unexpected output in wingetf90: Please see the FAQ page for debugging suggestions
+Program wingetf90 exited without No Errors
+Unexpected output in winscale2f90: 
+Unexpected output in winscale2f90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in winscale2f90: 
+Unexpected output in winscale2f90: Backtrace for this error:
+Unexpected output in winscale2f90: 
+Unexpected output in winscale2f90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in winscale2f90: 
+Unexpected output in winscale2f90: Backtrace for this error:
+Unexpected output in winscale2f90: #0  0x7FA2676C7037
+Unexpected output in winscale2f90: #1  0x7FA2676C7604
+Unexpected output in winscale2f90: #2  0x378FA35CCF
+Unexpected output in winscale2f90: #3  0x7FA267254735
+Unexpected output in winscale2f90: #4  0x7FA267E7FC63
+Unexpected output in winscale2f90: #5  0x7FA267F1432F
+Unexpected output in winscale2f90: #6  0x7FA267E73879
+Unexpected output in winscale2f90: #7  0x4015D0 in MAIN__ at winscale2f90.f90:?
+Unexpected output in winscale2f90: #0  0x7FC5DB4EC037
+Unexpected output in winscale2f90: #1  0x7FC5DB4EC604
+Unexpected output in winscale2f90: #2  0x378FA35CCF
+Unexpected output in winscale2f90: #3  0x7FC5DB079735
+Unexpected output in winscale2f90: #4  0x7FC5DBCA4C63
+Unexpected output in winscale2f90: #5  0x7FC5DBD3932F
+Unexpected output in winscale2f90: #6  0x7FC5DBC98879
+Unexpected output in winscale2f90: 
+Unexpected output in winscale2f90: ===================================================================================
+Unexpected output in winscale2f90: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in winscale2f90: =   EXIT CODE: 11
+Unexpected output in winscale2f90: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in winscale2f90: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in winscale2f90: ===================================================================================
+Unexpected output in winscale2f90: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in winscale2f90: This typically refers to a problem with your application.
+Unexpected output in winscale2f90: Please see the FAQ page for debugging suggestions
+Program winscale2f90 exited without No Errors
+Unexpected output in winaccf90: 
+Unexpected output in winaccf90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in winaccf90: 
+Unexpected output in winaccf90: Backtrace for this error:
+Unexpected output in winaccf90: 
+Unexpected output in winaccf90: Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+Unexpected output in winaccf90: 
+Unexpected output in winaccf90: Backtrace for this error:
+Unexpected output in winaccf90: #0  0x7F500BD69037
+Unexpected output in winaccf90: #1  0x7F500BD69604
+Unexpected output in winaccf90: #0  0x7F6A83C80037
+Unexpected output in winaccf90: #1  0x7F6A83C80604
+Unexpected output in winaccf90: #2  #2  0x378FA35CCF
+Unexpected output in winaccf90: 0x#3  0x7F6A8380D735
+Unexpected output in winaccf90: 378FA35CCF#4  0x7F6A84437B5B
+Unexpected output in winaccf90: 
+Unexpected output in winaccf90: #5  0x7F6A844CB0AF
+Unexpected output in winaccf90: #6  0x7F6A8442C7F4
+Unexpected output in winaccf90: #3  #7  0x401375 in MAIN__ at winaccf90.f90:?
+Unexpected output in winaccf90: 0x7F500B8F6735
+Unexpected output in winaccf90: #4  0x7F500C520B5B
+Unexpected output in winaccf90: #5  0x7F500C5B40AF
+Unexpected output in winaccf90: #6  0x7F500C5157F4
+Unexpected output in winaccf90: #7  0x40130B in MAIN__ at winaccf90.f90:?
+Unexpected output in winaccf90: 
+Unexpected output in winaccf90: ===================================================================================
+Unexpected output in winaccf90: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in winaccf90: =   EXIT CODE: 11
+Unexpected output in winaccf90: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in winaccf90: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in winaccf90: ===================================================================================
+Unexpected output in winaccf90: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+Unexpected output in winaccf90: This typically refers to a problem with your application.
+Unexpected output in winaccf90: Please see the FAQ page for debugging suggestions
+Program winaccf90 exited without No Errors
+Processing directory spawn
+Looking in ./f90/spawn/testlist
+Processing directory timer
+Looking in ./f90/timer/testlist
+Processing directory topo
+Looking in ./f90/topo/testlist
+58 tests failed out of 735
+Details in /home/hauke/repo/psmpi2/build/mpich2/test/mpi/summary.xml
+TAP formatted results in /home/hauke/repo/psmpi2/build/mpich2/test/mpi/summary.tap
+make[3]: Leaving directory `/home/hauke/repo/psmpi2/build/mpich2/test/mpi'
+(XMLFILE=../mpi/summary.xml && XMLCONTINUE=YES && \
+export XMLFILE && export XMLCONTINUE && \
+cd commands && make testing)
+make[3]: Entering directory `/home/hauke/repo/psmpi2/build/mpich2/test/commands'
+make[3]: Nothing to be done for `testing'.
+make[3]: Leaving directory `/home/hauke/repo/psmpi2/build/mpich2/test/commands'
+make[2]: Leaving directory `/home/hauke/repo/psmpi2/build/mpich2/test'
+make[1]: Leaving directory `/home/hauke/repo/psmpi2/build/mpich2'
+./pt2pt/scancel np=2:
+Failed to cancel an Isend request
+Failed to cancel an Ibsend request
+Failed to cancel an Isend request
+Failed to cancel an Ibsend request
+Failed to cancel an Isend request
+Failed to cancel an Ibsend request
+Failed to cancel an Isend request
+Failed to cancel an Ibsend request
+ Found 8 errors
+
+-------------------------------------------------
+./pt2pt/pscancel np=2:
+Failed to cancel a persistent send request
+Failed to cancel a persistent bsend request
+Failed to cancel a persistent send request
+Failed to cancel a persistent bsend request
+Failed to cancel a persistent send request
+Failed to cancel a persistent bsend request
+Failed to cancel a persistent send request
+Failed to cancel a persistent bsend request
+ Found 8 errors
+
+-------------------------------------------------
+./rma/rmanull np=2:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/rmazero np=2:
+Warning: MPID_Get_accumulate() not implemented
+Warning: MPID_Get_accumulate() not implemented
+Zero-byte op Get accumulate: Error class 44 (Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1ff8150, origin_count=0, MPI_INT, result_addr=0x1ff7d40, result_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation )
+Zero-byte op Get accumulate: Error class 44 (Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x248c150, origin_count=0, MPI_INT, result_addr=0x248bd40, result_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation )
+Zero-byte op Get accumulate: Error class 44 (Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1ff8150, origin_count=0, MPI_INT, result_addr=0x1ff7d40, result_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation )
+Zero-byte op Rput: Error class 44 (Unsupported file operation , error stack:
+MPI_Rput(172): MPI_Rput(origin_addr=0x1ff8150, origin_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, win=0xa0000000, request=0x7fff5dfbffdc) failed
+(unknown)(): Unsupported file operation )
+Warning: MPID_Rput() not implemented
+Fatal error in PMPI_Wait: Invalid MPI_Request, error stack:
+PMPI_Wait(180): MPI_Wait(request=0x7fff5dfbffdc, status=0x1) failed
+PMPI_Wait(133): Invalid MPI_Request
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/strided_putget_indexed_shared np=4:
+Warning: MPID_Win_allocate_shared() not implemented
+Warning: MPID_Win_allocate_shared() not implemented
+Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fffc096a190, win=0x7fffc096a180) failed
+(unknown)(): Unsupported file operation Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff75338f10, win=0x7fff75338f00) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/strided_getacc_indexed np=4:
+Warning: MPID_Get_accumulate() not implemented
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x2092ce0, origin_count=1, dtype=USER<indexed>, result_addr=0x20a2cf0, result_count=1, dtype=USER<indexed>, target_rank=1, target_disp=0, target_count=1, dtype=USER<indexed>, MPI_REPLACE, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x2277ce0, origin_count=1, dtype=USER<indexed>, result_addr=0x2287cf0, result_count=1, dtype=USER<indexed>, target_rank=2, target_disp=0, target_count=1, dtype=USER<indexed>, MPI_REPLACE, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/strided_getacc_indexed_shared np=4:
+Warning: MPID_Win_allocate_shared() not implemented
+Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff0cf57850, win=0x7fff0cf57840) failed
+(unknown)(): Unsupported file operation Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fffc445af00, win=0x7fffc445aef0) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/win_flavors np=4:
+2: MPI_Win_create - Error, bad flavor (0)
+2: MPI_Win_create - Error, bad model (0)
+3: MPI_Win_create - Error, bad flavor (0)
+3: MPI_Win_create - Error, bad model (0)
+0: MPI_Win_create - Error, bad flavor (0)
+0: MPI_Win_create - Error, bad model (0)
+1: MPI_Win_create - Error, bad flavor (0)
+1: MPI_Win_create - Error, bad model (0)
+Warning: MPID_Win_allocate() not implemented
+Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=8, disp_unit=1, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff316871b0, win=0x7fff3168718c) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=0, disp_unit=1, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7ffff1676f00, win=0x7ffff1676edc) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=24, disp_unit=1, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff9bb7e740, win=0x7fff9bb7e71c) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/win_shared np=4:
+Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff795b9030, win=0x7fff795b9018) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fffbccdc380, win=0x7fffbccdc368) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff4e7bdbd0, win=0x7fff4e7bdbb8) failed
+(unknown)(): Unsupported file operation Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff6a754050, win=0x7fff6a754038) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/win_shared_noncontig np=4:
+Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fffb8ffae18, win=0x7fffb8ffadf8) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff6b86efe8, win=0x7fff6b86efc8) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff81de4f38, win=0x7fff81de4f18) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff1884d668, win=0x7fff1884d648) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/win_shared_noncontig_put np=4:
+Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff854b1698, win=0x7fff854b1660) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff5e333968, win=0x7fff5e333930) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7ffff4bbf1a8, win=0x7ffff4bbf170) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/win_dynamic_acc np=4:
+Warning: MPID_Win_create_dynamic() not implemented
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff1f61425c) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/get_acc_local np=1:
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x404e24, origin_count=1, MPI_INT, result_addr=0x7fff2efc15d4, result_count=1, MPI_INT, target_rank=0, target_disp=0, target_count=1, MPI_INT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/linked_list np=4:
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff3c42005c) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/linked_list_fop np=4:
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff62f8d71c) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffe86888ac) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/compare_and_swap np=4:
+Warning: MPID_Compare_and_swap() not implemented
+Warning: MPID_Compare_and_swap() not implemented
+Fatal error in MPI_Compare_and_swap: Unsupported file operation , error stack:
+MPI_Compare_and_swap(149): MPI_Compare_and_swap(origin_addr=0x7fff56653d10, compare_addr=0x7fff56653cd0, result_addr=0x7fff56653d20, MPI_INT, target_rank=0, target_disp=0, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Compare_and_swap() not implemented
+Fatal error in MPI_Compare_and_swap: Unsupported file operation , error stack:
+MPI_Compare_and_swap(149): MPI_Compare_and_swap(origin_addr=0x7ffffdf8d390, compare_addr=0x7ffffdf8d350, result_addr=0x7ffffdf8d3a0, MPI_INT, target_rank=2, target_disp=0, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Compare_and_swap: Unsupported file operation , error stack:
+MPI_Compare_and_swap(149): MPI_Compare_and_swap(origin_addr=0x7fff11ef33c0, compare_addr=0x7fff11ef3380, result_addr=0x7fff11ef33d0, MPI_INT, target_rank=3, target_disp=0, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/fetch_and_op_char np=4:
+Warning: MPID_Fetch_and_op() not implemented
+Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffa087e8a0, result_addr=0x7fffa087e8b0, MPI_CHAR, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff0819e410, result_addr=0x7fff0819e420, MPI_CHAR, target_rank=3, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff5a996f70, result_addr=0x7fff5a996f80, MPI_CHAR, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/fetch_and_op_short np=4:
+Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff95719be0, result_addr=0x7fff95719bf0, MPI_SHORT, target_rank=0, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff48834380, result_addr=0x7fff48834390, MPI_SHORT, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff23d705c0, result_addr=0x7fff23d705d0, MPI_SHORT, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/fetch_and_op_int np=4:
+Warning: MPID_Fetch_and_op() not implemented
+Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff02a34880, result_addr=0x7fff02a34890, MPI_INT, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffe75674f0, result_addr=0x7fffe7567500, MPI_INT, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff9c09eb80, result_addr=0x7fff9c09eb90, MPI_INT, target_rank=0, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/fetch_and_op_long np=4:
+Warning: MPID_Fetch_and_op() not implemented
+Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7ffffa69ae50, result_addr=0x7ffffa69ae60, MPI_LONG, target_rank=3, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/fetch_and_op_double np=4:
+Warning: MPID_Fetch_and_op() not implemented
+Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff9e8d8020, result_addr=0x7fff9e8d8030, MPI_DOUBLE, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff3ae2c7b0, result_addr=0x7fff3ae2c7c0, MPI_DOUBLE, target_rank=3, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff429a8c70, result_addr=0x7fff429a8c80, MPI_DOUBLE, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/fetch_and_op_long_double np=4:
+Warning: MPID_Fetch_and_op() not implemented
+Warning: MPID_Fetch_and_op() not implemented
+Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffb24b6bb0, result_addr=0x7fffb24b6bc0, MPI_LONG_DOUBLE, target_rank=0, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffc7a49500, result_addr=0x7fffc7a49510, MPI_LONG_DOUBLE, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffe467c240, result_addr=0x7fffe467c250, MPI_LONG_DOUBLE, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/get_accumulate_double np=4:
+Warning: MPID_Get_accumulate() not implemented
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x104e7d0, origin_count=5, MPI_DOUBLE, result_addr=0x1051d80, result_count=5, MPI_DOUBLE, target_rank=2, target_disp=0, target_count=5, MPI_DOUBLE, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xf667d0, origin_count=5, MPI_DOUBLE, result_addr=0xf69d80, result_count=5, MPI_DOUBLE, target_rank=3, target_disp=0, target_count=5, MPI_DOUBLE, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/get_accumulate_double_derived np=4:
+Warning: MPID_Get_accumulate() not implemented
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1c337d0, origin_count=5, dtype=USER<contig>, result_addr=0x1c36d80, result_count=5, dtype=USER<contig>, target_rank=0, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x22b47d0, origin_count=5, dtype=USER<contig>, result_addr=0x22b7d80, result_count=5, dtype=USER<contig>, target_rank=1, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x132d7d0, origin_count=5, dtype=USER<contig>, result_addr=0x1330d80, result_count=5, dtype=USER<contig>, target_rank=3, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/get_accumulate_int np=4:
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x9947d0, origin_count=5, MPI_INT, result_addr=0x997d30, result_count=5, MPI_INT, target_rank=0, target_disp=0, target_count=5, MPI_INT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xe6e7d0, origin_count=5, MPI_INT, result_addr=0xe71d30, result_count=5, MPI_INT, target_rank=1, target_disp=0, target_count=5, MPI_INT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xcdd7d0, origin_count=5, MPI_INT, result_addr=0xce0d30, result_count=5, MPI_INT, target_rank=3, target_disp=0, target_count=5, MPI_INT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/get_accumulate_int_derived np=4:
+Warning: MPID_Get_accumulate() not implemented
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x10147d0, origin_count=5, dtype=USER<contig>, result_addr=0x1017d30, result_count=5, dtype=USER<contig>, target_rank=1, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x7df7d0, origin_count=5, dtype=USER<contig>, result_addr=0x7e2d30, result_count=5, dtype=USER<contig>, target_rank=2, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/get_accumulate_long np=4:
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1e2a7d0, origin_count=5, MPI_LONG, result_addr=0x1e2dd80, result_count=5, MPI_LONG, target_rank=0, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x10077d0, origin_count=5, MPI_LONG, result_addr=0x100add0, result_count=5, MPI_LONG, target_rank=1, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1a6a7d0, origin_count=5, MPI_LONG, result_addr=0x1a6dd80, result_count=5, MPI_LONG, target_rank=2, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1c527d0, origin_count=5, MPI_LONG, result_addr=0x1c55d80, result_count=5, MPI_LONG, target_rank=3, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/get_accumulate_long_derived np=4:
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xee27d0, origin_count=5, dtype=USER<contig>, result_addr=0xee5d80, result_count=5, dtype=USER<contig>, target_rank=0, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xd3b7d0, origin_count=5, dtype=USER<contig>, result_addr=0xd3edd0, result_count=5, dtype=USER<contig>, target_rank=1, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xa467d0, origin_count=5, dtype=USER<contig>, result_addr=0xa49d80, result_count=5, dtype=USER<contig>, target_rank=3, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/get_accumulate_short np=4:
+Warning: MPID_Get_accumulate() not implemented
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xd8ed00, origin_count=5, MPI_SHORT, result_addr=0xd8ecd0, result_count=5, MPI_SHORT, target_rank=0, target_disp=0, target_count=5, MPI_SHORT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x256ad00, origin_count=5, MPI_SHORT, result_addr=0x256acd0, result_count=5, MPI_SHORT, target_rank=1, target_disp=0, target_count=5, MPI_SHORT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/get_accumulate_short_derived np=4:
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x2562d00, origin_count=5, dtype=USER<contig>, result_addr=0x2562cd0, result_count=5, dtype=USER<contig>, target_rank=0, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x797d00, origin_count=5, dtype=USER<contig>, result_addr=0x797cd0, result_count=5, dtype=USER<contig>, target_rank=2, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1170d00, origin_count=5, dtype=USER<contig>, result_addr=0x1170cd0, result_count=5, dtype=USER<contig>, target_rank=3, target_disp=0, target_count=5, dtype=USER<contig>, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/flush np=4:
+Warning: MPID_Win_flush_all() not implemented
+Warning: MPID_Win_flush_all() not implemented
+Fatal error in MPI_Win_flush_all: Unsupported file operation , error stack:
+MPI_Win_flush_all(113): MPI_Win_flush_all(win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/reqops np=4:
+Warning: MPID_Win_lock_all() not implemented
+Fatal error in MPI_Win_lock_all: Unsupported file operation , error stack:
+MPI_Win_lock_all(147): MPI_Win_lock_all(assert=0, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/req_example np=4:
+Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=800000, disp_unit=8, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fffd4365598, win=0x7fffd4365590) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/win_info np=4:
+Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff2f809418, win=0x7fff2f809410) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff55990628, win=0x7fff55990620) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fffca24b2c8, win=0x7fffca24b2c0) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff63458458, win=0x7fff63458450) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/linked_list_lockall np=4:
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff9df2746c) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff30db8eec) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/linked_list_bench_lock_all np=4:
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffdbe636b8) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/linked_list_bench_lock_excl np=4:
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff3fbaf788) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffe2499488) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7ffff773db08) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/linked_list_bench_lock_shr np=4:
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff511c37b8) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff52181a88) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/linked_list_bench_lock_shr_nocheck np=4:
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffa69fb4b8) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff0e810ff8) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffb981dcb8) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/mutex_bench np=4:
+Warning: MPID_Win_allocate() not implemented
+Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=8, disp_unit=4, MPI_INFO_NULL, comm=0x84000000, base=0x13907e0, win=0x13907d8) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=8, disp_unit=4, MPI_INFO_NULL, comm=0x84000000, base=0x23b97e0, win=0x23b97d8) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./rma/mutex_bench_shared np=4:
+Warning: MPID_Win_allocate_shared() not implemented
+Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=8, MPI_INFO_NULL, comm=0x84000001, baseptr=0x194cf40, win=0x194cf38) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./spawn/spawnintra np=2:
+[mpiexec@phoenix] APPLICATION TIMED OUT
+[proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+[proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
+[proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+[mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+[mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+[mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:188): launcher returned error waiting for completion
+[mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
+
+-------------------------------------------------
+./spawn/spaiccreate np=2:
+Fatal error in PMPI_Intercomm_create: Invalid communicator, error stack:
+PMPI_Intercomm_create(597).....: MPI_Intercomm_create(MPI_COMM_WORLD, local_leader=0, comm=0x84000000, remote_leader=0, tag=123, newintercomm=0x7fff22ed12dc) failed
+MPIR_Intercomm_create_impl(267): 
+MPIR_CheckDisjointLpids(86)....: Local and remote groups in MPI_Intercomm_create must not contain the same processes; both contain process 0Fatal error in PMPI_Intercomm_create: Other MPI error, error stack:
+PMPI_Intercomm_create(597)..........: MPI_Intercomm_create(MPI_COMM_WORLD, local_leader=0, MPI_COMM_NULL, remote_leader=0, tag=123, newintercomm=0x7fff5b3fb37c) failed
+MPIR_Intercomm_create_impl(295).....: 
+MPIR_Get_contextid(806).............: 
+MPIR_Get_contextid_sparse_group(864): 
+MPIR_Allreduce_impl(719)............: 
+MPIR_Allreduce_intra(362)...........: 
+mpid_irecv_done(100)................: read from socket failed - request state:recv(pde)done
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+[proxy:1:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+[proxy:1:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
+[proxy:1:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+[mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+[mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+[mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:217): launcher returned error waiting for completion
+[mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
+
+-------------------------------------------------
+./spawn/join np=2:
+[mpiexec@phoenix] APPLICATION TIMED OUT
+[proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+[proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
+[proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+[mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+[mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+[mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:188): launcher returned error waiting for completion
+[mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
+
+-------------------------------------------------
+./f77/rma/winscale1f np=4:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7F01BD3F2037
+#1  0x7F01BD3F2604
+#2  0x378FA35CCF
+#3  0x7F01BCF7F735
+#4  0x7F01BDBABC63
+#5  0x7F01BDC4032F
+#6  0x7F01BDB9F879
+#7  0x4015E8 in MAIN__ at winscale1f.f:?
+#0  0x7F2E24F56037
+#1  0x7F2E24F56604
+#2  0x378FA35CCF
+#3  0x7F2E24AE3735
+#4  0x7F2E2570FC63
+#5  0x7F2E257A432F
+#6  0x7F2E25703879
+#7  0x401649 in MAIN__ at winscale1f.f:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./f77/rma/winfencef np=4:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7F58B8F65037
+#1  0x7F58B8F65604
+#2  0x378FA35CCF
+#3  0x7F58B8AF2735
+#4  0x7F58B971EC63
+#5  0x7F58B97B332F
+#6  0x7F58B9712879
+#7  0x4012F6 in MAIN__ at winfencef.f:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./f77/rma/wingetf np=5:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7F37E3628037
+#1  0x7F37E3628604
+#2  0x378FA35CCF
+#3  0x7F37E31B918B
+#4  0x7F37E31B4FDC
+#5  0x7F37E3DE17B6
+#6  0x7F37E3E7521F
+#7  0x7F37E3DD5839
+#8  0x401356 in MAIN__ at wingetf.f:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./f77/rma/winscale2f np=4:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7FF2D20F1037
+#1  0x7FF2D20F1604
+#2  0x378FA35CCF
+#3  0x7FF2D1C7E735
+#4  0x7FF2D28AAC63
+#5  0x7FF2D293F32F
+#6  0x7FF2D289E879
+#7  0x4015E8 in MAIN__ at winscale2f.f:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./f77/rma/winaccf np=4:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7FA252B4B037
+#1  0x7FA252B4B604
+#2  0x378FA35CCF
+#3  0x7FA2526D8735
+#4  0x7FA253303B5B
+#5  0x7FA2533970AF
+#6  0x7FA2532F87F4
+#7  0x401379 in MAIN__ at winaccf.f:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./cxx/spawn/spawnintrax np=2:
+[mpiexec@phoenix] APPLICATION TIMED OUT
+[proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+[proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
+[proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+[mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+[mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+[mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:188): launcher returned error waiting for completion
+[mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
+
+-------------------------------------------------
+./cxx/rma/winfencex np=4:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./cxx/rma/winscale1x np=4:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./cxx/rma/winscale2x np=4:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./f90/rma/winscale1f90 np=4:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  #0  0x7F069ACA6037
+#1  0x7F069ACA6604
+#2  0x378FA35CCF
+#3  0x7F069A833735
+#4  0x7F069B45EC63
+#5  0x7F069B4F332F
+#6  0x7F069B452879
+#7  0x401631 in MAIN__ at winscale1f90.f90:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./f90/rma/winfencef90 np=4:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Backtrace for this error:
+#0  0x7FE23170C037
+#1  0x7FE23170C604
+#2  0x378FA35CCF
+#3  0x7FE231299735
+#0  0x7F5E04454037
+#1  0x7F5E04454604
+#2  0x#4  378FA35CCF
+#3  0x7F5E03FE1735
+0x7FE231EC4C63
+#5  0x7FE231F5932F
+#6  0x7FE231EB8879
+#7  0x401363 in MAIN__ at winfencef90.f90:?
+#4  0x7F5E04C0CC63
+#5  0x7F5E04CA132F
+#6  0x7F5E04C00879
+#7  
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./f90/rma/wingetf90 np=5:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7F9EF118E037
+#1  0x7F9EF118E604
+#2  0x378FA35CCF
+#3  0x7F9EF0D1F18B
+#4  0x7F9EF0D1AFDC
+#5  0x7F9EF19467B6
+#0  0x7FD870570037
+#1  0x7FD870570604
+#2  0x378FA35CCF
+#3  0x7FD87010118B
+#4  0x7FD8700FCFDC
+#5  0x7FD870D287B6
+#6  0x7FD870DBC21F
+#7  0x7FD870D1C839
+#8  0x401305 in MAIN__ at wingetf90.f90:?
+#6  0x7F9EF19DA21F
+#7  0x7F9EF193A839
+#8  0x401362 in MAIN__ at wingetf90.f90:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./f90/rma/winscale2f90 np=4:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7FA2676C7037
+#1  0x7FA2676C7604
+#2  0x378FA35CCF
+#3  0x7FA267254735
+#4  0x7FA267E7FC63
+#5  0x7FA267F1432F
+#6  0x7FA267E73879
+#7  0x4015D0 in MAIN__ at winscale2f90.f90:?
+#0  0x7FC5DB4EC037
+#1  0x7FC5DB4EC604
+#2  0x378FA35CCF
+#3  0x7FC5DB079735
+#4  0x7FC5DBCA4C63
+#5  0x7FC5DBD3932F
+#6  0x7FC5DBC98879
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./f90/rma/winaccf90 np=4:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7F500BD69037
+#1  0x7F500BD69604
+#0  0x7F6A83C80037
+#1  0x7F6A83C80604
+#2  #2  0x378FA35CCF
+0x#3  0x7F6A8380D735
+378FA35CCF#4  0x7F6A84437B5B
+
+#5  0x7F6A844CB0AF
+#6  0x7F6A8442C7F4
+#3  #7  0x401375 in MAIN__ at winaccf90.f90:?
+0x7F500B8F6735
+#4  0x7F500C520B5B
+#5  0x7F500C5B40AF
+#6  0x7F500C5157F4
+#7  0x40130B in MAIN__ at winaccf90.f90:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+58 tests failed out of 735

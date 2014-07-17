@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2005 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -7,7 +7,7 @@
 /* A very simple program that performs only a send and a receive.  This
    program can be use with logging enabled (configure with 
    --enable-g=dbg,log) and run with -mpich-dbg-class=routine to get
-   a trace of the execution of the functions in MPICH2 */
+   a trace of the execution of the functions in MPICH */
 #include <stdio.h>
 #include "mpi.h"
 

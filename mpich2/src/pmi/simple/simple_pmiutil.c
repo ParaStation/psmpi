@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -11,7 +11,8 @@
    the PMI interface itself.  Reading and writing on pipes, signals, and parsing
    key=value messages
 */
-#include "pmiconf.h"
+
+#include "mpichconf.h"
 
 #include <stdio.h>
 #ifdef HAVE_STDLIB_H
@@ -27,9 +28,9 @@
 #include <errno.h>
 #include "simple_pmiutil.h"
 
-/* Use the memory definitions from mpich2/src/include */
+/* Use the memory definitions from mpich/src/include */
 #include "mpimem.h"
-/* Use the MPI error message routines from mpich2/src/include */
+/* Use the MPI error message routines from mpich/src/include */
 #include "mpibase.h"
 
 #define MAXVALLEN 1024
@@ -113,10 +114,10 @@ int PMIU_readline( int fd, char *buf, int maxlen )
     static char readbuf[MAX_READLINE];
     static char *nextChar = 0, *lastChar = 0;  /* lastChar is really one past 
 						  last char */
-    static int  lastErrno = 0;
     static int lastfd = -1;
-    int curlen, n;
-    char *p, ch;
+    ssize_t n;
+    int     curlen;
+    char    *p, ch;
 
     /* Note: On the client side, only one thread at a time should 
        be calling this, and there should only be a single fd.  
@@ -143,7 +144,6 @@ int PMIU_readline( int fd, char *buf, int maxlen )
 		/* Error.  Return a negative value if there is no
 		   data.  Save the errno in case we need to return it
 		   later. */
-		lastErrno = errno;
 		if (curlen == 1) {
 		    curlen = 0;
 		}
@@ -173,7 +173,7 @@ int PMIU_readline( int fd, char *buf, int maxlen )
 
 int PMIU_writeline( int fd, char *buf )	
 {
-    int size, n;
+    ssize_t size, n;
 
     size = strlen( buf );
     if ( size > PMIU_MAXLINE ) {
@@ -246,7 +246,7 @@ int PMIU_parse_keyvals( char *st )
 	/* store value */
         MPIU_Strncpy( PMIU_keyval_tab[PMIU_keyval_tab_idx].value, valstart, 
 		      MAXVALLEN );
-	offset = p - valstart;
+	offset = (int)(p - valstart);
 	/* When compiled with -fPIC, the pgcc compiler generates incorrect
 	   code if "p - valstart" is used instead of using the 
 	   intermediate offset */

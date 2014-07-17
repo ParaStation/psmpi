@@ -74,6 +74,16 @@ void MPID_DEV_Request_wait(MPID_Request *req)
 			MPID_DEV_Request_multi_wait(req);
 			break;
 */
+	case MPID_COLL_REQUEST:
+		/* ToDo: Unhandled request type!!! */
+#		define MPID_COLL_REQUEST_NOT_IMPLEMENTED 0
+		assert(MPID_COLL_REQUEST_NOT_IMPLEMENTED);
+		break;
+	case MPID_REQUEST_MPROBE:
+		/* ToDo: Unhandled request type!!! */
+#		define MPID_REQUEST_MPROBE_NOT_IMPLEMENTED 0
+		assert(MPID_REQUEST_MPROBE_NOT_IMPLEMENTED);
+		break;
 	case MPID_UREQUEST:
 	case MPID_REQUEST_UNDEFINED:
 	case MPID_LAST_REQUEST_KIND:
@@ -102,8 +112,17 @@ void MPID_Progress_start(MPID_Progress_state * state)
 /*  Wait for some communication since 'MPID_Progress_start'  */
 int MPID_Progress_wait(MPID_Progress_state * state)
 {
-	MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
+	int made_progress;
+	int mpi_errno;
 
+	/* Make progress on nonblocking collectives */
+	mpi_errno = MPIDU_Sched_progress(&made_progress);
+	assert(mpi_errno == MPI_SUCCESS);
+
+	if (!made_progress) {
+		/* Make progress on pscom requests */
+		MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
+	}
 	return MPI_SUCCESS;
 }
 
@@ -125,6 +144,13 @@ void MPID_Progress_end(MPID_Progress_state * state)
 */
 int MPID_Progress_test(void)
 {
+	int made_progress;
+	int mpi_errno;
+
+	/* Make progress on nonblocking collectives */
+	mpi_errno = MPIDU_Sched_progress(&made_progress);
+	assert(mpi_errno == MPI_SUCCESS);
+
 	pscom_test_any();
 	return MPI_SUCCESS;
 }
@@ -156,7 +182,7 @@ int MPID_PSP_Wait(MPID_Request *request)
 	MPID_DEV_Request_wait(request);
 
 	/* Dont use request after MPID_DEV_Request_wait(), until you hold one additional ref! */
-	/* assert(MPID_Request_is_completed(request)); */
+	/* assert(MPID_Request_is_complete(request)); */
 
 	return MPI_SUCCESS;
 }

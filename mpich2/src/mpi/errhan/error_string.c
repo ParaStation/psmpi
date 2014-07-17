@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -35,7 +35,7 @@
 Input Parameters:
 . errorcode - Error code returned by an MPI routine or an MPI error class
 
-Output Parameter:
+Output Parameters:
 + string - Text that corresponds to the errorcode 
 - resultlen - Length of string 
 
@@ -70,7 +70,6 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen)
         {
 	    MPIR_ERRTEST_ARGNULL(string,"string",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(resultlen,"resultlen",mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

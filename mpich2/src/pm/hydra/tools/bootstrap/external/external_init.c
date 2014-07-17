@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -32,9 +32,6 @@ static HYD_status external_rmk_init(void)
     /* for everything else, set default values */
     if (HYDT_bsci_fns.query_native_int == NULL)
         HYDT_bsci_fns.query_native_int = HYDT_bscd_external_query_native_int;
-
-    if (HYDT_bsci_fns.query_jobid == NULL)
-        HYDT_bsci_fns.query_jobid = HYDT_bscd_external_query_jobid;
 
     HYDU_FUNC_EXIT();
 

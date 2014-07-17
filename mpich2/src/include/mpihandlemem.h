@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -10,7 +10,7 @@
   MPI Opaque Objects:
 
   MPI Opaque objects such as 'MPI_Comm' or 'MPI_Datatype' are specified by 
-  integers (in the MPICH2 implementation); the MPI standard calls these
+  integers (in the MPICH implementation); the MPI standard calls these
   handles.  
   Out of range values are invalid; the value 0 is reserved.
   For most (with the possible exception of 
@@ -19,7 +19,7 @@
   passed where a communicator is expected) and important properties of the 
   object.  Even the 'MPI_xxx_NULL' values should be encoded so that 
   different null handles can be distinguished.  The details of the encoding
-  of the handles is covered in more detail in the MPICH2 Design Document.
+  of the handles is covered in more detail in the MPICH Design Document.
   For the most part, the ADI uses pointers to the underlying structures
   rather than the handles themselves.  However, each structure contains an 
   'handle' field that is the corresponding integer handle for the MPI object.
@@ -41,7 +41,7 @@
   multiple types (for example, we may want a universal error handler for 
   errors return).  This is also used to indicate the type of MPI object a 
   MPI handle represents.  It is an enum because only this applies only the
-  the MPI and internal MPICH2 objects.
+  the MPI and internal MPICH objects.
 
   The 'MPID_PROCGROUP' kind is used to manage process groups (different
   from MPI Groups) that are used to keep track of collections of
@@ -59,7 +59,7 @@ typedef enum MPID_Object_kind {
   MPID_COMM       = 0x1, 
   MPID_GROUP      = 0x2,
   MPID_DATATYPE   = 0x3,
-  MPID_FILE       = 0x4,               /* This is not used */
+  MPID_FILE       = 0x4, /* only used obliquely inside MPID_Errhandler objs */
   MPID_ERRHANDLER = 0x5,
   MPID_OP         = 0x6,
   MPID_INFO       = 0x7,
@@ -90,15 +90,26 @@ const char *MPIU_Handle_get_kind_str(int kind);
 #define HANDLE_GET_KIND(a) (((unsigned)(a)&HANDLE_KIND_MASK)>>HANDLE_KIND_SHIFT)
 #define HANDLE_SET_KIND(a,kind) ((a)|((kind)<<HANDLE_KIND_SHIFT))
 
-/* For indirect, the remainder of the handle has a block and index */
-#define HANDLE_INDIRECT_SHIFT 16
-#define HANDLE_BLOCK(a) (((a)& 0x03FF0000) >> HANDLE_INDIRECT_SHIFT)
-#define HANDLE_BLOCK_INDEX(a) ((a) & 0x0000FFFF)
+/* For indirect, the remainder of the handle has a block and index within that
+ * block */
+#define HANDLE_INDIRECT_SHIFT 12
+#define HANDLE_BLOCK(a) (((a)& 0x03FFF000) >> HANDLE_INDIRECT_SHIFT)
+#define HANDLE_BLOCK_INDEX(a) ((a) & 0x00000FFF)
 
-/* Handle block is between 1 and 1024 *elements* */
-#define HANDLE_BLOCK_SIZE 256
-/* Index size is bewtween 1 and 65536 *elements* */
-#define HANDLE_BLOCK_INDEX_SIZE 1024
+/* Number of blocks is between 1 and 16384 */
+#if defined MPID_HANDLE_NUM_BLOCKS
+#define HANDLE_NUM_BLOCKS MPID_HANDLE_NUM_BLOCKS
+#else
+#define HANDLE_NUM_BLOCKS 8192
+#endif /* MPID_HANDLE_NUM_BLOCKS */
+
+/* Number of objects in a block is bewtween 1 and 4096 (each obj has an index
+ * within its block) */
+#if defined MPID_HANDLE_NUM_INDICES
+#define HANDLE_NUM_INDICES MPID_HANDLE_NUM_INDICES
+#else
+#define HANDLE_NUM_INDICES 1024
+#endif /* MPID_HANDLE_NUM_INDICES */
 
 /* For direct, the remainder of the handle is the index into a predefined 
    block */
@@ -123,7 +134,7 @@ const char *MPIU_Handle_get_kind_str(int kind);
                                              "Invalid refcount (%d) in %p (0x%08x) %s",             \
                                              local_ref_count_, (objptr_), (objptr_)->handle, op_)); \
         }                                                                                           \
-        MPIU_Assert(local_ref_count_ < 0);                                                          \
+        MPIU_Assert(local_ref_count_ >= 0);                                                         \
     } while (0)
 #else
 #define MPIU_HANDLE_CHECK_REFCOUNT(objptr_,op_) \
@@ -318,7 +329,7 @@ typedef OPA_int_t MPIU_Handle_ref_count;
 #define MPIU_Object_add_ref(objptr_)                           \
     do {                                                       \
         int handle_kind_ = HANDLE_GET_KIND((objptr_)->handle); \
-        if (handle_kind_ != HANDLE_KIND_BUILTIN) {             \
+        if (unlikely(handle_kind_ != HANDLE_KIND_BUILTIN)) {   \
             MPIU_Object_add_ref_always((objptr_));             \
         }                                                      \
         else {                                                                                                 \
@@ -333,7 +344,7 @@ typedef OPA_int_t MPIU_Handle_ref_count;
 #define MPIU_Object_release_ref(objptr_,inuse_ptr_)                  \
     do {                                                             \
         int handle_kind_ = HANDLE_GET_KIND((objptr_)->handle);       \
-        if (handle_kind_ != HANDLE_KIND_BUILTIN) {                   \
+        if (unlikely(handle_kind_ != HANDLE_KIND_BUILTIN)) {         \
             MPIU_Object_release_ref_always((objptr_), (inuse_ptr_)); \
         }                                                            \
         else {                                                       \
@@ -362,7 +373,7 @@ typedef OPA_int_t MPIU_Handle_ref_count;
 /* ------------------------------------------------------------------------- */
 
 /* This macro defines structure fields that are needed in order to use the
- * reference counting and object allocation macros/functions in MPICH2.  This
+ * reference counting and object allocation macros/functions in MPICH.  This
  * allows us to avoid casting and violating C's strict aliasing rules in most
  * cases.
  *

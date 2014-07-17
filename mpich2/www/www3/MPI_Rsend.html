@@ -9,7 +9,7 @@
 Blocking ready send  
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+int MPI_Rsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
               MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -81,5 +81,5 @@ zero and the size of the communicator minus one; ranks in a receive
 (<TT>MPI_Recv</TT>, <TT>MPI_Irecv</TT>, <TT>MPI_Sendrecv</TT>, etc.) may also be <TT>MPI_ANY_SOURCE</TT>.
 </DL>
 <P>
-<P><B>Location:</B>rsend.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/pt2pt/rsend.c<P>
 </BODY></HTML>

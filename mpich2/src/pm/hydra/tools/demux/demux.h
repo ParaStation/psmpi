@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -38,8 +38,7 @@ HYD_status HYDT_dmx_init(char **demux);
  * event.
  */
 HYD_status HYDT_dmx_register_fd(int num_fds, int *fd, HYD_event_t events, void *userp,
-                                HYD_status(*callback) (int fd, HYD_event_t events,
-                                                       void *userp));
+                                HYD_status(*callback) (int fd, HYD_event_t events, void *userp));
 
 /**
  * \brief HYDT_dmx_deregister_fd - Deregister file descriptor

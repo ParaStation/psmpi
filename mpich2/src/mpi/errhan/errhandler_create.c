@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -31,10 +31,10 @@
 /*@
   MPI_Errhandler_create - Creates an MPI-style errorhandler
 
-Input Parameter:
+Input Parameters:
 . function - user defined error handling procedure 
 
-Output Parameter:
+Output Parameters:
 . errhandler - MPI error handler (handle) 
 
 Notes:
@@ -77,7 +77,6 @@ int MPI_Errhandler_create(MPI_Handler_function *function,
         {
 	    MPIR_ERRTEST_ARGNULL(function, "function", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(errhandler, "errhandler", mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

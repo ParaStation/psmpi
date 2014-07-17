@@ -9,9 +9,10 @@
 Sends data from all to all processes; each process may  send a different amount of data and provide displacements for the input and output data. 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Alltoallv(void *sendbuf, int *sendcnts, int *sdispls, 
-                  MPI_Datatype sendtype, void *recvbuf, int *recvcnts, 
-                  int *rdispls, MPI_Datatype recvtype, MPI_Comm comm)
+int MPI_Alltoallv(const void *sendbuf, const int *sendcounts,
+                  const int *sdispls, MPI_Datatype sendtype, void *recvbuf,
+                  const int *recvcounts, const int *rdispls, MPI_Datatype recvtype,
+                  MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -39,7 +40,7 @@ which to place the incoming data from process  <TT>i</TT>
 <DT><B>comm </B><DD>communicator (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>recvbuf </B> <DD> address of receive buffer (choice) 
 </DL>
 <P>
@@ -88,5 +89,5 @@ MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 <DL><DT><B>MPI_ERR_BUFFER </B> <DD> Invalid buffer pointer.  Usually a null buffer where
 one is not valid.
 </DL>
-<P><B>Location:</B>alltoallv.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/coll/alltoallv.c<P>
 </BODY></HTML>

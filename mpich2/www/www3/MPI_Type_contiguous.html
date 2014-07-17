@@ -10,8 +10,8 @@ Creates a contiguous datatype
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Type_contiguous(int count,
-                      MPI_Datatype old_type,
-                      MPI_Datatype *new_type_p)
+                      MPI_Datatype oldtype,
+                      MPI_Datatype *newtype)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -20,7 +20,7 @@ int MPI_Type_contiguous(int count,
 <DT><B>oldtype </B><DD>old datatype (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>newtype </B> <DD> new datatype (handle) 
 </DL>
 <P>
@@ -68,5 +68,5 @@ non-negative; a count of zero is often valid.
 <DL><DT><B>MPI_ERR_INTERN </B> <DD> This error is returned when some part of the MPICH 
 implementation is unable to acquire memory.  
 </DL>
-<P><B>Location:</B>type_contiguous.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/type_contiguous.c<P>
 </BODY></HTML>

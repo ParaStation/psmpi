@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Win_wait */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -32,7 +31,7 @@
 /*@
    MPI_Win_wait - Completes an RMA exposure epoch begun with MPI_Win_post
 
-   Input Parameter:
+Input Parameters:
 . win - window object (handle) 
 
 .N ThreadSafe
@@ -62,7 +61,6 @@ int MPI_Win_wait(MPI_Win win)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_WIN(win, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -78,6 +76,8 @@ int MPI_Win_wait(MPI_Win win)
         {
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
+
+            /* TODO: Ensure window is in a PSCW active mode epoch */
             if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;

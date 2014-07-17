@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -46,7 +46,10 @@ PMPI_LOCAL int MPIR_fd_send(int fd, void *buffer, int length)
 
     while (length)
     {
-	num_bytes = send(fd, buffer, length, 0);
+        /* The expectation is that the length of a join message will fit 
+           in an int.  For Unixes that define send as returning ssize_t, 
+           we can safely cast this to an int. */
+	num_bytes = (int)send(fd, buffer, length, 0);
 	/* --BEGIN ERROR HANDLING-- */
 	if (num_bytes == -1)
 	{
@@ -75,7 +78,8 @@ PMPI_LOCAL int MPIR_fd_recv(int fd, void *buffer, int length)
 
     while (length)
     {
-	num_bytes = recv(fd, buffer, length, 0);
+        /* See discussion on send above for the cast to int. */
+	num_bytes = (int)recv(fd, buffer, length, 0);
 	/* --BEGIN ERROR HANDLING-- */
 	if (num_bytes == -1)
 	{
@@ -107,10 +111,10 @@ PMPI_LOCAL int MPIR_fd_recv(int fd, void *buffer, int length)
    MPI_Comm_join - Create a communicator by joining two processes connected by 
      a socket.
 
-   Input Parameter:
+Input Parameters:
 . fd - socket file descriptor 
 
-   Output Parameter:
+Output Parameters:
 . intercomm - new intercommunicator (handle) 
 
  Notes:

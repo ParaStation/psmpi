@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -32,13 +32,13 @@
    MPI_Type_create_hvector - Create a datatype with a constant stride given
      in bytes
 
-   Input Parameters:
+Input Parameters:
 + count - number of blocks (nonnegative integer)
 . blocklength - number of elements in each block (nonnegative integer)
 . stride - number of bytes between start of each block (address integer)
 - oldtype - old datatype (handle)
 
-   Output Parameter:
+Output Parameters:
 . newtype - new datatype (handle)
 
 .N ThreadSafe
@@ -77,14 +77,13 @@ int MPI_Type_create_hvector(int count,
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
 	    MPIR_ERRTEST_ARGNEG(blocklength, "blocklen", mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(oldtype, "datatype", mpi_errno);
-	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
             if (HANDLE_GET_KIND(oldtype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(oldtype, datatype_ptr);
                 MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
             }
             MPIR_ERRTEST_ARGNULL(newtype, "newtype", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }

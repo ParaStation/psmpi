@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -59,15 +59,13 @@ static HYD_status proxy_list_to_node_str(struct HYD_proxy *proxy_list, char **no
     goto fn_exit;
 }
 
-HYD_status HYDT_bscd_slurm_launch_procs(char **args, struct HYD_proxy *proxy_list,
-                                        int *control_fd)
+HYD_status HYDT_bscd_slurm_launch_procs(char **args, struct HYD_proxy *proxy_list, int *control_fd)
 {
     int num_hosts, idx, i;
     int *pid, *fd_list;
     char *targs[HYD_NUM_TMP_STRINGS], *node_list_str = NULL;
     char *path = NULL, *extra_arg_list = NULL, *extra_arg;
     struct HYD_proxy *proxy;
-    struct HYDT_topo_cpuset_t cpuset;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -142,9 +140,8 @@ HYD_status HYDT_bscd_slurm_launch_procs(char **args, struct HYD_proxy *proxy_lis
         HYDU_print_strlist(targs);
     }
 
-    HYDT_topo_cpuset_zero(&cpuset);
     status = HYDU_create_process(targs, NULL, NULL, &fd_stdout, &fd_stderr,
-                                 &HYD_bscu_pid_list[HYD_bscu_pid_count++], cpuset);
+                                 &HYD_bscu_pid_list[HYD_bscu_pid_count++], -1);
     HYDU_ERR_POP(status, "create process returned error\n");
 
     HYD_bscu_fd_list[HYD_bscu_fd_count++] = fd_stdout;

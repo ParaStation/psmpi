@@ -1,9 +1,9 @@
-.TH MPI_Ibsend 3 "8/6/2010" " " "MPI"
+.TH MPI_Ibsend 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Ibsend \-  Starts a nonblocking buffered send 
 .SH SYNOPSIS
 .nf
-int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag, 
+int MPI_Ibsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
                MPI_Comm comm, MPI_Request *request)
 .fi
 .SH INPUT PARAMETERS
@@ -38,7 +38,7 @@ int MPI_Ibsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
 - communicator (handle) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B request 
@@ -177,4 +177,4 @@ one is not valid.
 .PD 1
 
 .SH LOCATION
-ibsend.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/pt2pt/ibsend.c

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2003 by Argonne National Laboratory.
@@ -19,7 +19,7 @@ int main( int argc, char *argv[] )
     MPI_Comm comm;
     MPI_Request r[2];
     MPI_Status  s[2];
-    int errval;
+    int errval, errclass;
     int b1[20], b2[20], rank, size, src, dest, i;
 
     MTest_Init( &argc, &argv );
@@ -48,7 +48,16 @@ int main( int argc, char *argv[] )
 	    printf( "Error returned from Irecv\n" );
 	}
 
-	errval = MPI_Barrier(comm);
+        /* Wait for Irecvs to be posted before the sender calls send.  This
+         * prevents the operation from completing and returning an error in the
+         * Irecv. */
+        errval = MPI_Recv(NULL, 0, MPI_INT, src, 100, comm, MPI_STATUS_IGNORE);
+        if (errval) {
+            errs++;
+            MTestPrintError( errval );
+            printf( "Error returned from Recv\n" );
+        }
+
 	if (errval) {
 	    errs++;
 	    MTestPrintError( errval );
@@ -58,7 +67,8 @@ int main( int argc, char *argv[] )
 	    s[i].MPI_ERROR = -1;
 	}
 	errval = MPI_Waitall( 2, r, s );
-	if (errval != MPI_ERR_IN_STATUS) {
+        MPI_Error_class( errval, &errclass );
+	if (errclass != MPI_ERR_IN_STATUS) {
 	    errs++;
 	    printf( "Did not get ERR_IN_STATUS in Waitall\n" );
 	}
@@ -88,14 +98,11 @@ int main( int argc, char *argv[] )
 
     }
     else if (rank == src) {
-	/* Send messages, then barrier so that the wait does not start 
-	   until we are sure that the sends have begun */
+        /* Wait for Irecvs to be posted before the sender calls send */
+        MPI_Ssend( NULL, 0, MPI_INT, dest, 100, comm );
+
 	MPI_Send( b1, 10, MPI_INT, dest, 0, comm );
 	MPI_Send( b2, 11, MPI_INT, dest, 10, comm );
-	MPI_Barrier(comm);
-    }
-    else {
-	MPI_Barrier(comm);
     }
 
     MTest_Finalize( errs );

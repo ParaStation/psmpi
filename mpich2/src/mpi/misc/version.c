@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -31,7 +31,7 @@
 /*@
    MPI_Get_version - Return the version number of MPI
 
-   Output Parameters:
+Output Parameters:
 +  version - Version of MPI
 -  subversion - Subversion of MPI
 
@@ -62,7 +62,6 @@ int MPI_Get_version( int *version, int *subversion )
         {
 	    MPIR_ERRTEST_ARGNULL(version,"version",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(subversion,"subversion",mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -27,8 +27,7 @@ int main(int argc, char **argv)
             num_cpus = atoi(argv[1]);
             argv += 2;
         }
-        else if (!strcmp(argv[0], "--help") || !strcmp(argv[0], "-help") ||
-                 !strcmp(argv[0], "-h")) {
+        else if (!strcmp(argv[0], "--help") || !strcmp(argv[0], "-help") || !strcmp(argv[0], "-h")) {
             fprintf(stderr, "Usage: ./binding {--num-cpus [CPUs]}\n");
             MPI_Abort(MPI_COMM_WORLD, -1);
         }

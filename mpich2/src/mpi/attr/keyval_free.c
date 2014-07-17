@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -33,7 +33,7 @@
 
 MPI_Keyval_free - Frees an attribute key for communicators
 
-Input Parameter:
+Input Parameters:
 . keyval - Frees the integer key value (integer) 
 
 Note:
@@ -57,7 +57,6 @@ int MPI_Keyval_free(int *keyval)
 {
     static const char FCNAME[] = "MPI_Keyval_free";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Keyval *keyval_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_KEYVAL_FREE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -69,20 +68,21 @@ int MPI_Keyval_free(int *keyval)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_ARGNULL(keyval, "keyval", mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
-
-    /* Convert MPI object handles to object pointers */
-    MPID_Keyval_get_ptr( *keyval, keyval_ptr );
 
     /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
+            MPID_Keyval *keyval_ptr = NULL;
+
+            /* Convert MPI object handles to object pointers */
+            MPID_Keyval_get_ptr( *keyval, keyval_ptr );
+
 	    MPID_Keyval_valid_ptr( keyval_ptr, mpi_errno );
             if (mpi_errno) goto fn_fail;
         }

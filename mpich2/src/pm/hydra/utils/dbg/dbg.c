@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -15,12 +15,11 @@ HYD_status HYDU_dbg_init(const char *str)
 
     HYDU_mem_init();
 
-    status = HYDU_gethostname(hostname);
-    HYDU_ERR_POP(status, "unable to get local host name\n");
+    if (gethostname(hostname, MAX_HOSTNAME_LEN) < 0)
+        HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "unable to get local host name\n");
 
     HYDU_MALLOC(HYD_dbg_prefix, char *, strlen(hostname) + 1 + strlen(str) + 1, status);
-    HYDU_snprintf(HYD_dbg_prefix, strlen(hostname) + 1 + strlen(str) + 1, "%s@%s", str,
-                  hostname);
+    HYDU_snprintf(HYD_dbg_prefix, strlen(hostname) + 1 + strlen(str) + 1, "%s@%s", str, hostname);
 
   fn_exit:
     HYDU_FUNC_EXIT();

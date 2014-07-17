@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -6,9 +6,6 @@
 
 #if !defined(MPICH_MPIDI_CH3_POST_H_INCLUDED)
 #define MPICH_MPIDI_CH3_POST_H_INCLUDED
-
-/* #define MPIDI_CH3_EAGER_MAX_MSG_SIZE (1500 - sizeof(MPIDI_CH3_Pkt_t)) */
-#define MPIDI_CH3_EAGER_MAX_MSG_SIZE   (128*1024)
 
 #define MPIDI_CH3_Progress_start(progress_state_)                                                       \
         (progress_state_)->ch.completion_count = OPA_load_int(&MPIDI_CH3I_progress_completion_count);
@@ -38,11 +35,6 @@ int  MPIDI_CH3I_Posted_recv_dequeued(MPID_Request *rreq);
 #define MPIDI_CH3_Comm_Spawn MPIDI_CH3_Comm_Spawn
 
 #include "mpid_nem_post.h"
-
-/* communicator creation/descruction hooks */
-
-int MPIDI_CH3I_comm_create (MPID_Comm *new_comm);
-int MPIDI_CH3I_comm_destroy (MPID_Comm *new_comm);
 
 /* rendezvous hooks */
 int MPID_nem_lmt_RndvSend(MPID_Request **sreq_p, const void * buf, int count, MPI_Datatype datatype, int dt_contig,

@@ -1,11 +1,11 @@
-.TH MPI_Sendrecv 3 "7/27/2010" " " "MPI"
+.TH MPI_Sendrecv 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Sendrecv \-  Sends and receives a message 
 .SH SYNOPSIS
 .nf
-int MPI_Sendrecv(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
+int MPI_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                 int dest, int sendtag,
-                void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+                void *recvbuf, int recvcount, MPI_Datatype recvtype,
                 int source, int recvtag,
                 MPI_Comm comm, MPI_Status *status)
 .fi
@@ -209,4 +209,4 @@ zero and the size of the communicator minus one; ranks in a receive
 .PD 1
 
 .SH LOCATION
-sendrecv.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/pt2pt/sendrecv.c

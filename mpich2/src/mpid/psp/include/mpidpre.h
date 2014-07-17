@@ -15,6 +15,7 @@
 
 #include "list.h"
 #include <stdint.h>
+#include "mpid_sched_pre.h"
 
 /*********************************************
  * PSCOM Network header
@@ -114,8 +115,10 @@ typedef struct MPID_PSP_packed_msg {
 
 
 typedef struct pscom_request_put_send {
+	struct MPID_Request     *mpid_req;
 	MPID_PSP_packed_msg_t	msg;
 	struct MPID_Win		*win_ptr;
+	int                     target_rank;
 } pscom_request_put_send_t;
 
 
@@ -127,8 +130,10 @@ typedef struct pscom_request_put_recv {
 
 
 typedef struct pscom_request_accumulate_send {
+	struct MPID_Request     *mpid_req;
 	MPID_PSP_packed_msg_t	msg;
 	struct MPID_Win		*win_ptr;
+	int                     target_rank;
 } pscom_request_accumulate_send_t;
 
 
@@ -139,11 +144,13 @@ typedef struct pscom_request_accumulate_recv {
 
 
 typedef struct pscom_request_get_answer_recv {
+	struct MPID_Request     *mpid_req;
 	void			*origin_addr;
 	int			origin_count;
 	MPI_Datatype		origin_datatype;
 	MPID_PSP_packed_msg_t	msg;
 	struct MPID_Win		*win_ptr;
+	int                     target_rank;
 } pscom_request_get_answer_recv_t;
 
 
@@ -215,7 +222,37 @@ enum MPID_PSP_MSGTYPE {
 	MPID_PSP_MSGTYPE_RMA_LOCK_ANSWER,
 
 	MPID_PSP_MSGTYPE_RMA_UNLOCK_REQUEST,
-	MPID_PSP_MSGTYPE_RMA_UNLOCK_ANSWER
+	MPID_PSP_MSGTYPE_RMA_UNLOCK_ANSWER,
+
+	MPID_PSP_MSGTYPE_DATA_CANCELLED,          /* Data message that should be cancelled */
+	MPID_PSP_MSGTYPE_MPROBE_RESERVED_REQUEST, /* Message that has been reserved by mprobe */
+	MPID_PSP_MSGTYPE_MPROBE_RESERVED_REQUEST_ACK, /* Message that has been reserved by mprobe with ACK request */
+
+	MPID_PSP_MSGTYPE_RMA_FLUSH_REQUEST,
+	MPID_PSP_MSGTYPE_RMA_FLUSH_ANSWER,
+
+	MPID_PSP_MSGTYPE_RMA_INTERNAL_LOCK_REQUEST,
+	MPID_PSP_MSGTYPE_RMA_INTERNAL_LOCK_ANSWER,
+
+	MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_REQUEST,
+	MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_ANSWER
+};
+
+enum MPID_PSP_Win_lock_state {
+	MPID_PSP_LOCK_UNLOCKED = 0,
+	MPID_PSP_LOCK_LOCKED,
+	MPID_PSP_LOCK_LOCKED_ALL
+};
+
+enum MPID_PSP_Win_epoch_states {
+	MPID_PSP_EPOCH_NONE = 0,
+	MPID_PSP_EPOCH_FENCE,
+	MPID_PSP_EPOCH_FENCE_ISSUED,
+	MPID_PSP_EPOCH_POST,
+	MPID_PSP_EPOCH_START,
+	MPID_PSP_EPOCH_PSCW, /* Both post and start have been called. */
+	MPID_PSP_EPOCH_LOCK,
+	MPID_PSP_EPOCH_LOCK_ALL
 };
 
 
@@ -227,7 +264,6 @@ struct MPID_DEV_Request_common
 {
 	pscom_request_t	*pscom_req;
 };
-
 
 struct MPID_DEV_Request_recv
 {
@@ -242,6 +278,9 @@ struct MPID_DEV_Request_recv
 	const char	*addr;
 	int		count;
 	MPI_Datatype	datatype;
+
+	/* for mrecv only. Reference to the mprobed request. */
+	void *mprobe_tag;
 };
 
 
@@ -302,6 +341,7 @@ struct MPID_DEV_Request
 		struct MPID_DEV_Request_send  send;
 		struct MPID_DEV_Request_multi multi;
 		struct MPID_DEV_Request_persistent persistent; /* Persistent send/recv */
+		/* mprobe requests using also MPID_DEV_Request_recv recv */
 	} kind;
 };
 
@@ -358,17 +398,24 @@ typedef struct MPID_Win_rank_info
 	unsigned int *rma_puts_accs;					\
 	unsigned int rma_puts_accs_received;				\
 	unsigned int rma_local_pending_cnt;	/* pending io counter */ \
+	unsigned int *rma_local_pending_rank;   /* pending io counter per rank */ \
+	MPID_Group *start_group_ptr; /* group passed in MPI_Win_start */ \
 	int *ranks_start;		/* ranks of last MPID_Win_start call */	\
 	unsigned int ranks_start_sz;					\
 	int *ranks_post;		/* ranks of last MPID_Win_post call */ \
 	unsigned int ranks_post_sz;					\
 	struct list_head lock_list; /* list root of pscom_request_rma_lock_t.next */\
+	struct list_head lock_list_internal;				\
 	pscom_request_t *lock_tail;					\
 	int		lock_exclusive;	/* boolean exclusive or shared lock */ \
-	unsigned int	lock_cnt;	/* shared lock holder */
-
+	unsigned int	lock_cnt;	/* shared lock holder */ \
+	unsigned int    lock_internal;  /* lock for internal purpose (atomic ops) */ \
+	enum MPID_PSP_Win_lock_state *remote_lock_state; /* array to remember the locked remote ranks */ \
+	enum MPID_PSP_Win_epoch_states epoch_state; /* this is for error detection */ \
+	int epoch_lock_count;  /* number of pending locks (for error detection, too) */
 
 #define MPID_DEV_COMM_DECL			\
+	pscom_socket_t	*pscom_socket;		\
 	pscom_group_t	*group;			\
 	pscom_request_t *bcast_request;
 
@@ -392,5 +439,18 @@ int MPID_PSP_comm_destroy_hook(struct MPID_Comm * comm);
 #define HAVE_DEV_COMM_HOOK
 #define MPID_Dev_comm_create_hook(comm) MPID_PSP_comm_create_hook(comm)
 #define MPID_Dev_comm_destroy_hook(comm) MPID_PSP_comm_destroy_hook(comm)
+
+
+/* Tell Intercomm create and friends that the GPID routines have been
+   implemented */
+#define HAVE_GPID_ROUTINES
+
+struct MPID_Comm;
+int MPID_GPID_GetAllInComm(struct MPID_Comm *comm_ptr, int local_size,
+			   int local_gpids[], int *singlePG);
+int MPID_GPID_ToLpidArray(int size, int gpid[], int lpid[]);
+int MPID_VCR_CommFromLpids(struct MPID_Comm *newcomm_ptr,
+			   int size, const int lpids[]);
+
 
 #endif /* _MPIDPRE_H_ */

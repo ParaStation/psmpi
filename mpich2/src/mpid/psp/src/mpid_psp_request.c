@@ -74,8 +74,9 @@ void MPID_PSP_Request_init(MPID_Request *req)
 	req->status.MPI_SOURCE = MPI_UNDEFINED;
 	req->status.MPI_TAG = MPI_UNDEFINED;
 	req->status.MPI_ERROR = MPI_SUCCESS;
-	req->status.count = 0;
-	req->status.cancelled = FALSE;
+	/* combined MPIR_STATUS_SET_COUNT and MPIR_STATUS_SET_CANCEL_BIT: */
+	req->status.count_lo = 0;
+	req->status.count_hi_and_cancelled = 0;
 	req->comm = NULL;
 
 	creq = &req->dev.kind.common;
@@ -267,9 +268,10 @@ MPID_Request *MPID_DEV_Request_common_create(MPID_Comm *comm, MPID_Request_kind_
 static inline
 void MPID_DEV_Request_common_destroy(MPID_Request *req)
 {
-	assert(MPID_Request_is_completed(req) || \
+	assert(MPID_Request_is_complete(req) || \
 	       req->kind == MPID_PREQUEST_RECV || \
-	       req->kind == MPID_PREQUEST_SEND);
+	       req->kind == MPID_PREQUEST_SEND || \
+	       req->kind == MPID_REQUEST_MPROBE);
 	req->kind = MPID_REQUEST_UNDEFINED;
 	MPID_PSP_Request_destroy(req);
 }
@@ -373,6 +375,25 @@ void MPID_DEV_Request_persistent_destroy(MPID_Request *req)
 	if (preq->comm) {
 		MPIR_Comm_release(preq->comm, 0);
 	}
+	MPID_DEV_Request_common_destroy(req);
+}
+
+
+void MPID_DEV_Request_ureq_destroy(MPID_Request *req)
+{
+	if (req->greq_fns != NULL) {
+		MPIU_Free(req->greq_fns);
+	}
+	MPID_DEV_Request_common_destroy(req);
+}
+
+
+void MPID_DEV_Request_coll_destroy(MPID_Request *req)
+{
+	if (req->comm) {
+		MPIR_Comm_release(req->comm, 0);
+	}
+
 	MPID_DEV_Request_common_destroy(req);
 }
 

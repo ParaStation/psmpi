@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_open_port_( MPI_Fint *, char * FORT_MIXE
 #else
 #pragma _CRI duplicate mpi_open_port_ as pmpi_open_port_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_OPEN_PORT")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_OPEN_PORT")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_OPEN_PORT")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_OPEN_PORT")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_open_port__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
 extern FORT_DLL_SPEC void FORT_CALL mpi_open_port( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_open_port_( MPI_Fint *, char * FORT_MIXE
 #pragma weak mpi_open_port__ = mpi_open_port
 #pragma weak mpi_open_port_ = mpi_open_port
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("MPI_OPEN_PORT")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("MPI_OPEN_PORT")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("MPI_OPEN_PORT")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_open_port__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_open_port__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_open_port__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_open_port_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_open_port_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_open_port_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_open_port")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_open_port")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_open_port")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_open_port( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port( MPI_Fint *, char * FORT_MIXE
 #pragma weak pmpi_open_port__ = pmpi_open_port
 #pragma weak pmpi_open_port_ = pmpi_open_port
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_OPEN_PORT")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_OPEN_PORT")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_OPEN_PORT")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_OPEN_PORT( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, MPI_Fint * FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_open_port")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_open_port_ PMPI_OPEN_PORT
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port( MPI_Fint *, char * FORT_MIXE
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Open_port
 #define MPI_Open_port PMPI_Open_port 
 

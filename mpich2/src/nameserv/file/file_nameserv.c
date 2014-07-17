@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -18,6 +18,31 @@
 #include <unistd.h>
 #endif
 #include <errno.h>
+
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+categories:
+    - name        : PROCESS_MANAGER
+      description : cvars that control the client-side process manager code
+
+cvars:
+    - name        : MPIR_CVAR_NAMESERV_FILE_PUBDIR
+      category    : PROCESS_MANAGER
+      alt-env     : MPIR_CVAR_NAMEPUB_DIR
+      type        : string
+      default     : NULL
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        Sets the directory to use for MPI service publishing in the
+        file nameserv implementation.  Allows the user to override
+        where the publish and lookup information is placed for
+        connect/accept based applications.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
 
 /* For writing the name/service pair */
 /* style: allow:fprintf:1 sig:0 */   
@@ -57,8 +82,8 @@ int MPID_NS_Create( const MPID_Info *info_ptr, MPID_NS_Handle *handle_ptr )
     (*handle_ptr)->mypid   = getpid();
 
     /* Get the dirname.  Could use an info value of NAMEPUB_CONTACT */
-    ret = MPL_env2str("MPICH_NAMEPUB_DIR", &dirname);
-    if (!ret) {
+    dirname = MPIR_CVAR_NAMESERV_FILE_PUBDIR;
+    if (!dirname) {
         /* user did not specify a directory, try using HOME */
         ret = MPL_env2str("HOME", &dirname);
         if (!ret) {
@@ -172,10 +197,12 @@ int MPID_NS_Publish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 int MPID_NS_Lookup( MPID_NS_Handle handle, const MPID_Info *info_ptr,
                     const char service_name[], char port[] )
 {
-    static const char FCNAME[] = "MPID_NS_Lookup";
     FILE *fp;
     char filename[MAXPATHLEN];
     int  mpi_errno = MPI_SUCCESS;
+#ifdef HAVE_ERROR_CHECKING
+    static const char FCNAME[] = "MPID_NS_Lookup";
+#endif
     
     /* Determine file and directory name.  The file name is from
        the service name */
@@ -246,7 +273,7 @@ int MPID_NS_Unpublish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 	/* --BEGIN ERROR HANDLING-- */
 	/* Error: this name was not found */
 	err = MPIR_Err_create_code( MPI_SUCCESS, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, 
-				    MPI_ERR_OTHER, "**namepubnotpub",
+				    MPI_ERR_SERVICE, "**namepubnotpub",
 				    "**namepubnotpub %s", service_name );
 	return err;
 	/* --END ERROR HANDLING-- */

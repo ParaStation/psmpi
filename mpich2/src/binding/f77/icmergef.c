@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge_( MPI_Fint *, MPI_Fint *
 #else
 #pragma _CRI duplicate mpi_intercomm_merge_ as pmpi_intercomm_merge_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_INTERCOMM_MERGE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_INTERCOMM_MERGE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_INTERCOMM_MERGE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_INTERCOMM_MERGE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_INTERCOMM_MERGE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_INTERCOMM_MERGE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_INTERCOMM_MERGE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_INTERCOMM_MERGE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_INTERCOMM_MERGE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge_( MPI_Fint *, MPI_Fint *
 #pragma weak mpi_intercomm_merge__ = mpi_intercomm_merge
 #pragma weak mpi_intercomm_merge_ = mpi_intercomm_merge
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_INTERCOMM_MERGE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_INTERCOMM_MERGE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_INTERCOMM_MERGE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_INTERCOMM_MERGE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_INTERCOMM_MERGE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_intercomm_merge__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_intercomm_merge__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_intercomm_merge__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_INTERCOMM_MERGE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_intercomm_merge_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_intercomm_merge_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_intercomm_merge_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_INTERCOMM_MERGE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_intercomm_merge")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_intercomm_merge")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_intercomm_merge")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_intercomm_merge( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_INTERCOMM_MERGE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_intercomm_merge( MPI_Fint *, MPI_Fint *
 #pragma weak pmpi_intercomm_merge__ = pmpi_intercomm_merge
 #pragma weak pmpi_intercomm_merge_ = pmpi_intercomm_merge
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_intercomm_merge__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_INTERCOMM_MERGE")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_intercomm_merge_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_INTERCOMM_MERGE")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_intercomm_merge( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_INTERCOMM_MERGE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_INTERCOMM_MERGE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_intercomm_merge_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_intercomm_merge( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_INTERCOMM_MERGE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_intercomm_merge__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_intercomm_merge( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_INTERCOMM_MERGE( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_intercomm_merge__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_intercomm_merge_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_intercomm_merge")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_intercomm_merge_ PMPI_INTERCOMM_MERGE
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_intercomm_merge( MPI_Fint *, MPI_Fint *
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Intercomm_merge
 #define MPI_Intercomm_merge PMPI_Intercomm_merge 
 

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -71,17 +71,9 @@ int MPIDI_CH3_PortFnsInit( MPIDI_PortFns *portFns ATTRIBUTE((unused)) )
     return 0;
 }
 
-/* This function simply tells the CH3 device to use the defaults for the 
-   MPI-2 RMA functions */
-int MPIDI_CH3_RMAFnsInit( MPIDI_RMAFns *a ATTRIBUTE((unused)) ) 
-{
-    MPIU_UNREFERENCED_ARG(a);
-    return 0;
-}
-
 /* Perform the channel-specific vc initialization */
 int MPIDI_CH3_VC_Init( MPIDI_VC_t *vc ) {
-    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
+    MPIDI_CH3I_VC *vcch = &vc->ch;
     vcch->sendq_head         = NULL;
     vcch->sendq_tail         = NULL;
     vcch->state              = MPIDI_CH3I_VC_STATE_UNCONNECTED;
@@ -128,8 +120,6 @@ int MPIDI_CH3_VC_Destroy( struct MPIDI_VC *vc ATTRIBUTE((unused)) )
     return MPI_SUCCESS;
 }
 
-/* A dummy function so that all channels provide the same set of functions, 
-   enabling dll channels */
 int MPIDI_CH3_InitCompleted( void )
 {
     return MPI_SUCCESS;

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -67,7 +67,7 @@ int MPID_Iprobe(int source, int tag, MPID_Comm *comm, int context_offset,
             /* it's not anysource, check if the netmod has overridden it */
             MPIDI_VC_t * vc;
             MPIDI_Comm_get_vc_set_active(comm, source, &vc);
-            if (vc->comm_ops && vc->comm_ops->probe) {
+            if (vc->comm_ops && vc->comm_ops->iprobe) {
                 mpi_errno = vc->comm_ops->iprobe(vc, source, tag, comm, context_offset, &found, status);
                 if (mpi_errno) MPIU_ERR_POP(mpi_errno);
                 *flag = found;

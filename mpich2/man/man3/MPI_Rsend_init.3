@@ -1,9 +1,9 @@
-.TH MPI_Rsend_init 3 "7/27/2010" " " "MPI"
+.TH MPI_Rsend_init 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Rsend_init \-  Creates a persistent request for a ready send 
 .SH SYNOPSIS
 .nf
-int MPI_Rsend_init(void *buf, int count, MPI_Datatype datatype, int dest,
+int MPI_Rsend_init(const void *buf, int count, MPI_Datatype datatype, int dest,
                   int tag, MPI_Comm comm, MPI_Request *request)
 .fi
 .SH INPUT PARAMETERS
@@ -38,7 +38,7 @@ int MPI_Rsend_init(void *buf, int count, MPI_Datatype datatype, int dest,
 - communicator (handle) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B request 
@@ -180,4 +180,4 @@ implementation is unable to acquire memory.
 MPI_Start, MPI_Request_free, MPI_Send_init
 .br
 .SH LOCATION
-rsend_init.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/pt2pt/rsend_init.c

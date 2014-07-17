@@ -12,13 +12,12 @@
 
 #include "mpidimpl.h"
 
-
 int MPID_Cancel_recv(MPID_Request * rreq)
 {
 	pscom_request_t *req = rreq->dev.kind.recv.common.pscom_req;
 
 	if (req && pscom_cancel_recv(req)) {
-		rreq->status.cancelled = 1;
+		MPIR_STATUS_SET_CANCEL_BIT(rreq->status, TRUE);
 	}
 
 	return MPI_SUCCESS;
@@ -31,7 +30,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 
 	if (req) {
 		if (pscom_cancel_send(req)) {
-			sreq->status.cancelled = 1;
+			MPIR_STATUS_SET_CANCEL_BIT(sreq->status, TRUE);
 		} else {
 			MPID_PSCOM_XHeader_t *xhead = &req->xheader.user.common;
 
@@ -40,6 +39,26 @@ int MPID_Cancel_send(MPID_Request * sreq)
 				MPID_PSP_SendCtrl(xhead->tag, xhead->context_id, sreq->comm->rank,
 						  req->connection, MPID_PSP_MSGTYPE_CANCEL_DATA_REQUEST_ACK);
 			}
+#if 0
+/*
+ |  Cancelling of non-synchronous messages is disabled because
+ |  with PSP_UNEXPECTED_RECEIVES=0 (default) the absence of the
+ |  expected cancel-ack may lead to a deadlock...
+ */
+			else {
+				/* request is NOT a synchronous send. */
+
+				/* remember that this message is to be cancelled: */
+				xhead->type = MPID_PSP_MSGTYPE_DATA_CANCELLED;
+
+				/* wait for the ack cancel: */
+				MPID_PSP_RecvAck(sreq);
+
+				/* send the anti-send message: */
+				MPID_PSP_SendCtrl(xhead->tag, xhead->context_id, sreq->comm->rank,
+						  req->connection, MPID_PSP_MSGTYPE_CANCEL_DATA_REQUEST_ACK);
+			}
+#endif
 		}
 	}
 

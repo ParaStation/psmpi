@@ -1,18 +1,18 @@
-.TH MPI_Errhandler_get 3 "7/28/2010" " " "MPI"
+.TH MPI_Errhandler_get 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Errhandler_get \-  Gets the error handler for a communicator 
 .SH SYNOPSIS
 .nf
 int MPI_Errhandler_get(MPI_Comm comm, MPI_Errhandler *errhandler)
 .fi
-.SH INPUT PARAMETER
+.SH INPUT PARAMETERS
 .PD 0
 .TP
 .B comm 
 - communicator to get the error handler from (handle) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B errhandler 
@@ -122,4 +122,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-errhandler_get.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/errhan/errhandler_get.c

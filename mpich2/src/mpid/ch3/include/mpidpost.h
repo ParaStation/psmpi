@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -268,5 +268,9 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_ptr, MPID_Comm *comm_ptr,
    in the current definition of PMI */
 #define MPID_ICCREATE_REMOTECOMM_HOOK(_p,_c,_np,_gp,_r) \
      MPID_PG_ForwardPGInfo(_p,_c,_np,_gp,_r)
+
+/* communicator hooks */
+int MPIDI_CH3I_Comm_create_hook(struct MPID_Comm *);
+int MPIDI_CH3I_Comm_destroy_hook(struct MPID_Comm *);
 
 #endif /* !defined(MPICH_MPIDPOST_H_INCLUDED) */

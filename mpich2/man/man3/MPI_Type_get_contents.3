@@ -1,4 +1,4 @@
-.TH MPI_Type_get_contents 3 "5/20/2010" " " "MPI"
+.TH MPI_Type_get_contents 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Type_get_contents \-  get type contents 
 .SH SYNOPSIS
@@ -11,41 +11,43 @@ int MPI_Type_get_contents(MPI_Datatype datatype,
                         MPI_Aint array_of_addresses[],
                         MPI_Datatype array_of_datatypes[])
 .fi
-.SH ARGUMENTS
+.SH INPUT PARAMETERS
 .PD 0
 .TP
-.B MPI_Datatype datatype 
-- datatype
+.B datatype 
+- datatype to access (handle)
 .PD 1
 .PD 0
 .TP
-.B int max_integers 
-- max integers
+.B max_integers 
+- number of elements in array_of_integers (non-negative integer)
 .PD 1
 .PD 0
 .TP
-.B int max_addresses 
-- max addresses
+.B max_addresses 
+- number of elements in array_of_addresses (non-negative integer)
 .PD 1
 .PD 0
 .TP
-.B int max_datatypes 
-- max datatypes
+.B max_datatypes 
+- number of elements in array_of_datatypes (non-negative integer)
+.PD 1
+
+.SH OUTPUT PARAMETERS
+.PD 0
+.TP
+.B array_of_integers 
+- contains integer arguments used in constructing the datatype (array of integers)
 .PD 1
 .PD 0
 .TP
-.B int array_of_integers[] 
-- integers
+.B array_of_addresses 
+- contains address arguments used in constructing the datatype (array of integers)
 .PD 1
 .PD 0
 .TP
-.B MPI_Aint array_of_addresses[] 
-- addresses
-.PD 1
-.PD 0
-.TP
-.B MPI_Datatype array_of_datatypes[] 
-- datatypes
+.B array_of_datatypes 
+- contains datatype arguments used in constructing the datatype (array of handles)
 .PD 1
 
 .SH NOTES
@@ -108,4 +110,4 @@ possible.
 - No error; MPI routine completed successfully.
 .PD 1
 .SH LOCATION
-type_get_contents.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/type_get_contents.c

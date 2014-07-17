@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -60,7 +60,7 @@ void MPIR_Comm_set_errhandler_impl(MPID_Comm *comm_ptr, MPID_Errhandler *errhand
 /*@
    MPI_Comm_set_errhandler - Set the error handler for a communicator
 
-   Input Parameters:
+Input Parameters:
 + comm - communicator (handle) 
 - errhandler - new error handler for communicator (handle) 
 
@@ -93,7 +93,6 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -115,7 +114,6 @@ int MPI_Comm_set_errhandler(MPI_Comm comm, MPI_Errhandler errhandler)
 		MPID_Errhandler_valid_ptr( errhan_ptr, mpi_errno );
 	    }
 	    MPIR_ERRTEST_ERRHANDLER(errhandler, mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

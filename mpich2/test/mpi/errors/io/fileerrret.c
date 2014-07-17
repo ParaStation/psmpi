@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2006 by Argonne National Laboratory.
@@ -58,7 +58,6 @@ int main( int argc, char *argv[] )
     }
     
     /* Find out how many errors we saw */
-
     MTest_Finalize( errs );
     MPI_Finalize();
 

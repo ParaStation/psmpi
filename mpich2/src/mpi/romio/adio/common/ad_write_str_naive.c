@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /* 
  *
  *   Copyright (C) 2001 University of Chicago. 
@@ -8,7 +8,7 @@
 #include "adio.h"
 #include "adio_extern.h"
 
-void ADIOI_GEN_WriteStrided_naive(ADIO_File fd, void *buf, int count,
+void ADIOI_GEN_WriteStrided_naive(ADIO_File fd, const void *buf, int count,
                        MPI_Datatype buftype, int file_ptr_type,
                        ADIO_Offset offset, ADIO_Status *status, int
                        *error_code)
@@ -19,11 +19,11 @@ void ADIOI_GEN_WriteStrided_naive(ADIO_File fd, void *buf, int count,
     /* bwr == buffer write; fwr == file write */
     ADIO_Offset bwr_size, fwr_size=0, sum, size_in_filetype; 
     int b_index;
-    unsigned bufsize; 
-    int n_etypes_in_filetype;
+    MPI_Count bufsize;
+    ADIO_Offset n_etypes_in_filetype;
     ADIO_Offset size, n_filetypes, etype_in_filetype;
     ADIO_Offset abs_off_in_filetype=0, req_len;
-    int filetype_size, etype_size, buftype_size;
+    MPI_Count filetype_size, etype_size, buftype_size;
     MPI_Aint filetype_extent, buftype_extent; 
     int buf_count, buftype_is_contig, filetype_is_contig;
     ADIO_Offset userbuf_off;
@@ -35,14 +35,17 @@ void ADIOI_GEN_WriteStrided_naive(ADIO_File fd, void *buf, int count,
     ADIOI_Datatype_iscontig(buftype, &buftype_is_contig);
     ADIOI_Datatype_iscontig(fd->filetype, &filetype_is_contig);
 
-    MPI_Type_size(fd->filetype, &filetype_size);
+    MPI_Type_size_x(fd->filetype, &filetype_size);
     if ( ! filetype_size ) {
+#ifdef HAVE_STATUS_SET_BYTES
+	MPIR_Status_set_bytes(status, buftype, 0);
+#endif
 	*error_code = MPI_SUCCESS; 
 	return;
     }
 
     MPI_Type_extent(fd->filetype, &filetype_extent);
-    MPI_Type_size(buftype, &buftype_size);
+    MPI_Type_size_x(buftype, &buftype_size);
     MPI_Type_extent(buftype, &buftype_extent);
     etype_size = fd->etype_size;
 

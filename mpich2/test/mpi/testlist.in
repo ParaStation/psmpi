@@ -1,5 +1,6 @@
 # The next item ensures that the support routines are built first
 !util:all
+parastation
 attr 
 #basic
 coll
@@ -9,14 +10,18 @@ errhan
 group
 info
 init
+mpi_t
 pt2pt
 @rmadir@
 @spawndir@
 topo
-#perf
+#@perfdir@
 @iodir@
 @f77dir@
 @cxxdir@
 @f90dir@
 @errordir@
 @threadsdir@
+@ckpointdir@
+#@ftdir@
+impls

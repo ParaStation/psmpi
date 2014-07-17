@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC double FORT_CALL mpi_wtick_(void);
 #else
 #pragma _CRI duplicate mpi_wtick_ as pmpi_wtick_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC double FORT_CALL MPI_WTICK(void) __attribute__((weak,alias("PMPI_WTICK")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick__(void) __attribute__((weak,alias("PMPI_WTICK")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick_(void) __attribute__((weak,alias("PMPI_WTICK")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick(void) __attribute__((weak,alias("PMPI_WTICK")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC double FORT_CALL MPI_WTICK(void) __attribute__((weak,alias("pmpi_wtick__")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick__(void) __attribute__((weak,alias("pmpi_wtick__")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick_(void) __attribute__((weak,alias("pmpi_wtick__")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick(void) __attribute__((weak,alias("pmpi_wtick__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC double FORT_CALL MPI_WTICK(void) __attribute__((weak,alias("pmpi_wtick_")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick__(void) __attribute__((weak,alias("pmpi_wtick_")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick_(void) __attribute__((weak,alias("pmpi_wtick_")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick(void) __attribute__((weak,alias("pmpi_wtick_")));
+
+#else
+extern FORT_DLL_SPEC double FORT_CALL MPI_WTICK(void) __attribute__((weak,alias("pmpi_wtick")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick__(void) __attribute__((weak,alias("pmpi_wtick")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick_(void) __attribute__((weak,alias("pmpi_wtick")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick(void) __attribute__((weak,alias("pmpi_wtick")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC double FORT_CALL MPI_WTICK(void);
 extern FORT_DLL_SPEC double FORT_CALL mpi_wtick__(void);
 extern FORT_DLL_SPEC double FORT_CALL mpi_wtick(void);
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC double FORT_CALL mpi_wtick_(void);
 #pragma weak mpi_wtick__ = mpi_wtick
 #pragma weak mpi_wtick_ = mpi_wtick
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC double FORT_CALL MPI_WTICK(void);
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick__(void) __attribute__((weak,alias("MPI_WTICK")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick_(void) __attribute__((weak,alias("MPI_WTICK")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick(void) __attribute__((weak,alias("MPI_WTICK")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC double FORT_CALL MPI_WTICK(void) __attribute__((weak,alias("mpi_wtick__")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick__(void);
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick_(void) __attribute__((weak,alias("mpi_wtick__")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick(void) __attribute__((weak,alias("mpi_wtick__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC double FORT_CALL MPI_WTICK(void) __attribute__((weak,alias("mpi_wtick_")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick__(void) __attribute__((weak,alias("mpi_wtick_")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick_(void);
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick(void) __attribute__((weak,alias("mpi_wtick_")));
+
+#else
+extern FORT_DLL_SPEC double FORT_CALL MPI_WTICK(void) __attribute__((weak,alias("mpi_wtick")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick__(void) __attribute__((weak,alias("mpi_wtick")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick_(void) __attribute__((weak,alias("mpi_wtick")));
+extern FORT_DLL_SPEC double FORT_CALL mpi_wtick(void);
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC double FORT_CALL PMPI_WTICK(void);
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC double FORT_CALL pmpi_wtick(void);
 #pragma weak pmpi_wtick__ = pmpi_wtick
 #pragma weak pmpi_wtick_ = pmpi_wtick
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC double FORT_CALL pmpi_wtick__(void) __attribute__((weak,alias("PMPI_WTICK")));
+extern FORT_DLL_SPEC double FORT_CALL pmpi_wtick_(void) __attribute__((weak,alias("PMPI_WTICK")));
+extern FORT_DLL_SPEC double FORT_CALL pmpi_wtick(void) __attribute__((weak,alias("PMPI_WTICK")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC double FORT_CALL PMPI_WTICK(void) __attribute__((weak,alias("pmpi_wtick__")));
+extern FORT_DLL_SPEC double FORT_CALL pmpi_wtick_(void) __attribute__((weak,alias("pmpi_wtick__")));
+extern FORT_DLL_SPEC double FORT_CALL pmpi_wtick(void) __attribute__((weak,alias("pmpi_wtick__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC double FORT_CALL PMPI_WTICK(void) __attribute__((weak,alias("pmpi_wtick_")));
+extern FORT_DLL_SPEC double FORT_CALL pmpi_wtick__(void) __attribute__((weak,alias("pmpi_wtick_")));
+extern FORT_DLL_SPEC double FORT_CALL pmpi_wtick(void) __attribute__((weak,alias("pmpi_wtick_")));
+
+#else
+extern FORT_DLL_SPEC double FORT_CALL PMPI_WTICK(void) __attribute__((weak,alias("pmpi_wtick")));
+extern FORT_DLL_SPEC double FORT_CALL pmpi_wtick__(void) __attribute__((weak,alias("pmpi_wtick")));
+extern FORT_DLL_SPEC double FORT_CALL pmpi_wtick_(void) __attribute__((weak,alias("pmpi_wtick")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_wtick_ PMPI_WTICK
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC double FORT_CALL pmpi_wtick(void);
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Wtick
 #define MPI_Wtick PMPI_Wtick 
 

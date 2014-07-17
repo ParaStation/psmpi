@@ -1,10 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpi.h"
 #include <stdio.h>
+#include "mpitest.h"
 
 void addem ( int *, int *, int *, MPI_Datatype * );
 
@@ -24,7 +25,7 @@ int main( int argc, char **argv )
     int              correct_result;
     MPI_Op           op;
 
-    MPI_Init( &argc, &argv );
+    MTest_Init( &argc, &argv );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
     MPI_Comm_size( MPI_COMM_WORLD, &size );
 
@@ -38,12 +39,7 @@ int main( int argc, char **argv )
       correct_result += i;
     if (result != correct_result) errors++;
 
+    MTest_Finalize( errors );
     MPI_Finalize();
-    if (errors)
-      printf( "[%d] done with ERRORS(%d)!\n", rank, errors );
-    else {
-	if (rank == 0) 
-	    printf(" No Errors\n");
-    }
-    return errors;
+    return MTestReturnValue( errors );
 }

@@ -1,35 +1,35 @@
-.TH MPI_Register_datarep 3 "5/20/2010" " " "MPI"
+.TH MPI_Register_datarep 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Register_datarep \-  Register functions for user-defined data  representations 
 .SH SYNOPSIS
 .nf
-int MPI_Register_datarep(char *name,
-                       MPI_Datarep_conversion_function *read_conv_fn,
-                       MPI_Datarep_conversion_function *write_conv_fn,
-                       MPI_Datarep_extent_function *extent_fn,
-                       void *state)
+int MPI_Register_datarep(ROMIO_CONST char *datarep,
+                       MPI_Datarep_conversion_function *read_conversion_fn,
+                       MPI_Datarep_conversion_function *write_conversion_fn,
+                       MPI_Datarep_extent_function *dtype_file_extent_fn,
+                       void *extra_state)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
-.B name 
+.B datarep 
 - data representation name (string)
 .PD 1
 .PD 0
 .TP
-.B read_conv_fn 
+.B read_conversion_fn 
 - function invoked to convert from file representation to
 native representation (function)
 .PD 1
 .PD 0
 .TP
-.B write_conv_fn 
+.B write_conversion_fn 
 - function invoked to convert from native representation to
 file representation (function)
 .PD 1
 .PD 0
 .TP
-.B extent_fn 
+.B dtype_file_extent_fn 
 - function invoked to get the exted of a datatype as represented
 in the file (function)
 .PD 1
@@ -73,4 +73,4 @@ All MPI objects (e.g.,
 in Fortran.
 
 .SH LOCATION
-register_datarep.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/romio/mpi-io/register_datarep.c

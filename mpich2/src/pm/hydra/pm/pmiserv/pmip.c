@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -19,16 +19,13 @@ static HYD_status init_params(void)
 
     HYDU_init_user_global(&HYD_pmcd_pmip.user_global);
 
-    HYD_pmcd_pmip.system_global.global_core_map.left = -1;
-    HYD_pmcd_pmip.system_global.global_core_map.current = -1;
-    HYD_pmcd_pmip.system_global.global_core_map.right = -1;
-    HYD_pmcd_pmip.system_global.filler_process_map.left = -1;
-    HYD_pmcd_pmip.system_global.filler_process_map.current = -1;
-    HYD_pmcd_pmip.system_global.filler_process_map.right = -1;
+    HYD_pmcd_pmip.system_global.global_core_map.local_filler = -1;
+    HYD_pmcd_pmip.system_global.global_core_map.local_count = -1;
+    HYD_pmcd_pmip.system_global.global_core_map.global_count = -1;
+    HYD_pmcd_pmip.system_global.pmi_id_map.filler_start = -1;
+    HYD_pmcd_pmip.system_global.pmi_id_map.non_filler_start = -1;
 
     HYD_pmcd_pmip.system_global.global_process_count = -1;
-    HYD_pmcd_pmip.system_global.jobid = NULL;
-    HYD_pmcd_pmip.system_global.pmi_port = NULL;
     HYD_pmcd_pmip.system_global.pmi_fd = NULL;
     HYD_pmcd_pmip.system_global.pmi_rank = -1;
     HYD_pmcd_pmip.system_global.pmi_process_mapping = NULL;
@@ -50,8 +47,7 @@ static HYD_status init_params(void)
     HYD_pmcd_pmip.local.pgid = -1;
     HYD_pmcd_pmip.local.iface_ip_env_name = NULL;
     HYD_pmcd_pmip.local.hostname = NULL;
-    HYD_pmcd_pmip.local.local_binding = NULL;
-    HYD_pmcd_pmip.local.spawner_kvs_name = NULL;
+    HYD_pmcd_pmip.local.spawner_kvsname = NULL;
     HYD_pmcd_pmip.local.proxy_core_count = -1;
     HYD_pmcd_pmip.local.proxy_process_count = -1;
     HYD_pmcd_pmip.local.ckpoint_prefix_list = NULL;
@@ -67,19 +63,12 @@ static HYD_status init_params(void)
 static void cleanup_params(void)
 {
     int i;
-    HYD_status status = HYD_SUCCESS;
 
     HYDU_finalize_user_global(&HYD_pmcd_pmip.user_global);
 
     /* System global */
-    if (HYD_pmcd_pmip.system_global.jobid)
-        HYDU_FREE(HYD_pmcd_pmip.system_global.jobid);
-
     if (HYD_pmcd_pmip.system_global.pmi_fd)
         HYDU_FREE(HYD_pmcd_pmip.system_global.pmi_fd);
-
-    if (HYD_pmcd_pmip.system_global.pmi_port)
-        HYDU_FREE(HYD_pmcd_pmip.system_global.pmi_port);
 
     if (HYD_pmcd_pmip.system_global.pmi_process_mapping)
         HYDU_FREE(HYD_pmcd_pmip.system_global.pmi_process_mapping);
@@ -120,11 +109,8 @@ static void cleanup_params(void)
     if (HYD_pmcd_pmip.local.hostname)
         HYDU_FREE(HYD_pmcd_pmip.local.hostname);
 
-    if (HYD_pmcd_pmip.local.local_binding)
-        HYDU_FREE(HYD_pmcd_pmip.local.local_binding);
-
-    if (HYD_pmcd_pmip.local.spawner_kvs_name)
-        HYDU_FREE(HYD_pmcd_pmip.local.spawner_kvs_name);
+    if (HYD_pmcd_pmip.local.spawner_kvsname)
+        HYDU_FREE(HYD_pmcd_pmip.local.spawner_kvsname);
 
     if (HYD_pmcd_pmip.local.ckpoint_prefix_list) {
         for (i = 0; HYD_pmcd_pmip.local.ckpoint_prefix_list[i]; i++)
@@ -138,23 +124,19 @@ static void cleanup_params(void)
     /* Exec list */
     HYDU_free_exec_list(HYD_pmcd_pmip.exec_list);
 
-    status = HYDT_topo_finalize();
+    HYDT_topo_finalize();
 }
 
 static void signal_cb(int sig)
 {
-    int i;
-
     HYDU_FUNC_ENTER();
 
     if (sig == SIGPIPE) {
         /* Upstream socket closed; kill all processes */
-        HYD_pmcd_pmip_kill_localprocs();
+        HYD_pmcd_pmip_send_signal(SIGKILL);
     }
     else if (sig == SIGTSTP) {
-        for (i = 0; i < HYD_pmcd_pmip.local.proxy_process_count; i++)
-            if (HYD_pmcd_pmip.downstream.pid[i] != -1)
-                kill(HYD_pmcd_pmip.downstream.pid[i], sig);
+        HYD_pmcd_pmip_send_signal(sig);
     }
     /* Ignore other signals for now */
 
@@ -198,12 +180,10 @@ int main(int argc, char **argv)
         HYDU_ERR_POP(status, "error reading HYDI_CONTROL_FD environment\n");
     }
     else if (ret == 0) {
-        /* FIXME: Have a non-zero delay in retries; possibly have a
-         * larger delay for larger ranks */
         status = HYDU_sock_connect(HYD_pmcd_pmip.upstream.server_name,
                                    HYD_pmcd_pmip.upstream.server_port,
                                    &HYD_pmcd_pmip.upstream.control,
-                                   HYD_pmcd_pmip.local.retries, 0);
+                                   HYD_pmcd_pmip.local.retries, HYD_CONNECT_DELAY);
         HYDU_ERR_POP(status,
                      "unable to connect to server %s at port %d (check for firewalls!)\n",
                      HYD_pmcd_pmip.upstream.server_name, HYD_pmcd_pmip.upstream.server_port);
@@ -211,7 +191,7 @@ int main(int argc, char **argv)
 
     status = HYDU_sock_write(HYD_pmcd_pmip.upstream.control,
                              &HYD_pmcd_pmip.local.id, sizeof(HYD_pmcd_pmip.local.id), &sent,
-                             &closed);
+                             &closed, HYDU_SOCK_COMM_MSGWAIT);
     HYDU_ERR_POP(status, "unable to send the proxy ID to the server\n");
     if (closed)
         goto fn_fail;
@@ -280,14 +260,15 @@ int main(int argc, char **argv)
     HYD_pmcd_init_header(&hdr);
     hdr.cmd = EXIT_STATUS;
     status =
-        HYDU_sock_write(HYD_pmcd_pmip.upstream.control, &hdr, sizeof(hdr), &sent, &closed);
+        HYDU_sock_write(HYD_pmcd_pmip.upstream.control, &hdr, sizeof(hdr), &sent, &closed,
+                        HYDU_SOCK_COMM_MSGWAIT);
     HYDU_ERR_POP(status, "unable to send EXIT_STATUS command upstream\n");
     HYDU_ASSERT(!closed, status);
 
     status = HYDU_sock_write(HYD_pmcd_pmip.upstream.control,
                              HYD_pmcd_pmip.downstream.exit_status,
                              HYD_pmcd_pmip.local.proxy_process_count * sizeof(int), &sent,
-                             &closed);
+                             &closed, HYDU_SOCK_COMM_MSGWAIT);
     HYDU_ERR_POP(status, "unable to return exit status upstream\n");
     HYDU_ASSERT(!closed, status);
 
@@ -312,6 +293,7 @@ int main(int argc, char **argv)
     return status;
 
   fn_fail:
-    HYD_pmcd_pmip_kill_localprocs();
+    /* kill all processes */
+    HYD_pmcd_pmip_send_signal(SIGKILL);
     goto fn_exit;
 }

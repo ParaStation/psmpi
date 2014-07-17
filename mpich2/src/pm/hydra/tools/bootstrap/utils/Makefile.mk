@@ -1,11 +1,13 @@
-# -*- Mode: Makefile; -*-
-#
-# (C) 2008 by Argonne National Laboratory.
-#     See COPYRIGHT in top-level directory.
-#
+## -*- Mode: Makefile; -*-
+##
+## (C) 2008 by Argonne National Laboratory.
+##     See COPYRIGHT in top-level directory.
+##
 
 AM_CPPFLAGS += -I$(top_srcdir)/tools/bootstrap/utils
 
+noinst_HEADERS += tools/bootstrap/utils/bscu.h
+
 libhydra_la_SOURCES += \
-	$(top_srcdir)/tools/bootstrap/utils/bscu_wait.c \
-	$(top_srcdir)/tools/bootstrap/utils/bscu_cb.c
+	tools/bootstrap/utils/bscu_wait.c \
+	tools/bootstrap/utils/bscu_cb.c

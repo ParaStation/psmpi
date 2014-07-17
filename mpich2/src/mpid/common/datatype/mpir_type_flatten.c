@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -12,10 +12,10 @@
 /*@
   MPIR_Type_flatten
  
-  Input Parameters:
+Input Parameters:
 . type - MPI Datatype (must have been committed)
 
-  Output Parameters:
+Output Parameters:
 . nr_blocks_p - pointer to int in which to store the number of contiguous blocks in the type
 
 
@@ -25,12 +25,12 @@
 
 int MPIR_Type_flatten(MPI_Datatype type,
 		      MPI_Aint *off_array,
-		      int *size_array,
+		      MPI_Aint *size_array,
 		      MPI_Aint *array_len_p)
 {
     int err;
     MPI_Aint first, last;
-    MPID_Datatype *datatype_ptr;
+    MPID_Datatype *datatype_ptr ATTRIBUTE((unused));
     MPID_Segment *segp;
 
     if (HANDLE_GET_KIND(type) == HANDLE_KIND_BUILTIN) {

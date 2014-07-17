@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2003 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -7,10 +7,10 @@
 /*
  * This is a simple PMI server implementation.  This file implements
  * the PMI calls, including the PMI key value spaces.  This implements the
- * "server" end of the interface defined in mpich2/src/pmi/simple .
+ * "server" end of the interface defined in mpich/src/pmi/simple .
  */
 
-#include "pmutilconf.h"
+#include "mpichconf.h"
 #include <stdio.h>
 #ifdef HAVE_SYS_TYPES_H
 #include <sys/types.h>
@@ -1121,7 +1121,7 @@ static int fPMI_Handle_spawn( PMIProcess *pentry )
 	    argnum = atoi( cmdPtr + 3 ) - 1;
 	    if (argnum < 0 || argnum >= PMI_MAX_ARGS) {
 		MPIU_Error_printf( "Malformed PMI Spawn command; the index of an argument in the command is %d but must be between 0 and %d\n",
-				   argnum, PMI_MAX_ARGS );
+				   argnum, PMI_MAX_ARGS-1 );
 		return 1;
 	    }
 	    args[argnum] = MPIU_Strdup( valPtr );
@@ -1388,7 +1388,10 @@ static int PMIUBufferedReadLine( PMIProcess *pentry, char *buf, int maxlen )
     while (curlen < maxlen) {
 	if (nextChar == endChar) {
 	    do {
-		n = read( fd, readbuf, sizeof(readbuf)-1 );
+                /* Carefully read data into buffer.  This could be
+                   written to read more at one time, but would then
+                   need to know the size of the readbuf */
+		n = (int)read( fd, readbuf, 1 );
 	    } while (n == -1 && errno == EINTR);
 	    if (n == 0) {
 		/* EOF */

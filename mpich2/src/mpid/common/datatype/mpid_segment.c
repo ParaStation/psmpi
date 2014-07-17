@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
 *  (C) 2001 by Argonne National Laboratory.
@@ -35,9 +35,9 @@ struct MPID_Segment_piece_params {
 	} pack_vector;
 	struct {
 	    int64_t *offp;
-	    int *sizep; /* see notes in Segment_flatten header */
+	    DLOOP_Size *sizep; /* see notes in Segment_flatten header */
 	    int index;
-	    int length;
+	    MPI_Aint length;
 	} flatten;
 	struct {
 	    char *last_loc;
@@ -54,8 +54,8 @@ struct MPID_Segment_piece_params {
 
 /* prototypes of internal functions */
 static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,
-				       int count,
-				       int blksz,
+				       DLOOP_Count count,
+				       DLOOP_Size blksz,
 				       DLOOP_Offset stride,
 				       DLOOP_Type el_type,
 				       DLOOP_Offset rel_off,
@@ -75,8 +75,8 @@ static int MPID_Segment_contig_flatten(DLOOP_Offset *blocks_p,
 				   void *v_paramp);
 
 static int MPID_Segment_vector_flatten(DLOOP_Offset *blocks_p,
-				   int count,
-				   int blksz,
+				   DLOOP_Count count,
+				   DLOOP_Size blksz,
 				   DLOOP_Offset stride,
 				   DLOOP_Type el_type,
 				   DLOOP_Offset rel_off, /* offset into buffer */
@@ -173,7 +173,7 @@ void MPID_Segment_flatten(struct DLOOP_Segment *segp,
 		      DLOOP_Offset first,
 		      DLOOP_Offset *lastp,
 		      DLOOP_Offset *offp,
-		      int *sizep,
+		      DLOOP_Size *sizep,
 		      DLOOP_Offset *lengthp)
 {
 struct MPID_Segment_piece_params packvec_params;
@@ -235,7 +235,7 @@ static int MPID_Segment_contig_pack_to_iov(DLOOP_Offset *blocks_p,
     size = *blocks_p * (DLOOP_Offset) el_size;
 
     MPIU_DBG_MSG_FMT(DATATYPE,VERBOSE,(MPIU_DBG_FDEST,
-             "\t[contig to vec: do=" MPI_AINT_FMT_DEC_SPEC ", dp=%p, ind=%d, sz=%d, blksz=" MPI_AINT_FMT_DEC_SPEC "]\n",
+             "    contig to vec: do=" MPI_AINT_FMT_DEC_SPEC ", dp=%p, ind=%d, sz=%d, blksz=" MPI_AINT_FMT_DEC_SPEC,
 		    (MPI_Aint) rel_off,
 		    bufp,
 		    paramp->u.pack_vector.index,
@@ -292,8 +292,8 @@ static int MPID_Segment_contig_pack_to_iov(DLOOP_Offset *blocks_p,
  * of a whole block in a vector type.
  */
 static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,
-					   int count,
-					   int blksz,
+					   DLOOP_Count count,
+					   DLOOP_Size blksz,
 					   DLOOP_Offset stride,
 					   DLOOP_Type el_type,
 					   DLOOP_Offset rel_off, /* offset into buffer */
@@ -311,16 +311,18 @@ static int MPID_Segment_vector_pack_to_iov(DLOOP_Offset *blocks_p,
     blocks_left = *blocks_p;
 
     MPIU_DBG_MSG_FMT(DATATYPE,VERBOSE,(MPIU_DBG_FDEST,
-             "\t[vector to vec: do=" MPI_AINT_FMT_DEC_SPEC
+             "    vector to vec: do=" MPI_AINT_FMT_DEC_SPEC
              ", dp=%p"
-             ", len=%d, ind=%d, ct=%d, blksz=%d"
+             ", len=" MPI_AINT_FMT_DEC_SPEC
+	     ", ind=" MPI_AINT_FMT_DEC_SPEC
+	     ", ct=" MPI_AINT_FMT_DEC_SPEC
+	     ", blksz=" MPI_AINT_FMT_DEC_SPEC
              ", str=" MPI_AINT_FMT_DEC_SPEC
-             ", blks=" MPI_AINT_FMT_DEC_SPEC
-             "]\n",
+             ", blks=" MPI_AINT_FMT_DEC_SPEC,
 		    (MPI_Aint) rel_off,
 		    bufp,
-		    paramp->u.pack_vector.length,
-		    paramp->u.pack_vector.index,
+		    (MPI_Aint) paramp->u.pack_vector.length,
+		    (MPI_Aint) paramp->u.pack_vector.index,
 		    count,
 		    blksz,
 		    (MPI_Aint) stride,
@@ -406,7 +408,7 @@ static int MPID_Segment_contig_flatten(DLOOP_Offset *blocks_p,
 				       void *bufp,
 				       void *v_paramp)
 {
-    int index, el_size;
+    int idx, el_size;
     DLOOP_Offset size;
     struct MPID_Segment_piece_params *paramp = v_paramp;
     MPIDI_STATE_DECL(MPID_STATE_MPID_SEGMENT_CONTIG_FLATTEN);
@@ -415,27 +417,27 @@ static int MPID_Segment_contig_flatten(DLOOP_Offset *blocks_p,
 
     el_size = MPID_Datatype_get_basic_size(el_type);
     size = *blocks_p * (DLOOP_Offset) el_size;
-    index = paramp->u.flatten.index;
+    idx = paramp->u.flatten.index;
 
 #ifdef MPID_SP_VERBOSE
-    MPIU_dbg_printf("\t[contig flatten: index = %d, loc = (" MPI_AINT_FMT_HEX_SPEC " + " MPI_AINT_FMT_HEX_SPEC ") = " MPI_AINT_FMT_HEX_SPEC ", size = " MPI_AINT_FMT_DEC_SPEC "]\n",
-		    index,
+    MPIU_dbg_printf("\t[contig flatten: idx = %d, loc = (" MPI_AINT_FMT_HEX_SPEC " + " MPI_AINT_FMT_HEX_SPEC ") = " MPI_AINT_FMT_HEX_SPEC ", size = " MPI_AINT_FMT_DEC_SPEC "]\n",
+		    idx,
 		    MPI_VOID_PTR_CAST_TO_MPI_AINT bufp,
 		    (MPI_Aint) rel_off,
 		    MPI_VOID_PTR_CAST_TO_MPI_AINT bufp + rel_off,
 		    (MPI_Aint) size);
 #endif
 
-    if (index > 0 && ((DLOOP_Offset) MPI_VOID_PTR_CAST_TO_MPI_AINT bufp + rel_off) ==
-	((paramp->u.flatten.offp[index - 1]) +
-	 (DLOOP_Offset) paramp->u.flatten.sizep[index - 1]))
+    if (idx > 0 && ((DLOOP_Offset) MPI_VOID_PTR_CAST_TO_MPI_AINT bufp + rel_off) ==
+	((paramp->u.flatten.offp[idx - 1]) +
+	 (DLOOP_Offset) paramp->u.flatten.sizep[idx - 1]))
     {
 	/* add this size to the last vector rather than using up another one */
-	paramp->u.flatten.sizep[index - 1] += size;
+	paramp->u.flatten.sizep[idx - 1] += size;
     }
     else {
-	paramp->u.flatten.offp[index] =  ((int64_t) MPI_VOID_PTR_CAST_TO_MPI_AINT bufp) + (int64_t) rel_off;
-	paramp->u.flatten.sizep[index] = size;
+	paramp->u.flatten.offp[idx] =  ((int64_t) MPI_VOID_PTR_CAST_TO_MPI_AINT bufp) + (int64_t) rel_off;
+	paramp->u.flatten.sizep[idx] = size;
 
 	paramp->u.flatten.index++;
 	/* check to see if we have used our entire vector buffer, and if so
@@ -466,8 +468,8 @@ static int MPID_Segment_contig_flatten(DLOOP_Offset *blocks_p,
  *   blocks_p.
  */
 static int MPID_Segment_vector_flatten(DLOOP_Offset *blocks_p,
-				       int count,
-				       int blksz,
+				       DLOOP_Count count,
+				       DLOOP_Size blksz,
 				       DLOOP_Offset stride,
 				       DLOOP_Type el_type,
 				       DLOOP_Offset rel_off, /* offset into buffer */
@@ -485,7 +487,7 @@ static int MPID_Segment_vector_flatten(DLOOP_Offset *blocks_p,
     blocks_left = *blocks_p;
 
     for (i=0; i < count && blocks_left > 0; i++) {
-	int index = paramp->u.flatten.index;
+	int idx = paramp->u.flatten.index;
 
 	if (blocks_left > (DLOOP_Offset) blksz) {
 	    size = ((DLOOP_Offset) blksz) * basic_size;
@@ -497,16 +499,16 @@ static int MPID_Segment_vector_flatten(DLOOP_Offset *blocks_p,
 	    blocks_left = 0;
 	}
 
-	if (index > 0 && ((DLOOP_Offset) MPI_VOID_PTR_CAST_TO_MPI_AINT bufp + rel_off) ==
-	    ((paramp->u.flatten.offp[index - 1]) + (DLOOP_Offset) paramp->u.flatten.sizep[index - 1]))
+	if (idx > 0 && ((DLOOP_Offset) MPI_VOID_PTR_CAST_TO_MPI_AINT bufp + rel_off) ==
+	    ((paramp->u.flatten.offp[idx - 1]) + (DLOOP_Offset) paramp->u.flatten.sizep[idx - 1]))
 	{
 	    /* add this size to the last region rather than using up another one */
-	    paramp->u.flatten.sizep[index - 1] += size;
+	    paramp->u.flatten.sizep[idx - 1] += size;
 	}
-	else if (index < paramp->u.flatten.length) {
+	else if (idx < paramp->u.flatten.length) {
 	    /* take up another region */
-	    paramp->u.flatten.offp[index]  = (DLOOP_Offset) MPI_VOID_PTR_CAST_TO_MPI_AINT bufp + rel_off;
-	    paramp->u.flatten.sizep[index] = size;
+	    paramp->u.flatten.offp[idx]  = (DLOOP_Offset) MPI_VOID_PTR_CAST_TO_MPI_AINT bufp + rel_off;
+	    paramp->u.flatten.sizep[idx] = size;
 	    paramp->u.flatten.index++;
 	}
 	else {

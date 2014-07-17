@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*  
  *
  *  (C) 2007 by Argonne National Laboratory.
@@ -7,7 +7,7 @@
 
 /*
  * This file provides the very basic definitions for use in a component
- * that is to work with MPICH2.  This defines (by inclusion) the 
+ * that is to work with MPICH.  This defines (by inclusion) the 
  * MPI error reporting routines, memory access routines, and common types.
  * Using this include (instead of the comprehensive mpiimpl.h file) is 
  * appropriate for modules that perform more basic functions, such as
@@ -62,16 +62,11 @@
 #include "mpierrs.h"
 
 /* FIXME: This is extracted from mpi.h.in, where it may not be appropriate */
-#define MPICH_ERR_LAST_CLASS 53     /* It is also helpful to know the
+#define MPICH_ERR_LAST_CLASS 72     /* It is also helpful to know the
 				       last valid class */
 
-/* Add support for the states and function enter/exit macros */
-/* #include "mpitimerimpl.h" */
-#if defined(MPICH_DEBUG_MEMARENA)
-#   include "mpifuncmem.h"
-#elif defined(USE_DBG_LOGGING)
-#   include "mpifunclog.h"
-#elif !defined(NEEDS_FUNC_ENTER_EXIT_DEFS)
+#include "mpifunc.h"
+#if !defined(NEEDS_FUNC_ENTER_EXIT_DEFS)
     /* If no timing choice is selected, this sets the entry/exit macros 
        to empty */
 #   include "mpitimerimpl.h"

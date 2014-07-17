@@ -13,7 +13,7 @@ int MPI_Intercomm_merge(MPI_Comm intercomm, int high, MPI_Comm *newintracomm)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>comm </B><DD>Intercommunicator (handle)
+<DT><B>intercomm </B><DD>Intercommunicator (handle)
 
 <DT><B>high </B><DD>Used to order the groups within comm (logical)
 when creating the new communicator.  This is a boolean value; the group
@@ -22,8 +22,8 @@ this value to false.  If all processes in the intercommunicator provide
 the same value, the choice of which group is ordered first is arbitrary.
 </DL>
 <P>
-<H2>Output Parameter</H2>
-<DL><DT><B>comm_out </B> <DD> Created intracommunicator (handle)
+<H2>Output Parameters</H2>
+<DL><DT><B>newintracomm </B> <DD> Created intracommunicator (handle)
 </DL>
 <P>
 <H2>Notes</H2>
@@ -50,14 +50,12 @@ All MPI objects (e.g., <TT>MPI_Datatype</TT>, <TT>MPI_Comm</TT>) are of type <TT
 </TT>in Fortran.
 <P>
 <H2>Algorithm</H2>
-<OL>
-<P>
-<LI>Allocate contexts
-<LI>Local and remote group leaders swap high values
-<LI>Determine the high value.
-<LI>Merge the two groups and make the intra-communicator
-</OL>
-<P>
+b
+Allocate contexts
+Local and remote group leaders swap high values
+Determine the high value.
+Merge the two groups and make the intra-communicator
+e
 <P>
 <H2>Errors</H2>
 <P>
@@ -85,5 +83,5 @@ implementation is unable to acquire memory.
 <P>
 <H2>See Also</H2>
  MPI_Intercomm_create, MPI_Comm_free
-<BR><P><B>Location:</B>intercomm_merge.c<P>
+<BR><P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/comm/intercomm_merge.c<P>
 </BODY></HTML>

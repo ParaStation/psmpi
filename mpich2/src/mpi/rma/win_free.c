@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Win_free */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -32,7 +31,7 @@
 /*@
    MPI_Win_free - Free an MPI RMA window
 
-   Input Parameter:
+Input Parameters:
 . win - window object (handle) 
 
    Notes:
@@ -65,7 +64,6 @@ int MPI_Win_free(MPI_Win *win)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_WIN(*win, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -81,15 +79,12 @@ int MPI_Win_free(MPI_Win *win)
         {
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
-	    /* If win_ptr is not valid, it will be reset to null */
-
             if (mpi_errno) goto fn_fail;
-	    /* Check for unterminated lock epoch */
-	    if (win_ptr->lockRank != -1) {
-		MPIU_ERR_SET1(mpi_errno,MPI_ERR_OTHER, 
-			     "**winfreewhilelocked",
-			     "**winfreewhilelocked %d", win_ptr->lockRank);
-	    }
+
+            /* TODO: Check for unterminated passive target epoch */
+
+            /* TODO: check for unterminated active mode epoch */
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -121,6 +116,7 @@ int MPI_Win_free(MPI_Win *win)
     }
     
     mpi_errno = MPIU_RMA_CALL(win_ptr,Win_free(&win_ptr));
+    if (mpi_errno) goto fn_fail;
     *win = MPI_WIN_NULL;
 
     /* ... end of body of routine ... */

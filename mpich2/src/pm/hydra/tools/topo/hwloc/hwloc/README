@@ -2,17 +2,19 @@ Introduction
 
 hwloc provides command line tools and a C API to obtain the hierarchical map of
 key computing elements, such as: NUMA memory nodes, shared caches, processor
-sockets, processor cores, and processing units (logical processors or
-"threads"). hwloc also gathers various attributes such as cache and memory
-information, and is portable across a variety of different operating systems
-and platforms.
+sockets, processor cores, processing units (logical processors or "threads")
+and even I/O devices. hwloc also gathers various attributes such as cache and
+memory information, and is portable across a variety of different operating
+systems and platforms. Additionally it may assemble the topologies of multiple
+machines into a single one so as to let applications consult the topology of an
+entire fabric or cluster at once.
 
 hwloc primarily aims at helping high-performance computing (HPC) applications,
 but is also applicable to any project seeking to exploit code and/or data
 locality on modern computing platforms.
 
 Note that the hwloc project represents the merger of the libtopology project
-from INRIA and the Portable Linux Processor Affinity (PLPA) sub-project from
+from inria and the Portable Linux Processor Affinity (PLPA) sub-project from
 Open MPI. Both of these prior projects are now deprecated. The first hwloc
 release was essentially a "re-branding" of the libtopology code base, but with
 both a few genuinely new features and a few PLPA-like features added in. Prior
@@ -27,10 +29,23 @@ hwloc supports the following operating systems:
   * Solaris
   * AIX
   * Darwin / OS X
-  * FreeBSD and its variants, such as kFreeBSD/GNU
+  * FreeBSD and its variants (such as kFreeBSD/GNU)
+  * NetBSD
   * OSF/1 (a.k.a., Tru64)
   * HP-UX
   * Microsoft Windows
+  * IBM BlueGene/Q Compute Node Kernel (CNK)
+
+Since it uses standard Operating System information, hwloc's support is mostly
+independant from the processor type (x86, powerpc, ...) and just relies on the
+Operating System support. The only exception to this is kFreeBSD, which does
+not support topology information, and hwloc thus uses an x86-only CPUID-based
+backend (which can be used for other OSes too, see the Components and plugins
+section).
+
+To check whether hwloc works on a particular machine, just try to build it and
+run lstopo or lstopo-no-graphics. If some things do not look right (e.g. bogus
+or missing cache information), see Questions and Bugs below.
 
 hwloc only reports the number of processors on unsupported operating systems;
 no topology information is available.
@@ -54,6 +69,13 @@ below. It may also be used to binding applications onto certain cores or memory
 nodes. Several utility programs are also provided to ease command-line
 manipulation of topology objects, binding of processes, and so on.
 
+Perl bindings are available from Bernd Kallies on CPAN.
+
+Python bindings are available from Guy Streeter:
+
+  * Fedora RPM and tarball.
+  * git tree (html).
+
 Installation
 
 hwloc (http://www.open-mpi.org/projects/hwloc/) is available under the BSD
@@ -65,8 +87,8 @@ It just happens to be hosted as part of the overall Open MPI project.
 Nightly development snapshots are available on the web site. Additionally, the
 code can be directly checked out of Subversion:
 
-shell$ svn checkout http://svn.open-mpi.org/svn/hwloc/trunk hwloc-trunk
-shell$ cd hwloc-trunk
+shell$ git clone https://github.com/open-mpi/hwloc.git
+shell$ cd hwloc
 shell$ ./autogen.sh
 
 Note that GNU Autoconf >=2.63, Automake >=1.10 and Libtool >=2.2.6 are required
@@ -81,15 +103,62 @@ shell$ make install
 The hwloc command-line tool "lstopo" produces human-readable topology maps, as
 mentioned above. It can also export maps to the "fig" file format. Support for
 PDF, Postscript, and PNG exporting is provided if the "Cairo" development
-package can be found when hwloc is configured and build. Similarly, lstopo's
-XML support requires the libxml2 development package.
+package (usually cairo-devel or libcairo2-dev) can be found in "lstopo" when
+hwloc is configured and build.
+
+The hwloc core may also benefit from the following development packages:
+
+  * libnuma for memory binding and migration support on Linux (numactl-devel or
+ libnuma-dev package).
+  * hwloc can use one of two different libraries for full I/O device discovery:
+
+  1. libpciaccess (BSD). The relevant development package is usually
+     libpciaccess-devel or libpciaccess-dev.
+  2. libpci, from the pciutils package (GPL). The relevant development
+     package is usually pciutils-devel or libpci-dev.
+
+ On Linux, PCI discovery may still be performed even if none of the above
+ libraries can be used.
+
+  * the AMD OpenCL implementation for OpenCL device discovery.
+  * the NVIDIA CUDA Toolkit for CUDA device discovery.
+  * the NVIDIA Tesla Development Kit for NVML device discovery.
+  * the NV-CONTROL X extension library (NVCtrl) for NVIDIA display discovery.
+  * libxml2 for full XML import/export support (otherwise, the internal
+ minimalistic parser will only be able to import XML files that were
+ exported by the same hwloc release). See Importing and exporting topologies
+ from/to XML files for details. The relevant development package is usually
+ libxml2-devel or libxml2-dev.
+  * libtool's ltdl library for dynamic plugin loading. The relevant development
+ package is usually libtool-ltdl-devel or libltdl-dev.
+
+PCI and XML support may be statically built inside the main hwloc library, or
+as separate dynamically-loaded plugins (see the Components and plugins
+section).
+
+Note that because of the possibility of GPL taint (remember that hwloc is
+BSD-licensed), hwloc's configure script will prefer libpciaccess to the
+pciutils package. Indeed, if libpciaccess is not found, hwloc will not use
+pciutils unless it is specifically requested via the --enable-libpci flag is
+provided.
+
+Also note that if you install supplemental libraries in non-standard locations,
+hwloc's configure script may not be able to find them without some help. You
+may need to specify additional CPPFLAGS, LDFLAGS, or PKG_CONFIG_PATH values on
+the configure command line.
+
+For example, if libpciaccess was installed into /opt/pciaccess, hwloc's
+configure script may not find it be default. Try adding PKG_CONFIG_PATH to the
+./configure command line, like this:
+
+./configure PKG_CONFIG_PATH=/opt/pciaccess/lib/pkgconfig ...
 
 CLI Examples
 
 On a 4-socket 2-core machine with hyperthreading, the lstopo tool may show the
 following graphical output:
 
-                               dudley.png
+dudley.png
 
 Here's the equivalent output in textual form:
 
@@ -130,55 +199,39 @@ line), and only socket #0 is shown for brevity:
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE topology SYSTEM "hwloc.dtd">
 <topology>
-  <object type="Machine" os_level="-1" os_index="0" cpuset="0x0000ffff"
+  <object type="Machine" os_index="0" cpuset="0x0000ffff"
    complete_cpuset="0x0000ffff" online_cpuset="0x0000ffff"
    allowed_cpuset="0x0000ffff"
    dmi_board_vendor="Dell Computer Corporation" dmi_board_name="0RD318"
    local_memory="16648183808">
  <page_type size="4096" count="4064498"/>
  <page_type size="2097152" count="0"/>
- <object type="Socket" os_level="-1" os_index="0" cpuset="0x00001111"
-     complete_cpuset="0x00001111" online_cpuset="0x00001111"
-     allowed_cpuset="0x00001111">
-   <object type="Cache" os_level="-1" cpuset="0x00001111"
-       complete_cpuset="0x00001111" online_cpuset="0x00001111"
-       allowed_cpuset="0x00001111" cache_size="4194304" depth="3"
-       cache_linesize="64">
-     <object type="Cache" os_level="-1" cpuset="0x00000101"
-         complete_cpuset="0x00000101" online_cpuset="0x00000101"
-         allowed_cpuset="0x00000101" cache_size="1048576" depth="2"
-         cache_linesize="64">
-       <object type="Cache" os_level="-1" cpuset="0x00000101"
-           complete_cpuset="0x00000101" online_cpuset="0x00000101"
-           allowed_cpuset="0x00000101" cache_size="16384" depth="1"
-           cache_linesize="64">
-         <object type="Core" os_level="-1" os_index="0" cpuset="0x00000101"
-             complete_cpuset="0x00000101" online_cpuset="0x00000101"
-             allowed_cpuset="0x00000101">
-           <object type="PU" os_level="-1" os_index="0" cpuset="0x00000001"
+ <object type="Socket" os_index="0" cpuset="0x00001111" ... >
+   <object type="Cache" cpuset="0x00001111" ...
+       cache_size="4194304" depth="3" cache_linesize="64">
+     <object type="Cache" cpuset="0x00000101" ...
+         cache_size="1048576" depth="2" cache_linesize="64">
+       <object type="Cache" cpuset="0x00000101" ...
+           cache_size="16384" depth="1" cache_linesize="64">
+         <object type="Core" os_index="0" ... >
+           <object type="PU" os_index="0" cpuset="0x00000001"
                complete_cpuset="0x00000001" online_cpuset="0x00000001"
                allowed_cpuset="0x00000001"/>
-           <object type="PU" os_level="-1" os_index="8" cpuset="0x00000100"
+           <object type="PU" os_index="8" cpuset="0x00000100"
                complete_cpuset="0x00000100" online_cpuset="0x00000100"
                allowed_cpuset="0x00000100"/>
          </object>
        </object>
      </object>
-     <object type="Cache" os_level="-1" cpuset="0x00001010"
-         complete_cpuset="0x00001010" online_cpuset="0x00001010"
-         allowed_cpuset="0x00001010" cache_size="1048576" depth="2"
-         cache_linesize="64">
-       <object type="Cache" os_level="-1" cpuset="0x00001010"
-           complete_cpuset="0x00001010" online_cpuset="0x00001010"
-           allowed_cpuset="0x00001010" cache_size="16384" depth="1"
-           cache_linesize="64">
-         <object type="Core" os_level="-1" os_index="1" cpuset="0x00001010"
-             complete_cpuset="0x00001010" online_cpuset="0x00001010"
-             allowed_cpuset="0x00001010">
-           <object type="PU" os_level="-1" os_index="4" cpuset="0x00000010"
+     <object type="Cache" cpuset="0x00001010" ...
+         cache_size="1048576" depth="2" cache_linesize="64">
+       <object type="Cache" cpuset="0x00001010"
+           cache_size="16384" depth="1" cache_linesize="64">
+         <object type="Core" os_index="1" cpuset="0x00001010" ... >
+           <object type="PU" os_index="4" cpuset="0x00000010"
                complete_cpuset="0x00000010" online_cpuset="0x00000010"
                allowed_cpuset="0x00000010"/>
-           <object type="PU" os_level="-1" os_index="12" cpuset="0x00001000"
+           <object type="PU" os_index="12" cpuset="0x00001000"
                complete_cpuset="0x00001000" online_cpuset="0x00001000"
                allowed_cpuset="0x00001000"/>
          </object>
@@ -193,7 +246,7 @@ line), and only socket #0 is shown for brevity:
 On a 4-socket 2-core Opteron NUMA machine, the lstopo tool may show the
 following graphical output:
 
-                               hagrid.png
+hagrid.png
 
 Here's the equivalent output in textual form:
 
@@ -217,40 +270,24 @@ added and only PU #0 is shown for brevity:
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE topology SYSTEM "hwloc.dtd">
 <topology>
-  <object type="Machine" os_level="-1" os_index="0" cpuset="0x000000ff"
+  <object type="Machine" os_index="0" cpuset="0x000000ff"
    complete_cpuset="0x000000ff" online_cpuset="0x000000ff"
    allowed_cpuset="0x000000ff" nodeset="0x000000ff"
    complete_nodeset="0x000000ff" allowed_nodeset="0x000000ff"
    dmi_board_vendor="TYAN Computer Corp" dmi_board_name="S4881 ">
  <page_type size="4096" count="0"/>
  <page_type size="2097152" count="0"/>
- <object type="NUMANode" os_level="-1" os_index="0" cpuset="0x00000003"
-     complete_cpuset="0x00000003" online_cpuset="0x00000003"
-     allowed_cpuset="0x00000003" nodeset="0x00000001"
-     complete_nodeset="0x00000001" allowed_nodeset="0x00000001"
-     local_memory="7514177536">
+ <object type="NUMANode" os_index="0" cpuset="0x00000003" ...
+     nodeset="0x00000001" ... local_memory="7514177536">
    <page_type size="4096" count="1834516"/>
    <page_type size="2097152" count="0"/>
-   <object type="Socket" os_level="-1" os_index="0" cpuset="0x00000003"
-       complete_cpuset="0x00000003" online_cpuset="0x00000003"
-       allowed_cpuset="0x00000003" nodeset="0x00000001"
-       complete_nodeset="0x00000001" allowed_nodeset="0x00000001">
-     <object type="Cache" os_level="-1" cpuset="0x00000001"
-         complete_cpuset="0x00000001" online_cpuset="0x00000001"
-         allowed_cpuset="0x00000001" nodeset="0x00000001"
-         complete_nodeset="0x00000001" allowed_nodeset="0x00000001"
+   <object type="Socket" os_index="0" cpuset="0x00000003" ... >
+     <object type="Cache" cpuset="0x00000001" ...
          cache_size="1048576" depth="2" cache_linesize="64">
-       <object type="Cache" os_level="-1" cpuset="0x00000001"
-           complete_cpuset="0x00000001" online_cpuset="0x00000001"
-           allowed_cpuset="0x00000001" nodeset="0x00000001"
-           complete_nodeset="0x00000001" allowed_nodeset="0x00000001"
+       <object type="Cache" cpuset="0x00000001" ...
            cache_size="65536" depth="1" cache_linesize="64">
-         <object type="Core" os_level="-1" os_index="0"
-             cpuset="0x00000001" complete_cpuset="0x00000001"
-             online_cpuset="0x00000001" allowed_cpuset="0x00000001"
-             nodeset="0x00000001" complete_nodeset="0x00000001"
-             allowed_nodeset="0x00000001">
-           <object type="PU" os_level="-1" os_index="0" cpuset="0x00000001"
+         <object type="Core" os_index="0" ... >
+           <object type="PU" os_index="0" cpuset="0x00000001"
                complete_cpuset="0x00000001" online_cpuset="0x00000001"
                allowed_cpuset="0x00000001" nodeset="0x00000001"
                complete_nodeset="0x00000001" allowed_nodeset="0x00000001"/>
@@ -263,7 +300,7 @@ added and only PU #0 is shown for brevity:
 On a 2-socket quad-core Xeon (pre-Nehalem, with 2 dual-core dies into each
 socket):
 
-                               emmett.png
+emmett.png
 
 Here's the same output in textual form:
 
@@ -288,39 +325,27 @@ And the same output in XML (line breaks added, only PU #0 shown):
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE topology SYSTEM "hwloc.dtd">
 <topology>
-  <object type="Machine" os_level="-1" os_index="0" cpuset="0x000000ff"
+  <object type="Machine" os_index="0" cpuset="0x000000ff"
    complete_cpuset="0x000000ff" online_cpuset="0x000000ff"
    allowed_cpuset="0x000000ff" dmi_board_vendor="Dell Inc."
    dmi_board_name="0NR282" local_memory="16865292288">
  <page_type size="4096" count="4117503"/>
  <page_type size="2097152" count="0"/>
- <object type="Socket" os_level="-1" os_index="0" cpuset="0x00000055"
-     complete_cpuset="0x00000055" online_cpuset="0x00000055"
-     allowed_cpuset="0x00000055">
-   <object type="Cache" os_level="-1" cpuset="0x00000011"
-       complete_cpuset="0x00000011" online_cpuset="0x00000011"
-       allowed_cpuset="0x00000011" cache_size="4194304" depth="2"
-       cache_linesize="64">
-     <object type="Cache" os_level="-1" cpuset="0x00000001"
-         complete_cpuset="0x00000001" online_cpuset="0x00000001"
-         allowed_cpuset="0x00000001" cache_size="32768" depth="1"
-         cache_linesize="64">
-       <object type="Core" os_level="-1" os_index="0" cpuset="0x00000001"
-           complete_cpuset="0x00000001" online_cpuset="0x00000001"
-           allowed_cpuset="0x00000001">
-         <object type="PU" os_level="-1" os_index="0" cpuset="0x00000001"
+ <object type="Socket" os_index="0" cpuset="0x00000055" ... >
+   <object type="Cache" cpuset="0x00000011" ...
+       cache_size="4194304" depth="2" cache_linesize="64">
+     <object type="Cache" cpuset="0x00000001" ...
+         cache_size="32768" depth="1" cache_linesize="64">
+       <object type="Core" os_index="0" ... >
+         <object type="PU" os_index="0" cpuset="0x00000001"
              complete_cpuset="0x00000001" online_cpuset="0x00000001"
              allowed_cpuset="0x00000001"/>
        </object>
      </object>
-     <object type="Cache" os_level="-1" cpuset="0x00000010"
-         complete_cpuset="0x00000010" online_cpuset="0x00000010"
-         allowed_cpuset="0x00000010" cache_size="32768" depth="1"
-         cache_linesize="64">
-       <object type="Core" os_level="-1" os_index="1" cpuset="0x00000010"
-           complete_cpuset="0x00000010" online_cpuset="0x00000010"
-           allowed_cpuset="0x00000010">
-         <object type="PU" os_level="-1" os_index="4" cpuset="0x00000010"
+     <object type="Cache" cpuset="0x00000010" ...
+         cache_size="32768" depth="1" cache_linesize="64">
+       <object type="Core" os_index="1" ... >
+         <object type="PU" os_index="4" cpuset="0x00000010" ...
              complete_cpuset="0x00000010" online_cpuset="0x00000010"
              allowed_cpuset="0x00000010"/>
        </object>
@@ -331,11 +356,12 @@ And the same output in XML (line breaks added, only PU #0 shown):
 
 Programming Interface
 
-The basic interface is available in hwloc.h. It essentially offers low-level
-routines for advanced programmers that want to manually manipulate objects and
-follow links between them. Documentation for everything in hwloc.h are provided
-later in this document. Developers should also look at hwloc/helper.h (and also
-in this document, which provides good higher-level topology traversal examples.
+The basic interface is available in hwloc.h. Some higher-level functions are
+available in hwloc/helper.h to reduce the need to manually manipulate objects
+and follow links between them. Documentation for all these is provided later in
+this document. Developers may also want to look at hwloc/inlines.h which
+contains the actual inline code of some hwloc.h routines, and at this document,
+which provides good higher-level topology traversal examples.
 
 To precisely define the vocabulary used by hwloc, a Terms and Definitions
 section is available and should probably be read first.
@@ -381,12 +407,12 @@ interfaces for them are usually available on the supported Operating Systems.
 Here's the graphical output from lstopo on this platform when Simultaneous
 Multi-Threading (SMT) is enabled:
 
-                           ppc64-with-smt.png
+ppc64-with-smt.png
 
 And here's the graphical output from lstopo on this platform when SMT is
 disabled:
 
-                          ppc64-without-smt.png
+ppc64-without-smt.png
 
 Notice that hwloc only sees half the PUs when SMT is disabled. PU #15, for
 example, seems to change location from NUMA node #0 to #1. In reality, no PUs
@@ -403,7 +429,7 @@ Note that upgrading the Linux kernel on the same PPC64 system mentioned above
 to 2.6.34, hwloc is able to discover all the topology information. The
 following picture shows the entire topology layout when SMT is enabled:
 
-                         ppc64-full-with-smt.png
+ppc64-full-with-smt.png
 
 Developers using the hwloc API or XML output for portable applications should
 therefore be extremely careful to not make any assumptions about the structure
@@ -424,9 +450,10 @@ core of the machine.
 
 /* Example hwloc API program.
  *
- * Copyright ? 2009-2010 INRIA.  All rights reserved.
- * Copyright ? 2009-2010 Universit? Bordeaux 1
- * Copyright ? 2009-2010 Cisco Systems, Inc.  All rights reserved.
+ * Copyright (c) 2009-2010 inria.  All rights reserved.
+ * Copyright (c) 2009-2011 Universit?eacute; Bordeaux 1
+ * Copyright (c) 2009-2010 Cisco Systems, Inc.  All rights reserved.
+ * See COPYING in top-level directory.
  *
  * hwloc-hello.c
  */
@@ -436,7 +463,7 @@ core of the machine.
 #include <stdio.h>
 #include <string.h>
 
-static void print_children(hwloc_topology_t topology, hwloc_obj_t obj,
+static void print_children(hwloc_topology_t topology, hwloc_obj_t obj, 
                         int depth)
 {
  char string[128];
@@ -465,7 +492,7 @@ int main(void)
  hwloc_topology_init(&topology);
 
  /* ... Optionally, put detection configuration here to ignore
-    some objects types, define a synthetic topology, etc....
+    some objects types, define a synthetic topology, etc....  
 
     The default is to detect all the objects of the machine that
     the caller is allowed to access.  See Configure Topology
@@ -485,7 +512,7 @@ int main(void)
   *****************************************************************/
  for (depth = 0; depth < topodepth; depth++) {
      printf("*** Objects at level %d\n", depth);
-     for (i = 0; i < hwloc_get_nbobjs_by_depth(topology, depth);
+     for (i = 0; i < hwloc_get_nbobjs_by_depth(topology, depth); 
           i++) {
          hwloc_obj_snprintf(string, sizeof(string), topology,
                     hwloc_get_obj_by_depth(topology, depth, i),
@@ -509,7 +536,7 @@ int main(void)
  if (depth == HWLOC_TYPE_DEPTH_UNKNOWN) {
      printf("*** The number of sockets is unknown\n");
  } else {
-     printf("*** %u socket(s)\n",
+     printf("*** %u socket(s)\n", 
             hwloc_get_nbobjs_by_depth(topology, depth));
  }
 
@@ -527,7 +554,7 @@ int main(void)
      levels++;
      size += obj->attr->cache.size;
    }
- printf("*** Logical processor 0 has %d caches totaling %luKB\n",
+ printf("*** Logical processor 0 has %d caches totaling %luKB\n", 
         levels, size / 1024);
 
  /*****************************************************************
@@ -572,7 +599,7 @@ int main(void)
  n = hwloc_get_nbobjs_by_type(topology, HWLOC_OBJ_NODE);
  if (n) {
      void *m;
-     size_t size = 1024*1024;
+     size = 1024*1024;
 
      obj = hwloc_get_obj_by_type(topology, HWLOC_OBJ_NODE, n - 1);
      m = hwloc_alloc_membind_nodeset(topology, size, obj->nodeset,
@@ -638,7 +665,7 @@ Questions and Bugs
 
 Questions should be sent to the devel mailing list (http://www.open-mpi.org/
 community/lists/hwloc.php). Bug reports should be reported in the tracker (
-https://svn.open-mpi.org/trac/hwloc/).
+https://git.open-mpi.org/trac/hwloc/).
 
 If hwloc discovers an incorrect topology for your machine, the very first thing
 you should check is to ensure that you have the most recent updates installed
@@ -650,7 +677,10 @@ the most recent version of the BIOS for your machine.
 
 If those things fail, contact us on the mailing list for additional help.
 Please attach the output of lstopo after having given the --enable-debug option
-to ./configure and rebuilt completely, to get debugging output.
+to ./configure and rebuilt completely, to get debugging output. Also attach the
+/proc + /sys tarball generated by the installed script hwloc-gather-topology.sh
+when submitting problems about Linux, or send the output of kstat cpu_info in
+the Solaris case, or the output of sysctl hw in the Darwin or BSD cases.
 
 History / Credits
 
@@ -660,7 +690,7 @@ Processor Affinity (PLPA) (http://www.open-mpi.org/projects/plpa/) project.
 Because of functional and ideological overlap, these two code bases and ideas
 were merged and released under the name "hwloc" as an Open MPI sub-project.
 
-libtopology was initially developed by the INRIA Runtime Team-Project (http://
+libtopology was initially developed by the inria Runtime Team-Project (http://
 runtime.bordeaux.inria.fr/) (headed by Raymond Namyst (http://
 dept-info.labri.fr/~namyst/). PLPA was initially developed by the Open MPI
 development team as a sub-project. Both are now deprecated in favor of hwloc,
@@ -674,8 +704,14 @@ The documentation chapters include
   * Command-Line Tools
   * Environment Variables
   * CPU and Memory Binding Overview
+  * I/O Devices
+  * Multi-node Topologies
+  * Object attributes
+  * Importing and exporting topologies from/to XML files
+  * Synthetic topologies
   * Interoperability With Other Software
   * Thread Safety
+  * Components and plugins
   * Embedding hwloc in Other Software
   * Frequently Asked Questions
 
@@ -683,5 +719,5 @@ Make sure to have had a look at those too!
 
 -------------------------------------------------------------------------------
 
-Generated on Thu Feb 3 2011 11:06:33 for Hardware Locality (hwloc) by  doxygen
-1.7.2
+Generated on Tue Sep 10 2013 16:08:12 for Hardware Locality (hwloc) by   
+doxygen 1.8.4

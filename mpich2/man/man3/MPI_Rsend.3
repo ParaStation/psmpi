@@ -1,9 +1,9 @@
-.TH MPI_Rsend 3 "7/27/2010" " " "MPI"
+.TH MPI_Rsend 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Rsend \-  Blocking ready send  
 .SH SYNOPSIS
 .nf
-int MPI_Rsend(void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+int MPI_Rsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
               MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
@@ -164,4 +164,4 @@ zero and the size of the communicator minus one; ranks in a receive
 .PD 1
 
 .SH LOCATION
-rsend.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/pt2pt/rsend.c

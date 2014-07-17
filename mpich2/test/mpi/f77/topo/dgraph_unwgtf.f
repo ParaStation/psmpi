@@ -1,6 +1,11 @@
-!     This program is Fortran version of dgraph_unwgt.c
-!     Specify a distributed graph of a bidirectional ring of the MPI_COMM_WORLD,
-!     i.e. everyone only talks to left and right neighbors.
+C -*- Mode: Fortran; -*- 
+C
+C  (C) 2010 by Argonne National Laboratory.
+C      See COPYRIGHT in top-level directory.
+C
+C     This program is Fortran version of dgraph_unwgt.c
+C     Specify a distributed graph of a bidirectional ring of the MPI_COMM_WORLD,
+C     i.e. everyone only talks to left and right neighbors.
 
       logical function validate_dgraph(dgraph_comm)
       implicit none
@@ -55,8 +60,8 @@
           return
       endif
 
-!     Check if the neighbors returned from MPI are really
-!     the nearest neighbors that within a ring.
+C     Check if the neighbors returned from MPI are really
+C     the nearest neighbors that within a ring.
       call MPI_Comm_rank(MPI_COMM_WORLD, world_rank, ierr)
       call MPI_Comm_size(MPI_COMM_WORLD, world_size, ierr)
  
@@ -147,6 +152,22 @@
       endif
       call MPI_Comm_free(dgraph_comm, ierr)
 
+C now create one with MPI_WEIGHTS_EMPTY
+C NOTE that MPI_WEIGHTS_EMPTY was added in MPI-3 and does not 
+C appear before then.  Incluing this test means that this test cannot
+C be compiled if the MPI version is less than 3 (see the testlist file)
+
+      degs(1) = 0;
+      call MPI_Dist_graph_create(MPI_COMM_WORLD, 1, srcs, degs, dests,
+     &                           MPI_WEIGHTS_EMPTY, MPI_INFO_NULL,
+     &                          .true., dgraph_comm, ierr)
+      if (ierr .ne. MPI_SUCCESS) then
+          write(6,*) "MPI_Dist_graph_create() fails!"
+          call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+          stop
+      endif
+      call MPI_Comm_free(dgraph_comm, ierr)
+
       src_sz   = 2
       srcs(1)  = ring_rank(world_size, world_rank-1)
       srcs(2)  = ring_rank(world_size, world_rank+1)
@@ -173,7 +194,23 @@
       endif
       call MPI_Comm_free(dgraph_comm, ierr)
 
+C now create one with MPI_WEIGHTS_EMPTY
+      src_sz   = 0
+      dest_sz  = 0
+      call MPI_Dist_graph_create_adjacent(MPI_COMM_WORLD,
+     &                                    src_sz, srcs,
+     &                                    MPI_WEIGHTS_EMPTY,
+     &                                    dest_sz, dests,
+     &                                    MPI_WEIGHTS_EMPTY,
+     &                                    MPI_INFO_NULL, .true.,
+     &                                    dgraph_comm, ierr)
+      if (ierr .ne. MPI_SUCCESS) then
+          write(6,*) "MPI_Dist_graph_create_adjacent() fails!"
+          call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+          stop
+      endif
+      call MPI_Comm_free(dgraph_comm, ierr)
+
       call MTEST_Finalize(errs)
       call MPI_Finalize(ierr)
-      stop
       end

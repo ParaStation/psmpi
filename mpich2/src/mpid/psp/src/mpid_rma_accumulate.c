@@ -22,19 +22,29 @@
 static
 void rma_accumulate_done(pscom_request_t *req)
 {
+	MPID_Request *mpid_req = req->user->type.accumulate_send.mpid_req;
 	/* This is an pscom.io_done call. Global lock state undefined! */
 	MPID_PSP_packed_msg_cleanup(&req->user->type.accumulate_send.msg);
 	/* ToDo: this is not threadsave */
 	req->user->type.accumulate_send.win_ptr->rma_local_pending_cnt--;
-	pscom_request_free(req);
+	req->user->type.accumulate_send.win_ptr->rma_local_pending_rank[req->user->type.accumulate_send.target_rank]--;
+
+	if(mpid_req) {
+		MPID_PSP_Subrequest_completed(mpid_req);
+		MPID_PSP_Request_dequeue(mpid_req, MPID_REQUEST_SEND);
+	} else {
+		pscom_request_free(req);
+	}
 }
 
 
-int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
-		    int target_rank, MPI_Aint target_disp, int target_count,
-		    MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win_ptr)
+static
+int MPID_Accumulate_generic(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
+			    int target_rank, MPI_Aint target_disp, int target_count,
+			    MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win_ptr,
+			    MPID_Request **request)
 {
-	int ret;
+	int mpi_error = MPI_SUCCESS;
 	MPID_PSP_Datatype_info dt_info;
 	MPID_PSP_packed_msg_t msg;
 	MPID_Win_rank_info *ri = win_ptr->rank_info + target_rank;
@@ -47,23 +57,103 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype origin_dat
 		target_rank, target_disp, target_count,
 		target_datatype, op, win_ptr);
 #endif
+
 	if (unlikely(op == MPI_REPLACE)) {
-		return MPID_Put(origin_addr, origin_count, origin_datatype,
-				target_rank, target_disp, target_count,
-				target_datatype, win_ptr);
+		/*  MPI_PUT is a special case of MPI_ACCUMULATE, with the operation MPI_REPLACE.
+		 |  However, PUT and ACCUMULATE have different constraints on concurrent updates!
+		 |  Therefore, in the SHMEM case, the PUT/REPLACE operation must here be locked:
+		 */
+		if(unlikely(win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED)) {
+			MPID_PSP_shm_rma_mutex_lock(win_ptr);
+			mpi_error =  MPID_Put_generic(origin_addr, origin_count, origin_datatype,
+						target_rank, target_disp, target_count,
+						target_datatype, win_ptr, request);
+			MPID_PSP_shm_rma_mutex_unlock(win_ptr);
+			return mpi_error;
+		} else {
+			return MPID_Put_generic(origin_addr, origin_count, origin_datatype,
+						target_rank, target_disp, target_count,
+						target_datatype, win_ptr, request);
+		}
 	}
 
 	/* Datatype */
 	MPID_PSP_Datatype_get_info(target_datatype, &dt_info);
 
+	if(request) {
+		*request = MPID_DEV_Request_send_create(win_ptr->comm_ptr);
+	}
+
+	if (unlikely(target_rank == MPI_PROC_NULL)) {
+
+		goto fn_completed;
+	}
+
+
+	/* Request-based RMA operations are only valid within a passive target epoch! */
+	if(request && win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK && win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK_ALL) {
+		mpi_error = MPI_ERR_RMA_SYNC;
+		goto err_sync_rma;
+	}
+
+	/* Check that we are within an access/exposure epoch: */
+	if (win_ptr->epoch_state == MPID_PSP_EPOCH_NONE) {
+		mpi_error = MPI_ERR_RMA_SYNC;
+		goto err_sync_rma;
+	}
+
+	/* Track access epoch state: */
+	if (win_ptr->epoch_state == MPID_PSP_EPOCH_FENCE_ISSUED) {
+		win_ptr->epoch_state = MPID_PSP_EPOCH_FENCE;
+	}
+
+
 	/* Data */
-	ret = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg);
-	if (unlikely(ret != MPI_SUCCESS)) goto err_create_packed_msg;
+	mpi_error = MPID_PSP_packed_msg_prepare(origin_addr, origin_count, origin_datatype, &msg);
+	if (unlikely(mpi_error != MPI_SUCCESS)) goto err_create_packed_msg;
 
 	MPID_PSP_packed_msg_pack(origin_addr, origin_count, origin_datatype, &msg);
 
 	target_buf = (char *) ri->base_addr + ri->disp_unit * target_disp;
 
+	/* If the acc is a local operation, do it here */
+	if (target_rank == win_ptr->rank || win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
+
+		if (target_rank != win_ptr->rank) {
+			int disp_unit;
+			void* base;
+
+			MPID_PSP_shm_rma_get_base(win_ptr, target_rank, &disp_unit, &base);
+
+			assert(ri->disp_unit == disp_unit);
+			target_buf = (char *) base + disp_unit * target_disp;
+
+			/* accumulate may be executed concurrently --> locking required! */
+			MPID_PSP_shm_rma_mutex_lock(win_ptr);
+			MPID_PSP_packed_msg_acc(target_buf, target_count, target_datatype,
+						msg.msg, msg.msg_sz, op);
+			MPID_PSP_shm_rma_mutex_unlock(win_ptr);
+
+		} else {
+			/* This is a local acc, but do locking just in SHMEM case! */
+			if(unlikely(win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED)) {
+
+				/* in case of a COMM_SELF clone, mutex_lock()/unlock() will just act as no-ops: */
+				MPID_PSP_shm_rma_mutex_lock(win_ptr);
+				MPID_PSP_packed_msg_acc(target_buf, target_count, target_datatype,
+							msg.msg, msg.msg_sz, op);
+				MPID_PSP_shm_rma_mutex_unlock(win_ptr);
+			} else {
+				/* this is a local operation on non-shared memory: */
+				MPID_PSP_packed_msg_acc(target_buf, target_count, target_datatype,
+							msg.msg, msg.msg_sz, op);
+			}
+		}
+
+		MPID_PSP_packed_msg_cleanup(&msg);
+
+		goto fn_completed;
+	}
 
 	if (0 && MPID_PSP_Datatype_is_contig(&dt_info)) { /* ToDo: reenable pscom buildin rma_write */
 		/* Contig message. Use pscom buildin rma */
@@ -110,19 +200,47 @@ int MPID_Accumulate(void *origin_addr, int origin_count, MPI_Datatype origin_dat
 		req->data_len = msg.msg_sz;
 
 		req->ops.io_done = rma_accumulate_done;
-
+		req->user->type.accumulate_send.target_rank = target_rank;
 		req->connection = ri->con;
 
 		win_ptr->rma_local_pending_cnt++;
+		win_ptr->rma_local_pending_rank[target_rank]++;
 		win_ptr->rma_puts_accs[target_rank]++;
+
+		if(request) {
+			MPID_Request *mpid_req = *request;
+			/* TODO: Use a new and 'acc_send'-dedicated MPID_DEV_Request_create() */
+			/*       instead of allocating and overloading a common send request. */
+			pscom_request_free(mpid_req->dev.kind.common.pscom_req);
+			mpid_req->dev.kind.common.pscom_req = req;
+			MPID_PSP_Request_enqueue(mpid_req);
+			req->user->type.accumulate_send.mpid_req = mpid_req;
+		} else {
+			req->user->type.accumulate_send.mpid_req = NULL;
+		}
 
 		pscom_post_send(req);
 	}
 
+fn_exit:
+	return MPI_SUCCESS;
+fn_completed:
+	if(request) {
+		_MPID_Request_set_completed(*request);
+	}
 	return MPI_SUCCESS;
 	/* --- */
+err_exit:
+	if(request) {
+		_MPID_Request_set_completed(*request);
+		MPID_DEV_Request_release_ref(*request, MPID_REQUEST_SEND);
+	}
+	return mpi_error;
+	/* --- */
 err_create_packed_msg:
-	return ret;
+	goto err_exit;
+err_sync_rma:
+	goto err_exit;
 }
 
 
@@ -133,9 +251,9 @@ void rma_accumulate_receive_done(pscom_request_t *req)
 	MPID_PSCOM_XHeader_Rma_accumulate_t *xhead_rma = &req->xheader.user.accumulate;
 	pscom_request_accumulate_recv_t *rpr = &req->user->type.accumulate_recv;
 /*
-	void *origin_addr		= req->data;
-	int origin_count		= req->data_len / sizeof(basic buildin type);
-	MPI_Datatype origin_datatype	= basic buildin type;
+  void *origin_addr		= req->data;
+  int origin_count		= req->data_len / sizeof(basic buildin type);
+  MPI_Datatype origin_datatype	= basic buildin type;
 */
 
 	void *target_buf		= xhead_rma->target_buf;
@@ -177,4 +295,142 @@ pscom_request_t *MPID_do_recv_rma_accumulate(pscom_connection_t *con, pscom_head
 	req->ops.io_done = rma_accumulate_receive_done;
 
 	return req;
+}
+
+
+int MPID_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
+		    int target_rank, MPI_Aint target_disp, int target_count,
+		    MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win_ptr)
+{
+	return MPID_Accumulate_generic(origin_addr, origin_count, origin_datatype,
+				       target_rank, target_disp, target_count, target_datatype,
+				       op, win_ptr, NULL);
+}
+
+int MPID_Raccumulate(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
+		     int target_rank, MPI_Aint target_disp, int target_count, MPI_Datatype target_datatype,
+		     MPI_Op op, MPID_Win *win_ptr, MPID_Request **request)
+{
+	return MPID_Accumulate_generic((void*)origin_addr, origin_count, origin_datatype,
+				       target_rank, target_disp, target_count, target_datatype,
+				       op, win_ptr, request);
+}
+
+
+/***********************************************************************************************************
+ *   RMA-3.0 Get & Accumulate / Fetch & Op Functions:
+ */
+
+static
+int MPID_Get_accumulate_generic(const void *origin_addr, int origin_count,
+				MPI_Datatype origin_datatype, void *result_addr, int result_count,
+				MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
+				int target_count, MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win_ptr,
+				MPID_Request **request)
+{
+	if (unlikely(target_rank == MPI_PROC_NULL)) {
+
+		if(request) {
+			*request = MPID_DEV_Request_send_create(win_ptr->comm_ptr);
+			_MPID_Request_set_completed(*request);
+		}
+
+		return MPI_SUCCESS;
+	}
+
+	if (unlikely(op == MPI_NO_OP)) {
+		return MPID_Get_generic(result_addr, result_count, result_datatype,
+					target_rank, target_disp, target_count,
+					target_datatype, win_ptr, request);
+	}
+
+	if(1) { /* TODO: This implementation is just based on the common Get/Accumulate ops (plus some additional internal locking): */
+
+		MPID_Win_lock_internal(target_rank, win_ptr);
+
+		MPID_Get(result_addr, result_count, result_datatype, target_rank, target_disp, target_count, target_datatype, win_ptr);
+
+		MPID_Win_wait_local_completion(target_rank, win_ptr);
+
+		MPID_Accumulate_generic((void*)origin_addr, origin_count, origin_datatype, target_rank, target_disp, target_count, target_datatype, op, win_ptr, request);
+
+		MPID_Win_unlock_internal(target_rank, win_ptr);
+	}
+	else {
+		/* TODO: A dedicated Get_accumulate() implementation goes here... */
+		assert(0);
+	}
+
+	return MPI_SUCCESS;
+}
+
+int MPID_Get_accumulate(const void *origin_addr, int origin_count,
+			MPI_Datatype origin_datatype, void *result_addr, int result_count,
+			MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
+			int target_count, MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win_ptr)
+{
+	return MPID_Get_accumulate_generic(origin_addr, origin_count, origin_datatype, result_addr, result_count, result_datatype,
+					   target_rank, target_disp, target_count, target_datatype, op, win_ptr, NULL);
+}
+
+int MPID_Rget_accumulate(const void *origin_addr, int origin_count,
+			 MPI_Datatype origin_datatype, void *result_addr, int result_count,
+			 MPI_Datatype result_datatype, int target_rank, MPI_Aint target_disp,
+			 int target_count, MPI_Datatype target_datatype, MPI_Op op, MPID_Win *win_ptr,
+			 MPID_Request **request)
+{
+	return MPID_Get_accumulate_generic(origin_addr, origin_count, origin_datatype, result_addr, result_count, result_datatype,
+					   target_rank, target_disp, target_count, target_datatype, op, win_ptr, request);
+}
+
+
+int MPID_Fetch_and_op(const void *origin_addr, void *result_addr,
+		      MPI_Datatype datatype, int target_rank, MPI_Aint target_disp,
+		      MPI_Op op, MPID_Win *win)
+{
+	if (unlikely(target_rank == MPI_PROC_NULL)) {
+		goto fn_exit;
+	}
+
+	if(1) { /* TODO: This implementation is just based on Get&Accumulate: */
+
+		return MPID_Get_accumulate(origin_addr, 1, datatype, result_addr, 1, datatype, target_rank, target_disp, 1, datatype, op, win);
+	}
+	else {
+		/* TODO: A dedicated Fetch_and_op() implementation goes here... */
+		assert(0);
+	}
+fn_exit:
+	return MPI_SUCCESS;
+}
+
+int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
+			  void *result_addr, MPI_Datatype datatype, int target_rank,
+			  MPI_Aint target_disp, MPID_Win *win_ptr)
+{
+	if(1) { /* TODO: This implementation is just based on Get (plus some additional internal locking): */
+
+		if (unlikely(target_rank == MPI_PROC_NULL)) {
+			goto fn_exit;
+		}
+
+		MPID_Win_lock_internal(target_rank, win_ptr);
+
+		MPID_Get(result_addr, 1, datatype, target_rank, target_disp, 1, datatype, win_ptr);
+
+		MPID_Win_wait_local_completion(target_rank, win_ptr);
+
+		if(MPIR_Compare_equal(compare_addr, result_addr, datatype)) {
+
+			MPID_Put((void*)origin_addr, 1, datatype, target_rank, target_disp, 1, datatype, win_ptr);
+		}
+
+		MPID_Win_unlock_internal(target_rank, win_ptr);
+	}
+	else {
+		/* TODO: A dedicated Compare_and_swap() implementation goes here... */
+		assert(0);
+	}
+fn_exit:
+	return MPI_SUCCESS;
 }

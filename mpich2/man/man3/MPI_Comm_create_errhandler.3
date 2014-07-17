@@ -1,24 +1,29 @@
-.TH MPI_Comm_create_errhandler 3 "7/27/2010" " " "MPI"
+.TH MPI_Comm_create_errhandler 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Comm_create_errhandler \-  Create a communicator error handler 
 .SH SYNOPSIS
 .nf
-int MPI_Comm_create_errhandler(MPI_Comm_errhandler_function *function, 
+int MPI_Comm_create_errhandler(MPI_Comm_errhandler_function *comm_errhandler_fn,
                                MPI_Errhandler *errhandler)
 .fi
-.SH INPUT PARAMETER
+.SH INPUT PARAMETERS
 .PD 0
 .TP
-.B function 
-- user defined error handling procedure (function) 
+.B comm_errhandler_fn 
+- user defined error handling procedure (function)
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B errhandler 
 - MPI error handler (handle) 
 .PD 1
+
+.SH ERROR HANDLER
+The error handler function should be of the form
+
+void MPI_Comm_errhandler_function(MPI_Comm *comm, int *rc);
 
 .SH THREAD AND INTERRUPT SAFETY
 
@@ -103,4 +108,4 @@ to get more information
 about this error code. 
 .PD 1
 .SH LOCATION
-comm_create_errhandler.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/errhan/comm_create_errhandler.c

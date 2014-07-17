@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -66,11 +66,11 @@
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 static int MPIR_Scan_generic ( 
-    void *sendbuf, 
-    void *recvbuf, 
-    int count, 
-    MPI_Datatype datatype, 
-    MPI_Op op, 
+    const void *sendbuf,
+    void *recvbuf,
+    int count,
+    MPI_Datatype datatype,
+    MPI_Op op,
     MPID_Comm *comm_ptr,
     int *errflag )
 {
@@ -81,14 +81,10 @@ static int MPIR_Scan_generic (
     int mask, dst, is_commutative; 
     MPI_Aint true_extent, true_lb, extent;
     void *partial_scan, *tmp_buf;
-    MPI_User_function *uop;
     MPID_Op *op_ptr;
     MPI_Comm comm;
     MPIU_THREADPRIV_DECL;
     MPIU_CHKLMEM_DECL(2);
-#ifdef HAVE_CXX_BINDING
-    int is_cxx_uop = 0;
-#endif
     
     if (count == 0) return MPI_SUCCESS;
 
@@ -105,8 +101,6 @@ static int MPIR_Scan_generic (
 
     if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
         is_commutative = 1;
-        /* get the function by indexing into the op table */
-        uop = MPIR_Op_table[op%16 - 1];
     }
     else {
         MPID_Op_get_ptr(op, op_ptr);
@@ -114,18 +108,6 @@ static int MPIR_Scan_generic (
             is_commutative = 0;
         else
             is_commutative = 1;
-
-#ifdef HAVE_CXX_BINDING            
-	if (op_ptr->language == MPID_LANG_CXX) {
-	    uop = (MPI_User_function *) op_ptr->function.c_function;
-	    is_cxx_uop = 1;
-	}
-	else
-#endif
-	if ((op_ptr->language == MPID_LANG_C))
-            uop = (MPI_User_function *) op_ptr->function.c_function;
-        else
-            uop = (MPI_User_function *) op_ptr->function.f77_function;
     }
     
     /* need to allocate temporary buffer to store partial scan*/
@@ -168,7 +150,7 @@ static int MPIR_Scan_generic (
         dst = rank ^ mask;
         if (dst < comm_size) {
             /* Send partial_scan to dst. Recv into tmp_buf */
-            mpi_errno = MPIC_Sendrecv_ft(partial_scan, count, datatype,
+            mpi_errno = MPIC_Sendrecv(partial_scan, count, datatype,
                                          dst, MPIR_SCAN_TAG, tmp_buf,
                                          count, datatype, dst,
                                          MPIR_SCAN_TAG, comm,
@@ -181,44 +163,27 @@ static int MPIR_Scan_generic (
             }
             
             if (rank > dst) {
-#ifdef HAVE_CXX_BINDING
-		if (is_cxx_uop) {
-		    (*MPIR_Process.cxx_call_op_fn)( tmp_buf, partial_scan, 
-				     count, datatype, uop );
-		    (*MPIR_Process.cxx_call_op_fn)( tmp_buf, recvbuf, 
-				     count, datatype, uop );
-		}
-		else 
-#endif
-                {		    
-		    (*uop)(tmp_buf, partial_scan, &count, &datatype);
-		    (*uop)(tmp_buf, recvbuf, &count, &datatype);
-		}
+		mpi_errno = MPIR_Reduce_local_impl( 
+			   tmp_buf, partial_scan, count, datatype, op);
+                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+		mpi_errno = MPIR_Reduce_local_impl( 
+			   tmp_buf, recvbuf, count, datatype, op);
+                if (mpi_errno) MPIU_ERR_POP(mpi_errno);
             }
             else {
                 if (is_commutative) {
-#ifdef HAVE_CXX_BINDING
-		    if (is_cxx_uop) {
-			(*MPIR_Process.cxx_call_op_fn)( tmp_buf, partial_scan, 
-					 count, datatype, uop );
-		    }
-		    else 
-#endif
-                    (*uop)(tmp_buf, partial_scan, &count, &datatype);
+		    mpi_errno = MPIR_Reduce_local_impl( 
+			       tmp_buf, partial_scan, count, datatype, op);
+                    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 		}
                 else {
-#ifdef HAVE_CXX_BINDING
-		    if (is_cxx_uop) {
-			(*MPIR_Process.cxx_call_op_fn)( partial_scan, tmp_buf,
-					 count, datatype, uop );
-		    }
-		    else 
-#endif
-                    (*uop)(partial_scan, tmp_buf, &count, &datatype);
-                    mpi_errno = MPIR_Localcopy(tmp_buf, count, datatype,
-                                               partial_scan,
-                                               count, datatype);
+		    mpi_errno = MPIR_Reduce_local_impl( 
+			       partial_scan, tmp_buf, count, datatype, op);
                     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+		    mpi_errno = MPIR_Localcopy(tmp_buf, count, datatype,
+					       partial_scan,
+					       count, datatype);
+		    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
                 }
             }
         }
@@ -255,7 +220,7 @@ static int MPIR_Scan_generic (
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIR_Scan(
-    void *sendbuf,
+    const void *sendbuf,
     void *recvbuf,
     int count,
     MPI_Datatype datatype,
@@ -271,8 +236,6 @@ int MPIR_Scan(
     MPI_Status status;
     void *tempbuf = NULL, *localfulldata = NULL, *prefulldata = NULL;
     MPI_Aint  true_lb, true_extent, extent; 
-    MPI_User_function *uop;
-    MPID_Op *op_ptr;
     int noneed = 1; /* noneed=1 means no need to bcast tempbuf and 
                        reduce tempbuf & recvbuf */
 
@@ -336,7 +299,7 @@ int MPIR_Scan(
        reduced data of rank 1,2,3. */
     if (comm_ptr->node_roots_comm != NULL && comm_ptr->node_comm != NULL)
     {
-        mpi_errno = MPIC_Recv_ft(localfulldata, count, datatype, 
+        mpi_errno = MPIC_Recv(localfulldata, count, datatype,
                                  comm_ptr->node_comm->local_size - 1, MPIR_SCAN_TAG, 
                                  comm_ptr->node_comm->handle, &status, errflag);
         if (mpi_errno) {
@@ -350,7 +313,7 @@ int MPIR_Scan(
              comm_ptr->node_comm != NULL && 
              MPIU_Get_intranode_rank(comm_ptr, rank) == comm_ptr->node_comm->local_size - 1)
     {
-        mpi_errno = MPIC_Send_ft(recvbuf, count, datatype,
+        mpi_errno = MPIC_Send(recvbuf, count, datatype,
                                  0, MPIR_SCAN_TAG, comm_ptr->node_comm->handle, errflag);
         if (mpi_errno) {
             /* for communication errors, just record the error but continue */
@@ -382,7 +345,7 @@ int MPIR_Scan(
         if (MPIU_Get_internode_rank(comm_ptr, rank) != 
             comm_ptr->node_roots_comm->local_size-1)
         {
-            mpi_errno = MPIC_Send_ft(prefulldata, count, datatype,
+            mpi_errno = MPIC_Send(prefulldata, count, datatype,
                                      MPIU_Get_internode_rank(comm_ptr, rank) + 1,
                                      MPIR_SCAN_TAG, comm_ptr->node_roots_comm->handle, errflag);
             if (mpi_errno) {
@@ -394,7 +357,7 @@ int MPIR_Scan(
         }
         if (MPIU_Get_internode_rank(comm_ptr, rank) != 0)
         {
-            mpi_errno = MPIC_Recv_ft(tempbuf, count, datatype,
+            mpi_errno = MPIC_Recv(tempbuf, count, datatype,
                                      MPIU_Get_internode_rank(comm_ptr, rank) - 1, 
                                      MPIR_SCAN_TAG, comm_ptr->node_roots_comm->handle, 
                                      &status, errflag);
@@ -425,11 +388,9 @@ int MPIR_Scan(
     }
 
     if (noneed == 0) {
-#ifdef HAVE_CXX_BINDING
-        int is_cxx_uop = 0;
-#endif
         if (comm_ptr->node_comm != NULL) {
-            mpi_errno = MPIR_Bcast_impl(tempbuf, count, datatype, 0, comm_ptr->node_comm, errflag);
+            mpi_errno = MPIR_Bcast_impl(tempbuf, count, datatype, 0, 
+					comm_ptr->node_comm, errflag);
             if (mpi_errno) {
                 /* for communication errors, just record the error but continue */
                 *errflag = TRUE;
@@ -438,38 +399,10 @@ int MPIR_Scan(
             }
         }
 
-        /* do reduce on tempbuf and recvbuf, finish scan. */
-        if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
-            /* get the function by indexing into the op table */
-            uop = MPIR_Op_table[op%16 - 1];
-        }
-        else {
-            MPID_Op_get_ptr(op, op_ptr);
-
-#ifdef HAVE_CXX_BINDING
-            if (op_ptr->language == MPID_LANG_CXX) {
-                 uop = (MPI_User_function *) op_ptr->function.c_function;
-                 is_cxx_uop = 1;
-            }
-            else
-#endif
-            {
-                if ((op_ptr->language == MPID_LANG_C))
-                    uop = (MPI_User_function *) op_ptr->function.c_function;
-                else
-                    uop = (MPI_User_function *) op_ptr->function.f77_function;
-            }
-        }
-
-#ifdef HAVE_CXX_BINDING
-        if (is_cxx_uop) {
-            (*MPIR_Process.cxx_call_op_fn)( tempbuf, recvbuf, count, 
-                                            datatype, uop );
-        }
-        else
-#endif
-            (*uop)(tempbuf, recvbuf, &count, &datatype);
+	mpi_errno = MPIR_Reduce_local_impl( tempbuf, recvbuf, 
+					    count, datatype, op );
     }
+
 
   fn_exit:
     MPIU_CHKLMEM_FREEALL();
@@ -491,15 +424,17 @@ int MPIR_Scan(
 #define FUNCNAME MPIR_Scan_impl
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_Scan_impl(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+int MPIR_Scan_impl(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
                    MPI_Op op, MPID_Comm *comm_ptr, int *errflag)
 {
     int mpi_errno = MPI_SUCCESS;
 
     if (comm_ptr->coll_fns != NULL && comm_ptr->coll_fns->Scan != NULL) {
+	/* --BEGIN USEREXTENSION-- */
 	mpi_errno = comm_ptr->coll_fns->Scan(sendbuf, recvbuf, count,
                                              datatype, op, comm_ptr, errflag);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+	/* --END USEREXTENSION-- */
     } else {
         mpi_errno = MPIR_Scan(sendbuf, recvbuf, count, datatype,
                               op, comm_ptr, errflag);
@@ -531,7 +466,7 @@ Input Parameters:
 . op - operation (handle) 
 - comm - communicator (handle) 
 
-Output Parameter:
+Output Parameters:
 . recvbuf - starting address of receive buffer (choice) 
 
 .N ThreadSafe
@@ -548,7 +483,7 @@ Output Parameter:
 .N MPI_ERR_BUFFER
 .N MPI_ERR_BUFFER_ALIAS
 @*/
-int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, 
+int MPI_Scan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
 	     MPI_Op op, MPI_Comm comm)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -567,7 +502,6 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -595,23 +529,23 @@ int MPI_Scan(void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
             if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype_get_ptr(datatype, datatype_ptr);
                 MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
+                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
                 MPID_Datatype_committed_ptr( datatype_ptr, mpi_errno );
+                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
             }
 
             /* in_place option allowed. no error check */
             MPIR_ERRTEST_USERBUFFER(sendbuf,count,datatype,mpi_errno);
-
             MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, count, mpi_errno);
             MPIR_ERRTEST_USERBUFFER(recvbuf,count,datatype,mpi_errno);
 
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
             if (HANDLE_GET_KIND(op) != HANDLE_KIND_BUILTIN) {
                 MPID_Op_get_ptr(op, op_ptr);
                 MPID_Op_valid_ptr( op_ptr, mpi_errno );
             }
             if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
                 mpi_errno = 
-                    ( * MPIR_Op_check_dtype_table[op%16 - 1] )(datatype); 
+                    ( * MPIR_OP_HDL_TO_DTYPE_FN(op) )(datatype); 
             }
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }

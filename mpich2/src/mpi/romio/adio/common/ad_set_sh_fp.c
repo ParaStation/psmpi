@@ -1,10 +1,13 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /* 
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
  */
 
 #include "adio.h"
+#ifdef ROMIO_BG
+void ADIOI_BG_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code);
+#endif
 
 /* set the shared file pointer to "offset" etypes relative to the current 
    view */
@@ -27,6 +30,13 @@ void ADIO_Set_shared_fp(ADIO_File fd, ADIO_Offset offset, int *error_code)
     /* BGLOCKLESS won't support shared fp */
     if (fd->file_system == ADIO_BGL) {
 	ADIOI_BGL_Set_shared_fp(fd, offset, error_code);
+	return;
+    }
+#endif
+#ifdef ROMIO_BG
+    /* BGLOCKLESS won't support shared fp */
+    if (fd->file_system == ADIO_BG) {
+	ADIOI_BG_Set_shared_fp(fd, offset, error_code);
 	return;
     }
 #endif

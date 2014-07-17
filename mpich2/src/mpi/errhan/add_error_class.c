@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -32,7 +32,7 @@
 /*@
    MPI_Add_error_class - Add an MPI error class to the known classes
 
-   Output Parameter:
+Output Parameters:
 .  errorclass - New error class
 
 .N ThreadSafe
@@ -61,7 +61,6 @@ int MPI_Add_error_class(int *errorclass)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_ARGNULL(errorclass, "errorclass", mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -38,12 +38,12 @@ MPID_NS_Handle MPIR_Namepub = 0;
 /*@
    MPI_Lookup_name - Lookup a port given a service name
 
-   Input Parameters:
+Input Parameters:
 + service_name - a service name (string) 
 - info - implementation-specific information (handle) 
 
 
-   Output Parameter:
+Output Parameters:
 .  port_name - a port name (string) 
 
 Notes:
@@ -61,7 +61,7 @@ If the 'service_name' is found, MPI copies the associated value into
 .N MPI_ERR_OTHER
 .N MPI_ERR_ARG
 @*/
-int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
+int MPI_Lookup_name(const char *service_name, MPI_Info info, char *port_name)
 {
     static const char FCNAME[] = "MPI_Lookup_name";
     int mpi_errno = MPI_SUCCESS;
@@ -78,7 +78,6 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INFO_OR_NULL(info, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -98,7 +97,6 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
 	    /* Validate character pointers */
 	    MPIR_ERRTEST_ARGNULL( service_name, "service_name", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( port_name, "port_name", mpi_errno );
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -119,7 +117,13 @@ int MPI_Lookup_name(char *service_name, MPI_Info info, char *port_name)
 	mpi_errno = MPID_NS_Lookup( MPIR_Namepub, info_ptr,
 				    (const char *)service_name, port_name );
 	/* FIXME: change **fail to something more meaningful */
-	MPIU_ERR_CHKANDJUMP((mpi_errno != MPI_SUCCESS && MPIR_ERR_GET_CLASS(mpi_errno) != MPI_ERR_NAME),
+	/* Note: Jump on *any* error, not just errors other than MPI_ERR_NAME.
+	   The usual MPI rules on errors apply - the error handler on the
+	   communicator (file etc.) is invoked; MPI_COMM_WORLD is used
+	   if there is no obvious communicator. A previous version of 
+	   this routine erroneously did not invoke the error handler
+	   when the error was of class MPI_ERR_NAME. */
+	MPIU_ERR_CHKANDJUMP(mpi_errno != MPI_SUCCESS,
 			    mpi_errno, MPI_ERR_OTHER, "**fail");
     }
 #   else

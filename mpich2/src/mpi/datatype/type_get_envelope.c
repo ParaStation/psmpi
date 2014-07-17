@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -67,12 +67,14 @@ void MPIR_Type_get_envelope_impl(MPI_Datatype datatype,
 /*@
    MPI_Type_get_envelope - get type envelope
 
-   Arguments:
-+  MPI_Datatype datatype - datatype
-.  int *num_integers - num integers
-.  int *num_addresses - num addresses
-.  int *num_datatypes - num datatypes
--  int *combiner - combiner
+Input Parameters:
+.  datatype - datatype to access (handle)
+
+Output Parameters:
++  num_integers - number of input integers used in the call constructing combiner (non-negative integer)
+.  num_addresses - number of input addresses used in the call constructing combiner (non-negative integer)
+.  num_datatypes - number of input datatypes used in the call constructing combiner (non-negative integer)
+-  combiner - combiner (state)
 
    Notes:
 
@@ -88,7 +90,6 @@ int MPI_Type_get_envelope(MPI_Datatype datatype,
 			  int *combiner)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPID_Datatype *datatype_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_GET_ENVELOPE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -101,20 +102,21 @@ int MPI_Type_get_envelope(MPI_Datatype datatype,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif
-    
-    /* Convert MPI object handles to object pointers */
-    MPID_Datatype_get_ptr( datatype, datatype_ptr );
     
     /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
+            MPID_Datatype *datatype_ptr = NULL;
+
+            /* Convert MPI object handles to object pointers */
+            MPID_Datatype_get_ptr( datatype, datatype_ptr );
+
 	    /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 	    /* If comm_ptr is not value, it will be reset to null */

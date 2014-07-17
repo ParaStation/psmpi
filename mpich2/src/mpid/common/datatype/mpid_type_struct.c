@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -13,9 +13,9 @@
 #undef MPID_STRUCT_FLATTEN_DEBUG
 #undef MPID_STRUCT_DEBUG
 
-static int MPID_Type_struct_alignsize(int count,
-				      MPI_Datatype *oldtype_array,
-				      MPI_Aint *displacement_array);
+static MPI_Aint MPID_Type_struct_alignsize(int count,
+				      const MPI_Datatype *oldtype_array,
+				      const MPI_Aint *displacement_array);
 
 /* MPID_Type_struct_alignsize
  *
@@ -39,11 +39,12 @@ static int MPID_Type_struct_alignsize(int count,
  * have different natural alignments).  Linux on X86, however, does not have
  * different rules for this case.
  */
-static int MPID_Type_struct_alignsize(int count,
-				      MPI_Datatype *oldtype_array,
-				      MPI_Aint *displacement_array)
+static MPI_Aint MPID_Type_struct_alignsize(int count,
+				      const MPI_Datatype *oldtype_array,
+				      const MPI_Aint *displacement_array)
 {
-    int i, max_alignsize = 0, tmp_alignsize, derived_alignsize = 0;
+    int i;
+    MPI_Aint max_alignsize = 0, tmp_alignsize, derived_alignsize = 0;
 
     for (i=0; i < count; i++)
     {
@@ -129,22 +130,22 @@ static int MPID_Type_struct_alignsize(int count,
 /*@
   MPID_Type_struct - create a struct datatype
 
-  Input Parameters:
+Input Parameters:
 + count - number of blocks in vector
 . blocklength_array - number of elements in each block
 . displacement_array - offsets of blocks from start of type in bytes
 - oldtype_array - types (using handle) of datatypes on which vector is based
 
-  Output Parameters:
+Output Parameters:
 . newtype - handle of new struct datatype
 
   Return Value:
   MPI_SUCCESS on success, MPI errno on failure.
 @*/
 int MPID_Type_struct(int count,
-		     int *blocklength_array,
-		     MPI_Aint *displacement_array,
-		     MPI_Datatype *oldtype_array,
+		     const int *blocklength_array,
+		     const MPI_Aint *displacement_array,
+		     const MPI_Datatype *oldtype_array,
 		     MPI_Datatype *newtype)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -152,7 +153,7 @@ int MPID_Type_struct(int count,
     int found_sticky_lb = 0, found_sticky_ub = 0, found_true_lb = 0,
 	found_true_ub = 0, found_el_type = 0;
     MPI_Aint el_sz = 0;
-    int size = 0;
+    MPI_Aint size = 0;
     MPI_Datatype el_type = MPI_DATATYPE_NULL;
     MPI_Aint true_lb_disp = 0, true_ub_disp = 0, sticky_lb_disp = 0,
 	sticky_ub_disp = 0;

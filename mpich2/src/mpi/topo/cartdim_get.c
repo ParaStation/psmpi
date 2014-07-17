@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -34,10 +34,10 @@
 MPI_Cartdim_get - Retrieves Cartesian topology information associated with a 
                   communicator
 
-Input Parameter:
+Input Parameters:
 . comm - communicator with cartesian structure (handle) 
 
-Output Parameter:
+Output Parameters:
 . ndims - number of dimensions of the cartesian structure (integer) 
 
 .N SignalSafe
@@ -67,7 +67,6 @@ int MPI_Cartdim_get(MPI_Comm comm, int *ndims)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

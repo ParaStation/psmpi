@@ -1,10 +1,10 @@
-.TH MPI_File_set_view 3 "8/11/2010" " " "MPI"
+.TH MPI_File_set_view 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_File_set_view \-  Sets the file view 
 .SH SYNOPSIS
 .nf
-int MPI_File_set_view(MPI_File mpi_fh, MPI_Offset disp, MPI_Datatype etype,
-                     MPI_Datatype filetype, char *datarep, MPI_Info info)
+int MPI_File_set_view(MPI_File fh, MPI_Offset disp, MPI_Datatype etype,
+                     MPI_Datatype filetype, ROMIO_CONST char *datarep, MPI_Info info)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -61,4 +61,4 @@ All MPI objects (e.g.,
 .I INTEGER
 in Fortran.
 .SH LOCATION
-set_view.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/romio/mpi-io/set_view.c

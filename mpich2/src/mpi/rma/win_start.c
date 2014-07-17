@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Win_start */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -32,7 +31,7 @@
 /*@
    MPI_Win_start - Start an RMA access epoch for MPI
 
-  Input Parameters:
+Input Parameters:
 + group - group of target processes (handle) 
 . assert - Used to optimize this call; zero may be used as a default.
   See notes. (integer) 
@@ -81,11 +80,10 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
         {
 	    MPIR_ERRTEST_WIN(win, mpi_errno);
 	    MPIR_ERRTEST_GROUP(group, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif
+#   endif /* HAVE_ERROR_CHECKING */
     
     /* Get handles to MPI objects. */
     MPID_Win_get_ptr( win, win_ptr );
@@ -100,6 +98,9 @@ int MPI_Win_start(MPI_Group group, int assert, MPI_Win win)
             if (mpi_errno) goto fn_fail;
 
             MPID_Group_valid_ptr(group_ptr, mpi_errno);
+
+            /* TODO: Validate assert argument */
+            /* TODO: Validate window state */
 
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }

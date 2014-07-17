@@ -9,11 +9,11 @@
 set datatype name 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Type_set_name(MPI_Datatype type, char *type_name)
+int MPI_Type_set_name(MPI_Datatype datatype, const char *type_name)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>type </B><DD>datatype whose identifier is to be set (handle) 
+<DT><B>datatype </B><DD>datatype whose identifier is to be set (handle)
 
 <DT><B>type_name </B><DD>the character string which is remembered as the name (string) 
 </DL>
@@ -54,5 +54,5 @@ MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 <DL><DT><B>MPI_ERR_OTHER </B> <DD> Other error; use <TT>MPI_Error_string</TT> to get more information
 about this error code. 
 </DL>
-<P><B>Location:</B>type_set_name.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/type_set_name.c<P>
 </BODY></HTML>

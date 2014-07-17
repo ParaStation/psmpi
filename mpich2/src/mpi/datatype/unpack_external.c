@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -32,17 +32,17 @@
    MPI_Unpack_external - Unpack a buffer (packed with MPI_Pack_external)
    according to a datatype into contiguous memory
 
-   Input Parameters:
+Input Parameters:
 + datarep - data representation (string)
 . inbuf - input buffer start (choice)
 . insize - input buffer size, in bytes (address integer)
 . outcount - number of output data items (integer)
 . datatype - datatype of output data item (handle)
 
-   Input/Output Parameter:
+Input/Output Parameters:
 . position - current position in buffer, in bytes (address integer)
 
-   Output Parameter:
+Output Parameters:
 . outbuf - output buffer start (choice)
 
 .N ThreadSafe
@@ -54,8 +54,8 @@
 .N MPI_ERR_TYPE
 .N MPI_ERR_ARG
 @*/
-int MPI_Unpack_external(char *datarep,
-			void *inbuf,
+int MPI_Unpack_external(const char datarep[],
+			const void *inbuf,
 			MPI_Aint insize,
 			MPI_Aint *position,
 			void *outbuf,
@@ -85,7 +85,6 @@ int MPI_Unpack_external(char *datarep,
 	    MPIR_ERRTEST_COUNT(outcount, mpi_errno);
 
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
-	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
 	    if (datatype != MPI_DATATYPE_NULL && HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
 		MPID_Datatype *datatype_ptr = NULL;

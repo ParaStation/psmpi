@@ -1,15 +1,15 @@
-.TH MPI_Buffer_detach 3 "5/20/2010" " " "MPI"
+.TH MPI_Buffer_detach 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Buffer_detach \-  Removes an existing buffer (for use in MPI_Bsend etc) 
 .SH SYNOPSIS
 .nf
-int MPI_Buffer_detach(void *buffer, int *size)
+int MPI_Buffer_detach(void *buffer_addr, int *size)
 .fi
 .SH OUTPUT PARAMETERS
 .PD 0
 .TP
-.B buffer 
-- initial buffer address (choice) 
+.B buffer_addr 
+- initial buffer address (choice)
 .PD 1
 .PD 0
 .TP
@@ -129,4 +129,4 @@ standard for more details.
 MPI_Buffer_attach
 .br
 .SH LOCATION
-buffree.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/pt2pt/buffree.c

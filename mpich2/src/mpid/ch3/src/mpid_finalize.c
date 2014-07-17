@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -93,23 +93,13 @@ int MPID_Finalize(void)
       *    cancel it, in which case an error shouldn't be generated.
       */
     
-#ifdef MPID_NEEDS_ICOMM_WORLD
-    mpi_errno = MPIR_Comm_release_always(MPIR_Process.icomm_world, 0);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-#endif
-
-    mpi_errno = MPIR_Comm_release_always(MPIR_Process.comm_self, 0);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-
-    mpi_errno = MPIR_Comm_release_always(MPIR_Process.comm_world, 0);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-
     /* Re-enabling the close step because many tests are failing
      * without it, particularly under gforker */
 #if 1
     /* FIXME: The close actions should use the same code as the other
        connection close code */
-    MPIDI_PG_Close_VCs();
+    mpi_errno = MPIDI_PG_Close_VCs();
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     /*
      * Wait for all VCs to finish the close protocol
      */
@@ -122,9 +112,17 @@ int MPID_Finalize(void)
     mpi_errno = MPIDI_CH3_Finalize();
     if (mpi_errno) { MPIU_ERR_POP(mpi_errno); }
 
-    MPIR_Comm_free_keyval_impl(MPICH_ATTR_FAILED_PROCESSES);
-    MPICH_ATTR_FAILED_PROCESSES = MPI_KEYVAL_INVALID;
-    
+#ifdef MPID_NEEDS_ICOMM_WORLD
+    mpi_errno = MPIR_Comm_release_always(MPIR_Process.icomm_world, 0);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+#endif
+
+    mpi_errno = MPIR_Comm_release_always(MPIR_Process.comm_self, 0);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    mpi_errno = MPIR_Comm_release_always(MPIR_Process.comm_world, 0);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
     /* Tell the process group code that we're done with the process groups.
        This will notify PMI (with PMI_Finalize) if necessary.  It
        also frees all PG structures, including the PG for COMM_WORLD, whose 

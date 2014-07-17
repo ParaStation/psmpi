@@ -1,13 +1,16 @@
 <dir>
-<file name="mpidpre.h" info="1289055764"/>
-<file name="mpidpkt.h" info="1289055764"/>
-<file name="mpidimpl.h" info="1295046643"/>
-<file name="mpidftb.h" info="1289055764"/>
-<file name="mpidrma.h" info="1289246555"/>
-<file name="mpidpost.h" info="1295567233"/>
+<file name="mpidpre.h" info="1392877287"/>
+<file name="mpidi_recvq_statistics.h" info="1392877287"/>
+<file name="mpidpkt.h" info="1392877287"/>
+<file name="mpidimpl.h" info="1392877287"/>
+<file name="mpidftb.h" info="1392877287"/>
+<file name="mpidrma.h" info="1392877287"/>
+<file name="mpidpost.h" info="1392877287"/>
 </dir>
 <data>
 <fileinfo name="mpidpre.h">
+</fileinfo>
+<fileinfo name="mpidi_recvq_statistics.h">
 </fileinfo>
 <fileinfo name="mpidpkt.h">
 </fileinfo>
@@ -16,6 +19,13 @@
 <fileinfo name="mpidftb.h">
 </fileinfo>
 <fileinfo name="mpidrma.h">
+MPID_STATE_MPIDI_CH3I_SHM_PUT_OP MPIDI_CH3I_Shm_put_op
+MPID_STATE_MPIDI_CH3I_SHM_ACC_OP MPIDI_CH3I_Shm_acc_op
+MPID_STATE_MPIDI_CH3I_SHM_GET_ACC_OP MPIDI_CH3I_Shm_get_acc_op
+MPID_STATE_MPIDI_CH3I_SHM_GET_OP MPIDI_CH3I_Shm_get_op
+MPID_STATE_MPIDI_CH3I_SHM_CAS_OP MPIDI_CH3I_Shm_cas_op
+MPID_STATE_MPIDI_CH3I_SHM_FOP_OP MPIDI_CH3I_Shm_fop_op
+MPID_STATE_MPIDI_CH3I_WAIT_FOR_PT_OPS_FINISH MPIDI_CH3I_Wait_for_pt_ops_finish
 </fileinfo>
 <fileinfo name="mpidpost.h">
 </fileinfo>

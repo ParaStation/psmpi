@@ -1,0 +1,81 @@
+#!/bin/bash
+
+prefix="@prefix@"
+exec_prefix="@exec_prefix@"
+libdir="@libdir@"
+bindir="@bindir@"
+EXTRA_VERSION_INFO="@EXTRA_VERSION_INFO@"
+
+function error() {
+    echo "error: $*"
+    exit 1
+}
+
+function generate() {
+
+    _extra_version_info=""
+    _extra_version_info_long=""
+    if [ "$EXTRA_VERSION_INFO" != "" ];then
+	_extra_version_info=" ($EXTRA_VERSION_INFO)"
+	_extra_version_info_long="  $EXTRA_VERSION_INFO"
+    fi
+    # Search for libpscom and libpsi
+    libdir_pscom=$(findlibdir libpscom.so "$libdir/libmpich.so") || echo "/opt/parastation/lib64"
+    libdir_psi=$(findlibdir libpsi.so "$(which mpiexec)" || echo "/opt/parastation/lib64")
+
+    ld_library_path="$libdir_pscom"
+    if [ "$libdir_pscom" != "$libdir_psi" ]; then
+	ld_library_path="$ld_library_path:$libdir_psi"
+    fi
+
+    mpi_home="$prefix"
+
+cat <<EOF
+#%Module1.0
+## parastation mpi modulefile
+##
+
+proc ModulesHelp { } {
+	global mpi_home
+
+	puts stderr " Parastation 5.1 MPI tools and libraries for parallel computing."
+	puts stderr "$_extra_version_info_long"
+	puts stderr "\nBuild details:"
+	set data [exec cat \$mpi_home/VERSION.psmpi]
+	puts stderr \$data
+	puts stderr " "
+}
+
+module-whatis "Parastation MPI library for parallel computing${_extra_version_info}."
+
+set mpi_home ${mpi_home}
+
+conflict mpi
+
+setenv MPI_HOME \${mpi_home}
+setenv FORT_BUFFERED true
+
+prepend-path PATH ${bindir/$mpi_home/\$mpi_home}:/opt/parastation/bin
+prepend-path LD_LIBRARY_PATH ${libdir/$mpi_home/\$mpi_home}:$ld_library_path
+prepend-path MANPATH \${mpi_home}/share/man:/opt/parastation/share/man
+prepend-path --delim , PSI_EXPORTS FORT_BUFFERED
+
+EOF
+}
+
+function findlibdir() {
+    lib=${1?"library"}
+    consumer=${2?"consumer"}
+    dir=$(ldd "$consumer" |grep "$lib"|sed 's#.*=> \(.*\)/'"$lib"'.*#\1#')
+
+    if [ ! -e "$dir/$lib" ]; then
+	echo "Library $lib not found by $consumer"; exit 1
+    fi
+    echo $dir
+}
+
+generate
+
+# Local Variables:
+#  compile-command: "./generate_modulefile.sh.in"
+# End:

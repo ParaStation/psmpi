@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -36,7 +36,7 @@ Input Parameters:
 . tag - tag value or 'MPI_ANY_TAG' (integer) 
 - comm - communicator (handle) 
 
-Output Parameter:
+Output Parameters:
 . status - status object (Status) 
 
 .N ThreadSafe
@@ -67,7 +67,6 @@ int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -83,11 +82,12 @@ int MPI_Probe(int source, int tag, MPI_Comm comm, MPI_Status *status)
         {
 	    /* Validate communicator */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            if (mpi_errno) goto fn_fail;
+
 	    MPIR_ERRTEST_RECV_TAG(tag,mpi_errno);
 	    if (comm_ptr) {
 		MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
 	    }
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

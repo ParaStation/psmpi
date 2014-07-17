@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /* 
  *   Copyright (C) 1997 University of Chicago. 
  *   See COPYRIGHT notice in top-level directory.
@@ -20,11 +20,11 @@ void ADIOI_NFS_IwriteContig(ADIO_File fd, void *buf, int count,
                 MPI_Datatype datatype, int file_ptr_type,
                 ADIO_Offset offset, ADIO_Request *request, int *error_code)  
 {
-    int len, typesize;
+    MPI_Count len, typesize;
     int aio_errno = 0;
     static char myname[] = "ADIOI_NFS_IWRITECONTIG";
 
-    MPI_Type_size(datatype, &typesize);
+    MPI_Type_size_x(datatype, &typesize);
     len = count * typesize;
 
     if (file_ptr_type == ADIO_INDIVIDUAL) offset = fd->fp_ind;

@@ -1,13 +1,11 @@
 .\" -*- nroff -*-
-.\" Copyright © 2009-2011 INRIA.  All rights reserved.
+.\" Copyright © 2009-2013 Inria.  All rights reserved.
 .\" Copyright © 2009-2010 Université of Bordeaux
 .\" Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 .\" See COPYING in top-level directory.
 .TH LSTOPO "1" "#HWLOC_DATE#" "#PACKAGE_VERSION#" "#PACKAGE_NAME#"
 .SH NAME
-lstopo \- Show the topology of the system (note that hwloc-bind(1)
-provides a detailed explanation of the hwloc system; it should be read
-before reading this man page).
+lstopo, lstopo-no-graphics \- Show the topology of the system
 .
 .\" **************************
 .\"    Synopsis Section
@@ -16,6 +14,14 @@ before reading this man page).
 .
 .B lstopo
 [ \fIoptions \fR]... [ \fIfilename \fR]
+.
+.PP
+.B lstopo-no-graphics
+[ \fIoptions \fR]... [ \fIfilename \fR]
+.
+.PP
+Note that hwloc(7) provides a detailed explanation of the hwloc system; it
+should be read before reading this man page
 .
 .\" **************************
 .\"    Options Section
@@ -43,6 +49,7 @@ by gathering another machine topology with hwloc-gather-topology.
 Simulate a fake hierarchy (instead of discovering the topology on the
 local machine). If <specification> is "node:2 pu:3", the topology will
 contain two NUMA nodes with 3 processing units in each of them.
+The <specification> string must end with a number of PUs.
 .TP
 \fB\-\-if\fR <format>, \fB\-\-input\-format\fR <format>
 Enforce the input in the given format, among \fBxml\fR, \fBfsroot\fR
@@ -50,6 +57,8 @@ and \fBsynthetic\fR.
 .TP
 \fB\-v\fR \fB\-\-verbose\fR
 Include additional detail.
+The hwloc-info tool may be used to display even more information
+about specific objects.
 .TP
 \fB\-s\fR \fB\-\-silent\fR
 Reduce the amount of details to show.
@@ -82,12 +91,19 @@ Only show objects of the given type in the textual output.
 .TP
 \fB\-\-ignore\fR <type>
 Ignore all objects of type <type> in the topology.
+hwloc supports ignoring any type except PUs and I/O devices.
+However lstopo still offers PU ignoring by hiding PU objects
+in the graphical and textual outputs.
+Note that PU may not be ignored in the XML output.
 .TP
 \fB\-\-no\-caches\fR
 Do not show caches.
 .TP
 \fB\-\-no\-useless\-caches\fR
 Do not show caches which do not have a hierarchical impact.
+.TP
+\fB\-\-no\-icaches\fR
+Do not show Instruction caches, only Data and Unified caches are displayed.
 .TP
 \fB\-\-whole\-system\fR
 Do not consider administration limitations.
@@ -104,16 +120,35 @@ This option requires the use of the actual current machine topology
 (or any other topology with \fB\-\-thissystem\fR or with
 HWLOC_THISSYSTEM set to 1 in the environment).
 .TP
+\fB\-\-no\-io\fB
+Do not show any I/O device or bridge.
+By default, common devices (GPUs, NICs, block devices, ...) and
+interesting bridges are shown.
+.TP
+\fB\-\-no\-bridges\fB
+Do not show any I/O bridge except hostbridges.
+By default, common devices (GPUs, NICs, block devices, ...) and
+interesting bridges are shown.
+.TP
+\fB\-\-whole\-io\fB
+Show all I/O devices and bridges.
+By default, only common devices (GPUs, NICs, block devices, ...) and
+interesting bridges are shown.
+.TP
 \fB\-\-thissystem\fR
 Assume that the selected backend provides the topology for the
 system on which we are running. 
 This is useful when using \fB\-\-restrict\fR binding and loading
-a custom topology such as a XML file.
+a custom topology such as an XML file.
 .TP
 \fB\-\-pid\fR <pid>
 Detect topology as seen by process <pid>, i.e. as if process <pid> did the
-discovery itself, and show its current binding. Note that this can for instance
-change the set of allowed processors. If 0 is given as pid, the current binding for the lstopo process will be shown.
+discovery itself.
+Note that this can for instance change the set of allowed processors.
+Also show this process current CPU binding by marking the corresponding
+PUs (in Green in the graphical output, see the COLORS section below,
+or by appending \fI(binding)\fR to the verbose text output).
+If 0 is given as pid, the current binding for the lstopo process will be shown.
 .TP
 \fB\-\-ps\fR \fB\-\-top\fR
 Show existing processes as misc objects in the output. To avoid uselessly
@@ -128,14 +163,24 @@ Set size of text font.
 \fB\-\-gridsize\fR <size>
 Set size of margin between elements.
 .TP
-\fB\-\-horiz\fR
+\fB\-\-horiz\fR, \fB\-\-horiz\fR=<type1,...>
 Horizontal graphical layout instead of nearly 4/3 ratio.
+If a comma-separated list of types is given, the layout only
+applies to the corresponding containers.
 .TP
-\fB\-\-vert\fR
+\fB\-\-vert\fR, \fB\-\-vert\fR=<type1,...>
 Vertical graphical layout instead of nearly 4/3 ratio.
+If a comma-separated list of types is given, the layout only
+applies to the corresponding containers.
 .TP
 \fB\-\-no\-legend\fR
 Remove the text legend at the bottom.
+.TP
+\fB\-\-append\-legend\fB <line>
+Append the line of text to the bottom of the legend in graphical mode.
+If the line is too long, it will be truncated in the output.
+If adding multiple lines, each line should be given separately by
+passing this option multiple times.
 .TP
 \fB\-\-version\fR
 Report version and exit.
@@ -145,13 +190,17 @@ Report version and exit.
 .\" **************************
 .SH DESCRIPTION
 .
-lstopo is capable of displaying a topological map of the system in a
-variety of different output formats.  If no filename is specified and
-the DISPLAY environment variable is set, lstopo displays the map in a
-graphical window.  If no filename is specified and the DISPLAY
-environment variable is
+lstopo and lstopo-no-graphics are capable of displaying a topological map of
+the system in a variety of different output formats.  The only difference
+between lstopo and lstopo-no-graphics is that graphical outputs are only
+supported by lstopo, to reduce dependencies on external libraries.
+.
+.PP
+If no filename is specified and the DISPLAY environment variable is set,
+lstopo displays the map in a graphical window.  If no filename is
+specified and the DISPLAY environment variable is
 .I not
-set, a text summary is displayed.  
+set, a text summary is displayed.
 .
 .PP
 The filename specified directly implies the output format that will be
@@ -181,9 +230,12 @@ be used with "\-\-of" or as a filename suffix.
 .TP
 .B default
 Send the output to a window or to the console depending on the environment.
+.
 .TP
 .B console
 Send a text summary to stdout.
+Binding, unallowed or offline processors are only annotated in this mode
+if verbose; see the COLORS section, below.
 .
 .TP
 .B txt
@@ -214,6 +266,17 @@ support, lstopo outputs a PNG representation of the map.
 .B svg
 If lstopo was compiled with the proper
 support, lstopo outputs an SVG representation of the map.
+.
+.TP
+.B synthetic
+If the topology is symmetric
+(which requires that the root object has its symmetric_subtree field set),
+lstopo outputs a synthetic description string.
+This output may be reused as an input synthetic topology
+description later.
+Note that I/O devices often cause topology asymmetry.
+Adding \-\-no\-io may then be useful when the synthetic export fails.
+See also the Synthetic topologies section in the documentation.
 .
 .TP
 .B xml
@@ -252,11 +315,13 @@ Individual CPUs are colored in the semi-graphical and graphical output
 formats to indicate different characteristics:
 .TP
 Green
-The CPU is in the current CPU binding mask.
+The topology is reported as seen by a specific process (see \fB\-\-pid\fR),
+and the given CPU is in this process CPU binding mask.
 .TP
 White
-The CPU is in the allowed set (see below), but it is not in the
-current CPU binding mask.
+The CPU is in the allowed set (see below).
+If the topology is reported as seen by a specific process (see \fB\-\-pid\fR),
+the given CPU is also not in this process CPU binding mask.
 .TP
 Red
 The CPU is not in the allowed set (see below).
@@ -276,6 +341,43 @@ set.  Hence, invoking lstopo in different contexts and/or as different
 users may display different colors for the same individual CPUs (e.g.,
 running lstopo in one context may show a specific CPU as red, but
 running lstopo in a different context may show the same CPU as white).
+.PP
+Some lstopo output modes, e.g. the console mode (default non-graphical output),
+do not support colors at all.
+The console mode displays the above characteristics by appending text
+to each PU line if verbose messages are enabled.
+.
+.SH CUSTOM COLORS
+The color of each object in the graphical output may be enforced by
+specifying a "lstopoStyle" info attribute in that object.
+Its value should be a semi-colon separated list of "<attribute>=#rrggbb"
+where rr, gg and bb are the RGB components of a color,
+each between 0 and 255, in hexadecimal (00 to ff).
+.
+<attribute> may be
+.TP
+\fBBackground\fR
+Sets the background color of the main object box.
+.TP
+\fBBackground2\fR
+Sets the background color of the additional box for the object,
+for instance the memory box inside a NUMA node box.
+.TP
+\fBText\fR
+Sets the color of the text showing the object name, type, index, etc.
+.TP
+\fBText2\fB
+Sets the color of the additional text near the object,
+for instance the link speed behind a PCI bridge.
+.PP
+The "lstopoStyle" info may be added to a temporarily-saved XML topologies
+with hwloc-annotate, or with hwloc_obj_add_info().
+.
+For instance, to display all core objects in blue (with white names):
+
+    lstopo save.xml
+    hwloc-annotate save.xml save.xml core:all info lstopoStyle "Background=#0000ff;Text=#ffffff"
+    lstopo -i save.xml
 .
 .\" **************************
 .\"    Layout Section
@@ -287,6 +389,8 @@ in the particular case of NUMA nodes, the layout is always a flat
 rectangle, to avoid letting the user believe any particular NUMA
 topology (lstopo is not able to render that yet).
 .
+The layout of a level may be changed with \-\-vert and \-\-horiz.
+.
 .\" **************************
 .\"    Examples Section
 .\" **************************
@@ -294,7 +398,11 @@ topology (lstopo is not able to render that yet).
 .
 To display the machine topology in textual mode:
 
-    lstopo -
+    lstopo-no-graphics
+
+To display the machine topology in pseudo-graphical mode:
+
+    lstopo-no-graphics -.txt
 
 To display in graphical mode (assuming that the DISPLAY environment
 variable is set to a relevant value):
@@ -305,7 +413,7 @@ To export the topology to a PNG file:
 
     lstopo file.png
 
-To export a XML file on a machine and later display the corresponding
+To export an XML file on a machine and later display the corresponding
 graphical output on another machine:
 
     machine1$ lstopo file.xml
@@ -319,11 +427,11 @@ while still considering it as the current machine:
    <...>
    $ lstopo --input file.xml --thissystem
 
-To restrict a XML topology to only physical processors 0, 1, 4 and 5:
+To restrict an XML topology to only physical processors 0, 1, 4 and 5:
 
     lstopo --input file.xml --restrict 0x33 newfile.xml
 
-To restrict a XML topology to only numa node whose logical index is 1:
+To restrict an XML topology to only numa node whose logical index is 1:
 
     lstopo --input file.xml --restrict $(hwloc-calc --input file.xml node:1) newfile.xml
 
@@ -355,11 +463,16 @@ processor units:
 To count the number of logical processors in the system
 
    lstopo --only pu | wc -l
+
+To append the kernel release and version to the graphical legend:
+
+   lstopo --append-legend "Kernel release: $(uname -r)" --append-legend "Kernel version: $(uname -v)"
+
 .\" **************************
 .\"    See also section
 .\" **************************
 .SH SEE ALSO
 .
 .ft R
-hwloc-bind(1), hwloc-ps(1), hwloc-gather-topology(1)
+hwloc(7), hwloc-info(1), hwloc-bind(1), hwloc-annotate(1), hwloc-ps(1), hwloc-gather-topology(1)
 .sp

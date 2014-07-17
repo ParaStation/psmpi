@@ -1,11 +1,11 @@
-.TH MPI_Type_free 3 "7/29/2010" " " "MPI"
+.TH MPI_Type_free 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Type_free \-  Frees the datatype 
 .SH SYNOPSIS
 .nf
 int MPI_Type_free(MPI_Datatype *datatype)
 .fi
-.SH INPUT PARAMETER
+.SH INPUT PARAMETERS
 .PD 0
 .TP
 .B datatype 
@@ -15,12 +15,10 @@ int MPI_Type_free(MPI_Datatype *datatype)
 .SH PREDEFINED TYPES
 
 The MPI standard states that (in Opaque Objects)
-.in 1cm
-
+qs
 MPI provides certain predefined opaque objects and predefined, static handles
 to these objects. Such objects may not be destroyed.
-.in
-
+qe
 
 Thus, it is an error to free a predefined datatype.  The same section makes
 it clear that it is an error to free a null datatype.
@@ -108,4 +106,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-type_free.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/type_free.c

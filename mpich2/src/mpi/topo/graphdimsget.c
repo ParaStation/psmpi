@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -34,7 +34,7 @@
 MPI_Graphdims_get - Retrieves graph topology information associated with a 
                     communicator
 
-Input Parameter:
+Input Parameters:
 . comm - communicator for group with graph structure (handle) 
 
 Output Parameters:
@@ -69,7 +69,6 @@ int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -85,10 +84,10 @@ int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
         {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            if (mpi_errno) goto fn_fail;
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(nnodes, "nnodes", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL(nedges, "nedges", mpi_errno );
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

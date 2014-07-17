@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -14,10 +14,10 @@
 /*@
   MPID_Type_zerolen - create an empty datatype
  
-  Input Parameters:
+Input Parameters:
 . none
 
-  Output Parameters:
+Output Parameters:
 . newtype - handle of new contiguous datatype
 
   Return Value:

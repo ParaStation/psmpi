@@ -15,12 +15,20 @@
 
 #include "mpiimpl.h"
 #include "list.h"
+#include "mpid_sched.h"
+
+void MPID_PSP_shm_rma_init(void);
+void MPID_PSP_shm_rma_get_base(MPID_Win *win_ptr, int rank, int *disp, void **base);
+void MPID_PSP_shm_rma_mutex_init(MPID_Win *win_ptr);
+void MPID_PSP_shm_rma_mutex_lock(MPID_Win *win_ptr);
+void MPID_PSP_shm_rma_mutex_unlock(MPID_Win *win_ptr);
+void MPID_PSP_shm_rma_mutex_destroy(MPID_Win *win_ptr);
 
 #define PRINTERROR(fmt, args...) fprintf(stderr, "Error:" fmt "\n" ,##args)
 
 typedef struct MPIDI_Process
 {
-	pscom_socket_t *socket;
+	/* pscom_socket_t *socket; // moved To comm_ptr->pscom_socket */
 
 	pscom_connection_t **grank2con;
 
@@ -32,6 +40,7 @@ typedef struct MPIDI_Process
 	struct {
 		unsigned enable_collectives;
 		unsigned enable_ondemand;
+		unsigned enable_ondemand_spawn;
 	} env;
 } MPIDI_Process_t;
 
@@ -61,8 +70,11 @@ pscom_request_t *MPID_do_recv_rma_accumulate(pscom_connection_t *con,
 void MPID_do_recv_rma_lock_exclusive_req(pscom_request_t *req);
 void MPID_do_recv_rma_lock_shared_req(pscom_request_t *req);
 void MPID_do_recv_rma_unlock_req(pscom_request_t *req);
+void MPID_do_recv_rma_lock_internal_req(pscom_request_t *req);
+void MPID_do_recv_rma_unlock_internal_req(pscom_request_t *req);
+void MPID_do_recv_rma_flush_req(pscom_request_t *req);
 
-void MPID_enable_receive_dispach(void);
+void MPID_enable_receive_dispach(pscom_socket_t *socket);
 
 void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Datatype datatype,
 			     void *msg, unsigned int msg_sz, MPI_Op op);
@@ -79,6 +91,17 @@ void MPID_req_queue_cleanup(void);
 pscom_connection_t *MPID_PSCOM_rank2connection(MPID_Comm *comm, int rank);
 
 int MPID_PSP_Wait(MPID_Request *request);
+
+int MPID_Put_generic(const void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
+		     int target_rank, MPI_Aint target_disp, int target_count,
+		     MPI_Datatype target_datatype, MPID_Win *win_ptr, MPID_Request **request);
+int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
+		     int target_rank, MPI_Aint target_disp, int target_count,
+		     MPI_Datatype target_datatype, MPID_Win *win_ptr, MPID_Request **request);
+
+int MPID_Win_lock_internal(int dest, MPID_Win *win_ptr);
+int MPID_Win_unlock_internal(int dest, MPID_Win *win_ptr);
+int MPID_Win_wait_local_completion(int rank, MPID_Win *win_ptr);
 
 int MPID_VCR_Initialize(MPID_VCR *vcr_ptr, pscom_connection_t *con, int lpid);
 
@@ -115,6 +138,8 @@ const char *mpid_msgtype_str(enum MPID_PSP_MSGTYPE msg_type);
 } while (0);
 #endif
 
+
+int MPID_PSP_GetParentPort(char **parent_port);
 
 
 /*----------------------

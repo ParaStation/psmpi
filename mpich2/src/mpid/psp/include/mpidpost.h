@@ -21,4 +21,10 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_ptr, MPID_Comm *comm_ptr,
 			   int root );
 int MPID_GPID_Get(MPID_Comm *comm_ptr, int rank, int gpid[]);
 
+#define MPID_REQUEST_SET_COMPLETED(req_)	\
+{						\
+    MPID_cc_set((req_)->cc_ptr, 0);             \
+}
+
+
 #endif /* _MPIDPOST_H_ */

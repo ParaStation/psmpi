@@ -1,10 +1,10 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*  
  *  (C) 2003 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
-#include "pmutilconf.h"
+#include "mpichconf.h"
 #ifdef NEEDS_POSIX_FOR_SIGACTION
 #define _POSIX_SOURCE
 #endif
@@ -66,7 +66,7 @@ static void MPIE_InstallSigHandler( int sig, void (*handler)(int) );
 /*@
   MPIE_ForkProcesses - Create new processes for a comm_world
 
-  Input Parameters:
+Input Parameters:
 + pWorld - Pointer to a 'ProcessWorld' structure, containing one or more
            'ProcessApp' structures.  Each 'ProcessApp' specifies how many
 	   processes to create.
@@ -189,7 +189,7 @@ int MPIE_ForkProcesses( ProcessWorld *pWorld, char *envp[],
   return status of all processes in the process universe; returns the
   maximum value seen.
 
-  Output Parameter:
+Output Parameters:
 . signaled - 0 if the process was `not` signaled, otherwise the signal 
   that terminated the process.
 
@@ -597,7 +597,7 @@ void MPIE_ProcessInit( void )
  * the signal handler in charge avoids race conditions and possible loss
  * of information).
  */
-int MPIE_WaitForProcesses( ProcessUniverse *pUniv, int timeout )
+int MPIE_WaitForProcesses( ProcessUniverse *mypUniv, int timeout )
 {
     ProcessWorld *world;
     ProcessApp   *app;
@@ -609,7 +609,7 @@ int MPIE_WaitForProcesses( ProcessUniverse *pUniv, int timeout )
     TimeoutInit( timeout );
     nactive = 0;
     do {
-	world = pUniv->worlds;
+	world = mypUniv->worlds;
 	while (world) {
 	    app = world->apps;
 	    while (app) {
@@ -666,10 +666,10 @@ int MPIE_WaitForProcesses( ProcessUniverse *pUniv, int timeout )
   MPIE_InitWorldWithSoft - Initialize a process world from any 
   soft specifications
 
-  Input Parameter:
+Input Parameters:
 . maxnp - The maximum number of processes to allow.
 
-  Input/Output Parameter:
+Input/Output Parameters:
 . world - Process world.  On return, the 'ProcessState' fields for
   any soft specifications have been initialized 
   @*/
@@ -828,11 +828,11 @@ int MPIE_KillWorld( ProcessWorld *world )
 /*@
   MPIE_KillUniverse - Kill all of the processes in a universe
   @*/
-int MPIE_KillUniverse( ProcessUniverse *pUniv )
+int MPIE_KillUniverse( ProcessUniverse *mypUniv )
 {
     ProcessWorld *world;
 
-    world = pUniv->worlds;
+    world = mypUniv->worlds;
     while (world) {
 	MPIE_KillWorld( world );
 	world = world->nextWorld;
@@ -984,13 +984,13 @@ void MPIE_IgnoreSigPipe( void )
  * 
  * Note that MPIE_Args already allocated a pWorld.
  */
-int MPIE_SetupSingleton( ProcessUniverse *pUniv )
+int MPIE_SetupSingleton( ProcessUniverse *mypUniv )
 {
     ProcessApp   *pApp;
     ProcessWorld *pWorld;
     ProcessState *pState;
 
-    pWorld		  = &pUniv->worlds[0];
+    pWorld		  = &mypUniv->worlds[0];
     pWorld->nProcess      = 1;
     pApp		  = (ProcessApp *) MPIU_Malloc( sizeof(ProcessApp) );
     pApp->nextApp	  = 0;
@@ -1014,7 +1014,7 @@ int MPIE_SetupSingleton( ProcessUniverse *pUniv )
     pState[0].id	  = UniqId++;
     pState[0].initWithEnv = 0;
     pState[0].status	  = PROCESS_ALIVE;  /* The process is already running */
-    pState[0].pid	  = pUniv->singletonPID;
+    pState[0].pid	  = mypUniv->singletonPID;
     pState[0].exitStatus.exitReason = EXIT_NOTYET;
 
     return 0;

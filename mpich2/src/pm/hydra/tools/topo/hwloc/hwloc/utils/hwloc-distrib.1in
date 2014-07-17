@@ -1,5 +1,5 @@
 .\" -*- nroff -*-
-.\" Copyright © 2010 INRIA.  All rights reserved.
+.\" Copyright © 2010-2013 Inria.  All rights reserved.
 .\" Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 .\" See COPYING in top-level directory.
 .TH HWLOC-DISTRIB "1" "#HWLOC_DATE#" "#PACKAGE_VERSION#" "#PACKAGE_NAME#"
@@ -10,7 +10,7 @@ hwloc-distrib \- Build a number of cpu masks distributed on the system
 .\"    Synopsis Section
 .\" **************************
 .SH SYNOPSIS
-.B topodistrib
+.B hwloc-distrib
 [\fIoptions\fR] \fI<integer>\fR
 .
 .\" **************************
@@ -25,7 +25,7 @@ Singlify each output to a single CPU.
 Show CPU set strings in the format recognized by the taskset command-line
 program instead of hwloc-specific CPU set string format.
 .TP
-\fB\-v\fR
+\fB\-v\fR \fB\-\-verbose\fR
 Verbose messages.
 .TP
 \fB\-i\fR <file>, \fB\-\-input\fR <file>
@@ -44,6 +44,7 @@ by gathering another machine topology with hwloc-gather-topology.
 Simulate a fake hierarchy (instead of discovering the topology on the
 local machine). If <specification> is "node:2 pu:3", the topology will
 contain two NUMA nodes with 3 processing units in each of them.
+The <specification> string must end with a number of PUs.
 .TP
 \fB\-\-if\fR <format>, \fB\-\-input\-format\fR <format>
 Enforce the input in the given format, among \fBxml\fR, \fBfsroot\fR
@@ -57,7 +58,7 @@ Distribute starting from objects of the given type instead of from
 the top of the topology hierarchy, i.e. ignoring the structure given by objects
 above.
 .TP
-\fB\-\-top\fR <type>
+\fB\-\-to\fR <type>
 Distribute down to objects of the given type instead of down to the bottom of
 the topology hierarchy, i.e. ignoring the structure given by objects below.
 This may be useful if some latitude is desired for the binding, e.g. just bind
@@ -66,6 +67,12 @@ on sockets and not to precise cores or caches.
 \fB\-\-at\fR <type>
 Distribute among objects of the given type.  This is equivalent to specifying
 both \fB\-\-from\fR and \fB\-\-to\fR at the same time.
+.TP
+\fB\-\-restrict\fR <cpuset>
+Restrict the topology to the given cpuset.
+.TP
+\fB\-\-whole\-system\fR
+Do not consider administration limitations.
 .TP
 \fB\-\-version\fR
 Report version and exit.
@@ -82,7 +89,8 @@ by option \fB\-\-from\fR) down to the bottom of the hierarchy (or down to the
 level specified by option \fB\-\-to\fR, or until only one element remains),
 splitting the number of elements at each encountered hierarchy level not ignored
 by options \fB\-\-ignore\fR.
-
+.
+.PP
 This can e.g. be used to distribute a set of processes hierarchically according
 to the topology of a machine. These masks can be used with hwloc-bind(1).
 .
@@ -108,6 +116,14 @@ may be obtained with:
     0x00000f00
     0x000000f0
     0x0000f000
+
+To distribute only among the second socket, the topology should be restricted:
+
+    $ hwloc-distrib --restrict $(hwloc-calc socket:1) 4
+    0x00000010
+    0x00000020
+    0x00000040
+    0x00000080
 
 To get a single processor of each CPU masks (prevent migration in case
 of binding)

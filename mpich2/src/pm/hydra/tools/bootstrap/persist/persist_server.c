@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -86,19 +86,20 @@ static HYD_status stdio_cb(int fd, HYD_event_t events, void *userp)
         hdr.io_type = HYDT_PERSIST_STDOUT;
         hdr.buflen = count;
 
-        status = HYDU_sock_write(private.client_fd, &hdr, sizeof(hdr), &sent, &closed);
+        status = HYDU_sock_write(private.client_fd, &hdr, sizeof(hdr), &sent, &closed,
+                                 HYDU_SOCK_COMM_MSGWAIT);
         HYDU_ERR_POP(status, "error sending header to client\n");
         HYDU_ASSERT(!closed, status);
 
         if (hdr.buflen) {
-            status = HYDU_sock_write(private.client_fd, buf, count, &sent, &closed);
+            status = HYDU_sock_write(private.client_fd, buf, count, &sent, &closed,
+                                     HYDU_SOCK_COMM_MSGWAIT);
             HYDU_ERR_POP(status, "error sending stdout to client\n");
             HYDU_ASSERT(!closed, status);
         }
         else {
             status = HYDT_dmx_deregister_fd(private.stdout_fd);
-            HYDU_ERR_SETANDJUMP(status, status, "error deregistering fd %d\n",
-                                private.stdout_fd);
+            HYDU_ERR_SETANDJUMP(status, status, "error deregistering fd %d\n", private.stdout_fd);
             close(private.stdout_fd);
         }
     }
@@ -115,19 +116,20 @@ static HYD_status stdio_cb(int fd, HYD_event_t events, void *userp)
         hdr.io_type = HYDT_PERSIST_STDOUT;
         hdr.buflen = count;
 
-        status = HYDU_sock_write(private.client_fd, &hdr, sizeof(hdr), &sent, &closed);
+        status = HYDU_sock_write(private.client_fd, &hdr, sizeof(hdr), &sent, &closed,
+                                 HYDU_SOCK_COMM_MSGWAIT);
         HYDU_ERR_POP(status, "error sending header to client\n");
         HYDU_ASSERT(!closed, status);
 
         if (hdr.buflen) {
-            status = HYDU_sock_write(private.client_fd, buf, count, &sent, &closed);
+            status = HYDU_sock_write(private.client_fd, buf, count, &sent, &closed,
+                                     HYDU_SOCK_COMM_MSGWAIT);
             HYDU_ERR_POP(status, "error sending stdout to client\n");
             HYDU_ASSERT(!closed, status);
         }
         else {
             status = HYDT_dmx_deregister_fd(private.stderr_fd);
-            HYDU_ERR_SETANDJUMP(status, status, "error deregistering fd %d\n",
-                                private.stderr_fd);
+            HYDU_ERR_SETANDJUMP(status, status, "error deregistering fd %d\n", private.stderr_fd);
             close(private.stderr_fd);
         }
     }
@@ -144,7 +146,6 @@ static HYD_status listen_cb(int fd, HYD_event_t events, void *userp)
 {
     int recvd, i, num_strings, str_len, closed;
     char **args;
-    struct HYDT_topo_cpuset_t cpuset;
     HYD_status status = HYD_SUCCESS;
 
     HYDU_FUNC_ENTER();
@@ -159,8 +160,7 @@ static HYD_status listen_cb(int fd, HYD_event_t events, void *userp)
 
         /* fork and let the slave process handle this connection */
         private.slave_pid = fork();
-        HYDU_ERR_CHKANDJUMP(status, private.slave_pid < 0, HYD_INTERNAL_ERROR,
-                            "fork failed\n");
+        HYDU_ERR_CHKANDJUMP(status, private.slave_pid < 0, HYD_INTERNAL_ERROR, "fork failed\n");
 
         if (private.slave_pid > 0) {    /* master process */
             close(private.client_fd);   /* the slave process will handle this */
@@ -198,9 +198,8 @@ static HYD_status listen_cb(int fd, HYD_event_t events, void *userp)
     args[num_strings] = NULL;
 
     /* spawn process */
-    HYDT_topo_cpuset_zero(&cpuset);
     status = HYDU_create_process(args, NULL, NULL, &private.stdout_fd,
-                                 &private.stderr_fd, &private.app_pid, cpuset);
+                                 &private.stderr_fd, &private.app_pid, -1);
     HYDU_ERR_POP(status, "unable to create process\n");
 
     /* use the accepted connection for stdio */

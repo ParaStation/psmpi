@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2003 by Argonne National Laboratory.
@@ -64,8 +64,8 @@ int main( int argc, char *argv[] )
 	    MPI_Comm_split( MPI_COMM_WORLD, 0, size - rank, &tmpComm[i] );
 	}
 
-	MPI_Sendrecv( 0, 0, MPI_INT, source, 1, 
-		      0, 0, MPI_INT, source, 1, MPI_COMM_WORLD, &status );
+	MPI_Sendrecv( NULL, 0, MPI_INT, source, 1,
+		      NULL, 0, MPI_INT, source, 1, MPI_COMM_WORLD, &status );
 
 	MPI_Wait( &req, &status );
 	for (i=0; i<NELM; i++) {
@@ -89,8 +89,8 @@ int main( int argc, char *argv[] )
 	    MPI_Comm_split( MPI_COMM_WORLD, 0, size - rank, &tmpComm[i] );
 	}
 	/* Synchronize with the receiver */
-	MPI_Sendrecv( 0, 0, MPI_INT, dest, 1, 
-		      0, 0, MPI_INT, dest, 1, MPI_COMM_WORLD, &status );
+	MPI_Sendrecv( NULL, 0, MPI_INT, dest, 1,
+		      NULL, 0, MPI_INT, dest, 1, MPI_COMM_WORLD, &status );
 	MPI_Send( buf, NELM, MPI_INT, dest, 0, comm );
 	free( buf );
     }

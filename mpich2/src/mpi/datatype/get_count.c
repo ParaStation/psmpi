@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -26,18 +26,20 @@
 #define FUNCNAME MPIR_Get_count_impl
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-void MPIR_Get_count_impl(MPI_Status *status, MPI_Datatype datatype, int *count)
+void MPIR_Get_count_impl(const MPI_Status *status, MPI_Datatype datatype, int *count)
 {
-    int size;
-    /* Check for correct number of bytes */
+    MPI_Count size;
+
     MPID_Datatype_get_size_macro(datatype, size);
+    MPIU_Assert(size >= 0 && MPIR_STATUS_GET_COUNT(*status) >= 0);
     if (size != 0) {
-	if ((status->count % size) != 0)
+        /* MPI-3 says return MPI_UNDEFINED if too large for an int */
+	if ((MPIR_STATUS_GET_COUNT(*status) % size) != 0 || ((MPIR_STATUS_GET_COUNT(*status) / size) > INT_MAX))
 	    (*count) = MPI_UNDEFINED;
 	else
-	    (*count) = status->count / size;
+	    (*count) = (int)(MPIR_STATUS_GET_COUNT(*status) / size);
     } else {
-	if (status->count > 0) {
+	if (MPIR_STATUS_GET_COUNT(*status) > 0) {
 	    /* --BEGIN ERROR HANDLING-- */
 
 	    /* case where datatype size is 0 and count is > 0 should
@@ -70,7 +72,7 @@ Input Parameters:
 + status - return status of receive operation (Status) 
 - datatype - datatype of each receive buffer element (handle) 
 
-Output Parameter:
+Output Parameters:
 . count - number of received elements (integer) 
 Notes:
 If the size of the datatype is zero, this routine will return a count of
@@ -84,7 +86,7 @@ size of 'datatype' (so that 'count' would not be integral), a 'count' of
 .N MPI_SUCCESS
 .N MPI_ERR_TYPE
 @*/
-int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
+int MPI_Get_count( const MPI_Status *status, MPI_Datatype datatype, int *count )
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_GET_COUNT);
@@ -102,15 +104,14 @@ int MPI_Get_count( MPI_Status *status, 	MPI_Datatype datatype, int *count )
 	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(count, "count", mpi_errno);
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
-            if (mpi_errno) goto fn_fail;
 
             /* Validate datatype_ptr */
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
 		MPID_Datatype_get_ptr(datatype, datatype_ptr);
 		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+                if (mpi_errno) goto fn_fail;
 		/* Q: Must the type be committed to be used with this function? */
 	    }
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

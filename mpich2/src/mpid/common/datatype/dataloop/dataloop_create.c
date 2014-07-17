@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -12,18 +12,18 @@
 
 static void DLOOP_Dataloop_create_named(MPI_Datatype type,
 					DLOOP_Dataloop **dlp_p,
-					int *dlsz_p,
+					MPI_Aint *dlsz_p,
 					int *dldepth_p,
 					int flag);
 
 void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 				     DLOOP_Dataloop **dlp_p,
-				     int *dlsz_p,
+				     MPI_Aint *dlsz_p,
 				     int *dldepth_p,
 				     int flag)
 {
     int i;
-    int err;
+    int err ATTRIBUTE((unused));
 
     int nr_ints, nr_aints, nr_types, combiner;
     MPI_Datatype *types;
@@ -31,13 +31,15 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
     MPI_Aint *aints;
 
     DLOOP_Dataloop *old_dlp;
-    int old_dlsz, old_dldepth;
+    MPI_Aint old_dlsz;
+    int old_dldepth;
 
     int dummy1, dummy2, dummy3, type0_combiner, ndims;
     MPI_Datatype tmptype;
 
     MPI_Aint stride;
     MPI_Aint *disps;
+    DLOOP_Size *blklen;
 
     MPIR_Type_get_envelope_impl(type, &nr_ints, &nr_aints, &nr_types, &combiner);
 
@@ -50,12 +52,13 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
              combiner == MPI_COMBINER_F90_COMPLEX ||
              combiner == MPI_COMBINER_F90_INTEGER)
     {
-        /* the unnamed predefined types are created at runtime as
-         * contigs, but they don't need a dataloop and they have
-         * (intentionally) different envelopes/contents */
-        *dlp_p = NULL;
-        *dlsz_p = 0;
-        *dldepth_p = 0;
+        MPI_Datatype f90basetype;
+        DLOOP_Handle_get_basic_type_macro(type, f90basetype);
+        PREPEND_PREFIX(Dataloop_create_contiguous)(1 /* count */,
+                                                   f90basetype,
+                                                   dlp_p, dlsz_p,
+                                                   dldepth_p,
+                                                   flag);
         return;
     }
 
@@ -81,6 +84,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 	case MPI_COMBINER_HVECTOR_INTEGER:
 	case MPI_COMBINER_HVECTOR:
 	case MPI_COMBINER_INDEXED_BLOCK:
+	case MPI_COMBINER_HINDEXED_BLOCK:
 	case MPI_COMBINER_INDEXED:
 	case MPI_COMBINER_HINDEXED_INTEGER:
 	case MPI_COMBINER_HINDEXED:
@@ -205,14 +209,32 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 							 dldepth_p,
 							 flag);
 	    break;
+	case MPI_COMBINER_HINDEXED_BLOCK:
+            disps = (MPI_Aint *) DLOOP_Malloc(ints[0] * sizeof(MPI_Aint));
+            for (i = 0; i < ints[0]; i++)
+                disps[i] = aints[i];
+	    PREPEND_PREFIX(Dataloop_create_blockindexed)(ints[0] /* count */,
+							 ints[1] /* blklen */,
+							 disps /* disps */,
+							 1 /* disp is bytes */,
+							 types[0] /* oldtype */,
+							 dlp_p, dlsz_p,
+							 dldepth_p,
+							 flag);
+            DLOOP_Free(disps);
+	    break;
 	case MPI_COMBINER_INDEXED:
+            blklen = (DLOOP_Size *) DLOOP_Malloc(ints[0] * sizeof(DLOOP_Size));
+            for (i = 0; i < ints[0]; i++)
+                blklen[i] = ints[1+i];
 	    PREPEND_PREFIX(Dataloop_create_indexed)(ints[0] /* count */,
-						    &ints[1] /* blklens */,
+						    blklen /* blklens */,
 						    &ints[ints[0]+1] /* disp */,
 						    0 /* disp not in bytes */,
 						    types[0] /* oldtype */,
 						    dlp_p, dlsz_p, dldepth_p,
 						    flag);
+	    DLOOP_Free(blklen);
 	    break;
 	case MPI_COMBINER_HINDEXED_INTEGER:
 	case MPI_COMBINER_HINDEXED:
@@ -227,8 +249,11 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 		disps = aints;
 	    }
 
+	    blklen = (DLOOP_Size *) DLOOP_Malloc(ints[0] * sizeof(DLOOP_Size));
+	    for (i=0; i< ints[0]; i++)
+		blklen[i] = (DLOOP_Size) ints[1+i];
 	    PREPEND_PREFIX(Dataloop_create_indexed)(ints[0] /* count */,
-						    &ints[1] /* blklens */,
+						    blklen /* blklens */,
 						    disps,
 						    1 /* disp in bytes */,
 						    types[0] /* oldtype */,
@@ -238,6 +263,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 	    if (combiner == MPI_COMBINER_HINDEXED_INTEGER) {
 		DLOOP_Free(disps);
 	    }
+	    DLOOP_Free(blklen);
 
 	    break;
 	case MPI_COMBINER_STRUCT_INTEGER:
@@ -356,7 +382,7 @@ void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 @*/
 static void DLOOP_Dataloop_create_named(MPI_Datatype type,
 					DLOOP_Dataloop **dlp_p,
-					int *dlsz_p,
+					MPI_Aint *dlsz_p,
 					int *dldepth_p,
 					int flag)
 {
@@ -367,8 +393,8 @@ static void DLOOP_Dataloop_create_named(MPI_Datatype type,
      * note: not dealing with MPI_2INT because size == extent
      *       in all cases for that type.
      *
-     * note: MPICH2 always precreates these, so we will never call
-     *       Dataloop_create_pairtype() from here in the MPICH2
+     * note: MPICH always precreates these, so we will never call
+     *       Dataloop_create_pairtype() from here in the MPICH
      *       case.
      */
     if (type == MPI_FLOAT_INT || type == MPI_DOUBLE_INT ||

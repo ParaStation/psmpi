@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -31,10 +31,10 @@
 /*@
    MPI_Win_get_group - Get the MPI Group of the window object
 
-   Input Parameter:
+Input Parameters:
 . win - window object (handle) 
 
-   Output Parameter:
+Output Parameters:
 . group - group of processes which share access to the window (handle) 
 
    Notes:
@@ -73,7 +73,7 @@ int MPI_Win_get_group(MPI_Win win, MPI_Group *group)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_WIN(win, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+            MPIR_ERRTEST_ARGNULL(group, "group", mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }

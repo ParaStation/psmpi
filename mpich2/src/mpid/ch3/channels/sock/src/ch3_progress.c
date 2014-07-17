@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -52,6 +52,7 @@ static int MPIDI_CH3i_Progress_test(void)
 {
     MPIDU_Sock_event_t event;
     int mpi_errno = MPI_SUCCESS;
+    int made_progress;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3I_PROGRESS_TEST);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3I_PROGRESS_TEST);
@@ -83,6 +84,10 @@ static int MPIDI_CH3i_Progress_test(void)
     }
 #   endif
     
+    /* make progress on NBC schedules */
+    mpi_errno = MPIDU_Sched_progress(&made_progress);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
     mpi_errno = MPIDU_Sock_wait(MPIDI_CH3I_sock_set, 0, &event);
 
     if (mpi_errno == MPI_SUCCESS)
@@ -169,11 +174,20 @@ static int MPIDI_CH3i_Progress_wait(MPID_Progress_state * progress_state)
     
     do
     {
+        int made_progress = FALSE;
+
+        /* make progress on NBC schedules, must come before we block on sock_wait */
+        mpi_errno = MPIDU_Sched_progress(&made_progress);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        if (made_progress) {
+            MPIDI_CH3_Progress_signal_completion();
+            break;
+        }
+
 #       ifdef MPICH_IS_THREADED
 
 	/* The logic for this case is just complicated enough that
 	   we write separate code for each possibility */
-#       ifdef HAVE_RUNTIME_THREADCHECK
 	if (MPIR_ThreadInfo.isThreaded) {
 	    MPIDI_CH3I_progress_blocked = TRUE;
 	    mpi_errno = MPIDU_Sock_wait(MPIDI_CH3I_sock_set, 
@@ -185,13 +199,6 @@ static int MPIDI_CH3i_Progress_wait(MPID_Progress_state * progress_state)
 	    mpi_errno = MPIDU_Sock_wait(MPIDI_CH3I_sock_set, 
 				    MPIDU_SOCK_INFINITE_TIME, &event);
 	}
-#       else
-	MPIDI_CH3I_progress_blocked = TRUE;
-	mpi_errno = MPIDU_Sock_wait(MPIDI_CH3I_sock_set, 
-				    MPIDU_SOCK_INFINITE_TIME, &event);
-	MPIDI_CH3I_progress_blocked = FALSE;
-	MPIDI_CH3I_progress_wakeup_signalled = FALSE;
-#       endif /* HAVE_RUNTIME_THREADCHECK */
 
 #       else
 	mpi_errno = MPIDU_Sock_wait(MPIDI_CH3I_sock_set, 
@@ -254,7 +261,7 @@ static int MPIDI_CH3i_Progress_wait(MPID_Progress_state * progress_state)
 int MPIDI_CH3_Connection_terminate(MPIDI_VC_t * vc)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
+    MPIDI_CH3I_VC *vcch = &vc->ch;
 
     MPIU_DBG_CONNSTATECHANGE(vc,vcch->conn,CONN_STATE_CLOSING);
     vcch->conn->state = CONN_STATE_CLOSING;
@@ -287,7 +294,9 @@ int MPIDI_CH3I_Progress_init(void)
     /* FIXME should be appropriately abstracted somehow */
 #   if defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
     {
-	MPID_Thread_cond_create(&MPIDI_CH3I_progress_completion_cond, NULL);
+        int err;
+	MPID_Thread_cond_create(&MPIDI_CH3I_progress_completion_cond, &err);
+        MPIU_Assert(err == 0);
     }
 #   endif
     MPIU_THREAD_CHECK_END
@@ -353,7 +362,9 @@ int MPIDI_CH3I_Progress_finalize(void)
     /* FIXME should be appropriately abstracted somehow */
 #   if defined(MPICH_IS_THREADED) && (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL)
     {
-	MPID_Thread_cond_destroy(&MPIDI_CH3I_progress_completion_cond, NULL);
+        int err;
+	MPID_Thread_cond_destroy(&MPIDI_CH3I_progress_completion_cond, &err);
+        MPIU_Assert(err == 0);
     }
 #   endif
     MPIU_THREAD_CHECK_END
@@ -728,7 +739,7 @@ int MPIDI_CH3I_VC_post_connect(MPIDI_VC_t * vc)
 static inline int connection_pop_sendq_req(MPIDI_CH3I_Connection_t * conn)
 {
     int mpi_errno = MPI_SUCCESS;
-    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)conn->vc->channel_private;
+    MPIDI_CH3I_VC *vcch = &conn->vc->ch;
     MPIDI_STATE_DECL(MPID_STATE_CONNECTION_POP_SENDQ_REQ);
 
 
@@ -893,3 +904,8 @@ int MPIDI_CH3I_Progress( int blocking, MPID_Progress_state *state )
 
     return mpi_errno;
 }
+
+/* A convenience dummy symbol so that the PETSc folks can configure test to
+ * ensure that they have a working version of MPICH ch3:sock.  Please don't
+ * delete it without consulting them. */
+int MPIDI_CH3I_sock_fixed_nbc_progress = TRUE;

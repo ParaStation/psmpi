@@ -1,12 +1,12 @@
 .\" -*- nroff -*-
-.\" Copyright © 2009-2010 INRIA.  All rights reserved.
+.\" Copyright © 2009-2013 Inria.  All rights reserved.
 .\" Copyright © 2010 Université of Bordeaux
 .\" Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 .\" See COPYING in top-level directory.
 .TH HWLOC-BIND "1" "#HWLOC_DATE#" "#PACKAGE_VERSION#" "#PACKAGE_NAME#"
 .SH NAME
 hwloc-bind \- Launch a command that is bound to specific processors
-and/or memory.
+and/or memory, or consult the binding of an existing program
 .
 .\" **************************
 .\"    Synopsis Section
@@ -16,24 +16,32 @@ and/or memory.
 .B hwloc-bind
 [\fIoptions\fR] \fI<location1> [<location2> [...] ] [--] <command> \fR...
 .
+.PP
+Note that hwloc(7) provides a detailed explanation of the hwloc system
+and of valid <location> formats;
+it should be read before reading this man page.
 .\" **************************
 .\"    Options Section
 .\" **************************
 .SH OPTIONS
 .
-See below for a description of valid <location> formats.
 .TP 10
 \fB\-\-cpubind\fR
 Use following arguments for CPU binding (default).
 .TP
 \fB\-\-membind\fR
 Use following arguments for memory binding.
+If \fB\-\-mempolicy\fR is not also given,
+the default policy is bind.
 .TP
 \fB\-\-mempolicy\fR <policy>
 Change the memory binding policy.
 The available policies are default, firsttouch, bind, interleave
 replicate and nexttouch.
-If a binding set is given, the default policy is bind.
+This option is only meaningful when an actual binding is also given
+with \fB\-\-membind\fR.
+If \fB\-\-membind\fR is given without \fB\-\-mempolicy\fR,
+the default policy is bind.
 .TP
 \fB\-\-get\fR
 Report the current bindings.
@@ -53,9 +61,6 @@ Bind on a single CPU to prevent migration.
 \fB\-\-strict\fR
 Require strict binding.
 .TP
-\fB\-\-get\fR
-Retrieve the current process binding
-.TP
 \fB\-\-pid\fR <pid>
 Operate on pid <pid>
 .TP
@@ -66,10 +71,27 @@ take OS/physical indexes instead of logical indexes
 take logical indexes instead of physical/OS indexes (default)
 .TP
 \fB\-\-taskset\fR
-Manipulate CPU set strings in the format recognized by the taskset command-line
+Display CPU set strings in the format recognized by the taskset command-line
 program instead of hwloc-specific CPU set string format.
+This option has no impact on the format of input CPU set strings,
+both formats are always accepted.
 .TP
-\fB\-v\fR
+\fB\-\-restrict\fR <cpuset>
+Restrict the topology to the given cpuset.
+.TP
+\fB\-\-whole\-system\fR
+Do not consider administration limitations.
+.TP
+\fB\-f\fR \fB\-\-force\fR
+Launch the executable even if binding failed.
+.TP
+\fB\-q\fR \fB\-\-quiet\fR
+Hide non-fatal error messages.
+It includes locations pointing to non-existing objects,
+as well as failure to bind.
+This is usually useful in addition to \fB\-\-force\fR.
+.TP
+\fB\-v\fR \fB\-\-verbose\fR
 Verbose output.
 .TP
 \fB\-\-version\fR
@@ -84,6 +106,11 @@ hwloc-bind execs an executable (with optional command line arguments)
 that is bound to the specified location (or list of locations).  Upon
 successful execution, hwloc-bind simply sets bindings and then execs
 the executable over itself.
+.
+.PP
+If binding fails, or if the binding set is empty, and \fB\-\-force\fR
+was not given, hwloc-bind returns with an error instead of launching
+the executable.
 .
 .PP
 .B NOTE:
@@ -151,6 +178,14 @@ To run anywhere except on the first socket:
 
     hwloc-bind all ~socket:0 echo hello
 
+To run on a core near the network interface named eth0:
+
+    hwloc-bind os=eth0 echo hello
+
+To run on a core near the PCI device whose bus ID is 0000:01:02.0:
+
+    hwloc-bind pci=0000:01:02.0 echo hello
+
 To bind memory on second memory node and run on first node (when supported by the OS):
 
     hwloc-bind --cpubind node:1 --membind node:0 echo hello
@@ -180,6 +215,13 @@ This returns a string describing the memory binding, such as "0x000000f0
 (interleave)".  Note that if the system does not contain any NUMA
 nodes, the reported string will indicate that the process is bound to
 the entire system memory (e.g., "0xf...f").
+.SH HINT
+If the graphics-enabled lstopo is available, use for instance
+
+    hwloc-bind core:2 -- lstopo --pid 0
+
+to check what the result of your binding command actually is.
+lstopo will graphically show where it is bound to by hwloc-bind.
 .
 .\" **************************
 .\"    Return value section

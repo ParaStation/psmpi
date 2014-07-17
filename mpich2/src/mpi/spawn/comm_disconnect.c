@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -31,7 +31,7 @@
 /*@
    MPI_Comm_disconnect - Disconnect from a communicator
 
-   Input Parameter:
+Input Parameters:
 .  comm - communicator (handle) 
 
 Notes:
@@ -66,7 +66,6 @@ int MPI_Comm_disconnect(MPI_Comm * comm)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(*comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

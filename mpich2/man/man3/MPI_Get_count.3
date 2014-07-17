@@ -1,9 +1,9 @@
-.TH MPI_Get_count 3 "7/30/2010" " " "MPI"
+.TH MPI_Get_count 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Get_count \-  Gets the number of "top level" elements 
 .SH SYNOPSIS
 .nf
-int MPI_Get_count( MPI_Status *status,  MPI_Datatype datatype, int *count )
+int MPI_Get_count( const MPI_Status *status, MPI_Datatype datatype, int *count )
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -17,7 +17,7 @@ int MPI_Get_count( MPI_Status *status,  MPI_Datatype datatype, int *count )
 - datatype of each receive buffer element (handle) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B count 
@@ -104,4 +104,4 @@ MPI_Datatype (see
 ).
 .PD 1
 .SH LOCATION
-get_count.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/get_count.c

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -69,9 +69,10 @@ MPID_Request * MPID_Request_create(void)
 	req->status.MPI_SOURCE	   = MPI_UNDEFINED;
 	req->status.MPI_TAG	   = MPI_UNDEFINED;
 	req->status.MPI_ERROR	   = MPI_SUCCESS;
-	req->status.count	   = 0;
-	req->status.cancelled	   = FALSE;
+        MPIR_STATUS_SET_COUNT(req->status, 0);
+        MPIR_STATUS_SET_CANCEL_BIT(req->status, FALSE);
 	req->comm		   = NULL;
+        req->greq_fns              = NULL;
 	req->dev.datatype_ptr	   = NULL;
 	req->dev.segment_ptr	   = NULL;
 	/* Masks and flags for channel device state in an MPID_Request */
@@ -81,11 +82,12 @@ MPID_Request * MPID_Request_create(void)
 	   request for RMA operations */
 	req->dev.target_win_handle = MPI_WIN_NULL;
 	req->dev.source_win_handle = MPI_WIN_NULL;
-	req->dev.single_op_opt	   = 0;
 	req->dev.lock_queue_entry  = NULL;
 	req->dev.dtype_info	   = NULL;
 	req->dev.dataloop	   = NULL;
 	req->dev.iov_offset        = 0;
+        req->dev.flags             = MPIDI_CH3_PKT_FLAG_NONE;
+        req->dev.resp_request_handle = MPI_REQUEST_NULL;
 #ifdef MPIDI_CH3_REQUEST_INIT
 	MPIDI_CH3_REQUEST_INIT(req);
 #endif
@@ -143,6 +145,10 @@ void MPIDI_CH3_Request_destroy(MPID_Request * req)
        related ref count has become zero. */
     if (req->comm != NULL) {
 	MPIR_Comm_release(req->comm, 0);
+    }
+
+    if (req->greq_fns != NULL) {
+        MPIU_Free(req->greq_fns);
     }
 
     if (req->dev.datatype_ptr != NULL) {
@@ -360,8 +366,8 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 				   rreq->dev.segment_first,
 				   &last, &rreq->dev.iov[0], &rreq->dev.iov_count);
 	MPIU_DBG_MSG_FMT(CH3_CHANNEL,VERBOSE,(MPIU_DBG_FDEST,
-   "post-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d, iov_offset=%d",
-			  rreq->dev.segment_first, last, rreq->dev.iov_count, rreq->dev.iov_offset));
+   "post-upv: first=" MPIDI_MSG_SZ_FMT ", last=" MPIDI_MSG_SZ_FMT ", iov_n=%d, iov_offset=%lld",
+			  rreq->dev.segment_first, last, rreq->dev.iov_count, (long long)rreq->dev.iov_offset));
 	MPIU_Assert(rreq->dev.iov_count >= 0 && rreq->dev.iov_count <= 
 		    MPID_IOV_LIMIT);
 
@@ -375,7 +381,7 @@ int MPIDI_CH3U_Request_load_recv_iov(MPID_Request * const rreq)
 	    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
 		       MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
 		       "**dtypemismatch", 0);
-	    rreq->status.count = (int)rreq->dev.segment_first;
+            MPIR_STATUS_SET_COUNT(rreq->status, rreq->dev.segment_first);
 	    rreq->dev.segment_size = rreq->dev.segment_first;
 	    mpi_errno = MPIDI_CH3U_Request_load_recv_iov(rreq);
 	    goto fn_exit;
@@ -512,7 +518,7 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
 	/* If no data can be unpacked, then we have a datatype processing 
 	   problem.  Adjust the segment info so that the remaining
 	   data is received and thrown away. */
-	rreq->status.count = (int)rreq->dev.segment_first;
+	MPIR_STATUS_SET_COUNT(rreq->status, rreq->dev.segment_first);
 	rreq->dev.segment_size = rreq->dev.segment_first;
 	rreq->dev.segment_first += tmpbuf_last;
 	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
@@ -530,7 +536,7 @@ int MPIDI_CH3U_Request_unpack_srbuf(MPID_Request * rreq)
 	       Note: the segment_first field is set to segment_last so that if
 	       this is a truncated message, extra data will be read
 	       off the pipe. */
-	    rreq->status.count = (int)last;
+	    MPIR_STATUS_SET_COUNT(rreq->status, last);
 	    rreq->dev.segment_size = last;
 	    rreq->dev.segment_first = tmpbuf_last;
 	    rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
@@ -594,7 +600,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 	      ", buf_sz=" MPIDI_MSG_SZ_FMT, 
                 rreq->dev.recv_data_sz, userbuf_sz));
 	unpack_sz = userbuf_sz;
-	rreq->status.count = (int)userbuf_sz;
+	MPIR_STATUS_SET_COUNT(rreq->status, userbuf_sz);
 	rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
 		 MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TRUNCATE,
 		 "**truncate", "**truncate %d %d", 
@@ -630,7 +636,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 		/* received data was not entirely consumed by unpack() 
 		   because too few bytes remained to fill the next basic
 		   datatype */
-		rreq->status.count = (int)last;
+		MPIR_STATUS_SET_COUNT(rreq->status, last);
 		rreq->status.MPI_ERROR = MPIR_Err_create_code(MPI_SUCCESS, 
                          MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_TYPE,
 			 "**dtypemismatch", 0);
@@ -645,7 +651,7 @@ int MPIDI_CH3U_Request_unpack_uebuf(MPID_Request * rreq)
 
 /* 
  * Export the function to set a request as completed for use by
- * the generalized request functions in mpich2/src/pt2pt/greq_complete.c
+ * the generalized request functions in mpich/src/pt2pt/greq_complete.c
  */
 void MPID_Request_set_completed( MPID_Request *req )
 {

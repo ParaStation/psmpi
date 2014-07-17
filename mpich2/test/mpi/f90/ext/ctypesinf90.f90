@@ -1,4 +1,9 @@
 ! This file created from test/mpi/f77/ext/ctypesinf.f with f77tof90
+! -*- Mode: Fortran; -*- 
+!
+!  (C) 2010 by Argonne National Laboratory.
+!      See COPYRIGHT in top-level directory.
+!
       program main
       use mpi
       integer ierr

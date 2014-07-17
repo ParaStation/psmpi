@@ -9,7 +9,7 @@
 Applies a reduction operator to local arguments. 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Reduce_local(void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype, MPI_Op op)
+int MPI_Reduce_local(const void *inbuf, void *inoutbuf, int count, MPI_Datatype datatype, MPI_Op op)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -22,7 +22,7 @@ int MPI_Reduce_local(void *inbuf, void *inoutbuf, int count, MPI_Datatype dataty
 <DT><B>op </B><DD>reduction operation (handle)
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>inoutbuf </B> <DD> address of input-output buffer (choice)
 </DL>
 <P>
@@ -88,5 +88,5 @@ is prohibited in MPI (because it is prohibited by the Fortran
 standard, and rather than have a separate case for C and Fortran, the
 MPI Forum adopted the more restrictive requirements of Fortran).
 </DL>
-<P><B>Location:</B>reduce_local.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/coll/reduce_local.c<P>
 </BODY></HTML>

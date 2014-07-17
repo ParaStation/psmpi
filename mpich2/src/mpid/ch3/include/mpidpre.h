@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -9,8 +9,6 @@
 
 #if !defined(MPICH_MPIDPRE_H_INCLUDED)
 #define MPICH_MPIDPRE_H_INCLUDED
-
-#include "mpidi_ch3_conf.h"
 
 /* Tell the compiler that we're going to declare struct MPID_Request later */
 struct MPID_Request;
@@ -24,6 +22,27 @@ struct MPID_Request;
 typedef MPIR_Pint MPIDI_msg_sz_t;
 
 #include "mpid_dataloop.h"
+
+/* FIXME: Include here? */
+#include "opa_primitives.h"
+
+union MPIDI_CH3_Pkt;
+struct MPIDI_VC;
+struct MPID_Request;
+
+/* PktHandler function:
+   vc  (INPUT) -- vc on which the packet was received
+   pkt (INPUT) -- pointer to packet header at beginning of receive buffer
+   buflen (I/O) -- IN: number of bytes received into receive buffer
+                   OUT: number of bytes processed by the handler function
+   req (OUTPUT) -- NULL, if the whole message has been processed by the handler
+                   function, otherwise, pointer to the receive request for this
+                   message.  The IOV will be set describing where the rest of the
+                   message should be received.
+   (This decl needs to come before mpidi_ch3_pre.h)
+*/
+typedef int MPIDI_CH3_PktHandler_Fcn(struct MPIDI_VC *vc, union MPIDI_CH3_Pkt *pkt,
+				     MPIDI_msg_sz_t *buflen, struct MPID_Request **req );
 
 /* Include definitions from the channel which must exist before items in this 
    file (mpidpre.h) or the file it includes (mpiimpl.h) can be defined. */
@@ -59,6 +78,9 @@ typedef int32_t MPIR_Rank_t;
 typedef MPIR_Rank_t MPID_Node_id_t;
 
 
+/* provides "pre" typedefs and such for NBC scheduling mechanism */
+#include "mpid_sched_pre.h"
+
 /* For the typical communication system for which the ch3 channel is
    appropriate, 16 bits is sufficient for the rank.  By also using 16
    bits for the context, we can reduce the size of the match
@@ -69,7 +91,7 @@ typedef MPIR_Rank_t MPID_Node_id_t;
    in this optimized case, the "whole" field can be used for
    comparisons.
 
-   Note that the MPICH2 code (in src/mpi) uses int for rank (and usually for 
+   Note that the MPICH code (in src/mpi) uses int for rank (and usually for 
    contextids, though some work is needed there).  
 
    Note:  We need to check for truncation of rank in MPID_Init - it should 
@@ -78,7 +100,7 @@ typedef MPIR_Rank_t MPID_Node_id_t;
    size of the communicator is within range.
 
    If any part of the definition of this type is changed, those changes
-   must be reflected in the debugger interface in src/mpi/debugger/dll_mpich2.c
+   must be reflected in the debugger interface in src/mpi/debugger/dll_mpich.c
    and dbgstub.c
 */
 typedef struct MPIDI_Message_match_parts {
@@ -90,16 +112,14 @@ typedef union {
     MPIDI_Message_match_parts_t parts;
     MPIR_Upint whole;
 } MPIDI_Message_match;
+/* NOTE-T1: We set MPIR_Process.attrs.tag_ub to this value during MPID_Init, but
+ * upper level code may then modify this value after MPID_Init and before the
+ * end of MPIR_Init_thread.  Don't use this value directly, always check the
+ * runtime global value. */
 #define MPIDI_TAG_UB (0x7fffffff)
 
-/* Packet types are defined in mpidpkt.h .  The intent is to remove the
-   need for packet definitions outside of the device directories.
-   Currently, the request contains a block of storage in which a 
-   packet header can be copied in the event that a message cannot be
-   send immediately.  
-*/
-typedef struct MPIDI_CH3_PktGeneric { int32_t kind; int32_t *pktptrs[1]; int32_t pktwords[6]; } 
-    MPIDI_CH3_PktGeneric_t;
+/* Provides MPIDI_CH3_Pkt_t.  Must come after MPIDI_Message_match definition. */
+#include "mpidpkt.h"
 
 /*
  * THIS IS OBSOLETE AND UNUSED, BUT RETAINED FOR ITS DESCRIPTIONS OF THE
@@ -147,6 +167,25 @@ typedef struct MPIDI_CH3_PktGeneric { int32_t kind; int32_t *pktptrs[1]; int32_t
  * by the channel instance.
  */
 
+#define HAVE_DEV_COMM_HOOK
+#define MPID_Dev_comm_create_hook(comm_) MPIDI_CH3I_Comm_create_hook(comm_)
+#define MPID_Dev_comm_destroy_hook(comm_) MPIDI_CH3I_Comm_destroy_hook(comm_)
+
+#define MPIDI_CH3I_Comm_AS_enabled(comm) ((comm)->ch.anysource_enabled)
+
+typedef struct MPIDI_CH3I_comm
+{
+    int eager_max_msg_sz;   /* comm-wide eager/rendezvous message threshold */
+    int coll_active;        /* TRUE iff this communicator is collectively active */
+    int anysource_enabled;  /* TRUE iff this anysource recvs can be posted on this communicator */
+    struct MPID_nem_barrier_vars *barrier_vars; /* shared memory variables used in barrier */
+    struct MPID_Comm *next; /* next pointer for list of communicators */
+    struct MPID_Comm *prev; /* prev pointer for list of communicators */
+}
+MPIDI_CH3I_comm_t;
+
+#define MPID_DEV_COMM_DECL MPIDI_CH3I_comm_t ch;
+
 #ifndef HAVE_MPIDI_VCRT
 #define HAVE_MPIDI_VCRT
 typedef struct MPIDI_VCRT * MPID_VCRT;
@@ -162,20 +201,73 @@ typedef struct MPIDI_VC * MPID_VCR;
 #   define MPIDI_REQUEST_SEQNUM
 #endif
 
+enum MPIDI_CH3_Lock_states {
+    MPIDI_CH3_WIN_LOCK_NONE = 0,
+    MPIDI_CH3_WIN_LOCK_CALLED,
+    MPIDI_CH3_WIN_LOCK_REQUESTED,
+    MPIDI_CH3_WIN_LOCK_GRANTED,
+    MPIDI_CH3_WIN_LOCK_FLUSH
+};
+
+enum MPIDI_Win_info_arv_vals_accumulate_ordering {
+    MPIDI_ACC_ORDER_RAR = 1,
+    MPIDI_ACC_ORDER_RAW = 2,
+    MPIDI_ACC_ORDER_WAR = 4,
+    MPIDI_ACC_ORDER_WAW = 8
+};
+
+enum MPIDI_Win_info_arg_vals_accumulate_ops {
+    MPIDI_ACC_OPS_SAME_OP,
+    MPIDI_ACC_OPS_SAME_OP_NO_OP
+};
+
+enum MPIDI_Win_epoch_states {
+    MPIDI_EPOCH_NONE = 0,
+    MPIDI_EPOCH_FENCE,
+    MPIDI_EPOCH_POST,
+    MPIDI_EPOCH_START,
+    MPIDI_EPOCH_PSCW,           /* Both post and start have been called. */
+    MPIDI_EPOCH_LOCK,
+    MPIDI_EPOCH_LOCK_ALL
+};
+
+struct MPIDI_Win_info_args {
+    int no_locks;               /* valid flavor = all */
+    int accumulate_ordering;
+    int accumulate_ops;
+    int same_size;              /* valid flavor = allocate */
+    int alloc_shared_noncontig; /* valid flavor = allocate shared */
+    int alloc_shm;              /* valid flavor = allocate */
+};
+
+struct MPIDI_RMA_op;            /* forward decl from mpidrma.h */
+
+struct MPIDI_Win_target_state {
+    struct MPIDI_RMA_Op *rma_ops_list;
+                                /* List of outstanding RMA operations */
+    volatile enum MPIDI_CH3_Lock_states remote_lock_state;
+                                /* Indicates the state of the target
+                                   process' "lock" for passive target
+                                   RMA. */
+    int remote_lock_mode;       /* Indicates the access mode
+                                   (shared/exclusive) of the target
+                                   process for passive target RMA. Valid
+                                   whenever state != NONE. */
+    int remote_lock_assert;     /* Assertion value provided in the call
+                                   to Lock */
+};
+
 #define MPIDI_DEV_WIN_DECL                                               \
     volatile int my_counter;  /* completion counter for operations       \
                                  targeting this window */                \
     void **base_addrs;     /* array of base addresses of the windows of  \
                               all processes */                           \
+    void **shm_base_addrs; /* shared memory windows -- array of base     \
+                              addresses of the windows of all processes  \
+                              in this process's address space */         \
     int *disp_units;      /* array of displacement units of all windows */\
     MPI_Win *all_win_handles;    /* array of handles to the window objects\
                                           of all processes */            \
-    struct MPIDI_RMA_ops *rma_ops_list_head; /* list of outstanding \
-                                                RMA requests */ \
-    struct MPIDI_RMA_ops *rma_ops_list_tail; \
-    volatile int lock_granted;  /* flag to indicate whether lock has     \
-                                   been granted to this process (as source) for         \
-                                   passive target rma */                 \
     volatile int current_lock_type;   /* current lock type on this window (as target)   \
                               * (none, shared, exclusive) */             \
     volatile int shared_lock_ref_cnt;                                    \
@@ -186,8 +278,27 @@ typedef struct MPIDI_VC * MPID_VCR;
                                processes. */                             \
     volatile int my_pt_rma_puts_accs;  /* no. of passive target puts/accums  \
                                           that this process has          \
-                                          completed as target */
- 
+                                          completed as target */         \
+    MPI_Aint *sizes;      /* array of sizes of all windows */            \
+    struct MPIDI_Win_info_args info_args;                                \
+    struct MPIDI_Win_target_state *targets; /* Target state and ops      \
+                                               lists for passive target  \
+                                               mode of operation */      \
+    struct MPIDI_RMA_Op *at_rma_ops_list; /* Ops list for active target  \
+                                             mode of operation. */       \
+    enum MPIDI_Win_epoch_states epoch_state;                             \
+    int epoch_count;                                                     \
+    int fence_issued;   /* Indicates if fence has been called, and if an \
+                           active target fence epoch is possible. This   \
+                           is maintained separately from the epoch state;\
+                           this state must be updated collectively (in   \
+                           fence) to ensure that the fence state across  \
+                           all processes remains consistent. */          \
+    MPID_Group *start_group_ptr; /* group passed in MPI_Win_start */     \
+    int start_assert;   /* assert passed to MPI_Win_start */             \
+    int shm_allocated; /* flag: TRUE iff this window has a shared memory \
+                          region associated with it */                   \
+
 #ifdef MPIDI_CH3_WIN_DECL
 #define MPID_DEV_WIN_DECL \
 MPIDI_DEV_WIN_DECL \
@@ -222,12 +333,12 @@ typedef struct MPIDI_Request {
        iov_offset points to the current head element in the IOV */
     MPID_IOV iov[MPID_IOV_LIMIT];
     int iov_count;
-    int iov_offset;
+    size_t iov_offset;
 
     /* OnDataAvail is the action to take when data is now available.
        For example, when an operation described by an iov has 
        completed.  This replaces the MPIDI_CA_t (completion action)
-       field used through MPICH2 1.0.4. */
+       field used through MPICH 1.0.4. */
     int (*OnDataAvail)( struct MPIDI_VC *, struct MPID_Request *, int * );
     /* OnFinal is used in the following case:
        OnDataAvail is set to a function, and that function has processed
@@ -263,7 +374,7 @@ typedef struct MPIDI_Request {
      * unexpected, exclusive access otherwise */
     int            recv_pending_count;
 
-    /* The next 8 are for RMA */
+    /* The next several fields are used to hold state for ongoing RMA operations */
     MPI_Op op;
     /* For accumulate, since data is first read into a tmp_buf */
     void *real_user_buf;
@@ -274,8 +385,9 @@ typedef struct MPIDI_Request {
     MPI_Request request_handle;
     MPI_Win     target_win_handle;
     MPI_Win     source_win_handle;
-    int single_op_opt;   /* to indicate a lock-put-unlock optimization case */
+    MPIDI_CH3_Pkt_flags_t flags; /* flags that were included in the original RMA packet header */
     struct MPIDI_Win_lock_queue *lock_queue_entry; /* for single lock-put-unlock optimization */
+    MPI_Request resp_request_handle; /* Handle for get_accumulate response */
 
     MPIDI_REQUEST_SEQNUM
 
@@ -285,7 +397,7 @@ typedef struct MPIDI_Request {
        message packet. This field provide a generic location for that.
        Question: do we want to make this a link instead of reserving 
        a fixed spot in the request? */
-    MPIDI_CH3_PktGeneric_t pending_pkt;
+    MPIDI_CH3_Pkt_t pending_pkt;
     struct MPID_Request * next;
 } MPIDI_Request;
 #define MPID_REQUEST_DECL MPIDI_Request dev;
@@ -307,7 +419,7 @@ MPID_REQUEST_DECL
 
 /* FIXME: This ifndef test is a temp until mpidpre is cleaned of
    all items that do not belong (e.g., all items not needed by the
-   top layers of MPICH2) */
+   top layers of MPICH) */
 /* FIXME: The progress routines will be made into ch3-common definitions, not
    channel specific.  Channels that need more will need to piggy back or 
    otherwise override */

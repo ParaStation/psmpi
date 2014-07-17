@@ -16,7 +16,7 @@
 /* defined in opa_primitives.c */
 extern pthread_mutex_t *OPA_emulation_lock;
 
-/* FIXME these make less sense now that OPA is not inside of MPICH2.  Is there a
+/* FIXME these make less sense now that OPA is not inside of MPICH.  Is there a
    simpler name/scheme that could be used here instead? [goodell@ 2009-02-19] */
 #define OPA_IPC_SINGLE_CS_ENTER(msg)          \
     do {                                        \
@@ -85,6 +85,11 @@ static _opa_inline void OPA_store_ptr(OPA_ptr_t *ptr, void *val)
     OPA_IPC_SINGLE_CS_EXIT("atomic_add");
 }
 
+/* normal loads/stores are fully ordered, so just use them */
+#define OPA_load_acquire_int(ptr_)       OPA_load_int((ptr_))
+#define OPA_store_release_int(ptr_,val_) OPA_store_int((ptr_),(val_))
+#define OPA_load_acquire_ptr(ptr_)       OPA_load_ptr((ptr_))
+#define OPA_store_release_ptr(ptr_,val_) OPA_store_ptr((ptr_),(val_))
 
 static _opa_inline void OPA_add_int(OPA_int_t *ptr, int val)
 {

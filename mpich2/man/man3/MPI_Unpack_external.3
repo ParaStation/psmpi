@@ -1,10 +1,10 @@
-.TH MPI_Unpack_external 3 "8/2/2008" " " "MPI"
+.TH MPI_Unpack_external 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Unpack_external \-  Unpack a buffer (packed with MPI_Pack_external) according to a datatype into contiguous memory 
 .SH SYNOPSIS
 .nf
-int MPI_Unpack_external(char *datarep,
-                      void *inbuf,
+int MPI_Unpack_external(const char datarep[],
+                      const void *inbuf,
                       MPI_Aint insize,
                       MPI_Aint *position,
                       void *outbuf,
@@ -38,14 +38,14 @@ int MPI_Unpack_external(char *datarep,
 - datatype of output data item (handle)
 .PD 1
 
-.SH INPUT/OUTPUT PARAMETER
+.SH INPUT/OUTPUT PARAMETERS
 .PD 0
 .TP
 .B position 
 - current position in buffer, in bytes (address integer)
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B outbuf 
@@ -135,4 +135,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-unpack_external.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/unpack_external.c

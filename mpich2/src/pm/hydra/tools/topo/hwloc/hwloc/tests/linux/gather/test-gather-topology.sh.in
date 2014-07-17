@@ -2,15 +2,15 @@
 #-*-sh-*-
 
 #
-# Copyright © 2010 INRIA.  All rights reserved.
+# Copyright © 2012-2013 Inria.  All rights reserved.
 # Copyright © 2010 Cisco Systems, Inc.  All rights reserved.
 # Copyright © 2011 Université Bordeaux 1
 # See COPYING in top-level directory.
 #
 
-abs_top_builddir="@abs_top_builddir@"
-lstopo="$abs_top_builddir/utils/lstopo"
-gather="$abs_top_builddir/tests/linux/hwloc-gather-topology"
+HWLOC_top_builddir="@HWLOC_top_builddir@"
+lstopo="$HWLOC_top_builddir/utils/lstopo-no-graphics"
+gather="$HWLOC_top_builddir/tests/linux/hwloc-gather-topology"
 
 # make sure we use default numeric formats
 LANG=C
@@ -50,7 +50,7 @@ tmpdir=`mktemp -d`
 export HWLOC_THISSYSTEM=0
 
 echo "Saving current system topology to XML..."
-if ! "$lstopo" "$tmpdir/save.xml" ; then
+if ! "$lstopo" --no-io "$tmpdir/save.xml" ; then
     error "Failed"
     exit 1
 fi
@@ -69,7 +69,7 @@ fi
 export HWLOC_FSROOT="$tmpdir/save"
 
 echo "Saving tarball topology to XML..."
-if ! "$lstopo" "$tmpdir/save2.xml" ; then
+if ! "$lstopo" --no-io "$tmpdir/save2.xml" ; then
     error "Failed"
     exit 1
 fi

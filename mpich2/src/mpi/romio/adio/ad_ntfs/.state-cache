@@ -1,17 +1,18 @@
 <dir>
-<file name="ad_ntfs_open.c" info="1194043819"/>
-<file name="ad_ntfs_done.c" info="1194043819"/>
-<file name="ad_ntfs_flush.c" info="1194043819"/>
-<file name="ad_ntfs_resize.c" info="1194043819"/>
-<file name="ad_ntfs_iread.c" info="1194043819"/>
-<file name="ad_ntfs.h" info="1194043819"/>
-<file name="ad_ntfs_read.c" info="1194043819"/>
-<file name="ad_ntfs.c" info="1221684388"/>
-<file name="ad_ntfs_wait.c" info="1194043819"/>
-<file name="ad_ntfs_iwrite.c" info="1281541879"/>
-<file name="ad_ntfs_fcntl.c" info="1194043819"/>
-<file name="ad_ntfs_write.c" info="1194043819"/>
-<file name="ad_ntfs_close.c" info="1194043819"/>
+<file name="ad_ntfs_open.c" info="1392877287"/>
+<file name="ad_ntfs_done.c" info="1392877287"/>
+<file name="ad_ntfs_flush.c" info="1392877287"/>
+<file name="ad_ntfs_resize.c" info="1392877287"/>
+<file name="ad_ntfs_iread.c" info="1392877287"/>
+<file name="ad_ntfs.h" info="1392877287"/>
+<file name="ad_ntfs_read.c" info="1392877287"/>
+<file name="ad_ntfs_wait.c" info="1392877287"/>
+<file name="ad_ntfs.c" info="1392877287"/>
+<file name="ad_ntfs_iwrite.c" info="1392877287"/>
+<file name="ad_ntfs_feature.c" info="1392877287"/>
+<file name="ad_ntfs_fcntl.c" info="1392877287"/>
+<file name="ad_ntfs_write.c" info="1392877287"/>
+<file name="ad_ntfs_close.c" info="1392877287"/>
 </dir>
 <data>
 <fileinfo name="ad_ntfs_open.c">
@@ -28,11 +29,13 @@
 </fileinfo>
 <fileinfo name="ad_ntfs_read.c">
 </fileinfo>
-<fileinfo name="ad_ntfs.c">
-</fileinfo>
 <fileinfo name="ad_ntfs_wait.c">
 </fileinfo>
+<fileinfo name="ad_ntfs.c">
+</fileinfo>
 <fileinfo name="ad_ntfs_iwrite.c">
+</fileinfo>
+<fileinfo name="ad_ntfs_feature.c">
 </fileinfo>
 <fileinfo name="ad_ntfs_fcntl.c">
 </fileinfo>

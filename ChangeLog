@@ -1,4 +1,18 @@
-2014-03-03  Jens Hauke  <hauke@par-tec.com>	-	5.0.29-1
+2014-07-14  Jens Hauke  <hauke@par-tec.com>	-	5.1.0-1
+
+	* Add a module file to the distribution
+
+2014-03-20  Jens Hauke  <hauke@par-tec.com>
+
+	* Update to mpich version 3.1
+
+2014-02-28  Carsten Clauss <clauss@par-tec.com>
+
+	* Implement MPI_Win_allocate_shared() and family
+
+	* Implement MPI_Mprobe()/MPI_Mrecv() and family
+
+	* Implement Fetch&Op Routines
 
 2014-01-15  Carsten Clauss <clauss@par-tec.com>
 
@@ -8,9 +22,19 @@
 
 	* Fix memory leaks in MPI_Finalize
 
-2014-01-08  Carsten Clauss <clauss@par-tec.com>
-
 	* Fix RMA-related deadlocks
+
+2014-01-09  Jens Hauke  <hauke@par-tec.com>
+
+	* Update to mpich version 3.0.4
+
+	* Add support for Xeon Phi
+
+	* Implement MPI_Comm_spawn() and family
+
+	* Implement MPI_Comm_connect() and family
+
+	* Implement non-blocking collectives
 
 2013-06-20  Jens Hauke  <hauke@par-tec.com>	-	5.0.28-1
 

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -38,7 +38,7 @@ Input Parameters:
 + comm1 - comm1 (handle) 
 - comm2 - comm2 (handle) 
 
-Output Parameter:
+Output Parameters:
 . result - integer which is 'MPI_IDENT' if the contexts and groups are the
 same, 'MPI_CONGRUENT' if different contexts but identical groups, 'MPI_SIMILAR'
 if different contexts but similar groups, and 'MPI_UNEQUAL' otherwise
@@ -75,6 +75,7 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
     
+    MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_COMM_COMPARE);
 
 #   ifdef HAVE_ERROR_CHECKING
@@ -83,7 +84,6 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
         {
 	    MPIR_ERRTEST_COMM(comm1, mpi_errno);
 	    MPIR_ERRTEST_COMM(comm2, mpi_errno);
-            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -100,10 +100,10 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
         {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr1, mpi_errno );
-            MPID_Comm_valid_ptr( comm_ptr2, mpi_errno );
-	    MPIR_ERRTEST_ARGNULL( result, "result", mpi_errno );
-	    /* If comm_ptr1 or 2 is not valid, it will be reset to null */
             if (mpi_errno) goto fn_fail;
+            MPID_Comm_valid_ptr( comm_ptr2, mpi_errno );
+            if (mpi_errno) goto fn_fail;
+	    MPIR_ERRTEST_ARGNULL( result, "result", mpi_errno );
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -178,6 +178,7 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
 
   fn_exit:
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_COMM_COMPARE);
+    MPIU_THREAD_CS_EXIT(ALLFUNC,);
     return mpi_errno;
     
     /* --BEGIN ERROR HANDLING-- */

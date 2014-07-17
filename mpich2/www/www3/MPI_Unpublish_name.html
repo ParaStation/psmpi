@@ -9,7 +9,7 @@
 Unpublish a service name published with  MPI_Publish_name 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
+int MPI_Unpublish_name(const char *service_name, MPI_Info info, const char *port_name)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -70,5 +70,5 @@ identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 <DL><DT><B>MPI_ERR_OTHER </B> <DD> Other error; use <TT>MPI_Error_string</TT> to get more information
 about this error code. 
 </DL>
-<P><B>Location:</B>unpublish_name.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/spawn/unpublish_name.c<P>
 </BODY></HTML>

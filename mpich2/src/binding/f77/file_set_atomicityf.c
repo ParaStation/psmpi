@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity_( MPI_Fint *, MPI_Fin
 #else
 #pragma _CRI duplicate mpi_file_set_atomicity_ as pmpi_file_set_atomicity_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_SET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FILE_SET_ATOMICITY")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FILE_SET_ATOMICITY")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FILE_SET_ATOMICITY")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FILE_SET_ATOMICITY")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_SET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_SET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_SET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_SET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity( MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity_( MPI_Fint *, MPI_Fin
 #pragma weak mpi_file_set_atomicity__ = mpi_file_set_atomicity
 #pragma weak mpi_file_set_atomicity_ = mpi_file_set_atomicity
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_SET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_FILE_SET_ATOMICITY")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_FILE_SET_ATOMICITY")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_FILE_SET_ATOMICITY")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_SET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_file_set_atomicity__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_file_set_atomicity__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_file_set_atomicity__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_SET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_file_set_atomicity_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_file_set_atomicity_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_file_set_atomicity_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_FILE_SET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_file_set_atomicity")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_file_set_atomicity")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_file_set_atomicity")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_file_set_atomicity( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_FILE_SET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_set_atomicity( MPI_Fint *, MPI_Fin
 #pragma weak pmpi_file_set_atomicity__ = pmpi_file_set_atomicity
 #pragma weak pmpi_file_set_atomicity_ = pmpi_file_set_atomicity
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_set_atomicity__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FILE_SET_ATOMICITY")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_set_atomicity_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FILE_SET_ATOMICITY")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_set_atomicity( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FILE_SET_ATOMICITY")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_FILE_SET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_set_atomicity_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_set_atomicity( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_FILE_SET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_set_atomicity__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_set_atomicity( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_FILE_SET_ATOMICITY( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_set_atomicity__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_file_set_atomicity_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_file_set_atomicity")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_file_set_atomicity_ PMPI_FILE_SET_ATOMICITY
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_set_atomicity( MPI_Fint *, MPI_Fin
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_File_set_atomicity
 #define MPI_File_set_atomicity PMPI_File_set_atomicity 
 

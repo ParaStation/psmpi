@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -51,8 +51,7 @@ HYD_status HYDT_dmxu_select_wait_for_event(int wtime)
             status = HYD_SUCCESS;
             goto fn_exit;
         }
-        HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "select error (%s)\n",
-                            HYDU_strerror(errno));
+        HYDU_ERR_SETANDJUMP(status, HYD_SOCK_ERROR, "select error (%s)\n", HYDU_strerror(errno));
     }
 
     work_done = 0;

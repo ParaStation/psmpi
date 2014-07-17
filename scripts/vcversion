@@ -1,25 +1,15 @@
 #!/bin/bash
 #
-# Open ParaStation
+# ParaStation
 #
-# Copyright (C) 2010 ParTec Cluster Competence Center GmbH, Munich
+# Copyright (C) 2010-2012 ParTec Cluster Competence Center GmbH, Munich
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# This file may be distributed under the terms of the Q Public License
+# as defined in the file LICENSE.QPL included in the packaging of this
+# file.
 #
 # Author:	Jens Hauke <hauke@par-tec.com>
 #
-
 
 function error() {
     echo "$*" >&2
@@ -67,6 +57,7 @@ EOF
 
 arg_prjroot="."
 arg_fmt="all"
+arg_newline=""
 
 function parse_arg() {
     while [ $# -gt 0 ]; do
@@ -79,6 +70,7 @@ function parse_arg() {
 	    --isrelease)	arg_isrelease="1"; arg_fmt="none";;
 	    --help|-h)		usage;;
 	    --verbose|-v)	arg_verbose=1;;
+	    -n)			arg_newline="-n";;
 	    *)			echo "WARNING: unhandled option '$1'";;
 	esac
 	shift
@@ -112,6 +104,14 @@ case "$arg_vc" in
 	# retry git-describe without --dirty on error. (pre git-1.6.6 has no --dirty)
 	version="$(git describe --tags --dirty --always --match "?*-?*" 2>/dev/null ||\
 		   git describe --tags --always --match "?*-?*")"
+	if ! git describe --tags --exact-match --always --match "?*-?*" >/dev/null 2>&1; then
+	    # Append the branchname, if not exactly on a tag and branch != master
+	    branch="$(git symbolic-ref HEAD)"
+	    branch="${branch/*\/}"
+	    if [ "$branch" != "master" ]; then
+		version="$version-$branch"
+	    fi
+	fi
 	;;
     svn)
 	vecho "Tag from svn"
@@ -177,14 +177,17 @@ if [ "$release" == "$version" ]; then release="0"; fi
 
 version="${version%%-*}"
 
-# use only rpm release allowed chars.
+# Allow only [.a-zA-Z0-9] for the version. Replace all others by "_".
+version="${version//[^.a-zA-Z0-9]/_}"
+
+# use only rpm release allowed chars. Replace all others by "_".
 release="${release//[^a-zA-Z0-9]/_}"
 
 case "$arg_fmt" in
-    version)	echo "$version";;
-    release)	echo "$release";;
+    version)	echo $arg_newline "$version";;
+    release)	echo $arg_newline "$release";;
     none)	;;
-    *)		echo "$version-$release";;
+    *)		echo $arg_newline "$version-$release";;
 esac
 
 if [ "$arg_isrelease" != "1" ];then

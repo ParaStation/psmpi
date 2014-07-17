@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -13,7 +13,6 @@ struct HYD_ui_mpich_info {
     int ppn;
     int ckpoint_int;
     int print_all_exitcodes;
-    int ranks_per_proc;
 
     enum HYD_sort_order {
         NONE = 0,

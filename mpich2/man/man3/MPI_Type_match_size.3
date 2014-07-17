@@ -1,4 +1,4 @@
-.TH MPI_Type_match_size 3 "3/1/2011" " " "MPI"
+.TH MPI_Type_match_size 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Type_match_size \-  Find an MPI datatype matching a specified size 
 .SH SYNOPSIS
@@ -17,11 +17,11 @@ int MPI_Type_match_size(int typeclass, int size, MPI_Datatype *datatype)
 - size, in bytes, of representation (integer) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
-.B type 
-- datatype with correct type, size (handle) 
+.B datatype 
+- datatype with correct type, size (handle)
 .PD 1
 
 .SH NOTES
@@ -113,4 +113,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-type_match_size.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/type_match_size.c

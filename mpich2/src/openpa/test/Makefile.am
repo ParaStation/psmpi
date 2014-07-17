@@ -7,9 +7,9 @@ TESTS = sanity test_primitives test_barriers test_queue
 
 check_PROGRAMS = $(TESTS)
 
-LDFLAGS = -L../src
-LDADD = -lopa
-DEPENDENCIES = libopa.la
+AM_LDFLAGS = -L../src
+LDADD = -l@OPALIBNAME@
+DEPENDENCIES = lib@OPALIBNAME@.la
 
 sanity_SOURCES = sanity.c
 test_primitives_SOURCES = test_primitives.c opa_test.h

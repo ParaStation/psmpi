@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -17,7 +17,7 @@ static void update_request(MPID_Request * sreq, void * hdr,
 
     MPIDI_FUNC_ENTER(MPID_STATE_UPDATE_REQUEST);
     MPIU_Assert(hdr_sz == sizeof(MPIDI_CH3_Pkt_t));
-    sreq->dev.pending_pkt = *(MPIDI_CH3_PktGeneric_t *) hdr;
+    sreq->dev.pending_pkt = *(MPIDI_CH3_Pkt_t *) hdr;
     sreq->dev.iov[0].MPID_IOV_BUF = (MPID_IOV_BUF_CAST)((char *) &sreq->dev.pending_pkt + nb);
     sreq->dev.iov[0].MPID_IOV_LEN = hdr_sz - nb;
     sreq->dev.iov_count = 1;
@@ -33,7 +33,7 @@ int MPIDI_CH3_iSend(MPIDI_VC_t * vc, MPID_Request * sreq, void * hdr,
 {
     int mpi_errno = MPI_SUCCESS;
     int (*reqFn)(MPIDI_VC_t *, MPID_Request *, int *);
-    MPIDI_CH3I_VC *vcch = (MPIDI_CH3I_VC *)vc->channel_private;
+    MPIDI_CH3I_VC *vcch = &vc->ch;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_ISEND);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_ISEND);

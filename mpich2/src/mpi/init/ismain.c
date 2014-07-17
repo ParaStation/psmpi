@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -30,7 +30,7 @@
    MPI_Is_thread_main - Returns a flag indicating whether this thread called 
                         'MPI_Init' or 'MPI_Init_thread'
 
-   Output Parameter:
+Output Parameters:
 . flag - Flag is true if 'MPI_Init' or 'MPI_Init_thread' has been called by 
          this thread and false otherwise.  (logical)
 
@@ -55,7 +55,6 @@ int MPI_Is_thread_main( int *flag )
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_ARGNULL(flag,"flag",mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

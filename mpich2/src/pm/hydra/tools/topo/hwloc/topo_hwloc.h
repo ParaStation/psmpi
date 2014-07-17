@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -14,8 +14,17 @@
 #include <hwloc.h>
 #include <assert.h>
 
-HYD_status HYDT_topo_hwloc_init(HYDT_topo_support_level_t * support_level);
-HYD_status HYDT_topo_hwloc_bind(struct HYDT_topo_cpuset_t cpuset);
+struct HYDT_topo_hwloc_info {
+    int num_bitmaps;
+    hwloc_bitmap_t *bitmap;
+    hwloc_membind_policy_t membind;
+    int user_binding;
+    int total_num_pus;
+};
+extern struct HYDT_topo_hwloc_info HYDT_topo_hwloc_info;
+
+HYD_status HYDT_topo_hwloc_init(const char *binding, const char *mapping, const char *membind);
+HYD_status HYDT_topo_hwloc_bind(int idx);
 HYD_status HYDT_topo_hwloc_finalize(void);
 
 #endif /* TOPO_HWLOC_H_INCLUDED */

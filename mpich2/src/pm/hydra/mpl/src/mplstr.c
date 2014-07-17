@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -70,7 +70,7 @@ int MPL_snprintf(char *str, size_t size, mpl_const char *format, ...)
                     val = va_arg(list, int);
                     sprintf(tmp, "%d", val);
                     if (width > 0) {
-                        int tmplen = strlen(tmp);
+                        size_t tmplen = strlen(tmp);
                         /* If a width was specified, pad with spaces on the
                          * left (on the right if %-3d given; not implemented yet */
                         while (size-- > 0 && width-- > tmplen)
@@ -91,7 +91,7 @@ int MPL_snprintf(char *str, size_t size, mpl_const char *format, ...)
                     val = va_arg(list, int);
                     sprintf(tmp, "%x", val);
                     if (width > 0) {
-                        int tmplen = strlen(tmp);
+                        size_t tmplen = strlen(tmp);
                         /* If a width was specified, pad with spaces on the
                          * left (on the right if %-3d given; not implemented yet */
                         while (size-- > 0 && width-- > tmplen)
@@ -112,7 +112,7 @@ int MPL_snprintf(char *str, size_t size, mpl_const char *format, ...)
                     val = va_arg(list, void *);
                     sprintf(tmp, "%p", val);
                     if (width > 0) {
-                        int tmplen = strlen(tmp);
+                        size_t tmplen = strlen(tmp);
                         /* If a width was specified, pad with spaces on the
                          * left (on the right if %-3d given; not implemented yet */
                         while (size-- > 0 && width-- > tmplen)
@@ -161,7 +161,7 @@ int MPL_snprintf(char *str, size_t size, mpl_const char *format, ...)
     char *MPL_strdup(mpl_const char *str)
 .ve
 
-  Input Parameter:
+Input Parameters:
 . str - null-terminated string to duplicate
 
   Return value:
@@ -205,11 +205,11 @@ char *MPL_strdup(mpl_const char *str)
  */
 /*@ MPL_strncpy - Copy a string with a maximum length
 
-    Input Parameters:
+Input Parameters:
 +   instr - String to copy
 -   maxlen - Maximum total length of 'outstr'
 
-    Output Parameter:
+Output Parameters:
 .   outstr - String to copy into
 
     Notes:

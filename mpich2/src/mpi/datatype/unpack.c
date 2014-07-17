@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -27,7 +27,7 @@
 #define FUNCNAME MPIR_Unpack_impl
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_Unpack_impl(void *inbuf, int insize, int *position,
+int MPIR_Unpack_impl(const void *inbuf, MPI_Aint insize, MPI_Aint *position,
                      void *outbuf, int outcount, MPI_Datatype datatype)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -112,10 +112,10 @@ Input Parameters:
 . datatype - datatype of each output data item (handle)
 - comm - communicator for packed message (handle)
 
-Output Parameter:
+Output Parameters:
 . outbuf - output buffer start (choice)
 
-Inout/Output Parameter:
+Inout/Output Parameters:
 . position - current position in bytes (integer)
 
 
@@ -132,11 +132,12 @@ Inout/Output Parameter:
 
 .seealso: MPI_Pack, MPI_Pack_size
 @*/
-int MPI_Unpack(void *inbuf, int insize, int *position,
+int MPI_Unpack(const void *inbuf, int insize, int *position,
 	       void *outbuf, int outcount, MPI_Datatype datatype,
 	       MPI_Comm comm)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPI_Aint position_x;
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_UNPACK);
 
@@ -150,7 +151,6 @@ int MPI_Unpack(void *inbuf, int insize, int *position,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -173,10 +173,10 @@ int MPI_Unpack(void *inbuf, int insize, int *position,
 
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr(comm_ptr, mpi_errno);
+	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	    /* If comm_ptr is not valid, it will be reset to null */
 
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
-	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
 	    if (datatype != MPI_DATATYPE_NULL &&
 		HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
@@ -194,8 +194,10 @@ int MPI_Unpack(void *inbuf, int insize, int *position,
 
     /* ... body of routine ...  */
     
-    mpi_errno = MPIR_Unpack_impl(inbuf, insize, position, outbuf, outcount, datatype);
+    position_x = *position;
+    mpi_errno = MPIR_Unpack_impl(inbuf, insize, &position_x, outbuf, outcount, datatype);
     if (mpi_errno) goto fn_fail;
+    MPIU_Assign_trunc(*position, position_x, int);
     
     /* ... end of body of routine ... */
 

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -111,7 +111,7 @@ int MPID_NS_Unpublish( MPID_NS_Handle handle, const MPID_Info *info_ptr,
 #else
     rc = PMI_Unpublish_name( service_name );
 #endif
-    MPIU_ERR_CHKANDJUMP1(rc, mpi_errno, MPI_ERR_NAME, "**namepubnotunpub", "**namepubnotunpub %s", service_name);
+    MPIU_ERR_CHKANDJUMP1(rc, mpi_errno, MPI_ERR_SERVICE, "**namepubnotunpub", "**namepubnotunpub %s", service_name);
 
 fn_fail:
     return mpi_errno;

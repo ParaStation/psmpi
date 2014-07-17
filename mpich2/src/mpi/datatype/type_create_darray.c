@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -21,7 +21,7 @@
 #define MIN(__a, __b) (((__a) < (__b)) ? (__a) : (__b))
 #endif
 
-PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
+PMPI_LOCAL int MPIR_Type_block(const int *array_of_gsizes,
 			       int dim,
 			       int ndims,
 			       int nprocs,
@@ -32,7 +32,7 @@ PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
 			       MPI_Datatype type_old,
 			       MPI_Datatype *type_new,
 			       MPI_Aint *st_offset);
-PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
+PMPI_LOCAL int MPIR_Type_cyclic(const int *array_of_gsizes,
 				int dim,
 				int ndims,
 				int nprocs,
@@ -52,7 +52,7 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 
 
 
-PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
+PMPI_LOCAL int MPIR_Type_block(const int *array_of_gsizes,
 			       int dim,
 			       int ndims,
 			       int nprocs,
@@ -178,7 +178,7 @@ PMPI_LOCAL int MPIR_Type_block(int *array_of_gsizes,
 }
 
 
-PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
+PMPI_LOCAL int MPIR_Type_cyclic(const int *array_of_gsizes,
 				int dim,
 				int ndims,
 				int nprocs,
@@ -325,7 +325,7 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 /*@
    MPI_Type_create_darray - Create a datatype representing a distributed array
 
-   Input Parameters:
+Input Parameters:
 + size - size of process group (positive integer)
 . rank - rank in process group (nonnegative integer)
 . ndims - number of array dimensions as well as process grid dimensions (positive integer)
@@ -336,7 +336,7 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 . order - array storage order flag (state)
 - oldtype - old datatype (handle)
 
-    Output Parameter:
+Output Parameters:
 . newtype - new datatype (handle)
 
 .N ThreadSafe
@@ -351,10 +351,10 @@ PMPI_LOCAL int MPIR_Type_cyclic(int *array_of_gsizes,
 int MPI_Type_create_darray(int size,
 			   int rank,
 			   int ndims,
-			   int array_of_gsizes[],
-			   int array_of_distribs[],
-			   int array_of_dargs[],
-			   int array_of_psizes[],
+			   const int array_of_gsizes[],
+			   const int array_of_distribs[],
+			   const int array_of_dargs[],
+			   const int array_of_psizes[],
 			   int order,
 			   MPI_Datatype oldtype,
 			   MPI_Datatype *newtype)
@@ -388,7 +388,6 @@ int MPI_Type_create_darray(int size,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_DATATYPE(oldtype, "datatype", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -404,9 +403,11 @@ int MPI_Type_create_darray(int size,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    /* Check parameters */
-	    MPIR_ERRTEST_ARGNEG(rank, "rank", mpi_errno);
-	    MPIR_ERRTEST_ARGNONPOS(size, "size", mpi_errno);
-	    MPIR_ERRTEST_ARGNONPOS(ndims, "ndims", mpi_errno);
+	    MPIR_ERRTEST_ARGNONPOS(size, "size", mpi_errno, MPI_ERR_ARG);
+            /* use MPI_ERR_RANK class for PE-MPI compatibility */
+            MPIU_ERR_CHKANDJUMP3((rank < 0 || rank >= size), mpi_errno, MPI_ERR_RANK,
+                                 "**argrange", "**argrange %s %d %d", "rank", rank, (size-1));
+	    MPIR_ERRTEST_ARGNONPOS(ndims, "ndims", mpi_errno, MPI_ERR_DIMS);
 
 	    MPIR_ERRTEST_ARGNULL(array_of_gsizes, "array_of_gsizes", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(array_of_distribs, "array_of_distribs", mpi_errno);
@@ -421,11 +422,13 @@ int MPI_Type_create_darray(int size,
 						 "**arg",
 						 "**arg %s",
 						 "order");
+                goto fn_fail;
 	    }
 
+            tmp_size = 1;
 	    for (i=0; mpi_errno == MPI_SUCCESS && i < ndims; i++) {
-		MPIR_ERRTEST_ARGNONPOS(array_of_gsizes[i], "gsize", mpi_errno);
-		MPIR_ERRTEST_ARGNONPOS(array_of_psizes[i], "psize", mpi_errno);
+		MPIR_ERRTEST_ARGNONPOS(array_of_gsizes[i], "gsize", mpi_errno, MPI_ERR_ARG);
+		MPIR_ERRTEST_ARGNONPOS(array_of_psizes[i], "psize", mpi_errno, MPI_ERR_ARG);
 
 		if ((array_of_distribs[i] != MPI_DISTRIBUTE_NONE) &&
 		    (array_of_distribs[i] != MPI_DISTRIBUTE_BLOCK) &&
@@ -438,6 +441,7 @@ int MPI_Type_create_darray(int size,
 						     MPI_ERR_ARG,
 						     "**darrayunknown",
 						     0);
+                    goto fn_fail;
 		}
 
 		if ((array_of_dargs[i] != MPI_DISTRIBUTE_DFLT_DARG) &&
@@ -451,6 +455,7 @@ int MPI_Type_create_darray(int size,
 						     "**arg",
 						     "**arg %s",
 						     "array_of_dargs");
+                    goto fn_fail;
 		}
 
 		if ((array_of_distribs[i] == MPI_DISTRIBUTE_NONE) &&
@@ -464,8 +469,14 @@ int MPI_Type_create_darray(int size,
 						     "**darraydist",
 						     "**darraydist %d %d",
 						     i, array_of_psizes[i]);
+                    goto fn_fail;
 		}
+
+                tmp_size *= array_of_psizes[i];
 	    }
+
+            MPIU_ERR_CHKANDJUMP1((tmp_size != size), mpi_errno, MPI_ERR_ARG,
+                                 "**arg", "**arg %s", "array_of_psizes");
 
 	    /* TODO: GET THIS CHECK IN ALSO */
 
@@ -485,6 +496,7 @@ int MPI_Type_create_darray(int size,
 						 "**darrayoverflow",
 						 "**darrayoverflow %L",
 						 size_with_offset);
+                goto fn_fail;
 	    }
 
             /* Validate datatype_ptr */

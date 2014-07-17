@@ -1,0 +1,981 @@
+phoenix
+Name        : pscom
+Version     : 5.0.43
+Release     : 1_21_g9ab7382_extoll
+Architecture: x86_64
+Install Date: Mon 17 Feb 2014 04:37:46 PM CET
+Group       : System/Development/Libraries
+Size        : 715189
+License     : QPL
+Signature   : (none)
+Source RPM  : pscom-5.0.43-1_21_g9ab7382_extoll.src.rpm
+Build Date  : Mon 17 Feb 2014 04:37:33 PM CET
+Build Host  : phoenix
+Relocations : /opt/parastation 
+Packager    : support@par-tec.de
+Vendor      : ParTec Cluster Competence Center GmbH, Munich, Germany
+Summary     : ParaStation Cluster Communication drivers and libraries
+Description :
+ParaStation Cluster Communication drivers and libraries.
+Name        : psmgmt
+Version     : 5.0.45
+Release     : 0
+Architecture: x86_64
+Install Date: Tue 11 Mar 2014 11:51:35 AM CET
+Group       : Productivity/Clustering/Computing
+Size        : 2062848
+License     : QPL
+Signature   : (none)
+Source RPM  : psmgmt-5.0.45-0.src.rpm
+Build Date  : Tue 11 Mar 2014 11:50:16 AM CET
+Build Host  : phoenix
+Relocations : (not relocatable)
+Packager    : support@par-tec.de
+Vendor      : ParTec Cluster Competence Center GmbH, Munich, Germany
+Summary     : ParaStation Process Management
+Description :
+The ParaStation Process Management Layer.
+5.0.28-1_214_g80131d4_master_3_1
+/home/hauke/repo/psmpi2/build/install/bin/mpiexec.hydra
+make[1]: Entering directory `/home/hauke/repo/psmpi2/build/mpich2'
+( cd test && make  testing )
+make[2]: Entering directory `/home/hauke/repo/psmpi2/build/mpich2/test'
+(NOXMLCLOSE=YES && export NOXMLCLOSE && cd mpi && make testing)
+make[3]: Entering directory `/home/hauke/repo/psmpi2/build/mpich2/test/mpi'
+./runtests -srcdir=/home/hauke/repo/psmpi2/mpich2/test/mpi -tests=testlist \
+	-mpiexec=/home/hauke/repo/psmpi2/build/install/bin/mpiexec.hydra -xmlfile=summary.xml \
+	-tapfile=summary.tap -junitfile=summary.junit.xml
+Looking in ./testlist
+Processing directory parastation
+Looking in ./parastation/testlist
+Some programs (mprobe) may still be running:
+pids = 14321 14322 
+The executable (mprobe) will not be removed.
+Processing directory attr
+Looking in ./attr/testlist
+Processing directory coll
+Looking in ./coll/testlist
+Processing directory comm
+Looking in ./comm/testlist
+Processing directory datatype
+Looking in ./datatype/testlist
+Unexpected output in large_type_sendrec: 
+Unexpected output in large_type_sendrec: ===================================================================================
+Unexpected output in large_type_sendrec: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in large_type_sendrec: =   PID 28616 RUNNING AT phoenix
+Unexpected output in large_type_sendrec: =   EXIT CODE: 9
+Unexpected output in large_type_sendrec: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in large_type_sendrec: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in large_type_sendrec: ===================================================================================
+Unexpected output in large_type_sendrec: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Killed (signal 9)
+Unexpected output in large_type_sendrec: This typically refers to a problem with your application.
+Unexpected output in large_type_sendrec: Please see the FAQ page for debugging suggestions
+Program large_type_sendrec exited without No Errors
+Processing directory errhan
+Looking in ./errhan/testlist
+Processing directory group
+Looking in ./group/testlist
+Processing directory info
+Looking in ./info/testlist
+Processing directory init
+Looking in ./init/testlist
+Some programs (version) may still be running:
+pids = 11479 17989 
+The executable (version) will not be removed.
+Processing directory mpi_t
+Looking in ./mpi_t/testlist
+Processing directory pt2pt
+Looking in ./pt2pt/testlist
+Some programs (mprobe) may still be running:
+pids = 14321 14322 
+The executable (mprobe) will not be removed.
+Processing directory rma
+Looking in ./rma/testlist
+Unexpected output in win_zero: win_zero: /home/hauke/repo/psmpi2/mpich2/src/mpid/psp/src/mpid_rma.c:818: MPID_Win_allocate_shared: Assertion `mpi_errno == 0' failed.
+Unexpected output in win_zero: win_zero: /home/hauke/repo/psmpi2/mpich2/src/mpid/psp/src/mpid_rma.c:818: MPID_Win_allocate_shared: Assertion `mpi_errno == 0' failed.
+Unexpected output in win_zero: 
+Unexpected output in win_zero: ===================================================================================
+Unexpected output in win_zero: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in win_zero: =   PID 1726 RUNNING AT phoenix
+Unexpected output in win_zero: =   EXIT CODE: 6
+Unexpected output in win_zero: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in win_zero: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in win_zero: ===================================================================================
+Unexpected output in win_zero: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Aborted (signal 6)
+Unexpected output in win_zero: This typically refers to a problem with your application.
+Unexpected output in win_zero: Please see the FAQ page for debugging suggestions
+Program win_zero exited without No Errors
+Unexpected output in win_large_shm: win_large_shm: /home/hauke/repo/psmpi2/mpich2/src/mpid/psp/src/mpid_rma.c:818: MPID_Win_allocate_shared: Assertion `mpi_errno == 0' failed.
+Unexpected output in win_large_shm: win_large_shm: /home/hauke/repo/psmpi2/mpich2/src/mpid/psp/src/mpid_rma.c:818: MPID_Win_allocate_shared: Assertion `mpi_errno == 0' failed.
+Unexpected output in win_large_shm: 
+Unexpected output in win_large_shm: ===================================================================================
+Unexpected output in win_large_shm: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in win_large_shm: =   PID 1766 RUNNING AT phoenix
+Unexpected output in win_large_shm: =   EXIT CODE: 6
+Unexpected output in win_large_shm: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in win_large_shm: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in win_large_shm: ===================================================================================
+Unexpected output in win_large_shm: YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Aborted (signal 6)
+Unexpected output in win_large_shm: This typically refers to a problem with your application.
+Unexpected output in win_large_shm: Please see the FAQ page for debugging suggestions
+Program win_large_shm exited without No Errors
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Unexpected output in reqops: 3 - Got 1, expected 2
+Program reqops exited without No Errors
+Processing directory spawn
+Looking in ./spawn/testlist
+Unexpected output in spawnintra: [mpiexec@phoenix] APPLICATION TIMED OUT
+Unexpected output in spawnintra: [proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+Unexpected output in spawnintra: [proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:76): callback returned error status
+Unexpected output in spawnintra: [proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+Unexpected output in spawnintra: [proxy:1:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+Unexpected output in spawnintra: [proxy:1:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:76): callback returned error status
+Unexpected output in spawnintra: [proxy:1:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+Unexpected output in spawnintra: [mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+Unexpected output in spawnintra: [mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+Unexpected output in spawnintra: [mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:189): launcher returned error waiting for completion
+Unexpected output in spawnintra: [mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:336): process manager error waiting for completion
+Program spawnintra exited without No Errors
+Unexpected output in spaiccreate: Fatal error in PMPI_Intercomm_create: Invalid communicator, error stack:
+Unexpected output in spaiccreate: PMPI_Intercomm_create(598).....: MPI_Intercomm_create(MPI_COMM_WORLD, local_leader=0, comm=0x84000000, remote_leader=0, tag=123, newintercomm=0x7fff61a69bdc) failed
+Unexpected output in spaiccreate: MPIR_Intercomm_create_impl(268): 
+Unexpected output in spaiccreate: MPIR_CheckDisjointLpids(86)....: Local and remote groups in MPI_Intercomm_create must not contain the same processes; both contain process 0Assertion failed in file /home/hauke/repo/psmpi2/mpich2/src/mpi/coll/helper_fns.c at line 491: status->MPI_TAG == recvtag
+Unexpected output in spaiccreate: (null)
+Unexpected output in spaiccreate: ===================================================================================
+Unexpected output in spaiccreate: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in spaiccreate: =   PID 3506 RUNNING AT phoenix
+Unexpected output in spaiccreate: =   EXIT CODE: 1
+Unexpected output in spaiccreate: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in spaiccreate: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in spaiccreate: ===================================================================================
+Unexpected output in spaiccreate: [proxy:1:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+Unexpected output in spaiccreate: [proxy:1:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:76): callback returned error status
+Unexpected output in spaiccreate: [proxy:1:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+Unexpected output in spaiccreate: [mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+Unexpected output in spaiccreate: [mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+Unexpected output in spaiccreate: [mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:218): launcher returned error waiting for completion
+Unexpected output in spaiccreate: [mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:336): process manager error waiting for completion
+Program spaiccreate exited without No Errors
+Processing directory topo
+Looking in ./topo/testlist
+Processing directory io
+Looking in ./io/testlist
+Processing directory f77
+Looking in ./f77/testlist
+Processing directory attr
+Looking in ./f77/attr/testlist
+Processing directory coll
+Looking in ./f77/coll/testlist
+Processing directory datatype
+Looking in ./f77/datatype/testlist
+Processing directory pt2pt
+Looking in ./f77/pt2pt/testlist
+Processing directory info
+Looking in ./f77/info/testlist
+Processing directory spawn
+Looking in ./f77/spawn/testlist
+Processing directory io
+Looking in ./f77/io/testlist
+Processing directory rma
+Looking in ./f77/rma/testlist
+Processing directory init
+Looking in ./f77/init/testlist
+Processing directory comm
+Looking in ./f77/comm/testlist
+Processing directory ext
+Looking in ./f77/ext/testlist
+Processing directory topo
+Looking in ./f77/topo/testlist
+Processing directory profile
+Looking in ./f77/profile/testlist
+Processing directory cxx
+Looking in ./cxx/testlist
+Processing directory attr
+Looking in ./cxx/attr/testlist
+Processing directory pt2pt
+Looking in ./cxx/pt2pt/testlist
+Processing directory comm
+Looking in ./cxx/comm/testlist
+Processing directory coll
+Looking in ./cxx/coll/testlist
+Processing directory errhan
+Looking in ./cxx/errhan/testlist
+Processing directory init
+Looking in ./cxx/init/testlist
+Processing directory info
+Looking in ./cxx/info/testlist
+Processing directory datatype
+Looking in ./cxx/datatype/testlist
+Processing directory topo
+Looking in ./cxx/topo/testlist
+Processing directory io
+Looking in ./cxx/io/testlist
+Processing directory spawn
+Looking in ./cxx/spawn/testlist
+Unexpected output in spawnintrax: [mpiexec@phoenix] APPLICATION TIMED OUT
+Unexpected output in spawnintrax: [proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+Unexpected output in spawnintrax: [proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:76): callback returned error status
+Unexpected output in spawnintrax: [proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+Unexpected output in spawnintrax: [mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+Unexpected output in spawnintrax: [mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+Unexpected output in spawnintrax: [mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:189): launcher returned error waiting for completion
+Unexpected output in spawnintrax: [mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:336): process manager error waiting for completion
+Program spawnintrax exited without No Errors
+Processing directory rma
+Looking in ./cxx/rma/testlist
+Processing directory f90
+Looking in ./f90/testlist
+Processing directory attr
+Looking in ./f90/attr/testlist
+Processing directory coll
+Looking in ./f90/coll/testlist
+Processing directory comm
+Looking in ./f90/comm/testlist
+Processing directory ext
+Looking in ./f90/ext/testlist
+Processing directory info
+Looking in ./f90/info/testlist
+Processing directory init
+Looking in ./f90/init/testlist
+Processing directory io
+Looking in ./f90/io/testlist
+Processing directory misc
+Looking in ./f90/misc/testlist
+Processing directory pt2pt
+Looking in ./f90/pt2pt/testlist
+Processing directory datatype
+Looking in ./f90/datatype/testlist
+Processing directory f90types
+Looking in ./f90/f90types/testlist
+Processing directory rma
+Looking in ./f90/rma/testlist
+Processing directory spawn
+Looking in ./f90/spawn/testlist
+Processing directory timer
+Looking in ./f90/timer/testlist
+Processing directory topo
+Looking in ./f90/topo/testlist
+Processing directory profile
+Looking in ./f90/profile/testlist
+Processing directory errors
+Looking in ./errors/testlist
+Processing directory attr
+Looking in ./errors/attr/testlist
+Processing directory coll
+Looking in ./errors/coll/testlist
+Processing directory comm
+Looking in ./errors/comm/testlist
+Processing directory group
+Looking in ./errors/group/testlist
+Processing directory pt2pt
+Looking in ./errors/pt2pt/testlist
+Unexpected output in truncmsg2: MPI_Recv succeeded with non-matching datatype signature
+Unexpected output in truncmsg2:  Found 1 errors
+Program truncmsg2 exited without No Errors
+Processing directory topo
+Looking in ./errors/topo/testlist
+Processing directory rma
+Looking in ./errors/rma/testlist
+Unexpected output in win_sync_unlock: 0: Operation succeeded, when it should have failed
+Unexpected output in win_sync_unlock: 1: Operation succeeded, when it should have failed
+Program win_sync_unlock exited without No Errors
+Unexpected output in win_sync_free_pt: 0: Operation succeeded, when it should have failed
+Unexpected output in win_sync_free_pt: 1: Operation succeeded, when it should have failed
+Unexpected output in win_sync_free_pt: Fatal error in MPI_Win_unlock: Invalid MPI_Win, error stack:
+Unexpected output in win_sync_free_pt: MPI_Win_unlock(114): MPI_Win_unlock(rank=0, MPI_WIN_NULL) failed
+Unexpected output in win_sync_free_pt: MPI_Win_unlock(67).: Null MPI_WinFatal error in MPI_Win_unlock: Invalid MPI_Win, error stack:
+Unexpected output in win_sync_free_pt: MPI_Win_unlock(114): MPI_Win_unlock(rank=0, MPI_WIN_NULL) failed
+Unexpected output in win_sync_free_pt: MPI_Win_unlock(67).: Null MPI_Win
+Unexpected output in win_sync_free_pt: ===================================================================================
+Unexpected output in win_sync_free_pt: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in win_sync_free_pt: =   PID 16501 RUNNING AT phoenix
+Unexpected output in win_sync_free_pt: =   EXIT CODE: 1
+Unexpected output in win_sync_free_pt: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in win_sync_free_pt: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in win_sync_free_pt: ===================================================================================
+Program win_sync_free_pt exited without No Errors
+Unexpected output in win_sync_free_at: 0: Operation succeeded, when it should have failed
+Unexpected output in win_sync_free_at: 1: Operation succeeded, when it should have failed
+Unexpected output in win_sync_free_at: Fatal error in MPI_Win_complete: Invalid MPI_Win, error stack:
+Unexpected output in win_sync_free_at: MPI_Win_complete(103): MPI_Win_complete(MPI_WIN_NULL) failed
+Unexpected output in win_sync_free_at: MPI_Win_complete(63).: Null MPI_WinFatal error in MPI_Win_complete: Invalid MPI_Win, error stack:
+Unexpected output in win_sync_free_at: MPI_Win_complete(103): MPI_Win_complete(MPI_WIN_NULL) failed
+Unexpected output in win_sync_free_at: MPI_Win_complete(63).: Null MPI_Win
+Unexpected output in win_sync_free_at: ===================================================================================
+Unexpected output in win_sync_free_at: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in win_sync_free_at: =   PID 16540 RUNNING AT phoenix
+Unexpected output in win_sync_free_at: =   EXIT CODE: 1
+Unexpected output in win_sync_free_at: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in win_sync_free_at: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in win_sync_free_at: ===================================================================================
+Program win_sync_free_at exited without No Errors
+Unexpected output in win_sync_complete: 0: Expected MPI_ERR_RMA_SYNC, got:
+Unexpected output in win_sync_complete: Invalid argument, error stack:
+Unexpected output in win_sync_complete: MPI_Win_complete(103): MPI_Win_complete(win=0xa0000000) failed
+Unexpected output in win_sync_complete: (unknown)(): Invalid argument
+Unexpected output in win_sync_complete: 1: Expected MPI_ERR_RMA_SYNC, got:
+Unexpected output in win_sync_complete: Invalid argument, error stack:
+Unexpected output in win_sync_complete: MPI_Win_complete(103): MPI_Win_complete(win=0xa0000000) failed
+Unexpected output in win_sync_complete: (unknown)(): Invalid argument
+Program win_sync_complete exited without No Errors
+Unexpected output in win_sync_lock_at: 0: Operation succeeded, when it should have failed
+Unexpected output in win_sync_lock_at: 1: Operation succeeded, when it should have failed
+Program win_sync_lock_at exited without No Errors
+Unexpected output in win_sync_lock_pt: 0: Operation succeeded, when it should have failed
+Unexpected output in win_sync_lock_pt: 1: Operation succeeded, when it should have failed
+Program win_sync_lock_pt exited without No Errors
+Unexpected output in win_sync_nested: 0: Expected MPI_ERR_RMA_SYNC, got:
+Unexpected output in win_sync_nested: Invalid argument, error stack:
+Unexpected output in win_sync_nested: MPI_Win_start(128): MPI_Win_start(group=0x88000000, assert=0, win=0xa0000000) failed
+Unexpected output in win_sync_nested: (unknown)(): Invalid argument
+Unexpected output in win_sync_nested: 0: Expected MPI_ERR_RMA_SYNC, got:
+Unexpected output in win_sync_nested: Invalid argument, error stack:
+Unexpected output in win_sync_nested: MPI_Win_complete(103): MPI_Win_complete(win=0xa0000000) failed
+Unexpected output in win_sync_nested: (unknown)(): Invalid argument
+Unexpected output in win_sync_nested: 1: Expected MPI_ERR_RMA_SYNC, got:
+Unexpected output in win_sync_nested: Invalid argument, error stack:
+Unexpected output in win_sync_nested: MPI_Win_start(128): MPI_Win_start(group=0x88000000, assert=0, win=0xa0000000) failed
+Unexpected output in win_sync_nested: (unknown)(): Invalid argument
+Unexpected output in win_sync_nested: 1: Expected MPI_ERR_RMA_SYNC, got:
+Unexpected output in win_sync_nested: Invalid argument, error stack:
+Unexpected output in win_sync_nested: MPI_Win_complete(103): MPI_Win_complete(win=0xa0000000) failed
+Unexpected output in win_sync_nested: (unknown)(): Invalid argument
+Program win_sync_nested exited without No Errors
+Unexpected output in win_sync_op: 0: Operation succeeded, when it should have failed
+Unexpected output in win_sync_op: 1: Operation succeeded, when it should have failed
+Program win_sync_op exited without No Errors
+Processing directory spawn
+Looking in ./errors/spawn/testlist
+Unexpected output in badport: Error:connecting 'myhost:27' : Invalid argument
+Unexpected output in badport: 
+Unexpected output in badport: ===================================================================================
+Unexpected output in badport: =   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+Unexpected output in badport: =   PID 16775 RUNNING AT phoenix
+Unexpected output in badport: =   EXIT CODE: 1
+Unexpected output in badport: =   CLEANING UP REMAINING PROCESSES
+Unexpected output in badport: =   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+Unexpected output in badport: ===================================================================================
+Program badport exited without No Errors
+Processing directory io
+Looking in ./errors/io/testlist
+Processing directory f77
+Looking in ./errors/f77/testlist
+Processing directory io
+Looking in ./errors/f77/io/testlist
+Processing directory cxx
+Looking in ./errors/cxx/testlist
+Processing directory errhan
+Looking in ./errors/cxx/errhan/testlist
+Processing directory io
+Looking in ./errors/cxx/io/testlist
+Processing directory f90
+Looking in ./errors/f90/testlist
+Processing directory io
+Looking in ./errors/f90/io/testlist
+Processing directory impls
+Looking in ./impls/testlist
+17 tests failed out of 793
+Details in /home/hauke/repo/psmpi2/build/mpich2/test/mpi/summary.xml
+TAP formatted results in /home/hauke/repo/psmpi2/build/mpich2/test/mpi/summary.tap
+JUNIT formatted results in /home/hauke/repo/psmpi2/build/mpich2/test/mpi/summary.junit.xml
+make[3]: Leaving directory `/home/hauke/repo/psmpi2/build/mpich2/test/mpi'
+(XMLFILE=../mpi/summary.xml && XMLCONTINUE=YES && \
+export XMLFILE && export XMLCONTINUE && \
+cd commands && make testing)
+make[3]: Entering directory `/home/hauke/repo/psmpi2/build/mpich2/test/commands'
+make[3]: Nothing to be done for `testing'.
+make[3]: Leaving directory `/home/hauke/repo/psmpi2/build/mpich2/test/commands'
+make[2]: Leaving directory `/home/hauke/repo/psmpi2/build/mpich2/test'
+make[1]: Leaving directory `/home/hauke/repo/psmpi2/build/mpich2'
+./datatype/large_type_sendrec np=2:
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 28616 RUNNING AT phoenix
+=   EXIT CODE: 9
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Killed (signal 9)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/win_zero np=4:
+win_zero: /home/hauke/repo/psmpi2/mpich2/src/mpid/psp/src/mpid_rma.c:818: MPID_Win_allocate_shared: Assertion `mpi_errno == 0' failed.
+win_zero: /home/hauke/repo/psmpi2/mpich2/src/mpid/psp/src/mpid_rma.c:818: MPID_Win_allocate_shared: Assertion `mpi_errno == 0' failed.
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 1726 RUNNING AT phoenix
+=   EXIT CODE: 6
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Aborted (signal 6)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/win_large_shm np=4:
+win_large_shm: /home/hauke/repo/psmpi2/mpich2/src/mpid/psp/src/mpid_rma.c:818: MPID_Win_allocate_shared: Assertion `mpi_errno == 0' failed.
+win_large_shm: /home/hauke/repo/psmpi2/mpich2/src/mpid/psp/src/mpid_rma.c:818: MPID_Win_allocate_shared: Assertion `mpi_errno == 0' failed.
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 1766 RUNNING AT phoenix
+=   EXIT CODE: 6
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Aborted (signal 6)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+
+-------------------------------------------------
+./rma/reqops np=4:
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+3 - Got 1, expected 2
+
+-------------------------------------------------
+./spawn/spawnintra np=2:
+[mpiexec@phoenix] APPLICATION TIMED OUT
+[proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+[proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:76): callback returned error status
+[proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+[proxy:1:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+[proxy:1:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:76): callback returned error status
+[proxy:1:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+[mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+[mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+[mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:189): launcher returned error waiting for completion
+[mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:336): process manager error waiting for completion
+
+-------------------------------------------------
+./spawn/spaiccreate np=2:
+Fatal error in PMPI_Intercomm_create: Invalid communicator, error stack:
+PMPI_Intercomm_create(598).....: MPI_Intercomm_create(MPI_COMM_WORLD, local_leader=0, comm=0x84000000, remote_leader=0, tag=123, newintercomm=0x7fff61a69bdc) failed
+MPIR_Intercomm_create_impl(268): 
+MPIR_CheckDisjointLpids(86)....: Local and remote groups in MPI_Intercomm_create must not contain the same processes; both contain process 0Assertion failed in file /home/hauke/repo/psmpi2/mpich2/src/mpi/coll/helper_fns.c at line 491: status->MPI_TAG == recvtag
+(null)
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 3506 RUNNING AT phoenix
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+[proxy:1:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+[proxy:1:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:76): callback returned error status
+[proxy:1:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+[mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+[mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+[mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:218): launcher returned error waiting for completion
+[mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:336): process manager error waiting for completion
+
+-------------------------------------------------
+./cxx/spawn/spawnintrax np=2:
+[mpiexec@phoenix] APPLICATION TIMED OUT
+[proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+[proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:76): callback returned error status
+[proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+[mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+[mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+[mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:189): launcher returned error waiting for completion
+[mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:336): process manager error waiting for completion
+
+-------------------------------------------------
+./errors/pt2pt/truncmsg2 np=2:
+MPI_Recv succeeded with non-matching datatype signature
+ Found 1 errors
+
+-------------------------------------------------
+./errors/rma/win_sync_unlock np=2:
+0: Operation succeeded, when it should have failed
+1: Operation succeeded, when it should have failed
+
+-------------------------------------------------
+./errors/rma/win_sync_free_pt np=2:
+0: Operation succeeded, when it should have failed
+1: Operation succeeded, when it should have failed
+Fatal error in MPI_Win_unlock: Invalid MPI_Win, error stack:
+MPI_Win_unlock(114): MPI_Win_unlock(rank=0, MPI_WIN_NULL) failed
+MPI_Win_unlock(67).: Null MPI_WinFatal error in MPI_Win_unlock: Invalid MPI_Win, error stack:
+MPI_Win_unlock(114): MPI_Win_unlock(rank=0, MPI_WIN_NULL) failed
+MPI_Win_unlock(67).: Null MPI_Win
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 16501 RUNNING AT phoenix
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./errors/rma/win_sync_free_at np=2:
+0: Operation succeeded, when it should have failed
+1: Operation succeeded, when it should have failed
+Fatal error in MPI_Win_complete: Invalid MPI_Win, error stack:
+MPI_Win_complete(103): MPI_Win_complete(MPI_WIN_NULL) failed
+MPI_Win_complete(63).: Null MPI_WinFatal error in MPI_Win_complete: Invalid MPI_Win, error stack:
+MPI_Win_complete(103): MPI_Win_complete(MPI_WIN_NULL) failed
+MPI_Win_complete(63).: Null MPI_Win
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 16540 RUNNING AT phoenix
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+./errors/rma/win_sync_complete np=2:
+0: Expected MPI_ERR_RMA_SYNC, got:
+Invalid argument, error stack:
+MPI_Win_complete(103): MPI_Win_complete(win=0xa0000000) failed
+(unknown)(): Invalid argument
+1: Expected MPI_ERR_RMA_SYNC, got:
+Invalid argument, error stack:
+MPI_Win_complete(103): MPI_Win_complete(win=0xa0000000) failed
+(unknown)(): Invalid argument
+
+-------------------------------------------------
+./errors/rma/win_sync_lock_at np=2:
+0: Operation succeeded, when it should have failed
+1: Operation succeeded, when it should have failed
+
+-------------------------------------------------
+./errors/rma/win_sync_lock_pt np=2:
+0: Operation succeeded, when it should have failed
+1: Operation succeeded, when it should have failed
+
+-------------------------------------------------
+./errors/rma/win_sync_nested np=2:
+0: Expected MPI_ERR_RMA_SYNC, got:
+Invalid argument, error stack:
+MPI_Win_start(128): MPI_Win_start(group=0x88000000, assert=0, win=0xa0000000) failed
+(unknown)(): Invalid argument
+0: Expected MPI_ERR_RMA_SYNC, got:
+Invalid argument, error stack:
+MPI_Win_complete(103): MPI_Win_complete(win=0xa0000000) failed
+(unknown)(): Invalid argument
+1: Expected MPI_ERR_RMA_SYNC, got:
+Invalid argument, error stack:
+MPI_Win_start(128): MPI_Win_start(group=0x88000000, assert=0, win=0xa0000000) failed
+(unknown)(): Invalid argument
+1: Expected MPI_ERR_RMA_SYNC, got:
+Invalid argument, error stack:
+MPI_Win_complete(103): MPI_Win_complete(win=0xa0000000) failed
+(unknown)(): Invalid argument
+
+-------------------------------------------------
+./errors/rma/win_sync_op np=2:
+0: Operation succeeded, when it should have failed
+1: Operation succeeded, when it should have failed
+
+-------------------------------------------------
+./errors/spawn/badport np=2:
+Error:connecting 'myhost:27' : Invalid argument
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   PID 16775 RUNNING AT phoenix
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+
+-------------------------------------------------
+17 tests failed out of 793

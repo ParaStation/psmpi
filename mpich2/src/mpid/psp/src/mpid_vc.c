@@ -92,14 +92,6 @@ int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
 #undef FUNCNAME
 #undef FCNAME
 
-int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
-{
-	Dprintf("(vcrt=%p), refcnt=%d", vcrt, vcrt->refcnt);
-
-	vcrt->refcnt++;
-
-	return MPI_SUCCESS;
-}
 
 static
 void MPID_VCRT_Destroy(MPID_VCRT vcrt)
@@ -112,7 +104,18 @@ void MPID_VCRT_Destroy(MPID_VCRT vcrt)
 		vcrt->vcr[i] = NULL;
 		if (vcr) VCR_put(vcr);
 	}
+
 	MPIU_Free(vcrt);
+}
+
+
+int MPID_VCRT_Add_ref(MPID_VCRT vcrt)
+{
+	Dprintf("(vcrt=%p), refcnt=%d", vcrt, vcrt->refcnt);
+
+	vcrt->refcnt++;
+
+	return MPI_SUCCESS;
 }
 
 int MPID_VCRT_Release(MPID_VCRT vcrt, int isDisconnect)

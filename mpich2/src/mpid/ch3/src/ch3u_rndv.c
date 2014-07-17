@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -51,8 +51,7 @@ int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count,
     MPIU_DBG_MSGPKT(vc,tag,rts_pkt->match.parts.context_id,rank,data_sz,"Rndv");
 
     MPIU_THREAD_CS_ENTER(CH3COMM,vc);
-    mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsg(vc, rts_pkt, sizeof(*rts_pkt), 
-					      &rts_sreq));
+    mpi_errno = MPIDI_CH3_iStartMsg(vc, rts_pkt, sizeof(*rts_pkt), &rts_sreq);
     MPIU_THREAD_CS_EXIT(CH3COMM,vc);
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
@@ -99,7 +98,7 @@ int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count,
 {								\
     (rreq_)->status.MPI_SOURCE = (pkt_)->match.parts.rank;	\
     (rreq_)->status.MPI_TAG = (pkt_)->match.parts.tag;		\
-    (rreq_)->status.count = (pkt_)->data_sz;			\
+    MPIR_STATUS_SET_COUNT((rreq_)->status, (pkt_)->data_sz);		\
     (rreq_)->dev.sender_req_id = (pkt_)->sender_req_id;		\
     (rreq_)->dev.recv_data_sz = (pkt_)->data_sz;		\
     MPIDI_Request_set_seqnum((rreq_), (pkt_)->seqnum);		\
@@ -153,8 +152,7 @@ int MPIDI_CH3_PktHandler_RndvReqToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	cts_pkt->sender_req_id = rts_pkt->sender_req_id;
 	cts_pkt->receiver_req_id = rreq->handle;
         MPIU_THREAD_CS_ENTER(CH3COMM,vc);
-	mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsg(vc, cts_pkt, 
-						  sizeof(*cts_pkt), &cts_req));
+	mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
         MPIU_THREAD_CS_EXIT(CH3COMM,vc);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
@@ -248,7 +246,7 @@ int MPIDI_CH3_PktHandler_RndvClrToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
 	iov[1].MPID_IOV_LEN = data_sz;
 
         MPIU_THREAD_CS_ENTER(CH3COMM,vc);
-	mpi_errno = MPIU_CALL(MPIDI_CH3,iSendv(vc, sreq, iov, 2));
+	mpi_errno = MPIDI_CH3_iSendv(vc, sreq, iov, 2);
         MPIU_THREAD_CS_EXIT(CH3COMM,vc);
 	MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**ch3|senddata");
     }
@@ -349,8 +347,7 @@ int MPIDI_CH3_RecvRndv( MPIDI_VC_t * vc, MPID_Request *rreq )
     cts_pkt->sender_req_id = rreq->dev.sender_req_id;
     cts_pkt->receiver_req_id = rreq->handle;
     MPIU_THREAD_CS_ENTER(CH3COMM,vc);
-    mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsg(vc, cts_pkt, 
-					      sizeof(*cts_pkt), &cts_req));
+    mpi_errno = MPIDI_CH3_iStartMsg(vc, cts_pkt, sizeof(*cts_pkt), &cts_req);
     MPIU_THREAD_CS_EXIT(CH3COMM,vc);
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER, "**ch3|ctspkt");

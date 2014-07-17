@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real_( MPI_Fint *, MPI_F
 #else
 #pragma _CRI duplicate mpi_type_create_f90_real_ as pmpi_type_create_f90_real_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_CREATE_F90_REAL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_CREATE_F90_REAL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_CREATE_F90_REAL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_CREATE_F90_REAL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_CREATE_F90_REAL")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_CREATE_F90_REAL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_CREATE_F90_REAL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_CREATE_F90_REAL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_CREATE_F90_REAL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real_( MPI_Fint *, MPI_F
 #pragma weak mpi_type_create_f90_real__ = mpi_type_create_f90_real
 #pragma weak mpi_type_create_f90_real_ = mpi_type_create_f90_real
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_CREATE_F90_REAL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_TYPE_CREATE_F90_REAL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_TYPE_CREATE_F90_REAL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_TYPE_CREATE_F90_REAL")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_CREATE_F90_REAL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_create_f90_real__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_create_f90_real__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_create_f90_real__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_CREATE_F90_REAL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_create_f90_real_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_create_f90_real_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_create_f90_real_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_CREATE_F90_REAL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_create_f90_real")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_create_f90_real")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_create_f90_real")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_TYPE_CREATE_F90_REAL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_create_f90_real( MPI_Fint *, MPI_F
 #pragma weak pmpi_type_create_f90_real__ = pmpi_type_create_f90_real
 #pragma weak pmpi_type_create_f90_real_ = pmpi_type_create_f90_real
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_create_f90_real__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_CREATE_F90_REAL")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_create_f90_real_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_CREATE_F90_REAL")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_create_f90_real( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_CREATE_F90_REAL")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_TYPE_CREATE_F90_REAL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_create_f90_real_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_create_f90_real( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_TYPE_CREATE_F90_REAL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_create_f90_real__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_create_f90_real( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_TYPE_CREATE_F90_REAL( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_create_f90_real__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_create_f90_real_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_create_f90_real")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_type_create_f90_real_ PMPI_TYPE_CREATE_F90_REAL
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_create_f90_real( MPI_Fint *, MPI_F
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Type_create_f90_real
 #define MPI_Type_create_f90_real PMPI_Type_create_f90_real 
 
@@ -187,5 +264,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_create_f90_real( MPI_Fint *, MPI_F
 /* Prototypes for the Fortran interfaces */
 #include "mpif90type.h"
 FORT_DLL_SPEC void FORT_CALL mpi_type_create_f90_real_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *ierr ){
-    *ierr = MPI_Type_create_f90_real( *v1, *v2, (MPI_Datatype *)(v3) );
+    *ierr = MPI_Type_create_f90_real( (int)*v1, (int)*v2, (MPI_Datatype *)(v3) );
 }

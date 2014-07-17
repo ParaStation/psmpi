@@ -1,18 +1,18 @@
-.TH MPI_Comm_join 3 "7/27/2010" " " "MPI"
+.TH MPI_Comm_join 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Comm_join \-  Create a communicator by joining two processes connected by  a socket. 
 .SH SYNOPSIS
 .nf
 int MPI_Comm_join(int fd, MPI_Comm *intercomm)
 .fi
-.SH INPUT PARAMETER
+.SH INPUT PARAMETERS
 .PD 0
 .TP
 .B fd 
 - socket file descriptor 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B intercomm 
@@ -108,4 +108,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-comm_join.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/spawn/comm_join.c

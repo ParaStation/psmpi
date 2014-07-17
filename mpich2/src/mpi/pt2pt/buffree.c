@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -33,7 +33,7 @@
   MPI_Buffer_detach - Removes an existing buffer (for use in MPI_Bsend etc)
 
 Output Parameters:
-+ buffer - initial buffer address (choice) 
++ buffer_addr - initial buffer address (choice)
 - size - buffer size, in bytes (integer) 
 
 Notes:
@@ -89,7 +89,7 @@ Notes for C:
 
 .seealso: MPI_Buffer_attach
 @*/
-int MPI_Buffer_detach(void *buffer, int *size)
+int MPI_Buffer_detach(void *buffer_addr, int *size)
 {
     static const char FCNAME[] = "MPI_Buffer_detach";
     int mpi_errno = MPI_SUCCESS;
@@ -105,7 +105,6 @@ int MPI_Buffer_detach(void *buffer, int *size)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_ARGNULL(size,"size",mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -113,7 +112,7 @@ int MPI_Buffer_detach(void *buffer, int *size)
 
     /* ... body of routine ...  */
     
-    mpi_errno = MPIR_Bsend_detach( buffer, size );
+    mpi_errno = MPIR_Bsend_detach( buffer_addr, size );
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
@@ -129,7 +128,7 @@ int MPI_Buffer_detach(void *buffer, int *size)
     {
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_buffer_detach",
-	    "**mpi_buffer_detach %p %p", buffer, size);
+	    "**mpi_buffer_detach %p %p", buffer_addr, size);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( 0, FCNAME, mpi_errno );

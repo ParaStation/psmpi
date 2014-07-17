@@ -1,0 +1,5494 @@
+<?xml version='1.0' ?>
+<?xml-stylesheet href="TestResults.xsl" type="text/xsl" ?>
+<MPITESTRESULTS>
+<DATE>2014-03-17-14-45</DATE>
+<MPISOURCE></MPISOURCE>
+<MPITEST>
+<NAME>mprobe</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>locknull</NAME>
+<NP>2</NP>
+<WORKDIR>./parastation</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrt</NAME>
+<NP>2</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attric</NAME>
+<NP>4</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrerr</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrend</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrend</NAME>
+<NP>4</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrend2</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrend2</NAME>
+<NP>5</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrerrcomm</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrerrtype</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attr2type</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrorder</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrordercomm</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrordertype</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>baseattr2</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>baseattrcomm</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fkeyval</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fkeyvalcomm</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fkeyvaltype</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>keyval_double_free</NAME>
+<NP>1</NP>
+<WORKDIR>./attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allred</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allred</NAME>
+<NP>7</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allred</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allredmany</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allred2</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allred3</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allred4</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allred5</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allred5</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allred6</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allred6</NAME>
+<NP>7</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>reduce</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>reduce</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>reduce_local</NAME>
+<NP>2</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>op_commutative</NAME>
+<NP>2</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>red3</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>red4</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>alltoall1</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>alltoallv</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>alltoallv0</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>alltoallw1</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>alltoallw2</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>alltoallw_zeros</NAME>
+<NP>1</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>alltoallw_zeros</NAME>
+<NP>2</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>alltoallw_zeros</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>alltoallw_zeros</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allgather2</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allgather3</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allgatherv2</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allgatherv3</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allgatherv4</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bcasttest</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bcasttest</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bcasttest</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bcast2</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bcast2</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bcast3</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bcastzerotype</NAME>
+<NP>1</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bcastzerotype</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bcastzerotype</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bcastzerotype</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>coll2</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>coll3</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>coll4</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>coll5</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>coll6</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>coll7</NAME>
+<NP>1</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>coll7</NAME>
+<NP>2</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>coll7</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>coll8</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>coll9</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>coll10</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>coll11</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>coll12</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>coll13</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>longuser</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>redscat</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>redscat</NAME>
+<NP>6</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>redscat2</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>redscat2</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>redscat2</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>redscat3</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>redscatinter</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>red_scat_block</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>red_scat_block</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>red_scat_block</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>red_scat_block2</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>red_scat_block2</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>red_scat_block2</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>redscatblk3</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>redscatblk3</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>redscatbkinter</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>redscatbkinter</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>scantst</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>exscan</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>exscan2</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>gather</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>gather2</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>scattern</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>scatter2</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>scatter3</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>scatterv</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icbcast</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icbcast</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icallreduce</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icallreduce</NAME>
+<NP>7</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icreduce</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icreduce</NAME>
+<NP>7</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icscatter</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icscatter</NAME>
+<NP>7</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icgather</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icgather</NAME>
+<NP>7</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icallgather</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icallgather</NAME>
+<NP>7</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icbarrier</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icbarrier</NAME>
+<NP>7</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icallgatherv</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icallgatherv</NAME>
+<NP>7</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icgatherv</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icgatherv</NAME>
+<NP>7</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icscatterv</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icscatterv</NAME>
+<NP>7</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icalltoall</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icalltoall</NAME>
+<NP>7</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icalltoallv</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icalltoallv</NAME>
+<NP>7</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icalltoallw</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icalltoallw</NAME>
+<NP>7</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>opland</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>oplor</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>oplxor</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>oplxor</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>opband</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>opbor</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>opbxor</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>opbxor</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>opprod</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>opprod</NAME>
+<NP>6</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>opsum</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>opmin</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>opminloc</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>opmax</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>opmaxloc</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>uoplong</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>uoplong</NAME>
+<NP>11</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>uoplong</NAME>
+<NP>16</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nonblocking</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nonblocking</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nonblocking</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nonblocking2</NAME>
+<NP>1</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nonblocking2</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nonblocking2</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nonblocking2</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nonblocking3</NAME>
+<NP>1</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nonblocking3</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nonblocking3</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nonblocking3</NAME>
+<NP>10</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iallred</NAME>
+<NP>2</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>ibarrier</NAME>
+<NP>2</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nballtoall1</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbcoll2</NAME>
+<NP>5</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbredscat</NAME>
+<NP>4</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbredscat</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbredscat3</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nbredscatinter</NAME>
+<NP>8</NP>
+<WORKDIR>./coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dup</NAME>
+<NP>2</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dupic</NAME>
+<NP>4</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commcreate1</NAME>
+<NP>8</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commname</NAME>
+<NP>4</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>ic1</NAME>
+<NP>4</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>ic2</NAME>
+<NP>33</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icgroup</NAME>
+<NP>8</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icm</NAME>
+<NP>8</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icsplit</NAME>
+<NP>8</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iccreate</NAME>
+<NP>8</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>ctxalloc</NAME>
+<NP>2</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>ctxsplit</NAME>
+<NP>4</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cmfree</NAME>
+<NP>4</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cmsplit</NAME>
+<NP>4</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cmsplit2</NAME>
+<NP>12</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>probe-intercomm</NAME>
+<NP>2</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cmsplit_type</NAME>
+<NP>4</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_create_group</NAME>
+<NP>4</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_create_group</NAME>
+<NP>8</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_group_half</NAME>
+<NP>2</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_group_half</NAME>
+<NP>4</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_group_half</NAME>
+<NP>8</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_group_rand</NAME>
+<NP>2</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_group_rand</NAME>
+<NP>4</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_group_rand</NAME>
+<NP>8</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_idup</NAME>
+<NP>2</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_idup</NAME>
+<NP>4</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_idup</NAME>
+<NP>9</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dup_with_info</NAME>
+<NP>2</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dup_with_info</NAME>
+<NP>4</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dup_with_info</NAME>
+<NP>9</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>comm_info</NAME>
+<NP>6</NP>
+<WORKDIR>./comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>contents</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>gaddress</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>lbub</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>localpack</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>simple-pack</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>simple-pack-external</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>transpose-pack</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>slice-pack</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>struct-pack</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typecommit</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typename</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typefree</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>zeroparms</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>getpartelm</NAME>
+<NP>2</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>tresized</NAME>
+<NP>2</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>tresized2</NAME>
+<NP>2</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>tmatchsize</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>tfree</NAME>
+<NP>2</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typelb</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>contigstruct</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>struct-zero-count</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>blockindexed-zero-count</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>blockindexed-misc</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>indexed-misc</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>subarray-pack</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>subarray</NAME>
+<NP>2</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>darray-pack</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>darray-pack</NAME>
+<NP>9</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>darray-cyclic</NAME>
+<NP>12</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>pairtype-size-extent</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>simple-commit</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>simple-size-extent</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>struct-no-real-types</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>struct-empty-el</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>contig-zero-count</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>simple-resized</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>unusual-noncontigs</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>hindexed-zeros</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>lots-of-types</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>get-elements-pairtype</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>unpack</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>struct-ezhov</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>zeroblks</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>struct-derived-zeros</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>struct-verydeep</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>get-elements</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>hindexed_block</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>hindexed_block_contents</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>longdouble</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cxx-types</NAME>
+<NP>1</NP>
+<WORKDIR>./datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>adderr</NAME>
+<NP>1</NP>
+<WORKDIR>./errhan</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commcall</NAME>
+<NP>2</NP>
+<WORKDIR>./errhan</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>errfatal</NAME>
+<NP>1</NP>
+<WORKDIR>./errhan</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>predef_eh</NAME>
+<NP>1</NP>
+<WORKDIR>./errhan</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>predef_eh</NAME>
+<NP>2</NP>
+<WORKDIR>./errhan</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>groupcreate</NAME>
+<NP>4</NP>
+<WORKDIR>./group</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>grouptest</NAME>
+<NP>8</NP>
+<WORKDIR>./group</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>grouptest2</NAME>
+<NP>4</NP>
+<WORKDIR>./group</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>groupnullincl</NAME>
+<NP>4</NP>
+<WORKDIR>./group</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>gtranks</NAME>
+<NP>8</NP>
+<WORKDIR>./group</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>gtranksperf</NAME>
+<NP>20</NP>
+<WORKDIR>./group</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infodup</NAME>
+<NP>1</NP>
+<WORKDIR>./info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infodel</NAME>
+<NP>1</NP>
+<WORKDIR>./info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infovallen</NAME>
+<NP>1</NP>
+<WORKDIR>./info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infoorder</NAME>
+<NP>1</NP>
+<WORKDIR>./info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infomany</NAME>
+<NP>1</NP>
+<WORKDIR>./info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infomany2</NAME>
+<NP>1</NP>
+<WORKDIR>./info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infotest</NAME>
+<NP>1</NP>
+<WORKDIR>./info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infoenv</NAME>
+<NP>1</NP>
+<WORKDIR>./info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>exitst1</NAME>
+<NP>2</NP>
+<WORKDIR>./init</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>exitst2</NAME>
+<NP>4</NP>
+<WORKDIR>./init</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>initstat</NAME>
+<NP>1</NP>
+<WORKDIR>./init</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>timeout</NAME>
+<NP>2</NP>
+<WORKDIR>./init</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>version</NAME>
+<NP>1</NP>
+<WORKDIR>./init</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>finalized</NAME>
+<NP>1</NP>
+<WORKDIR>./init</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrself</NAME>
+<NP>1</NP>
+<WORKDIR>./init</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>library_version</NAME>
+<NP>1</NP>
+<WORKDIR>./init</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>mpi_t_str</NAME>
+<NP>1</NP>
+<WORKDIR>./mpi_t</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>sendrecv1</NAME>
+<NP>4</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>sendrecv2</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>sendrecv3</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>sendflood</NAME>
+<NP>8</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>sendself</NAME>
+<NP>1</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>sendall</NAME>
+<NP>4</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>anyall</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>eagerdt</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>pingping</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bottom</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bsend1</NAME>
+<NP>1</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bsend2</NAME>
+<NP>1</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bsend3</NAME>
+<NP>1</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bsend4</NAME>
+<NP>1</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bsend5</NAME>
+<NP>4</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bsendalign</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bsendpending</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>isendself</NAME>
+<NP>1</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bsendfrag</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icsend</NAME>
+<NP>4</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>rqstatus</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>rqfreeb</NAME>
+<NP>4</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>greq1</NAME>
+<NP>1</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>probe-unexp</NAME>
+<NP>4</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>probenull</NAME>
+<NP>1</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>scancel</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Failed to cancel an Isend request
+Failed to cancel an Ibsend request
+Failed to cancel an Isend request
+Failed to cancel an Ibsend request
+Failed to cancel an Isend request
+Failed to cancel an Ibsend request
+Failed to cancel an Isend request
+Failed to cancel an Ibsend request
+ Found 8 errors
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>scancel2</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>pscancel</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Failed to cancel a persistent send request
+Failed to cancel a persistent bsend request
+Failed to cancel a persistent send request
+Failed to cancel a persistent bsend request
+Failed to cancel a persistent send request
+Failed to cancel a persistent bsend request
+Failed to cancel a persistent send request
+Failed to cancel a persistent bsend request
+ Found 8 errors
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>rcancel</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cancelrecv</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>isendselfprobe</NAME>
+<NP>1</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>inactivereq</NAME>
+<NP>1</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>waittestnull</NAME>
+<NP>1</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>waitany-null</NAME>
+<NP>1</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>mprobe</NAME>
+<NP>2</NP>
+<WORKDIR>./pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>winname</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allocmem</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>putfence1</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>putfidx</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>getfence1</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>accfence1</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>adlb_mimic1</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>accfence2</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>putpscw1</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>accpscw1</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>getgroup</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>transpose1</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>transpose2</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>transpose3</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>transpose5</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>transpose6</NAME>
+<NP>1</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>transpose7</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>test1</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>test2</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>test3</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>test4</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>test5</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>lockcontention</NAME>
+<NP>3</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>lockcontention2</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>lockcontention2</NAME>
+<NP>8</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>lockcontention3</NAME>
+<NP>8</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>lockopts</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>transpose4</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fetchandadd</NAME>
+<NP>7</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fetchandadd_tree</NAME>
+<NP>7</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>wintest</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>contig_displ</NAME>
+<NP>1</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>test1_am</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>test2_am</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>test3_am</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>test4_am</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>test5_am</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fetchandadd_am</NAME>
+<NP>7</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fetchandadd_tree_am</NAME>
+<NP>7</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>accfence2_am</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>test1_dt</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nullpscw</NAME>
+<NP>7</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrorderwin</NAME>
+<NP>1</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>wincall</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>baseattrwin</NAME>
+<NP>1</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fkeyvalwin</NAME>
+<NP>1</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>selfrma</NAME>
+<NP>1</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>mixedsync</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>epochtest</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>locknull</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>rmanull</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>rmazero</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Get_accumulate() not implemented
+Warning: MPID_Get_accumulate() not implemented
+Zero-byte op Get accumulate: Error class 44 (Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1ff8150, origin_count=0, MPI_INT, result_addr=0x1ff7d40, result_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation )
+Zero-byte op Get accumulate: Error class 44 (Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x248c150, origin_count=0, MPI_INT, result_addr=0x248bd40, result_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation )
+Zero-byte op Get accumulate: Error class 44 (Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1ff8150, origin_count=0, MPI_INT, result_addr=0x1ff7d40, result_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation )
+Zero-byte op Rput: Error class 44 (Unsupported file operation , error stack:
+MPI_Rput(172): MPI_Rput(origin_addr=0x1ff8150, origin_count=0, MPI_INT, target_rank=0, target_disp=0, target_count=0, MPI_INT, win=0xa0000000, request=0x7fff5dfbffdc) failed
+(unknown)(): Unsupported file operation )
+Warning: MPID_Rput() not implemented
+Fatal error in PMPI_Wait: Invalid MPI_Request, error stack:
+PMPI_Wait(180): MPI_Wait(request=0x7fff5dfbffdc, status=0x1) failed
+PMPI_Wait(133): Invalid MPI_Request
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>strided_acc_indexed</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>strided_acc_onelock</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>strided_acc_subarray</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>strided_get_indexed</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>strided_putget_indexed</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>strided_putget_indexed_shared</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_allocate_shared() not implemented
+Warning: MPID_Win_allocate_shared() not implemented
+Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fffc096a190, win=0x7fffc096a180) failed
+(unknown)(): Unsupported file operation Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff75338f10, win=0x7fff75338f00) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>strided_getacc_indexed</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Get_accumulate() not implemented
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x2092ce0, origin_count=1, dtype=USER&lt;indexed&gt;, result_addr=0x20a2cf0, result_count=1, dtype=USER&lt;indexed&gt;, target_rank=1, target_disp=0, target_count=1, dtype=USER&lt;indexed&gt;, MPI_REPLACE, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x2277ce0, origin_count=1, dtype=USER&lt;indexed&gt;, result_addr=0x2287cf0, result_count=1, dtype=USER&lt;indexed&gt;, target_rank=2, target_disp=0, target_count=1, dtype=USER&lt;indexed&gt;, MPI_REPLACE, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>strided_getacc_indexed_shared</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_allocate_shared() not implemented
+Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff0cf57850, win=0x7fff0cf57840) failed
+(unknown)(): Unsupported file operation Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=65536, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fffc445af00, win=0x7fffc445aef0) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>window_creation</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>contention_put</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>contention_putget</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>put_base</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>put_bottom</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_flavors</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+2: MPI_Win_create - Error, bad flavor (0)
+2: MPI_Win_create - Error, bad model (0)
+3: MPI_Win_create - Error, bad flavor (0)
+3: MPI_Win_create - Error, bad model (0)
+0: MPI_Win_create - Error, bad flavor (0)
+0: MPI_Win_create - Error, bad model (0)
+1: MPI_Win_create - Error, bad flavor (0)
+1: MPI_Win_create - Error, bad model (0)
+Warning: MPID_Win_allocate() not implemented
+Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=8, disp_unit=1, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff316871b0, win=0x7fff3168718c) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=0, disp_unit=1, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7ffff1676f00, win=0x7ffff1676edc) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=24, disp_unit=1, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff9bb7e740, win=0x7fff9bb7e71c) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>manyrma2</NAME>
+<NP>2</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>win_shared</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff795b9030, win=0x7fff795b9018) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fffbccdc380, win=0x7fffbccdc368) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff4e7bdbd0, win=0x7fff4e7bdbb8) failed
+(unknown)(): Unsupported file operation Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, MPI_INFO_NULL, comm=0x84000000, baseptr=0x7fff6a754050, win=0x7fff6a754038) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>win_shared_noncontig</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fffb8ffae18, win=0x7fffb8ffadf8) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff6b86efe8, win=0x7fff6b86efc8) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff81de4f38, win=0x7fff81de4f18) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff1884d668, win=0x7fff1884d648) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>win_shared_noncontig_put</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff854b1698, win=0x7fff854b1660) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7fff5e333968, win=0x7fff5e333930) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=40000, info=0x9c000000, comm=0x84000000, baseptr=0x7ffff4bbf1a8, win=0x7ffff4bbf170) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>win_dynamic_acc</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_create_dynamic() not implemented
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff1f61425c) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>get_acc_local</NAME>
+<NP>1</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x404e24, origin_count=1, MPI_INT, result_addr=0x7fff2efc15d4, result_count=1, MPI_INT, target_rank=0, target_disp=0, target_count=1, MPI_INT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>linked_list</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff3c42005c) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>linked_list_fop</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff62f8d71c) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffe86888ac) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>compare_and_swap</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Compare_and_swap() not implemented
+Warning: MPID_Compare_and_swap() not implemented
+Fatal error in MPI_Compare_and_swap: Unsupported file operation , error stack:
+MPI_Compare_and_swap(149): MPI_Compare_and_swap(origin_addr=0x7fff56653d10, compare_addr=0x7fff56653cd0, result_addr=0x7fff56653d20, MPI_INT, target_rank=0, target_disp=0, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Compare_and_swap() not implemented
+Fatal error in MPI_Compare_and_swap: Unsupported file operation , error stack:
+MPI_Compare_and_swap(149): MPI_Compare_and_swap(origin_addr=0x7ffffdf8d390, compare_addr=0x7ffffdf8d350, result_addr=0x7ffffdf8d3a0, MPI_INT, target_rank=2, target_disp=0, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Compare_and_swap: Unsupported file operation , error stack:
+MPI_Compare_and_swap(149): MPI_Compare_and_swap(origin_addr=0x7fff11ef33c0, compare_addr=0x7fff11ef3380, result_addr=0x7fff11ef33d0, MPI_INT, target_rank=3, target_disp=0, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>fetch_and_op_char</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Fetch_and_op() not implemented
+Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffa087e8a0, result_addr=0x7fffa087e8b0, MPI_CHAR, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff0819e410, result_addr=0x7fff0819e420, MPI_CHAR, target_rank=3, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff5a996f70, result_addr=0x7fff5a996f80, MPI_CHAR, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>fetch_and_op_short</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff95719be0, result_addr=0x7fff95719bf0, MPI_SHORT, target_rank=0, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff48834380, result_addr=0x7fff48834390, MPI_SHORT, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff23d705c0, result_addr=0x7fff23d705d0, MPI_SHORT, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>fetch_and_op_int</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Fetch_and_op() not implemented
+Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff02a34880, result_addr=0x7fff02a34890, MPI_INT, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffe75674f0, result_addr=0x7fffe7567500, MPI_INT, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff9c09eb80, result_addr=0x7fff9c09eb90, MPI_INT, target_rank=0, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>fetch_and_op_long</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Fetch_and_op() not implemented
+Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7ffffa69ae50, result_addr=0x7ffffa69ae60, MPI_LONG, target_rank=3, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>fetch_and_op_double</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Fetch_and_op() not implemented
+Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff9e8d8020, result_addr=0x7fff9e8d8030, MPI_DOUBLE, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff3ae2c7b0, result_addr=0x7fff3ae2c7c0, MPI_DOUBLE, target_rank=3, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fff429a8c70, result_addr=0x7fff429a8c80, MPI_DOUBLE, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>fetch_and_op_long_double</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Fetch_and_op() not implemented
+Warning: MPID_Fetch_and_op() not implemented
+Warning: MPID_Fetch_and_op() not implemented
+Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffb24b6bb0, result_addr=0x7fffb24b6bc0, MPI_LONG_DOUBLE, target_rank=0, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffc7a49500, result_addr=0x7fffc7a49510, MPI_LONG_DOUBLE, target_rank=1, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Fetch_and_op: Unsupported file operation , error stack:
+MPI_Fetch_and_op(163): MPI_Fetch_and_op(origin_addr=0x7fffe467c240, result_addr=0x7fffe467c250, MPI_LONG_DOUBLE, target_rank=2, target_disp=0, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>get_accumulate_double</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Get_accumulate() not implemented
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x104e7d0, origin_count=5, MPI_DOUBLE, result_addr=0x1051d80, result_count=5, MPI_DOUBLE, target_rank=2, target_disp=0, target_count=5, MPI_DOUBLE, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xf667d0, origin_count=5, MPI_DOUBLE, result_addr=0xf69d80, result_count=5, MPI_DOUBLE, target_rank=3, target_disp=0, target_count=5, MPI_DOUBLE, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>get_accumulate_double_derived</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Get_accumulate() not implemented
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1c337d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x1c36d80, result_count=5, dtype=USER&lt;contig&gt;, target_rank=0, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x22b47d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x22b7d80, result_count=5, dtype=USER&lt;contig&gt;, target_rank=1, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x132d7d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x1330d80, result_count=5, dtype=USER&lt;contig&gt;, target_rank=3, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>get_accumulate_int</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x9947d0, origin_count=5, MPI_INT, result_addr=0x997d30, result_count=5, MPI_INT, target_rank=0, target_disp=0, target_count=5, MPI_INT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xe6e7d0, origin_count=5, MPI_INT, result_addr=0xe71d30, result_count=5, MPI_INT, target_rank=1, target_disp=0, target_count=5, MPI_INT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xcdd7d0, origin_count=5, MPI_INT, result_addr=0xce0d30, result_count=5, MPI_INT, target_rank=3, target_disp=0, target_count=5, MPI_INT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>get_accumulate_int_derived</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Get_accumulate() not implemented
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x10147d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x1017d30, result_count=5, dtype=USER&lt;contig&gt;, target_rank=1, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x7df7d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x7e2d30, result_count=5, dtype=USER&lt;contig&gt;, target_rank=2, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>get_accumulate_long</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1e2a7d0, origin_count=5, MPI_LONG, result_addr=0x1e2dd80, result_count=5, MPI_LONG, target_rank=0, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x10077d0, origin_count=5, MPI_LONG, result_addr=0x100add0, result_count=5, MPI_LONG, target_rank=1, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1a6a7d0, origin_count=5, MPI_LONG, result_addr=0x1a6dd80, result_count=5, MPI_LONG, target_rank=2, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1c527d0, origin_count=5, MPI_LONG, result_addr=0x1c55d80, result_count=5, MPI_LONG, target_rank=3, target_disp=0, target_count=5, MPI_LONG, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>get_accumulate_long_derived</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xee27d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0xee5d80, result_count=5, dtype=USER&lt;contig&gt;, target_rank=0, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xd3b7d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0xd3edd0, result_count=5, dtype=USER&lt;contig&gt;, target_rank=1, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xa467d0, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0xa49d80, result_count=5, dtype=USER&lt;contig&gt;, target_rank=3, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>get_accumulate_short</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Get_accumulate() not implemented
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0xd8ed00, origin_count=5, MPI_SHORT, result_addr=0xd8ecd0, result_count=5, MPI_SHORT, target_rank=0, target_disp=0, target_count=5, MPI_SHORT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x256ad00, origin_count=5, MPI_SHORT, result_addr=0x256acd0, result_count=5, MPI_SHORT, target_rank=1, target_disp=0, target_count=5, MPI_SHORT, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>get_accumulate_short_derived</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x2562d00, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x2562cd0, result_count=5, dtype=USER&lt;contig&gt;, target_rank=0, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x797d00, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x797cd0, result_count=5, dtype=USER&lt;contig&gt;, target_rank=2, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation Warning: MPID_Get_accumulate() not implemented
+Fatal error in MPI_Get_accumulate: Unsupported file operation , error stack:
+MPI_Get_accumulate(210): MPI_Get_accumulate(origin_addr=0x1170d00, origin_count=5, dtype=USER&lt;contig&gt;, result_addr=0x1170cd0, result_count=5, dtype=USER&lt;contig&gt;, target_rank=3, target_disp=0, target_count=5, dtype=USER&lt;contig&gt;, MPI_SUM, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>flush</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_flush_all() not implemented
+Warning: MPID_Win_flush_all() not implemented
+Fatal error in MPI_Win_flush_all: Unsupported file operation , error stack:
+MPI_Win_flush_all(113): MPI_Win_flush_all(win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>reqops</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_lock_all() not implemented
+Fatal error in MPI_Win_lock_all: Unsupported file operation , error stack:
+MPI_Win_lock_all(147): MPI_Win_lock_all(assert=0, win=0xa0000000) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>req_example</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=800000, disp_unit=8, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fffd4365598, win=0x7fffd4365590) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>win_info</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff2f809418, win=0x7fff2f809410) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff55990628, win=0x7fff55990620) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fffca24b2c8, win=0x7fffca24b2c0) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=4, disp_unit=4, MPI_INFO_NULL, MPI_COMM_WORLD, base=0x7fff63458458, win=0x7fff63458450) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>linked_list_lockall</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff9df2746c) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff30db8eec) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>pscw_ordering</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>linked_list_bench_lock_all</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffdbe636b8) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>linked_list_bench_lock_excl</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff3fbaf788) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffe2499488) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7ffff773db08) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>linked_list_bench_lock_shr</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff511c37b8) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff52181a88) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>linked_list_bench_lock_shr_nocheck</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffa69fb4b8) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fff0e810ff8) failed
+(unknown)(): Unsupported file operation Warning: MPID_Win_create_dynamic() not implemented
+Fatal error in MPI_Win_create_dynamic: Unsupported file operation , error stack:
+MPI_Win_create_dynamic(154): MPI_Win_create_dynamic(MPI_INFO_NULL, MPI_COMM_WORLD, win=0x7fffb981dcb8) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>mutex_bench</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_allocate() not implemented
+Warning: MPID_Win_allocate() not implemented
+Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=8, disp_unit=4, MPI_INFO_NULL, comm=0x84000000, base=0x13907e0, win=0x13907d8) failed
+(unknown)(): Unsupported file operation Fatal error in MPI_Win_allocate: Unsupported file operation , error stack:
+MPI_Win_allocate(161): MPI_Win_allocate(size=8, disp_unit=4, MPI_INFO_NULL, comm=0x84000000, base=0x23b97e0, win=0x23b97d8) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>mutex_bench_shared</NAME>
+<NP>4</NP>
+<WORKDIR>./rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Warning: MPID_Win_allocate_shared() not implemented
+Warning: MPID_Win_allocate_shared() not implemented
+Fatal error in PMPI_Win_allocate_shared: Unsupported file operation , error stack:
+PMPI_Win_allocate_shared(159): MPI_Win_allocate_shared(size=8, MPI_INFO_NULL, comm=0x84000001, baseptr=0x194cf40, win=0x194cf38) failed
+(unknown)(): Unsupported file operation 
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>namepub</NAME>
+<NP>2</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawn1</NAME>
+<NP>1</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawn2</NAME>
+<NP>1</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawninfo1</NAME>
+<NP>1</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnminfo1</NAME>
+<NP>1</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnintra</NAME>
+<NP>1</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnintra</NAME>
+<NP>2</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+[mpiexec@phoenix] APPLICATION TIMED OUT
+[proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+[proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
+[proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+[mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+[mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+[mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:188): launcher returned error waiting for completion
+[mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>spawnargv</NAME>
+<NP>1</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnmanyarg</NAME>
+<NP>1</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnmult2</NAME>
+<NP>2</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spaconacc</NAME>
+<NP>1</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spaconacc2</NAME>
+<NP>1</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>selfconacc</NAME>
+<NP>2</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spaiccreate</NAME>
+<NP>2</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+Fatal error in PMPI_Intercomm_create: Invalid communicator, error stack:
+PMPI_Intercomm_create(597).....: MPI_Intercomm_create(MPI_COMM_WORLD, local_leader=0, comm=0x84000000, remote_leader=0, tag=123, newintercomm=0x7fff22ed12dc) failed
+MPIR_Intercomm_create_impl(267): 
+MPIR_CheckDisjointLpids(86)....: Local and remote groups in MPI_Intercomm_create must not contain the same processes; both contain process 0Fatal error in PMPI_Intercomm_create: Other MPI error, error stack:
+PMPI_Intercomm_create(597)..........: MPI_Intercomm_create(MPI_COMM_WORLD, local_leader=0, MPI_COMM_NULL, remote_leader=0, tag=123, newintercomm=0x7fff5b3fb37c) failed
+MPIR_Intercomm_create_impl(295).....: 
+MPIR_Get_contextid(806).............: 
+MPIR_Get_contextid_sparse_group(864): 
+MPIR_Allreduce_impl(719)............: 
+MPIR_Allreduce_intra(362)...........: 
+mpid_irecv_done(100)................: read from socket failed - request state:recv(pde)done
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 1
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+[proxy:1:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+[proxy:1:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
+[proxy:1:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+[mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+[mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+[mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:217): launcher returned error waiting for completion
+[mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>taskmaster</NAME>
+<NP>1</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>taskmaster</NAME>
+<NP>2</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>join</NAME>
+<NP>2</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+[mpiexec@phoenix] APPLICATION TIMED OUT
+[proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+[proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
+[proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+[mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+[mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+[mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:188): launcher returned error waiting for completion
+[mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>disconnect_reconnect</NAME>
+<NP>3</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>disconnect_reconnect2</NAME>
+<NP>3</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>disconnect_reconnect3</NAME>
+<NP>3</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>multiple_ports</NAME>
+<NP>3</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>multiple_ports2</NAME>
+<NP>4</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>disconnect</NAME>
+<NP>3</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>disconnect2</NAME>
+<NP>3</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>disconnect3</NAME>
+<NP>3</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>concurrent_spawns</NAME>
+<NP>1</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>pgroup_connect_test</NAME>
+<NP>4</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>pgroup_intercomm_test</NAME>
+<NP>4</NP>
+<WORKDIR>./spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cartmap1</NAME>
+<NP>4</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cartzero</NAME>
+<NP>4</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cartshift1</NAME>
+<NP>4</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cartsuball</NAME>
+<NP>4</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cartcreates</NAME>
+<NP>4</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dims1</NAME>
+<NP>4</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dims2</NAME>
+<NP>1</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>graphmap1</NAME>
+<NP>4</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>topotest</NAME>
+<NP>4</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>topodup</NAME>
+<NP>4</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>graphcr</NAME>
+<NP>4</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>graphcr2</NAME>
+<NP>4</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>distgraph1</NAME>
+<NP>4</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dgraph_unwgt</NAME>
+<NP>4</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>neighb_coll</NAME>
+<NP>4</NP>
+<WORKDIR>./topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>rdwrord</NAME>
+<NP>4</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>rdwrzero</NAME>
+<NP>4</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>getextent</NAME>
+<NP>2</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>setinfo</NAME>
+<NP>4</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>setviewcur</NAME>
+<NP>4</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>i_noncontig</NAME>
+<NP>2</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>async</NAME>
+<NP>4</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>async_any</NAME>
+<NP>4</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>userioerr</NAME>
+<NP>1</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>resized</NAME>
+<NP>1</NP>
+<WORKDIR>./io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrmpi1f</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>baseattrf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>baseattr2f</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commattrf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commattr2f</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commattr3f</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typeattrf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typeattr2f</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typeattr3f</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>uallreducef</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>exscanf</NAME>
+<NP>5</NP>
+<WORKDIR>./f77/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>alltoallwf</NAME>
+<NP>7</NP>
+<WORKDIR>./f77/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>alltoallvf</NAME>
+<NP>7</NP>
+<WORKDIR>./f77/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>inplacef</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>reducelocalf</NAME>
+<NP>2</NP>
+<WORKDIR>./f77/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>redscatf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>split_typef</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nonblockingf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>vw_inplacef</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>red_scat_blockf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nonblocking_inpf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typenamef</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typename3f</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typesnamef</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typecntsf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typem2f</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typesubf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>packef</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>gaddressf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allctypesf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>hindex1f</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>hindexed_blockf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>statusesf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>greqf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allpairf</NAME>
+<NP>2</NP>
+<WORKDIR>./f77/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>mprobef</NAME>
+<NP>2</NP>
+<WORKDIR>./f77/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infotestf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infotest2f</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>namepubf</NAME>
+<NP>2</NP>
+<WORKDIR>./f77/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnargvf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>connaccf</NAME>
+<NP>2</NP>
+<WORKDIR>./f77/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnmultf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnmult2f</NAME>
+<NP>2</NP>
+<WORKDIR>./f77/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iwriteatf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iwritef</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iwriteshf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writef</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeatf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeallf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeshf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeordf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeatallf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeatallbef</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeallbef</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeordbef</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fileerrf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fileinfof</NAME>
+<NP>3</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>shpositionf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>atomicityf</NAME>
+<NP>8</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>miscfilef</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>setviewcurf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>c2f2ciof</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>c2fmultio</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>winscale1f</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7F01BD3F2037
+#1  0x7F01BD3F2604
+#2  0x378FA35CCF
+#3  0x7F01BCF7F735
+#4  0x7F01BDBABC63
+#5  0x7F01BDC4032F
+#6  0x7F01BDB9F879
+#7  0x4015E8 in MAIN__ at winscale1f.f:?
+#0  0x7F2E24F56037
+#1  0x7F2E24F56604
+#2  0x378FA35CCF
+#3  0x7F2E24AE3735
+#4  0x7F2E2570FC63
+#5  0x7F2E257A432F
+#6  0x7F2E25703879
+#7  0x401649 in MAIN__ at winscale1f.f:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>winfencef</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7F58B8F65037
+#1  0x7F58B8F65604
+#2  0x378FA35CCF
+#3  0x7F58B8AF2735
+#4  0x7F58B971EC63
+#5  0x7F58B97B332F
+#6  0x7F58B9712879
+#7  0x4012F6 in MAIN__ at winfencef.f:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>wingetf</NAME>
+<NP>5</NP>
+<WORKDIR>./f77/rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7F37E3628037
+#1  0x7F37E3628604
+#2  0x378FA35CCF
+#3  0x7F37E31B918B
+#4  0x7F37E31B4FDC
+#5  0x7F37E3DE17B6
+#6  0x7F37E3E7521F
+#7  0x7F37E3DD5839
+#8  0x401356 in MAIN__ at wingetf.f:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>winscale2f</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7FF2D20F1037
+#1  0x7FF2D20F1604
+#2  0x378FA35CCF
+#3  0x7FF2D1C7E735
+#4  0x7FF2D28AAC63
+#5  0x7FF2D293F32F
+#6  0x7FF2D289E879
+#7  0x4015E8 in MAIN__ at winscale2f.f:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>winerrf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>winnamef</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>wingroupf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>winaccf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7FA252B4B037
+#1  0x7FA252B4B604
+#2  0x378FA35CCF
+#3  0x7FA2526D8735
+#4  0x7FA253303B5B
+#5  0x7FA2533970AF
+#6  0x7FA2532F87F4
+#7  0x401379 in MAIN__ at winaccf.f:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>c2f2cwinf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>baseattrwinf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>winattrf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>winattr2f</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>baseenvf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/init</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commnamef</NAME>
+<NP>2</NP>
+<WORKDIR>./f77/comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commerrf</NAME>
+<NP>2</NP>
+<WORKDIR>./f77/comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>c2f2cf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/ext</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>c2fmult</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/ext</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>ctypesinf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/ext</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allocmemf</NAME>
+<NP>1</NP>
+<WORKDIR>./f77/ext</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cartcrf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dgraph_wgtf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dgraph_unwgtf</NAME>
+<NP>4</NP>
+<WORKDIR>./f77/topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrtx</NAME>
+<NP>2</NP>
+<WORKDIR>./cxx/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attricx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>baseattrcommx</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fkeyvalcommx</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fkeyvaltypex</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>bsend1cxx</NAME>
+<NP>2</NP>
+<WORKDIR>./cxx/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>sendrecvx</NAME>
+<NP>2</NP>
+<WORKDIR>./cxx/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commname2</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>arcomplex</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>uallredx</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>uallreduce</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>ureduce</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>uscan</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>uexscan</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>alltoallw2x</NAME>
+<NP>10</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icbcastx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icbcastx</NAME>
+<NP>10</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icallreducex</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icreducex</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icscatterx</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icgatherx</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icallgatherx</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icbarrierx</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icallgathervx</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icgathervx</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icscattervx</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>icalltoallx</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>reduceboolx</NAME>
+<NP>5</NP>
+<WORKDIR>./cxx/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commcallx</NAME>
+<NP>2</NP>
+<WORKDIR>./cxx/errhan</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>baseenv</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/init</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>initstatx</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/init</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>initstat2x</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/init</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infodupx</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infodelx</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infovallenx</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infoorderx</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>packsizex</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typecntsx</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typenamex</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typemiscx</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iwriteatx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iwritex</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iwriteshx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writex</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeatx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeallx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeshx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeordx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeatallx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeatallbex</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeallbex</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeordbex</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iwriteatnosx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iwritenosx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iwriteshnosx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writenosx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeatnosx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeallnosx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeshnosx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeordnosx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeatallnosx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeatallbenosx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeallbenosx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeordbenosx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fileerrx</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fileinfox</NAME>
+<NP>3</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>filemiscx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>shpositionx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>seekavail</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>namepubx</NAME>
+<NP>2</NP>
+<WORKDIR>./cxx/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnintrax</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnintrax</NAME>
+<NP>2</NP>
+<WORKDIR>./cxx/spawn</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+[mpiexec@phoenix] APPLICATION TIMED OUT
+[proxy:0:0@phoenix] HYD_pmcd_pmip_control_cmd_cb (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip_cb.c:886): assert (!closed) failed
+[proxy:0:0@phoenix] HYDT_dmxu_poll_wait_for_event (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/demux/demux_poll.c:77): callback returned error status
+[proxy:0:0@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmip.c:206): demux engine error waiting for event
+[mpiexec@phoenix] HYDT_bscu_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/utils/bscu_wait.c:76): one of the processes terminated badly; aborting
+[mpiexec@phoenix] HYDT_bsci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/tools/bootstrap/src/bsci_wait.c:23): launcher returned error waiting for completion
+[mpiexec@phoenix] HYD_pmci_wait_for_completion (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/pm/pmiserv/pmiserv_pmci.c:188): launcher returned error waiting for completion
+[mpiexec@phoenix] main (/home/hauke/repo/psmpi2/mpich2/src/pm/hydra/ui/mpich/mpiexec.c:331): process manager error waiting for completion
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>spawnargvx</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>selfconaccx</NAME>
+<NP>2</NP>
+<WORKDIR>./cxx/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>winnamex</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>wincallx</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>getgroupx</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>winfencex</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>winscale1x</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>winscale2x</NAME>
+<NP>4</NP>
+<WORKDIR>./cxx/rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>fkeyvalwinx</NAME>
+<NP>1</NP>
+<WORKDIR>./cxx/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrmpi1f90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>baseattrf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>baseattr2f90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commattrf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commattr2f90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commattr3f90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typeattrf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typeattr2f90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typeattr3f90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fandcattrf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>baseattr3f90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>attrlangf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/attr</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>uallreducef90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>exscanf90</NAME>
+<NP>5</NP>
+<WORKDIR>./f90/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>alltoallwf90</NAME>
+<NP>7</NP>
+<WORKDIR>./f90/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>alltoallvf90</NAME>
+<NP>7</NP>
+<WORKDIR>./f90/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>inplacef90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>reducelocalf90</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>redscatf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>split_typef90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nonblockingf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>vw_inplacef90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>red_scat_blockf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>nonblocking_inpf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/coll</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commnamef90</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>commerrf90</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/comm</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>c2f2cf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/ext</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>c2f90mult</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/ext</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>ctypesinf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/ext</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allocmemf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/ext</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infotestf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>infotest2f90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/info</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>baseenvf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/init</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iwriteatf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iwritef90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>iwriteshf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writef90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeatf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeallf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeshf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeordf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeatallf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeatallbef90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeallbef90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>writeordbef90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fileerrf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>fileinfof90</NAME>
+<NP>3</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>shpositionf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>atomicityf90</NAME>
+<NP>8</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>miscfilef90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>setviewcurf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>c2f2ciof90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>c2f90multio</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/io</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>sizeof2</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/misc</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>statusesf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>greqf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allpairf90</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>mprobef90</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/pt2pt</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typenamef90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typename3f90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typesnamef90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typecntsf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typem2f90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>typesubf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>packef90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>gaddressf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>allctypesf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>hindex1f90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>hindexed_blockf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>structf</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>indtype</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>createf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>sizeof</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>kinds</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>trf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>get_elem_d</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>get_elem_u</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/datatype</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>createf90types</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/f90types</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>createf90types</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/f90types</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>winscale1f90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  #0  0x7F069ACA6037
+#1  0x7F069ACA6604
+#2  0x378FA35CCF
+#3  0x7F069A833735
+#4  0x7F069B45EC63
+#5  0x7F069B4F332F
+#6  0x7F069B452879
+#7  0x401631 in MAIN__ at winscale1f90.f90:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>winfencef90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Backtrace for this error:
+#0  0x7FE23170C037
+#1  0x7FE23170C604
+#2  0x378FA35CCF
+#3  0x7FE231299735
+#0  0x7F5E04454037
+#1  0x7F5E04454604
+#2  0x#4  378FA35CCF
+#3  0x7F5E03FE1735
+0x7FE231EC4C63
+#5  0x7FE231F5932F
+#6  0x7FE231EB8879
+#7  0x401363 in MAIN__ at winfencef90.f90:?
+#4  0x7F5E04C0CC63
+#5  0x7F5E04CA132F
+#6  0x7F5E04C00879
+#7  
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>wingetf90</NAME>
+<NP>5</NP>
+<WORKDIR>./f90/rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7F9EF118E037
+#1  0x7F9EF118E604
+#2  0x378FA35CCF
+#3  0x7F9EF0D1F18B
+#4  0x7F9EF0D1AFDC
+#5  0x7F9EF19467B6
+#0  0x7FD870570037
+#1  0x7FD870570604
+#2  0x378FA35CCF
+#3  0x7FD87010118B
+#4  0x7FD8700FCFDC
+#5  0x7FD870D287B6
+#6  0x7FD870DBC21F
+#7  0x7FD870D1C839
+#8  0x401305 in MAIN__ at wingetf90.f90:?
+#6  0x7F9EF19DA21F
+#7  0x7F9EF193A839
+#8  0x401362 in MAIN__ at wingetf90.f90:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>winscale2f90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7FA2676C7037
+#1  0x7FA2676C7604
+#2  0x378FA35CCF
+#3  0x7FA267254735
+#4  0x7FA267E7FC63
+#5  0x7FA267F1432F
+#6  0x7FA267E73879
+#7  0x4015D0 in MAIN__ at winscale2f90.f90:?
+#0  0x7FC5DB4EC037
+#1  0x7FC5DB4EC604
+#2  0x378FA35CCF
+#3  0x7FC5DB079735
+#4  0x7FC5DBCA4C63
+#5  0x7FC5DBD3932F
+#6  0x7FC5DBC98879
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>winerrf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>winnamef90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>wingroupf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>winaccf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/rma</WORKDIR>
+<STATUS>fail</STATUS>
+<TESTDIFF>
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+
+Program received signal SIGSEGV: Segmentation fault - invalid memory reference.
+
+Backtrace for this error:
+#0  0x7F500BD69037
+#1  0x7F500BD69604
+#0  0x7F6A83C80037
+#1  0x7F6A83C80604
+#2  #2  0x378FA35CCF
+0x#3  0x7F6A8380D735
+378FA35CCF#4  0x7F6A84437B5B
+
+#5  0x7F6A844CB0AF
+#6  0x7F6A8442C7F4
+#3  #7  0x401375 in MAIN__ at winaccf90.f90:?
+0x7F500B8F6735
+#4  0x7F500C520B5B
+#5  0x7F500C5B40AF
+#6  0x7F500C5157F4
+#7  0x40130B in MAIN__ at winaccf90.f90:?
+
+===================================================================================
+=   BAD TERMINATION OF ONE OF YOUR APPLICATION PROCESSES
+=   EXIT CODE: 11
+=   CLEANING UP REMAINING PROCESSES
+=   YOU CAN IGNORE THE BELOW CLEANUP MESSAGES
+===================================================================================
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Segmentation fault (signal 11)
+This typically refers to a problem with your application.
+Please see the FAQ page for debugging suggestions
+</TESTDIFF>
+</MPITEST>
+<MPITEST>
+<NAME>c2f2cwinf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>baseattrwinf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>winattrf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>winattr2f90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/rma</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>namepubf90</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnargvf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>connaccf90</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnmultf90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnmult2f90</NAME>
+<NP>2</NP>
+<WORKDIR>./f90/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnargvf03</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>spawnmultf03</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/spawn</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>wtimef90</NAME>
+<NP>1</NP>
+<WORKDIR>./f90/timer</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>cartcrf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dgraph_wgtf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>
+<MPITEST>
+<NAME>dgraph_unwgtf90</NAME>
+<NP>4</NP>
+<WORKDIR>./f90/topo</WORKDIR>
+<STATUS>pass</STATUS>
+</MPITEST>

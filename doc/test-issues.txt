@@ -1,111 +1,105 @@
-For 5.0.28-1_11_g70a62e7 on master:
+For 5.0.28-1_214_g80131d4_master_3_1
 
-42 tests failed out of 584
+with hydra mpiexec, confset=default
 
-Issue #1: (32 tests)
-      MPID_Comm_spawn_multiple() not implemented
-Issue #2: (8 tests)
-      MPID_Open_port() not implemented
+17 tests failed out of 793
+Issue #1: (1 test)
+      YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Killed (signal
+      9)
+      large_type_sendrec np=2: running out of mem?
+
+Issue #2: (2 tests)
+      MPID_Win_allocate_shared: Assertion `mpi_errno == 0' faid
+
 Issue #3: (2 tests)
-      Failing cancel for sends of kind send, bsend, isend and ibsend
+	[mpiexec@phoenix] APPLICATION TIMED OUT
+	In spawn/..
 
-./pt2pt/scancel: #3
-	Failed to cancel an Isend request
-	Failed to cancel an Ibsend request
-	Failed to cancel an Isend request
-	Failed to cancel an Ibsend request
-	Failed to cancel an Isend request
-	Failed to cancel an Ibsend request
-	Failed to cancel an Isend request
-	Failed to cancel an Ibsend request
-	 Found 8 errors
-./pt2pt/pscancel: #3
-	Failed to cancel a persistent send request
-	Failed to cancel a persistent bsend request
-	Failed to cancel a persistent send request
-	Failed to cancel a persistent bsend request
-	Failed to cancel a persistent send request
-	Failed to cancel a persistent bsend request
-	Failed to cancel a persistent send request
-	Failed to cancel a persistent bsend request
-	 Found 8 errors
-./spawn/spawn1: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/spawn2: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/spawninfo1: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/spawnminfo1: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/spawnintra np=1: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/spawnintra np=2: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/spawnargv: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/spawnmanyarg: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/spawnmult2: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/spaconacc: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/spaconacc2: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/selfconacc: #2
-	MPI_Open_port failed: Unsupported file operation
-./spawn/spaiccreate: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/taskmaster np=1: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/taskmaster np=2: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/join: #2
-	Warning: MPID_Open_port() not implemented
-./spawn/disconnect_reconnect: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/disconnect_reconnect2: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/disconnect_reconnect3: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/multiple_ports: #2
-	Warning: MPID_Open_port() not implemented
-./spawn/multiple_ports2: #2
-	Warning: MPID_Open_port() not implemented
-./spawn/disconnect: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/disconnect2: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/disconnect3: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/concurrent_spawns: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./spawn/pgroup_connect_test: #2
-	Warning: MPID_Open_port() not implemented
-./f77/spawn/spawnf: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./f77/spawn/spawnargvf: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./f77/spawn/connaccf: #2
-	Warning: MPID_Open_port() not implemented
-./f77/spawn/spawnmultf: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./f77/spawn/spawnmult2f: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./cxx/spawn/spawnintrax np=1: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./cxx/spawn/spawnintrax np=2: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./cxx/spawn/spawnargvx: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./cxx/spawn/selfconaccx: #2
-	Warning: MPID_Open_port() not implemented
-./f90/spawn/spawnf90: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./f90/spawn/spawnargvf90: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./f90/spawn/connaccf90: #2
-	Warning: MPID_Open_port() not implemented
-./f90/spawn/spawnmultf90: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
-./f90/spawn/spawnmult2f90: #1
-	Warning: MPID_Comm_spawn_multiple() not implemented
+Other Issues: (12 test)
+
+
+from
+test-5.0.28-1_214_g80131d4_master_3_1_2014-03-20_12:56:59.log
+-------------------------------------------------
+./datatype/large_type_sendrec np=2:		#1
+
+YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Killed (signal 9)
+-------------------------------------------------
+./rma/win_zero np=4:				#2
+win_zero: /home/hauke/repo/psmpi2/mpich2/src/mpid/psp/src/mpid_rma.c:818: MPID_Win_allocate_shared: Assertion `mpi_errno == 0' fai
+
+-------------------------------------------------
+./rma/win_large_shm np=4:			#2
+win_large_shm: /home/hauke/repo/psmpi2/mpich2/src/mpid/psp/src/mpid_rma.c:818: MPID_Win_allocate_shared: Assertion `mpi_errno == 0' failed.
+
+-------------------------------------------------
+./rma/reqops np=4:
+3 - Got 1, expected 2
+
+-------------------------------------------------
+./spawn/spawnintra np=2:			#3
+[mpiexec@phoenix] APPLICATION TIMED OUT
+
+-------------------------------------------------
+./spawn/spaiccreate np=2:
+Fatal error in PMPI_Intercomm_create: Invalid communicator, error stack:
+
+-------------------------------------------------
+./cxx/spawn/spawnintrax np=2:			#3
+[mpiexec@phoenix] APPLICATION TIMED OUT
+
+-------------------------------------------------
+./errors/pt2pt/truncmsg2 np=2:
+MPI_Recv succeeded with non-matching datatype signature
+ Found 1 errors
+
+-------------------------------------------------
+./errors/rma/win_sync_unlock np=2:
+0: Operation succeeded, when it should have failed
+1: Operation succeeded, when it should have failed
+
+-------------------------------------------------
+./errors/rma/win_sync_free_pt np=2:
+0: Operation succeeded, when it should have failed
+1: Operation succeeded, when it should have failed
+
+-------------------------------------------------
+./errors/rma/win_sync_free_at np=2:
+0: Operation succeeded, when it should have failed
+1: Operation succeeded, when it should have failed
+
+-------------------------------------------------
+./errors/rma/win_sync_complete np=2:
+0: Expected MPI_ERR_RMA_SYNC, got:
+Invalid argument, error stack:
+MPI_Win_complete(103): MPI_Win_complete(win=0xa0000000) failed
+(unknown)(): Invalid argument
+
+-------------------------------------------------
+./errors/rma/win_sync_lock_at np=2:
+0: Operation succeeded, when it should have failed
+1: Operation succeeded, when it should have failed
+
+-------------------------------------------------
+./errors/rma/win_sync_lock_pt np=2:
+0: Operation succeeded, when it should have failed
+1: Operation succeeded, when it should have failed
+
+-------------------------------------------------
+./errors/rma/win_sync_nested np=2:
+0: Expected MPI_ERR_RMA_SYNC, got:
+Invalid argument, error stack:
+MPI_Win_start(128): MPI_Win_start(group=0x88000000, assert=0, win=0xa0000000) failed
+(unknown)(): Invalid argument
+
+-------------------------------------------------
+./errors/rma/win_sync_op np=2:
+0: Operation succeeded, when it should have failed
+1: Operation succeeded, when it should have failed
+
+-------------------------------------------------
+./errors/spawn/badport np=2:
+Error:connecting 'myhost:27' : Invalid argument
+
+-------------------------------------------------
+17 tests failed out of 793

@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2010 INRIA.  All rights reserved.
- * Copyright © 2009-2011 Université Bordeaux 1
+ * Copyright © 2009-2013 Inria.  All rights reserved.
+ * Copyright © 2009-2012 Université Bordeaux 1
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -36,6 +36,7 @@
 #endif /* HWLOC_HAVE_LIBTERMCAP */
 
 #include "lstopo.h"
+#include "misc.h"
 
 #define indent(output, i) \
   fprintf (output, "%*s", (int) i, "");
@@ -45,12 +46,12 @@
  */
 
 static void
-output_console_obj (hwloc_obj_t l, FILE *output, int logical, int verbose_mode)
+output_console_obj (hwloc_topology_t topology, hwloc_obj_t l, FILE *output, int logical, int verbose_mode)
 {
   char type[32], *attr, phys[32] = "";
   unsigned idx = logical ? l->logical_index : l->os_index;
   const char *indexprefix = logical ? " L#" :  " P#";
-  if (show_cpuset < 2) {
+  if (lstopo_show_cpuset < 2) {
     int len;
     if (l->type == HWLOC_OBJ_MISC && l->name)
       fprintf(output, "%s", l->name);
@@ -58,7 +59,9 @@ output_console_obj (hwloc_obj_t l, FILE *output, int logical, int verbose_mode)
       hwloc_obj_type_snprintf (type, sizeof(type), l, verbose_mode-1);
       fprintf(output, "%s", type);
     }
-    if (l->depth != 0 && idx != (unsigned)-1)
+    if (l->depth != 0 && idx != (unsigned)-1
+        && l->type != HWLOC_OBJ_PCI_DEVICE
+        && (l->type != HWLOC_OBJ_BRIDGE || l->attr->bridge.upstream_type == HWLOC_OBJ_BRIDGE_HOST))
       fprintf(output, "%s%u", indexprefix, idx);
     if (logical && l->os_index != (unsigned) -1 &&
 	(verbose_mode >= 2 || l->type == HWLOC_OBJ_PU || l->type == HWLOC_OBJ_NODE))
@@ -66,28 +69,38 @@ output_console_obj (hwloc_obj_t l, FILE *output, int logical, int verbose_mode)
     len = hwloc_obj_attr_snprintf (NULL, 0, l, " ", verbose_mode-1);
     attr = malloc(len+1);
     *attr = '\0';
-    len = hwloc_obj_attr_snprintf (attr, len+1, l, " ", verbose_mode-1);
+    hwloc_obj_attr_snprintf (attr, len+1, l, " ", verbose_mode-1);
     if (*phys || *attr) {
       const char *separator = *phys != '\0' && *attr!= '\0' ? " " : "";
       fprintf(output, " (%s%s%s)",
 	      phys, separator, attr);
     }
     free(attr);
-    if (verbose_mode >= 2 && l->name && l->type != HWLOC_OBJ_MISC)
+    if ((l->type == HWLOC_OBJ_OS_DEVICE || verbose_mode >= 2) && l->name && l->type != HWLOC_OBJ_MISC)
       fprintf(output, " \"%s\"", l->name);
   }
   if (!l->cpuset)
     return;
-  if (show_cpuset == 1)
+  if (lstopo_show_cpuset == 1)
     fprintf(output, " cpuset=");
-  if (show_cpuset) {
+  if (lstopo_show_cpuset) {
     char *cpusetstr;
-    if (taskset)
+    if (lstopo_show_taskset)
       hwloc_bitmap_taskset_asprintf(&cpusetstr, l->cpuset);
     else
       hwloc_bitmap_asprintf(&cpusetstr, l->cpuset);
     fprintf(output, "%s", cpusetstr);
     free(cpusetstr);
+  }
+
+  /* annotate if the PU is forbidden/offline/running */
+  if (l->type == HWLOC_OBJ_PU && verbose_mode >= 2) {
+    if (lstopo_pu_offline(l))
+      printf(" (offline)");
+    else if (lstopo_pu_forbidden(l))
+      printf(" (forbidden)");
+    else if (lstopo_pu_running(topology, l))
+      printf(" (running)");
   }
 }
 
@@ -96,7 +109,7 @@ static void
 output_topology (hwloc_topology_t topology, hwloc_obj_t l, hwloc_obj_t parent, FILE *output, int i, int logical, int verbose_mode)
 {
   unsigned x;
-  int group_identical = (verbose_mode <= 1) && !show_cpuset;
+  int group_identical = (verbose_mode <= 1) && !lstopo_show_cpuset;
   if (group_identical
       && parent && parent->arity == 1
       && l->cpuset && parent->cpuset && hwloc_bitmap_isequal(l->cpuset, parent->cpuset)) {
@@ -108,11 +121,12 @@ output_topology (hwloc_topology_t topology, hwloc_obj_t l, hwloc_obj_t parent, F
     indent (output, 2*i);
     i++;
   }
-  output_console_obj(l, output, logical, verbose_mode);
+  output_console_obj(topology, l, output, logical, verbose_mode);
   if (l->arity || (!i && !l->arity))
     {
       for (x=0; x<l->arity; x++)
-	output_topology (topology, l->children[x], l, output, i, logical, verbose_mode);
+	if (l->children[x]->type != HWLOC_OBJ_PU || !lstopo_ignore_pus)
+	  output_topology (topology, l->children[x], l, output, i, logical, verbose_mode);
   }
 }
 
@@ -121,8 +135,8 @@ static void
 output_only (hwloc_topology_t topology, hwloc_obj_t l, FILE *output, int logical, int verbose_mode)
 {
   unsigned x;
-  if (show_only == l->type) {
-    output_console_obj (l, output, logical, verbose_mode);
+  if (lstopo_show_only == l->type) {
+    output_console_obj (topology, l, output, logical, verbose_mode);
     fprintf (output, "\n");
   }
   for (x=0; x<l->arity; x++)
@@ -152,64 +166,42 @@ void output_console(hwloc_topology_t topology, const char *filename, int logical
    * if verbose_mode > 1, print both.
    */
 
-  if (show_only != (hwloc_obj_type_t)-1) {
+  if (lstopo_show_only != (hwloc_obj_type_t)-1) {
     if (verbose_mode > 1)
-      fprintf(output, "Only showing %s objects\n", hwloc_obj_type_string(show_only));
+      fprintf(output, "Only showing %s objects\n", hwloc_obj_type_string(lstopo_show_only));
     output_only (topology, hwloc_get_root_obj(topology), output, logical, verbose_mode);
   } else if (verbose_mode >= 1) {
     output_topology (topology, hwloc_get_root_obj(topology), NULL, output, 0, logical, verbose_mode);
     fprintf(output, "\n");
   }
 
-  if (verbose_mode > 1 || !verbose_mode) {
-    unsigned depth;
-    for (depth = 0; depth < topodepth; depth++) {
-      hwloc_obj_type_t type = hwloc_get_depth_type (topology, depth);
-      unsigned nbobjs = hwloc_get_nbobjs_by_depth (topology, depth);
-      indent(output, depth);
-      fprintf (output, "depth %u:\t%u %s%s (type #%u)\n",
-	       depth, nbobjs, hwloc_obj_type_string (type), nbobjs>1?"s":"", type);
-    }
-  }
+  if ((verbose_mode > 1 || !verbose_mode) && lstopo_show_only == (hwloc_obj_type_t)-1) {
+    hwloc_lstopo_show_summary(output, topology);
+ }
 
-  if (verbose_mode > 1) {
+  if (verbose_mode > 1 && lstopo_show_only == (hwloc_obj_type_t)-1) {
     const struct hwloc_distances_s * distances;
     unsigned depth;
 
     for (depth = 0; depth < topodepth; depth++) {
-      unsigned nbobjs;
-      unsigned i, j;
-
       distances = hwloc_get_whole_distance_matrix_by_depth(topology, depth);
       if (!distances || !distances->latency)
         continue;
-      nbobjs = distances->nbobjs;
-
-      printf("depth %u distance matrix:\n", depth);
-      /* column header */
-      printf("  index");
-      for(j=0; j<nbobjs; j++)
-        printf(" % 5d", (int) j);
-      printf("\n");
-      /* each line */
-      for(i=0; i<nbobjs; i++) {
-        /* row header */
-        printf("  % 5d", (int) i);
-        /* each value */
-        for(j=0; j<nbobjs; j++)
-          printf(" %2.3f", distances->latency[i*nbobjs+j]);
-        printf("\n");
-      }
+      printf("latency matrix between %ss (depth %u) by %s indexes:\n",
+	     hwloc_obj_type_string(hwloc_get_depth_type(topology, depth)),
+	     depth,
+	     logical ? "logical" : "physical");
+      hwloc_utils_print_distance_matrix(topology, hwloc_get_root_obj(topology), distances->nbobjs, depth, distances->latency, logical);
     }
   }
 
-  if (verbose_mode > 1) {
+  if (verbose_mode > 1 && lstopo_show_only == (hwloc_obj_type_t)-1) {
     hwloc_const_bitmap_t complete = hwloc_topology_get_complete_cpuset(topology);
     hwloc_const_bitmap_t topo = hwloc_topology_get_topology_cpuset(topology);
     hwloc_const_bitmap_t online = hwloc_topology_get_online_cpuset(topology);
     hwloc_const_bitmap_t allowed = hwloc_topology_get_allowed_cpuset(topology);
 
-    if (!hwloc_bitmap_isequal(topo, complete)) {
+    if (complete && !hwloc_bitmap_isequal(topo, complete)) {
       hwloc_bitmap_t unknown = hwloc_bitmap_alloc();
       char *unknownstr;
       hwloc_bitmap_copy(unknown, complete);
@@ -219,7 +211,7 @@ void output_console(hwloc_topology_t topology, const char *filename, int logical
       free(unknownstr);
       hwloc_bitmap_free(unknown);
     }
-    if (!hwloc_bitmap_isequal(online, complete)) {
+    if (complete && !hwloc_bitmap_isequal(online, complete)) {
       hwloc_bitmap_t offline = hwloc_bitmap_alloc();
       char *offlinestr;
       hwloc_bitmap_copy(offline, complete);
@@ -229,7 +221,7 @@ void output_console(hwloc_topology_t topology, const char *filename, int logical
       free(offlinestr);
       hwloc_bitmap_free(offline);
     }
-    if (!hwloc_bitmap_isequal(allowed, online)) {
+    if (complete && !hwloc_bitmap_isequal(allowed, online)) {
       if (!hwloc_bitmap_isincluded(online, allowed)) {
         hwloc_bitmap_t forbidden = hwloc_bitmap_alloc();
         char *forbiddenstr;
@@ -254,6 +246,40 @@ void output_console(hwloc_topology_t topology, const char *filename, int logical
     if (!hwloc_topology_is_thissystem(topology))
       fprintf (output, "Topology not from this system\n");
   }
+
+  if (output != stdout)
+    fclose(output);
+}
+
+void output_synthetic(hwloc_topology_t topology, const char *filename, int logical __hwloc_attribute_unused, int legend __hwloc_attribute_unused, int verbose_mode __hwloc_attribute_unused)
+{
+  FILE *output;
+  hwloc_obj_t obj = hwloc_get_root_obj(topology);
+  int arity;
+
+  if (!obj->symmetric_subtree) {
+    fprintf(stderr, "Cannot output assymetric topology in synthetic format.\n");
+    fprintf(stderr, "Adding --no-io may help making the topology symmetric.\n");
+    return;
+  }
+
+  if (!filename || !strcmp(filename, "-"))
+    output = stdout;
+  else {
+    output = open_file(filename, "w");
+    if (!output) {
+      fprintf(stderr, "Failed to open %s for writing (%s)\n", filename, strerror(errno));
+      return;
+    }
+  }
+
+  arity = obj->arity;
+  while (arity) {
+    obj = obj->first_child;
+    fprintf(output, "%s:%u ", hwloc_obj_type_string(obj->type), arity);
+    arity = obj->arity;
+  }
+  fprintf(output, "\n");
 
   if (output != stdout)
     fclose(output);
@@ -635,7 +661,7 @@ text_text(void *output, int r, int g, int b, int size __hwloc_attribute_unused, 
   x /= (gridsize/2);
   y /= gridsize;
 
-#ifdef HAVE_PUTWC
+#if defined(HAVE_PUTWC) && !defined(__MINGW32__)
   {
     size_t len = strlen(text) + 1;
     wchar_t *wbuf = malloc(len * sizeof(wchar_t)), *wtext;

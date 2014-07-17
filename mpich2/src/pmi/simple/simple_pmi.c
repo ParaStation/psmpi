@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*  
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -13,11 +13,11 @@
  * reporting error codes to which messages are attached.  
  *
  * In v2, we should require a PMI client interface to use MPI error codes
- * to provide better integration with MPICH2.  
+ * to provide better integration with MPICH.  
  */
 /***************************************************************************/
 
-#include "pmiconf.h" 
+#include "mpichconf.h"
 
 #define PMI_VERSION    1
 #define PMI_SUBVERSION 1
@@ -416,7 +416,7 @@ int PMI_KVS_Get( const char kvsname[], const char key[], char value[],
     /* Connect to the PM if we haven't already.  This is needed in case
        we're doing an MPI_Comm_join or MPI_Comm_connect/accept from
        the singleton init case.  This test is here because, in the way in 
-       which MPICH2 uses PMI, this is where the test needs to be. */
+       which MPICH uses PMI, this is where the test needs to be. */
     if (PMIi_InitIfSingleton() != 0) return -1;
 
     rc = MPIU_Snprintf( buf, PMIU_MAXLINE, "cmd=get kvsname=%s key=%s\n", 
@@ -451,11 +451,12 @@ int PMI_Publish_name( const char service_name[], const char port[] )
 		       "cmd=publish_name service=%s port=%s\n",
 		       service_name, port );
 	err = GetResponse( cmd, "publish_result", 0 );
-	/* FIXME: This should have used rc and msg */
 	if (err == PMI_SUCCESS) {
-	    PMIU_getval( "info", buf, PMIU_MAXLINE );
-	    if ( strcmp(buf,"ok") != 0 ) {
-	        PMIU_printf( 1, "publish failed; reason = %s\n", buf );
+	    PMIU_getval( "rc", buf, PMIU_MAXLINE );
+	    if ( strcmp(buf,"0") != 0 ) {
+                PMIU_getval( "msg", buf, PMIU_MAXLINE );
+                PMIU_printf( PMI_debug, "publish failed; reason = %s\n", buf );
+
 	        return( PMI_FAIL );
 	    }
 	}
@@ -479,13 +480,12 @@ int PMI_Unpublish_name( const char service_name[] )
 		       service_name );
 	err = GetResponse( cmd, "unpublish_result", 0 );
 	if (err == PMI_SUCCESS) {
-	    PMIU_getval( "info", buf, PMIU_MAXLINE );
-	    if ( strcmp(buf,"ok") != 0 ) {
-		/* FIXME: Do correct error reporting */
-		/*
-	        PMIU_printf( 1, "unpublish failed; reason = %s\n", buf );
-		*/
-	        return( PMI_FAIL );
+	    PMIU_getval( "rc", buf, PMIU_MAXLINE );
+	    if ( strcmp(buf,"0") != 0 ) {
+                PMIU_getval( "msg", buf, PMIU_MAXLINE );
+                PMIU_printf( PMI_debug, "unpublish failed; reason = %s\n", buf );
+
+                return( PMI_FAIL );
 	    }
 	}
     }
@@ -508,12 +508,11 @@ int PMI_Lookup_name( const char service_name[], char port[] )
 		       service_name );
 	err = GetResponse( cmd, "lookup_result", 0 );
 	if (err == PMI_SUCCESS) {
-	    PMIU_getval( "info", buf, PMIU_MAXLINE );
-	    if ( strcmp(buf,"ok") != 0 ) {
-		/* FIXME: Do correct error reporting */
-		/****
-	        PMIU_printf( 1, "lookup failed; reason = %s\n", buf );
-		****/
+	    PMIU_getval( "rc", buf, PMIU_MAXLINE );
+	    if ( strcmp(buf,"0") != 0 ) {
+                PMIU_getval( "msg", buf, PMIU_MAXLINE );
+                PMIU_printf( PMI_debug, "lookup failed; reason = %s\n", buf );
+
 	        return( PMI_FAIL );
 	    }
 	    PMIU_getval( "port", port, MPI_MAX_PORT_NAME );

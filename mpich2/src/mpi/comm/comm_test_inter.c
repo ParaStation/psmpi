@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -34,10 +34,10 @@
 
 MPI_Comm_test_inter - Tests to see if a comm is an inter-communicator
 
-Input Parameter:
+Input Parameters:
 . comm - communicator to test (handle) 
 
-Output Parameter:
+Output Parameters:
 . flag - true if this is an inter-communicator(logical) 
 
 .N SignalSafe
@@ -65,7 +65,6 @@ int MPI_Comm_test_inter(MPI_Comm comm, int *flag)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -81,10 +80,9 @@ int MPI_Comm_test_inter(MPI_Comm comm, int *flag)
         {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            if (mpi_errno) goto fn_fail;
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(flag,"flag",mpi_errno);
-
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

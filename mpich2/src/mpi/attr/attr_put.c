@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -68,7 +68,7 @@ corresponding keyval was created) will be called.
 
 .seealso MPI_Attr_get, MPI_Keyval_create, MPI_Attr_delete, MPI_Comm_set_attr
 @*/
-int MPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
+int MPI_Attr_put(MPI_Comm comm, int keyval, void *attribute_val)
 {
     static const char FCNAME[] = "MPI_Attr_put";
     int mpi_errno = MPI_SUCCESS;
@@ -88,7 +88,6 @@ int MPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
             MPIR_ERRTEST_KEYVAL(keyval, MPID_COMM, "communicator", mpi_errno);
             MPIR_ERRTEST_KEYVAL_PERM(keyval, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -113,7 +112,7 @@ int MPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
 
     /* ... body of routine ...  */
 
-    mpi_errno = MPIR_Comm_set_attr_impl( comm_ptr, keyval, attr_value, MPIR_ATTR_PTR );
+    mpi_errno = MPIR_Comm_set_attr_impl( comm_ptr, keyval, attribute_val, MPIR_ATTR_PTR );
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
     /* ... end of body of routine ... */
@@ -129,7 +128,7 @@ int MPI_Attr_put(MPI_Comm comm, int keyval, void *attr_value)
     {
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, "**mpi_attr_put",
-	    "**mpi_attr_put %C %d %p", comm, keyval, attr_value);
+	    "**mpi_attr_put %C %d %p", comm, keyval, attribute_val);
     }
 #   endif
     mpi_errno = MPIR_Err_return_comm( comm_ptr, FCNAME, mpi_errno );

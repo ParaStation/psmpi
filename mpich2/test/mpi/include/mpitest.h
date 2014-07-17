@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -19,6 +19,7 @@ void MTestPrintError( int );
 void MTestPrintErrorMsg( const char [], int );
 void MTestPrintfMsg( int, const char [], ... );
 void MTestError( const char [] );
+int MTestReturnValue( int );
 
 /*
  * Utilities

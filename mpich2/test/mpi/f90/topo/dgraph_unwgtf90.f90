@@ -1,4 +1,9 @@
 ! This file created from test/mpi/f77/topo/dgraph_unwgtf.f with f77tof90
+! -*- Mode: Fortran; -*- 
+!
+!  (C) 2010 by Argonne National Laboratory.
+!      See COPYRIGHT in top-level directory.
+!
 !     This program is Fortran version of dgraph_unwgt.c
 !     Specify a distributed graph of a bidirectional ring of the MPI_COMM_WORLD,
 !     i.e. everyone only talks to left and right neighbors.
@@ -145,6 +150,22 @@
       endif
       call MPI_Comm_free(dgraph_comm, ierr)
 
+! now create one with MPI_WEIGHTS_EMPTY
+! NOTE that MPI_WEIGHTS_EMPTY was added in MPI-3 and does not 
+! appear before then.  Incluing this test means that this test cannot
+! be compiled if the MPI version is less than 3 (see the testlist file)
+
+      degs(1) = 0;
+      call MPI_Dist_graph_create(MPI_COMM_WORLD, 1, srcs, degs, dests, &
+      &                           MPI_WEIGHTS_EMPTY, MPI_INFO_NULL, &
+      &                          .true., dgraph_comm, ierr)
+      if (ierr .ne. MPI_SUCCESS) then
+          write(6,*) "MPI_Dist_graph_create() fails!"
+          call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+          stop
+      endif
+      call MPI_Comm_free(dgraph_comm, ierr)
+
       src_sz   = 2
       srcs(1)  = ring_rank(world_size, world_rank-1)
       srcs(2)  = ring_rank(world_size, world_rank+1)
@@ -171,7 +192,23 @@
       endif
       call MPI_Comm_free(dgraph_comm, ierr)
 
+! now create one with MPI_WEIGHTS_EMPTY
+      src_sz   = 0
+      dest_sz  = 0
+      call MPI_Dist_graph_create_adjacent(MPI_COMM_WORLD, &
+      &                                    src_sz, srcs, &
+      &                                    MPI_WEIGHTS_EMPTY, &
+      &                                    dest_sz, dests, &
+      &                                    MPI_WEIGHTS_EMPTY, &
+      &                                    MPI_INFO_NULL, .true., &
+      &                                    dgraph_comm, ierr)
+      if (ierr .ne. MPI_SUCCESS) then
+          write(6,*) "MPI_Dist_graph_create_adjacent() fails!"
+          call MPI_Abort(MPI_COMM_WORLD, 1, ierr)
+          stop
+      endif
+      call MPI_Comm_free(dgraph_comm, ierr)
+
       call MTEST_Finalize(errs)
       call MPI_Finalize(ierr)
-      stop
       end

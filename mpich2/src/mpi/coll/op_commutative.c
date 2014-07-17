@@ -32,10 +32,10 @@
 /*@
   MPI_Op_commute - Queries an MPI reduction operation for its commutativity.
 
-  Input Parameter:
+Input Parameters:
 . op - operation (handle)
 
-  Output Parameter:
+Output Parameters:
 . commute - Flag is true if 'op' is a commutative operation. (logical)
 
 .N NULL
@@ -78,7 +78,6 @@ int MPI_Op_commutative(MPI_Op op, int *commute)
 
     if (HANDLE_GET_KIND(op) == HANDLE_KIND_BUILTIN) {
         *commute = 1;
-        /* get the function by indexing into the op table */
     }
     else {
         if (op_ptr->kind == MPID_OP_USER_NONCOMMUTE)

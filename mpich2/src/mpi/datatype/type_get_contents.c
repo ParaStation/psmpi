@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -31,14 +31,16 @@
 /*@
    MPI_Type_get_contents - get type contents
 
-   Arguments:
-+  MPI_Datatype datatype - datatype
-.  int max_integers - max integers
-.  int max_addresses - max addresses
-.  int max_datatypes - max datatypes
-.  int array_of_integers[] - integers
-.  MPI_Aint array_of_addresses[] - addresses
--  MPI_Datatype array_of_datatypes[] - datatypes
+Input Parameters:
++  datatype - datatype to access (handle)
+.  max_integers - number of elements in array_of_integers (non-negative integer)
+.  max_addresses - number of elements in array_of_addresses (non-negative integer)
+-  max_datatypes - number of elements in array_of_datatypes (non-negative integer)
+
+Output Parameters:
++  array_of_integers - contains integer arguments used in constructing the datatype (array of integers)
+.  array_of_addresses - contains address arguments used in constructing the datatype (array of integers)
+-  array_of_datatypes - contains datatype arguments used in constructing the datatype (array of handles)
 
    Notes:
 
@@ -57,7 +59,6 @@ int MPI_Type_get_contents(MPI_Datatype datatype,
 {
     static const char FCNAME[] = "MPI_Type_get_contents";
     int mpi_errno = MPI_SUCCESS;
-    MPID_Datatype *datatype_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_TYPE_GET_CONTENTS);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -71,27 +72,25 @@ int MPI_Type_get_contents(MPI_Datatype datatype,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif
     
-    /* Convert MPI object handles to object pointers */
-    MPID_Datatype_get_ptr(datatype, datatype_ptr);
-
     /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
+            MPID_Datatype *datatype_ptr = NULL;
+
 	    /* Check for built-in type */
 	    if (HANDLE_GET_KIND(datatype) == HANDLE_KIND_BUILTIN) {
 		mpi_errno = MPIR_Err_create_code(MPI_SUCCESS,
 						 MPIR_ERR_RECOVERABLE,
 						 FCNAME, __LINE__,
 						 MPI_ERR_TYPE,
-						 "**dtypeperm", 0);
+						 "**contentspredef", 0);
 		goto fn_fail;
 	    }
 
@@ -108,9 +107,12 @@ int MPI_Type_get_contents(MPI_Datatype datatype,
 						 MPIR_ERR_RECOVERABLE,
 						 FCNAME, __LINE__,
 						 MPI_ERR_TYPE,
-						 "**dtypeperm", 0);
+						 "**contentspredef", 0);
 		goto fn_fail;
 	    }
+
+            /* Convert MPI object handles to object pointers */
+            MPID_Datatype_get_ptr(datatype, datatype_ptr);
 
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);

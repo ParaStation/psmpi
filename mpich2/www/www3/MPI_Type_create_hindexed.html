@@ -10,24 +10,24 @@ Create a datatype for an indexed datatype with displacements in bytes
 <H2>Synopsis</H2>
 <PRE>
 int MPI_Type_create_hindexed(int count,
-                           int blocklengths[],
-                           MPI_Aint displacements[],
+                           const int array_of_blocklengths[],
+                           const MPI_Aint array_of_displacements[],
                            MPI_Datatype oldtype,
                            MPI_Datatype *newtype)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
 <DT><B>count </B><DD>number of blocks --- also number of entries in
-displacements and blocklengths (integer)
+array_of_displacements and array_of_blocklengths (integer)
 
-<DT><B>blocklengths </B><DD>number of elements in each block (array of nonnegative integers)
+<DT><B>array_of_blocklengths </B><DD>number of elements in each block (array of nonnegative integers)
 
-<DT><B>displacements </B><DD>byte displacement of each block (array of address integers)
+<DT><B>array_of_displacements </B><DD>byte displacement of each block (array of address integers)
 
 <DT><B>oldtype </B><DD>old datatype (handle)
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>newtype </B> <DD> new datatype (handle)
 </DL>
 <P>
@@ -72,5 +72,5 @@ MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 <DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
-<P><B>Location:</B>type_create_hindexed.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/type_create_hindexed.c<P>
 </BODY></HTML>

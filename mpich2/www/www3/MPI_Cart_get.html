@@ -9,8 +9,8 @@
 Retrieves Cartesian topology information associated with a  communicator 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Cart_get(MPI_Comm comm, int maxdims, int *dims, int *periods, 
-                 int *coords)
+int MPI_Cart_get(MPI_Comm comm, int maxdims, int dims[], int periods[],
+                 int coords[])
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -76,5 +76,5 @@ communicator in a call (not even allowed in <TT>MPI_Comm_rank</TT>).
 <DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
-<P><B>Location:</B>cart_get.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/topo/cart_get.c<P>
 </BODY></HTML>

@@ -12,10 +12,10 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPI_STARTALL( MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_startall__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_startall( MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_STARTALL( MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall__( MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall( MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak MPI_STARTALL = PMPI_STARTALL
@@ -44,19 +44,19 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint *, MPI_F
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPI_STARTALL( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_STARTALL( MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #pragma weak MPI_STARTALL = PMPI_STARTALL
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_startall__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall__( MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #pragma weak mpi_startall__ = pmpi_startall__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_startall( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall( MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #pragma weak mpi_startall = pmpi_startall
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #pragma weak mpi_startall_ = pmpi_startall_
 #endif
@@ -82,18 +82,45 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint *, MPI_F
 #else
 #pragma _CRI duplicate mpi_startall_ as pmpi_startall_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_STARTALL( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_STARTALL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall__( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_STARTALL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_STARTALL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_STARTALL")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_STARTALL( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall__( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_STARTALL( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall__( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_STARTALL( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall__( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPI_STARTALL( MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_startall__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_startall( MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+extern FORT_DLL_SPEC void FORT_CALL MPI_STARTALL( MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall__( MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall( MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak mpi_startall__ = MPI_STARTALL
@@ -112,24 +139,52 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint *, MPI_F
 #pragma weak mpi_startall__ = mpi_startall
 #pragma weak mpi_startall_ = mpi_startall
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_STARTALL( MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall__( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("MPI_STARTALL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("MPI_STARTALL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("MPI_STARTALL")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_STARTALL( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_startall__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall__( MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_startall__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_startall__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_STARTALL( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_startall_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall__( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_startall_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_startall_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_STARTALL( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_startall")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall__( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_startall")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall_( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_startall")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_startall( MPI_Fint *, MPI_Fint [], MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPI_STARTALL( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_STARTALL( MPI_Fint *, MPI_Fint [], MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_startall__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_startall__( MPI_Fint *, MPI_Fint [], MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_startall_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_startall_( MPI_Fint *, MPI_Fint [], MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpi_startall( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_startall( MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #endif
 
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_startall( MPI_Fint *, MPI_Fint *, MPI_F
 #pragma weak pmpi_startall__ = pmpi_startall
 #pragma weak pmpi_startall_ = pmpi_startall
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_startall__( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_STARTALL")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_startall_( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_STARTALL")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_startall( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_STARTALL")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_STARTALL( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_startall_( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_startall( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_STARTALL( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_startall__( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_startall( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_STARTALL( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_startall__( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_startall_( MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_startall")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_startall_ PMPI_STARTALL
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_startall( MPI_Fint *, MPI_Fint *, MPI_F
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Startall
 #define MPI_Startall PMPI_Startall 
 
@@ -186,6 +263,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_startall( MPI_Fint *, MPI_Fint *, MPI_F
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpi_startall_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
-    *ierr = MPI_Startall( *v1, (MPI_Request *)(v2) );
+FORT_DLL_SPEC void FORT_CALL mpi_startall_ ( MPI_Fint *v1, MPI_Fint v2[], MPI_Fint *ierr ){
+    *ierr = MPI_Startall( (int)*v1, (MPI_Request *)(v2) );
 }

@@ -1,10 +1,10 @@
-.TH MPI_Alltoall 3 "3/11/2011" " " "MPI"
+.TH MPI_Alltoall 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Alltoall \-  Sends data from all to all processes 
 .SH SYNOPSIS
 .nf
-int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
-                 void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+int MPI_Alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                 void *recvbuf, int recvcount, MPI_Datatype recvtype,
                  MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
@@ -39,7 +39,7 @@ int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 - communicator (handle) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B recvbuf 
@@ -136,4 +136,4 @@ MPI_Datatype (see
 one is not valid.
 .PD 1
 .SH LOCATION
-alltoall.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/coll/alltoall.c

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -14,7 +14,7 @@
 /*@
   MPID_Type_indexed - create an indexed datatype
 
-  Input Parameters:
+Input Parameters:
 + count - number of blocks in type
 . blocklength_array - number of elements in each block
 . displacement_array - offsets of blocks from start of type (see next
@@ -24,7 +24,7 @@
   extent of oldtype (the displacement_array is an array of MPI_Aints)
 - oldtype - type (using handle) of datatype on which new type is based
 
-  Output Parameters:
+Output Parameters:
 . newtype - handle of new indexed datatype
 
   Return Value:
@@ -32,16 +32,17 @@
 @*/
 
 int MPID_Type_indexed(int count,
-		      int *blocklength_array,
-		      void *displacement_array,
+		      const int *blocklength_array,
+		      const void *displacement_array,
 		      int dispinbytes,
 		      MPI_Datatype oldtype,
 		      MPI_Datatype *newtype)
 {
     int mpi_errno = MPI_SUCCESS;
     int is_builtin, old_is_contig;
-    int i, contig_count;
-    int el_sz, el_ct, old_ct, old_sz;
+    int i;
+    MPI_Aint contig_count;
+    MPI_Aint el_sz, el_ct, old_ct, old_sz;
     MPI_Aint old_lb, old_ub, old_extent, old_true_lb, old_true_ub;
     MPI_Aint min_lb = 0, max_ub = 0, eff_disp;
     MPI_Datatype el_type;
@@ -109,8 +110,8 @@ int MPID_Type_indexed(int count,
 	new_dtp->has_sticky_ub = 0;
 	new_dtp->has_sticky_lb = 0;
 
-	new_dtp->alignsize    = el_sz; /* ??? */
-	new_dtp->element_size = (MPI_Aint) el_sz;
+        MPIU_Assign_trunc(new_dtp->alignsize, el_sz, MPI_Aint);
+	new_dtp->element_size = el_sz;
 	new_dtp->eltype       = el_type;
 
 	new_dtp->max_contig_blocks = count;
@@ -215,8 +216,11 @@ int MPID_Type_indexed(int count,
     new_dtp->is_contig = 0;
     if(old_is_contig)
     {
+	MPI_Aint *blklens = MPIU_Malloc(count *sizeof(MPI_Aint));
+	for (i=0; i<count; i++)
+		blklens[i] = blocklength_array[i];
         contig_count = MPID_Type_indexed_count_contig(count,
-						  blocklength_array,
+						  blklens,
 						  displacement_array,
 						  dispinbytes,
 						  old_extent);
@@ -226,6 +230,7 @@ int MPID_Type_indexed(int count,
         {
             new_dtp->is_contig = 1;
         }
+	MPIU_Free(blklens);
     }
 
     *newtype = new_dtp->handle;

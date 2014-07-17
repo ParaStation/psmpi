@@ -1,5 +1,5 @@
 /*
- * Copyright © 2011 INRIA.  All rights reserved.
+ * Copyright © 2011 inria.  All rights reserved.
  * See COPYING in top-level directory.
  */
 
@@ -9,6 +9,8 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
+
+/* intensive testing of two grouping cases (2+1 and 2+2+1) */
 
 int main(void)
 {

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /* 
  *
  *   Copyright (C) 2001 University of Chicago. 
@@ -66,6 +66,8 @@ int ADIOI_cb_bcast_rank_map(ADIO_File fd)
 {
     int my_rank;
     char *value;
+	int error_code = MPI_SUCCESS;
+	static char myname[] = "ADIOI_cb_bcast_rank_map";
 
     MPI_Bcast(&(fd->hints->cb_nodes), 1, MPI_INT, 0, fd->comm);
     if (fd->hints->cb_nodes > 0) {
@@ -73,7 +75,13 @@ int ADIOI_cb_bcast_rank_map(ADIO_File fd)
 	if (my_rank != 0) {
 	    fd->hints->ranklist = ADIOI_Malloc(fd->hints->cb_nodes*sizeof(int));
 	    if (fd->hints->ranklist == NULL) {
-		/* NEED TO HANDLE ENOMEM */
+                error_code = MPIO_Err_create_code(error_code,
+                                                  MPIR_ERR_RECOVERABLE,
+                                                  myname,
+                                                  __LINE__,
+                                                  MPI_ERR_OTHER,
+                                                  "**nomem2",0);
+                return error_code;
 	    }
 	}
 	MPI_Bcast(fd->hints->ranklist, fd->hints->cb_nodes, MPI_INT, 0, 
@@ -658,7 +666,7 @@ static int get_max_procs(int cb_nodes)
 	if (token != AGG_WILDCARD && token != AGG_STRING) return -1;
 	if (token == AGG_WILDCARD) max_procs = cb_nodes;
 	else if (token == AGG_STRING) {
-	    max_procs = strtol(yylval, &errptr, 10);
+	    max_procs = (int)strtol(yylval, &errptr, 10);
 	    if (*errptr != '\0') {
 		/* some garbage value; default to 1 */
 		max_procs = 1;
@@ -680,7 +688,7 @@ static int get_max_procs(int cb_nodes)
  *
  * Returns a token of types defined at top of this file.
  */
-#ifdef ROMIO_BGL
+#if defined(ROMIO_BGL) || defined(ROMIO_BG)
 /* On BlueGene, the ',' character shows up in get_processor_name, so we have to
  * use a different delimiter */
 #define COLON ':'

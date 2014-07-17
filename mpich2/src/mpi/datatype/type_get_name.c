@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -111,6 +111,7 @@ static mpi_names_t mpi_names[] = {
     /* address/offset types */
     type_name_entry(MPI_AINT),
     type_name_entry(MPI_OFFSET),
+    type_name_entry(MPI_COUNT),
 
     { 0, (char *) 0 },  /* Sentinel used to indicate the last element */
 };
@@ -166,11 +167,11 @@ int MPIR_Datatype_init_names(void)
 		}
 	    if (!datatype_ptr) {
 		MPIU_ERR_SETFATALANDJUMP1(mpi_errno,MPI_ERR_INTERN,
-			      "**typeinitfail", "**typeinitfail %d", i - 1)
+			      "**typeinitfail", "**typeinitfail %d", i - 1);
 	    }
 
 	    MPIU_DBG_MSG_FMT(DATATYPE,VERBOSE,(MPIU_DBG_FDEST,
-		   "mpi_names[%d].name = %p\n", i, mpi_names[i].name));
+		   "mpi_names[%d].name = %p", i, mpi_names[i].name));
 
 	    MPIU_Strncpy(datatype_ptr->name, mpi_names[i].name,
 			 MPI_MAX_OBJECT_NAME);
@@ -205,10 +206,10 @@ int MPIR_Datatype_init_names(void)
 /*@
    MPI_Type_get_name - Get the print name for a datatype
 
-   Input Parameter:
-. type - datatype whose name is to be returned (handle)
+Input Parameters:
+. datatype - datatype whose name is to be returned (handle)
 
-   Output Parameters:
+Output Parameters:
 + type_name - the name previously stored on the datatype, or a empty string
   if no such name exists (string)
 - resultlen - length of returned name (integer)
@@ -242,7 +243,6 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -262,10 +262,10 @@ int MPI_Type_get_name(MPI_Datatype datatype, char *type_name, int *resultlen)
         {
             /* Validate datatype_ptr */
             MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+            if (mpi_errno) goto fn_fail;
 	    /* If datatype_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(type_name,"type_name", mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(resultlen,"resultlen", mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

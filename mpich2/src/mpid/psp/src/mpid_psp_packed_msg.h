@@ -92,7 +92,7 @@ int MPID_PSP_packed_msg_need_unpack(const MPID_PSP_packed_msg_t *msg)
  * prepare msg with packed_msg_prepare()
  */
 static inline
-void MPID_PSP_packed_msg_unpack(const void *addr, int count, MPI_Datatype datatype,
+int MPID_PSP_packed_msg_unpack(const void *addr, int count, MPI_Datatype datatype,
 				const MPID_PSP_packed_msg_t *msg, unsigned int data_len)
 {
 	if (msg->tmp_buf) {
@@ -101,7 +101,18 @@ void MPID_PSP_packed_msg_unpack(const void *addr, int count, MPI_Datatype dataty
 
 		MPID_Segment_init(addr, count, datatype, &segment, 0);
 		MPID_Segment_unpack(&segment, /* first */0, &last, msg->tmp_buf);
+		/* From ch3u_handle_recv_pkt.c:
+		   "If the data can't be unpacked, then we have a mismatch between
+		   the datatype and the amount of data received."
+		   (see also Segment_manipulate() in mpid/common/datatype/dataloop/segment.c)
+		   For a matching signature, 'last' should still point to the end of the
+		   dataloop stream after unpacking it:
+		*/
+		if( last != pscom_min(msg->msg_sz, data_len) ) {
+			return MPI_ERR_TYPE;
+		}
 	}
+	return MPI_SUCCESS;
 }
 
 

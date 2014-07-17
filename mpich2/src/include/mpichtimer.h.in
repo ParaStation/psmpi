@@ -10,7 +10,7 @@
  * timer calls, including the definition of the time stamp type and 
  * any inlined timer calls.
  *
- * The include file timerconf.h (created by autoheader from configure.in)
+ * The include file timerconf.h (created by autoheader from configure.ac)
  * is needed only to build the function versions of the timers.
  */
 /* Include the appropriate files */
@@ -219,7 +219,7 @@ int MPID_Wtime_init(void);
    post-processsing step to convert the values to doubles.
    */
 
-/* The timer kind is set using AC_SUBST in the MPICH2 configure */
+/* The timer kind is set using AC_SUBST in the MPICH configure */
 #define MPICH_TIMER_KIND @MPICH_TIMER_KIND@
 
 #if MPICH_TIMER_KIND == USE_GETHRTIME 

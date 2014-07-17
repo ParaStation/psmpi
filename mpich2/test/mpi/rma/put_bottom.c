@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -21,6 +21,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <mpi.h>
+#include "mpitest.h"
+#include "squelch.h"
 
 #define XDIM 1024
 #define YDIM 1024
@@ -28,14 +30,12 @@
 #define SUB_YDIM 1024
 #define ITERATIONS 10
 
-static int verbose = 0;
-
 int main(int argc, char **argv) {
     int i, j, rank, nranks, peer, bufsize, errors;
     double *win_buf, *src_buf, *dst_buf;
     MPI_Win buf_win;
 
-    MPI_Init(&argc, &argv);
+    MTest_Init(&argc, &argv);
 
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &nranks);
@@ -44,9 +44,6 @@ int main(int argc, char **argv) {
     MPI_Alloc_mem(bufsize, MPI_INFO_NULL, &win_buf);
     MPI_Alloc_mem(bufsize, MPI_INFO_NULL, &src_buf);
     MPI_Alloc_mem(bufsize, MPI_INFO_NULL, &dst_buf);
-
-    if (rank == 0)
-        if (verbose) printf("MPI RMA Strided Put Test:\n");
 
     for (i = 0; i < XDIM*YDIM; i++) {
         *(win_buf  + i) = 1.0 + rank;
@@ -64,9 +61,6 @@ int main(int argc, char **argv) {
       int idx_rem[SUB_YDIM];
       int blk_len[SUB_YDIM];
       MPI_Datatype src_type, dst_type;
-
-      if (rank == 0)
-        if (verbose) printf(" + iteration %d\n", i);
 
       for (j = 0; j < SUB_YDIM; j++) {
         MPI_Get_address(&src_buf[j*XDIM], &idx_loc[j]);
@@ -99,8 +93,8 @@ int main(int argc, char **argv) {
         const double actual   = *(win_buf + i + j*XDIM);
         const double expected = (1.0 + ((rank+nranks-1)%nranks));
         if (actual - expected > 1e-10) {
-          printf("%d: Data validation failed at [%d, %d] expected=%f actual=%f\n",
-              rank, j, i, expected, actual);
+          SQUELCH( printf("%d: Data validation failed at [%d, %d] expected=%f actual=%f\n",
+              rank, j, i, expected, actual); );
           errors++;
           fflush(stdout);
         }
@@ -111,8 +105,8 @@ int main(int argc, char **argv) {
         const double actual   = *(win_buf + i + j*XDIM);
         const double expected = 1.0 + rank;
         if (actual - expected > 1e-10) {
-          printf("%d: Data validation failed at [%d, %d] expected=%f actual=%f\n",
-              rank, j, i, expected, actual);
+          SQUELCH( printf("%d: Data validation failed at [%d, %d] expected=%f actual=%f\n",
+              rank, j, i, expected, actual); );
           errors++;
           fflush(stdout);
         }
@@ -123,8 +117,8 @@ int main(int argc, char **argv) {
         const double actual   = *(win_buf + i + j*XDIM);
         const double expected = 1.0 + rank;
         if (actual - expected > 1e-10) {
-          printf("%d: Data validation failed at [%d, %d] expected=%f actual=%f\n",
-              rank, j, i, expected, actual);
+          SQUELCH( printf("%d: Data validation failed at [%d, %d] expected=%f actual=%f\n",
+              rank, j, i, expected, actual); );
           errors++;
           fflush(stdout);
         }
@@ -137,14 +131,8 @@ int main(int argc, char **argv) {
     MPI_Free_mem(src_buf);
     MPI_Free_mem(dst_buf);
 
+    MTest_Finalize( errors );
     MPI_Finalize();
 
-    if (errors == 0) {
-      if (rank == 0)
-        printf(" No Errors\n");
-      return 0;
-    } else {
-      printf("%d: Fail\n", rank);
-      return 1;
-    }
+    return 0;
 }

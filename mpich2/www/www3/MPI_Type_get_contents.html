@@ -17,21 +17,24 @@ int MPI_Type_get_contents(MPI_Datatype datatype,
                         MPI_Aint array_of_addresses[],
                         MPI_Datatype array_of_datatypes[])
 </PRE>
-<H2>Arguments</H2>
+<H2>Input Parameters</H2>
 <DL>
-<DT><B>MPI_Datatype datatype </B><DD>datatype
+<DT><B>datatype </B><DD>datatype to access (handle)
 
-<DT><B>int max_integers </B><DD>max integers
+<DT><B>max_integers </B><DD>number of elements in array_of_integers (non-negative integer)
 
-<DT><B>int max_addresses </B><DD>max addresses
+<DT><B>max_addresses </B><DD>number of elements in array_of_addresses (non-negative integer)
 
-<DT><B>int max_datatypes </B><DD>max datatypes
+<DT><B>max_datatypes </B><DD>number of elements in array_of_datatypes (non-negative integer)
+</DL>
+<P>
+<H2>Output Parameters</H2>
+<DL>
+<DT><B>array_of_integers </B><DD>contains integer arguments used in constructing the datatype (array of integers)
 
-<DT><B>int array_of_integers[] </B><DD>integers
+<DT><B>array_of_addresses </B><DD>contains address arguments used in constructing the datatype (array of integers)
 
-<DT><B>MPI_Aint array_of_addresses[] </B><DD>addresses
-
-<DT><B>MPI_Datatype array_of_datatypes[] </B><DD>datatypes
+<DT><B>array_of_datatypes </B><DD>contains datatype arguments used in constructing the datatype (array of handles)
 </DL>
 <P>
 <H2>Notes</H2>
@@ -63,5 +66,5 @@ possible.
 <P>
 <DL><DT><B>MPI_SUCCESS </B> <DD> No error; MPI routine completed successfully.
 </DL>
-<P><B>Location:</B>type_get_contents.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/type_get_contents.c<P>
 </BODY></HTML>

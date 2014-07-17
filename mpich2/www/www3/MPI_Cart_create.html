@@ -9,8 +9,8 @@
 Makes a new communicator to which topology information has been attached 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Cart_create(MPI_Comm comm_old, int ndims, int *dims, int *periods, 
-                   int reorder, MPI_Comm *comm_cart)
+int MPI_Cart_create(MPI_Comm comm_old, int ndims, const int dims[],
+                    const int periods[], int reorder, MPI_Comm *comm_cart)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -27,7 +27,7 @@ periodic (true) or not (false) in each dimension
 <DT><B>reorder </B><DD>ranking may be reordered (true) or not (false) (logical) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>comm_cart </B> <DD> communicator with new cartesian topology (handle) 
 </DL>
 <P>
@@ -79,5 +79,5 @@ is null or its length is less than or equal to zero.
 <DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
-<P><B>Location:</B>cart_create.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/topo/cart_create.c<P>
 </BODY></HTML>

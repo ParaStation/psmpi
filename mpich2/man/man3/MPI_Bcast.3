@@ -1,4 +1,4 @@
-.TH MPI_Bcast 3 "3/28/2011" " " "MPI"
+.TH MPI_Bcast 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Bcast \-  Broadcasts a message from the process with rank "root" to all other processes of the communicator 
 .SH SYNOPSIS
@@ -6,7 +6,7 @@ MPI_Bcast \-  Broadcasts a message from the process with rank "root" to all othe
 int MPI_Bcast( void *buffer, int count, MPI_Datatype datatype, int root, 
                MPI_Comm comm )
 .fi
-.SH INPUT/OUTPUT PARAMETER
+.SH INPUT/OUTPUT PARAMETERS
 .PD 0
 .TP
 .B buffer 
@@ -137,4 +137,4 @@ communicator.  Ranks must be between zero and the size of the communicator
 minus one.
 .PD 1
 .SH LOCATION
-bcast.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/coll/bcast.c

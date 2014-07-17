@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*  
  *  (C) 2003 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -54,12 +54,17 @@ extern int MPIE_Debug;
 #define DBG_PRINTF(a)  DBG_PRINTFCOND(MPIE_Debug,a)
 
 /* #define USE_LOG_SYSCALLS */
+/* For the system calls used in PMI, values returned by the system 
+   calls will fit in an int, and need to be an int (signed) to 
+   test for error, since a return of -1 (typically) indicates error, 
+   even for system calls such as write that may return an unsigned value (!)
+*/
 #ifdef USE_LOG_SYSCALLS
 #include <errno.h>
 #define MPIE_SYSCALL(a_,b_,c_) { \
     printf( "about to call %s (%s,%d)\n", #b_ ,__FILE__, __LINE__);\
           fflush(stdout); errno = 0;\
-    a_ = b_ c_; \
+          a_ = (int)b_ c_;          \
     if ((a_)>=0 || errno==0) {\
     printf( "%s returned %d\n", #b_, a_ );\
     } \
@@ -68,11 +73,11 @@ extern int MPIE_Debug;
           #b_, a_, errno, strerror(errno));\
     };           fflush(stdout);}
 #else
-#define MPIE_SYSCALL(a_,b_,c_) a_ = b_ c_
+#define MPIE_SYSCALL(a_,b_,c_) a_ = (int)b_ c_
 #endif
 
 
-/* Use the memory defintions from mpich2/src/include */
+/* Use the memory defintions from mpich/src/include */
 /* #include "mpimem.h" */
 /* The memory routines no longer are available as utility routines.
    The choices are to use the original memory tracing routines or

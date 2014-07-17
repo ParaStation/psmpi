@@ -1,10 +1,10 @@
-.TH MPI_Allgather 3 "1/21/2011" " " "MPI"
+.TH MPI_Allgather 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Allgather \-  Gathers data from all tasks and distribute the combined data to all tasks 
 .SH SYNOPSIS
 .nf
-int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
-                  void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                  void *recvbuf, int recvcount, MPI_Datatype recvtype,
                   MPI_Comm comm)
 .fi
 .SH INPUT PARAMETERS
@@ -39,7 +39,7 @@ int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 - communicator (handle) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B recvbuf 
@@ -168,4 +168,4 @@ MPI_Datatype (see
 one is not valid.
 .PD 1
 .SH LOCATION
-allgather.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/coll/allgather.c

@@ -1,19 +1,19 @@
-.TH MPI_Win_create_errhandler 3 "7/27/2010" " " "MPI"
+.TH MPI_Win_create_errhandler 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Win_create_errhandler \-  Create an error handler for use with MPI window objects 
 .SH SYNOPSIS
 .nf
-int MPI_Win_create_errhandler(MPI_Win_errhandler_fn *function, 
+int MPI_Win_create_errhandler(MPI_Win_errhandler_function *win_errhandler_fn,
                             MPI_Errhandler *errhandler)
 .fi
-.SH INPUT PARAMETER
+.SH INPUT PARAMETERS
 .PD 0
 .TP
-.B function 
-- user defined error handling procedure (function) 
+.B win_errhandler_fn 
+- user defined error handling procedure (function)
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B errhandler 
@@ -95,4 +95,4 @@ to get more information
 about this error code. 
 .PD 1
 .SH LOCATION
-win_create_errhandler.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/errhan/win_create_errhandler.c

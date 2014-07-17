@@ -1,13 +1,13 @@
-.TH MPI_Pack 3 "2/26/2011" " " "MPI"
+.TH MPI_Pack 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Pack \-  Packs a datatype into contiguous memory 
 .SH SYNOPSIS
 .nf
-int MPI_Pack(void *inbuf,
+int MPI_Pack(const void *inbuf,
              int incount,
              MPI_Datatype datatype,
              void *outbuf,
-             int outcount,
+             int outsize,
              int *position,
              MPI_Comm comm)
 .fi
@@ -29,7 +29,7 @@ int MPI_Pack(void *inbuf,
 .PD 1
 .PD 0
 .TP
-.B outcount 
+.B outsize 
 - output buffer size, in bytes (non-negative integer)
 .PD 1
 .PD 0
@@ -38,14 +38,14 @@ int MPI_Pack(void *inbuf,
 - communicator for packed message (handle)
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B outbuf 
 - output buffer start (choice)
 .PD 1
 
-.SH INPUT/OUTPUT PARAMETER
+.SH INPUT/OUTPUT PARAMETERS
 .PD 0
 .TP
 .B position 
@@ -136,4 +136,4 @@ to get more information
 about this error code. 
 .PD 1
 .SH LOCATION
-pack.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/pack.c

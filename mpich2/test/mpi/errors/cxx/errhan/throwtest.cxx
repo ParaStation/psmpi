@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -15,6 +15,7 @@
 
 #include <mpi.h>
 #include <iostream>
+#include "mpitestconf.h"
 #include "mpitestcxx.h"
 
 /* #define VERBOSE */

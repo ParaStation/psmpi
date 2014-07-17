@@ -9,7 +9,7 @@
 Combines values and scatters the results 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Reduce_scatter(void *sendbuf, void *recvbuf, int *recvcnts, 
+int MPI_Reduce_scatter(const void *sendbuf, void *recvbuf, const int recvcounts[],
                       MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -27,7 +27,7 @@ Array must be identical on all calling processes.
 <DT><B>comm </B><DD>communicator (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>recvbuf </B> <DD> starting address of receive buffer (choice) 
 </DL>
 <P>
@@ -100,5 +100,5 @@ is prohibited in MPI (because it is prohibited by the Fortran
 standard, and rather than have a separate case for C and Fortran, the
 MPI Forum adopted the more restrictive requirements of Fortran).
 </DL>
-<P><B>Location:</B>red_scat.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/coll/red_scat.c<P>
 </BODY></HTML>

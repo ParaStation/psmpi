@@ -1,10 +1,11 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 #include "mpi.h"
 #include <stdio.h>
+#include "mpitest.h"
 
 #define MAX_PROCESSES 10
 
@@ -16,21 +17,23 @@ int main( int argc, char **argv )
     int              participants;
     int              displs[MAX_PROCESSES];
     int              recv_counts[MAX_PROCESSES];
+    MPI_Comm         test_comm;
 
-    MPI_Init( &argc, &argv );
+    MTest_Init( &argc, &argv );
     MPI_Comm_rank( MPI_COMM_WORLD, &rank );
     MPI_Comm_size( MPI_COMM_WORLD, &size );
 
     /* A maximum of MAX_PROCESSES processes can participate */
-    if ( size > MAX_PROCESSES ) participants = MAX_PROCESSES;
-    else              participants = size;
-    /* while (MAX_PROCESSES % participants) participants--; */
+    participants = ( size > MAX_PROCESSES ) ? MAX_PROCESSES : size;
+
     if (MAX_PROCESSES % participants) {
 	fprintf( stderr, "Number of processors must divide %d\n",
 		MAX_PROCESSES );
 	MPI_Abort( MPI_COMM_WORLD, 1 );
 	}
-    if ( (rank < participants) ) {
+    MPI_Comm_split(MPI_COMM_WORLD, rank<participants, rank, &test_comm);
+
+    if ( rank < participants ) {
 
       /* Determine what rows are my responsibility */
       int block_size = MAX_PROCESSES / participants;
@@ -52,7 +55,7 @@ int main( int argc, char **argv )
       /* Everybody gets the gathered data */
       MPI_Allgatherv(&table[begin_row][0], send_count, MPI_INT, 
 		     &table[0][0], recv_counts, displs, 
-		     MPI_INT, MPI_COMM_WORLD);
+                     MPI_INT, test_comm);
 
       /* Everybody should have the same table now.
 
@@ -78,12 +81,9 @@ int main( int argc, char **argv )
 	  }
     } 
 
+    MTest_Finalize( errors );
+
+    MPI_Comm_free(&test_comm);
     MPI_Finalize();
-    if (errors)
-        printf( "[%d] done with ERRORS(%d)!\n", rank, errors );
-    else {
-	if (rank == 0) 
-	    printf(" No Errors\n");
-    }
-    return errors;
+    return MTestReturnValue( errors );
 }

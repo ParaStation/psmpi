@@ -9,23 +9,23 @@
 Register functions for user-defined data  representations 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Register_datarep(char *name,
-                       MPI_Datarep_conversion_function *read_conv_fn,
-                       MPI_Datarep_conversion_function *write_conv_fn,
-                       MPI_Datarep_extent_function *extent_fn,
-                       void *state)
+int MPI_Register_datarep(ROMIO_CONST char *datarep,
+                       MPI_Datarep_conversion_function *read_conversion_fn,
+                       MPI_Datarep_conversion_function *write_conversion_fn,
+                       MPI_Datarep_extent_function *dtype_file_extent_fn,
+                       void *extra_state)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
-<DT><B>name </B><DD>data representation name (string)
+<DT><B>datarep </B><DD>data representation name (string)
 
-<DT><B>read_conv_fn </B><DD>function invoked to convert from file representation to
+<DT><B>read_conversion_fn </B><DD>function invoked to convert from file representation to
 native representation (function)
 
-<DT><B>write_conv_fn </B><DD>function invoked to convert from native representation to
+<DT><B>write_conversion_fn </B><DD>function invoked to convert from native representation to
 file representation (function)
 
-<DT><B>extent_fn </B><DD>function invoked to get the exted of a datatype as represented
+<DT><B>dtype_file_extent_fn </B><DD>function invoked to get the exted of a datatype as represented
 in the file (function)
 
 <DT><B>extra_state </B><DD>pointer to extra state that is passed to each of the
@@ -49,5 +49,5 @@ in C.  In Fortran, MPI routines are subroutines, and are invoked with the
 All MPI objects (e.g., <TT>MPI_Datatype</TT>, <TT>MPI_Comm</TT>) are of type <TT>INTEGER
 </TT>in Fortran.
 <P>
-<P><B>Location:</B>register_datarep.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/romio/mpi-io/register_datarep.c<P>
 </BODY></HTML>

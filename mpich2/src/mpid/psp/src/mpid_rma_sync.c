@@ -14,6 +14,7 @@
 #include "mpid_psp_datatype.h"
 #include "mpid_psp_packed_msg.h"
 #include "mpid_psp_request.h"
+#include "opa_primitives.h"
 
 
 #define TAG_POST	11
@@ -124,12 +125,12 @@ fn_fail:
 }
 
 
+extern pscom_request_t *dummy_req_any_source_for_rma;
+
 void MPID_PSP_rma_cleanup(void)
 {
 	cleanup_array_1();
 	cleanup_array_123();
-
-	extern pscom_request_t *dummy_req_any_source_for_rma;
 
 	if (dummy_req_any_source_for_rma) {
 		/* cancel and free the any_source dummy request */
@@ -141,23 +142,18 @@ void MPID_PSP_rma_cleanup(void)
 }
 
 
-static
-int _accept_never(pscom_request_t *request,
-		  pscom_connection_t *connection,
-		  pscom_header_net_t *header_net)
-{
-	return 0;
-}
-
 
 int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 {
-
 	int mpi_errno, comm_size;
 	MPID_Comm *comm_ptr;
 	int * recvcnts;
 	unsigned int total_rma_puts_accs;
 	int errflag = 0;
+
+	if(win_ptr->epoch_state != MPID_PSP_EPOCH_NONE && win_ptr->epoch_state != MPID_PSP_EPOCH_FENCE && win_ptr->epoch_state != MPID_PSP_EPOCH_FENCE_ISSUED) {
+		return MPI_ERR_RMA_SYNC;
+	}
 
 	comm_ptr = win_ptr->comm_ptr;
 	comm_size = comm_ptr->local_size;
@@ -177,6 +173,16 @@ int MPID_Win_fence(int assert, MPID_Win *win_ptr)
 		MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
 	}
 
+	if(win_ptr->epoch_state == MPID_PSP_EPOCH_NONE) {
+		win_ptr->epoch_state = MPID_PSP_EPOCH_FENCE_ISSUED;
+	} else {
+		if(win_ptr->epoch_state == MPID_PSP_EPOCH_FENCE) {
+			win_ptr->epoch_state = MPID_PSP_EPOCH_FENCE_ISSUED;
+		} else {
+			assert(win_ptr->epoch_state == MPID_PSP_EPOCH_FENCE_ISSUED);
+		}
+	}
+
 	return MPIR_Barrier_impl(comm_ptr, &errflag);
 }
 
@@ -192,10 +198,26 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 	int dummy;
 	int mpi_errno = MPI_SUCCESS;
 
+#if 0
 	if (win_ptr->ranks_post) {
 		/* Error: win_post already called */
 		return MPI_ERR_ARG;
 	}
+#else
+	if(win_ptr->epoch_state != MPID_PSP_EPOCH_NONE &&
+	   win_ptr->epoch_state != MPID_PSP_EPOCH_FENCE_ISSUED &&
+	   win_ptr->epoch_state != MPID_PSP_EPOCH_START) {
+		return MPI_ERR_RMA_SYNC;
+	}
+
+	/* Track access epoch state */
+	if (win_ptr->epoch_state == MPID_PSP_EPOCH_START) {
+		win_ptr->epoch_state = MPID_PSP_EPOCH_PSCW;
+	}
+	else {
+		win_ptr->epoch_state = MPID_PSP_EPOCH_POST;
+	}
+#endif
 
 	ranks = get_group_ranks(win_ptr->comm_ptr, group_ptr);
 	for (i = 0; i < ranks_sz; i++) {
@@ -209,7 +231,7 @@ int MPID_Win_post(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 		if (rc != MPI_SUCCESS) {
 			mpi_errno = rc;
 		}
-		if (sreq) {
+		if(sreq) {
 			MPID_Request_release(sreq);
 		}
 	}
@@ -237,10 +259,26 @@ int MPID_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 	int dummy;
 	int mpi_errno = MPI_SUCCESS;
 
+#if 0
 	if (win_ptr->ranks_start) {
 		/* Error: win_start already called */
 		return MPI_ERR_ARG;
 	}
+#else
+	if(win_ptr->epoch_state != MPID_PSP_EPOCH_NONE &&
+	   win_ptr->epoch_state != MPID_PSP_EPOCH_FENCE_ISSUED &&
+	   win_ptr->epoch_state != MPID_PSP_EPOCH_POST) {
+		return MPI_ERR_RMA_SYNC;
+	}
+
+	/* Track access epoch state */
+	if (win_ptr->epoch_state == MPID_PSP_EPOCH_POST) {
+		win_ptr->epoch_state = MPID_PSP_EPOCH_PSCW;
+	}
+	else {
+		win_ptr->epoch_state = MPID_PSP_EPOCH_START;
+	}
+#endif
 
 	ranks = get_group_ranks(win_ptr->comm_ptr, group_ptr);
 	for (i = 0; i < ranks_sz; i++) {
@@ -255,7 +293,7 @@ int MPID_Win_start(MPID_Group *group_ptr, int assert, MPID_Win *win_ptr)
 		if (rc != MPI_SUCCESS) {
 			mpi_errno = rc;
 		}
-		if (rreq) {
+		if(rreq) {
 			MPID_Request_release(rreq);
 		}
 	}
@@ -283,9 +321,23 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 	int dummy;
 	int mpi_errno = MPI_SUCCESS;
 
+#if 0
 	if (!win_ptr->ranks_start) {
 		return MPI_ERR_ARG;
 	}
+#else
+	if(win_ptr->epoch_state != MPID_PSP_EPOCH_PSCW && win_ptr->epoch_state != MPID_PSP_EPOCH_START) {
+		return MPI_ERR_RMA_SYNC;
+	}
+
+	/* Track access epoch state */
+	if (win_ptr->epoch_state == MPID_PSP_EPOCH_PSCW) {
+		win_ptr->epoch_state = MPID_PSP_EPOCH_POST;
+	}
+	else {
+		win_ptr->epoch_state = MPID_PSP_EPOCH_NONE;
+	}
+#endif
 
 	/* Wait for local rma opperations */
 	while (win_ptr->rma_local_pending_cnt) {
@@ -303,7 +355,7 @@ int MPID_Win_complete(MPID_Win *win_ptr)
 		if (rc != MPI_SUCCESS) {
 			mpi_errno = rc;
 		}
-		if (sreq) {
+		if(sreq) {
 			MPID_Request_release(sreq);
 		}
 	}
@@ -332,9 +384,23 @@ int MPID_Win_wait(MPID_Win *win_ptr)
 	int dummy;
 	int mpi_errno = MPI_SUCCESS;
 
+#if 0
 	if (!win_ptr->ranks_post) {
 		return MPI_ERR_ARG;
 	}
+#else
+	if(win_ptr->epoch_state != MPID_PSP_EPOCH_PSCW && win_ptr->epoch_state != MPID_PSP_EPOCH_POST) {
+		return MPI_ERR_RMA_SYNC;
+	}
+
+	/* Track access epoch state */
+	if (win_ptr->epoch_state == MPID_PSP_EPOCH_PSCW) {
+		win_ptr->epoch_state = MPID_PSP_EPOCH_START;
+	}
+	else {
+		win_ptr->epoch_state = MPID_PSP_EPOCH_NONE;
+	}
+#endif
 
 	for (i = 0; i < ranks_sz; i++) {
 		int rank = ranks[i];
@@ -349,7 +415,7 @@ int MPID_Win_wait(MPID_Win *win_ptr)
 			/* Set mpi_errno, but stay in the loop and receive all other TAG_COMPLETE's */
 			mpi_errno = rc;
 		}
-		if (rreq) {
+		if(rreq) {
 			MPID_Request_release(rreq);
 		}
 	}
@@ -378,9 +444,15 @@ int MPID_Win_test(MPID_Win *win_ptr, int *flag)
 	int mpi_errno = MPI_SUCCESS;
 	int ret_flag = 1;
 
+#if 0
 	if (!win_ptr->ranks_post) {
 		return MPI_ERR_ARG;
 	}
+#else
+	if(win_ptr->epoch_state != MPID_PSP_EPOCH_PSCW && win_ptr->epoch_state != MPID_PSP_EPOCH_POST) {
+		return MPI_ERR_RMA_SYNC;
+	}
+#endif
 
 	for (i = 0; i < ranks_sz; i++) {
 		int rank = ranks[i];
@@ -432,10 +504,8 @@ void MPID_PSP_SendRmaCtrl(MPID_Win *win_ptr, MPID_Comm *comm, pscom_connection_t
 
 
 static inline
-int do_trylock(MPID_Win *win_ptr, pscom_request_t *req)
+int do_trylock(MPID_Win *win_ptr, int exclusive)
 {
-	int exclusive = req->user->type.rma_lock.exclusive;
-
 	if (!win_ptr->lock_cnt ||
 	    (!win_ptr->lock_exclusive && !exclusive)) {
 		/* unlocked or shared locked */
@@ -454,7 +524,7 @@ int do_trylock(MPID_Win *win_ptr, pscom_request_t *req)
 static
 void do_lock(MPID_Win *win_ptr, pscom_request_t *req)
 {
-	if (do_trylock(win_ptr, req)) {
+	if (do_trylock(win_ptr, req->user->type.rma_lock.exclusive)) {
 		/* window locked, send ack */
 		pscom_post_send(req);
 	} else {
@@ -465,12 +535,8 @@ void do_lock(MPID_Win *win_ptr, pscom_request_t *req)
 
 
 static
-void do_unlock(MPID_Win *win_ptr, pscom_request_t *req)
+void do_unlock(MPID_Win *win_ptr)
 {
-	/* send answer */
-	pscom_post_send(req);
-	req = NULL;
-
 	win_ptr->lock_cnt--; /* unlock */
 
 	if (!list_empty(&win_ptr->lock_list)) {
@@ -481,7 +547,7 @@ void do_unlock(MPID_Win *win_ptr, pscom_request_t *req)
 
 		list_del(&rma_lock->next);
 
-		if (do_trylock(win_ptr, lreq)) {
+		if (do_trylock(win_ptr, lreq->user->type.rma_lock.exclusive)) {
 			/* window locked, send ack */
 			pscom_post_send(lreq);
 		} else {
@@ -544,29 +610,66 @@ void MPID_do_recv_rma_unlock_req(pscom_request_t *req)
 
 	req->ops.io_done = pscom_request_free;
 
-	do_unlock(win_ptr, req);
+	/* send answer */
+	pscom_post_send(req);
+
+	do_unlock(win_ptr);
 }
 
 
 int MPID_Win_lock(int lock_type, int dest, int assert, MPID_Win *win_ptr)
 {
+	int exclusive;
 	MPID_Comm *comm;
 	pscom_connection_t *con;
 	enum MPID_PSP_MSGTYPE msgt;
 
+	if (unlikely(dest == MPI_PROC_NULL)) {
+		return MPI_SUCCESS;
+	}
+
+	if(win_ptr->remote_lock_state[dest] != MPID_PSP_LOCK_UNLOCKED) {
+		return MPI_ERR_RMA_SYNC;
+	}
+
+	if(win_ptr->epoch_state != MPID_PSP_EPOCH_NONE &&
+	   win_ptr->epoch_state != MPID_PSP_EPOCH_FENCE_ISSUED &&
+	   win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK) {
+		return MPI_ERR_RMA_SYNC;
+	}
+
 	if (lock_type == MPI_LOCK_EXCLUSIVE) {
 		msgt = MPID_PSP_MSGTYPE_RMA_LOCK_EXCLUSIVE_REQUEST;
+		exclusive = 1;
 	} else if (lock_type == MPI_LOCK_SHARED) {
 		msgt = MPID_PSP_MSGTYPE_RMA_LOCK_SHARED_REQUEST;
+		exclusive = 0;
 	} else {
 		return MPI_ERR_ARG;
+	}
+
+	if(dest == win_ptr->rank) {
+		/* avoid starvation / foster progress: */
+		pscom_test_any();
+
+		if(do_trylock(win_ptr, exclusive)) {
+			/* This is a shortcut for _local_ locks! */
+			goto fn_exit;
+		}
 	}
 
 	comm = win_ptr->comm_ptr;
 	con = MPID_PSCOM_rank2connection(comm, dest);
 
 	MPID_PSP_SendRmaCtrl(win_ptr, comm, con, dest, msgt);
-	MPID_PSP_RecvCtrl(0/*tag*/, comm->context_id, MPI_ANY_SOURCE, con, MPID_PSP_MSGTYPE_RMA_LOCK_ANSWER);
+	MPID_PSP_RecvCtrl(0/*tag*/, comm->recvcontext_id, MPI_ANY_SOURCE, con, MPID_PSP_MSGTYPE_RMA_LOCK_ANSWER);
+
+fn_exit:
+	win_ptr->remote_lock_state[dest] = MPID_PSP_LOCK_LOCKED;
+
+	/* Track access epoch state */
+	win_ptr->epoch_state = MPID_PSP_EPOCH_LOCK;
+	win_ptr->epoch_lock_count++;
 
 	return MPI_SUCCESS;
 }
@@ -577,11 +680,391 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr)
 	MPID_Comm *comm;
 	pscom_connection_t *con;
 
+	if (unlikely(dest == MPI_PROC_NULL)) {
+		return MPI_SUCCESS;
+	}
+
+	if(win_ptr->remote_lock_state[dest] == MPID_PSP_LOCK_UNLOCKED) {
+		return MPI_ERR_RMA_SYNC;
+	}
+
+	if(win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK && win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK_ALL) {
+		return MPI_ERR_RMA_SYNC;
+	}
+
+	if(dest == win_ptr->rank) {
+		/* This is a shortcut for _local_ locks! */
+		do_unlock(win_ptr);
+		goto fn_exit;
+	}
+
 	comm = win_ptr->comm_ptr;
 	con = MPID_PSCOM_rank2connection(comm, dest);
 
 	MPID_PSP_SendRmaCtrl(win_ptr, comm, con, dest, MPID_PSP_MSGTYPE_RMA_UNLOCK_REQUEST);
-	MPID_PSP_RecvCtrl(0/*tag*/, comm->context_id, MPI_ANY_SOURCE, con, MPID_PSP_MSGTYPE_RMA_UNLOCK_ANSWER);
+	MPID_PSP_RecvCtrl(0/*tag*/, comm->recvcontext_id, MPI_ANY_SOURCE, con, MPID_PSP_MSGTYPE_RMA_UNLOCK_ANSWER);
+
+fn_exit:
+	win_ptr->remote_lock_state[dest] = MPID_PSP_LOCK_UNLOCKED;
+
+	/* Track access epoch state */
+	win_ptr->epoch_lock_count--;
+	if (win_ptr->epoch_lock_count == 0) {
+		win_ptr->epoch_state = MPID_PSP_EPOCH_NONE;
+	}
 
 	return MPI_SUCCESS;
+}
+
+
+/***********************************************************************************************************
+ *   RMA-3.0 Functions:
+ */
+
+
+int MPID_Win_sync(MPID_Win *win_ptr)
+{
+	/* Flush and Sync can be called only within passive target epochs! */
+	if(win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK && win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK_ALL) {
+		return MPI_ERR_RMA_SYNC;
+	}
+
+	if (win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
+		OPA_read_write_barrier();
+	}
+
+        return MPI_SUCCESS;
+}
+
+
+int MPID_Win_lock_all(int assert, MPID_Win *win_ptr)
+{
+	int mpi_error;
+
+	if(1) { /* TODO: This is just a simple straightforward implementation! */
+
+		int i;
+		for(i=0; i<win_ptr->comm_ptr->local_size; i++) {
+			if(win_ptr->remote_lock_state[i] != MPID_PSP_LOCK_UNLOCKED) {
+				/* Window is already locked! */
+				return MPI_ERR_RMA_SYNC;
+			}
+			mpi_error = MPID_Win_lock(MPI_LOCK_SHARED, i, 0, win_ptr);
+			if(mpi_error) {
+				return mpi_error;
+			}
+			win_ptr->remote_lock_state[i] = MPID_PSP_LOCK_LOCKED_ALL;
+		}
+	}
+	else {
+		/* TODO: A more sophisticated implementation goes here... */
+		assert(0);
+	}
+
+	return MPI_SUCCESS;
+}
+
+int MPID_Win_unlock_all(MPID_Win *win_ptr)
+{
+	int mpi_error;
+
+	if(1) { /* TODO: This is just a simple straightforward implementation! */
+
+		int i;
+		for(i=0; i<win_ptr->comm_ptr->local_size; i++) {
+			if(win_ptr->remote_lock_state[i] != MPID_PSP_LOCK_LOCKED_ALL) {
+				/* Window wasn't locked by Win_lock_all()! */
+				return MPI_ERR_RMA_SYNC;
+			}
+			mpi_error = MPID_Win_unlock(i, win_ptr);
+			if(mpi_error) {
+				return mpi_error;
+			}
+			win_ptr->remote_lock_state[i] = MPID_PSP_LOCK_UNLOCKED;
+		}
+	}
+	else {
+		/* TODO: A more sophisticated implementation goes here... */
+		assert(0);
+	}
+
+	return MPI_SUCCESS;
+}
+
+
+/***********************************************************************************************************
+ *   RMA-3.0 Flush Routines:
+ */
+
+void MPID_do_recv_rma_flush_req(pscom_request_t *req)
+{
+	/* This is an pscom callback. Global lock state undefined! */
+	MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
+	/*
+	MPID_Win *win_ptr = xhead_lock->win_ptr;
+	*/
+
+	/* reuse orignal header, but overwrite type,src_rank and xheader_len: */
+	xhead_lock->common.type = MPID_PSP_MSGTYPE_RMA_FLUSH_ANSWER;
+	xhead_lock->common.src_rank = MPI_ANY_SOURCE;
+
+	req->xheader_len = sizeof(xhead_lock->common);
+
+	req->user->type.rma_lock.req = req;
+
+	req->ops.io_done = pscom_request_free;
+
+	pscom_post_send(req);
+}
+
+int MPID_Win_flush(int dest, MPID_Win *win_ptr)
+{
+	MPID_Comm *comm;
+	pscom_connection_t *con;
+
+	/* Flush and Sync can be called only within passive target epochs! */
+	if(win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK && win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK_ALL) {
+		return MPI_ERR_RMA_SYNC;
+	}
+
+	MPID_Win_flush_local(dest, win_ptr);
+
+	if(dest == win_ptr->rank) {
+		/* avoid starvation / foster progress: */
+		pscom_test_any();
+
+	} else {
+
+		comm = win_ptr->comm_ptr;
+		con = MPID_PSCOM_rank2connection(comm, dest);
+
+		MPID_PSP_SendRmaCtrl(win_ptr, comm, con, dest, MPID_PSP_MSGTYPE_RMA_FLUSH_REQUEST);
+		MPID_PSP_RecvCtrl(0/*tag*/, comm->recvcontext_id, MPI_ANY_SOURCE, con, MPID_PSP_MSGTYPE_RMA_FLUSH_ANSWER);
+	}
+	
+	return MPI_SUCCESS;
+}
+
+int MPID_Win_flush_all(MPID_Win *win_ptr)
+{
+	int i;
+	MPID_Comm *comm;
+	pscom_connection_t *con;
+
+	/* Flush and Sync can be called only within passive target epochs! */
+	if(win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK && win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK_ALL) {
+		return MPI_ERR_RMA_SYNC;
+	}
+
+	MPID_Win_flush_local_all(win_ptr);
+
+	comm = win_ptr->comm_ptr;
+
+	for(i=0; i<win_ptr->comm_ptr->local_size; i++) {
+
+		if(i != win_ptr->rank) {
+			con = MPID_PSCOM_rank2connection(comm, i);
+			MPID_PSP_SendRmaCtrl(win_ptr, comm, con, i, MPID_PSP_MSGTYPE_RMA_FLUSH_REQUEST);
+		}
+	}
+
+	for(i=0; i<win_ptr->comm_ptr->local_size; i++) {
+
+		if(i != win_ptr->rank) {
+			MPID_PSP_RecvCtrl(0/*tag*/, comm->recvcontext_id, MPI_ANY_SOURCE, NULL, MPID_PSP_MSGTYPE_RMA_FLUSH_ANSWER);
+		}
+	}
+
+	return MPI_SUCCESS;
+}
+
+int MPID_Win_wait_local_completion(int rank, MPID_Win *win_ptr)
+{
+	if (win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
+		OPA_read_write_barrier();
+	}
+
+	while (win_ptr->rma_local_pending_rank[rank]) {
+
+		MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
+	}
+
+	return MPI_SUCCESS;
+}
+
+int MPID_Win_flush_local(int rank, MPID_Win *win_ptr)
+{
+	/* Flush and Sync can be called only within passive target epochs! */
+	if(win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK && win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK_ALL) {
+		return MPI_ERR_RMA_SYNC;
+	}
+
+	MPID_Win_wait_local_completion(rank, win_ptr);
+
+	return MPI_SUCCESS;
+}
+
+int MPID_Win_flush_local_all(MPID_Win *win_ptr)
+{
+	/* Flush and Sync can be called only within passive target epochs! */
+	if(win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK && win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK_ALL) {
+		return MPI_ERR_RMA_SYNC;
+	}
+
+	if (win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
+		OPA_read_write_barrier();
+	}
+
+	while (win_ptr->rma_local_pending_cnt) {
+
+		MPID_PSP_LOCKFREE_CALL(pscom_wait_any());
+	}
+
+	return MPI_SUCCESS;
+}
+
+
+/***********************************************************************************************************
+ *   RMA-3.0 Auxiliary Routines for internal locking needed by Fetch&Op & Co.:
+ */
+
+static
+int do_trylock_internal(MPID_Win *win_ptr)
+{
+	if (!win_ptr->lock_internal) {
+		/* lock */
+		win_ptr->lock_internal = 1;
+
+		return 1;
+	} else {
+		return 0;
+	}
+}
+
+static
+void do_lock_internal(MPID_Win *win_ptr, pscom_request_t *req)
+{
+	if (do_trylock_internal(win_ptr)) {
+		/* window locked, send ack */
+		pscom_post_send(req);
+	} else {
+		/* schedule this lock */
+		list_add_tail(&req->user->type.rma_lock.next, &win_ptr->lock_list_internal);
+	}
+}
+
+static
+void do_unlock_internal(MPID_Win *win_ptr)
+{
+	win_ptr->lock_internal = 0; /* unlock */
+
+	if (!list_empty(&win_ptr->lock_list_internal)) {
+		pscom_request_rma_lock_t *rma_lock =
+			list_entry(win_ptr->lock_list_internal.next, pscom_request_rma_lock_t, next);
+
+		pscom_request_t *lreq = rma_lock->req;
+
+		list_del(&rma_lock->next);
+
+		if (do_trylock_internal(win_ptr)) {
+			/* window locked, send ack */
+			pscom_post_send(lreq);
+		} else {
+			/* reschedule this lock */
+			list_add(&rma_lock->next, &win_ptr->lock_list_internal);
+		}
+	}
+}
+
+void MPID_do_recv_rma_lock_internal_req(pscom_request_t *req)
+{
+	/* This is an pscom callback. Global lock state undefined! */
+	MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
+
+	MPID_Win *win_ptr = xhead_lock->win_ptr;
+
+	/* reuse orignal header, but overwrite type,src_rank and xheader_len: */
+	xhead_lock->common.type = MPID_PSP_MSGTYPE_RMA_INTERNAL_LOCK_ANSWER;
+	xhead_lock->common.src_rank = MPI_ANY_SOURCE;
+
+	req->xheader_len = sizeof(xhead_lock->common);
+
+	req->user->type.rma_lock.req = req;
+
+	req->ops.io_done = pscom_request_free;
+
+	do_lock_internal(win_ptr, req);
+}
+
+void MPID_do_recv_rma_unlock_internal_req(pscom_request_t *req)
+{
+	/* This is an pscom callback. Global lock state undefined! */
+	MPID_PSCOM_XHeader_Rma_lock_t *xhead_lock = &req->xheader.user.rma_lock;
+
+	MPID_Win *win_ptr = xhead_lock->win_ptr;
+
+	/* reuse orignal header, but overwrite type,src_rank and xheader_len: */
+	xhead_lock->common.type = MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_ANSWER;
+	xhead_lock->common.src_rank = MPI_ANY_SOURCE;
+
+	req->xheader_len = sizeof(xhead_lock->common);
+
+	req->ops.io_done = pscom_request_free;
+
+	/* send answer */
+	pscom_post_send(req);
+
+	do_unlock_internal(win_ptr);
+}
+
+int MPID_Win_lock_internal(int dest, MPID_Win *win_ptr)
+{
+        MPID_Comm *comm;
+        pscom_connection_t *con;
+
+        if (unlikely(dest == MPI_PROC_NULL)) {
+		return MPI_SUCCESS;
+        }
+
+        if(dest == win_ptr->rank) {
+                /* avoid starvation / foster progress: */
+                pscom_test_any();
+
+		if(do_trylock_internal(win_ptr)) {
+			/* This is a shortcut for _local_ locks! */
+			return MPI_SUCCESS;
+		}
+        }
+
+        comm = win_ptr->comm_ptr;
+        con = MPID_PSCOM_rank2connection(comm, dest);
+
+        MPID_PSP_SendRmaCtrl(win_ptr, comm, con, dest, MPID_PSP_MSGTYPE_RMA_INTERNAL_LOCK_REQUEST);
+        MPID_PSP_RecvCtrl(0/*tag*/, comm->recvcontext_id, MPI_ANY_SOURCE, con, MPID_PSP_MSGTYPE_RMA_INTERNAL_LOCK_ANSWER);
+
+        return MPI_SUCCESS;
+}
+
+int MPID_Win_unlock_internal(int dest, MPID_Win *win_ptr)
+{
+        MPID_Comm *comm;
+        pscom_connection_t *con;
+
+        if (unlikely(dest == MPI_PROC_NULL)) {
+		return MPI_SUCCESS;
+        }
+
+	if(dest == win_ptr->rank) {
+		/* This is a shortcut for _local_ locks! */
+		do_unlock_internal(win_ptr);
+		return MPI_SUCCESS;
+	}
+
+        comm = win_ptr->comm_ptr;
+	con = MPID_PSCOM_rank2connection(comm, dest);
+
+        MPID_PSP_SendRmaCtrl(win_ptr, comm, con, dest, MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_REQUEST);
+        MPID_PSP_RecvCtrl(0/*tag*/, comm->recvcontext_id, MPI_ANY_SOURCE, con, MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_ANSWER);
+
+        return MPI_SUCCESS;
 }

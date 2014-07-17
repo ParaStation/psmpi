@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -32,10 +32,10 @@
 
 MPI_Comm_size - Determines the size of the group associated with a communicator
 
-Input Parameter:
+Input Parameters:
 . comm - communicator (handle) 
 
-Output Parameter:
+Output Parameters:
 . size - number of processes in the group of 'comm'  (integer) 
 
 Notes:
@@ -67,7 +67,6 @@ int MPI_Comm_size( MPI_Comm comm, int *size )
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }

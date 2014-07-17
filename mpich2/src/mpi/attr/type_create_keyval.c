@@ -1,8 +1,17 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
+ *
+ * Portions of this code were written by Microsoft. Those portions are
+ * Copyright (c) 2007 Microsoft Corporation. Microsoft grants
+ * permission to use, reproduce, prepare derivative works, and to
+ * redistribute to others. The code is licensed "as is." The User
+ * bears the risk of using it. Microsoft gives no express warranties,
+ * guarantees or conditions. To the extent permitted by law, Microsoft
+ * excludes the implied warranties of merchantability, fitness for a
+ * particular purpose and non-infringement.
  */
 
 #include "mpiimpl.h"
@@ -32,12 +41,12 @@
 /*@
    MPI_Type_create_keyval - Create an attribute keyval for MPI datatypes
 
-   Input Parameters:
+Input Parameters:
 + type_copy_attr_fn - copy callback function for type_keyval (function) 
 . type_delete_attr_fn - delete callback function for type_keyval (function) 
 - extra_state - extra state for callback functions 
 
-   Output Parameter:
+Output Parameters:
 . type_keyval - key value for future access (integer) 
 
 Notes:
@@ -77,7 +86,6 @@ int MPI_Type_create_keyval(MPI_Type_copy_attr_function *type_copy_attr_fn,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_ARGNULL(type_keyval,"type_keyval",mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

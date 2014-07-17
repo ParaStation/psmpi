@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -37,11 +37,11 @@ int MPIR_Open_port_impl(MPID_Info *info_ptr, char *port_name)
    MPI_Open_port - Establish an address that can be used to establish 
    connections between groups of MPI processes
 
- Input Parameter:
+Input Parameters:
 . info - implementation-specific information on how to establish a 
    port for 'MPI_Comm_accept' (handle) 
 
- Output Parameter:
+Output Parameters:
 . port_name - newly established port (string) 
 
 Notes:
@@ -81,7 +81,6 @@ int MPI_Open_port(MPI_Info info, char *port_name)
         {
 	    /* Note that a NULL info is allowed */
 	    MPIR_ERRTEST_INFO_OR_NULL(info, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -97,7 +96,6 @@ int MPI_Open_port(MPI_Info info, char *port_name)
         {
 	    /* FIXME: If info_ptr is non-null, we should validate it */
 	    MPIR_ERRTEST_ARGNULL(port_name,"port_name",mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

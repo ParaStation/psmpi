@@ -57,7 +57,7 @@ void cb_io_done_ack(pscom_request_t *request)
 	MPID_Request *send_req = request->user->type.sr.mpid_req;
 
 	if (xhead->type == MPID_PSP_MSGTYPE_CANCEL_DATA_ACK) {
-		send_req->status.cancelled = 1;
+		MPIR_STATUS_SET_CANCEL_BIT(send_req->status, TRUE);
 	}
 
 	MPID_PSP_Subrequest_completed(send_req);
@@ -74,12 +74,13 @@ void receive_done(pscom_request_t *request)
 	MPID_Request *req = request->user->type.sr.mpid_req;
 	MPID_PSCOM_XHeader_t *xhead = &request->xheader.user.common;
 
-	req->status.count = request->header.data_len; /* status.count == datalen, or == datalen/sizeof(mpitype) ?? */
+	MPIR_STATUS_SET_COUNT(req->status, request->header.data_len); /* status.count == datalen, or == datalen/sizeof(mpitype) ?? */
 	req->status.MPI_SOURCE = xhead->src_rank;
 	req->status.MPI_TAG = xhead->tag;
+	/* req->status.MPI_ERROR has already been preset to MPI_SUCCESS in prepare_recvreq() */
+	/* ...and may by now be overwritten with MPI_ERR_TYPE in receive_done_noncontig() */
 	if (pscom_req_successful(request)) {
 		assert(request->xheader_len == request->header.xheader_len);
-		req->status.MPI_ERROR = MPI_SUCCESS;
 
 		if (unlikely(xhead->type == MPID_PSP_MSGTYPE_DATA_REQUEST_ACK)) {
 			/* synchronous send : send ack */
@@ -91,8 +92,8 @@ void receive_done(pscom_request_t *request)
 		req->status.MPI_ERROR = MPI_ERR_TRUNCATE;
 	} else if (request->state & PSCOM_REQ_STATE_CANCELED) {
 		/* ToDo: MPI_ERROR = MPI_SUCCESS on cancelled ? */
-		req->status.MPI_ERROR = MPI_SUCCESS;
-		req->status.cancelled = 1;
+		/* req->status.MPI_ERROR = MPI_SUCCESS; */
+		MPIR_STATUS_SET_CANCEL_BIT(req->status, TRUE);
 	} else {
 		static char state_str[100];
 		snprintf(state_str, 100, "request state:%s", pscom_req_state_str(request->state));
@@ -115,8 +116,8 @@ void receive_done_noncontig(pscom_request_t *request)
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
 
 	if (pscom_req_successful(request) || (request->state & PSCOM_REQ_STATE_TRUNCATED)) {
-		MPID_PSP_packed_msg_unpack(rreq->addr, rreq->count, rreq->datatype,
-					   &rreq->msg, request->header.data_len);
+		req->status.MPI_ERROR = MPID_PSP_packed_msg_unpack(rreq->addr, rreq->count, rreq->datatype,
+								   &rreq->msg, request->header.data_len);
 	}
 
 	/* Noncontig receive request */
@@ -135,7 +136,8 @@ int cb_accept_cancel_data(pscom_request_t *request,
 	MPID_PSCOM_XHeader_t *xhead = &request->xheader.user.common;
 	MPID_PSCOM_XHeader_t *xhead_net = &header_net->xheader->user.common;
 
-	return  (xhead_net->type == MPID_PSP_MSGTYPE_DATA_REQUEST_ACK) &&
+	return ((xhead_net->type == MPID_PSP_MSGTYPE_DATA_REQUEST_ACK) ||
+		(xhead_net->type == MPID_PSP_MSGTYPE_DATA_CANCELLED)) &&
 		(xhead_net->tag == xhead->tag) &&
 		(xhead_net->context_id == xhead->context_id);
 }
@@ -159,6 +161,19 @@ void MPID_do_recv_cancel_data_request_ack(pscom_request_t *cancel_req)
 		*/
 		pscom_cancel_recv(cancel_req);
 		pscom_request_free(cancel_req);
+#if 0
+/*
+ |  Cancelling of non-synchronous messages is disabled because
+ |  with PSP_UNEXPECTED_RECEIVES=0 (default) the absence of the
+ |  expected cancel-ack may lead to a deadlock...
+ */
+		if (xhead->type != MPID_PSP_MSGTYPE_DATA_REQUEST_ACK) { /* XXX */
+			/* this was NOT a synchronous send. */
+			/* send common ack to signal the failed cancel request: */
+			MPID_PSP_SendCtrl(xhead->tag, xhead->context_id, MPI_PROC_NULL,
+					  cancel_req->connection, MPID_PSP_MSGTYPE_DATA_ACK);
+		}
+#endif
 	} else {
 		/* send cancel ack */
 		MPID_PSP_SendCtrl(xhead->tag, xhead->context_id, MPI_PROC_NULL,
@@ -166,6 +181,7 @@ void MPID_do_recv_cancel_data_request_ack(pscom_request_t *cancel_req)
 		if (pscom_req_is_done(cancel_req)) {
 			pscom_request_free(cancel_req);
 		} else {
+			/* Free the cancel_req when done */
 			cancel_req->ops.io_done = pscom_request_free;
 		}
 	}
@@ -221,18 +237,27 @@ pscom_request_t *receive_dispatch(pscom_connection_t *connection,
 
 	case MPID_PSP_MSGTYPE_RMA_UNLOCK_REQUEST:
 		return MPID_do_recv_forward_to(MPID_do_recv_rma_unlock_req, header_net);
+
+	case MPID_PSP_MSGTYPE_RMA_FLUSH_REQUEST:
+		return MPID_do_recv_forward_to(MPID_do_recv_rma_flush_req, header_net);
+
+	case MPID_PSP_MSGTYPE_RMA_INTERNAL_LOCK_REQUEST:
+		return MPID_do_recv_forward_to(MPID_do_recv_rma_lock_internal_req, header_net);
+
+	case MPID_PSP_MSGTYPE_RMA_INTERNAL_UNLOCK_REQUEST:
+		return MPID_do_recv_forward_to(MPID_do_recv_rma_unlock_internal_req, header_net);
 	}
 
 	return NULL;
 }
 
 
-void MPID_enable_receive_dispach(void)
+void MPID_enable_receive_dispach(pscom_socket_t *socket)
 {
-	if (!MPIDI_Process.socket->ops.default_recv) {
-		MPIDI_Process.socket->ops.default_recv = receive_dispatch;
+	if (!socket->ops.default_recv) {
+		socket->ops.default_recv = receive_dispatch;
 	} else {
-		assert(MPIDI_Process.socket->ops.default_recv == receive_dispatch);
+		assert(socket->ops.default_recv == receive_dispatch);
 	}
 }
 
@@ -245,9 +270,9 @@ void prepare_recvreq(MPID_Request *req, int tag, MPID_Comm * comm, int context_o
 
 	rreq->tag = tag;
 	rreq->context_id = comm->recvcontext_id + context_offset;
-
 	preq->ops.recv_accept = cb_accept_data;
 	preq->xheader_len = sizeof(MPID_PSCOM_XHeader_Send_t);
+	req->status.MPI_ERROR = MPI_SUCCESS;
 }
 
 
@@ -332,7 +357,7 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 	prepare_recvreq(req, tag, comm, context_offset);
 
 	con = MPID_PSCOM_rank2connection(comm, rank);
-	sock = MPIDI_Process.socket; /* ToDo: get socket from comm? */
+	sock = comm->pscom_socket;
 
 	if (con || (rank == MPI_ANY_SOURCE)) {
 
@@ -404,8 +429,8 @@ void set_probe_status(pscom_request_t *req, MPI_Status *status)
 {
 	if (!status || status == MPI_STATUS_IGNORE) return;
 
-	status->count = req->header.data_len;
-	status->cancelled = (req->state & PSCOM_REQ_STATE_CANCELED) ? 1 : 0;
+	MPIR_STATUS_SET_COUNT(*status, req->header.data_len);
+	MPIR_STATUS_SET_CANCEL_BIT(*status, (req->state & PSCOM_REQ_STATE_CANCELED) ? TRUE : FALSE);
 	status->MPI_SOURCE = req->xheader.user.common.src_rank;
 	status->MPI_TAG    = req->xheader.user.common.tag;
 	/* status->MPI_ERROR  = MPI_SUCCESS; */
@@ -425,7 +450,7 @@ int MPID_Probe(int rank, int tag, MPID_Comm * comm, int context_offset, MPI_Stat
 */
 
 	con = MPID_PSCOM_rank2connection(comm, rank);
-	sock = MPIDI_Process.socket; /* ToDo: get socket from comm? */
+	sock = comm->pscom_socket;
 
 	if (con || (rank == MPI_ANY_SOURCE)) {
 		MPID_Request *req;
@@ -476,7 +501,7 @@ int MPID_Iprobe(int rank, int tag, MPID_Comm * comm, int context_offset, int * f
 */
 
 	con = MPID_PSCOM_rank2connection(comm, rank);
-	sock = MPIDI_Process.socket; /* ToDo: get socket from comm? */
+	sock = comm->pscom_socket;
 
 	if (con || (rank == MPI_ANY_SOURCE)) {
 		MPID_Request *req;
@@ -514,3 +539,5 @@ int MPID_Iprobe(int rank, int tag, MPID_Comm * comm, int context_offset, int * f
  err_rank:
 	return  MPI_ERR_RANK;
 }
+
+#include "mpid_mprobe.c"

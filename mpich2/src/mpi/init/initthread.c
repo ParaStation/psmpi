@@ -1,10 +1,20 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
+ *
+ * Portions of this code were written by Microsoft. Those portions are
+ * Copyright (c) 2007 Microsoft Corporation. Microsoft grants
+ * permission to use, reproduce, prepare derivative works, and to
+ * redistribute to others. The code is licensed "as is." The User
+ * bears the risk of using it. Microsoft gives no express warranties,
+ * guarantees or conditions. To the extent permitted by law, Microsoft
+ * excludes the implied warranties of merchantability, fitness for a
+ * particular purpose and non-infringement.
  */
 
 #include "mpiimpl.h"
+#include "mpiinfo.h"
 #include "datatype.h"
 #include "mpi_init.h"
 #ifdef HAVE_CRTDBG_H
@@ -13,6 +23,43 @@
 #ifdef HAVE_USLEEP
 #include <unistd.h>
 #endif
+
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+categories:
+    - name        : DEBUGGER
+      description : cvars relevant to the "MPIR" debugger interface
+
+cvars:
+    - name        : MPIR_CVAR_DEBUG_HOLD
+      category    : DEBUGGER
+      type        : boolean
+      default     : false
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If true, causes processes to wait in MPI_Init and
+        MPI_Initthread for a debugger to be attached.  Once the
+        debugger has attached, the variable 'hold' should be set to 0
+        in order to allow the process to continue (e.g., in gdb, "set
+        hold=0").
+
+    - name        : MPIR_CVAR_ERROR_CHECKING
+      category    : ERROR_HANDLING
+      type        : boolean
+      default     : true
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        If true, perform checks for errors, typically to verify valid inputs
+        to MPI routines.  Only effective when MPICH is configured with
+        --enable-error-checking=runtime .
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
 
 /* -- Begin Profiling Symbol Block for routine MPI_Init_thread */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -45,7 +92,7 @@ MPIU_DLL_SPEC MPI_Fint *MPI_F_STATUS_IGNORE = 0;
 MPIU_DLL_SPEC MPI_Fint *MPI_F_STATUSES_IGNORE = 0;
 
 /* This will help force the load of initinfo.o, which contains data about
-   how MPICH2 was configured. */
+   how MPICH was configured. */
 extern const char MPIR_Version_device[];
 
 /* Make sure the Fortran symbols are initialized unless it will cause problems
@@ -80,7 +127,7 @@ static int assert_hook( int reportType, char *message, int *returnValue )
     return TRUE;
 }
 
-/* MPICH2 dll entry point */
+/* MPICH dll entry point */
 BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 {
     BOOL result = TRUE;
@@ -113,7 +160,7 @@ BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpReserved)
 MPICH_PerThread_t  MPIR_Thread = { 0 };
 #elif defined(MPIU_TLS_SPECIFIER)
 MPIU_TLS_SPECIFIER MPICH_PerThread_t MPIR_Thread = { 0 };
-#elif defined(HAVE_RUNTIME_THREADCHECK)
+#else
 /* If we may be single threaded, we need a preallocated version to use
    if we are single threaded case */
 MPICH_PerThread_t  MPIR_ThreadSingle = { 0 };
@@ -138,12 +185,14 @@ void MPIR_CleanupThreadStorage( void *a )
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 static int MPIR_Thread_CS_Init( void )
 {
+    int err;
     MPIU_THREADPRIV_DECL;
 
     MPIU_Assert(MPICH_MAX_LOCKS >= MPIU_Nest_NUM_MUTEXES);
 
     /* we create this at all granularities right now */
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.memalloc_mutex, NULL);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.memalloc_mutex, &err);
+    MPIU_Assert(err == 0);
 
     /* must come after memalloc_mutex creation */
     MPIU_THREADPRIV_INITKEY;
@@ -151,17 +200,25 @@ static int MPIR_Thread_CS_Init( void )
 
 #if MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL
 /* There is a single, global lock, held for the duration of an MPI call */
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.global_mutex, NULL);
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.handle_mutex, NULL);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.global_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.handle_mutex, &err);
+    MPIU_Assert(err == 0);
 
 #elif MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT
     /* MPIU_THREAD_GRANULARITY_PER_OBJECT: Multiple locks */
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.global_mutex, NULL);
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.handle_mutex, NULL);
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.msgq_mutex, NULL);
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.completion_mutex, NULL);
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.ctx_mutex, NULL);
-    MPID_Thread_mutex_create(&MPIR_ThreadInfo.pmi_mutex, NULL);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.global_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.handle_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.msgq_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.completion_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.ctx_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_create(&MPIR_ThreadInfo.pmi_mutex, &err);
+    MPIU_Assert(err == 0);
 
 #elif MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_LOCK_FREE
 /* Updates to shared data and access to shared services is handled without 
@@ -184,20 +241,29 @@ static int MPIR_Thread_CS_Init( void )
 #define FCNAME MPIU_QUOTE(FUNCNAME)
 int MPIR_Thread_CS_Finalize( void )
 {
+    int err;
+
     MPIU_DBG_MSG(THREAD,TYPICAL,"Freeing global mutex and private storage");
 #if MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_GLOBAL
 /* There is a single, global lock, held for the duration of an MPI call */
-    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.global_mutex, NULL);
+    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.global_mutex, &err);
+    MPIU_Assert(err == 0);
 
 #elif MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT
     /* MPIU_THREAD_GRANULARITY_PER_OBJECT: There are multiple locks,
      * one for each logical class (e.g., each type of object) */
-    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.global_mutex, NULL);
-    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.handle_mutex, NULL);
-    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.msgq_mutex, NULL);
-    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.completion_mutex, NULL);
-    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.ctx_mutex, NULL);
-    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.pmi_mutex, NULL);
+    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.global_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.handle_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.msgq_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.completion_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.ctx_mutex, &err);
+    MPIU_Assert(err == 0);
+    MPID_Thread_mutex_destroy(&MPIR_ThreadInfo.pmi_mutex, &err);
+    MPIU_Assert(err == 0);
 
 
 #elif MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_LOCK_FREE
@@ -231,13 +297,14 @@ int MPIR_Init_thread(int * argc, char ***argv, int required, int * provided)
     int has_env;
     int thread_provided;
     int exit_init_cs_on_failure = 0;
+    MPID_Info *info_ptr;
 
     /* For any code in the device that wants to check for runtime 
        decisions on the value of isThreaded, set a provisional
        value here. We could let the MPID_Init routine override this */
-#ifdef HAVE_RUNTIME_THREADCHECK
+#if defined MPICH_IS_THREADED
     MPIR_ThreadInfo.isThreaded = required == MPI_THREAD_MULTIPLE;
-#endif
+#endif /* MPICH_IS_THREADED */
 
     MPIU_THREAD_CS_INIT;
 
@@ -281,8 +348,8 @@ int MPIR_Init_thread(int * argc, char ***argv, int required, int * provided)
     /* Initialize necessary subsystems and setup the predefined attribute
        values.  Subsystems may change these values. */
     MPIR_Process.attrs.appnum          = -1;
-    MPIR_Process.attrs.host            = 0;
-    MPIR_Process.attrs.io              = 0;
+    MPIR_Process.attrs.host            = MPI_PROC_NULL;
+    MPIR_Process.attrs.io              = MPI_PROC_NULL;
     MPIR_Process.attrs.lastusedcode    = MPI_ERR_LASTCODE;
     MPIR_Process.attrs.tag_ub          = 0;
     MPIR_Process.attrs.universe        = MPIR_UNIVERSE_SIZE_NOT_SET;
@@ -360,11 +427,8 @@ int MPIR_Init_thread(int * argc, char ***argv, int required, int * provided)
 
     /* MPIU_Timer_pre_init(); */
 
-    mpi_errno = MPIR_Param_init_params();
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-
     /* Wait for debugger to attach if requested. */
-    if (MPIR_PARAM_DEBUG_HOLD) {
+    if (MPIR_CVAR_DEBUG_HOLD) {
         volatile int hold = 1;
         while (hold)
 #ifdef HAVE_USLEEP
@@ -374,8 +438,8 @@ int MPIR_Init_thread(int * argc, char ***argv, int required, int * provided)
     }
 
 
-#if HAVE_ERROR_CHECKING == MPID_ERROR_LEVEL_RUNTIME
-    MPIR_Process.do_error_checks = MPIR_PARAM_ERROR_CHECKING;
+#if defined(HAVE_ERROR_CHECKING) && (HAVE_ERROR_CHECKING == MPID_ERROR_LEVEL_RUNTIME)
+    MPIR_Process.do_error_checks = MPIR_CVAR_ERROR_CHECKING;
 #endif
 
     /* define MPI as initialized so that we can use MPI functions within 
@@ -387,16 +451,39 @@ int MPIR_Init_thread(int * argc, char ***argv, int required, int * provided)
     MPIU_THREAD_CS_ENTER(INIT,required);
     exit_init_cs_on_failure = 1;
 
+    /* create MPI_INFO_NULL object */
+    /* FIXME: Currently this info object is empty, we need to add data to this
+       as defined by the standard. */
+    info_ptr = MPID_Info_builtin + 1;
+    info_ptr->handle = MPI_INFO_ENV;
+    MPIU_Object_set_ref(info_ptr, 1);
+    MPIU_THREAD_MPI_OBJ_INIT(info_ptr);
+    info_ptr->next  = NULL;
+    info_ptr->key   = NULL;
+    info_ptr->value = NULL;
+    
     mpi_errno = MPID_Init(argc, argv, required, &thread_provided, 
 			  &has_args, &has_env);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
+    /* Assert: tag_ub should be a power of 2 minus 1 */
+    MPIU_Assert(((unsigned)MPIR_Process.attrs.tag_ub & ((unsigned)MPIR_Process.attrs.tag_ub + 1)) == 0);
+
+    /* Set aside tag space for tagged collectives and failure notification */
+    MPIR_Process.attrs.tag_ub     >>= 2;
+    /* The bit for error checking is set in a macro in mpiimpl.h for
+     * performance reasons. */
+    MPIR_Process.tagged_coll_mask   = MPIR_Process.attrs.tag_ub + 1;
+
+    /* Assert: tag_ub is at least the minimum asked for in the MPI spec */
+    MPIU_Assert( MPIR_Process.attrs.tag_ub >= 32767 );
+
     /* Capture the level of thread support provided */
     MPIR_ThreadInfo.thread_provided = thread_provided;
     if (provided) *provided = thread_provided;
-#ifdef HAVE_RUNTIME_THREADCHECK
+#if defined MPICH_IS_THREADED
     MPIR_ThreadInfo.isThreaded = (thread_provided == MPI_THREAD_MULTIPLE);
-#endif
+#endif /* MPICH_IS_THREADED */
 
     /* FIXME: Define these in the interface.  Does Timer init belong here? */
     MPIU_dbg_init(MPIR_Process.comm_world->rank);
@@ -465,12 +552,12 @@ fn_fail:
 /*@
    MPI_Init_thread - Initialize the MPI execution environment
 
-   Input Parameters:
+Input Parameters:
 +  argc - Pointer to the number of arguments 
 .  argv - Pointer to the argument vector
 -  required - Level of desired thread support
 
-   Output Parameter:
+Output Parameters:
 .  provided - Level of provided thread support
 
    Command line arguments:
@@ -503,7 +590,7 @@ Notes for Fortran:
 int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 {
     int mpi_errno = MPI_SUCCESS;
-    int rc, reqd = required;
+    int rc ATTRIBUTE((unused)), reqd = required;
     MPID_MPI_INIT_STATE_DECL(MPID_STATE_MPI_INIT_THREAD);
 
     rc = MPID_Wtime_init();
@@ -529,21 +616,34 @@ int MPI_Init_thread( int *argc, char ***argv, int required, int *provided )
 
     /* ... body of routine ... */
 
+    /* Temporarily disable thread-safety.  This is needed because the
+     * mutexes are not initialized yet, and we don't want to
+     * accidentally use them before they are initialized.  We will
+     * reset this value once it is properly initialized. */
+#if defined MPICH_IS_THREADED
+    MPIR_ThreadInfo.isThreaded = 0;
+#endif /* MPICH_IS_THREADED */
+
+    MPIR_T_env_init();
+
     /* If the user requested for asynchronous progress, request for
      * THREAD_MULTIPLE. */
-    rc = 0;
-    MPL_env2bool("MPICH_ASYNC_PROGRESS", &rc);
-    if (rc)
+    if (MPIR_CVAR_ASYNC_PROGRESS)
         reqd = MPI_THREAD_MULTIPLE;
 
     mpi_errno = MPIR_Init_thread( argc, argv, reqd, provided );
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
-    if (rc && *provided == MPI_THREAD_MULTIPLE) {
-        mpi_errno = MPIR_Init_async_thread();
-        if (mpi_errno) goto fn_fail;
+    if (MPIR_CVAR_ASYNC_PROGRESS) {
+        if (*provided == MPI_THREAD_MULTIPLE) {
+            mpi_errno = MPIR_Init_async_thread();
+            if (mpi_errno) goto fn_fail;
 
-        MPIR_async_thread_initialized = 1;
+            MPIR_async_thread_initialized = 1;
+        }
+        else {
+            printf("WARNING: No MPI_THREAD_MULTIPLE support (needed for async progress)\n");
+        }
     }
 
     /* ... end of body of routine ... */

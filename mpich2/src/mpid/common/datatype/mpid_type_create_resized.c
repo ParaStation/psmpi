@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -60,6 +60,7 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 	new_dtp->element_size   = oldsize;
 	new_dtp->is_contig      = (extent == oldsize) ? 1 : 0;
         new_dtp->eltype         = oldtype;
+	new_dtp->max_contig_blocks = 3;  /* lb, data, ub */
     }
     else
     {
@@ -84,6 +85,7 @@ int MPID_Type_create_resized(MPI_Datatype oldtype,
 
 	new_dtp->is_contig      =
 	    (extent == old_dtp->size) ? old_dtp->is_contig : 0;
+	new_dtp->max_contig_blocks = old_dtp->max_contig_blocks;
     }
 
     *newtype_p = new_dtp->handle;

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -7,6 +7,28 @@
 
 #include "mpiimpl.h"
 #include "mpi_init.h"
+
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+categories:
+    - name        : DEVELOPER
+      description : useful for developers working on MPICH itself
+
+cvars:
+    - name        : MPIR_CVAR_MEMDUMP
+      category    : DEVELOPER
+      type        : boolean
+      default     : true
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_MPIDEV_DETAIL
+      scope       : MPI_T_SCOPE_LOCAL
+      description : >-
+        If true, list any memory that was allocated by MPICH and that
+        remains allocated when MPI_Finalize completes.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
 
 /* -- Begin Profiling Symbol Block for routine MPI_Finalize */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -151,11 +173,13 @@ int MPI_Finalize( void )
     if (MPIR_Process.attr_free && MPIR_Process.comm_self->attributes) {
         mpi_errno = MPIR_Process.attr_free( MPI_COMM_SELF,
 					    &MPIR_Process.comm_self->attributes);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	MPIR_Process.comm_self->attributes = 0;
     }
     if (MPIR_Process.attr_free && MPIR_Process.comm_world->attributes) {
         mpi_errno = MPIR_Process.attr_free( MPI_COMM_WORLD, 
                                             &MPIR_Process.comm_world->attributes);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 	MPIR_Process.comm_world->attributes = 0;
     }
 
@@ -174,8 +198,9 @@ int MPI_Finalize( void )
 	if (!in_use) {
 	    MPIU_Handle_obj_free( &MPID_Errhandler_mem, 
 				  MPIR_Process.comm_world->errhandler );
-            MPIR_Process.comm_world->errhandler = NULL;
 	}
+        /* always set to NULL to avoid a double-release later in finalize */
+        MPIR_Process.comm_world->errhandler = NULL;
     }
     if (MPIR_Process.comm_self->errhandler && 
 	! (HANDLE_GET_KIND(MPIR_Process.comm_self->errhandler->handle) == 
@@ -186,8 +211,9 @@ int MPI_Finalize( void )
 	if (!in_use) {
 	    MPIU_Handle_obj_free( &MPID_Errhandler_mem, 
 				  MPIR_Process.comm_self->errhandler );
-            MPIR_Process.comm_self->errhandler = NULL;
 	}
+        /* always set to NULL to avoid a double-release later in finalize */
+        MPIR_Process.comm_self->errhandler = NULL;
     }
 
     /* FIXME: Why is this not one of the finalize callbacks?.  Do we need
@@ -208,13 +234,18 @@ int MPI_Finalize( void )
     if (mpi_errno) {
 	MPIU_ERR_POP(mpi_errno);
     }
-    
+
     /* Call the low-priority (post Finalize) callbacks */
     MPIR_Call_finalize_callbacks( 0, MPIR_FINALIZE_CALLBACK_PRIO-1 );
 
     /* At this point, if there has been a failure, exit before 
        completing the finalize */
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+    /* Users did not call MPI_T_init_thread(), so we free memories allocated to
+     * MPIR_T during MPI_Init here. Otherwise, free them in MPI_T_finalize() */
+    if (!MPIR_T_is_initialized())
+        MPIR_T_env_finalize();
 
     /* FIXME: Many of these debugging items could/should be callbacks, 
        added to the finalize callback list */
@@ -234,7 +265,7 @@ int MPI_Finalize( void )
        go to separate files or to be sorted by rank (note that
        the rank is at the head of the line) */
     {
-	if (MPIR_PARAM_MEMDUMP) {
+	if (MPIR_CVAR_MEMDUMP) {
 	    /* The second argument is the min id to print; memory allocated 
 	       after MPI_Init is given an id of one.  This allows us to
 	       ignore, if desired, memory leaks in the MPID_Init call */
@@ -268,7 +299,6 @@ int MPI_Finalize( void )
 #endif
 
     /* ... end of body of routine ... */
-
   fn_exit:
     MPID_MPI_FINALIZE_FUNC_EXIT(MPID_STATE_MPI_FINALIZE);
     return mpi_errno;

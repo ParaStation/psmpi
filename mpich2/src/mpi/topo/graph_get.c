@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -54,7 +54,7 @@ Output Parameters:
 .N MPI_ERR_ARG
 @*/
 int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, 
-                  int *indx, int *edges)
+                  int indx[], int edges[])
 {
     static const char FCNAME[] = "MPI_Graph_get";
     int mpi_errno = MPI_SUCCESS;
@@ -73,7 +73,6 @@ int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -89,12 +88,11 @@ int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges,
         {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            if (mpi_errno) goto fn_fail;
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    
 	    MPIR_ERRTEST_ARGNULL( edges, "edges", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( indx,  "indx", mpi_errno );
-
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -105,10 +103,10 @@ int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges,
     topo_ptr = MPIR_Topology_get( comm_ptr );
 
     MPIU_ERR_CHKANDJUMP((!topo_ptr || topo_ptr->kind != MPI_GRAPH), mpi_errno, MPI_ERR_TOPOLOGY, "**notgraphtopo");
-    MPIU_ERR_CHKANDJUMP3((topo_ptr->topo.graph.nnodes > maxindex), mpi_errno, MPI_ERR_ARG, "**argrange",
-			 "**argrange %s %d %d", "maxindex", maxindex, topo_ptr->topo.graph.nnodes);
-    MPIU_ERR_CHKANDJUMP3((topo_ptr->topo.graph.nedges > maxedges), mpi_errno, MPI_ERR_ARG, "**argrange",
-			 "**argrange %s %d %d", "maxedges", maxedges, topo_ptr->topo.graph.nedges);
+    MPIU_ERR_CHKANDJUMP3((topo_ptr->topo.graph.nnodes > maxindex), mpi_errno, MPI_ERR_ARG, "**argtoosmall",
+			 "**argtoosmall %s %d %d", "maxindex", maxindex, topo_ptr->topo.graph.nnodes);
+    MPIU_ERR_CHKANDJUMP3((topo_ptr->topo.graph.nedges > maxedges), mpi_errno, MPI_ERR_ARG, "**argtoosmall",
+			 "**argtoosmall %s %d %d", "maxedges", maxedges, topo_ptr->topo.graph.nedges);
     
     /* Get index */
     n = topo_ptr->topo.graph.nnodes;

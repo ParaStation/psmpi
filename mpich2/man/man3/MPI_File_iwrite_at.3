@@ -1,13 +1,13 @@
-.TH MPI_File_iwrite_at 3 "11/2/2007" " " "MPI"
+.TH MPI_File_iwrite_at 3 "2/20/2014" " " "MPI"
 .SH NAME
-MPI_File_iwrite_at \-  Nonblocking write using explict offset 
+MPI_File_iwrite_at \-  Nonblocking write using explicit offset 
 .SH SYNOPSIS
 .nf
 #ifdef HAVE_MPI_GREQUEST
 #include "mpiu_greq.h"
 #endif
 
-int MPI_File_iwrite_at(MPI_File mpi_fh, MPI_Offset offset, void *buf,
+int MPI_File_iwrite_at(MPI_File fh, MPI_Offset offset, ROMIO_CONST void *buf,
                        int count, MPI_Datatype datatype, 
                        MPIO_Request *request)
 .fi
@@ -68,4 +68,4 @@ All MPI objects (e.g.,
 .I INTEGER
 in Fortran.
 .SH LOCATION
-iwrite_at.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/romio/mpi-io/iwrite_at.c

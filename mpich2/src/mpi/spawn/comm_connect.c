@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -26,7 +26,7 @@
 #define FUNCNAME MPIR_Comm_connect_impl
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPIR_Comm_connect_impl(char * port_name, MPID_Info * info_ptr, int root,
+int MPIR_Comm_connect_impl(const char * port_name, MPID_Info * info_ptr, int root,
                           MPID_Comm * comm_ptr, MPID_Comm ** newcomm_ptr)
 {
     return MPID_Comm_connect(port_name, info_ptr, root, comm_ptr, newcomm_ptr);
@@ -41,13 +41,13 @@ int MPIR_Comm_connect_impl(char * port_name, MPID_Info * info_ptr, int root,
 /*@
    MPI_Comm_connect - Make a request to form a new intercommunicator
 
- Input Parameters:
+Input Parameters:
 + port_name - network address (string, used only on root) 
 . info - implementation-dependent information (handle, used only on root) 
 . root - rank in comm of root node (integer) 
 - comm - intracommunicator over which call is collective (handle) 
 
- Output Parameter:
+Output Parameters:
 . newcomm - intercommunicator with server as remote group (handle) 
 
 .N ThreadSafe
@@ -60,7 +60,7 @@ int MPIR_Comm_connect_impl(char * port_name, MPID_Info * info_ptr, int root,
 .N MPI_ERR_INFO
 .N MPI_ERR_PORT
 @*/
-int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm, 
+int MPI_Comm_connect(const char *port_name, MPI_Info info, int root, MPI_Comm comm,
                      MPI_Comm *newcomm)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -81,7 +81,6 @@ int MPI_Comm_connect(char *port_name, MPI_Info info, int root, MPI_Comm comm,
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
 	    MPIR_ERRTEST_INFO_OR_NULL(info, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

@@ -9,8 +9,8 @@
 Combines values from all processes and distributes the result back to all processes 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count, 
-                   MPI_Datatype datatype, MPI_Op op, MPI_Comm comm )
+int MPI_Allreduce(const void *sendbuf, void *recvbuf, int count,
+                  MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -25,7 +25,7 @@ int MPI_Allreduce ( void *sendbuf, void *recvbuf, int count,
 <DT><B>comm </B><DD>communicator (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>recvbuf </B> <DD> starting address of receive buffer (choice) 
 </DL>
 <P>
@@ -89,5 +89,5 @@ created with <TT>MPI_Op_create</TT>.
 <DL><DT><B>MPI_ERR_COMM </B> <DD> Invalid communicator.  A common error is to use a null
 communicator in a call (not even allowed in <TT>MPI_Comm_rank</TT>).
 </DL>
-<P><B>Location:</B>allreduce.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/coll/allreduce.c<P>
 </BODY></HTML>

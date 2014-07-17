@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -7,7 +7,7 @@
 
 #include "mpiimpl.h"
 
-/* mpiext.h contains the prototypes for functions to interface MPICH2
+/* mpiext.h contains the prototypes for functions to interface MPICH
    and ROMIO */
 #include "mpiext.h"
 
@@ -35,10 +35,10 @@
 /*@
    MPI_File_get_errhandler - Get the error handler attached to a file
 
-   Input Parameter:
+Input Parameters:
 . file - MPI file (handle) 
 
-   Output Parameter:
+Output Parameters:
 . errhandler - handler currently associated with file (handle) 
 
 .N ThreadSafeNoUpdate
@@ -75,7 +75,6 @@ int MPI_File_get_errhandler(MPI_File file, MPI_Errhandler *errhandler)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_ARGNULL(errhandler,"errhandler",mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

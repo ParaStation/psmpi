@@ -11,7 +11,7 @@ Create an indexed datatype with constant-sized blocks
 <PRE>
 int MPI_Type_create_indexed_block(int count,
                                int blocklength,
-                               int array_of_displacements[],
+                               const int array_of_displacements[],
                                MPI_Datatype oldtype,
                                MPI_Datatype *newtype)
 </PRE>
@@ -26,7 +26,7 @@ int MPI_Type_create_indexed_block(int count,
 <DT><B>oldtype </B><DD>old datatype (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>newtype </B> <DD> new datatype (handle) 
 </DL>
 <P>
@@ -43,9 +43,9 @@ is to do something like the following
     call MPI_SEND(a,1,newtype,...)
 </PRE>
 
-expecting this to send <TT>a(1),a(11),...</TT> because the indices have values
-<TT>1,11,...</TT>.   Because these are <EM>displacements</EM> from the beginning of <TT>a</TT>,
-it actually sends <TT>a(1+1),a(1+11),...</TT>.
+expecting this to send "a(1),a(11),..." because the indices have values
+"1,11,...".   Because these are <EM>displacements</EM> from the beginning of "a",
+it actually sends "a(1+1),a(1+11),...".
 <P>
 If you wish to consider the displacements as indices into a Fortran array,
 consider declaring the Fortran array with a zero origin
@@ -95,5 +95,5 @@ MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 <DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
-<P><B>Location:</B>type_create_indexed_block.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/type_create_indexed_block.c<P>
 </BODY></HTML>

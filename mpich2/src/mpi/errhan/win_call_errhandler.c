@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -34,7 +34,7 @@
    MPI_Win_call_errhandler - Call the error handler installed on a 
    window object
 
-   Input Parameters:
+Input Parameters:
 + win - window with error handler (handle) 
 - errorcode - error code (integer) 
 
@@ -70,7 +70,6 @@ int MPI_Win_call_errhandler(MPI_Win win, int errorcode)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_WIN(win, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

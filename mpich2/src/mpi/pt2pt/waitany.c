@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -40,12 +40,12 @@ Input Parameters:
 - array_of_requests - array of requests (array of handles) 
 
 Output Parameters:
-+ index - index of handle for operation that completed (integer).  In the
++ indx - index of handle for operation that completed (integer).  In the
 range '0' to 'count-1'.  In Fortran, the range is '1' to 'count'.
 - status - status object (Status).  May be 'MPI_STATUS_IGNORE'.
 
 Notes:
-If all of the requests are 'MPI_REQUEST_NULL', then 'index' is returned as 
+If all of the requests are 'MPI_REQUEST_NULL', then 'indx' is returned as
 'MPI_UNDEFINED', and 'status' is returned as an empty status.
 
 While it is possible to list a request handle more than once in the
@@ -63,7 +63,7 @@ program to unexecpectedly terminate or produce incorrect results.
 .N MPI_ERR_REQUEST
 .N MPI_ERR_ARG
 @*/
-int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, 
+int MPI_Waitany(int count, MPI_Request array_of_requests[], int *indx,
 		MPI_Status *status)
 {
     static const char FCNAME[] = "MPI_Waitany";
@@ -90,15 +90,13 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
 	    if (count != 0) {
 		MPIR_ERRTEST_ARGNULL(array_of_requests, "array_of_requests", mpi_errno);
 		/* NOTE: MPI_STATUS_IGNORE != NULL */
 		MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
 	    }
-	    MPIR_ERRTEST_ARGNULL(index, "index", mpi_errno);
-	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	    MPIR_ERRTEST_ARGNULL(indx, "indx", mpi_errno);
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -126,9 +124,7 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
 #ifdef HAVE_ERROR_CHECKING
                 MPID_BEGIN_ERROR_CHECKS;
                 {
-                    MPIR_ERRTEST_ARRAYREQUEST_OR_NULL(array_of_requests[i], 
-						      i, mpi_errno);
-                    if (mpi_errno != MPI_SUCCESS) goto fn_progress_end_fail;
+                    MPIR_ERRTEST_ARRAYREQUEST_OR_NULL(array_of_requests[i], i, mpi_errno);
                 }
                 MPID_END_ERROR_CHECKS;
 #endif /* HAVE_ERROR_CHECKING */
@@ -158,10 +154,10 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
             /* we found at least one non-null request */
             found_nonnull_req = TRUE;
             
-	    if (request_ptrs[i]->kind == MPID_UREQUEST && request_ptrs[i]->poll_fn != NULL)
+            if (request_ptrs[i]->kind == MPID_UREQUEST && request_ptrs[i]->greq_fns->poll_fn != NULL)
 	    {
                 /* this is a generalized request; make progress on it */
-		mpi_errno = (request_ptrs[i]->poll_fn)(request_ptrs[i]->grequest_extra_state, status);
+                mpi_errno = (request_ptrs[i]->greq_fns->poll_fn)(request_ptrs[i]->greq_fns->grequest_extra_state, status);
 		if (mpi_errno != MPI_SUCCESS) goto fn_progress_end_fail;
 	    }
             if (MPID_Request_is_complete(request_ptrs[i]))
@@ -171,7 +167,7 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
 						  &active_flag);
 		if (active_flag)
 		{
-		    *index = i;
+		    *indx = i;
 		    goto break_l1;
 		}
 		else
@@ -181,7 +177,7 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
 
 		    if (n_inactive == count)
 		    {
-			*index = MPI_UNDEFINED;
+			*indx = MPI_UNDEFINED;
 			/* status is set to empty by MPIR_Request_complete */
 			goto break_l1;
 		    }
@@ -193,7 +189,7 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
         if (!found_nonnull_req)
         {
             /* all requests were NULL */
-            *index = MPI_UNDEFINED;
+            *indx = MPI_UNDEFINED;
             if (status != NULL)    /* could be null if count=0 */
                 MPIR_Status_set_empty(status);
             goto break_l1;
@@ -227,7 +223,7 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
 				     FCNAME, __LINE__, MPI_ERR_OTHER,
 				     "**mpi_waitany", 
 				     "**mpi_waitany %d %p %p %p", 
-				     count, array_of_requests, index, status);
+				     count, array_of_requests, indx, status);
 #endif
     mpi_errno = MPIR_Err_return_comm(NULL, FCNAME, mpi_errno);
     goto fn_exit;

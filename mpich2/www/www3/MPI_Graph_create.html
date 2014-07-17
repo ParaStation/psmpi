@@ -9,8 +9,8 @@
 Makes a new communicator to which topology information has been attached 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *indx, int *edges, 
-                    int reorder, MPI_Comm *comm_graph)
+int MPI_Graph_create(MPI_Comm comm_old, int nnodes, const int indx[],
+                     const int edges[], int reorder, MPI_Comm *comm_graph)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -25,7 +25,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, int *indx, int *edges,
 <DT><B>reorder </B><DD>ranking may be reordered (true) or not (false) (logical) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>comm_graph </B> <DD> communicator with graph topology added (handle) 
 </DL>
 <P>
@@ -82,5 +82,5 @@ communicator in a call (not even allowed in <TT>MPI_Comm_rank</TT>).
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
 <P>
-<P><B>Location:</B>graphcreate.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/topo/graphcreate.c<P>
 </BODY></HTML>

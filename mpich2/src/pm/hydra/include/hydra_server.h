@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -27,7 +27,7 @@ struct HYD_server_info {
     char *port_range;
     char *iface_ip_env_name;
     char *nameserver;
-    char *local_hostname;
+    char *localhost;
 
      HYD_status(*stdout_cb) (int pgid, int proxy_id, int rank, void *buf, int buflen);
      HYD_status(*stderr_cb) (int pgid, int proxy_id, int rank, void *buf, int buflen);
@@ -39,7 +39,7 @@ struct HYD_server_info {
     struct HYD_pg pg_list;
 
     /* Cleanup */
-    int cleanup_pipe[2];
+    int cmd_pipe[2];
 
 #if defined ENABLE_PROFILING
     int enable_profiling;

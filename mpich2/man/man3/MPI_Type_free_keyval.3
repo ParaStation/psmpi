@@ -1,15 +1,15 @@
-.TH MPI_Type_free_keyval 3 "5/20/2010" " " "MPI"
+.TH MPI_Type_free_keyval 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Type_free_keyval \-  Frees an attribute key for datatypes 
 .SH SYNOPSIS
 .nf
 int MPI_Type_free_keyval(int *type_keyval)
 .fi
-.SH INPUT PARAMETER
+.SH INPUT PARAMETERS
 .PD 0
 .TP
-.B keyval 
-- Frees the integer key value (integer) 
+.B type_keyval 
+- Frees the integer key value (integer)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY
@@ -92,4 +92,4 @@ about this error code.
 - Invalid keyval
 .PD 1
 .SH LOCATION
-type_free_keyval.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/attr/type_free_keyval.c

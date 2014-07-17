@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -104,7 +104,6 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
 	    /* Validate source and destination */
 	    MPIR_ERRTEST_SEND_RANK(comm_ptr, dest, mpi_errno);
 	    MPIR_ERRTEST_RECV_RANK(comm_ptr, source, mpi_errno);
-            if (mpi_errno) goto fn_fail;
 
 	    /* Validate datatype handle */
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
@@ -116,13 +115,13 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
 
 		MPID_Datatype_get_ptr(datatype, datatype_ptr);
 		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+		if (mpi_errno) goto fn_fail;
 		MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
 		if (mpi_errno) goto fn_fail;
 	    }
 	    
 	    /* Validate buffer */
 	    MPIR_ERRTEST_USERBUFFER(buf,count,datatype,mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -141,8 +140,8 @@ int MPI_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
 	MPID_Request * sreq;
 	MPID_Request * rreq;
 	void * tmpbuf = NULL;
-	int tmpbuf_size = 0;
-	int tmpbuf_count = 0;
+	MPI_Aint tmpbuf_size = 0;
+	MPI_Aint tmpbuf_count = 0;
 
 	if (count > 0 && dest != MPI_PROC_NULL)
 	{

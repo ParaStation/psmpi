@@ -1,11 +1,11 @@
-.TH MPI_Type_contiguous 3 "7/30/2010" " " "MPI"
+.TH MPI_Type_contiguous 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Type_contiguous \-  Creates a contiguous datatype 
 .SH SYNOPSIS
 .nf
 int MPI_Type_contiguous(int count,
-                      MPI_Datatype old_type,
-                      MPI_Datatype *new_type_p)
+                      MPI_Datatype oldtype,
+                      MPI_Datatype *newtype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -19,7 +19,7 @@ int MPI_Type_contiguous(int count,
 - old datatype (handle) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B newtype 
@@ -113,4 +113,4 @@ non-negative; a count of zero is often valid.
 implementation is unable to acquire memory.  
 .PD 1
 .SH LOCATION
-type_contiguous.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/type_contiguous.c

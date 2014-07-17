@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- 
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- 
  * vim: ts=8 sts=4 sw=4 noexpandtab
  *
  *   Copyright (C) 2007 UChicago/Argonne LLC. 
@@ -94,7 +94,8 @@ static int file_to_info(int fd, MPI_Info info)
 {
     char *buffer, *token, *key, *val, *garbage;
     char *pos1=NULL, *pos2=NULL;
-    int flag, ret;
+    int flag;
+    ssize_t ret;
     char dummy;
     struct stat statbuf;
 

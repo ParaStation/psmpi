@@ -1,86 +1,113 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
-#include "mpi.h" 
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
+#include "mpi.h"
 
-/* FIXME: This comment is wrong - the test appears to only create a datatype */
-/* This does a transpose with a get operation, fence, and derived
-   datatypes. Uses vector and hvector (Example 3.32 from MPI 1.1
-   Standard). Run on 2 processes */
+/* Make sure datatype creation is independent of data size
+   Note, however, that there is no guarantee or expectation
+   that the time would be constant.  In particular, some
+   optimizations might take more time than others.
 
-int main(int argc, char *argv[]) 
-{ 
-    MPI_Datatype column, xpose;
-    double t[5], ttmp, tmin, tmax, ttick;
-    static int sizes[5] = { 10, 100, 1000, 10000, 20000 };
-    int i, isMonotone, errs=0, nrows, ncols, isvalid;
- 
-    MPI_Init(&argc,&argv); 
+   The real goal of this is to ensure that the time to create
+   a datatype doesn't increase strongly with the number of elements
+   within the datatype, particularly for these datatypes that are
+   quite simple patterns.
+ */
 
-    ttick = MPI_Wtick();
+#define SKIP 4
+#define NUM_SIZES 16
+#define FRACTION 1.0
 
-    for (i=0; i<5; i++) {
-         nrows = ncols = sizes[i];
-         ttmp = MPI_Wtime();
-         /* create datatype for one column */
-         MPI_Type_vector(nrows, 1, ncols, MPI_INT, &column);
-         /* create datatype for matrix in column-major order */
-         MPI_Type_hvector(ncols, 1, sizeof(int), column, &xpose);
-         MPI_Type_commit(&xpose);
-         t[i] = MPI_Wtime() - ttmp;
-         MPI_Type_free( &xpose );
-         MPI_Type_free( &column );
-     }
+/* Don't make the number of loops too high; we create so many
+ * datatypes before trying to free them */
+#define LOOPS 1024
 
-     /* Now, analyze the times to see that they are (a) small and (b)
-        nearly independent of size */
-     tmin = 10000;
-     tmax = 0;
-     isvalid = 1;
-     for (i=0; i<5; i++) {
-	 if (t[i] < 10*ttick) {
-	     /* Timing is invalid - resolution is too low */
-	     isvalid = 0;
-	 }
-	 else {
-	     if (t[i] < tmin) tmin = t[i];
-	     if (t[i] > tmax) tmax = t[i];
-	 }
-     }
-     if (isvalid) {
-	 /* Monotone times are a warning */
-	 isMonotone = 1;
-	 for (i=1; i<5; i++) {
-	     if (t[i] < t[i-1]) isMonotone = 0;
-	 }
-	 if (tmax > 100 * tmin) {
-	     errs++;
-	     fprintf( stderr, "Range of times appears too large\n" );
-	     if (isMonotone) {
-		 fprintf( stderr, "Vector types may use processing proportion to count\n" );
-	     }
-	     for (i=0; i<5; i++) {
-		 fprintf( stderr, "n = %d, time = %f\n", sizes[i], t[i] );
-	     }
-	     fflush(stderr);
-	 }
-     }
-     else {
-	 fprintf( stderr, "Timing failed - recorded times are too small relative to MPI_Wtick\n" );
-	 /* Note that this is not an error in the MPI implementation - it is a 
-	    failure in the test */
-     }
+int main(int argc, char *argv[])
+{
+    MPI_Datatype column[LOOPS], xpose[LOOPS];
+    double t[NUM_SIZES], ttmp, tmin, tmax, tmean, tdiff;
+    double tMeanLower, tMeanHigher;
+    int size;
+    int i, j, errs = 0, nrows, ncols;
+
+    MPI_Init(&argc, &argv);
+
+    tmean = 0;
+    size  = 1;
+    for (i = -SKIP; i < NUM_SIZES; i++) {
+        nrows = ncols = size;
+
+        ttmp = MPI_Wtime();
+
+        for (j = 0; j < LOOPS; j++) {
+            MPI_Type_vector(nrows, 1, ncols, MPI_INT, &column[j]);
+            MPI_Type_hvector(ncols, 1, sizeof(int), column[j], &xpose[j]);
+            MPI_Type_commit(&xpose[j]);
+        }
+
+        if (i >= 0) {
+            t[i] = MPI_Wtime() - ttmp;
+            if (t[i] < 100 * MPI_Wtick()) {
+                /* Time is too inaccurate to use.  Set to zero.
+                   Consider increasing the LOOPS value to make this
+                   time large enough */
+                t[i] = 0;
+            }
+            tmean += t[i];
+        }
+
+        for (j = 0; j < LOOPS; j++) {
+            MPI_Type_free(&xpose[j]);
+            MPI_Type_free(&column[j]);
+        }
+
+        if (i >= 0)
+            size *= 2;
+    }
+    tmean /= NUM_SIZES;
+
+    /* Now, analyze the times to see that they do not grow too fast
+       as a function of size.  As that is a vague criteria, we do the
+       following as a simple test:
+          Compute the mean of the first half and the second half of the
+          data
+          Compare the two means
+          If the mean of the second half is more than FRACTION times the
+          mean of the first half, then the time may be growing too fast.
+     */
+    tMeanLower = tMeanHigher = 0;
+    for (i=0; i<NUM_SIZES/2; i++)
+        tMeanLower += t[i];
+    tMeanLower /= (NUM_SIZES/2);
+    for (i=NUM_SIZES/2; i<NUM_SIZES; i++)
+        tMeanHigher += t[i];
+    tMeanHigher /= (NUM_SIZES - NUM_SIZES/2);
+    /* A large value (even 1 or greater) is a good choice for
+       FRACTION here - the goal is to detect significant growth in
+       execution time as the size increases, and there is no MPI
+       standard requirement here to meet.
+
+       If the times were too small, then the test also passes - the
+       goal is to find implementation problems that lead to excessive
+       time in these routines.
+    */
+    if (tMeanLower > 0 && tMeanHigher > (1 + FRACTION) * tMeanLower) errs++;
 
     if (errs) {
-        printf( " Found %d errors\n", errs );
+        fprintf(stderr, "too much difference in performance: ");
+        for (i = 0; i < NUM_SIZES; i++)
+            fprintf(stderr, "%.3f ", t[i] * 1e6);
+        fprintf(stderr, "\n");
     }
-    else {
-        printf( " No Errors\n" );
-    } 
-    MPI_Finalize(); 
-    return 0; 
-} 
+    else
+        printf(" No Errors\n");
+
+    MPI_Finalize();
+    return 0;
+}

@@ -1,10 +1,14 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 #ifndef MPIMEM_H_INCLUDED
 #define MPIMEM_H_INCLUDED
+
+#ifndef MPICHCONF_H_INCLUDED
+#error 'mpimem.h requires that mpichconf.h be included first'
+#endif
 
 /* Make sure that we have the definitions for the malloc routines and size_t */
 #include <stdio.h>
@@ -22,6 +26,11 @@ extern "C" {
 
 /* ensure that we weren't included out of order */
 #include "mpibase.h"
+
+/* Define attribute as empty if it has no definition */
+#ifndef ATTRIBUTE
+#define ATTRIBUTE(a)
+#endif
 
 /* ------------------------------------------------------------------------- */
 /* mpimem.h */
@@ -77,7 +86,7 @@ char *MPIU_Strdup( const char * );
 
 /* ---------------------------------------------------------------------- */
 /* FIXME - The string routines do not belong in the memory header file  */
-/* FIXME - The string error code such be MPICH2-usable error codes */
+/* FIXME - The string error code such be MPICH-usable error codes */
 #define MPIU_STR_SUCCESS    0
 #define MPIU_STR_FAIL      -1
 #define MPIU_STR_NOMEM      1
@@ -133,17 +142,17 @@ int MPIU_Str_get_string(char **str_ptr, char *val, int maxlen);
 /* ------------------------------------------------------------------------- */
 
 void MPIU_trinit(int);
-void *MPIU_trmalloc(unsigned int, int, const char []);
+void *MPIU_trmalloc(size_t, int, const char []);
 void MPIU_trfree(void *, int, const char []);
 int MPIU_trvalid(const char []);
-void MPIU_trspace(int *, int *);
+void MPIU_trspace(size_t *, size_t *);
 void MPIU_trid(int);
 void MPIU_trlevel(int);
 void MPIU_trDebugLevel(int);
-void *MPIU_trcalloc(unsigned int, unsigned int, int, const char []);
-void *MPIU_trrealloc(void *, int, int, const char[]);
+void *MPIU_trcalloc(size_t, size_t, int, const char []);
+void *MPIU_trrealloc(void *, size_t, int, const char[]);
 void *MPIU_trstrdup(const char *, int, const char[]);
-void MPIU_TrSetMaxMem(int);
+void MPIU_TrSetMaxMem(size_t);
 void MPIU_trdump(FILE *, int);
 
 #ifdef USE_MEMORY_TRACING
@@ -168,7 +177,7 @@ void MPIU_trdump(FILE *, int);
 .ve
   However, it can also be defined as 
 .vb
-  #define MPIU_Malloc(n) MPIU_trmalloc(n,__FILE__,__LINE__)
+  #define MPIU_Malloc(n) MPIU_trmalloc(n,__LINE__,__FILE__)
 .ve
   where 'MPIU_trmalloc' is a tracing version of 'malloc' that is included with 
   MPICH.
@@ -176,7 +185,7 @@ void MPIU_trdump(FILE *, int);
   Module:
   Utility
   M*/
-#define MPIU_Malloc(a)    MPIU_trmalloc((unsigned)(a),__LINE__,__FILE__)
+#define MPIU_Malloc(a)    MPIU_trmalloc((a),__LINE__,__FILE__)
 
 /*M
   MPIU_Calloc - Allocate memory that is initialized to zero.
@@ -198,7 +207,7 @@ void MPIU_trdump(FILE *, int);
   Utility
   M*/
 #define MPIU_Calloc(a,b)  \
-    MPIU_trcalloc((unsigned)(a),(unsigned)(b),__LINE__,__FILE__)
+    MPIU_trcalloc((a),(b),__LINE__,__FILE__)
 
 /*M
   MPIU_Free - Free memory
@@ -219,7 +228,7 @@ void MPIU_trdump(FILE *, int);
 .ve
   However, it can also be defined as 
 .vb
-  #define MPIU_Free(n) MPIU_trfree(n,__FILE__,__LINE__)
+  #define MPIU_Free(n) MPIU_trfree(n,__LINE__,__FILE__)
 .ve
   where 'MPIU_trfree' is a tracing version of 'free' that is included with 
   MPICH.
@@ -298,7 +307,7 @@ extern char *strdup( const char * );
 /* Define decl with a dummy definition to allow us to put a semi-colon
    after the macro without causing the declaration block to end (restriction
    imposed by C) */
-#define MPIU_CHKLMEM_DECL(n_) int dummy_
+#define MPIU_CHKLMEM_DECL(n_) int dummy_ ATTRIBUTE((unused))
 #define MPIU_CHKLMEM_FREEALL()
 #define MPIU_CHKLMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,stmt_) \
 {pointer_ = (type_)alloca(nbytes_); \
@@ -359,7 +368,7 @@ if (pointer_) { \
 
 /* Persistent memory that we may want to recover if something goes wrong */
 #define MPIU_CHKPMEM_DECL(n_) \
- void *(mpiu_chkpmem_stk_[n_]);\
+ void *(mpiu_chkpmem_stk_[n_]) = { NULL };     \
  int mpiu_chkpmem_stk_sp_=0;\
  MPIU_AssertDeclValue(const int mpiu_chkpmem_stk_sz_,n_)
 #define MPIU_CHKPMEM_MALLOC_ORSTMT(pointer_,type_,nbytes_,rc_,name_,stmt_) \
@@ -417,7 +426,7 @@ if (pointer_) { \
     void *realloc_tmp_ = MPIU_Realloc((ptr_), (size_)); \
     if ((size_) && !realloc_tmp_) { \
         MPIU_Free(ptr_); \
-        MPIU_ERR_SETANDJUMP2(rc_,MPIU_CHKMEM_ISFATAL,"**nomem2","**nomem2 %d %s",(size_),MPIU_QUOTE(ptr_)); \
+        MPIU_ERR_SETANDJUMP2(rc_,MPI_ERR_OTHER,"**nomem2","**nomem2 %d %s",(size_),MPIU_QUOTE(ptr_)); \
     } \
     (ptr_) = realloc_tmp_; \
 } while (0)
@@ -425,14 +434,9 @@ if (pointer_) { \
 #define MPIU_REALLOC_ORJUMP(ptr_,size_,rc_) do { \
     void *realloc_tmp_ = MPIU_Realloc((ptr_), (size_)); \
     if (size_) \
-        MPIU_ERR_CHKANDJUMP2(!realloc_tmp_,rc_,MPIU_CHKMEM_ISFATAL,"**nomem2","**nomem2 %d %s",(size_),MPIU_QUOTE(ptr_)); \
+        MPIU_ERR_CHKANDJUMP2(!realloc_tmp_,rc_,MPI_ERR_OTHER,"**nomem2","**nomem2 %d %s",(size_),MPIU_QUOTE(ptr_)); \
     (ptr_) = realloc_tmp_; \
 } while (0)
-
-/* Define attribute as empty if it has no definition */
-#ifndef ATTRIBUTE
-#define ATTRIBUTE(a)
-#endif
 
 #if defined(HAVE_STRNCASECMP)
 #   define MPIU_Strncasecmp strncasecmp

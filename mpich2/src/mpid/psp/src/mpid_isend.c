@@ -25,7 +25,7 @@ void sendrequest_common_done(pscom_request_t *preq)
 		req->status.MPI_ERROR = MPI_SUCCESS;
 	} else if (preq->state & PSCOM_REQ_STATE_CANCELED) {
 		req->status.MPI_ERROR = MPI_SUCCESS;
-		req->status.cancelled = 1;
+		MPIR_STATUS_SET_CANCEL_BIT(req->status, TRUE);
 	} else {
 		static char state_str[100];
 		snprintf(state_str, 100, "request state:%s", pscom_req_state_str(preq->state));
@@ -112,8 +112,8 @@ int prepare_data(MPID_Request *req, const void *buf, int count, MPI_Datatype dat
 	preq->data_len = sreq->msg.msg_sz;
 	preq->data = sreq->msg.msg;
 
-	req->status.count = preq->data_len;
-	req->status.cancelled = 0;
+	MPIR_STATUS_SET_COUNT(req->status, preq->data_len);
+	MPIR_STATUS_SET_CANCEL_BIT(req->status, FALSE)
 
 	return MPI_SUCCESS;
 	/* --- */
@@ -232,13 +232,13 @@ int accept_ctrl(pscom_request_t *req,
 }
 
 
-void MPID_PSP_RecvCtrl(int tag, int context_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype)
+void MPID_PSP_RecvCtrl(int tag, int recvcontext_id, int src_rank, pscom_connection_t *con, enum MPID_PSP_MSGTYPE msgtype)
 {
 	pscom_request_t *req = PSCOM_REQUEST_CREATE();
 	MPID_PSCOM_XHeader_t *xhead = &req->xheader.user.common;
 
 	xhead->tag = tag;
-	xhead->context_id = context_id;
+	xhead->context_id = recvcontext_id;
 	xhead->type = msgtype;
 	xhead->_reserved_ = 0;
 	xhead->src_rank = src_rank;
@@ -247,7 +247,7 @@ void MPID_PSP_RecvCtrl(int tag, int context_id, int src_rank, pscom_connection_t
 		req->connection = con;
 	} else {
 		req->connection = NULL;
-		req->socket = MPIDI_Process.socket;
+		req->socket = MPIR_Process.comm_world->pscom_socket;
 	}
 
 	req->ops.recv_accept = accept_ctrl;

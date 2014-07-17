@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -33,7 +33,7 @@
    MPI_Unpublish_name - Unpublish a service name published with 
    MPI_Publish_name
 
- Input Parameters:
+Input Parameters:
 + service_name - a service name (string) 
 . info - implementation-specific information (handle) 
 - port_name - a port name (string) 
@@ -48,7 +48,7 @@
 .N MPI_ERR_ARG
 .N MPI_ERR_OTHER
 @*/
-int MPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
+int MPI_Unpublish_name(const char *service_name, MPI_Info info, const char *port_name)
 {
     static const char FCNAME[] = "MPI_Unpublish_name";
     int mpi_errno = MPI_SUCCESS;
@@ -66,7 +66,6 @@ int MPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_INFO_OR_NULL(info, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -85,7 +84,6 @@ int MPI_Unpublish_name(char *service_name, MPI_Info info, char *port_name)
 		MPID_Info_valid_ptr( info_ptr, mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( service_name, "service_name", mpi_errno );
 	    MPIR_ERRTEST_ARGNULL( port_name, "port_name", mpi_errno );
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

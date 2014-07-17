@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -30,11 +30,11 @@
  */
 /*@ MPIU_Strncpy - Copy a string with a maximum length
   
-    Input Parameters:
+Input Parameters:
 +   instr - String to copy
 -   maxlen - Maximum total length of 'outstr'
 
-    Output Parameter:
+Output Parameters:
 .   outstr - String to copy into
 
     Notes:
@@ -85,11 +85,11 @@ int MPIU_Strncpy( char *dest, const char *src, size_t n )
    any null, which is always added to the end of the line */
 /*@ MPIU_Strnapp - Append to a string with a maximum length
 
-    Input Parameters:
+Input Parameters:
 +   instr - String to copy
 -   maxlen - Maximum total length of 'outstr'
 
-    Output Parameter:
+Output Parameters:
 .   outstr - String to copy into
 
     Notes:
@@ -145,7 +145,7 @@ int MPIU_Strnapp( char *dest, const char *src, size_t n )
     char *MPIU_Strdup( const char *str )
 .ve
 
-  Input Parameter:
+Input Parameters:
 . str - null-terminated string to duplicate
 
   Return value:

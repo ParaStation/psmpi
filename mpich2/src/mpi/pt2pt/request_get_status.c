@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -32,7 +32,7 @@
 /*@
    MPI_Request_get_status - Nondestructive test for the completion of a Request
 
-Input Parameter:
+Input Parameters:
 .  request - request (handle).  May be 'MPI_REQUEST_NULL'.
 
 Output Parameters:
@@ -72,7 +72,6 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 	    MPIR_ERRTEST_ARGNULL(flag, "flag", mpi_errno);
 	    /* NOTE: MPI_STATUS_IGNORE != NULL */
 	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);
-	    if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -120,7 +119,7 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
         {
             if (status != MPI_STATUS_IGNORE)
             {
-                status->cancelled = request_ptr->status.cancelled;
+                MPIR_STATUS_SET_CANCEL_BIT(*status, MPIR_STATUS_GET_CANCEL_BIT(request_ptr->status));
             }
             mpi_errno = request_ptr->status.MPI_ERROR;
             break;
@@ -143,7 +142,7 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
 		{
 		    if (status != MPI_STATUS_IGNORE)
 		    {
-			status->cancelled = request_ptr->status.cancelled;
+			MPIR_STATUS_SET_CANCEL_BIT(*status, MPIR_STATUS_GET_CANCEL_BIT(request_ptr->status));
 		    }
 		    mpi_errno = prequest_ptr->status.MPI_ERROR;
 		}
@@ -159,7 +158,7 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
                     }
                     if (status != MPI_STATUS_IGNORE)
                     {
-                        status->cancelled = prequest_ptr->status.cancelled;
+                        MPIR_STATUS_SET_CANCEL_BIT(*status, MPIR_STATUS_GET_CANCEL_BIT(prequest_ptr->status));
                     }
                     if (mpi_errno == MPI_SUCCESS)
                     {
@@ -175,7 +174,7 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
                        make the error code available */
                     if (status != MPI_STATUS_IGNORE)
                     {
-                        status->cancelled = request_ptr->status.cancelled;
+                        MPIR_STATUS_SET_CANCEL_BIT(*status, MPIR_STATUS_GET_CANCEL_BIT(request_ptr->status));
                     }
                     mpi_errno = request_ptr->status.MPI_ERROR;
                 }
@@ -219,7 +218,7 @@ int MPI_Request_get_status(MPI_Request request, int *flag, MPI_Status *status)
             }
             if (status != MPI_STATUS_IGNORE)
             {
-                status->cancelled = request_ptr->status.cancelled;
+                MPIR_STATUS_SET_CANCEL_BIT(*status, MPIR_STATUS_GET_CANCEL_BIT(request_ptr->status));
             }
             MPIR_Request_extract_status(request_ptr, status);
 	    

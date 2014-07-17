@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2006 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -7,7 +7,7 @@
 /* We need to include the conf file first so that we can use
    the _SVID_SOURCE if needed before any file includes features.h 
    on GNU systems */
-#include "mpidi_ch3_conf.h"
+#include "mpichconf.h"
 
 
 #ifdef USE_NOPOSIX_FOR_IFCONF

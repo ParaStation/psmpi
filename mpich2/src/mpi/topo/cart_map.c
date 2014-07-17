@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -74,11 +74,13 @@ int MPIR_Cart_map_impl(const MPID_Comm *comm_ptr, int ndims, const int dims[],
     int mpi_errno = MPI_SUCCESS;
         
     if (comm_ptr->topo_fns != NULL && comm_ptr->topo_fns->cartMap != NULL) {
+	/* --BEGIN USEREXTENSION-- */
 	mpi_errno = comm_ptr->topo_fns->cartMap( comm_ptr, ndims,
 						 (const int*) dims,
 						 (const int*) periods,
 						 newrank );
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+	/* --END USEREXTENSION-- */
     } else {
 	mpi_errno = MPIR_Cart_map( comm_ptr, ndims,
 				   (const int*) dims,
@@ -109,7 +111,7 @@ Input Parameters:
 - periods - logical array of size 'ndims' specifying the periodicity 
   specification in each coordinate direction 
 
-Output Parameter:
+Output Parameters:
 . newrank - reordered rank of the calling process; 'MPI_UNDEFINED' if 
   calling process does not belong to grid (integer) 
 
@@ -123,7 +125,7 @@ Output Parameter:
 .N MPI_ERR_DIMS
 .N MPI_ERR_ARG
 @*/
-int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods, 
+int MPI_Cart_map(MPI_Comm comm, int ndims, const int dims[], const int periods[],
 		 int *newrank)
 {
     int mpi_errno = MPI_SUCCESS;
@@ -139,15 +141,14 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods,
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_COMM(comm_old, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	    MPIR_ERRTEST_COMM(comm, mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif
     
     /* Convert MPI object handles to object pointers */
-    MPID_Comm_get_ptr( comm_old, comm_ptr );
+    MPID_Comm_get_ptr( comm, comm_ptr );
 
     /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
@@ -156,6 +157,7 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods,
         {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            if (mpi_errno) goto fn_fail;
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(newrank,"newrank",mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(dims,"dims",mpi_errno);
@@ -165,8 +167,8 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 				  MPIR_ERR_RECOVERABLE, 
 				  FCNAME, __LINE__, MPI_ERR_DIMS,
 				  "**dims", "**dims %d", ndims );
-		}
-            if (mpi_errno) goto fn_fail;
+                goto fn_fail;
+            }
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -190,7 +192,7 @@ int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods,
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
 	    "**mpi_cart_map",
-	    "**mpi_cart_map %C %d %p %p %p", comm_old, ndims, dims, periods, 
+	    "**mpi_cart_map %C %d %p %p %p", comm, ndims, dims, periods,
 	    newrank);
     }
 #   endif

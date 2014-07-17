@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -41,7 +41,7 @@ int MPIR_Comm_free_impl(MPID_Comm * comm_ptr)
 /*@
 MPI_Comm_free - Marks the communicator object for deallocation
 
-Input Parameter:
+Input Parameters:
 . comm - Communicator to be destroyed (handle) 
 
 Notes:
@@ -89,7 +89,6 @@ int MPI_Comm_free(MPI_Comm *comm)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(*comm, mpi_errno);
-            if (mpi_errno) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }

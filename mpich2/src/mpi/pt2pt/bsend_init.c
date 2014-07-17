@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -39,7 +39,7 @@ Input Parameters:
 . tag - message tag (integer) 
 - comm - communicator (handle) 
 
-Output Parameter:
+Output Parameters:
 . request - communication request (handle) 
 
 .N ThreadSafe
@@ -56,7 +56,7 @@ Output Parameter:
 
 .seealso: MPI_Buffer_attach
 @*/
-int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype, 
+int MPI_Bsend_init(const void *buf, int count, MPI_Datatype datatype,
                    int dest, int tag, MPI_Comm comm, MPI_Request *request)
 {
     static const char FCNAME[] = "MPI_Bsend_init";
@@ -76,7 +76,6 @@ int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -98,7 +97,6 @@ int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype,
 	    MPIR_ERRTEST_SEND_RANK(comm_ptr, dest, mpi_errno);
 	    MPIR_ERRTEST_SEND_TAG(tag, mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(request,"request",mpi_errno);
-            if (mpi_errno) goto fn_fail;
 
 	    /* Validate datatype object */
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
@@ -107,6 +105,7 @@ int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype,
 
 		MPID_Datatype_get_ptr(datatype, datatype_ptr);
 		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+		if (mpi_errno) goto fn_fail;
 		MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
 		if (mpi_errno) goto fn_fail;
 	    }
@@ -120,6 +119,7 @@ int MPI_Bsend_init(void *buf, int count, MPI_Datatype datatype,
     mpi_errno = MPID_Bsend_init(buf, count, datatype, dest, tag, comm_ptr,
 				MPID_CONTEXT_INTRA_PT2PT, &request_ptr);
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+    MPIR_SENDQ_REMEMBER(request_ptr, dest, tag, comm_ptr->context_id);
 
     /* return the handle of the request to the user */
     MPIU_OBJ_PUBLISH_HANDLE(*request, request_ptr->handle);

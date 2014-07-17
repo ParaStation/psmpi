@@ -1,0 +1,10 @@
+mprobe 2 mpiversion=3.0
+locknull 2 mpiversion=3.0
+win_sync_err_flush 2 mpiversion=3.0
+win_sync_err_flushall 2 mpiversion=3.0
+win_sync_err_lockall_pt 2 mpiversion=3.0
+win_sync_err_lockall_at 2 mpiversion=3.0
+win_sync_err_unlockall 2 mpiversion=3.0
+win_sync_err_reqops 2 mpiversion=3.0
+win_flavor_err_shm 2 mpiversion=3.0
+win_flavor_err_dyn 2 mpiversion=3.0

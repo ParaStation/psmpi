@@ -9,7 +9,7 @@
 Produces a group by reordering an existing group and taking only unlisted members 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
+int MPI_Group_excl(MPI_Group group, int n, const int ranks[], MPI_Group *newgroup)
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -20,7 +20,7 @@ int MPI_Group_excl(MPI_Group group, int n, int *ranks, MPI_Group *newgroup)
 <DT><B>ranks </B><DD>array of integer ranks in <TT>group</TT> not to appear in <TT>newgroup</TT> 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>newgroup </B> <DD> new group derived from above, preserving the order defined by 
 <TT>group</TT> (handle) 
 </DL>
@@ -80,5 +80,5 @@ zero and the size of the communicator minus one; ranks in a receive
 <P>
 <H2>See Also</H2>
  MPI_Group_free
-<BR><P><B>Location:</B>group_excl.c<P>
+<BR><P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/group/group_excl.c<P>
 </BODY></HTML>

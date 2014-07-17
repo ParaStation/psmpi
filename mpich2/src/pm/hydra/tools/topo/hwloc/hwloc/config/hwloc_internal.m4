@@ -1,6 +1,6 @@
 dnl -*- Autoconf -*-
 dnl
-dnl Copyright (c) 2009 INRIA.  All rights reserved.
+dnl Copyright (c) 2009-2012 Inria.  All rights reserved.
 dnl Copyright (c) 2009, 2011 Université Bordeaux 1
 dnl Copyright (c) 2004-2005 The Trustees of Indiana University and Indiana
 dnl                         University Research and Technology
@@ -9,7 +9,7 @@ dnl Copyright (c) 2004-2005 The Regents of the University of California.
 dnl                         All rights reserved.
 dnl Copyright (c) 2004-2008 High Performance Computing Center Stuttgart, 
 dnl                         University of Stuttgart.  All rights reserved.
-dnl Copyright ©  2010 INRIA.  All rights reserved.
+dnl Copyright © 2010-2012 Inria.  All rights reserved.
 dnl Copyright © 2006-2011 Cisco Systems, Inc.  All rights reserved.
 dnl
 dnl See COPYING in top-level directory.
@@ -55,10 +55,49 @@ AC_DEFUN([HWLOC_DEFINE_ARGS],[
                   AS_HELP_STRING([--disable-cairo], 
                                  [Disable the Cairo back-end of hwloc's lstopo command]))
 
-    # XML?
-    AC_ARG_ENABLE([xml],
-                  AS_HELP_STRING([--disable-xml], 
-		                 [Disable the XML back-end of hwloc's lstopo command]))
+    # XML using libxml2?
+    AC_ARG_ENABLE([libxml2],
+                  AS_HELP_STRING([--disable-libxml2], 
+		                 [Do not use libxml2 for XML support, use a custom minimalistic support]))
+
+    # PCI?
+    AC_ARG_ENABLE([pci],
+                  AS_HELP_STRING([--disable-pci],
+                                 [Disable the PCI device discovery]))
+    AC_ARG_ENABLE([libpci],
+		  AS_HELP_STRING([--enable-libpci],
+				 [Use libpci for PCI support. Note that hwloc may be tainted by the pciutils GPL license.]))
+
+    # OpenCL?
+    AC_ARG_ENABLE([opencl],
+                  AS_HELP_STRING([--disable-opencl],
+                                 [Disable the OpenCL device discovery]))
+
+    # CUDA?
+    AC_ARG_ENABLE([cuda],
+                  AS_HELP_STRING([--disable-cuda],
+                                 [Disable the CUDA device discovery using libcudart]))
+
+    # NVML?
+    AC_ARG_ENABLE([nvml],
+                  AS_HELP_STRING([--disable-nvml],
+                                 [Disable the NVML device discovery]))
+
+    # GL/Display
+    AC_ARG_ENABLE([gl],
+		  AS_HELP_STRING([--disable-gl],
+				 [Disable the GL display device discovery]))
+
+    # Linux libnuma
+    AC_ARG_ENABLE([libnuma],
+                  AS_HELP_STRING([--disable-libnuma],
+                                 [Disable the Linux libnuma]))
+
+    # Plugins
+    AC_ARG_ENABLE([plugins],
+                  AS_HELP_STRING([--enable-plugins=name,...],
+                                 [Build the given components as dynamically-loaded plugins]))
+
 ])dnl
 
 #-----------------------------------------------------------------------
@@ -77,7 +116,7 @@ AC_DEFUN([HWLOC_SETUP_DOCS],[
 EOF
 
     AC_MSG_CHECKING([if this is a developer build])
-    AS_IF([test ! -d "$srcdir/.svn" -a ! -d "$srcdir/.hg" -a ! -d "$srcdir/.git"],
+    AS_IF([test ! -d "$srcdir/.hg" -a ! -d "$srcdir/.git"],
           [AC_MSG_RESULT([no (doxygen generation is optional)])],
           [AC_MSG_RESULT([yes])])
     
@@ -106,6 +145,8 @@ EOF
     AS_IF([test "x$DOXYGEN" != "x" -a "x$PDFLATEX" != "x" -a "x$MAKEINDEX" != "x" -a "x$FIG2DEV" != "x" -a "x$GS" != "x" -a "x$EPSTOPDF" != "x"],
                  [hwloc_generate_doxs=yes], [hwloc_generate_doxs=no])
     AC_MSG_RESULT([$hwloc_generate_doxs])
+    AS_IF([test "x$hwloc_generate_doxs" = xyes -a "x$HWLOC_DOXYGEN_VERSION" = x1.6.2],
+                 [hwloc_generate_doxs="no"; AC_MSG_WARN([doxygen 1.6.2 has broken short name support, disabling])])
     
     # Linux and OS X take different sed arguments.
     AC_PROG_SED
@@ -161,8 +202,8 @@ EOF
     # specifically disabled by the user.
     AC_MSG_CHECKING([whether to enable "picky" compiler mode])
     hwloc_want_picky=0
-    AS_IF([test "$GCC" = "yes"],
-          [AS_IF([test -d "$srcdir/.svn" -o -d "$srcdir/.hg" -o -d "$srcdir/.git"],
+    AS_IF([test "$hwloc_c_vendor" = "gnu"],
+          [AS_IF([test -d "$srcdir/.hg" -o -d "$srcdir/.git"],
                  [hwloc_want_picky=1])])
     if test "$enable_picky" = "yes"; then
         if test "$GCC" = "yes"; then
@@ -188,7 +229,7 @@ EOF
         add="$add -Wmissing-prototypes -Wstrict-prototypes"
         add="$add -Wcomment -pedantic"
 
-        CFLAGS="$CFLAGS $add"
+        HWLOC_CFLAGS="$HWLOC_CFLAGS $add"
     fi
 
     # Generate some files for the docs
@@ -208,39 +249,12 @@ AC_DEFUN([HWLOC_SETUP_UTILS],[
 ###
 EOF
 
-    hwloc_build_utils=yes
-
     # Cairo support
-    hwloc_cairo_happy=
+    hwloc_cairo_happy=no
     if test "x$enable_cairo" != "xno"; then
       HWLOC_PKG_CHECK_MODULES([CAIRO], [cairo], [cairo_fill],
                               [hwloc_cairo_happy=yes],
                               [hwloc_cairo_happy=no])
-      if test "x$hwloc_cairo_happy" = "xyes"; then
-        AC_PATH_XTRA
-	CFLAGS_save=$CFLAGS
-	LIBS_save=$LIBS
-
-	CFLAGS="$CFLAGS $X_CFLAGS"
-	LIBS="$LIBS $X_PRE_LIBS $X_LIBS $X_EXTRA_LIBS"
-        AC_CHECK_HEADERS([X11/Xlib.h], [
-          AC_CHECK_HEADERS([X11/Xutil.h X11/keysym.h], [
-            AC_CHECK_LIB([X11], [XOpenDisplay], [
-              enable_X11=yes
-              AC_SUBST([HWLOC_X11_LIBS], ["-lX11"])
-              AC_DEFINE([HWLOC_HAVE_X11], [1], [Define to 1 if X11 libraries are available.])
-            ])]
-          )],,
-          [[#include <X11/Xlib.h>]]
-        )
-        if test "x$enable_X11" != "xyes"; then
-          AC_MSG_WARN([X11 headers not found, Cairo/X11 back-end disabled])
-          hwloc_cairo_happy=no
-        fi
-
-	CFLAGS=$CFLAGS_save
-	LIBS=$LIBS_save
-      fi
     fi
     
     if test "x$hwloc_cairo_happy" = "xyes"; then
@@ -255,9 +269,12 @@ EOF
       AC_CHECK_FUNCS([putwc])
     ], [], [[#include <wchar.h>]])
 
-    AC_CHECK_HEADERS([locale.h], [
+    HWLOC_XML_LOCALIZED=1
+    AC_CHECK_HEADERS([locale.h xlocale.h], [
       AC_CHECK_FUNCS([setlocale])
+      AC_CHECK_FUNCS([uselocale], [HWLOC_XML_LOCALIZED=0])
     ])
+    AC_SUBST([HWLOC_XML_LOCALIZED])
     AC_CHECK_HEADERS([langinfo.h], [
       AC_CHECK_FUNCS([nl_langinfo])
     ])
@@ -293,6 +310,7 @@ EOF
     unset hwloc_old_LIBS
 
     _HWLOC_CHECK_DIFF_U
+    _HWLOC_CHECK_DIFF_W
 
     # Only generate this if we're building the utilities
     AC_CONFIG_FILES(
@@ -311,7 +329,7 @@ AC_DEFUN([HWLOC_SETUP_TESTS],[
 ###
 EOF
 
-    hwloc_build_tests=yes
+    AC_CHECK_LIB([pthread], [pthread_self], [hwloc_have_pthread=yes])
 
     # linux-libnuma.h testing requires libnuma with numa_bitmask_alloc()
     AC_CHECK_DECL([numa_bitmask_alloc], [hwloc_have_linux_libnuma=yes], [],
@@ -326,48 +344,29 @@ EOF
     AC_CHECK_HEADERS([myriexpress.h], [
       AC_MSG_CHECKING(if MX_NUMA_NODE exists)
       AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <myriexpress.h>]],
-                                         [[int a = MX_NUMA_NODE;]],
+                                         [[int a = MX_NUMA_NODE;]])],
                         [AC_MSG_RESULT(yes)
                          AC_CHECK_LIB([myriexpress], [mx_get_info],
                                       [AC_DEFINE([HAVE_MYRIEXPRESS], 1, [Define to 1 if we have -lmyriexpress])
                                        hwloc_have_myriexpress=yes])],
-                        [AC_MSG_RESULT(no)])])])
+                        [AC_MSG_RESULT(no)])])
 
-    AC_CHECK_HEADERS([cuda.h], [
-      AC_MSG_CHECKING(if CUDA_VERSION >= 3020)
-      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <cuda.h>
-#ifndef CUDA_VERSION
-#error CUDA_VERSION undefined
-#elif CUDA_VERSION < 3020
-#error CUDA_VERSION too old
-#endif]], [[int i = 3;]])],
-       [AC_MSG_RESULT(yes)
-        AC_CHECK_LIB([cuda], [cuInit],
-		     [AC_DEFINE([HAVE_CUDA], 1, [Define to 1 if we have -lcuda])
-		      hwloc_have_cuda=yes])],
-       [AC_MSG_RESULT(no)])])
-
-    AC_CHECK_HEADERS([cuda_runtime_api.h], [
-      AC_MSG_CHECKING(if CUDART_VERSION >= 3020)
-      AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#include <cuda_runtime_api.h>
-#ifndef CUDART_VERSION
-#error CUDART_VERSION undefined
-#elif CUDART_VERSION < 3020
-#error CUDART_VERSION too old
-#endif]], [[int i = 3;]])],
-       [AC_MSG_RESULT(yes)
-        AC_CHECK_LIB([cudart], [cudaGetDeviceCount],
-		     [AC_DEFINE([HAVE_CUDART], 1, [Define to 1 if we have -lcudart])
-		      hwloc_have_cudart=yes])],
-       [AC_MSG_RESULT(no)])])
-
-    if test "x$enable_xml" != "xno"; then
-        AC_CHECK_PROGS(XMLLINT, [xmllint])
-    fi
+    AC_CHECK_PROGS(XMLLINT, [xmllint])
 
     AC_CHECK_PROGS(BUNZIPP, bunzip2, false)
+
+    AC_MSG_CHECKING(if CXX works)
+    AC_LANG_PUSH([C++])
+    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#include <iostream>
+using namespace std;
+int foo(void) {
+  cout << "test" << endl;
+  return 0;
+}
+	]])], [hwloc_have_cxx=yes], [hwloc_have_cxx=no])
+    AC_LANG_POP([C++])
+    AC_MSG_RESULT([$hwloc_have_cxx])
 
     _HWLOC_CHECK_DIFF_U
 
@@ -378,14 +377,26 @@ EOF
         hwloc_config_prefix[tests/linux/gather/Makefile]
         hwloc_config_prefix[tests/xml/Makefile]
         hwloc_config_prefix[tests/ports/Makefile]
+        hwloc_config_prefix[tests/rename/Makefile]
         hwloc_config_prefix[tests/linux/hwloc-gather-topology]
         hwloc_config_prefix[tests/linux/gather/test-gather-topology.sh]
         hwloc_config_prefix[tests/linux/test-topology.sh]
         hwloc_config_prefix[tests/xml/test-topology.sh]
+        hwloc_config_prefix[tests/wrapper.sh]
+        hwloc_config_prefix[utils/hwloc-assembler-remote]
+        hwloc_config_prefix[utils/hwloc-compress-dir]
+        hwloc_config_prefix[utils/test-hwloc-annotate.sh]
+        hwloc_config_prefix[utils/test-hwloc-assembler.sh]
         hwloc_config_prefix[utils/test-hwloc-calc.sh]
-        hwloc_config_prefix[utils/test-hwloc-distrib.sh])
+        hwloc_config_prefix[utils/test-hwloc-compress-dir.sh]
+        hwloc_config_prefix[utils/test-hwloc-diffpatch.sh]
+        hwloc_config_prefix[utils/test-hwloc-distances.sh]
+        hwloc_config_prefix[utils/test-hwloc-distrib.sh]
+        hwloc_config_prefix[utils/test-hwloc-info.sh]
+        hwloc_config_prefix[utils/test-hwloc-ls.sh]
+        hwloc_config_prefix[utils/test-fake-plugin.sh])
 
-    AC_CONFIG_COMMANDS([chmoding-scripts], [chmod +x ]hwloc_config_prefix[tests/linux/test-topology.sh ]hwloc_config_prefix[tests/xml/test-topology.sh ]hwloc_config_prefix[tests/linux/hwloc-gather-topology ]hwloc_config_prefix[tests/linux/gather/test-gather-topology.sh ]hwloc_config_prefix[utils/test-hwloc-calc.sh ]hwloc_config_prefix[utils/test-hwloc-distrib.sh])
+    AC_CONFIG_COMMANDS([chmoding-scripts], [chmod +x ]hwloc_config_prefix[tests/linux/test-topology.sh ]hwloc_config_prefix[tests/xml/test-topology.sh ]hwloc_config_prefix[tests/linux/hwloc-gather-topology ]hwloc_config_prefix[tests/linux/gather/test-gather-topology.sh ]hwloc_config_prefix[tests/wrapper.sh ]hwloc_config_prefix[utils/hwloc-assembler-remote ]hwloc_config_prefix[utils/hwloc-compress-dir ]hwloc_config_prefix[utils/test-hwloc-annotate.sh ]hwloc_config_prefix[utils/test-hwloc-assembler.sh ]hwloc_config_prefix[utils/test-hwloc-calc.sh ]hwloc_config_prefix[utils/test-hwloc-compress-dir.sh ]hwloc_config_prefix[utils/test-hwloc-diffpatch.sh ]hwloc_config_prefix[utils/test-hwloc-distances.sh ]hwloc_config_prefix[utils/test-hwloc-distrib.sh ]hwloc_config_prefix[utils/test-hwloc-info.sh ]hwloc_config_prefix[utils/test-hwloc-ls.sh ]hwloc_config_prefix[utils/test-fake-plugin.sh])
 
     # These links are only needed in standalone mode.  It would
     # be nice to m4 foreach this somehow, but whenever I tried
@@ -394,15 +405,19 @@ EOF
     # built in standalone mode, only generate them in
     # standalone mode.
     AC_CONFIG_LINKS(
-        hwloc_config_prefix[tests/ports/topology.c]:hwloc_config_prefix[src/topology.c]
-	hwloc_config_prefix[tests/ports/traversal.c]:hwloc_config_prefix[src/traversal.c]
-	hwloc_config_prefix[tests/ports/topology-synthetic.c]:hwloc_config_prefix[src/topology-synthetic.c]
 	hwloc_config_prefix[tests/ports/topology-solaris.c]:hwloc_config_prefix[src/topology-solaris.c]
+	hwloc_config_prefix[tests/ports/topology-solaris-chiptype.c]:hwloc_config_prefix[src/topology-solaris-chiptype.c]
 	hwloc_config_prefix[tests/ports/topology-aix.c]:hwloc_config_prefix[src/topology-aix.c]
 	hwloc_config_prefix[tests/ports/topology-osf.c]:hwloc_config_prefix[src/topology-osf.c]
 	hwloc_config_prefix[tests/ports/topology-windows.c]:hwloc_config_prefix[src/topology-windows.c]
 	hwloc_config_prefix[tests/ports/topology-darwin.c]:hwloc_config_prefix[src/topology-darwin.c]
 	hwloc_config_prefix[tests/ports/topology-freebsd.c]:hwloc_config_prefix[src/topology-freebsd.c]
-	hwloc_config_prefix[tests/ports/topology-hpux.c]:hwloc_config_prefix[src/topology-hpux.c])
+	hwloc_config_prefix[tests/ports/topology-netbsd.c]:hwloc_config_prefix[src/topology-netbsd.c]
+	hwloc_config_prefix[tests/ports/topology-hpux.c]:hwloc_config_prefix[src/topology-hpux.c]
+	hwloc_config_prefix[tests/ports/topology-bgq.c]:hwloc_config_prefix[src/topology-bgq.c]
+	hwloc_config_prefix[tests/ports/topology-opencl.c]:hwloc_config_prefix[src/topology-opencl.c]
+	hwloc_config_prefix[tests/ports/topology-cuda.c]:hwloc_config_prefix[src/topology-cuda.c]
+	hwloc_config_prefix[tests/ports/topology-nvml.c]:hwloc_config_prefix[src/topology-nvml.c]
+	hwloc_config_prefix[tests/ports/topology-gl.c]:hwloc_config_prefix[src/topology-gl.c])
     ])
 ])dnl

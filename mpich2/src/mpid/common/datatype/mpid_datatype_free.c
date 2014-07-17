@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2002 by Argonne National Laboratory.
@@ -15,11 +15,11 @@
 
   MPID_Datatype_free
 
-  Input Parameters:
+Input Parameters:
 . MPID_Datatype ptr - pointer to MPID datatype structure that is no longer
   referenced
 
-  Output Parameters:
+Output Parameters:
   none
 
   Return Value:

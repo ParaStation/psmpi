@@ -9,7 +9,7 @@
 Accumulate data into the target process using remote  memory access  
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Accumulate(void *origin_addr, int origin_count, MPI_Datatype
+int MPI_Accumulate(const void *origin_addr, int origin_count, MPI_Datatype
                    origin_datatype, int target_rank, MPI_Aint
                    target_disp, int target_count, MPI_Datatype
                    target_datatype, MPI_Op op, MPI_Win win) 
@@ -82,5 +82,8 @@ MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 </DL>
 <DL><DT><B>MPI_ERR_WIN </B> <DD> Invalid MPI window object
 </DL>
-<P><B>Location:</B>accumulate.c<P>
+<P>
+<H2>See Also</H2>
+ MPI_Raccumulate
+<BR><P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/rma/accumulate.c<P>
 </BODY></HTML>

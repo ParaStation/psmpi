@@ -1,5 +1,5 @@
 /*
- * Copyright © 2010-2011 Université Bordeaux 1
+ * Copyright © 2010-2012 Université Bordeaux 1
  * Copyright © 2010 Cisco Systems, Inc.  All rights reserved.
  *
  * See COPYING in top-level directory.
@@ -51,22 +51,29 @@ static __hwloc_inline int hwloc_have_cpuid(void) { return 1; }
 
 static __hwloc_inline void hwloc_cpuid(unsigned *eax, unsigned *ebx, unsigned *ecx, unsigned *edx)
 {
+  /* Note: gcc might want to use bx or the stack for %1 addressing, so we can't
+   * use them :/ */
+#ifdef HWLOC_X86_64_ARCH
+  unsigned long sav_rbx;
   asm(
-#ifdef HWLOC_X86_32_ARCH 
-  "push %%ebx\n\t"
-#endif
+  "mov %%rbx,%2\n\t"
   "cpuid\n\t"
-#ifdef HWLOC_X86_32_ARCH 
-  "mov %%ebx,%1\n\t"
-  "pop %%ebx\n\t"
-#endif
-  : "+a" (*eax),
-#ifdef HWLOC_X86_32_ARCH 
-    "=r" (*ebx),
+  "xchg %2,%%rbx\n\t"
+  "movl %k2,%1\n\t"
+  : "+a" (*eax), "=m" (*ebx), "=&r"(sav_rbx),
+    "+c" (*ecx), "=&d" (*edx));
+#elif defined(HWLOC_X86_32_ARCH)
+  unsigned long sav_ebx;
+  asm(
+  "mov %%ebx,%2\n\t"
+  "cpuid\n\t"
+  "xchg %2,%%ebx\n\t"
+  "movl %k2,%1\n\t"
+  : "+a" (*eax), "=m" (*ebx), "=&r"(sav_ebx),
+    "+c" (*ecx), "=&d" (*edx));
 #else
-    "=b" (*ebx),
+#error unknown architecture
 #endif
-    "+c" (*ecx), "=d" (*edx));
 }
 
 #endif /* HWLOC_PRIVATE_CPUID_H */

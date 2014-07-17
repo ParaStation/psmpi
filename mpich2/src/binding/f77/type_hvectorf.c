@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector_( MPI_Fint *, MPI_Fint *, M
 #else
 #pragma _CRI duplicate mpi_type_hvector_ as pmpi_type_hvector_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_HVECTOR( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_HVECTOR")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_HVECTOR")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_HVECTOR")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_HVECTOR")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_HVECTOR( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_HVECTOR( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_HVECTOR( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_HVECTOR( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector_( MPI_Fint *, MPI_Fint *, M
 #pragma weak mpi_type_hvector__ = mpi_type_hvector
 #pragma weak mpi_type_hvector_ = mpi_type_hvector
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_HVECTOR( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_TYPE_HVECTOR")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_TYPE_HVECTOR")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_TYPE_HVECTOR")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_HVECTOR( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_hvector__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_hvector__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_hvector__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_HVECTOR( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_hvector_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_hvector_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_hvector_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_HVECTOR( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_hvector")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_hvector")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_hvector")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_hvector( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_TYPE_HVECTOR( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_hvector( MPI_Fint *, MPI_Fint *, M
 #pragma weak pmpi_type_hvector__ = pmpi_type_hvector
 #pragma weak pmpi_type_hvector_ = pmpi_type_hvector
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_hvector__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_HVECTOR")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_hvector_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_HVECTOR")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_hvector( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_HVECTOR")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_TYPE_HVECTOR( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_hvector_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_hvector( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_TYPE_HVECTOR( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_hvector__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_hvector( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_TYPE_HVECTOR( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_hvector__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_hvector_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_hvector")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_type_hvector_ PMPI_TYPE_HVECTOR
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_hvector( MPI_Fint *, MPI_Fint *, M
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Type_hvector
 #define MPI_Type_hvector PMPI_Type_hvector 
 
@@ -189,5 +266,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_hvector( MPI_Fint *, MPI_Fint *, M
 FORT_DLL_SPEC void FORT_CALL mpi_type_hvector_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint * v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *ierr ){
     MPI_Aint l3;
     l3 = (MPI_Aint)*v3;
-    *ierr = MPI_Type_hvector( *v1, *v2, l3, (MPI_Datatype)(*v4), (MPI_Datatype *)(v5) );
+    *ierr = MPI_Type_hvector( (int)*v1, (int)*v2, l3, (MPI_Datatype)(*v4), (MPI_Datatype *)(v5) );
 }

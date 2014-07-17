@@ -2,7 +2,7 @@
 
 /* -*- c -*-
  *
- * Copyright © 2009 CNRS, INRIA., Université Bordeaux 1  All rights reserved.
+ * Copyright © 2009, 2011, 2012 CNRS, inria., Université Bordeaux 1  All rights reserved.
  * Copyright © 2009 Cisco Systems, Inc.  All rights reserved.
  * $COPYRIGHT$
  * 
@@ -30,11 +30,17 @@
 /* Define to 1 if you have the `clzl' function. */
 #undef HAVE_CLZL
 
+/* Define to 1 if you have the <CL/cl_ext.h> header file. */
+#undef HAVE_CL_CL_EXT_H
+
+/* Define to 1 if you have the `cpuset_setaffinity' function. */
+#undef HAVE_CPUSET_SETAFFINITY
+
+/* Define to 1 if you have the `cpuset_setid' function. */
+#undef HAVE_CPUSET_SETID
+
 /* Define to 1 if we have -lcuda */
 #undef HAVE_CUDA
-
-/* Define to 1 if we have -lcudart */
-#undef HAVE_CUDART
 
 /* Define to 1 if you have the <cuda.h> header file. */
 #undef HAVE_CUDA_H
@@ -42,13 +48,29 @@
 /* Define to 1 if you have the <cuda_runtime_api.h> header file. */
 #undef HAVE_CUDA_RUNTIME_API_H
 
+/* Define to 1 if you have the declaration of `CL_DEVICE_TOPOLOGY_AMD', and to
+   0 if you don't. */
+#undef HAVE_DECL_CL_DEVICE_TOPOLOGY_AMD
+
 /* Define to 1 if you have the declaration of `CTL_HW', and to 0 if you don't.
    */
 #undef HAVE_DECL_CTL_HW
 
+/* Define to 1 if you have the declaration of `fabsf', and to 0 if you don't.
+   */
+#undef HAVE_DECL_FABSF
+
 /* Define to 1 if you have the declaration of `HW_NCPU', and to 0 if you
    don't. */
 #undef HAVE_DECL_HW_NCPU
+
+/* Define to 1 if you have the declaration of
+   `nvmlDeviceGetMaxPcieLinkGeneration', and to 0 if you don't. */
+#undef HAVE_DECL_NVMLDEVICEGETMAXPCIELINKGENERATION
+
+/* Define to 1 if you have the declaration of `PCI_LOOKUP_NO_NUMBERS', and to
+   0 if you don't. */
+#undef HAVE_DECL_PCI_LOOKUP_NO_NUMBERS
 
 /* Define to 1 if you have the declaration of `pthread_getaffinity_np', and to
    0 if you don't. */
@@ -57,6 +79,10 @@
 /* Define to 1 if you have the declaration of `pthread_setaffinity_np', and to
    0 if you don't. */
 #undef HAVE_DECL_PTHREAD_SETAFFINITY_NP
+
+/* Define to 1 if you have the declaration of `strtoull', and to 0 if you
+   don't. */
+#undef HAVE_DECL_STRTOULL
 
 /* Define to 1 if you have the declaration of `_SC_LARGE_PAGESIZE', and to 0
    if you don't. */
@@ -77,6 +103,17 @@
 /* Define to 1 if you have the declaration of `_SC_NPROC_ONLN', and to 0 if
    you don't. */
 #undef HAVE_DECL__SC_NPROC_ONLN
+
+/* Define to 1 if you have the declaration of `_SC_PAGESIZE', and to 0 if you
+   don't. */
+#undef HAVE_DECL__SC_PAGESIZE
+
+/* Define to 1 if you have the declaration of `_SC_PAGE_SIZE', and to 0 if you
+   don't. */
+#undef HAVE_DECL__SC_PAGE_SIZE
+
+/* Define to 1 if you have the <dirent.h> header file. */
+#undef HAVE_DIRENT_H
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
@@ -132,6 +169,9 @@
 /* Define to 1 if we have -llgrp */
 #undef HAVE_LIBLGRP
 
+/* Define to 1 if you have the `pci' library (-lpci). */
+#undef HAVE_LIBPCI
+
 /* Define to 1 if you have the <locale.h> header file. */
 #undef HAVE_LOCALE_H
 
@@ -153,6 +193,9 @@
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
+/* Define to 1 if we have -lmyriexpress */
+#undef HAVE_MYRIEXPRESS
+
 /* Define to 1 if you have the <myriexpress.h> header file. */
 #undef HAVE_MYRIEXPRESS_H
 
@@ -165,8 +208,20 @@
 /* Define to 1 if the system has the type `NUMA_NODE_RELATIONSHIP'. */
 #undef HAVE_NUMA_NODE_RELATIONSHIP
 
+/* Define to 1 if you have the <NVCtrl/NVCtrl.h> header file. */
+#undef HAVE_NVCTRL_NVCTRL_H
+
+/* Define to 1 if you have the <nvml.h> header file. */
+#undef HAVE_NVML_H
+
 /* Define to 1 if you have the `openat' function. */
 #undef HAVE_OPENAT
+
+/* Define to 1 if you have the <pci/pci.h> header file. */
+#undef HAVE_PCI_PCI_H
+
+/* Define to 1 if you have the <picl.h> header file. */
+#undef HAVE_PICL_H
 
 /* Define to 1 if you have the `posix_memalign' function. */
 #undef HAVE_POSIX_MEMALIGN
@@ -220,10 +275,10 @@
 /* Define to 1 if you have the `strncasecmp' function. */
 #undef HAVE_STRNCASECMP
 
-/* Define to 1 if you have the `sysctl' function. */
+/* Define to '1' if sysctl is present and usable */
 #undef HAVE_SYSCTL
 
-/* Define to 1 if you have the `sysctlbyname' function. */
+/* Define to '1' if sysctlbyname is present and usable */
 #undef HAVE_SYSCTLBYNAME
 
 /* Define to 1 if the system has the type
@@ -264,6 +319,9 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
+/* Define to 1 if you have the `uselocale' function. */
+#undef HAVE_USELOCALE
+
 /* Define to 1 if the system has the type `wchar_t'. */
 #undef HAVE_WCHAR_T
 
@@ -276,10 +334,16 @@
 /* Define to 1 if you have the <X11/Xutil.h> header file. */
 #undef HAVE_X11_XUTIL_H
 
+/* Define to 1 if you have the <xlocale.h> header file. */
+#undef HAVE_XLOCALE_H
+
 /* Define to 1 on AIX */
 #undef HWLOC_AIX_SYS
 
-/* Whether C compiler supports -fvisibility */
+/* Define to 1 on BlueGene/Q */
+#undef HWLOC_BGQ_SYS
+
+/* Whether C compiler supports symbol visibility or not */
 #undef HWLOC_C_HAVE_VISIBILITY
 
 /* Define to 1 on Darwin */
@@ -348,6 +412,9 @@
 /* Whether your compiler has __attribute__ weak alias or not */
 #undef HWLOC_HAVE_ATTRIBUTE_WEAK_ALIAS
 
+/* Define to 1 if your `ffs' function is known to be broken. */
+#undef HWLOC_HAVE_BROKEN_FFS
+
 /* Define to 1 if you have the `cairo' library. */
 #undef HWLOC_HAVE_CAIRO
 
@@ -365,6 +432,9 @@
 
 /* Define to 1 if the CPU_SET_S macro works */
 #undef HWLOC_HAVE_CPU_SET_S
+
+/* Define to 1 if you have the `cudart' SDK. */
+#undef HWLOC_HAVE_CUDART
 
 /* Define to 1 if function `clz' is declared by system headers */
 #undef HWLOC_HAVE_DECL_CLZ
@@ -396,8 +466,20 @@
 /* Define to 1 if you have the `flsl' function. */
 #undef HWLOC_HAVE_FLSL
 
+/* Define to 1 if you have the GL module components. */
+#undef HWLOC_HAVE_GL
+
+/* Define to 1 if you have the `libpciaccess' library. */
+#undef HWLOC_HAVE_LIBPCIACCESS
+
 /* Define to 1 if you have a library providing the termcap interface */
 #undef HWLOC_HAVE_LIBTERMCAP
+
+/* Define to 1 if you have the `libxml2' library. */
+#undef HWLOC_HAVE_LIBXML2
+
+/* Define to 1 if building the Linux PCI component */
+#undef HWLOC_HAVE_LINUXPCI
 
 /* Define to 1 if mbind is available. */
 #undef HWLOC_HAVE_MBIND
@@ -405,11 +487,40 @@
 /* Define to 1 if migrate_pages is available. */
 #undef HWLOC_HAVE_MIGRATE_PAGES
 
-/* Define to 1 if glibc provides the old prototype of sched_setaffinity() */
+/* Define to 1 if you have the `NVML' library. */
+#undef HWLOC_HAVE_NVML
+
+/* Define to 1 if glibc provides the old prototype (without length) of
+   sched_setaffinity() */
 #undef HWLOC_HAVE_OLD_SCHED_SETAFFINITY
+
+/* Define to 1 if you have the `OpenCL' library. */
+#undef HWLOC_HAVE_OPENCL
+
+/* Define to 1 if `libpci' struct pci_dev has a `device_class' field. */
+#undef HWLOC_HAVE_PCIDEV_DEVICE_CLASS
+
+/* Define to 1 if `libpci' struct pci_dev has a `domain' field. */
+#undef HWLOC_HAVE_PCIDEV_DOMAIN
+
+/* Define to 1 if you have the pciutils `libpci' library. */
+#undef HWLOC_HAVE_PCIUTILS
+
+/* Define to 1 if `libpci' has the `pci_find_cap' function. */
+#undef HWLOC_HAVE_PCI_FIND_CAP
+
+/* Define to 1 if the hwloc library should support dynamically-loaded plugins
+   */
+#undef HWLOC_HAVE_PLUGINS
 
 /* `Define to 1 if you have pthread_getthrds_np' */
 #undef HWLOC_HAVE_PTHREAD_GETTHRDS_NP
+
+/* Define to 1 if pthread mutexes are available */
+#undef HWLOC_HAVE_PTHREAD_MUTEX
+
+/* Define to 1 if glibc provides a prototype of sched_setaffinity() */
+#undef HWLOC_HAVE_SCHED_SETAFFINITY
 
 /* Define to 1 if set_mempolicy is available. */
 #undef HWLOC_HAVE_SET_MEMPOLICY
@@ -420,11 +531,8 @@
 /* Define to 1 if you have the `windows.h' header. */
 #undef HWLOC_HAVE_WINDOWS_H
 
-/* Define to 1 if X11 libraries are available. */
-#undef HWLOC_HAVE_X11
-
-/* Define to 1 if you have the `xml' library. */
-#undef HWLOC_HAVE_XML
+/* Define to 1 if X11 headers including Xutil.h and keysym.h are available. */
+#undef HWLOC_HAVE_X11_KEYSYM
 
 /* Define to 1 if the _syscall3 macro works */
 #undef HWLOC_HAVE__SYSCALL3
@@ -438,17 +546,11 @@
 /* Define to 1 on Linux */
 #undef HWLOC_LINUX_SYS
 
-/* Major version of hwloc */
-#undef HWLOC_MAJOR_VERSION
-
-/* Minor version of hwloc */
-#undef HWLOC_MINOR_VERSION
+/* Define to 1 on *NETBSD */
+#undef HWLOC_NETBSD_SYS
 
 /* Define to 1 on OSF */
 #undef HWLOC_OSF_SYS
-
-/* Release version of hwloc */
-#undef HWLOC_RELEASE_VERSION
 
 /* The size of `unsigned int', as computed by sizeof */
 #undef HWLOC_SIZEOF_UNSIGNED_INT
@@ -487,9 +589,6 @@
    */
 #undef LT_OBJDIR
 
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
-
 /* Name of package */
 #undef PACKAGE
 
@@ -504,6 +603,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
@@ -566,10 +668,6 @@
 
 /* Define to 1 if you need to in order for `stat' and other things to work. */
 #undef _POSIX_SOURCE
-
-/* Define this to a keyword that can safely replace inline in installed
-   headers */
-#undef __hwloc_inline
 
 /* Define this to the process ID type */
 #undef hwloc_pid_t

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -23,7 +23,7 @@
 #undef MPI_Close_port
 #define MPI_Close_port PMPI_Close_port
 
-int MPIR_Close_port_impl(char *port_name)
+int MPIR_Close_port_impl(const char *port_name)
 {
     return MPID_Close_port(port_name);
 }
@@ -38,7 +38,7 @@ int MPIR_Close_port_impl(char *port_name)
 /*@
    MPI_Close_port - close port
 
-   Input Parameter:
+Input Parameters:
 .  port_name - a port name (string)
 
 .N NotThreadSafe
@@ -48,7 +48,7 @@ int MPIR_Close_port_impl(char *port_name)
 .N Errors
 .N MPI_SUCCESS
 @*/
-int MPI_Close_port(char *port_name)
+int MPI_Close_port(const char *port_name)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_CLOSE_PORT);

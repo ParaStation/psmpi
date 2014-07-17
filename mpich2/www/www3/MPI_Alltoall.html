@@ -9,8 +9,8 @@
 Sends data from all to all processes 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype, 
-                 void *recvbuf, int recvcount, MPI_Datatype recvtype, 
+int MPI_Alltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                 void *recvbuf, int recvcount, MPI_Datatype recvtype,
                  MPI_Comm comm)
 </PRE>
 <H2>Input Parameters</H2>
@@ -28,7 +28,7 @@ int MPI_Alltoall(void *sendbuf, int sendcount, MPI_Datatype sendtype,
 <DT><B>comm </B><DD>communicator (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>recvbuf </B> <DD> address of receive buffer (choice) 
 </DL>
 <P>
@@ -77,5 +77,5 @@ MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 <DL><DT><B>MPI_ERR_BUFFER </B> <DD> Invalid buffer pointer.  Usually a null buffer where
 one is not valid.
 </DL>
-<P><B>Location:</B>alltoall.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/coll/alltoall.c<P>
 </BODY></HTML>

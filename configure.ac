@@ -1,9 +1,9 @@
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
-AC_INIT([psmpi2],[],[hauke@par-tec.com])
+AC_INIT([psmpi],[],[hauke@par-tec.com])
 AC_CONFIG_SRCDIR([configure.ac])
 
-AC_CONFIG_AUX_DIR([scripts])
+AC_CONFIG_AUX_DIR(["scripts"])
 AC_CANONICAL_TARGET([])
 
 # AC_PROG_INSTALL
@@ -30,11 +30,11 @@ AC_SUBST([CONFIGARGS])
 # Try to find the version and release date
 . ${TOP_SRCDIR}/mpich2/maint/Version
 
-if test -z "$MPICH2_VERSION"; then
-   AC_MSG_ERROR([MPICH2_VERSION not found. Configuration aborted.])
+if test -z "$MPICH_VERSION"; then
+   AC_MSG_ERROR([MPICH_VERSION not found. Configuration aborted.])
 fi
-AC_SUBST([MPICH2_VERSION])
-AC_SUBST([MPICH2_RELEASE_DATE])
+AC_SUBST([MPICH_VERSION])
+AC_SUBST([MPICH_RELEASE_DATE])
 # configure mpich2
 
 AC_ARG_WITH([mpd], [
@@ -101,6 +101,9 @@ CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-fast=defopt,notiming"
 CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-cache"
 CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-lib-depend"
 CONF_OPS_COMMON="$CONF_OPS_COMMON --disable-rpath"
+CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-shared"
+CONF_OPS_COMMON="$CONF_OPS_COMMON --disable-static"
+MODULEFILE_CONFSET="$CONFSET"
 
 case $CONFSET in
 "devel")
@@ -109,13 +112,15 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-cache"
 	CONF_OPS="$CONF_OPS --enable-g=all"
 	CONF_OPS="$CONF_OPS --enable-dependencies"
-	CONF_OPS="$CONF_OPS --disable-f77"
-	CONF_OPS="$CONF_OPS --disable-fc"
-	CONF_OPS="$CONF_OPS --disable-cxx"
-	CONF_OPS="$CONF_OPS --disable-romio"
-	CONF_OPS="$CONF_OPS --disable-mpe"
+	# CONF_OPS="$CONF_OPS --disable-f77"
+	# CONF_OPS="$CONF_OPS --disable-fc"
+	# CONF_OPS="$CONF_OPS --disable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	# CONF_OPS="$CONF_OPS --disable-mpe"
 	CONF_OPS="$CONF_OPS --enable-shared"
+	CONF_OPS="$CONF_OPS --disable-static"
 	CONF_OPS="$CONF_OPS --enable-error-checking=all"
+	CONF_OPS="$CONF_OPS --enable-strict" # Compile with -Wall and other checks.
 
 	CONF_OPS="$CONF_OPS CFLAGS=-O3"
 	;;
@@ -128,7 +133,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-cxx"
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-	CONF_OPS="$CONF_OPS --enable-shared"
 
 	CONF_OPS="$CONF_OPS CC=gcc CXX=g++ CFLAGS=-O3"
 	if which gfortran >/dev/null 2>&1 ;then
@@ -137,6 +141,7 @@ case $CONFSET in
 	   CONF_OPS="$CONF_OPS --enable-fc"
 	   CONF_OPS="$CONF_OPS FC=gfortran"
 	fi
+	MODULEFILE_CONFSET=""
 	EXTRA_VERSION_INFO=" compiler: $(gcc --version|head -n 1)"
 	;;
 "intel")
@@ -148,7 +153,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-cxx"
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-	CONF_OPS="$CONF_OPS --enable-shared"
 
 	CONF_OPS="$CONF_OPS CC=icc CXX=icpc FC=ifort"
 	CONF_OPS="$CONF_OPS CFLAGS=-O3"
@@ -163,21 +167,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-cxx"
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-	CONF_OPS="$CONF_OPS --enable-shared"
-
-	CONF_OPS="$CONF_OPS CC=pgcc CXX=pgc++ FC=pgf90"
-	CONF_OPS="$CONF_OPS CFLAGS=-O3"
-	;;
-"pgi_pgCC")
-	echo "Using confset=pgi"
-	CONF_OPS="--with-device=psp"
-	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
-	CONF_OPS="$CONF_OPS --enable-f77"
-	CONF_OPS="$CONF_OPS --enable-fc"
-	CONF_OPS="$CONF_OPS --enable-cxx"
-	CONF_OPS="$CONF_OPS --enable-romio"
-	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-	CONF_OPS="$CONF_OPS --enable-shared"
 
 	CONF_OPS="$CONF_OPS CC=pgcc CXX=pgCC FC=pgf90"
 	CONF_OPS="$CONF_OPS CFLAGS=-O3"
@@ -191,10 +180,87 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-cxx"
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-	CONF_OPS="$CONF_OPS --enable-shared"
 
 	CONF_OPS="$CONF_OPS CC=pathcc CXX=pathCC FC=pathf90"
 	CONF_OPS="$CONF_OPS CFLAGS=-O3"
+	;;
+"micgcc")
+	echo "Using confset=micgcc"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
+	CONF_OPS="$CONF_OPS --enable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
+
+	CONF_OPS="$CONF_OPS --host=x86_64-k1om-linux"
+
+	CONF_OPS="$CONF_OPS 'CC=x86_64-k1om-linux-gcc'"
+	CONF_OPS="$CONF_OPS 'CXX=x86_64-k1om-linux-g++'"
+	CONF_OPS="$CONF_OPS 'F77=x86_64-k1om-linux-gfortran'"
+	CONF_OPS="$CONF_OPS 'FC=x86_64-k1om-linux-gfortran'"
+	CONF_OPS="$CONF_OPS 'AR=x86_64-k1om-linux-ar'"
+	CONF_OPS="$CONF_OPS 'RANLIB=x86_64-k1om-linux-ranlib'"
+
+	# FIXME: check whether all of these are valid in mpich 3.0.4,
+	# they were gathered with 1.5a2
+	CONF_OPS="$CONF_OPS 'CROSS_F77_FALSE_VALUE=0'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_DOUBLE_PRECISION=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_INTEGER=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_REAL=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_TRUE_VALUE=1'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_ADDRESS_KIND=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_ALL_INTEGER_MODELS=2,1,4,2,9,4,18,8,'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_DOUBLE_MODEL=15,307'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_KIND=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL=9'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL_MAP={2,1,1},{4,2,2},{9,4,4},{18,8,8},'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_OFFSET_KIND=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_REAL_MODEL=6,37'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_DOUBLE_PRECISION=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_INTEGER=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_REAL=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_MPI_STATUS_SIZE=5'"
+
+	CONF_OPS="$CONF_OPS CFLAGS=-O3"
+	EXTRA_VERSION_INFO=" compiler: $(x86_64-k1om-linux-gcc --version|head -n 1)"
+	;;
+"micintel")
+	echo "Using confset=micintel"
+	CONF_OPS="--with-device=psp"
+	CONF_OPS="$CONF_OPS $CONF_OPS_COMMON"
+	CONF_OPS="$CONF_OPS --enable-cxx"
+	CONF_OPS="$CONF_OPS --enable-romio"
+	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
+	CONF_OPS="$CONF_OPS --disable-fc"	# Problems with the MPI_Status alignment
+
+	CONF_OPS="$CONF_OPS --host=x86_64-k1om-linux"
+	CONF_OPS="$CONF_OPS 'CC=icc -mmic'"
+	CONF_OPS="$CONF_OPS 'CXX=icpc -mmic'"
+	CONF_OPS="$CONF_OPS 'F77=ifort -mmic'"
+	CONF_OPS="$CONF_OPS 'FC=ifort -mmic'"
+
+	# FIXME: check whether all of these are valid in mpich 3.0.4,
+	# they were gathered with 1.5a2
+	CONF_OPS="$CONF_OPS 'CROSS_F77_FALSE_VALUE=0'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_DOUBLE_PRECISION=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_INTEGER=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_SIZEOF_REAL=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F77_TRUE_VALUE=1'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_ADDRESS_KIND=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_ALL_INTEGER_MODELS=2,1,4,2,9,4,18,8,'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_DOUBLE_MODEL=15,307'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_KIND=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL=9'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_INTEGER_MODEL_MAP={2,1,1},{4,2,2},{9,4,4},{18,8,8},'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_OFFSET_KIND=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_REAL_MODEL=6,37'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_DOUBLE_PRECISION=8'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_INTEGER=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_REAL=4'"
+	CONF_OPS="$CONF_OPS 'CROSS_MPI_STATUS_SIZE=5'"
+
+	CONF_OPS="$CONF_OPS CFLAGS=-O3"
+	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
 	;;
 "cellgcc")
 	echo "Using confset=cellgcc"
@@ -205,7 +271,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-cxx"
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-	CONF_OPS="$CONF_OPS --enable-shared"
 
 	CONF_OPS="$CONF_OPS CC=ppu-gcc CXX=ppu-c++ FC=ppu-gfortran"
 	CONF_OPS="$CONF_OPS CFLAGS=-O3"
@@ -219,7 +284,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-cxx"
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-	CONF_OPS="$CONF_OPS --enable-shared"
 
 	CONF_OPS="$CONF_OPS CC='ppuxlc -q64' CXX='ppuxlC -q64' FC='ppuxlf -q64'"
 	CONF_OPS="$CONF_OPS CFLAGS=-O3"
@@ -238,7 +302,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-cxx"
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-	CONF_OPS="$CONF_OPS --enable-shared"
 
 	CONF_OPS="$CONF_OPS CC=gcc CXX=g++ FC=gfortran CFLAGS=-O3"
 
@@ -255,13 +318,30 @@ AC_ARG_WITH([threading], [
   --with-threading      Enable threading 'multiple' in device psp
 ],[
 	export PSP_THREADING=multiple
+	MODULEFILE_CONFSET="$MODULEFILE_CONFSET-mt"
+])
+
+AC_ARG_WITH([modulefile], [
+  --with-modulefile=filename
+			destinaton of the generated modulefile
+],[
+	MODULEFILE="$withval"
+],[
+	# MODULEFILE="${sysconfdir}/modulefiles/mpi/psmpi-${host_cpu}$MODULEFILE_CONFSET"
+	MODULEFILE="${sysconfdir}/modulefiles/mpi/psmpi"
+	if test "${MODULEFILE_CONFSET}"x != "x" ; then
+		MODULEFILE="$MODULEFILE-$MODULEFILE_CONFSET"
+	fi
+	MODULEFILE="$MODULEFILE-\$(VER)"
 ])
 
 
 AC_SUBST([CONFSET])
+AC_SUBST([MODULEFILE])
 AC_SUBST([EXTRA_VERSION_INFO])
 
 AC_CONFIG_FILES([Makefile])
+AC_CONFIG_FILES([scripts/generate_modulefile.sh], [chmod +x scripts/generate_modulefile.sh])
 
 AC_OUTPUT
 

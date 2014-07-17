@@ -15,6 +15,5 @@
 
 #include "mpidimpl.h"
 
-void MPID_PSP_CollectiveInit(MPID_Comm * comm);
 
 #endif /* _MPID_COLLECTIVE_H_ */

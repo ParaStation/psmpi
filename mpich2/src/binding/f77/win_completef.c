@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete_( MPI_Fint *, MPI_Fint * );
 #else
 #pragma _CRI duplicate mpi_win_complete_ as pmpi_win_complete_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_COMPLETE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_COMPLETE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_COMPLETE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_COMPLETE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_COMPLETE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_COMPLETE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_COMPLETE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_COMPLETE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_COMPLETE( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete__( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete( MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete_( MPI_Fint *, MPI_Fint * );
 #pragma weak mpi_win_complete__ = mpi_win_complete
 #pragma weak mpi_win_complete_ = mpi_win_complete
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_COMPLETE( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_WIN_COMPLETE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_WIN_COMPLETE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_WIN_COMPLETE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_COMPLETE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_complete__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete__( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_complete__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_complete__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_COMPLETE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_complete_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_complete_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete_( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_complete_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_COMPLETE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_complete")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_complete")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_complete")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_complete( MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_COMPLETE( MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_complete( MPI_Fint *, MPI_Fint * );
 #pragma weak pmpi_win_complete__ = pmpi_win_complete
 #pragma weak pmpi_win_complete_ = pmpi_win_complete
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_complete__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_COMPLETE")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_complete_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_COMPLETE")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_complete( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_COMPLETE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_COMPLETE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_complete_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_complete( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_COMPLETE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_complete__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_complete( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_COMPLETE( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_complete__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_complete_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_complete")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_win_complete_ PMPI_WIN_COMPLETE
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_complete( MPI_Fint *, MPI_Fint * );
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Win_complete
 #define MPI_Win_complete PMPI_Win_complete 
 
@@ -187,5 +264,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_complete( MPI_Fint *, MPI_Fint * );
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_win_complete_ ( MPI_Fint *v1, MPI_Fint *ierr ){
-    *ierr = MPI_Win_complete( *v1 );
+    *ierr = MPI_Win_complete( (MPI_Win)*v1 );
 }

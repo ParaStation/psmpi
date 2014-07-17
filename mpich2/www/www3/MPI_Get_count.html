@@ -9,7 +9,7 @@
 Gets the number of "top level" elements 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Get_count( MPI_Status *status,  MPI_Datatype datatype, int *count )
+int MPI_Get_count( const MPI_Status *status, MPI_Datatype datatype, int *count )
 </PRE>
 <H2>Input Parameters</H2>
 <DL>
@@ -18,7 +18,7 @@ int MPI_Get_count( MPI_Status *status,  MPI_Datatype datatype, int *count )
 <DT><B>datatype </B><DD>datatype of each receive buffer element (handle) 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>count </B> <DD> number of received elements (integer) 
 Notes:
 If the size of the datatype is zero, this routine will return a count of
@@ -57,5 +57,5 @@ possible.
 <DL><DT><B>MPI_ERR_TYPE </B> <DD> Invalid datatype argument.  May be an uncommitted 
 MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 </DL>
-<P><B>Location:</B>get_count.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/get_count.c<P>
 </BODY></HTML>

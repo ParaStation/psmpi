@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -14,7 +14,7 @@
 /*@
   MPID_Type_blockindexed - create a block indexed datatype
 
-  Input Parameters:
+Input Parameters:
 + count - number of blocks in type
 . blocklength - number of elements in each block
 . displacement_array - offsets of blocks from start of type (see next
@@ -23,7 +23,7 @@
   they in terms of extent of oldtype
 - oldtype - type (using handle) of datatype on which new type is based
 
-  Output Parameters:
+Output Parameters:
 . newtype - handle of new block indexed datatype
 
   Return Value:
@@ -32,13 +32,14 @@
 
 int MPID_Type_blockindexed(int count,
 			   int blocklength,
-			   void *displacement_array,
+			   const void *displacement_array,
 			   int dispinbytes,
 			   MPI_Datatype oldtype,
 			   MPI_Datatype *newtype)
 {
     int mpi_errno = MPI_SUCCESS, i;
-    int is_builtin, contig_count, old_is_contig;
+    int is_builtin, old_is_contig;
+    MPI_Aint contig_count;
     MPI_Aint el_sz;
     MPI_Datatype el_type;
     MPI_Aint old_lb, old_ub, old_extent, old_true_lb, old_true_ub;

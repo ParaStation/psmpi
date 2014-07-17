@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -74,10 +74,10 @@ int MPIR_Comm_dup_impl(MPID_Comm *comm_ptr, MPID_Comm **newcomm_ptr)
 MPI_Comm_dup - Duplicates an existing communicator with all its cached
                information
 
-Input Parameter:
+Input Parameters:
 . comm - Communicator to be duplicated (handle) 
 
-Output Parameter:
+Output Parameters:
 . newcomm - A new communicator over the same group as 'comm' but with a new
   context. See notes.  (handle) 
 
@@ -131,7 +131,6 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -147,9 +146,9 @@ int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm)
         {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            if (mpi_errno) goto fn_fail;
 	    /* If comm_ptr is not valid, it will be reset to null */
             MPIR_ERRTEST_ARGNULL(newcomm, "newcomm", mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

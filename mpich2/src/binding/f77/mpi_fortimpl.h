@@ -1,7 +1,16 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
+ *
+ * Portions of this code were written by Microsoft. Those portions are
+ * Copyright (c) 2007 Microsoft Corporation. Microsoft grants
+ * permission to use, reproduce, prepare derivative works, and to
+ * redistribute to others. The code is licensed "as is." The User
+ * bears the risk of using it. Microsoft gives no express warranties,
+ * guarantees or conditions. To the extent permitted by law, Microsoft
+ * excludes the implied warranties of merchantability, fitness for a
+ * particular purpose and non-infringement.
  */
 #include "mpichconf.h"
 
@@ -13,16 +22,35 @@
  * an MPI_Fint instead of an int.  In that case, we will need an additional
  * case.
  */
+/*
+ * Many Fortran compilers at some point changed from passing the length of
+ * a CHARACTER*(N) in an int to using a size_t.  This definition allows
+ * us to select either size_t or int.  Determining which one the compiler
+ * is using may require reading the documentation or examining the generated
+ * code.
+ *
+ * The default is left as "int" because that is the correct legacy choice.
+ * Configure may need to check the compiler vendor and version to decide
+ * whether to select size_t.  And despite documentation to the contrary,
+ * in our experiments, gfortran used int instead of size_t, which was
+ * verified by inspecting the assembly code.
+ */
+#ifdef USE_FORT_STR_LEN_SIZET
+#define FORT_SIZE_INT size_t
+#else
+#define FORT_SIZE_INT int
+#endif
+
 #ifdef USE_FORT_MIXED_STR_LEN
-#define FORT_MIXED_LEN_DECL   , int
+#define FORT_MIXED_LEN_DECL   , FORT_SIZE_INT
 #define FORT_END_LEN_DECL
-#define FORT_MIXED_LEN(a)     , int a
+#define FORT_MIXED_LEN(a)     , FORT_SIZE_INT a
 #define FORT_END_LEN(a)
 #else
 #define FORT_MIXED_LEN_DECL
-#define FORT_END_LEN_DECL     , int
+#define FORT_END_LEN_DECL     , FORT_SIZE_INT
 #define FORT_MIXED_LEN(a)
-#define FORT_END_LEN(a)       , int a
+#define FORT_END_LEN(a)       , FORT_SIZE_INT a
 #endif
 
 /* ------------------------------------------------------------------------- */
@@ -142,13 +170,16 @@ extern FORT_DLL_SPEC int  MPIR_F_NeedInit;
 extern FORT_DLL_SPEC void *MPIR_F_MPI_BOTTOM;
 extern FORT_DLL_SPEC void *MPIR_F_MPI_IN_PLACE;
 extern FORT_DLL_SPEC void *MPIR_F_MPI_UNWEIGHTED;
+extern FORT_DLL_SPEC void *MPIR_F_MPI_WEIGHTS_EMPTY;
 /* MPI_F_STATUS(ES)_IGNORE are defined in mpi.h and are intended for C 
    programs. */
 /*
 extern FORT_DLL_SPEC MPI_Fint *MPI_F_STATUS_IGNORE;
 extern FORT_DLL_SPEC MPI_Fint *MPI_F_STATUSES_IGNORE;
 */
-extern FORT_DLL_SPEC int  *MPI_F_ERRCODES_IGNORE;
+/* MPI_F_ERRCODES_IGNORE is defined as a Fortran INTEGER type, so must 
+   be declared as MPI_Fint */
+extern FORT_DLL_SPEC MPI_Fint  *MPI_F_ERRCODES_IGNORE;
 extern FORT_DLL_SPEC void *MPI_F_ARGVS_NULL;
 /* MPIR_F_PTR checks for the Fortran MPI_BOTTOM and provides the value 
    MPI_BOTTOM if found 

@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_( MPI_Fint *, MPI_Fint * 
 #else
 #pragma _CRI duplicate mpi_is_thread_main_ as pmpi_is_thread_main_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IS_THREAD_MAIN")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IS_THREAD_MAIN")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IS_THREAD_MAIN")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IS_THREAD_MAIN")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main__( MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main( MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_( MPI_Fint *, MPI_Fint * 
 #pragma weak mpi_is_thread_main__ = mpi_is_thread_main
 #pragma weak mpi_is_thread_main_ = mpi_is_thread_main
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_IS_THREAD_MAIN")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_IS_THREAD_MAIN")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_IS_THREAD_MAIN")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_is_thread_main__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main__( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_is_thread_main__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_is_thread_main__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_is_thread_main_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_is_thread_main_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_( MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_is_thread_main_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_is_thread_main")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_is_thread_main")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_is_thread_main")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main( MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main( MPI_Fint *, MPI_Fint * 
 #pragma weak pmpi_is_thread_main__ = pmpi_is_thread_main
 #pragma weak pmpi_is_thread_main_ = pmpi_is_thread_main
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IS_THREAD_MAIN")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IS_THREAD_MAIN")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_IS_THREAD_MAIN")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_IS_THREAD_MAIN( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main__( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main_( MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_is_thread_main")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_is_thread_main_ PMPI_IS_THREAD_MAIN
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main( MPI_Fint *, MPI_Fint * 
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Is_thread_main
 #define MPI_Is_thread_main PMPI_Is_thread_main 
 
@@ -187,5 +264,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_is_thread_main( MPI_Fint *, MPI_Fint * 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_is_thread_main_ ( MPI_Fint *v1, MPI_Fint *ierr ){
-    *ierr = MPI_Is_thread_main( v1 );
+    int l1;
+    *ierr = MPI_Is_thread_main( &l1 );
+    if (*ierr == MPI_SUCCESS) *v1 = MPIR_TO_FLOG(l1);
 }

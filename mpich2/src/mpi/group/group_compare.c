@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -91,7 +91,7 @@ Input Parameters:
 + group1 - group1 (handle) 
 - group2 - group2 (handle) 
 
-Output Parameter:
+Output Parameters:
 . result - integer which is 'MPI_IDENT' if the order and members of
 the two groups are the same, 'MPI_SIMILAR' if only the members are the same,
 and 'MPI_UNEQUAL' otherwise
@@ -128,7 +128,6 @@ int MPI_Group_compare(MPI_Group group1, MPI_Group group2, int *result)
 	    MPIR_ERRTEST_ARGNULL( result, "result", mpi_errno );
 	    MPIR_ERRTEST_GROUP(group1, mpi_errno);
 	    MPIR_ERRTEST_GROUP(group2, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

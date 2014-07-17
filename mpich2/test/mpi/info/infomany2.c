@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -38,7 +38,7 @@ int main( int argc, char *argv[] )
 
     /* We create max_info items, then delete the middle third of them,
        then recreate them, then check them, then 
-       delete them all.  This checks that the MPICH2 algorithm for 
+       delete them all.  This checks that the MPICH algorithm for 
        handling large numbers of items works correctly; other MPI 
        implementations should also be able to handle this */
 

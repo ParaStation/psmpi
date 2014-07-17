@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -115,8 +115,6 @@ int builtin_float_test(void)
  * Builds a vector of a vector of ints.  Assuming an int array of size 9 
  * integers, and treating the array as a 3x3 2D array, this will grab the 
  * corners.
- *
- * MPICH1 fails this test because it converts the vectors into hvectors.
  *
  * Returns the number of errors encountered.
  */
@@ -489,8 +487,6 @@ int indexed_of_basics_test(void)
 /* indexed_of_vectors_test()
  *
  * Builds an indexed type of vectors of ints.
- *
- * MPICH1 fails this test because it converts the vectors into hvectors.
  *
  * Returns the number of errors encountered.
  */

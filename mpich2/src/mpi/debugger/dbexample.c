@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*  
  *  (C) 2009 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -6,6 +6,10 @@
 #include "mpi.h"
 #include <stdlib.h>
 #include <stdio.h>
+
+/* style: allow:calloc:1 sig:0 */
+/* style: allow:fprintf:2 sig:0 */
+/* style: allow:printf:2 sig:0 */
 
 /* 
  * This program provides a convienient way to test some of the debugger

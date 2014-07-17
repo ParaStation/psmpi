@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -27,9 +27,9 @@
 #define FUNCNAME MPIR_Pack_size_impl
 #undef FCNAME
 #define FCNAME MPIU_QUOTE(FUNCNAME)
-void MPIR_Pack_size_impl(int incount, MPI_Datatype datatype, int *size)
+void MPIR_Pack_size_impl(int incount, MPI_Datatype datatype, MPI_Aint *size)
 {
-    int typesize;
+    MPI_Aint typesize;
     MPID_Datatype_get_size_macro(datatype, typesize);
     *size = incount * typesize;
 }
@@ -50,7 +50,7 @@ Input Parameters:
 . datatype - datatype argument to packing call (handle) 
 - comm - communicator argument to packing call (handle) 
 
-Output Parameter:
+Output Parameters:
 . size - upper bound on size of packed message, in bytes (integer) 
 
 Notes:
@@ -74,8 +74,11 @@ int MPI_Pack_size(int incount,
 		  MPI_Comm comm,
 		  int *size)
 {
+#ifdef HAVE_ERROR_CHECKING
     MPID_Comm *comm_ptr = NULL;
+#endif
     int mpi_errno = MPI_SUCCESS;
+    MPI_Aint size_x = MPI_UNDEFINED;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_PACK_SIZE);
 
     MPIR_ERRTEST_INITIALIZED_ORDIE();
@@ -88,38 +91,35 @@ int MPI_Pack_size(int incount,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif /* HAVE_ERROR_CHECKING */
     
-    /* Convert MPI object handles to object pointers */
-    MPID_Comm_get_ptr( comm, comm_ptr );
-    
 #   ifdef HAVE_ERROR_CHECKING
     {
+        /* Convert MPI object handles to object pointers */
+        MPID_Comm_get_ptr( comm, comm_ptr );
+
         MPID_BEGIN_ERROR_CHECKS;
         {
             MPID_Datatype *datatype_ptr = NULL;
 
 	    MPIR_ERRTEST_COUNT(incount, mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(size, "size", mpi_errno);
-            if (mpi_errno) goto fn_fail;
 	    
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
             if (mpi_errno) goto fn_fail;
 	    
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
-            if (mpi_errno) goto fn_fail;
 	    
 	    if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN)
 	    {
 		MPID_Datatype_get_ptr(datatype, datatype_ptr);
 		MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
 		MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+                if (mpi_errno) goto fn_fail;
 	    }
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -127,8 +127,9 @@ int MPI_Pack_size(int incount,
 
     /* ... body of routine ... */
 
-    MPIR_Pack_size_impl(incount, datatype, size);
-    
+    MPIR_Pack_size_impl(incount, datatype, &size_x);
+    MPIU_Assign_trunc(*size, size_x, int);
+
     /* ... end of body of routine ... */
 
 #ifdef HAVE_ERROR_CHECKING

@@ -1,7 +1,7 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2010 INRIA.  All rights reserved.
- * Copyright © 2009-2010 Université Bordeaux 1
+ * Copyright © 2009-2012 Inria.  All rights reserved.
+ * Copyright © 2009-2013 Université Bordeaux 1
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
  */
@@ -22,26 +22,39 @@
 #include <private/private.h>
 #include <private/debug.h>
 
-void
-hwloc_look_darwin(struct hwloc_topology *topology)
+static int
+hwloc_look_darwin(struct hwloc_backend *backend)
 {
+  struct hwloc_topology *topology = backend->topology;
   int64_t _nprocs;
   unsigned nprocs;
   int64_t _npackages;
   unsigned i, j, cpu;
   struct hwloc_obj *obj;
   size_t size;
-  int64_t l1cachesize;
+  int64_t l1dcachesize, l1icachesize;
+  int64_t cacheways[2];
   int64_t l2cachesize;
   int64_t cachelinesize;
   int64_t memsize;
+  char cpumodel[64];
+
+  if (topology->levels[0][0]->cpuset)
+    /* somebody discovered things */
+    return 0;
+
+  hwloc_alloc_obj_cpusets(topology->levels[0][0]);
 
   if (hwloc_get_sysctlbyname("hw.ncpu", &_nprocs) || _nprocs <= 0)
-    return;
+    return -1;
   nprocs = _nprocs;
   topology->support.discovery->pu = 1;
 
   hwloc_debug("%u procs\n", nprocs);
+
+  size = sizeof(cpumodel);
+  if (sysctlbyname("machdep.cpu.brand_string", cpumodel, &size, NULL, 0))
+    cpumodel[0] = '\0';
 
   if (!hwloc_get_sysctlbyname("hw.packages", &_npackages) && _npackages > 0) {
     unsigned npackages = _npackages;
@@ -69,8 +82,14 @@ hwloc_look_darwin(struct hwloc_topology *topology)
 
         hwloc_debug_1arg_bitmap("package %u has cpuset %s\n",
                    i, obj->cpuset);
+
+        if (cpumodel[0] != '\0')
+          hwloc_obj_add_info(obj, "CPUModel", cpumodel);
         hwloc_insert_object_by_cpuset(topology, obj);
       }
+    else
+      if (cpumodel[0] != '\0')
+        hwloc_obj_add_info(topology->levels[0][0], "CPUModel", cpumodel);
 
     if (!hwloc_get_sysctlbyname("machdep.cpu.cores_per_package", &_cores_per_package) && _cores_per_package > 0) {
       unsigned cores_per_package = _cores_per_package;
@@ -90,13 +109,28 @@ hwloc_look_darwin(struct hwloc_topology *topology)
           hwloc_insert_object_by_cpuset(topology, obj);
         }
     }
-  }
+  } else
+    if (cpumodel[0] != '\0')
+      hwloc_obj_add_info(topology->levels[0][0], "CPUModel", cpumodel);
 
-  if (hwloc_get_sysctlbyname("hw.l1dcachesize", &l1cachesize))
-    l1cachesize = 0;
+  if (hwloc_get_sysctlbyname("hw.l1dcachesize", &l1dcachesize))
+    l1dcachesize = 0;
+
+  if (hwloc_get_sysctlbyname("hw.l1icachesize", &l1icachesize))
+    l1icachesize = 0;
 
   if (hwloc_get_sysctlbyname("hw.l2cachesize", &l2cachesize))
     l2cachesize = 0;
+
+  if (hwloc_get_sysctlbyname("machdep.cpu.cache.L1_associativity", &cacheways[0]))
+    cacheways[0] = 0;
+  else if (cacheways[0] == 0xff)
+    cacheways[0] = -1;
+
+  if (hwloc_get_sysctlbyname("machdep.cpu.cache.L2_associativity", &cacheways[1]))
+    cacheways[1] = 0;
+  else if (cacheways[1] == 0xff)
+    cacheways[1] = -1;
 
   if (hwloc_get_sysctlbyname("hw.cachelinesize", &cachelinesize))
     cachelinesize = 0;
@@ -139,7 +173,7 @@ hwloc_look_darwin(struct hwloc_topology *topology)
         if (n > 0)
           cachesize[0] = memsize;
         if (n > 1)
-          cachesize[1] = l1cachesize;
+          cachesize[1] = l1dcachesize;
         if (n > 2)
           cachesize[2] = l2cachesize;
       }
@@ -148,7 +182,6 @@ hwloc_look_darwin(struct hwloc_topology *topology)
       for (i = 0; i < n && cacheconfig[i]; i++)
         hwloc_debug(" %"PRIu64"(%"PRIu64"kB)", cacheconfig[i], cachesize[i] / 1024);
 
-      cacheconfig[i] = cacheconfig32[i];
       /* Now we know how many caches there are */
       n = i;
       hwloc_debug("\n%u cache levels\n", n - 1);
@@ -168,12 +201,35 @@ hwloc_look_darwin(struct hwloc_topology *topology)
                cpu++)
             hwloc_bitmap_set(obj->cpuset, cpu);
 
+          if (i == 1 && l1icachesize) {
+            /* FIXME assuming that L1i and L1d are shared the same way. Darwin
+             * does not yet provide a way to know.  */
+            hwloc_obj_t l1i = hwloc_alloc_setup_object(HWLOC_OBJ_CACHE, j);
+            l1i->cpuset = hwloc_bitmap_dup(obj->cpuset);
+            hwloc_debug_1arg_bitmap("L1icache %u has cpuset %s\n",
+                j, l1i->cpuset);
+            l1i->attr->cache.depth = i;
+            l1i->attr->cache.size = l1icachesize;
+            l1i->attr->cache.linesize = cachelinesize;
+            l1i->attr->cache.associativity = 0;
+            l1i->attr->cache.type = HWLOC_OBJ_CACHE_INSTRUCTION;
+
+            hwloc_insert_object_by_cpuset(topology, l1i);
+          }
           if (i) {
             hwloc_debug_2args_bitmap("L%ucache %u has cpuset %s\n",
                 i, j, obj->cpuset);
             obj->attr->cache.depth = i;
             obj->attr->cache.size = cachesize[i];
             obj->attr->cache.linesize = cachelinesize;
+            if (i <= sizeof(cacheways) / sizeof(cacheways[0]))
+              obj->attr->cache.associativity = cacheways[i-1];
+            else
+              obj->attr->cache.associativity = 0;
+            if (i == 1 && l1icachesize)
+              obj->attr->cache.type = HWLOC_OBJ_CACHE_DATA;
+            else
+              obj->attr->cache.type = HWLOC_OBJ_CACHE_UNIFIED;
           } else {
             hwloc_debug_1arg_bitmap("node %u has cpuset %s\n",
                 j, obj->cpuset);
@@ -181,7 +237,7 @@ hwloc_look_darwin(struct hwloc_topology *topology)
 	    obj->memory.page_types_len = 2;
 	    obj->memory.page_types = malloc(2*sizeof(*obj->memory.page_types));
 	    memset(obj->memory.page_types, 0, 2*sizeof(*obj->memory.page_types));
-	    obj->memory.page_types[0].size = getpagesize();
+	    obj->memory.page_types[0].size = hwloc_getpagesize();
 #ifdef HAVE__SC_LARGE_PAGESIZE
 	    obj->memory.page_types[1].size = sysconf(_SC_LARGE_PAGESIZE);
 #endif
@@ -207,10 +263,44 @@ hwloc_look_darwin(struct hwloc_topology *topology)
   /* add PU objects */
   hwloc_setup_pu_level(topology, nprocs);
 
-  hwloc_add_object_info(topology->levels[0][0], "Backend", "Darwin");
+  hwloc_obj_add_info(topology->levels[0][0], "Backend", "Darwin");
+  if (topology->is_thissystem)
+    hwloc_add_uname_info(topology);
+  return 1;
 }
 
 void
-hwloc_set_darwin_hooks(struct hwloc_topology *topology __hwloc_attribute_unused)
+hwloc_set_darwin_hooks(struct hwloc_binding_hooks *hooks __hwloc_attribute_unused,
+		       struct hwloc_topology_support *support __hwloc_attribute_unused)
 {
 }
+
+static struct hwloc_backend *
+hwloc_darwin_component_instantiate(struct hwloc_disc_component *component,
+				   const void *_data1 __hwloc_attribute_unused,
+				   const void *_data2 __hwloc_attribute_unused,
+				   const void *_data3 __hwloc_attribute_unused)
+{
+  struct hwloc_backend *backend;
+  backend = hwloc_backend_alloc(component);
+  if (!backend)
+    return NULL;
+  backend->discover = hwloc_look_darwin;
+  return backend;
+}
+
+static struct hwloc_disc_component hwloc_darwin_disc_component = {
+  HWLOC_DISC_COMPONENT_TYPE_CPU,
+  "darwin",
+  HWLOC_DISC_COMPONENT_TYPE_GLOBAL,
+  hwloc_darwin_component_instantiate,
+  50,
+  NULL
+};
+
+const struct hwloc_component hwloc_darwin_component = {
+  HWLOC_COMPONENT_ABI,
+  HWLOC_COMPONENT_TYPE_DISC,
+  0,
+  &hwloc_darwin_disc_component
+};

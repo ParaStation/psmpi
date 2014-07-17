@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -8,7 +8,7 @@
 #if !defined(SOCKI_H_INCLUDED)
 #define SOCKI_H_INCLUDED
 
-#include "mpidu_socki_conf.h"
+#include "mpichconf.h"
 
 #if defined(HAVE_SYS_UIO_H)
 #include <sys/uio.h>

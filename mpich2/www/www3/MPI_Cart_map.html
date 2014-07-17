@@ -9,7 +9,7 @@
 Maps process to Cartesian topology information  
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Cart_map(MPI_Comm comm_old, int ndims, int *dims, int *periods, 
+int MPI_Cart_map(MPI_Comm comm, int ndims, const int dims[], const int periods[],
                 int *newrank)
 </PRE>
 <H2>Input Parameters</H2>
@@ -25,7 +25,7 @@ each coordinate direction
 specification in each coordinate direction 
 </DL>
 <P>
-<H2>Output Parameter</H2>
+<H2>Output Parameters</H2>
 <DL><DT><B>newrank </B> <DD> reordered rank of the calling process; <TT>MPI_UNDEFINED</TT> if 
 calling process does not belong to grid (integer) 
 </DL>
@@ -72,5 +72,5 @@ is null or its length is less than or equal to zero.
 <DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
-<P><B>Location:</B>cart_map.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/topo/cart_map.c<P>
 </BODY></HTML>

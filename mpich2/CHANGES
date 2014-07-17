@@ -1,4 +1,284 @@
 ===============================================================================
+                               Changes in 3.1
+===============================================================================
+
+ # Implement runtime compatibility with MPICH-derived implementations as per
+   the ABI Compatibility Initiative (see www.mpich.org/abi for more
+   information).
+
+ # Integrated MPICH-PAMI code base for Blue Gene/Q and other IBM
+   platforms.
+
+ # Several improvements to the SCIF netmod.  (code contribution from
+   Intel).
+
+ # Major revamp of the MPI_T interface added in MPI-3.
+
+ # Added environment variables to control a lot more capabilities for
+   collectives.  See the README.envvar file for more information.
+
+ # Allow non-blocking collectives and fault tolerance at the same
+   time. The option MPIR_PARAM_ENABLE_COLL_FT_RET has been deprecated as
+   it is no longer necessary.
+
+ # Improvements to MPI_WIN_ALLOCATE to internally allocate shared
+   memory between processes on the same node.
+
+ # Performance improvements for MPI RMA operations on shared memory
+   for MPI_WIN_ALLOCATE and MPI_WIN_ALLOCATE_SHARED.
+
+ # Enable shared library builds by default.
+
+ # Upgraded hwloc to 1.8.
+
+ # Several improvements to the Hydra-SLURM integration.
+
+ # Several improvements to the Hydra process binding code.  See the
+   Hydra wiki page for more information:
+   http://wiki.mpich.org/mpich/index.php/Using_the_Hydra_Process_Manager
+
+ # MPICH now supports operations on very large datatypes (those that describe
+   more than 32 bits of data).  This work also allows MPICH to fully support
+   MPI-3's introduction of MPI_Count.
+
+ # Several other minor bug fixes, memory leak fixes, and code cleanup.
+
+   A full list of changes is available at the following link:
+
+     http://git.mpich.org/mpich.git/shortlog/v3.0.4..v3.1
+
+   A full list of bugs that have been fixed is available at the
+   following link:
+
+     https://trac.mpich.org/projects/mpich/query?status=closed&group=resolution&milestone=mpich-3.1
+
+
+===============================================================================
+                               Changes in 3.0.4
+===============================================================================
+
+ # BUILD SYSTEM: Reordered the default compiler search to prefer Intel
+   and PG compilers over GNU compilers because of the performance
+   difference.
+
+   WARNING: If you do not explicitly specify the compiler you want
+   through CC and friends, this might break ABI for you relative to
+   the previous 3.0.x release.
+
+ # OVERALL: Added support to manage per-communicator eager-rendezvous
+   thresholds.
+
+ # PM/PMI: Performance improvements to the Hydra process manager on
+   large-scale systems by allowing for key/value caching.
+
+ # Several other minor bug fixes, memory leak fixes, and code cleanup.
+   A full list of changes is available at the following link:
+
+     http://git.mpich.org/mpich.git/shortlog/v3.0.3..v3.0.4
+
+
+===============================================================================
+                               Changes in 3.0.3
+===============================================================================
+
+ # RMA: Added a new mechanism for piggybacking RMA synchronization operations,
+   which improves the performance of several synchronization operations,
+   including Flush.
+
+ # RMA: Added an optimization to utilize the MPI_MODE_NOCHECK assertion in
+   passive target RMA to improve performance by eliminating a lock request
+   message.
+
+ # RMA: Added a default implementation of shared memory windows to CH3.  This
+   adds support for this MPI 3.0 feature to the ch3:sock device.
+
+ # RMA: Fix a bug that resulted in an error when RMA operation request handles
+   where completed outside of a synchronization epoch.
+
+ # PM/PMI: Upgraded to hwloc-1.6.2rc1.  This version uses libpciaccess
+   instead of libpci, to workaround the GPL license used by libpci.
+
+ # PM/PMI: Added support for the Cobalt process manager.
+
+ # BUILD SYSTEM: allow MPI_LONG_DOUBLE_SUPPORT to be disabled with a configure
+   option.
+
+ # FORTRAN: fix MPI_WEIGHTS_EMPTY in the Fortran bindings
+
+ # MISC: fix a bug in MPI_Get_elements where it could return incorrect values
+
+ # Several other minor bug fixes, memory leak fixes, and code cleanup.
+   A full list of changes is available at the following link:
+
+     http://git.mpich.org/mpich.git/shortlog/v3.0.2..v3.0.3
+
+
+===============================================================================
+                               Changes in 3.0.2
+===============================================================================
+
+ # PM/PMI: Upgrade to hwloc-1.6.1
+
+ # RMA: Performance enhancements for shared memory windows.
+
+ # COMPILER INTEGRATION: minor improvements and fixes to the clang static type
+   checking annotation macros.
+
+ # MPI-IO (ROMIO): improved error checking for user errors, contributed by IBM.
+
+ # MPI-3 TOOLS INTERFACE: new MPI_T performance variables providing information
+   about nemesis communication behavior and and CH3 message matching queues.
+
+ # TEST SUITE: "make testing" now also outputs a "summary.tap" file that can be
+   interpreted with standard TAP consumer libraries and tools.  The
+   "summary.xml" format remains unchanged.
+
+ # GIT: This is the first release built from the new git repository at
+   git.mpich.org.  A few build system mechanisms have changed because of this
+   switch.
+
+ # BUG FIX: resolved a compilation error related to LLONG_MAX that affected
+   several users (ticket #1776).
+
+ # BUG FIX: nonblocking collectives now properly make progress when MPICH is
+   configured with the ch3:sock channel (ticket #1785).
+
+ # Several other minor bug fixes, memory leak fixes, and code cleanup.
+   A full list of changes is available at the following link:
+
+     http://git.mpich.org/mpich.git/shortlog/v3.0.1..v3.0.2
+
+
+===============================================================================
+                               Changes in 3.0.1
+===============================================================================
+
+ # PM/PMI: Critical bug-fix in Hydra to work correctly in multi-node
+   tests.
+
+ # A full list of changes is available using:
+
+     svn log -r10790:HEAD https://svn.mcs.anl.gov/repos/mpi/mpich2/tags/release/mpich-3.0.1
+
+     ... or at the following link:
+
+     https://trac.mcs.anl.gov/projects/mpich2/log/mpich2/tags/release/mpich-3.0.1?action=follow_copy&rev=HEAD&stop_rev=10790&mode=follow_copy
+
+
+===============================================================================
+                               Changes in 3.0
+===============================================================================
+
+ # MPI-3: All MPI-3 features are now implemented and the MPI_VERSION
+   bumped up to 3.0.
+
+ # OVERALL: Added support for ARM-v7 native atomics
+
+ # MPE: MPE is now separated out of MPICH and can be downloaded/used
+   as a separate package.
+
+ # PM/PMI: Upgraded to hwloc-1.6
+
+ # Several other minor bug fixes, memory leak fixes, and code cleanup.
+   A full list of changes is available using:
+
+     svn log -r10344:HEAD https://svn.mcs.anl.gov/repos/mpi/mpich2/tags/release/mpich-3.0
+
+     ... or at the following link:
+
+     https://trac.mcs.anl.gov/projects/mpich2/log/mpich2/tags/release/mpich-3.0?action=follow_copy&rev=HEAD&stop_rev=10344&mode=follow_copy
+
+
+===============================================================================
+                               Changes in 1.5
+===============================================================================
+
+ # OVERALL: Nemesis now supports an "--enable-yield=..." configure
+   option for better performance/behavior when oversubscribing
+   processes to cores.  Some form of this option is enabled by default
+   on Linux, Darwin, and systems that support sched_yield().
+
+ # OVERALL: Added support for Intel Many Integrated Core (MIC)
+   architecture: shared memory, TCP/IP, and SCIF based communication.
+
+ # OVERALL: Added support for IBM BG/Q architecture.  Thanks to IBM
+   for the contribution.
+
+ # MPI-3: const support has been added to mpi.h, although it is
+   disabled by default.  It can be enabled on a per-translation unit
+   basis with "#define MPICH2_CONST const".
+
+ # MPI-3: Added support for MPIX_Type_create_hindexed_block.
+
+ # MPI-3: The new MPI-3 nonblocking collective functions are now
+   available as "MPIX_" functions (e.g., "MPIX_Ibcast").
+
+ # MPI-3: The new MPI-3 neighborhood collective routines are now available as
+   "MPIX_" functions (e.g., "MPIX_Neighbor_allgather").
+
+ # MPI-3: The new MPI-3 MPI_Comm_split_type function is now available
+   as an "MPIX_" function.
+
+ # MPI-3: The new MPI-3 tools interface is now available as "MPIX_T_"
+   functions.  This is a beta implementation right now with several
+   limitations, including no support for multithreading.  Several
+   performance variables related to CH3's message matching are exposed
+   through this interface.
+
+ # MPI-3: The new MPI-3 matched probe functionality is supported via
+   the new routines MPIX_Mprobe, MPIX_Improbe, MPIX_Mrecv, and
+   MPIX_Imrecv.
+
+ # MPI-3: The new MPI-3 nonblocking communicator duplication routine,
+   MPIX_Comm_idup, is now supported.  It will only work for
+   single-threaded programs at this time.
+
+ # MPI-3: MPIX_Comm_reenable_anysource support
+
+ # MPI-3: Native MPIX_Comm_create_group support (updated version of
+   the prior MPIX_Group_comm_create routine).
+
+ # MPI-3: MPI_Intercomm_create's internal communication no longer interferes
+   with point-to-point communication, even if point-to-point operations on the
+   parent communicator use the same tag or MPI_ANY_TAG.
+
+ # MPI-3: Eliminated the possibility of interference between
+   MPI_Intercomm_create and point-to-point messaging operations.
+
+ # Build system: Completely revamped build system to rely fully on
+   autotools.  Parallel builds ("make -j8" and similar) are now supported.
+
+ # Build system: rename "./maint/updatefiles" --> "./autogen.sh" and
+   "configure.in" --> "configure.ac"
+
+ # JUMPSHOT: Improvements to Jumpshot to handle thousands of
+   timelines, including performance improvements to slog2 in such
+   cases.
+
+ # JUMPSHOT: Added navigation support to locate chosen drawable's ends
+   when viewport has been scrolled far from the drawable.
+
+ # PM/PMI: Added support for memory binding policies.
+
+ # PM/PMI: Various improvements to the process binding support in
+   Hydra.  Several new pre-defined binding options are provided.
+
+ # PM/PMI: Upgraded to hwloc-1.5
+
+ # PM/PMI: Several improvements to PBS support to natively use the PBS
+   launcher.
+
+ # Several other minor bug fixes, memory leak fixes, and code cleanup.
+   A full list of changes is available using:
+
+     svn log -r8478:HEAD https://svn.mcs.anl.gov/repos/mpi/mpich2/tags/release/mpich2-1.5
+
+     ... or at the following link:
+
+     https://trac.mcs.anl.gov/projects/mpich2/log/mpich2/tags/release/mpich2-1.5?action=follow_copy&rev=HEAD&stop_rev=8478&mode=follow_copy
+
+
+===============================================================================
                                Changes in 1.4.1
 ===============================================================================
 

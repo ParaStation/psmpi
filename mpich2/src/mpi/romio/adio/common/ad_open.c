@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /* 
  *
  *   Copyright (C) 1997 University of Chicago. 
@@ -19,7 +19,7 @@ static int build_cb_config_list(ADIO_File fd,
 	int rank, int procs, int *error_code);
 
 MPI_File ADIO_Open(MPI_Comm orig_comm,
-		   MPI_Comm comm, char *filename, int file_system,
+		   MPI_Comm comm, const char *filename, int file_system,
 		   ADIOI_Fns *ops,
 		   int access_mode, ADIO_Offset disp, MPI_Datatype etype, 
 		   MPI_Datatype filetype,
@@ -75,7 +75,13 @@ MPI_File ADIO_Open(MPI_Comm orig_comm,
 /* create and initialize info object */
     fd->hints = (ADIOI_Hints *)ADIOI_Calloc(1, sizeof(struct ADIOI_Hints_struct));
     if (fd->hints == NULL) {
-	/* NEED TO HANDLE ENOMEM ERRORS */
+	*error_code = MPIO_Err_create_code(*error_code,
+					   MPIR_ERR_RECOVERABLE,
+					   myname,
+					   __LINE__,
+					   MPI_ERR_OTHER,
+					   "**nomem2",0);
+	goto fn_exit;
     }
     fd->hints->cb_config_list = NULL;
     fd->hints->ranklist = NULL;
@@ -209,28 +215,21 @@ int is_aggregator(int rank, ADIO_File fd ) {
         return 0;
 }
 
-/* 
- * we special-case TESTFS because all it does is wrap logging info around GEN 
+/*
+ * If file system implements some version of two-phase -- doesn't have to be
+ * generic -- we can still carry out the defered open optimization
  */
 static int uses_generic_read(ADIO_File fd)
 {
-    ADIOI_Fns *fns = fd->fns;
-    if (fns->ADIOI_xxx_ReadStridedColl == ADIOI_GEN_ReadStridedColl || 
-        fd->file_system == ADIO_TESTFS )
-    {
+    if (ADIO_Feature(fd, ADIO_TWO_PHASE))
         return 1;
-    }
     return 0;
 }
 
 static int uses_generic_write(ADIO_File fd)
 {
-    ADIOI_Fns *fns = fd->fns;
-    if (fns->ADIOI_xxx_WriteStridedColl == ADIOI_GEN_WriteStridedColl ||
-        fd->file_system == ADIO_TESTFS )
-    {
+    if (ADIO_Feature(fd, ADIO_TWO_PHASE))
         return 1;
-    }
     return 0;
 }
 
@@ -254,7 +253,13 @@ static int build_cb_config_list(ADIO_File fd,
     if (rank == 0) {
 	tmp_ranklist = (int *) ADIOI_Malloc(sizeof(int) * procs);
 	if (tmp_ranklist == NULL) {
-	    /* NEED TO HANDLE ENOMEM ERRORS */
+	    *error_code = MPIO_Err_create_code(*error_code,
+					       MPIR_ERR_RECOVERABLE,
+					       myname,
+					       __LINE__,
+					       MPI_ERR_OTHER,
+					       "**nomem2",0);
+	    return 0;
 	}
 
 	rank_ct = ADIOI_cb_config_list_parse(fd->hints->cb_config_list, 

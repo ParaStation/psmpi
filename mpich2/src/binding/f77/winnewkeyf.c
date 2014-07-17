@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval_( MPI_Win_copy_attr_fu
 #else
 #pragma _CRI duplicate mpi_win_create_keyval_ as pmpi_win_create_keyval_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_CREATE_KEYVAL( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_CREATE_KEYVAL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval__( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_CREATE_KEYVAL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval_( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_CREATE_KEYVAL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_CREATE_KEYVAL")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_CREATE_KEYVAL( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval__( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval_( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_CREATE_KEYVAL( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval__( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval_( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_CREATE_KEYVAL( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval__( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval_( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_CREATE_KEYVAL( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval__( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval_( MPI_Win_copy_attr_fu
 #pragma weak mpi_win_create_keyval__ = mpi_win_create_keyval
 #pragma weak mpi_win_create_keyval_ = mpi_win_create_keyval
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_CREATE_KEYVAL( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval__( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("MPI_WIN_CREATE_KEYVAL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval_( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("MPI_WIN_CREATE_KEYVAL")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("MPI_WIN_CREATE_KEYVAL")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_CREATE_KEYVAL( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("mpi_win_create_keyval__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval__( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval_( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("mpi_win_create_keyval__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("mpi_win_create_keyval__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_CREATE_KEYVAL( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("mpi_win_create_keyval_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval__( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("mpi_win_create_keyval_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval_( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("mpi_win_create_keyval_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_CREATE_KEYVAL( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("mpi_win_create_keyval")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval__( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("mpi_win_create_keyval")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval_( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("mpi_win_create_keyval")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_CREATE_KEYVAL( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_create_keyval( MPI_Win_copy_attr_fu
 #pragma weak pmpi_win_create_keyval__ = pmpi_win_create_keyval
 #pragma weak pmpi_win_create_keyval_ = pmpi_win_create_keyval
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_create_keyval__( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_CREATE_KEYVAL")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_create_keyval_( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_CREATE_KEYVAL")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_create_keyval( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_CREATE_KEYVAL")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_CREATE_KEYVAL( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_create_keyval_( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_create_keyval( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_CREATE_KEYVAL( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_create_keyval__( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_create_keyval( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_CREATE_KEYVAL( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_create_keyval__( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_create_keyval_( MPI_Win_copy_attr_function*, MPI_Win_delete_attr_function*, MPI_Fint *, void*, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_create_keyval")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_win_create_keyval_ PMPI_WIN_CREATE_KEYVAL
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_create_keyval( MPI_Win_copy_attr_fu
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Win_create_keyval
 #define MPI_Win_create_keyval PMPI_Win_create_keyval 
 
@@ -215,9 +292,9 @@ MPIR_Win_copy_attr_f90_proxy(
 
     ((F90_CopyFunction*)user_function)( &fhandle, &fkeyval, fextra, &fvalue, &fnew, &fflag, &ierr );
 
-    *flag = fflag;
+    *flag = MPIR_FROM_FLOG(fflag);
     *new_value = MPI_AINT_CAST_TO_VOID_PTR (fnew);
-    return ierr;
+    return (int)ierr;
 }
 
 
@@ -243,12 +320,12 @@ MPIR_Win_delete_attr_f90_proxy(
     MPI_Aint* fextra  = (MPI_Aint*)extra_state;
 
     ((F90_DeleteFunction*)user_function)( &fhandle, &fkeyval, &fvalue, fextra, &ierr );
-    return ierr;
+    return (int)ierr;
 }
 FORT_DLL_SPEC void FORT_CALL mpi_win_create_keyval_ ( MPI_Win_copy_attr_function*v1, MPI_Win_delete_attr_function*v2, MPI_Fint *v3, void*v4, MPI_Fint *ierr ){
     *ierr = MPI_Win_create_keyval( v1, v2, v3, v4 );
 
     if (*ierr == MPI_SUCCESS) {
-         MPIR_Keyval_set_proxy( *v3, MPIR_Win_copy_attr_f90_proxy, MPIR_Win_delete_attr_f90_proxy );
+         MPIR_Keyval_set_proxy( (int)*v3, MPIR_Win_copy_attr_f90_proxy, MPIR_Win_delete_attr_f90_proxy );
     }
 }

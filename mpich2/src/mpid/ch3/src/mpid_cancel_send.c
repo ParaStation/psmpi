@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -70,7 +70,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	    MPIU_Object_set_ref(rreq, 0);
 	    MPIDI_CH3_Request_destroy(rreq);
 	    
-	    sreq->status.cancelled = TRUE;
+	    MPIR_STATUS_SET_CANCEL_BIT(sreq->status, TRUE);
 	    /* no other thread should be waiting on sreq, so it is safe to 
 	       reset ref_count and cc */
             MPID_cc_set(&sreq->cc, 0);
@@ -79,7 +79,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	}
 	else
 	{
-	    sreq->status.cancelled = FALSE; 
+	    MPIR_STATUS_SET_CANCEL_BIT(sreq->status, FALSE);
 	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
                "send-to-self cancellation failed, sreq=0x%08x, rreq=0x%08x",
 						sreq->handle, rreq->handle));
@@ -125,7 +125,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 		
 		if (cancelled)
 		{
-		    sreq->status.cancelled = TRUE;
+		    MPIR_STATUS_SET_CANCEL_BIT(sreq->status, TRUE);
 		    /* no other thread should be waiting on sreq, so it is 
 		       safe to reset ref_count and cc */
                     MPID_cc_set(&sreq->cc, 0);
@@ -140,7 +140,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	    cancelled = FALSE;
 	    if (cancelled)
 	    {
-		sreq->status.cancelled = TRUE;
+		MPIR_STATUS_SET_CANCEL_BIT(sreq->status, TRUE);
 		/* no other thread should be waiting on sreq, so it is safe to 
 		   reset ref_count and cc */
                 MPID_cc_set(&sreq->cc, 0);
@@ -183,8 +183,7 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	csr_pkt->sender_req_id = sreq->handle;
 	
 	MPIU_THREAD_CS_ENTER(CH3COMM,vc);
-	mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsg(vc, csr_pkt, 
-					  sizeof(*csr_pkt), &csr_sreq));
+	mpi_errno = MPIDI_CH3_iStartMsg(vc, csr_pkt, sizeof(*csr_pkt), &csr_sreq);
 	MPIU_THREAD_CS_EXIT(CH3COMM,vc);
 	if (mpi_errno != MPI_SUCCESS) {
 	    MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,"**ch3|cancelreq");
@@ -255,8 +254,7 @@ int MPIDI_CH3_PktHandler_CancelSendReq( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     resp_pkt->ack = ack;
     /* FIXME: This is called within the packet handler */
     /* MPIU_THREAD_CS_ENTER(CH3COMM,vc); */
-    mpi_errno = MPIU_CALL(MPIDI_CH3,iStartMsg(vc, resp_pkt, 
-					      sizeof(*resp_pkt), &resp_sreq));
+    mpi_errno = MPIDI_CH3_iStartMsg(vc, resp_pkt, sizeof(*resp_pkt), &resp_sreq);
     /* MPIU_THREAD_CS_EXIT(CH3COMM,vc); */
     if (mpi_errno != MPI_SUCCESS) {
 	MPIU_ERR_SETANDJUMP(mpi_errno,MPI_ERR_OTHER,
@@ -290,7 +288,7 @@ int MPIDI_CH3_PktHandler_CancelSendResp( MPIDI_VC_t *vc ATTRIBUTE((unused)),
     
     if (resp_pkt->ack)
     {
-	sreq->status.cancelled = TRUE;
+	MPIR_STATUS_SET_CANCEL_BIT(sreq->status, TRUE);
 	
 	if (MPIDI_Request_get_msg_type(sreq) == MPIDI_REQUEST_RNDV_MSG ||
 	    MPIDI_Request_get_type(sreq) == MPIDI_REQUEST_TYPE_SSEND)
@@ -306,7 +304,7 @@ int MPIDI_CH3_PktHandler_CancelSendResp( MPIDI_VC_t *vc ATTRIBUTE((unused)),
     }
     else
     {
-	sreq->status.cancelled = FALSE; 
+	MPIR_STATUS_SET_CANCEL_BIT(sreq->status, FALSE);
 	MPIU_DBG_MSG(CH3_OTHER,TYPICAL,"unable to cancel message");
     }
     

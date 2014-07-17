@@ -1,8 +1,35 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+categories:
+    - name        : MEMORY
+      description : affects memory allocation and usage, including MPI object handles
+
+cvars:
+    - name        : MPIR_CVAR_ABORT_ON_LEAKED_HANDLES
+      category    : MEMORY
+      type        : boolean
+      default     : false
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If true, MPI will call MPI_Abort at MPI_Finalize if any MPI object
+        handles have been leaked.  For example, if MPI_Comm_dup is called
+        without calling a corresponding MPI_Comm_free.  For uninteresting
+        reasons, enabling this option may prevent all known object leaks from
+        being reported.  MPICH must have been configure with
+        "--enable-g=handlealloc" or better in order for this functionality to
+        work.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
 
 #include "mpiimpl.h"
 #include <stdio.h>
@@ -61,12 +88,12 @@ static const char *MPIR_ObjectName( MPIU_Object_alloc_t * );
 	handle_type is the kind of object (e.g., MPID_INFO)
 
    void *MPIU_Handle_indirect_init( void (**indirect)[], int *indirect_size, 
-                                    int indirect_max_size,
-                                    int indirect_block_size, 
+                                    int indirect_num_blocks,
+                                    int indirect_num_indices, 
                                     int obj_size,
                                     int handle_type )
 	Initialize the indirect array (MPID_<obj>_indirect) of size
-        indirect_size, each block of which contains indirect_block_size
+        indirect_size, each block of which contains indirect_num_indices
 	members of size obj_size.  Returns the first available element, or
 	NULL if no memory is available.  
         Also incrementes indirect_size and assigns to indirect if it is null.
@@ -74,22 +101,22 @@ static const char *MPIR_ObjectName( MPIU_Object_alloc_t * );
 	The Handle_indirect routine and the data structures that it manages
 	require a little more discussion.
 	This routine allocates an array of pointers to a block of storage.
-	The block of storage contains space for indirect_block_size 
+	The block of storage contains space for indirect_num_indices 
 	instances of an object of obj_size.  These blocks are allocated
 	as needed; the pointers to these blocks are stored in the 
 	indirect array.  The value of indirect_size is the number of 
 	valid pointers in indirect.  In other words, indirect[0] through
         indirect[*indirect_size-1] contain pointers to blocks of 
-	storage of size indirect_block_size * obj_size.  The array 
-	indirect has indirect_max_size entries, each holding a pointer.
+	storage of size indirect_num_indices * obj_size.  The array 
+	indirect has indirect_num_blocks entries, each holding a pointer.
 
 	The rationale for this approach is that this approach can 
 	handle large amounts of memory; however, relatively little
 	memory is used unless needed.  The definitions in 
-        mpich2/src/include/mpihandlemem.h define defaults for the
-	indirect_max_size (HANDLE_BLOCK_INDEX_SIZE = 1024) and
-	indirect_block_size (HANDLE_BLOCK_SIZE = 256) that permits
-	the allocation of 256K objects.  
+        mpich/src/include/mpihandlemem.h define defaults for the
+        indirect_num_blocks (HANDLE_NUM_BLOCKS = 512) and
+        indirect_num_indices (HANDLE_NUM_INDICES = 16384) that permits
+        the allocation of 8 Mi objects.
 
    int MPIU_Handle_free( void *(*indirect)[], int indirect_size )
         Frees any memory allocated for the indirect handles.  Returns 0 on
@@ -133,7 +160,7 @@ static int MPIU_Handle_free( void *((*indirect)[]), int indirect_size )
         if (MPL_VG_RUNNING_ON_VALGRIND()) {                                                     \
             char desc_str[256];                                                                  \
             MPIU_Snprintf(desc_str, sizeof(desc_str)-1,                                          \
-                          "[MPICH2 handle: objptr=%p handle=0x%x %s/%s]",                        \
+                          "[MPICH handle: objptr=%p handle=0x%x %s/%s]",                        \
                           (objptr_), (objptr_)->handle,                                          \
                           ((is_direct_) ? "DIRECT" : "INDIRECT"),                                \
                           MPIU_Handle_get_kind_str(handle_type_));                               \
@@ -157,7 +184,9 @@ void *MPIU_Handle_direct_init(void *direct,
 
     for (i=0; i<direct_size; i++) {
 	/* printf( "Adding %p in %d\n", ptr, handle_type ); */
-	hptr = (MPIU_Handle_common *)ptr;
+        /* First cast to (void*) to avoid false warnings about alignment
+           (consider that a requirement of the input parameters) */
+	hptr = (MPIU_Handle_common *)(void *)ptr;
 	ptr  = ptr + obj_size;
 	hptr->next = ptr;
 	hptr->handle = ((unsigned)HANDLE_KIND_DIRECT << HANDLE_KIND_SHIFT) | 
@@ -174,8 +203,9 @@ void *MPIU_Handle_direct_init(void *direct,
 /* indirect is really a pointer to a pointer to an array of pointers */
 static void *MPIU_Handle_indirect_init( void *(**indirect)[], 
 					int *indirect_size, 
-					int indirect_max_size,
-					int indirect_block_size, int obj_size, 
+					int indirect_num_blocks,
+					int indirect_num_indices,
+                                        int obj_size,
 					int handle_type )
 {
     void               *block_ptr;
@@ -186,8 +216,8 @@ static void *MPIU_Handle_indirect_init( void *(**indirect)[],
     /* Must create new storage for dynamically allocated objects */
     /* Create the table */
     if (!*indirect) {
-	/* printf( "Creating indirect table\n" ); */
-	*indirect = (void *)MPIU_Calloc(indirect_max_size, sizeof(void *));
+	/* printf( "Creating indirect table with %d pointers to blocks in it\n", indirect_num_blocks ); */
+	*indirect = (void *)MPIU_Calloc(indirect_num_blocks, sizeof(void *));
 	if (!*indirect) {
 	    return 0;
 	}
@@ -195,24 +225,27 @@ static void *MPIU_Handle_indirect_init( void *(**indirect)[],
     }
 
     /* See if we can allocate another block */
-    if (*indirect_size >= indirect_max_size-1) {
+    if (*indirect_size >= indirect_num_blocks) {
+        /* printf("Out of space in indirect table\n"); */
 	return 0;
     }
-    
+
     /* Create the next block */
-    /* printf( "Adding indirect block %d\n", MPID_Info_indirect_size ); */
-    block_ptr = (void *)MPIU_Calloc( indirect_block_size, obj_size );
+    /* printf("Creating indirect block number %d with %d objects in it\n", *indirect_size, indirect_num_indices); */
+    block_ptr = (void *)MPIU_Calloc( indirect_num_indices, obj_size );
     if (!block_ptr) { 
 	return 0;
     }
     ptr = (char *)block_ptr;
-    for (i=0; i<indirect_block_size; i++) {
-	hptr       = (MPIU_Handle_common *)ptr;
+    for (i=0; i<indirect_num_indices; i++) {
+        /* Cast to (void*) to avoid false warning about alignment */
+	hptr       = (MPIU_Handle_common *)(void*)ptr;
 	ptr        = ptr + obj_size;
 	hptr->next = ptr;
 	hptr->handle   = ((unsigned)HANDLE_KIND_INDIRECT << HANDLE_KIND_SHIFT) | 
 	    (handle_type << HANDLE_MPI_KIND_SHIFT) | 
 	    (*indirect_size << HANDLE_INDIRECT_SHIFT) | i;
+        /* printf("handle=%#x handle_type=%x *indirect_size=%d i=%d\n", hptr->handle, handle_type, *indirect_size, i); */
 
         MPIU_HANDLE_VG_LABEL(hptr, obj_size, handle_type, 0);
     }
@@ -272,7 +305,7 @@ void MPIU_Handle_obj_alloc_complete(MPIU_Object_alloc_t *objmem,
 /*+
   MPIU_Handle_obj_alloc - Create an object using the handle allocator
 
-  Input Parameter:
+Input Parameters:
 . objmem - Pointer to object memory block.
 
   Return Value:
@@ -360,8 +393,8 @@ void *MPIU_Handle_obj_alloc_unsafe(MPIU_Object_alloc_t *objmem)
 
 	    ptr = MPIU_Handle_indirect_init(&objmem->indirect, 
 					    &objmem->indirect_size, 
-					    HANDLE_BLOCK_INDEX_SIZE,
-					    HANDLE_BLOCK_SIZE, 
+					    HANDLE_NUM_BLOCKS,
+					    HANDLE_NUM_INDICES,
 					    objsize,
 					    objkind);
 	    if (ptr) {
@@ -417,7 +450,7 @@ void *MPIU_Handle_obj_alloc_unsafe(MPIU_Object_alloc_t *objmem)
 /*+
   MPIU_Handle_obj_free - Free an object allocated with MPID_Handle_obj_new
 
-  Input Parameters:
+Input Parameters:
 + objmem - Pointer to object block
 - object - Object to delete
 
@@ -450,19 +483,27 @@ void MPIU_Handle_obj_free( MPIU_Object_alloc_t *objmem, void *object )
     }
 #endif
 
-    MPL_VG_MEMPOOL_FREE(objmem, obj);
-    /* MEMPOOL_FREE marks the object NOACCESS, so we have to make the
-     * MPIU_Handle_common area that is used for internal book keeping
-     * addressable again. */
-    MPL_VG_MAKE_MEM_DEFINED(&obj->handle, sizeof(obj->handle));
-    MPL_VG_MAKE_MEM_UNDEFINED(&obj->next, sizeof(obj->next));
+    if (MPL_VG_RUNNING_ON_VALGRIND()) {
+        int tmp_handle = obj->handle;
 
-    /* Necessary to prevent annotations from being misinterpreted.  HB/HA arcs
-     * will be drawn between a req object in across a free/alloc boundary
-     * otherwise.  Specifically, stores to obj->next when obj is actually an
-     * MPID_Request falsely look like a race to DRD and Helgrind because of the
-     * other lockfree synchronization used with requests. */
-    MPL_VG_ANNOTATE_NEW_MEMORY(obj, objmem->size);
+        MPL_VG_MEMPOOL_FREE(objmem, obj);
+        /* MEMPOOL_FREE marks the object NOACCESS, so we have to make the
+         * MPIU_Handle_common area that is used for internal book keeping
+         * addressable again. */
+        MPL_VG_MAKE_MEM_DEFINED(&obj->handle, sizeof(obj->handle));
+        MPL_VG_MAKE_MEM_UNDEFINED(&obj->next, sizeof(obj->next));
+
+        /* tt#1626: MEMPOOL_FREE also uses the value of `--free-fill=0x..` to
+         * memset the object, so we need to restore the handle */
+        obj->handle = tmp_handle;
+
+        /* Necessary to prevent annotations from being misinterpreted.  HB/HA arcs
+         * will be drawn between a req object in across a free/alloc boundary
+         * otherwise.  Specifically, stores to obj->next when obj is actually an
+         * MPID_Request falsely look like a race to DRD and Helgrind because of the
+         * other lockfree synchronization used with requests. */
+        MPL_VG_ANNOTATE_NEW_MEMORY(obj, objmem->size);
+    }
 
     obj->next	        = objmem->avail;
     objmem->avail	= obj;
@@ -590,7 +631,7 @@ static int MPIU_CheckHandlesOnFinalize( void *objmem_ptr )
 	    void **indirect = (void **)objmem->indirect;
 	    for (i=0; i<objmem->indirect_size; i++) {
 		char *start = indirect[i];
-		char *end   = start + HANDLE_BLOCK_SIZE *objmem->size;
+		char *end   = start + HANDLE_NUM_INDICES * objmem->size;
 		if ((char *)ptr >= start && (char *)ptr < end) {
 		    nIndirect[i]++;
 		    break;
@@ -603,7 +644,7 @@ static int MPIU_CheckHandlesOnFinalize( void *objmem_ptr )
 		printf( "direct block is [%p,%p]\n", direct, directEnd );
 		if (objmem->indirect_size) {
 		    printf( "indirect block is [%p,%p]\n", indirect[0], 
-			    (char *)indirect[0] + HANDLE_BLOCK_SIZE * 
+			    (char *)indirect[0] + HANDLE_NUM_INDICES * 
 			    objmem->size );
 		}
 	    }
@@ -623,9 +664,9 @@ static int MPIU_CheckHandlesOnFinalize( void *objmem_ptr )
 	printf( "In direct memory block for handle type %s, %d handles are still allocated\n", MPIR_ObjectName( objmem ), directSize - nDirect );
     }
     for (i=0; i<objmem->indirect_size; i++) {
-	if (nIndirect[i] != HANDLE_BLOCK_SIZE) {
+	if (nIndirect[i] != HANDLE_NUM_INDICES) {
             leaked_handles = TRUE;
-	    printf( "In indirect memory block %d for handle type %s, %d handles are still allocated\n", i, MPIR_ObjectName( objmem ), HANDLE_BLOCK_SIZE - nIndirect[i] );
+	    printf( "In indirect memory block %d for handle type %s, %d handles are still allocated\n", i, MPIR_ObjectName( objmem ), HANDLE_NUM_INDICES - nIndirect[i] );
 	}
     }
 
@@ -633,7 +674,7 @@ static int MPIU_CheckHandlesOnFinalize( void *objmem_ptr )
 	MPIU_Free( nIndirect );
     }
 
-    if (leaked_handles && MPIR_PARAM_ABORT_ON_LEAKED_HANDLES) {
+    if (leaked_handles && MPIR_CVAR_ABORT_ON_LEAKED_HANDLES) {
         /* comm_world has been (or should have been) destroyed by this point,
          * pass comm=NULL */
         MPID_Abort(NULL, MPI_ERR_OTHER, 1, "ERROR: leaked handles detected, aborting");
@@ -697,7 +738,7 @@ int MPIU_Handle_obj_outstanding(const MPIU_Object_alloc_t *objmem)
     if(objmem->initialized)
     {
         allocated = objmem->direct_size +
-            objmem->indirect_size * HANDLE_BLOCK_SIZE;
+            objmem->indirect_size * HANDLE_NUM_INDICES;
     }
 
     return allocated - available;

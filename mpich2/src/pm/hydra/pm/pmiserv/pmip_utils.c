@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -13,17 +13,23 @@
 
 struct HYD_pmcd_pmip HYD_pmcd_pmip;
 
-void HYD_pmcd_pmip_kill_localprocs(void)
+void HYD_pmcd_pmip_send_signal(int sig)
 {
-    int i;
+    int i, pgid;
 
     /* Send the kill signal to all processes */
-    for (i = 0; i < HYD_pmcd_pmip.local.proxy_process_count; i++) {
+    for (i = 0; i < HYD_pmcd_pmip.local.proxy_process_count; i++)
         if (HYD_pmcd_pmip.downstream.pid[i] != -1) {
-            kill(HYD_pmcd_pmip.downstream.pid[i], SIGTERM);
-            kill(HYD_pmcd_pmip.downstream.pid[i], SIGKILL);
+#if defined(HAVE_GETPGID) && defined(HAVE_SETSID)
+            /* If we are able to get the process group ID, and the
+             * child process has its own process group ID, send a
+             * signal to the entire process group */
+            pgid = getpgid(HYD_pmcd_pmip.downstream.pid[i]);
+            killpg(pgid, sig);
+#else
+            kill(HYD_pmcd_pmip.downstream.pid[i], sig);
+#endif
         }
-    }
 
     HYD_pmcd_pmip.downstream.forced_cleanup = 1;
 }
@@ -76,6 +82,17 @@ static HYD_status pgid_fn(char *arg, char ***argv)
 static HYD_status debug_fn(char *arg, char ***argv)
 {
     return HYDU_set_int(arg, &HYD_pmcd_pmip.user_global.debug, 1);
+}
+
+static HYD_status usize_fn(char *arg, char ***argv)
+{
+    HYD_status status = HYD_SUCCESS;
+
+    HYD_pmcd_pmip.user_global.usize = atoi(**argv);
+
+    (*argv)++;
+
+    return status;
 }
 
 static HYD_status rmk_fn(char *arg, char ***argv)
@@ -155,42 +172,9 @@ static HYD_status retries_fn(char *arg, char ***argv)
     return status;
 }
 
-static HYD_status pmi_port_fn(char *arg, char ***argv)
-{
-    HYD_status status = HYD_SUCCESS;
-
-    status = HYDU_set_str(arg, &HYD_pmcd_pmip.system_global.pmi_port, **argv);
-
-    (*argv)++;
-
-    return status;
-}
-
-static HYD_status pmi_fd_fn(char *arg, char ***argv)
-{
-    HYD_status status = HYD_SUCCESS;
-
-    status = HYDU_set_str(arg, &HYD_pmcd_pmip.system_global.pmi_fd, **argv);
-
-    (*argv)++;
-
-    return status;
-}
-
-static HYD_status pmi_rank_fn(char *arg, char ***argv)
-{
-    HYD_status status = HYD_SUCCESS;
-
-    status = HYDU_set_int(arg, &HYD_pmcd_pmip.system_global.pmi_rank, atoi(**argv));
-
-    (*argv)++;
-
-    return status;
-}
-
 static HYD_status pmi_kvsname_fn(char *arg, char ***argv)
 {
-    HYDU_snprintf(HYD_pmcd_pmip.local.kvs->kvs_name, PMI_MAXKVSLEN, "%s", **argv);
+    HYDU_snprintf(HYD_pmcd_pmip.local.kvs->kvsname, PMI_MAXKVSLEN, "%s", **argv);
     (*argv)++;
 
     return HYD_SUCCESS;
@@ -200,9 +184,9 @@ static HYD_status pmi_spawner_kvsname_fn(char *arg, char ***argv)
 {
     HYD_status status = HYD_SUCCESS;
 
-    HYDU_MALLOC(HYD_pmcd_pmip.local.spawner_kvs_name, char *, PMI_MAXKVSLEN, status);
+    HYDU_MALLOC(HYD_pmcd_pmip.local.spawner_kvsname, char *, PMI_MAXKVSLEN, status);
 
-    HYDU_snprintf(HYD_pmcd_pmip.local.spawner_kvs_name, PMI_MAXKVSLEN, "%s", **argv);
+    HYDU_snprintf(HYD_pmcd_pmip.local.spawner_kvsname, PMI_MAXKVSLEN, "%s", **argv);
     (*argv)++;
 
   fn_exit:
@@ -228,6 +212,28 @@ static HYD_status binding_fn(char *arg, char ***argv)
     HYD_status status = HYD_SUCCESS;
 
     status = HYDU_set_str(arg, &HYD_pmcd_pmip.user_global.binding, **argv);
+
+    (*argv)++;
+
+    return status;
+}
+
+static HYD_status mapping_fn(char *arg, char ***argv)
+{
+    HYD_status status = HYD_SUCCESS;
+
+    status = HYDU_set_str(arg, &HYD_pmcd_pmip.user_global.mapping, **argv);
+
+    (*argv)++;
+
+    return status;
+}
+
+static HYD_status membind_fn(char *arg, char ***argv)
+{
+    HYD_status status = HYD_SUCCESS;
+
+    status = HYDU_set_str(arg, &HYD_pmcd_pmip.user_global.membind, **argv);
 
     (*argv)++;
 
@@ -364,50 +370,28 @@ static HYD_status genv_prop_fn(char *arg, char ***argv)
     return status;
 }
 
-static HYD_status split_map(char *map, int *left, int *current, int *right)
-{
-    char *tmp;
-    HYD_status status = HYD_SUCCESS;
-
-    tmp = strtok(map, ",");
-    HYDU_ASSERT(tmp, status);
-    *left = atoi(tmp);
-
-    tmp = strtok(NULL, ",");
-    HYDU_ASSERT(tmp, status);
-    *current = atoi(tmp);
-
-    tmp = strtok(NULL, ",");
-    HYDU_ASSERT(tmp, status);
-    *right = atoi(tmp);
-
-  fn_exit:
-    HYDU_FUNC_EXIT();
-    return status;
-
-  fn_fail:
-    goto fn_exit;
-}
-
 static HYD_status global_core_map_fn(char *arg, char ***argv)
 {
-    char *map;
+    char *map, *tmp;
     HYD_status status = HYD_SUCCESS;
 
     /* Split the core map into three different segments */
     map = HYDU_strdup(**argv);
     HYDU_ASSERT(map, status);
 
-    status = split_map(map, &HYD_pmcd_pmip.system_global.global_core_map.left,
-                       &HYD_pmcd_pmip.system_global.global_core_map.current,
-                       &HYD_pmcd_pmip.system_global.global_core_map.right);
-    HYDU_ERR_POP(status, "unable to split the provided mapping\n");
-    HYDU_FREE(map);
+    tmp = strtok(map, ",");
+    HYDU_ASSERT(tmp, status);
+    HYD_pmcd_pmip.system_global.global_core_map.local_filler = atoi(tmp);
 
-    HYD_pmcd_pmip.system_global.global_core_map.total =
-        HYD_pmcd_pmip.system_global.global_core_map.left +
-        HYD_pmcd_pmip.system_global.global_core_map.current +
-        HYD_pmcd_pmip.system_global.global_core_map.right;
+    tmp = strtok(NULL, ",");
+    HYDU_ASSERT(tmp, status);
+    HYD_pmcd_pmip.system_global.global_core_map.local_count = atoi(tmp);
+
+    tmp = strtok(NULL, ",");
+    HYDU_ASSERT(tmp, status);
+    HYD_pmcd_pmip.system_global.global_core_map.global_count = atoi(tmp);
+
+    HYDU_FREE(map);
 
     (*argv)++;
 
@@ -419,25 +403,24 @@ static HYD_status global_core_map_fn(char *arg, char ***argv)
     goto fn_exit;
 }
 
-static HYD_status filler_process_map_fn(char *arg, char ***argv)
+static HYD_status pmi_id_map_fn(char *arg, char ***argv)
 {
-    char *map;
+    char *map, *tmp;
     HYD_status status = HYD_SUCCESS;
 
     /* Split the core map into three different segments */
     map = HYDU_strdup(**argv);
     HYDU_ASSERT(map, status);
 
-    status = split_map(map, &HYD_pmcd_pmip.system_global.filler_process_map.left,
-                       &HYD_pmcd_pmip.system_global.filler_process_map.current,
-                       &HYD_pmcd_pmip.system_global.filler_process_map.right);
-    HYDU_ERR_POP(status, "unable to split the provided mapping\n");
-    HYDU_FREE(map);
+    tmp = strtok(map, ",");
+    HYDU_ASSERT(tmp, status);
+    HYD_pmcd_pmip.system_global.pmi_id_map.filler_start = atoi(tmp);
 
-    HYD_pmcd_pmip.system_global.filler_process_map.total =
-        HYD_pmcd_pmip.system_global.filler_process_map.left +
-        HYD_pmcd_pmip.system_global.filler_process_map.current +
-        HYD_pmcd_pmip.system_global.filler_process_map.right;
+    tmp = strtok(NULL, ",");
+    HYDU_ASSERT(tmp, status);
+    HYD_pmcd_pmip.system_global.pmi_id_map.non_filler_start = atoi(tmp);
+
+    HYDU_FREE(map);
 
     (*argv)++;
 
@@ -453,8 +436,7 @@ static HYD_status global_process_count_fn(char *arg, char ***argv)
 {
     HYD_status status = HYD_SUCCESS;
 
-    status = HYDU_set_int(arg, &HYD_pmcd_pmip.system_global.global_process_count,
-                          atoi(**argv));
+    status = HYDU_set_int(arg, &HYD_pmcd_pmip.system_global.global_process_count, atoi(**argv));
 
     (*argv)++;
 
@@ -495,17 +477,6 @@ static HYD_status hostname_fn(char *arg, char ***argv)
     HYD_status status = HYD_SUCCESS;
 
     status = HYDU_set_str(arg, &HYD_pmcd_pmip.local.hostname, **argv);
-
-    (*argv)++;
-
-    return status;
-}
-
-static HYD_status local_binding_fn(char *arg, char ***argv)
-{
-    HYD_status status = HYD_SUCCESS;
-
-    status = HYDU_set_str(arg, &HYD_pmcd_pmip.local.local_binding, **argv);
 
     (*argv)++;
 
@@ -667,6 +638,7 @@ struct HYD_arg_match_table HYD_pmcd_pmip_match_table[] = {
     {"proxy-id", proxy_id_fn, NULL},
     {"pgid", pgid_fn, NULL},
     {"debug", debug_fn, NULL},
+    {"usize", usize_fn, NULL},
     {"rmk", rmk_fn, NULL},
     {"launcher", launcher_fn, NULL},
     {"launcher-exec", launcher_exec_fn, NULL},
@@ -676,14 +648,13 @@ struct HYD_arg_match_table HYD_pmcd_pmip_match_table[] = {
     {"retries", retries_fn, NULL},
 
     /* Executable parameters */
-    {"pmi-port", pmi_port_fn, NULL},
-    {"pmi-fd", pmi_fd_fn, NULL},
-    {"pmi-rank", pmi_rank_fn, NULL},
     {"pmi-kvsname", pmi_kvsname_fn, NULL},
     {"pmi-spawner-kvsname", pmi_spawner_kvsname_fn, NULL},
     {"pmi-process-mapping", pmi_process_mapping_fn, NULL},
-    {"binding", binding_fn, NULL},
     {"topolib", topolib_fn, NULL},
+    {"binding", binding_fn, NULL},
+    {"mapping", mapping_fn, NULL},
+    {"membind", membind_fn, NULL},
     {"ckpointlib", ckpointlib_fn, NULL},
     {"ckpoint-prefix", ckpoint_prefix_fn, NULL},
     {"ckpoint-num", ckpoint_num_fn, NULL},
@@ -692,12 +663,11 @@ struct HYD_arg_match_table HYD_pmcd_pmip_match_table[] = {
     {"global-user-env", global_env_fn, NULL},
     {"genv-prop", genv_prop_fn, NULL},
     {"global-core-map", global_core_map_fn, NULL},
-    {"filler-process-map", filler_process_map_fn, NULL},
+    {"pmi-id-map", pmi_id_map_fn, NULL},
     {"global-process-count", global_process_count_fn, NULL},
     {"version", version_fn, NULL},
     {"iface-ip-env-name", iface_ip_env_name_fn, NULL},
     {"hostname", hostname_fn, NULL},
-    {"local-binding", local_binding_fn, NULL},
     {"proxy-core-count", proxy_core_count_fn, NULL},
     {"exec", exec_fn, NULL},
     {"exec-appnum", exec_appnum_fn, NULL},
@@ -751,11 +721,6 @@ HYD_status HYD_pmcd_pmip_get_params(char **t_argv)
          * for it. */
         status = HYDT_bsci_query_proxy_id(&HYD_pmcd_pmip.local.id);
         HYDU_ERR_POP(status, "unable to query launcher for proxy ID\n");
-    }
-
-    if (HYD_pmcd_pmip.system_global.jobid == NULL) {
-        status = HYDT_bsci_query_jobid(&HYD_pmcd_pmip.system_global.jobid);
-        HYDU_ERR_POP(status, "unable to query launcher for job ID\n");
     }
 
     if (HYD_pmcd_pmip.local.id == -1)

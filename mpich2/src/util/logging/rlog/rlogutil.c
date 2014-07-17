@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -60,7 +60,7 @@ static int WriteFileData(const char *pBuffer, int length, FILE *fout)
 
 /* style: allow:vprintf:1 sig:0 */
 
-int rlog_err_printf(char *str, ...)
+int rlog_err_printf(const char *str, ...)
 {
     int n;
     va_list list;

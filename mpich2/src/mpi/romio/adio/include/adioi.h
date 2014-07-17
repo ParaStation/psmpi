@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /* 
  *
  *   Copyright (C) 1997 University of Chicago. 
@@ -104,7 +104,7 @@ enum {
 
 typedef struct ADIOI_Fl_node {  
     MPI_Datatype type;
-    int count;                   /* no. of contiguous blocks */
+    MPI_Count count;                   /* no. of contiguous blocks */
     ADIO_Offset *blocklens;      /* array of contiguous block lengths (bytes)*/
     ADIO_Offset *indices;        /* array of byte offsets of each block */
     struct ADIOI_Fl_node *next;  /* pointer to next node */
@@ -115,7 +115,7 @@ typedef struct ADIOI_Fl_node {
 #endif
 typedef struct ADIOI_AIO_req_str {
 	/* very wierd: if this MPI_Request is a pointer, some C++ compilers
-	 * will clobber it when the MPICH2 C++ bindings are used */
+	 * will clobber it when the MPICH C++ bindings are used */
 	MPI_Request req;
 	MPI_Offset nbytes;
 	/* should probably make this a union */
@@ -140,16 +140,16 @@ struct ADIOI_Fns_struct {
     void (*ADIOI_xxx_Open) (ADIO_File fd, int *error_code);
     void (*ADIOI_xxx_OpenColl) (ADIO_File fd, int rank, 
 		    int access_mode, int *error_code);
-    void (*ADIOI_xxx_ReadContig) (ADIO_File fd, void *buf, int count, 
-                   MPI_Datatype datatype, int file_ptr_type, 
+    void (*ADIOI_xxx_ReadContig) (ADIO_File fd, void *buf, int count,
+                   MPI_Datatype datatype, int file_ptr_type,
                    ADIO_Offset offset, ADIO_Status *status, int *error_code);
-    void (*ADIOI_xxx_WriteContig) (ADIO_File fd, void *buf, int count, 
-                   MPI_Datatype datatype, int file_ptr_type, 
+    void (*ADIOI_xxx_WriteContig) (ADIO_File fd, const void *buf, int count,
+                   MPI_Datatype datatype, int file_ptr_type,
                    ADIO_Offset offset, ADIO_Status *status, int *error_code);  
     void (*ADIOI_xxx_ReadStridedColl) (ADIO_File fd, void *buf, int count,
 	       MPI_Datatype datatype, int file_ptr_type,
 	       ADIO_Offset offset, ADIO_Status *status, int *error_code);
-    void (*ADIOI_xxx_WriteStridedColl) (ADIO_File fd, void *buf, int count,
+    void (*ADIOI_xxx_WriteStridedColl) (ADIO_File fd, const void *buf, int count,
 	       MPI_Datatype datatype, int file_ptr_type,
 	       ADIO_Offset offset, ADIO_Status *status, int *error_code);
     ADIO_Offset (*ADIOI_xxx_SeekIndividual) (ADIO_File fd, ADIO_Offset offset, 
@@ -161,15 +161,15 @@ struct ADIOI_Fns_struct {
     void (*ADIOI_xxx_ReadStrided) (ADIO_File fd, void *buf, int count,
 	       MPI_Datatype datatype, int file_ptr_type,
 	       ADIO_Offset offset, ADIO_Status *status, int *error_code);
-    void (*ADIOI_xxx_WriteStrided) (ADIO_File fd, void *buf, int count,
+    void (*ADIOI_xxx_WriteStrided) (ADIO_File fd, const void *buf, int count,
 	       MPI_Datatype datatype, int file_ptr_type,
 	       ADIO_Offset offset, ADIO_Status *status, int *error_code);
     void (*ADIOI_xxx_Close) (ADIO_File fd, int *error_code);
     void (*ADIOI_xxx_IreadContig) (ADIO_File fd, void *buf, int count, 
                    MPI_Datatype datatype, int file_ptr_type, 
                    ADIO_Offset offset, ADIO_Request *request, int *error_code);
-    void (*ADIOI_xxx_IwriteContig) (ADIO_File fd, void *buf, int count, 
-                   MPI_Datatype datatype, int file_ptr_type, 
+    void (*ADIOI_xxx_IwriteContig) (ADIO_File fd, const void *buf, int count,
+                   MPI_Datatype datatype, int file_ptr_type,
 	           ADIO_Offset offset, ADIO_Request *request, int *error_code);
     int (*ADIOI_xxx_ReadDone) (ADIO_Request *request, ADIO_Status *status, 
                int *error_code); 
@@ -182,12 +182,12 @@ struct ADIOI_Fns_struct {
     void (*ADIOI_xxx_IreadStrided) (ADIO_File fd, void *buf, int count,
 	       MPI_Datatype datatype, int file_ptr_type,
 	       ADIO_Offset offset, ADIO_Request *request, int *error_code);
-    void (*ADIOI_xxx_IwriteStrided) (ADIO_File fd, void *buf, int count,
+    void (*ADIOI_xxx_IwriteStrided) (ADIO_File fd, const void *buf, int count,
 	       MPI_Datatype datatype, int file_ptr_type,
 	       ADIO_Offset offset, ADIO_Request *request, int *error_code);
     void (*ADIOI_xxx_Flush) (ADIO_File fd, int *error_code); 
     void (*ADIOI_xxx_Resize) (ADIO_File fd, ADIO_Offset size, int *error_code);
-    void (*ADIOI_xxx_Delete) (char *filename, int *error_code);
+    void (*ADIOI_xxx_Delete) (const char *filename, int *error_code);
     int  (*ADIOI_xxx_Feature) (ADIO_File fd, int flag);
 };
 
@@ -318,9 +318,9 @@ typedef struct {
 void ADIOI_SetFunctions(ADIO_File fd);
 void ADIOI_Flatten_datatype(MPI_Datatype type);
 void ADIOI_Flatten(MPI_Datatype type, ADIOI_Flatlist_node *flat,
-		  ADIO_Offset st_offset, int *curr_index);  
+		  ADIO_Offset st_offset, MPI_Count *curr_index);
 void ADIOI_Delete_flattened(MPI_Datatype datatype);
-int ADIOI_Count_contiguous_blocks(MPI_Datatype type, int *curr_index);
+MPI_Count ADIOI_Count_contiguous_blocks(MPI_Datatype type, MPI_Count *curr_index);
 void ADIOI_Complete_async(int *error_code);
 void *ADIOI_Malloc_fn(size_t size, int lineno, const char *fname);
 void *ADIOI_Calloc_fn(size_t nelem, size_t elsize, int lineno, const char *fname);
@@ -345,7 +345,7 @@ void ADIOI_SCALEABLE_OpenColl(ADIO_File fd, int rank,
 		int access_mode, int *error_code);
 void ADIOI_FAILSAFE_OpenColl(ADIO_File fd, int rank, 
 		int access_mode, int *error_code);
-void ADIOI_GEN_Delete(char *filename, int *error_code);
+void ADIOI_GEN_Delete(const char *filename, int *error_code);
 void ADIOI_GEN_ReadContig(ADIO_File fd, void *buf, int count, 
 			  MPI_Datatype datatype, int file_ptr_type,
 			  ADIO_Offset offset, ADIO_Status *status,
@@ -356,11 +356,11 @@ void ADIOI_GEN_IreadContig(ADIO_File fd, void *buf, int count,
 			   MPI_Datatype datatype, int file_ptr_type,
 			   ADIO_Offset offset, ADIO_Request *request,
 			   int *error_code);
-void ADIOI_GEN_WriteContig(ADIO_File fd, void *buf, int count, 
+void ADIOI_GEN_WriteContig(ADIO_File fd, const void *buf, int count,
 			   MPI_Datatype datatype, int file_ptr_type,
 			   ADIO_Offset offset, ADIO_Status *status,
 			   int *error_code);
-void ADIOI_GEN_IwriteContig(ADIO_File fd, void *buf, int count, 
+void ADIOI_GEN_IwriteContig(ADIO_File fd, const void *buf, int count,
 			    MPI_Datatype datatype, int file_ptr_type,
 			    ADIO_Offset offset, ADIO_Request *request,
 			    int *error_code);
@@ -372,7 +372,7 @@ void ADIOI_GEN_IreadStrided(ADIO_File fd, void *buf, int count,
 			    MPI_Datatype datatype, int file_ptr_type,
 			    ADIO_Offset offset, ADIO_Request *request, int
 			    *error_code);
-void ADIOI_GEN_IwriteStrided(ADIO_File fd, void *buf, int count,
+void ADIOI_GEN_IwriteStrided(ADIO_File fd, const void *buf, int count,
 			     MPI_Datatype datatype, int file_ptr_type,
 			     ADIO_Offset offset, ADIO_Request *request, int
 			     *error_code);
@@ -391,15 +391,15 @@ void ADIOI_GEN_ReadStrided_naive(ADIO_File fd, void *buf, int count,
                        MPI_Datatype buftype, int file_ptr_type,
                        ADIO_Offset offset, ADIO_Status *status, int
                        *error_code);
-void ADIOI_GEN_WriteStrided(ADIO_File fd, void *buf, int count,
+void ADIOI_GEN_WriteStrided(ADIO_File fd, const void *buf, int count,
                        MPI_Datatype datatype, int file_ptr_type,
                        ADIO_Offset offset, ADIO_Status *status, int
                        *error_code);
-void ADIOI_GEN_WriteStrided_naive(ADIO_File fd, void *buf, int count,
+void ADIOI_GEN_WriteStrided_naive(ADIO_File fd, const void *buf, int count,
                        MPI_Datatype datatype, int file_ptr_type,
                        ADIO_Offset offset, ADIO_Status *status, int
                        *error_code);
-void ADIOI_NOLOCK_WriteStrided(ADIO_File fd, void *buf, int count,
+void ADIOI_NOLOCK_WriteStrided(ADIO_File fd, const void *buf, int count,
                        MPI_Datatype datatype, int file_ptr_type,
                        ADIO_Offset offset, ADIO_Status *status, int
                        *error_code);
@@ -407,7 +407,7 @@ void ADIOI_GEN_ReadStridedColl(ADIO_File fd, void *buf, int count,
                        MPI_Datatype datatype, int file_ptr_type,
                        ADIO_Offset offset, ADIO_Status *status, int
                        *error_code);
-void ADIOI_GEN_WriteStridedColl(ADIO_File fd, void *buf, int count,
+void ADIOI_GEN_WriteStridedColl(ADIO_File fd, const void *buf, int count,
                        MPI_Datatype datatype, int file_ptr_type,
                        ADIO_Offset offset, ADIO_Status *status, int
                        *error_code);
@@ -558,9 +558,10 @@ void ADIOI_GEN_Prealloc(ADIO_File fd, ADIO_Offset size, int *error_code);
 int ADIOI_Error(ADIO_File fd, int error_code, char *string);
 int MPIR_Err_setmsg( int, int, const char *, const char *, const char *, ... );
 int ADIOI_End_call(MPI_Comm comm, int keyval, void *attribute_val, void *extra_state);
-int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, int nbytes);
+int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, MPI_Count nbytes);
 int ADIOI_Uses_generic_read(ADIO_File fd);
 int ADIOI_Uses_generic_write(ADIO_File fd);
+int ADIOI_Err_create_code(const char *myname, const char *filename, int my_errno);
 
 
 int ADIOI_FAKE_IODone(ADIO_Request *request, ADIO_Status *status,
@@ -573,11 +574,11 @@ void ADIOI_FAKE_IreadStrided(ADIO_File fd, void *buf, int count,
 			    MPI_Datatype datatype, int file_ptr_type,
 			    ADIO_Offset offset, ADIO_Request *request,
                              int *error_code);
-void ADIOI_FAKE_IwriteContig(ADIO_File fd, void *buf, int count, 
+void ADIOI_FAKE_IwriteContig(ADIO_File fd, const void *buf, int count,
 			    MPI_Datatype datatype, int file_ptr_type,
 			    ADIO_Offset offset, ADIO_Request *request,
-                             int *error_code);  
-void ADIOI_FAKE_IwriteStrided(ADIO_File fd, void *buf, int count, 
+                             int *error_code);
+void ADIOI_FAKE_IwriteStrided(ADIO_File fd, const void *buf, int count,
 			     MPI_Datatype datatype, int file_ptr_type,
 			     ADIO_Offset offset, ADIO_Request *request,
                               int *error_code);
@@ -597,7 +598,7 @@ int MPIOI_File_read(MPI_File fh,
 int MPIOI_File_write(MPI_File fh,
 		     MPI_Offset offset,
 		     int file_ptr_type,
-		     void *buf,
+		     const void *buf,
 		     int count,
 		     MPI_Datatype datatype,
 		     char *myname,
@@ -613,7 +614,7 @@ int MPIOI_File_read_all(MPI_File fh,
 int MPIOI_File_write_all(MPI_File fh,
 			 MPI_Offset offset,
 			 int file_ptr_type,
-			 void *buf,
+			 const void *buf,
 			 int count,
 			 MPI_Datatype datatype,
 			 char *myname,
@@ -628,7 +629,7 @@ int MPIOI_File_read_all_begin(MPI_File fh,
 int MPIOI_File_write_all_begin(MPI_File fh,
 			       MPI_Offset offset,
 			       int file_ptr_type,
-			       void *buf,
+			       const void *buf,
 			       int count,
 			       MPI_Datatype datatype,
 			       char *myname);
@@ -637,13 +638,13 @@ int MPIOI_File_read_all_end(MPI_File fh,
 			    char *myname,
 			    MPI_Status *status);
 int MPIOI_File_write_all_end(MPI_File fh,
-			     void *buf,
+			     const void *buf,
 			     char *myname,
 			     MPI_Status *status);
 int MPIOI_File_iwrite(MPI_File fh,
 		      MPI_Offset offset,
 		      int file_ptr_type,
-		      void *buf,
+		      const void *buf,
 		      int count,
 		      MPI_Datatype datatype,
 		      char *myname,
@@ -814,7 +815,7 @@ int  ADIOI_MPE_iwrite_a;
 int  ADIOI_MPE_iwrite_b;
 #endif
 
-#ifdef ROMIO_INSIDE_MPICH2
+#ifdef ROMIO_INSIDE_MPICH
 /* Assert that this MPI_Aint value can be cast to a ptr value without problem.*/
 /* Basic idea is the value should be unchanged after casting 
    (no loss of (meaningful) high order bytes in 8 byte MPI_Aint 
@@ -822,7 +823,7 @@ int  ADIOI_MPE_iwrite_b;
 /* Should work even on 64bit or old 32bit configs                 */
   /* Use MPID_Ensure_Aint_fits_in_pointer from mpiutil.h and 
          MPI_AINT_CAST_TO_VOID_PTR from configure (mpi.h) */
-  #include "mpiimpl.h"
+  #include "glue_romio.h"
 
   #define ADIOI_AINT_CAST_TO_VOID_PTR (void*)(MPIR_Pint)
   /* The next two casts are only used when you don't want sign extension
@@ -830,8 +831,8 @@ int  ADIOI_MPE_iwrite_b;
   #define ADIOI_AINT_CAST_TO_LONG_LONG (long long)
   #define ADIOI_AINT_CAST_TO_OFFSET ADIOI_AINT_CAST_TO_LONG_LONG
 
-  #define ADIOI_ENSURE_AINT_FITS_IN_PTR(aint_value) MPID_Ensure_Aint_fits_in_pointer(aint_value)
-  #define ADIOI_Assert MPIU_Assert
+  #define ADIOI_ENSURE_AINT_FITS_IN_PTR(aint_value) MPIR_Ext_ensure_Aint_fits_in_pointer(aint_value)
+  #define ADIOI_Assert MPIR_Ext_assert
 #else
   #include <assert.h>
   #define ADIOI_AINT_CAST_TO_VOID_PTR (void*)
@@ -845,14 +846,14 @@ int  ADIOI_MPE_iwrite_b;
 
 #ifdef USE_DBG_LOGGING    /*todo fix dependency on mpich?*/
 /* DBGT_FPRINTF terse level printing */
-#define DBGT_FPRINTF if (MPIU_DBG_SELECTED(ROMIO,VERBOSE)) fprintf(stderr,"%s:%d:",__FILE__,__LINE__); \
-if (MPIU_DBG_SELECTED(ROMIO,TERSE)) fprintf
+#define DBGT_FPRINTF if (MPIR_Ext_dbg_romio_verbose_enabled) fprintf(stderr,"%s:%d:",__FILE__,__LINE__); \
+if (MPIR_Ext_dbg_romio_terse_enabled) fprintf
 /* DBG_FPRINTF default (typical level) printing */
-#define DBG_FPRINTF if (MPIU_DBG_SELECTED(ROMIO,VERBOSE)) fprintf(stderr,"%s:%d:",__FILE__,__LINE__); \
-if (MPIU_DBG_SELECTED(ROMIO,TYPICAL)) fprintf
+#define DBG_FPRINTF if (MPIR_Ext_dbg_romio_verbose_enabled) fprintf(stderr,"%s:%d:",__FILE__,__LINE__); \
+if (MPIR_Ext_dbg_romio_typical_enabled) fprintf
 /* DBGV_FPRINTF verbose level printing */
-#define DBGV_FPRINTF if (MPIU_DBG_SELECTED(ROMIO,VERBOSE)) fprintf(stderr,"%s:%d:",__FILE__,__LINE__); \
- if (MPIU_DBG_SELECTED(ROMIO,VERBOSE)) fprintf
+#define DBGV_FPRINTF if (MPIR_Ext_dbg_romio_verbose_enabled) fprintf(stderr,"%s:%d:",__FILE__,__LINE__); \
+ if (MPIR_Ext_dbg_romio_verbose_enabled) fprintf
 #else /* compile it out */
 #define DBGT_FPRINTF if (0) fprintf
 #define DBG_FPRINTF if (0) fprintf

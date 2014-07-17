@@ -1,7 +1,16 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
+ *
+ * Portions of this code were written by Microsoft. Those portions are
+ * Copyright (c) 2007 Microsoft Corporation. Microsoft grants
+ * permission to use, reproduce, prepare derivative works, and to
+ * redistribute to others. The code is licensed "as is." The User
+ * bears the risk of using it. Microsoft gives no express warranties,
+ * guarantees or conditions. To the extent permitted by law, Microsoft
+ * excludes the implied warranties of merchantability, fitness for a
+ * particular purpose and non-infringement.
  */
 
 #include "mpiimpl.h"
@@ -41,6 +50,7 @@ MPID_Attribute *MPID_Attr_alloc(void)
     MPID_Attribute *attr = (MPID_Attribute *)MPIU_Handle_obj_alloc(&MPID_Attr_mem);
     /* attributes don't have refcount semantics, but let's keep valgrind and
      * the debug logging pacified */
+    MPIU_Assert(attr != NULL);
     MPIU_Object_set_ref(attr, 0);
     return attr;
 }
@@ -62,7 +72,7 @@ void MPID_Attr_free(MPID_Attribute *attr_ptr)
 
   Even though there are separate keyvals for communicators, types, and files,
   we can use the same function because the handle for these is always an int
-  in MPICH2.  
+  in MPICH.  
 
   Note that this simply invokes the attribute delete function.  It does not
   remove the attribute from the list of attributes.
@@ -116,7 +126,7 @@ int MPIR_Call_attr_delete( int handle, MPID_Attribute *attr_p )
 
   Even though there are separate keyvals for communicators, types, and files,
   we can use the same function because the handle for these is always an int
-  in MPICH2.
+  in MPICH.
 
   Note that this simply invokes the attribute copy function.
 */
@@ -211,6 +221,8 @@ int MPIR_Attr_dup_list( int handle, MPID_Attribute *old_attrs,
 
         new_p->attrType         = p->attrType;
         new_p->pre_sentinal     = 0;
+	/* FIXME: This is not correct in some cases (size(MPI_Aint)>
+	 sizeof(MPIR_Pint)) */
         new_p->value            = (MPID_AttrVal_t)(MPIR_Pint)new_value;
         new_p->post_sentinal    = 0;
         new_p->next             = 0;

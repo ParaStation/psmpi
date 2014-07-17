@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Win_complete */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -32,7 +31,7 @@
 /*@
    MPI_Win_complete - Completes an RMA operations begun after an MPI_Win_start.
 
-   Input Parameter:
+Input Parameters:
 . win - window object (handle) 
 
 .N ThreadSafe
@@ -62,11 +61,10 @@ int MPI_Win_complete(MPI_Win win)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_WIN(win, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
-#   endif
+#   endif /* HAVE_ERROR_CHECKING */
     
     /* Convert MPI object handles to object pointers */
     MPID_Win_get_ptr( win, win_ptr );

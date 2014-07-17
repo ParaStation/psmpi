@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -11,53 +11,56 @@
 /* Dataloop construction functions */
 void PREPEND_PREFIX(Dataloop_create)(MPI_Datatype type,
 				     DLOOP_Dataloop **dlp_p,
-				     int *dlsz_p,
+				     DLOOP_Size *dlsz_p,
 				     int *dldepth_p,
 				     int flag);
-int PREPEND_PREFIX(Dataloop_create_contiguous)(int count,
+int PREPEND_PREFIX(Dataloop_create_contiguous)(DLOOP_Count count,
 					       MPI_Datatype oldtype,
 					       DLOOP_Dataloop **dlp_p,
-					       int *dlsz_p,
+					       DLOOP_Size *dlsz_p,
 					       int *dldepth_p,
 					       int flag);
-int PREPEND_PREFIX(Dataloop_create_vector)(int count,
-					   int blocklength,
+int PREPEND_PREFIX(Dataloop_create_vector)(DLOOP_Count count,
+					   DLOOP_Size blocklength,
 					   MPI_Aint stride,
 					   int strideinbytes,
 					   MPI_Datatype oldtype,
 					   DLOOP_Dataloop **dlp_p,
-					   int *dlsz_p,
+					   DLOOP_Size *dlsz_p,
 					   int *dldepth_p,
 					   int flag);
-int PREPEND_PREFIX(Dataloop_create_blockindexed)(int count,
-						 int blklen,
-						 void *disp_array,
+int PREPEND_PREFIX(Dataloop_create_blockindexed)(DLOOP_Count count,
+						 DLOOP_Size blklen,
+						 const void *disp_array,
 						 int dispinbytes,
 						 MPI_Datatype oldtype,
 						 DLOOP_Dataloop **dlp_p,
-						 int *dlsz_p,
+						 DLOOP_Size *dlsz_p,
 						 int *dldepth_p,
 						 int flag);
-int PREPEND_PREFIX(Dataloop_create_indexed)(int count,
-					    int *blocklength_array,
-					    void *displacement_array,
+/* we bump up the size of the blocklength array because create_struct might use
+ * create_indexed in an optimization, and in course of doing so, generate a
+ * request of a large blocklength. */
+int PREPEND_PREFIX(Dataloop_create_indexed)(DLOOP_Count count,
+					    const DLOOP_Size *blocklength_array,
+					    const void *displacement_array,
 					    int dispinbytes,
 					    MPI_Datatype oldtype,
 					    DLOOP_Dataloop **dlp_p,
-					    int *dlsz_p,
+					    DLOOP_Size *dlsz_p,
 					    int *dldepth_p,
 					    int flag);
-int PREPEND_PREFIX(Dataloop_create_struct)(int count,
-					   int *blklen_array,
-					   MPI_Aint *disp_array,
-					   MPI_Datatype *oldtype_array,
+int PREPEND_PREFIX(Dataloop_create_struct)(DLOOP_Count count,
+					   const int *blklen_array,
+					   const MPI_Aint *disp_array,
+					   const MPI_Datatype *oldtype_array,
 					   DLOOP_Dataloop **dlp_p,
-					   int *dlsz_p,
+					   DLOOP_Size *dlsz_p,
 					   int *dldepth_p,
 					   int flag);
 int PREPEND_PREFIX(Dataloop_create_pairtype)(MPI_Datatype type,
 					     DLOOP_Dataloop **dlp_p,
-					     int *dlsz_p,
+					     DLOOP_Size *dlsz_p,
 					     int *dldepth_p,
 					     int flag);
 
@@ -81,14 +84,14 @@ int PREPEND_PREFIX(Type_convert_darray)(int size,
 					MPI_Datatype *newtype);
 
 DLOOP_Count PREPEND_PREFIX(Type_indexed_count_contig)(DLOOP_Count count,
-                                                      int *blocklength_array,
-                                                      void *displacement_array,
+                                                      const DLOOP_Count *blocklength_array,
+                                                      const void *displacement_array,
                                                       int dispinbytes,
                                                       DLOOP_Offset old_extent);
                                                      
 DLOOP_Count PREPEND_PREFIX(Type_blockindexed_count_contig)(DLOOP_Count count,
                                                            DLOOP_Count blklen,
-                                                           void *disp_array,
+                                                           const void *disp_array,
                                                            int dispinbytes,
                                                            DLOOP_Offset old_extent);
                                                           

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*  
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -11,6 +11,33 @@
 #include <unistd.h>
 #endif
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+cvars:
+    - name        : MPIR_CVAR_PROCTABLE_SIZE
+      category    : DEBUGGER
+      type        : int
+      default     : 64
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        Size of the "MPIR" debugger interface proctable (process table).
+
+    - name        : MPIR_CVAR_PROCTABLE_PRINT
+      category    : DEBUGGER
+      type        : boolean
+      default     : false
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If true, dump the proctable entries at MPIR_WaitForDebugger-time.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
+
 /* There are two versions of the debugger startup:
    1. The debugger starts mpiexec - then mpiexec provides the MPIR_proctable
       information
@@ -20,20 +47,20 @@
    This file is intended to provide both as an option.  The macros that 
    control the code for these are
 
-   MPICH2_STARTER_MPIEXEC
-   MPICH2_STARTER_RANK0
+   MPICH_STARTER_MPIEXEC
+   MPICH_STARTER_RANK0
  */
-#define MPICH2_STARTER_MPIEXEC
-/* #define MPICH2_STARTER_RANK0 */
+#define MPICH_STARTER_MPIEXEC
+/* #define MPICH_STARTER_RANK0 */
 
-#ifdef MPICH2_STARTER_RANK0
+#ifdef MPICH_STARTER_RANK0
 #define MPIU_PROCTABLE_NEEDED 1
 #define MPIU_BREAKPOINT_NEEDED 1
 #endif
 
 /* If MPIR_Breakpoint is not defined and called, the message queue information
    will not be properly displayed by the debugger. */
-/* I believe this was caused by a poor choice in the dll_mpich2.c file */
+/* I believe this was caused by a poor choice in the dll_mpich.c file */
 /* #define MPIU_BREAKPOINT_NEEDED 1 */
 
 #ifdef MPIU_BREAKPOINT_NEEDED
@@ -77,7 +104,7 @@ void *MPIR_Breakpoint(void);
  *
  * In MPICH1, the variables MPIR_debug_state, MPIR_debug_abort_string, 
  * MPIR_being_debugged, and MPIR_debug_gate where exported globally.  
- * In MPICH2, while these are global variables (so that the debugger can
+ * In MPICH, while these are global variables (so that the debugger can
  * find them easily), they are not explicitly exported or referenced outside
  * of a few routines.  In particular, MPID_Abort uses MPIR_DebuggerSetAborting
  * instead of directly accessing these variables.
@@ -144,7 +171,7 @@ static void SendqInit( void );
 static int SendqFreePool( void * );
 
 /*
- * If MPICH2 is built with the --enable-debugger option, MPI_Init and 
+ * If MPICH is built with the --enable-debugger option, MPI_Init and 
  * MPI_Init_thread will call MPIR_WaitForDebugger.  This ensures both that
  * the debugger can gather information on the MPI job before the MPI_Init
  * returns to the user and that the necessary symbols for providing 
@@ -161,7 +188,7 @@ void MPIR_WaitForDebugger( void )
     int size = MPIR_Process.comm_world->local_size;
     int i, maxsize;
 
-    /* FIXME: In MPICH2, the executables may not have the information
+    /* FIXME: In MPICH, the executables may not have the information
        on the other processes; this is part of the Process Manager Interface
        (PMI).  We need another way to provide this information to 
        a debugger */
@@ -170,7 +197,7 @@ void MPIR_WaitForDebugger( void )
        to access this. */
     /* Also, to avoid scaling problems, we only populate the first 64
        entries (default) */
-    maxsize = MPIR_PARAM_PROCTABLE_SIZE;
+    maxsize = MPIR_CVAR_PROCTABLE_SIZE;
     if (maxsize > size) maxsize = size;
 
     if (rank == 0) {
@@ -203,16 +230,14 @@ void MPIR_WaitForDebugger( void )
 	}
 
 	MPIR_proctable_size               = size;
-#if 0
 	/* Debugging hook */
-	if (MPIR_PARAM_PROCTABLE_PRINT) {
+	if (MPIR_CVAR_PROCTABLE_PRINT) {
 	    for (i=0; i<maxsize; i++) {
 		printf( "PT[%d].pid = %d, .host_name = %s\n", 
 			i, MPIR_proctable[i].pid, MPIR_proctable[i].host_name );
 	    }
 	    fflush( stdout );
 	}
-#endif
 	MPIR_Add_finalize( MPIR_FreeProctable, MPIR_proctable, 0 );
     }
     else {
@@ -240,29 +265,6 @@ void MPIR_WaitForDebugger( void )
     /* After we exit the MPIR_Breakpoint routine, the debugger may have
        set variables such as MPIR_being_debugged */
 
-#if 0
-    /* Check to see if we're not the master,
-     * and wait for the debugger to attach if we're 
-     * a slave. The debugger will reset the debug_gate.
-     * There is no code in the library which will do it !
-     * 
-     * THIS IS OLD CODE FROM MPICH1.  It is no longer needed for the 
-     * MPIEXEC is starter process mode.
-     */
-    if (MPIR_being_debugged && rank != 0) {
-	while (MPIR_debug_gate == 0) {
-	    /* Wait to be attached to, select avoids 
-	     * signaling and allows a smaller timeout than 
-	     * sleep(1)
-	     */
-	    struct timeval timeout;
-	    timeout.tv_sec  = 0;
-	    timeout.tv_usec = 250000;
-	    select( 0, (void *)0, (void *)0, (void *)0,
-		    &timeout );
-	}
-    }
-#endif
     /* Initialize the sendq support */
     SendqInit();
 
@@ -319,8 +321,6 @@ void MPIR_DebuggerSetAborting( const char *msg )
  * (more specifically, requests created with MPI_Isend, MPI_Issend, or 
  * MPI_Irsend).
  *
- * FIXME: We need to add MPI_Ibsend and the persistent send requests to
- * the known send requests.
  * FIXME: We should exploit this to allow Finalize to report on 
  * send requests that were never completed.
  */
@@ -332,6 +332,7 @@ typedef struct MPIR_Sendq {
     MPID_Request *sreq;
     int tag, rank, context_id;
     struct MPIR_Sendq *next;
+    struct MPIR_Sendq *prev;
 } MPIR_Sendq;
 
 MPIR_Sendq *MPIR_Sendq_head = 0;
@@ -356,7 +357,8 @@ void MPIR_Sendq_remember( MPID_Request *req,
 	p = (MPIR_Sendq *)MPIU_Malloc( sizeof(MPIR_Sendq) );
 	if (!p) {
 	    /* Just ignore it */
-	    return;
+            req->dbg_next = NULL;
+            goto fn_exit;
 	}
     }
     p->sreq       = req;
@@ -364,7 +366,11 @@ void MPIR_Sendq_remember( MPID_Request *req,
     p->rank       = rank;
     p->context_id = context_id;
     p->next       = MPIR_Sendq_head;
+    p->prev       = NULL;
     MPIR_Sendq_head = p;
+    if (p->next) p->next->prev = p;
+    req->dbg_next = p;
+fn_exit:
     MPIU_THREAD_CS_EXIT(HANDLE,req);
 }
 
@@ -373,22 +379,19 @@ void MPIR_Sendq_forget( MPID_Request *req )
     MPIR_Sendq *p, *prev;
 
     MPIU_THREAD_CS_ENTER(HANDLE,req);
-    p    = MPIR_Sendq_head;
-    prev = 0;
-
-    while (p) {
-	if (p->sreq == req) {
-	    if (prev) prev->next = p->next;
-	    else MPIR_Sendq_head = p->next;
-	    /* Return this element to the pool */
-	    p->next = pool;
-	    pool    = p;
-	    break;
-	}
-	prev = p;
-	p    = p->next;
+    p    = req->dbg_next;
+    if (!p) {
+        /* Just ignore it */
+        MPIU_THREAD_CS_EXIT(HANDLE,req);
+        return;
     }
-    /* If we don't find the request, just ignore it */
+    prev = p->prev;
+    if (prev != NULL) prev->next = p->next;
+    else MPIR_Sendq_head = p->next;
+    if (p->next != NULL) p->next->prev = prev;
+    /* Return this element to the pool */
+    p->next = pool;
+    pool    = p;
     MPIU_THREAD_CS_EXIT(HANDLE,req);
 }
 
@@ -446,6 +449,8 @@ void MPIR_CommL_remember( MPID_Comm *comm_ptr )
 {   
     MPIU_DBG_MSG_P(COMM,VERBOSE,
 		   "Adding communicator %p to remember list",comm_ptr);
+    MPIU_DBG_MSG_P(COMM,VERBOSE,
+		   "Remember list structure address is %p",&MPIR_All_communicators);
     MPIU_THREAD_CS_ENTER(HANDLE,comm_ptr);
     if (comm_ptr == MPIR_All_communicators.head) {
 	MPIU_Internal_error_printf( "Internal error: communicator is already on free list\n" );
@@ -454,6 +459,9 @@ void MPIR_CommL_remember( MPID_Comm *comm_ptr )
     comm_ptr->comm_next = MPIR_All_communicators.head;
     MPIR_All_communicators.head = comm_ptr;
     MPIR_All_communicators.sequence_number++;
+    MPIU_DBG_MSG_P(COMM,VERBOSE,
+		   "master head is %p", MPIR_All_communicators.head );
+
     MPIU_THREAD_CS_EXIT(HANDLE,comm_ptr);
 }
 

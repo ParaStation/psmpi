@@ -2,6 +2,8 @@
 **argnonpos %s %d:Invalid value for %s; must be positive but is %d
 **argneg:Invalid argument; must be non-negative
 **argneg %s %d:Invalid value for %s, must be non-negative but is %d
+**argtoosmall:Invalid argument; value is too small
+**argtoosmall %s %d %d:Invalid argument for %s: value is %d but must be at least %d
 **countneg:Negative count
 **countneg %d:Negative count, value is %d
 **initialized:MPI not initialized. Call MPI_Init or MPI_Init_thread first
@@ -91,6 +93,9 @@ was not started with MPI_GREQUEST_START
 **attrsentinal:Internal fields in an attribute have been overwritten; \
  possible errors in using the attribute value in user code.
 **toomanycomm:Too many communicators
+**toomanycomm %d %d %d:Too many communicators (%d/%d free on this process; ignore_id=%d)
+**toomanycommfrag: Cannot allocate context ID because of fragmentation
+**toomanycommfrag %d %d %d: Cannot allocate context ID because of fragmentation (%d/%d free on this process; ignore_id=%d)
 **commperm:Cannot free permanent communicator
 **commperm %s:Cannot free permanent communicator %s
 **group:Invalid group
@@ -134,6 +139,7 @@ be in the range 0 to %d
 **sendbuf_inplace:sendbuf cannot be MPI_IN_PLACE
 **recvbuf_inplace:recvbuf cannot be MPI_IN_PLACE
 **buf_inplace:buffer cannot be MPI_IN_PLACE
+**buf_inplace %s:buffer '%s' cannot be MPI_IN_PLACE
 **typematchnoclass:The value of typeclass is not one of MPI_TYPECLASS_REAL, \
 MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 **typematchsize:No MPI datatype available for the given typeclass and size
@@ -148,7 +154,7 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 (precision=%d, range=%d) failed
 **f90typetoomany:Too many requests for unnamed, predefined f90 types
 **f90typeintnone: No integer type with the requested range is available
-**f90typeintnone %d: No integer type with %d digits of range is avaiable
+**f90typeintnone %d: No integer type with %d digits of range is available
 **f90typerealnone: No real type with the requested range and/or precision \
  is available
 **f90typerealnone %d %d: No real type with both %d digits of precision \
@@ -176,10 +182,19 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 **unableToLoadDLLsym %s %s: Unable to find or load the symbol %s from a \
  dynamically loaded library for reason %s
 
-**dynamic_node_ids: Node information for dynamic processes currently is not implemnted
+**dynamic_node_ids: Node information for dynamic processes currently is not implemented
+
+**nomprobe: Mprobe-related functionality is not implemented
 
 **memcpyalias:memcpy arguments alias each other
 **memcpyalias %p %p %L:memcpy arguments alias each other, dst=%p src=%p len=%L
+
+**rmatypenotatomic: Datatype not permitted for atomic operations
+**rmatypenotatomic %D: Datatype (%D) not permitted for atomic operations
+**winflavor: Window flavor is not compatible with the given operation
+**winflavor %s: Window flavor is not compatible with the given operation (expected %s)
+
+**typenotpredefined: Datatype must be predefined
 
 # -- FIXME: Some (but not all) of the messages below this line have been used
 #---- The messages below this line haven't been used yet.
@@ -192,6 +207,7 @@ MPI_TYPECLASS_INTEGER, or MPI_TYPECLASS_COMPLEX
 **dtypecommit:Datatype has not been committed 
 **dtypeperm:Cannot free permanent data type 
 **dtypemismatch:Receiving data with a datatype whose signature does not match that of the sending datatype.
+**contentspredef:Named predefined datatypes are not permitted in MPI_Type_get_contents
 **comm:Invalid communicator
 **commnull:Null communicator
 **rankarray:Invalid rank in rank array
@@ -204,6 +220,8 @@ be in the range 0 to %d
 **opnull:Null MPI_Op
 **opundefined:MPI_Op operation not defined for this datatype 
 **opundefined %s:MPI_Op %s operation not defined for this datatype 
+**opnotallowed:MPI_Op operation is not allowed in this routine
+**opnotallowed %d:MPI_Op operation is not allowed in this routine (op = %d)
 **topology:Invalid topology
 **dims:Invalid dimension argument
 **dims %d:Invalid dimension argument (value is %d)
@@ -269,6 +287,9 @@ be in the range 0 to %d
 **request_invalid_kind %d:The supplied request was invalid (kind=%d)
 **request_invalid_kind %d %d:The supplied request in array element %d was \
  invalid (kind=%d)
+**reqnotmsg: Invalid MPI_Message (MPI_Request passed)
+**msgnotreq: Invalid MPI_Request (MPI_Message passed)
+**msgnotreq %d: Invalid MPI_Request at array index %d (MPI_Message passed)
 **requestnull:Null MPI_Request 
 **requestnotpersist:Request is not persistent in MPI_Start or MPI_Startall.
 **requestpersistactive:Persistent request passed to MPI_Start or MPI_Startall is already active.
@@ -366,24 +387,17 @@ be in the range 0 to %d
 **rmasize:Invalid size argument in RMA call
 **rmasize %d:Invalid size argument in RMA call (value is %d)
 **rmadisp:Invalid displacement argument in RMA call 
+**rmareqcancel:Request-based RMA operation cannot be cancelled
+**rmareqop:Error in request-based RMA operation
+**rmarange:Target memory is not contained within the window
+**rmaattach:Memory cannot be attached
+**rmashared:Memory cannot be shared
+**rmaflavor:Incorrect window flavor
 **assert:Invalid assert argument
 **lockassertval:Invalid assert argument passed to MPI_Win_lock
 **lockassertval %d: Invalid assert argument (%d) passed to MPI_Win_lock
 **winunlockrank:Invalid rank argument
 **winunlockrank %d %d:Invalid rank argument %d, should be %d
-**mismatchedlockrank:Rank to unlock in MPI_Win_unlock was not locked with \
- MPI_Win_lock
-**mismatchedlockrank %d %d:Rank to unlock (%d) in MPI_Win_unlock was not \
- locked with MPI_Win_lock (rank %d was locked)
-**winunlockwithoutlock: Attempt to unlock in MPI_Win_unlock without \
- first locking with MPI_Win_lock
-**winfreewhilelocked: MPI_Win_free called while holding an MPI_Win_lock on \
- a window
-**winfreewhilelocked %d: MPI_Win_free called while holding an MPI_Win_lock on \
- the process with rank %d
-**lockwhilelocked: Attempt to lock a process while holding a lock
-**lockwhilelocked %d: Attempt to lock a process while holding a lock on \
- process %d
 **nomemreq:failure occurred while allocating memory for a request object
 **nomemuereq %d:Failed to allocate memory for an unexpected message. %d \
 unexpected messages queued.
@@ -407,6 +421,7 @@ unexpected messages queued.
 **badcase:INTERNAL ERROR: unexpected value in case statement
 **badcase %d:INTERNAL ERROR: unexpected value in case statement (value=%d)
 **node_root_rank:Unable to get the node root rank
+**proc_fail_stop:A process has failed
 # Duplicates?
 #**argnull:Invalid null parameter
 #**argnull %s:Invalid null parameter %s
@@ -659,8 +674,10 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **sock_init:unable to initialize the sock library
 **write:write failed
 **writev:writev failed
-**collective_size_mismatch:message sizes do not match across processes in the collective
-
+**collective_size_mismatch:message sizes do not match across processes in the \
+ collective routine
+**collective_size_mismatch %d %d:message sizes do not match across processes \
+ in the collective routine: Received %d but expected %d
 #
 # CH3:shm
 #
@@ -692,14 +709,6 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **remove_shar_mem %s %s:unable to remove shared memory - %s %s
 **detach_shar_mem:unable to detach shared memory
 **detach_shar_mem %s %s:unable to detach shared memory - %s %s
-**gm_init:gm_init failed
-**gm_init %d:gm_init failed gm_status=%d
-**gm_regmem:gm_register_memory failed
-**gm_regmem %d:gm_register_memory failed gm_status=%d
-**gm_get_unique_board_id:gm_get_unique_board_id failed
-**gm_get_unique_board_id %d:gm_get_unique_board_id failed status=%d
-**gm_incompatible_lib:GM library and driver are different versions
-**gm_no_port:unable to find a free GM port
 **read %d %s:read from socket failed - nread=%d %s
 **winput_oob:target pointer for win_put is out of bounds
 **winget_oob:source pointer for win_get is out of bounds
@@ -707,8 +716,6 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **windeserialize:deserializing win object
 **winnoprogress: Detected an error while in progress wait for RMA messages
 **winInvalidOp: Invalid RMA operation
-**winRMAmessage: RMA message operation failed
-**winRMArequest: RMA message operation failed; request returned error
 **open %s:open failed - %s
 **setenv:setenv failed
 **putenv:putenv failed
@@ -779,62 +786,22 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **pthread_create %d:pthread_create failed with status (%d)
 **pthread_cancel:pthread_cancel failed
 **pthread_cancel %s:pthread_cancel failed (%s)
+**pthread_lock:pthread_lock failed
+**pthread_lock %s:pthread_lock failed (%s)
+**pthread_unlock:pthread_unlock failed
+**pthread_unlock %s:pthread_unlock failed (%s)
+**pthread_mutex:pthread mutex routine failed
+**pthread_mutex %s:pthread mutex routine failed (%s)
 **badportrange:MPICH_PORT_RANGE - invalid range specified
 **argstr_missingifname:Missing ifname or invalid host/port description in business card
 **rtspkt:failure occurred while attempting to send RTS packet
 **ctspkt:failure occurred while attempting to send CTS packet
 **cookiepkt:failure occurred while attempting to send COOKIE packet
 **donepkt:failure occurred while attempting to send DONE packet
-**psm_connect:psm_connect failed
-**psm_connect %d: psm_connect failed (%d)
 **decode_buffer:decode_buffer failed
 **decode_buffer %d:decode_buffer failed (%d)
 **encode_buffer:decode_buffer failed
 **encode_buffer %d:decode_buffer failed (%d)
-**psm_close_endpoint:psm_close_endpiont failed
-**psm_close_endpoint %s:psm_close_endpiont failed (%s)
-**psm_ep_connect:psm_ep_connect failed
-**psm_ep_connect %s:psm_ep_connect failed (%s)
-**psm_ep_open:psm_ep_open failed
-**psm_ep_open %s:psm_ep_open failed (%s)
-**psm_finalize:psm_finalize failed
-**psm_finalize %s:psm_finalize failed (%s)
-**psm_init:psm_init failed
-**psm_init %s:psm_init failed (%s)
-**psm_irecv:psm_irecv failed
-**psm_irecv %s:psm_irecv failed (%s)
-**psm_isend:psm_isend failed
-**psm_isend %s:psm_isend failed (%s)
-**psm_mq_finalize:psm_mq_finalize failed
-**psm_mq_finalize %s:psm_mq_finalize failed (%s)
-**psm_mq_init:psm_mq_init failed
-**psm_mq_init %s:psm_mq_init failed (%s)
-**psm_test:psm_test failed
-**psm_test %s:psm_test failed (%s)
-**nd_init:Initializing Network Direct Service failed
-**nd_init %s %d:Initializing Network Direct Service failed, %s (errno=%d)
-**nd_unavail:Unable to find an ND provider
-**nd_unavail %s %d:Unable to find an ND provider, %s (errno=%d)
-**nd_prov_init:Initializing ND provider failed
-**nd_prov_init %s %d:Initializing ND provider failed, %s (errno=%d)
-**nd_ad_open:Opening ND Adapter failed
-**nd_ad_open %s %d:Opening ND Adapter failed, %s (errno=%d)
-**nd_ep_create:Creating an endpoint failed 
-**nd_ep_create %s %d:Creating an endpoint failed, %s (errno=%d) 
-**nd_ep_reg_mem:Unable to register memory with ND endpoint
-**nd_ep_reg_mem %s %d:Unable to register memory with ND endpoint, %s (errno=%d)
-**nd_listen:Listening on ND Adapter failed
-**nd_listen %s %d:Listening on ND Adapter failed, %s (errno=%d)
-**nd_accept:Accepting an ND conn failed
-**nd_accept %s %d:Accepting an ND conn failed, %s (errno=%d)
-**nd_connect:Failed to connect to host
-**nd_connect %s %d:Failed to connect to host, %s (errno=%d)
-**nd_read:A read on ND Adapter failed
-**nd_read %s %d:A read on ND Adapter failed, %s (errno=%d)
-**nd_write:A write on ND Adapter failed
-**nd_write %s %d:A write on ND Adapter failed, %s (errno=%d)
-**nd_disc:Failed to disconnect from host
-**nd_disc %s %d:Failed to disconnect from host, %s (errno=%d)
 **inet_ntoa:Converting network address to string failed
 **inet_ntoa %s %d:Converting network address to string failed, %s (errno=%d)
 
@@ -900,15 +867,22 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **envvarparse:Unable to parse environment variable
 **envvarparse %s:Unable to parse environment variable (%s)
 
+**infohintparse:Unable to parse info hint
+**infohintparse %s:Unable to parse info hint (%s)
+
 **signal:signal() failed
 **signal %s:signal() failed: %s
 **sigusr1:This version of MPICH requires the SIGUSR1 signal, but the application has already installed a handler
 
-**ifname_and_hostname:Only one of MPICH_INTERFACE_HOSTNAME and MPICH_NETWORK_IFACE environment variables are allowed, but both were set.
-**iface_notfound:The network interface specified in MPICH_NETWORK_IFACE was not found.
-**iface_notfound %s:The network interface, \"%s\", specified in MPICH_NETWORK_IFACE was not found.
+**toomanynbc: too many outstanding nonblocking collectives detected
+
+**ifname_and_hostname:Only one of MPIR_CVAR_CH3_INTERFACE_HOSTNAME and MPIR_CVAR_CH3_NETWORK_IFACE environment variables are allowed, but both were set.
+**iface_notfound:The network interface specified in MPIR_CVAR_CH3_NETWORK_IFACE was not found.
+**iface_notfound %s:The network interface, \"%s\", specified in MPIR_CVAR_CH3_NETWORK_IFACE was not found.
 
 **procnamefailed:Failed to get processor name
+
+**notsuppmultithread:this functionality is not supported when the thread level is greater than MPI_THREAD_SINGLE
 
 #
 # mpi functions
@@ -1089,8 +1063,12 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_comm_compare %C %C %p:MPI_Comm_compare(%C, %C, result=%p) failed
 **mpi_comm_dup:MPI_Comm_dup failed
 **mpi_comm_dup %C %p:MPI_Comm_dup(%C, new_comm=%p) failed
+**mpi_comm_dup_with_info:MPI_Comm_dup_with_info failed
+**mpi_comm_dup_with_info %C %I %p:MPI_Comm_dup(%C, %I, new_comm=%p) failed
 **mpi_comm_create:MPI_Comm_create failed
 **mpi_comm_create %C %G %p:MPI_Comm_create(%C, %G, new_comm=%p) failed
+**mpi_comm_create_group:MPI_Comm_create_group failed
+**mpi_comm_create_group %C %G %d %p:MPI_Comm_create_group(%C, %G, %d, new_comm=%p) failed
 **mpi_comm_split:MPI_Comm_split failed
 **mpi_comm_split %C %d %d %p:MPI_Comm_split(%C, color=%d, key=%d, new_comm=%p) failed
 **mpi_comm_free:MPI_Comm_free failed
@@ -1101,6 +1079,12 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_comm_remote_size %C %p:MPI_Comm_remote_size(%C, size=%p) failed
 **mpi_comm_remote_group:MPI_Comm_remote_group failed
 **mpi_comm_remote_group %C %p:MPI_Comm_remote_group(%C, group=%p) failed
+**mpix_comm_remote_group_failed:MPIX_Comm_remote_group_failed failed
+**mpix_comm_remote_group_failed %C %p:MPIX_Comm_remote_group_failed(%C, group=%p) failed
+**mpix_comm_group_failed:MPIX_Comm_group_failed failed
+**mpix_comm_group_failed %C %p:MPIX_Comm_group_failed(%C, group=%p) failed
+**mpix_comm_reenable_anysource:MPIX_Comm_reenable_anysource
+**mpix_comm_reenable_anysource %C %p:MPIX_Comm_reenable_anysource(%C, group=%p) failed
 **mpi_intercomm_create:MPI_Intercomm_create failed
 **mpi_intercomm_create %C %d %C %d %d %p:MPI_Intercomm_create(%C, local_leader=%d, %C, remote_leader=%d, tag=%d, newintercomm=%p) failed
 **mpi_intercomm_merge:MPI_Intercomm_merge failed
@@ -1151,6 +1135,8 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_get_processor_name %p %p:MPI_Get_processor_name(name=%p, resultlen=%p) failed
 **mpi_get_version:MPI_Get_version failed
 **mpi_get_version %p %p:MPI_Get_version(version=%p, subversion=%p) failed
+**mpi_get_library_version:MPI_Get_library_version failed
+**mpi_get_library_version %p %p:MPI_Get_library_version(version=%p, resultlen=%p) failed
 **mpi_errhandler_create:MPI_Errhandler_create failed
 **mpi_errhandler_create %p %p:MPI_Errhandler_create(function=%p, errhandler=%p) failed
 **mpi_errhandler_set:MPI_Errhandler_set failed
@@ -1200,6 +1186,10 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_get %p %d %D %d %d %d %D %W:MPI_Get(origin_addr=%p, origin_count=%d, %D, target_rank=%d, target_disp=%d, target_count=%d, %D, %W) failed
 **mpi_put:MPI_Put failed
 **mpi_put %p %d %D %d %d %d %D %W:MPI_Put(origin_addr=%p, origin_count=%d, %D, target_rank=%d, target_disp=%d, target_count=%d, %D, %W) failed
+**mpi_win_allocate_shared:MPI_Win_allocate_shared failed
+**mpi_win_allocate_shared %d %I %C %p %p:MPI_Win_allocate_shared(size=%d, %I, %C, baseptr=%p, win=%p) failed
+**mpi_win_shared_query:MPI_Win_shared_query failed
+**mpi_win_shared_query %W %d %p %p:MPI_Win_shared_query(win=%W, rank=%d, size=%p, baseptr=%p) failed
 **mpi_win_complete:MPI_Win_complete failed
 **mpi_win_complete %W:MPI_Win_complete(%W) failed
 **mpi_win_create:MPI_Win_create failed
@@ -1312,6 +1302,10 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_comm_get_errhandler %C %p:MPI_Comm_get_errhandler(%C, errhandler=%p) failed
 **mpi_comm_set_errhandler:MPI_Comm_set_errhandler failed
 **mpi_comm_set_errhandler %C %E:MPI_Comm_set_errhandler(%C, %E) failed
+**mpi_comm_get_info:MPI_Comm_get_info failed
+**mpi_comm_get_info %W %p:MPI_Comm_get_info(comm=%C, info_used=%p) failed
+**mpi_comm_set_info:MPI_Comm_set_info failed
+**mpi_comm_set_info %W %p:MPI_Comm_set_info(comm=%C, info=%p) failed
 **mpi_file_create_errhandler:MPI_File_create_errhandler failed
 **mpi_file_create_errhandler %p %p:MPI_File_create_errhandler(function=%p, errhandler=%p) failed
 **mpi_file_get_errhandler:MPI_File_get_errhandler failed
@@ -1356,6 +1350,8 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_type_create_hvector %d %d %d %D %p:MPI_Type_create_hvector(count=%d, blocklength=%d, stride=%d, %D, newtype=%p) failed
 **mpi_type_create_indexed_block:MPI_Type_create_indexed_block failed
 **mpi_type_create_indexed_block %d %d %p %D %p:MPI_Type_create_indexed_block(count=%d, blocklength=%d, array_of_displacements=%p, %D, newtype=%p) failed
+**mpi_type_create_hindexed_block:MPI_Type_create_hindexed_block failed
+**mpi_type_create_hindexed_block %d %d %p %D %p:MPI_Type_create_hindexed_block(count=%d, blocklength=%d, array_of_displacements=%p, %D, newtype=%p) failed
 **mpi_type_create_resized:MPI_Type_create_resized failed
 **mpi_type_create_resized %D %L %L %p:MPI_Type_create_resized(%D, lb=%L, extent=%L, newtype=%p) failed
 **mpi_type_create_struct:MPI_Type_create_struct failed
@@ -1384,6 +1380,48 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_dist_graph_neighbors_count %C %p %p %p: MPI_Dist_graph_neighbors_count(%C, indegree=%p, outdegree=%p, weighted=%p) failed
 **mpi_dist_graph_neighbors: MPI_Dist_graph_neighbors failed
 **mpi_dist_graph_neighbors %C %d %p %p %d %p %p: MPI_Dist_graph_neighbors(%C, maxindegree=%d, sources=%p, sourceweights=%p, maxoutdegree=%d, destinations=%p, destweights=%p) failed
+
+# MPI-3 RMA Errors
+**mpi_get_accumulate:MPI_Get_accumulate failed
+**mpi_get_accumulate %p %d %D %p %d %D %d %d %d %D %O %W:MPI_Get_accumulate(origin_addr=%p, origin_count=%d, %D, result_addr=%p, result_count=%d, %D, target_rank=%d, target_disp=%d, target_count=%d, %D, %O, %W) failed
+**mpi_fetch_and_op:MPI_Fetch_and_op failed
+**mpi_fetch_and_op %p %p %D %d %d %O %W:MPI_Fetch_and_op(origin_addr=%p, result_addr=%p, %D, target_rank=%d, target_disp=%d, %O, %W) failed
+**mpi_compare_and_swap: MPI_Compare_and_swap failed
+**mpi_compare_and_swap %p %p %p %D %d %d %W:MPI_Compare_and_swap(origin_addr=%p, compare_addr=%p, result_addr=%p, %D, target_rank=%d, target_disp=%d, %W) failed
+**mpi_raccumulate:MPI_Raccumulate failed
+**mpi_raccumulate %p %d %D %d %d %d %D %O %W %p:MPI_Raccumulate(origin_addr=%p, origin_count=%d, %D, target_rank=%d, target_disp=%d, target_count=%d, %D, %O, %W, request=%p) failed
+**mpi_rget:MPI_Rget failed
+**mpi_rget %p %d %D %d %d %d %D %W %p:MPI_Rget(origin_addr=%p, origin_count=%d, %D, target_rank=%d, target_disp=%d, target_count=%d, %D, %W, request=%p) failed
+**mpi_rput:MPI_Rput failed
+**mpi_rput %p %d %D %d %d %d %D %W %p:MPI_Rput(origin_addr=%p, origin_count=%d, %D, target_rank=%d, target_disp=%d, target_count=%d, %D, %W, request=%p) failed
+**mpi_rget_accumulate:MPI_Rget_accumulate failed
+**mpi_rget_accumulate %p %d %D %p %d %D %d %d %d %D %O %W %p:MPI_Rget_accumulate(origin_addr=%p, origin_count=%d, %D, result_addr=%p, result_count=%d, %D, target_rank=%d, target_disp=%d, target_count=%d, %D, %O, %W, %p) failed
+**mpi_win_allocate:MPI_Win_allocate failed
+**mpi_win_allocate %d %d %I %C %p %p:MPI_Win_allocate(size=%d, disp_unit=%d, %I, %C, base=%p, win=%p) failed
+**mpi_win_create_dynamic:MPI_Win_create_dynamic failed
+**mpi_win_create_dynamic %I %C %p:MPI_Win_create_dynamic(%I, %C, win=%p) failed
+**mpi_win_attach:MPI_Win_attach failed
+**mpi_win_attach %W %p %d:MPI_Win_attach(%W, base=%p, size=%d) failed
+**mpi_win_detach:MPI_Win_detach failed
+**mpi_win_detach %W %p:MPI_Win_detach(%W, base=%p) failed
+**mpi_win_lock_all:MPI_Win_lock_all failed
+**mpi_win_lock_all %A %W:MPI_Win_lock_all(%A, %W) failed
+**mpi_win_unlock_all:MPI_Win_unlock_all failed
+**mpi_win_unlock_all %W:MPI_Win_unlock_all(%W) failed
+**mpi_win_flush:MPI_Win_flush failed
+**mpi_win_flush %d %W:MPI_Win_flush(target_rank=%d, %W) failed
+**mpi_win_flush_all:MPI_Win_flush_all failed
+**mpi_win_flush_all %W:MPI_Win_flush_all(%W) failed
+**mpi_win_flush_local:MPI_Win_flush_local failed
+**mpi_win_flush_local %d %W:MPI_Win_flush_local(target_rank=%d, %W) failed
+**mpi_win_flush_local_all:MPI_Win_flush_local_all failed
+**mpi_win_flush_local_all %W:MPI_Win_flush_local_all(%W) failed
+**mpi_win_sync:MPI_Win_sync failed
+**mpi_win_sync %W:MPI_Win_sync(%W) failed
+**mpi_win_get_info:MPI_Win_get_info failed
+**mpi_win_get_info %W %p:MPI_Win_get_info(win=%W, info_used=%p) failed
+**mpi_win_set_info:MPI_Win_set_info failed
+**mpi_win_set_info %W %I:MPI_Win_set_info(win=%W, info=%I) failed
 
 # pmi2 errors
 **bad_keyval:PMI2 received malformed key-value pair
@@ -1436,6 +1474,129 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpir_type_get_attr %D %d %p %p:MPIR_Type_get_attr(%D, type_keyval=%d, attribute_val=%p, flag=%p) failed
 **mpir_wingetattr:MPIR_WinGetAttr failed
 **mpir_wingetattr %W %d %p %p:MPIR_WinGetAttr(%W, win_keyval=%d, attribute_val=%p, flag=%p) failed
+
+## MPI-3 Mprobe routines
+**mpi_improbe: MPI_Improbe failed
+**mpi_improbe %d %d %C %p %p %p: MPI_Improbe(source=%d, tag=%d, comm=%C, flag=%p, message=%p, status=%p)
+**mpi_mprobe: MPI_Mprobe failed
+**mpi_mprobe %d %d %C %p %p: MPI_Mprobe(source=%d, tag=%d, comm=%C, message=%p, status=%p)
+**mpi_mrecv: MPI_Mrecv failed
+**mpi_mrecv %p %d %D %p %p: MPI_Mrecv(buf=%p, count=%d, datatype=%D, message=%p, status=%p)
+**mpi_imrecv: MPI_Imrecv failed
+**mpi_imrecv %p %d %D %p %p: MPI_Imrecv(buf=%p, count=%d, datatype=%D, message=%p, request=%p)
+
+## MPI-3 nonblocking comm dup
+**mpi_comm_idup: MPI_Comm_idup failed
+**mpi_comm_idup %C %p %p: MPI_Comm_idup(comm=%C, newcomm=%p, request=%p)
+
+## MPI-3 nonblocking collectives
+**mpi_ibarrier: MPI_Ibarrier failed
+**mpi_ibarrier %C %p: MPI_Ibarrier(comm=%C, request=%p)
+**mpi_ibcast: MPI_Ibcast failed
+**mpi_ibcast %p %d %D %C %p: MPI_Ibcast(buffer=%p, count=%d, datatype=%D, comm=%C, request=%p)
+**mpi_igather: MPI_Igather failed
+**mpi_igather %p %d %D %p %d %D %d %C %p: MPI_Igather(sendbuf=%p, sendcount=%d, sendtype=%D, recvbuf=%p, recvcount=%d, recvtype=%D, root=%d, comm=%C, request=%p)
+**mpi_igatherv: MPI_Igatherv failed
+**mpi_igatherv %p %d %D %p %p %p %D %d %C %p: MPI_Igatherv(sendbuf=%p, sendcount=%d, sendtype=%D, recvbuf=%p, recvcounts=%p, displs=%p, recvtype=%D, root=%d, comm=%C, request=%p)
+**mpi_iscatter: MPI_Iscatter failed
+**mpi_iscatter %p %d %D %p %d %D %d %C %p: MPI_Iscatter(sendbuf=%p, sendcount=%d, sendtype=%D, recvbuf=%p, recvcount=%d, recvtype=%D, root=%d, comm=%C, request=%p)
+**mpi_iscatterv: MPI_Iscatterv failed
+**mpi_iscatterv %p %p %p %D %p %d %D %d %C %p: MPI_Iscatterv(sendbuf=%p, sendcounts=%p, displs=%p, sendtype=%D, recvbuf=%p, recvcount=%d, recvtype=%D, root=%d, comm=%C, request=%p)
+**mpi_iallgather: MPI_Iallgather failed
+**mpi_iallgather %p %d %D %p %d %D %C %p: MPI_Iallgather(sendbuf=%p, sendcount=%d, sendtype=%D, recvbuf=%p, recvcount=%d, recvtype=%D, comm=%C, request=%p)
+**mpi_iallgatherv: MPI_Iallgatherv failed
+**mpi_iallgatherv %p %d %D %p %p %p %D %C %p: MPI_Iallgatherv(sendbuf=%p, sendcount=%d, sendtype=%D, recvbuf=%p, recvcounts=%p, displs=%p, recvtype=%D, comm=%C, request=%p)
+**mpi_ialltoall: MPI_Ialltoall failed
+**mpi_ialltoall %p %d %D %p %d %D %C %p: MPI_Ialltoall(sendbuf=%p, sendcount=%d, sendtype=%D, recvbuf=%p, recvcount=%d, recvtype=%D, comm=%C, request=%p)
+**mpi_ialltoallv: MPI_Ialltoallv failed
+**mpi_ialltoallv %p %p %p %D %p %p %p %D %C %p: MPI_Ialltoallv(sendbuf=%p, sendcounts=%p, sdispls=%p, sendtype=%D, recvbuf=%p, recvcounts=%p, rdispls=%p, recvtype=%D, comm=%C, request=%p)
+**mpi_ialltoallw: MPI_Ialltoallw failed
+**mpi_ialltoallw %p %p %p %p %p %p %p %p %C %p: MPI_Ialltoallw(sendbuf=%p, sendcounts=%p, sdispls=%p, sendtypes=%p, recvbuf=%p, recvcounts=%p, rdispls=%p, recvtypes=%p, comm=%C, request=%p)
+**mpi_ireduce: MPI_Ireduce failed
+**mpi_ireduce %p %p %d %D %O %d %C %p: MPI_Ireduce(sendbuf=%p, recvbuf=%p, count=%d, datatype=%D, op=%O, root=%d, comm=%C, request=%p)
+**mpi_iallreduce: MPI_Iallreduce failed
+**mpi_iallreduce %p %p %d %D %O %C %p: MPI_Iallreduce(sendbuf=%p, recvbuf=%p, count=%d, datatype=%D, op=%O, comm=%C, request=%p)
+**mpi_ireduce_scatter: MPI_Ireduce_scatter failed
+**mpi_ireduce_scatter %p %p %p %D %O %C %p: MPI_Ireduce_scatter(sendbuf=%p, recvbuf=%p, recvcounts=%p, datatype=%D, op=%O, comm=%C, request=%p)
+**mpi_ireduce_scatter_block: MPI_Ireduce_scatter_block failed
+**mpi_ireduce_scatter_block %p %p %d %D %O %C %p: MPI_Ireduce_scatter_block(sendbuf=%p, recvbuf=%p, recvcount=%d, datatype=%D, op=%O, comm=%C, request=%p)
+**mpi_iscan: MPI_Iscan failed
+**mpi_iscan %p %p %d %D %O %C %p: MPI_Iscan(sendbuf=%p, recvbuf=%p, count=%d, datatype=%D, op=%O, comm=%C, request=%p)
+**mpi_iexscan: MPI_Iexscan failed
+**mpi_iexscan %p %p %d %D %O %C %p: MPI_Iexscan(sendbuf=%p, recvbuf=%p, count=%d, datatype=%D, op=%O, comm=%C, request=%p)
+
+## MPI-3 neighborhood collectives
+**mpi_ineighbor_allgather: MPI_Ineighbor_allgather failed
+**mpi_ineighbor_allgather %p %d %D %p %d %D %C %p: MPI_Ineighbor_allgather(sendbuf=%p, sendcount=%d, sendtype=%D, recvbuf=%p, recvcount=%d, recvtype=%D, comm=%C, request=%p)
+**mpi_ineighbor_allgatherv: MPI_Ineighbor_allgatherv failed
+**mpi_ineighbor_allgatherv %p %d %D %p %p %p %D %C %p: MPI_Ineighbor_allgatherv(sendbuf=%p, sendcount=%d, sendtype=%D, recvbuf=%p, recvcounts=%p, displs=%p, recvtype=%D, comm=%C, request=%p)
+**mpi_ineighbor_alltoall: MPI_Ineighbor_alltoall failed
+**mpi_ineighbor_alltoall %p %d %D %p %d %D %C %p: MPI_Ineighbor_alltoall(sendbuf=%p, sendcount=%d, sendtype=%D, recvbuf=%p, recvcount=%d, recvtype=%D, comm=%C, request=%p)
+**mpi_ineighbor_alltoallv: MPI_Ineighbor_alltoallv failed
+**mpi_ineighbor_alltoallv %p %p %p %D %p %p %p %D %C %p: MPI_Ineighbor_alltoallv(sendbuf=%p, sendcounts=%p, sdispls=%p, sendtype=%D, recvbuf=%p, recvcounts=%p, rdispls=%p, recvtype=%D, comm=%C, request=%p)
+**mpi_ineighbor_alltoallw: MPI_Ineighbor_alltoallw failed
+**mpi_ineighbor_alltoallw %p %p %p %p %p %p %p %p %C %p: MPI_Ineighbor_alltoallw(sendbuf=%p, sendcounts=%p, sdispls=%p, sendtypes=%p, recvbuf=%p, recvcounts=%p, rdispls=%p, recvtypes=%p, comm=%C, request=%p)
+**mpi_neighbor_allgather: MPI_Neighbor_allgather failed
+**mpi_neighbor_allgather %p %d %D %p %d %D %C: MPI_Neighbor_allgather(sendbuf=%p, sendcount=%d, sendtype=%D, recvbuf=%p, recvcount=%d, recvtype=%D, comm=%C)
+**mpi_neighbor_allgatherv: MPI_Neighbor_allgatherv failed
+**mpi_neighbor_allgatherv %p %d %D %p %p %p %D %C: MPI_Neighbor_allgatherv(sendbuf=%p, sendcount=%d, sendtype=%D, recvbuf=%p, recvcounts=%p, displs=%p, recvtype=%D, comm=%C)
+**mpi_neighbor_alltoall: MPI_Neighbor_alltoall failed
+**mpi_neighbor_alltoall %p %d %D %p %d %D %C: MPI_Neighbor_alltoall(sendbuf=%p, sendcount=%d, sendtype=%D, recvbuf=%p, recvcount=%d, recvtype=%D, comm=%C)
+**mpi_neighbor_alltoallv: MPI_Neighbor_alltoallv failed
+**mpi_neighbor_alltoallv %p %p %p %D %p %p %p %D %C: MPI_Neighbor_alltoallv(sendbuf=%p, sendcounts=%p, sdispls=%p, sendtype=%D, recvbuf=%p, recvcounts=%p, rdispls=%p, recvtype=%D, comm=%C)
+**mpi_neighbor_alltoallw: MPI_Neighbor_alltoallw failed
+**mpi_neighbor_alltoallw %p %p %p %p %p %p %p %p %C: MPI_Neighbor_alltoallw(sendbuf=%p, sendcounts=%p, sdispls=%p, sendtypes=%p, recvbuf=%p, recvcounts=%p, rdispls=%p, recvtypes=%p, comm=%C)
+
+## MPI-3 "large count" functions
+**mpi_type_size_x: MPI_Type_size_x failed
+**mpi_type_size_x %D %p: MPI_Type_size_x(datatype=%D, size=%p)
+**mpi_type_get_extent_x: MPI_Type_get_extent_x failed
+**mpi_type_get_extent_x %D %p %p: MPI_Type_get_extent_x(datatype=%D, lb=%p, extent=%p)
+**mpi_type_get_true_extent_x: MPI_Type_get_true_extent_x failed
+**mpi_type_get_true_extent_x %D %p %p: MPI_Type_get_true_extent_x(datatype=%D, lb=%p, extent=%p)
+**mpi_get_elements_x: MPI_Get_elements_x failed
+**mpi_get_elements_x %p %D %p: MPI_Get_elements_x(status=%p, datatype=%D, count=%p)
+**mpi_status_set_elements_x: MPI_Status_set_elements_x failed
+**mpi_status_set_elements_x %p %D %c: MPI_Status_set_elements_x(status=%p, datatype=%D, count=%c)
+
+# SCIF netmod functions
+
+**scif_open:scif_open failed
+**scif_open %s:scif_open failed (scif_open failed with error '%s')
+**scif_bind:scif_bind failed
+**scif_bind %s:scif_bind failed (scif_bind failed with error '%s')
+**scif_listen:scif_listen failed
+**scif_listen %s:scif_listen failed (scif_listen failed with error '%s')
+**scif_connect:scif_connect failed
+**scif_connect %s:scif_connect failed (scif_connect failed with error '%s')
+**scif_accept:scif_accept failed
+**scif_accept %s:scif_accept failed (scif_accept failed with error '%s')
+**scif_send:scif_send failed
+**scif_send %s:scif_send failed (scif_send failed with error '%s')
+**scif_recv:scif_recv failed
+**scif_recv %s:scif_recv failed (scif_recv failed with error '%s')
+**scif_get_nodeIDs:scif_get_nodeIDs failed
+**scif_get_nodeIDs %s %d:scif_get_nodeIDs failed (scif_get_nodeIDs failed with error '%s', error number = %d)
+**scif_init_shmsend:failed to init shared memory for send
+**scif_init_shmsend %s:failed to init shared memory for send (scif_init_shmsend failed with error '%s')
+**scif_init_shmrecv:failed to init shared memory for recv
+**scif_init_shmrecv %s:failed to init shared memory for recv (scif_init_shmrecv failed with error '%s')
+**argstr_missingnode:failed to get node from business card
+**scif_writev:scif_writev failed
+**scif_writev %s:scif_writev failed (scif_writev failed with error '%s')
+**scif_read:scif_read failed
+**scif_scif_read %s:scif_scif_read failed (scif_scif_read failed with error '%s')
+**scif_readv:scif_readv failed
+**scif_scif_readv %s:scif_scif_readv (scif_scif_readv failed with error '%s')
+**scif_poll_send:scif_poll_send failed
+**scif_poll_send %s:scif_poll_send failed (scif_poll_send failed with error '%s')
+**poll error:poll error
+**loadsendiov:sendiov failed
+**MPIDI_PG_Get_vc:MPIDI_PG_Get_vc failed
+**MPIDI_PG_Get_vc %s:MPIDI_PG_Get_vc failed (MPIDI_PG_Get_vc failed with error '%s')
+
+# Datarep conversion function not supported by ROMIO (Temproary until implemented)
+**drconvnotsupported:Read and Write datarep conversions are currently not supported by MPI-IO
 
 # -----------------------------------------------------------------------------
 # The following names are defined but not used (see the -careful option 

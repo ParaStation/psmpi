@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint *, MPI_Fin
 #else
 #pragma _CRI duplicate mpi_get_address_ as pmpi_get_address_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_GET_ADDRESS")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address__( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_GET_ADDRESS")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_GET_ADDRESS")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_GET_ADDRESS")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address__( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address__( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address__( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_get_address__( void*, MPI_Aint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_get_address( void*, MPI_Aint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint *, MPI_Fin
 #pragma weak mpi_get_address__ = mpi_get_address
 #pragma weak mpi_get_address_ = mpi_get_address
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address__( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("MPI_GET_ADDRESS")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("MPI_GET_ADDRESS")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("MPI_GET_ADDRESS")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("mpi_get_address__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address__( void*, MPI_Aint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("mpi_get_address__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("mpi_get_address__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("mpi_get_address_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address__( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("mpi_get_address_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("mpi_get_address_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("mpi_get_address")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address__( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("mpi_get_address")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address_( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("mpi_get_address")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_get_address( void*, MPI_Aint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address( void*, MPI_Aint *, MPI_Fin
 #pragma weak pmpi_get_address__ = pmpi_get_address
 #pragma weak pmpi_get_address_ = pmpi_get_address
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address__( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_GET_ADDRESS")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address_( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_GET_ADDRESS")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_GET_ADDRESS")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address_( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address__( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_GET_ADDRESS( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address__( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address_( void*, MPI_Aint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_get_address")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_get_address_ PMPI_GET_ADDRESS
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_get_address( void*, MPI_Aint *, MPI_Fin
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Get_address
 #define MPI_Get_address PMPI_Get_address 
 

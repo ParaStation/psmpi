@@ -1,10 +1,10 @@
-.TH MPI_Cart_get 3 "8/1/2008" " " "MPI"
+.TH MPI_Cart_get 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Cart_get \-  Retrieves Cartesian topology information associated with a  communicator 
 .SH SYNOPSIS
 .nf
-int MPI_Cart_get(MPI_Comm comm, int maxdims, int *dims, int *periods, 
-                 int *coords)
+int MPI_Cart_get(MPI_Comm comm, int maxdims, int dims[], int periods[],
+                 int coords[])
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -136,4 +136,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-cart_get.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/topo/cart_get.c

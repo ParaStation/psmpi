@@ -30,6 +30,10 @@ void MPID_DEV_Request_send_destroy(MPID_Request *req);
 MPID_Request *MPID_DEV_Request_persistent_create(MPID_Comm *comm, MPID_Request_kind_t type);
 void MPID_DEV_Request_persistent_destroy(MPID_Request *req);
 
+void MPID_DEV_Request_ureq_destroy(MPID_Request *req);
+
+void MPID_DEV_Request_coll_destroy(MPID_Request *req);
+
 /* void MPID_DEV_Request_multi_destroy(MPID_Request *req); */
 
 
@@ -69,7 +73,14 @@ void MPID_DEV_Request_release_ref(MPID_Request *req, MPID_Request_kind_t kind)
 			break;
 */
 		case MPID_UREQUEST:
-			MPID_PSP_Request_destroy(req);
+			MPID_DEV_Request_ureq_destroy(req);
+			break;
+		case MPID_COLL_REQUEST:
+			MPID_DEV_Request_coll_destroy(req);
+			break;
+		case MPID_REQUEST_MPROBE:
+			/* mprobe requests use also MPID_DEV_Request_recv */
+			MPID_DEV_Request_recv_destroy(req);
 			break;
 		case MPID_REQUEST_UNDEFINED:
 		case MPID_LAST_REQUEST_KIND:
@@ -79,12 +90,6 @@ void MPID_DEV_Request_release_ref(MPID_Request *req, MPID_Request_kind_t kind)
 	}
 }
 
-
-static inline
-int MPID_Request_is_completed(MPID_Request *req)
-{
-	return !*(req->cc_ptr);
-}
 
 static inline
 void _MPID_Request_set_completed(MPID_Request *req)

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*  
  *  (C) 2004 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -7,7 +7,7 @@
 #include "create_f90_util.h"
 
 #include "mpiimpl.h"
-#ifdef HAVE_F90_TYPE_ROUTINES
+#ifdef HAVE_FC_TYPE_ROUTINES
 #include "mpif90model.h"
 #else
 /* Assume only 4 byte integers available */
@@ -42,10 +42,10 @@ typedef struct intModel {
    MPI_Type_create_f90_integer - Return a predefined type that matches 
    the specified range
 
-   Input Arguments:
+Input Parameters:
 .  range - Decimal range (number of digits) desired
 
-   Output Arguments:
+Output Parameters:
 .  newtype - A predefine MPI Datatype that matches the range.
 
    Notes:

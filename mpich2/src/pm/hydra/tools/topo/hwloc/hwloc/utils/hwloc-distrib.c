@@ -1,6 +1,6 @@
 /*
  * Copyright © 2009 CNRS
- * Copyright © 2009-2010 INRIA.  All rights reserved.
+ * Copyright © 2009-2013 Inria.  All rights reserved.
  * Copyright © 2009-2010 Université Bordeaux 1
  * Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
  * See COPYING in top-level directory.
@@ -11,20 +11,27 @@
 
 #include "misc.h"
 
+#ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#endif
 
 void usage(const char *callname __hwloc_attribute_unused, FILE *where)
 {
   fprintf(where, "Usage: hwloc-distrib [options] number\n");
-  fprintf(where, "Options:\n");
-  fprintf(where, "  --single         Singlify each output to a single CPU\n");
-  fprintf(where, "  --taskset        Show taskset-specific cpuset strings\n");
-  hwloc_utils_input_format_usage(where, 0);
+  fprintf(where, "Distribution options:\n");
   fprintf(where, "  --ignore <type>  Ignore objects of the given type\n");
   fprintf(where, "  --from <type>    Distribute starting from objects of the given type\n");
   fprintf(where, "  --to <type>      Distribute down to objects of the given type\n");
   fprintf(where, "  --at <type>      Distribute among objects of the given type\n");
-  fprintf(where, "  -v               Show verbose messages\n");
+  fprintf(where, "Input topology options:\n");
+  fprintf(where, "  --restrict <set> Restrict the topology to processors listed in <set>\n");
+  fprintf(where, "  --whole-system   Do not consider administration limitations\n");
+  hwloc_utils_input_format_usage(where, 0);
+  fprintf(where, "Formatting options:\n");
+  fprintf(where, "  --single         Singlify each output to a single CPU\n");
+  fprintf(where, "  --taskset        Show taskset-specific cpuset strings\n");
+  fprintf(where, "Miscellaneous options:\n");
+  fprintf(where, "  -v --verbose     Show verbose messages\n");
   fprintf(where, "  --version        Report version and exit\n");
 }
 
@@ -37,15 +44,21 @@ int main(int argc, char *argv[])
   int taskset = 0;
   int singlify = 0;
   int verbose = 0;
+  char *restrictstring = NULL;
   hwloc_obj_type_t from_type = (hwloc_obj_type_t) -1, to_type = (hwloc_obj_type_t) -1;
-  char **orig_argv = argv;
   hwloc_topology_t topology;
+  unsigned long flags = 0;
   int opt;
+  int err;
+
+  /* enable verbose backends */
+  putenv("HWLOC_XML_VERBOSE=1");
+  putenv("HWLOC_SYNTHETIC_VERBOSE=1");
 
   hwloc_topology_init(&topology);
 
-  /* skip argv[0], handle options */
   callname = argv[0];
+  /* skip argv[0], handle options */
   argv++;
   argc--;
 
@@ -65,8 +78,12 @@ int main(int argc, char *argv[])
 	taskset = 1;
 	goto next;
       }
-      if (!strcmp(argv[0], "-v")) {
+      if (!strcmp(argv[0], "-v") || !strcmp(argv[0], "--verbose")) {
 	verbose = 1;
+	goto next;
+      }
+      if (!strcmp (argv[0], "--whole-system")) {
+	flags |= HWLOC_TOPOLOGY_FLAG_WHOLE_SYSTEM;
 	goto next;
       }
       if (!strcmp(argv[0], "--help")) {
@@ -81,37 +98,46 @@ int main(int argc, char *argv[])
 	goto next;
       }
       else if (!strcmp (argv[0], "--ignore")) {
-	if (argc <= 2) {
+	hwloc_obj_type_t type;
+	if (argc < 2) {
 	  usage(callname, stdout);
 	  exit(EXIT_FAILURE);
 	}
-	hwloc_topology_ignore_type(topology, hwloc_obj_type_of_string(argv[1]));
+	type = hwloc_obj_type_of_string(argv[1]);
+	if (type != (hwloc_obj_type_t) -1)
+	  hwloc_topology_ignore_type(topology, type);
+	else
+	  fprintf(stderr, "Unsupported type `%s' passed to --ignore, ignoring.\n", argv[1]);
 	argc--;
 	argv++;
 	goto next;
       }
       else if (!strcmp (argv[0], "--from")) {
-	if (argc <= 2) {
+	if (argc < 2) {
 	  usage(callname, stdout);
 	  exit(EXIT_FAILURE);
 	}
 	from_type = hwloc_obj_type_of_string(argv[1]);
+	if (from_type == (hwloc_obj_type_t) -1)
+	  fprintf(stderr, "Unsupported type `%s' passed to --from, ignoring.\n", argv[1]);
 	argc--;
 	argv++;
 	goto next;
       }
       else if (!strcmp (argv[0], "--to")) {
-	if (argc <= 2) {
+	if (argc < 2) {
 	  usage(callname, stdout);
 	  exit(EXIT_FAILURE);
 	}
 	to_type = hwloc_obj_type_of_string(argv[1]);
+	if (to_type == (hwloc_obj_type_t) -1)
+	  fprintf(stderr, "Unsupported type `%s' passed to --to, ignoring.\n", argv[1]);
 	argc--;
 	argv++;
 	goto next;
       }
       else if (!strcmp (argv[0], "--at")) {
-	if (argc <= 2) {
+	if (argc < 2) {
 	  usage(callname, stdout);
 	  exit(EXIT_FAILURE);
 	}
@@ -120,8 +146,18 @@ int main(int argc, char *argv[])
 	argv++;
 	goto next;
       }
+      else if (!strcmp (argv[0], "--restrict")) {
+	if (argc < 2) {
+	  usage (callname, stdout);
+	  exit(EXIT_FAILURE);
+	}
+	restrictstring = strdup(argv[1]);
+	argc--;
+	argv++;
+	goto next;
+      }
       else if (!strcmp (argv[0], "--version")) {
-          printf("%s %s\n", orig_argv[0], VERSION);
+          printf("%s %s\n", callname, VERSION);
           exit(EXIT_SUCCESS);
       }
 
@@ -159,9 +195,25 @@ int main(int argc, char *argv[])
 
     cpuset = malloc(n * sizeof(hwloc_bitmap_t));
 
-    if (input)
-      hwloc_utils_enable_input_format(topology, input, input_format, verbose, callname);
+    if (input) {
+      err = hwloc_utils_enable_input_format(topology, input, input_format, verbose, callname);
+      if (err)
+	return err;
+    }
+    hwloc_topology_set_flags(topology, flags);
     hwloc_topology_load(topology);
+
+    if (restrictstring) {
+      hwloc_bitmap_t restrictset = hwloc_bitmap_alloc();
+      hwloc_bitmap_sscanf(restrictset, restrictstring);
+      err = hwloc_topology_restrict (topology, restrictset, 0);
+      if (err) {
+	perror("Restricting the topology");
+	/* fallthrough */
+      }
+      hwloc_bitmap_free(restrictset);
+      free(restrictstring);
+    }
 
     if (from_type == (hwloc_obj_type_t) -1) {
       from_depth = 0;

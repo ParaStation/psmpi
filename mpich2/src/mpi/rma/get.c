@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Get */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -32,7 +31,7 @@
 /*@
    MPI_Get - Get data from a memory window on a remote process
 
- Input Parameters:
+Input Parameters:
 + origin_addr - Address of the buffer in which to receive the data
 . origin_count - number of entries in origin buffer (nonnegative integer) 
 . origin_datatype - datatype of each entry in origin buffer (handle) 
@@ -54,6 +53,8 @@
 .N MPI_ERR_RANK
 .N MPI_ERR_TYPE
 .N MPI_ERR_WIN
+
+.seealso: MPI_Rget
 @*/
 int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
             origin_datatype, int target_rank, MPI_Aint target_disp,
@@ -76,7 +77,6 @@ int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_WIN(win, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -97,12 +97,12 @@ int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
             if (mpi_errno) goto fn_fail;
 
 	    MPIR_ERRTEST_COUNT(origin_count, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(origin_datatype, "origin_datatype",
-				  mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(origin_datatype, "origin_datatype", mpi_errno);
+	    MPIR_ERRTEST_USERBUFFER(origin_addr, origin_count, origin_datatype, mpi_errno);
 	    MPIR_ERRTEST_COUNT(target_count, mpi_errno);
-	    MPIR_ERRTEST_DATATYPE(target_datatype, "target_datatype",
-				  mpi_errno);
-	    MPIR_ERRTEST_DISP(target_disp, mpi_errno);
+	    MPIR_ERRTEST_DATATYPE(target_datatype, "target_datatype", mpi_errno);
+            if (win_ptr->create_flavor != MPI_WIN_FLAVOR_DYNAMIC)
+                MPIR_ERRTEST_DISP(target_disp, mpi_errno);
 
             if (HANDLE_GET_KIND(origin_datatype) != HANDLE_KIND_BUILTIN)
             {
@@ -110,7 +110,9 @@ int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
                 
                 MPID_Datatype_get_ptr(origin_datatype, datatype_ptr);
                 MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
                 MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
             }
 
             if (HANDLE_GET_KIND(target_datatype) != HANDLE_KIND_BUILTIN)
@@ -119,13 +121,13 @@ int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
                 
                 MPID_Datatype_get_ptr(target_datatype, datatype_ptr);
                 MPID_Datatype_valid_ptr(datatype_ptr, mpi_errno);
+                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
                 MPID_Datatype_committed_ptr(datatype_ptr, mpi_errno);
+                if (mpi_errno != MPI_SUCCESS) goto fn_fail;
             }
 
 	    comm_ptr = win_ptr->comm_ptr;
 	    MPIR_ERRTEST_SEND_RANK(comm_ptr, target_rank, mpi_errno);
-	    
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -133,8 +135,6 @@ int MPI_Get(void *origin_addr, int origin_count, MPI_Datatype
 
     /* ... body of routine ...  */
     
-    if (target_rank == MPI_PROC_NULL) goto fn_exit;
-
     mpi_errno = MPIU_RMA_CALL(win_ptr,
 			      Get(origin_addr, origin_count, origin_datatype,
 				  target_rank, target_disp, target_count,

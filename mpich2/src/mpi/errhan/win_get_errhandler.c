@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -31,10 +31,10 @@
 /*@
    MPI_Win_get_errhandler - Get the error handler for the MPI RMA window
 
-   Input Parameter:
+Input Parameters:
 . win - window (handle) 
 
-   Output Parameter:
+Output Parameters:
 . errhandler - error handler currently associated with window (handle) 
 
 .N ThreadSafe
@@ -66,7 +66,6 @@ int MPI_Win_get_errhandler(MPI_Win win, MPI_Errhandler *errhandler)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_WIN(win, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

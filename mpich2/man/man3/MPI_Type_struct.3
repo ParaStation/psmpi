@@ -1,12 +1,12 @@
-.TH MPI_Type_struct 3 "7/29/2010" " " "MPI"
+.TH MPI_Type_struct 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Type_struct \-  Creates a struct datatype 
 .SH SYNOPSIS
 .nf
 int MPI_Type_struct(int count,
-                   int blocklens[],
-                   MPI_Aint indices[],
-                   MPI_Datatype old_types[],
+                   const int *array_of_blocklengths,
+                   const MPI_Aint *array_of_displacements,
+                   const MPI_Datatype *array_of_types,
                    MPI_Datatype *newtype)
 .fi
 .SH INPUT PARAMETERS
@@ -19,22 +19,22 @@ array_of_displacements  and array_of_blocklengths
 .PD 1
 .PD 0
 .TP
-.B blocklens 
+.B array_of_blocklengths 
 - number of elements in each block (array)
 .PD 1
 .PD 0
 .TP
-.B indices 
+.B array_of_displacements 
 - byte displacement of each block (array)
 .PD 1
 .PD 0
 .TP
-.B old_types 
-- type of elements in each block (array 
+.B array_of_types 
+- type of elements in each block (array
 of handles to datatype objects) 
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B newtype 
@@ -98,10 +98,10 @@ entry as the
 last member of the structure.  For example, the following code can be used
 for the structure foo
 .nf
-blen[0] = 1; indices[0] = 0; oldtypes[0] = MPI_INT;
-blen[1] = 1; indices[1] = &foo.b - &foo; oldtypes[1] = MPI_CHAR;
-blen[2] = 1; indices[2] = sizeof(foo); oldtypes[2] = MPI_UB;
-MPI_Type_struct( 3, blen, indices, oldtypes, &newtype );
+blen[0] = 1; array_of_displacements[0] = 0; oldtypes[0] = MPI_INT;
+blen[1] = 1; array_of_displacements[1] = &foo.b - &foo; oldtypes[1] = MPI_CHAR;
+blen[2] = 1; array_of_displacements[2] = sizeof(foo); oldtypes[2] = MPI_UB;
+MPI_Type_struct( 3, blen, array_of_displacements, oldtypes, &newtype );
 .fi
 
 
@@ -192,4 +192,4 @@ non-negative; a count of zero is often valid.
 implementation is unable to acquire memory.  
 .PD 1
 .SH LOCATION
-type_struct.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/type_struct.c

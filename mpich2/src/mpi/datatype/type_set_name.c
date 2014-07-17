@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -34,8 +34,8 @@
 /*@
    MPI_Type_set_name - set datatype name
 
-   Input Parameters:
-+ type - datatype whose identifier is to be set (handle) 
+Input Parameters:
++ datatype - datatype whose identifier is to be set (handle)
 - type_name - the character string which is remembered as the name (string) 
 
 .N Fortran
@@ -46,7 +46,7 @@
 .N MPI_ERR_TYPE
 .N MPI_ERR_OTHER
 @*/
-int MPI_Type_set_name(MPI_Datatype type, char *type_name)
+int MPI_Type_set_name(MPI_Datatype datatype, const char *type_name)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Datatype *datatype_ptr = NULL;
@@ -62,15 +62,14 @@ int MPI_Type_set_name(MPI_Datatype type, char *type_name)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-	    MPIR_ERRTEST_DATATYPE(type, "datatype", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }
 #   endif
     
     /* Convert MPI object handles to object pointers */
-    MPID_Datatype_get_ptr( type, datatype_ptr );
+    MPID_Datatype_get_ptr( datatype, datatype_ptr );
 
     /* Validate parameters and objects (post conversion) */
 #   ifdef HAVE_ERROR_CHECKING
@@ -83,13 +82,11 @@ int MPI_Type_set_name(MPI_Datatype type, char *type_name)
             MPID_Datatype_valid_ptr( datatype_ptr, mpi_errno );
 	    /* If datatype_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(type_name,"type_name", mpi_errno);
-	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
 	    slen = (int)strlen( type_name );
 	    MPIU_ERR_CHKANDSTMT1((slen >= MPI_MAX_OBJECT_NAME), mpi_errno, 
-				 MPI_ERR_ARG,;, "**typenamelen",
+				 MPI_ERR_ARG,goto fn_fail, "**typenamelen",
 				    "**typenamelen %d", slen );
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -122,7 +119,7 @@ int MPI_Type_set_name(MPI_Datatype type, char *type_name)
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER, 
 	    "**mpi_type_set_name",
-	    "**mpi_type_set_name %D %s", type, type_name);
+	    "**mpi_type_set_name %D %s", datatype, type_name);
     }
     mpi_errno = MPIR_Err_return_comm( NULL, FCNAME, mpi_errno );
     goto fn_exit;

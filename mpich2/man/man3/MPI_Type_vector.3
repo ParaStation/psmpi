@@ -1,4 +1,4 @@
-.TH MPI_Type_vector 3 "6/3/2011" " " "MPI"
+.TH MPI_Type_vector 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Type_vector \-  Creates a vector (strided) datatype 
 .SH SYNOPSIS
@@ -6,8 +6,8 @@ MPI_Type_vector \-  Creates a vector (strided) datatype
 int MPI_Type_vector(int count,
                    int blocklength,
                    int stride, 
-                   MPI_Datatype old_type,
-                   MPI_Datatype *newtype_p)
+                   MPI_Datatype oldtype,
+                   MPI_Datatype *newtype)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
@@ -24,19 +24,19 @@ int MPI_Type_vector(int count,
 .PD 0
 .TP
 .B stride 
-- number of elements between start of each block (integer) 
+- number of elements between start of each block (integer)
 .PD 1
 .PD 0
 .TP
 .B oldtype 
-- old datatype (handle) 
+- old datatype (handle)
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
-.B newtype_p 
-- new datatype (handle) 
+.B newtype 
+- new datatype (handle)
 .PD 1
 
 .SH THREAD AND INTERRUPT SAFETY
@@ -122,4 +122,4 @@ to get more information
 about this error code. 
 .PD 1
 .SH LOCATION
-type_vector.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/type_vector.c

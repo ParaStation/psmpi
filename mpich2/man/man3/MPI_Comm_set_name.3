@@ -1,19 +1,19 @@
-.TH MPI_Comm_set_name 3 "8/3/2010" " " "MPI"
+.TH MPI_Comm_set_name 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Comm_set_name \-  Sets the print name for a communicator 
 .SH SYNOPSIS
 .nf
-int MPI_Comm_set_name(MPI_Comm comm, char *comm_name)
+int MPI_Comm_set_name(MPI_Comm comm, const char *comm_name)
 .fi
 .SH INPUT PARAMETERS
 .PD 0
 .TP
-.B MPI_Comm comm 
+.B comm 
 - communicator to name (handle)
 .PD 1
 .PD 0
 .TP
-.B char *comm_name 
+.B comm_name 
 - Name for communicator
 .PD 1
 
@@ -100,4 +100,4 @@ communicator in a call (not even allowed in
 ).
 .PD 1
 .SH LOCATION
-comm_set_name.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/comm/comm_set_name.c

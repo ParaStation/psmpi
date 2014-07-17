@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -36,7 +36,7 @@
 Input Parameters:
 . datatype - datatype (handle)
 
-Output Parameter:
+Output Parameters:
 . displacement - displacement of upper bound from origin,
                              in bytes (address integer)
 
@@ -68,7 +68,6 @@ int MPI_Type_ub(MPI_Datatype datatype, MPI_Aint *displacement)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

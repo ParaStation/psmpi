@@ -82,14 +82,41 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr_( MPI_Fint *, MPI_Fint 
 #else
 #pragma _CRI duplicate mpi_type_delete_attr_ as pmpi_type_delete_attr_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_DELETE_ATTR( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_DELETE_ATTR")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_DELETE_ATTR")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_DELETE_ATTR")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_DELETE_ATTR")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_DELETE_ATTR( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_DELETE_ATTR( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_DELETE_ATTR( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_DELETE_ATTR( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
 extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr( MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -112,12 +139,40 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr_( MPI_Fint *, MPI_Fint 
 #pragma weak mpi_type_delete_attr__ = mpi_type_delete_attr
 #pragma weak mpi_type_delete_attr_ = mpi_type_delete_attr
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_DELETE_ATTR( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_TYPE_DELETE_ATTR")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_TYPE_DELETE_ATTR")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_TYPE_DELETE_ATTR")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_DELETE_ATTR( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_delete_attr__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr__( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_delete_attr__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_delete_attr__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_DELETE_ATTR( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_delete_attr_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_delete_attr_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr_( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_delete_attr_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_TYPE_DELETE_ATTR( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_delete_attr")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_delete_attr")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_type_delete_attr")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr( MPI_Fint *, MPI_Fint *, MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
 extern FORT_DLL_SPEC void FORT_CALL PMPI_TYPE_DELETE_ATTR( MPI_Fint *, MPI_Fint *, MPI_Fint * );
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_delete_attr( MPI_Fint *, MPI_Fint 
 #pragma weak pmpi_type_delete_attr__ = pmpi_type_delete_attr
 #pragma weak pmpi_type_delete_attr_ = pmpi_type_delete_attr
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_delete_attr__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_DELETE_ATTR")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_delete_attr_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_DELETE_ATTR")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_delete_attr( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_TYPE_DELETE_ATTR")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_TYPE_DELETE_ATTR( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_delete_attr_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_delete_attr( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_TYPE_DELETE_ATTR( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_delete_attr__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_delete_attr( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_TYPE_DELETE_ATTR( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_delete_attr__( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_type_delete_attr_( MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_type_delete_attr")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_type_delete_attr_ PMPI_TYPE_DELETE_ATTR
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_delete_attr( MPI_Fint *, MPI_Fint 
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Type_delete_attr
 #define MPI_Type_delete_attr PMPI_Type_delete_attr 
 
@@ -187,5 +264,5 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_delete_attr( MPI_Fint *, MPI_Fint 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
 FORT_DLL_SPEC void FORT_CALL mpi_type_delete_attr_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *ierr ){
-    *ierr = MPI_Type_delete_attr( (MPI_Datatype)(*v1), *v2 );
+    *ierr = MPI_Type_delete_attr( (MPI_Datatype)(*v1), (int)*v2 );
 }

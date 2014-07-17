@@ -12,10 +12,10 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak MPI_COMM_SPAWN_MULTIPLE = PMPI_COMM_SPAWN_MULTIPLE
@@ -44,19 +44,19 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char *
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 
 #pragma weak MPI_COMM_SPAWN_MULTIPLE = PMPI_COMM_SPAWN_MULTIPLE
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 
 #pragma weak mpi_comm_spawn_multiple__ = pmpi_comm_spawn_multiple__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 
 #pragma weak mpi_comm_spawn_multiple = pmpi_comm_spawn_multiple
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 
 #pragma weak mpi_comm_spawn_multiple_ = pmpi_comm_spawn_multiple_
 #endif
@@ -82,18 +82,45 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char *
 #else
 #pragma _CRI duplicate mpi_comm_spawn_multiple_ as pmpi_comm_spawn_multiple_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_COMM_SPAWN_MULTIPLE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_COMM_SPAWN_MULTIPLE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_COMM_SPAWN_MULTIPLE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_COMM_SPAWN_MULTIPLE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
-extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak mpi_comm_spawn_multiple__ = MPI_COMM_SPAWN_MULTIPLE
@@ -112,24 +139,52 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char *
 #pragma weak mpi_comm_spawn_multiple__ = mpi_comm_spawn_multiple
 #pragma weak mpi_comm_spawn_multiple_ = mpi_comm_spawn_multiple
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("MPI_COMM_SPAWN_MULTIPLE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("MPI_COMM_SPAWN_MULTIPLE")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("MPI_COMM_SPAWN_MULTIPLE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_comm_spawn_multiple__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_comm_spawn_multiple__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_comm_spawn_multiple__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_comm_spawn_multiple_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_comm_spawn_multiple_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_comm_spawn_multiple_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_comm_spawn_multiple")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_comm_spawn_multiple")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("mpi_comm_spawn_multiple")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Info [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL );
 
 #endif
 
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple( MPI_Fint *, char *
 #pragma weak pmpi_comm_spawn_multiple__ = pmpi_comm_spawn_multiple
 #pragma weak pmpi_comm_spawn_multiple_ = pmpi_comm_spawn_multiple
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_COMM_SPAWN_MULTIPLE")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_COMM_SPAWN_MULTIPLE")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("PMPI_COMM_SPAWN_MULTIPLE")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_COMM_SPAWN_MULTIPLE( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple__( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple_( MPI_Fint *, char * FORT_MIXED_LEN_DECL, char * FORT_MIXED_LEN_DECL, MPI_Fint [], MPI_Fint [], MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint * FORT_END_LEN_DECL FORT_END_LEN_DECL ) __attribute__((weak,alias("pmpi_comm_spawn_multiple")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_comm_spawn_multiple_ PMPI_COMM_SPAWN_MULTIPLE
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple( MPI_Fint *, char *
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Comm_spawn_multiple
 #define MPI_Comm_spawn_multiple PMPI_Comm_spawn_multiple 
 
@@ -186,7 +263,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_spawn_multiple( MPI_Fint *, char *
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_ ( MPI_Fint *v1, char *v2 FORT_MIXED_LEN(d2), char *v3 FORT_MIXED_LEN(d3), MPI_Fint v4[], MPI_Info v5[], MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *v8, MPI_Fint v9[], MPI_Fint *ierr FORT_END_LEN(d2) FORT_END_LEN(d3) ){
+FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_ ( MPI_Fint *v1, char *v2 FORT_MIXED_LEN(d2), char *v3 FORT_MIXED_LEN(d3), MPI_Fint v4[], MPI_Fint v5[], MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *v8, MPI_Fint v9[], MPI_Fint *ierr FORT_END_LEN(d2) FORT_END_LEN(d3) ){
     char **p2;
     int  asize2=0;
     char ***p3=0;
@@ -198,7 +275,7 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_ ( MPI_Fint *v1, char *v2 F
     { int i;
       char *ptmp;
 
-      asize2 = *v1 + 1;
+      asize2 = (int)*v1 + 1;
 
       p2 = (char **)MPIU_Malloc( asize2 * sizeof(char *) );
       ptmp    = (char *)MPIU_Malloc( asize2 * (d2 + 1) );
@@ -237,7 +314,8 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_ ( MPI_Fint *v1, char *v2 F
            They are terminated by an empty entry. */
         /* Find the first entry in the Fortran array for this row */
         char *p = v3 + k * d3;
-        int arglen = 0, argcnt=0, i;
+        ssize_t arglen = 0;
+        int argcnt=0, i;
         char **pargs, *pdata;
         for (argcnt=0; 1; argcnt ++) {
             char *pin = p + d3 - 1; /* Move to the end of the
@@ -282,9 +360,10 @@ FORT_DLL_SPEC void FORT_CALL mpi_comm_spawn_multiple_ ( MPI_Fint *v1, char *v2 F
        }
     }
 
-    if (v9 == MPI_F_ERRCODES_IGNORE) { v9 = MPI_ERRCODES_IGNORE; }
-    *ierr = MPI_Comm_spawn_multiple( *v1, p2, p3, v4, (MPI_Info *)(v5), *v6, (MPI_Comm)(*v7), (MPI_Comm *)(v8), (int *)v9 );
-    MPIU_Free( p2[0] ); MPIU_Free( p2 );
+    if ((MPI_Fint*)v9 == MPI_F_ERRCODES_IGNORE) { v9 = (MPI_Fint *)MPI_ERRCODES_IGNORE; }
+    *ierr = MPI_Comm_spawn_multiple( (int)*v1, p2, p3, v4, (MPI_Info *)(v5), (int)*v6, (MPI_Comm)(*v7), (MPI_Comm *)(v8), (int *)v9 );
+    MPIU_Free( p2[0] );
+    MPIU_Free( p2 );
     if (v3 != (char *)MPI_ARGVS_NULL) { 
         int i; 
         for (i=0; i <*v1; i++) {

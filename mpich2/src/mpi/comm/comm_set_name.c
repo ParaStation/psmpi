@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -33,9 +33,9 @@
 /*@
    MPI_Comm_set_name - Sets the print name for a communicator
 
-   Input Parameters:
-+  MPI_Comm comm - communicator to name (handle)
--  char *comm_name - Name for communicator
+Input Parameters:
++  comm - communicator to name (handle)
+-  comm_name - Name for communicator
 
 .N ThreadSafeNoUpdate
 
@@ -45,7 +45,7 @@
 .N MPI_SUCCESS
 .N MPI_ERR_COMM
 @*/
-int MPI_Comm_set_name(MPI_Comm comm, char *comm_name)
+int MPI_Comm_set_name(MPI_Comm comm, const char *comm_name)
 {
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
@@ -61,7 +61,6 @@ int MPI_Comm_set_name(MPI_Comm comm, char *comm_name)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_COMM(comm, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 	}
         MPID_END_ERROR_CHECKS;
     }
@@ -77,9 +76,9 @@ int MPI_Comm_set_name(MPI_Comm comm, char *comm_name)
         {
             /* Validate comm_ptr */
             MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            if (mpi_errno) goto fn_fail;
 	    MPIR_ERRTEST_ARGNULL( comm_name, "comm_name", mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

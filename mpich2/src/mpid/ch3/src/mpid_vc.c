@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -22,6 +22,49 @@
 #endif
 #include <ctype.h>
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+cvars:
+    - name        : MPIR_CVAR_CH3_NOLOCAL
+      category    : CH3
+      alt-env     : MPIR_CVAR_CH3_NO_LOCAL
+      type        : boolean
+      default     : false
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If true, force all processes to operate as though all processes
+        are located on another node.  For example, this disables shared
+        memory communication hierarchical collectives.
+
+    - name        : MPIR_CVAR_CH3_ODD_EVEN_CLIQUES
+      category    : CH3
+      alt-env     : MPIR_CVAR_CH3_EVEN_ODD_CLIQUES
+      type        : boolean
+      default     : false
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If true, odd procs on a node are seen as local to each other, and even
+        procs on a node are seen as local to each other.  Used for debugging on
+        a single machine.
+
+    - name        : MPIR_CVAR_CH3_EAGER_MAX_MSG_SIZE
+      category    : CH3
+      type        : int
+      default     : 131072
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        This cvar controls the message size at which CH3 switches
+        from eager to rendezvous mode.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
 
 /*S
  * MPIDI_VCRT - virtual connection reference table
@@ -36,8 +79,6 @@
 typedef struct MPIDI_VCRT
 {
     MPIU_OBJECT_HEADER; /* adds handle and ref_count fields */
-    int contains_failed_vc;
-    int last_check_for_failed_vc;
     int size;
     MPIDI_VC_t * vcr_table[1];
 }
@@ -83,16 +124,16 @@ int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
     MPIU_Object_set_ref(vcrt, 1);
     vcrt->size = size;
     *vcrt_ptr = vcrt;
-    vcrt->contains_failed_vc = FALSE;
-    vcrt->last_check_for_failed_vc = 0;
 
  fn_exit:
     MPIU_CHKPMEM_COMMIT();
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_CREATE);
     return mpi_errno;
  fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 /*@
@@ -217,7 +258,7 @@ int MPID_VCRT_Release(MPID_VCRT vcrt, int isDisconnect )
 			     vc, i, MPIDI_VC_GetStateString(vc->state)));
 		}
 
-                /* NOTE: we used to * MPIU_CALL(MPIDI_CH3,VC_Destroy(&(pg->vct[i])))
+                /* NOTE: we used to * MPIDI_CH3_VC_Destroy(&(pg->vct[i])))
                    here but that is incorrect.  According to the standard, it's
                    entirely possible (likely even) that this VC might still be
                    connected.  VCs are now destroyed when the PG that "owns"
@@ -257,34 +298,6 @@ int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_VCRT_GET_PTR);
     return MPI_SUCCESS;
 }
-
-/*@
-  MPID_VCRT_Contains_failed_vc - returns TRUE iff a VC in this VCRT is in MORUBIND state
-  @*/
-#undef FUNCNAME
-#define FUNCNAME MPID_VCRT_Contains_failed_vc
-#undef FCNAME
-#define FCNAME MPIU_QUOTE(FUNCNAME)
-int MPID_VCRT_Contains_failed_vc(MPID_VCRT vcrt)
-{
-    if (vcrt->contains_failed_vc) {
-        /* We have already determined that this VCRT has a dead VC */
-        return TRUE;
-    } else if (vcrt->last_check_for_failed_vc < MPIDI_Failed_vc_count) {
-        /* A VC has failed since the last time we checked for dead VCs
-           in this VCRT */
-        int i;
-        for (i = 0; i < vcrt->size; ++i) {
-            if (vcrt->vcr_table[i]->state == MPIDI_VC_STATE_MORIBUND) {
-                vcrt->contains_failed_vc = TRUE;
-                return TRUE;
-            }
-        }
-        vcrt->last_check_for_failed_vc = MPIDI_Failed_vc_count;
-    }
-    return FALSE;
-}
-
 
 /*@
   MPID_VCR_Dup - Duplicate a virtual connection reference 
@@ -435,12 +448,19 @@ int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] )
 	do {
 	    MPIDI_PG_Get_next( &iter, &pg );
 	    if (!pg) {
+		/* --BEGIN ERROR HANDLING-- */
 		/* Internal error.  This gpid is unknown on this process */
-		printf("No matching pg foung for id = %d\n", pgid );
+		/* A printf is NEVER valid in code that might be executed
+		   by the user, even in an error case (use 
+		   MPIU_Internal_error_printf if you need to print
+		   an error message and its not appropriate to use the
+		   regular error code system */
+		/* printf("No matching pg foung for id = %d\n", pgid ); */
 		lpid[i] = -1;
 		MPIU_ERR_SET2(mpi_errno,MPI_ERR_INTERN, "**unknowngpid",
 			      "**unknowngpid %d %d", gpid[0], gpid[1] );
 		return mpi_errno;
+		/* --END ERROR HANDLING-- */
 	    }
 	    MPIDI_PG_IdToNum( pg, &pgid );
 
@@ -452,10 +472,12 @@ int MPID_GPID_ToLpidArray( int size, int gpid[], int lpid[] )
 		    lpid[i] = pg->vct[gpid[1]].lpid;
 		}
 		else {
+		    /* --BEGIN ERROR HANDLING-- */
 		    lpid[i] = -1;
 		    MPIU_ERR_SET2(mpi_errno,MPI_ERR_INTERN, "**unknowngpid",
 				  "**unknowngpid %d %d", gpid[0], gpid[1] );
 		    return mpi_errno;
+		    /* --END ERROR HANDLING-- */
 		}
 		/* printf( "lpid[%d] = %d for gpid = (%d)%d\n", i, lpid[i], 
 		   gpid[0], gpid[1] ); */
@@ -656,7 +678,10 @@ static int MPIDI_CH3U_VC_FinishPending( MPIDI_VCRT_t *vcrt )
 	    }
 	}
 	if (nPending > 0) {
-	    printf( "Panic! %d pending operations!\n", nPending );
+	    /* FIXME: See note about printfs above.  It is never valid
+	       to use printfs, even for panic messages */
+	    MPIU_Internal_error_printf( "Panic! %d pending operations!\n", nPending );
+	    /* printf( "Panic! %d pending operations!\n", nPending ); */
 	    fflush(stdout);
 	    MPIU_Assert( nPending == 0 );
 	}
@@ -739,7 +764,9 @@ int MPIDI_VC_Init( MPIDI_VC_t *vc, MPIDI_PG_t *pg, int rank )
     MPIDI_VC_Init_seqnum_recv(vc);
     vc->rndvSend_fn      = MPIDI_CH3_RndvSend;
     vc->rndvRecv_fn      = MPIDI_CH3_RecvRndv;
-    vc->eager_max_msg_sz = MPIDI_CH3_EAGER_MAX_MSG_SIZE;
+    vc->ready_eager_max_msg_sz = -1; /* no limit */;
+    vc->eager_max_msg_sz = MPIR_CVAR_CH3_EAGER_MAX_MSG_SIZE;
+
     vc->sendNoncontig_fn = MPIDI_CH3_SendNoncontig_iov;
 #ifdef ENABLE_COMM_OVERRIDES
     vc->comm_ops         = NULL;
@@ -747,10 +774,14 @@ int MPIDI_VC_Init( MPIDI_VC_t *vc, MPIDI_PG_t *pg, int rank )
     /* FIXME: We need a better abstraction for initializing the thread state 
        for an object */
 #if MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT
-    MPID_Thread_mutex_create(&vc->pobj_mutex,NULL);
+    {
+        int err;
+        MPID_Thread_mutex_create(&vc->pobj_mutex,&err);
+        MPIU_Assert(err == 0);
+    }
 #endif /* MPIU_THREAD_GRANULARITY */
-    MPIU_CALL(MPIDI_CH3,VC_Init( vc ));
-    MPIU_DBG_PrintVCState(vc);
+    MPIDI_CH3_VC_Init(vc);
+    MPIDI_DBG_PrintVCState(vc);
 
     return MPI_SUCCESS;
 }
@@ -931,7 +962,7 @@ static int parse_mapping(char *map_str, mapping_type_t *type, map_block_t **map,
 
         if (!isdigit(*c))
             parse_error();
-        (*map)[i].start_id = strtol(c, &c, 0);
+        (*map)[i].start_id = (int)strtol(c, &c, 0);
         skip_space(c);
 
         expect_and_skip_c(c, ',');
@@ -939,7 +970,7 @@ static int parse_mapping(char *map_str, mapping_type_t *type, map_block_t **map,
 
         if (!isdigit(*c))
             parse_error();
-        (*map)[i].count = strtol(c, &c, 0);
+        (*map)[i].count = (int)strtol(c, &c, 0);
         skip_space(c);
 
         expect_and_skip_c(c, ',');
@@ -947,7 +978,7 @@ static int parse_mapping(char *map_str, mapping_type_t *type, map_block_t **map,
 
         if (!isdigit(*c))
             parse_error();
-        (*map)[i].size = strtol(c, &c, 0);
+        (*map)[i].size = (int)strtol(c, &c, 0);
 
         expect_and_skip_c(c, ')');
         skip_space(c);
@@ -961,8 +992,10 @@ fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_PARSE_MAPPING);
     return mpi_errno;
 fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     MPIU_CHKPMEM_REAP();
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 #if 0
@@ -1023,6 +1056,21 @@ done:
 
 #endif
 
+#if defined HAVE_QSORT
+static int compare_ints(const void *orig_x, const void *orig_y)
+{
+    int x = *((int *) orig_x);
+    int y = *((int *) orig_y);
+
+    if (x == y)
+        return 0;
+    else if (x < y)
+        return -1;
+    else
+        return 1;
+}
+#endif
+
 #undef FUNCNAME
 #define FUNCNAME populate_ids_from_mapping
 #undef FCNAME
@@ -1036,6 +1084,9 @@ static int populate_ids_from_mapping(char *mapping, int *num_nodes, MPIDI_PG_t *
     int nblocks = 0;
     int rank;
     int block, block_node, node_proc;
+    int *tmp_rank_list, i;
+    int found_wrap;
+    MPIU_CHKLMEM_DECL(1);
 
     *did_map = 1; /* reset upon failure */
 
@@ -1045,36 +1096,87 @@ static int populate_ids_from_mapping(char *mapping, int *num_nodes, MPIDI_PG_t *
     if (NULL_MAPPING == mt) goto fn_fail;
     MPIU_ERR_CHKINTERNAL(mt != VECTOR_MAPPING, mpi_errno, "unsupported mapping type");
 
-    rank = 0;
-    /* for a representation like (block,N,(1,1)) this while loop causes us to
-     * re-use that sole map block over and over until we have assigned node
-     * ids to every process */
-    while (rank < pg->size) {
-        for (block = 0; block < nblocks; ++block) {
-            int node_id = mb[block].start_id;
-            for (block_node = 0; block_node < mb[block].count; ++block_node) {
-                if (node_id > *num_nodes)
-                    *num_nodes = node_id;
+    /* allocate nodes to ranks */
+    found_wrap = 0;
+    for (rank = 0;;) {
+        /* FIXME: The patch is hacky because it assumes that seeing a
+         * start node ID of 0 means a wrap around.  This is not
+         * necessarily true.  A user-defined node list can, in theory,
+         * use the node ID 0 without actually creating a wrap around.
+         * The reason this patch still works in this case is because
+         * Hydra creates a new node list starting from node ID 0 for
+         * user-specified nodes during MPI_Comm_spawn{_multiple}.  If
+         * a different process manager searches for allocated nodes in
+         * the user-specified list, this patch will break. */
 
-                for (node_proc = 0; node_proc < mb[block].size; ++node_proc) {
-                    pg->vct[rank].node_id = node_id;
-                    ++rank;
-                    if (rank == pg->size)
-                        goto map_done;
+        /* If we found that the blocks wrap around, repeat loops
+         * should only start at node id 0 */
+        for (block = 0; found_wrap && mb[block].start_id; block++);
+
+        for (; block < nblocks; block++) {
+            if (mb[block].start_id == 0)
+                found_wrap = 1;
+            for (block_node = 0; block_node < mb[block].count; block_node++) {
+                for (node_proc = 0; node_proc < mb[block].size; node_proc++) {
+                    pg->vct[rank].node_id = mb[block].start_id + block_node;
+                    if (++rank == pg->size)
+                        goto break_out;
                 }
-                ++node_id;
             }
         }
     }
 
-map_done:
-    ++(*num_nodes); /* add one to get the num instead of the max */
+break_out:
+    /* Find the number of unique node ids.  This is the classic
+     * element distinctness problem, for which the lower bound time
+     * complexity is O(N log N).  Here we use a simple algorithm to
+     * sort the array and find the number of changes in the array
+     * through a linear search.  There are certainly better algorithms
+     * available, which can be employed. */
+    MPIU_CHKLMEM_MALLOC(tmp_rank_list, int *, pg->size * sizeof(int), mpi_errno, "tmp_rank_list");
+    for (i = 0; i < pg->size; i++)
+        tmp_rank_list[i] = pg->vct[i].node_id;
+
+#if defined HAVE_QSORT
+    qsort(tmp_rank_list, pg->size, sizeof(int), compare_ints);
+#else
+    /* fall through to insertion sort if qsort is unavailable/disabled */
+    {
+        int j, tmp;
+
+        for (i = 1; i < pg->size; ++i) {
+            tmp = tmp_rank_list[i];
+            j = i - 1;
+            while (1) {
+                if (tmp_rank_list[j] > tmp) {
+                    tmp_rank_list[j+1] = tmp_rank_list[j];
+                    j = j - 1;
+                    if (j < 0)
+                        break;
+                }
+                else {
+                    break;
+                }
+            }
+            tmp_rank_list[j+1] = tmp;
+        }
+    }
+#endif
+
+    *num_nodes = 1;
+    for (i = 1; i < pg->size; i++)
+        if (tmp_rank_list[i] != tmp_rank_list[i-1])
+            (*num_nodes)++;
+
 fn_exit:
+    MPIU_CHKLMEM_FREEALL();
     MPIU_Free(mb);
     return mpi_errno;
 fn_fail:
+    /* --BEGIN ERROR HANDLING-- */
     *did_map = 0;
     goto fn_exit;
+    /* --END ERROR HANDLING-- */
 }
 
 /* Fills in the node_id info from PMI info.  Adapted from MPIU_Get_local_procs.
@@ -1128,7 +1230,7 @@ int MPIDI_Populate_vc_node_ids(MPIDI_PG_t *pg, int our_pg_rank)
 #ifdef ENABLED_NO_LOCAL
     no_local = 1;
 #else
-    no_local = MPIR_PARAM_NOLOCAL;
+    no_local = MPIR_CVAR_CH3_NOLOCAL;
 #endif
 
     /* Used for debugging on a single machine: Odd procs on a node are
@@ -1137,7 +1239,7 @@ int MPIDI_Populate_vc_node_ids(MPIDI_PG_t *pg, int our_pg_rank)
 #ifdef ENABLED_ODD_EVEN_CLIQUES
     odd_even_cliques = 1;
 #else
-    odd_even_cliques = MPIR_PARAM_ODD_EVEN_CLIQUES;
+    odd_even_cliques = MPIR_CVAR_CH3_ODD_EVEN_CLIQUES;
 #endif
 
     if (no_local) {
@@ -1191,7 +1293,6 @@ int MPIDI_Populate_vc_node_ids(MPIDI_PG_t *pg, int our_pg_rank)
 
     /* See if process manager supports PMI_process_mapping keyval */
 
-    /* FIXME 'PMI_process_mapping' only applies for the original PG (MPI_COMM_WORLD) */
     if (pmi_version == 1 && pmi_subversion == 1) {
         pmi_errno = PMI_KVS_Get(kvs_name, "PMI_process_mapping", value, val_max_sz);
         if (pmi_errno == 0) {

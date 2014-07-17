@@ -24,7 +24,6 @@
 #define dinit(name)
 #endif
 MPIDI_Process_t MPIDI_Process = {
-	dinit(socket)		NULL,
 	dinit(grank2con)	NULL,
 	dinit(my_pg_rank)	-1,
 	dinit(my_pg_size)	0,
@@ -32,6 +31,7 @@ MPIDI_Process_t MPIDI_Process = {
 	dinit(env)		{
 		dinit(enable_collectives)	0,
 		dinit(enable_ondemand)		0,
+		dinit(enable_ondemand_spawn)	0,
 	},
 };
 
@@ -221,13 +221,12 @@ void i_version_check(char *pg_id, int pg_rank, const char *ver)
 #define FCNAME "InitPortConnections"
 #define FUNCNAME InitPortConnections
 static
-int InitPortConnections(void) {
+int InitPortConnections(pscom_socket_t *socket) {
 	char key[50];
 	unsigned long guard_pmi_key = MAGIC_PMI_KEY;
 	int i;
 	int mpi_errno = MPI_SUCCESS;
 
-	pscom_socket_t *socket = MPIDI_Process.socket;
 	int pg_rank = MPIDI_Process.my_pg_rank;
 	int pg_size = MPIDI_Process.my_pg_size;
 	char *pg_id = MPIDI_Process.pg_id;
@@ -329,13 +328,12 @@ int InitPortConnections(void) {
 #define FCNAME "InitPscomConnections"
 #define FUNCNAME InitPscomConnections
 static
-int InitPscomConnections(void) {
+int InitPscomConnections(pscom_socket_t *socket) {
 	char key[50];
 	unsigned long guard_pmi_key = MAGIC_PMI_KEY;
 	int i;
 	int mpi_errno = MPI_SUCCESS;
 
-	pscom_socket_t *socket = MPIDI_Process.socket;
 	int pg_rank = MPIDI_Process.my_pg_rank;
 	int pg_size = MPIDI_Process.my_pg_size;
 	char *pg_id = MPIDI_Process.pg_id;
@@ -427,7 +425,7 @@ int InitPscomConnections(void) {
 #warning "Pscom without on demand connections! You should update to pscom >= 5.0.24."
 static
 int InitPscomConnections(void) {
-	fprintf(stderr, "Please recompile psmpi2 with pscom \"on demand connections\"!\n");
+	fprintf(stderr, "Please recompile psmpi with pscom \"on demand connections\"!\n");
 	exit(1);
 }
 #endif
@@ -446,6 +444,7 @@ int MPID_Init(int *argc, char ***argv,
 	pscom_socket_t *socket;
 	pscom_err_t rc;
 	char *pg_id;
+	char *parent_port;
 
 	mpid_debug_init();
 
@@ -458,6 +457,9 @@ int MPID_Init(int *argc, char ***argv,
 	PMICALL(PMI_Get_rank(&pg_rank));
 	PMICALL(PMI_Get_size(&pg_size));
 	PMICALL(PMI_Get_appnum(&appnum));
+
+	*has_args = 1;
+	*has_env  = 1;
 
 	/* without PMI_Get_universe_size() we see pmi error:
 	   '[unset]: write_line error; fd=-1' in PMI_KVS_Get()! */
@@ -490,6 +492,9 @@ int MPID_Init(int *argc, char ***argv,
 #else
 	MPIDI_Process.env.enable_ondemand = 0;
 #endif
+	/* enable_ondemand_spawn defaults to enable_ondemand */
+	MPIDI_Process.env.enable_ondemand_spawn = MPIDI_Process.env.enable_ondemand;
+	pscom_env_get_uint(&MPIDI_Process.env.enable_ondemand_spawn, "PSP_ONDEMAND_SPAWN");
 	/*
 	pscom_env_get_uint(&mpir_allgather_short_msg,	"PSP_ALLGATHER_SHORT_MSG");
 	pscom_env_get_uint(&mpir_allgather_long_msg,	"PSP_ALLGATHER_LONG_MSG");
@@ -550,17 +555,17 @@ int MPID_Init(int *argc, char ***argv,
 	PMICALL(PMI_KVS_Get_my_name(pg_id, pg_id_sz));
 
 	/* safe */
-	MPIDI_Process.socket = socket;
+	/* MPIDI_Process.socket = socket; */
 	MPIDI_Process.my_pg_rank = pg_rank;
 	MPIDI_Process.my_pg_size = pg_size;
 	MPIDI_Process.pg_id = pg_id;
 
 	if (!MPIDI_Process.env.enable_ondemand) {
 		/* Create and establish all connections */
-		if (InitPortConnections() != MPI_SUCCESS) goto fn_fail;
+		if (InitPortConnections(socket) != MPI_SUCCESS) goto fn_fail;
 	} else {
 		/* Create all connections as "on demand" connections. */
-		if (InitPscomConnections() != MPI_SUCCESS) goto fn_fail;
+		if (InitPscomConnections(socket) != MPI_SUCCESS) goto fn_fail;
 	}
 
 	/*
@@ -574,6 +579,7 @@ int MPID_Init(int *argc, char ***argv,
 		comm->rank        = pg_rank;
 		comm->remote_size = pg_size;
 		comm->local_size  = pg_size;
+		comm->pscom_socket = socket;
 
 		mpi_errno = MPID_VCRT_Create(comm->remote_size, &comm->vcrt);
 		assert(mpi_errno == MPI_SUCCESS);
@@ -591,7 +597,9 @@ int MPID_Init(int *argc, char ***argv,
 					    grank2con_get(grank),
 					    grank /*+ 12000*/ /* lpid */);
 		}
-		MPID_PSP_CollectiveInit(comm);
+
+		mpi_errno = MPIR_Comm_commit(comm);
+		assert(mpi_errno == MPI_SUCCESS);
 	}
 
 	/*
@@ -604,6 +612,7 @@ int MPID_Init(int *argc, char ***argv,
 		comm->rank        = 0;
 		comm->remote_size = 1;
 		comm->local_size  = 1;
+		comm->pscom_socket = socket;
 
 		mpi_errno = MPID_VCRT_Create(comm->remote_size, &comm->vcrt);
 		assert(mpi_errno == MPI_SUCCESS);
@@ -612,15 +621,44 @@ int MPID_Init(int *argc, char ***argv,
 		assert(mpi_errno == MPI_SUCCESS);
 
 		MPID_VCR_Dup(MPIR_Process.comm_world->vcr[pg_rank], &comm->vcr[0]);
+
+		mpi_errno = MPIR_Comm_commit(comm);
+		assert(mpi_errno == MPI_SUCCESS);
 	}
 
 	/* ToDo: move MPID_enable_receive_dispach to bg thread */
-	MPID_enable_receive_dispach();
+	MPID_enable_receive_dispach(socket);
 
 	if (threadlevel_provided) {
 		*threadlevel_provided = (MPICH_THREAD_LEVEL < threadlevel_requested) ?
 			MPICH_THREAD_LEVEL : threadlevel_requested;
 	}
+
+
+
+	if (has_parent) {
+		MPID_Comm * comm;
+
+		mpi_errno = MPID_PSP_GetParentPort(&parent_port);
+		assert(mpi_errno == MPI_SUCCESS);
+
+		/*
+		printf("%s:%u:%s Child with Parent: %s\n", __FILE__, __LINE__, __func__, parent_port);
+		*/
+
+		mpi_errno = MPID_Comm_connect(parent_port, NULL, 0,
+					      MPIR_Process.comm_world, &comm);
+		if (mpi_errno != MPI_SUCCESS) {
+			fprintf(stderr, "MPI_Comm_connect(parent) failed!\n");
+			goto fn_fail;
+		}
+
+		assert(comm != NULL);
+		MPIU_Strncpy(comm->name, "MPI_COMM_PARENT", MPI_MAX_OBJECT_NAME);
+		MPIR_Process.comm_parent = comm;
+	}
+
+	MPID_PSP_shm_rma_init();
 
  fn_exit:
 	MPIDI_FUNC_EXIT(MPID_STATE_MPID_INIT);

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -6,7 +6,6 @@
  */
 
 #include "mpiimpl.h"
-#include "rma.h"
 
 /* -- Begin Profiling Symbol Block for routine MPI_Free_mem */
 #if defined(HAVE_PRAGMA_WEAK)
@@ -32,7 +31,7 @@
 /*@
    MPI_Free_mem - Free memory allocated with MPI_Alloc_mem
 
-   Input Parameter:
+Input Parameters:
 .  base - initial address of memory segment allocated by 'MPI_ALLOC_MEM' 
        (choice) 
 
@@ -55,6 +54,9 @@ int MPI_Free_mem(void *base)
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_FREE_MEM);
 
     /* ... body of routine ...  */
+
+    if (base == NULL) goto fn_exit;
+
     mpi_errno = MPID_Free_mem(base);
     if (mpi_errno) goto fn_fail;
 

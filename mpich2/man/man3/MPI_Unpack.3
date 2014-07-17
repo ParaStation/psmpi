@@ -1,9 +1,9 @@
-.TH MPI_Unpack 3 "2/26/2011" " " "MPI"
+.TH MPI_Unpack 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Unpack \-  Unpack a buffer according to a datatype into contiguous memory 
 .SH SYNOPSIS
 .nf
-int MPI_Unpack(void *inbuf, int insize, int *position,
+int MPI_Unpack(const void *inbuf, int insize, int *position,
                void *outbuf, int outcount, MPI_Datatype datatype,
                MPI_Comm comm)
 .fi
@@ -34,14 +34,14 @@ int MPI_Unpack(void *inbuf, int insize, int *position,
 - communicator for packed message (handle)
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B outbuf 
 - output buffer start (choice)
 .PD 1
 
-.SH INOUT/OUTPUT PARAMETER
+.SH INOUT/OUTPUT PARAMETERS
 .PD 0
 .TP
 .B position 
@@ -150,4 +150,4 @@ identified by a specific error class (e.g.,
 MPI_Pack, MPI_Pack_size
 .br
 .SH LOCATION
-unpack.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/unpack.c

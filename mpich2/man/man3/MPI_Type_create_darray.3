@@ -1,4 +1,4 @@
-.TH MPI_Type_create_darray 3 "7/29/2010" " " "MPI"
+.TH MPI_Type_create_darray 3 "2/20/2014" " " "MPI"
 .SH NAME
 MPI_Type_create_darray \-  Create a datatype representing a distributed array 
 .SH SYNOPSIS
@@ -6,10 +6,10 @@ MPI_Type_create_darray \-  Create a datatype representing a distributed array
 int MPI_Type_create_darray(int size,
                          int rank,
                          int ndims,
-                         int array_of_gsizes[],
-                         int array_of_distribs[],
-                         int array_of_dargs[],
-                         int array_of_psizes[],
+                         const int array_of_gsizes[],
+                         const int array_of_distribs[],
+                         const int array_of_dargs[],
+                         const int array_of_psizes[],
                          int order,
                          MPI_Datatype oldtype,
                          MPI_Datatype *newtype)
@@ -61,7 +61,7 @@ int MPI_Type_create_darray(int size,
 - old datatype (handle)
 .PD 1
 
-.SH OUTPUT PARAMETER
+.SH OUTPUT PARAMETERS
 .PD 0
 .TP
 .B newtype 
@@ -151,4 +151,4 @@ identified by a specific error class (e.g.,
 ).
 .PD 1
 .SH LOCATION
-type_create_darray.c
+/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/datatype/type_create_darray.c

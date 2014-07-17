@@ -12,10 +12,10 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak MPI_GROUP_TRANSLATE_RANKS = PMPI_GROUP_TRANSLATE_RANKS
@@ -44,19 +44,19 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #pragma weak MPI_GROUP_TRANSLATE_RANKS = PMPI_GROUP_TRANSLATE_RANKS
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #pragma weak mpi_group_translate_ranks__ = pmpi_group_translate_ranks__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #pragma weak mpi_group_translate_ranks = pmpi_group_translate_ranks
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #pragma weak mpi_group_translate_ranks_ = pmpi_group_translate_ranks_
 #endif
@@ -82,18 +82,45 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_
 #else
 #pragma _CRI duplicate mpi_group_translate_ranks_ as pmpi_group_translate_ranks_
 #endif
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_GROUP_TRANSLATE_RANKS")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_GROUP_TRANSLATE_RANKS")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_GROUP_TRANSLATE_RANKS")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_GROUP_TRANSLATE_RANKS")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks")));
+
+#endif
 #endif /* HAVE_PRAGMA_WEAK */
 #endif /* USE_WEAK_SYMBOLS */
 /* End MPI profiling block */
 
 
 /* These definitions are used only for generating the Fortran wrappers */
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK) && \
-    defined(USE_ONLY_MPI_NAMES)
-extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+#if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak mpi_group_translate_ranks__ = MPI_GROUP_TRANSLATE_RANKS
@@ -112,24 +139,52 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_
 #pragma weak mpi_group_translate_ranks__ = mpi_group_translate_ranks
 #pragma weak mpi_group_translate_ranks_ = mpi_group_translate_ranks
 #endif
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("MPI_GROUP_TRANSLATE_RANKS")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("MPI_GROUP_TRANSLATE_RANKS")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("MPI_GROUP_TRANSLATE_RANKS")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_group_translate_ranks__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_group_translate_ranks__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_group_translate_ranks__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_group_translate_ranks_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_group_translate_ranks_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_group_translate_ranks_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL MPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_group_translate_ranks")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_group_translate_ranks")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("mpi_group_translate_ranks")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
+
+#endif
+#endif
 
 #endif
 
 /* Map the name to the correct form */
 #ifndef MPICH_MPI_FROM_PMPI
-#if defined(USE_WEAK_SYMBOLS) && defined(HAVE_MULTIPLE_PRAGMA_WEAK)
+#if defined(USE_WEAK_SYMBOLS)
+#if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * );
 
 #endif
 
@@ -150,7 +205,31 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks( MPI_Fint *, MPI_
 #pragma weak pmpi_group_translate_ranks__ = pmpi_group_translate_ranks
 #pragma weak pmpi_group_translate_ranks_ = pmpi_group_translate_ranks
 #endif /* Test on name mapping */
-#endif /* Use multiple pragma weak */
+
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+#if defined(F77_NAME_UPPER)
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_GROUP_TRANSLATE_RANKS")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_GROUP_TRANSLATE_RANKS")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("PMPI_GROUP_TRANSLATE_RANKS")));
+
+#elif defined(F77_NAME_LOWER_2USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks__")));
+
+#elif defined(F77_NAME_LOWER_USCORE)
+extern FORT_DLL_SPEC void FORT_CALL PMPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks_")));
+
+#else
+extern FORT_DLL_SPEC void FORT_CALL PMPI_GROUP_TRANSLATE_RANKS( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks__( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks_( MPI_Fint *, MPI_Fint *, MPI_Fint [], MPI_Fint *, MPI_Fint [], MPI_Fint * ) __attribute__((weak,alias("pmpi_group_translate_ranks")));
+
+#endif /* Test on name mapping */
+#endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
+#endif /* USE_WEAK_SYMBOLS */
 
 #ifdef F77_NAME_UPPER
 #define mpi_group_translate_ranks_ PMPI_GROUP_TRANSLATE_RANKS
@@ -164,9 +243,7 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks( MPI_Fint *, MPI_
 
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
-   must be undefined first to prevent any conflicts with previous renamings,
-   such as those put in place by the globus device when it is building on
-   top of a vendor MPI. */
+   must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Group_translate_ranks
 #define MPI_Group_translate_ranks PMPI_Group_translate_ranks 
 
@@ -186,6 +263,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_group_translate_ranks( MPI_Fint *, MPI_
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *ierr ){
-    *ierr = MPI_Group_translate_ranks( *v1, *v2, v3, *v4, v5 );
+FORT_DLL_SPEC void FORT_CALL mpi_group_translate_ranks_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint v3[], MPI_Fint *v4, MPI_Fint v5[], MPI_Fint *ierr ){
+    *ierr = MPI_Group_translate_ranks( (MPI_Group)*v1, (int)*v2, v3, (MPI_Group)*v4, v5 );
 }

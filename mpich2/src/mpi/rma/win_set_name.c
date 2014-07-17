@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
  *  (C) 2001 by Argonne National Laboratory.
@@ -31,7 +31,7 @@
 /*@
    MPI_Win_set_name - Set the print name for an MPI RMA window
 
-   Input Parameters:
+Input Parameters:
 + win - window whose identifier is to be set (handle) 
 - win_name - the character string which is remembered as the name (string) 
 
@@ -45,11 +45,9 @@
 .N MPI_ERR_OTHER
 .N MPI_ERR_ARG
 @*/
-int MPI_Win_set_name(MPI_Win win, char *win_name)
+int MPI_Win_set_name(MPI_Win win, const char *win_name)
 {
-#ifdef HAVE_ERROR_CHECKING
     static const char FCNAME[] = "MPI_Win_set_name";
-#endif
     int mpi_errno = MPI_SUCCESS;
     MPID_Win *win_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_WIN_SET_NAME);
@@ -64,7 +62,6 @@ int MPI_Win_set_name(MPI_Win win, char *win_name)
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    MPIR_ERRTEST_WIN(win, mpi_errno);
-            if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -80,10 +77,10 @@ int MPI_Win_set_name(MPI_Win win, char *win_name)
         {
             /* Validate win_ptr */
             MPID_Win_valid_ptr( win_ptr, mpi_errno );
+            if (mpi_errno) goto fn_fail;
 	    /* If win_ptr is not valid, it will be reset to null */
 
 	    MPIR_ERRTEST_ARGNULL(win_name, "win_name", mpi_errno);
-            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -95,24 +92,22 @@ int MPI_Win_set_name(MPI_Win win, char *win_name)
     
     /* ... end of body of routine ... */
 
-#ifdef HAVE_ERROR_CHECKING
   fn_exit:
-#endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_WIN_SET_NAME);
     return mpi_errno;
 
+  fn_fail:
     /* --BEGIN ERROR HANDLING-- */
 #   ifdef HAVE_ERROR_CHECKING
-  fn_fail:
     {
 	mpi_errno = MPIR_Err_create_code(
 	    mpi_errno, MPIR_ERR_RECOVERABLE, FCNAME, __LINE__, MPI_ERR_OTHER,
 	    "**mpi_win_set_name", 
 	    "**mpi_win_set_name %W %s", win, win_name);
     }
+#   endif
     mpi_errno = MPIR_Err_return_win( win_ptr, FCNAME, mpi_errno );
     goto fn_exit;
-#   endif
     /* --END ERROR HANDLING-- */
 }
 

@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -45,6 +45,12 @@
    it may simply have been undetermined.  This should instead use either 
    a configure-time test (for which there are macros) or a runtime test
    and not use this non-portable check */
+
+/* Some platforms, like AIX, use BYTE_ORDER instead of __BYTE_ORDER */
+#if defined(BYTE_ORDER) && !defined(__BYTE_ORDER)
+#define __BYTE_ORDER BYTE_ORDER
+#endif
+
 #if defined(WORDS_BIGENDIAN)
 #define BLENDIAN 0
 #elif defined(WORDS_LITTLEENDIAN)
@@ -54,7 +60,7 @@
 #error This code assumes that __BYTE_ORDER and __BIG_ENDIAN are defined
 #endif
 /* FIXME: "BLENDIAN" is a non-conforming name - it could conflict with some
-   other definition in a non-mpich2 header file */
+   other definition in a non-mpich header file */
 #if ((defined(_BIG_ENDIAN) && !defined(ntohl)) || (__BYTE_ORDER == __BIG_ENDIAN))
 #define BLENDIAN 0 /* detected host arch byte order is big endian */
 #else

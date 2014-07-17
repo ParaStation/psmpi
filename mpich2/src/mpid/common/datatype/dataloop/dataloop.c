@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 
 /*
  *  (C) 2001 by Argonne National Laboratory.
@@ -54,7 +54,7 @@
 /*@
   Dataloop_free - deallocate the resources used to store a dataloop
 
-  Input Parameters:
+Input Parameters:
 . dataloop - pointer to dataloop structure
 @*/
 void PREPEND_PREFIX(Dataloop_free)(DLOOP_Dataloop **dataloop)
@@ -76,7 +76,7 @@ void PREPEND_PREFIX(Dataloop_free)(DLOOP_Dataloop **dataloop)
   Dataloop_copy - Copy an arbitrary dataloop structure, updating
   pointers as necessary
 
-  Input Parameters:
+Input Parameters:
 + dest   - pointer to destination region
 . src    - pointer to original dataloop structure
 - size   - size of dataloop structure
@@ -97,13 +97,13 @@ void PREPEND_PREFIX(Dataloop_free)(DLOOP_Dataloop **dataloop)
 @*/
 void PREPEND_PREFIX(Dataloop_copy)(void *dest,
 				   void *src,
-				   int size)
+				   DLOOP_Size size)
 {
     DLOOP_Offset ptrdiff;
 
 #ifdef DLOOP_DEBUG_MEMORY
-    DLOOP_dbg_printf("DLOOP_Dataloop_copy: copying from %x to %x (%d bytes).\n",
-		     (int) src, (int) dest, size);
+    DLOOP_dbg_printf("DLOOP_Dataloop_copy: copying from %x to %x (%z bytes).\n",
+		     (int) src, (int) dest, (size_t)size);
 #endif
 
     /* copy region first */
@@ -126,7 +126,7 @@ void PREPEND_PREFIX(Dataloop_copy)(void *dest,
 /*@
   Dataloop_update - update pointers after a copy operation
 
-  Input Parameters:
+Input Parameters:
 + dataloop - pointer to loop to update
 - ptrdiff - value indicating offset between old and new pointer values
 
@@ -273,7 +273,7 @@ void PREPEND_PREFIX(Dataloop_update)(DLOOP_Dataloop *dataloop,
   Dataloop_alloc - allocate the resources used to store a dataloop with
                    no old loops associated with it.
 
-  Input Parameters:
+Input Parameters:
 + kind          - kind of dataloop to allocate
 . count         - number of elements in dataloop (kind dependent)
 . new_loop_p    - address at which to store new dataloop pointer
@@ -286,7 +286,7 @@ void PREPEND_PREFIX(Dataloop_update)(DLOOP_Dataloop *dataloop,
 void PREPEND_PREFIX(Dataloop_alloc)(int kind,
 				    DLOOP_Count count,
 				    DLOOP_Dataloop **new_loop_p,
-				    int *new_loop_sz_p)
+				    MPI_Aint *new_loop_sz_p)
 {
     PREPEND_PREFIX(Dataloop_alloc_and_copy)(kind,
 					    count,
@@ -302,7 +302,7 @@ void PREPEND_PREFIX(Dataloop_alloc)(int kind,
                             dataloop and copy in old dataloop as
 			    appropriate
 
-  Input Parameters:
+Input Parameters:
 + kind          - kind of dataloop to allocate
 . count         - number of elements in dataloop (kind dependent)
 . old_loop      - pointer to old dataloop (or NULL for none)
@@ -317,15 +317,15 @@ void PREPEND_PREFIX(Dataloop_alloc)(int kind,
 void PREPEND_PREFIX(Dataloop_alloc_and_copy)(int kind,
 					     DLOOP_Count count,
 					     DLOOP_Dataloop *old_loop,
-					     int old_loop_sz,
+					     DLOOP_Size old_loop_sz,
 					     DLOOP_Dataloop **new_loop_p,
-					     int *new_loop_sz_p)
+					     DLOOP_Size *new_loop_sz_p)
 {
-    int new_loop_sz = 0;
+    DLOOP_Size new_loop_sz = 0;
     int align_sz = 8; /* default aligns everything to 8-byte boundaries */
     int epsilon;
-    int loop_sz = sizeof(DLOOP_Dataloop);
-    int off_sz = 0, blk_sz = 0, ptr_sz = 0, extent_sz = 0;
+    DLOOP_Size loop_sz = sizeof(DLOOP_Dataloop);
+    DLOOP_Size off_sz = 0, blk_sz = 0, ptr_sz = 0, extent_sz = 0;
 
     char *pos;
     DLOOP_Dataloop *new_loop;
@@ -386,7 +386,7 @@ void PREPEND_PREFIX(Dataloop_alloc_and_copy)(int kind,
     }
 
 #ifdef DLOOP_DEBUG_MEMORY
-    DLOOP_dbg_printf("DLOOP_Dataloop_alloc_and_copy: new loop @ %x (tot sz = %d, loop = %d, off = %d, blk = %d, ptr = %d, extent = %d, old = %d)\n",
+    DLOOP_dbg_printf("DLOOP_Dataloop_alloc_and_copy: new loop @ %x (tot sz = %z, loop = %z, off = %z, blk = %z, ptr = %z, extent = %z, old = %z)\n",
 		     (int) new_loop,
 		     new_loop_sz,
 		     loop_sz,
@@ -489,7 +489,7 @@ void PREPEND_PREFIX(Dataloop_alloc_and_copy)(int kind,
                           this case must be described back to the
                           implementation in order for efficient copying.
 
-  Input Parameters:
+Input Parameters:
 + count         - number of elements in dataloop (kind dependent)
 . old_loop_sz   - size of old dataloop (should be zero if old_loop is NULL)
 . basic_ct      - number of basic types for which new dataloops are needed
@@ -505,17 +505,17 @@ void PREPEND_PREFIX(Dataloop_alloc_and_copy)(int kind,
   old_loop_p (count elements).
 @*/
 void PREPEND_PREFIX(Dataloop_struct_alloc)(DLOOP_Count count,
-					   int old_loop_sz,
+					   DLOOP_Size old_loop_sz,
 					   int basic_ct,
 					   DLOOP_Dataloop **old_loop_p,
 					   DLOOP_Dataloop **new_loop_p,
-					   int *new_loop_sz_p)
+					   DLOOP_Size *new_loop_sz_p)
 {
-    int new_loop_sz = 0;
+    DLOOP_Size new_loop_sz = 0;
     int align_sz = 8; /* default aligns everything to 8-byte boundaries */
     int epsilon;
-    int loop_sz = sizeof(DLOOP_Dataloop);
-    int off_sz, blk_sz, ptr_sz, extent_sz, basic_sz;
+    DLOOP_Size loop_sz = sizeof(DLOOP_Dataloop);
+    DLOOP_Size off_sz, blk_sz, ptr_sz, extent_sz, basic_sz;
 
     DLOOP_Dataloop *new_loop;
 
@@ -567,7 +567,7 @@ void PREPEND_PREFIX(Dataloop_struct_alloc)(DLOOP_Count count,
     }
 
 #ifdef DLOOP_DEBUG_MEMORY
-    DLOOP_dbg_printf("DLOOP_Dataloop_struct_alloc: new loop @ %x (tot sz = %d, loop = %d, off = %d, blk = %d, ptr = %d, extent = %d, basics = %d, old = %d)\n",
+    DLOOP_dbg_printf("DLOOP_Dataloop_struct_alloc: new loop @ %x (tot sz = %z, loop = %z, off = %z, blk = %z, ptr = %z, extent = %z, basics = %z, old = %z)\n",
 		     (int) new_loop,
 		     new_loop_sz,
 		     loop_sz,
@@ -603,7 +603,7 @@ void PREPEND_PREFIX(Dataloop_struct_alloc)(DLOOP_Count count,
   Returns 0 on success, -1 on failure.
 @*/
 void PREPEND_PREFIX(Dataloop_dup)(DLOOP_Dataloop *old_loop,
-				  int old_loop_sz,
+				  DLOOP_Count old_loop_sz,
 				  DLOOP_Dataloop **new_loop_p)
 {
     DLOOP_Dataloop *new_loop;
@@ -625,7 +625,7 @@ void PREPEND_PREFIX(Dataloop_dup)(DLOOP_Dataloop *old_loop,
 /*@
   Dataloop_stream_size - return the size of the data described by the dataloop
 
-  Input Parameters:
+Input Parameters:
 + dl_p   - pointer to dataloop for which we will return the size
 - sizefn - function for determining size of types in the corresponding stream
            (passing NULL will instead result in el_size values being used)
@@ -713,7 +713,7 @@ PREPEND_PREFIX(Dataloop_stream_size)(struct DLOOP_Dataloop *dl_p,
   Dataloop_print - dump a dataloop tree to stdout for debugging
   purposes
 
-  Input Parameters:
+Input Parameters:
 + dataloop - root of tree to dump
 - depth - starting depth; used to help keep up with where we are in the tree
 @*/

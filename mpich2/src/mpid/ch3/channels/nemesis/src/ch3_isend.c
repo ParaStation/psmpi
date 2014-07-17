@@ -1,4 +1,4 @@
-/* -*- Mode: C; c-basic-offset:4 ; -*- */
+/* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *  (C) 2001 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
@@ -26,19 +26,19 @@ int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPID_Request *sreq, void * hdr, MPIDI_msg_s
 
     if (vc->state == MPIDI_VC_STATE_MORIBUND) {
         sreq->status.MPI_ERROR = MPI_SUCCESS;
-        MPIU_ERR_SET1(sreq->status.MPI_ERROR, MPI_ERR_OTHER, "**comm_fail", "**comm_fail %d", vc->pg_rank);
+        MPIU_ERR_SET1(sreq->status.MPI_ERROR, MPIX_ERR_PROC_FAIL_STOP, "**comm_fail", "**comm_fail %d", vc->pg_rank);
         MPIDI_CH3U_Request_complete(sreq);
         goto fn_fail;
     }
 
-    if (VC_CH(vc)->iSendContig)
+    if (vc->ch.iSendContig)
     {
-        mpi_errno = VC_CH(vc)->iSendContig(vc, sreq, hdr, hdr_sz, NULL, 0);
+        mpi_errno = vc->ch.iSendContig(vc, sreq, hdr, hdr_sz, NULL, 0);
         if(mpi_errno != MPI_SUCCESS) { MPIU_ERR_POP(mpi_errno); }
         goto fn_exit;
     }
 
-    /* MPIU_Assert(VC_CH(vc)->is_local); */
+    /* MPIU_Assert(vc->ch.is_local); */
     MPIU_Assert(hdr_sz <= sizeof(MPIDI_CH3_Pkt_t));
 
     /* This channel uses a fixed length header, the size of which
@@ -51,8 +51,9 @@ int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPID_Request *sreq, void * hdr, MPIDI_msg_s
 
     if (MPIDI_CH3I_Sendq_empty(MPIDI_CH3I_shm_sendq))
     {
+        MPIU_Assert(hdr_sz <= INT_MAX);
 	MPIU_DBG_MSG_D (CH3_CHANNEL, VERBOSE, "iSend %d", (int) hdr_sz);
-	mpi_errno = MPID_nem_mpich2_send_header (hdr, hdr_sz, vc, &again);
+	mpi_errno = MPID_nem_mpich_send_header (hdr, (int)hdr_sz, vc, &again);
         if (mpi_errno) MPIU_ERR_POP (mpi_errno);
 	if (again)
 	{
@@ -95,7 +96,7 @@ int MPIDI_CH3_iSend (MPIDI_VC_t *vc, MPID_Request *sreq, void * hdr, MPIDI_msg_s
  enqueue_it:
     MPIDI_DBG_PRINTF((55, FCNAME, "enqueuing"));
 
-    sreq->dev.pending_pkt = *(MPIDI_CH3_PktGeneric_t *) hdr;
+    sreq->dev.pending_pkt = *(MPIDI_CH3_Pkt_t *) hdr;
     sreq->dev.iov[0].MPID_IOV_BUF = (char *) &sreq->dev.pending_pkt;
     sreq->dev.iov[0].MPID_IOV_LEN = hdr_sz;
     sreq->dev.iov_count = 1;

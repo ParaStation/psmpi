@@ -35,6 +35,7 @@ int accept_rma_get_answer(pscom_request_t *request,
 static
 void io_done_rma_get_answer(pscom_request_t *request)
 {
+	MPID_Request *mpid_req = request->user->type.get_answer_recv.mpid_req;
 	/* This is an pscom.io_done call. Global lock state undefined! */
 	pscom_request_get_answer_recv_t *ga = &request->user->type.get_answer_recv;
 
@@ -46,15 +47,22 @@ void io_done_rma_get_answer(pscom_request_t *request)
 	MPID_PSP_packed_msg_cleanup_datatype(&ga->msg, ga->origin_datatype);
 	/* ToDo: This is not threadsave */
 	ga->win_ptr->rma_local_pending_cnt--;
+	ga->win_ptr->rma_local_pending_rank[request->user->type.get_answer_recv.target_rank]--;
 
-	pscom_request_free(request);
+	if(mpid_req) {
+		MPID_PSP_Subrequest_completed(mpid_req);
+		MPID_PSP_Request_dequeue(mpid_req, MPID_REQUEST_RECV);
+	} else {
+		pscom_request_free(request);
+	}
 }
 
 
-int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
-	     int target_rank, MPI_Aint target_disp, int target_count,
-	     MPI_Datatype target_datatype, MPID_Win *win_ptr)
+int MPID_Get_generic(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
+		     int target_rank, MPI_Aint target_disp, int target_count,
+		     MPI_Datatype target_datatype, MPID_Win *win_ptr, MPID_Request **request)
 {
+	int mpi_error = MPI_SUCCESS;
 	MPID_PSP_Datatype_info dt_info;
 	MPID_Win_rank_info *ri = win_ptr->rank_info + target_rank;
 	char *target_buf;
@@ -68,6 +76,59 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 #endif
 	/* Datatype */
 	MPID_PSP_Datatype_get_info(target_datatype, &dt_info);
+
+	if(request) {
+		*request = MPID_DEV_Request_recv_create(win_ptr->comm_ptr);
+	}
+
+	if (unlikely(target_rank == MPI_PROC_NULL)) {
+
+		goto fn_completed;
+	}
+
+
+	/* Request-based RMA operations are only valid within a passive target epoch! */
+	if(request && win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK && win_ptr->epoch_state != MPID_PSP_EPOCH_LOCK_ALL) {
+		mpi_error = MPI_ERR_RMA_SYNC;
+		goto err_sync_rma;
+	}
+
+	/* Check that we are within an access/exposure epoch: */
+	if (win_ptr->epoch_state == MPID_PSP_EPOCH_NONE) {
+		mpi_error = MPI_ERR_RMA_SYNC;
+		goto err_sync_rma;
+	}
+
+	/* Track access epoch state: */
+	if (win_ptr->epoch_state == MPID_PSP_EPOCH_FENCE_ISSUED) {
+		win_ptr->epoch_state = MPID_PSP_EPOCH_FENCE;
+	}
+
+
+	/* If the get is a local operation, do it here */
+	if (target_rank == win_ptr->rank || win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
+		void *base;
+		int disp_unit;
+
+		if (win_ptr->create_flavor == MPI_WIN_FLAVOR_SHARED) {
+
+			MPID_PSP_shm_rma_get_base(win_ptr, target_rank, &disp_unit, &base);
+		}
+		else {
+			base = win_ptr->base;
+			disp_unit = win_ptr->disp_unit;
+		}
+
+		mpi_error = MPIR_Localcopy((char *) base + disp_unit * target_disp,
+				     target_count, target_datatype, origin_addr,
+				     origin_count, origin_datatype);
+
+		if (mpi_error) {
+			goto err_local_copy;
+		}
+
+		goto fn_completed;
+	}
 
 	target_buf = (char *) ri->base_addr + ri->disp_unit * target_disp;
 
@@ -113,7 +174,20 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 
 			rreq->ops.recv_accept = accept_rma_get_answer;
 			rreq->ops.io_done = io_done_rma_get_answer;
+			rreq->user->type.get_answer_recv.target_rank = target_rank;
 			rreq->connection = ri->con;
+
+			if(request) {
+				MPID_Request *mpid_req = *request;
+				/* TODO: Use a new and 'get_answer'-dedicated MPID_DEV_Request_create() */
+				/*       instead of allocating and overloading a common receive request */
+				pscom_request_free(mpid_req->dev.kind.common.pscom_req);
+				mpid_req->dev.kind.common.pscom_req = rreq;
+				MPID_PSP_Request_enqueue(mpid_req);
+				rreq->user->type.get_answer_recv.mpid_req = mpid_req;
+			} else {
+				rreq->user->type.get_answer_recv.mpid_req = NULL;
+			}
 
 			pscom_post_recv(rreq);
 		}
@@ -138,9 +212,27 @@ int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
 		pscom_post_send(req);
 
 		win_ptr->rma_local_pending_cnt++;
+		win_ptr->rma_local_pending_rank[target_rank]++;
 	}
-
+fn_exit:
 	return MPI_SUCCESS;
+fn_completed:
+	if(request) {
+		_MPID_Request_set_completed(*request);
+	}
+	return MPI_SUCCESS;
+	/* --- */
+error_exit:
+	if(request) {
+		_MPID_Request_set_completed(*request);
+		MPID_DEV_Request_release_ref(*request, MPID_REQUEST_RECV);
+	}
+	return mpi_error;
+	/* --- */
+err_local_copy:
+	goto error_exit;
+err_sync_rma:
+	goto error_exit;
 }
 
 
@@ -209,4 +301,22 @@ pscom_request_t *MPID_do_recv_rma_get_req(pscom_connection_t *connection, MPID_P
 	req->user->type.get_answer_send.datatype = MPID_PSP_Datatype_decode(xhead_get->encoded_type);
 
 	return req;
+}
+
+
+int MPID_Get(void *origin_addr, int origin_count, MPI_Datatype origin_datatype,
+	     int target_rank, MPI_Aint target_disp, int target_count,
+	     MPI_Datatype target_datatype, MPID_Win *win_ptr)
+{
+	return MPID_Get_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
+				target_count, target_datatype, win_ptr, NULL);
+}
+
+int MPID_Rget(void *origin_addr, int origin_count,
+	      MPI_Datatype origin_datatype, int target_rank, MPI_Aint target_disp,
+	      int target_count, MPI_Datatype target_datatype, MPID_Win *win_ptr,
+	      MPID_Request **request)
+{
+	return MPID_Get_generic(origin_addr, origin_count, origin_datatype, target_rank, target_disp,
+				target_count, target_datatype, win_ptr, request);
 }

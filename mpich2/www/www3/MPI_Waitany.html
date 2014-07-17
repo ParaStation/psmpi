@@ -9,7 +9,7 @@
 Waits for any specified MPI Request to complete 
 <H2>Synopsis</H2>
 <PRE>
-int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index, 
+int MPI_Waitany(int count, MPI_Request array_of_requests[], int *indx,
                MPI_Status *status)
 </PRE>
 <H2>Input Parameters</H2>
@@ -21,14 +21,14 @@ int MPI_Waitany(int count, MPI_Request array_of_requests[], int *index,
 <P>
 <H2>Output Parameters</H2>
 <DL>
-<DT><B>index </B><DD>index of handle for operation that completed (integer).  In the
+<DT><B>indx </B><DD>index of handle for operation that completed (integer).  In the
 range <TT>0</TT> to <TT>count-1</TT>.  In Fortran, the range is <TT>1</TT> to <TT>count</TT>.
 
 <DT><B>status </B><DD>status object (Status).  May be <TT>MPI_STATUS_IGNORE</TT>.
 </DL>
 <P>
 <H2>Notes</H2>
-If all of the requests are <TT>MPI_REQUEST_NULL</TT>, then <TT>index</TT> is returned as
+If all of the requests are <TT>MPI_REQUEST_NULL</TT>, then <TT>indx</TT> is returned as
 <TT>MPI_UNDEFINED</TT>, and <TT>status</TT> is returned as an empty status.
 <P>
 While it is possible to list a request handle more than once in the
@@ -94,5 +94,5 @@ possible.
 <DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
-<P><B>Location:</B>waitany.c<P>
+<P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/pt2pt/waitany.c<P>
 </BODY></HTML>

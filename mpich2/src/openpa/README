@@ -1,4 +1,4 @@
-OpenPA v1.0.2
+OpenPA v1.0.3
 -------------
 
 The goal of this project is to provide an open source, highly-portable
@@ -6,7 +6,7 @@ library that provides atomic primitives (and related constructs) for
 high performance, concurrent software. This project is a collaboration
 between the Mathematics and Computer Science (MCS) division at Argonne
 National Laboratory (ANL) and the HDF Group. The code was originally
-derived from work on the MPICH2 project. 
+derived from work on the MPICH project.
 
 Project documentation and bug tracking can be found at:
 
@@ -20,9 +20,9 @@ Building
 --------
 
 If you checked out the project from source control then you will need to
-generate configure files and makefiles with autoreconf:
+generate configure files and makefiles with autogen.sh:
 
-% autoreconf -vif
+% ./autogen.sh
 
 Otherwise, the build procedure is basically the same as any other
 autoconfiscated software:
