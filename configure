@@ -1958,7 +1958,7 @@ fi
 
 EXTRA_VERSION_INFO=""
 # CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-error-messages=generic"
-CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-fast=defopt,notiming"
+CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-fast=all"
 CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-cache"
 CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-lib-depend"
 CONF_OPS_COMMON="$CONF_OPS_COMMON --disable-rpath"
@@ -2093,6 +2093,10 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 	CONF_OPS="$CONF_OPS --disable-fc"	# Problems with the MPI_Status alignment
+
+	# Get Performance
+	CONF_OPS="$CONF_OPS --enable-g=none"
+	CONF_OPS="$CONF_OPS --enable-error-checking=no"
 
 	CONF_OPS="$CONF_OPS --host=x86_64-k1om-linux"
 	CONF_OPS="$CONF_OPS 'CC=icc -mmic'"
