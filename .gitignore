@@ -1,0 +1,7 @@
+.svn
+*.o
+*~
+*.d
+build*/*
+dist/pscom-*
+autom4te.cache/*
