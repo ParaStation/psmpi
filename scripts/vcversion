@@ -104,6 +104,8 @@ case "$arg_vc" in
 	# retry git-describe without --dirty on error. (pre git-1.6.6 has no --dirty)
 	version="$(git describe --tags --dirty --always --match "?*-?*" 2>/dev/null ||\
 		   git describe --tags --always --match "?*-?*")"
+	version_prefix="${version/\/*}"
+	version="${version#*\/}" # Remove prefix e.g. "sf/"
 	if ! git describe --tags --exact-match --always --match "?*-?*" >/dev/null 2>&1; then
 	    # Append the branchname, if not exactly on a tag and branch != master
 	    branch="$(git symbolic-ref HEAD)"
