@@ -2092,7 +2092,6 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-cxx"
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
-	CONF_OPS="$CONF_OPS --disable-fc"	# Problems with the MPI_Status alignment
 
 	# Get Performance
 	CONF_OPS="$CONF_OPS --enable-g=none"
