@@ -90,29 +90,30 @@ DIST_COMMON = $(top_srcdir)/Makefile.mtest $(srcdir)/Makefile.in \
 noinst_PROGRAMS = blockindexed-misc$(EXEEXT) \
 	blockindexed-zero-count$(EXEEXT) contents$(EXEEXT) \
 	contig-zero-count$(EXEEXT) contigstruct$(EXEEXT) \
-	cxx-types$(EXEEXT) darray-pack$(EXEEXT) darray-cyclic$(EXEEXT) \
-	gaddress$(EXEEXT) get-elements$(EXEEXT) \
+	cxx-types$(EXEEXT) dataalign$(EXEEXT) darray-pack$(EXEEXT) \
+	darray-cyclic$(EXEEXT) gaddress$(EXEEXT) get-elements$(EXEEXT) \
 	get-elements-pairtype$(EXEEXT) getpartelm$(EXEEXT) \
 	hindexed-zeros$(EXEEXT) hindexed_block$(EXEEXT) \
-	hindexed_block_contents$(EXEEXT) indexed-misc$(EXEEXT) \
-	large-count$(EXEEXT) large_type$(EXEEXT) \
+	hindexed_block_contents$(EXEEXT) hvecblklen$(EXEEXT) \
+	indexed-misc$(EXEEXT) large-count$(EXEEXT) large_type$(EXEEXT) \
 	large_type_sendrec$(EXEEXT) lbub$(EXEEXT) localpack$(EXEEXT) \
 	longdouble$(EXEEXT) lots-of-types$(EXEEXT) \
 	pairtype-pack$(EXEEXT) pairtype-size-extent$(EXEEXT) \
-	simple-commit$(EXEEXT) simple-pack$(EXEEXT) \
-	simple-pack-external$(EXEEXT) simple-resized$(EXEEXT) \
-	simple-size-extent$(EXEEXT) sizedtypes$(EXEEXT) \
-	slice-pack$(EXEEXT) slice-pack-external$(EXEEXT) \
-	struct-derived-zeros$(EXEEXT) struct-empty-el$(EXEEXT) \
-	struct-ezhov$(EXEEXT) struct-no-real-types$(EXEEXT) \
-	struct-pack$(EXEEXT) struct-verydeep$(EXEEXT) \
+	sendrecvt2$(EXEEXT) sendrecvt4$(EXEEXT) simple-commit$(EXEEXT) \
+	simple-pack$(EXEEXT) simple-pack-external$(EXEEXT) \
+	simple-resized$(EXEEXT) simple-size-extent$(EXEEXT) \
+	sizedtypes$(EXEEXT) slice-pack$(EXEEXT) \
+	slice-pack-external$(EXEEXT) struct-derived-zeros$(EXEEXT) \
+	struct-empty-el$(EXEEXT) struct-ezhov$(EXEEXT) \
+	struct-no-real-types$(EXEEXT) struct-pack$(EXEEXT) \
+	structpack2$(EXEEXT) struct-verydeep$(EXEEXT) \
 	struct-zero-count$(EXEEXT) subarray$(EXEEXT) \
 	subarray-pack$(EXEEXT) tfree$(EXEEXT) tmatchsize$(EXEEXT) \
 	transpose-pack$(EXEEXT) tresized$(EXEEXT) tresized2$(EXEEXT) \
 	triangular-pack$(EXEEXT) typecommit$(EXEEXT) typefree$(EXEEXT) \
 	typelb$(EXEEXT) typename$(EXEEXT) unpack$(EXEEXT) \
-	unusual-noncontigs$(EXEEXT) zeroblks$(EXEEXT) \
-	zeroparms$(EXEEXT)
+	unusual-noncontigs$(EXEEXT) vecblklen$(EXEEXT) \
+	zeroblks$(EXEEXT) zeroparms$(EXEEXT)
 subdir = datatype
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -163,6 +164,10 @@ darray_pack_SOURCES = darray-pack.c
 darray_pack_OBJECTS = darray-pack.$(OBJEXT)
 darray_pack_LDADD = $(LDADD)
 darray_pack_DEPENDENCIES = $(top_builddir)/util/mtest.o
+dataalign_SOURCES = dataalign.c
+dataalign_OBJECTS = dataalign.$(OBJEXT)
+dataalign_LDADD = $(LDADD)
+dataalign_DEPENDENCIES = $(top_builddir)/util/mtest.o
 gaddress_SOURCES = gaddress.c
 gaddress_OBJECTS = gaddress.$(OBJEXT)
 gaddress_LDADD = $(LDADD)
@@ -191,6 +196,10 @@ hindexed_block_contents_SOURCES = hindexed_block_contents.c
 hindexed_block_contents_OBJECTS = hindexed_block_contents.$(OBJEXT)
 hindexed_block_contents_LDADD = $(LDADD)
 hindexed_block_contents_DEPENDENCIES = $(top_builddir)/util/mtest.o
+hvecblklen_SOURCES = hvecblklen.c
+hvecblklen_OBJECTS = hvecblklen.$(OBJEXT)
+hvecblklen_LDADD = $(LDADD)
+hvecblklen_DEPENDENCIES = $(top_builddir)/util/mtest.o
 indexed_misc_SOURCES = indexed-misc.c
 indexed_misc_OBJECTS = indexed-misc.$(OBJEXT)
 indexed_misc_LDADD = $(LDADD)
@@ -231,6 +240,12 @@ pairtype_size_extent_SOURCES = pairtype-size-extent.c
 pairtype_size_extent_OBJECTS = pairtype-size-extent.$(OBJEXT)
 pairtype_size_extent_LDADD = $(LDADD)
 pairtype_size_extent_DEPENDENCIES = $(top_builddir)/util/mtest.o
+sendrecvt2_SOURCES = sendrecvt2.c
+sendrecvt2_OBJECTS = sendrecvt2.$(OBJEXT)
+sendrecvt2_DEPENDENCIES = $(LDADD) $(LDADDDATA)
+sendrecvt4_SOURCES = sendrecvt4.c
+sendrecvt4_OBJECTS = sendrecvt4.$(OBJEXT)
+sendrecvt4_DEPENDENCIES = $(LDADD) $(LDADDDATA)
 simple_commit_SOURCES = simple-commit.c
 simple_commit_OBJECTS = simple-commit.$(OBJEXT)
 simple_commit_LDADD = $(LDADD)
@@ -291,6 +306,10 @@ struct_zero_count_SOURCES = struct-zero-count.c
 struct_zero_count_OBJECTS = struct-zero-count.$(OBJEXT)
 struct_zero_count_LDADD = $(LDADD)
 struct_zero_count_DEPENDENCIES = $(top_builddir)/util/mtest.o
+structpack2_SOURCES = structpack2.c
+structpack2_OBJECTS = structpack2.$(OBJEXT)
+structpack2_LDADD = $(LDADD)
+structpack2_DEPENDENCIES = $(top_builddir)/util/mtest.o
 subarray_SOURCES = subarray.c
 subarray_OBJECTS = subarray.$(OBJEXT)
 subarray_LDADD = $(LDADD)
@@ -347,6 +366,10 @@ unusual_noncontigs_SOURCES = unusual-noncontigs.c
 unusual_noncontigs_OBJECTS = unusual-noncontigs.$(OBJEXT)
 unusual_noncontigs_LDADD = $(LDADD)
 unusual_noncontigs_DEPENDENCIES = $(top_builddir)/util/mtest.o
+vecblklen_SOURCES = vecblklen.c
+vecblklen_OBJECTS = vecblklen.$(OBJEXT)
+vecblklen_LDADD = $(LDADD)
+vecblklen_DEPENDENCIES = $(top_builddir)/util/mtest.o
 zeroblks_SOURCES = zeroblks.c
 zeroblks_OBJECTS = zeroblks.$(OBJEXT)
 zeroblks_LDADD = $(LDADD)
@@ -378,43 +401,47 @@ am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
-LINK = $(CCLD) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = blockindexed-misc.c blockindexed-zero-count.c contents.c \
 	contig-zero-count.c contigstruct.c cxx-types.c darray-cyclic.c \
-	darray-pack.c gaddress.c get-elements.c \
+	darray-pack.c dataalign.c gaddress.c get-elements.c \
 	get-elements-pairtype.c getpartelm.c hindexed-zeros.c \
-	hindexed_block.c hindexed_block_contents.c indexed-misc.c \
-	large-count.c large_type.c large_type_sendrec.c lbub.c \
-	localpack.c longdouble.c lots-of-types.c pairtype-pack.c \
-	pairtype-size-extent.c simple-commit.c simple-pack.c \
+	hindexed_block.c hindexed_block_contents.c hvecblklen.c \
+	indexed-misc.c large-count.c large_type.c large_type_sendrec.c \
+	lbub.c localpack.c longdouble.c lots-of-types.c \
+	pairtype-pack.c pairtype-size-extent.c sendrecvt2.c \
+	sendrecvt4.c simple-commit.c simple-pack.c \
 	simple-pack-external.c simple-resized.c simple-size-extent.c \
 	sizedtypes.c slice-pack.c slice-pack-external.c \
 	struct-derived-zeros.c struct-empty-el.c struct-ezhov.c \
 	struct-no-real-types.c struct-pack.c struct-verydeep.c \
-	struct-zero-count.c subarray.c subarray-pack.c tfree.c \
-	tmatchsize.c transpose-pack.c tresized.c tresized2.c \
+	struct-zero-count.c structpack2.c subarray.c subarray-pack.c \
+	tfree.c tmatchsize.c transpose-pack.c tresized.c tresized2.c \
 	triangular-pack.c typecommit.c typefree.c typelb.c typename.c \
-	unpack.c unusual-noncontigs.c zeroblks.c zeroparms.c
+	unpack.c unusual-noncontigs.c vecblklen.c zeroblks.c \
+	zeroparms.c
 DIST_SOURCES = blockindexed-misc.c blockindexed-zero-count.c \
 	contents.c contig-zero-count.c contigstruct.c cxx-types.c \
-	darray-cyclic.c darray-pack.c gaddress.c get-elements.c \
-	get-elements-pairtype.c getpartelm.c hindexed-zeros.c \
-	hindexed_block.c hindexed_block_contents.c indexed-misc.c \
-	large-count.c large_type.c large_type_sendrec.c lbub.c \
-	localpack.c longdouble.c lots-of-types.c pairtype-pack.c \
-	pairtype-size-extent.c simple-commit.c simple-pack.c \
+	darray-cyclic.c darray-pack.c dataalign.c gaddress.c \
+	get-elements.c get-elements-pairtype.c getpartelm.c \
+	hindexed-zeros.c hindexed_block.c hindexed_block_contents.c \
+	hvecblklen.c indexed-misc.c large-count.c large_type.c \
+	large_type_sendrec.c lbub.c localpack.c longdouble.c \
+	lots-of-types.c pairtype-pack.c pairtype-size-extent.c \
+	sendrecvt2.c sendrecvt4.c simple-commit.c simple-pack.c \
 	simple-pack-external.c simple-resized.c simple-size-extent.c \
 	sizedtypes.c slice-pack.c slice-pack-external.c \
 	struct-derived-zeros.c struct-empty-el.c struct-ezhov.c \
 	struct-no-real-types.c struct-pack.c struct-verydeep.c \
-	struct-zero-count.c subarray.c subarray-pack.c tfree.c \
-	tmatchsize.c transpose-pack.c tresized.c tresized2.c \
+	struct-zero-count.c structpack2.c subarray.c subarray-pack.c \
+	tfree.c tmatchsize.c transpose-pack.c tresized.c tresized2.c \
 	triangular-pack.c typecommit.c typefree.c typelb.c typename.c \
-	unpack.c unusual-noncontigs.c zeroblks.c zeroparms.c
+	unpack.c unusual-noncontigs.c vecblklen.c zeroblks.c \
+	zeroparms.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -574,6 +601,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -622,8 +650,15 @@ top_srcdir = @top_srcdir@
 # AM_CPPFLAGS are used for C++ code as well
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = $(top_builddir)/util/mtest.o
-CLEANFILES = summary.xml summary.tap
+CLEANFILES = summary.xml summary.tap summary.junit.xml
 EXTRA_DIST = testlist
+
+# Some of the tests use a more comprehensive set of datatype tests.
+# These must specify a different LDADD that includes the object file
+# with these additional routines
+LDADDDATA = $(top_builddir)/util/dtypes.$(OBJEXT)
+sendrecvt2_LDADD = $(LDADD) $(LDADDDATA)
+sendrecvt4_LDADD = $(LDADD) $(LDADDDATA)
 all: all-am
 
 .SUFFIXES:
@@ -697,6 +732,10 @@ darray-pack$(EXEEXT): $(darray_pack_OBJECTS) $(darray_pack_DEPENDENCIES) $(EXTRA
 	@rm -f darray-pack$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(darray_pack_OBJECTS) $(darray_pack_LDADD) $(LIBS)
 
+dataalign$(EXEEXT): $(dataalign_OBJECTS) $(dataalign_DEPENDENCIES) $(EXTRA_dataalign_DEPENDENCIES) 
+	@rm -f dataalign$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(dataalign_OBJECTS) $(dataalign_LDADD) $(LIBS)
+
 gaddress$(EXEEXT): $(gaddress_OBJECTS) $(gaddress_DEPENDENCIES) $(EXTRA_gaddress_DEPENDENCIES) 
 	@rm -f gaddress$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(gaddress_OBJECTS) $(gaddress_LDADD) $(LIBS)
@@ -724,6 +763,10 @@ hindexed_block$(EXEEXT): $(hindexed_block_OBJECTS) $(hindexed_block_DEPENDENCIES
 hindexed_block_contents$(EXEEXT): $(hindexed_block_contents_OBJECTS) $(hindexed_block_contents_DEPENDENCIES) $(EXTRA_hindexed_block_contents_DEPENDENCIES) 
 	@rm -f hindexed_block_contents$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(hindexed_block_contents_OBJECTS) $(hindexed_block_contents_LDADD) $(LIBS)
+
+hvecblklen$(EXEEXT): $(hvecblklen_OBJECTS) $(hvecblklen_DEPENDENCIES) $(EXTRA_hvecblklen_DEPENDENCIES) 
+	@rm -f hvecblklen$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(hvecblklen_OBJECTS) $(hvecblklen_LDADD) $(LIBS)
 
 indexed-misc$(EXEEXT): $(indexed_misc_OBJECTS) $(indexed_misc_DEPENDENCIES) $(EXTRA_indexed_misc_DEPENDENCIES) 
 	@rm -f indexed-misc$(EXEEXT)
@@ -764,6 +807,14 @@ pairtype-pack$(EXEEXT): $(pairtype_pack_OBJECTS) $(pairtype_pack_DEPENDENCIES) $
 pairtype-size-extent$(EXEEXT): $(pairtype_size_extent_OBJECTS) $(pairtype_size_extent_DEPENDENCIES) $(EXTRA_pairtype_size_extent_DEPENDENCIES) 
 	@rm -f pairtype-size-extent$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(pairtype_size_extent_OBJECTS) $(pairtype_size_extent_LDADD) $(LIBS)
+
+sendrecvt2$(EXEEXT): $(sendrecvt2_OBJECTS) $(sendrecvt2_DEPENDENCIES) $(EXTRA_sendrecvt2_DEPENDENCIES) 
+	@rm -f sendrecvt2$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(sendrecvt2_OBJECTS) $(sendrecvt2_LDADD) $(LIBS)
+
+sendrecvt4$(EXEEXT): $(sendrecvt4_OBJECTS) $(sendrecvt4_DEPENDENCIES) $(EXTRA_sendrecvt4_DEPENDENCIES) 
+	@rm -f sendrecvt4$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(sendrecvt4_OBJECTS) $(sendrecvt4_LDADD) $(LIBS)
 
 simple-commit$(EXEEXT): $(simple_commit_OBJECTS) $(simple_commit_DEPENDENCIES) $(EXTRA_simple_commit_DEPENDENCIES) 
 	@rm -f simple-commit$(EXEEXT)
@@ -825,6 +876,10 @@ struct-zero-count$(EXEEXT): $(struct_zero_count_OBJECTS) $(struct_zero_count_DEP
 	@rm -f struct-zero-count$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(struct_zero_count_OBJECTS) $(struct_zero_count_LDADD) $(LIBS)
 
+structpack2$(EXEEXT): $(structpack2_OBJECTS) $(structpack2_DEPENDENCIES) $(EXTRA_structpack2_DEPENDENCIES) 
+	@rm -f structpack2$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(structpack2_OBJECTS) $(structpack2_LDADD) $(LIBS)
+
 subarray$(EXEEXT): $(subarray_OBJECTS) $(subarray_DEPENDENCIES) $(EXTRA_subarray_DEPENDENCIES) 
 	@rm -f subarray$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(subarray_OBJECTS) $(subarray_LDADD) $(LIBS)
@@ -881,6 +936,10 @@ unusual-noncontigs$(EXEEXT): $(unusual_noncontigs_OBJECTS) $(unusual_noncontigs_
 	@rm -f unusual-noncontigs$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(unusual_noncontigs_OBJECTS) $(unusual_noncontigs_LDADD) $(LIBS)
 
+vecblklen$(EXEEXT): $(vecblklen_OBJECTS) $(vecblklen_DEPENDENCIES) $(EXTRA_vecblklen_DEPENDENCIES) 
+	@rm -f vecblklen$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(vecblklen_OBJECTS) $(vecblklen_LDADD) $(LIBS)
+
 zeroblks$(EXEEXT): $(zeroblks_OBJECTS) $(zeroblks_DEPENDENCIES) $(EXTRA_zeroblks_DEPENDENCIES) 
 	@rm -f zeroblks$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(zeroblks_OBJECTS) $(zeroblks_LDADD) $(LIBS)
@@ -903,6 +962,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cxx-types.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/darray-cyclic.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/darray-pack.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dataalign.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaddress.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-elements-pairtype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-elements.Po@am__quote@
@@ -910,6 +970,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hindexed-zeros.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hindexed_block.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hindexed_block_contents.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hvecblklen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/indexed-misc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large-count.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large_type.Po@am__quote@
@@ -920,6 +981,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lots-of-types.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pairtype-pack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pairtype-size-extent.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sendrecvt2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sendrecvt4.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple-commit.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple-pack-external.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/simple-pack.Po@am__quote@
@@ -935,6 +998,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct-pack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct-verydeep.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/struct-zero-count.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/structpack2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/subarray-pack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/subarray.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tfree.Po@am__quote@
@@ -949,6 +1013,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/typename.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unpack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/unusual-noncontigs.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vecblklen.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zeroblks.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/zeroparms.Po@am__quote@
 

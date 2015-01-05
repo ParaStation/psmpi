@@ -6289,7 +6289,7 @@ ia64-*-hpux*)
   rm -rf conftest*
   ;;
 
-x86_64-*kfreebsd*-gnu|x86_64-*linux*|ppc*-*linux*|powerpc*-*linux*| \
+x86_64-*kfreebsd*-gnu|x86_64-*linux*|powerpc*-*linux*| \
 s390*-*linux*|s390*-*tpf*|sparc*-*linux*)
   # Find out which ABI we are using.
   echo 'int i;' > conftest.$ac_ext
@@ -6307,7 +6307,10 @@ s390*-*linux*|s390*-*tpf*|sparc*-*linux*)
 	  x86_64-*linux*)
 	    LD="${LD-ld} -m elf_i386"
 	    ;;
-	  ppc64-*linux*|powerpc64-*linux*)
+	  powerpc64le-*linux*)
+	    LD="${LD-ld} -m elf32lppclinux"
+	    ;;
+	  powerpc64-*linux*)
 	    LD="${LD-ld} -m elf32ppclinux"
 	    ;;
 	  s390x-*linux*)
@@ -6326,7 +6329,10 @@ s390*-*linux*|s390*-*tpf*|sparc*-*linux*)
 	  x86_64-*linux*)
 	    LD="${LD-ld} -m elf_x86_64"
 	    ;;
-	  ppc*-*linux*|powerpc*-*linux*)
+	  powerpcle-*linux*)
+	    LD="${LD-ld} -m elf64lppc"
+	    ;;
+	  powerpc-*linux*)
 	    LD="${LD-ld} -m elf64ppc"
 	    ;;
 	  s390*-*linux*|s390*-*tpf*)
@@ -11702,36 +11708,7 @@ esac
 
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking for variable argument list macro functionality" >&5
 $as_echo_n "checking for variable argument list macro functionality... " >&6; }
-
-    # check if the program links correctly
-    rm -f pac_test.log
-
-
-# START of PUSHVAL
-
-if ${pac_stk_ac_link_level+:} false; then :
-
-    as_fn_arith $pac_stk_ac_link_level + 1 && pac_stk_ac_link_level=$as_val
-
-else
-
-    pac_stk_ac_link_level=0
-
-fi
-eval "pac_stk_ac_link_$pac_stk_ac_link_level=\$ac_link"
-if test "x$pac_stk_ac_link_level" = x0; then :
-
-        eval pac_FirstSavedValueOf_ac_link=\$pac_stk_ac_link_$pac_stk_ac_link_level
-
-fi
-
-        eval pac_LastSavedValueOf_ac_link=\$pac_stk_ac_link_$pac_stk_ac_link_level
-
-
-# END of PUSHVAL
-
-ac_link="`echo $pac_FirstSavedValueOf_ac_link | sed -e 's|>.*$|> pac_test.log 2>\&1|g'`"
-cat confdefs.h - <<_ACEOF >conftest.$ac_ext
+    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
         #include <stdio.h>
@@ -11747,55 +11724,16 @@ conftest_va_arg_macro("a test %d", 3);
 _ACEOF
 if ac_fn_c_try_link "$LINENO"; then :
 
-    prog_links=yes
+$as_echo "#define HAVE_MACRO_VA_ARGS 1" >>confdefs.h
 
+     { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
 else
-
-    prog_links=no
-
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-
-# START of POPVAL
-
-if ${pac_stk_ac_link_level+:} false; then :
-
-    if test "x$pac_stk_ac_link_level" = x-1; then :
-
-        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Imbalance of PUSHVAL/POPVAL of ac_link\"" >&5
-$as_echo "$as_me: WARNING: \"Imbalance of PUSHVAL/POPVAL of ac_link\"" >&2;}
-
-else
-
-                eval ac_link=\$pac_stk_ac_link_$pac_stk_ac_link_level
-                as_fn_arith  $pac_stk_ac_link_level - 1  && pac_stk_ac_link_level=$as_val
-
-fi
-
-else
-
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: \"Uninitialized PUSHVAL/POPVAL of ac_link\"" >&5
-$as_echo "$as_me: WARNING: \"Uninitialized PUSHVAL/POPVAL of ac_link\"" >&2;}
-
-fi
-
-# END of POPVAL
-
-
-
-    # If the program linked OK, make sure there were no warnings
-    if test "$prog_links" = "yes" -a "`cat pac_test.log`" = "" ; then
-
-$as_echo "#define HAVE_MACRO_VA_ARGS 1" >>confdefs.h
-
-       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
-$as_echo "yes" >&6; }
-    else
-       { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
-    fi
-    rm -f pac_test.log
 
 
 # TODO: could add a --enable-embedded or similar to also control this

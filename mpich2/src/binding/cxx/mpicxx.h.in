@@ -708,15 +708,15 @@ class Op  {
     {
         MPIX_CALLWORLD( MPI_Op_free( (MPI_Op *) &the_real_op ));
     }
-    virtual bool Is_commutative( void )
+    virtual bool Is_commutative( void ) const
     {
         int v2;
         MPIX_CALLWORLD( MPI_Op_commutative( (MPI_Op) the_real_op, &v2 ));
         return v2!= 0;
     }
-    virtual void Reduce_local( const void * v1, void * v2, int v3, Datatype v4 )
+    virtual void Reduce_local( const void * v1, void * v2, int v3, const Datatype &v4 ) const
     {
-        MPIX_CALLWORLD( MPI_Reduce_local( v1, v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPI_Op) the_real_op ));
+        MPIX_CALLWORLD( MPI_Reduce_local( (const void *)v1, v2, v3, (MPI_Datatype)(v4.the_real_datatype), (MPI_Op) the_real_op ));
     }
 
     void Init( User_function *, bool );

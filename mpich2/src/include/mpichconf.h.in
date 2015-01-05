@@ -217,6 +217,9 @@
 /* Define if environ extern is available */
 #undef HAVE_EXTERN_ENVIRON
 
+/* Define to 1 to enable Fortran 2008 binding */
+#undef HAVE_F08_BINDING
+
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
@@ -578,9 +581,6 @@
 
 /* Define to 1 if you have the `strsignal' function. */
 #undef HAVE_STRSIGNAL
-
-/* Define to 1 if you have the `strtoll' function. */
-#undef HAVE_STRTOLL
 
 /* Define if struct ifconf can be used */
 #undef HAVE_STRUCT_IFCONF

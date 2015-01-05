@@ -36,6 +36,8 @@
 #include "pami.h"
 #include "mpidi_trace.h"
 
+#include "opa_primitives.h"
+
 #if (MPIU_HANDLE_ALLOCATION_METHOD == MPIU_HANDLE_ALLOCATION_THREAD_LOCAL) && defined(__BGQ__)
 struct MPID_Request;
 typedef struct
@@ -439,9 +441,18 @@ typedef struct MPIDI_Win_info
   uint32_t           disp_unit;     /**< Node's exposure window displacement units            */
   pami_memregion_t   memregion;     /**< Memory region descriptor for each node               */
   uint32_t           memregion_used;
+  MPI_Aint           base_size;     /**< Node's exposure window base size in bytes            */
 } MPIDI_Win_info;
 
 typedef pthread_mutex_t MPIDI_SHM_MUTEX;
+
+typedef struct MPIDI_Win_shm_ctrl_t
+{
+  MPIDI_SHM_MUTEX  mutex_lock;    /* shared memory windows -- lock for    */
+                                     /*     accumulate/atomic operations     */
+  OPA_int_t       active;
+  int        shm_count;
+} MPIDI_Win_shm_ctrl_t;
 
 typedef struct MPIDI_Win_shm_t
 {
@@ -449,10 +460,12 @@ typedef struct MPIDI_Win_shm_t
                                                  region associated with it */
     void *base_addr;                /* base address of shared memory region */
     MPI_Aint segment_len;           /* size of shared memory region         */
-    uint32_t  shm_id;                /* shared memory id                    */
-    int       *shm_count;
-    MPIDI_SHM_MUTEX *mutex_lock;    /* shared memory windows -- lock for    */
-                                     /*     accumulate/atomic operations     */
+    union
+    {
+      uint32_t shm_id;                /* shared memory id - sysv            */
+      char     shm_key[64];         /* shared memory key - posix            */
+    };
+    MPIDI_Win_shm_ctrl_t  *ctrl;
 } MPIDI_Win_shm_t;
 
 /**

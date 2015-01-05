@@ -89,7 +89,7 @@ DIST_COMMON = $(top_srcdir)/Makefile.mtest $(srcdir)/Makefile.in \
 noinst_PROGRAMS = rdwrord$(EXEEXT) rdwrzero$(EXEEXT) \
 	getextent$(EXEEXT) setinfo$(EXEEXT) setviewcur$(EXEEXT) \
 	i_noncontig$(EXEEXT) async$(EXEEXT) async_any$(EXEEXT) \
-	userioerr$(EXEEXT) resized$(EXEEXT)
+	userioerr$(EXEEXT) resized$(EXEEXT) resized2$(EXEEXT)
 subdir = io
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -136,6 +136,10 @@ resized_SOURCES = resized.c
 resized_OBJECTS = resized.$(OBJEXT)
 resized_LDADD = $(LDADD)
 resized_DEPENDENCIES = $(top_builddir)/util/mtest.o
+resized2_SOURCES = resized2.c
+resized2_OBJECTS = resized2.$(OBJEXT)
+resized2_LDADD = $(LDADD)
+resized2_DEPENDENCIES = $(top_builddir)/util/mtest.o
 setinfo_SOURCES = setinfo.c
 setinfo_OBJECTS = setinfo.$(OBJEXT)
 setinfo_LDADD = $(LDADD)
@@ -171,15 +175,17 @@ am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
-LINK = $(CCLD) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = async.c async_any.c getextent.c i_noncontig.c rdwrord.c \
-	rdwrzero.c resized.c setinfo.c setviewcur.c userioerr.c
+	rdwrzero.c resized.c resized2.c setinfo.c setviewcur.c \
+	userioerr.c
 DIST_SOURCES = async.c async_any.c getextent.c i_noncontig.c rdwrord.c \
-	rdwrzero.c resized.c setinfo.c setviewcur.c userioerr.c
+	rdwrzero.c resized.c resized2.c setinfo.c setviewcur.c \
+	userioerr.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -339,6 +345,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -387,7 +394,7 @@ top_srcdir = @top_srcdir@
 # AM_CPPFLAGS are used for C++ code as well
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = $(top_builddir)/util/mtest.o
-CLEANFILES = summary.xml summary.tap
+CLEANFILES = summary.xml summary.tap summary.junit.xml
 EXTRA_DIST = testlist
 all: all-am
 
@@ -456,6 +463,10 @@ resized$(EXEEXT): $(resized_OBJECTS) $(resized_DEPENDENCIES) $(EXTRA_resized_DEP
 	@rm -f resized$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(resized_OBJECTS) $(resized_LDADD) $(LIBS)
 
+resized2$(EXEEXT): $(resized2_OBJECTS) $(resized2_DEPENDENCIES) $(EXTRA_resized2_DEPENDENCIES) 
+	@rm -f resized2$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(resized2_OBJECTS) $(resized2_LDADD) $(LIBS)
+
 setinfo$(EXEEXT): $(setinfo_OBJECTS) $(setinfo_DEPENDENCIES) $(EXTRA_setinfo_DEPENDENCIES) 
 	@rm -f setinfo$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(setinfo_OBJECTS) $(setinfo_LDADD) $(LIBS)
@@ -481,6 +492,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rdwrord.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rdwrzero.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resized.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resized2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/setinfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/setviewcur.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/userioerr.Po@am__quote@

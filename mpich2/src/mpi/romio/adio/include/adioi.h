@@ -74,6 +74,13 @@ struct ADIOI_Hints_struct {
 			unsigned read_chunk_sz; /* chunk size for direct reads */
 			unsigned write_chunk_sz; /* chunk size for direct writes */
 		} xfs;
+	struct {
+	    int *bridgelist; /* list of all bride ranks */
+	    int *bridgelistnum; /* each entry here is the number of aggregators
+				   associated with the bridge rank of the same
+				   index in bridgelist */
+	    int numbridges; /* total number of bridges */
+	} bg;
     } fs_hints;
 
 };
@@ -197,6 +204,9 @@ struct ADIOI_Fns_struct {
 
 #define ADIOI_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ADIOI_MAX(a, b) ((a) > (b) ? (a) : (b))
+/* thanks stackoverflow:
+ * http://stackoverflow.com/questions/3982348/implement-generic-swap-macro-in-c */
+#define ADIOI_SWAP(x, y, T) do { T temp##x##y = x; x = y; y = temp##x##y; } while (0);
 
 #define ADIOI_PREALLOC_BUFSZ      16777216    /* buffer size used to 
                                                 preallocate disk space */
@@ -548,6 +558,22 @@ int ADIOI_Build_client_req(ADIO_File fd,
 			   ADIO_Offset agg_comm_sz,
 			   MPI_Datatype *agg_comm_dtype_p);
 
+void ADIOI_P2PContigWriteAggregation(ADIO_File fd,
+	                             const void *buf,
+				     int *error_code,
+				     ADIO_Offset *st_offsets,
+				     ADIO_Offset *end_offset,
+				     ADIO_Offset *fd_start,
+				     ADIO_Offset *fd_end);
+
+void ADIOI_P2PContigReadAggregation(ADIO_File fd,
+	                             const void *buf,
+				     int *error_code,
+				     ADIO_Offset *st_offsets,
+				     ADIO_Offset *end_offset,
+				     ADIO_Offset *fd_start,
+				     ADIO_Offset *fd_end);
+
 ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
 				     int whence, int *error_code);
 void ADIOI_GEN_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
@@ -859,5 +885,23 @@ if (MPIR_Ext_dbg_romio_typical_enabled) fprintf
 #define DBG_FPRINTF if (0) fprintf
 #define DBGV_FPRINTF if (0) fprintf
 #endif
+
+/* declarations for threaded I/O */
+/* i/o thread data structure (bgmpio_pthreadwc) */
+typedef struct wcThreadFuncData {
+    ADIO_File fd;
+    int io_kind;
+    char *buf;
+    int size;
+    ADIO_Offset offset;
+    ADIO_Status status;
+    int error_code;
+} ADIOI_IO_ThreadFuncData;
+
+void *ADIOI_IO_Thread_Func(void *vptr_args);
+
+
+
+
 #endif
 

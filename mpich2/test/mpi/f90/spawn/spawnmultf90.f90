@@ -23,6 +23,7 @@
        character*(80) argv(64)
        integer argc
        integer ierr
+       integer can_spawn
 !
 !       Arguments are stored by rows, not columns in the vector.
 !       We write the data in a way that looks like the transpose,
@@ -43,6 +44,12 @@
        errs = 0
 
        call MTest_Init( ierr )
+
+       call MTestSpawnPossible( can_spawn, errs )
+        if ( can_spawn .eq. 0 ) then
+            call MTest_Finalize( errs )
+            goto 300
+        endif
 
        call MPI_Comm_get_parent( parentcomm, ierr )
 
@@ -142,5 +149,6 @@
             call MTest_Finalize( errs )
         endif
 
+ 300    continue
         call MPI_Finalize( ierr )
         end

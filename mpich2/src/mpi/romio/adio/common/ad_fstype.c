@@ -30,6 +30,10 @@
 #include "zoidfs.h"
 #endif
 
+#ifdef HAVE_GPFS_H
+#include "gpfs.h"
+#endif
+
 /* Notes on detection process:
  *
  * There are three more "general" mechanisms that we use for detecting
@@ -72,6 +76,10 @@
 
 #if !defined(PVFS2_SUPER_MAGIC)
 #define PVFS2_SUPER_MAGIC (0x20030528)
+#endif
+
+#if defined(ROMIO_GPFS) && !defined(GPFS_SUPER_MAGIC)
+# define GPFS_SUPER_MAGIC 0x47504653
 #endif
 
 #ifdef ROMIO_HAVE_STRUCT_STATVFS_WITH_F_BASETYPE
@@ -204,32 +212,8 @@ static void ADIO_FileSysType_parentdir(const char *filename, char **dirnamep)
 }
 #endif /* ROMIO_NTFS */
 
-#if defined(ROMIO_BGL) || defined(ROMIO_BG)
-		    /* BlueGene support for lockless i/o (necessary for PVFS.
-		      possibly beneficial for others, unless data sieving
-		      writes desired) */
-
-/* BlueGene environment variables can override lockless selection.*/
-#ifdef ROMIO_BG
-extern void ad_bg_get_env_vars();
-#else
-extern void ad_bgl_get_env_vars();
-#endif
-extern long bglocklessmpio_f_type;
-
-static void check_for_lockless_exceptions(long stat_type, int *fstype)
-{
-    /* exception for lockless file systems.  (PVFS2 is the default in ad_bgl_tuning.)
-     * The BGLOCKLESS_F_TYPE environment variable will override it by specifying 
-     * the appropriate file system magic number here. 
-     */ 
-    if (stat_type == bglocklessmpio_f_type) 
-      /* use lock-free driver on bluegene to support specified fs (defaults to pvfs2) */
-      *fstype = ADIO_BGLOCKLESS; 
-}
-#endif
 /*
- ADIO_FileSysType_fncall - determines the file system type for a given file 
+ ADIO_FileSysType_fncall - determines the file system type for a given file
  using a system-dependent function call
 
 Input Parameters:
@@ -269,6 +253,7 @@ static void ADIO_FileSysType_fncall(const char *filename, int *fstype, int *erro
     *error_code = MPI_SUCCESS;
 
 #ifdef ROMIO_HAVE_STRUCT_STATVFS_WITH_F_BASETYPE
+    /* rare: old solaris machines */
     retry_cnt=0;
     do {
 	err = statvfs(filename, &vfsbuf);
@@ -326,7 +311,9 @@ static void ADIO_FileSysType_fncall(const char *filename, int *fstype, int *erro
     /* --END ERROR HANDLING-- */
 #endif /* STATVFS APPROACH */
 
-#ifdef HAVE_STRUCT_STATFS
+#if defined(HAVE_STRUCT_STATFS) && defined(HAVE_STATFS)
+    /* common automagic fs-detection logic for any modern POSX-compliant
+     * environment */
     retry_cnt = 0;
     do {
 	err = statfs(filename, &fsbuf);
@@ -355,34 +342,20 @@ static void ADIO_FileSysType_fncall(const char *filename, int *fstype, int *erro
     /* --END ERROR HANDLING-- */
 
 # ifdef ROMIO_HAVE_STRUCT_STATFS_WITH_F_FSTYPENAME
+    /* uncommon: maybe only on Darwin ? */
     if ( !strncmp("nfs",fsbuf.f_fstypename,3) ) {
 	*fstype = ADIO_NFS;
 	return;
     }
 # endif
 
-#ifdef ROMIO_BG
-/* The BlueGene generic ADIO is also a special case. */
-    ad_bg_get_env_vars();
 
-    *fstype = ADIO_BG;
-    check_for_lockless_exceptions(fsbuf.f_type, fstype);
-    *error_code = MPI_SUCCESS;
-    return;
+#ifdef ROMIO_GPFS
+    if (fsbuf.f_type == GPFS_SUPER_MAGIC) {
+	*fstype = ADIO_GPFS;
+	return;
+    }
 #endif
-
-#  ifdef ROMIO_BGL 
-    /* BlueGene is a special case: all file systems are AD_BGL, except for
-     * certain exceptions */
-
-    /* Bluegene needs to read enviroment variables before selecting the file system*/
-    ad_bgl_get_env_vars();
-
-    *fstype = ADIO_BGL;
-    check_for_lockless_exceptions(fsbuf.f_type, fstype);
-    *error_code = MPI_SUCCESS;
-    return;
-#  endif
 
     /* FPRINTF(stderr, "%d\n", fsbuf.f_type);*/
 # ifdef NFS_SUPER_MAGIC
@@ -457,6 +430,7 @@ static void ADIO_FileSysType_fncall(const char *filename, int *fstype, int *erro
 #endif /* STATFS APPROACH */
 
 #ifdef ROMIO_HAVE_STRUCT_STAT_WITH_ST_FSTYPE
+    /* rare: maybe old NEC SX or SGI IRIX machines */
     retry_cnt = 0;
     do {
 	err = stat(filename, &sbuf);
@@ -598,15 +572,8 @@ static void ADIO_FileSysType_prefix(const char *filename, int *fstype, int *erro
     {
 	*fstype = ADIO_LUSTRE;
     }
-    else if (!strncmp(filename, "bgl:", 4) || !strncmp(filename, "BGL:", 4)) {
-	*fstype = ADIO_BGL;
-    }
-    else if (!strncmp(filename, "bg:", 3) || !strncmp(filename, "BG:", 3)) {
-	*fstype = ADIO_BG;
-    }
-    else if (!strncmp(filename, "bglockless:", 11) || 
-	    !strncmp(filename, "BGLOCKLESS:", 11)) {
-	*fstype = ADIO_BGLOCKLESS;
+    else if (!strncmp(filename, "gpfs:", 5) || !strncmp(filename, "GPFS:", 5)) {
+	*fstype = ADIO_GPFS;
     }
     else {
 #ifdef ROMIO_NTFS
@@ -649,6 +616,10 @@ void ADIO_ResolveFileType(MPI_Comm comm, const char *filename, int *fstype,
     static char myname[] = "ADIO_RESOLVEFILETYPE";
 
     file_system = -1;
+    if (filename == NULL) {
+	    *error_code = ADIOI_Err_create_code(myname, filename, ENOENT);
+	    return;
+    }
     tmp = strchr(filename, ':');
     if (!tmp) {
 	int have_nfs_enabled=0;
@@ -682,32 +653,28 @@ void ADIO_ResolveFileType(MPI_Comm comm, const char *filename, int *fstype,
 	    }
 	} else {
 	    ADIO_FileSysType_fncall(filename, &file_system, &myerrcode);
-	    if (myerrcode != MPI_SUCCESS) {
-		*error_code = myerrcode;
 
-		/* the check for file system type will hang if any process got
-		 * an error in ADIO_FileSysType_fncall.  Processes encountering
-		 * an error will return early, before the collective file
-		 * system type check below.  This case could happen if a full
-		 * path exists on one node but not on others, and no prefix
-		 * like ufs: was provided.  see discussion at
-		 * http://www.mcs.anl.gov/web-mail-archive/lists/mpich-discuss/2007/08/msg00042.html
-		 * (edit: now
-		 * http://lists.mcs.anl.gov/pipermail/mpich-discuss/2007-August/002648.html)
-	         */
+	    /* the check for file system type will hang if any process got
+	     * an error in ADIO_FileSysType_fncall.  Processes encountering
+	     * an error will return early, before the collective file
+	     * system type check below.  This case could happen if a full
+	     * path exists on one node but not on others, and no prefix
+	     * like ufs: was provided.  see discussion at
+	     * http://www.mcs.anl.gov/web-mail-archive/lists/mpich-discuss/2007/08/msg00042.html
+	     * (edit: now
+	     * http://lists.mcs.anl.gov/pipermail/mpich-discuss/2007-August/002648.html)
+	     */
 
-	        MPI_Allreduce(error_code, &max_code, 1, MPI_INT, MPI_MAX, comm);
-		if (max_code != MPI_SUCCESS)  {
-		    *error_code = max_code;
-		    return;
-		} 
-		/* ensure everyone came up with the same file system type */
-		MPI_Allreduce(&file_system, &min_code, 1, MPI_INT, 
-			MPI_MIN, comm);
-		if (min_code == ADIO_NFS) file_system = ADIO_NFS;
+	    MPI_Allreduce(&myerrcode, &max_code, 1, MPI_INT, MPI_MAX, comm);
+	    if (max_code != MPI_SUCCESS)  {
+		*error_code = max_code;
+		return;
 	    }
+	    /* ensure everyone came up with the same file system type */
+	    MPI_Allreduce(&file_system, &min_code, 1, MPI_INT,
+		    MPI_MIN, comm);
+	    if (min_code == ADIO_NFS) file_system = ADIO_NFS;
 	}
-
     }
     else {
 	/* prefix specified; just match via prefix and assume everyone got 
@@ -843,34 +810,15 @@ void ADIO_ResolveFileType(MPI_Comm comm, const char *filename, int *fstype,
 	*ops = &ADIO_TESTFS_operations;
 #endif
     }
-    if (file_system == ADIO_BGL) {
-#ifndef ROMIO_BGL
-	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
-					   myname, __LINE__, MPI_ERR_IO, 
-					   "**iofstypeunsupported", 0);
-	return;
-#else
-	*ops = &ADIO_BGL_operations;
-#endif
-    }
-    if (file_system == ADIO_BG) {
-#ifndef ROMIO_BG
+
+    if (file_system == ADIO_GPFS) {
+#ifndef ROMIO_GPFS
 	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE,
 					myname, __LINE__, MPI_ERR_IO,
 					"**iofstypeunsupported", 0);
 	return;
 #else
-	*ops = &ADIO_BG_operations;
-#endif
-    }
-    if (file_system == ADIO_BGLOCKLESS) {
-#ifndef ROMIO_BGLOCKLESS
-	*error_code = MPIO_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, 
-					   myname, __LINE__, MPI_ERR_IO, 
-					   "**iofstypeunsupported", 0);
-	return;
-#else
-	*ops = &ADIO_BGLOCKLESS_operations;
+	*ops = &ADIO_GPFS_operations;
 #endif
     }
 

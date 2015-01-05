@@ -164,7 +164,7 @@ int ADIOI_PVFS2_StridedDtypeIO(ADIO_File fd, void *buf, int count,
     if (ret != 0) {
 	fprintf(stderr, "ADIOI_PVFS2_StridedDtypeIO: Warning - PVFS_sys_"
 		"read/write returned %d and completed %Ld bytes.\n", 
-		ret, resp_io.total_completed);
+		ret, (long long)resp_io.total_completed);
         *error_code = MPIO_Err_create_code(MPI_SUCCESS,
                                            MPIR_ERR_RECOVERABLE,
                                            myname, __LINE__,
@@ -212,7 +212,8 @@ int convert_mpi_pvfs2_dtype(MPI_Datatype *mpi_dtype,
 {
     int num_int = -1, num_addr = -1, num_dtype = -1, 
 	combiner = -1, i = -1, ret = -1, leaf = -1;
-    int *arr_int = NULL, *arr_addr = NULL;
+    int *arr_int = NULL;
+    MPI_Aint *arr_addr = NULL;
     MPI_Datatype *arr_dtype = NULL;
     PVFS_Request *old_pvfs_dtype = NULL;
     PVFS_Request *old_pvfs_dtype_arr = NULL;
@@ -586,84 +587,94 @@ int convert_named(MPI_Datatype *mpi_dtype,
     fprintf(stderr, "NAMED");
 #endif
 
-    switch (*mpi_dtype)
+    if (MPI_CHAR == *mpi_dtype)
     {
-	case MPI_CHAR:
 	    ret = PVFS_Request_contiguous(1, PVFS_CHAR, pvfs_dtype);
 #ifdef DEBUG_DTYPE
 	    fprintf(stderr, "-MPI_CHAR\n");
 #endif
-	    break;
-	case MPI_BYTE:
-	    ret = PVFS_Request_contiguous(1, PVFS_BYTE, pvfs_dtype);
+    }
+    else if ( MPI_BYTE == *mpi_dtype )
+    {
+            ret = PVFS_Request_contiguous(1, PVFS_BYTE, pvfs_dtype);
 #ifdef DEBUG_DTYPE
-	    fprintf(stderr, "-MPI_BYTE\n");
+            fprintf(stderr, "-MPI_BYTE\n");
 #endif
-	    break;
-	case MPI_SHORT:
-	    ret = PVFS_Request_contiguous(1, PVFS_SHORT, pvfs_dtype);
+    }
+    else if ( MPI_SHORT == *mpi_dtype )
+    {
+            ret = PVFS_Request_contiguous(1, PVFS_SHORT, pvfs_dtype);
 #ifdef DEBUG_DTYPE
-	    fprintf(stderr, "-MPI_SHORT\n");
+            fprintf(stderr, "-MPI_SHORT\n");
 #endif
-	    break;
-	case MPI_INT:
-	    ret = PVFS_Request_contiguous(1, PVFS_INT, pvfs_dtype);	  
+    }
+    else if ( MPI_INT == *mpi_dtype )
+    {
+            ret = PVFS_Request_contiguous(1, PVFS_INT, pvfs_dtype);
 #ifdef DEBUG_DTYPE
-	    fprintf(stderr, "-MPI_INT\n");
+            fprintf(stderr, "-MPI_INT\n");
 #endif
-	    break;
-	case MPI_LONG:
-	    ret = PVFS_Request_contiguous(1, PVFS_LONG, pvfs_dtype);	  
+    }
+    else if ( MPI_LONG == *mpi_dtype )
+    {
+            ret = PVFS_Request_contiguous(1, PVFS_LONG, pvfs_dtype);
 #ifdef DEBUG_DTYPE
-	    fprintf(stderr, "-MPI_LONG\n");
+            fprintf(stderr, "-MPI_LONG\n");
 #endif
-	    break;
-	case MPI_FLOAT:
-	    ret = PVFS_Request_contiguous(1, PVFS_FLOAT, pvfs_dtype);	  
+    }
+    else if ( MPI_FLOAT == *mpi_dtype )
+    {
+	    ret  = PVFS_Request_contiguous(1, PVFS_FLOAT, pvfs_dtype);
 #ifdef DEBUG_DTYPE
 	    fprintf(stderr, "-MPI_FLOAT\n");
 #endif
-	    break;
-	case MPI_DOUBLE:
-	    ret = PVFS_Request_contiguous(1, PVFS_DOUBLE, pvfs_dtype);	  
+    }
+    else if ( MPI_DOUBLE == *mpi_dtype )
+    {
+	    ret = PVFS_Request_contiguous(1, PVFS_DOUBLE, pvfs_dtype);
 #ifdef DEBUG_DTYPE
 	    fprintf(stderr, "-MPI_DOUBLE\n");
 #endif
-	    break;
-	case MPI_UNSIGNED_CHAR:
-	    ret = PVFS_Request_contiguous(1, PVFS_UNSIGNED_CHAR, pvfs_dtype);  
+    }
+    else if ( MPI_UNSIGNED_CHAR == *mpi_dtype )
+    {
+	    ret = PVFS_Request_contiguous(1, PVFS_UNSIGNED_CHAR, pvfs_dtype);
 #ifdef DEBUG_DTYPE
 	    fprintf(stderr, "-MPI_UNSIGNED_CHAR\n");
 #endif
-	    break;
-	case MPI_UNSIGNED_SHORT:
-	    ret = PVFS_Request_contiguous(1, PVFS_UNSIGNED, pvfs_dtype); 
+    }
+    else if ( MPI_UNSIGNED_SHORT == *mpi_dtype )
+    {
+	    ret = PVFS_Request_contiguous(1, PVFS_UNSIGNED, pvfs_dtype);
 #ifdef DEBUG_DTYPE
 	    fprintf(stderr, "-MPI_UNSIGNED_SHORT\n");
 #endif
-	    break;
-	case MPI_UNSIGNED:
-	    ret = PVFS_Request_contiguous(1, PVFS_UNSIGNED, pvfs_dtype);  
+    }
+    else if ( MPI_UNSIGNED == *mpi_dtype )
+    {
+	    ret = PVFS_Request_contiguous(1, PVFS_UNSIGNED, pvfs_dtype);
 #ifdef DEBUG_DTYPE
 	    fprintf(stderr, "-MPI_SHORT\n");
 #endif
-	    break;
-	case MPI_UNSIGNED_LONG:
-	    ret = PVFS_Request_contiguous(1, PVFS_UNSIGNED_LONG, pvfs_dtype);  
+    }
+    else if ( MPI_UNSIGNED_LONG == *mpi_dtype )
+    {
+	    ret = PVFS_Request_contiguous(1, PVFS_UNSIGNED_LONG, pvfs_dtype);
 #ifdef DEBUG_DTYPE
 	    fprintf(stderr, "-MPI_UNSIGNED_LONG\n");
 #endif
-	    break;
-	case MPI_LONG_DOUBLE:
-	    ret = PVFS_Request_contiguous(1, PVFS_LONG_DOUBLE, pvfs_dtype);  
+    }
+    else if ( MPI_LONG_DOUBLE == *mpi_dtype )
+    {
+	    ret = PVFS_Request_contiguous(1, PVFS_LONG_DOUBLE, pvfs_dtype);
 #ifdef DEBUG_DTYPE
 	    fprintf(stderr, "-MPI_LONG_DOUBLE\n");
 #endif
-	    break;
-	default:
+    }
+    else
+    {
 	    fprintf(stderr, "convert_named: predefined type not found");
 	    return -1;
-	    break;
     }
     if (ret != 0)
 	fprintf(stderr, "convert_named: Datatype creation failed\n");
@@ -689,34 +700,34 @@ void print_dtype_info(int combiner,
 		    arr_int[0], arr_int[1], arr_int[2]);
 	    break;
 	case MPI_COMBINER_HVECTOR:
-	    fprintf(stderr, "HVECTOR(%d,%d,%d)\n",
+	    fprintf(stderr, "HVECTOR(%d,%d,%ld)\n",
 		    arr_int[0], arr_int[1],arr_addr[0]);
 	    break;
 	case MPI_COMBINER_INDEXED:
 	    fprintf(stderr, "INDEXED(%d,[",
 		    arr_int[0]);
 	    for (i = 0; i < arr_int[0]; i++)
-		fprintf(stderr, "(%d,%Ld) ",
+		fprintf(stderr, "(%d,%d) ",
 			arr_int[1+i],
-			(int64_t) arr_int[arr_int[0]+1+i]);
+			arr_int[arr_int[0]+1+i]);
 	    fprintf(stderr, "]\n");
 	    break;
 	case MPI_COMBINER_HINDEXED:
 	    fprintf(stderr, "HINDEXED(%d,[",
 		    arr_int[0]);
 	    for (i = 0; i < arr_int[0]; i++)
-		fprintf(stderr, "(%d,%Ld) ",
+		fprintf(stderr, "(%d,%lld) ",
 			arr_int[1+i],
-			(int64_t) arr_addr[i]);
+			(long long)arr_addr[i]);
 	    fprintf(stderr, "]\n");
 	    break;
 	case MPI_COMBINER_STRUCT:
 	    fprintf(stderr, "STRUCT(%d,[",
 		    arr_int[0]);
 	    for (i = 0; i < arr_int[0]; i++)
-		fprintf(stderr, "(%d,%Ld) ",
+		fprintf(stderr, "(%d,%lld) ",
 			arr_int[1+i],
-			(int64_t) arr_addr[i]);
+			(long long) arr_addr[i]);
 	    fprintf(stderr, "]\n");
 	    break;
 	case MPI_COMBINER_DUP:

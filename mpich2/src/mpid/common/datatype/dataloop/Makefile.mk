@@ -7,7 +7,7 @@
 
 ## this file is already guarded by an "if BUILD_MPID_COMMON_DATATYPE"
 
-lib_lib@MPILIBNAME@_la_SOURCES +=                                    \
+mpi_core_sources +=                                    \
     src/mpid/common/datatype/dataloop/darray_support.c               \
     src/mpid/common/datatype/dataloop/dataloop.c                     \
     src/mpid/common/datatype/dataloop/dataloop_create.c              \
@@ -21,7 +21,8 @@ lib_lib@MPILIBNAME@_la_SOURCES +=                                    \
     src/mpid/common/datatype/dataloop/segment_count.c                \
     src/mpid/common/datatype/dataloop/segment_flatten.c              \
     src/mpid/common/datatype/dataloop/segment_packunpack.c           \
-    src/mpid/common/datatype/dataloop/subarray_support.c
+    src/mpid/common/datatype/dataloop/subarray_support.c             \
+    src/mpid/common/datatype/dataloop/dataloop_optimize.c
 
 # several headers are included by the rest of MPICH
 AM_CPPFLAGS += -I$(top_srcdir)/src/mpid/common/datatype

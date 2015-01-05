@@ -82,7 +82,8 @@ DIST_COMMON = $(top_srcdir)/threads/Makefile_threads.mtest \
 	$(srcdir)/Makefile.am $(top_srcdir)/confdb/depcomp
 noinst_PROGRAMS = ctxdup$(EXEEXT) dup_leak_test$(EXEEXT) \
 	comm_dup_deadlock$(EXEEXT) comm_create_threads$(EXEEXT) \
-	comm_create_group_threads$(EXEEXT)
+	comm_create_group_threads$(EXEEXT) comm_idup$(EXEEXT) \
+	ctxidup$(EXEEXT)
 subdir = threads/comm
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -117,10 +118,20 @@ comm_dup_deadlock_OBJECTS = comm_dup_deadlock.$(OBJEXT)
 comm_dup_deadlock_LDADD = $(LDADD)
 comm_dup_deadlock_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+comm_idup_SOURCES = comm_idup.c
+comm_idup_OBJECTS = comm_idup.$(OBJEXT)
+comm_idup_LDADD = $(LDADD)
+comm_idup_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
 ctxdup_SOURCES = ctxdup.c
 ctxdup_OBJECTS = ctxdup.$(OBJEXT)
 ctxdup_LDADD = $(LDADD)
 ctxdup_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
+ctxidup_SOURCES = ctxidup.c
+ctxidup_OBJECTS = ctxidup.$(OBJEXT)
+ctxidup_LDADD = $(LDADD)
+ctxidup_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
 dup_leak_test_SOURCES = dup_leak_test.c
 dup_leak_test_OBJECTS = dup_leak_test.$(OBJEXT)
@@ -150,15 +161,17 @@ am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
-LINK = $(CCLD) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = comm_create_group_threads.c comm_create_threads.c \
-	comm_dup_deadlock.c ctxdup.c dup_leak_test.c
+	comm_dup_deadlock.c comm_idup.c ctxdup.c ctxidup.c \
+	dup_leak_test.c
 DIST_SOURCES = comm_create_group_threads.c comm_create_threads.c \
-	comm_dup_deadlock.c ctxdup.c dup_leak_test.c
+	comm_dup_deadlock.c comm_idup.c ctxdup.c ctxidup.c \
+	dup_leak_test.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -318,6 +331,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -367,7 +381,7 @@ top_srcdir = @top_srcdir@
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
-CLEANFILES = summary.xml summary.tap
+CLEANFILES = summary.xml summary.tap summary.junit.xml
 EXTRA_DIST = testlist
 all: all-am
 
@@ -420,9 +434,17 @@ comm_dup_deadlock$(EXEEXT): $(comm_dup_deadlock_OBJECTS) $(comm_dup_deadlock_DEP
 	@rm -f comm_dup_deadlock$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(comm_dup_deadlock_OBJECTS) $(comm_dup_deadlock_LDADD) $(LIBS)
 
+comm_idup$(EXEEXT): $(comm_idup_OBJECTS) $(comm_idup_DEPENDENCIES) $(EXTRA_comm_idup_DEPENDENCIES) 
+	@rm -f comm_idup$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(comm_idup_OBJECTS) $(comm_idup_LDADD) $(LIBS)
+
 ctxdup$(EXEEXT): $(ctxdup_OBJECTS) $(ctxdup_DEPENDENCIES) $(EXTRA_ctxdup_DEPENDENCIES) 
 	@rm -f ctxdup$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(ctxdup_OBJECTS) $(ctxdup_LDADD) $(LIBS)
+
+ctxidup$(EXEEXT): $(ctxidup_OBJECTS) $(ctxidup_DEPENDENCIES) $(EXTRA_ctxidup_DEPENDENCIES) 
+	@rm -f ctxidup$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(ctxidup_OBJECTS) $(ctxidup_LDADD) $(LIBS)
 
 dup_leak_test$(EXEEXT): $(dup_leak_test_OBJECTS) $(dup_leak_test_DEPENDENCIES) $(EXTRA_dup_leak_test_DEPENDENCIES) 
 	@rm -f dup_leak_test$(EXEEXT)
@@ -437,7 +459,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_create_group_threads.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_create_threads.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_dup_deadlock.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/comm_idup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ctxdup.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ctxidup.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dup_leak_test.Po@am__quote@
 
 .c.o:

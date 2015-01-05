@@ -5,5 +5,6 @@
 ##     See COPYRIGHT in top-level directory.
 ##
 
-lib_lib@MPILIBNAME@_la_SOURCES += src/glue/romio/glue_romio.c
+mpi_core_sources += src/glue/romio/glue_romio.c
 
+mpi_sources += src/glue/romio/all_romio_symbols.c

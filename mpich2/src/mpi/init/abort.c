@@ -10,6 +10,22 @@
 #include <stdlib.h>
 #endif
 
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+cvars:
+    - name        : MPIR_CVAR_SUPPRESS_ABORT_MESSAGE
+      category    : ERROR_HANDLING
+      type        : boolean
+      default     : false
+      class       : device
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : Disable printing of abort error message.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
+
 /* -- Begin Profiling Symbol Block for routine MPI_Abort */
 #if defined(HAVE_PRAGMA_WEAK)
 #pragma weak MPI_Abort = PMPI_Abort
@@ -58,7 +74,7 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     /* FIXME: 100 is arbitrary and may not be long enough */
-    char abort_str[100], comm_name[MPI_MAX_OBJECT_NAME];
+    char abort_str[100] = "", comm_name[MPI_MAX_OBJECT_NAME];
     int len = MPI_MAX_OBJECT_NAME;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_ABORT);
 
@@ -113,8 +129,9 @@ int MPI_Abort(MPI_Comm comm, int errorcode)
     {
 	MPIU_Snprintf(comm_name, MPI_MAX_OBJECT_NAME, "comm=0x%X", comm);
     }
-    /* FIXME: This is not internationalized */
-    MPIU_Snprintf(abort_str, 100, "application called MPI_Abort(%s, %d) - process %d", comm_name, errorcode, comm_ptr->rank);
+    if (!MPIR_CVAR_SUPPRESS_ABORT_MESSAGE)
+        /* FIXME: This is not internationalized */
+        MPIU_Snprintf(abort_str, 100, "application called MPI_Abort(%s, %d) - process %d", comm_name, errorcode, comm_ptr->rank);
     mpi_errno = MPID_Abort( comm_ptr, mpi_errno, errorcode, abort_str );
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS) goto fn_fail;

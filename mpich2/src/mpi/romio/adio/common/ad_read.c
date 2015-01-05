@@ -5,13 +5,16 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
-#include "adio.h"
 
-#ifdef HAVE_UNISTD_H
+#define _XOPEN_SOURCE 500
 #include <unistd.h>
-#endif
+
+#include "adio.h"
 #ifdef AGGREGATION_PROFILE
 #include "mpe.h"
+#endif
+#ifdef ROMIO_GPFS
+# include "adio/ad_gpfs/ad_gpfs_tuning.h"
 #endif
 
 void ADIOI_GEN_ReadContig(ADIO_File fd, void *buf, int count, 
@@ -19,12 +22,12 @@ void ADIOI_GEN_ReadContig(ADIO_File fd, void *buf, int count,
 			  ADIO_Offset offset, ADIO_Status *status,
 			  int *error_code)
 {
-    off_t err_lseek = -1;
     ssize_t err = -1;
     MPI_Count datatype_size;
     ADIO_Offset len, bytes_xfered=0;
     size_t rd_count;
     static char myname[] = "ADIOI_GEN_READCONTIG";
+    double io_time=0;
     char *p;
 
 #ifdef AGGREGATION_PROFILE
@@ -33,29 +36,15 @@ void ADIOI_GEN_ReadContig(ADIO_File fd, void *buf, int count,
     MPI_Type_size_x(datatype, &datatype_size);
     len = datatype_size * (ADIO_Offset)count;
 
+    io_time = MPI_Wtime();
+#ifdef ROMIO_GPFS
+    if (gpfsmpio_timing) {
+	gpfsmpio_prof_cr[ GPFSMPIO_CIO_DATA_SIZE ] += len;
+    }
+#endif
+
     if (file_ptr_type == ADIO_INDIVIDUAL) {
 	offset = fd->fp_ind;
-    }
-
-    if (fd->fp_sys_posn != offset) {
-#ifdef ADIOI_MPE_LOGGING
-        MPE_Log_event( ADIOI_MPE_lseek_a, 0, NULL );
-#endif
-	err_lseek = lseek(fd->fd_sys, offset, SEEK_SET);
-#ifdef ADIOI_MPE_LOGGING
-        MPE_Log_event( ADIOI_MPE_lseek_b, 0, NULL );
-#endif
-	/* --BEGIN ERROR HANDLING-- */
-	if (err_lseek == -1) {
-	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
-					       MPIR_ERR_RECOVERABLE,
-					       myname, __LINE__,
-					       MPI_ERR_IO, "**io",
-					       "**io %s", strerror(errno));
-	    fd->fp_sys_posn = -1;
-	    return;
-	}
-	/* --END ERROR HANDLING-- */
     }
 
     p=buf;
@@ -64,7 +53,12 @@ void ADIOI_GEN_ReadContig(ADIO_File fd, void *buf, int count,
 	MPE_Log_event( ADIOI_MPE_read_a, 0, NULL );
 #endif
 	rd_count = len - bytes_xfered;
-	err = read(fd->fd_sys, p, rd_count);
+#ifdef ROMIO_GPFS
+	if (gpfsmpio_devnullio)
+	    err = pread(fd->null_fd, p, rd_count, offset+bytes_xfered);
+	else
+#endif
+	    err = pread(fd->fd_sys, p, rd_count, offset+bytes_xfered);
 	/* --BEGIN ERROR HANDLING-- */
 	if (err == -1) {
 	    *error_code = MPIO_Err_create_code(MPI_SUCCESS,
@@ -87,7 +81,9 @@ void ADIOI_GEN_ReadContig(ADIO_File fd, void *buf, int count,
 	bytes_xfered += err;
 	p += err;
     }
-
+#ifdef ROMIO_GPFS
+    if (gpfsmpio_timing) gpfsmpio_prof_cr[ GPFSMPIO_CIO_T_POSI_RW ] += (MPI_Wtime() - io_time);
+#endif
     fd->fp_sys_posn = offset + bytes_xfered;
 
     if (file_ptr_type == ADIO_INDIVIDUAL) {
@@ -103,5 +99,8 @@ void ADIOI_GEN_ReadContig(ADIO_File fd, void *buf, int count,
     *error_code = MPI_SUCCESS;
 #ifdef AGGREGATION_PROFILE
     MPE_Log_event (5035, 0, NULL);
+#endif
+#ifdef ROMIO_GPFS
+    if (gpfsmpio_timing) gpfsmpio_prof_cr[ GPFSMPIO_CIO_T_MPIO_RW ] += (MPI_Wtime() - io_time);
 #endif
 }

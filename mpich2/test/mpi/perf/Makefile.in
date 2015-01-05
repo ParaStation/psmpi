@@ -114,10 +114,14 @@ dtpack_SOURCES = dtpack.c
 dtpack_OBJECTS = dtpack-dtpack.$(OBJEXT)
 dtpack_LDADD = $(LDADD)
 dtpack_DEPENDENCIES = $(top_builddir)/util/mtest.o
+dtpack_LINK = $(CCLD) $(dtpack_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 indexperf_SOURCES = indexperf.c
 indexperf_OBJECTS = indexperf-indexperf.$(OBJEXT)
 indexperf_LDADD = $(LDADD)
 indexperf_DEPENDENCIES = $(top_builddir)/util/mtest.o
+indexperf_LINK = $(CCLD) $(indexperf_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 manyrma_SOURCES = manyrma.c
 manyrma_OBJECTS = manyrma.$(OBJEXT)
 manyrma_LDADD = $(LDADD)
@@ -126,10 +130,14 @@ nestvec_SOURCES = nestvec.c
 nestvec_OBJECTS = nestvec-nestvec.$(OBJEXT)
 nestvec_LDADD = $(LDADD)
 nestvec_DEPENDENCIES = $(top_builddir)/util/mtest.o
+nestvec_LINK = $(CCLD) $(nestvec_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 nestvec2_SOURCES = nestvec2.c
 nestvec2_OBJECTS = nestvec2-nestvec2.$(OBJEXT)
 nestvec2_LDADD = $(LDADD)
 nestvec2_DEPENDENCIES = $(top_builddir)/util/mtest.o
+nestvec2_LINK = $(CCLD) $(nestvec2_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 non_zero_root_SOURCES = non_zero_root.c
 non_zero_root_OBJECTS = non_zero_root.$(OBJEXT)
 non_zero_root_LDADD = $(LDADD)
@@ -176,7 +184,7 @@ am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
-LINK = $(CCLD) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
@@ -346,6 +354,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -394,7 +403,7 @@ top_srcdir = @top_srcdir@
 # AM_CPPFLAGS are used for C++ code as well
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = $(top_builddir)/util/mtest.o
-CLEANFILES = summary.xml summary.tap
+CLEANFILES = summary.xml summary.tap summary.junit.xml
 EXTRA_DIST = testlist
 
 # Force all tests to be compiled with optimization 
@@ -456,11 +465,11 @@ commcreatep$(EXEEXT): $(commcreatep_OBJECTS) $(commcreatep_DEPENDENCIES) $(EXTRA
 
 dtpack$(EXEEXT): $(dtpack_OBJECTS) $(dtpack_DEPENDENCIES) $(EXTRA_dtpack_DEPENDENCIES) 
 	@rm -f dtpack$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(dtpack_OBJECTS) $(dtpack_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(dtpack_LINK) $(dtpack_OBJECTS) $(dtpack_LDADD) $(LIBS)
 
 indexperf$(EXEEXT): $(indexperf_OBJECTS) $(indexperf_DEPENDENCIES) $(EXTRA_indexperf_DEPENDENCIES) 
 	@rm -f indexperf$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(indexperf_OBJECTS) $(indexperf_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(indexperf_LINK) $(indexperf_OBJECTS) $(indexperf_LDADD) $(LIBS)
 
 manyrma$(EXEEXT): $(manyrma_OBJECTS) $(manyrma_DEPENDENCIES) $(EXTRA_manyrma_DEPENDENCIES) 
 	@rm -f manyrma$(EXEEXT)
@@ -468,11 +477,11 @@ manyrma$(EXEEXT): $(manyrma_OBJECTS) $(manyrma_DEPENDENCIES) $(EXTRA_manyrma_DEP
 
 nestvec$(EXEEXT): $(nestvec_OBJECTS) $(nestvec_DEPENDENCIES) $(EXTRA_nestvec_DEPENDENCIES) 
 	@rm -f nestvec$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(nestvec_OBJECTS) $(nestvec_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(nestvec_LINK) $(nestvec_OBJECTS) $(nestvec_LDADD) $(LIBS)
 
 nestvec2$(EXEEXT): $(nestvec2_OBJECTS) $(nestvec2_DEPENDENCIES) $(EXTRA_nestvec2_DEPENDENCIES) 
 	@rm -f nestvec2$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(nestvec2_OBJECTS) $(nestvec2_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(nestvec2_LINK) $(nestvec2_OBJECTS) $(nestvec2_LDADD) $(LIBS)
 
 non_zero_root$(EXEEXT): $(non_zero_root_OBJECTS) $(non_zero_root_DEPENDENCIES) $(EXTRA_non_zero_root_DEPENDENCIES) 
 	@rm -f non_zero_root$(EXEEXT)

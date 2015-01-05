@@ -1,7 +1,7 @@
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
-# (C) 2011 by Argonne National Laboratory.
+# (C) 2008 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
 #
 
@@ -14,6 +14,7 @@ noinst_PROGRAMS = \
     uallredx      \
     uallreduce    \
     ureduce       \
+    ureducelocal  \
     uscan         \
     uexscan       \
     icbcastx      \
@@ -28,12 +29,14 @@ noinst_PROGRAMS = \
     icreducex     \
     icalltoallx   \
     alltoallw2x   \
-    reduceboolx
+    reduceboolx   \
+    redscatblk
 
 arcomplex_SOURCES = arcomplex.cxx
 uallredx_SOURCES = uallredx.cxx
 uallreduce_SOURCES = uallreduce.cxx
 ureduce_SOURCES = ureduce.cxx
+ureducelocal_SOURCES = ureducelocal.cxx
 uscan_SOURCES = uscan.cxx
 uexscan_SOURCES = uexscan.cxx
 icbcastx_SOURCES = icbcastx.cxx
@@ -49,4 +52,4 @@ icreducex_SOURCES = icreducex.cxx
 icalltoallx_SOURCES = icalltoallx.cxx
 alltoallw2x_SOURCES = alltoallw2x.cxx
 reduceboolx_SOURCES = reduceboolx.cxx
-
+redscatblk_SOURCES = redscatblk.cxx

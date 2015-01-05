@@ -571,7 +571,8 @@ static const MPI_Datatype mpich_mpi_aint   MPICH_ATTR_TYPE_TAG(MPI_Aint)   = MPI
 static const MPI_Datatype mpich_mpi_offset MPICH_ATTR_TYPE_TAG(MPI_Offset) = MPI_OFFSET;
 #endif
 
-/* The order of these elements must match that in mpif.h */
+/* The order of these elements must match that in mpif.h, mpi_f08_types.f90,
+   and mpi_c_interface_types.f90 */
 typedef struct MPI_Status {
     int count_lo;
     int count_hi_and_cancelled;
@@ -734,6 +735,26 @@ extern MPIU_DLL_SPEC MPI_Fint * MPI_F_STATUSES_IGNORE;
    NULL (see 5.3.2) */
 #define MPI_ARGV_NULL (char **)0
 #define MPI_ARGVS_NULL (char ***)0
+
+/* C type for MPI_STATUS in F08.
+   The field order should match that in mpi_f08_types.f90, and mpi_c_interface_types.f90.
+ */
+typedef struct {
+    MPI_Fint count_lo;
+    MPI_Fint count_hi_and_cancelled;
+    MPI_Fint MPI_SOURCE;
+    MPI_Fint MPI_TAG;
+    MPI_Fint MPI_ERROR;
+} MPI_F08_Status;
+
+extern MPI_F08_Status MPIR_F08_MPI_STATUS_IGNORE_OBJ;
+extern MPI_F08_Status MPIR_F08_MPI_STATUSES_IGNORE_OBJ[1];
+extern int MPIR_F08_MPI_IN_PLACE;
+extern int MPIR_F08_MPI_BOTTOM;
+
+/* Pointers to above objects */
+extern MPI_F08_Status *MPI_F08_STATUS_IGNORE;
+extern MPI_F08_Status *MPI_F08_STATUSES_IGNORE;
 
 /* For supported thread levels */
 #define MPI_THREAD_SINGLE 0

@@ -46,13 +46,11 @@ static pami_result_t
 MPIDI_WinUnlockAllReq_post(pami_context_t   context,
                         void           * _info)
 {
-  MPID_Win  *win;  
   MPIDI_WinLock_info* info = (MPIDI_WinLock_info*)_info;
   MPIDI_Win_control_t msg = {
   .type       = MPIDI_WIN_MSGTYPE_UNLOCKALL,
   .flagAddr   = info,
   };
-  win=info->win; 
   MPIDI_WinCtrlSend(context, &msg, info->peer, info->win);
   return PAMI_SUCCESS;
 }
@@ -100,7 +98,7 @@ MPID_Win_lock_all(int      assert,
    size = (MPIR_Comm_size(win->comm_ptr));
    win->mpid.max_ctrlsends = MAX_NUM_CTRLSEND;
    nMask= win->mpid.max_ctrlsends - 1;
-   if (cp=getenv("MP_MAX_NUM_CTRLSEND")) {
+   if ( (cp=getenv("MP_MAX_NUM_CTRLSEND")) ) {
        win->mpid.max_ctrlsends = atoi(cp);
    }
    nMask=(win->mpid.max_ctrlsends - 1);

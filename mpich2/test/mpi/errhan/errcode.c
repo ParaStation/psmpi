@@ -1020,6 +1020,12 @@ int main(int argc, char **argv)
     /* src/mpi/romio/adio/common/error.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**fileexist", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**fileexist" );
+    /* src/mpi/romio/adio/common/error.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**filenospace", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**filenospace" );
+    /* src/mpi/romio/adio/common/error.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**filequota", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**filequota" );
     /* src/mpi/romio/adio/common/async_list.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "Unknown request optype", 0);
     ChkMsg( err, MPI_ERR_OTHER, "Unknown request optype" );
@@ -1185,12 +1191,6 @@ int main(int argc, char **argv)
     /* src/mpi/romio/adio/ad_nfs/ad_nfs_write.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "ADIOI_NFS_WriteStrided: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.", 0);
     ChkMsg( err, MPI_ERR_OTHER, "ADIOI_NFS_WriteStrided: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR." );
-    /* src/mpi/romio/adio/ad_bgl/ad_bgl_write.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "ADIOI_BGL_WriteStrided: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "ADIOI_BGL_WriteStrided: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR." );
-    /* src/mpi/romio/adio/ad_bg/ad_bg_write.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "ADIOI_BG_WriteStrided: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR.", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "ADIOI_BG_WriteStrided: ROMIO tries to optimize this access by doing a read-modify-write, but is unable to read the file. Please give the file read permission and open it with MPI_MODE_RDWR." );
     /* src/mpi/rma/win_wait.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_win_wait", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_win_wait" );
@@ -5552,74 +5552,74 @@ int main(int argc, char **argv)
     /* src/util/procmap/local_proc.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**dynamic_node_ids", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**dynamic_node_ids" );
-    /* src/binding/f90/create_f90_util.c */
+    /* src/binding/fortran/use_mpi/create_f90_util.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**f90typetoomany", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**f90typetoomany" );
-    /* src/binding/f90/create_f90_real.c */
+    /* src/binding/fortran/use_mpi/create_f90_real.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**f90typerealnone", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**f90typerealnone" );
     {
-    /* src/binding/f90/create_f90_real.c */
+    /* src/binding/fortran/use_mpi/create_f90_real.c */
     int i1 = 1;
     int i2 = 2;
      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**f90typerealnone", "**f90typerealnone %d %d", i1, i2 );
     ChkMsg( err, MPI_ERR_OTHER, "**f90typerealnone %d %d" );
     }
-    /* src/binding/f90/create_f90_real.c */
+    /* src/binding/fortran/use_mpi/create_f90_real.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_type_create_f90_real", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_type_create_f90_real" );
     {
-    /* src/binding/f90/create_f90_real.c */
+    /* src/binding/fortran/use_mpi/create_f90_real.c */
     int i1 = 1;
     int i2 = 2;
      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_type_create_f90_real", "**mpi_type_create_f90_real %d %d", i1, i2 );
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_type_create_f90_real %d %d" );
     }
-    /* src/binding/f90/create_f90_int.c */
+    /* src/binding/fortran/use_mpi/create_f90_int.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**f90typeintnone", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**f90typeintnone" );
     {
-    /* src/binding/f90/create_f90_int.c */
+    /* src/binding/fortran/use_mpi/create_f90_int.c */
     int i1 = 1;
      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**f90typeintnone", "**f90typeintnone %d", i1 );
     ChkMsg( err, MPI_ERR_OTHER, "**f90typeintnone %d" );
     }
-    /* src/binding/f90/create_f90_int.c */
+    /* src/binding/fortran/use_mpi/create_f90_int.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_type_create_f90_int", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_type_create_f90_int" );
     {
-    /* src/binding/f90/create_f90_int.c */
+    /* src/binding/fortran/use_mpi/create_f90_int.c */
     int i1 = 1;
      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_type_create_f90_int", "**mpi_type_create_f90_int %d", i1 );
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_type_create_f90_int %d" );
     }
-    /* src/binding/f90/create_f90_complex.c */
+    /* src/binding/fortran/use_mpi/create_f90_complex.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**f90typecomplexnone", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**f90typecomplexnone" );
     {
-    /* src/binding/f90/create_f90_complex.c */
+    /* src/binding/fortran/use_mpi/create_f90_complex.c */
     int i1 = 1;
     int i2 = 2;
      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**f90typecomplexnone", "**f90typecomplexnone %d %d", i1, i2 );
     ChkMsg( err, MPI_ERR_OTHER, "**f90typecomplexnone %d %d" );
     }
-    /* src/binding/f90/create_f90_complex.c */
+    /* src/binding/fortran/use_mpi/create_f90_complex.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_type_create_f90_complex", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_type_create_f90_complex" );
     {
-    /* src/binding/f90/create_f90_complex.c */
+    /* src/binding/fortran/use_mpi/create_f90_complex.c */
     int i1 = 1;
     int i2 = 2;
      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**mpi_type_create_f90_complex", "**mpi_type_create_f90_complex %d %d", i1, i2 );
     ChkMsg( err, MPI_ERR_OTHER, "**mpi_type_create_f90_complex %d %d" );
     }
-    /* src/binding/f77/statusc2f.c */
+    /* src/binding/fortran/mpif_h/statusc2f.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**notcstatignore", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**notcstatignore" );
-    /* src/binding/f77/statusf2c.c */
+    /* src/binding/fortran/mpif_h/statusf2c.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**notfstatignore", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**notfstatignore" );
-    /* src/binding/f77/addressf.c */
+    /* src/binding/fortran/mpif_h/addressf.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**inttoosmall", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**inttoosmall" );
     {

@@ -316,6 +316,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -364,7 +365,7 @@ AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = $(top_builddir)/cxx/util/mtest.o
 CLEANFILES = summary.xml summary.tap
 EXTRA_DIST = testlist.in
-static_subdirs = util attr pt2pt init info comm coll datatype errhan
+static_subdirs = util attr pt2pt init info comm coll datatype errhan topo
 SUBDIRS = $(static_subdirs) $(iodir) $(rmadir) $(spawndir)
 DIST_SUBDIRS = $(static_subdirs) io rma spawn
 all: all-recursive

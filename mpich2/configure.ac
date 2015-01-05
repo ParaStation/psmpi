@@ -25,7 +25,7 @@ dnl Each of these is described in more detail below.
 dnl
 dnl 1. Identify the modules (most are specified by 
 dnl --with-<modulename>=instance,
-dnl for example, --with-pm=mpd or --with-device=ch3:nemesis).
+dnl for example, --with-pm=hydra or --with-device=ch3:nemesis).
 dnl For each module, source the file mpichprereq if present (in the
 dnl module's top-level directory).  This
 dnl must be a bourne (sh) shell script; it can access any of the variables
@@ -131,8 +131,8 @@ MPICH_VERSION=MPICH_VERSION_m4
 AC_SUBST([MPICH_VERSION])
 MPICH_RELEASE_DATE="MPICH_RELEASE_DATE_m4"
 AC_SUBST([MPICH_RELEASE_DATE])
-libmpich_so_version="libmpich_so_version_m4"
-AC_SUBST([libmpich_so_version])
+libmpi_so_version="libmpi_so_version_m4"
+AC_SUBST([libmpi_so_version])
 
 
 if test -z "$MPICH_VERSION" ; then
@@ -185,10 +185,10 @@ MPICH_NUMVERSION=`expr $V1$V2$V3$V4$V5 + 0`
 AC_SUBST(MPICH_NUMVERSION)
 
 # ABIVERSION is the name used by simplemake, so we reassign the
-# libmpich_so_version number to it
-ABIVERSION=${libmpich_so_version}
+# libmpi_so_version number to it
+ABIVERSION=${libmpi_so_version}
 export ABIVERSION
-export libmpich_so_version
+export libmpi_so_version
 AC_SUBST(ABIVERSION)
 
 # Print out the configure options
@@ -401,6 +401,9 @@ AC_ARG_ENABLE(fast,
         none     - None of above options, i.e. --disable-fast
 ],,enable_fast=O2)
 
+AC_ARG_ENABLE(interlib-deps,
+	[AC_HELP_STRING([--interlib-deps - Enable interlibrary dependencies])],,enable_interlib_deps=yes)
+
 AC_ARG_ENABLE(check-compiler-flags,
 	AC_HELP_STRING([--enable-check-compiler-flags], [enable the checks for all compiler
                        options, xxxFLAGS, MPICH_xxxFLAGS. Default is on.]),,
@@ -408,19 +411,22 @@ AC_ARG_ENABLE(check-compiler-flags,
 
 dnl We enable f77 and fc if we can find compilers for them.
 dnl In addition, we check whether f77 and fc can work together.
+AC_ARG_ENABLE(fortran,
+[  --enable-fortran=option - Control the level of Fortran support in the MPICH implementation.
+	yes|all   - Enable all available Fortran implementations (F77, F90, F08)
+	f77       - Enable Fortran 77 support
+	f90       - Enable Fortran 90 support
+	f08       - Enable Fortran 2008 support
+	no|none   - No Fortran support
+],,[enable_fortran=f77,f90])
+
 AC_ARG_ENABLE(f77,
-	AC_HELP_STRING([--enable-f77], [Enable Fortran 77 bindings]),,enable_f77=yes)
+	AC_HELP_STRING([--enable-f77],
+		[DEPRECATED: Use --enable-fortran or --disable-fortran instead]),,[enable_f77=yes])
 
 AC_ARG_ENABLE(fc,
-	AC_HELP_STRING([--enable-fc], [Enable Fortran 90 bindings]),,enable_fc=yes)
-
-AC_ARG_ENABLE(f90,
-	AC_HELP_STRING([--enable-f90],
-		[Obsolete option: Use --enable-fc or --disable-fc instead]),
-	[AC_MSG_ERROR([
---enable-f90 and --disable-f90 are NO longer valid configure options,
-use --enable-fc or --disable-fc instead])]
-)
+	AC_HELP_STRING([--enable-fc],
+		[DEPRECATED: Use --enable-fortran or --disable-fortran instead]),,[enable_fc=yes])
 
 AC_ARG_ENABLE(cxx,
 	AC_HELP_STRING([--enable-cxx], [Enable C++ bindings]),,enable_cxx=yes)
@@ -468,8 +474,8 @@ AC_ARG_WITH(pm,
                  valid values.  Multiple process managers may be specified as
                  long as they all use the same pmi interface by separating them
                  with colons.  The mpiexec for the first named process manager
-                 will be installed.  Example: "--with-pm=hydra:mpd:gforker"
-                 builds the three process managers hydra, mpd and gforker;
+                 will be installed.  Example: "--with-pm=hydra:gforker"
+                 builds the two process managers hydra, and gforker;
                  only the mpiexec from hydra is installed into the bin
                  directory.]),,with_pm=default)
 
@@ -534,7 +540,7 @@ AC_ARG_ENABLE(weak-symbols,
 AC_ARG_ENABLE([two-level-namespace],
               [AS_HELP_STRING([--enable-two-level-namespace],
                               [(Darwin only) Build shared libraries and programs
-                               built with the mpicc/mpif77/etc. compiler
+                               built with the mpicc/mpifort/etc. compiler
                                wrappers with '-Wl,-commons,use_dylibs' and
                                without '-Wl,-flat_namespace'.  This may make the
                                MPICH installation and MPI programs more
@@ -587,28 +593,10 @@ AC_ARG_WITH(namepublisher,
                               include
                                    pmi (default)
 			           file[:directory] (optional directory)
-                                   mpd
                                    no (no service available)],,with_namepublisher=default)
 AC_ARG_WITH(name-publisher,
     [],
     with_namepublisher=$with_name_publisher,)
-
-AC_SUBST(MPIFLIBNAME)
-AC_SUBST(PMPIFLIBNAME)
-
-dnl The default is a special wrapper library
-AC_ARG_WITH(fwrapname,
-	AC_HELP_STRING([--with-fwrapname=name],
-		[Specify name of library containing Fortran interface routines]),
-	[FWRAPNAME=$withval;set_FWRAPNAME="yes"],FWRAPNAME=fmpich)
-AC_SUBST(FWRAPNAME)
-
-dnl The default is a special wrapper library
-AC_ARG_WITH(fcwrapname,
-	AC_HELP_STRING([--with-fcwrapname=name],
-		[Specify name of library containing Fortran 90 interface routines]),
-	[FCWRAPNAME=$withval;set_FCWRAPNAME="yes"],FCWRAPNAME=mpichf90)
-AC_SUBST(FCWRAPNAME)
 
 # Find a C compiler.
 # We also need to do this before the F77 and FC test to ensure that we
@@ -649,6 +637,15 @@ if test "X$enable_shared" = "Xno" ; then
     enable_wrapper_rpath=no
 fi
 
+INTERLIB_DEPS=yes
+# We conservatively disable interlibrary dependencies if the libtool
+# support model is anything different from "pass_all"
+if test "X$enable_shared" = "Xno" -o "$deplibs_check_method" != "pass_all" -o "$enable_interlib_deps" = "no" ; then
+    INTERLIB_DEPS=no
+fi
+export INTERLIB_DEPS
+AC_SUBST(INTERLIB_DEPS)
+
 dnl AC_PROG_{CXX,F77,FC} must come early in configure.ac in order to avoid some
 dnl esoteric autoconf macro expansion errors
 dnl
@@ -669,14 +666,64 @@ AS_IF([test "x$enable_cxx" = "xno"],[CXX=no])
 : ${CXXFLAGS=""}
 AC_PROG_CXX([PAC_CXX_SEARCH_LIST])
 
-# suppress default "-g -O2" from AC_PROG_F77
-: ${FFLAGS=""}
-AC_PROG_F77([PAC_F77_SEARCH_LIST])
-
 # suppress default "-g -O2" from AC_PROG_FC
 : ${FCFLAGS=""}
 AC_PROG_FC([PAC_FC_SEARCH_LIST])
 
+save_IFS="$IFS"
+IFS=","
+enable_f77=no
+enable_fc=no
+enable_f08=no
+for option in $enable_fortran ; do
+    case "$option" in
+        yes|all)
+		enable_f77=yes
+		enable_fc=yes
+		;;
+        no|none)
+		enable_f77=no
+		enable_fc=no
+		;;
+        f77)
+		enable_f77=yes
+		;;
+        f90)
+		enable_fc=yes
+		;;
+        f08)
+		enable_f08=yes
+		;;
+        *)
+		IFS="$save_IFS"
+		AC_MSG_WARN([Unknown value $option for --enable-fortran])
+		IFS=","
+		;;
+    esac
+done
+IFS="$save_IFS"
+
+if test "$enable_f77" = "no" ; then
+   if test "$enable_f90" = "yes" ; then
+      AC_MSG_ERROR([Fortran 90 support requires enabling Fortran 77])
+   fi
+fi
+
+if test ! -z "$FC" -a -z "$F77" ; then
+   F77=$FC
+   if test ! -z "$FCFLAGS" -a -z "$FFLAGS" ; then
+      FFLAGS=$FCFLAGS
+   fi
+fi
+
+AM_CONDITIONAL([INSTALL_MPIF77],[test "$F77" != "$FC" -a "$FFLAGS" != "$FCFLAGS"])
+
+# This needs to come after we've potentially set F77=$FC. Otherwise, we could
+# override the user's Fortran compiler selection when only specifying FC at configure
+# time, as is allowed.
+# suppress default "-g -O2" from AC_PROG_F77
+: ${FFLAGS=""}
+AC_PROG_F77([PAC_F77_SEARCH_LIST])
 
 # compute canonical system types
 AC_CANONICAL_BUILD
@@ -799,10 +846,11 @@ m4_map([PAC_SUBCFG_DO_PREREQ], [PAC_SUBCFG_MODULE_LIST])
 
 # ----------------------------------------------------------------------------
 # Set default library names if names haven't already been provided
-AC_ARG_VAR([MPILIBNAME],[can be used to override the name of the MPI library (default: "mpich")])
+AC_ARG_VAR([MPILIBNAME],[can be used to override the name of the MPI library (default: "mpi")])
 AC_ARG_VAR([PMPILIBNAME],[can be used to override the name of the MPI profiling library (default: "p$MPILIBNAME")])
 AC_ARG_VAR([MPICXXLIBNAME],[can be used to override the name of the MPI C++ library (default: "${MPILIBNAME}cxx")])
-MPILIBNAME=${MPILIBNAME:-"mpich"}
+AC_ARG_VAR([MPIFCLIBNAME],[can be used to override the name of the MPI fortran library (default: "${MPILIBNAME}fort")])
+MPILIBNAME=${MPILIBNAME:-"mpi"}
 PMPILIBNAME_set=no
 if test -n "$PMPILIBNAME" ; then 
    PMPILIBNAME_set=yes
@@ -814,10 +862,11 @@ PMPILIBNAME=${PMPILIBNAME:-"p$MPILIBNAME"}
 # We use a different library for the C++ wrappers to avoid problems when
 # creating shared libraries
 if test -z "$MPICXXLIBNAME" ; then MPICXXLIBNAME="${MPILIBNAME}cxx" ; fi
-export MPIFLIBNAME
-export PMPIFLIBNAME
+if test -z "$MPIFCLIBNAME" ; then MPIFCLIBNAME="${MPILIBNAME}fort" ; fi
 export MPICXXLIBNAME
+export MPIFCLIBNAME
 AC_SUBST(MPICXXLIBNAME)
+AC_SUBST(MPIFCLIBNAME)
 
 # We'll set FORTRAN_BINDING to 1 if we support Fortran 
 FORTRAN_BINDING=0
@@ -1114,20 +1163,20 @@ AC_ARG_WITH([mpl-prefix],
                              distributed with MPICH2.])],
             [],dnl action-if-given
             [with_mpl_prefix=embedded]) dnl action-if-not-given
-mpldir=""
-AC_SUBST([mpldir])
 mplsrcdir=""
 AC_SUBST([mplsrcdir])
 mpllibdir=""
 AC_SUBST([mpllibdir])
+mpllib=""
+AC_SUBST([mpllib])
 if test "$with_mpl_prefix" = "embedded" ; then
     PAC_CONFIG_SUBDIR(src/mpl,,AC_MSG_ERROR(MPL configure failed))
-    PAC_PREPEND_FLAG([-l${MPLLIBNAME}], [WRAPPER_LIBS])
     PAC_APPEND_FLAG([-I${master_top_builddir}/src/mpl/include], [CPPFLAGS])
     PAC_APPEND_FLAG([-I${use_top_srcdir}/src/mpl/include], [CPPFLAGS])
 
     mpllibdir="${master_top_builddir}/src/mpl"
     mplsrcdir="${master_top_builddir}/src/mpl"
+    mpllib="src/mpl/lib${MPLLIBNAME}.la"
 else
     # The user specified an already-installed MPL; just sanity check, don't
     # subconfigure it
@@ -1137,6 +1186,7 @@ else
     PAC_PREPEND_FLAG([-l${MPLLIBNAME}],[WRAPPER_LIBS])
     PAC_APPEND_FLAG([-L${with_mpl_prefix}/lib],[WRAPPER_LDFLAGS])
     mpllibdir="${with_mpl_prefix}/lib"
+    mpllib="-l${MPLLIBNAME}"
 fi
 
 # OpenPA
@@ -1170,11 +1220,14 @@ opasrcdir=""
 AC_SUBST([opasrcdir])
 opalibdir=""
 AC_SUBST([opalibdir])
+opalib=""
+AC_SUBST([opalib])
 
 if test "$with_openpa_prefix" = "embedded" ; then
     if test -e "${use_top_srcdir}/src/openpa" ; then
         opasrcdir="${master_top_builddir}/src/openpa"
         opalibdir="${master_top_builddir}/src/openpa/src"
+        opalib="${master_top_builddir}/src/openpa/src/lib${OPALIBNAME}.la"
         PAC_APPEND_FLAG([-I${use_top_srcdir}/src/openpa/src],[CPPFLAGS])
         PAC_APPEND_FLAG([-I${master_top_builddir}/src/openpa/src],[CPPFLAGS])
 
@@ -1191,12 +1244,12 @@ if test "$with_openpa_prefix" = "embedded" ; then
             opa_subdir_args="--with-atomic-primitives=auto_allow_emulation"
         fi
         PAC_CONFIG_SUBDIR_ARGS([src/openpa],[$opa_subdir_args],[],[AC_MSG_ERROR([OpenPA configure failed])])
-        PAC_PREPEND_FLAG([-l${OPALIBNAME}],[WRAPPER_LIBS])
     else
         AC_MSG_WARN([Attempted to use the embedded OpenPA source tree in "src/openpa", but it is missing.  Configuration or compilation may fail later.])
     fi
 elif test "$with_openpa_prefix" = "system" ; then
     PAC_PREPEND_FLAG([-l${OPALIBNAME}],[WRAPPER_LIBS])
+    opalib="-l${OPALIBNAME}"
 elif test "$with_openpa_prefix" = "no" ; then
     # The user doesn't want to use OPA.  This may or may not cause MPICH to
     # fail to configure/build, depending on many other factors.
@@ -1208,6 +1261,7 @@ else
           [:],[AC_MSG_ERROR([the OpenPA installation in "${with_openpa_prefix}" appears broken])])
     PAC_APPEND_FLAG([-I${with_openpa_prefix}/include],[CPPFLAGS])
     PAC_PREPEND_FLAG([-l${OPALIBNAME}],[WRAPPER_LIBS])
+    opalib="-l${OPALIBNAME}"
     if test -d ${with_openpa_prefix}/lib64 ; then
         PAC_APPEND_FLAG([-L${with_openpa_prefix}/lib64],[WRAPPER_LDFLAGS])
         opalibdir="${with_openpa_prefix}/lib64"
@@ -1318,6 +1372,7 @@ if test "$enable_threads" = "multiple" ; then
     thread_granularity=MPIU_THREAD_GRANULARITY_LOCK_FREE
     if test "$enable_refcount" = "default" ; then enable_refcount=lock-free ; fi
     if test "$enable_predefined_refcount" = "default" ; then enable_predefined_refcount=no ; fi
+    AC_MSG_ERROR([--enable-thread-cs=lock-free is not supported yet, please select a different granularity])
     ;;
     *)
     AC_MSG_ERROR([Unrecognized value $enable_thread_cs for --enable-thread-cs])
@@ -1833,11 +1888,11 @@ fi
 # Handle default choices for the Fortran compilers
 # Note that these have already been set above
 
-if test "$enable_f77" = "yes" -a "$F77" = "" ; then
+if test "$enable_f77" = "yes" -a "$F77" = "no" ; then
    # No Fortran 77 compiler found; abort
    AC_MSG_ERROR([No Fortran 77 compiler found. If you don't need to
    build any Fortran programs, you can disable Fortran support using
-   --disable-f77 and --disable-fc. If you do want to build Fortran
+   --disable-fortran. If you do want to build Fortran
    programs, you need to install a Fortran compiler such as gfortran
    or ifort before you can proceed.])
 fi
@@ -1898,7 +1953,7 @@ information to configure with the FCFLAGS environment variable.])
         # If Fortran implicitly enabled, disable it now.  Otherwise,
 	# abort the configure since warning messages are often lost in
 	# the output.
-	AC_MSG_ERROR([Aborting configure because of mixed case names in Fortran.  Either select --disable-f77 or set FFLAGS to force the compiler to select monocase names])
+	AC_MSG_ERROR([Aborting configure because of mixed case names in Fortran.  Either select --disable-fortran or set FCFLAGS to force the compiler to select monocase names])
     fi
 
     # The MPI standard requires that MPI_Init in any language initialize
@@ -1981,7 +2036,7 @@ fi
 fc_with_f77=yes
 if test "$enable_fc" = "yes" -a "$enable_f77" = yes ; then
     enable_fc=no
-    if test -n "$FC" ; then 
+    if test "$FC" != "no" ; then
 	# If we allow multiple weak symbols, we should test a name
 	# that does not contain an underscore.  The Fortran binding uses
 	# this rule for enabling multiple weak symbols:
@@ -2007,7 +2062,7 @@ if test "$enable_fc" = "yes" -a "$enable_f77" = yes ; then
         AC_MSG_WARN([Use --disable-fc to keep configure from searching for a Fortran 90 compiler])
     fi
 
-    if test "$enable_fc" = "yes" -a "$FC" = "" ; then
+    if test "$enable_fc" = "yes" -a "$FC" = "no" ; then
        # No Fortran 90 compiler found; abort
        AC_MSG_ERROR([No Fortran 90 compiler found. If you don't need
        to build any Fortran 90 programs, you can disable Fortran 90
@@ -2022,10 +2077,10 @@ if test "$enable_fc" = "yes" -a "$enable_f77" != "yes" ; then
    AC_MSG_ERROR([
 Fortran 90 support requires compatible Fortran 77 support.
 To force the use of the Fortran 90 compiler for Fortran 77,
-do not use configure option --disable-f77, and set the environment
+do not use configure option --disable-fortran, and set the environment
 variable F77 to the name of the Fortran 90 compiler, or \$FC.
 If you do not want any Fortran support, use configure options
---disable-f77 and --disable-fc.])
+--disable-fortran.])
    # We should probably do the compatibility test as well
    enable_f77=yes
 fi
@@ -2097,15 +2152,15 @@ dnl compilers without creating a separate version.
 dnl Note that this is run AFTER the AC_OUTPUT actions
 AC_OUTPUT_COMMANDS([if test "$enable_f77" = yes ; then 
 if test "$has_exclaim" = "yes" ; then
-    sed -e 's/^C/\!/g' src/binding/f77/mpif.h > src/include/mpif.h
-	cp src/include/mpif.h src/binding/f77/mpif.h
+    sed -e 's/^C/\!/g' src/binding/fortran/mpif_h/mpif.h > src/include/mpif.h
+	cp src/include/mpif.h src/binding/fortran/mpif_h/mpif.h
 else
-    cp src/binding/f77/mpif.h src/include
+    cp src/binding/fortran/mpif_h/mpif.h src/include
 fi
 if test "$has_fort_real8" = "yes" ; then
     sed -e 's/DOUBLE PRECISION/REAL*8/g' src/include/mpif.h > src/include/mpif.h.new
     mv src/include/mpif.h.new src/include/mpif.h
-    cp src/include/mpif.h src/binding/f77/mpif.h
+    cp src/include/mpif.h src/binding/fortran/mpif_h/mpif.h
 fi
 fi],
 master_top_srcdir=$master_top_srcdir
@@ -2122,10 +2177,24 @@ if test "$enable_fc" = "yes" ; then
         AC_MSG_WARN([Fortran 90 requires Fortran 77])
         enable_fc=no
     else 
-        bindingsubsystems="$bindingsubsystems src/binding/f90"
+        bindingsubsystems="$bindingsubsystems src/binding/fortran/use_mpi"
         bindings="$bindings f90"
     fi
 fi
+
+f08_works=no
+if test "$enable_f08" = "yes" ; then
+    PAC_FC_2008_SUPPORT([f08_works=yes],[f08_works=no])
+fi
+AM_CONDITIONAL([BUILD_F08_BINDING], [test "$f08_works" = "yes"])
+
+if test -n "$f08_works" ; then
+    status_f08_works=1
+    bindings="$bindings f08"
+else
+    status_f08_works=0
+fi
+AC_DEFINE_UNQUOTED(HAVE_F08_BINDING, $status_f08_works, [Define to 1 to enable Fortran 2008 binding])
 
 # Set defaults for these values so that the Makefile in src/bindings/f90
 # is valid even if fc is not enabled (this is necessary for the 
@@ -2151,10 +2220,10 @@ if test "$enable_fc" = "yes" ; then
     FCFLAGS=$saveFCFLAGS
     if test "$pac_cv_prog_fc_works" = no ; then 
         # Reject this compiler
-        if test -n "$FC" ; then
+        if test "$FC" != "no" ; then
             fc_rejected=yes
             oldFC="$FC"
-            FC=""
+            FC="no"
         fi
     fi
 
@@ -2162,7 +2231,7 @@ if test "$enable_fc" = "yes" ; then
     FCEXT=$ac_fc_srcext
     AC_SUBST(FCEXT)
 
-    if test -z "$FC" ; then
+    if test "$FC" = "no" ; then
         if test "$fc_rejected" = "yes" ; then
             AC_MSG_ERROR([Could not find a usable Fortran 90 compiler.  The compiler $oldFC may be incompatible with the Fortran 77 compiler $F77; check the output of configure and consult the installation manuals])
         else
@@ -2202,8 +2271,7 @@ if test "$enable_fc" = "yes" ; then
     AC_SUBST(FCINCFLAG)
 
     # Check if $MPI_DEFAULT_FCOPTS is valid with $F90
-    if test "$enable_default_optimize" = "yes" \
-         -a -n "$MPI_DEFAULT_FCOPTS" ; then
+    if test -n "$MPI_DEFAULT_FCOPTS" ; then
         if test "$enable_check_compiler_flags" = "yes" ; then
             PAC_FC_CHECK_COMPILER_OPTION( [$MPI_DEFAULT_FCOPTS], [
             FCFLAGS="$FCFLAGS $MPI_DEFAULT_FCOPTS"
@@ -2383,8 +2451,7 @@ fi
 
 if test "$enable_cxx" = yes; then
     # Check if $MPI_DEFAULT_CXXOPTS is valid with $CXX
-    if test "$enable_default_optimize" = "yes" \
-         -a -n "$MPI_DEFAULT_CXXOPTS" ; then
+    if test -n "$MPI_DEFAULT_CXXOPTS" ; then
         if test "$enable_check_compiler_flags" = "yes" ; then
             PAC_CXX_CHECK_COMPILER_OPTION( [$MPI_DEFAULT_CXXOPTS], [
             CXXFLAGS="$CXXFLAGS $MPI_DEFAULT_CXXOPTS"
@@ -2497,13 +2564,13 @@ AM_CONDITIONAL([BUILD_BASH_SCRIPTS], [test "x$bashWorks" = xyes])
 if test "$NEEDSPLIB" = yes -a "$PMPILIBNAME" = "$MPILIBNAME" ; then
     NEEDSPLIB=no
 fi
-# Set the defaults for the Fortran libraries to be the same as the C libraries
-if test -z "$MPIFLIBNAME" ; then 
-    MPIFLIBNAME=$MPILIBNAME 
-fi
-if test -z "$PMPIFLIBNAME" ; then
-    PMPIFLIBNAME=$PMPILIBNAME
-fi
+
+# We are cheating a bit here and reaching inside of the libtool macros to
+# extract the correct shared library extension.  It would be nice if this
+# were publicly available in at least the same way that $libext is.
+eval SHLIB_EXT='"'$shrext_cmds'"'
+export SHLIB_EXT
+AC_SUBST(SHLIB_EXT)
 
 # ----------------------------------------------------------------------------
 # 
@@ -2553,11 +2620,6 @@ on all link lines (consider adding it to LDFLAGS)])
     ## The default name is libtvmpich.$SHLIB_EXT (e.g., libtvmpich.so for
     ## most Unix versions, libtvmpich.dylib for Mac OSX).
     ##ENVVAR END:
-
-    # We are cheating a bit here and reaching inside of the libtool macros to
-    # extract the correct shared library extension.  It would be nice if this
-    # were publicly available in at least the same way that $libext is.
-    eval SHLIB_EXT='"'$shrext_cmds'"'
 
     if test -z "$MPICH_DEBUGLIBNAME" ; then
         DEBUGLIBNAME=libtvmpich$SHLIB_EXT
@@ -2620,21 +2682,6 @@ if test "$with_namepublisher" != no -a "$with_namepublisher" != "none" ; then
     AC_DEFINE(USE_FILE_FOR_NAMEPUB,1,[Define if file should be used for name publisher])
     ;;
 
-    mpd)
-    nameserv_name="mpd"
-    # The mpd nameserver is specific to the mpd process manager
-    foundMPD=no
-    for pm_name in $pm_names ; do
-        if test "$pm_name" = "mpd" ; then 
-	    foundMPD=yes
-	    break
-	fi
-    done
-    if test "$foundMPD" = no ; then
-        AC_MSG_ERROR([The mpd nameserver requires the mpd process manager])
-    fi
-    ;;
-
     *)
     # Check for a new namepublisher
     dir=$with_namepublisher
@@ -2656,7 +2703,6 @@ if test -n "$nameserv_name" ; then
    AC_DEFINE(HAVE_NAMEPUB_SERVICE,1,[Define if a name publishing service is available])
 fi
 AM_CONDITIONAL([BUILD_NAMEPUB_FILE],[test "X$nameserv_name" = "Xfile"])
-AM_CONDITIONAL([BUILD_NAMEPUB_MPD],[test "X$nameserv_name" = "Xmpd"])
 AM_CONDITIONAL([BUILD_NAMEPUB_PMI],[test "X$nameserv_name" = "Xpmi"])
 
 # In case the documentation targets are used, find doctext and attempt to 
@@ -3074,7 +3120,7 @@ if test "$len_long_double" != 0 -a "$MPID_NO_LONG_DOUBLE" != yes ; then
 else
     MPI_LONG_DOUBLE=MPI_DATATYPE_NULL
 fi
-# If you change MPI_BYTE, you must change it in src/binding/f77/buildiface
+# If you change MPI_BYTE, you must change it in src/binding/fortran/mpif_h/buildiface
 MPI_BYTE="0x4c00010d"
 MPI_WCHAR="0x4c00${len_wchar_t}0e"
 MPI_PACKED="0x4c00010f"
@@ -3906,10 +3952,10 @@ dnl     len_doublecplx=$hexlen
 	# interface (was error)
 	# Check to see if the f77 binding has enabled the code to support
 	# the case of int != fint. 
-	if grep HAVE_FINT_IS_INT $master_top_srcdir/src/binding/f77/testf.c 2>&1 1>/dev/null ; then
+	if grep HAVE_FINT_IS_INT $master_top_srcdir/src/binding/fortran/mpif_h/testf.c 2>&1 1>/dev/null ; then
 	    AC_MSG_WARN([Fortran integers and C ints are not the same size.  Support for this case is experimental; use at your own risk])
 	else 
-            AC_MSG_ERROR([Fortran integers and C ints are not the same size.  The current Fortran binding does not support this case.  Either force the Fortran compiler to use integers of $ac_cv_sizeof_int bytes, or use --disable-f77 on the configure line for MPICH.])
+            AC_MSG_ERROR([Fortran integers and C ints are not the same size.  The current Fortran binding does not support this case.  Either force the Fortran compiler to use integers of $ac_cv_sizeof_int bytes, or use --disable-fortran on the configure line for MPICH.])
 	fi
     fi
 
@@ -4022,7 +4068,7 @@ dnl     len_doublecplx=$hexlen
     # For Fortran 90, we'll also need MPI_ADDRESS_KIND and MPI_OFFSET_KIND
     # Since our compiler might BE a Fortran 90 compiler, try and determine the
     # values.  
-    if test -z "$FC" ; then
+    if test "$FC" = "no" ; then
         PAC_F77_IS_FC([
             FC=$F77
             if test -z "$FCFLAGS" ; then
@@ -4030,7 +4076,7 @@ dnl     len_doublecplx=$hexlen
             fi
         ])
     fi
-    if test -n "$FC" ; then
+    if test "$FC" != "no" ; then
         # Offset kind should be for 8 bytes if possible (Romio prefers that)
         # address should be sizeof void * (unless --with-aint-size has
         # been set)
@@ -5785,7 +5831,7 @@ fi
 
 dnl FIXME XXX DJG does this need to actually be conditional on something?
 dnl previously it was conditional on the successful execution of
-dnl "src/binding/f90/configure" but that would only fail if FC couldn't be
+dnl "src/binding/fortran/use_mpi/configure" but that would only fail if FC couldn't be
 dnl determined or a bad VPATH build env was detected
 AC_DEFINE(HAVE_FC_TYPE_ROUTINES,1,[Define if Fortran 90 type routines available])
 
@@ -5843,10 +5889,10 @@ MPICH_ENABLE_FC=$enable_fc
 export MPICH_ENABLE_CXX
 export MPICH_ENABLE_F77
 export MPICH_ENABLE_FC
-AM_CONDITIONAL([BUILD_CXX_LIB],[test "$enable_cxx" = "yes"])
+AM_CONDITIONAL([BUILD_CXX_BINDING],[test "$enable_cxx" = "yes"])
 AM_CONDITIONAL([BUILD_F77_BINDING],[test "$enable_f77" = "yes"])
 dnl FIXME DJG this has been moved to the f90 bindings subconfigure.m4 for now
-dnl AM_CONDITIONAL([BUILD_F90_LIB],[test "$enable_fc" = "yes"])
+dnl AM_CONDITIONAL([BUILD_FC_BINDING],[test "$enable_fc" = "yes"])
 # MPI_SRCDIR gives the test/mpi configure the location of the source
 # files for an MPI implementation
 if test -n "$ac_abs_srcdir" ; then
@@ -5857,12 +5903,6 @@ MPI_NO_SPAWN=$MPID_NO_SPAWN
 export MPI_NO_SPAWN
 MPI_NO_RMA=$MPID_NO_RMA
 export MPI_NO_RMA
-
-# Attach program prefix and suffix to executable names for Makefile
-AC_SUBST(MPICXX_NAME)
-AC_SUBST(MPICPP_NAME)
-PAC_GET_EXENAME("mpicxx", MPICXX_NAME)
-PAC_GET_EXENAME("mpic++", MPICPP_NAME)
 
 AC_CONFIG_SUBDIRS([test/mpi])
 dnl
@@ -5906,7 +5946,7 @@ if test -z "$libbuild_dir" ; then
 fi
 if test -z "$modincbuild_dir" ; then
     # The include files may be in a different directory from the mpif.h file
-    modincbuild_dir=`pwd`/src/binding/f90
+    modincbuild_dir=`pwd`/src/binding/fortran/use_mpi
 fi
 
 dnl
@@ -6020,12 +6060,12 @@ AC_OUTPUT(Makefile \
           src/include/glue_romio.h \
           src/include/mpichtimer.h \
           src/binding/cxx/mpicxx.h \
-	  src/binding/f77/mpif.h \
-	  src/binding/f77/setbotf.f \
-	  src/binding/f77/setbot.c \
-	  src/binding/f90/mpi_sizeofs.f90 \
-	  src/binding/f90/mpi_base.f90 \
-	  src/binding/f90/mpi_constants.f90 \
+	  src/binding/fortran/mpif_h/mpif.h \
+	  src/binding/fortran/mpif_h/setbotf.f \
+	  src/binding/fortran/mpif_h/setbot.c \
+	  src/binding/fortran/use_mpi/mpi_sizeofs.f90 \
+	  src/binding/fortran/use_mpi/mpi_base.f90 \
+	  src/binding/fortran/use_mpi/mpi_constants.f90 \
 	  src/packaging/pkgconfig/mpich.pc \
 	  src/packaging/envmods/mpich.module \
           src/env/mpixxx_opts.conf \
@@ -6035,8 +6075,8 @@ AC_OUTPUT(Makefile \
 	  src/env/mpicxx.bash \
 	  src/env/mpif77.sh \
 	  src/env/mpif77.bash \
-	  src/env/mpif90.sh \
-	  src/env/mpif90.bash \
+	  src/env/mpifort.sh \
+	  src/env/mpifort.bash \
           src/env/parkill \
 	  src/util/dbg/getfuncstack \
           src/include/mpi.h \

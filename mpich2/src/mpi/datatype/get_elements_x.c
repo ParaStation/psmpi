@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2012 by Argonne National Laboratory.
+ *  (C) 2011 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
@@ -15,10 +15,6 @@
 #pragma _CRI duplicate MPI_Get_elements_x as PMPI_Get_elements_x
 #endif
 /* -- End Profiling Symbol Block */
-
-#ifndef MIN
-#define MIN(__a, __b) (((__a) < (__b)) ? (__a) : (__b))
-#endif
 
 /* Internal helper routines.  If you want to get the number of elements from
  * within the MPI library, call MPIR_Get_elements_x_impl instead. */
@@ -78,7 +74,7 @@ PMPI_LOCAL MPI_Count MPIR_Type_get_basic_type_elements(MPI_Count *bytes_p,
         usable_bytes = *bytes_p;
     }
     else {
-        usable_bytes = MIN(*bytes_p,
+        usable_bytes = MPIR_MIN(*bytes_p,
                            count * MPID_Datatype_get_basic_size(datatype));
     }
 

@@ -111,6 +111,7 @@ am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_attr_alias.m4 \
 	$(top_srcdir)/confdb/aclocal_mpi.m4 \
 	$(top_srcdir)/confdb/aclocal_runlog.m4 \
 	$(top_srcdir)/confdb/aclocal_shl.m4 \
+	$(top_srcdir)/confdb/aclocal_shm.m4 \
 	$(top_srcdir)/confdb/aclocal_subcfg.m4 \
 	$(top_srcdir)/confdb/aclocal_util.m4 \
 	$(top_srcdir)/confdb/ax_tls.m4 $(top_srcdir)/confdb/libtool.m4 \
@@ -120,9 +121,9 @@ am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_attr_alias.m4 \
 	$(top_srcdir)/confdb/lt~obsolete.m4 \
 	$(top_srcdir)/maint/version.m4 $(top_srcdir)/subsys_include.m4 \
 	$(top_srcdir)/src/mpid/pamid/subconfigure.m4 \
-	$(top_srcdir)/src/binding/f90/subconfigure.m4 \
 	$(top_srcdir)/src/pm/subconfigure.m4 \
 	$(top_srcdir)/src/pm/remshell/subconfigure.m4 \
+	$(top_srcdir)/src/binding/fortran/use_mpi/subconfigure.m4 \
 	$(top_srcdir)/src/pm/gforker/subconfigure.m4 \
 	$(top_srcdir)/src/pm/util/subconfigure.m4 \
 	$(top_srcdir)/src/pmi/subconfigure.m4 \
@@ -164,8 +165,8 @@ am__v_lt_1 =
 am_cpi_OBJECTS = cpi.$(OBJEXT)
 cpi_OBJECTS = $(am_cpi_OBJECTS)
 cpi_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(cpi_LDFLAGS) $(LDFLAGS) \
-	-o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(cpi_LDFLAGS) $(LDFLAGS) -o $@
 am_hellow_OBJECTS = hellow.$(OBJEXT)
 hellow_OBJECTS = $(am_hellow_OBJECTS)
 hellow_LDADD = $(LDADD)
@@ -230,8 +231,8 @@ am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
 LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
@@ -348,7 +349,6 @@ FCMODEXT = @FCMODEXT@
 FCMODINCFLAG = @FCMODINCFLAG@
 FCMODINCSPEC = @FCMODINCSPEC@
 FCMODOUTFLAG = @FCMODOUTFLAG@
-FCWRAPNAME = @FCWRAPNAME@
 FC_ALL_INTEGER_MODELS = @FC_ALL_INTEGER_MODELS@
 FC_DOUBLE_MODEL = @FC_DOUBLE_MODEL@
 FC_INTEGER_MODEL = @FC_INTEGER_MODEL@
@@ -362,7 +362,6 @@ FILE = @FILE@
 FLIBS = @FLIBS@
 FORTRAN_BINDING = @FORTRAN_BINDING@
 FORTRAN_MPI_OFFSET = @FORTRAN_MPI_OFFSET@
-FWRAPNAME = @FWRAPNAME@
 GCOV = @GCOV@
 GNUCXX_MINORVERSION = @GNUCXX_MINORVERSION@
 GNUCXX_VERSION = @GNUCXX_VERSION@
@@ -377,6 +376,7 @@ INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
 INTEGER_KIND = @INTEGER_KIND@
+INTERLIB_DEPS = @INTERLIB_DEPS@
 KILLALL = @KILLALL@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
@@ -406,11 +406,9 @@ MPICH_RELEASE_DATE = @MPICH_RELEASE_DATE@
 MPICH_TIMER_KIND = @MPICH_TIMER_KIND@
 MPICH_VERSION = @MPICH_VERSION@
 MPICONSTMODNAME = @MPICONSTMODNAME@
-MPICPP_NAME = @MPICPP_NAME@
 MPICXXLIBNAME = @MPICXXLIBNAME@
-MPICXX_NAME = @MPICXX_NAME@
 MPID_TIMER_TYPE = @MPID_TIMER_TYPE@
-MPIFLIBNAME = @MPIFLIBNAME@
+MPIFCLIBNAME = @MPIFCLIBNAME@
 MPIFPMPI = @MPIFPMPI@
 MPILIBNAME = @MPILIBNAME@
 MPIMODNAME = @MPIMODNAME@
@@ -561,7 +559,6 @@ PAMILIBNAME = @PAMILIBNAME@
 PAPI_INCLUDE = @PAPI_INCLUDE@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
-PMPIFLIBNAME = @PMPIFLIBNAME@
 PMPILIBNAME = @PMPILIBNAME@
 RANLIB = @RANLIB@
 REQD = @REQD@
@@ -573,6 +570,7 @@ SED = @SED@
 SET_CFLAGS = @SET_CFLAGS@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SHLIB_EXT = @SHLIB_EXT@
 SIZEOF_FC_CHARACTER = @SIZEOF_FC_CHARACTER@
 SIZEOF_FC_DOUBLE_PRECISION = @SIZEOF_FC_DOUBLE_PRECISION@
 SIZEOF_FC_INTEGER = @SIZEOF_FC_INTEGER@
@@ -583,6 +581,7 @@ STRIP = @STRIP@
 USER_CFLAGS = @USER_CFLAGS@
 USER_CPPFLAGS = @USER_CPPFLAGS@
 USER_CXXFLAGS = @USER_CXXFLAGS@
+USER_EXTRA_LIBS = @USER_EXTRA_LIBS@
 USER_FCFLAGS = @USER_FCFLAGS@
 USER_FFLAGS = @USER_FFLAGS@
 USER_LDFLAGS = @USER_LDFLAGS@
@@ -592,6 +591,7 @@ VERSION = @VERSION@
 WRAPPER_CFLAGS = @WRAPPER_CFLAGS@
 WRAPPER_CPPFLAGS = @WRAPPER_CPPFLAGS@
 WRAPPER_CXXFLAGS = @WRAPPER_CXXFLAGS@
+WRAPPER_EXTRA_LIBS = @WRAPPER_EXTRA_LIBS@
 WRAPPER_FCFLAGS = @WRAPPER_FCFLAGS@
 WRAPPER_FFLAGS = @WRAPPER_FFLAGS@
 WRAPPER_LDFLAGS = @WRAPPER_LDFLAGS@
@@ -641,7 +641,7 @@ infodir = @infodir@
 install_sh = @install_sh@
 libdir = @libdir@
 libexecdir = @libexecdir@
-libmpich_so_version = @libmpich_so_version@
+libmpi_so_version = @libmpi_so_version@
 localedir = @localedir@
 localstatedir = @localstatedir@
 mandir = @mandir@
@@ -651,7 +651,7 @@ mkdir_p = @mkdir_p@
 mmx_copy_s = @mmx_copy_s@
 modincdir = @modincdir@
 mpich_libtool_static_flag = @mpich_libtool_static_flag@
-mpldir = @mpldir@
+mpllib = @mpllib@
 mpllibdir = @mpllibdir@
 mplsrcdir = @mplsrcdir@
 nemesis_nets_array = @nemesis_nets_array@
@@ -663,6 +663,7 @@ nemesis_nets_macro_defs = @nemesis_nets_macro_defs@
 nemesis_nets_strings = @nemesis_nets_strings@
 nemesis_networks = @nemesis_networks@
 oldincludedir = @oldincludedir@
+opalib = @opalib@
 opalibdir = @opalibdir@
 opasrcdir = @opasrcdir@
 pdfdir = @pdfdir@
@@ -696,7 +697,7 @@ AM_CFLAGS = $(WRAPPER_CFLAGS)
 # to get rebuilt whenever MPICH's core libraries are rebuilt, but perhaps there
 # is a better system?
 
-# the make-time instances of libpmpich.la and libmpich.la live here
+# the make-time instances of libpmpi.la and libmpi.la live here
 # the make-time instances of libmpl.la and libopa.la live here
 
 # Wrapper LDFLAGS need to be added at the end to make sure we link

@@ -90,11 +90,48 @@ AC_ARG_ENABLE(echo,
 	[AC_HELP_STRING([--enable-echo],[Turn on strong echoing. The default is enable=no.])],
 	[set -x])
 
-AC_ARG_ENABLE(f77,
-	[AC_HELP_STRING([--enable-f77],[Turn on Fortran 77 tests (default)])],,[enable_f77=yes])
-AC_ARG_ENABLE(fc,
-	[AC_HELP_STRING([--enable-fc],[Turn on Fortran 90 tests (if f90 available)])],,
-	[enable_fc=yes])
+AC_ARG_ENABLE(fortran,
+[  --enable-fortran=option - Control the level of Fortran support in the MPICH implementation.
+        yes|all   - Enable all available Fortran implementations (F77, F90, F08)
+        f77       - Enable Fortran 77 support
+        f90       - Enable Fortran 90 support
+        f08       - Enable Fortran 2008 support
+        no|none   - No Fortran support
+],,[enable_fortran=f77,f90])
+
+save_IFS="$IFS"
+IFS=","
+enable_f77=no
+enable_fc=no
+enable_f08=no
+for option in $enable_fortran ; do
+    case "$option" in
+        yes|all)
+                enable_f77=yes
+                enable_fc=yes
+                ;;
+        no|none)
+                enable_f77=no
+                enable_fc=no
+                ;;
+        f77)
+                enable_f77=yes
+                ;;
+        f90)
+                enable_fc=yes
+                ;;
+        f08)
+                enable_f08=yes
+                ;;
+        *)
+                IFS="$save_IFS"
+                AC_MSG_WARN([Unknown value $option for --enable-fortran])
+                IFS=","
+                ;;
+    esac
+done
+IFS="$save_IFS"
+
 AC_ARG_ENABLE(cxx,
 	[AC_HELP_STRING([--enable-cxx],[Turn on C++ tests (default)])],,[enable_cxx=yes])
 
@@ -185,7 +222,7 @@ AC_ARG_ENABLE(xfail,
 AC_ARG_WITH(mpi,
 	[AC_HELP_STRING([--with-mpi=dir],
 		[Use the selected MPI; compilation scripts for mpicc,
-		mpif77 and mpicxx should be in dir/bin])],,)
+		mpifort and mpicxx should be in dir/bin])],,)
 
 AC_ARG_WITH(pm,
 	AC_HELP_STRING([--with-pm=name],
@@ -193,8 +230,8 @@ AC_ARG_WITH(pm,
                  valid values.  Multiple process managers may be specified as
                  long as they all use the same pmi interface by separating them
                  with colons.  The mpiexec for the first named process manager
-                 will be installed.  Example: "--with-pm=hydra:mpd:gforker"
-                 builds the three process managers hydra, mpd and gforker;
+                 will be installed.  Example: "--with-pm=hydra:gforker"
+                 builds the two process managers hydra and gforker;
                  only the mpiexec from hydra is installed into the bin
                  directory.]),,with_pm=default)
 
@@ -439,7 +476,7 @@ AC_ARG_VAR([WRAPPER_CXXFLAGS],[])
 # Attach program prefix and suffix to executable names
 PAC_GET_EXENAME("mpicc", MPICC_NAME)
 PAC_GET_EXENAME("mpif77", MPIF77_NAME)
-PAC_GET_EXENAME("mpif90", MPIF90_NAME)
+PAC_GET_EXENAME("mpifort", MPIFORT_NAME)
 PAC_GET_EXENAME("mpicxx", MPICXX_NAME)
 PAC_GET_EXENAME("mpiexec", MPIEXEC_NAME)
 
@@ -472,7 +509,7 @@ elif test -n "$with_mpi" ; then
         F77=$MPIF77
     fi
     if test -z "$MPIFC" ; then
-        FC=$with_mpi/bin/$MPIF90_NAME
+        FC=$with_mpi/bin/$MPIFORT_NAME
     else
         FC=$MPIFC
     fi
@@ -499,7 +536,7 @@ else
         F77=$MPIF77
     fi
     if test -z "$MPIFC" ; then
-        AC_PATH_PROG(MPIFC,$MPIF90_NAME mpftn)
+        AC_PATH_PROG(MPIFC,$MPIFORT_NAME mpftn)
     fi
     if test "x$MPIFC" != "x" ; then
         FC=$MPIFC
@@ -1142,6 +1179,13 @@ elif test "$enable_fc" = yes ; then
 fi
 AM_CONDITIONAL([BUILD_F90_TESTS],[test "X$f90dir" = "f90"])
 
+f08dir="#"
+AC_SUBST(f08dir)
+# FIXME if $FROM_MPICH is no, we should test build an MPI F08 program
+if test "$enable_f08" = "yes" -a "$FROM_MPICH" = "yes" ; then
+   f08dir=f08
+fi
+
 # Running C++ compiler tests
 PAC_PROG_CXX
 if test "$enable_cxx" = yes ; then
@@ -1401,7 +1445,7 @@ if test "$FROM_MPICH" = yes ; then
     # installed compiler wrappers for actually building the tests
     CC=$mpibindir/$MPICC_NAME
     F77=$mpibindir/$MPIF77_NAME
-    FC=$mpibindir/$MPIF90_NAME
+    FC=$mpibindir/$MPIFORT_NAME
     CXX=$mpibindir/$MPICXX_NAME
     MPIEXEC=$mpibindir/$MPIEXEC_NAME
 
@@ -1502,6 +1546,15 @@ AC_OUTPUT(maint/testmerge \
           f90/io/Makefile \
           f90/misc/Makefile \
 	  f90/profile/Makefile \
+	  f08/Makefile \
+	  f08/util/Makefile \
+	  f08/pt2pt/Makefile \
+	  f08/coll/Makefile \
+	  f08/datatype/Makefile \
+	  f08/attr/Makefile \
+	  f08/comm/Makefile \
+	  f08/rma/Makefile \
+	  f08/subarray/Makefile \
           cxx/Makefile \
           cxx/util/Makefile \
           cxx/attr/Makefile \
@@ -1546,6 +1599,8 @@ AC_OUTPUT(maint/testmerge \
           errors/f77/io/iooffset.h \
           errors/f90/Makefile \
 	  errors/f90/io/Makefile \
+          errors/f08/Makefile \
+	  errors/f08/io/Makefile \
 	  ckpoint/Makefile \
 	  ft/Makefile \
           manual/Makefile \

@@ -35,7 +35,7 @@
 #include "mpidi_util.h"
 
 #define PAMI_TUNE_MAX_ITER 2000
-
+#define _DEBUG  1
 /* Short hand for sizes */
 #define ONE  (1)
 #define ONEK (1<<10)
@@ -461,7 +461,7 @@ int MPIDI_Print_mpenv(int rank,int size)
         char *popenptr;
         char tempstr[128];
         int  mpi_errno;
-        int  errflag;
+        int  errflag=0;
 
         MPIDI_Set_mpich_env(rank,size);
         memset(&sender,0,sizeof(MPIDI_printenv_t));
@@ -1865,7 +1865,6 @@ static void MPIDI_collsel_print_params(advisor_params_t *params, char *output_fi
 
 int MPIDI_collsel_pami_tune_parse_params(int argc, char ** argv)
 {
-  pami_configuration_t config;
   MPIDI_Collsel_output_file = NULL;
   num_tasks = PAMIX_Client_query(MPIDI_Client, PAMI_CLIENT_NUM_TASKS).value.intval;
   task_id   = PAMIX_Client_query(MPIDI_Client, PAMI_CLIENT_TASK_ID  ).value.intval;
@@ -1919,13 +1918,20 @@ int MPID_Get_node_id(MPID_Comm *comm, int rank, MPID_Node_id_t *id_p)
   uint32_t node_id;
   uint32_t offset;
   uint32_t max_nodes;
-  if(!PAMIX_Extensions.is_local_task.node_info)
-    MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**notimpl");
 
-  pami_result_t rc = PAMIX_Extensions.is_local_task.node_info(comm->vcr[rank]->taskid,
-                                                              &node_id,&offset,&max_nodes);
-  if(rc != PAMI_SUCCESS)  MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**notimpl");
-  *id_p = node_id;
+  if(!PAMIX_Extensions.is_local_task.node_info)
+  {
+    *id_p = rank;
+  }
+  else
+  {
+    pami_result_t rc = PAMIX_Extensions.is_local_task.node_info(comm->vcr[rank]->taskid,
+                                                                &node_id,&offset,&max_nodes);
+    if(rc != PAMI_SUCCESS)
+      *id_p = rank;
+    else
+      *id_p = node_id;
+  }
 
   fn_fail:
   return mpi_errno;

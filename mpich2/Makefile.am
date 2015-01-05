@@ -48,9 +48,10 @@ pkgconfigdir = @pkgconfigdir@
 errnames_txt_files = 
 
 external_subdirs = @mplsrcdir@ @opasrcdir@
-# FIXME how/where does external_libs/ldflags get used?
 external_ldflags = -L@mpllibdir@ -L@opalibdir@
-external_libs = -l@MPLLIBNAME@ -l@OPALIBNAME@
+external_libs = @mpllib@ @opalib@
+mpi_convenience_libs =
+pmpi_convenience_libs =
 
 # NOTE on our semi-unconventional usage of DIST_SUBDIRS:
 # The automake manual recommends thinking of DIST_SUBDIRS as the list of all
@@ -62,23 +63,6 @@ external_libs = -l@MPLLIBNAME@ -l@OPALIBNAME@
 # condition as the corresponding SUBDIRS addition.
 DIST_SUBDIRS = ${external_subdirs}
 SUBDIRS = ${external_subdirs}
-
-
-# lib/lib@MPILIBNAME@.la always contains the "PMPI_" functions and all of the
-# functions and symbols that actually make up the MPICH implementation.  If
-# weak symbols are fully supported (such as on Linux), then this library also
-# contains weak symbols for "MPI_" aliasing the "PMPI_" symbols.  This lib also
-# always contains the F77 bindings, but not the F90 or C++ bindings.
-#
-# if weak symbols are not supported (such as on Darwin), then
-# lib/lib@PMPILIBNAME@.la contains duplicate builds of all of the "PMPI_" routines
-# as "MPI_" routines, but none of the implementation routines under the hood
-# (such as MPIR_Bcast_impl).
-lib_LTLIBRARIES = lib/lib@MPILIBNAME@.la
-lib_lib@MPILIBNAME@_la_SOURCES =
-nodist_lib_lib@MPILIBNAME@_la_SOURCES =
-lib_lib@MPILIBNAME@_la_LIBADD = $(external_libs)
-lib_lib@MPILIBNAME@_la_LDFLAGS = $(external_ldflags) $(ABIVERSIONFLAGS)
 
 ## Automake attempts to guess the correct linker among the various compilers
 ## for each language (see "How the Linker is Chosen" in the AM manual).
@@ -93,36 +77,120 @@ lib_lib@MPILIBNAME@_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=F77 \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(F77LD) \
 	$(AM_FFLAGS) $(FFLAGS) $(lib_lib@MPILIBNAME@_la_LDFLAGS) \
 	$(LDFLAGS) -o $@
+lib_lib@PMPILIBNAME@_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=F77 \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(F77LD) \
+	$(AM_FFLAGS) $(FFLAGS) $(lib_lib@PMPILIBNAME@_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
 else !BUILD_F77_BINDING
 # link with libtool+CCLD
 lib_lib@MPILIBNAME@_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(lib_lib@MPILIBNAME@_la_CFLAGS) $(CFLAGS) \
 	$(lib_lib@MPILIBNAME@_la_LDFLAGS) $(LDFLAGS) -o $@
+lib_lib@PMPILIBNAME@_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(lib_lib@PMPILIBNAME@_la_CFLAGS) $(CFLAGS) \
+	$(lib_lib@PMPILIBNAME@_la_LDFLAGS) $(LDFLAGS) -o $@
 endif !BUILD_F77_BINDING
 
-if BUILD_PROFILING_LIB
-lib_LTLIBRARIES += lib/lib@PMPILIBNAME@.la
-## FIXME XXX DJG is this "-DMPICH..." flag is in CFLAGS now, should it really be in CPPFLAGS?
-lib_lib@PMPILIBNAME@_la_CFLAGS = $(AM_CFLAGS) -DMPICH_MPI_FROM_PMPI
-lib_lib@PMPILIBNAME@_la_SOURCES =
-lib_lib@PMPILIBNAME@_la_LIBADD = lib/lib@MPILIBNAME@.la $(lib_lib@MPILIBNAME@_la_LIBADD)
-lib_lib@PMPILIBNAME@_la_LDFLAGS = $(ABIVERSIONFLAGS)
-endif BUILD_PROFILING_LIB
+if BUILD_F77_BINDING
+if BUILD_FC_BINDING
+lib_lib@MPIFCLIBNAME@_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=FC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(FCLD) \
+	$(AM_FCFLAGS) $(FCFLAGS) $(lib_lib@MPIFCLIBNAME@_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
+else !BUILD_FC_BINDING
+lib_lib@MPIFCLIBNAME@_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=F77 \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(F77LD) \
+	$(AM_FFLAGS) $(FFLAGS) $(lib_lib@MPIFCLIBNAME@_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
+endif !BUILD_FC_BINDING
+endif BUILD_F77_BINDING
 
-# these are files that provide "MPI_" functions with "PMPI_" profiling versions
-# (for the C language bindings only, fortran & C++ are handled separately)
-mpi_sources = 
+## Create lists of files for different libraries
+##
+## mpi_sources: When compiled with -DMPICH_MPI_FROM_PMPI, these files
+## provide "MPI_" public functions for the C bindings and end up in
+## lib@MPILIBNAME@.  When compiled without this macro, these files
+## provide "PMPI_" public functions for the C bindings as well as a
+## few other internal MPICH functions, all of which end up in
+## lib@PMPILIBNAME@ (which is the same as lib@MPILIBNAME@ on systems
+## that support weak symbols).
+##
+## mpi_f77_sources: When compiled with -DMPICH_MPI_FROM_PMPI, these
+## files provide the "mpi_" public functions for the F77 bindings and
+## end up in lib@MPIFCLIBNAME@.
+##
+## mpi_fc_sources: When compiled with -DMPICH_MPI_FROM_PMPI, these
+## files provide the "mpi_" public functions for the F90+ bindings and
+## end up in lib@MPIFCLIBNAME@.
+##
+## mpi_cxx_sources: When compiled with -DMPICH_MPI_FROM_PMPI, these
+## files provide the "MPI" public functions for the C++ bindings and
+## end up in lib@MPICXXLIBNAME@.
+##
+## mpi_core_sources: These files are internal non-public functions
+## that are used by all bindings.
+mpi_sources =
+mpi_f77_sources =
+mpi_fc_sources =
+mpi_fc_modules =
+mpi_cxx_sources =
+mpi_core_sources =
+
+lib_LTLIBRARIES =
 
 # include our subdir automake fragments
 include maint/Makefile.mk
 include src/Makefile.mk
 
-lib_lib@MPILIBNAME@_la_SOURCES += $(mpi_sources)
-
 if BUILD_PROFILING_LIB
-lib_lib@PMPILIBNAME@_la_SOURCES += $(mpi_sources)
+# dropping mpi_fc_sources and mpi_cxx_sources from libmpmpi since they
+# don't contribute any PMPI symbols.
+lib_LTLIBRARIES += lib/lib@PMPILIBNAME@.la
+lib_lib@PMPILIBNAME@_la_SOURCES = $(mpi_sources) $(mpi_f77_sources) $(mpi_core_sources)
+lib_lib@PMPILIBNAME@_la_LDFLAGS = $(external_ldflags) $(ABIVERSIONFLAGS)
+lib_lib@PMPILIBNAME@_la_LIBADD = $(external_libs) $(pmpi_convenience_libs)
+
+# lib@MPILIBNAME@.la might depend on lib@PMPILIBNAME@.la.  We add them
+# in that order to lib_LTLIBRARIES so libtool doesn't get
+# confused. (see https://bugzilla.redhat.com/show_bug.cgi?id=91110)
+lib_LTLIBRARIES += lib/lib@MPILIBNAME@.la
+lib_lib@MPILIBNAME@_la_SOURCES = $(mpi_sources)
+lib_lib@MPILIBNAME@_la_LDFLAGS = $(ABIVERSIONFLAGS)
+lib_lib@MPILIBNAME@_la_CPPFLAGS = $(AM_CPPFLAGS) -DMPICH_MPI_FROM_PMPI
+lib_lib@MPILIBNAME@_la_LIBADD = lib/lib@PMPILIBNAME@.la $(mpi_convenience_libs)
+
+else !BUILD_PROFILING_LIB
+
+lib_LTLIBRARIES += lib/lib@MPILIBNAME@.la
+lib_lib@MPILIBNAME@_la_SOURCES = $(mpi_sources) $(mpi_core_sources)
+lib_lib@MPILIBNAME@_la_LDFLAGS = $(external_ldflags) $(ABIVERSIONFLAGS)
+lib_lib@MPILIBNAME@_la_CPPFLAGS = $(AM_CPPFLAGS)
+lib_lib@MPILIBNAME@_la_LIBADD = $(external_libs) $(pmpi_convenience_libs) $(mpi_convenience_libs)
+endif !BUILD_PROFILING_LIB
+
+if BUILD_F77_BINDING
+lib_LTLIBRARIES += lib/lib@MPIFCLIBNAME@.la
+lib_lib@MPIFCLIBNAME@_la_CPPFLAGS = $(AM_CPPFLAGS)
+if BUILD_PROFILING_LIB
+lib_lib@MPIFCLIBNAME@_la_CPPFLAGS += -DMPICH_MPI_FROM_PMPI -DUSE_ONLY_MPI_NAMES
 endif BUILD_PROFILING_LIB
+lib_lib@MPIFCLIBNAME@_la_SOURCES = $(mpi_f77_sources)
+if BUILD_FC_BINDING
+modinc_HEADERS = $(mpi_fc_modules)
+lib_lib@MPIFCLIBNAME@_la_SOURCES += $(mpi_fc_sources)
+endif BUILD_FC_BINDING
+lib_lib@MPIFCLIBNAME@_la_LDFLAGS = $(ABIVERSIONFLAGS)
+lib_lib@MPIFCLIBNAME@_la_LIBADD = lib/lib@MPILIBNAME@.la
+endif BUILD_F77_BINDING
+
+if BUILD_CXX_BINDING
+lib_LTLIBRARIES += lib/lib@MPICXXLIBNAME@.la
+lib_lib@MPICXXLIBNAME@_la_SOURCES = $(mpi_cxx_sources)
+lib_lib@MPICXXLIBNAME@_la_LDFLAGS = $(ABIVERSIONFLAGS)
+lib_lib@MPICXXLIBNAME@_la_LIBADD = lib/lib@MPILIBNAME@.la
+endif BUILD_CXX_BINDING
 
 # build the current directory and then the examples directory after everything else
 SUBDIRS += . examples
@@ -150,19 +218,32 @@ CLEAN_LOCAL_TARGETS += test-clean
 ## common set of rules.
 install-exec-hook:
 	for e in ${DESTDIR}${bindir}/mpicc ${DESTDIR}${bindir}/mpicxx \
-		${DESTDIR}${bindir}/mpif77 ${DESTDIR}${bindir}/mpif90 ; do \
+		${DESTDIR}${bindir}/mpif77 ${DESTDIR}${bindir}/mpifort ; do \
 		if test -e $${e} ; then \
-			sed -e 's|^prefix=.*|prefix=${prefix}|g' \
-				-e 's|^exec_prefix=.*|exec_prefix=${exec_prefix}|g' \
-				-e 's|^sysconfdir=.*|sysconfdir=${sysconfdir}|g' \
-				-e 's|^includdir=.*|includedir=${includedir}|g' \
-				-e 's|^libdir=.*|libdir=${libdir}|g' $${e} > $${e}.tmp ; \
+			sed -e 's|__PREFIX_TO_BE_FILLED_AT_INSTALL_TIME__|${prefix}|g' \
+				-e 's|__EXEC_PREFIX_TO_BE_FILLED_AT_INSTALL_TIME__|${exec_prefix}|g' \
+				-e 's|__SYSCONFDIR_TO_BE_FILLED_AT_INSTALL_TIME__|${sysconfdir}|g' \
+				-e 's|__INCLUDEDIR_TO_BE_FILLED_AT_INSTALL_TIME__|${includedir}|g' \
+				-e 's|__LIBDIR_TO_BE_FILLED_AT_INSTALL_TIME__|${libdir}|g' $${e} > $${e}.tmp ; \
 			$(INSTALL_SCRIPT) $${e}.tmp $${e} ; \
 			rm -f $${e}.tmp ; \
 		fi ; \
 	done ; \
-	if test -e ${DESTDIR}${bindir}/@MPICXX_NAME@ ; then \
-		cd ${DESTDIR}${bindir} && ln -f -s @MPICXX_NAME@ @MPICPP_NAME@ ; fi
+	if test -e ${DESTDIR}${bindir}/mpicxx ; then \
+		cd ${DESTDIR}${bindir} && ln -f -s mpicxx mpic++ ; fi ; \
+	if test -e ${DESTDIR}${bindir}/mpifort ; then \
+		cd ${DESTDIR}${bindir} && ln -f -s mpifort mpif90 ; fi ; \
+	if test -e ${DESTDIR}${bindir}/mpifort -a ! -e ${DESTDIR}${bindir}/mpif77 ; then \
+		cd ${DESTDIR}${bindir} && ln -f -s mpifort mpif77 ; fi ; \
+	if test -e ${DESTDIR}${libdir}/lib@MPILIBNAME@@SHLIB_EXT@ ; then \
+		cd ${DESTDIR}${libdir} && ln -f -s lib@MPILIBNAME@@SHLIB_EXT@ libmpl@SHLIB_EXT@ ; \
+		cd ${DESTDIR}${libdir} && ln -f -s lib@MPILIBNAME@@SHLIB_EXT@ libopa@SHLIB_EXT@ ; \
+		cd ${DESTDIR}${libdir} && ln -f -s lib@MPILIBNAME@@SHLIB_EXT@ libmpich@SHLIB_EXT@ ; fi ; \
+	if test -e ${DESTDIR}${libdir}/lib@MPIFCLIBNAME@@SHLIB_EXT@ ; then \
+		cd ${DESTDIR}${libdir} && ln -f -s lib@MPIFCLIBNAME@@SHLIB_EXT@ libfmpich@SHLIB_EXT@ ; \
+		cd ${DESTDIR}${libdir} && ln -f -s lib@MPIFCLIBNAME@@SHLIB_EXT@ libmpichf90@SHLIB_EXT@ ; fi ; \
+	if test -e ${DESTDIR}${libdir}/lib@MPICXXLIBNAME@@SHLIB_EXT@ ; then \
+		cd ${DESTDIR}${libdir} && ln -f -s lib@MPICXXLIBNAME@@SHLIB_EXT@ libmpichcxx@SHLIB_EXT@ ; fi
 
 # the configure step checks for the 'lib' dir to decide whether a source
 # directory has been previously used for an in-path build before allowing a
@@ -206,7 +287,7 @@ gcov_sources = $(lib_lib@MPILIBNAME@_la_SOURCES)
 #
 # Gcov has no good way to deal with source files that have been compiled twice
 # into two different object files, such as
-#   bcast.c --> {bcast.o,lib_libpmpich_la-bcast.o}
+#   bcast.c --> {bcast.o,lib_libpmpi_la-bcast.o}
 # It still generates a bcast.c.gcov output for each object file.  Long file
 # names and preserved paths do not help with this problem.
 # What we can do in this case is to move the second files to a separate 
@@ -350,6 +431,7 @@ htmldoc-local: $(mpi_sources:.c=.html-phony) $(doc1_src_txt:.txt=.html1-phony)
 		fi \
 	    fi \
 	done
+	$(srcdir)/maint/createhtmlindex -wwwroot=$(top_builddir)
 
 # install-man does not have a special "-local" target for some reason
 INSTALL_DATA_LOCAL_TARGETS += install-man-local

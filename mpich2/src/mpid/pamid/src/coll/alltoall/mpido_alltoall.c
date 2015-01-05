@@ -55,7 +55,8 @@ int MPIDO_Alltoall(const void *sendbuf,
    pami_type_t stype, rtype;
    MPI_Aint sdt_true_lb=0, rdt_true_lb;
    MPIDI_Post_coll_t alltoall_post;
-   int sndlen, rcvlen, snd_contig, rcv_contig, pamidt=1;
+   int snd_contig, rcv_contig, pamidt=1;
+   int sndlen ATTRIBUTE((unused)), rcvlen ATTRIBUTE((unused));
    int tmp;
 #if ASSERT_LEVEL==0
    /* We can't afford the tracing in ndebug/performance libraries */
@@ -152,9 +153,9 @@ int MPIDO_Alltoall(const void *sendbuf,
             result.check.unspecified = 1;
          if(my_md->check_correct.values.rangeminmax)
          {
-            MPI_Aint data_true_lb;
+            MPI_Aint data_true_lb ATTRIBUTE((unused));
             MPID_Datatype *data_ptr;
-            int data_size, data_contig;
+            int data_size, data_contig ATTRIBUTE((unused));
             MPIDI_Datatype_get_info(sendcount, sendtype, data_contig, data_size, data_ptr, data_true_lb); 
             if((my_md->range_lo <= data_size) &&
                (my_md->range_hi >= data_size))
@@ -243,13 +244,17 @@ int MPIDO_Alltoall_simple(const void *sendbuf,
    size_t recv_size = 0;
    MPID_Segment segment;
    MPID_Datatype *sdt, *rdt;
-   pami_type_t stype = NULL, rtype;
    MPI_Aint sdt_true_lb=0, rdt_true_lb;
    MPIDI_Post_coll_t alltoall_post;
-   int sndlen, rcvlen, snd_contig = 1, rcv_contig = 1, pamidt=1;
-   int tmp;
+   int sndlen, rcvlen, snd_contig = 1, rcv_contig = 1;
    const int rank = comm_ptr->rank;
    const int size = comm_ptr->local_size;
+#if ASSERT_LEVEL==0
+   /* We can't afford the tracing in ndebug/performance libraries */
+    const unsigned verbose = 0;
+#else
+    const unsigned verbose = (MPIDI_Process.verbose >= MPIDI_VERBOSE_DETAILS_ALL) && (comm_ptr->rank == 0);
+#endif
 
    const struct MPIDI_Comm* const mpid = &(comm_ptr->mpid);
 
@@ -268,6 +273,14 @@ int MPIDO_Alltoall_simple(const void *sendbuf,
         return MPIR_Alltoall_intra(sendbuf, sendcount, sendtype,
                                    recvbuf, recvcount, recvtype,
                                    comm_ptr, mpierrno);
+      }
+      else if(advisor_algorithms[0].metadata && advisor_algorithms[0].metadata->check_correct.values.asyncflowctl && !(--(comm_ptr->mpid.num_requests)))
+      {
+        comm_ptr->mpid.num_requests = MPIDI_Process.optimized.num_requests;
+        int tmpmpierrno;
+        if(unlikely(verbose))
+          fprintf(stderr,"Query barrier required for %s\n", advisor_algorithms[0].metadata->name);
+        MPIDO_Barrier(comm_ptr, &tmpmpierrno);
       }
     }
   }
@@ -317,12 +330,11 @@ int MPIDO_Alltoall_simple(const void *sendbuf,
 
 
    pami_xfer_t alltoall;
+#ifdef TRACE_ON
    const pami_metadata_t *my_alltoall_md;
    my_alltoall_md = &mpid->coll_metadata[PAMI_XFER_ALLTOALL][0][0];
-
-   char *pname = my_alltoall_md->name;
-   TRACE_ERR("Using alltoall protocol %s\n", pname);
-
+   TRACE_ERR("Using alltoall protocol %s\n", my_alltoall_md->name);
+#endif
    alltoall.cb_done = cb_alltoall;
    alltoall.cookie = (void *)&active;
    alltoall.algorithm = mpid->coll_algorithm[PAMI_XFER_ALLTOALL][0][0];

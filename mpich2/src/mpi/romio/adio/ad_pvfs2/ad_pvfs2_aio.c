@@ -32,12 +32,12 @@ void ADIOI_PVFS2_IReadContig(ADIO_File fd, void *buf, int count,
 	    offset, request, READ, error_code);
 }
 
-void ADIOI_PVFS2_IWriteContig(ADIO_File fd, void *buf, int count, 
+void ADIOI_PVFS2_IWriteContig(ADIO_File fd, const void *buf, int count,
 			    MPI_Datatype datatype, int file_ptr_type,
 			    ADIO_Offset offset, MPI_Request *request,
 			    int *error_code)
 {
-    ADIOI_PVFS2_AIO_contig(fd, buf, count, datatype, file_ptr_type,
+    ADIOI_PVFS2_AIO_contig(fd, (void *)buf, count, datatype, file_ptr_type,
 	    offset, request, WRITE, error_code);
 }
 
@@ -130,7 +130,7 @@ void ADIOI_PVFS2_AIO_contig(ADIO_File fd, void *buf, int count,
 		    &ADIOI_PVFS2_greq_class);
 	}
 	MPIX_Grequest_class_allocate(ADIOI_PVFS2_greq_class, aio_req, request);
-	memcpy(&(aio_req->req), request, sizeof(request));
+	memcpy(&(aio_req->req), request, sizeof(*request));
     }
 
     /* immediate completion */

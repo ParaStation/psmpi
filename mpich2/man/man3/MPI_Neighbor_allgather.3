@@ -1,4 +1,4 @@
-.TH MPI_Neighbor_allgather 3 "2/20/2014" " " "MPI"
+.TH MPI_Neighbor_allgather 3 "6/4/2014" " " "MPI"
 .SH NAME
 MPI_Neighbor_allgather \-  In this function, each process i gathers data items from each process j if an edge (j,i) exists in the topology graph, and each process i sends the same data items to all processes j where an edge (i,j) exists. The send buffer is sent to each neighboring process and the l-th block in the receive buffer is received from the l-th neighbor. 
 .SH SYNOPSIS
@@ -106,4 +106,4 @@ an error; however, MPI implementations will attempt to continue whenever
 possible.
 
 .SH LOCATION
-/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/topo/nhb_allgather.c
+/tmp/JGQRosY5vd/mpich-3.1.1/src/mpi/topo/nhb_allgather.c

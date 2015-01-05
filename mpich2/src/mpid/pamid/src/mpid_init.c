@@ -27,6 +27,8 @@
 #include "mpidi_platform.h"
 #include "onesided/mpidi_onesided.h"
 
+#include "mpidi_util.h"
+
 #ifdef DYNAMIC_TASKING
 #define PAMIX_CLIENT_DYNAMIC_TASKING 1032
 #define PAMIX_CLIENT_WORLD_TASKS     1033
@@ -125,7 +127,7 @@ MPIDI_Process_t  MPIDI_Process = {
     .subcomms            = 1,
     .select_colls        = 2,
     .memory              = 0,
-    .num_requests        = 1,
+    .num_requests        = 16,
   },
 
   .mpir_nbc              = 1,
@@ -324,6 +326,39 @@ static struct
 #endif
 };
 
+
+#undef FUNCNAME
+#define FUNCNAME split_type
+#undef FCNAME
+#define FCNAME MPIDI_QUOTE(FUNCNAME)
+static int split_type(MPID_Comm * comm_ptr, int stype, int key,
+                      MPID_Info *info_ptr, MPID_Comm ** newcomm_ptr)
+{
+    MPID_Node_id_t id;
+    int nid;
+    int mpi_errno = MPI_SUCCESS;
+
+    mpi_errno = MPID_Get_node_id(comm_ptr, comm_ptr->rank, &id);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+    nid = (stype == MPI_COMM_TYPE_SHARED) ? id : MPI_UNDEFINED;
+    mpi_errno = MPIR_Comm_split_impl(comm_ptr, nid, key, newcomm_ptr);
+    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+  fn_exit:
+    return mpi_errno;
+
+    /* --BEGIN ERROR HANDLING-- */
+  fn_fail:
+    goto fn_exit;
+    /* --END ERROR HANDLING-- */
+}
+
+static MPID_CommOps comm_fns = {
+    split_type
+};
+
+
 /* ------------------------------ */
 /* Collective selection extension */
 /* ------------------------------ */
@@ -441,7 +476,7 @@ MPIDI_PAMI_client_init(int* rank, int* size, int* mpidi_dynamic_tasking, char **
     char * env = getenv("PAMID_DISABLE_INTERNAL_EAGER_TASK_LIMIT");
     if (env != NULL)
       {
-        size_t i, n = strlen(env);
+        size_t n = strlen(env);
         char * tmp = (char *) MPIU_Malloc(n+1);
         strncpy(tmp,env,n);
         if (n>0) tmp[n]=0;
@@ -628,8 +663,10 @@ void MPIDI_Collsel_table_generate()
 static void
 MPIDI_PAMI_context_init(int* threading, int *size)
 {
+#ifdef TRACE_ON
   int requested_thread_level;
   requested_thread_level = *threading;
+#endif
   int  numTasks;
 
 #if (MPIU_THREAD_GRANULARITY == MPIU_THREAD_GRANULARITY_PER_OBJECT)
@@ -1064,8 +1101,8 @@ MPIDI_VCRT_init(int rank, int size, char *world_tasks, MPIDI_PG_t *pg)
 {
   int i, rc;
   MPID_Comm * comm;
-  int p, mpi_errno=0;
 #ifdef DYNAMIC_TASKING
+  int p, mpi_errno=0;
   char *world_tasks_save,*cp;
   char *pg_id;
 #endif
@@ -1190,6 +1227,8 @@ int MPID_Init(int * argc,
   char *world_tasks;
   pami_result_t rc;
 
+  /* Override split_type */
+  MPID_Comm_fns = &comm_fns;
 
   /* ------------------------------------------------------------------------------- */
   /*  Initialize the pami client to get the process rank; needed for env var output. */
@@ -1246,9 +1285,6 @@ int MPID_Init(int * argc,
                                 * for getting the business card
                                 */
     MPIDI_Process.my_pg_rank = pg_rank;
-    /* FIXME: Why do we add a ref to pg here? */
-    TRACE_ERR("Adding ref pg=%x\n", pg);
-    MPIDI_PG_add_ref(pg);
 
   }
 #endif

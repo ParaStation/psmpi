@@ -14,7 +14,7 @@ use Data::Dumper;
 use Getopt::Long;
 
 # Help perl find the YAML parsing module
-use lib './maint/local_perl/lib';
+use lib '/tmp/JGQRosY5vd/mpich-3.1.1/maint/local_perl/lib';
 use YAML::Tiny qw();
 
 # To format README file
@@ -42,9 +42,9 @@ my $alt_ns = "MPIR_PARAM";
 my $dep_ns = "MPICH";
 
 # Default :output source files
-my $header_file = "src/include/mpich_cvars.h";
-my $c_file      = "src/util/cvar/mpich_cvars.c";
-my $readme_file = "README.envvar";
+my $header_file = "/tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/include/mpich_cvars.h";
+my $c_file      = "/tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/util/cvar/mpich_cvars.c";
+my $readme_file = "/tmp/JGQRosY5vd/mpich-3.1.1/maint/../README.envvar";
 
 sub Usage {
     print <<EOT;
@@ -123,7 +123,7 @@ foreach my $p (@cvars) {
 print "Categories include: \n".Dumper(@categories) if $debug;
 print "Cvars include :\n".Dumper(@cvars)."\n" if $debug;
 
-my $run_timestamp = localtime;
+my $run_timestamp = localtime();
 my $uc_ns = uc($ns);
 
 # Setup output files
@@ -137,7 +137,7 @@ my $hdr_guard = Header2InclGuard($header_file);
 print OUTPUT_H <<EOT;
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2011 by Argonne National Laboratory.
+ *  (C) 2010 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
@@ -184,7 +184,7 @@ close(OUTPUT_H);
 print OUTPUT_C <<EOT;
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2011 by Argonne National Laboratory.
+ *  (C) 2010 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 /* automatically generated
@@ -406,7 +406,7 @@ close(OUTPUT_C);
 #===============================================================
 #Step 5.3 Dump the readme file
 print OUTPUT_README <<EOT;
-(C) 2011 by Argonne National Laboratory.
+(C) 2010 by Argonne National Laboratory.
     See COPYRIGHT in top-level directory.
 
 Automatically generated

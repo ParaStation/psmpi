@@ -323,6 +323,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -379,7 +380,7 @@ AM_FFLAGS = -I.
 CLEANFILES = summary.xml summary.tap
 EXTRA_DIST = testlist.in
 static_subdirs = util timer attr coll datatype pt2pt info comm topo ext init \
-		 misc f90types
+		 misc f90types profile
 
 SUBDIRS = $(static_subdirs) $(rmadir) $(spawndir) $(iodir)
 DIST_SUBDIRS = $(static_subdirs) rma spawn io

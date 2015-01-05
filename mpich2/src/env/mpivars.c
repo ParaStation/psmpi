@@ -1,8 +1,14 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2013 by Argonne National Laboratory.
+ *  (C) 2014 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+
+/* style:allow:snprintf:9 sig:0 */
+/* style:allow:strncpy:3 sig:0 */
+/* style:allow:fprintf:26 sig:0 */
+/* style:allow:free:3 sig:0 */
+/* style:allow:malloc:3 sig:0 */
 
 #include <stdio.h>
 #include <string.h>

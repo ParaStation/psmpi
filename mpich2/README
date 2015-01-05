@@ -1,4 +1,4 @@
-			MPICH Release 3.1
+			MPICH Release 3.1.1
 
 MPICH is a high-performance and widely portable implementation of the
 MPI-3.0 standard from the Argonne National Laboratory.  This release
@@ -40,7 +40,7 @@ shared memory), Hydra process management) of MPICH up and running.
 
 (a) You will need the following prerequisites.
 
-    - REQUIRED: This tar file mpich-3.1.tar.gz
+    - REQUIRED: This tar file mpich-3.1.1.tar.gz
 
     - REQUIRED: A C compiler (gcc is sufficient)
 
@@ -50,18 +50,11 @@ shared memory), Hydra process management) of MPICH up and running.
       --disable-cxx (configuring MPICH is described in step 1(d)
       below).
 
-    - OPTIONAL: A Fortran 77 compiler, if Fortran 77 applications are
-      to be used (gfortran, ifort, etc.). If you do not require
-      support for Fortran 77 applications, you can disable this
-      support using --disable-f77 (configuring MPICH is described in
-      step 1(d) below).
-
-    - OPTIONAL: A Fortran 90 compiler, if Fortran 90 applications are
-      to be used (gfortran, ifort, etc.). If you do not require
-      support for Fortran 90 applications, you can disable this
-      support using --disable-fc. Note that Fortran 77 support is a
-      prerequisite for Fortran 90 support (configuring MPICH is
-      described in step 1(d) below).
+    - OPTIONAL: A Fortran compiler, if Fortran applications are to be
+      used (gfortran, ifort, etc.). If you do not require support for
+      Fortran applications, you can disable this support using
+      --disable-fortran (configuring MPICH is described in step 1(d)
+      below).
 
     Also, you need to know what shell you are using since different shell
     has different command syntax. Command "echo $SHELL" prints out the
@@ -69,14 +62,14 @@ shared memory), Hydra process management) of MPICH up and running.
 
 (b) Unpack the tar file and go to the top level directory:
 
-      tar xzf mpich-3.1.tar.gz
-      cd mpich-3.1
+      tar xzf mpich-3.1.1.tar.gz
+      cd mpich-3.1.1
 
     If your tar doesn't accept the z option, use
 
-      gunzip mpich-3.1.tar.gz
-      tar xf mpich-3.1.tar
-      cd mpich-3.1
+      gunzip mpich-3.1.1.tar.gz
+      tar xf mpich-3.1.1.tar
+      cd mpich-3.1.1
 
 (c) Choose an installation directory, say
     /home/<USERNAME>/mpich-install, which is assumed to non-existent
@@ -100,11 +93,11 @@ shared memory), Hydra process management) of MPICH up and running.
     command will display the error. Most errors are straight-forward
     to follow. For example, if the configure command fails with:
 
-       "No Fortran 77 compiler found. If you don't need to build any
+       "No Fortran compiler found. If you don't need to build any
         Fortran programs, you can disable Fortran support using
-        --disable-f77 and --disable-fc. If you do want to build
-        Fortran programs, you need to install a Fortran compiler such
-        as gfortran or ifort before you can proceed."
+        --disable-fortran. If you do want to build Fortran programs,
+        you need to install a Fortran compiler such as gfortran or
+        ifort before you can proceed."
 
     ... it means that you don't have a Fortran compiler :-). You will
     need to either install one, or disable Fortran support in MPICH.
@@ -185,7 +178,7 @@ shared memory), Hydra process management) of MPICH up and running.
     Now we will run an MPI job, using the mpiexec command as specified
     in the MPI standard. There are some examples in the install
     directory, which you have already put in your path, as well as in
-    the directory mpich-3.1/examples. One of them is the classic
+    the directory mpich-3.1.1/examples. One of them is the classic
     CPI example, which computes the value of pi by numerical
     integration in parallel.
 
@@ -249,14 +242,14 @@ COMPRESS BEFORE SENDING, AS THE FILES CAN BE LARGE.  Note that,
 depending on which step the build failed, some of the files might not
 exist.
 
-    mpich-3.1/c.txt (generated in step 1(d) above)
-    mpich-3.1/m.txt (generated in step 1(e) above)
-    mpich-3.1/mi.txt (generated in step 1(f) above)
-    mpich-3.1/config.log (generated in step 1(d) above)
-    mpich-3.1/src/openpa/config.log (generated in step 1(d) above)
-    mpich-3.1/src/mpl/config.log (generated in step 1(d) above)
-    mpich-3.1/src/pm/hydra/config.log (generated in step 1(d) above)
-    mpich-3.1/src/pm/hydra/tools/topo/hwloc/hwloc/config.log (generated in step 1(d) above)
+    mpich-3.1.1/c.txt (generated in step 1(d) above)
+    mpich-3.1.1/m.txt (generated in step 1(e) above)
+    mpich-3.1.1/mi.txt (generated in step 1(f) above)
+    mpich-3.1.1/config.log (generated in step 1(d) above)
+    mpich-3.1.1/src/openpa/config.log (generated in step 1(d) above)
+    mpich-3.1.1/src/mpl/config.log (generated in step 1(d) above)
+    mpich-3.1.1/src/pm/hydra/config.log (generated in step 1(d) above)
+    mpich-3.1.1/src/pm/hydra/tools/topo/hwloc/hwloc/config.log (generated in step 1(d) above)
 
     DID WE MENTION? DO NOT FORGET TO COMPRESS THESE FILES!
 
@@ -305,10 +298,10 @@ developers might be interested in, but which break existing configure
 tests (e.g., -Werror). These are NOT recommended for regular users.
 
 (d) MPICH_MPICC_FLAGS, MPICH_MPICPP_FLAGS, MPICH_MPICXX_FLAGS,
-MPICH_MPIF77_FLAGS, MPICH_MPIFC_FLAGS, MPICH_LDFLAGS and
-MPICH_LIBS (abbreviated as MPICH_MPIX_FLAGS): These flags do *not*
-affect the compilation of the MPICH library itself, but will be
-internally used by mpicc and friends.
+MPICH_MPIFC_FLAGS, MPICH_LDFLAGS and MPICH_LIBS (abbreviated as
+MPICH_MPIX_FLAGS): These flags do *not* affect the compilation of the
+MPICH library itself, but will be internally used by mpicc and
+friends.
 
 
   +--------------------------------------------------------------------+
@@ -500,8 +493,8 @@ configurations:
        --with-cross=<mpich-source>/src/mpid/ch3/channels/nemesis/netmod/ib/cross_values.txt
        --host=x86_64-k1om-linux
        --with-ib=/opt/intel/mic/ofed/card/usr
-       CC=icc CXX=icpc F77=ifort FC=ifort
-       CFLAGS=-mmic CXXFLAGS=-mmic FFLAGS=-mmic FCFLAGS=-mmic LDFLAGS=-mmic
+       CC=icc CXX=icpc FC=ifort
+       CFLAGS=-mmic CXXFLAGS=-mmic FCFLAGS=-mmic LDFLAGS=-mmic
 
 3. InfiniBand Open Fabrics, Xeon Phi, McKernel (developed by
    University of Tokyo)
@@ -513,8 +506,8 @@ configurations:
        --host=x86_64-k1om-linux
        --with-ib=<mckernel-source>/attached
        --disable-shared
-       CC=icc CXX=icpc F77=ifort FC=ifort
-       CFLAGS=-mmic CXXFLAGS=-mmic FFLAGS=-mmic FCFLAGS=-mmic LDFLAGS=-mmic
+       CC=icc CXX=icpc FC=ifort
+       CFLAGS=-mmic CXXFLAGS=-mmic FCFLAGS=-mmic LDFLAGS=-mmic
 
     Note that shared builds are not supported for the third
     configuration right now.
@@ -568,13 +561,6 @@ Hydra is the default process management framework that uses existing
 daemons on nodes (e.g., ssh, pbs, slurm, sge) to start MPI
 processes. More information on Hydra can be found at
 http://wiki.mpich.org/mpich/index.php/Using_the_Hydra_Process_Manager
-
-mpd
----
-MPD was the traditional process manager in MPICH. The file
-mpich-3.1/src/pm/mpd/README has more information about
-interactive commands for managing the ring of MPDs. The MPD process
-manager is now deprecated.
 
 gforker
 -------
@@ -760,7 +746,7 @@ http://wiki.mpich.org/mpich/index.php/Getting_And_Building_MPICH
 
 If the C compiler that is used to build MPICH libraries supports both
 multiple weak symbols and multiple aliases of common symbols, the
-Fortran 77 binding can support multiple Fortran compilers. The
+Fortran binding can support multiple Fortran compilers. The
 multiple weak symbols support allow MPICH to provide different name
 mangling scheme (of subroutine names) required by differen Fortran
 compilers. The multiple aliases of common symbols support enables
@@ -775,20 +761,19 @@ e.g. linker warnings of different sizes of common symbols, MPIFCMB*
 (the warning should be harmless).
 
 We have only tested this support on a limited set of
-platforms/compilers.  On linux, if the C compiler that builds MPICH
-is either gcc or icc, the above support will be enabled by configure.
-At the time of this writing, pgcc does not seem to have this multiple
+platforms/compilers.  On linux, if the C compiler that builds MPICH is
+either gcc or icc, the above support will be enabled by configure.  At
+the time of this writing, pgcc does not seem to have this multiple
 aliases of common symbols, so configure will detect the deficiency and
-disable the feature automatically.  The tested Fortran compiler
-includes GNU Forran compilers(gfortan, g77), Intel Fortran
-compiler(ifort), Portland Group Fortran compilers(pgf77, pgf90),
-Absoft Fortran compilers (af77, af90), and IBM XL fortran
-compiler(xlf).  What this mean is that if mpich is built by
-gcc/gfortran, the resulting mpich library can be used to link a
-Fortran program compiled/linked by another fortran compiler, say
-pgf77, say through mpif77 -f77=pgf77.  As long as the Fortran program
-is linked without any errors by one of these compilers, the program
-shall be running fine.
+disable the feature automatically.  The tested Fortran compilers
+include GNU Fortran compilers (gfortan), Intel Fortran compiler
+(ifort), Portland Group Fortran compilers (pgfortran), Absoft Fortran
+compilers (af90), and IBM XL fortran compiler (xlf).  What this means
+is that if mpich is built by gcc/gfortran, the resulting mpich library
+can be used to link a Fortran program compiled/linked by another
+fortran compiler, say pgf90, say through mpifort -fc=pgf90.  As long
+as the Fortran program is linked without any errors by one of these
+compilers, the program shall be running fine.
 
 -------------------------------------------------------------------------
 
@@ -797,72 +782,29 @@ shall be running fine.
 
 The MPICH ABI compatibility initiative was announced at SC 2014
 (http://www.mpich.org/abi).  As a part of this initiative, Argonne,
-Intel, IBM and Cray, have committed to maintaining ABI compatibility
+Intel, IBM and Cray have committed to maintaining ABI compatibility
 with each other.
 
 As a first step in this initiative, starting with version 3.1, MPICH
 is binary (ABI) compatible with Intel MPI 5.0.  This means you can
 build your program with one MPI implementation and run with the other.
 Specifically, binary-only applications that were built and distributed
-with one of these MPI implementations and now be executed with the
+with one of these MPI implementations can now be executed with the
 other MPI implementation.
 
-Some setup is required to achieve this.  Below details how to
-accomplish this.
+Some setup is required to achieve this.  Suppose you have MPICH
+installed in /path/to/mpich and Intel MPI installed in /path/to/impi.
 
-To run an MPICH-built program with Intel:
-----------------------------------------
+You can run your application with mpich using:
 
-1. The current MPI library names do not currently match.  This is
-   planned to be fixed in the future, but for now, you need to employ
-   some symbolic links in order for the linker to find the necessary
-   libraries correctly.  We recommend doing this in a separate
-   directory.
+   % export LD_LIBRARY_PATH=/path/to/mpich/lib:$LD_LIBRARY_PATH
+   % mpiexec -np 100 ./foo
 
-   For applications built with the default Intel MPI configuration:
+or using Intel MPI using:
 
-   ln -s /path/to/intel/lib/libmpi.so libmpich.so.12
-   ln -s /path/to/intel/lib/libmpigc4.so libmpichcxx.so.12
-   ln -s /path/to/intel/lib/libmpigf.so libfmpich.so.12
-   ln -s /path/to/intel/lib/libmpigf.so libmpichf90.so.12
-   ln -s /path/to/intel/lib/libmpi.so libmpl.so.1
-   ln -s /path/to/intel/lib/libmpi.so libopa.so.1
+   % export LD_LIBRARY_PATH=/path/to/impi/lib:$LD_LIBRARY_PATH
+   % mpiexec -np 100 ./foo
 
-   For applications built with the debug configuration of Intel MPI:
-
-   ln -s /path/to/intel/lib/libmpi_dbg.so libmpich.so.12
-   ln -s /path/to/intel/lib/libmpigc4.so libmpichcxx.so.12
-   ln -s /path/to/intel/lib/libmpigf.so libfmpich.so.12
-   ln -s /path/to/intel/lib/libmpigf.so libmpichf90.so.12
-   ln -s /path/to/intel/lib/libmpi_dbg.so libmpl.so.1
-   ln -s /path/to/intel/lib/libmpi_dbg.so libopa.so.1
-
-2. Add directory to LD_LIBRARY_PATH
-
-   export LD_LIBRARY_PATH=/path/to/symlinks:$LD_LIBRARY_PATH
-
-3. For Fortran programs, you must also modify LD_PRELOAD
-
-   export LD_PRELOAD=/path/to/intel/lib/libmpi.so:/path/to/intel/lib/libmpigf.so:$LD_PRELOAD
-
-4. Run your program
-
-   /path/to/intel/bin/mpiexec <mpi_program>
-
-To run an Intel-built program with MPICH:
-----------------------------------------
-
-1. Create symlinks
-
-   ln -s /path/to/mpich/lib/libmpich.so libmpi.so.5
-   ln -s /path/to/mpich/lib/libmpich.so libmpi_dbg.so.5
-   ln -s /path/to/mpich/lib/libmpichcxx.so libmpigc4.so.5
-   ln -s /path/to/mpich/lib/libmpichf90.so libmpigf.so.5
-
-2. Modify LD_LIBRARY_PATH
-
-   export LD_LIBRARY_PATH=/path/to/symlinks:$LD_LIBRARY_PATH
-
-3. Run your program
-
-   /path/to/mpich/bin/mpiexec <mpi_program>
+This works irrespective of which MPI implementation your application
+was compiled with, as long as you use one of the MPI implementations
+in the ABI compatibility initiative.

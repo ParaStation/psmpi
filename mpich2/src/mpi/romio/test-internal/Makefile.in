@@ -161,8 +161,8 @@ am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
 LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
@@ -246,6 +246,7 @@ FORTRAN_MPI_OFFSET = @FORTRAN_MPI_OFFSET@
 FORTRAN_TEST = @FORTRAN_TEST@
 FROM_LAM = @FROM_LAM@
 FROM_MPICH = @FROM_MPICH@
+FROM_OMPI = @FROM_OMPI@
 FTESTDEFINE = @FTESTDEFINE@
 GCOV = @GCOV@
 GREP = @GREP@

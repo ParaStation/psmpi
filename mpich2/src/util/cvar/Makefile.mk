@@ -5,11 +5,11 @@
 ##     See COPYRIGHT in top-level directory.
 ##
 
-lib_lib@MPILIBNAME@_la_SOURCES +=   \
+mpi_core_sources +=   \
     src/util/cvar/mpich_cvars.c
 
 if MAINTAINER_MODE
 # normally built by autogen.sh, but this rebuild rule is here
 $(top_srcdir)/src/util/cvar/mpich_cvars.c: $(top_srcdir)/maint/extractcvars
-	( cd $(top_srcdir) && ./maint/extractcvars --dirs="`cat ./maint/cvardirs`")
+	( cd $(top_srcdir) && $(top_srcdir)/maint/extractcvars --dirs="`cat $(top_srcdir)/maint/cvardirs`")
 endif MAINTAINER_MODE

@@ -87,7 +87,7 @@ host_triplet = @host@
 DIST_COMMON = $(top_srcdir)/Makefile.mtest $(srcdir)/Makefile.in \
 	$(srcdir)/Makefile.am $(top_srcdir)/confdb/depcomp
 noinst_PROGRAMS = adderr$(EXEEXT) commcall$(EXEEXT) errfatal$(EXEEXT) \
-	predef_eh$(EXEEXT)
+	predef_eh$(EXEEXT) errstring2$(EXEEXT)
 EXTRA_PROGRAMS = errcode$(EXEEXT) errring$(EXEEXT) errstring$(EXEEXT)
 subdir = errhan
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -131,6 +131,10 @@ errstring_SOURCES = errstring.c
 errstring_OBJECTS = errstring.$(OBJEXT)
 errstring_LDADD = $(LDADD)
 errstring_DEPENDENCIES = $(top_builddir)/util/mtest.o
+errstring2_SOURCES = errstring2.c
+errstring2_OBJECTS = errstring2.$(OBJEXT)
+errstring2_LDADD = $(LDADD)
+errstring2_DEPENDENCIES = $(top_builddir)/util/mtest.o
 predef_eh_SOURCES = predef_eh.c
 predef_eh_OBJECTS = predef_eh.$(OBJEXT)
 predef_eh_LDADD = $(LDADD)
@@ -158,15 +162,15 @@ am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
-LINK = $(CCLD) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = adderr.c commcall.c $(errcode_SOURCES) errfatal.c errring.c \
-	errstring.c predef_eh.c
+	errstring.c errstring2.c predef_eh.c
 DIST_SOURCES = adderr.c commcall.c $(errcode_SOURCES) errfatal.c \
-	errring.c errstring.c predef_eh.c
+	errring.c errstring.c errstring2.c predef_eh.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -326,6 +330,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -374,7 +379,7 @@ top_srcdir = @top_srcdir@
 # AM_CPPFLAGS are used for C++ code as well
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = $(top_builddir)/util/mtest.o
-CLEANFILES = summary.xml summary.tap
+CLEANFILES = summary.xml summary.tap summary.junit.xml
 EXTRA_DIST = testlist
 errcode_SOURCES = errcode.c errmsg.c
 all: all-am
@@ -440,6 +445,10 @@ errstring$(EXEEXT): $(errstring_OBJECTS) $(errstring_DEPENDENCIES) $(EXTRA_errst
 	@rm -f errstring$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(errstring_OBJECTS) $(errstring_LDADD) $(LIBS)
 
+errstring2$(EXEEXT): $(errstring2_OBJECTS) $(errstring2_DEPENDENCIES) $(EXTRA_errstring2_DEPENDENCIES) 
+	@rm -f errstring2$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(errstring2_OBJECTS) $(errstring2_LDADD) $(LIBS)
+
 predef_eh$(EXEEXT): $(predef_eh_OBJECTS) $(predef_eh_DEPENDENCIES) $(EXTRA_predef_eh_DEPENDENCIES) 
 	@rm -f predef_eh$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(predef_eh_OBJECTS) $(predef_eh_LDADD) $(LIBS)
@@ -457,6 +466,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/errmsg.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/errring.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/errstring.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/errstring2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/predef_eh.Po@am__quote@
 
 .c.o:

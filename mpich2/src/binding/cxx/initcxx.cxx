@@ -11,6 +11,7 @@
 #include "mpi.h"
 #include <stdarg.h>
 #include "mpichconf.h"
+/* style:PMPIuse:PMPI_Type_set_name:4 sig:0 */
 
 // #define MPIX_TRACE_MEMORY
 #ifdef MPIX_TRACE_MEMORY

@@ -1,11 +1,11 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2011 by Argonne National Laboratory.
+ *  (C) 2010 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 /* automatically generated
  *   by:   ./maint/extractcvars
- *   at:   Thu Feb 20 11:41:41 2014
+ *   at:   Wed Jun  4 15:02:51 2014
  *
  * DO NOT EDIT!!!
  */
@@ -42,6 +42,12 @@ int MPIR_CVAR_MEMDUMP = MPID_MEMDUMP;
 #else
 int MPIR_CVAR_MEMDUMP = 1;
 #endif /* MPID_MEMDUMP */
+
+#if defined MPID_SUPPRESS_ABORT_MESSAGE
+int MPIR_CVAR_SUPPRESS_ABORT_MESSAGE = MPID_SUPPRESS_ABORT_MESSAGE;
+#else
+int MPIR_CVAR_SUPPRESS_ABORT_MESSAGE = 0;
+#endif /* MPID_SUPPRESS_ABORT_MESSAGE */
 
 #if defined MPID_PRINT_ERROR_STACK
 int MPIR_CVAR_PRINT_ERROR_STACK = MPID_PRINT_ERROR_STACK;
@@ -237,6 +243,9 @@ int MPIR_CVAR_ABORT_ON_LEAKED_HANDLES = 0;
 #endif /* MPID_ABORT_ON_LEAKED_HANDLES */
 
 int MPIR_CVAR_NEMESIS_POLLS_BEFORE_YIELD = 1000;
+int MPIR_CVAR_DATALOOP_OPTIMIZE = 1;
+int MPIR_CVAR_DATALOOP_FLATTEN = 1;
+int MPIR_CVAR_DATALOOP_FLATTEN_MULT = 2;
 int MPIR_CVAR_CH3_NOLOCAL = 0;
 int MPIR_CVAR_CH3_ODD_EVEN_CLIQUES = 0;
 int MPIR_CVAR_CH3_EAGER_MAX_MSG_SIZE = 131072;
@@ -272,47 +281,51 @@ int MPIR_T_cvar_init(void)
         return MPI_SUCCESS;
     initialized = TRUE;
 
-    /* declared in src/mpi/init/initthread.c */
+    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpi/init/initthread.c */
     MPIR_T_cat_add_desc("DEBUGGER",
         "cvars relevant to the \"MPIR\" debugger interface");
 
-    /* declared in src/mpi/init/init.c */
+    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpi/init/init.c */
     MPIR_T_cat_add_desc("THREADS",
         "multi-threading cvars");
 
-    /* declared in src/mpi/init/finalize.c */
+    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpi/init/finalize.c */
     MPIR_T_cat_add_desc("DEVELOPER",
         "useful for developers working on MPICH itself");
 
-    /* declared in src/mpi/errhan/errutil.c */
+    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpi/errhan/errutil.c */
     MPIR_T_cat_add_desc("ERROR_HANDLING",
         "cvars that control error handling behavior (stack traces, aborts, etc)");
 
-    /* declared in src/mpi/comm/comm_split.c */
+    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpi/comm/comm_split.c */
     MPIR_T_cat_add_desc("COMMUNICATOR",
         "cvars that control communicator construction and operation");
 
-    /* declared in src/mpi/coll/helper_fns.c */
+    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpi/coll/helper_fns.c */
     MPIR_T_cat_add_desc("FAULT_TOLERANCE",
         "cvars that control fault tolerance behavior");
 
-    /* declared in src/mpi/coll/alltoall.c */
+    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpi/coll/alltoall.c */
     MPIR_T_cat_add_desc("COLLECTIVE",
         "A category for collective communication variables.");
 
-    /* declared in src/nameserv/file/file_nameserv.c */
+    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/nameserv/file/file_nameserv.c */
     MPIR_T_cat_add_desc("PROCESS_MANAGER",
         "cvars that control the client-side process manager code");
 
-    /* declared in src/util/mem/handlemem.c */
+    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/util/mem/handlemem.c */
     MPIR_T_cat_add_desc("MEMORY",
         "affects memory allocation and usage, including MPI object handles");
 
-    /* declared in src/mpid/ch3/src/ch3u_rma_sync.c */
+    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpid/common/datatype/dataloop/dataloop_create_struct.c */
+    MPIR_T_cat_add_desc("DATATYPE",
+        "Datatype optimization parameters");
+
+    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpid/ch3/src/ch3u_rma_sync.c */
     MPIR_T_cat_add_desc("CH3",
         "cvars that control behavior of ch3");
 
-    /* declared in src/mpid/ch3/channels/nemesis/src/mpid_nem_init.c */
+    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpid/ch3/channels/nemesis/src/mpid_nem_init.c */
     MPIR_T_cat_add_desc("NEMESIS",
         "cvars that control behavior of the ch3:nemesis channel");
 
@@ -417,6 +430,24 @@ int MPIR_T_cvar_init(void)
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_MEMDUMP");
     rc = MPL_env2bool("MPIR_CVAR_MEMDUMP", &(MPIR_CVAR_MEMDUMP));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_CVAR_MEMDUMP");
+
+    defaultval.d = 0;
+    MPIR_T_CVAR_REGISTER_STATIC(
+        MPI_INT,
+        MPIR_CVAR_SUPPRESS_ABORT_MESSAGE, /* name */
+        &MPIR_CVAR_SUPPRESS_ABORT_MESSAGE, /* address */
+        1, /* count */
+        MPI_T_VERBOSITY_USER_BASIC,
+        MPI_T_SCOPE_ALL_EQ,
+        defaultval,
+        "ERROR_HANDLING", /* category */
+        "Disable printing of abort error message.");
+    rc = MPL_env2bool("MPICH_SUPPRESS_ABORT_MESSAGE", &(MPIR_CVAR_SUPPRESS_ABORT_MESSAGE));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_SUPPRESS_ABORT_MESSAGE");
+    rc = MPL_env2bool("MPIR_PARAM_SUPPRESS_ABORT_MESSAGE", &(MPIR_CVAR_SUPPRESS_ABORT_MESSAGE));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_SUPPRESS_ABORT_MESSAGE");
+    rc = MPL_env2bool("MPIR_CVAR_SUPPRESS_ABORT_MESSAGE", &(MPIR_CVAR_SUPPRESS_ABORT_MESSAGE));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_CVAR_SUPPRESS_ABORT_MESSAGE");
 
     defaultval.d = 1;
     MPIR_T_CVAR_REGISTER_STATIC(
@@ -1047,6 +1078,60 @@ int MPIR_T_cvar_init(void)
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_NEMESIS_POLLS_BEFORE_YIELD");
     rc = MPL_env2int("MPIR_CVAR_NEMESIS_POLLS_BEFORE_YIELD", &(MPIR_CVAR_NEMESIS_POLLS_BEFORE_YIELD));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_CVAR_NEMESIS_POLLS_BEFORE_YIELD");
+
+    defaultval.d = 1;
+    MPIR_T_CVAR_REGISTER_STATIC(
+        MPI_INT,
+        MPIR_CVAR_DATALOOP_OPTIMIZE, /* name */
+        &MPIR_CVAR_DATALOOP_OPTIMIZE, /* address */
+        1, /* count */
+        MPI_T_VERBOSITY_USER_BASIC,
+        MPI_T_SCOPE_LOCAL,
+        defaultval,
+        "DATATYPE", /* category */
+        "By default, the internal representation of an MPI datatype that is used by MPICH to move data is very similar to the original description of the datatype.  If this flag is true, additional optimizations are used to improve the performance of datatypes.");
+    rc = MPL_env2bool("MPICH_DATALOOP_OPTIMIZE", &(MPIR_CVAR_DATALOOP_OPTIMIZE));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_DATALOOP_OPTIMIZE");
+    rc = MPL_env2bool("MPIR_PARAM_DATALOOP_OPTIMIZE", &(MPIR_CVAR_DATALOOP_OPTIMIZE));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_DATALOOP_OPTIMIZE");
+    rc = MPL_env2bool("MPIR_CVAR_DATALOOP_OPTIMIZE", &(MPIR_CVAR_DATALOOP_OPTIMIZE));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_CVAR_DATALOOP_OPTIMIZE");
+
+    defaultval.d = 1;
+    MPIR_T_CVAR_REGISTER_STATIC(
+        MPI_INT,
+        MPIR_CVAR_DATALOOP_FLATTEN, /* name */
+        &MPIR_CVAR_DATALOOP_FLATTEN, /* address */
+        1, /* count */
+        MPI_T_VERBOSITY_USER_BASIC,
+        MPI_T_SCOPE_LOCAL,
+        defaultval,
+        "DATATYPE", /* category */
+        "If true, attempt to \"flatten\" the internal representation of MPI struct datatypes (created with MPI_Type_create_struct).");
+    rc = MPL_env2bool("MPICH_DATALOOP_FLATTEN", &(MPIR_CVAR_DATALOOP_FLATTEN));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_DATALOOP_FLATTEN");
+    rc = MPL_env2bool("MPIR_PARAM_DATALOOP_FLATTEN", &(MPIR_CVAR_DATALOOP_FLATTEN));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_DATALOOP_FLATTEN");
+    rc = MPL_env2bool("MPIR_CVAR_DATALOOP_FLATTEN", &(MPIR_CVAR_DATALOOP_FLATTEN));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_CVAR_DATALOOP_FLATTEN");
+
+    defaultval.d = 2;
+    MPIR_T_CVAR_REGISTER_STATIC(
+        MPI_INT,
+        MPIR_CVAR_DATALOOP_FLATTEN_MULT, /* name */
+        &MPIR_CVAR_DATALOOP_FLATTEN_MULT, /* address */
+        1, /* count */
+        MPI_T_VERBOSITY_USER_BASIC,
+        MPI_T_SCOPE_LOCAL,
+        defaultval,
+        "DATATYPE", /* category */
+        "Flattening an MPI struct datatype does not always improve performance.  This parameter is a threshold that is used in comparing the size of the description with the amount of data moved.  Larger values make it more likely that a struct datatype will be flattened.  The default value is adequate for flattening simple structs, and will usually avoid flattening structs containing vectors or block-indexed data.");
+    rc = MPL_env2int("MPICH_DATALOOP_FLATTEN_MULT", &(MPIR_CVAR_DATALOOP_FLATTEN_MULT));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_DATALOOP_FLATTEN_MULT");
+    rc = MPL_env2int("MPIR_PARAM_DATALOOP_FLATTEN_MULT", &(MPIR_CVAR_DATALOOP_FLATTEN_MULT));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_DATALOOP_FLATTEN_MULT");
+    rc = MPL_env2int("MPIR_CVAR_DATALOOP_FLATTEN_MULT", &(MPIR_CVAR_DATALOOP_FLATTEN_MULT));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_CVAR_DATALOOP_FLATTEN_MULT");
 
     defaultval.d = 0;
     MPIR_T_CVAR_REGISTER_STATIC(

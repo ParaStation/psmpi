@@ -77,6 +77,7 @@ AC_SUBST([MPI_H_INCLUDE])
 
 TEST_LIBNAME=""
 FILE_SYSTEM=""
+
 # Do not set variables to empty that may be communicated from the
 # outside environment (e.g., MPI_LIB, MPI_BIN_DIR, LIBNAME)
 DEBUG=no
@@ -89,6 +90,10 @@ FROM_MPICH=${FROM_MPICH:-no}
 AC_ARG_VAR([FROM_LAM],[set to "yes" if building ROMIO inside of LAM])
 FROM_LAM=${FROM_LAM:-no}
 if test "$FROM_LAM" = 1 ; then FROM_LAM=yes ; fi
+
+AC_ARG_VAR([FROM_OMPI],[set to "yes" if building ROMIO inside of Open MPI])
+FROM_OMPI=${FROM_OMPI:-no}
+if test "$FROM_OMPI" = 1 ; then FROM_OMPI=yes ; fi
 
 CFLAGS=${CFLAGS:-""}
 LL="lld"
@@ -130,13 +135,13 @@ TEST_F77=""
 #
 have_aio=no
 #
-known_mpi_impls="mpich_mpi mpich_mpi sgi_mpi hp_mpi cray_mpi lam_mpi"
+known_mpi_impls="mpich_mpi mpich_mpi sgi_mpi hp_mpi cray_mpi lam_mpi open_mpi_mpi"
 
 dnl An m4 macro for use with m4_foreach_w and friends.  You should modify this
 dnl list if you want to add a known file system.  The list is just whitespace
 dnl separated, so you can use newlines and tabs as well.
 m4_define([known_filesystems_m4_w],
-          [nfs ufs pfs pvfs pvfs2 testfs xfs panfs gridftp lustre bg bgl bglockless zoidfs hfs piofs sfs])dnl
+          [nfs ufs pfs pvfs pvfs2 testfs xfs panfs gridftp lustre gpfs zoidfs hfs piofs sfs])dnl
 dnl
 dnl An m4 macro for use with m4_foreach and friends.  Expands to a quoted list of
 dnl quoted elements.  A bit easier to use without unintended expansion than the
@@ -194,8 +199,8 @@ if test -n "$with_mpi"; then
 fi
 
 # start with the set of file systems that the user asked for
-FILE_SYSTEM=$with_file_system
-
+# FILE_SYSTEM=$with_file_system
+FILE_SYSTEM=`echo $with_file_system | sed -e 's/:.*$//'`
 
 # Check if Make is working
 PAC_PROG_MAKE
@@ -269,11 +274,17 @@ AC_SUBST(htmldir)
 
 # If we are building within a known MPI implementation, we must avoid the
 # tests about an existing implementation
-if test "$FROM_MPICH" != no -o "$FROM_LAM" != no ; then
+if test "$FROM_MPICH" != no -o "$FROM_LAM" != no -o "$FROM_OMPI" != no ; then
     WITHIN_KNOWN_MPI_IMPL=yes
 else
     WITHIN_KNOWN_MPI_IMPL=no
 fi
+
+# Open MPI: Set the MPI implementation
+if test "$FROM_OMPI" = "yes" ; then
+    MPI_IMPL=open_mpi
+fi
+
 # check for valid MPI implementation
 if test -n "$MPI_IMPL" ; then
    found=no
@@ -384,7 +395,7 @@ if test -z "$MPI_IMPL" ; then
 fi
 if test $MPI_IMPL = "mpich" ; then
 	TEST_CC=mpicc
-	TEST_F77=mpif77
+	TEST_F77=mpifort
 else
 	TEST_CC="$CC"
 	TEST_F77="$F77"
@@ -777,30 +788,41 @@ users manual for instructions on testing and if necessary fixing this])
 fi
 
 if test -n "$file_system_panfs"; then
-    AC_DEFINE(ROMIO_PANFS,1,[Define for ROMIO with PANFS])
+    # TODO: are there ever any installations with the panfs SDK somewhere else?
+    CPPFLAGS="${CPPFLAGS} -I/opt/panfs/include"
+    AC_CHECK_HEADER(pan_fs_client_cw_mode.h,
+	AC_DEFINE(ROMIO_PANFS,1,[Define for ROMIO with PANFS]),
+	AC_MSG_ERROR([PANFS support requested but cannot find pan_fs_client_cw_mode.h header file])
+    )
 fi
+
 if test -n "$file_system_ufs"; then
     AC_DEFINE(ROMIO_UFS,1,[Define for ROMIO with UFS])
 fi
-if test -n "$file_system_bgl"; then	
-    AC_DEFINE(ROMIO_BGL,1,[Define for ROMIO with BGL])
-fi
-if test -n "$file_system_bg"; then
-    AC_DEFINE(ROMIO_BG,1,[Define for ROMIO with BG])
-fi
-if test -n "$file_system_bglockless"; then
-    if test -n "$file_system_bgl"; then
-        AC_DEFINE(ROMIO_BGLOCKLESS,1,[Define for lock-free ROMIO with BGL])
-    fi
 
-    if test -n "$file_system_bg"; then
-        AC_DEFINE(ROMIO_BGLOCKLESS,1,[Define for lock-free ROMIO with BG])
-    fi
+changequote(<<,>>)
+file_system_args=`echo $with_file_system | sed -e 's/^[^:]*//' -e 's/^://'`
+changequote([,])
 
-    if test -n "$ROMIO_BGLOCKLESS"; then
-        AC_MSG_ERROR("bglockless requested without [bgl|bg]")
-    fi
+if test -n "$file_system_gpfs"; then
+    AC_DEFINE(ROMIO_GPFS,1,[Define for ROMIO with GPFS])
 fi
+
+AM_CONDITIONAL([BUILD_AD_BG],[false])
+AM_CONDITIONAL([BUILD_AD_PE],[false])
+if test "$file_system_args" = "BGQ" -a -n "$file_system_gpfs"; then
+    AC_DEFINE(BGQPLATFORM,1,BGQ platform)
+    AM_CONDITIONAL([BUILD_AD_BG],[true])
+    dnl what if anything can make Blue Gene support aio?
+    disable_aio=yes
+fi
+if test "$file_system_args" = "PE" -a -n "$file_system_gpfs"; then
+    AC_DEFINE(PEPLATFORM,1,PE platform)
+    AM_CONDITIONAL([BUILD_AD_PE],[true])
+fi
+
+# echo "with_file_system is :"$with_file_system": file_system_args is :"$file_system_args": FILE_SYSTEM is :"$FILE_SYSTEM":"
+
 if test -n "$file_system_hfs"; then
     AC_DEFINE(ROMIO_HFS,1,[Define for ROMIO with HFS])
 fi
@@ -948,11 +970,14 @@ if test -n "$file_system_gridftp"; then
 	AC_DEFINE(ROMIO_GRIDFTP, 1, [Define for ROMIO with gridftp])
 fi
 
-if test -n "$file_system_bgl" -o -n "$file_system_bg"; then
-    SYSDEP_INC=-I${prefix}/include
-else
-    SYSDEP_INC=
+AS_IF([test -n "$file_system_gpfs"],
+    [SYSDEP_INC=-I${prefix}/include], [SYSDEP_INC=])
 
+AC_CHECK_HEADERS([gpfs.h gpfs_fcntl.h])
+AS_IF([test "$ac_cv_header_gpfs_h" = "yes" -o "$ac_cv_header_gpfs_fcntl_h" = "yes"], [
+  AC_SEARCH_LIBS([gpfs_fcntl], [gpfs], [],
+    [AC_MSG_ERROR([Library containing gpfs_fcntl symbols not found])])
+])
 # Check for presence and characteristics of async. I/O calls if
 # not disabled.
 
@@ -1237,13 +1262,14 @@ if test "$have_aio_h" = "yes" -o "$have_sys_aio_h" = "yes" -o "x$disable_aio" = 
     )
 	
 fi
-fi
+
 # End of aio-related tests
 
 #
 # Check for statfs (many) and specifically f_fstypename field (BSD)
 #
 AC_CHECK_HEADERS(sys/vfs.h sys/param.h sys/mount.h sys/statvfs.h)
+AC_CHECK_FUNCS([statfs])
 AC_MSG_CHECKING([whether struct statfs properly defined])
 AC_TRY_COMPILE([
 #ifdef HAVE_SYS_VFS_H
@@ -1345,6 +1371,17 @@ AC_CHECK_FUNCS(statvfs,
 	AC_MSG_RESULT(no)
     )
 )
+
+AC_CHECK_TYPE([blksize_t],[],[AC_DEFINE_UNQUOTED([blksize_t],[__blksize_t],[Provide blksize_t if not available]) ], [[
+	       #ifdef HAVE_SYS_TYPES_H
+	       #include <sys/types.h>
+	       #endif
+	       #ifdef HAVE_SYS_STAT_H
+	       #include <sys/stat.h>
+	       #endif
+	       #ifdef HAVE_UNISTD_H
+	       #include <unistd.h>
+	       #endif]] )
 
 #
 # Check for large file support.  Make sure that we can use the off64_t 
@@ -1500,13 +1537,34 @@ fi
 #
 TEST_LIBNAME=$LIBNAME
 MPIRUN=mpirun
-if test $FROM_LAM = yes ; then
+if test $FROM_OMPI = yes ; then
+   # Open MPI does have the status set bytes functionality
+
+   AC_DEFINE(HAVE_STATUS_SET_BYTES,1,[Define if have MPIR_Status_set_bytes])
+
+   # Used in the tests/ subdirectory for after ROMIO is built
+
+   TEST_CC=mpicc
+   TEST_F77=mpifort
+   MPIRUN=mpirun
+   MPI_LIB=
+   NOPROFILE=1
+   ROMIO_INCLUDE=
+   USER_CFLAGS=
+   USER_FFLAGS=
+   TEST_LIBNAME=
+   AC_DEFINE(HAVE_MPI_DARRAY_SUBARRAY,1,[Define if Darray is available])
+   HAVE_MPI_DARRAY_SUBARRAY="#define HAVE_MPI_DARRAY_SUBARRAY"
+   # Open MPI: see comments in mpi-io/mpioprof.h
+   AC_DEFINE(MPIO_BUILD_PROFILING, 1, [hack to make ROMIO build without profiling])
+   DEFINE_HAVE_MPI_GREQUEST="#define HAVE_MPI_GREQUEST"
+elif test $FROM_LAM = yes ; then
    # LAM does have the status set bytes functionality
    AC_DEFINE(HAVE_STATUS_SET_BYTES,1,[Define if have MPIR_Status_set_bytes])
         
    # Used in the tests/ subdirectory for after ROMIO is built
    TEST_CC=mpicc
-   TEST_F77=mpif77
+   TEST_F77=mpifort
    MPIRUN=mpirun 
    MPI_LIB=
    ROMIO_INCLUDE=
@@ -1533,7 +1591,7 @@ elif test $FROM_MPICH = yes ; then
    #
    # set the compilers to the ones in MPICH bin directory (master_top_builddir/bin)
    TEST_CC='$(bindir)/mpicc'
-   TEST_F77='$(bindir)/mpif77'
+   TEST_F77='$(bindir)/mpifort'
    MPI_H_INCLUDE="-I${master_top_builddir}/src/include"
    ROMIO_INCLUDE=""
    USER_CFLAGS=""
@@ -1545,6 +1603,7 @@ elif test $FROM_MPICH = yes ; then
    EXTRA_DIRS=""
    AC_DEFINE(HAVE_STATUS_SET_BYTES,1,[Define if status_set_bytes available])
    DEFINE_HAVE_MPI_GREQUEST="#define HAVE_MPI_GREQUEST 1"
+   DEFINE_HAVE_MPI_GREQUEST_EXTENSIONS="#define HAVE_MPI_GREQUEST_EXTENSIONS 1"
    AC_DEFINE(HAVE_MPIU_FUNCS,1,[Define if MPICH memory tracing macros defined])
    AC_DEFINE(HAVE_MPIX_H, 1, [])
    AC_DEFINE(HAVE_MPIIO_CONST, const, Set if MPI-IO prototypes use const qualifier)
@@ -1609,6 +1668,12 @@ AC_CHECK_FUNCS(lseek64)
 if test "$ac_cv_func_lseek64" = "yes" ; then
     PAC_FUNC_NEEDS_DECL([#include <unistd.h>],lseek64)
 fi
+
+AC_CHECK_FUNCS(usleep)
+if test "$ac_cv_func_usleep" = "yes" ; then
+    PAC_FUNC_NEEDS_DECL([#include <unistd.h>],usleep)
+fi
+
 #
 # Create the directory lists for the Makefile
 FILE_SYS_DIRS=""
@@ -1621,11 +1686,14 @@ EXTRA_SRC_DIRS=""
 mpio_glue=""
 if test "$FROM_MPICH" = yes -o "${MPI_IMPL}_mpi" = "mpich_mpi"; then
     mpio_glue=mpich
+elif test "$FROM_OMPI" = yes -o "${MPI_IMPL}_mpi" = "open_mpi_mpi" ; then
+    mpio_glue=openmpi
 else
     mpio_glue=default
 fi
 
 AM_CONDITIONAL([MPIO_GLUE_MPICH],[test "X$mpio_glue" = "Xmpich"])
+AM_CONDITIONAL([MPIO_GLUE_OPENMPI],[test "X$mpio_glue" = "Xopenmpi"])
 AM_CONDITIONAL([MPIO_GLUE_DEFAULT],[test "X$mpio_glue" = "Xdefault"])
 
 if test "$BUILD_MPI_INFO" = 1 ; then
@@ -1791,11 +1859,5 @@ AC_CONFIG_FILES([
 ])
 AC_OUTPUT
 
-#
-rm -f *.o
-
-if test $FROM_MPICH = no ; then
-   AC_MSG_RESULT([Configure done. Now type make.])
-fi
 dnl PAC_SUBDIR_CACHE_CLEANUP
 exit 0

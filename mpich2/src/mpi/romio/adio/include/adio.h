@@ -187,6 +187,7 @@ typedef struct ADIOI_Hints_struct ADIOI_Hints;
 typedef struct ADIOI_FileD {
     int cookie;              /* for error checking */
     FDTYPE fd_sys;              /* system file descriptor */
+    FDTYPE null_fd;          /* the null-device file descriptor: debug only (obviously)*/
     int fd_direct;           /* On XFS, this is used for direct I/O; 
                                 fd_sys is used for buffered I/O */
     int direct_read;         /* flag; 1 means use direct read */
@@ -195,6 +196,8 @@ typedef struct ADIOI_FileD {
     unsigned d_mem;          /* data buffer memory alignment */
     unsigned d_miniosz;      /* min xfer size, xfer size multiple,
                                 and file seek offset alignment */
+    blksize_t blksize;       /* some optimizations benefit from knowing
+				underlying block size */
     ADIO_Offset fp_ind;      /* individual file pointer in MPI-IO (in bytes)*/
     ADIO_Offset fp_sys_posn; /* current location of the system file-pointer
                                 in bytes */
@@ -233,6 +236,7 @@ typedef struct ADIOI_FileD {
     ADIO_Offset *file_realm_st_offs; /* file realm starting offsets */
     MPI_Datatype *file_realm_types;  /* file realm datatypes */
     int my_cb_nodes_index; /* my index into cb_config_list. -1 if N/A */
+    char *io_buf;          /* two-phase buffer allocated out of i/o path */
     /* External32 */
     int is_external32;      /* bool:  0 means native view */
 
@@ -290,10 +294,11 @@ typedef struct {
 #define ADIO_PANFS               161   /* Panasas FS */
 #define ADIO_GRIDFTP             162   /* Globus GridFTP */
 #define ADIO_LUSTRE              163   /* Lustre */
-#define ADIO_BGL                 164   /* IBM BGL */
-#define ADIO_BGLOCKLESS          165   /* IBM BGL (lock-free) */
+// #define ADIO_BGL                 164   /* IBM BGL */
+// #define ADIO_BGLOCKLESS          165   /* IBM BGL (lock-free) */
 #define ADIO_ZOIDFS              167   /* ZoidFS: the I/O forwarding fs */
-#define ADIO_BG                  168
+//#define ADIO_BG                  168
+#define ADIO_GPFS                  168
 
 #define ADIO_SEEK_SET            SEEK_SET
 #define ADIO_SEEK_CUR            SEEK_CUR
@@ -317,6 +322,8 @@ typedef struct {
 #define ADIO_TWO_PHASE           306 /* file system implements some version of
 					two-phase collective buffering with
 					aggregation */
+#define ADIO_SCALABLE_RESIZE     307 /* file system supports resizing from one
+					processor (nfs, e.g. does not) */
 
 /* for default file permissions */
 #define ADIO_PERM_NULL           -1

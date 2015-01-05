@@ -313,7 +313,6 @@ MPIDO_Allgatherv(const void *sendbuf,
   size_t   send_size     = 0;
   size_t   recv_size     = 0;
   int config[6];
-  double msize;
   int scount=sendcount;
 
   int i, rc, buffer_sum = 0;
@@ -423,7 +422,6 @@ MPIDO_Allgatherv(const void *sendbuf,
       buffer_sum += recvcounts[size - 1];
 
       buffer_sum *= recv_size;
-      msize = (double)buffer_sum / (double)size;
 
       /* disable with "safe allgatherv" env var */
       if(mpid->preallreduces[MPID_ALLGATHERV_PREALLREDUCE])
@@ -648,6 +646,12 @@ MPIDO_Allgatherv_simple(const void *sendbuf,
   const int rank = comm_ptr->rank;
   const int size = comm_ptr->local_size;
   const struct MPIDI_Comm* const mpid = &(comm_ptr->mpid);
+#if ASSERT_LEVEL==0
+   /* We can't afford the tracing in ndebug/performance libraries */
+    const unsigned verbose = 0;
+#else
+   const unsigned verbose = (MPIDI_Process.verbose >= MPIDI_VERBOSE_DETAILS_ALL) && (rank == 0);
+#endif
 
   int recvcontinuous=0;
   size_t totalrecvcount=0;
@@ -682,6 +686,14 @@ MPIDO_Allgatherv_simple(const void *sendbuf,
          return MPIR_Allgatherv(sendbuf, sendcount, sendtype,
                        recvbuf, recvcounts, displs, recvtype,
                        comm_ptr, mpierrno);
+       }
+       else if(advisor_algorithms[0].metadata && advisor_algorithms[0].metadata->check_correct.values.asyncflowctl && !(--(comm_ptr->mpid.num_requests)))
+       {
+         comm_ptr->mpid.num_requests = MPIDI_Process.optimized.num_requests;
+         int tmpmpierrno;
+         if(unlikely(verbose))
+           fprintf(stderr,"Query barrier required for %s\n", advisor_algorithms[0].metadata->name);
+         MPIDO_Barrier(comm_ptr, &tmpmpierrno);
        }
      }
    }

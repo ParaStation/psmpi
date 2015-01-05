@@ -48,10 +48,11 @@ int MPIDO_Gather_reduce(void * sendbuf,
 			int *mpierrno)
 {
   MPID_Datatype * data_ptr;
-  MPI_Aint true_lb;
+  MPI_Aint true_lb ATTRIBUTE((unused));
   const int rank = comm_ptr->rank;
   const int size = comm_ptr->local_size;
-  int rc, sbytes, rbytes, contig;
+  int rc, sbytes, rbytes;
+  int contig ATTRIBUTE((unused));
   char *tempbuf = NULL;
   char *inplacetemp = NULL;
 
@@ -138,7 +139,7 @@ int MPIDO_Gather(const void *sendbuf,
   }
 #endif
   MPID_Datatype * data_ptr;
-  MPI_Aint true_lb = 0;
+  MPI_Aint true_lb ATTRIBUTE((unused));
   pami_xfer_t gather;
   MPIDI_Post_coll_t gather_post;
   int use_opt = 1, contig=0, send_bytes=-1, recv_bytes = 0;
@@ -402,6 +403,12 @@ int MPIDO_Gather_simple(const void *sendbuf,
   const int rank = comm_ptr->rank;
   const int size = comm_ptr->local_size;
   const struct MPIDI_Comm* const mpid = &(comm_ptr->mpid);
+#if ASSERT_LEVEL==0
+   /* We can't afford the tracing in ndebug/performance libraries */
+    const unsigned verbose = 0;
+#else
+    const unsigned verbose = (MPIDI_Process.verbose >= MPIDI_VERBOSE_DETAILS_ALL) && (rank == 0);
+#endif
 
   if(sendbuf != MPI_IN_PLACE)
   {
@@ -418,6 +425,14 @@ int MPIDO_Gather_simple(const void *sendbuf,
           return MPIR_Gather(sendbuf, sendcount, sendtype,
                             recvbuf, recvcount, recvtype,
                             root, comm_ptr, mpierrno);
+        }
+        else if(advisor_algorithms[0].metadata && advisor_algorithms[0].metadata->check_correct.values.asyncflowctl && !(--(comm_ptr->mpid.num_requests)))
+        {
+          comm_ptr->mpid.num_requests = MPIDI_Process.optimized.num_requests;
+          int tmpmpierrno;
+          if(unlikely(verbose))
+            fprintf(stderr,"Query barrier required for %s\n", advisor_algorithms[0].metadata->name);
+          MPIDO_Barrier(comm_ptr, &tmpmpierrno);
         }
       }
     }
@@ -453,6 +468,15 @@ int MPIDO_Gather_simple(const void *sendbuf,
                            recvbuf, recvcount, recvtype,
                            root, comm_ptr, mpierrno);
        }
+       else if(advisor_algorithms[0].metadata && advisor_algorithms[0].metadata->check_correct.values.asyncflowctl && !(--(comm_ptr->mpid.num_requests)))
+       {
+         comm_ptr->mpid.num_requests = MPIDI_Process.optimized.num_requests;
+         int tmpmpierrno;
+         if(unlikely(verbose))
+           fprintf(stderr,"Query barrier required for %s\n", advisor_algorithms[0].metadata->name);
+         MPIDO_Barrier(comm_ptr, &tmpmpierrno);
+       }
+
      }
    }
   }

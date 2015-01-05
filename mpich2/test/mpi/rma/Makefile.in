@@ -136,7 +136,8 @@ noinst_PROGRAMS = allocmem$(EXEEXT) ircpi$(EXEEXT) test1$(EXEEXT) \
 	reqops$(EXEEXT) req_example$(EXEEXT) req_example_shm$(EXEEXT) \
 	win_info$(EXEEXT) pscw_ordering$(EXEEXT) mutex_bench$(EXEEXT) \
 	mutex_bench_shared$(EXEEXT) mutex_bench_shm$(EXEEXT) \
-	rma-contig$(EXEEXT) badrma$(EXEEXT) nb_test$(EXEEXT)
+	rma-contig$(EXEEXT) badrma$(EXEEXT) nb_test$(EXEEXT) \
+	acc-loc$(EXEEXT)
 subdir = rma
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -155,6 +156,10 @@ CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
 CONFIG_CLEAN_FILES = testlist
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+acc_loc_SOURCES = acc-loc.c
+acc_loc_OBJECTS = acc-loc.$(OBJEXT)
+acc_loc_LDADD = $(LDADD)
+acc_loc_DEPENDENCIES = $(top_builddir)/util/mtest.o
 accfence1_SOURCES = accfence1.c
 accfence1_OBJECTS = accfence1.$(OBJEXT)
 accfence1_LDADD = $(LDADD)
@@ -647,12 +652,12 @@ am__v_CC_ = $(am__v_CC_@AM_DEFAULT_V@)
 am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
-LINK = $(CCLD) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = accfence1.c accfence2.c accfence2_am.c accpscw1.c \
+SOURCES = acc-loc.c accfence1.c accfence2.c accfence2_am.c accpscw1.c \
 	adlb_mimic1.c allocmem.c attrorderwin.c badrma.c baseattrwin.c \
 	compare_and_swap.c contention_put.c contention_putget.c \
 	contig_displ.c epochtest.c $(fetch_and_op_char_SOURCES) \
@@ -690,12 +695,12 @@ SOURCES = accfence1.c accfence2.c accfence2_am.c accpscw1.c \
 	win_dynamic_acc.c win_flavors.c win_info.c win_large_shm.c \
 	win_shared.c win_shared_noncontig.c win_shared_noncontig_put.c \
 	win_zero.c wincall.c window_creation.c winname.c wintest.c
-DIST_SOURCES = accfence1.c accfence2.c accfence2_am.c accpscw1.c \
-	adlb_mimic1.c allocmem.c attrorderwin.c badrma.c baseattrwin.c \
-	compare_and_swap.c contention_put.c contention_putget.c \
-	contig_displ.c epochtest.c $(fetch_and_op_char_SOURCES) \
-	$(fetch_and_op_double_SOURCES) $(fetch_and_op_int_SOURCES) \
-	$(fetch_and_op_long_SOURCES) \
+DIST_SOURCES = acc-loc.c accfence1.c accfence2.c accfence2_am.c \
+	accpscw1.c adlb_mimic1.c allocmem.c attrorderwin.c badrma.c \
+	baseattrwin.c compare_and_swap.c contention_put.c \
+	contention_putget.c contig_displ.c epochtest.c \
+	$(fetch_and_op_char_SOURCES) $(fetch_and_op_double_SOURCES) \
+	$(fetch_and_op_int_SOURCES) $(fetch_and_op_long_SOURCES) \
 	$(fetch_and_op_long_double_SOURCES) \
 	$(fetch_and_op_short_SOURCES) fetchandadd.c fetchandadd_am.c \
 	fetchandadd_tree.c fetchandadd_tree_am.c fkeyvalwin.c flush.c \
@@ -887,6 +892,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -935,7 +941,7 @@ top_srcdir = @top_srcdir@
 # AM_CPPFLAGS are used for C++ code as well
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = $(top_builddir)/util/mtest.o
-CLEANFILES = summary.xml summary.tap
+CLEANFILES = summary.xml summary.tap summary.junit.xml
 EXTRA_DIST = testlist
 strided_acc_indexed_LDADD = $(LDADD) -lm
 strided_acc_onelock_LDADD = $(LDADD) -lm
@@ -1022,6 +1028,10 @@ testlist: $(top_builddir)/config.status $(srcdir)/testlist.in
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
+
+acc-loc$(EXEEXT): $(acc_loc_OBJECTS) $(acc_loc_DEPENDENCIES) $(EXTRA_acc_loc_DEPENDENCIES) 
+	@rm -f acc-loc$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(acc_loc_OBJECTS) $(acc_loc_LDADD) $(LIBS)
 
 accfence1$(EXEEXT): $(accfence1_OBJECTS) $(accfence1_DEPENDENCIES) $(EXTRA_accfence1_DEPENDENCIES) 
 	@rm -f accfence1$(EXEEXT)
@@ -1465,6 +1475,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/acc-loc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/accfence1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/accfence2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/accfence2_am.Po@am__quote@

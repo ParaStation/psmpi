@@ -16,7 +16,7 @@
 
 # -*- Mode: Makefile; -*-
 #
-# (C) 2008 by Argonne National Laboratory.
+# (C) 2009 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
 #
 
@@ -433,14 +433,15 @@ am__DEPENDENCIES_1 =
 am__DEPENDENCIES_2 = $(am__DEPENDENCIES_1)
 hydra_nameserver_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(hydra_nameserver_CFLAGS) $(CFLAGS) \
 	$(hydra_nameserver_LDFLAGS) $(LDFLAGS) -o $@
 am__hydra_persist_SOURCES_DIST =  \
 	tools/bootstrap/persist/persist_server.c
 @hydra_bss_persist_TRUE@am_hydra_persist_OBJECTS = tools/bootstrap/persist/hydra_persist-persist_server.$(OBJEXT)
 hydra_persist_OBJECTS = $(am_hydra_persist_OBJECTS)
 hydra_persist_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(hydra_persist_LDFLAGS) \
-	$(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(hydra_persist_CFLAGS) \
+	$(CFLAGS) $(hydra_persist_LDFLAGS) $(LDFLAGS) -o $@
 am__hydra_pmi_proxy_SOURCES_DIST = pm/pmiserv/pmip.c \
 	pm/pmiserv/pmip_cb.c pm/pmiserv/pmip_utils.c \
 	pm/pmiserv/pmip_pmi_v1.c pm/pmiserv/pmip_pmi_v2.c \
@@ -455,15 +456,16 @@ am__hydra_pmi_proxy_SOURCES_DIST = pm/pmiserv/pmip.c \
 hydra_pmi_proxy_OBJECTS = $(am_hydra_pmi_proxy_OBJECTS)
 hydra_pmi_proxy_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(hydra_pmi_proxy_LDFLAGS) $(LDFLAGS) -o $@
+	$(hydra_pmi_proxy_CFLAGS) $(CFLAGS) $(hydra_pmi_proxy_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am__mpiexec_hydra_SOURCES_DIST = ui/mpich/mpiexec.c ui/mpich/utils.c
 @hydra_ui_mpich_TRUE@am_mpiexec_hydra_OBJECTS =  \
 @hydra_ui_mpich_TRUE@	ui/mpich/mpiexec.$(OBJEXT) \
 @hydra_ui_mpich_TRUE@	ui/mpich/utils.$(OBJEXT)
 mpiexec_hydra_OBJECTS = $(am_mpiexec_hydra_OBJECTS)
 mpiexec_hydra_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(mpiexec_hydra_LDFLAGS) \
-	$(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(mpiexec_hydra_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -492,8 +494,8 @@ am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
 LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;

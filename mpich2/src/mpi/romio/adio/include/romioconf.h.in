@@ -8,6 +8,9 @@
 #define ROMIOCONF_H_INCLUDED
 
 
+/* BGQ platform */
+#undef BGQPLATFORM
+
 /* Define if aio.h exists and can be compiled */
 #undef HAVE_AIO_H
 
@@ -29,6 +32,12 @@
 
 /* Define if GNU __attribute__ is supported */
 #undef HAVE_GCC_ATTRIBUTE
+
+/* Define to 1 if you have the <gpfs_fcntl.h> header file. */
+#undef HAVE_GPFS_FCNTL_H
+
+/* Define to 1 if you have the <gpfs.h> header file. */
+#undef HAVE_GPFS_H
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
@@ -126,6 +135,9 @@
 /* Define to 1 if you have the `stat' function. */
 #undef HAVE_STAT
 
+/* Define to 1 if you have the `statfs' function. */
+#undef HAVE_STATFS
+
 /* Define if status set bytes available */
 #undef HAVE_STATUS_SET_BYTES
 
@@ -211,6 +223,9 @@
 /* Define if compiling within LAM/MPI */
 #undef MPILAM
 
+/* hack to make ROMIO build without profiling */
+#undef MPIO_BUILD_PROFILING
+
 /* Define if SGI MPI */
 #undef MPISGI
 
@@ -247,6 +262,9 @@
 /* Define if strdup needs a declaration */
 #undef NEEDS_STRDUP_DECL
 
+/* Define if usleep needs a declaration */
+#undef NEEDS_USLEEP_DECL
+
 /* Define if no MPI type is contig */
 #undef NO_MPI_SGI_type_is_contig
 
@@ -271,17 +289,14 @@
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
+/* PE platform */
+#undef PEPLATFORM
+
 /* Define for printing error messages */
 #undef PRINT_ERR_MSG
 
-/* Define for ROMIO with BG */
-#undef ROMIO_BG
-
-/* Define for ROMIO with BGL */
-#undef ROMIO_BGL
-
-/* Define for lock-free ROMIO with BG */
-#undef ROMIO_BGLOCKLESS
+/* Define for ROMIO with GPFS */
+#undef ROMIO_GPFS
 
 /* Define for ROMIO with gridftp */
 #undef ROMIO_GRIDFTP
@@ -381,6 +396,9 @@
 
 /* Version number of package */
 #undef VERSION
+
+/* Provide blksize_t if not available */
+#undef blksize_t
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */

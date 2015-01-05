@@ -640,6 +640,7 @@ CXXDEPMODE
 ac_ct_CXX
 CXXFLAGS
 CXX
+f08dir
 BUILD_F90_TESTS_FALSE
 BUILD_F90_TESTS_TRUE
 FCMODOUTFLAG
@@ -814,8 +815,7 @@ enable_option_checking
 enable_silent_rules
 enable_maintainer_mode
 enable_echo
-enable_f77
-enable_fc
+enable_fortran
 enable_cxx
 enable_romio
 enable_spawn
@@ -1496,8 +1496,13 @@ Optional Features:
                           disable make rules and dependencies not useful (and
                           sometimes confusing) to the casual installer
   --enable-echo           Turn on strong echoing. The default is enable=no.
-  --enable-f77            Turn on Fortran 77 tests (default)
-  --enable-fc             Turn on Fortran 90 tests (if f90 available)
+  --enable-fortran=option - Control the level of Fortran support in the MPICH implementation.
+        yes|all   - Enable all available Fortran implementations (F77, F90, F08)
+        f77       - Enable Fortran 77 support
+        f90       - Enable Fortran 90 support
+        f08       - Enable Fortran 2008 support
+        no|none   - No Fortran support
+
   --enable-cxx            Turn on C++ tests (default)
   --enable-romio          Enable ROMIO MPI I/O implementation
   --enable-spawn          Enable tests of the dynamic process parts of MPI-2
@@ -1551,16 +1556,16 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-mpi=dir          Use the selected MPI; compilation scripts for mpicc,
-                          mpif77 and mpicxx should be in dir/bin
+                          mpifort and mpicxx should be in dir/bin
   --with-pm=name          Specify the process manager for MPICH. "no" or
                           "none" are valid values. Multiple process managers
                           may be specified as long as they all use the same
                           pmi interface by separating them with colons. The
                           mpiexec for the first named process manager will be
-                          installed. Example: "--with-pm=hydra:mpd:gforker"
-                          builds the three process managers hydra, mpd and
-                          gforker; only the mpiexec from hydra is installed
-                          into the bin directory.
+                          installed. Example: "--with-pm=hydra:gforker" builds
+                          the two process managers hydra and gforker; only the
+                          mpiexec from hydra is installed into the bin
+                          directory.
   --with-config-args=filename
                           Specify configure argument file that contains the
                           values of variables that configure reads, e.g.
@@ -4022,19 +4027,47 @@ if test "${enable_echo+set}" = set; then :
 fi
 
 
-# Check whether --enable-f77 was given.
-if test "${enable_f77+set}" = set; then :
-  enableval=$enable_f77;
+# Check whether --enable-fortran was given.
+if test "${enable_fortran+set}" = set; then :
+  enableval=$enable_fortran;
 else
-  enable_f77=yes
+  enable_fortran=f77,f90
 fi
 
-# Check whether --enable-fc was given.
-if test "${enable_fc+set}" = set; then :
-  enableval=$enable_fc;
-else
-  enable_fc=yes
-fi
+
+save_IFS="$IFS"
+IFS=","
+enable_f77=no
+enable_fc=no
+enable_f08=no
+for option in $enable_fortran ; do
+    case "$option" in
+        yes|all)
+                enable_f77=yes
+                enable_fc=yes
+                ;;
+        no|none)
+                enable_f77=no
+                enable_fc=no
+                ;;
+        f77)
+                enable_f77=yes
+                ;;
+        f90)
+                enable_fc=yes
+                ;;
+        f08)
+                enable_f08=yes
+                ;;
+        *)
+                IFS="$save_IFS"
+                { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Unknown value $option for --enable-fortran" >&5
+$as_echo "$as_me: WARNING: Unknown value $option for --enable-fortran" >&2;}
+                IFS=","
+                ;;
+    esac
+done
+IFS="$save_IFS"
 
 # Check whether --enable-cxx was given.
 if test "${enable_cxx+set}" = set; then :
@@ -4765,12 +4798,12 @@ if test "$program_suffix" != "NONE" ; then
 fi
 
 
-MPIF90_NAME="mpif90"
+MPIFORT_NAME="mpifort"
 if test "$program_prefix" != "NONE" ; then
-    MPIF90_NAME="${program_prefix}$MPIF90_NAME"
+    MPIFORT_NAME="${program_prefix}$MPIFORT_NAME"
 fi
 if test "$program_suffix" != "NONE" ; then
-    MPIF90_NAME="$MPIF90_NAME$program_suffix"
+    MPIFORT_NAME="$MPIFORT_NAME$program_suffix"
 fi
 
 
@@ -4821,7 +4854,7 @@ elif test -n "$with_mpi" ; then
         F77=$MPIF77
     fi
     if test -z "$MPIFC" ; then
-        FC=$with_mpi/bin/$MPIF90_NAME
+        FC=$with_mpi/bin/$MPIFORT_NAME
     else
         FC=$MPIFC
     fi
@@ -4926,8 +4959,8 @@ fi
         F77=$MPIF77
     fi
     if test -z "$MPIFC" ; then
-        # Extract the first word of "$MPIF90_NAME mpftn", so it can be a program name with args.
-set dummy $MPIF90_NAME mpftn; ac_word=$2
+        # Extract the first word of "$MPIFORT_NAME mpftn", so it can be a program name with args.
+set dummy $MPIFORT_NAME mpftn; ac_word=$2
 { $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
 $as_echo_n "checking for $ac_word... " >&6; }
 if ${ac_cv_path_MPIFC+:} false; then :
@@ -10850,6 +10883,13 @@ else
 fi
 
 
+f08dir="#"
+
+# FIXME if $FROM_MPICH is no, we should test build an MPI F08 program
+if test "$enable_f08" = "yes" -a "$FROM_MPICH" = "yes" ; then
+   f08dir=f08
+fi
+
 # Running C++ compiler tests
 
 
@@ -12174,7 +12214,7 @@ if test "$FROM_MPICH" = yes ; then
     # installed compiler wrappers for actually building the tests
     CC=$mpibindir/$MPICC_NAME
     F77=$mpibindir/$MPIF77_NAME
-    FC=$mpibindir/$MPIF90_NAME
+    FC=$mpibindir/$MPIFORT_NAME
     CXX=$mpibindir/$MPICXX_NAME
     MPIEXEC=$mpibindir/$MPIEXEC_NAME
 
@@ -12248,7 +12288,7 @@ ac_config_commands="$ac_config_commands default-3"
 
 ac_config_commands="$ac_config_commands default-4"
 
-ac_config_files="$ac_config_files maint/testmerge runtests checktests Makefile basic/Makefile attr/Makefile util/Makefile coll/Makefile comm/Makefile datatype/Makefile datatype/testlist errhan/Makefile group/Makefile info/Makefile init/Makefile pt2pt/Makefile mpi_t/Makefile rma/Makefile rma/testlist spawn/Makefile topo/Makefile io/Makefile f77/Makefile f77/attr/Makefile f77/attr/attraints.h f77/pt2pt/attr1aints.h f77/ext/add1size.h f77/datatype/Makefile f77/datatype/typeaints.h f77/util/Makefile f77/coll/Makefile f77/comm/Makefile f77/topo/Makefile f77/init/Makefile f77/rma/addsize.h f77/pt2pt/Makefile f77/info/Makefile f77/spawn/Makefile f77/spawn/testlist f77/spawn/type1aint.h f77/rma/Makefile f77/ext/Makefile f77/ext/testlist f77/io/Makefile f77/io/iooffset.h f77/io/iodisp.h f77/io/ioaint.h f77/profile/Makefile f90/Makefile f90/attr/Makefile f90/datatype/Makefile f90/f90types/Makefile f90/util/Makefile f90/coll/Makefile f90/comm/Makefile f90/topo/Makefile f90/init/Makefile f90/pt2pt/Makefile f90/rma/Makefile f90/info/Makefile f90/spawn/Makefile f90/spawn/testlist f90/timer/Makefile f90/ext/Makefile f90/ext/testlist f90/io/Makefile f90/misc/Makefile f90/profile/Makefile cxx/Makefile cxx/util/Makefile cxx/attr/Makefile cxx/pt2pt/Makefile cxx/comm/Makefile cxx/coll/Makefile cxx/errhan/Makefile cxx/info/Makefile cxx/datatype/Makefile cxx/io/Makefile cxx/init/Makefile cxx/rma/Makefile cxx/spawn/Makefile cxx/topo/Makefile threads/Makefile threads/pt2pt/Makefile threads/util/Makefile threads/comm/Makefile threads/init/Makefile threads/mpi_t/Makefile threads/spawn/Makefile threads/rma/Makefile errors/Makefile errors/attr/Makefile errors/basic/Makefile errors/coll/Makefile errors/comm/Makefile errors/datatype/Makefile errors/faults/Makefile errors/group/Makefile errors/pt2pt/Makefile errors/rma/Makefile errors/spawn/Makefile errors/topo/Makefile errors/io/Makefile errors/cxx/Makefile errors/cxx/errhan/Makefile errors/cxx/io/Makefile errors/f77/Makefile errors/f77/io/Makefile errors/f77/io/addsize.h errors/f77/io/iooffset.h errors/f90/Makefile errors/f90/io/Makefile ckpoint/Makefile ft/Makefile manual/Makefile manual/manyconnect manual/mpi_t/Makefile perf/Makefile testlist cxx/testlist cxx/topo/testlist f77/testlist f90/testlist threads/testlist errors/testlist errors/cxx/testlist errors/f77/testlist errors/f90/testlist impls/testlist impls/Makefile impls/hydra/Makefile impls/hydra/proc_binding.sh impls/mpich/Makefile impls/mpich/testlist impls/mpich/mpi_t/Makefile"
+ac_config_files="$ac_config_files maint/testmerge runtests checktests Makefile basic/Makefile attr/Makefile util/Makefile coll/Makefile comm/Makefile datatype/Makefile datatype/testlist errhan/Makefile group/Makefile info/Makefile init/Makefile pt2pt/Makefile mpi_t/Makefile rma/Makefile rma/testlist spawn/Makefile topo/Makefile io/Makefile f77/Makefile f77/attr/Makefile f77/attr/attraints.h f77/pt2pt/attr1aints.h f77/ext/add1size.h f77/datatype/Makefile f77/datatype/typeaints.h f77/util/Makefile f77/coll/Makefile f77/comm/Makefile f77/topo/Makefile f77/init/Makefile f77/rma/addsize.h f77/pt2pt/Makefile f77/info/Makefile f77/spawn/Makefile f77/spawn/testlist f77/spawn/type1aint.h f77/rma/Makefile f77/ext/Makefile f77/ext/testlist f77/io/Makefile f77/io/iooffset.h f77/io/iodisp.h f77/io/ioaint.h f77/profile/Makefile f90/Makefile f90/attr/Makefile f90/datatype/Makefile f90/f90types/Makefile f90/util/Makefile f90/coll/Makefile f90/comm/Makefile f90/topo/Makefile f90/init/Makefile f90/pt2pt/Makefile f90/rma/Makefile f90/info/Makefile f90/spawn/Makefile f90/spawn/testlist f90/timer/Makefile f90/ext/Makefile f90/ext/testlist f90/io/Makefile f90/misc/Makefile f90/profile/Makefile f08/Makefile f08/util/Makefile f08/pt2pt/Makefile f08/coll/Makefile f08/datatype/Makefile f08/attr/Makefile f08/comm/Makefile f08/rma/Makefile f08/subarray/Makefile cxx/Makefile cxx/util/Makefile cxx/attr/Makefile cxx/pt2pt/Makefile cxx/comm/Makefile cxx/coll/Makefile cxx/errhan/Makefile cxx/info/Makefile cxx/datatype/Makefile cxx/io/Makefile cxx/init/Makefile cxx/rma/Makefile cxx/spawn/Makefile cxx/topo/Makefile threads/Makefile threads/pt2pt/Makefile threads/util/Makefile threads/comm/Makefile threads/init/Makefile threads/mpi_t/Makefile threads/spawn/Makefile threads/rma/Makefile errors/Makefile errors/attr/Makefile errors/basic/Makefile errors/coll/Makefile errors/comm/Makefile errors/datatype/Makefile errors/faults/Makefile errors/group/Makefile errors/pt2pt/Makefile errors/rma/Makefile errors/spawn/Makefile errors/topo/Makefile errors/io/Makefile errors/cxx/Makefile errors/cxx/errhan/Makefile errors/cxx/io/Makefile errors/f77/Makefile errors/f77/io/Makefile errors/f77/io/addsize.h errors/f77/io/iooffset.h errors/f90/Makefile errors/f90/io/Makefile errors/f08/Makefile errors/f08/io/Makefile ckpoint/Makefile ft/Makefile manual/Makefile manual/manyconnect manual/mpi_t/Makefile perf/Makefile testlist cxx/testlist cxx/topo/testlist f77/testlist f90/testlist threads/testlist errors/testlist errors/cxx/testlist errors/f77/testlist errors/f90/testlist impls/testlist impls/Makefile impls/hydra/Makefile impls/hydra/proc_binding.sh impls/mpich/Makefile impls/mpich/testlist impls/mpich/mpi_t/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -13073,6 +13113,15 @@ do
     "f90/io/Makefile") CONFIG_FILES="$CONFIG_FILES f90/io/Makefile" ;;
     "f90/misc/Makefile") CONFIG_FILES="$CONFIG_FILES f90/misc/Makefile" ;;
     "f90/profile/Makefile") CONFIG_FILES="$CONFIG_FILES f90/profile/Makefile" ;;
+    "f08/Makefile") CONFIG_FILES="$CONFIG_FILES f08/Makefile" ;;
+    "f08/util/Makefile") CONFIG_FILES="$CONFIG_FILES f08/util/Makefile" ;;
+    "f08/pt2pt/Makefile") CONFIG_FILES="$CONFIG_FILES f08/pt2pt/Makefile" ;;
+    "f08/coll/Makefile") CONFIG_FILES="$CONFIG_FILES f08/coll/Makefile" ;;
+    "f08/datatype/Makefile") CONFIG_FILES="$CONFIG_FILES f08/datatype/Makefile" ;;
+    "f08/attr/Makefile") CONFIG_FILES="$CONFIG_FILES f08/attr/Makefile" ;;
+    "f08/comm/Makefile") CONFIG_FILES="$CONFIG_FILES f08/comm/Makefile" ;;
+    "f08/rma/Makefile") CONFIG_FILES="$CONFIG_FILES f08/rma/Makefile" ;;
+    "f08/subarray/Makefile") CONFIG_FILES="$CONFIG_FILES f08/subarray/Makefile" ;;
     "cxx/Makefile") CONFIG_FILES="$CONFIG_FILES cxx/Makefile" ;;
     "cxx/util/Makefile") CONFIG_FILES="$CONFIG_FILES cxx/util/Makefile" ;;
     "cxx/attr/Makefile") CONFIG_FILES="$CONFIG_FILES cxx/attr/Makefile" ;;
@@ -13117,6 +13166,8 @@ do
     "errors/f77/io/iooffset.h") CONFIG_FILES="$CONFIG_FILES errors/f77/io/iooffset.h" ;;
     "errors/f90/Makefile") CONFIG_FILES="$CONFIG_FILES errors/f90/Makefile" ;;
     "errors/f90/io/Makefile") CONFIG_FILES="$CONFIG_FILES errors/f90/io/Makefile" ;;
+    "errors/f08/Makefile") CONFIG_FILES="$CONFIG_FILES errors/f08/Makefile" ;;
+    "errors/f08/io/Makefile") CONFIG_FILES="$CONFIG_FILES errors/f08/io/Makefile" ;;
     "ckpoint/Makefile") CONFIG_FILES="$CONFIG_FILES ckpoint/Makefile" ;;
     "ft/Makefile") CONFIG_FILES="$CONFIG_FILES ft/Makefile" ;;
     "manual/Makefile") CONFIG_FILES="$CONFIG_FILES manual/Makefile" ;;

@@ -246,7 +246,6 @@ print("done\n");
 # Remove content that is not being released
 print("===> Removing content that is not being released... ");
 chdir($expdir);
-run_cmd("rm -rf doc/notes src/pm/mpd/Zeroconf.py");
 
 chdir("${expdir}/src/mpid/ch3/channels/nemesis/netmod");
 my @nem_modules = qw(elan);
@@ -288,7 +287,7 @@ print("done\n");
 print("===> Creating secondary codebase for the docs... ");
 run_cmd("mkdir ${expdir}-build");
 chdir("${expdir}-build");
-run_cmd("${expdir}/configure --disable-fc --disable-f77 --disable-cxx");
+run_cmd("${expdir}/configure --disable-fortran --disable-cxx");
 run_cmd("(make mandoc && make htmldoc && make latexdoc)");
 print("done\n");
 

@@ -192,8 +192,8 @@ am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
 hwloc_cuda_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(hwloc_cuda_la_LDFLAGS) \
-	$(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(hwloc_cuda_la_CFLAGS) \
+	$(CFLAGS) $(hwloc_cuda_la_LDFLAGS) $(LDFLAGS) -o $@
 @HWLOC_CUDA_BUILD_STATIC_FALSE@@HWLOC_HAVE_CUDART_TRUE@am_hwloc_cuda_la_rpath =  \
 @HWLOC_CUDA_BUILD_STATIC_FALSE@@HWLOC_HAVE_CUDART_TRUE@	-rpath \
 @HWLOC_CUDA_BUILD_STATIC_FALSE@@HWLOC_HAVE_CUDART_TRUE@	$(pluginsdir)
@@ -202,16 +202,16 @@ am__hwloc_fake_la_SOURCES_DIST = topology-fake.c
 @HWLOC_HAVE_PLUGINS_TRUE@am_hwloc_fake_la_OBJECTS = topology-fake.lo
 hwloc_fake_la_OBJECTS = $(am_hwloc_fake_la_OBJECTS)
 hwloc_fake_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(hwloc_fake_la_LDFLAGS) \
-	$(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(hwloc_fake_la_LDFLAGS) $(LDFLAGS) -o $@
 @HWLOC_HAVE_PLUGINS_TRUE@am_hwloc_fake_la_rpath =
 hwloc_gl_la_LIBADD =
 am__hwloc_gl_la_SOURCES_DIST = topology-gl.c
 @HWLOC_GL_BUILD_STATIC_FALSE@@HWLOC_HAVE_GL_TRUE@am_hwloc_gl_la_OBJECTS = hwloc_gl_la-topology-gl.lo
 hwloc_gl_la_OBJECTS = $(am_hwloc_gl_la_OBJECTS)
 hwloc_gl_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(hwloc_gl_la_LDFLAGS) \
-	$(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(hwloc_gl_la_CFLAGS) \
+	$(CFLAGS) $(hwloc_gl_la_LDFLAGS) $(LDFLAGS) -o $@
 @HWLOC_GL_BUILD_STATIC_FALSE@@HWLOC_HAVE_GL_TRUE@am_hwloc_gl_la_rpath =  \
 @HWLOC_GL_BUILD_STATIC_FALSE@@HWLOC_HAVE_GL_TRUE@	-rpath \
 @HWLOC_GL_BUILD_STATIC_FALSE@@HWLOC_HAVE_GL_TRUE@	$(pluginsdir)
@@ -220,8 +220,8 @@ am__hwloc_nvml_la_SOURCES_DIST = topology-nvml.c
 @HWLOC_HAVE_NVML_TRUE@@HWLOC_NVML_BUILD_STATIC_FALSE@am_hwloc_nvml_la_OBJECTS = hwloc_nvml_la-topology-nvml.lo
 hwloc_nvml_la_OBJECTS = $(am_hwloc_nvml_la_OBJECTS)
 hwloc_nvml_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(hwloc_nvml_la_LDFLAGS) \
-	$(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(hwloc_nvml_la_CFLAGS) \
+	$(CFLAGS) $(hwloc_nvml_la_LDFLAGS) $(LDFLAGS) -o $@
 @HWLOC_HAVE_NVML_TRUE@@HWLOC_NVML_BUILD_STATIC_FALSE@am_hwloc_nvml_la_rpath =  \
 @HWLOC_HAVE_NVML_TRUE@@HWLOC_NVML_BUILD_STATIC_FALSE@	-rpath \
 @HWLOC_HAVE_NVML_TRUE@@HWLOC_NVML_BUILD_STATIC_FALSE@	$(pluginsdir)
@@ -231,7 +231,8 @@ am__hwloc_opencl_la_SOURCES_DIST = topology-opencl.c
 hwloc_opencl_la_OBJECTS = $(am_hwloc_opencl_la_OBJECTS)
 hwloc_opencl_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
-	$(hwloc_opencl_la_LDFLAGS) $(LDFLAGS) -o $@
+	$(hwloc_opencl_la_CFLAGS) $(CFLAGS) $(hwloc_opencl_la_LDFLAGS) \
+	$(LDFLAGS) -o $@
 @HWLOC_HAVE_OPENCL_TRUE@@HWLOC_OPENCL_BUILD_STATIC_FALSE@am_hwloc_opencl_la_rpath = -rpath \
 @HWLOC_HAVE_OPENCL_TRUE@@HWLOC_OPENCL_BUILD_STATIC_FALSE@	$(pluginsdir)
 hwloc_pci_la_LIBADD =
@@ -239,8 +240,8 @@ am__hwloc_pci_la_SOURCES_DIST = topology-pci.c
 @HWLOC_HAVE_PCI_TRUE@@HWLOC_PCI_BUILD_STATIC_FALSE@am_hwloc_pci_la_OBJECTS = hwloc_pci_la-topology-pci.lo
 hwloc_pci_la_OBJECTS = $(am_hwloc_pci_la_OBJECTS)
 hwloc_pci_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(hwloc_pci_la_LDFLAGS) \
-	$(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(hwloc_pci_la_CFLAGS) \
+	$(CFLAGS) $(hwloc_pci_la_LDFLAGS) $(LDFLAGS) -o $@
 @HWLOC_HAVE_PCI_TRUE@@HWLOC_PCI_BUILD_STATIC_FALSE@am_hwloc_pci_la_rpath =  \
 @HWLOC_HAVE_PCI_TRUE@@HWLOC_PCI_BUILD_STATIC_FALSE@	-rpath \
 @HWLOC_HAVE_PCI_TRUE@@HWLOC_PCI_BUILD_STATIC_FALSE@	$(pluginsdir)
@@ -250,6 +251,7 @@ am__hwloc_xml_libxml_la_SOURCES_DIST = topology-xml-libxml.c
 hwloc_xml_libxml_la_OBJECTS = $(am_hwloc_xml_libxml_la_OBJECTS)
 hwloc_xml_libxml_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(hwloc_xml_libxml_la_CFLAGS) $(CFLAGS) \
 	$(hwloc_xml_libxml_la_LDFLAGS) $(LDFLAGS) -o $@
 @HWLOC_HAVE_LIBXML2_TRUE@@HWLOC_XML_LIBXML_BUILD_STATIC_FALSE@am_hwloc_xml_libxml_la_rpath = -rpath \
 @HWLOC_HAVE_LIBXML2_TRUE@@HWLOC_XML_LIBXML_BUILD_STATIC_FALSE@	$(pluginsdir)
@@ -295,8 +297,8 @@ am__objects_18 = topology.lo traversal.lo distances.lo components.lo \
 am_libhwloc_la_OBJECTS = $(am__objects_18)
 libhwloc_la_OBJECTS = $(am_libhwloc_la_OBJECTS)
 libhwloc_la_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(libhwloc_la_LDFLAGS) \
-	$(LDFLAGS) -o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(libhwloc_la_LDFLAGS) $(LDFLAGS) -o $@
 @HWLOC_BUILD_STANDALONE_TRUE@am_libhwloc_la_rpath = -rpath $(libdir)
 libhwloc_embedded_la_LIBADD =
 am__libhwloc_embedded_la_SOURCES_DIST = topology.c traversal.c \
@@ -340,8 +342,8 @@ am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
 LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;

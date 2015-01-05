@@ -1209,7 +1209,6 @@ AC_SUBST([am__untar])
 
 m4_include([confdb/aclocal_cc.m4])
 m4_include([confdb/aclocal_coverage.m4])
-m4_include([confdb/aclocal_runlog.m4])
 m4_include([confdb/aclocal_util.m4])
 m4_include([confdb/ax_prefix_config_h.m4])
 m4_include([confdb/libtool.m4])

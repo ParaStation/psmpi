@@ -25,18 +25,16 @@ extern pami_result_t
 MPIDI_Atomic (pami_context_t   context,
 	      void           * _req);
 
+#ifndef __BGQ__
 static pami_result_t
 MPIDI_Compare_and_swap_using_pami_rmw(pami_context_t   context,
                                       void           * _req)
 {
   MPIDI_Win_request *req = (MPIDI_Win_request*)_req;
   pami_result_t rc;
-  void *map;
-  MPID_Win    *win;
   int  target_rank;  
 
   MPID_assert(req != NULL);
-  win = req->win;
   target_rank = req->target.rank;
 
   pami_rmw_t  params;
@@ -55,6 +53,7 @@ MPIDI_Compare_and_swap_using_pami_rmw(pami_context_t   context,
   MPID_assert(rc == PAMI_SUCCESS);
   return rc;
 }
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_Compare_and_swap
@@ -66,8 +65,6 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 {
   int mpi_errno = MPI_SUCCESS;
   MPIDI_Win_request *req;
-  int good_for_rmw=0;
-  pami_type_t pami_type;
   int shm_locked=0;
 
   if(win->mpid.sync.origin_epoch_type == win->mpid.sync.target_epoch_type &&
@@ -119,6 +116,7 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
         int disp_unit;
         int len;
 
+        ++win->mpid.sync.total;
         if (win->create_flavor == MPI_WIN_FLAVOR_SHARED) {
             MPIDI_SHM_MUTEX_LOCK(win);
             shm_locked = 1;
@@ -131,7 +129,7 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
 	    disp_unit = win->disp_unit;
 	}
         else {
-            base = win->base;
+            base = win->mpid.info[target_rank].base_addr;
             disp_unit = win->disp_unit;
         }
 
@@ -148,6 +146,7 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
             shm_locked = 0;
         }
         MPIU_Free(req);
+       ++win->mpid.sync.complete;
     } 
   else {
     req->buffer           = (void *) ((uintptr_t) origin_addr + req->origin.dt.true_lb);
@@ -187,9 +186,10 @@ int MPID_Compare_and_swap(const void *origin_addr, const void *compare_addr,
      *        better latency for one-sided operations.
      */
     
+#ifndef __BGQ__
   MPI_Op null_op=0;
   pami_data_function  pami_op;
-#ifndef __BGQ__
+  pami_type_t pami_type;
   if(MPIDI_Datatype_is_pami_rmw_supported(basic_type, &pami_type, null_op, &pami_op)  ) {
       req->pami_datatype = pami_type;
       PAMI_Context_post(MPIDI_Context[0], &req->post_request, MPIDI_Compare_and_swap_using_pami_rmw, req);

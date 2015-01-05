@@ -8,14 +8,9 @@
 # ensure that the buildiface script ends up in the release tarball
 EXTRA_DIST += src/binding/cxx/buildiface
 
-if BUILD_CXX_LIB
+if BUILD_CXX_BINDING
 
-# No profile library for C++.  All routines call the MPI, not PMPI, routines.
-lib_LTLIBRARIES += lib/lib@MPICXXLIBNAME@.la
-
-lib_lib@MPICXXLIBNAME@_la_SOURCES = \
-    src/binding/cxx/initcxx.cxx
-lib_lib@MPICXXLIBNAME@_la_LDFLAGS = $(ABIVERSIONFLAGS)
+mpi_cxx_sources += src/binding/cxx/initcxx.cxx
 
 # Update output files if the buildiface script or mpi.h.in is updated.  Use the
 # buildiface-stamp to deal with the &ReplaceIfDifferent logic
@@ -24,7 +19,7 @@ cxx_buildiface_out_files = $(top_srcdir)/src/binding/cxx/mpicxx.h.in \
 if MAINTAINER_MODE
 $(cxx_buildiface_out_files): src/binding/cxx/buildiface-stamp
 src/binding/cxx/buildiface-stamp: $(top_srcdir)/src/binding/cxx/buildiface $(top_srcdir)/src/include/mpi.h.in
-	( cd $(top_srcdir)/src/binding/cxx && ./buildiface )
+	( cd $(top_srcdir)/src/binding/cxx && ./buildiface -nosep -initfile=cxx.vlist )
 endif MAINTAINER_MODE
 
 
@@ -49,5 +44,5 @@ mpicovsimple.o: mpicovsimple.cxx mpicovsimple.h
 	$(CXXCOMPILE) -c -DCOVERAGE_DIR='"@builddir@"' ${srcdir}/mpicovsimple.cxx
 endif BUILD_COVERAGE
 
-endif BUILD_CXX_LIB
+endif BUILD_CXX_BINDING
 
