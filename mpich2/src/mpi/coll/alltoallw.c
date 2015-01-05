@@ -14,6 +14,10 @@
 #pragma _HP_SECONDARY_DEF PMPI_Alltoallw  MPI_Alltoallw
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Alltoallw as PMPI_Alltoallw
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Alltoallw(const void *sendbuf, const int sendcounts[], const int sdispls[],
+                  const MPI_Datatype sendtypes[], void *recvbuf, const int recvcounts[],
+                  const int rdispls[], const MPI_Datatype recvtypes[], MPI_Comm comm) __attribute__((weak,alias("PMPI_Alltoallw")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -462,7 +466,7 @@ int MPI_Alltoallw(const void *sendbuf, const int sendcounts[],
             int i, comm_size;
             int check_send;
 
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
             check_send = (comm_ptr->comm_kind == MPID_INTRACOMM && sendbuf != MPI_IN_PLACE);
@@ -471,9 +475,12 @@ int MPI_Alltoallw(const void *sendbuf, const int sendcounts[],
                 MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**sendbuf_inplace");
             }
 
-            if (comm_ptr->comm_kind == MPID_INTRACOMM)
+            if (comm_ptr->comm_kind == MPID_INTRACOMM) {
                 comm_size = comm_ptr->local_size;
-            else
+
+                if (sendbuf != MPI_IN_PLACE && sendcounts == recvcounts && sendtypes == recvtypes)
+                    MPIR_ERRTEST_ALIAS_COLL(sendbuf, recvbuf, mpi_errno);
+            } else
                 comm_size = comm_ptr->remote_size;
 
             for (i=0; i<comm_size; i++) {

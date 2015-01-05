@@ -15,6 +15,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Comm_group  MPI_Comm_group
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Comm_group as PMPI_Comm_group
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Comm_group(MPI_Comm comm, MPI_Group *group) __attribute__((weak,alias("PMPI_Comm_group")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -146,8 +148,8 @@ int MPI_Comm_group(MPI_Comm comm, MPI_Group *group)
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
-	    /* If comm_ptr is not valid, it will be reset to null */
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
+            /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;

@@ -27,9 +27,7 @@ MPIDI_Win_DoneCB(pami_context_t  context,
                  void          * cookie,
                  pami_result_t   result)
 {
-  int   target_rank;
   MPIDI_Win_request *req = (MPIDI_Win_request*)cookie;
-  target_rank = req->target.rank;
   ++req->win->mpid.sync.complete;
   ++req->origin.completed;
 
@@ -45,9 +43,6 @@ MPIDI_Win_DoneCB(pami_context_t  context,
                                      req->origin.count,
                                      req->origin.datatype);
           MPID_assert(mpi_errno == MPI_SUCCESS);
-#ifndef USE_PAMI_RDMA
-          MPIDI_Win_datatype_unmap(&req->target.dt);
-#endif
           MPID_Datatype_release(req->origin.dt.pointer);
           MPIU_Free(req->buffer);
           MPIU_Free(req->user_buffer);
@@ -60,18 +55,32 @@ MPIDI_Win_DoneCB(pami_context_t  context,
         ((req->type >= MPIDI_WIN_REQUEST_COMPARE_AND_SWAP) && 
          (req->origin.completed == req->origin.dt.num_contig)))
     {
-      if(req->req_handle)
-          MPID_cc_set(req->req_handle->cc_ptr, 0);
+      MPID_Request * req_handle = req->req_handle;
 
       if (req->buffer_free) {
           MPIU_Free(req->buffer);
           MPIU_Free(req->user_buffer);
           req->buffer_free = 0;
       }
+      MPIDI_Win_datatype_unmap(&req->target.dt);
       if (req->accum_headers)
           MPIU_Free(req->accum_headers);
+
       if (!((req->type > MPIDI_WIN_REQUEST_GET_ACCUMULATE) && (req->type <=MPIDI_WIN_REQUEST_RGET_ACCUMULATE)))
           MPIU_Free(req);
+
+      if(req_handle) {
+
+          /* The instant this completion counter is set to zero another thread
+           * may notice the change and begin freeing request resources. The
+           * thread executing the code in this function must not touch any
+           * portion of the request structure after decrementing the completion
+           * counter.
+           *
+           * See MPID_Request_release_inline()
+           */
+          MPID_cc_set(req_handle->cc_ptr, 0);
+      }
     }
   MPIDI_Progress_signal();
 }

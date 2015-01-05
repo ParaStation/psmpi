@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
+ *  (C) 2010 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
@@ -11,7 +11,7 @@
 #include "topo.h"
 #include "hydt_ftb.h"
 
-struct HYD_pmcd_pmip HYD_pmcd_pmip;
+struct HYD_pmcd_pmip_s HYD_pmcd_pmip;
 
 static HYD_status init_params(void)
 {

@@ -13,6 +13,10 @@
 #pragma _HP_SECONDARY_DEF PMPI_T_pvar_get_info  MPI_T_pvar_get_info
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_T_pvar_get_info as PMPI_T_pvar_get_info
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_T_pvar_get_info(int pvar_index, char *name, int *name_len, int *verbosity, int *var_class,
+                        MPI_Datatype *datatype, MPI_T_enum *enumtype, char *desc, int *desc_len,
+                        int *binding, int *readonly, int *continuous, int *atomic) __attribute__((weak,alias("PMPI_T_pvar_get_info")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -61,6 +65,8 @@ int MPI_T_pvar_get_info(int pvar_index, char *name, int *name_len, int *verbosit
     int *desc_len, int *binding, int *readonly, int *continuous, int *atomic)
 {
     int mpi_errno = MPI_SUCCESS;
+    const pvar_table_entry_t *entry;
+    const pvar_table_entry_t *info;
 
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_PVAR_GET_INFO);
     MPIR_ERRTEST_MPIT_INITIALIZED(mpi_errno);
@@ -82,7 +88,6 @@ int MPI_T_pvar_get_info(int pvar_index, char *name, int *name_len, int *verbosit
 #   endif /* HAVE_ERROR_CHECKING */
 
     /* ... body of routine ...  */
-    const pvar_table_entry_t *entry;
 
     entry = (pvar_table_entry_t *) utarray_eltptr(pvar_table, pvar_index);
     if (!entry->active) {
@@ -90,7 +95,6 @@ int MPI_T_pvar_get_info(int pvar_index, char *name, int *name_len, int *verbosit
         goto fn_fail;
     }
 
-    const pvar_table_entry_t *info;
     info = (pvar_table_entry_t *) utarray_eltptr(pvar_table, pvar_index);
 
     MPIR_T_strncpy(name, info->name, name_len);

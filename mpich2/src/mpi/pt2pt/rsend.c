@@ -14,6 +14,9 @@
 #pragma _HP_SECONDARY_DEF PMPI_Rsend  MPI_Rsend
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Rsend as PMPI_Rsend
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Rsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+              MPI_Comm comm) __attribute__((weak,alias("PMPI_Rsend")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -85,7 +88,7 @@ int MPI_Rsend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             if (mpi_errno) goto fn_fail;
 	    
 	    MPIR_ERRTEST_COUNT(count, mpi_errno);

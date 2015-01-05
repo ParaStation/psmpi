@@ -112,11 +112,6 @@ typedef union {
     MPIDI_Message_match_parts_t parts;
     MPIR_Upint whole;
 } MPIDI_Message_match;
-/* NOTE-T1: We set MPIR_Process.attrs.tag_ub to this value during MPID_Init, but
- * upper level code may then modify this value after MPID_Init and before the
- * end of MPIR_Init_thread.  Don't use this value directly, always check the
- * runtime global value. */
-#define MPIDI_TAG_UB (0x7fffffff)
 
 /* Provides MPIDI_CH3_Pkt_t.  Must come after MPIDI_Message_match definition. */
 #include "mpidpkt.h"
@@ -171,20 +166,23 @@ typedef union {
 #define MPID_Dev_comm_create_hook(comm_) MPIDI_CH3I_Comm_create_hook(comm_)
 #define MPID_Dev_comm_destroy_hook(comm_) MPIDI_CH3I_Comm_destroy_hook(comm_)
 
-#define MPIDI_CH3I_Comm_AS_enabled(comm) ((comm)->ch.anysource_enabled)
+#define MPIDI_CH3I_Comm_AS_enabled(comm) ((comm)->dev.anysource_enabled)
 
 typedef struct MPIDI_CH3I_comm
 {
     int eager_max_msg_sz;   /* comm-wide eager/rendezvous message threshold */
-    int coll_active;        /* TRUE iff this communicator is collectively active */
     int anysource_enabled;  /* TRUE iff this anysource recvs can be posted on this communicator */
-    struct MPID_nem_barrier_vars *barrier_vars; /* shared memory variables used in barrier */
+    int last_ack_rank;      /* The rank of the last acknowledged failure */
+    int waiting_for_revoke; /* The number of other processes from which we are
+                             * waiting for a revoke message before we can release
+                             * the context id */
     struct MPID_Comm *next; /* next pointer for list of communicators */
     struct MPID_Comm *prev; /* prev pointer for list of communicators */
+    MPIDI_CH3I_CH_comm_t ch;
 }
 MPIDI_CH3I_comm_t;
 
-#define MPID_DEV_COMM_DECL MPIDI_CH3I_comm_t ch;
+#define MPID_DEV_COMM_DECL MPIDI_CH3I_comm_t dev;
 
 #ifndef HAVE_MPIDI_VCRT
 #define HAVE_MPIDI_VCRT
@@ -201,8 +199,11 @@ typedef struct MPIDI_VC * MPID_VCR;
 #   define MPIDI_REQUEST_SEQNUM
 #endif
 
+/* We start with an arbitrarily chosen number (42), to help with
+ * debugging when a packet type is not initialized or wrongly
+ * initialized. */
 enum MPIDI_CH3_Lock_states {
-    MPIDI_CH3_WIN_LOCK_NONE = 0,
+    MPIDI_CH3_WIN_LOCK_NONE = 42,
     MPIDI_CH3_WIN_LOCK_CALLED,
     MPIDI_CH3_WIN_LOCK_REQUESTED,
     MPIDI_CH3_WIN_LOCK_GRANTED,
@@ -221,8 +222,11 @@ enum MPIDI_Win_info_arg_vals_accumulate_ops {
     MPIDI_ACC_OPS_SAME_OP_NO_OP
 };
 
+/* We start with an arbitrarily chosen number (42), to help with
+ * debugging when a packet type is not initialized or wrongly
+ * initialized. */
 enum MPIDI_Win_epoch_states {
-    MPIDI_EPOCH_NONE = 0,
+    MPIDI_EPOCH_NONE = 42,
     MPIDI_EPOCH_FENCE,
     MPIDI_EPOCH_POST,
     MPIDI_EPOCH_START,
@@ -258,7 +262,7 @@ struct MPIDI_Win_target_state {
 };
 
 #define MPIDI_DEV_WIN_DECL                                               \
-    volatile int my_counter;  /* completion counter for operations       \
+    volatile int at_completion_counter;  /* completion counter for operations \
                                  targeting this window */                \
     void **base_addrs;     /* array of base addresses of the windows of  \
                               all processes */                           \

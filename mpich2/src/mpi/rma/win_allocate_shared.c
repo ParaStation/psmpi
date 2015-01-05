@@ -14,6 +14,9 @@
 #pragma _HP_SECONDARY_DEF PMPI_Win_allocate_shared  MPI_Win_allocate_shared
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Win_allocate_shared as PMPI_Win_allocate_shared
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Win_allocate_shared(MPI_Aint size, int disp_unit, MPI_Info info, MPI_Comm comm,
+                            void *baseptr, MPI_Win *win) __attribute__((weak,alias("PMPI_Win_allocate_shared")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -113,7 +116,7 @@ int MPI_Win_allocate_shared(MPI_Aint size, int disp_unit, MPI_Info info, MPI_Com
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate pointers */
-	    MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+	    MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
             MPIU_ERR_CHKANDJUMP1(disp_unit <= 0, mpi_errno, MPI_ERR_ARG,

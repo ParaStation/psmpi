@@ -55,6 +55,10 @@ cvars:
 #pragma _HP_SECONDARY_DEF PMPI_Reduce  MPI_Reduce
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Reduce as PMPI_Reduce
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+               MPI_Op op, int root, MPI_Comm comm)
+               __attribute__((weak,alias("PMPI_Reduce")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -1159,7 +1163,7 @@ int MPI_Reduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datat
             MPID_Op *op_ptr = NULL;
             int rank;
 	    
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
 	    if (comm_ptr->comm_kind == MPID_INTRACOMM) {

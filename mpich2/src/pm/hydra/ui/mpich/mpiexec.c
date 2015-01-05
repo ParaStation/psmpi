@@ -14,11 +14,11 @@
 #include "ui.h"
 #include "uiu.h"
 
-struct HYD_server_info HYD_server_info = { {0} };
+struct HYD_server_info_s HYD_server_info = { {0} };
 
 struct HYD_exec *HYD_uii_mpx_exec_list = NULL;
-struct HYD_ui_info HYD_ui_info;
-struct HYD_ui_mpich_info HYD_ui_mpich_info;
+struct HYD_ui_info_s HYD_ui_info;
+struct HYD_ui_mpich_info_s HYD_ui_mpich_info;
 
 static void signal_cb(int signum)
 {
@@ -314,9 +314,17 @@ int main(int argc, char **argv)
 
     /* Check if the user wants us to use a port within a certain
      * range. */
-    if (MPL_env2str("MPIEXEC_PORTRANGE", (const char **) &HYD_server_info.port_range) ||
-        MPL_env2str("MPIEXEC_PORT_RANGE", (const char **) &HYD_server_info.port_range) ||
-        MPL_env2str("MPIR_CVAR_CH3_PORT_RANGE", (const char **) &HYD_server_info.port_range))
+    if (MPL_env2str("MPIR_CVAR_CH3_PORT_RANGE", (const char **) &HYD_server_info.port_range) ||
+        MPL_env2str("MPIR_PARAM_CH3_PORT_RANGE", (const char **) &HYD_server_info.port_range) ||
+        MPL_env2str("MPICH_CH3_PORT_RANGE", (const char **) &HYD_server_info.port_range) ||
+        MPL_env2str("MPIR_CVAR_PORTRANGE", (const char **) &HYD_server_info.port_range) ||
+        MPL_env2str("MPIR_CVAR_PORT_RANGE", (const char **) &HYD_server_info.port_range) ||
+        MPL_env2str("MPIR_PARAM_PORTRANGE", (const char **) &HYD_server_info.port_range) ||
+        MPL_env2str("MPIR_PARAM_PORT_RANGE", (const char **) &HYD_server_info.port_range) ||
+        MPL_env2str("MPICH_PORTRANGE", (const char **) &HYD_server_info.port_range) ||
+        MPL_env2str("MPICH_PORT_RANGE", (const char **) &HYD_server_info.port_range) ||
+        MPL_env2str("MPIEXEC_PORTRANGE", (const char **) &HYD_server_info.port_range) ||
+        MPL_env2str("MPIEXEC_PORT_RANGE", (const char **) &HYD_server_info.port_range))
         HYD_server_info.port_range = HYDU_strdup(HYD_server_info.port_range);
 
     /* Add the stdout/stderr callback handlers */

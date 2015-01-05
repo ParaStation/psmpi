@@ -34,6 +34,11 @@ cvars:
 #pragma _HP_SECONDARY_DEF PMPI_Gatherv  MPI_Gatherv
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Gatherv as PMPI_Gatherv
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+                const int *recvcounts, const int *displs, MPI_Datatype recvtype, int root,
+                MPI_Comm comm)
+                __attribute__((weak,alias("PMPI_Gatherv")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -314,7 +319,7 @@ int MPI_Gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
 	    MPID_Datatype *sendtype_ptr=NULL, *recvtype_ptr=NULL;
             int i, rank, comm_size;
 	    
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
 	    if (comm_ptr->comm_kind == MPID_INTRACOMM) {
@@ -354,6 +359,13 @@ int MPI_Gatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                             MPIR_ERRTEST_USERBUFFER(recvbuf,recvcounts[i],recvtype,mpi_errno);
                             break;
                         }
+                    }
+
+                    /* catch common aliasing cases */
+                    if (sendbuf != MPI_IN_PLACE && sendtype == recvtype && recvcounts[comm_ptr->rank] != 0 && sendcount != 0) {
+                        int recvtype_size;
+                        MPID_Datatype_get_size_macro(recvtype, recvtype_size);
+                        MPIR_ERRTEST_ALIAS_COLL(sendbuf, (char*)recvbuf + displs[comm_ptr->rank]*recvtype_size, mpi_errno);
                     }
                 }
                 else

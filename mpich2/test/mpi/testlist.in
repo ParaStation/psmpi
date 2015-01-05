@@ -20,6 +20,7 @@ topo
 @f77dir@
 @cxxdir@
 @f90dir@
+@f08dir@
 @errordir@
 @threadsdir@
 @ckpointdir@

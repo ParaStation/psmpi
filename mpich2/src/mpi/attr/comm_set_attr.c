@@ -15,6 +15,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Comm_set_attr  MPI_Comm_set_attr
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Comm_set_attr as PMPI_Comm_set_attr
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val) __attribute__((weak,alias("PMPI_Comm_set_attr")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -140,7 +142,7 @@ int MPIR_CommSetAttr( MPI_Comm comm, int comm_keyval, void *attribute_val,
             MPID_Keyval *keyval_ptr = NULL;
 
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    /* Validate keyval_ptr */
             MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );
@@ -247,7 +249,7 @@ int MPI_Comm_set_attr(MPI_Comm comm, int comm_keyval, void *attribute_val)
             MPID_Keyval *keyval_ptr = NULL;
 
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    /* Validate keyval_ptr */
             MPID_Keyval_get_ptr( comm_keyval, keyval_ptr );

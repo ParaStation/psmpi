@@ -90,9 +90,9 @@ DIST_COMMON = $(srcdir)/mpi-io/Makefile.mk \
 	$(top_srcdir)/mpi-io/glue/mpich/Makefile.mk \
 	$(top_srcdir)/mpi-io/fortran/Makefile.mk \
 	$(srcdir)/adio/Makefile.mk \
-	$(top_srcdir)/adio/ad_bg/Makefile.mk \
-	$(top_srcdir)/adio/ad_bgl/Makefile.mk \
-	$(top_srcdir)/adio/ad_bglockless/Makefile.mk \
+	$(top_srcdir)/adio/ad_gpfs/Makefile.mk \
+	$(top_srcdir)/adio/ad_gpfs/bg/Makefile.mk \
+	$(top_srcdir)/adio/ad_gpfs/pe/Makefile.mk \
 	$(top_srcdir)/adio/ad_gridftp/Makefile.mk \
 	$(top_srcdir)/adio/ad_hfs/Makefile.mk \
 	$(top_srcdir)/adio/ad_lustre/Makefile.mk \
@@ -202,60 +202,38 @@ DIST_COMMON = $(srcdir)/mpi-io/Makefile.mk \
 
 # not used in MPICH
 @BUILD_MPIO_ERRHAN_TRUE@am__append_6 = $(mpio_request_sources)
-@BUILD_AD_BG_TRUE@am__append_7 = -DBGL_OPTIM_STEP1_2=1 -DBGL_OPTIM_STEP1_1=1
-@BUILD_AD_BG_TRUE@am__append_8 = \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_aggrs.h                                         \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg.h                                               \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_pset.h                                          \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_tuning.h
+@BUILD_AD_GPFS_TRUE@am__append_7 = \
+@BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_aggrs.h                                         \
+@BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs.h                                               \
+@BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_tuning.h
+
+@BUILD_AD_GPFS_TRUE@am__append_8 = \
+@BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_aggrs.c                                         \
+@BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_close.c                                         \
+@BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_flush.c                                         \
+@BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_tuning.c                                        \
+@BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs.c                                               \
+@BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_open.c                                          \
+@BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_hints.c                                         \
+@BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_rdcoll.c                                        \
+@BUILD_AD_GPFS_TRUE@    adio/ad_gpfs/ad_gpfs_wrcoll.c
 
 @BUILD_AD_BG_TRUE@am__append_9 = \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_aggrs.c                                         \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_close.c                                         \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_flush.c                                         \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_hints.c                                         \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_pset.c                                          \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_read.c                                          \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_tuning.c                                        \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_write.c                                         \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg.c                                               \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_fcntl.c                                         \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_getsh.c                                         \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_open.c                                          \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_rdcoll.c                                        \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_setsh.c                                         \
-@BUILD_AD_BG_TRUE@    adio/ad_bg/ad_bg_wrcoll.c
+@BUILD_AD_BG_TRUE@    adio/ad_gpfs/bg/ad_bg_aggrs.h                                         \
+@BUILD_AD_BG_TRUE@    adio/ad_gpfs/bg/ad_bg_pset.h
 
-@BUILD_AD_BGL_TRUE@am__append_10 = \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl.h        \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_aggrs.h  \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_pset.h   \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_tuning.h
+@BUILD_AD_BG_TRUE@am__append_10 = \
+@BUILD_AD_BG_TRUE@    adio/ad_gpfs/bg/ad_bg_aggrs.c                                         \
+@BUILD_AD_BG_TRUE@    adio/ad_gpfs/bg/ad_bg_pset.c 
 
-@BUILD_AD_BGL_TRUE@am__append_11 = \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_open.c   \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_close.c  \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_fcntl.c  \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_flush.c  \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_read.c   \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_write.c  \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_getsh.c  \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_setsh.c  \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl.c        \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_aggrs.c  \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_pset.c   \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_hints.c  \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_rdcoll.c \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_wrcoll.c \
-@BUILD_AD_BGL_TRUE@    adio/ad_bgl/ad_bgl_tuning.c
+@BUILD_AD_PE_TRUE@am__append_11 = \
+@BUILD_AD_PE_TRUE@    adio/ad_gpfs/pe/ad_pe_aggrs.h
 
-@BUILD_AD_BGLOCKLESS_TRUE@am__append_12 = adio/ad_bglockless/ad_bglockless.h
-@BUILD_AD_BGLOCKLESS_TRUE@am__append_13 = \
-@BUILD_AD_BGLOCKLESS_TRUE@    adio/ad_bglockless/ad_bglockless.c          \
-@BUILD_AD_BGLOCKLESS_TRUE@    adio/ad_bglockless/ad_bglockless_features.c
+@BUILD_AD_PE_TRUE@am__append_12 = \
+@BUILD_AD_PE_TRUE@    adio/ad_gpfs/pe/ad_pe_aggrs.c
 
-@BUILD_AD_GRIDFTP_TRUE@am__append_14 = adio/ad_gridftp/ad_gridftp.h
-@BUILD_AD_GRIDFTP_TRUE@am__append_15 = \
+@BUILD_AD_GRIDFTP_TRUE@am__append_13 = adio/ad_gridftp/ad_gridftp.h
+@BUILD_AD_GRIDFTP_TRUE@am__append_14 = \
 @BUILD_AD_GRIDFTP_TRUE@    adio/ad_gridftp/ad_gridftp_close.c    \
 @BUILD_AD_GRIDFTP_TRUE@    adio/ad_gridftp/ad_gridftp_open.c     \
 @BUILD_AD_GRIDFTP_TRUE@    adio/ad_gridftp/ad_gridftp_read.c     \
@@ -269,8 +247,8 @@ DIST_COMMON = $(srcdir)/mpi-io/Makefile.mk \
 @BUILD_AD_GRIDFTP_TRUE@    adio/ad_gridftp/globus_routines.c     \
 @BUILD_AD_GRIDFTP_TRUE@    adio/ad_gridftp/ad_gridftp_features.c
 
-@BUILD_AD_HFS_TRUE@am__append_16 = adio/ad_hfs/ad_hfs.h
-@BUILD_AD_HFS_TRUE@am__append_17 = \
+@BUILD_AD_HFS_TRUE@am__append_15 = adio/ad_hfs/ad_hfs.h
+@BUILD_AD_HFS_TRUE@am__append_16 = \
 @BUILD_AD_HFS_TRUE@    adio/ad_hfs/ad_hfs_read.c   \
 @BUILD_AD_HFS_TRUE@    adio/ad_hfs/ad_hfs_open.c   \
 @BUILD_AD_HFS_TRUE@    adio/ad_hfs/ad_hfs_write.c  \
@@ -278,8 +256,8 @@ DIST_COMMON = $(srcdir)/mpi-io/Makefile.mk \
 @BUILD_AD_HFS_TRUE@    adio/ad_hfs/ad_hfs_resize.c \
 @BUILD_AD_HFS_TRUE@    adio/ad_hfs/ad_hfs.c
 
-@BUILD_AD_LUSTRE_TRUE@am__append_18 = adio/ad_lustre/ad_lustre.h
-@BUILD_AD_LUSTRE_TRUE@am__append_19 = \
+@BUILD_AD_LUSTRE_TRUE@am__append_17 = adio/ad_lustre/ad_lustre.h
+@BUILD_AD_LUSTRE_TRUE@am__append_18 = \
 @BUILD_AD_LUSTRE_TRUE@    adio/ad_lustre/ad_lustre.c           \
 @BUILD_AD_LUSTRE_TRUE@    adio/ad_lustre/ad_lustre_open.c      \
 @BUILD_AD_LUSTRE_TRUE@    adio/ad_lustre/ad_lustre_rwcontig.c  \
@@ -288,8 +266,8 @@ DIST_COMMON = $(srcdir)/mpi-io/Makefile.mk \
 @BUILD_AD_LUSTRE_TRUE@    adio/ad_lustre/ad_lustre_hints.c     \
 @BUILD_AD_LUSTRE_TRUE@    adio/ad_lustre/ad_lustre_aggregate.c
 
-@BUILD_AD_NFS_TRUE@am__append_20 = adio/ad_nfs/ad_nfs.h
-@BUILD_AD_NFS_TRUE@am__append_21 = \
+@BUILD_AD_NFS_TRUE@am__append_19 = adio/ad_nfs/ad_nfs.h
+@BUILD_AD_NFS_TRUE@am__append_20 = \
 @BUILD_AD_NFS_TRUE@    adio/ad_nfs/ad_nfs_read.c     \
 @BUILD_AD_NFS_TRUE@    adio/ad_nfs/ad_nfs_open.c     \
 @BUILD_AD_NFS_TRUE@    adio/ad_nfs/ad_nfs_write.c    \
@@ -304,12 +282,8 @@ DIST_COMMON = $(srcdir)/mpi-io/Makefile.mk \
 @BUILD_AD_NFS_TRUE@    adio/ad_nfs/ad_nfs_resize.c   \
 @BUILD_AD_NFS_TRUE@    adio/ad_nfs/ad_nfs_features.c
 
-
-# I don't like this hard-coded path to the PANFS headers but I guess that's
-# where they always are?
-@BUILD_AD_PANFS_TRUE@am__append_22 = -I/opt/panfs/include
-@BUILD_AD_PANFS_TRUE@am__append_23 = adio/ad_panfs/ad_panfs.h
-@BUILD_AD_PANFS_TRUE@am__append_24 = \
+@BUILD_AD_PANFS_TRUE@am__append_21 = adio/ad_panfs/ad_panfs.h
+@BUILD_AD_PANFS_TRUE@am__append_22 = \
 @BUILD_AD_PANFS_TRUE@    adio/ad_panfs/ad_panfs.c        \
 @BUILD_AD_PANFS_TRUE@    adio/ad_panfs/ad_panfs_open.c   \
 @BUILD_AD_PANFS_TRUE@    adio/ad_panfs/ad_panfs_hints.c  \
@@ -317,8 +291,8 @@ DIST_COMMON = $(srcdir)/mpi-io/Makefile.mk \
 @BUILD_AD_PANFS_TRUE@    adio/ad_panfs/ad_panfs_resize.c \
 @BUILD_AD_PANFS_TRUE@    adio/ad_panfs/ad_panfs_write.c
 
-@BUILD_AD_PFS_TRUE@am__append_25 = adio/ad_pfs/ad_pfs.h
-@BUILD_AD_PFS_TRUE@am__append_26 = \
+@BUILD_AD_PFS_TRUE@am__append_23 = adio/ad_pfs/ad_pfs.h
+@BUILD_AD_PFS_TRUE@am__append_24 = \
 @BUILD_AD_PFS_TRUE@    adio/ad_pfs/ad_pfs_read.c   \
 @BUILD_AD_PFS_TRUE@    adio/ad_pfs/ad_pfs_open.c   \
 @BUILD_AD_PFS_TRUE@    adio/ad_pfs/ad_pfs_write.c  \
@@ -331,8 +305,8 @@ DIST_COMMON = $(srcdir)/mpi-io/Makefile.mk \
 @BUILD_AD_PFS_TRUE@    adio/ad_pfs/ad_pfs_hints.c  \
 @BUILD_AD_PFS_TRUE@    adio/ad_pfs/ad_pfs.c
 
-@BUILD_AD_PIOFS_TRUE@am__append_27 = adio/ad_piofs/ad_piofs.h
-@BUILD_AD_PIOFS_TRUE@am__append_28 = \
+@BUILD_AD_PIOFS_TRUE@am__append_25 = adio/ad_piofs/ad_piofs.h
+@BUILD_AD_PIOFS_TRUE@am__append_26 = \
 @BUILD_AD_PIOFS_TRUE@    adio/ad_piofs/ad_piofs_read.c  \
 @BUILD_AD_PIOFS_TRUE@    adio/ad_piofs/ad_piofs_open.c  \
 @BUILD_AD_PIOFS_TRUE@    adio/ad_piofs/ad_piofs_write.c \
@@ -340,8 +314,8 @@ DIST_COMMON = $(srcdir)/mpi-io/Makefile.mk \
 @BUILD_AD_PIOFS_TRUE@    adio/ad_piofs/ad_piofs_hints.c \
 @BUILD_AD_PIOFS_TRUE@    adio/ad_piofs/ad_piofs.c
 
-@BUILD_AD_PVFS_TRUE@am__append_29 = adio/ad_pvfs/ad_pvfs.h
-@BUILD_AD_PVFS_TRUE@am__append_30 = \
+@BUILD_AD_PVFS_TRUE@am__append_27 = adio/ad_pvfs/ad_pvfs.h
+@BUILD_AD_PVFS_TRUE@am__append_28 = \
 @BUILD_AD_PVFS_TRUE@    adio/ad_pvfs/ad_pvfs_close.c  \
 @BUILD_AD_PVFS_TRUE@    adio/ad_pvfs/ad_pvfs_read.c   \
 @BUILD_AD_PVFS_TRUE@    adio/ad_pvfs/ad_pvfs_open.c   \
@@ -353,8 +327,11 @@ DIST_COMMON = $(srcdir)/mpi-io/Makefile.mk \
 @BUILD_AD_PVFS_TRUE@    adio/ad_pvfs/ad_pvfs_delete.c \
 @BUILD_AD_PVFS_TRUE@    adio/ad_pvfs/ad_pvfs.c
 
-@BUILD_AD_PVFS2_TRUE@am__append_31 = adio/ad_pvfs2/ad_pvfs2.h
-@BUILD_AD_PVFS2_TRUE@am__append_32 = \
+@BUILD_AD_PVFS2_TRUE@am__append_29 = adio/ad_pvfs2/ad_pvfs2.h \
+@BUILD_AD_PVFS2_TRUE@		  adio/ad_pvfs2/ad_pvfs2_io.h \
+@BUILD_AD_PVFS2_TRUE@		  adio/ad_pvfs2/ad_pvfs2_common.h
+
+@BUILD_AD_PVFS2_TRUE@am__append_30 = \
 @BUILD_AD_PVFS2_TRUE@    adio/ad_pvfs2/ad_pvfs2_close.c              \
 @BUILD_AD_PVFS2_TRUE@    adio/ad_pvfs2/ad_pvfs2_read.c               \
 @BUILD_AD_PVFS2_TRUE@    adio/ad_pvfs2/ad_pvfs2_open.c               \
@@ -373,15 +350,15 @@ DIST_COMMON = $(srcdir)/mpi-io/Makefile.mk \
 @BUILD_AD_PVFS2_TRUE@    adio/ad_pvfs2/ad_pvfs2_write_list_classic.c \
 @BUILD_AD_PVFS2_TRUE@    adio/ad_pvfs2/ad_pvfs2_features.c
 
-@BUILD_AD_SFS_TRUE@am__append_33 = adio/ad_sfs/ad_sfs.h
-@BUILD_AD_SFS_TRUE@am__append_34 = \
+@BUILD_AD_SFS_TRUE@am__append_31 = adio/ad_sfs/ad_sfs.h
+@BUILD_AD_SFS_TRUE@am__append_32 = \
 @BUILD_AD_SFS_TRUE@    adio/ad_sfs/ad_sfs_open.c  \
 @BUILD_AD_SFS_TRUE@    adio/ad_sfs/ad_sfs_fcntl.c \
 @BUILD_AD_SFS_TRUE@    adio/ad_sfs/ad_sfs_flush.c \
 @BUILD_AD_SFS_TRUE@    adio/ad_sfs/ad_sfs.c
 
-@BUILD_AD_TESTFS_TRUE@am__append_35 = adio/ad_testfs/ad_testfs.h
-@BUILD_AD_TESTFS_TRUE@am__append_36 = \
+@BUILD_AD_TESTFS_TRUE@am__append_33 = adio/ad_testfs/ad_testfs.h
+@BUILD_AD_TESTFS_TRUE@am__append_34 = \
 @BUILD_AD_TESTFS_TRUE@    adio/ad_testfs/ad_testfs_close.c  \
 @BUILD_AD_TESTFS_TRUE@    adio/ad_testfs/ad_testfs_read.c   \
 @BUILD_AD_TESTFS_TRUE@    adio/ad_testfs/ad_testfs_rdcoll.c \
@@ -400,13 +377,13 @@ DIST_COMMON = $(srcdir)/mpi-io/Makefile.mk \
 @BUILD_AD_TESTFS_TRUE@    adio/ad_testfs/ad_testfs_delete.c \
 @BUILD_AD_TESTFS_TRUE@    adio/ad_testfs/ad_testfs.c
 
-@BUILD_AD_UFS_TRUE@am__append_37 = adio/ad_ufs/ad_ufs.h
-@BUILD_AD_UFS_TRUE@am__append_38 = \
+@BUILD_AD_UFS_TRUE@am__append_35 = adio/ad_ufs/ad_ufs.h
+@BUILD_AD_UFS_TRUE@am__append_36 = \
 @BUILD_AD_UFS_TRUE@    adio/ad_ufs/ad_ufs.c      \
 @BUILD_AD_UFS_TRUE@    adio/ad_ufs/ad_ufs_open.c
 
-@BUILD_AD_XFS_TRUE@am__append_39 = adio/ad_xfs/ad_xfs.h
-@BUILD_AD_XFS_TRUE@am__append_40 = \
+@BUILD_AD_XFS_TRUE@am__append_37 = adio/ad_xfs/ad_xfs.h
+@BUILD_AD_XFS_TRUE@am__append_38 = \
 @BUILD_AD_XFS_TRUE@    adio/ad_xfs/ad_xfs.c        \
 @BUILD_AD_XFS_TRUE@    adio/ad_xfs/ad_xfs_fcntl.c  \
 @BUILD_AD_XFS_TRUE@    adio/ad_xfs/ad_xfs_hints.c  \
@@ -415,8 +392,8 @@ DIST_COMMON = $(srcdir)/mpi-io/Makefile.mk \
 @BUILD_AD_XFS_TRUE@    adio/ad_xfs/ad_xfs_resize.c \
 @BUILD_AD_XFS_TRUE@    adio/ad_xfs/ad_xfs_write.c
 
-@BUILD_AD_ZOIDFS_TRUE@am__append_41 = adio/ad_zoidfs/ad_zoidfs.h adio/ad_zoidfs/ad_zoidfs_common.h
-@BUILD_AD_ZOIDFS_TRUE@am__append_42 = \
+@BUILD_AD_ZOIDFS_TRUE@am__append_39 = adio/ad_zoidfs/ad_zoidfs.h adio/ad_zoidfs/ad_zoidfs_common.h
+@BUILD_AD_ZOIDFS_TRUE@am__append_40 = \
 @BUILD_AD_ZOIDFS_TRUE@    adio/ad_zoidfs/ad_zoidfs.c            \
 @BUILD_AD_ZOIDFS_TRUE@    adio/ad_zoidfs/ad_zoidfs_close.c      \
 @BUILD_AD_ZOIDFS_TRUE@    adio/ad_zoidfs/ad_zoidfs_common.c     \
@@ -433,9 +410,9 @@ DIST_COMMON = $(srcdir)/mpi-io/Makefile.mk \
 
 # The current best strategy for now is to build the PMPI symbols as a separate
 # convenience lib to permit adding the special "-D..." argument for all objects.
-# MPICH will then link in both convenience library into libmpich, since it
+# MPICH will then link in both convenience library into libmpi, since it
 # won't work very well the other way around.
-@BUILD_PROFILING_LIB_TRUE@@BUILD_ROMIO_EMBEDDED_TRUE@am__append_43 = libpromio.la
+@BUILD_PROFILING_LIB_TRUE@@BUILD_ROMIO_EMBEDDED_TRUE@am__append_41 = libpromio.la
 subdir = .
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cc.m4 \
@@ -705,23 +682,12 @@ am__libromio_la_SOURCES_DIST = mpi-io/fortran/closef.c \
 	mpi-io/iotest.c mpi-io/iotestall.c mpi-io/iotestany.c \
 	mpi-io/iotestsome.c mpi-io/iowait.c mpi-io/iowaitall.c \
 	mpi-io/iowaitany.c mpi-io/iowaitsome.c \
-	adio/ad_bg/ad_bg_aggrs.c adio/ad_bg/ad_bg_close.c \
-	adio/ad_bg/ad_bg_flush.c adio/ad_bg/ad_bg_hints.c \
-	adio/ad_bg/ad_bg_pset.c adio/ad_bg/ad_bg_read.c \
-	adio/ad_bg/ad_bg_tuning.c adio/ad_bg/ad_bg_write.c \
-	adio/ad_bg/ad_bg.c adio/ad_bg/ad_bg_fcntl.c \
-	adio/ad_bg/ad_bg_getsh.c adio/ad_bg/ad_bg_open.c \
-	adio/ad_bg/ad_bg_rdcoll.c adio/ad_bg/ad_bg_setsh.c \
-	adio/ad_bg/ad_bg_wrcoll.c adio/ad_bgl/ad_bgl_open.c \
-	adio/ad_bgl/ad_bgl_close.c adio/ad_bgl/ad_bgl_fcntl.c \
-	adio/ad_bgl/ad_bgl_flush.c adio/ad_bgl/ad_bgl_read.c \
-	adio/ad_bgl/ad_bgl_write.c adio/ad_bgl/ad_bgl_getsh.c \
-	adio/ad_bgl/ad_bgl_setsh.c adio/ad_bgl/ad_bgl.c \
-	adio/ad_bgl/ad_bgl_aggrs.c adio/ad_bgl/ad_bgl_pset.c \
-	adio/ad_bgl/ad_bgl_hints.c adio/ad_bgl/ad_bgl_rdcoll.c \
-	adio/ad_bgl/ad_bgl_wrcoll.c adio/ad_bgl/ad_bgl_tuning.c \
-	adio/ad_bglockless/ad_bglockless.c \
-	adio/ad_bglockless/ad_bglockless_features.c \
+	adio/ad_gpfs/ad_gpfs_aggrs.c adio/ad_gpfs/ad_gpfs_close.c \
+	adio/ad_gpfs/ad_gpfs_flush.c adio/ad_gpfs/ad_gpfs_tuning.c \
+	adio/ad_gpfs/ad_gpfs.c adio/ad_gpfs/ad_gpfs_open.c \
+	adio/ad_gpfs/ad_gpfs_hints.c adio/ad_gpfs/ad_gpfs_rdcoll.c \
+	adio/ad_gpfs/ad_gpfs_wrcoll.c adio/ad_gpfs/bg/ad_bg_aggrs.c \
+	adio/ad_gpfs/bg/ad_bg_pset.c adio/ad_gpfs/pe/ad_pe_aggrs.c \
 	adio/ad_gridftp/ad_gridftp_close.c \
 	adio/ad_gridftp/ad_gridftp_open.c \
 	adio/ad_gridftp/ad_gridftp_read.c \
@@ -838,7 +804,8 @@ am__libromio_la_SOURCES_DIST = mpi-io/fortran/closef.c \
 	adio/common/lock.c adio/common/malloc.c \
 	adio/common/shfp_fname.c adio/common/status_setb.c \
 	adio/common/strfns.c adio/common/system_hints.c \
-	adio/common/hint_fns.c
+	adio/common/hint_fns.c adio/common/ad_threaded_io.c \
+	adio/common/p2p_aggregation.c adio/common/utils.c
 @BUILD_F77_BINDINGS_TRUE@am__objects_3 = mpi-io/fortran/closef.lo \
 @BUILD_F77_BINDINGS_TRUE@	mpi-io/fortran/deletef.lo \
 @BUILD_F77_BINDINGS_TRUE@	mpi-io/fortran/fsyncf.lo \
@@ -926,39 +893,18 @@ am__objects_8 = mpi-io/ioreq_c2f.lo mpi-io/ioreq_f2c.lo \
 	mpi-io/iowaitany.lo mpi-io/iowaitsome.lo
 @BUILD_MPIO_REQUEST_TRUE@am__objects_9 = $(am__objects_8)
 @BUILD_MPIO_ERRHAN_TRUE@am__objects_10 = $(am__objects_8)
-@BUILD_AD_BG_TRUE@am__objects_11 = adio/ad_bg/ad_bg_aggrs.lo \
-@BUILD_AD_BG_TRUE@	adio/ad_bg/ad_bg_close.lo \
-@BUILD_AD_BG_TRUE@	adio/ad_bg/ad_bg_flush.lo \
-@BUILD_AD_BG_TRUE@	adio/ad_bg/ad_bg_hints.lo \
-@BUILD_AD_BG_TRUE@	adio/ad_bg/ad_bg_pset.lo \
-@BUILD_AD_BG_TRUE@	adio/ad_bg/ad_bg_read.lo \
-@BUILD_AD_BG_TRUE@	adio/ad_bg/ad_bg_tuning.lo \
-@BUILD_AD_BG_TRUE@	adio/ad_bg/ad_bg_write.lo \
-@BUILD_AD_BG_TRUE@	adio/ad_bg/ad_bg.lo \
-@BUILD_AD_BG_TRUE@	adio/ad_bg/ad_bg_fcntl.lo \
-@BUILD_AD_BG_TRUE@	adio/ad_bg/ad_bg_getsh.lo \
-@BUILD_AD_BG_TRUE@	adio/ad_bg/ad_bg_open.lo \
-@BUILD_AD_BG_TRUE@	adio/ad_bg/ad_bg_rdcoll.lo \
-@BUILD_AD_BG_TRUE@	adio/ad_bg/ad_bg_setsh.lo \
-@BUILD_AD_BG_TRUE@	adio/ad_bg/ad_bg_wrcoll.lo
-@BUILD_AD_BGL_TRUE@am__objects_12 = adio/ad_bgl/ad_bgl_open.lo \
-@BUILD_AD_BGL_TRUE@	adio/ad_bgl/ad_bgl_close.lo \
-@BUILD_AD_BGL_TRUE@	adio/ad_bgl/ad_bgl_fcntl.lo \
-@BUILD_AD_BGL_TRUE@	adio/ad_bgl/ad_bgl_flush.lo \
-@BUILD_AD_BGL_TRUE@	adio/ad_bgl/ad_bgl_read.lo \
-@BUILD_AD_BGL_TRUE@	adio/ad_bgl/ad_bgl_write.lo \
-@BUILD_AD_BGL_TRUE@	adio/ad_bgl/ad_bgl_getsh.lo \
-@BUILD_AD_BGL_TRUE@	adio/ad_bgl/ad_bgl_setsh.lo \
-@BUILD_AD_BGL_TRUE@	adio/ad_bgl/ad_bgl.lo \
-@BUILD_AD_BGL_TRUE@	adio/ad_bgl/ad_bgl_aggrs.lo \
-@BUILD_AD_BGL_TRUE@	adio/ad_bgl/ad_bgl_pset.lo \
-@BUILD_AD_BGL_TRUE@	adio/ad_bgl/ad_bgl_hints.lo \
-@BUILD_AD_BGL_TRUE@	adio/ad_bgl/ad_bgl_rdcoll.lo \
-@BUILD_AD_BGL_TRUE@	adio/ad_bgl/ad_bgl_wrcoll.lo \
-@BUILD_AD_BGL_TRUE@	adio/ad_bgl/ad_bgl_tuning.lo
-@BUILD_AD_BGLOCKLESS_TRUE@am__objects_13 =  \
-@BUILD_AD_BGLOCKLESS_TRUE@	adio/ad_bglockless/ad_bglockless.lo \
-@BUILD_AD_BGLOCKLESS_TRUE@	adio/ad_bglockless/ad_bglockless_features.lo
+@BUILD_AD_GPFS_TRUE@am__objects_11 = adio/ad_gpfs/ad_gpfs_aggrs.lo \
+@BUILD_AD_GPFS_TRUE@	adio/ad_gpfs/ad_gpfs_close.lo \
+@BUILD_AD_GPFS_TRUE@	adio/ad_gpfs/ad_gpfs_flush.lo \
+@BUILD_AD_GPFS_TRUE@	adio/ad_gpfs/ad_gpfs_tuning.lo \
+@BUILD_AD_GPFS_TRUE@	adio/ad_gpfs/ad_gpfs.lo \
+@BUILD_AD_GPFS_TRUE@	adio/ad_gpfs/ad_gpfs_open.lo \
+@BUILD_AD_GPFS_TRUE@	adio/ad_gpfs/ad_gpfs_hints.lo \
+@BUILD_AD_GPFS_TRUE@	adio/ad_gpfs/ad_gpfs_rdcoll.lo \
+@BUILD_AD_GPFS_TRUE@	adio/ad_gpfs/ad_gpfs_wrcoll.lo
+@BUILD_AD_BG_TRUE@am__objects_12 = adio/ad_gpfs/bg/ad_bg_aggrs.lo \
+@BUILD_AD_BG_TRUE@	adio/ad_gpfs/bg/ad_bg_pset.lo
+@BUILD_AD_PE_TRUE@am__objects_13 = adio/ad_gpfs/pe/ad_pe_aggrs.lo
 @BUILD_AD_GRIDFTP_TRUE@am__objects_14 =  \
 @BUILD_AD_GRIDFTP_TRUE@	adio/ad_gridftp/ad_gridftp_close.lo \
 @BUILD_AD_GRIDFTP_TRUE@	adio/ad_gridftp/ad_gridftp_open.lo \
@@ -1130,7 +1076,8 @@ am__objects_28 = $(am__objects_5) $(am__objects_6) $(am__objects_7) \
 	adio/common/lock.lo adio/common/malloc.lo \
 	adio/common/shfp_fname.lo adio/common/status_setb.lo \
 	adio/common/strfns.lo adio/common/system_hints.lo \
-	adio/common/hint_fns.lo
+	adio/common/hint_fns.lo adio/common/ad_threaded_io.lo \
+	adio/common/p2p_aggregation.lo adio/common/utils.lo
 am__objects_29 =
 @BUILD_ROMIO_EMBEDDED_FALSE@am_libromio_la_OBJECTS = $(am__objects_4) \
 @BUILD_ROMIO_EMBEDDED_FALSE@	$(am__objects_28) \
@@ -1168,8 +1115,8 @@ am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
 LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
@@ -1197,16 +1144,15 @@ am__noinst_HEADERS_DIST = mpi-io/mpioimpl.h mpi-io/mpioprof.h \
 	adio/include/adioi_fs_proto.h adio/include/heap-sort.h \
 	adio/include/mpio_error.h adio/include/mpipr.h \
 	adio/include/mpiu_greq.h adio/include/nopackage.h \
-	adio/ad_bg/ad_bg_aggrs.h adio/ad_bg/ad_bg.h \
-	adio/ad_bg/ad_bg_pset.h adio/ad_bg/ad_bg_tuning.h \
-	adio/ad_bgl/ad_bgl.h adio/ad_bgl/ad_bgl_aggrs.h \
-	adio/ad_bgl/ad_bgl_pset.h adio/ad_bgl/ad_bgl_tuning.h \
-	adio/ad_bglockless/ad_bglockless.h \
+	adio/ad_gpfs/ad_gpfs_aggrs.h adio/ad_gpfs/ad_gpfs.h \
+	adio/ad_gpfs/ad_gpfs_tuning.h adio/ad_gpfs/bg/ad_bg_aggrs.h \
+	adio/ad_gpfs/bg/ad_bg_pset.h adio/ad_gpfs/pe/ad_pe_aggrs.h \
 	adio/ad_gridftp/ad_gridftp.h adio/ad_hfs/ad_hfs.h \
 	adio/ad_lustre/ad_lustre.h adio/ad_nfs/ad_nfs.h \
 	adio/ad_panfs/ad_panfs.h adio/ad_pfs/ad_pfs.h \
 	adio/ad_piofs/ad_piofs.h adio/ad_pvfs/ad_pvfs.h \
-	adio/ad_pvfs2/ad_pvfs2.h adio/ad_sfs/ad_sfs.h \
+	adio/ad_pvfs2/ad_pvfs2.h adio/ad_pvfs2/ad_pvfs2_io.h \
+	adio/ad_pvfs2/ad_pvfs2_common.h adio/ad_sfs/ad_sfs.h \
 	adio/ad_testfs/ad_testfs.h adio/ad_ufs/ad_ufs.h \
 	adio/ad_xfs/ad_xfs.h adio/ad_zoidfs/ad_zoidfs.h \
 	adio/ad_zoidfs/ad_zoidfs_common.h
@@ -1332,6 +1278,7 @@ FORTRAN_MPI_OFFSET = @FORTRAN_MPI_OFFSET@
 FORTRAN_TEST = @FORTRAN_TEST@
 FROM_LAM = @FROM_LAM@
 FROM_MPICH = @FROM_MPICH@
+FROM_OMPI = @FROM_OMPI@
 FTESTDEFINE = @FTESTDEFINE@
 GCOV = @GCOV@
 GREP = @GREP@
@@ -1493,12 +1440,12 @@ noinst_HEADERS = mpi-io/mpioimpl.h mpi-io/mpioprof.h \
 	adio/include/adioi_fs_proto.h adio/include/heap-sort.h \
 	adio/include/mpio_error.h adio/include/mpipr.h \
 	adio/include/mpiu_greq.h adio/include/nopackage.h \
-	$(am__append_8) $(am__append_10) $(am__append_12) \
-	$(am__append_14) $(am__append_16) $(am__append_18) \
-	$(am__append_20) $(am__append_23) $(am__append_25) \
-	$(am__append_27) $(am__append_29) $(am__append_31) \
-	$(am__append_33) $(am__append_35) $(am__append_37) \
-	$(am__append_39) $(am__append_41)
+	$(am__append_7) $(am__append_9) $(am__append_11) \
+	$(am__append_13) $(am__append_15) $(am__append_17) \
+	$(am__append_19) $(am__append_21) $(am__append_23) \
+	$(am__append_25) $(am__append_27) $(am__append_29) \
+	$(am__append_31) $(am__append_33) $(am__append_35) \
+	$(am__append_37) $(am__append_39)
 
 # ------------------------------------------------------------------------
 # when building under MPICH we must be able to find mpi.h
@@ -1508,7 +1455,7 @@ noinst_HEADERS = mpi-io/mpioimpl.h mpi-io/mpioprof.h \
 AM_CPPFLAGS = $(MPI_H_INCLUDE) -I$(top_builddir)/include \
 	-I$(top_srcdir)/include -I$(top_builddir)/mpi-io \
 	-I$(top_srcdir)/mpi-io -I$(top_builddir)/adio/include \
-	-I$(top_srcdir)/adio/include $(am__append_7) $(am__append_22)
+	-I$(top_srcdir)/adio/include
 
 # for the sake of parallel make and avoiding an excessive number of convenience
 # libs, we use a subdir automake fragment strategy
@@ -1549,12 +1496,12 @@ romio_mpi_sources = $(am__append_4) mpi-io/close.c mpi-io/delete.c \
 romio_other_sources = $(am__append_1) $(am__append_2) $(am__append_3) \
 	mpi-io/mpich_fileutil.c mpi-io/mpir-mpioinit.c \
 	mpi-io/mpiu_greq.c mpi-io/mpiu_external32.c $(am__append_5) \
-	$(am__append_6) $(am__append_9) $(am__append_11) \
-	$(am__append_13) $(am__append_15) $(am__append_17) \
-	$(am__append_19) $(am__append_21) $(am__append_24) \
-	$(am__append_26) $(am__append_28) $(am__append_30) \
-	$(am__append_32) $(am__append_34) $(am__append_36) \
-	$(am__append_38) $(am__append_40) $(am__append_42) \
+	$(am__append_6) $(am__append_8) $(am__append_10) \
+	$(am__append_12) $(am__append_14) $(am__append_16) \
+	$(am__append_18) $(am__append_20) $(am__append_22) \
+	$(am__append_24) $(am__append_26) $(am__append_28) \
+	$(am__append_30) $(am__append_32) $(am__append_34) \
+	$(am__append_36) $(am__append_38) $(am__append_40) \
 	adio/common/ad_aggregate.c adio/common/ad_aggregate_new.c \
 	adio/common/ad_close.c adio/common/ad_coll_build_req_new.c \
 	adio/common/ad_coll_exch_new.c adio/common/ad_darray.c \
@@ -1585,7 +1532,8 @@ romio_other_sources = $(am__append_1) $(am__append_2) $(am__append_3) \
 	adio/common/lock.c adio/common/malloc.c \
 	adio/common/shfp_fname.c adio/common/status_setb.c \
 	adio/common/strfns.c adio/common/system_hints.c \
-	adio/common/hint_fns.c
+	adio/common/hint_fns.c adio/common/ad_threaded_io.c \
+	adio/common/p2p_aggregation.c adio/common/utils.c
 
 # code that may need to be "up" called from the MPI library and/or is
 # MPI-implementation-specific in some way
@@ -1616,7 +1564,7 @@ mpio_extra_sources = \
 # Build a libtool convenience library that the enclosing MPI implementation can
 # use by adding it to the right _LIBADD variable.
 @BUILD_ROMIO_EMBEDDED_TRUE@noinst_LTLIBRARIES = libromio.la \
-@BUILD_ROMIO_EMBEDDED_TRUE@	$(am__append_43)
+@BUILD_ROMIO_EMBEDDED_TRUE@	$(am__append_41)
 @BUILD_ROMIO_EMBEDDED_FALSE@libromio_la_SOURCES = $(romio_mpi_sources) $(romio_other_sources) $(glue_sources)
 @BUILD_ROMIO_EMBEDDED_TRUE@libromio_la_SOURCES = $(romio_mpi_sources) $(romio_other_sources) $(glue_sources)
 @BUILD_PROFILING_LIB_TRUE@@BUILD_ROMIO_EMBEDDED_FALSE@libpromio_la_SOURCES = $(romio_mpi_sources)
@@ -1647,7 +1595,7 @@ all: all-recursive
 .SUFFIXES: .man-phony .html-phony .man1-phony .html1-phony .txt .c .lo .o .obj
 am--refresh: Makefile
 	@:
-$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/mpi-io/Makefile.mk $(top_srcdir)/mpi-io/glue/Makefile.mk $(top_srcdir)/mpi-io/glue/default/Makefile.mk $(top_srcdir)/mpi-io/glue/mpich/Makefile.mk $(top_srcdir)/mpi-io/fortran/Makefile.mk $(srcdir)/adio/Makefile.mk $(top_srcdir)/adio/ad_bg/Makefile.mk $(top_srcdir)/adio/ad_bgl/Makefile.mk $(top_srcdir)/adio/ad_bglockless/Makefile.mk $(top_srcdir)/adio/ad_gridftp/Makefile.mk $(top_srcdir)/adio/ad_hfs/Makefile.mk $(top_srcdir)/adio/ad_lustre/Makefile.mk $(top_srcdir)/adio/ad_nfs/Makefile.mk $(top_srcdir)/adio/ad_panfs/Makefile.mk $(top_srcdir)/adio/ad_pfs/Makefile.mk $(top_srcdir)/adio/ad_piofs/Makefile.mk $(top_srcdir)/adio/ad_pvfs/Makefile.mk $(top_srcdir)/adio/ad_pvfs2/Makefile.mk $(top_srcdir)/adio/ad_sfs/Makefile.mk $(top_srcdir)/adio/ad_testfs/Makefile.mk $(top_srcdir)/adio/ad_ufs/Makefile.mk $(top_srcdir)/adio/ad_xfs/Makefile.mk $(top_srcdir)/adio/ad_zoidfs/Makefile.mk $(top_srcdir)/adio/common/Makefile.mk $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am $(srcdir)/mpi-io/Makefile.mk $(top_srcdir)/mpi-io/glue/Makefile.mk $(top_srcdir)/mpi-io/glue/default/Makefile.mk $(top_srcdir)/mpi-io/glue/mpich/Makefile.mk $(top_srcdir)/mpi-io/fortran/Makefile.mk $(srcdir)/adio/Makefile.mk $(top_srcdir)/adio/ad_gpfs/Makefile.mk $(top_srcdir)/adio/ad_gpfs/bg/Makefile.mk $(top_srcdir)/adio/ad_gpfs/pe/Makefile.mk $(top_srcdir)/adio/ad_gridftp/Makefile.mk $(top_srcdir)/adio/ad_hfs/Makefile.mk $(top_srcdir)/adio/ad_lustre/Makefile.mk $(top_srcdir)/adio/ad_nfs/Makefile.mk $(top_srcdir)/adio/ad_panfs/Makefile.mk $(top_srcdir)/adio/ad_pfs/Makefile.mk $(top_srcdir)/adio/ad_piofs/Makefile.mk $(top_srcdir)/adio/ad_pvfs/Makefile.mk $(top_srcdir)/adio/ad_pvfs2/Makefile.mk $(top_srcdir)/adio/ad_sfs/Makefile.mk $(top_srcdir)/adio/ad_testfs/Makefile.mk $(top_srcdir)/adio/ad_ufs/Makefile.mk $(top_srcdir)/adio/ad_xfs/Makefile.mk $(top_srcdir)/adio/ad_zoidfs/Makefile.mk $(top_srcdir)/adio/common/Makefile.mk $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -1670,7 +1618,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	    echo ' cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe)'; \
 	    cd $(top_builddir) && $(SHELL) ./config.status $@ $(am__depfiles_maybe);; \
 	esac;
-$(srcdir)/mpi-io/Makefile.mk $(top_srcdir)/mpi-io/glue/Makefile.mk $(top_srcdir)/mpi-io/glue/default/Makefile.mk $(top_srcdir)/mpi-io/glue/mpich/Makefile.mk $(top_srcdir)/mpi-io/fortran/Makefile.mk $(srcdir)/adio/Makefile.mk $(top_srcdir)/adio/ad_bg/Makefile.mk $(top_srcdir)/adio/ad_bgl/Makefile.mk $(top_srcdir)/adio/ad_bglockless/Makefile.mk $(top_srcdir)/adio/ad_gridftp/Makefile.mk $(top_srcdir)/adio/ad_hfs/Makefile.mk $(top_srcdir)/adio/ad_lustre/Makefile.mk $(top_srcdir)/adio/ad_nfs/Makefile.mk $(top_srcdir)/adio/ad_panfs/Makefile.mk $(top_srcdir)/adio/ad_pfs/Makefile.mk $(top_srcdir)/adio/ad_piofs/Makefile.mk $(top_srcdir)/adio/ad_pvfs/Makefile.mk $(top_srcdir)/adio/ad_pvfs2/Makefile.mk $(top_srcdir)/adio/ad_sfs/Makefile.mk $(top_srcdir)/adio/ad_testfs/Makefile.mk $(top_srcdir)/adio/ad_ufs/Makefile.mk $(top_srcdir)/adio/ad_xfs/Makefile.mk $(top_srcdir)/adio/ad_zoidfs/Makefile.mk $(top_srcdir)/adio/common/Makefile.mk:
+$(srcdir)/mpi-io/Makefile.mk $(top_srcdir)/mpi-io/glue/Makefile.mk $(top_srcdir)/mpi-io/glue/default/Makefile.mk $(top_srcdir)/mpi-io/glue/mpich/Makefile.mk $(top_srcdir)/mpi-io/fortran/Makefile.mk $(srcdir)/adio/Makefile.mk $(top_srcdir)/adio/ad_gpfs/Makefile.mk $(top_srcdir)/adio/ad_gpfs/bg/Makefile.mk $(top_srcdir)/adio/ad_gpfs/pe/Makefile.mk $(top_srcdir)/adio/ad_gridftp/Makefile.mk $(top_srcdir)/adio/ad_hfs/Makefile.mk $(top_srcdir)/adio/ad_lustre/Makefile.mk $(top_srcdir)/adio/ad_nfs/Makefile.mk $(top_srcdir)/adio/ad_panfs/Makefile.mk $(top_srcdir)/adio/ad_pfs/Makefile.mk $(top_srcdir)/adio/ad_piofs/Makefile.mk $(top_srcdir)/adio/ad_pvfs/Makefile.mk $(top_srcdir)/adio/ad_pvfs2/Makefile.mk $(top_srcdir)/adio/ad_sfs/Makefile.mk $(top_srcdir)/adio/ad_testfs/Makefile.mk $(top_srcdir)/adio/ad_ufs/Makefile.mk $(top_srcdir)/adio/ad_xfs/Makefile.mk $(top_srcdir)/adio/ad_zoidfs/Makefile.mk $(top_srcdir)/adio/common/Makefile.mk:
 
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	$(SHELL) ./config.status --recheck
@@ -2312,90 +2260,48 @@ mpi-io/iowaitany.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
 mpi-io/iowaitsome.lo: mpi-io/$(am__dirstamp) \
 	mpi-io/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/$(am__dirstamp):
-	@$(MKDIR_P) adio/ad_bg
-	@: > adio/ad_bg/$(am__dirstamp)
-adio/ad_bg/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) adio/ad_bg/$(DEPDIR)
-	@: > adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/ad_bg_aggrs.lo: adio/ad_bg/$(am__dirstamp) \
-	adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/ad_bg_close.lo: adio/ad_bg/$(am__dirstamp) \
-	adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/ad_bg_flush.lo: adio/ad_bg/$(am__dirstamp) \
-	adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/ad_bg_hints.lo: adio/ad_bg/$(am__dirstamp) \
-	adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/ad_bg_pset.lo: adio/ad_bg/$(am__dirstamp) \
-	adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/ad_bg_read.lo: adio/ad_bg/$(am__dirstamp) \
-	adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/ad_bg_tuning.lo: adio/ad_bg/$(am__dirstamp) \
-	adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/ad_bg_write.lo: adio/ad_bg/$(am__dirstamp) \
-	adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/ad_bg.lo: adio/ad_bg/$(am__dirstamp) \
-	adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/ad_bg_fcntl.lo: adio/ad_bg/$(am__dirstamp) \
-	adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/ad_bg_getsh.lo: adio/ad_bg/$(am__dirstamp) \
-	adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/ad_bg_open.lo: adio/ad_bg/$(am__dirstamp) \
-	adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/ad_bg_rdcoll.lo: adio/ad_bg/$(am__dirstamp) \
-	adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/ad_bg_setsh.lo: adio/ad_bg/$(am__dirstamp) \
-	adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bg/ad_bg_wrcoll.lo: adio/ad_bg/$(am__dirstamp) \
-	adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/$(am__dirstamp):
-	@$(MKDIR_P) adio/ad_bgl
-	@: > adio/ad_bgl/$(am__dirstamp)
-adio/ad_bgl/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) adio/ad_bgl/$(DEPDIR)
-	@: > adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/ad_bgl_open.lo: adio/ad_bgl/$(am__dirstamp) \
-	adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/ad_bgl_close.lo: adio/ad_bgl/$(am__dirstamp) \
-	adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/ad_bgl_fcntl.lo: adio/ad_bgl/$(am__dirstamp) \
-	adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/ad_bgl_flush.lo: adio/ad_bgl/$(am__dirstamp) \
-	adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/ad_bgl_read.lo: adio/ad_bgl/$(am__dirstamp) \
-	adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/ad_bgl_write.lo: adio/ad_bgl/$(am__dirstamp) \
-	adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/ad_bgl_getsh.lo: adio/ad_bgl/$(am__dirstamp) \
-	adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/ad_bgl_setsh.lo: adio/ad_bgl/$(am__dirstamp) \
-	adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/ad_bgl.lo: adio/ad_bgl/$(am__dirstamp) \
-	adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/ad_bgl_aggrs.lo: adio/ad_bgl/$(am__dirstamp) \
-	adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/ad_bgl_pset.lo: adio/ad_bgl/$(am__dirstamp) \
-	adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/ad_bgl_hints.lo: adio/ad_bgl/$(am__dirstamp) \
-	adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/ad_bgl_rdcoll.lo: adio/ad_bgl/$(am__dirstamp) \
-	adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/ad_bgl_wrcoll.lo: adio/ad_bgl/$(am__dirstamp) \
-	adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bgl/ad_bgl_tuning.lo: adio/ad_bgl/$(am__dirstamp) \
-	adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bglockless/$(am__dirstamp):
-	@$(MKDIR_P) adio/ad_bglockless
-	@: > adio/ad_bglockless/$(am__dirstamp)
-adio/ad_bglockless/$(DEPDIR)/$(am__dirstamp):
-	@$(MKDIR_P) adio/ad_bglockless/$(DEPDIR)
-	@: > adio/ad_bglockless/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bglockless/ad_bglockless.lo:  \
-	adio/ad_bglockless/$(am__dirstamp) \
-	adio/ad_bglockless/$(DEPDIR)/$(am__dirstamp)
-adio/ad_bglockless/ad_bglockless_features.lo:  \
-	adio/ad_bglockless/$(am__dirstamp) \
-	adio/ad_bglockless/$(DEPDIR)/$(am__dirstamp)
+adio/ad_gpfs/$(am__dirstamp):
+	@$(MKDIR_P) adio/ad_gpfs
+	@: > adio/ad_gpfs/$(am__dirstamp)
+adio/ad_gpfs/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) adio/ad_gpfs/$(DEPDIR)
+	@: > adio/ad_gpfs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_gpfs/ad_gpfs_aggrs.lo: adio/ad_gpfs/$(am__dirstamp) \
+	adio/ad_gpfs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_gpfs/ad_gpfs_close.lo: adio/ad_gpfs/$(am__dirstamp) \
+	adio/ad_gpfs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_gpfs/ad_gpfs_flush.lo: adio/ad_gpfs/$(am__dirstamp) \
+	adio/ad_gpfs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_gpfs/ad_gpfs_tuning.lo: adio/ad_gpfs/$(am__dirstamp) \
+	adio/ad_gpfs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_gpfs/ad_gpfs.lo: adio/ad_gpfs/$(am__dirstamp) \
+	adio/ad_gpfs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_gpfs/ad_gpfs_open.lo: adio/ad_gpfs/$(am__dirstamp) \
+	adio/ad_gpfs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_gpfs/ad_gpfs_hints.lo: adio/ad_gpfs/$(am__dirstamp) \
+	adio/ad_gpfs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_gpfs/ad_gpfs_rdcoll.lo: adio/ad_gpfs/$(am__dirstamp) \
+	adio/ad_gpfs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_gpfs/ad_gpfs_wrcoll.lo: adio/ad_gpfs/$(am__dirstamp) \
+	adio/ad_gpfs/$(DEPDIR)/$(am__dirstamp)
+adio/ad_gpfs/bg/$(am__dirstamp):
+	@$(MKDIR_P) adio/ad_gpfs/bg
+	@: > adio/ad_gpfs/bg/$(am__dirstamp)
+adio/ad_gpfs/bg/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) adio/ad_gpfs/bg/$(DEPDIR)
+	@: > adio/ad_gpfs/bg/$(DEPDIR)/$(am__dirstamp)
+adio/ad_gpfs/bg/ad_bg_aggrs.lo: adio/ad_gpfs/bg/$(am__dirstamp) \
+	adio/ad_gpfs/bg/$(DEPDIR)/$(am__dirstamp)
+adio/ad_gpfs/bg/ad_bg_pset.lo: adio/ad_gpfs/bg/$(am__dirstamp) \
+	adio/ad_gpfs/bg/$(DEPDIR)/$(am__dirstamp)
+adio/ad_gpfs/pe/$(am__dirstamp):
+	@$(MKDIR_P) adio/ad_gpfs/pe
+	@: > adio/ad_gpfs/pe/$(am__dirstamp)
+adio/ad_gpfs/pe/$(DEPDIR)/$(am__dirstamp):
+	@$(MKDIR_P) adio/ad_gpfs/pe/$(DEPDIR)
+	@: > adio/ad_gpfs/pe/$(DEPDIR)/$(am__dirstamp)
+adio/ad_gpfs/pe/ad_pe_aggrs.lo: adio/ad_gpfs/pe/$(am__dirstamp) \
+	adio/ad_gpfs/pe/$(DEPDIR)/$(am__dirstamp)
 adio/ad_gridftp/$(am__dirstamp):
 	@$(MKDIR_P) adio/ad_gridftp
 	@: > adio/ad_gridftp/$(am__dirstamp)
@@ -2872,18 +2778,24 @@ adio/common/system_hints.lo: adio/common/$(am__dirstamp) \
 	adio/common/$(DEPDIR)/$(am__dirstamp)
 adio/common/hint_fns.lo: adio/common/$(am__dirstamp) \
 	adio/common/$(DEPDIR)/$(am__dirstamp)
+adio/common/ad_threaded_io.lo: adio/common/$(am__dirstamp) \
+	adio/common/$(DEPDIR)/$(am__dirstamp)
+adio/common/p2p_aggregation.lo: adio/common/$(am__dirstamp) \
+	adio/common/$(DEPDIR)/$(am__dirstamp)
+adio/common/utils.lo: adio/common/$(am__dirstamp) \
+	adio/common/$(DEPDIR)/$(am__dirstamp)
 
 libromio.la: $(libromio_la_OBJECTS) $(libromio_la_DEPENDENCIES) $(EXTRA_libromio_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK) $(am_libromio_la_rpath) $(libromio_la_OBJECTS) $(libromio_la_LIBADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
-	-rm -f adio/ad_bg/*.$(OBJEXT)
-	-rm -f adio/ad_bg/*.lo
-	-rm -f adio/ad_bgl/*.$(OBJEXT)
-	-rm -f adio/ad_bgl/*.lo
-	-rm -f adio/ad_bglockless/*.$(OBJEXT)
-	-rm -f adio/ad_bglockless/*.lo
+	-rm -f adio/ad_gpfs/*.$(OBJEXT)
+	-rm -f adio/ad_gpfs/*.lo
+	-rm -f adio/ad_gpfs/bg/*.$(OBJEXT)
+	-rm -f adio/ad_gpfs/bg/*.lo
+	-rm -f adio/ad_gpfs/pe/*.$(OBJEXT)
+	-rm -f adio/ad_gpfs/pe/*.lo
 	-rm -f adio/ad_gridftp/*.$(OBJEXT)
 	-rm -f adio/ad_gridftp/*.lo
 	-rm -f adio/ad_hfs/*.$(OBJEXT)
@@ -2928,38 +2840,18 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bg/$(DEPDIR)/ad_bg.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bg/$(DEPDIR)/ad_bg_aggrs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bg/$(DEPDIR)/ad_bg_close.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bg/$(DEPDIR)/ad_bg_fcntl.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bg/$(DEPDIR)/ad_bg_flush.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bg/$(DEPDIR)/ad_bg_getsh.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bg/$(DEPDIR)/ad_bg_hints.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bg/$(DEPDIR)/ad_bg_open.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bg/$(DEPDIR)/ad_bg_pset.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bg/$(DEPDIR)/ad_bg_rdcoll.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bg/$(DEPDIR)/ad_bg_read.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bg/$(DEPDIR)/ad_bg_setsh.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bg/$(DEPDIR)/ad_bg_tuning.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bg/$(DEPDIR)/ad_bg_wrcoll.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bg/$(DEPDIR)/ad_bg_write.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bgl/$(DEPDIR)/ad_bgl.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bgl/$(DEPDIR)/ad_bgl_aggrs.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bgl/$(DEPDIR)/ad_bgl_close.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bgl/$(DEPDIR)/ad_bgl_fcntl.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bgl/$(DEPDIR)/ad_bgl_flush.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bgl/$(DEPDIR)/ad_bgl_getsh.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bgl/$(DEPDIR)/ad_bgl_hints.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bgl/$(DEPDIR)/ad_bgl_open.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bgl/$(DEPDIR)/ad_bgl_pset.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bgl/$(DEPDIR)/ad_bgl_rdcoll.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bgl/$(DEPDIR)/ad_bgl_read.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bgl/$(DEPDIR)/ad_bgl_setsh.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bgl/$(DEPDIR)/ad_bgl_tuning.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bgl/$(DEPDIR)/ad_bgl_wrcoll.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bgl/$(DEPDIR)/ad_bgl_write.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bglockless/$(DEPDIR)/ad_bglockless.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_bglockless/$(DEPDIR)/ad_bglockless_features.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gpfs/$(DEPDIR)/ad_gpfs.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gpfs/$(DEPDIR)/ad_gpfs_aggrs.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gpfs/$(DEPDIR)/ad_gpfs_close.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gpfs/$(DEPDIR)/ad_gpfs_flush.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gpfs/$(DEPDIR)/ad_gpfs_hints.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gpfs/$(DEPDIR)/ad_gpfs_open.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gpfs/$(DEPDIR)/ad_gpfs_rdcoll.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gpfs/$(DEPDIR)/ad_gpfs_tuning.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gpfs/$(DEPDIR)/ad_gpfs_wrcoll.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gpfs/bg/$(DEPDIR)/ad_bg_aggrs.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gpfs/bg/$(DEPDIR)/ad_bg_pset.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gpfs/pe/$(DEPDIR)/ad_pe_aggrs.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gridftp/$(DEPDIR)/ad_gridftp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gridftp/$(DEPDIR)/ad_gridftp_close.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/ad_gridftp/$(DEPDIR)/ad_gridftp_delete.Plo@am__quote@
@@ -3127,6 +3019,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_set_sh_fp.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_set_view.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_subarray.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_threaded_io.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_wait.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_wait_fake.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/ad_write.Plo@am__quote@
@@ -3147,10 +3040,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/iscontig.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/lock.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/malloc.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/p2p_aggregation.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/shfp_fname.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/status_setb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/strfns.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/system_hints.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/utils.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/close.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/delete.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/file_c2f.Plo@am__quote@
@@ -4181,9 +4076,9 @@ mostlyclean-libtool:
 
 clean-libtool:
 	-rm -rf .libs _libs
-	-rm -rf adio/ad_bg/.libs adio/ad_bg/_libs
-	-rm -rf adio/ad_bgl/.libs adio/ad_bgl/_libs
-	-rm -rf adio/ad_bglockless/.libs adio/ad_bglockless/_libs
+	-rm -rf adio/ad_gpfs/.libs adio/ad_gpfs/_libs
+	-rm -rf adio/ad_gpfs/bg/.libs adio/ad_gpfs/bg/_libs
+	-rm -rf adio/ad_gpfs/pe/.libs adio/ad_gpfs/pe/_libs
 	-rm -rf adio/ad_gridftp/.libs adio/ad_gridftp/_libs
 	-rm -rf adio/ad_hfs/.libs adio/ad_hfs/_libs
 	-rm -rf adio/ad_lustre/.libs adio/ad_lustre/_libs
@@ -4577,12 +4472,12 @@ clean-generic:
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
 	-test . = "$(srcdir)" || test -z "$(CONFIG_CLEAN_VPATH_FILES)" || rm -f $(CONFIG_CLEAN_VPATH_FILES)
-	-rm -f adio/ad_bg/$(DEPDIR)/$(am__dirstamp)
-	-rm -f adio/ad_bg/$(am__dirstamp)
-	-rm -f adio/ad_bgl/$(DEPDIR)/$(am__dirstamp)
-	-rm -f adio/ad_bgl/$(am__dirstamp)
-	-rm -f adio/ad_bglockless/$(DEPDIR)/$(am__dirstamp)
-	-rm -f adio/ad_bglockless/$(am__dirstamp)
+	-rm -f adio/ad_gpfs/$(DEPDIR)/$(am__dirstamp)
+	-rm -f adio/ad_gpfs/$(am__dirstamp)
+	-rm -f adio/ad_gpfs/bg/$(DEPDIR)/$(am__dirstamp)
+	-rm -f adio/ad_gpfs/bg/$(am__dirstamp)
+	-rm -f adio/ad_gpfs/pe/$(DEPDIR)/$(am__dirstamp)
+	-rm -f adio/ad_gpfs/pe/$(am__dirstamp)
 	-rm -f adio/ad_gridftp/$(DEPDIR)/$(am__dirstamp)
 	-rm -f adio/ad_gridftp/$(am__dirstamp)
 	-rm -f adio/ad_hfs/$(DEPDIR)/$(am__dirstamp)
@@ -4634,7 +4529,7 @@ clean-am: clean-generic clean-libLTLIBRARIES clean-libtool \
 
 distclean: distclean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
-	-rm -rf adio/ad_bg/$(DEPDIR) adio/ad_bgl/$(DEPDIR) adio/ad_bglockless/$(DEPDIR) adio/ad_gridftp/$(DEPDIR) adio/ad_hfs/$(DEPDIR) adio/ad_lustre/$(DEPDIR) adio/ad_nfs/$(DEPDIR) adio/ad_panfs/$(DEPDIR) adio/ad_pfs/$(DEPDIR) adio/ad_piofs/$(DEPDIR) adio/ad_pvfs/$(DEPDIR) adio/ad_pvfs2/$(DEPDIR) adio/ad_sfs/$(DEPDIR) adio/ad_testfs/$(DEPDIR) adio/ad_ufs/$(DEPDIR) adio/ad_xfs/$(DEPDIR) adio/ad_zoidfs/$(DEPDIR) adio/common/$(DEPDIR) mpi-io/$(DEPDIR) mpi-io/fortran/$(DEPDIR) mpi-io/glue/$(DEPDIR) mpi-io/glue/default/$(DEPDIR) mpi-io/glue/mpich/$(DEPDIR)
+	-rm -rf adio/ad_gpfs/$(DEPDIR) adio/ad_gpfs/bg/$(DEPDIR) adio/ad_gpfs/pe/$(DEPDIR) adio/ad_gridftp/$(DEPDIR) adio/ad_hfs/$(DEPDIR) adio/ad_lustre/$(DEPDIR) adio/ad_nfs/$(DEPDIR) adio/ad_panfs/$(DEPDIR) adio/ad_pfs/$(DEPDIR) adio/ad_piofs/$(DEPDIR) adio/ad_pvfs/$(DEPDIR) adio/ad_pvfs2/$(DEPDIR) adio/ad_sfs/$(DEPDIR) adio/ad_testfs/$(DEPDIR) adio/ad_ufs/$(DEPDIR) adio/ad_xfs/$(DEPDIR) adio/ad_zoidfs/$(DEPDIR) adio/common/$(DEPDIR) mpi-io/$(DEPDIR) mpi-io/fortran/$(DEPDIR) mpi-io/glue/$(DEPDIR) mpi-io/glue/default/$(DEPDIR) mpi-io/glue/mpich/$(DEPDIR)
 	-rm -f Makefile
 distclean-am: clean-am distclean-compile distclean-generic \
 	distclean-hdr distclean-libtool distclean-tags
@@ -4682,7 +4577,7 @@ installcheck-am:
 maintainer-clean: maintainer-clean-recursive
 	-rm -f $(am__CONFIG_DISTCLEAN_FILES)
 	-rm -rf $(top_srcdir)/autom4te.cache
-	-rm -rf adio/ad_bg/$(DEPDIR) adio/ad_bgl/$(DEPDIR) adio/ad_bglockless/$(DEPDIR) adio/ad_gridftp/$(DEPDIR) adio/ad_hfs/$(DEPDIR) adio/ad_lustre/$(DEPDIR) adio/ad_nfs/$(DEPDIR) adio/ad_panfs/$(DEPDIR) adio/ad_pfs/$(DEPDIR) adio/ad_piofs/$(DEPDIR) adio/ad_pvfs/$(DEPDIR) adio/ad_pvfs2/$(DEPDIR) adio/ad_sfs/$(DEPDIR) adio/ad_testfs/$(DEPDIR) adio/ad_ufs/$(DEPDIR) adio/ad_xfs/$(DEPDIR) adio/ad_zoidfs/$(DEPDIR) adio/common/$(DEPDIR) mpi-io/$(DEPDIR) mpi-io/fortran/$(DEPDIR) mpi-io/glue/$(DEPDIR) mpi-io/glue/default/$(DEPDIR) mpi-io/glue/mpich/$(DEPDIR)
+	-rm -rf adio/ad_gpfs/$(DEPDIR) adio/ad_gpfs/bg/$(DEPDIR) adio/ad_gpfs/pe/$(DEPDIR) adio/ad_gridftp/$(DEPDIR) adio/ad_hfs/$(DEPDIR) adio/ad_lustre/$(DEPDIR) adio/ad_nfs/$(DEPDIR) adio/ad_panfs/$(DEPDIR) adio/ad_pfs/$(DEPDIR) adio/ad_piofs/$(DEPDIR) adio/ad_pvfs/$(DEPDIR) adio/ad_pvfs2/$(DEPDIR) adio/ad_sfs/$(DEPDIR) adio/ad_testfs/$(DEPDIR) adio/ad_ufs/$(DEPDIR) adio/ad_xfs/$(DEPDIR) adio/ad_zoidfs/$(DEPDIR) adio/common/$(DEPDIR) mpi-io/$(DEPDIR) mpi-io/fortran/$(DEPDIR) mpi-io/glue/$(DEPDIR) mpi-io/glue/default/$(DEPDIR) mpi-io/glue/mpich/$(DEPDIR)
 	-rm -f Makefile
 maintainer-clean-am: distclean-am maintainer-clean-generic
 

@@ -20,14 +20,15 @@
  * \brief ???
  */
 #include "mpidi_onesided.h"
+#include "mpidi_util.h"
 
 
 static inline int
-MPIDI_Get_use_pami_rget(pami_context_t context, MPIDI_Win_request * req, int *freed)
+MPIDI_Get_use_pami_rget(pami_context_t context, MPIDI_Win_request * req)
 __attribute__((__always_inline__));
 #ifdef RDMA_FAILOVER
 static inline int
-MPIDI_Get_use_pami_get(pami_context_t context, MPIDI_Win_request * req, int *freed)
+MPIDI_Get_use_pami_get(pami_context_t context, MPIDI_Win_request * req)
 __attribute__((__always_inline__));
 #endif
 
@@ -37,17 +38,16 @@ MPIDI_Get(pami_context_t   context,
 {
   MPIDI_Win_request *req = (MPIDI_Win_request*)_req;
   pami_result_t rc;
-  int  freed=0;
 
 #ifdef USE_PAMI_RDMA
-  rc = MPIDI_Get_use_pami_rget(context,req,&freed);
+  rc = MPIDI_Get_use_pami_rget(context,req);
 #else
   if( (req->origin.memregion_used) &&
       (req->win->mpid.info[req->target.rank].memregion_used) )
     {
-      rc = MPIDI_Get_use_pami_rget(context,req,&freed);
+      rc = MPIDI_Get_use_pami_rget(context,req);
     } else {
-      rc = MPIDI_Get_use_pami_get(context,req,&freed);
+      rc = MPIDI_Get_use_pami_get(context,req);
     }
 #endif
   if(rc == PAMI_EAGAIN)
@@ -58,10 +58,9 @@ MPIDI_Get(pami_context_t   context,
 
 
 static inline int
-MPIDI_Get_use_pami_rget(pami_context_t context, MPIDI_Win_request * req, int *freed)
+MPIDI_Get_use_pami_rget(pami_context_t context, MPIDI_Win_request * req)
 {
   pami_result_t rc;
-  void  *map=NULL;
   pami_rget_simple_t  params;
 
   params=zero_rget_parms;
@@ -101,15 +100,8 @@ MPIDI_Get_use_pami_rget(pami_context_t context, MPIDI_Win_request * req, int *fr
 	will not change till that RMA has completed. In the meanwhile
 	the rest of the RMAs will have memory leaks */
     if (req->target.dt.num_contig - req->state.index == 1) {
-          map=NULL;
-          if (req->target.dt.map != &req->target.dt.__map) {
-              map=(void *) req->target.dt.map;
-          }
           rc = PAMI_Rget(context, &params);
           MPID_assert(rc == PAMI_SUCCESS);
-          if (map)
-              MPIU_Free(map);
-          *freed=1;
           return PAMI_SUCCESS;
       } else {
           rc = PAMI_Rget(context, &params);
@@ -124,10 +116,9 @@ MPIDI_Get_use_pami_rget(pami_context_t context, MPIDI_Win_request * req, int *fr
 
 #ifdef RDMA_FAILOVER
 static inline int
-MPIDI_Get_use_pami_get(pami_context_t context, MPIDI_Win_request * req, int *freed)
+MPIDI_Get_use_pami_get(pami_context_t context, MPIDI_Win_request * req)
 {
   pami_result_t rc;
-  void  *map=NULL;
   pami_get_simple_t params;
 
   params=zero_get_parms;
@@ -213,6 +204,8 @@ MPID_Get(void         *origin_addr,
          MPID_Win     *win)
 {
   int mpi_errno = MPI_SUCCESS;
+  int shm_locked=0;
+  void *target_addr;
   MPIDI_Win_request *req = MPIU_Calloc0(1, MPIDI_Win_request);
   req->win          = win;
   if(win->mpid.request_based != 1) 
@@ -266,20 +259,36 @@ MPID_Get(void         *origin_addr,
       return MPI_SUCCESS;
     }
 
-  /* If the get is a local operation, do it here */
-  if (target_rank == win->comm_ptr->rank)
+  /* If the get is a local operation,or shared window do it here */
+  if ((target_rank == win->comm_ptr->rank) || (win->create_flavor == MPI_WIN_FLAVOR_SHARED))
     {
-      size_t offset = req->offset;
+      if (target_rank == win->comm_ptr->rank)
+          target_addr = win->base + req->offset;
+      else
+          target_addr = win->mpid.info[target_rank].base_addr + req->offset;
+
+
+      /* The operation is not complete until the local copy is performed */
+      mpi_errno = MPIR_Localcopy(target_addr,
+                                 target_count,
+                                 target_datatype,
+                                 origin_addr,
+                                 origin_count,
+                                 origin_datatype);
+
+      /* The instant this completion counter is set to zero another thread
+       * may notice the change and begin freeing request resources. The
+       * thread executing the code in this function must not touch any
+       * portion of the request structure after decrementing the completion
+       * counter.
+       *
+       * See MPID_Request_release_inline()
+       */
       if(req->req_handle)
         MPID_cc_set(req->req_handle->cc_ptr, 0);
       else
         MPIU_Free(req);
-      return MPIR_Localcopy(win->base + offset,
-                            target_count,
-                            target_datatype,
-                            origin_addr,
-                            origin_count,
-                            origin_datatype);
+      return mpi_errno;
     }
   req->target.rank = target_rank;
 

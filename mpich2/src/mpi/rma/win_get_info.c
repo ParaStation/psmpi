@@ -1,7 +1,7 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
  *
- *  (C) 2012 by Argonne National Laboratory.
+ *  (C) 2008 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
@@ -14,6 +14,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Win_get_info  MPI_Win_get_info
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Win_get_info as PMPI_Win_get_info
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Win_get_info(MPI_Win win, MPI_Info *info_used) __attribute__((weak,alias("PMPI_Win_get_info")));
 #endif
 /* -- End Profiling Symbol Block */
 

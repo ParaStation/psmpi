@@ -14,6 +14,9 @@
 #pragma _HP_SECONDARY_DEF PMPI_Win_allocate  MPI_Win_allocate
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Win_allocate as PMPI_Win_allocate
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Win_allocate(MPI_Aint size, int disp_unit, MPI_Info info, MPI_Comm comm, void *baseptr,
+                     MPI_Win *win) __attribute__((weak,alias("PMPI_Win_allocate")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -103,7 +106,7 @@ int MPI_Win_allocate(MPI_Aint size, int disp_unit, MPI_Info info,
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate pointers */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
             if (size < 0)
                 mpi_errno = MPIR_Err_create_code( MPI_SUCCESS, 

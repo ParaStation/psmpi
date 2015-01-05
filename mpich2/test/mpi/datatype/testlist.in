@@ -7,6 +7,7 @@ simple-pack-external 1
 transpose-pack 1
 slice-pack 1
 struct-pack 1
+structpack2 1
 typecommit 1
 typename 1
 typefree 1
@@ -14,6 +15,8 @@ zeroparms 1
 getpartelm 2
 tresized 2
 tresized2 2
+sendrecvt2 2
+sendrecvt4 2
 tmatchsize 1
 tfree 2
 typelb 1
@@ -47,7 +50,10 @@ struct-verydeep 1
 get-elements 1
 hindexed_block 1 mpiversion=3.0
 hindexed_block_contents 1 mpiversion=3.0
+vecblklen 1
+hvecblklen 1
 longdouble 1
+dataalign 2
 @largetest@large-count 1 mpiversion=3.0 xfail=ticket1767
 cxx-types 1 mpiversion=3.0
 @largetest@large_type 1 mpiversion=3.0

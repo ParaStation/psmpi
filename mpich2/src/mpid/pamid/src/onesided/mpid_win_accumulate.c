@@ -20,6 +20,7 @@
  * \brief ???
  */
 #include "mpidi_onesided.h"
+#include "mpidi_util.h"
 
 
 void
@@ -37,9 +38,6 @@ MPIDI_WinAccumCB(pami_context_t    context,
   MPID_assert(msginfo_size == sizeof(MPIDI_Win_MsgInfo));
   MPID_assert(_msginfo != NULL);
   const MPIDI_Win_MsgInfo * msginfo = (const MPIDI_Win_MsgInfo*)_msginfo;
-  const MPIDI_Win_request * req = (const MPIDI_Win_request*)(msginfo->req);
-  char *tmpbuf;
-  int mpi_errno, rc;
 
   int null=0;
   pami_type_t         pami_type;
@@ -110,14 +108,8 @@ MPIDI_Accumulate(pami_context_t   context,
 	will not change till that RMA has completed. In the meanwhile
 	the rest of the RMAs will have memory leaks */
       if (req->target.dt.num_contig - req->state.index == 1) {
-          map=NULL;
-          if (req->target.dt.map != &req->target.dt.__map) {
-              map=(void *) req->target.dt.map;
-          }
           rc = PAMI_Send(context, &params);
           MPID_assert(rc == PAMI_SUCCESS);
-          if (map)
-              MPIU_Free(map);
           return PAMI_SUCCESS;
       } else {
           rc = PAMI_Send(context, &params);
@@ -127,7 +119,6 @@ MPIDI_Accumulate(pami_context_t   context,
       }
   }
 
-  MPIDI_Win_datatype_unmap(&req->target.dt);
 
   return PAMI_SUCCESS;
 }
@@ -170,6 +161,7 @@ MPID_Accumulate(const void   *origin_addr,
                 MPID_Win     *win)
 {
   int mpi_errno = MPI_SUCCESS;
+  int shm_locked = 0;
   MPIDI_Win_request *req = MPIU_Calloc0(1, MPIDI_Win_request);
   req->win          = win;
   if(win->mpid.request_based != 1)
@@ -272,7 +264,6 @@ MPID_Accumulate(const void   *origin_addr,
       req->buffer_free = 1;
       req->buffer      = MPIU_Malloc(req->origin.dt.size);
       MPID_assert(req->buffer != NULL);
-      MPID_Datatype_add_ref(req->origin.dt.pointer);
       int mpi_errno = 0;
       mpi_errno = MPIR_Localcopy(origin_addr,
                                  origin_count,
@@ -298,10 +289,33 @@ MPID_Accumulate(const void   *origin_addr,
 
 
   MPIDI_Win_datatype_map(&req->target.dt);
-  win->mpid.sync.total += req->target.dt.num_contig;
+
+  if (win->create_flavor == MPI_WIN_FLAVOR_SHARED)
+   {
+       MPI_User_function *uop;
+       void *base, *dest_addr;
+       int disp_unit;
+       int len, one;
+
+       ++win->mpid.sync.total;
+       base = win->mpid.info[target_rank].base_addr;
+       disp_unit = win->mpid.info[target_rank].disp_unit;
+       dest_addr = (char *) base + disp_unit * target_disp;
+
+       MPID_Datatype_get_size_macro(origin_datatype, len);
+
+       uop = MPIR_OP_HDL_TO_FN(op);
+       one = 1;
+
+       (*uop)((void *) origin_addr, dest_addr, &one, &origin_datatype);
 
 
+        MPIU_Free(req);
+        ++win->mpid.sync.complete;
+
+   } else { /* non-shared    */
   {
+    win->mpid.sync.total += req->target.dt.num_contig;
     MPI_Datatype basic_type = MPI_DATATYPE_NULL;
     MPID_Datatype_get_basic_type(origin_datatype, basic_type);
     /* MPID_Datatype_get_basic_type() doesn't handle the struct types */
@@ -344,6 +358,7 @@ MPID_Accumulate(const void   *origin_addr,
    */
   PAMI_Context_post(MPIDI_Context[0], &req->post_request, MPIDI_Accumulate, req);
 
+ }
 fn_fail:
   return mpi_errno;
 }

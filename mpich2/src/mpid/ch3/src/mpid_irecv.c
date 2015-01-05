@@ -27,8 +27,16 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 
     if (rank == MPI_PROC_NULL)
     {
-        MPIDI_Request_create_null_rreq(rreq, mpi_errno, fn_fail);
+        MPIDI_Request_create_null_rreq(rreq, mpi_errno, goto fn_fail);
         goto fn_exit;
+    }
+
+    /* Check to make sure the communicator hasn't already been revoked */
+    if (comm->revoked &&
+            MPIR_AGREE_TAG != MPIR_TAG_MASK_ERROR_BIT(tag & ~MPIR_Process.tagged_coll_mask) &&
+            MPIR_SHRINK_TAG != MPIR_TAG_MASK_ERROR_BIT(tag & ~MPIR_Process.tagged_coll_mask)) {
+        MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"Comm has been revoked. Returning from MPID_IRECV.");
+        MPIU_ERR_SETANDJUMP(mpi_errno,MPIX_ERR_REVOKED,"**revoked");
     }
 
     MPIU_THREAD_CS_ENTER(MSGQUEUE,);
@@ -161,6 +169,8 @@ int MPID_Irecv(void * buf, int count, MPI_Datatype datatype, int rank, int tag,
 		   rreq->handle);
 
  fn_fail:
+    MPIU_DBG_MSG_D(CH3_OTHER,VERBOSE,"IRECV errno: 0x%08x", mpi_errno);
+    MPIU_DBG_MSG_D(CH3_OTHER,VERBOSE,"(class: %d)", MPIR_ERR_GET_CLASS(mpi_errno));
     MPIDI_FUNC_EXIT(MPID_STATE_MPID_IRECV);
     return mpi_errno;
 }

@@ -39,7 +39,7 @@ include $(top_srcdir)/src/mpid/pamid/src/pt2pt/Makefile.mk
 include $(top_srcdir)/src/mpid/pamid/src/dyntask/Makefile.mk
 
 
-lib_lib@MPILIBNAME@_la_SOURCES +=               \
+mpi_core_sources +=               \
     src/mpid/pamid/src/mpid_buffer.c            \
     src/mpid/pamid/src/mpidi_bufmm.c            \
     src/mpid/pamid/src/mpid_finalize.c          \
@@ -58,8 +58,14 @@ lib_lib@MPILIBNAME@_la_SOURCES +=               \
     src/mpid/pamid/src/mpid_mprobe.c            \
     src/mpid/pamid/src/mpid_imrecv.c            \
     src/mpid/pamid/src/mpid_improbe.c           \
-    src/mpid/pamid/src/mpidi_nbc_sched.c        \
+    src/mpid/pamid/src/mpidi_nbc_sched.c
+
+if QUEUE_BINARY_SEARCH_SUPPORT
+mpi_core_sources +=                             \
     src/mpid/pamid/src/mpid_recvq_mmap.cpp
+endif QUEUE_BINARY_SEARCH_SUPPORT
+
+
 
 endif BUILD_PAMID
 

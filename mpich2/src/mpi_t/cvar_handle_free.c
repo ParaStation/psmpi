@@ -13,6 +13,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_T_cvar_handle_free  MPI_T_cvar_handle_free
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_T_cvar_handle_free as PMPI_T_cvar_handle_free
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_T_cvar_handle_free(MPI_T_cvar_handle *handle) __attribute__((weak,alias("PMPI_T_cvar_handle_free")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -43,6 +45,7 @@ Input/Output Parameters:
 int MPI_T_cvar_handle_free(MPI_T_cvar_handle *handle)
 {
     int mpi_errno = MPI_SUCCESS;
+    MPIR_T_cvar_handle_t *hnd;
 
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_CVAR_HANDLE_FREE);
     MPIR_ERRTEST_MPIT_INITIALIZED(mpi_errno);
@@ -62,7 +65,7 @@ int MPI_T_cvar_handle_free(MPI_T_cvar_handle *handle)
 
     /* ... body of routine ...  */
 
-    MPIR_T_cvar_handle_t *hnd = *handle;
+    hnd = *handle;
     MPIU_Free(hnd);
     *handle = MPI_T_CVAR_HANDLE_NULL;
 

@@ -14,6 +14,9 @@
 #pragma _HP_SECONDARY_DEF PMPI_T_pvar_handle_alloc  MPI_T_pvar_handle_alloc
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_T_pvar_handle_alloc as PMPI_T_pvar_handle_alloc
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_T_pvar_handle_alloc(MPI_T_pvar_session session, int pvar_index, void *obj_handle,
+                            MPI_T_pvar_handle *handle, int *count) __attribute__((weak,alias("PMPI_T_pvar_handle_alloc")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -199,6 +202,7 @@ int MPI_T_pvar_handle_alloc(MPI_T_pvar_session session, int pvar_index,
                             void *obj_handle, MPI_T_pvar_handle *handle, int *count)
 {
     int mpi_errno = MPI_SUCCESS;
+    pvar_table_entry_t *entry;
 
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_PVAR_HANDLE_ALLOC);
     MPIR_ERRTEST_MPIT_INITIALIZED(mpi_errno);
@@ -222,7 +226,7 @@ int MPI_T_pvar_handle_alloc(MPI_T_pvar_session session, int pvar_index,
 
     /* ... body of routine ...  */
 
-    pvar_table_entry_t *entry = (pvar_table_entry_t *) utarray_eltptr(pvar_table, pvar_index);
+    entry = (pvar_table_entry_t *) utarray_eltptr(pvar_table, pvar_index);
     if (!entry->active) {
         mpi_errno = MPI_T_ERR_INVALID_INDEX;
         goto fn_fail;

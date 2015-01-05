@@ -50,12 +50,14 @@ All MPI objects (e.g., <TT>MPI_Datatype</TT>, <TT>MPI_Comm</TT>) are of type <TT
 </TT>in Fortran.
 <P>
 <H2>Algorithm</H2>
-b
-Allocate contexts
-Local and remote group leaders swap high values
-Determine the high value.
-Merge the two groups and make the intra-communicator
-e
+<OL>
+<P>
+<LI>Allocate contexts
+<LI>Local and remote group leaders swap high values
+<LI>Determine the high value.
+<LI>Merge the two groups and make the intra-communicator
+</OL>
+<P>
 <P>
 <H2>Errors</H2>
 <P>
@@ -83,5 +85,5 @@ implementation is unable to acquire memory.
 <P>
 <H2>See Also</H2>
  MPI_Intercomm_create, MPI_Comm_free
-<BR><P><B>Location:</B>/tmp/gyCYfBi4J6/mpich-3.1/src/mpi/comm/intercomm_merge.c<P>
+<BR>
 </BODY></HTML>

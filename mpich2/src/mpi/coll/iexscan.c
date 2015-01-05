@@ -14,6 +14,10 @@
 #pragma _HP_SECONDARY_DEF PMPI_Iexscan  MPI_Iexscan
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Iexscan as PMPI_Iexscan
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Iexscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+                MPI_Op op, MPI_Comm comm, MPI_Request *request)
+                __attribute__((weak,alias("PMPI_Iexscan")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -283,7 +287,7 @@ int MPI_Iexscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype data
     {
         MPID_BEGIN_ERROR_CHECKS
         {
-            MPID_Comm_valid_ptr(comm_ptr, mpi_errno);
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             MPIR_ERRTEST_COMM_INTRA(comm_ptr, mpi_errno);
             if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype *datatype_ptr = NULL;
@@ -305,7 +309,10 @@ int MPI_Iexscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype data
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
             MPIR_ERRTEST_ARGNULL(request,"request", mpi_errno);
-            /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
+
+            if (sendbuf != MPI_IN_PLACE && count != 0)
+                MPIR_ERRTEST_ALIAS_COLL(sendbuf, recvbuf, mpi_errno);
+            /* TODO more checks may be appropriate (counts, in_place, etc) */
         }
         MPID_END_ERROR_CHECKS
     }

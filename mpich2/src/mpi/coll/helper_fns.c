@@ -367,7 +367,7 @@ int MPIC_Recv(void *buf, int count, MPI_Datatype datatype, int source, int tag,
         if (MPIR_TAG_CHECK_ERROR_BIT(status->MPI_TAG)) {
             *errflag = TRUE;
             MPIR_TAG_CLEAR_ERROR_BIT(status->MPI_TAG);
-        } else {
+        } else if (MPIX_ERR_REVOKED != MPIR_ERR_GET_CLASS(status->MPI_ERROR)) {
             MPIU_Assert(status->MPI_TAG == tag);
         }
     }
@@ -458,10 +458,9 @@ int MPIC_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     context_id = (comm_ptr->comm_kind == MPID_INTRACOMM) ?
         MPID_CONTEXT_INTRA_COLL : MPID_CONTEXT_INTER_COLL;
 
-    if (MPIR_CVAR_ENABLE_COLL_FT_RET) {
-        if (status == MPI_STATUS_IGNORE) status = &mystatus;
+    if (status == MPI_STATUS_IGNORE) status = &mystatus;
+    if (MPIR_CVAR_ENABLE_COLL_FT_RET)
         if (*errflag) MPIR_TAG_SET_ERROR_BIT(sendtag);
-    }
 
     mpi_errno = MPID_Irecv(recvbuf, recvcount, recvtype, source, recvtag,
                            comm_ptr, context_id, &recv_req_ptr);
@@ -487,11 +486,11 @@ int MPIC_Sendrecv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
         if (MPIR_TAG_CHECK_ERROR_BIT(status->MPI_TAG)) {
             *errflag = TRUE;
             MPIR_TAG_CLEAR_ERROR_BIT(status->MPI_TAG);
-        } else {
+        } else if (MPIX_ERR_REVOKED != MPIR_ERR_GET_CLASS(status->MPI_ERROR)) {
             MPIU_Assert(status->MPI_TAG == recvtag);
         }
     }
-    
+
  fn_exit:
     MPIU_DBG_MSG_S(PT2PT, TYPICAL, "OUT: errflag = %s", *errflag?"TRUE":"FALSE");
 
@@ -536,10 +535,9 @@ int MPIC_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
     MPIU_ERR_CHKANDJUMP1((count < 0), mpi_errno, MPI_ERR_COUNT,
                          "**countneg", "**countneg %d", count);
 
-    if (MPIR_CVAR_ENABLE_COLL_FT_RET) {
-        if (status == MPI_STATUS_IGNORE) status = &mystatus;
+    if (status == MPI_STATUS_IGNORE) status = &mystatus;
+    if (MPIR_CVAR_ENABLE_COLL_FT_RET)
         if (*errflag) MPIR_TAG_SET_ERROR_BIT(sendtag);
-    }
 
     MPID_Comm_get_ptr(comm, comm_ptr);
     context_id_offset = (comm_ptr->comm_kind == MPID_INTRACOMM) ?
@@ -604,7 +602,7 @@ int MPIC_Sendrecv_replace(void *buf, int count, MPI_Datatype datatype,
         if (MPIR_TAG_CHECK_ERROR_BIT(status->MPI_TAG)) {
             *errflag = TRUE;
             MPIR_TAG_CLEAR_ERROR_BIT(status->MPI_TAG);
-        } else {
+        } else if (MPIX_ERR_REVOKED != MPIR_ERR_GET_CLASS(status->MPI_ERROR)) {
             MPIU_Assert(status->MPI_TAG == recvtag);
         }
     }

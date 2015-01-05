@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2012 by Argonne National Laboratory.
+ *  (C) 2011 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
@@ -13,6 +13,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Type_size_x  MPI_Type_size_x
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Type_size_x as PMPI_Type_size_x
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Type_size_x(MPI_Datatype datatype, MPI_Count *size) __attribute__((weak,alias("PMPI_Type_size_x")));
 #endif
 /* -- End Profiling Symbol Block */
 

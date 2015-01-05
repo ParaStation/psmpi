@@ -1,13 +1,13 @@
 # -*- Mode: Makefile; -*-
 #
-# (C) 2008 by Argonne National Laboratory.
+# (C) 2009 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
 #
 
 external_subdirs = @mpl_srcdir@
 external_dist_subdirs = @mpl_dist_srcdir@
 external_ldflags = -L$(top_builddir)/@mpl_srcdir@
-external_libs = -lmpl
+external_libs = -lmpl @EXTERNAL_LIBS@
 
 bin_PROGRAMS =
 noinst_HEADERS =

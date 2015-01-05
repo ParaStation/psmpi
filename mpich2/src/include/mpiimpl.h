@@ -237,6 +237,10 @@ static MPIU_DBG_INLINE_KEYWORD void MPIUI_Memcpy(void * dst, const void * src, s
 /* Routines for memory management */
 #include "mpimem.h"
 
+#if defined HAVE_LIBHCOLL
+#include "../mpid/common/hcoll/hcollpre.h"
+#endif
+
 /*
  * Use MPIU_SYSCALL to wrap system calls; this provides a convenient point
  * for timing the calls and keeping track of the use of system calls.
@@ -494,11 +498,13 @@ int MPIU_Handle_free( void *((*)[]), int );
    for now */
 /* ticket #1441: check (refcount<=0) to cover the case of 0, an "over-free" of
  * -1 or similar, and the 0xecec... case when --enable-g=mem is used */
-#define MPID_Comm_valid_ptr(ptr,err) {                \
+#define MPID_Comm_valid_ptr(ptr,err,ignore_rev) {     \
      MPID_Valid_ptr_class(Comm,ptr,MPI_ERR_COMM,err); \
      if ((ptr) && MPIU_Object_get_ref(ptr) <= 0) {    \
          MPIU_ERR_SET(err,MPI_ERR_COMM,"**comm");     \
          ptr = 0;                                     \
+     } else if ((ptr) && (ptr)->revoked && !(ignore_rev)) {        \
+         MPIU_ERR_SET(err,MPIX_ERR_REVOKED,"**comm"); \
      }                                                \
 }
 #define MPID_Group_valid_ptr(ptr,err) MPID_Valid_ptr_class(Group,ptr,MPI_ERR_GROUP,err)
@@ -1240,11 +1246,19 @@ typedef struct MPID_Comm {
 				       implementting the topology routines */
     int next_sched_tag;             /* used by the NBC schedule code to allocate tags */
 
+    int revoked;                    /* Flag to track whether the communicator
+                                     * has been revoked */
+
     MPID_Info *info;                /* Hints to the communicator */
 
 #ifdef MPID_HAS_HETERO
     int is_hetero;
 #endif
+
+#if defined HAVE_LIBHCOLL
+    hcoll_comm_priv_t hcoll_priv;
+#endif /* HAVE_LIBHCOLL */
+
   /* Other, device-specific information */
 #ifdef MPID_DEV_COMM_DECL
     MPID_DEV_COMM_DECL
@@ -2754,7 +2768,18 @@ int MPID_Comm_spawn_multiple(int, char *[], char **[], const int [], MPID_Info* 
                              int, MPID_Comm *, MPID_Comm **, int []);
 
 /*@
-  MPID_Comm_group_failed - MPID entry point for MPI_Comm_group_failed
+  MPID_Comm_failure_ack - MPID entry point for MPI_Comm_failure_ack
+
+  Input Parameters:
+. comm - communicator
+
+  Return Value:
+  'MPI_SUCCESS' or a valid MPI error code.
+@*/
+int MPID_Comm_failure_ack(MPID_Comm *comm);
+
+/*@
+  MPID_Comm_failure_get_acked - MPID entry point for MPI_Comm_failure_get_acked
 
   Input Parameters:
 . comm - communicator
@@ -2765,35 +2790,66 @@ int MPID_Comm_spawn_multiple(int, char *[], char **[], const int [], MPID_Info* 
   Return Value:
   'MPI_SUCCESS' or a valid MPI error code.
 @*/
-int MPID_Comm_group_failed(MPID_Comm *comm, MPID_Group **failed_group_ptr);
+int MPID_Comm_failure_get_acked(MPID_Comm *comm, MPID_Group **failed_group_ptr);
 
 /*@
-  MPID_Comm_remote_group_failed - MPID entry point for MPI_Comm_remote_group_failed
-
-  Input Parameters:
-. comm - intercommunicator
-
-  Output Parameters
-. failed_group_ptr - group of failed processes in comm's remote group
-
-  Return Value:
-  'MPI_SUCCESS' or a valid MPI error code.
-@*/
-int MPID_Comm_remote_group_failed(MPID_Comm *comm, MPID_Group **failed_group_ptr);
-
-/*@
-  MPID_Comm_reenable_anysource - MPID entry point for MPI_Comm_reenable_anysource
+  MPID_Comm_failed_bitarray - MPID function to get the bitarray including all of the failed processes
 
   Input Parameters:
 . comm - communicator
+. acked - true if bitarray should contain only acked procs
 
-  Output Parameters
-. failed_group_ptr - group of failed processes
+  Output Parameter:
+. bitarray - Bit array containing all of the failed processes in comm
 
   Return Value:
   'MPI_SUCCESS' or a valid MPI error code.
 @*/
-int MPID_Comm_reenable_anysource(MPID_Comm *comm, MPID_Group **failed_group_ptr);
+int MPID_Comm_failed_bitarray(MPID_Comm *comm, uint32_t **bitarray, int acked);
+
+/*@
+  MPID_Comm_get_all_failed_procs - Constructs a group of failed processes that it uniform over a communicator
+
+  Input Parameters:
+. comm - communicator
+. tag - Tag used to do communciation
+
+  Output Parameters:
+. failed_grp - group of all failed processes
+
+  Return Value:
+  'MPI_SUCCESS' or a valid MPI error code.
+@*/
+int MPID_Comm_get_all_failed_procs(MPID_Comm *comm_ptr, MPID_Group **failed_group, int tag);
+
+/*@
+  MPID_Comm_revoke - MPID entry point for MPI_Comm_revoke
+
+  Input Parameters:
+  comm - communicator
+  remote - True if we received the revoke message from a remote process
+
+  Return Value:
+  'MPI_SUCCESS' or a valid MPI error code.
+@*/
+int MPID_Comm_revoke(MPID_Comm *comm, int is_remote);
+
+/*@
+  MPID_Comm_agree - MPID implementation of the last phase of the agreement
+
+  Input Parameters:
+. comm - communicator
+. bitarray - Bit array of all of the failures that have been discovered in comm
+. flag - flag input for agree from MPIX_Comm_agree
+. new_fail - If there is a new failure that we need to propagate, this should be true
+
+  Output Parameters:
+. flag - Bitwise AND of all of the flag input values
+
+  Return Value:
+  'MPI_SUCCESS' or a valid MPI error code.
+@*/
+int MPID_Comm_agree(MPID_Comm *comm, uint32_t *bitarray, int *flag, int new_fail);
 
 /*@
   MPID_Send - MPID entry point for MPI_Send
@@ -3360,7 +3416,7 @@ int MPID_Win_unlock(int dest, MPID_Win *win_ptr);
 int MPID_Win_allocate(MPI_Aint size, int disp_unit, MPID_Info *info,
                       MPID_Comm *comm, void *baseptr, MPID_Win **win);
 int MPID_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info_ptr, MPID_Comm *comm_ptr,
-                             void **base_ptr, MPID_Win **win_ptr);
+                             void *base_ptr, MPID_Win **win_ptr);
 int MPID_Win_shared_query(MPID_Win *win, int rank, MPI_Aint *size, int *disp_unit,
                           void *baseptr);
 int MPID_Win_create_dynamic(MPID_Info *info, MPID_Comm *comm, MPID_Win **win);
@@ -3780,7 +3836,9 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr);
 #define MPIR_TOPO_A_TAG               26
 #define MPIR_TOPO_B_TAG               27
 #define MPIR_REDUCE_SCATTER_BLOCK_TAG 28
-#define MPIR_FIRST_NBC_TAG            29
+#define MPIR_SHRINK_TAG               29
+#define MPIR_AGREE_TAG                30
+#define MPIR_FIRST_NBC_TAG            31
 
 /* These macros must be used carefully. These macros will not work with
  * negative tags. By definition, users are not to use negative tags and the
@@ -4083,6 +4141,9 @@ void MPIR_Free_err_dyncodes( void );
 
 int MPIR_Comm_idup_impl(MPID_Comm *comm_ptr, MPID_Comm **newcomm, MPID_Request **reqp);
 
+int MPIR_Comm_shrink(MPID_Comm *comm_ptr, MPID_Comm **newcomm_ptr);
+int MPIR_Comm_agree(MPID_Comm *comm_ptr, int *flag);
+
 int MPIR_Allreduce_group(void *sendbuf, void *recvbuf, int count,
                          MPI_Datatype datatype, MPI_Op op, MPID_Comm *comm_ptr,
                          MPID_Group *group_ptr, int tag, int *errflag);
@@ -4214,7 +4275,7 @@ int MPIR_Ialltoallw_inter(const void *sendbuf, const int *sendcounts, const int 
 /* begin impl functions for MPI_T (MPI_T_ right now) */
 int MPIR_T_cvar_handle_alloc_impl(int cvar_index, void *obj_handle, MPI_T_cvar_handle *handle, int *count);
 int MPIR_T_cvar_read_impl(MPI_T_cvar_handle handle, void *buf);
-int MPIR_T_cvar_write_impl(MPI_T_cvar_handle handle, void *buf);
+int MPIR_T_cvar_write_impl(MPI_T_cvar_handle handle, const void *buf);
 int MPIR_T_pvar_session_create_impl(MPI_T_pvar_session *session);
 int MPIR_T_pvar_session_free_impl(MPI_T_pvar_session *session);
 int MPIR_T_pvar_handle_alloc_impl(MPI_T_pvar_session session, int pvar_index, void *obj_handle, MPI_T_pvar_handle *handle, int *count);
@@ -4222,7 +4283,7 @@ int MPIR_T_pvar_handle_free_impl(MPI_T_pvar_session session, MPI_T_pvar_handle *
 int MPIR_T_pvar_start_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle);
 int MPIR_T_pvar_stop_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle);
 int MPIR_T_pvar_read_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, void *buf);
-int MPIR_T_pvar_write_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, void *buf);
+int MPIR_T_pvar_write_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, const void *buf);
 int MPIR_T_pvar_reset_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle);
 int MPIR_T_pvar_readreset_impl(MPI_T_pvar_session session, MPI_T_pvar_handle handle, void *buf);
 int MPIR_T_category_get_cvars_impl(int cat_index, int len, int indices[]);

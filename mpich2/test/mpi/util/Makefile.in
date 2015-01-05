@@ -76,7 +76,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-EXTRA_PROGRAMS = mtestcheck$(EXEEXT)
+EXTRA_PROGRAMS = mtestcheck$(EXEEXT) dtypes$(EXEEXT)
 subdir = util
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/confdb/depcomp
@@ -96,6 +96,9 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+dtypes_SOURCES = dtypes.c
+dtypes_OBJECTS = dtypes.$(OBJEXT)
+dtypes_LDADD = $(LDADD)
 am_mtestcheck_OBJECTS = mtestcheck.$(OBJEXT) mtest.$(OBJEXT)
 mtestcheck_OBJECTS = $(am_mtestcheck_OBJECTS)
 mtestcheck_LDADD = $(LDADD)
@@ -127,8 +130,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = $(mtestcheck_SOURCES)
-DIST_SOURCES = $(mtestcheck_SOURCES)
+SOURCES = dtypes.c $(mtestcheck_SOURCES)
+DIST_SOURCES = dtypes.c $(mtestcheck_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -288,6 +291,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -314,6 +318,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 nocxxdistgraph = @nocxxdistgraph@
+nslib = @nslib@
 oldincludedir = @oldincludedir@
 otherlangs = @otherlangs@
 pdfdir = @pdfdir@
@@ -324,6 +329,7 @@ psdir = @psdir@
 rmadir = @rmadir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
@@ -372,6 +378,10 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 
+dtypes$(EXEEXT): $(dtypes_OBJECTS) $(dtypes_DEPENDENCIES) $(EXTRA_dtypes_DEPENDENCIES) 
+	@rm -f dtypes$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(dtypes_OBJECTS) $(dtypes_LDADD) $(LIBS)
+
 mtestcheck$(EXEEXT): $(mtestcheck_OBJECTS) $(mtestcheck_DEPENDENCIES) $(EXTRA_mtestcheck_DEPENDENCIES) 
 	@rm -f mtestcheck$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(mtestcheck_OBJECTS) $(mtestcheck_LDADD) $(LIBS)
@@ -382,6 +392,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dtypes.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mtest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mtestcheck.Po@am__quote@
 
@@ -603,8 +614,9 @@ uninstall-am:
 
 
 mtest.$(OBJEXT): mtest.c
+dtypes.$(OBJEXT): dtypes.c
 nbc_pmpi_adapter.$(OBJEXT): nbc_pmpi_adapter.c
-all-local: mtest.$(OBJEXT)  nbc_pmpi_adapter.$(OBJEXT)
+all-local: mtest.$(OBJEXT) dtypes.$(OBJEXT) nbc_pmpi_adapter.$(OBJEXT)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

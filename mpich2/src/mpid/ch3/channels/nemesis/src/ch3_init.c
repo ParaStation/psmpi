@@ -30,8 +30,12 @@ static int split_type(MPID_Comm * comm_ptr, int stype, int key,
     MPIR_Rank_t nid;
     int mpi_errno = MPI_SUCCESS;
 
-    mpi_errno = MPID_Get_node_id(comm_ptr, comm_ptr->rank, &id);
-    if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    if (MPIDI_CH3I_Shm_supported()) {
+        mpi_errno = MPID_Get_node_id(comm_ptr, comm_ptr->rank, &id);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    }
+    else
+        id = comm_ptr->rank;
 
     nid = (stype == MPI_COMM_TYPE_SHARED) ? id : MPI_UNDEFINED;
     mpi_errno = MPIR_Comm_split_impl(comm_ptr, nid, key, newcomm_ptr);
@@ -44,6 +48,21 @@ static int split_type(MPID_Comm * comm_ptr, int stype, int key,
   fn_fail:
     goto fn_exit;
     /* --END ERROR HANDLING-- */
+}
+
+int MPIDI_CH3I_Shm_supported(void)
+{
+    int mutex_err;
+    pthread_mutexattr_t attr;
+
+    /* Test for PTHREAD_PROCESS_SHARED support.  Some platforms do not support
+     * this capability even though it is a part of the pthreads core API (e.g.,
+     * FreeBSD does not support this as of version 9.1) */
+    pthread_mutexattr_init(&attr);
+    mutex_err = pthread_mutexattr_setpshared(&attr, PTHREAD_PROCESS_SHARED);
+    pthread_mutexattr_destroy(&attr);
+
+    return !mutex_err;
 }
 
 static MPID_CommOps comm_fns = {
@@ -327,6 +346,7 @@ int MPIDI_CH3_InitCompleted(void)
 {
     int mpi_errno = MPI_SUCCESS;
     initcomp_cb_t *ep;
+    initcomp_cb_t *ep_tmp;
     MPIDI_STATE_DECL(MPID_STATE_MPIDI_CH3_INITCOMPLETED);
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3_INITCOMPLETED);
@@ -335,7 +355,9 @@ int MPIDI_CH3_InitCompleted(void)
     {
         mpi_errno = ep->callback();
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        ep_tmp = ep;
         ep = ep->next;
+        MPIU_Free(ep_tmp);
     }
 
  fn_exit:

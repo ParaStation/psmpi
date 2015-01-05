@@ -22,7 +22,9 @@ noinst_PROGRAMS =  \
     bsend5         \
     bsendalign     \
     cancelrecv     \
+    cancelanysrc   \
     isendself      \
+    issendselfcancel \
     sendself       \
     eagerdt        \
     isendselfprobe \

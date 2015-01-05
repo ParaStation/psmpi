@@ -210,6 +210,9 @@ am__DEPENDENCIES_2 = $(LDADD) $(am__DEPENDENCIES_1)
 @HWLOC_HAVE_CAIRO_TRUE@am__DEPENDENCIES_3 = $(am__DEPENDENCIES_1) \
 @HWLOC_HAVE_CAIRO_TRUE@	$(am__DEPENDENCIES_1)
 lstopo_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3)
+lstopo_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(lstopo_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 am_lstopo_no_graphics_OBJECTS = lstopo_no_graphics-lstopo.$(OBJEXT) \
 	lstopo_no_graphics-lstopo-color.$(OBJEXT) \
 	lstopo_no_graphics-lstopo-draw.$(OBJEXT) \
@@ -218,6 +221,10 @@ am_lstopo_no_graphics_OBJECTS = lstopo_no_graphics-lstopo.$(OBJEXT) \
 	lstopo_no_graphics-lstopo-xml.$(OBJEXT)
 lstopo_no_graphics_OBJECTS = $(am_lstopo_no_graphics_OBJECTS)
 lstopo_no_graphics_DEPENDENCIES = $(LDADD) $(am__DEPENDENCIES_1)
+lstopo_no_graphics_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(lstopo_no_graphics_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am__lstopo_win_SOURCES_DIST = lstopo.h lstopo.c lstopo-color.c \
 	lstopo-draw.c lstopo-fig.c lstopo-text.c lstopo-xml.c \
 	lstopo-cairo.c lstopo-windows.c
@@ -237,6 +244,9 @@ lstopo_win_OBJECTS = $(am_lstopo_win_OBJECTS)
 am__DEPENDENCIES_4 = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_3)
 @HWLOC_HAVE_WINDOWS_TRUE@lstopo_win_DEPENDENCIES =  \
 @HWLOC_HAVE_WINDOWS_TRUE@	$(am__DEPENDENCIES_4)
+lstopo_win_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(lstopo_win_CFLAGS) \
+	$(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
     $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
@@ -293,8 +303,8 @@ am__v_CC_0 = @echo "  CC      " $@;
 am__v_CC_1 = 
 CCLD = $(CC)
 LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_LDFLAGS) $(LDFLAGS) \
-	-o $@
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
@@ -926,15 +936,15 @@ hwloc-ps$(EXEEXT): $(hwloc_ps_OBJECTS) $(hwloc_ps_DEPENDENCIES) $(EXTRA_hwloc_ps
 
 lstopo$(EXEEXT): $(lstopo_OBJECTS) $(lstopo_DEPENDENCIES) $(EXTRA_lstopo_DEPENDENCIES) 
 	@rm -f lstopo$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(lstopo_OBJECTS) $(lstopo_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(lstopo_LINK) $(lstopo_OBJECTS) $(lstopo_LDADD) $(LIBS)
 
 lstopo-no-graphics$(EXEEXT): $(lstopo_no_graphics_OBJECTS) $(lstopo_no_graphics_DEPENDENCIES) $(EXTRA_lstopo_no_graphics_DEPENDENCIES) 
 	@rm -f lstopo-no-graphics$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(lstopo_no_graphics_OBJECTS) $(lstopo_no_graphics_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(lstopo_no_graphics_LINK) $(lstopo_no_graphics_OBJECTS) $(lstopo_no_graphics_LDADD) $(LIBS)
 
 lstopo-win$(EXEEXT): $(lstopo_win_OBJECTS) $(lstopo_win_DEPENDENCIES) $(EXTRA_lstopo_win_DEPENDENCIES) 
 	@rm -f lstopo-win$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(lstopo_win_OBJECTS) $(lstopo_win_LDADD) $(LIBS)
+	$(AM_V_CCLD)$(lstopo_win_LINK) $(lstopo_win_OBJECTS) $(lstopo_win_LDADD) $(LIBS)
 install-binSCRIPTS: $(bin_SCRIPTS)
 	@$(NORMAL_INSTALL)
 	@list='$(bin_SCRIPTS)'; test -n "$(bindir)" || list=; \

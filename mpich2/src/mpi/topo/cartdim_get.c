@@ -15,6 +15,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Cartdim_get  MPI_Cartdim_get
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Cartdim_get as PMPI_Cartdim_get
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Cartdim_get(MPI_Comm comm, int *ndims) __attribute__((weak,alias("PMPI_Cartdim_get")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -82,7 +84,7 @@ int MPI_Cartdim_get(MPI_Comm comm, int *ndims)
         {
 	    MPIR_ERRTEST_ARGNULL(ndims,"ndims",mpi_errno);
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
 	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) goto fn_fail;
         }

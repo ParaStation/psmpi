@@ -14,6 +14,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Errhandler_set  MPI_Errhandler_set
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Errhandler_set as PMPI_Errhandler_set
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Errhandler_set(MPI_Comm comm, MPI_Errhandler errhandler) __attribute__((weak,alias("PMPI_Errhandler_set")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -83,7 +85,7 @@ int MPI_Errhandler_set(MPI_Comm comm, MPI_Errhandler errhandler)
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr; if comm_ptr is not value, it will be reset to null */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
             if (mpi_errno) goto fn_fail;
 	    MPIR_ERRTEST_ERRHANDLER(errhandler, mpi_errno);
 

@@ -45,14 +45,26 @@ int MPIDI_Isend_self(const void * buf, int count, MPI_Datatype datatype, int ran
     /* --BEGIN ERROR HANDLING-- */
     if (rreq == NULL)
     {
-	MPIU_Object_set_ref(sreq, 0);
-	MPIDI_CH3_Request_destroy(sreq);
+        /* Set the refcount to 0 since the user will never have a chance to
+         * release their reference */
+        MPIU_Object_set_ref(sreq, 0);
+        MPIDI_CH3_Request_destroy(sreq);
 	sreq = NULL;
         MPIU_ERR_SET1(mpi_errno, MPI_ERR_OTHER, "**nomem", 
 		      "**nomemuereq %d", MPIDI_CH3U_Recvq_count_unexp());
 	goto fn_exit;
     }
     /* --END ERROR HANDLING-- */
+
+    /* If the completion counter is 0, that means that the communicator to
+     * which this message is being sent has been revoked and we shouldn't
+     * bother finishing this. */
+    if (!found && rreq->cc == 0) {
+        MPIU_Object_set_ref(sreq, 0);
+        MPIDI_CH3_Request_destroy(sreq);
+        sreq = NULL;
+        goto fn_exit;
+    }
 
     MPIDI_Comm_get_vc_set_active(comm, rank, &vc);
     MPIDI_VC_FAI_send_seqnum(vc, seqnum);

@@ -14,12 +14,13 @@
 #pragma _HP_SECONDARY_DEF PMPI_Type_create_darray  MPI_Type_create_darray
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Type_create_darray as PMPI_Type_create_darray
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Type_create_darray(int size, int rank, int ndims, const int array_of_gsizes[],
+                           const int array_of_distribs[], const int array_of_dargs[],
+                           const int array_of_psizes[], int order, MPI_Datatype oldtype,
+                           MPI_Datatype *newtype) __attribute__((weak,alias("PMPI_Type_create_darray")));
 #endif
 /* -- End Profiling Symbol Block */
-
-#ifndef MIN
-#define MIN(__a, __b) (((__a) < (__b)) ? (__a) : (__b))
-#endif
 
 PMPI_LOCAL int MPIR_Type_block(const int *array_of_gsizes,
 			       int dim,
@@ -105,7 +106,7 @@ PMPI_LOCAL int MPIR_Type_block(const int *array_of_gsizes,
     }
 
     j = global_size - blksize*rank;
-    mysize = MIN(blksize, j);
+    mysize = MPIR_MIN(blksize, j);
     if (mysize < 0) mysize = 0;
 
     stride = orig_extent;
@@ -222,7 +223,7 @@ PMPI_LOCAL int MPIR_Type_cyclic(const int *array_of_gsizes,
     else {
 	local_size = ((end_index - st_index + 1)/(nprocs*blksize))*blksize;
 	rem = (end_index - st_index + 1) % (nprocs*blksize);
-	local_size += MIN(rem, blksize);
+	local_size += MPIR_MIN(rem, blksize);
     }
 
     count = local_size/blksize;

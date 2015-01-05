@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
+ *  (C) 2009 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
@@ -21,7 +21,7 @@
  * Contains private persistent information stored by the checkpointing
  * library.
  */
-struct HYDT_ckpoint_info {
+struct HYDT_ckpoint_info_s {
     /** \brief Checkpointing library to use */
     const char *ckpointlib;
     const char *prefix;
@@ -32,7 +32,7 @@ struct HYDT_ckpoint_info {
 };
 
 /** \cond */
-extern struct HYDT_ckpoint_info HYDT_ckpoint_info;
+extern struct HYDT_ckpoint_info_s HYDT_ckpoint_info;
 /** \endcond */
 
 /**

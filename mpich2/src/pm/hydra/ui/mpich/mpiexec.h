@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
+ *  (C) 2009 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
@@ -9,7 +9,7 @@
 
 #include "hydra_server.h"
 
-struct HYD_ui_mpich_info {
+struct HYD_ui_mpich_info_s {
     int ppn;
     int ckpoint_int;
     int print_all_exitcodes;
@@ -21,7 +21,7 @@ struct HYD_ui_mpich_info {
     } sort_order;
 };
 
-extern struct HYD_ui_mpich_info HYD_ui_mpich_info;
+extern struct HYD_ui_mpich_info_s HYD_ui_mpich_info;
 
 HYD_status HYD_uii_mpx_get_parameters(char **t_argv);
 

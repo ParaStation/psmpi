@@ -145,8 +145,7 @@ disconnect_reconnect3_LDADD = $(LDADD)
 disconnect_reconnect3_DEPENDENCIES = $(top_builddir)/util/mtest.o
 join_SOURCES = join.c
 join_OBJECTS = join.$(OBJEXT)
-join_LDADD = $(LDADD)
-join_DEPENDENCIES = $(top_builddir)/util/mtest.o
+join_DEPENDENCIES = $(LDADD)
 multiple_ports_SOURCES = multiple_ports.c
 multiple_ports_OBJECTS = multiple_ports.$(OBJEXT)
 multiple_ports_LDADD = $(LDADD)
@@ -426,6 +425,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -452,6 +452,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 nocxxdistgraph = @nocxxdistgraph@
+nslib = @nslib@
 oldincludedir = @oldincludedir@
 otherlangs = @otherlangs@
 pdfdir = @pdfdir@
@@ -462,6 +463,7 @@ psdir = @psdir@
 rmadir = @rmadir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
@@ -474,8 +476,9 @@ top_srcdir = @top_srcdir@
 # AM_CPPFLAGS are used for C++ code as well
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = $(top_builddir)/util/mtest.o
-CLEANFILES = summary.xml summary.tap
+CLEANFILES = summary.xml summary.tap summary.junit.xml
 EXTRA_DIST = testlist
+join_LDADD = $(LDADD) @socklib@ @nslib@
 all: all-am
 
 .SUFFIXES:

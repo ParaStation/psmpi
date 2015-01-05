@@ -14,6 +14,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Comm_compare  MPI_Comm_compare
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Comm_compare as PMPI_Comm_compare
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result) __attribute__((weak,alias("PMPI_Comm_compare")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -99,9 +101,9 @@ int MPI_Comm_compare(MPI_Comm comm1, MPI_Comm comm2, int *result)
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr1, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr1, mpi_errno, TRUE );
             if (mpi_errno) goto fn_fail;
-            MPID_Comm_valid_ptr( comm_ptr2, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr2, mpi_errno, TRUE );
             if (mpi_errno) goto fn_fail;
 	    MPIR_ERRTEST_ARGNULL( result, "result", mpi_errno );
         }

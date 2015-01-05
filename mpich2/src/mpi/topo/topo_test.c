@@ -15,6 +15,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Topo_test  MPI_Topo_test
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Topo_test as PMPI_Topo_test
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Topo_test(MPI_Comm comm, int *status) __attribute__((weak,alias("PMPI_Topo_test")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -86,7 +88,7 @@ int MPI_Topo_test(MPI_Comm comm, int *status)
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
             if (mpi_errno) goto fn_fail;
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(status, "status", mpi_errno);

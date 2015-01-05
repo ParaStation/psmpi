@@ -13,6 +13,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_T_enum_get_item  MPI_T_enum_get_item
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_T_enum_get_item as PMPI_T_enum_get_item
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_T_enum_get_item(MPI_T_enum enumtype, int indx, int *value, char *name, int *name_len) __attribute__((weak,alias("PMPI_T_enum_get_item")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -52,6 +54,7 @@ Output Parameters:
 int MPI_T_enum_get_item(MPI_T_enum enumtype, int index, int *value, char *name, int *name_len)
 {
     int mpi_errno = MPI_SUCCESS;
+    enum_item_t *item;
 
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_T_ENUM_GET_ITEM);
     MPIR_ERRTEST_MPIT_INITIALIZED(mpi_errno);
@@ -76,7 +79,7 @@ int MPI_T_enum_get_item(MPI_T_enum enumtype, int index, int *value, char *name, 
 
     /* ... body of routine ...  */
 
-    enum_item_t *item = (enum_item_t *)utarray_eltptr(enumtype->items, index);
+    item = (enum_item_t *)utarray_eltptr(enumtype->items, index);
     *value = item->value;
     MPIR_T_strncpy(name, item->name, name_len);
 

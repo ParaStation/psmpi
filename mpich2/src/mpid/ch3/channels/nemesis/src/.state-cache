@@ -1,30 +1,30 @@
 <dir>
-<file name="ch3_istartmsgv.c" info="1392877287"/>
-<file name="ch3_win_fns.c" info="1392877287"/>
-<file name="mpid_nem_debug.c" info="1392877287"/>
-<file name="mpid_nem_alloc.c" info="1392877287"/>
-<file name="mpid_nem_network_poll.c" info="1392877287"/>
-<file name="mpid_nem_network.c" info="1392877287"/>
-<file name="ch3_istartmsg.c" info="1392877287"/>
-<file name="mpid_nem_mpich_rma.c" info="1392877287"/>
-<file name="ch3i_eagernoncontig.c" info="1392877287"/>
-<file name="ch3_isend.c" info="1392877287"/>
-<file name="mpid_nem_lmt_vmsplice.c" info="1392877287"/>
-<file name="ch3_rma_shm.c" info="1392877287"/>
-<file name="mpid_nem_mpich.c" info="1392877287"/>
-<file name="ch3_abort.c" info="1392877287"/>
-<file name="mpid_nem_ckpt.c" info="1392877287"/>
-<file name="ch3_progress.c" info="1392877287"/>
-<file name="mpid_nem_lmt.c" info="1392877287"/>
-<file name="mpid_nem_lmt_dma.c" info="1392877287"/>
-<file name="mpid_nem_init.c" info="1392877287"/>
-<file name="ch3_finalize.c" info="1392877287"/>
-<file name="mpid_nem_finalize.c" info="1392877287"/>
-<file name="ch3_init.c" info="1392877287"/>
-<file name="ch3_isendv.c" info="1392877287"/>
-<file name="mpid_nem_lmt_shm.c" info="1392877287"/>
-<file name="mpid_nem_barrier.c" info="1392877287"/>
-<file name="ch3i_comm.c" info="1392877287"/>
+<file name="ch3_istartmsgv.c" info="1412718623"/>
+<file name="ch3_win_fns.c" info="1412718623"/>
+<file name="mpid_nem_debug.c" info="1412718623"/>
+<file name="mpid_nem_alloc.c" info="1412718623"/>
+<file name="mpid_nem_network_poll.c" info="1412718623"/>
+<file name="mpid_nem_network.c" info="1412718623"/>
+<file name="ch3_istartmsg.c" info="1412718623"/>
+<file name="mpid_nem_mpich_rma.c" info="1412718623"/>
+<file name="ch3i_eagernoncontig.c" info="1412718623"/>
+<file name="ch3_isend.c" info="1412718623"/>
+<file name="mpid_nem_lmt_vmsplice.c" info="1412718623"/>
+<file name="ch3_rma_shm.c" info="1412718623"/>
+<file name="mpid_nem_mpich.c" info="1412718623"/>
+<file name="ch3_abort.c" info="1412718623"/>
+<file name="mpid_nem_ckpt.c" info="1412718623"/>
+<file name="ch3_progress.c" info="1412718623"/>
+<file name="mpid_nem_lmt.c" info="1412718623"/>
+<file name="mpid_nem_lmt_dma.c" info="1412718623"/>
+<file name="mpid_nem_init.c" info="1412718623"/>
+<file name="ch3_finalize.c" info="1412718623"/>
+<file name="mpid_nem_finalize.c" info="1412718623"/>
+<file name="ch3_init.c" info="1412718623"/>
+<file name="ch3_isendv.c" info="1412718623"/>
+<file name="mpid_nem_lmt_shm.c" info="1412718623"/>
+<file name="mpid_nem_barrier.c" info="1412718623"/>
+<file name="ch3i_comm.c" info="1412718623"/>
 </dir>
 <data>
 <fileinfo name="ch3_istartmsgv.c">
@@ -32,6 +32,8 @@ MPID_STATE_MPIDI_CH3_ISTARTMSGV MPIDI_CH3_iStartMsgv
 </fileinfo>
 <fileinfo name="ch3_win_fns.c">
 MPID_STATE_MPIDI_CH3_WIN_FNS_INIT MPIDI_CH3_Win_fns_init
+MPID_STATE_MPIDI_CH3I_SHM_WINS_MATCH MPIDI_CH3I_SHM_Wins_match
+MPID_STATE_MPIDI_CH3I_WIN_DETECT_SHM MPIDI_CH3I_Win_detect_shm
 MPID_STATE_MPIDI_CH3I_WIN_ALLOCATE_SHM MPIDI_CH3I_Win_allocate_shm
 </fileinfo>
 <fileinfo name="mpid_nem_debug.c">

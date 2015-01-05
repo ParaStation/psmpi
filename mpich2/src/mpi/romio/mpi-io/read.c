@@ -15,6 +15,9 @@
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_File_read as PMPI_File_read
 /* end of weak pragmas */
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_File_read(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_Status *status)
+    __attribute__((weak,alias("PMPI_File_read")));
 #endif
 
 /* Include mapping from MPI->PMPI */
@@ -171,7 +174,7 @@ int MPIOI_File_read(MPI_File fh,
     /* --END ERROR HANDLING-- */
 
     if (e32_buf != NULL) {
-        error_code = MPIU_read_external32_conversion_fn(xbuf, datatype,
+        error_code = MPIU_read_external32_conversion_fn(buf, datatype,
                 count, e32_buf);
 	ADIOI_Free(e32_buf);
     }

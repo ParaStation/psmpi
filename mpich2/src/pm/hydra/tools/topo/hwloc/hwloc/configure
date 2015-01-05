@@ -669,8 +669,8 @@ HWLOC_PCI_BUILD_STATIC_FALSE
 HWLOC_PCI_BUILD_STATIC_TRUE
 HWLOC_HAVE_PLUGINS_FALSE
 HWLOC_HAVE_PLUGINS_TRUE
-HWLOC_HAVE_CPUID_FALSE
-HWLOC_HAVE_CPUID_TRUE
+HWLOC_HAVE_X86_CPUID_FALSE
+HWLOC_HAVE_X86_CPUID_TRUE
 HWLOC_HAVE_X86_64_FALSE
 HWLOC_HAVE_X86_64_TRUE
 HWLOC_HAVE_X86_32_FALSE
@@ -15095,26 +15095,41 @@ fi
     fi
     # don't add LIBS/CFLAGS/REQUIRES yet, depends on plugins
 
-    # Try to compile the cpuid inlines
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for cpuid" >&5
-$as_echo_n "checking for cpuid... " >&6; }
+    # Try to compile the x86 cpuid inlines
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for x86 cpuid" >&5
+$as_echo_n "checking for x86 cpuid... " >&6; }
     old_CPPFLAGS="$CPPFLAGS"
     CPPFLAGS="$CPPFLAGS -I$HWLOC_top_srcdir/include"
+    # We need hwloc_uint64_t but we can't use hwloc/autogen/config.h before configure ends.
+    # So pass #include/#define manually here for now.
+    CPUID_CHECK_HEADERS=
+    CPUID_CHECK_DEFINE=
+    if test "x$hwloc_windows" = xyes; then
+      X86_CPUID_CHECK_HEADERS="#include <windows.h>"
+      X86_CPUID_CHECK_DEFINE="#define hwloc_uint64_t DWORDLONG"
+    else
+      X86_CPUID_CHECK_DEFINE="#define hwloc_uint64_t uint64_t"
+      if test "x$ac_cv_header_stdint_h" = xyes; then
+        X86_CPUID_CHECK_HEADERS="#include <stdint.h>"
+      fi
+    fi
     cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
         #include <stdio.h>
+        $X86_CPUID_CHECK_HEADERS
+        $X86_CPUID_CHECK_DEFINE
         #define __hwloc_inline
-        #include <private/cpuid.h>
+        #include <private/cpuid-x86.h>
 
 int
 main ()
 {
 
-        if (hwloc_have_cpuid()) {
+        if (hwloc_have_x86_cpuid()) {
           unsigned eax = 0, ebx, ecx = 0, edx;
-          hwloc_cpuid(&eax, &ebx, &ecx, &edx);
-          printf("highest cpuid %x\n", eax);
+          hwloc_x86_cpuid(&eax, &ebx, &ecx, &edx);
+          printf("highest x86 cpuid %x\n", eax);
           return 0;
         }
 
@@ -15126,16 +15141,16 @@ if ac_fn_c_try_link "$LINENO"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
 
-$as_echo "#define HWLOC_HAVE_CPUID 1" >>confdefs.h
+$as_echo "#define HWLOC_HAVE_X86_CPUID 1" >>confdefs.h
 
-       hwloc_have_cpuid=yes
+       hwloc_have_x86_cpuid=yes
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
-    if test "x$hwloc_have_cpuid" = xyes; then
+    if test "x$hwloc_have_x86_cpuid" = xyes; then
       hwloc_components="$hwloc_components x86"
     fi
     CPPFLAGS="$old_CPPFLAGS"
@@ -15727,9 +15742,11 @@ $as_echo_n "checking if this is a developer build... " >&6; }
     if test ! -d "$srcdir/.hg" -a ! -d "$srcdir/.git"; then :
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: no (doxygen generation is optional)" >&5
 $as_echo "no (doxygen generation is optional)" >&6; }
+	   test "x$enable_doxygen" = x && enable_doxygen=no
 else
   { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }
+	   test "x$enable_doxygen" = x && enable_doxygen=yes
 fi
 
     # Generating the doxygen output requires a few tools.  If we
@@ -16670,7 +16687,7 @@ $as_echo "$hwloc_generate_doxs" >&6; }
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if will install doxygen docs" >&5
 $as_echo_n "checking if will install doxygen docs... " >&6; }
     if test "x$hwloc_generate_doxs" = "xyes" -o \
-    	    -f "$srcdir/doc/doxygen-doc/man/man3/hwloc_distribute.3" -a \
+	    -f "$srcdir/doc/doxygen-doc/man/man3/hwloc_distrib.3" -a \
     	    -f "$srcdir/doc/doxygen-doc/hwloc-a4.pdf" -a \
     	    -f "$srcdir/doc/doxygen-doc/hwloc-letter.pdf"; then :
   hwloc_install_doxs=yes
@@ -17696,12 +17713,12 @@ else
   HWLOC_HAVE_X86_64_FALSE=
 fi
 
-         if test "x$hwloc_have_cpuid" = "xyes"; then
-  HWLOC_HAVE_CPUID_TRUE=
-  HWLOC_HAVE_CPUID_FALSE='#'
+         if test "x$hwloc_have_x86_cpuid" = "xyes"; then
+  HWLOC_HAVE_X86_CPUID_TRUE=
+  HWLOC_HAVE_X86_CPUID_FALSE='#'
 else
-  HWLOC_HAVE_CPUID_TRUE='#'
-  HWLOC_HAVE_CPUID_FALSE=
+  HWLOC_HAVE_X86_CPUID_TRUE='#'
+  HWLOC_HAVE_X86_CPUID_FALSE=
 fi
 
 
@@ -28680,8 +28697,8 @@ if test -z "${HWLOC_HAVE_X86_64_TRUE}" && test -z "${HWLOC_HAVE_X86_64_FALSE}"; 
   as_fn_error $? "conditional \"HWLOC_HAVE_X86_64\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
-if test -z "${HWLOC_HAVE_CPUID_TRUE}" && test -z "${HWLOC_HAVE_CPUID_FALSE}"; then
-  as_fn_error $? "conditional \"HWLOC_HAVE_CPUID\" was never defined.
+if test -z "${HWLOC_HAVE_X86_CPUID_TRUE}" && test -z "${HWLOC_HAVE_X86_CPUID_FALSE}"; then
+  as_fn_error $? "conditional \"HWLOC_HAVE_X86_CPUID\" was never defined.
 Usually this means the macro was only invoked conditionally." "$LINENO" 5
 fi
 if test -z "${HWLOC_HAVE_PLUGINS_TRUE}" && test -z "${HWLOC_HAVE_PLUGINS_FALSE}"; then

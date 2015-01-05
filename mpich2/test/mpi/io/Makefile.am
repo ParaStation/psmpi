@@ -22,7 +22,10 @@ noinst_PROGRAMS = \
     async         \
     async_any     \
     userioerr     \
-    resized
+    resized       \
+    resized2      \
+    bigtype       \
+    hindexed_io
 
 clean-local:
 	-rm -f testfile testfile.*

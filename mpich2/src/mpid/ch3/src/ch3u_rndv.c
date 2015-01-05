@@ -56,8 +56,7 @@ int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count,
     /* --BEGIN ERROR HANDLING-- */
     if (mpi_errno != MPI_SUCCESS)
     {
-	MPIU_Object_set_ref(sreq, 0);
-	MPIDI_CH3_Request_destroy(sreq);
+        MPID_Request_release(sreq);
 	*sreq_p = NULL;
         MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**ch3|rtspkt");
     }
@@ -66,8 +65,7 @@ int MPIDI_CH3_RndvSend( MPID_Request **sreq_p, const void * buf, int count,
     {
 	if (rts_sreq->status.MPI_ERROR != MPI_SUCCESS)
 	{
-	    MPIU_Object_set_ref(sreq, 0);
-	    MPIDI_CH3_Request_destroy(sreq);
+            MPID_Request_release(sreq);
 	    *sreq_p = NULL;
             mpi_errno = rts_sreq->status.MPI_ERROR;
             MPID_Request_release(rts_sreq);
@@ -129,6 +127,14 @@ int MPIDI_CH3_PktHandler_RndvReqToSend( MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
     MPIU_THREAD_CS_ENTER(MSGQUEUE,);
     rreq = MPIDI_CH3U_Recvq_FDP_or_AEU(&rts_pkt->match, &found);
     MPIU_ERR_CHKANDJUMP1(!rreq, mpi_errno,MPI_ERR_OTHER, "**nomemreq", "**nomemuereq %d", MPIDI_CH3U_Recvq_count_unexp());
+
+    /* If the completion counter is 0, that means that the communicator to
+     * which this message is being sent has been revoked and we shouldn't
+     * bother finishing this. */
+    if (!found && rreq->cc == 0) {
+        *rreqp = NULL;
+        goto fn_fail;
+    }
     
     set_request_info(rreq, rts_pkt, MPIDI_REQUEST_RNDV_MSG);
 

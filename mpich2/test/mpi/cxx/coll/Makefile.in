@@ -17,7 +17,7 @@
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
-# (C) 2011 by Argonne National Laboratory.
+# (C) 2008 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
 #
 
@@ -87,13 +87,13 @@ host_triplet = @host@
 DIST_COMMON = $(top_srcdir)/Makefile_cxx.mtest $(srcdir)/Makefile.in \
 	$(srcdir)/Makefile.am $(top_srcdir)/confdb/depcomp
 noinst_PROGRAMS = arcomplex$(EXEEXT) uallredx$(EXEEXT) \
-	uallreduce$(EXEEXT) ureduce$(EXEEXT) uscan$(EXEEXT) \
-	uexscan$(EXEEXT) icbcastx$(EXEEXT) icbarrierx$(EXEEXT) \
-	icgatherx$(EXEEXT) icgathervx$(EXEEXT) icscatterx$(EXEEXT) \
-	icscattervx$(EXEEXT) icallgatherx$(EXEEXT) \
+	uallreduce$(EXEEXT) ureduce$(EXEEXT) ureducelocal$(EXEEXT) \
+	uscan$(EXEEXT) uexscan$(EXEEXT) icbcastx$(EXEEXT) \
+	icbarrierx$(EXEEXT) icgatherx$(EXEEXT) icgathervx$(EXEEXT) \
+	icscatterx$(EXEEXT) icscattervx$(EXEEXT) icallgatherx$(EXEEXT) \
 	icallgathervx$(EXEEXT) icallreducex$(EXEEXT) \
 	icreducex$(EXEEXT) icalltoallx$(EXEEXT) alltoallw2x$(EXEEXT) \
-	reduceboolx$(EXEEXT)
+	reduceboolx$(EXEEXT) redscatblk$(EXEEXT)
 subdir = cxx/coll
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -164,6 +164,10 @@ am_icscatterx_OBJECTS = icscatterx.$(OBJEXT)
 icscatterx_OBJECTS = $(am_icscatterx_OBJECTS)
 icscatterx_LDADD = $(LDADD)
 icscatterx_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+am_redscatblk_OBJECTS = redscatblk.$(OBJEXT)
+redscatblk_OBJECTS = $(am_redscatblk_OBJECTS)
+redscatblk_LDADD = $(LDADD)
+redscatblk_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
 am_reduceboolx_OBJECTS = reduceboolx.$(OBJEXT)
 reduceboolx_OBJECTS = $(am_reduceboolx_OBJECTS)
 reduceboolx_LDADD = $(LDADD)
@@ -184,6 +188,10 @@ am_ureduce_OBJECTS = ureduce.$(OBJEXT)
 ureduce_OBJECTS = $(am_ureduce_OBJECTS)
 ureduce_LDADD = $(LDADD)
 ureduce_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
+am_ureducelocal_OBJECTS = ureducelocal.$(OBJEXT)
+ureducelocal_OBJECTS = $(am_ureducelocal_OBJECTS)
+ureducelocal_LDADD = $(LDADD)
+ureducelocal_DEPENDENCIES = $(top_builddir)/cxx/util/mtest.o
 am_uscan_OBJECTS = uscan.$(OBJEXT)
 uscan_OBJECTS = $(am_uscan_OBJECTS)
 uscan_LDADD = $(LDADD)
@@ -223,18 +231,20 @@ SOURCES = $(alltoallw2x_SOURCES) $(arcomplex_SOURCES) \
 	$(icbarrierx_SOURCES) $(icbcastx_SOURCES) \
 	$(icgathervx_SOURCES) $(icgatherx_SOURCES) \
 	$(icreducex_SOURCES) $(icscattervx_SOURCES) \
-	$(icscatterx_SOURCES) $(reduceboolx_SOURCES) \
-	$(uallreduce_SOURCES) $(uallredx_SOURCES) $(uexscan_SOURCES) \
-	$(ureduce_SOURCES) $(uscan_SOURCES)
+	$(icscatterx_SOURCES) $(redscatblk_SOURCES) \
+	$(reduceboolx_SOURCES) $(uallreduce_SOURCES) \
+	$(uallredx_SOURCES) $(uexscan_SOURCES) $(ureduce_SOURCES) \
+	$(ureducelocal_SOURCES) $(uscan_SOURCES)
 DIST_SOURCES = $(alltoallw2x_SOURCES) $(arcomplex_SOURCES) \
 	$(icallgathervx_SOURCES) $(icallgatherx_SOURCES) \
 	$(icallreducex_SOURCES) $(icalltoallx_SOURCES) \
 	$(icbarrierx_SOURCES) $(icbcastx_SOURCES) \
 	$(icgathervx_SOURCES) $(icgatherx_SOURCES) \
 	$(icreducex_SOURCES) $(icscattervx_SOURCES) \
-	$(icscatterx_SOURCES) $(reduceboolx_SOURCES) \
-	$(uallreduce_SOURCES) $(uallredx_SOURCES) $(uexscan_SOURCES) \
-	$(ureduce_SOURCES) $(uscan_SOURCES)
+	$(icscatterx_SOURCES) $(redscatblk_SOURCES) \
+	$(reduceboolx_SOURCES) $(uallreduce_SOURCES) \
+	$(uallredx_SOURCES) $(uexscan_SOURCES) $(ureduce_SOURCES) \
+	$(ureducelocal_SOURCES) $(uscan_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -394,6 +404,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -420,6 +431,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 nocxxdistgraph = @nocxxdistgraph@
+nslib = @nslib@
 oldincludedir = @oldincludedir@
 otherlangs = @otherlangs@
 pdfdir = @pdfdir@
@@ -430,6 +442,7 @@ psdir = @psdir@
 rmadir = @rmadir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
@@ -446,6 +459,7 @@ arcomplex_SOURCES = arcomplex.cxx
 uallredx_SOURCES = uallredx.cxx
 uallreduce_SOURCES = uallreduce.cxx
 ureduce_SOURCES = ureduce.cxx
+ureducelocal_SOURCES = ureducelocal.cxx
 uscan_SOURCES = uscan.cxx
 uexscan_SOURCES = uexscan.cxx
 icbcastx_SOURCES = icbcastx.cxx
@@ -461,6 +475,7 @@ icreducex_SOURCES = icreducex.cxx
 icalltoallx_SOURCES = icalltoallx.cxx
 alltoallw2x_SOURCES = alltoallw2x.cxx
 reduceboolx_SOURCES = reduceboolx.cxx
+redscatblk_SOURCES = redscatblk.cxx
 all: all-am
 
 .SUFFIXES:
@@ -552,6 +567,10 @@ icscatterx$(EXEEXT): $(icscatterx_OBJECTS) $(icscatterx_DEPENDENCIES) $(EXTRA_ic
 	@rm -f icscatterx$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(icscatterx_OBJECTS) $(icscatterx_LDADD) $(LIBS)
 
+redscatblk$(EXEEXT): $(redscatblk_OBJECTS) $(redscatblk_DEPENDENCIES) $(EXTRA_redscatblk_DEPENDENCIES) 
+	@rm -f redscatblk$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(redscatblk_OBJECTS) $(redscatblk_LDADD) $(LIBS)
+
 reduceboolx$(EXEEXT): $(reduceboolx_OBJECTS) $(reduceboolx_DEPENDENCIES) $(EXTRA_reduceboolx_DEPENDENCIES) 
 	@rm -f reduceboolx$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(reduceboolx_OBJECTS) $(reduceboolx_LDADD) $(LIBS)
@@ -571,6 +590,10 @@ uexscan$(EXEEXT): $(uexscan_OBJECTS) $(uexscan_DEPENDENCIES) $(EXTRA_uexscan_DEP
 ureduce$(EXEEXT): $(ureduce_OBJECTS) $(ureduce_DEPENDENCIES) $(EXTRA_ureduce_DEPENDENCIES) 
 	@rm -f ureduce$(EXEEXT)
 	$(AM_V_CXXLD)$(CXXLINK) $(ureduce_OBJECTS) $(ureduce_LDADD) $(LIBS)
+
+ureducelocal$(EXEEXT): $(ureducelocal_OBJECTS) $(ureducelocal_DEPENDENCIES) $(EXTRA_ureducelocal_DEPENDENCIES) 
+	@rm -f ureducelocal$(EXEEXT)
+	$(AM_V_CXXLD)$(CXXLINK) $(ureducelocal_OBJECTS) $(ureducelocal_LDADD) $(LIBS)
 
 uscan$(EXEEXT): $(uscan_OBJECTS) $(uscan_DEPENDENCIES) $(EXTRA_uscan_DEPENDENCIES) 
 	@rm -f uscan$(EXEEXT)
@@ -595,11 +618,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icreducex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icscattervx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icscatterx.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/redscatblk.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reduceboolx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uallreduce.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uallredx.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uexscan.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ureduce.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ureducelocal.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uscan.Po@am__quote@
 
 .cxx.o:

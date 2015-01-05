@@ -32,6 +32,10 @@ cvars:
 #pragma _HP_SECONDARY_DEF PMPI_Allgatherv  MPI_Allgatherv
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Allgatherv as PMPI_Allgatherv
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+                   const int *recvcounts, const int *displs, MPI_Datatype recvtype, MPI_Comm comm)
+                   __attribute__((weak,alias("PMPI_Allgatherv")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -1041,7 +1045,7 @@ int MPI_Allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
             MPID_Datatype *recvtype_ptr=NULL, *sendtype_ptr=NULL;
             int i, comm_size;
 	    
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
 	    if (comm_ptr->comm_kind == MPID_INTERCOMM)
@@ -1057,6 +1061,16 @@ int MPI_Allgatherv(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                     if (mpi_errno != MPI_SUCCESS) goto fn_fail;
                 }
                 MPIR_ERRTEST_USERBUFFER(sendbuf,sendcount,sendtype,mpi_errno);
+
+                /* catch common aliasing cases */
+                if (comm_ptr->comm_kind == MPID_INTRACOMM &&
+                        sendtype == recvtype &&
+                        recvcounts[comm_ptr->rank] != 0 &&
+                        sendcount != 0) {
+                    int recvtype_size;
+                    MPID_Datatype_get_size_macro(recvtype, recvtype_size);
+                    MPIR_ERRTEST_ALIAS_COLL(sendbuf, (char*)recvbuf + displs[comm_ptr->rank]*recvtype_size, mpi_errno);
+                }
             }
 
             if (comm_ptr->comm_kind == MPID_INTRACOMM) 

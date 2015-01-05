@@ -14,6 +14,10 @@
 #pragma _HP_SECONDARY_DEF PMPI_Exscan  MPI_Exscan
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Exscan as PMPI_Exscan
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Exscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+               MPI_Op op, MPI_Comm comm)
+               __attribute__((weak,alias("PMPI_Exscan")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -334,7 +338,7 @@ int MPI_Exscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datat
             MPID_Op *op_ptr = NULL;
             int rank;
 	    
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
             MPIR_ERRTEST_COMM_INTRA(comm_ptr, mpi_errno);
@@ -369,8 +373,10 @@ int MPI_Exscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datat
                 mpi_errno = 
                     ( * MPIR_OP_HDL_TO_DTYPE_FN(op) )(datatype); 
             }
-            
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+            if (sendbuf != MPI_IN_PLACE && count != 0)
+                MPIR_ERRTEST_ALIAS_COLL(sendbuf, recvbuf, mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }

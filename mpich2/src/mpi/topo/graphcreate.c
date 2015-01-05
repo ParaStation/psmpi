@@ -15,6 +15,9 @@
 #pragma _HP_SECONDARY_DEF PMPI_Graph_create  MPI_Graph_create
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Graph_create as PMPI_Graph_create
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Graph_create(MPI_Comm comm_old, int nnodes, const int indx[], const int edges[],
+                     int reorder, MPI_Comm *comm_graph) __attribute__((weak,alias("PMPI_Graph_create")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -197,7 +200,7 @@ int MPI_Graph_create(MPI_Comm comm_old, int nnodes, const int indx[],
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             if (mpi_errno) goto fn_fail;
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    if (comm_ptr) {

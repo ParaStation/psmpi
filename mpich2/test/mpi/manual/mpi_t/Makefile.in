@@ -314,6 +314,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -340,6 +341,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 nocxxdistgraph = @nocxxdistgraph@
+nslib = @nslib@
 oldincludedir = @oldincludedir@
 otherlangs = @otherlangs@
 pdfdir = @pdfdir@
@@ -350,6 +352,7 @@ psdir = @psdir@
 rmadir = @rmadir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
@@ -362,7 +365,7 @@ top_srcdir = @top_srcdir@
 # AM_CPPFLAGS are used for C++ code as well
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = $(top_builddir)/util/mtest.o
-CLEANFILES = summary.xml summary.tap
+CLEANFILES = summary.xml summary.tap summary.junit.xml
 
 # these tests are specific to the MPICH ch3:nemesis implementation of nemesis
 nemesis_tests = nem_fbox_fallback_to_queue_count \

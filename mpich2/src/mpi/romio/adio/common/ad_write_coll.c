@@ -366,7 +366,7 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
     MPI_Allreduce(&ntimes, &max_ntimes, 1, MPI_INT, MPI_MAX,
 		  fd->comm); 
 
-    if (ntimes) write_buf = (char *) ADIOI_Malloc(coll_bufsize);
+    write_buf = fd->io_buf;
 
     curr_offlen_ptr = (int *) ADIOI_Calloc(nprocs, sizeof(int)); 
     /* its use is explained below. calloc initializes to 0. */
@@ -544,7 +544,6 @@ static void ADIOI_Exch_and_write(ADIO_File fd, void *buf, MPI_Datatype
         if (*error_code != MPI_SUCCESS) return;
     }
 
-    if (ntimes) ADIOI_Free(write_buf);
     ADIOI_Free(curr_offlen_ptr);
     ADIOI_Free(count);
     ADIOI_Free(partial_recv);
@@ -612,8 +611,8 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, void *buf, char *write_buf,
 		tmp_len[i] = others_req[i].lens[k];
 		others_req[i].lens[k] = partial_recv[i];
 	    }
-	    MPI_Type_hindexed(count[i], 
-                 &(others_req[i].lens[start_pos[i]]),
+	    ADIOI_Type_create_hindexed_x(count[i],
+		     &(others_req[i].lens[start_pos[i]]),
 	             &(others_req[i].mem_ptrs[start_pos[i]]), 
 			 MPI_BYTE, recv_types+j);
 	    /* absolute displacements; use MPI_BOTTOM in recv */
@@ -975,7 +974,7 @@ void ADIOI_Heap_merge(ADIOI_Access *others_req, int *count,
 {
     typedef struct {
 	ADIO_Offset *off_list;
-	int *len_list;
+	ADIO_Offset *len_list;
 	int nelem;
     } heap_struct;
 

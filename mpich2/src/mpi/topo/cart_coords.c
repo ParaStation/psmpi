@@ -15,6 +15,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Cart_coords  MPI_Cart_coords
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Cart_coords as PMPI_Cart_coords
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int coords[]) __attribute__((weak,alias("PMPI_Cart_coords")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -86,7 +88,7 @@ int MPI_Cart_coords(MPI_Comm comm, int rank, int maxdims, int coords[])
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 

@@ -19,6 +19,7 @@ Output Parameters:
   Return Value:
   0 on success, -1 on failure.
 @*/
+
 int MPID_Type_commit(MPI_Datatype *datatype_p)
 {
     int           mpi_errno=MPI_SUCCESS;
@@ -60,6 +61,7 @@ int MPID_Type_commit(MPI_Datatype *datatype_p)
 #if 0
         MPIDI_Dataloop_dot_printf(datatype_ptr->dataloop, 0, 1);
 #endif
+
     }
 
     return mpi_errno;

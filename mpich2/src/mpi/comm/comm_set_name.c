@@ -14,6 +14,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Comm_set_name  MPI_Comm_set_name
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Comm_set_name as PMPI_Comm_set_name
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Comm_set_name(MPI_Comm comm, const char *comm_name) __attribute__((weak,alias("PMPI_Comm_set_name")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -75,7 +77,7 @@ int MPI_Comm_set_name(MPI_Comm comm, const char *comm_name)
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
             if (mpi_errno) goto fn_fail;
 	    MPIR_ERRTEST_ARGNULL( comm_name, "comm_name", mpi_errno );
 	    /* If comm_ptr is not valid, it will be reset to null */

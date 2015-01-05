@@ -14,6 +14,11 @@
 #pragma _HP_SECONDARY_DEF PMPI_Ireduce_scatter_block  MPI_Ireduce_scatter_block
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Ireduce_scatter_block as PMPI_Ireduce_scatter_block
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Ireduce_scatter_block(const void *sendbuf, void *recvbuf, int recvcount,
+                              MPI_Datatype datatype, MPI_Op op, MPI_Comm comm,
+                              MPI_Request *request)
+                              __attribute__((weak,alias("PMPI_Ireduce_scatter_block")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -1013,7 +1018,7 @@ int MPI_Ireduce_scatter_block(const void *sendbuf, void *recvbuf,
     {
         MPID_BEGIN_ERROR_CHECKS
         {
-            MPID_Comm_valid_ptr(comm_ptr, mpi_errno);
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             if (HANDLE_GET_KIND(datatype) != HANDLE_KIND_BUILTIN) {
                 MPID_Datatype *datatype_ptr = NULL;
                 MPID_Datatype_get_ptr(datatype, datatype_ptr);
@@ -1034,7 +1039,10 @@ int MPI_Ireduce_scatter_block(const void *sendbuf, void *recvbuf,
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
             MPIR_ERRTEST_ARGNULL(request,"request", mpi_errno);
-            /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
+
+            if (comm_ptr->comm_kind == MPID_INTRACOMM && sendbuf != MPI_IN_PLACE && recvcount != 0)
+                MPIR_ERRTEST_ALIAS_COLL(sendbuf, recvbuf, mpi_errno)
+            /* TODO more checks may be appropriate (counts, in_place, etc) */
         }
         MPID_END_ERROR_CHECKS
     }

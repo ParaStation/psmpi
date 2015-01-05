@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2012 by Argonne National Laboratory.
+ *  (C) 2011 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
@@ -13,6 +13,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Mprobe  MPI_Mprobe
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Mprobe as PMPI_Mprobe
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Mprobe(int source, int tag, MPI_Comm comm, MPI_Message *message, MPI_Status *status) __attribute__((weak,alias("PMPI_Mprobe")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -79,7 +81,7 @@ int MPI_Mprobe(int source, int tag, MPI_Comm comm, MPI_Message *message, MPI_Sta
     {
         MPID_BEGIN_ERROR_CHECKS
         {
-            MPID_Comm_valid_ptr(comm_ptr, mpi_errno);
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }

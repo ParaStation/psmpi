@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
+ *  (C) 2009 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
@@ -14,7 +14,7 @@
 #define PMI_MAXVALLEN    (1024) /* max length of value in keyval space */
 #define PMI_MAXKVSLEN    (256)  /* max length of various names */
 
-#define MAX_PMI_ARGS  (1024)    /* number of arguments in a PMI command */
+#define MAX_PMI_ARGS  (65536)    /* number of arguments in a PMI command */
 #define MAX_PMI_INTERNAL_ARGS   (65536) /* number of arguments in internal communication */
 
 struct HYD_pmcd_pmi_kvs_pair {

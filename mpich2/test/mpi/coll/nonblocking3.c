@@ -18,8 +18,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <assert.h>
-/* USE_STRICT_MPI may be defined in mpitestconf.h */
-#include "mpitestconf.h"
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
@@ -56,16 +54,6 @@ static int errs = 0;
         }                                                                                \
     } while (0)
 
-/* Since MPICH is currently the only NBC implementation in existence, just use
- * this quick-and-dirty #ifdef to decide whether to test the nonblocking
- * collectives.  Eventually we can add a configure option or configure test, or
- * the MPI-3 standard will be released and these can be gated on a MPI_VERSION
- * check */
-#if !defined(USE_STRICT_MPI) && defined(MPICH)
-#define TEST_NBC_ROUTINES 1
-#endif
-
-#if defined(TEST_NBC_ROUTINES)
 /* Intended to act like "rand_r", but we can be sure that it will exist and be
  * consistent across all of comm world.  Returns a number in the range
  * [0,GEN_PRN_MAX] */
@@ -141,7 +129,7 @@ static void start_random_nonblocking(MPI_Comm comm, unsigned int rndnum, MPI_Req
     int *rdispls = NULL;
     int *sendtypes = NULL;
     int *recvtypes = NULL;
-    char *buf_alias = NULL;
+    signed char *buf_alias = NULL;
 
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &size);
@@ -177,7 +165,7 @@ static void start_random_nonblocking(MPI_Comm comm, unsigned int rndnum, MPI_Req
 
         case 1: /* MPI_Ibcast (again, but designed to stress scatter/allgather impls) */
             /* FIXME fiddle with PRIME and buffer allocation s.t. PRIME is much larger (1021?) */
-            buf_alias = (char *)buf;
+            buf_alias = (signed char *)buf;
             my_assert(COUNT*size*sizeof(int) > PRIME); /* sanity */
             for (i = 0; i < PRIME; ++i) {
                 if (rank == 0)
@@ -188,7 +176,7 @@ static void start_random_nonblocking(MPI_Comm comm, unsigned int rndnum, MPI_Req
             for (i = PRIME; i < COUNT * size * sizeof(int); ++i) {
                 buf_alias[i] = 0xbf;
             }
-            MPI_Ibcast(buf, PRIME, MPI_SIGNED_CHAR, 0, comm, req);
+            MPI_Ibcast(buf_alias, PRIME, MPI_SIGNED_CHAR, 0, comm, req);
             break;
 
         case 2: /* MPI_Ibarrier */
@@ -745,7 +733,6 @@ static void complete_something_somehow(unsigned int rndnum, int numreqs, MPI_Req
     }
 #undef COMPLETION_CASES
 }
-#endif /* defined(TEST_NBC_ROUTINES) */
 
 int main(int argc, char **argv)
 {
@@ -753,9 +740,7 @@ int main(int argc, char **argv)
     int wrank, wsize;
     unsigned int seed = 0x10bc;
     unsigned int post_seq, complete_seq;
-#if defined(TEST_NBC_ROUTINES)
     struct laundry larr[WINDOW];
-#endif
     MPI_Request reqs[WINDOW];
     int outcount;
     int indices[WINDOW];
@@ -765,8 +750,6 @@ int main(int argc, char **argv)
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &wrank);
     MPI_Comm_size(MPI_COMM_WORLD, &wsize);
-
-#if defined(TEST_NBC_ROUTINES)
 
     /* it is critical that all processes in the communicator start with a
      * consistent value for "post_seq" */
@@ -825,8 +808,6 @@ int main(int argc, char **argv)
     for (i = 0; i < NUM_COMMS; ++i) {
         MPI_Comm_free(&comms[i]);
     }
-
-#endif /* defined(TEST_NBC_ROUTINES) */
 
     if (wrank == 0) {
         if (errs)

@@ -13,6 +13,10 @@
 #pragma _HP_SECONDARY_DEF PMPI_Comm_spawn_multiple  MPI_Comm_spawn_multiple
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Comm_spawn_multiple as PMPI_Comm_spawn_multiple
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Comm_spawn_multiple(int count, char *array_of_commands[], char **array_of_argv[],
+                            const int array_of_maxprocs[], const MPI_Info array_of_info[],
+                            int root, MPI_Comm comm, MPI_Comm *intercomm, int array_of_errcodes[]) __attribute__((weak,alias("PMPI_Comm_spawn_multiple")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -97,7 +101,7 @@ int MPI_Comm_spawn_multiple(int count, char *array_of_commands[],
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
 	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) goto fn_fail;
 

@@ -255,7 +255,7 @@ else {
 # Process any files
 if ($listfiles eq "") {
     if ($batchRun) {
-	print STDERR "An implicit list of tests is not permitted in batch mode\n";
+	print STDERR "An implicit list of tests is not permitted in batch mode. See README for more details\n";
 	exit(1);
     } 
     else {
@@ -544,7 +544,7 @@ sub RunList {
 				    $progEnv, $mpiexecArgs, $xfail );
 		}
 	    }
-	    elsif ($xfail ne '') {
+	    elsif ($xfail eq '') {
 		# We expected to run this program, so failure to build
 		# is an error
 		$found_error = 1;
@@ -1006,8 +1006,6 @@ sub TestTimeout {
 	if (/[Tt]imeout/) { next; }
 	# Allow 'signaled with Interrupt' (see gforker mpiexec)
 	if (/signaled with Interrupt/) { next; }
-	# Allow 'job ending due to env var MPIEXEC_TIMEOUT' (mpd)
-	if (/job ending due to env var MPIEXEC_TIMEOUT/) { next; }
 	# Allow 'APPLICATION TIMED OUT' (hydra)
 	if (/\[mpiexec@.*\] APPLICATION TIMED OUT/) { last; }
 	# ANY output is an error (other than timeout) 
@@ -1137,7 +1135,7 @@ sub RunTestFailed {
         print TAPOUT "  Directory: $workdir\n";
         print TAPOUT "  File: $programname\n";
         print TAPOUT "  Num-procs: $np\n";
-        print TAPOUT "  Date: \"" . localtime . "\"\n";
+        print TAPOUT "  Date: \"" . localtime() . "\"\n";
 
         # The following would be nice, but it leads to unfortunate formatting in
         # the Jenkins web output for now.  Using comment lines instead, since
@@ -1179,7 +1177,7 @@ sub RunTestFailed {
         print JUNITOUT "  Directory: $workdir\n";
         print JUNITOUT "  File: $programname\n";
         print JUNITOUT "  Num-procs: $np\n";
-        print JUNITOUT "  Date: \"" . localtime . "\"\n";
+        print JUNITOUT "  Date: \"" . localtime() . "\"\n";
 
         print JUNITOUT "  ...\n";
 

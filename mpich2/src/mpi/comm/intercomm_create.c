@@ -17,6 +17,9 @@
 #pragma _HP_SECONDARY_DEF PMPI_Intercomm_create  MPI_Intercomm_create
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Intercomm_create as PMPI_Intercomm_create
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader, MPI_Comm peer_comm,
+                         int remote_leader, int tag, MPI_Comm *newintercomm) __attribute__((weak,alias("PMPI_Intercomm_create")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -513,7 +516,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate local_comm_ptr */
-            MPID_Comm_valid_ptr( local_comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( local_comm_ptr, mpi_errno, FALSE );
 	    if (local_comm_ptr) {
 		/*  Only check if local_comm_ptr valid */
 		MPIR_ERRTEST_COMM_INTRA(local_comm_ptr, mpi_errno );
@@ -541,7 +544,7 @@ int MPI_Intercomm_create(MPI_Comm local_comm, int local_leader,
 	{
 	    MPID_BEGIN_ERROR_CHECKS;
 	    {
-		MPID_Comm_valid_ptr( peer_comm_ptr, mpi_errno );
+		MPID_Comm_valid_ptr( peer_comm_ptr, mpi_errno, FALSE );
 		/* Note: In MPI 1.0, peer_comm was restricted to 
 		   intracommunicators.  In 1.1, it may be any communicator */
 

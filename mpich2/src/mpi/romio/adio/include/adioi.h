@@ -74,6 +74,13 @@ struct ADIOI_Hints_struct {
 			unsigned read_chunk_sz; /* chunk size for direct reads */
 			unsigned write_chunk_sz; /* chunk size for direct writes */
 		} xfs;
+	struct {
+	    int *bridgelist; /* list of all bride ranks */
+	    int *bridgelistnum; /* each entry here is the number of aggregators
+				   associated with the bridge rank of the same
+				   index in bridgelist */
+	    int numbridges; /* total number of bridges */
+	} bg;
     } fs_hints;
 
 };
@@ -189,6 +196,7 @@ struct ADIOI_Fns_struct {
     void (*ADIOI_xxx_Resize) (ADIO_File fd, ADIO_Offset size, int *error_code);
     void (*ADIOI_xxx_Delete) (const char *filename, int *error_code);
     int  (*ADIOI_xxx_Feature) (ADIO_File fd, int flag);
+    const char *fsname;
 };
 
 /* optypes for ADIO_RequestD */
@@ -197,6 +205,9 @@ struct ADIOI_Fns_struct {
 
 #define ADIOI_MIN(a, b) ((a) < (b) ? (a) : (b))
 #define ADIOI_MAX(a, b) ((a) > (b) ? (a) : (b))
+/* thanks stackoverflow:
+ * http://stackoverflow.com/questions/3982348/implement-generic-swap-macro-in-c */
+#define ADIOI_SWAP(x, y, T) do { T temp##x##y = x; x = y; y = temp##x##y; } while (0);
 
 #define ADIOI_PREALLOC_BUFSZ      16777216    /* buffer size used to 
                                                 preallocate disk space */
@@ -296,9 +307,7 @@ struct ADIOI_Fns_struct {
    as array of structures indexed by process number. */
 typedef struct {
     ADIO_Offset *offsets;   /* array of offsets */
-    int *lens;              /* array of lengths */ 
-    /* consider aints or offsets for lens? Seems to be used as in-memory
-       buffer lengths, so it should be < 2G and ok as an int          */
+    ADIO_Offset *lens;      /* array of lengths */
     MPI_Aint *mem_ptrs;     /* array of pointers. used in the read/write
 			       phase to indicate where the data
 			       is stored in memory */
@@ -309,7 +318,7 @@ typedef struct {
    file realms among other things */
 typedef struct {
     ADIO_Offset *offsets; /* array of offsets */
-    int *lens;           /* array of lengths */
+    ADIO_Offset *lens;    /* array of lengths */
     int count;            /* size of above arrays */
 } ADIOI_Offlen;
 
@@ -331,9 +340,10 @@ void ADIOI_Get_position(ADIO_File fd, ADIO_Offset *offset);
 void ADIOI_Get_eof_offset(ADIO_File fd, ADIO_Offset *eof_offset);
 void ADIOI_Get_byte_offset(ADIO_File fd, ADIO_Offset offset,
 			   ADIO_Offset *disp);
-void ADIOI_process_system_hints(MPI_Info info);
+void ADIOI_process_system_hints(ADIO_File fd, MPI_Info info);
 void ADIOI_incorporate_system_hints(MPI_Info info, MPI_Info sysinfo, 
 		MPI_Info *new_info);
+void ADIOI_Info_print_keyvals(MPI_Info info);
 
 
 void ADIOI_GEN_Fcntl(ADIO_File fd, int flag, ADIO_Fcntl_t *fcntl_struct,
@@ -548,6 +558,22 @@ int ADIOI_Build_client_req(ADIO_File fd,
 			   ADIO_Offset agg_comm_sz,
 			   MPI_Datatype *agg_comm_dtype_p);
 
+void ADIOI_P2PContigWriteAggregation(ADIO_File fd,
+	                             const void *buf,
+				     int *error_code,
+				     ADIO_Offset *st_offsets,
+				     ADIO_Offset *end_offset,
+				     ADIO_Offset *fd_start,
+				     ADIO_Offset *fd_end);
+
+void ADIOI_P2PContigReadAggregation(ADIO_File fd,
+	                             const void *buf,
+				     int *error_code,
+				     ADIO_Offset *st_offsets,
+				     ADIO_Offset *end_offset,
+				     ADIO_Offset *fd_start,
+				     ADIO_Offset *fd_end);
+
 ADIO_Offset ADIOI_GEN_SeekIndividual(ADIO_File fd, ADIO_Offset offset, 
 				     int whence, int *error_code);
 void ADIOI_GEN_Resize(ADIO_File fd, ADIO_Offset size, int *error_code);
@@ -562,6 +588,11 @@ int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, MPI_Count n
 int ADIOI_Uses_generic_read(ADIO_File fd);
 int ADIOI_Uses_generic_write(ADIO_File fd);
 int ADIOI_Err_create_code(const char *myname, const char *filename, int my_errno);
+int ADIOI_Type_create_hindexed_x(int count,
+		const MPI_Count array_of_blocklengths[],
+		const MPI_Aint array_of_displacements[],
+		MPI_Datatype oldtype,
+		MPI_Datatype *newtype);
 
 
 int ADIOI_FAKE_IODone(ADIO_Request *request, ADIO_Status *status,
@@ -859,5 +890,23 @@ if (MPIR_Ext_dbg_romio_typical_enabled) fprintf
 #define DBG_FPRINTF if (0) fprintf
 #define DBGV_FPRINTF if (0) fprintf
 #endif
+
+/* declarations for threaded I/O */
+/* i/o thread data structure (bgmpio_pthreadwc) */
+typedef struct wcThreadFuncData {
+    ADIO_File fd;
+    int io_kind;
+    char *buf;
+    int size;
+    ADIO_Offset offset;
+    ADIO_Status status;
+    int error_code;
+} ADIOI_IO_ThreadFuncData;
+
+void *ADIOI_IO_Thread_Func(void *vptr_args);
+
+
+
+
 #endif
 

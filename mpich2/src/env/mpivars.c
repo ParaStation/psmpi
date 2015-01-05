@@ -1,8 +1,14 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2013 by Argonne National Laboratory.
+ *  (C) 2014 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
+
+/* style:allow:snprintf:9 sig:0 */
+/* style:allow:strncpy:3 sig:0 */
+/* style:allow:fprintf:26 sig:0 */
+/* style:allow:free:3 sig:0 */
+/* style:allow:malloc:3 sig:0 */
 
 #include <stdio.h>
 #include <string.h>
@@ -106,7 +112,7 @@ int PrintControlVars( FILE *fp )
 {
     int          i, num_cvar, nameLen, verbosity, descLen, binding, scope;
     int          hasValue;
-    char         name[MAX_NAME_LEN], desc[MAX_DESC_LEN], varValue[21];
+    char         name[MAX_NAME_LEN], desc[MAX_DESC_LEN], varValue[512];
     MPI_T_enum   enumtype;
     MPI_Datatype datatype;
 
@@ -160,7 +166,7 @@ int PrintPerfVars( FILE *fp )
 {
     int          i, numPvar, nameLen, descLen, verbosity, varClass;
     int          binding, isReadonly, isContinuous, isAtomic;
-    char         name[MAX_NAME_LEN], desc[MAX_DESC_LEN], varValue[21];
+    char         name[MAX_NAME_LEN], desc[MAX_DESC_LEN], varValue[512];
     MPI_T_enum   enumtype;
     MPI_Datatype datatype;
 
@@ -462,33 +468,25 @@ int getCvarValueAsStr( int idx, MPI_Datatype datatype,
 
     MPI_T_cvar_handle_alloc( idx, NULL, &chandle, &count );
     if (count == 1 || (datatype==MPI_CHAR && count < varValueLen)) {
-        switch (datatype) {
-        case MPI_INT:
+        if (MPI_INT == datatype) {
             MPI_T_cvar_read( chandle, &ival );
             snprintf( varValue, varValueLen, "%d", ival );
             hasValue = 1;
-            break;
-        case MPI_UNSIGNED:
+        } else if (MPI_UNSIGNED == datatype) {
             MPI_T_cvar_read( chandle, &uval );
             snprintf( varValue, varValueLen, "%u", uval );
             hasValue = 1;
-            break;
-        case MPI_UNSIGNED_LONG:
+        } else if (MPI_UNSIGNED_LONG == datatype) {
             MPI_T_cvar_read( chandle, &ulval );
             snprintf( varValue, varValueLen, "%lu", ulval );
             hasValue = 1;
-            break;
-        case MPI_UNSIGNED_LONG_LONG:
+        } else if (MPI_UNSIGNED_LONG_LONG == datatype) {
             MPI_T_cvar_read( chandle, &ullval );
             snprintf( varValue, varValueLen, "%llu", ullval );
             hasValue = 1;
-            break;
-        case MPI_CHAR:
+        } else if (MPI_CHAR == datatype) {
             MPI_T_cvar_read( chandle, varValue );
             hasValue = 1;
-            break;
-        default:
-            break;
         }
     }
     MPI_T_cvar_handle_free( &chandle );
@@ -528,38 +526,29 @@ int getPvarValueAsStr( int idx, MPI_Datatype datatype, int isContinuous,
                 goto fn_fail;
             }
         }
-        switch (datatype) {
-        case MPI_INT:
+        if (MPI_INT == datatype) {
             MPI_T_pvar_read( session, phandle, &ival );
             snprintf( varValue, varValueLen, "%d", ival );
             hasValue = 1;
-            break;
-        case MPI_UNSIGNED:
+        } else if (MPI_UNSIGNED == datatype) {
             MPI_T_pvar_read( session, phandle, &uval );
             snprintf( varValue, varValueLen, "%u", uval );
             hasValue = 1;
-            break;
-        case MPI_UNSIGNED_LONG:
+        } else if (MPI_UNSIGNED_LONG == datatype) {
             MPI_T_pvar_read( session, phandle, &ulval );
             snprintf( varValue, varValueLen, "%lu", ulval );
             hasValue = 1;
-            break;
-        case MPI_UNSIGNED_LONG_LONG:
+        } else if (MPI_UNSIGNED_LONG_LONG == datatype) {
             MPI_T_pvar_read( session, phandle, &ullval );
             snprintf( varValue, varValueLen, "%llu", ullval );
             hasValue = 1;
-            break;
-        case MPI_DOUBLE:
+        } else if (MPI_DOUBLE == datatype) {
             MPI_T_pvar_read( session, phandle, &dval );
             snprintf( varValue, varValueLen, "%e", dval );
             hasValue = 1;
-            break;
-        case MPI_CHAR:
+        } else if (MPI_CHAR == datatype) {
             MPI_T_pvar_read( session, phandle, varValue );
             hasValue = 1;
-            break;
-        default:
-            break;
         }
     }
  fn_fail:

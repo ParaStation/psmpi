@@ -15,6 +15,9 @@
 #pragma _HP_SECONDARY_DEF PMPI_Bsend  MPI_Bsend
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Bsend as PMPI_Bsend
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int tag,
+              MPI_Comm comm) __attribute__((weak,alias("PMPI_Bsend")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -118,7 +121,7 @@ int MPI_Bsend(const void *buf, int count, MPI_Datatype datatype, int dest, int t
         {
 	    MPIR_ERRTEST_COUNT(count,mpi_errno);
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             if (mpi_errno) goto fn_fail;
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    if (comm_ptr) {

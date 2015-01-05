@@ -27,11 +27,9 @@ MPIDI_Fetch_and_op_using_pami_rmw(pami_context_t   context,
 {
     MPIDI_Win_request *req = (MPIDI_Win_request*)_req;
     pami_result_t rc;
-    MPID_Win    *win;
     int  target_rank;  
   
     MPID_assert(req != NULL);
-    win = req->win;
     target_rank = req->target.rank;
 
     pami_rmw_t  params; 
@@ -106,7 +104,7 @@ MPIDI_WinAtomicCB(pami_context_t    context,
        .iov_base = NULL,
        .iov_len  = 0,
      },
-    .hints = 0, 
+    .hints = {0}, 
   };
   
   pami_result_t rc = PAMI_Send_immediate(context, &params);  
@@ -173,7 +171,7 @@ MPIDI_Atomic (pami_context_t   context,
        .iov_base = NULL,
        .iov_len  = 0,
      },
-    .hints = 0, 
+    .hints = {0}, 
   };
   
   rc = PAMI_Send_immediate(context, &params);  
@@ -191,7 +189,6 @@ int MPID_Fetch_and_op(const void *origin_addr, void *result_addr,
 {
   int mpi_errno = MPI_SUCCESS;
   MPIDI_Win_request *req;
-  int datatype_iscontig=0;
   int good_for_rmw=0;
   int count = 1;
   int shm_locked = 0;
@@ -207,8 +204,6 @@ int MPID_Fetch_and_op(const void *origin_addr, void *result_addr,
                         return mpi_errno, "**rmasync");
   }
 
-  int null=0;
-  MPI_Op null_op=0;
   pami_type_t         pami_type;
   pami_atomic_t  pami_op;
 
@@ -294,49 +289,6 @@ int MPID_Fetch_and_op(const void *origin_addr, void *result_addr,
 
   req->target.rank = target_rank;
 
-
-  if (target_rank == win->comm_ptr->rank || win->create_flavor == MPI_WIN_FLAVOR_SHARED)
-    {
-        MPI_User_function *uop;
-        void *base, *dest_addr;
-        int disp_unit;
-        int len, one;
-
-        if (win->create_flavor == MPI_WIN_FLAVOR_SHARED) {
-            MPIDI_SHM_MUTEX_LOCK(win);
-            shm_locked = 1;
-            base = win->mpid.shm->base_addr;
-            disp_unit = win->disp_unit;
-
-        }
-	else if (win->create_flavor == MPI_WIN_FLAVOR_DYNAMIC) {
-	    base = NULL;
-	    disp_unit = win->disp_unit;
-	}
-        else {
-            base = win->base;
-            disp_unit = win->disp_unit;
-        }
-
-        dest_addr = (char *) base + disp_unit * target_disp;
-
-        MPID_Datatype_get_size_macro(datatype, len);
-        MPIU_Memcpy(result_addr, dest_addr, len);
-
-        uop = MPIR_OP_HDL_TO_FN(op);
-        one = 1;
-
-        (*uop)((void *) origin_addr, dest_addr, &one, &datatype);
-
-        if (shm_locked) {
-            MPIDI_SHM_MUTEX_UNLOCK(win);
-            shm_locked = 0;
-        }
-
-        MPIU_Free(req);
-
-    }
-  else {
     req->compare_buffer = NULL;
     req->pami_op = pami_op;
     req->op = op;
@@ -379,7 +331,6 @@ int MPID_Fetch_and_op(const void *origin_addr, void *result_addr,
       PAMI_Context_post(MPIDI_Context[0], &req->post_request, MPIDI_Atomic, req);
 
     }
-  }
 
 fn_fail:
   return mpi_errno;

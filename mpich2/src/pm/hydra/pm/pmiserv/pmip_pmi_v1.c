@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
+ *  (C) 2010 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
@@ -17,7 +17,12 @@
             HYDU_dump(stdout, __VA_ARGS__);     \
     }
 
-#define CACHE_PUT_KEYVAL_MAXLEN  (65536)
+/* The number of key values we store has to be one less than the
+ * number of PMI arguments allowed.  This is because, when we flush
+ * the PMI keyvals upstream, the server will treat it as a single PMI
+ * command.  We leave room for one extra argument, cmd=put, that needs
+ * to be appended when flushing. */
+#define CACHE_PUT_KEYVAL_MAXLEN  (MAX_PMI_ARGS - 1)
 
 static struct {
     char *keyval[CACHE_PUT_KEYVAL_MAXLEN + 1];

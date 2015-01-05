@@ -127,6 +127,8 @@ static int TRSetBytes   = 0;
 /* Used to keep track of allocations */
 static volatile size_t TRMaxMem = 0;
 static volatile int    TRMaxMemId = 0;
+static volatile size_t TRCurOverhead = 0;
+static volatile size_t TRMaxOverhead = 314572800;
 /* Used to limit allocation */
 static volatile size_t TRMaxMemAllow = 0;
 
@@ -178,6 +180,11 @@ void MPL_trinit(int rank)
         TRDefaultByte = 0;
         TRFreedByte = 0;
     }
+    s = getenv("MPICH_TRMEM_MAX_OVERHEAD");
+    if (s && *s) {
+        long l = atol(s);
+        TRMaxOverhead = (size_t)l;
+    }
     s = getenv("MPL_TRMEM_INIT");
     if (s && *s && (strcmp(s, "YES") == 0 || strcmp(s, "yes") == 0)) {
         TRSetBytes = 1;
@@ -195,6 +202,11 @@ void MPL_trinit(int rank)
     if (s && *s) {
         int l = atoi(s);
         TRlevel = l;
+    }
+    s = getenv("MPL_TRMEM_MAX_OVERHEAD");
+    if (s && *s) {
+        long l = atol(s);
+        TRMaxOverhead = (size_t)l;
     }
 
 }
@@ -284,6 +296,15 @@ void *MPL_trmalloc(size_t a, int lineno, const char fname[])
          * all compilers */
         MPL_error_printf("[%d] Allocating %ld(%ld) bytes at %8p in %s[%d]\n",
                          world_rank, (long)a, (long)nsize, new, fname, lineno);
+    }
+
+    /* Warn the user about tracing overhead if the total memory overhead for
+     * tracing is larger than the threshold, TRMaxOverhead. */
+    TRCurOverhead += sizeof(TrSPACE);
+    if ((TRCurOverhead > TRMaxOverhead) && TRMaxOverhead) {
+        MPL_error_printf("[%d] %.1lf MB was used for memory usage tracing!\n",
+                         world_rank, (double)TRCurOverhead / 1024 / 1024);
+        TRMaxOverhead = TRMaxOverhead * 2;
     }
 
     /* Without these macros valgrind actually catches far fewer errors when
@@ -426,6 +447,8 @@ void MPL_trfree(void *a_ptr, int line, const char file[])
                          world_rank, (unsigned long)head->size, hexstring, 
                          file, line);
     }
+
+    TRCurOverhead -= sizeof(TrSPACE);
 
     /*
      * Now, scrub the data (except possibly the first few ints) to
@@ -606,19 +629,25 @@ void MPL_trdump(FILE * fp, int minid)
     }
     head = TRhead[1];
     while (head) {
+	/* these "rank and size" strings are supposed to be small: enough to
+	 * hold an mpi rank, a size, and a hexadecimal address. */
+#define ADDRESS_STR_BUFLEN 256
+
+	char address_str[ADDRESS_STR_BUFLEN];
         MPL_VG_MAKE_MEM_DEFINED(head, sizeof(*head));
         if (head->id >= minid) {
             addrToHex((char *) head + sizeof(TrSPACE), hexstring);
-            fprintf(fp, "[%d] %lu at [%s], ", world_rank, 
+            address_str[ADDRESS_STR_BUFLEN-1] = 0;
+            snprintf(address_str, ADDRESS_STR_BUFLEN-1, "[%d] %lu at [%s],", world_rank,
                     (unsigned long)head->size, hexstring);
             head->fname[TR_FNAME_LEN - 1] = 0;  /* Be extra careful */
             if (TRidSet) {
                 /* For head->id >= 0, we can add code to map the id to
                  * the name of a package, rather than using a raw number */
-                fprintf(fp, "id = %d %s[%d]\n", head->id, head->fname, head->lineno);
+                fprintf(fp, "%s id = %d %s[%d]\n", address_str, head->id, head->fname, head->lineno);
             }
             else {
-                fprintf(fp, "%s[%d]\n", head->fname, head->lineno);
+                fprintf(fp, "%s %s[%d]\n", address_str, head->fname, head->lineno);
             }
         }
 #ifdef VALGRIND_MAKE_MEM_NOACCESS

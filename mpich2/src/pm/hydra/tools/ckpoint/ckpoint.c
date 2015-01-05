@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
+ *  (C) 2009 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
@@ -19,7 +19,7 @@
 static pthread_t thread;
 #endif
 static enum { HYDT_CKPOINT_NONE, HYDT_CKPOINT_RUNNING, HYDT_CKPOINT_FINISHED } in_ckpt;
-struct HYDT_ckpoint_info HYDT_ckpoint_info;
+struct HYDT_ckpoint_info_s HYDT_ckpoint_info;
 
 HYD_status HYDT_ckpoint_init(const char *user_ckpointlib, int user_ckpoint_num)
 {

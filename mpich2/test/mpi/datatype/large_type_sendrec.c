@@ -1,6 +1,5 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *
  *  (C) 2013 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
@@ -18,7 +17,7 @@
 #include <mpi.h>
 
 #include <assert.h>
-static void MPIX_Verbose_abort(int errorcode)
+static void verbose_abort(int errorcode)
 {
     /* We do not check error codes here
      * because if MPI is in a really sorry state,
@@ -44,9 +43,9 @@ static void MPIX_Verbose_abort(int errorcode)
     return;
 }
 #define MPI_ASSERT(rc)  \
-        ((void) ((rc==MPI_SUCCESS) ? 0 : MPIX_Verbose_abort(rc) ))
+    do { if ((rc)!=MPI_SUCCESS) verbose_abort(rc); } while (0)
 
-int MPIX_Type_contiguous_x(MPI_Count count, MPI_Datatype oldtype,
+int Type_contiguous_x(MPI_Count count, MPI_Datatype oldtype,
 	MPI_Datatype * newtype);
 
 #define BIGMPI_MAX INT_MAX
@@ -54,7 +53,7 @@ int MPIX_Type_contiguous_x(MPI_Count count, MPI_Datatype oldtype,
 /*
  * Synopsis
  *
- * int MPIX_Type_contiguous_x(MPI_Count      count,
+ * int Type_contiguous_x(MPI_Count      count,
  *                            MPI_Datatype   oldtype,
  *                            MPI_Datatype * newtype)
  *                         
@@ -68,7 +67,7 @@ int MPIX_Type_contiguous_x(MPI_Count count, MPI_Datatype oldtype,
  *   newtype           new datatype (handle)
  *
  */
-int MPIX_Type_contiguous_x(MPI_Count count, MPI_Datatype oldtype, MPI_Datatype * newtype)
+int Type_contiguous_x(MPI_Count count, MPI_Datatype oldtype, MPI_Datatype * newtype)
 {
     MPI_Count c = count/BIGMPI_MAX;
     MPI_Count r = count%BIGMPI_MAX;
@@ -116,7 +115,7 @@ int main(int argc, char * argv[])
     size_t count = (size_t)1<<logn; /* explicit cast required */
 
     MPI_Datatype bigtype;
-    MPI_ASSERT(MPIX_Type_contiguous_x( (MPI_Count)count, MPI_CHAR, &bigtype));
+    MPI_ASSERT(Type_contiguous_x( (MPI_Count)count, MPI_CHAR, &bigtype));
     MPI_ASSERT(MPI_Type_commit(&bigtype));
 
     MPI_Request requests[2];
@@ -152,7 +151,8 @@ int main(int argc, char * argv[])
             MPI_ASSERT(MPI_Get_elements_x( &(statuses[1]), MPI_CHAR, &(ocount[1]) ));
         } else if (rank==0) {
             MPI_ASSERT(MPI_Wait( &(requests[0]), &(statuses[0]) ));
-            MPI_ASSERT(MPI_Get_elements_x( &(statuses[0]), MPI_CHAR, &(ocount[0]) ));
+	    /* No valid fields in status from a send request (MPI-3 p53,
+	       line 1-5) */
         }
     }
 
@@ -168,8 +168,8 @@ int main(int argc, char * argv[])
 	}
     }
 
-    free(rbuf);
-    free(sbuf);
+    if (rbuf) free(rbuf);
+    if (sbuf) free(sbuf);
 
     MPI_ASSERT(MPI_Type_free(&bigtype));
 

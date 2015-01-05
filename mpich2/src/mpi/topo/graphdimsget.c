@@ -15,6 +15,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Graphdims_get  MPI_Graphdims_get
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Graphdims_get as PMPI_Graphdims_get
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges) __attribute__((weak,alias("PMPI_Graphdims_get")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -83,7 +85,7 @@ int MPI_Graphdims_get(MPI_Comm comm, int *nnodes, int *nedges)
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
             if (mpi_errno) goto fn_fail;
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(nnodes, "nnodes", mpi_errno );

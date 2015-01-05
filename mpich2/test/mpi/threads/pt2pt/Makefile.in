@@ -350,6 +350,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -376,6 +377,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 nocxxdistgraph = @nocxxdistgraph@
+nslib = @nslib@
 oldincludedir = @oldincludedir@
 otherlangs = @otherlangs@
 pdfdir = @pdfdir@
@@ -386,6 +388,7 @@ psdir = @psdir@
 rmadir = @rmadir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
@@ -399,7 +402,7 @@ top_srcdir = @top_srcdir@
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
-CLEANFILES = summary.xml summary.tap
+CLEANFILES = summary.xml summary.tap summary.junit.xml
 EXTRA_DIST = testlist
 all: all-am
 

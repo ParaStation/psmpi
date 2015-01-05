@@ -15,6 +15,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Cart_rank  MPI_Cart_rank
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Cart_rank as PMPI_Cart_rank
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Cart_rank(MPI_Comm comm, const int coords[], int *rank) __attribute__((weak,alias("PMPI_Cart_rank")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -115,7 +117,7 @@ int MPI_Cart_rank(MPI_Comm comm, const int coords[], int *rank)
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
             if (mpi_errno) goto fn_fail;
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    MPIR_ERRTEST_ARGNULL(rank,"rank",mpi_errno);

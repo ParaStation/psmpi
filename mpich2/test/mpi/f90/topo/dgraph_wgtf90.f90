@@ -1,7 +1,7 @@
 ! This file created from test/mpi/f77/topo/dgraph_wgtf.f with f77tof90
 ! -*- Mode: Fortran; -*- 
 !
-!  (C) 2010 by Argonne National Laboratory.
+!  (C) 2011 by Argonne National Laboratory.
 !      See COPYRIGHT in top-level directory.
 !
 !     This program is Fortran version of dgraph_unwgt.c

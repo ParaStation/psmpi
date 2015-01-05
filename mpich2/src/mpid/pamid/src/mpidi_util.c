@@ -35,7 +35,7 @@
 #include "mpidi_util.h"
 
 #define PAMI_TUNE_MAX_ITER 2000
-
+#define _DEBUG  1
 /* Short hand for sizes */
 #define ONE  (1)
 #define ONEK (1<<10)
@@ -461,7 +461,7 @@ int MPIDI_Print_mpenv(int rank,int size)
         char *popenptr;
         char tempstr[128];
         int  mpi_errno;
-        int  errflag;
+        int  errflag=0;
 
         MPIDI_Set_mpich_env(rank,size);
         memset(&sender,0,sizeof(MPIDI_printenv_t));
@@ -1288,14 +1288,14 @@ int num_tasks;
 static int MPIDI_collsel_print_usage()
 {
   if(!task_id)
-    fputs("Usage: pami_tune [options]\n\
+    fputs("Usage: pami_tune (MPICH) [options]\n\
 Options:\n\
   -c            Comma separated list of collectives to benchmark\n\
                 Valid options are: \n\
-                   allgather, allgatherv, allgatherv_int, allreduce, alltoall,\n\
-                   alltoallv, alltoallv_int, ambroadcast, amgather, amreduce,\n\
-                   amscatter, barrier, broadcast, gather, gatherv, gatherv_int,\n\
-                   reduce, reduce_scatter, scan, scatter, scatterv, scatterv_int\n\
+                   allgather, allgatherv_int, allreduce, alltoall,\n\
+                   alltoallv_int, ambroadcast, amgather, amreduce,\n\
+                   amscatter, barrier, broadcast, gather, gatherv_int,\n\
+                   reduce, reduce_scatter, scan, scatter, scatterv_int\n\
                    (Default: all collectives)\n\n\
   -m            Comma separated list of message sizes to benchmark\n\
                 (Default: 1 to 2^k, where k <= 20)\n\n\
@@ -1394,6 +1394,7 @@ static int MPIDI_collsel_process_collectives(char *coll_arg, advisor_params_t *p
   coll = strtok(collectives,",");
   while (coll != NULL)
   {
+    int invalid_collective = 0;
     for(i=0; i<PAMI_XFER_COUNT; i++)
     {
       if(strcmp(coll, xfer_array_str[i]) == 0)
@@ -1402,24 +1403,28 @@ static int MPIDI_collsel_process_collectives(char *coll_arg, advisor_params_t *p
         {
           if(infolevel >= 1) 
             fprintf(stderr,"WARNING: MPICH (pami_tune) doesn't support tuning for ALLGATHERV. ALLGATHERV tuning will be skipped.\nTune for ALLGATHERV_INT instead\n");
+          invalid_collective = 1;
           break;
         }
         else if(i == 7)
         {
           if(infolevel >= 1)
             fprintf(stderr,"WARNING: MPICH (pami_tune) doesn't support tuning for SCATTERV. SCATTERV tuning will be skipped.\nTune for SCATTERV_INT instead\n");
+          invalid_collective = 1;
           break;
         }
         else if(i == 10)
         {
           if(infolevel >= 1)
             fprintf(stderr,"WARNING: MPICH (pami_tune) doesn't support tuning for GATHERV. GATHERV tuning will be skipped.\nTune for GATHERV_INT instead\n");
+          invalid_collective = 1;
           break;
         }
         else if(i == 14)
         {
           if(infolevel >= 1)
             fprintf(stderr,"WARNING: MPICH (pami_tune) doesn't support tuning for ALLTOALLV. ALLTOALLV tuning will be skipped.\nTune for ALLTOALLV_INT instead\n");
+          invalid_collective = 1;
           break;
         }
         else
@@ -1430,19 +1435,23 @@ static int MPIDI_collsel_process_collectives(char *coll_arg, advisor_params_t *p
       }
     }
     /* arg did not match any collective */
-    if(i == PAMI_XFER_COUNT)
+    if(i == PAMI_XFER_COUNT || invalid_collective)
     {
-      MPIU_Free(params->collectives);
-      params->collectives = NULL;
       if(!task_id)
       {
         fprintf(stderr, "Invalid collective: %s\n", coll);
       }
-      ret = 1;
       break;
     }
     coll = strtok(NULL,",");
   }
+  if(params->num_collectives == 0)
+  {
+    MPIU_Free(params->collectives);
+    params->collectives = NULL;
+    ret = 1;
+  }
+
   MPIU_Free(collectives);
   return ret;
 }
@@ -1865,7 +1874,6 @@ static void MPIDI_collsel_print_params(advisor_params_t *params, char *output_fi
 
 int MPIDI_collsel_pami_tune_parse_params(int argc, char ** argv)
 {
-  pami_configuration_t config;
   MPIDI_Collsel_output_file = NULL;
   num_tasks = PAMIX_Client_query(MPIDI_Client, PAMI_CLIENT_NUM_TASKS).value.intval;
   task_id   = PAMIX_Client_query(MPIDI_Client, PAMI_CLIENT_TASK_ID  ).value.intval;
@@ -1919,13 +1927,20 @@ int MPID_Get_node_id(MPID_Comm *comm, int rank, MPID_Node_id_t *id_p)
   uint32_t node_id;
   uint32_t offset;
   uint32_t max_nodes;
-  if(!PAMIX_Extensions.is_local_task.node_info)
-    MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**notimpl");
 
-  pami_result_t rc = PAMIX_Extensions.is_local_task.node_info(comm->vcr[rank]->taskid,
-                                                              &node_id,&offset,&max_nodes);
-  if(rc != PAMI_SUCCESS)  MPIU_ERR_SETANDJUMP(mpi_errno, MPI_ERR_OTHER, "**notimpl");
-  *id_p = node_id;
+  if(!PAMIX_Extensions.is_local_task.node_info)
+  {
+    *id_p = rank;
+  }
+  else
+  {
+    pami_result_t rc = PAMIX_Extensions.is_local_task.node_info(comm->vcr[rank]->taskid,
+                                                                &node_id,&offset,&max_nodes);
+    if(rc != PAMI_SUCCESS)
+      *id_p = rank;
+    else
+      *id_p = node_id;
+  }
 
   fn_fail:
   return mpi_errno;

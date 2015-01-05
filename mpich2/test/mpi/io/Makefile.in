@@ -89,7 +89,8 @@ DIST_COMMON = $(top_srcdir)/Makefile.mtest $(srcdir)/Makefile.in \
 noinst_PROGRAMS = rdwrord$(EXEEXT) rdwrzero$(EXEEXT) \
 	getextent$(EXEEXT) setinfo$(EXEEXT) setviewcur$(EXEEXT) \
 	i_noncontig$(EXEEXT) async$(EXEEXT) async_any$(EXEEXT) \
-	userioerr$(EXEEXT) resized$(EXEEXT)
+	userioerr$(EXEEXT) resized$(EXEEXT) resized2$(EXEEXT) \
+	bigtype$(EXEEXT) hindexed_io$(EXEEXT)
 subdir = io
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -116,10 +117,18 @@ async_any_SOURCES = async_any.c
 async_any_OBJECTS = async_any.$(OBJEXT)
 async_any_LDADD = $(LDADD)
 async_any_DEPENDENCIES = $(top_builddir)/util/mtest.o
+bigtype_SOURCES = bigtype.c
+bigtype_OBJECTS = bigtype.$(OBJEXT)
+bigtype_LDADD = $(LDADD)
+bigtype_DEPENDENCIES = $(top_builddir)/util/mtest.o
 getextent_SOURCES = getextent.c
 getextent_OBJECTS = getextent.$(OBJEXT)
 getextent_LDADD = $(LDADD)
 getextent_DEPENDENCIES = $(top_builddir)/util/mtest.o
+hindexed_io_SOURCES = hindexed_io.c
+hindexed_io_OBJECTS = hindexed_io.$(OBJEXT)
+hindexed_io_LDADD = $(LDADD)
+hindexed_io_DEPENDENCIES = $(top_builddir)/util/mtest.o
 i_noncontig_SOURCES = i_noncontig.c
 i_noncontig_OBJECTS = i_noncontig.$(OBJEXT)
 i_noncontig_LDADD = $(LDADD)
@@ -136,6 +145,10 @@ resized_SOURCES = resized.c
 resized_OBJECTS = resized.$(OBJEXT)
 resized_LDADD = $(LDADD)
 resized_DEPENDENCIES = $(top_builddir)/util/mtest.o
+resized2_SOURCES = resized2.c
+resized2_OBJECTS = resized2.$(OBJEXT)
+resized2_LDADD = $(LDADD)
+resized2_DEPENDENCIES = $(top_builddir)/util/mtest.o
 setinfo_SOURCES = setinfo.c
 setinfo_OBJECTS = setinfo.$(OBJEXT)
 setinfo_LDADD = $(LDADD)
@@ -176,10 +189,12 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = async.c async_any.c getextent.c i_noncontig.c rdwrord.c \
-	rdwrzero.c resized.c setinfo.c setviewcur.c userioerr.c
-DIST_SOURCES = async.c async_any.c getextent.c i_noncontig.c rdwrord.c \
-	rdwrzero.c resized.c setinfo.c setviewcur.c userioerr.c
+SOURCES = async.c async_any.c bigtype.c getextent.c hindexed_io.c \
+	i_noncontig.c rdwrord.c rdwrzero.c resized.c resized2.c \
+	setinfo.c setviewcur.c userioerr.c
+DIST_SOURCES = async.c async_any.c bigtype.c getextent.c hindexed_io.c \
+	i_noncontig.c rdwrord.c rdwrzero.c resized.c resized2.c \
+	setinfo.c setviewcur.c userioerr.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -339,6 +354,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -365,6 +381,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 nocxxdistgraph = @nocxxdistgraph@
+nslib = @nslib@
 oldincludedir = @oldincludedir@
 otherlangs = @otherlangs@
 pdfdir = @pdfdir@
@@ -375,6 +392,7 @@ psdir = @psdir@
 rmadir = @rmadir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
@@ -387,7 +405,7 @@ top_srcdir = @top_srcdir@
 # AM_CPPFLAGS are used for C++ code as well
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = $(top_builddir)/util/mtest.o
-CLEANFILES = summary.xml summary.tap
+CLEANFILES = summary.xml summary.tap summary.junit.xml
 EXTRA_DIST = testlist
 all: all-am
 
@@ -436,9 +454,17 @@ async_any$(EXEEXT): $(async_any_OBJECTS) $(async_any_DEPENDENCIES) $(EXTRA_async
 	@rm -f async_any$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(async_any_OBJECTS) $(async_any_LDADD) $(LIBS)
 
+bigtype$(EXEEXT): $(bigtype_OBJECTS) $(bigtype_DEPENDENCIES) $(EXTRA_bigtype_DEPENDENCIES) 
+	@rm -f bigtype$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(bigtype_OBJECTS) $(bigtype_LDADD) $(LIBS)
+
 getextent$(EXEEXT): $(getextent_OBJECTS) $(getextent_DEPENDENCIES) $(EXTRA_getextent_DEPENDENCIES) 
 	@rm -f getextent$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(getextent_OBJECTS) $(getextent_LDADD) $(LIBS)
+
+hindexed_io$(EXEEXT): $(hindexed_io_OBJECTS) $(hindexed_io_DEPENDENCIES) $(EXTRA_hindexed_io_DEPENDENCIES) 
+	@rm -f hindexed_io$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(hindexed_io_OBJECTS) $(hindexed_io_LDADD) $(LIBS)
 
 i_noncontig$(EXEEXT): $(i_noncontig_OBJECTS) $(i_noncontig_DEPENDENCIES) $(EXTRA_i_noncontig_DEPENDENCIES) 
 	@rm -f i_noncontig$(EXEEXT)
@@ -455,6 +481,10 @@ rdwrzero$(EXEEXT): $(rdwrzero_OBJECTS) $(rdwrzero_DEPENDENCIES) $(EXTRA_rdwrzero
 resized$(EXEEXT): $(resized_OBJECTS) $(resized_DEPENDENCIES) $(EXTRA_resized_DEPENDENCIES) 
 	@rm -f resized$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(resized_OBJECTS) $(resized_LDADD) $(LIBS)
+
+resized2$(EXEEXT): $(resized2_OBJECTS) $(resized2_DEPENDENCIES) $(EXTRA_resized2_DEPENDENCIES) 
+	@rm -f resized2$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(resized2_OBJECTS) $(resized2_LDADD) $(LIBS)
 
 setinfo$(EXEEXT): $(setinfo_OBJECTS) $(setinfo_DEPENDENCIES) $(EXTRA_setinfo_DEPENDENCIES) 
 	@rm -f setinfo$(EXEEXT)
@@ -476,11 +506,14 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/async.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/async_any.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bigtype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getextent.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hindexed_io.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_noncontig.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rdwrord.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rdwrzero.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resized.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/resized2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/setinfo.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/setviewcur.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/userioerr.Po@am__quote@

@@ -30,6 +30,8 @@ cvars:
 #pragma _HP_SECONDARY_DEF PMPI_Barrier  MPI_Barrier
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Barrier as PMPI_Barrier
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Barrier(MPI_Comm comm) __attribute__((weak,alias("PMPI_Barrier")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -401,7 +403,7 @@ int MPI_Barrier( MPI_Comm comm )
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    /* Validate communicator */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;

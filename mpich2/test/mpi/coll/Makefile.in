@@ -105,12 +105,12 @@ noinst_PROGRAMS = allgather2$(EXEEXT) allgather3$(EXEEXT) \
 	icgather$(EXEEXT) icgatherv$(EXEEXT) icreduce$(EXEEXT) \
 	icscatter$(EXEEXT) icscatterv$(EXEEXT) longuser$(EXEEXT) \
 	nonblocking$(EXEEXT) nonblocking2$(EXEEXT) \
-	nonblocking3$(EXEEXT) op_commutative$(EXEEXT) opband$(EXEEXT) \
-	opbor$(EXEEXT) opbxor$(EXEEXT) opland$(EXEEXT) oplor$(EXEEXT) \
-	oplxor$(EXEEXT) opmax$(EXEEXT) opmaxloc$(EXEEXT) \
-	opmin$(EXEEXT) opminloc$(EXEEXT) opprod$(EXEEXT) \
-	opsum$(EXEEXT) red3$(EXEEXT) red4$(EXEEXT) \
-	red_scat_block$(EXEEXT) red_scat_block2$(EXEEXT) \
+	nonblocking3$(EXEEXT) nonblocking4$(EXEEXT) \
+	op_commutative$(EXEEXT) opband$(EXEEXT) opbor$(EXEEXT) \
+	opbxor$(EXEEXT) opland$(EXEEXT) oplor$(EXEEXT) oplxor$(EXEEXT) \
+	opmax$(EXEEXT) opmaxloc$(EXEEXT) opmin$(EXEEXT) \
+	opminloc$(EXEEXT) opprod$(EXEEXT) opsum$(EXEEXT) red3$(EXEEXT) \
+	red4$(EXEEXT) red_scat_block$(EXEEXT) red_scat_block2$(EXEEXT) \
 	redscat$(EXEEXT) redscat2$(EXEEXT) redscat3$(EXEEXT) \
 	redscatblk3$(EXEEXT) redscatinter$(EXEEXT) \
 	redscatbkinter$(EXEEXT) reduce$(EXEEXT) reduce_local$(EXEEXT) \
@@ -379,6 +379,10 @@ nonblocking3_SOURCES = nonblocking3.c
 nonblocking3_OBJECTS = nonblocking3.$(OBJEXT)
 nonblocking3_LDADD = $(LDADD)
 nonblocking3_DEPENDENCIES = $(top_builddir)/util/mtest.o
+nonblocking4_SOURCES = nonblocking4.c
+nonblocking4_OBJECTS = nonblocking4.$(OBJEXT)
+nonblocking4_LDADD = $(LDADD)
+nonblocking4_DEPENDENCIES = $(top_builddir)/util/mtest.o
 op_commutative_SOURCES = op_commutative.c
 op_commutative_OBJECTS = op_commutative.$(OBJEXT)
 op_commutative_LDADD = $(LDADD)
@@ -544,13 +548,13 @@ SOURCES = allgather2.c allgather3.c allgatherv2.c allgatherv3.c \
 	icscatter.c icscatterv.c longuser.c $(nballtoall1_SOURCES) \
 	$(nbcoll2_SOURCES) $(nbredscat_SOURCES) $(nbredscat3_SOURCES) \
 	$(nbredscatinter_SOURCES) nonblocking.c nonblocking2.c \
-	nonblocking3.c op_commutative.c opband.c opbor.c opbxor.c \
-	opland.c oplor.c oplxor.c opmax.c opmaxloc.c opmin.c \
-	opminloc.c opprod.c opsum.c red3.c red4.c red_scat_block.c \
-	red_scat_block2.c redscat.c redscat2.c redscat3.c \
-	redscatbkinter.c redscatblk3.c redscatinter.c reduce.c \
-	reduce_local.c scantst.c scatter2.c scatter3.c scattern.c \
-	scatterv.c uoplong.c
+	nonblocking3.c nonblocking4.c op_commutative.c opband.c \
+	opbor.c opbxor.c opland.c oplor.c oplxor.c opmax.c opmaxloc.c \
+	opmin.c opminloc.c opprod.c opsum.c red3.c red4.c \
+	red_scat_block.c red_scat_block2.c redscat.c redscat2.c \
+	redscat3.c redscatbkinter.c redscatblk3.c redscatinter.c \
+	reduce.c reduce_local.c scantst.c scatter2.c scatter3.c \
+	scattern.c scatterv.c uoplong.c
 DIST_SOURCES = allgather2.c allgather3.c allgatherv2.c allgatherv3.c \
 	allgatherv4.c allred.c allred2.c allred3.c allred4.c allred5.c \
 	allred6.c allredmany.c alltoall1.c alltoallv.c alltoallv0.c \
@@ -564,13 +568,13 @@ DIST_SOURCES = allgather2.c allgather3.c allgatherv2.c allgatherv3.c \
 	icscatter.c icscatterv.c longuser.c $(nballtoall1_SOURCES) \
 	$(nbcoll2_SOURCES) $(nbredscat_SOURCES) $(nbredscat3_SOURCES) \
 	$(nbredscatinter_SOURCES) nonblocking.c nonblocking2.c \
-	nonblocking3.c op_commutative.c opband.c opbor.c opbxor.c \
-	opland.c oplor.c oplxor.c opmax.c opmaxloc.c opmin.c \
-	opminloc.c opprod.c opsum.c red3.c red4.c red_scat_block.c \
-	red_scat_block2.c redscat.c redscat2.c redscat3.c \
-	redscatbkinter.c redscatblk3.c redscatinter.c reduce.c \
-	reduce_local.c scantst.c scatter2.c scatter3.c scattern.c \
-	scatterv.c uoplong.c
+	nonblocking3.c nonblocking4.c op_commutative.c opband.c \
+	opbor.c opbxor.c opland.c oplor.c oplxor.c opmax.c opmaxloc.c \
+	opmin.c opminloc.c opprod.c opsum.c red3.c red4.c \
+	red_scat_block.c red_scat_block2.c redscat.c redscat2.c \
+	redscat3.c redscatbkinter.c redscatblk3.c redscatinter.c \
+	reduce.c reduce_local.c scantst.c scatter2.c scatter3.c \
+	scattern.c scatterv.c uoplong.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -730,6 +734,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -756,6 +761,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 nocxxdistgraph = @nocxxdistgraph@
+nslib = @nslib@
 oldincludedir = @oldincludedir@
 otherlangs = @otherlangs@
 pdfdir = @pdfdir@
@@ -766,6 +772,7 @@ psdir = @psdir@
 rmadir = @rmadir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
@@ -778,7 +785,7 @@ top_srcdir = @top_srcdir@
 # AM_CPPFLAGS are used for C++ code as well
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = $(top_builddir)/util/mtest.o
-CLEANFILES = summary.xml summary.tap
+CLEANFILES = summary.xml summary.tap summary.junit.xml
 EXTRA_DIST = testlist
 allgatherv4_LDADD = $(LDADD) -lm
 
@@ -1082,6 +1089,10 @@ nonblocking3$(EXEEXT): $(nonblocking3_OBJECTS) $(nonblocking3_DEPENDENCIES) $(EX
 	@rm -f nonblocking3$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(nonblocking3_OBJECTS) $(nonblocking3_LDADD) $(LIBS)
 
+nonblocking4$(EXEEXT): $(nonblocking4_OBJECTS) $(nonblocking4_DEPENDENCIES) $(EXTRA_nonblocking4_DEPENDENCIES) 
+	@rm -f nonblocking4$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nonblocking4_OBJECTS) $(nonblocking4_LDADD) $(LIBS)
+
 op_commutative$(EXEEXT): $(op_commutative_OBJECTS) $(op_commutative_DEPENDENCIES) $(EXTRA_op_commutative_DEPENDENCIES) 
 	@rm -f op_commutative$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(op_commutative_OBJECTS) $(op_commutative_LDADD) $(LIBS)
@@ -1269,6 +1280,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nonblocking.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nonblocking2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nonblocking3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nonblocking4.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/op_commutative.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opband.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/opbor.Po@am__quote@

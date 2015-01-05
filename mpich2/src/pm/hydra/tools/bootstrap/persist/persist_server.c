@@ -1,6 +1,6 @@
 /* -*- Mode: C; c-basic-offset:4 ; indent-tabs-mode:nil ; -*- */
 /*
- *  (C) 2008 by Argonne National Laboratory.
+ *  (C) 2009 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
  */
 
@@ -8,7 +8,7 @@
 #include "topo.h"
 #include "persist_server.h"
 
-struct HYDT_persist_handle HYDT_persist_handle;
+struct HYDT_persist_handle_s HYDT_persist_handle;
 static struct {
     enum {
         MASTER,

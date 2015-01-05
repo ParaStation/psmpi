@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Copyright © 2009-2013 Inria.  All rights reserved.
+# Copyright © 2009-2014 Inria.  All rights reserved.
 # Copyright © 2009-2011 Université Bordeaux 1
 # Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
@@ -605,6 +605,7 @@ sysfs_outputs = \
 		8amd64-4n2c.output  \
 		8em64t-4c2t.output \
 		8em64t-2s2ca2c.output \
+		8em64t-2s2ca2c-buggynuma.output \
 		8em64t-2s4c-heterogeneous.output \
 		8ia64-2n2s2c.output \
 		8ia64-2s2c2t.output \
@@ -614,7 +615,7 @@ sysfs_outputs = \
 		16amd64-8n2c-cpusets.output \
 		16amd64-8n2c-cpusets.xml.output \
 		16amd64-8n2c-cpusets_noadmin.output \
-		16em64t-4s2cu2c.output \
+		16em64t-4s2ca2c-cpusetreorder.output \
 		16em64t-4s2c2t.output \
 		16em64t-4s2c2t-offlines.output \
 		16em64t-4s2c2t-offlines.xml.output \
@@ -662,6 +663,7 @@ sysfs_tarballs = \
 		8amd64-4n2c.tar.bz2  \
 		8em64t-4c2t.tar.bz2 \
 		8em64t-2s2ca2c.tar.bz2 \
+		8em64t-2s2ca2c-buggynuma.tar.bz2 \
 		8em64t-2s4c-heterogeneous.tar.bz2 \
 		8ia64-2n2s2c.tar.bz2 \
 		8ia64-2s2c2t.tar.bz2 \
@@ -671,7 +673,7 @@ sysfs_tarballs = \
 		16amd64-8n2c-cpusets.tar.bz2 \
 		16amd64-8n2c-cpusets.xml.source \
 		16amd64-8n2c-cpusets_noadmin.source \
-		16em64t-4s2cu2c.tar.bz2 \
+		16em64t-4s2ca2c-cpusetreorder.tar.bz2 \
 		16em64t-4s2c2t.tar.bz2 \
 		16em64t-4s2c2t-offlines.tar.bz2 \
 		16em64t-4s2c2t-offlines.xml.source \
@@ -1170,6 +1172,13 @@ recheck: all
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
+8em64t-2s2ca2c-buggynuma.output.log: 8em64t-2s2ca2c-buggynuma.output
+	@p='8em64t-2s2ca2c-buggynuma.output'; \
+	b='8em64t-2s2ca2c-buggynuma.output'; \
+	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
+	--log-file $$b.log --trs-file $$b.trs \
+	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
+	"$$tst" $(AM_TESTS_FD_REDIRECT)
 8em64t-2s4c-heterogeneous.output.log: 8em64t-2s4c-heterogeneous.output
 	@p='8em64t-2s4c-heterogeneous.output'; \
 	b='8em64t-2s4c-heterogeneous.output'; \
@@ -1233,9 +1242,9 @@ recheck: all
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \
 	"$$tst" $(AM_TESTS_FD_REDIRECT)
-16em64t-4s2cu2c.output.log: 16em64t-4s2cu2c.output
-	@p='16em64t-4s2cu2c.output'; \
-	b='16em64t-4s2cu2c.output'; \
+16em64t-4s2ca2c-cpusetreorder.output.log: 16em64t-4s2ca2c-cpusetreorder.output
+	@p='16em64t-4s2ca2c-cpusetreorder.output'; \
+	b='16em64t-4s2ca2c-cpusetreorder.output'; \
 	$(am__check_pre) $(LOG_DRIVER) --test-name "$$f" \
 	--log-file $$b.log --trs-file $$b.trs \
 	$(am__common_driver_flags) $(AM_LOG_DRIVER_FLAGS) $(LOG_DRIVER_FLAGS) -- $(LOG_COMPILE) \

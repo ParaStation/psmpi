@@ -421,7 +421,9 @@ unexpected messages queued.
 **badcase:INTERNAL ERROR: unexpected value in case statement
 **badcase %d:INTERNAL ERROR: unexpected value in case statement (value=%d)
 **node_root_rank:Unable to get the node root rank
-**proc_fail_stop:A process has failed
+**proc_failed:Process failed
+**failure_pending:Request pending due to failure
+**revoked:Communication object revoked
 # Duplicates?
 #**argnull:Invalid null parameter
 #**argnull %s:Invalid null parameter %s
@@ -719,6 +721,22 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **open %s:open failed - %s
 **setenv:setenv failed
 **putenv:putenv failed
+**mxm_config_read_opts: mxm_config_read_opts failed
+**mxm_config_read_opts %s:mxm_config_read_opts failed (%s)
+**mxm_init: mxm_init failed
+**mxm_init %s:mxm_init failed (%s)
+**mxm_set_am_handler: mxm_set_am_handler failed
+**mxm_set_am_handler %s:mxm_set_am_handler failed (%s)
+**mxm_mq_create: mxm_mq_create failed
+**mxm_mq_create %s:mxm_mq_create failed (%s)
+**mxm_ep_create: mxm_ep_create failed
+**mxm_ep_create %s:mxm_ep_create failed (%s)
+**mxm_ep_get_address: mxm_ep_get_address failed
+**mxm_ep_get_address %s:mxm_ep_get_address failed (%s)
+**mxm_ep_connect: mxm_ep_connect failed
+**mxm_ep_connect %s:mxm_ep_connect failed (%s)
+**mxm_ep_disconnect: mxm_ep_disconnect failed
+**mxm_ep_disconnect %s:mxm_ep_disconnect failed (%s)
 **mx_close_endpoint: mx_close_endpoint failed
 **mx_close_endpoint %s:mx_close_endpoint failed (%s)
 **mx_finalize:mx_finalize failed
@@ -1079,12 +1097,16 @@ is too big (> MPIU_SHMW_GHND_SZ)
 **mpi_comm_remote_size %C %p:MPI_Comm_remote_size(%C, size=%p) failed
 **mpi_comm_remote_group:MPI_Comm_remote_group failed
 **mpi_comm_remote_group %C %p:MPI_Comm_remote_group(%C, group=%p) failed
-**mpix_comm_remote_group_failed:MPIX_Comm_remote_group_failed failed
-**mpix_comm_remote_group_failed %C %p:MPIX_Comm_remote_group_failed(%C, group=%p) failed
-**mpix_comm_group_failed:MPIX_Comm_group_failed failed
-**mpix_comm_group_failed %C %p:MPIX_Comm_group_failed(%C, group=%p) failed
-**mpix_comm_reenable_anysource:MPIX_Comm_reenable_anysource
-**mpix_comm_reenable_anysource %C %p:MPIX_Comm_reenable_anysource(%C, group=%p) failed
+**mpix_comm_failure_ack:MPIX_Comm_failure_ack failed
+**mpix_comm_failure_ack %C:MPIX_Comm_failure_ack(%C) failed
+**mpix_comm_failure_get_acked:MPIX_Comm_failure_get_acked failed
+**mpix_comm_failure_get_acked %C %p:MPIX_Comm_failure_get_acked(%C, group=%p) failed
+**mpix_comm_revoke:MPIX_Comm_revoke failed
+**mpix_comm_revoke %C:MPIX_Comm_revoke(%C) failed
+**mpix_comm_shrink:MPIX_Comm_shrink failed
+**mpix_comm_shrink %C %p:MPIX_Comm_shrink(%C, new_comm=%p) failed
+**mpix_comm_agree:MPIX_Comm_agree failed
+**mpix_comm_agree %C:MPIX_Comm_agree(%C) failed
 **mpi_intercomm_create:MPI_Intercomm_create failed
 **mpi_intercomm_create %C %d %C %d %d %p:MPI_Intercomm_create(%C, local_leader=%d, %C, remote_leader=%d, tag=%d, newintercomm=%p) failed
 **mpi_intercomm_merge:MPI_Intercomm_merge failed

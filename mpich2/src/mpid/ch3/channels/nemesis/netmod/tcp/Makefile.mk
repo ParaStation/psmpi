@@ -1,13 +1,13 @@
 ## -*- Mode: Makefile; -*-
 ## vim: set ft=automake :
 ##
-## (C) 2011 by Argonne National Laboratory.
+## (C) 2012 by Argonne National Laboratory.
 ##     See COPYRIGHT in top-level directory.
 ##
 
 if BUILD_NEMESIS_NETMOD_TCP
 
-lib_lib@MPILIBNAME@_la_SOURCES +=                                   \
+mpi_core_sources +=                                   \
     src/mpid/ch3/channels/nemesis/netmod/tcp/tcp_finalize.c \
     src/mpid/ch3/channels/nemesis/netmod/tcp/tcp_init.c     \
     src/mpid/ch3/channels/nemesis/netmod/tcp/tcp_send.c     \

@@ -16,6 +16,7 @@ bsend5 4
 bsendalign 2
 bsendpending 2
 isendself 1
+issendselfcancel 1
 bsendfrag 2
 icsend 4
 rqstatus 2
@@ -29,6 +30,7 @@ scancel2 2
 pscancel 2 xfail=ticket287
 rcancel 2
 cancelrecv 2 xfail=ticket287
+cancelanysrc 2
 isendselfprobe 1
 inactivereq 1
 waittestnull 1

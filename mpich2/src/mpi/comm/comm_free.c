@@ -15,6 +15,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Comm_free  MPI_Comm_free
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Comm_free as PMPI_Comm_free
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Comm_free(MPI_Comm *comm) __attribute__((weak,alias("PMPI_Comm_free")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -103,7 +105,7 @@ int MPI_Comm_free(MPI_Comm *comm)
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    
 	    /* Cannot free the predefined communicators */

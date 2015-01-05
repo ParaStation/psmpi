@@ -15,6 +15,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Graph_get  MPI_Graph_get
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Graph_get as PMPI_Graph_get
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges, int indx[], int edges[]) __attribute__((weak,alias("PMPI_Graph_get")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -87,7 +89,7 @@ int MPI_Graph_get(MPI_Comm comm, int maxindex, int maxedges,
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
             if (mpi_errno) goto fn_fail;
 	    /* If comm_ptr is not valid, it will be reset to null */
 	    

@@ -13,6 +13,9 @@
 #pragma _HP_SECONDARY_DEF PMPI_Comm_connect  MPI_Comm_connect
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Comm_connect as PMPI_Comm_connect
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Comm_connect(const char *port_name, MPI_Info info, int root, MPI_Comm comm,
+                     MPI_Comm *newcomm) __attribute__((weak,alias("PMPI_Comm_connect")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -96,7 +99,7 @@ int MPI_Comm_connect(const char *port_name, MPI_Info info, int root, MPI_Comm co
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
 	    /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno) goto fn_fail;
         }

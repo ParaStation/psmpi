@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Copyright © 2009-2013 Inria.  All rights reserved.
+# Copyright © 2009-2014 Inria.  All rights reserved.
 # Copyright © 2009-2010 Université Bordeaux 1
 # Copyright © 2009-2011 Cisco Systems, Inc.  All rights reserved.
 # Copyright © 2011      Oracle and/or its affiliates.  All rights reserved.
@@ -187,7 +187,7 @@ am__include_hwloc_HEADERS_DIST = hwloc/bitmap.h hwloc/helper.h \
 	hwloc/glibc-sched.h
 am__noinst_HEADERS_DIST = private/private.h private/debug.h \
 	private/misc.h private/xml.h private/components.h \
-	private/cpuid.h
+	private/cpuid-x86.h
 HEADERS = $(include_HEADERS) $(include_hwloc_HEADERS) \
 	$(nodist_include_hwloc_autogen_HEADERS) $(noinst_HEADERS)
 am__tagged_files = $(HEADERS) $(SOURCES) $(TAGS_FILES) $(LISP)
@@ -237,6 +237,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_LIBS = @EXTERNAL_LIBS@
 FGREP = @FGREP@
 GCOV = @GCOV@
 GREP = @GREP@
@@ -405,7 +406,7 @@ top_srcdir = @top_srcdir@
 @HWLOC_BUILD_STANDALONE_TRUE@        private/misc.h \
 @HWLOC_BUILD_STANDALONE_TRUE@        private/xml.h \
 @HWLOC_BUILD_STANDALONE_TRUE@        private/components.h \
-@HWLOC_BUILD_STANDALONE_TRUE@        private/cpuid.h
+@HWLOC_BUILD_STANDALONE_TRUE@        private/cpuid-x86.h
 
 all: all-am
 

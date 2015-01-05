@@ -13,6 +13,11 @@
 #pragma _HP_SECONDARY_DEF PMPI_Neighbor_alltoallv  MPI_Neighbor_alltoallv
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Neighbor_alltoallv as PMPI_Neighbor_alltoallv
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Neighbor_alltoallv(const void *sendbuf, const int sendcounts[], const int sdispls[],
+                           MPI_Datatype sendtype, void *recvbuf, const int recvcounts[],
+                           const int rdispls[], MPI_Datatype recvtype, MPI_Comm comm)
+                           __attribute__((weak,alias("PMPI_Neighbor_alltoallv")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -140,7 +145,7 @@ int MPI_Neighbor_alltoallv(const void *sendbuf, const int sendcounts[], const in
                 MPID_Datatype_committed_ptr(recvtype_ptr, mpi_errno);
             }
 
-            MPID_Comm_valid_ptr(comm_ptr, mpi_errno);
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
         }

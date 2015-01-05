@@ -66,10 +66,12 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	    MPIU_DBG_MSG_FMT(CH3_OTHER,VERBOSE,(MPIU_DBG_FDEST,
              "send-to-self cancellation successful, sreq=0x%08x, rreq=0x%08x",
 						sreq->handle, rreq->handle));
-	    
-	    MPIU_Object_set_ref(rreq, 0);
-	    MPIDI_CH3_Request_destroy(rreq);
-	    
+
+            /* Pull the message out of the unexpected queue since it's being
+             * cancelled */
+            MPIU_Object_set_ref(rreq, 0);
+            MPIDI_CH3_Request_destroy(rreq);
+
 	    MPIR_STATUS_SET_CANCEL_BIT(sreq->status, TRUE);
 	    /* no other thread should be waiting on sreq, so it is safe to 
 	       reset ref_count and cc */
@@ -87,6 +89,16 @@ int MPID_Cancel_send(MPID_Request * sreq)
 	
 	goto fn_exit;
     }
+
+    /* If the message went over a netmod and it provides a cancel_send
+       function, call it here. */
+#ifdef ENABLE_COMM_OVERRIDES
+    if (vc->comm_ops && vc->comm_ops->cancel_send)
+    {
+        mpi_errno = vc->comm_ops->cancel_send(vc, sreq);
+        goto fn_exit;
+    }
+#endif
 
     /* Check to see if the send is still in the send queue.  If so, remove it, 
        mark the request and cancelled and complete, and

@@ -14,6 +14,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Iprobe  MPI_Iprobe
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Iprobe as PMPI_Iprobe
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag, MPI_Status *status) __attribute__((weak,alias("PMPI_Iprobe")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -85,7 +87,7 @@ int MPI_Iprobe(int source, int tag, MPI_Comm comm, int *flag,
         MPID_BEGIN_ERROR_CHECKS;
         {
 	    /* Validate communicator */
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             if (mpi_errno) goto fn_fail;
 	    
 	    MPIR_ERRTEST_ARGNULL( flag, "flag", mpi_errno );

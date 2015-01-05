@@ -15,6 +15,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Comm_split_type  MPI_Comm_split_type
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Comm_split_type as PMPI_Comm_split_type
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Comm_split_type(MPI_Comm comm, int split_type, int key, MPI_Info info, MPI_Comm *newcomm) __attribute__((weak,alias("PMPI_Comm_split_type")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -23,7 +25,6 @@
 #ifndef MPICH_MPI_FROM_PMPI
 #undef MPI_Comm_split_type
 #define MPI_Comm_split_type PMPI_Comm_split_type
-#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPIR_Comm_split_type_impl
@@ -58,6 +59,7 @@ int MPIR_Comm_split_type_impl(MPID_Comm * comm_ptr, int split_type, int key,
     goto fn_exit;
 }
 
+#endif /* MPICH_MPI_FROM_PMPI */
 
 #undef FUNCNAME
 #define FUNCNAME MPI_Comm_split_type
@@ -125,7 +127,7 @@ int MPI_Comm_split_type(MPI_Comm comm, int split_type, int key, MPI_Info info,
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate comm_ptr */
-            MPID_Comm_valid_ptr(comm_ptr, mpi_errno);
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             /* If comm_ptr is not valid, it will be reset to null */
             if (mpi_errno)
                 goto fn_fail;

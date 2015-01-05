@@ -240,6 +240,10 @@ fi
 # Derived variables.  These are assembled from variables set from the
 # default, environment, configuration file (if any) and command-line
 # options (if any)
+f77libs=
+if [ "@MPIFCLIBNAME@" != "@MPILIBNAME@" ] ; then
+    f77libs="-l@MPIFCLIBNAME@"
+fi
 
 PROFILE_FOO=
 # Handle the case of a profile switch
@@ -258,7 +262,7 @@ if [ -n "$profConf" ] ; then
 	. $profConffile
     fi
 fi
-#
+
 # A temporary statement to invoke the compiler
 # Place the -L before any args incase there are any mpi libraries in there.
 # Eventually, we'll want to move this after any non-MPI implementation 
@@ -280,7 +284,7 @@ if [ "$linking" = yes ] ; then
         $Show $F77 $PROFILE_INCPATHS @WRAPPER_FFLAGS@ @WRAPPER_LDFLAGS@ "${allargs[@]}" -I$includedir
         rc=$?
     else
-        $Show $F77 $PROFILE_INCPATHS @WRAPPER_FFLAGS@ @WRAPPER_LDFLAGS@ "${allargs[@]}" -I$includedir -L$libdir $PROFILE_PRELIB $PROFILE_FOO $rpath_flags @LPMPILIBNAME@ -l@MPILIBNAME@ $PROFILE_POSTLIB @WRAPPER_LIBS@ @F77_OTHER_LIBS@
+        $Show $F77 $PROFILE_INCPATHS @WRAPPER_FFLAGS@ @WRAPPER_LDFLAGS@ "${allargs[@]}" -I$includedir -L$libdir $f77libs $PROFILE_PRELIB $PROFILE_FOO $rpath_flags -l@MPILIBNAME@ @LPMPILIBNAME@ $PROFILE_POSTLIB @WRAPPER_LIBS@ @F77_OTHER_LIBS@
         rc=$?
     fi
 else

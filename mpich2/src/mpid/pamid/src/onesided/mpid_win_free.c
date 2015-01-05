@@ -23,6 +23,9 @@
 #include <sys/shm.h>
 #include <sys/ipc.h>
 #include <sys/stat.h>
+#ifdef USE_MMAP_SHM
+#include <sys/mman.h>
+#endif
 
 
 int MPIDI_SHM_Win_free(MPID_Win **win_ptr)
@@ -31,24 +34,34 @@ int MPIDI_SHM_Win_free(MPID_Win **win_ptr)
   int    rc;
   int mpi_errno = MPI_SUCCESS;
 
-    /* Free shared memory region */
-    /* free shm_base_addrs that's only used for shared memory windows */
-    if ((*win_ptr)->mpid.shm->allocated) {
-        OPA_fetch_and_add_int((OPA_int_t *) (*win_ptr)->mpid.shm->shm_count,-1);
-        while(*(*win_ptr)->mpid.shm->shm_count) MPIDI_QUICKSLEEP;
-        if ((*win_ptr)->comm_ptr->rank == 0) {
-            MPIDI_SHM_MUTEX_DESTROY(*win_ptr);
-        }
-       mpi_errno = shmdt((*win_ptr)->mpid.shm->base_addr);
-       if ((*win_ptr)->comm_ptr->rank == 0) {
-            rc=shmctl((*win_ptr)->mpid.shm->shm_id,IPC_RMID,NULL);
-            MPIU_ERR_CHKANDJUMP((rc == -1), errno,MPI_ERR_RMA_SHARED, "**shmctl");
-        }
+  /* Free shared memory region */
+  /* free shm_base_addrs that's only used for shared memory windows */
+  if ((*win_ptr)->mpid.shm->allocated) {
+    OPA_fetch_and_add_int((OPA_int_t *) &((*win_ptr)->mpid.shm->ctrl->shm_count),-1);
+    while((*win_ptr)->mpid.shm->ctrl->shm_count !=0) MPIDI_QUICKSLEEP;
+    if ((*win_ptr)->comm_ptr->rank == 0) {
+      MPIDI_SHM_MUTEX_DESTROY(*win_ptr);
+      }
+#ifdef USE_SYSV_SHM
+    mpi_errno = shmdt((*win_ptr)->mpid.shm->base_addr);
+    if ((*win_ptr)->comm_ptr->rank == 0) {
+	rc=shmctl((*win_ptr)->mpid.shm->shm_id,IPC_RMID,NULL);
+	MPIU_ERR_CHKANDJUMP((rc == -1), errno,MPI_ERR_RMA_SHARED, "**shmctl");
     }
-    MPIU_Free((*win_ptr)->mpid.shm);
-    (*win_ptr)->mpid.shm = NULL;
-    fn_fail:
-    return mpi_errno;
+#elif USE_MMAP_SHM
+    munmap ((*win_ptr)->mpid.shm->base_addr, (*win_ptr)->mpid.shm->segment_len);
+    if (0 == (*win_ptr)->comm_ptr->rank) shm_unlink ((*win_ptr)->mpid.shm->shm_key);
+#else
+    MPID_Abort(NULL, MPI_ERR_RMA_SHARED, -1, "MPI_Win_free error");
+#endif
+  } else {/* one task on a node */
+    MPIU_Free((*win_ptr)->mpid.shm->base_addr);
+  }
+  MPIU_Free((*win_ptr)->mpid.shm);
+  (*win_ptr)->mpid.shm = NULL;
+
+ fn_fail:
+  return mpi_errno;
 }
 
 /**
@@ -85,6 +98,9 @@ MPID_Win_free(MPID_Win **win_ptr)
        mpi_errno=MPIDI_SHM_Win_free(win_ptr);
 
 
+
+  if (win->create_flavor == MPI_WIN_FLAVOR_ALLOCATE)
+    MPIU_Free(win->base);
 
   struct MPIDI_Win_info *winfo = &win->mpid.info[rank];
 #ifdef USE_PAMI_RDMA

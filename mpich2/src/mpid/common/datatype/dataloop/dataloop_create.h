@@ -88,11 +88,11 @@ DLOOP_Count PREPEND_PREFIX(Type_indexed_count_contig)(DLOOP_Count count,
                                                       const void *displacement_array,
                                                       int dispinbytes,
                                                       DLOOP_Offset old_extent);
-                                                     
+
 DLOOP_Count PREPEND_PREFIX(Type_blockindexed_count_contig)(DLOOP_Count count,
                                                            DLOOP_Count blklen,
                                                            const void *disp_array,
                                                            int dispinbytes,
                                                            DLOOP_Offset old_extent);
-                                                          
+
 #endif

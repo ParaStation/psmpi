@@ -92,7 +92,6 @@ confdb_dirs="${confdb_dirs} src/mpl/confdb"
 confdb_dirs="${confdb_dirs} src/pm/hydra/confdb"
 confdb_dirs="${confdb_dirs} src/pm/hydra/mpl/confdb"
 confdb_dirs="${confdb_dirs} test/mpi/confdb"
-confdb_dirs="${confdb_dirs} src/armci/m4"
 
 # hydra's copy of mpl
 sync_external src/mpl src/pm/hydra/mpl
@@ -159,7 +158,7 @@ export do_build_configure
 MAKE=${MAKE-make}
 
 # external packages that require autogen.sh to be run for each of them
-externals="src/pm/hydra src/mpi/romio src/armci src/pm/mpd src/openpa"
+externals="src/pm/hydra src/mpi/romio src/openpa"
 # amdirs are the directories that make use of autoreconf
 amdirs=". src/mpl src/util/logging/rlog"
 
@@ -657,6 +656,15 @@ if [ "X$do_subcfg_m4" = Xyes ] ; then
     echo "done"
 fi
 
+
+########################################################################
+## Building ROMIO glue code
+########################################################################
+echo_n "Building ROMIO glue code... "
+( cd src/glue/romio && chmod a+x ./all_romio_symbols && ./all_romio_symbols ../../mpi/romio/include/mpio.h.in )
+echo "done"
+
+
 ########################################################################
 ## Building non-C interfaces
 ########################################################################
@@ -667,31 +675,47 @@ if [ $do_bindings = "yes" ] ; then
     build_f90=no
     build_cxx=no
     if [ $do_f77 = "yes" ] ; then
-        if [ ! -s src/binding/f77/abortf.c ] ; then 
+        if [ ! -s src/binding/fortran/mpif_h/abortf.c ] ; then
 	    build_f77=yes
-        elif find src/binding/f77 -name 'buildiface' -newer 'src/binding/f77/abortf.c' >/dev/null 2>&1 ; then
+        elif find src/binding/fortran/mpif_h -name 'buildiface' -newer 'src/binding/fortran/mpif_h/abortf.c' >/dev/null 2>&1 ; then
 	    build_f77=yes
         fi
-        if [ ! -s src/binding/f90/mpi_base.f90 ] ; then
+        if [ ! -s src/binding/fortran/use_mpi/mpi_base.f90 ] ; then
  	    build_f90=yes
-        elif find src/binding/f90 -name 'buildiface' -newer 'src/binding/f90/mpi_base.f90' >/dev/null 2>&1 ; then
+        elif find src/binding/fortran/use_mpi -name 'buildiface' -newer 'src/binding/fortran/use_mpi/mpi_base.f90' >/dev/null 2>&1 ; then
 	    build_f90=yes
         fi
- 
+        if [ ! -s src/binding/fortran/use_mpi_f08/wrappers_c/cdesc.c ] ; then
+	    build_f08=yes
+        elif find src/binding/fortran/use_mpi_f08 -name 'buildiface' -newer 'src/binding/fortran/use_mpi_f08/wrappers_c/cdesc.c' >/dev/null 2>&1 ; then
+	    build_f08=yes
+        fi
     fi
 
     if [ $build_f77 = "yes" ] ; then
 	echo_n "Building Fortran 77 interface... "
-	( cd src/binding/f77 && chmod a+x ./buildiface && ./buildiface )
+	( cd src/binding/fortran/mpif_h && chmod a+x ./buildiface && ./buildiface )
 	echo "done"
     fi
     if [ $build_f90 = "yes" ] ; then
 	echo_n "Building Fortran 90 interface... "
 	# Remove any copy of mpi_base.f90 (this is used to handle the
 	# Double precision vs. Real*8 option
-	rm -f src/binding/f90/mpi_base.f90.orig
-	( cd src/binding/f90 && chmod a+x ./buildiface && ./buildiface )
-	( cd src/binding/f90 && ../f77/buildiface -infile=cf90t.h -deffile=cf90tdefs)
+	rm -f src/binding/fortran/use_mpi/mpi_base.f90.orig
+	( cd src/binding/fortran/use_mpi && chmod a+x ./buildiface && ./buildiface )
+	( cd src/binding/fortran/use_mpi && ../mpif_h/buildiface -infile=cf90t.h -deffile=cf90tdefs)
+	echo "done"
+    fi
+    if [ $build_f08 = "yes" ] ; then
+	echo_n "Building Fortran 08 interface... "
+	# Top-level files
+	( cd src/binding/fortran/use_mpi_f08 && chmod a+x ./buildiface && ./buildiface )
+        # Delete the old Makefile.mk
+        ( rm -f src/binding/fortran/use_mpi_f08/wrappers_c/Makefile.mk )
+        # Execute once for mpi.h.in ...
+	( cd src/binding/fortran/use_mpi_f08/wrappers_c && chmod a+x ./buildiface && ./buildiface ../../../../include/mpi.h.in )
+        # ... and once for mpio.h.in
+	( cd src/binding/fortran/use_mpi_f08/wrappers_c && chmod a+x ./buildiface && ./buildiface ../../../../mpi/romio/include/mpio.h.in )
 	echo "done"
     fi
 
@@ -703,7 +727,7 @@ if [ $do_bindings = "yes" ] ; then
     if [ $build_cxx = "yes" ] ; then
 	echo_n "Building C++ interface... "
 	( cd src/binding/cxx && chmod a+x ./buildiface &&
-	  ./buildiface -nosep -initfile=cxx.vlist $otherarg )
+	  ./buildiface -nosep -initfile=cxx.vlist )
 	echo "done"
     fi
 fi
@@ -898,22 +922,39 @@ if [ "$do_build_configure" = "yes" ] ; then
             # This works with libtool versions 2.4 - 2.4.2.
             # Older versions are not supported to build mpich.
             # Newer versions should have this patch already included.
-            # There is no need to patch if we're not going to use Fortran.
-            if [ $do_bindings = "yes" ] ; then
-                if [ -f $amdir/confdb/libtool.m4 ] ; then
+            if [ -f $amdir/confdb/libtool.m4 ] ; then
+                echo_n "Patching libtool.m4 to enable support for powerpcle... "
+                powerpcle_patch_requires_rebuild=no
+                patch -N -s -l $amdir/confdb/libtool.m4 maint/0001-libtool-powerpc-le-linux-support.patch
+                if [ $? -eq 0 ] ; then
+                    powerpcle_patch_requires_rebuild=yes
+                    # Remove possible leftovers, which don't imply a failure
+                    rm -f $amdir/confdb/libtool.m4.orig
+                    echo "done"
+                else
+                    echo "failed"
+                fi
+
+                # There is no need to patch if we're not going to use Fortran.
+                nagfor_patch_requires_rebuild=no
+                if [ $do_bindings = "yes" ] ; then
                     echo_n "Patching libtool.m4 for compatibility with nagfor shared libraries... "
-                    patch --forward -s -l $amdir/confdb/libtool.m4 maint/libtool.m4.patch
+                    patch -N -s -l $amdir/confdb/libtool.m4 maint/libtool.m4.patch
                     if [ $? -eq 0 ] ; then
+                        nagfor_patch_requires_rebuild=yes
                         # Remove possible leftovers, which don't imply a failure
                         rm -f $amdir/confdb/libtool.m4.orig
-                        # Rebuild configure
-                        (cd $amdir && $autoconf -f) || exit 1
-                        # Reset libtool.m4 timestamps to avoid confusing make
-                        touch -r $amdir/confdb/ltversion.m4 $amdir/confdb/libtool.m4
                         echo "done"
                     else
                         echo "failed"
                     fi
+                fi
+
+                if [ $powerpcle_patch_requires_rebuild = "yes" -o $nagfor_patch_requires_rebuild = "yes" ] ; then
+                    # Rebuild configure
+                    (cd $amdir && $autoconf -f) || exit 1
+                    # Reset libtool.m4 timestamps to avoid confusing make
+                    touch -r $amdir/confdb/ltversion.m4 $amdir/confdb/libtool.m4
                 fi
             fi
 	fi

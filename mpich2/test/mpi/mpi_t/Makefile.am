@@ -1,7 +1,7 @@
 # -*- Mode: Makefile; -*-
 # vim: set ft=automake :
 #
-# (C) 2012 by Argonne National Laboratory.
+# (C) 2011 by Argonne National Laboratory.
 #     See COPYRIGHT in top-level directory.
 #
 
@@ -14,4 +14,5 @@ EXTRA_DIST = testlist
 ## correctly
 noinst_PROGRAMS =     \
     mpi_t_str   \
-    mpit_vars
+    mpit_vars   \
+    cvarwrite

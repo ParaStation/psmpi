@@ -14,6 +14,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Pack_size  MPI_Pack_size
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Pack_size as PMPI_Pack_size
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Pack_size(int incount, MPI_Datatype datatype, MPI_Comm comm, int *size) __attribute__((weak,alias("PMPI_Pack_size")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -108,7 +110,7 @@ int MPI_Pack_size(int incount,
 	    MPIR_ERRTEST_COUNT(incount, mpi_errno);
 	    MPIR_ERRTEST_ARGNULL(size, "size", mpi_errno);
 	    
-            MPID_Comm_valid_ptr( comm_ptr, mpi_errno );
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, FALSE );
             if (mpi_errno) goto fn_fail;
 	    
 	    MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);

@@ -16,6 +16,8 @@
 #pragma _HP_SECONDARY_DEF PMPI_Comm_set_info  MPI_Comm_set_info
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Comm_set_info as PMPI_Comm_set_info
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Comm_set_info(MPI_Comm comm, MPI_Info info) __attribute__((weak,alias("PMPI_Comm_set_info")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -109,7 +111,7 @@ int MPI_Comm_set_info(MPI_Comm comm, MPI_Info info)
     {
         MPID_BEGIN_ERROR_CHECKS;
         {
-            MPIR_ERRTEST_ARGNULL(info, "info", mpi_errno);
+            MPIR_ERRTEST_INFO(info, mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }
@@ -125,9 +127,8 @@ int MPI_Comm_set_info(MPI_Comm comm, MPI_Info info)
         MPID_BEGIN_ERROR_CHECKS;
         {
             /* Validate pointers */
-            MPID_Comm_valid_ptr(comm_ptr, mpi_errno);
-            if (mpi_errno)
-                goto fn_fail;
+            MPID_Comm_valid_ptr( comm_ptr, mpi_errno, TRUE );
+            if (mpi_errno) goto fn_fail;
         }
         MPID_END_ERROR_CHECKS;
     }

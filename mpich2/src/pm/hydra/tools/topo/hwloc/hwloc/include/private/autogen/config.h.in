@@ -424,9 +424,6 @@
 /* Define to 1 if you have the `clzl' function. */
 #undef HWLOC_HAVE_CLZL
 
-/* Define to 1 if you have cpuid */
-#undef HWLOC_HAVE_CPUID
-
 /* Define to 1 if the CPU_SET macro works */
 #undef HWLOC_HAVE_CPU_SET
 
@@ -533,6 +530,9 @@
 
 /* Define to 1 if X11 headers including Xutil.h and keysym.h are available. */
 #undef HWLOC_HAVE_X11_KEYSYM
+
+/* Define to 1 if you have x86 cpuid */
+#undef HWLOC_HAVE_X86_CPUID
 
 /* Define to 1 if the _syscall3 macro works */
 #undef HWLOC_HAVE__SYSCALL3

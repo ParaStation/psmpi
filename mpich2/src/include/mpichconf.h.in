@@ -217,6 +217,9 @@
 /* Define if environ extern is available */
 #undef HAVE_EXTERN_ENVIRON
 
+/* Define to 1 to enable Fortran 2008 binding */
+#undef HAVE_F08_BINDING
+
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
 
@@ -307,8 +310,14 @@
 /* Define to 1 if you have the `ftb' library (-lftb). */
 #undef HAVE_LIBFTB
 
+/* Define to 1 if you have the `hcoll' library (-lhcoll). */
+#undef HAVE_LIBHCOLL
+
 /* Define to 1 if you have the `ibverbs' library (-libverbs). */
 #undef HAVE_LIBIBVERBS
+
+/* Define to 1 if you have the `mxm' library (-lmxm). */
+#undef HAVE_LIBMXM
 
 /* Define to 1 if you have the `myriexpress' library (-lmyriexpress). */
 #undef HAVE_LIBMYRIEXPRESS
@@ -578,9 +587,6 @@
 
 /* Define to 1 if you have the `strsignal' function. */
 #undef HAVE_STRSIGNAL
-
-/* Define to 1 if you have the `strtoll' function. */
-#undef HAVE_STRTOLL
 
 /* Define if struct ifconf can be used */
 #undef HAVE_STRUCT_IFCONF
