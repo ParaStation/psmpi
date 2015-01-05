@@ -28,7 +28,7 @@ static struct { vc_term_element_t *head, *tail; } vc_term_queue;
 #define TERMQ_ENQUEUE(ep) GENERIC_Q_ENQUEUE(&vc_term_queue, ep, next)
 #define TERMQ_DEQUEUE(epp) GENERIC_Q_DEQUEUE(&vc_term_queue, epp, next)
 
-#define PKTARRAY_SIZE (MPIDI_NEM_PKT_END+1)
+#define PKTARRAY_SIZE (MPIDI_CH3_PKT_END_ALL+1)
 static MPIDI_CH3_PktHandler_Fcn *pktArray[PKTARRAY_SIZE];
 
 #ifndef MPIDI_POSTED_RECV_ENQUEUE_HOOK
@@ -387,7 +387,7 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
                     vc_ch = &vc->ch;
 
                     /* invalid pkt data will result in unpredictable behavior */
-                    MPIU_Assert(pkt->type >= 0 && pkt->type < MPIDI_NEM_PKT_END);
+                    MPIU_Assert(pkt->type >= 0 && pkt->type < MPIDI_CH3_PKT_END_ALL);
 
                     mpi_errno = pktArray[pkt->type](vc, pkt, &buflen, &rreq);
                     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -463,6 +463,13 @@ int MPIDI_CH3I_Progress (MPID_Progress_state *progress_state, int is_blocking)
         if (made_progress) {
             MPIDI_CH3_Progress_signal_completion();
         }
+
+#if defined HAVE_LIBHCOLL
+        if (MPIR_CVAR_CH3_ENABLE_HCOLL) {
+            mpi_errno = hcoll_do_progress();
+            if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        }
+#endif /* HAVE_LIBHCOLL */
 
         /* in the case of progress_wait, bail out if anything completed (CC-1) */
         if (is_blocking) {
@@ -629,7 +636,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
                 MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "received new message");
 
                 /* invalid pkt data will result in unpredictable behavior */
-                MPIU_Assert(pkt->type >= 0 && pkt->type < MPIDI_NEM_PKT_END);
+                MPIU_Assert(pkt->type >= 0 && pkt->type < MPIDI_CH3_PKT_END_ALL);
 
                 mpi_errno = pktArray[pkt->type](vc, pkt, &len, &rreq);
                 if (mpi_errno) MPIU_ERR_POP(mpi_errno);
@@ -677,7 +684,7 @@ int MPID_nem_handle_pkt(MPIDI_VC_t *vc, char *buf, MPIDI_msg_sz_t buflen)
             buf    += copylen;
 
             /* invalid pkt data will result in unpredictable behavior */
-            MPIU_Assert(pkt->type >= 0 && pkt->type < MPIDI_NEM_PKT_END);
+            MPIU_Assert(pkt->type >= 0 && pkt->type < MPIDI_CH3_PKT_END_ALL);
 
             pktlen = sizeof(MPIDI_CH3_Pkt_t);
             mpi_errno = pktArray[pkt->type](vc, pkt, &pktlen, &rreq);
@@ -828,7 +835,7 @@ int MPIDI_CH3I_Progress_init(void)
     MPIDI_CH3I_shm_active_send = NULL;
     
     /* Initialize the code to handle incoming packets */
-    if (PKTARRAY_SIZE <= MPIDI_NEM_PKT_END) {
+    if (PKTARRAY_SIZE <= MPIDI_CH3_PKT_END_ALL) {
         MPIU_ERR_SETFATALANDJUMP(mpi_errno, MPI_ERR_INTERN, "**ch3|pktarraytoosmall");
     }
     /* pkt handlers from CH3 */
@@ -1023,7 +1030,7 @@ int MPIDI_CH3I_Complete_sendq_with_error(MPIDI_VC_t * vc)
                 MPIDI_CH3I_shm_sendq.tail = prev;
 
             req->status.MPI_ERROR = MPI_SUCCESS;
-            MPIU_ERR_SET1(req->status.MPI_ERROR, MPIX_ERR_PROC_FAIL_STOP, "**comm_fail", "**comm_fail %d", vc->pg_rank);
+            MPIU_ERR_SET1(req->status.MPI_ERROR, MPIX_ERR_PROC_FAILED, "**comm_fail", "**comm_fail %d", vc->pg_rank);
             
             MPID_Request_release(req); /* ref count was incremented when added to queue */
             MPIDI_CH3U_Request_complete(req);

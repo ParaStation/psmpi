@@ -12,10 +12,10 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak MPI_WIN_ALLOCATE_SHARED = PMPI_WIN_ALLOCATE_SHARED
@@ -44,19 +44,19 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Fint *, MPI_Fi
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 
 #pragma weak MPI_WIN_ALLOCATE_SHARED = PMPI_WIN_ALLOCATE_SHARED
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 
 #pragma weak mpi_win_allocate_shared__ = pmpi_win_allocate_shared__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 
 #pragma weak mpi_win_allocate_shared = pmpi_win_allocate_shared
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 
 #pragma weak mpi_win_allocate_shared_ = pmpi_win_allocate_shared_
 #endif
@@ -85,28 +85,28 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Fint *, MPI_Fi
 
 #elif defined(HAVE_WEAK_ATTRIBUTE)
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_ALLOCATE_SHARED")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_ALLOCATE_SHARED")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_ALLOCATE_SHARED")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_ALLOCATE_SHARED")));
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_ALLOCATE_SHARED")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_ALLOCATE_SHARED")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_ALLOCATE_SHARED")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_ALLOCATE_SHARED")));
 
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared__")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared__")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared__")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared__")));
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared__")));
 
 #elif defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared_")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared_")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared_")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared_")));
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared_")));
 
 #else
-extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared")));
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared")));
 
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
@@ -117,10 +117,10 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Fint *, MPI_Fin
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak mpi_win_allocate_shared__ = MPI_WIN_ALLOCATE_SHARED
@@ -141,28 +141,28 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Fint *, MPI_Fi
 #endif
 #elif defined(HAVE_WEAK_ATTRIBUTE)
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_WIN_ALLOCATE_SHARED")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_WIN_ALLOCATE_SHARED")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_WIN_ALLOCATE_SHARED")));
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_WIN_ALLOCATE_SHARED")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_WIN_ALLOCATE_SHARED")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_WIN_ALLOCATE_SHARED")));
 
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared__")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared__")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared__")));
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared__")));
 
 #elif defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared_")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared_")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared_")));
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared_")));
 
 #else
-extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_WIN_ALLOCATE_SHARED( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared__( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_win_allocate_shared")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 
 #endif
 #endif
@@ -175,16 +175,16 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared( MPI_Fint *, MPI_Fin
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_ALLOCATE_SHARED( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_ALLOCATE_SHARED( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared__( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared_( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * );
 
 #endif
 
@@ -208,24 +208,24 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared( MPI_Fint *, MPI_Fi
 
 #elif defined(HAVE_WEAK_ATTRIBUTE)
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_ALLOCATE_SHARED")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_ALLOCATE_SHARED")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_ALLOCATE_SHARED")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared__( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_ALLOCATE_SHARED")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared_( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_ALLOCATE_SHARED")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_WIN_ALLOCATE_SHARED")));
 
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_ALLOCATE_SHARED( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared__")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared__")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared__")));
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_ALLOCATE_SHARED( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared_( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared__")));
 
 #elif defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_ALLOCATE_SHARED( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared_")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared_")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared_")));
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_ALLOCATE_SHARED( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared__( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared_")));
 
 #else
-extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_ALLOCATE_SHARED( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared__( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared_( MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared")));
+extern FORT_DLL_SPEC void FORT_CALL PMPI_WIN_ALLOCATE_SHARED( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared__( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared_( MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, void*, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_win_allocate_shared")));
 
 #endif /* Test on name mapping */
 #endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
@@ -263,6 +263,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_allocate_shared_( MPI_Fint *, MPI_F
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_ ( MPI_Fint *v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, void*v5, MPI_Fint *v6, MPI_Fint *ierr ){
-    *ierr = MPI_Win_allocate_shared( (MPI_Aint)*v1, (int)*v2, (MPI_Info)(*v3), (MPI_Comm)(*v4), v5, v6 );
+FORT_DLL_SPEC void FORT_CALL mpi_win_allocate_shared_ ( MPI_Aint * v1, MPI_Fint *v2, MPI_Fint *v3, MPI_Fint *v4, void*v5, MPI_Fint *v6, MPI_Fint *ierr ){
+    *ierr = MPI_Win_allocate_shared( *v1, (int)*v2, (MPI_Info)(*v3), (MPI_Comm)(*v4), v5, v6 );
 }

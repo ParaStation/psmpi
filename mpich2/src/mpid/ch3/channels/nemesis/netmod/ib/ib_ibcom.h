@@ -174,6 +174,7 @@ static inline unsigned long long MPID_nem_ib_rdtsc_cpuid(void)
 
 extern struct ibv_cq *MPID_nem_ib_rc_shared_scq;
 extern struct ibv_cq *MPID_nem_ib_rc_shared_scq_scratch_pad;
+extern struct ibv_cq *MPID_nem_ib_rc_shared_rcq_scratch_pad;
 extern struct ibv_cq *MPID_nem_ib_ud_shared_rcq;
 extern uint8_t *MPID_nem_ib_scratch_pad;
 extern int MPID_nem_ib_scratch_pad_ref_count;
@@ -270,11 +271,12 @@ extern uint8_t *MPID_nem_ib_rdmawr_to_alloc_free_list;
 #define MPID_NEM_IB_COM_UD_INITIATOR 0  /* index to send request template */
 #define MPID_NEM_IB_COM_UD_RESPONDER 0  /* index to recv request template */
 
-#define MPID_NEM_IB_COM_SCRATCH_PAD_SR_NTEMPLATE 3
+#define MPID_NEM_IB_COM_SCRATCH_PAD_SR_NTEMPLATE 4
 #define MPID_NEM_IB_COM_SCRATCH_PAD_RR_NTEMPLATE 1
 #define MPID_NEM_IB_COM_SCRATCH_PAD_INITIATOR 0 /* index to send request template */
 #define MPID_NEM_IB_COM_SCRATCH_PAD_CAS       1
 #define MPID_NEM_IB_COM_SCRATCH_PAD_GET       2
+#define MPID_NEM_IB_COM_SCRATCH_PAD_WR        3
 #define MPID_NEM_IB_COM_SCRATCH_PAD_RESPONDER 0 /* index to recv request template */
 
 /* Header prepended to the MPI packet */
@@ -350,6 +352,17 @@ typedef struct {
     uint8_t *next;
 }
 MPID_nem_ib_rdmawr_to_alloc_hdr_t;
+
+typedef struct {
+    uint64_t wr_id;             /* address of MPID_Request */
+    int mf;                     /* more fragment (0 means the end of packet) */
+    void *mr_cache;             /* address of mr_cache_entry. derecement refc in drain_scq */
+} MPID_nem_ib_rc_send_request;
+
+#define MPID_NEM_IB_LMT_LAST_PKT        0
+#define MPID_NEM_IB_LMT_SEGMENT_LAST    1
+#define MPID_NEM_IB_LMT_PART_OF_SEGMENT 2
+#define MPID_NEM_IB_LAST_PKT            MPID_NEM_IB_LMT_LAST_PKT
 
 /* Ring-buffer to which a remote note RDMA-writes */
 #define MPID_NEM_IB_NRINGBUF 64
@@ -485,6 +498,7 @@ typedef struct MPID_nem_ib_com {
      * freeing scratch-pad QP. */
     int outstanding_connection_tx;
     int incoming_connection_tx;
+    int notify_outstanding_tx_empty;
 
 } MPID_nem_ib_com_t;
 
@@ -522,22 +536,25 @@ extern int MPID_nem_ib_com_get_scratch_pad(int condesc, uint64_t wr_id, uint64_t
 extern int MPID_nem_ib_com_cas_scratch_pad(int condesc, uint64_t wr_id, uint64_t offset,
                                            uint64_t compare, uint64_t swap, void **buf_from_out,
                                            uint32_t * buf_from_sz_out);
+extern int MPID_nem_ib_com_wr_scratch_pad(int condesc, uint64_t wr_id,
+                                          void *buf_from, uint32_t buf_from_sz);
 
 //extern int MPID_nem_ib_com_isend(int condesc, uint64_t wr_id, void* hdr, int sz_hdr, void* data, int sz_data);
 extern int MPID_nem_ib_com_irecv(int condesc, uint64_t wr_id);
 extern int MPID_nem_ib_com_udsend(int condesc, union ibv_gid *remote_gid, uint16_t remote_lid,
                                   uint32_t remote_qpn, uint32_t imm_data, uint64_t wr_id);
 extern int MPID_nem_ib_com_udrecv(int condesc);
-extern int MPID_nem_ib_com_lrecv(int condesc, uint64_t wr_id, void *raddr, int sz_data,
-                                 uint32_t rkey, void *laddr);
+extern int MPID_nem_ib_com_lrecv(int condesc, uint64_t wr_id, void *raddr, long sz_data,
+                                 uint32_t rkey, void *laddr, int last);
 extern int MPID_nem_ib_com_put_lmt(int condesc, uint64_t wr_id, void *raddr, int sz_data,
                                    uint32_t rkey, void *laddr);
+extern int MPID_nem_ib_com_scratch_pad_recv(int condesc, int sz_data);
 extern int MPID_nem_ib_com_poll_cq(int which_cq, struct ibv_wc *wc, int *result);
 
 extern int MPID_nem_ib_com_obtain_pointer(int condesc, MPID_nem_ib_com_t ** MPID_nem_ib_com);
 
 /* for ib_reg_mr.c */
-extern int MPID_nem_ib_com_reg_mr(void *addr, int len, struct ibv_mr **mr,
+extern int MPID_nem_ib_com_reg_mr(void *addr, long len, struct ibv_mr **mr,
                                   enum ibv_access_flags additional_flags);
 extern int MPID_nem_ib_com_dereg_mr(struct ibv_mr *mr);
 
@@ -548,7 +565,7 @@ extern int MPID_nem_ib_com_rdmabuf_occupancy_notify_rate_get(int condesc, int *n
 extern int MPID_nem_ib_com_rdmabuf_occupancy_notify_rstate_get(int condesc, int **rstate);
 extern int MPID_nem_ib_com_rdmabuf_occupancy_notify_lstate_get(int condesc, int **lstate);
 
-extern char *MPID_nem_ib_com_strerror(int errno);
+extern char *MPID_nem_ib_com_strerror(int err);
 
 extern int MPID_nem_ib_com_mem_rdmawr_from(int condesc, void **out);
 //extern int MPID_nem_ib_com_mem_rdmawr_to(int condesc, int seq_num, void **out);
@@ -556,10 +573,32 @@ extern int MPID_nem_ib_com_mem_udwr_from(int condesc, void **out);
 extern int MPID_nem_ib_com_mem_udwr_to(int condesc, void **out);
 
 /* ib_reg_mr.c */
+struct MPID_nem_ib_com_reg_mr_listnode_t {
+    struct MPID_nem_ib_com_reg_mr_listnode_t *lru_next;
+    struct MPID_nem_ib_com_reg_mr_listnode_t *lru_prev;
+};
+
+struct MPID_nem_ib_com_reg_mr_cache_entry_t {
+    /* : public MPID_nem_ib_com_reg_mr_listnode_t */
+    struct MPID_nem_ib_com_reg_mr_listnode_t *lru_next;
+    struct MPID_nem_ib_com_reg_mr_listnode_t *lru_prev;
+    struct MPID_nem_ib_com_reg_mr_listnode_t g_lru;
+
+    struct ibv_mr *mr;
+    void *addr;
+    long len;
+    int refc;
+};
 extern int MPID_nem_ib_com_register_cache_init(void);
 extern int MPID_nem_ib_com_register_cache_release(void);
-extern struct ibv_mr *MPID_nem_ib_com_reg_mr_fetch(void *addr, int len,
-                                                   enum ibv_access_flags additional_flags);
+extern void *MPID_nem_ib_com_reg_mr_fetch(void *addr, long len,
+                                          enum ibv_access_flags additional_flags, int mode);
+extern void MPID_nem_ib_com_reg_mr_release(struct MPID_nem_ib_com_reg_mr_cache_entry_t *entry);
+#define MPID_NEM_IB_COM_REG_MR_GLOBAL (0)
+#define MPID_NEM_IB_COM_REG_MR_STICKY (1)
+
+#define list_entry(ptr, type, member) \
+            ((type *)((char *)(ptr)-(unsigned long)(&((type *)0)->member)))
 
 extern int MPID_nem_ib_com_udbuf_init(void *q);
 
@@ -637,7 +676,12 @@ typedef struct {
     } else {                                                            \
         clz = __builtin_clz(_sz);                                       \
         int ctz = __builtin_ctz(_sz);                                   \
-        sz = (clz + ctz == 31) ? _sz : (1ULL << (32 - clz));            \
+        if (clz + ctz == 31) {                                          \
+            sz = _sz;                                                   \
+        } else {                                                        \
+            sz = (1ULL << (32 - clz));                                  \
+            clz = clz - 1;                                              \
+        }                                                               \
     }
 
 static inline void *MPID_nem_ib_rdmawr_from_alloc(uint32_t _sz)
@@ -653,7 +697,7 @@ static inline void *MPID_nem_ib_rdmawr_from_alloc(uint32_t _sz)
         return p;
     }
     else {
-        char *q, r;
+        char *q;
         if (MPID_nem_ib_rdmawr_from_alloc_arena_free_list[clz]) {
             q = MPID_nem_ib_rdmawr_from_alloc_arena_free_list[clz];
             MPID_nem_ib_rdmawr_from_alloc_arena_free_list[clz] =
@@ -687,7 +731,8 @@ static inline void *MPID_nem_ib_rdmawr_from_alloc(uint32_t _sz)
             }
 
             ((MPID_nem_ib_rdmawr_from_alloc_hdr_t *) q)->mr =
-                MPID_nem_ib_com_reg_mr_fetch(q, MPID_NEM_IB_RDMAWR_FROM_ALLOC_SZARENA, 0);
+                MPID_nem_ib_com_reg_mr_fetch(q, MPID_NEM_IB_RDMAWR_FROM_ALLOC_SZARENA, 0,
+                                             MPID_NEM_IB_COM_REG_MR_STICKY);
             if (!((MPID_nem_ib_rdmawr_from_alloc_hdr_t *) q)->mr) {
                 printf("ibv_reg_mr failed\n");
                 MPID_nem_ib_segv;
@@ -702,7 +747,8 @@ static inline void *MPID_nem_ib_rdmawr_from_alloc(uint32_t _sz)
                       1) * MPID_NEM_IB_RDMAWR_FROM_ALLOC_SZARENA;
                  p += MPID_NEM_IB_RDMAWR_FROM_ALLOC_SZARENA) {
                 ((MPID_nem_ib_rdmawr_from_alloc_hdr_t *) p)->mr =
-                    MPID_nem_ib_com_reg_mr_fetch(q, MPID_NEM_IB_RDMAWR_FROM_ALLOC_SZARENA, 0);
+                    MPID_nem_ib_com_reg_mr_fetch(q, MPID_NEM_IB_RDMAWR_FROM_ALLOC_SZARENA, 0,
+                                                 MPID_NEM_IB_COM_REG_MR_STICKY);
                 if (!((MPID_nem_ib_rdmawr_from_alloc_hdr_t *) p)->mr) {
                     printf("ibv_reg_mr failed\n");
                     MPID_nem_ib_segv;

@@ -56,7 +56,7 @@ static int handler_large(const ptl_event_t *e)
         MPIU_Error_printf("ACK event expected, received %s ni_fail=%s list=%s user_ptr=%p hdr_data=%#lx\n",
                           MPID_nem_ptl_strevent(e), MPID_nem_ptl_strnifail(e->ni_fail_type),
                           MPID_nem_ptl_strlist(e->ptl_list), e->user_ptr, e->hdr_data);
-    MPIU_Assert(e->type == PTL_EVENT_ACK || e->type != PTL_EVENT_GET);
+    MPIU_Assert(e->type == PTL_EVENT_ACK || e->type == PTL_EVENT_GET);
     
     if (e->type == PTL_EVENT_ACK && e->mlength < PTL_LARGE_THRESHOLD) {
         /* truncated message */
@@ -192,6 +192,7 @@ static int send_msg(ptl_hdr_data_t ssend_flag, struct MPIDI_VC *vc, const void *
     MPIDI_FUNC_ENTER(MPID_STATE_SEND_MSG);
 
     MPID_nem_ptl_request_create_sreq(sreq, mpi_errno, comm);
+    sreq->dev.match.parts.rank = dest;
 
     if (!vc_ptl->id_initialized) {
         mpi_errno = MPID_nem_ptl_init_id(vc);
@@ -207,7 +208,7 @@ static int send_msg(ptl_hdr_data_t ssend_flag, struct MPIDI_VC *vc, const void *
             MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Small contig message");
             REQ_PTL(sreq)->event_handler = handler_send_complete;
             MPIU_DBG_MSG_P(CH3_CHANNEL, VERBOSE, "&REQ_PTL(sreq)->event_handler = %p", &(REQ_PTL(sreq)->event_handler));
-            ret = PtlPut(MPIDI_nem_ptl_global_md, (ptl_size_t)buf, data_sz, PTL_ACK_REQ, vc_ptl->id, vc_ptl->pt,
+            ret = PtlPut(MPIDI_nem_ptl_global_md, (ptl_size_t)((char *)buf + dt_true_lb), data_sz, PTL_ACK_REQ, vc_ptl->id, vc_ptl->pt,
                          NPTL_MATCH(tag, comm->context_id + context_offset, comm->rank), 0, sreq,
                          NPTL_HEADER(ssend_flag, data_sz));
             MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlput", "**ptlput %s", MPID_nem_ptl_strerror(ret));
@@ -255,6 +256,7 @@ static int send_msg(ptl_hdr_data_t ssend_flag, struct MPIDI_VC *vc, const void *
         /* IOV is not long enough to describe entire message */
         MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "    IOV too long: using bounce buffer");
         MPIU_CHKPMEM_MALLOC(REQ_PTL(sreq)->chunk_buffer[0], void *, data_sz, mpi_errno, "chunk_buffer");
+        MPID_Segment_init(buf, count, datatype, sreq->dev.segment_ptr, 0);
         sreq->dev.segment_first = 0;
         last = data_sz;
         MPID_Segment_pack(sreq->dev.segment_ptr, sreq->dev.segment_first, &last, REQ_PTL(sreq)->chunk_buffer[0]);
@@ -272,7 +274,7 @@ static int send_msg(ptl_hdr_data_t ssend_flag, struct MPIDI_VC *vc, const void *
     if (dt_contig) {
         /* create ME for buffer so receiver can issue a GET for the data */
         MPIU_DBG_MSG(CH3_CHANNEL, VERBOSE, "Large contig message");
-        me.start = (char *)buf + PTL_LARGE_THRESHOLD;
+        me.start = (char *)buf + dt_true_lb + PTL_LARGE_THRESHOLD;
         me.length = data_sz - PTL_LARGE_THRESHOLD;
         me.ct_handle = PTL_CT_NONE;
         me.uid = PTL_UID_ANY;
@@ -290,7 +292,7 @@ static int send_msg(ptl_hdr_data_t ssend_flag, struct MPIDI_VC *vc, const void *
         REQ_PTL(sreq)->large = TRUE;
             
         REQ_PTL(sreq)->event_handler = handler_large;
-        ret = PtlPut(MPIDI_nem_ptl_global_md, (ptl_size_t)buf, PTL_LARGE_THRESHOLD, PTL_ACK_REQ, vc_ptl->id, vc_ptl->pt,
+        ret = PtlPut(MPIDI_nem_ptl_global_md, (ptl_size_t)((char *)buf + dt_true_lb), PTL_LARGE_THRESHOLD, PTL_ACK_REQ, vc_ptl->id, vc_ptl->pt,
                      NPTL_MATCH(tag, comm->context_id + context_offset, comm->rank), 0, sreq,
                      NPTL_HEADER(ssend_flag | NPTL_LARGE, data_sz));
         MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlput", "**ptlput %s", MPID_nem_ptl_strerror(ret));

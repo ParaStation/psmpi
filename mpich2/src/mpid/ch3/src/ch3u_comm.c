@@ -6,15 +6,35 @@
 
 #include "mpidimpl.h"
 #include "mpl_utlist.h"
+#if defined HAVE_LIBHCOLL
+#include "../../common/hcoll/hcoll.h"
+#endif
+
+/*
+=== BEGIN_MPI_T_CVAR_INFO_BLOCK ===
+
+cvars:
+    - name        : MPIR_CVAR_CH3_ENABLE_HCOLL
+      category    : CH3
+      type        : boolean
+      default     : false
+      class       : none
+      verbosity   : MPI_T_VERBOSITY_USER_BASIC
+      scope       : MPI_T_SCOPE_ALL_EQ
+      description : >-
+        If true, enable HCOLL collectives.
+
+=== END_MPI_T_CVAR_INFO_BLOCK ===
+*/
 
 static int register_hook_finalize(void *param);
 static int comm_created(MPID_Comm *comm, void *param);
 static int comm_destroyed(MPID_Comm *comm, void *param);
 
 /* macros and head for list of communicators */
-#define COMM_ADD(comm) MPL_DL_PREPEND_NP(comm_list, comm, ch.next, ch.prev)
-#define COMM_DEL(comm) MPL_DL_DELETE_NP(comm_list, comm, ch.next, ch.prev)
-#define COMM_FOREACH(elt) MPL_DL_FOREACH_NP(comm_list, elt, ch.next, ch.prev)
+#define COMM_ADD(comm) MPL_DL_PREPEND_NP(comm_list, comm, dev.next, dev.prev)
+#define COMM_DEL(comm) MPL_DL_DELETE_NP(comm_list, comm, dev.next, dev.prev)
+#define COMM_FOREACH(elt) MPL_DL_FOREACH_NP(comm_list, elt, dev.next, dev.prev)
 static MPID_Comm *comm_list = NULL;
 
 typedef struct hook_elt
@@ -25,8 +45,10 @@ typedef struct hook_elt
     struct hook_elt *next;
 } hook_elt;
 
-static hook_elt *create_hooks = NULL;
-static hook_elt *destroy_hooks = NULL;
+static hook_elt *create_hooks_head = NULL;
+static hook_elt *destroy_hooks_head = NULL;
+static hook_elt *create_hooks_tail = NULL;
+static hook_elt *destroy_hooks_tail = NULL;
 
 #undef FUNCNAME
 #define FUNCNAME MPIDI_CH3U_Comm_init
@@ -44,6 +66,16 @@ int MPIDI_CH3I_Comm_init(void)
     /* register hooks for keeping track of communicators */
     mpi_errno = MPIDI_CH3U_Comm_register_create_hook(comm_created, NULL);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+
+#if defined HAVE_LIBHCOLL
+    if (MPIR_CVAR_CH3_ENABLE_HCOLL) {
+        mpi_errno = MPIDI_CH3U_Comm_register_create_hook(hcoll_comm_create, NULL);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+        mpi_errno = MPIDI_CH3U_Comm_register_destroy_hook(hcoll_comm_destroy, NULL);
+        if (mpi_errno) MPIU_ERR_POP(mpi_errno);
+    }
+#endif
+
     mpi_errno = MPIDI_CH3U_Comm_register_destroy_hook(comm_destroyed, NULL);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     
@@ -68,7 +100,7 @@ int MPIDI_CH3I_Comm_create_hook(MPID_Comm *comm)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_COMM_CREATE_HOOK);
 
-    MPL_LL_FOREACH(create_hooks, elt) {
+    MPL_LL_FOREACH(create_hooks_head, elt) {
         mpi_errno = elt->hook_fn(comm, elt->param);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);;
     }
@@ -92,7 +124,7 @@ int MPIDI_CH3I_Comm_destroy_hook(MPID_Comm *comm)
 
     MPIDI_FUNC_ENTER(MPID_STATE_MPIDI_CH3U_COMM_DESTROY_HOOK);
 
-    MPL_LL_FOREACH(destroy_hooks, elt) {
+    MPL_LL_FOREACH(destroy_hooks_head, elt) {
         mpi_errno = elt->hook_fn(comm, elt->param);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
     }
@@ -123,7 +155,7 @@ int MPIDI_CH3U_Comm_register_create_hook(int (*hook_fn)(struct MPID_Comm *, void
     elt->hook_fn = hook_fn;
     elt->param = param;
     
-    MPL_LL_PREPEND(create_hooks, elt);
+    MPL_LL_PREPEND(create_hooks_head, create_hooks_tail, elt);
 
  fn_exit:
     MPIU_CHKPMEM_COMMIT();
@@ -152,7 +184,7 @@ int MPIDI_CH3U_Comm_register_destroy_hook(int (*hook_fn)(struct MPID_Comm *, voi
     elt->hook_fn = hook_fn;
     elt->param = param;
     
-    MPL_LL_PREPEND(destroy_hooks, elt);
+    MPL_LL_PREPEND(destroy_hooks_head, destroy_hooks_tail, elt);
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_MPIDI_CH3U_COMM_REGISTER_DESTROY_HOOK);
@@ -174,13 +206,13 @@ static int register_hook_finalize(void *param)
 
     MPIDI_FUNC_ENTER(MPID_STATE_REGISTER_HOOK_FINALIZE);
 
-    MPL_LL_FOREACH_SAFE(create_hooks, elt, tmp) {
-        MPL_LL_DELETE(create_hooks, elt);
+    MPL_LL_FOREACH_SAFE(create_hooks_head, elt, tmp) {
+        MPL_LL_DELETE(create_hooks_head, create_hooks_tail, elt);
         MPIU_Free(elt);
     }
     
-    MPL_LL_FOREACH_SAFE(destroy_hooks, elt, tmp) {
-        MPL_LL_DELETE(destroy_hooks, elt);
+    MPL_LL_FOREACH_SAFE(destroy_hooks_head, elt, tmp) {
+        MPL_LL_DELETE(destroy_hooks_head, destroy_hooks_tail, elt);
         MPIU_Free(elt);
     }
 
@@ -203,11 +235,13 @@ int comm_created(MPID_Comm *comm, void *param)
 
     MPIDI_FUNC_ENTER(MPID_STATE_COMM_CREATED);
 
-    comm->ch.coll_active = TRUE;
-    comm->ch.anysource_enabled = TRUE;
+    comm->dev.anysource_enabled = TRUE;
 
     /* Use the VC's eager threshold by default. */
-    comm->ch.eager_max_msg_sz = -1;
+    comm->dev.eager_max_msg_sz = -1;
+
+    /* Initialize the last acked failure to -1 */
+    comm->dev.last_ack_rank = -1;
 
     COMM_ADD(comm);
 
@@ -230,8 +264,8 @@ int comm_destroyed(MPID_Comm *comm, void *param)
     MPIDI_FUNC_ENTER(MPID_STATE_COMM_DESTROYED);
 
     COMM_DEL(comm);
-    comm->ch.next = NULL;
-    comm->ch.prev = NULL;
+    comm->dev.next = NULL;
+    comm->dev.prev = NULL;
 
  fn_exit:
     MPIDI_FUNC_EXIT(MPID_STATE_COMM_DESTROYED);
@@ -305,7 +339,7 @@ int MPIDI_CH3I_Comm_handle_failed_procs(MPID_Group *new_failed_procs)
     COMM_FOREACH(comm) {
         /* if this comm is already collectively inactive and
            anysources are disabled, there's no need to check */
-        if (!comm->ch.coll_active && !comm->ch.anysource_enabled)
+        if (!comm->dev.anysource_enabled)
             continue;
 
         mpi_errno = nonempty_intersection(comm, new_failed_procs, &flag);
@@ -313,10 +347,9 @@ int MPIDI_CH3I_Comm_handle_failed_procs(MPID_Group *new_failed_procs)
 
         if (flag) {
             MPIU_DBG_MSG_FMT(CH3_OTHER, VERBOSE,
-                             (MPIU_DBG_FDEST, "disabling AS and coll on communicator %p (%#08x)",
+                             (MPIU_DBG_FDEST, "disabling AS on communicator %p (%#08x)",
                               comm, comm->handle));
-            comm->ch.coll_active = FALSE;
-            comm->ch.anysource_enabled = FALSE;
+            comm->dev.anysource_enabled = FALSE;
         }
     }
 
@@ -331,4 +364,21 @@ int MPIDI_CH3I_Comm_handle_failed_procs(MPID_Group *new_failed_procs)
     return mpi_errno;
  fn_fail:
     goto fn_exit;
+}
+
+void MPIDI_CH3I_Comm_find(MPIR_Context_id_t context_id, MPID_Comm **comm)
+{
+    MPIDI_STATE_DECL(MPIDI_STATE_MPIDI_CH3I_COMM_FIND);
+    MPIDI_FUNC_ENTER(MPIDI_STATE_MPIDI_CH3I_COMM_FIND);
+
+    COMM_FOREACH((*comm)) {
+        if ((*comm)->context_id == context_id || ((*comm)->context_id + MPID_CONTEXT_INTRA_COLL) == context_id ||
+            ((*comm)->node_comm && ((*comm)->node_comm->context_id == context_id || ((*comm)->node_comm->context_id + MPID_CONTEXT_INTRA_COLL) == context_id)) ||
+            ((*comm)->node_roots_comm && ((*comm)->node_roots_comm->context_id == context_id || ((*comm)->node_roots_comm->context_id + MPID_CONTEXT_INTRA_COLL) == context_id)) ) {
+            MPIU_DBG_MSG_D(CH3_OTHER,VERBOSE,"Found matching context id: %d", (*comm)->context_id);
+            break;
+        }
+    }
+
+    MPIDI_FUNC_EXIT(MPIDI_STATE_MPIDI_CH3I_COMM_FIND);
 }

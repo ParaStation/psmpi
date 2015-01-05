@@ -307,9 +307,7 @@ struct ADIOI_Fns_struct {
    as array of structures indexed by process number. */
 typedef struct {
     ADIO_Offset *offsets;   /* array of offsets */
-    int *lens;              /* array of lengths */ 
-    /* consider aints or offsets for lens? Seems to be used as in-memory
-       buffer lengths, so it should be < 2G and ok as an int          */
+    ADIO_Offset *lens;      /* array of lengths */
     MPI_Aint *mem_ptrs;     /* array of pointers. used in the read/write
 			       phase to indicate where the data
 			       is stored in memory */
@@ -320,7 +318,7 @@ typedef struct {
    file realms among other things */
 typedef struct {
     ADIO_Offset *offsets; /* array of offsets */
-    int *lens;           /* array of lengths */
+    ADIO_Offset *lens;    /* array of lengths */
     int count;            /* size of above arrays */
 } ADIOI_Offlen;
 
@@ -342,7 +340,7 @@ void ADIOI_Get_position(ADIO_File fd, ADIO_Offset *offset);
 void ADIOI_Get_eof_offset(ADIO_File fd, ADIO_Offset *eof_offset);
 void ADIOI_Get_byte_offset(ADIO_File fd, ADIO_Offset offset,
 			   ADIO_Offset *disp);
-void ADIOI_process_system_hints(MPI_Info info);
+void ADIOI_process_system_hints(ADIO_File fd, MPI_Info info);
 void ADIOI_incorporate_system_hints(MPI_Info info, MPI_Info sysinfo, 
 		MPI_Info *new_info);
 void ADIOI_Info_print_keyvals(MPI_Info info);
@@ -590,6 +588,11 @@ int MPIR_Status_set_bytes(MPI_Status *status, MPI_Datatype datatype, MPI_Count n
 int ADIOI_Uses_generic_read(ADIO_File fd);
 int ADIOI_Uses_generic_write(ADIO_File fd);
 int ADIOI_Err_create_code(const char *myname, const char *filename, int my_errno);
+int ADIOI_Type_create_hindexed_x(int count,
+		const MPI_Count array_of_blocklengths[],
+		const MPI_Aint array_of_displacements[],
+		MPI_Datatype oldtype,
+		MPI_Datatype *newtype);
 
 
 int ADIOI_FAKE_IODone(ADIO_Request *request, ADIO_Status *status,

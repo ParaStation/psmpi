@@ -77,6 +77,11 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
     
     MPIDI_RMA_FUNC_ENTER(MPID_STATE_MPID_WIN_CREATE);
 
+    /* Check to make sure the communicator hasn't already been revoked */
+    if (comm_ptr->revoked) {
+        MPIU_ERR_SETANDJUMP(mpi_errno,MPIX_ERR_REVOKED,"**revoked");
+    }
+
     mpi_errno = win_init(size, disp_unit, MPI_WIN_FLAVOR_CREATE, MPI_WIN_UNIFIED, comm_ptr, win_ptr);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
 
@@ -280,7 +285,7 @@ static int win_init(MPI_Aint size, int disp_unit, int create_flavor, int model,
     (*win_ptr)->start_assert        = 0;
     (*win_ptr)->comm_ptr            = win_comm_ptr;
 
-    (*win_ptr)->my_counter          = 0;
+    (*win_ptr)->at_completion_counter = 0;
     /* (*win_ptr)->base_addrs[] is set by caller; */
     /* (*win_ptr)->sizes[] is set by caller; */
     /* (*win_ptr)->disp_units[] is set by caller; */

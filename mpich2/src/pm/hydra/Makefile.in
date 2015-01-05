@@ -640,6 +640,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_LIBS = @EXTERNAL_LIBS@
 FGREP = @FGREP@
 GCOV = @GCOV@
 GREP = @GREP@
@@ -790,7 +791,7 @@ top_srcdir = @top_srcdir@
 external_subdirs = @mpl_srcdir@ $(am__append_4)
 external_dist_subdirs = @mpl_dist_srcdir@ $(am__append_5)
 external_ldflags = -L$(top_builddir)/@mpl_srcdir@ $(am__append_6)
-external_libs = -lmpl $(am__append_7)
+external_libs = -lmpl @EXTERNAL_LIBS@ $(am__append_7)
 noinst_HEADERS = include/hydra.h include/hydra_server.h \
 	tools/topo/topo.h $(am__append_2) \
 	tools/bootstrap/include/bsci.h tools/bootstrap/utils/bscu.h \

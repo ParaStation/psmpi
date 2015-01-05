@@ -21,6 +21,7 @@ extern ptl_pt_index_t  MPIDI_nem_ptl_control_pt; /* portal for MPICH control mes
 extern ptl_handle_eq_t MPIDI_nem_ptl_eq;
 
 extern ptl_handle_md_t MPIDI_nem_ptl_global_md;
+extern ptl_ni_limits_t MPIDI_nem_ptl_ni_limits;
 
 #define MPID_NEM_PTL_MAX_OVERFLOW_DATA 32 /* that's way more than we need */
 typedef struct MPID_nem_ptl_pack_overflow
@@ -129,9 +130,9 @@ typedef struct {
 #define NPTL_MATCH_RANK_MASK (((ptl_match_bits_t)(1) << 16) - 1)
 #define NPTL_MATCH_CTX_MASK ((((ptl_match_bits_t)(1) << 16) - 1) << NPTL_MATCH_CTX_OFFSET)
 #define NPTL_MATCH_TAG_MASK ((((ptl_match_bits_t)(1) << 32) - 1) << NPTL_MATCH_TAG_OFFSET)
-#define NPTL_MATCH(tag_, ctx_, rank_) (((ptl_match_bits_t)(tag_) << NPTL_MATCH_TAG_OFFSET) |     \
-                                       ((ptl_match_bits_t)(ctx_) << NPTL_MATCH_CTX_OFFSET) |     \
-                                       ((ptl_match_bits_t)(rank_)))
+#define NPTL_MATCH(tag_, ctx_, rank_) ((((ptl_match_bits_t)(tag_) << NPTL_MATCH_TAG_OFFSET) & NPTL_MATCH_TAG_MASK) | \
+                                       (((ptl_match_bits_t)(ctx_) << NPTL_MATCH_CTX_OFFSET) & NPTL_MATCH_CTX_MASK) | \
+                                       ((ptl_match_bits_t)(rank_) & NPTL_MATCH_RANK_MASK))
 #define NPTL_MATCH_IGNORE NPTL_MATCH_RANK_MASK
 #define NPTL_MATCH_IGNORE_ANY_TAG (NPTL_MATCH_IGNORE | NPTL_MATCH_TAG_MASK)
 
@@ -180,6 +181,13 @@ int MPID_nem_ptl_anysource_improbe(int tag, MPID_Comm * comm, int context_offset
 void MPID_nem_ptl_anysource_posted(MPID_Request *rreq);
 int MPID_nem_ptl_anysource_matched(MPID_Request *rreq);
 int MPID_nem_ptl_init_id(MPIDI_VC_t *vc);
+
+int MPID_nem_ptl_lmt_initiate_lmt(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *rts_pkt, MPID_Request *req);
+int MPID_nem_ptl_lmt_start_recv(MPIDI_VC_t *vc,  MPID_Request *rreq, MPID_IOV s_cookie);
+int MPID_nem_ptl_lmt_start_send(MPIDI_VC_t *vc, MPID_Request *sreq, MPID_IOV r_cookie);
+int MPID_nem_ptl_lmt_handle_cookie(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV s_cookie);
+int MPID_nem_ptl_lmt_done_send(MPIDI_VC_t *vc, MPID_Request *req);
+int MPID_nem_ptl_lmt_done_recv(MPIDI_VC_t *vc, MPID_Request *req);
 
 
 /* debugging */

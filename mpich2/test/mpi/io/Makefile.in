@@ -90,7 +90,7 @@ noinst_PROGRAMS = rdwrord$(EXEEXT) rdwrzero$(EXEEXT) \
 	getextent$(EXEEXT) setinfo$(EXEEXT) setviewcur$(EXEEXT) \
 	i_noncontig$(EXEEXT) async$(EXEEXT) async_any$(EXEEXT) \
 	userioerr$(EXEEXT) resized$(EXEEXT) resized2$(EXEEXT) \
-	bigtype$(EXEEXT)
+	bigtype$(EXEEXT) hindexed_io$(EXEEXT)
 subdir = io
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -125,6 +125,10 @@ getextent_SOURCES = getextent.c
 getextent_OBJECTS = getextent.$(OBJEXT)
 getextent_LDADD = $(LDADD)
 getextent_DEPENDENCIES = $(top_builddir)/util/mtest.o
+hindexed_io_SOURCES = hindexed_io.c
+hindexed_io_OBJECTS = hindexed_io.$(OBJEXT)
+hindexed_io_LDADD = $(LDADD)
+hindexed_io_DEPENDENCIES = $(top_builddir)/util/mtest.o
 i_noncontig_SOURCES = i_noncontig.c
 i_noncontig_OBJECTS = i_noncontig.$(OBJEXT)
 i_noncontig_LDADD = $(LDADD)
@@ -185,12 +189,12 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = async.c async_any.c bigtype.c getextent.c i_noncontig.c \
-	rdwrord.c rdwrzero.c resized.c resized2.c setinfo.c \
-	setviewcur.c userioerr.c
-DIST_SOURCES = async.c async_any.c bigtype.c getextent.c i_noncontig.c \
-	rdwrord.c rdwrzero.c resized.c resized2.c setinfo.c \
-	setviewcur.c userioerr.c
+SOURCES = async.c async_any.c bigtype.c getextent.c hindexed_io.c \
+	i_noncontig.c rdwrord.c rdwrzero.c resized.c resized2.c \
+	setinfo.c setviewcur.c userioerr.c
+DIST_SOURCES = async.c async_any.c bigtype.c getextent.c hindexed_io.c \
+	i_noncontig.c rdwrord.c rdwrzero.c resized.c resized2.c \
+	setinfo.c setviewcur.c userioerr.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -377,6 +381,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 nocxxdistgraph = @nocxxdistgraph@
+nslib = @nslib@
 oldincludedir = @oldincludedir@
 otherlangs = @otherlangs@
 pdfdir = @pdfdir@
@@ -387,6 +392,7 @@ psdir = @psdir@
 rmadir = @rmadir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
@@ -456,6 +462,10 @@ getextent$(EXEEXT): $(getextent_OBJECTS) $(getextent_DEPENDENCIES) $(EXTRA_getex
 	@rm -f getextent$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(getextent_OBJECTS) $(getextent_LDADD) $(LIBS)
 
+hindexed_io$(EXEEXT): $(hindexed_io_OBJECTS) $(hindexed_io_DEPENDENCIES) $(EXTRA_hindexed_io_DEPENDENCIES) 
+	@rm -f hindexed_io$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(hindexed_io_OBJECTS) $(hindexed_io_LDADD) $(LIBS)
+
 i_noncontig$(EXEEXT): $(i_noncontig_OBJECTS) $(i_noncontig_DEPENDENCIES) $(EXTRA_i_noncontig_DEPENDENCIES) 
 	@rm -f i_noncontig$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(i_noncontig_OBJECTS) $(i_noncontig_LDADD) $(LIBS)
@@ -498,6 +508,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/async_any.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bigtype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getextent.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hindexed_io.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_noncontig.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rdwrord.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rdwrzero.Po@am__quote@

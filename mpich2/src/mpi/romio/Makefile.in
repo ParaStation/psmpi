@@ -805,7 +805,7 @@ am__libromio_la_SOURCES_DIST = mpi-io/fortran/closef.c \
 	adio/common/shfp_fname.c adio/common/status_setb.c \
 	adio/common/strfns.c adio/common/system_hints.c \
 	adio/common/hint_fns.c adio/common/ad_threaded_io.c \
-	adio/common/p2p_aggregation.c
+	adio/common/p2p_aggregation.c adio/common/utils.c
 @BUILD_F77_BINDINGS_TRUE@am__objects_3 = mpi-io/fortran/closef.lo \
 @BUILD_F77_BINDINGS_TRUE@	mpi-io/fortran/deletef.lo \
 @BUILD_F77_BINDINGS_TRUE@	mpi-io/fortran/fsyncf.lo \
@@ -1077,7 +1077,7 @@ am__objects_28 = $(am__objects_5) $(am__objects_6) $(am__objects_7) \
 	adio/common/shfp_fname.lo adio/common/status_setb.lo \
 	adio/common/strfns.lo adio/common/system_hints.lo \
 	adio/common/hint_fns.lo adio/common/ad_threaded_io.lo \
-	adio/common/p2p_aggregation.lo
+	adio/common/p2p_aggregation.lo adio/common/utils.lo
 am__objects_29 =
 @BUILD_ROMIO_EMBEDDED_FALSE@am_libromio_la_OBJECTS = $(am__objects_4) \
 @BUILD_ROMIO_EMBEDDED_FALSE@	$(am__objects_28) \
@@ -1533,7 +1533,7 @@ romio_other_sources = $(am__append_1) $(am__append_2) $(am__append_3) \
 	adio/common/shfp_fname.c adio/common/status_setb.c \
 	adio/common/strfns.c adio/common/system_hints.c \
 	adio/common/hint_fns.c adio/common/ad_threaded_io.c \
-	adio/common/p2p_aggregation.c
+	adio/common/p2p_aggregation.c adio/common/utils.c
 
 # code that may need to be "up" called from the MPI library and/or is
 # MPI-implementation-specific in some way
@@ -2782,6 +2782,8 @@ adio/common/ad_threaded_io.lo: adio/common/$(am__dirstamp) \
 	adio/common/$(DEPDIR)/$(am__dirstamp)
 adio/common/p2p_aggregation.lo: adio/common/$(am__dirstamp) \
 	adio/common/$(DEPDIR)/$(am__dirstamp)
+adio/common/utils.lo: adio/common/$(am__dirstamp) \
+	adio/common/$(DEPDIR)/$(am__dirstamp)
 
 libromio.la: $(libromio_la_OBJECTS) $(libromio_la_DEPENDENCIES) $(EXTRA_libromio_la_DEPENDENCIES) 
 	$(AM_V_CCLD)$(LINK) $(am_libromio_la_rpath) $(libromio_la_OBJECTS) $(libromio_la_LIBADD) $(LIBS)
@@ -3043,6 +3045,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/status_setb.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/strfns.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/system_hints.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@adio/common/$(DEPDIR)/utils.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/close.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/delete.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@mpi-io/$(DEPDIR)/file_c2f.Plo@am__quote@

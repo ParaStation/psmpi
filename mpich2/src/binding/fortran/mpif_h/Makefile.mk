@@ -306,9 +306,11 @@ mpi_f77_sources += src/binding/fortran/mpif_h/sendf.c \
 	src/binding/fortran/mpif_h/type_get_true_extent_xf.c \
 	src/binding/fortran/mpif_h/type_size_xf.c \
 	src/binding/fortran/mpif_h/comm_create_groupf.c \
-	src/binding/fortran/mpif_h/comm_group_failedf.c \
-	src/binding/fortran/mpif_h/comm_remote_group_failedf.c \
-	src/binding/fortran/mpif_h/comm_reenable_anysourcef.c \
+	src/binding/fortran/mpif_h/comm_failure_ackf.c \
+	src/binding/fortran/mpif_h/comm_failure_get_ackedf.c \
+	src/binding/fortran/mpif_h/comm_revokef.c \
+	src/binding/fortran/mpif_h/comm_shrinkf.c \
+	src/binding/fortran/mpif_h/comm_agreef.c \
 	src/binding/fortran/mpif_h/file_openf.c \
 	src/binding/fortran/mpif_h/file_closef.c \
 	src/binding/fortran/mpif_h/file_deletef.c \

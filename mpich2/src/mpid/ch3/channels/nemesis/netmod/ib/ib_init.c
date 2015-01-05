@@ -87,10 +87,12 @@ uint16_t MPID_nem_ib_cm_ringbuf_head;
 uint16_t MPID_nem_ib_cm_ringbuf_tail;
 uint64_t MPID_nem_ib_cm_ringbuf_released[(MPID_NEM_IB_CM_NSEG + 63) / 64];
 MPID_nem_ib_cm_sendq_t MPID_nem_ib_cm_sendq = { NULL, NULL };
+MPID_nem_ib_cm_notify_sendq_t MPID_nem_ib_cm_notify_sendq = { NULL, NULL };
 
 int MPID_nem_ib_ncqe_scratch_pad_to_drain;
 #endif
 MPID_nem_ib_ringbuf_sendq_t MPID_nem_ib_ringbuf_sendq = { NULL, NULL };
+
 
 int MPID_nem_ib_ncqe_scratch_pad;
 int MPID_nem_ib_ncqe_to_drain;
@@ -101,8 +103,6 @@ uint8_t MPID_nem_ib_lmt_tail_addr_cbf[MPID_nem_ib_cbf_nslot * MPID_nem_ib_cbf_bi
                                       8] = { 0 };
 static uint32_t MPID_nem_ib_rand_next = 1;
 MPID_nem_ib_vc_area *MPID_nem_ib_debug_current_vc_ib;
-static int listen_fd;
-static int listen_port;
 uint64_t MPID_nem_ib_ringbuf_acquired[(MPID_NEM_IB_NRINGBUF + 63) / 64];
 uint64_t MPID_nem_ib_ringbuf_allocated[(MPID_NEM_IB_NRINGBUF + 63) / 64];
 MPID_nem_ib_ringbuf_t *MPID_nem_ib_ringbuf;
@@ -199,7 +199,9 @@ static int MPID_nem_ib_kvs_get_binary(int from, const char *postfix, char *buf, 
     goto fn_exit;
 }
 
+#ifndef MPID_NEM_IB_ONDEMAND
 static int MPID_nem_ib_announce_network_addr(int my_rank, char **bc_val_p, int *val_max_sz_p);
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_ib_init
@@ -209,7 +211,6 @@ int MPID_nem_ib_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_m
 {
     int mpi_errno = MPI_SUCCESS;
     int ibcom_errno = 0, pmi_errno;
-    int ret;
     int i, j, k;
     int ib_port = 1;
 
@@ -488,6 +489,16 @@ int MPID_nem_ib_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_m
                         MPID_nem_ib_nranks * sizeof(MPID_nem_ib_conn_t), mpi_errno,
                         "connection table");
     memset(MPID_nem_ib_conns, 0, MPID_nem_ib_nranks * sizeof(MPID_nem_ib_conn_t));
+
+    /* post receive request */
+    for (i = 0; i < MPID_nem_ib_nranks; i++) {
+        if (i != MPID_nem_ib_myrank) {
+            for (j = 0; j < MPID_NEM_IB_COM_MAX_RQ_CAPACITY; j++) {
+                MPID_nem_ib_com_scratch_pad_recv(MPID_nem_ib_scratch_pad_fds[i], sizeof(MPID_nem_ib_cm_notify_send_t));
+            }
+        }
+    }
+
 #if 0
     MPIU_CHKPMEM_MALLOC(MPID_nem_ib_pollingset, MPIDI_VC_t **,
                         MPID_NEM_IB_MAX_POLLINGSET * sizeof(MPIDI_VC_t *), mpi_errno,
@@ -593,7 +604,23 @@ int MPID_nem_ib_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_m
 #endif
 #else /* define(MPID_NEM_IB_ONDEMAND)  */
     /* We need to communicate with all other ranks in close sequence.  */
-    MPID_nem_ib_conns_ref_count = MPID_nem_ib_nranks - 1;
+    MPID_nem_ib_conns_ref_count = MPID_nem_ib_nranks - MPID_nem_mem_region.num_local;
+
+    if (MPID_nem_ib_conns_ref_count == 0) {
+        MPIU_Free(MPID_nem_ib_conns);
+    }
+
+    for (i = 0; i < MPID_nem_mem_region.num_local; i++) {
+        if (MPID_nem_mem_region.local_procs[i] != MPID_nem_ib_myrank) {
+            ibcom_errno =
+                MPID_nem_ib_com_close(MPID_nem_ib_scratch_pad_fds
+                                      [MPID_nem_mem_region.local_procs[i]]);
+            if (--MPID_nem_ib_scratch_pad_fds_ref_count == 0) {
+                MPIU_Free(MPID_nem_ib_scratch_pad_fds);
+                MPIU_Free(MPID_nem_ib_scratch_pad_ibcoms);
+            }
+        }
+    }
 #endif
 
     MPIU_Free(remote_rank_str);
@@ -614,7 +641,6 @@ int MPID_nem_ib_init(MPIDI_PG_t * pg_p, int pg_rank, char **bc_val_p, int *val_m
 int MPID_nem_ib_get_business_card(int my_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
-    int str_errno = MPIU_STR_SUCCESS;
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_IB_GET_BUSINESS_CARD);
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_IB_GET_BUSINESS_CARD);
     dprintf("MPID_nem_ib_get_business_card,enter\n");
@@ -622,6 +648,7 @@ int MPID_nem_ib_get_business_card(int my_rank, char **bc_val_p, int *val_max_sz_
     return mpi_errno;
 }
 
+#ifndef MPID_NEM_IB_ONDEMAND
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_ib_announce_network_addr
 #undef FCNAME
@@ -629,7 +656,6 @@ int MPID_nem_ib_get_business_card(int my_rank, char **bc_val_p, int *val_max_sz_
 static int MPID_nem_ib_announce_network_addr(int my_rank, char **bc_val_p, int *val_max_sz_p)
 {
     int mpi_errno = MPI_SUCCESS;
-    int str_errno = MPIU_STR_SUCCESS;
     int ibcom_errno;
     int i, j, nranks;
 
@@ -760,6 +786,7 @@ static int MPID_nem_ib_announce_network_addr(int my_rank, char **bc_val_p, int *
     MPIU_CHKLMEM_FREEALL();
     goto fn_exit;
 }
+#endif
 
 #undef FUNCNAME
 #define FUNCNAME MPID_nem_ib_connect_to_root
@@ -818,18 +845,6 @@ int MPID_nem_ib_vc_init(MPIDI_VC_t * vc)
     int mpi_errno = MPI_SUCCESS;
 
     MPID_nem_ib_vc_area *vc_ib = VC_IB(vc);
-    int ibcom_errno;
-    size_t s;
-    MPID_nem_ib_conn_t *sc;
-    off_t offset;
-
-    int remote_qpnum;
-    uint16_t remote_lid;
-    union ibv_gid remote_gid;
-    void *remote_rmem;
-    int remote_rkey;
-
-    char key_str[256], remote_rank_str[256];
 
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_IB_VC_INIT);
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_IB_VC_INIT);
@@ -944,10 +959,12 @@ int MPID_nem_ib_vc_init(MPIDI_VC_t * vc)
     MPID_nem_ib_pkt_handler[MPIDI_NEM_IB_PKT_GET_RESP] = MPID_nem_ib_PktHandler_GetResp;
     MPID_nem_ib_pkt_handler[MPIDI_NEM_IB_PKT_ACCUMULATE] = MPID_nem_ib_PktHandler_Accumulate;
     MPID_nem_ib_pkt_handler[MPIDI_NEM_IB_PKT_LMT_GET_DONE] = MPID_nem_ib_pkt_GET_DONE_handler;
+    MPID_nem_ib_pkt_handler[MPIDI_NEM_IB_PKT_LMT_RTS] = MPID_nem_ib_pkt_RTS_handler;
     MPID_nem_ib_pkt_handler[MPIDI_NEM_IB_PKT_REQ_SEQ_NUM] = MPID_nem_ib_PktHandler_req_seq_num;
     MPID_nem_ib_pkt_handler[MPIDI_NEM_IB_PKT_REPLY_SEQ_NUM] = MPID_nem_ib_PktHandler_reply_seq_num;
     MPID_nem_ib_pkt_handler[MPIDI_NEM_IB_PKT_CHG_RDMABUF_OCC_NOTIFY_STATE] =
         MPID_nem_ib_PktHandler_change_rdmabuf_occupancy_notify_state;
+    MPID_nem_ib_pkt_handler[MPIDI_NEM_IB_PKT_RMA_LMT_GET_DONE] = MPID_nem_ib_pkt_rma_lmt_getdone;
 
     /* register CH3 send/recv functions */
     vc_ch->iStartContigMsg = MPID_nem_ib_iStartContigMsg;
@@ -993,8 +1010,6 @@ int MPID_nem_ib_vc_terminate(MPIDI_VC_t * vc)
     dprintf("ib_vc_terminate,pg_rank=%d\n", vc->pg_rank);
     int mpi_errno = MPI_SUCCESS;
     int ibcom_errno;
-    int req_errno = MPI_SUCCESS;
-    int i;
     MPIDI_STATE_DECL(MPID_STATE_MPID_NEM_IB_VC_TERMINATE);
     MPIDI_FUNC_ENTER(MPID_STATE_MPID_NEM_IB_VC_TERMINATE);
 
@@ -1052,11 +1067,23 @@ int MPID_nem_ib_vc_terminate(MPIDI_VC_t * vc)
     }
 #endif
 
+#ifdef MPID_NEM_IB_ONDEMAND
+    MPID_nem_ib_cm_notify_send_req_t *req = MPIU_Malloc(sizeof(MPID_nem_ib_cm_notify_send_req_t));
+    req->ibcom = MPID_nem_ib_scratch_pad_ibcoms[vc->pg_rank];
+    req->my_rank = MPID_nem_ib_myrank;
+    req->pg_rank = vc->pg_rank;
+    MPID_nem_ib_cm_notify_sendq_enqueue(&MPID_nem_ib_cm_notify_sendq, req);
+#endif
+
     /* Empty sendq */
     while (!MPID_nem_ib_sendq_empty(vc_ib->sendq) ||
            VC_FIELD(vc, pending_sends) > 0 ||
-           MPID_nem_ib_scratch_pad_ibcoms[vc->pg_rank]->outstanding_connection_tx > 0 ||
-           MPID_nem_ib_scratch_pad_ibcoms[vc->pg_rank]->incoming_connection_tx > 0) {
+           (MPID_nem_ib_scratch_pad_ibcoms[vc->pg_rank]->notify_outstanding_tx_empty !=
+            NOTIFY_OUTSTANDING_TX_COMP)) {
+#ifdef MPID_NEM_IB_ONDEMAND
+        MPID_nem_ib_cm_notify_progress();       /* progress cm_notify_sendq */
+        MPID_nem_ib_cm_drain_rcq();
+#endif
         /* mimic ib_poll because vc_terminate might be called from ib_poll_eager */
         mpi_errno = MPID_nem_ib_send_progress(vc);
         MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**MPID_nem_ib_send_progress");

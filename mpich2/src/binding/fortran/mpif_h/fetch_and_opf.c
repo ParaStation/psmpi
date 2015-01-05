@@ -12,10 +12,10 @@
 /* Begin MPI profiling block */
 #if defined(USE_WEAK_SYMBOLS) && !defined(USE_ONLY_MPI_NAMES) 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak MPI_FETCH_AND_OP = PMPI_FETCH_AND_OP
@@ -44,19 +44,19 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *,
 #elif defined(HAVE_PRAGMA_WEAK)
 
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #pragma weak MPI_FETCH_AND_OP = PMPI_FETCH_AND_OP
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #pragma weak mpi_fetch_and_op__ = pmpi_fetch_and_op__
 #elif !defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #pragma weak mpi_fetch_and_op = pmpi_fetch_and_op
 #else
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #pragma weak mpi_fetch_and_op_ = pmpi_fetch_and_op_
 #endif
@@ -85,28 +85,28 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *,
 
 #elif defined(HAVE_WEAK_ATTRIBUTE)
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FETCH_AND_OP")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FETCH_AND_OP")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FETCH_AND_OP")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FETCH_AND_OP")));
+extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FETCH_AND_OP")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FETCH_AND_OP")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FETCH_AND_OP")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FETCH_AND_OP")));
 
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op__")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op__")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op__")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op__")));
+extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op__")));
 
 #elif defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op_")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op_")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op_")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op_")));
+extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op_")));
 
 #else
-extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op")));
+extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op")));
 
 #endif
 #endif /* HAVE_PRAGMA_WEAK */
@@ -117,10 +117,10 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, 
 /* These definitions are used only for generating the Fortran wrappers */
 #if defined(USE_WEAK_SYMBOLS) && defined(USE_ONLY_MPI_NAMES)
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
-extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #if defined(F77_NAME_UPPER)
 #pragma weak mpi_fetch_and_op__ = MPI_FETCH_AND_OP
@@ -141,28 +141,28 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *,
 #endif
 #elif defined(HAVE_WEAK_ATTRIBUTE)
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_FETCH_AND_OP")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_FETCH_AND_OP")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_FETCH_AND_OP")));
+extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_FETCH_AND_OP")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_FETCH_AND_OP")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("MPI_FETCH_AND_OP")));
 
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op__")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op__")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op__")));
+extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op__")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op__")));
 
 #elif defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op_")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op_")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op_")));
+extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op_")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op_")));
 
 #else
-extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op")));
-extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL MPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("mpi_fetch_and_op")));
+extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 #endif
@@ -175,16 +175,16 @@ extern FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op( void*, void*, MPI_Fint *, 
 #if defined(HAVE_MULTIPLE_PRAGMA_WEAK)
 /* Define the weak versions of the PMPI routine*/
 #ifndef F77_NAME_UPPER
-extern FORT_DLL_SPEC void FORT_CALL PMPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL PMPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_2USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER_USCORE
-extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 #endif
 #ifndef F77_NAME_LOWER
-extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
+extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * );
 
 #endif
 
@@ -208,24 +208,24 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op( void*, void*, MPI_Fint *,
 
 #elif defined(HAVE_WEAK_ATTRIBUTE)
 #if defined(F77_NAME_UPPER)
-extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FETCH_AND_OP")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FETCH_AND_OP")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FETCH_AND_OP")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FETCH_AND_OP")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FETCH_AND_OP")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("PMPI_FETCH_AND_OP")));
 
 #elif defined(F77_NAME_LOWER_2USCORE)
-extern FORT_DLL_SPEC void FORT_CALL PMPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op__")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op__")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op__")));
+extern FORT_DLL_SPEC void FORT_CALL PMPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op__")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op__")));
 
 #elif defined(F77_NAME_LOWER_USCORE)
-extern FORT_DLL_SPEC void FORT_CALL PMPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op_")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op_")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op_")));
+extern FORT_DLL_SPEC void FORT_CALL PMPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op_")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op_")));
 
 #else
-extern FORT_DLL_SPEC void FORT_CALL PMPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op")));
-extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op")));
+extern FORT_DLL_SPEC void FORT_CALL PMPI_FETCH_AND_OP( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op__( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op")));
+extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op_( void*, void*, MPI_Fint *, MPI_Fint *, MPI_Aint *, MPI_Fint *, MPI_Fint *, MPI_Fint * ) __attribute__((weak,alias("pmpi_fetch_and_op")));
 
 #endif /* Test on name mapping */
 #endif /* HAVE_MULTIPLE_PRAGMA_WEAK */
@@ -263,6 +263,6 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_fetch_and_op_( void*, void*, MPI_Fint *
 
 /* Prototypes for the Fortran interfaces */
 #include "fproto.h"
-FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_ ( void*v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Fint *v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *ierr ){
-    *ierr = MPI_Fetch_and_op( v1, v2, (MPI_Datatype)(*v3), (int)*v4, (MPI_Aint)*v5, (MPI_Op)*v6, (MPI_Win)*v7 );
+FORT_DLL_SPEC void FORT_CALL mpi_fetch_and_op_ ( void*v1, void*v2, MPI_Fint *v3, MPI_Fint *v4, MPI_Aint * v5, MPI_Fint *v6, MPI_Fint *v7, MPI_Fint *ierr ){
+    *ierr = MPI_Fetch_and_op( v1, v2, (MPI_Datatype)(*v3), (int)*v4, *v5, (MPI_Op)*v6, (MPI_Win)*v7 );
 }

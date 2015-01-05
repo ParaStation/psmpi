@@ -269,13 +269,10 @@ PAC_PREFIX_ALL_FLAGS(USER)
 # as include paths).
 #
 # All libraries that are detected by MPICH as needed for some of its
-# functionality (such as -lpthread) should be added to LIBS so
-# autoconf link tests can use them. Libraries that are built by MPICH
-# at make time (and hence are not available for autoconf link tests to
-# use), such as OPA and MPL, should be added to WRAPPER_LIBS for
-# static builds. All libraries in LIBS are added to WRAPPER_LIBS
-# (similarly LDFLAGS are added to WRAPPER_LDFLAGS) as well, at the end
-# of configure.
+# functionality (such as -lpthread) should be added to EXTERNAL_LIBS
+# so executables built within MPICH use them.  If inter-library
+# dependencies are not supported on the platform, these libraries are
+# added to the MPICH wrappers (mpicc and friends) as well.
 PAC_PREFIX_ALL_FLAGS(WRAPPER)
 WRAPPER_CFLAGS="$CFLAGS $MPICH_MPICC_FLAGS"
 WRAPPER_CPPFLAGS="$CPPFLAGS $MPICH_MPICPP_FLAGS"
@@ -284,6 +281,9 @@ WRAPPER_FFLAGS="$FFLAGS $MPICH_MPIF77_FLAGS"
 WRAPPER_FCFLAGS="$FCFLAGS $MPICH_MPIFC_FLAGS"
 WRAPPER_LDFLAGS="$MPICH_LDFLAGS"
 WRAPPER_LIBS="$MPICH_LIBS"
+EXTERNAL_LIBS=""
+export EXTERNAL_LIBS
+AC_SUBST(EXTERNAL_LIBS)
 
 # Add MPICHLIB_* to the appropriate flags
 AC_ARG_VAR(MPICHLIB_CFLAGS,
@@ -413,12 +413,11 @@ dnl We enable f77 and fc if we can find compilers for them.
 dnl In addition, we check whether f77 and fc can work together.
 AC_ARG_ENABLE(fortran,
 [  --enable-fortran=option - Control the level of Fortran support in the MPICH implementation.
-	yes|all   - Enable all available Fortran implementations (F77, F90, F08)
+	yes|all   - Enable all available Fortran implementations (F77, F90+)
 	f77       - Enable Fortran 77 support
-	f90       - Enable Fortran 90 support
-	f08       - Enable Fortran 2008 support
+	fc        - Enable Fortran 90 and 2008 support
 	no|none   - No Fortran support
-],,[enable_fortran=f77,f90])
+],,[enable_fortran=all])
 
 AC_ARG_ENABLE(f77,
 	AC_HELP_STRING([--enable-f77],
@@ -674,7 +673,6 @@ save_IFS="$IFS"
 IFS=","
 enable_f77=no
 enable_fc=no
-enable_f08=no
 for option in $enable_fortran ; do
     case "$option" in
         yes|all)
@@ -682,17 +680,12 @@ for option in $enable_fortran ; do
 		enable_fc=yes
 		;;
         no|none)
-		enable_f77=no
-		enable_fc=no
 		;;
         f77)
 		enable_f77=yes
 		;;
-        f90)
+        fc)
 		enable_fc=yes
-		;;
-        f08)
-		enable_f08=yes
 		;;
         *)
 		IFS="$save_IFS"
@@ -704,7 +697,7 @@ done
 IFS="$save_IFS"
 
 if test "$enable_f77" = "no" ; then
-   if test "$enable_f90" = "yes" ; then
+   if test "$enable_fc" = "yes" ; then
       AC_MSG_ERROR([Fortran 90 support requires enabling Fortran 77])
    fi
 fi
@@ -1183,10 +1176,9 @@ else
     AS_IF([test -s "${with_mpl_prefix}/include/mplconfig.h"],
           [:],[AC_MSG_ERROR([the MPL installation in "${with_mpl_prefix}" appears broken])])
     PAC_APPEND_FLAG([-I${with_mpl_prefix}/include],[CPPFLAGS])
-    PAC_PREPEND_FLAG([-l${MPLLIBNAME}],[WRAPPER_LIBS])
+    PAC_PREPEND_FLAG([-l${MPLLIBNAME}],[EXTERNAL_LIBS])
     PAC_APPEND_FLAG([-L${with_mpl_prefix}/lib],[WRAPPER_LDFLAGS])
     mpllibdir="${with_mpl_prefix}/lib"
-    mpllib="-l${MPLLIBNAME}"
 fi
 
 # OpenPA
@@ -1248,8 +1240,7 @@ if test "$with_openpa_prefix" = "embedded" ; then
         AC_MSG_WARN([Attempted to use the embedded OpenPA source tree in "src/openpa", but it is missing.  Configuration or compilation may fail later.])
     fi
 elif test "$with_openpa_prefix" = "system" ; then
-    PAC_PREPEND_FLAG([-l${OPALIBNAME}],[WRAPPER_LIBS])
-    opalib="-l${OPALIBNAME}"
+    PAC_PREPEND_FLAG([-l${OPALIBNAME}],[EXTERNAL_LIBS])
 elif test "$with_openpa_prefix" = "no" ; then
     # The user doesn't want to use OPA.  This may or may not cause MPICH to
     # fail to configure/build, depending on many other factors.
@@ -1260,8 +1251,7 @@ else
     AS_IF([test -s "${with_openpa_prefix}/include/opa_primitives.h" -a -s "${with_openpa_prefix}/include/opa_config.h"],
           [:],[AC_MSG_ERROR([the OpenPA installation in "${with_openpa_prefix}" appears broken])])
     PAC_APPEND_FLAG([-I${with_openpa_prefix}/include],[CPPFLAGS])
-    PAC_PREPEND_FLAG([-l${OPALIBNAME}],[WRAPPER_LIBS])
-    opalib="-l${OPALIBNAME}"
+    PAC_PREPEND_FLAG([-l${OPALIBNAME}],[EXTERNAL_LIBS])
     if test -d ${with_openpa_prefix}/lib64 ; then
         PAC_APPEND_FLAG([-L${with_openpa_prefix}/lib64],[WRAPPER_LDFLAGS])
         opalibdir="${with_openpa_prefix}/lib64"
@@ -2185,7 +2175,7 @@ if test "$enable_fc" = "yes" ; then
 fi
 
 f08_works=no
-if test "$enable_f08" = "yes" ; then
+if test "$enable_fc" = "yes" ; then
     PAC_FC_2008_SUPPORT([f08_works=yes],[f08_works=no])
 fi
 AM_CONDITIONAL([BUILD_F08_BINDING], [test "$f08_works" = "yes"])
@@ -5293,6 +5283,7 @@ case $with_thread_package in
         AC_CHECK_LIB([pthread],[pthread_key_create],have_pthreads=yes)
 	if test "$have_pthreads" = "yes" ; then
 	   PAC_PREPEND_FLAG([-lpthread],[LIBS])
+	   PAC_PREPEND_FLAG([-lpthread],[EXTERNAL_LIBS])
 	fi
 
         AC_CHECK_FUNCS(pthread_yield)
@@ -5514,7 +5505,10 @@ AC_ARG_ENABLE(checkpointing,
     [AC_HELP_STRING([--enable-checkpointing], [Enable application checkpointing])],
     [ if test "$enableval" != "no" ; then
         PAC_SET_HEADER_LIB_PATH(blcr)
+	PAC_PUSH_FLAG([LIBS])
 	PAC_CHECK_HEADER_LIB_FATAL(blcr, libcr.h, cr, cr_init)
+	PAC_APPEND_FLAG([-lblcr],[EXTERNAL_LIBS])
+	PAC_POP_FLAG([LIBS])
         AC_DEFINE(ENABLE_CHECKPOINTING,1,[Application checkpointing enabled])
       fi ],
 )
@@ -5979,9 +5973,12 @@ AC_OUTPUT_COMMANDS([chmod a+x test/commands/cmdtests])
 
 AC_DEFINE(HAVE_MPICHCONF,1,[Define so that we can test whether the mpichconf.h file has been included])
 
-# Add the LDFLAGS/LIBS we got so far to WRAPPERs
-WRAPPER_LDFLAGS="$WRAPPER_LDFLAGS $LDFLAGS"
-WRAPPER_LIBS="$WRAPPER_LIBS $LIBS"
+# If the platform does not support inter-library dependencies,
+# add the LDFLAGS/LIBS we got so far to WRAPPERs
+if test "$INTERLIB_DEPS" = "no" ; then
+   WRAPPER_LDFLAGS="$WRAPPER_LDFLAGS $LDFLAGS"
+   WRAPPER_LIBS="$WRAPPER_LIBS $EXTERNAL_LIBS $ROMIO_EXTERNAL_LIBS"
+fi
 
 if test "$USE_PMI2_API" = "yes" ; then
    AC_DEFINE(USE_PMI2_API, 1, [Define if PMI2 API must be used])

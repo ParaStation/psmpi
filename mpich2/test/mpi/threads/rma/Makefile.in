@@ -80,7 +80,7 @@ host_triplet = @host@
 DIST_COMMON = $(top_srcdir)/threads/Makefile_threads.mtest \
 	$(top_srcdir)/Makefile.mtest $(srcdir)/Makefile.in \
 	$(srcdir)/Makefile.am $(top_srcdir)/confdb/depcomp
-noinst_PROGRAMS = multirma$(EXEEXT)
+noinst_PROGRAMS = multirma$(EXEEXT) multiget$(EXEEXT)
 subdir = threads/rma
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -99,6 +99,11 @@ CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+multiget_SOURCES = multiget.c
+multiget_OBJECTS = multiget.$(OBJEXT)
+multiget_LDADD = $(LDADD)
+multiget_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/threads/util/mtestthread.$(OBJEXT)
 multirma_SOURCES = multirma.c
 multirma_OBJECTS = multirma.$(OBJEXT)
 multirma_LDADD = $(LDADD)
@@ -132,8 +137,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = multirma.c
-DIST_SOURCES = multirma.c
+SOURCES = multiget.c multirma.c
+DIST_SOURCES = multiget.c multirma.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -320,6 +325,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 nocxxdistgraph = @nocxxdistgraph@
+nslib = @nslib@
 oldincludedir = @oldincludedir@
 otherlangs = @otherlangs@
 pdfdir = @pdfdir@
@@ -330,6 +336,7 @@ psdir = @psdir@
 rmadir = @rmadir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
@@ -384,6 +391,10 @@ $(am__aclocal_m4_deps):
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 
+multiget$(EXEEXT): $(multiget_OBJECTS) $(multiget_DEPENDENCIES) $(EXTRA_multiget_DEPENDENCIES) 
+	@rm -f multiget$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(multiget_OBJECTS) $(multiget_LDADD) $(LIBS)
+
 multirma$(EXEEXT): $(multirma_OBJECTS) $(multirma_DEPENDENCIES) $(EXTRA_multirma_DEPENDENCIES) 
 	@rm -f multirma$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(multirma_OBJECTS) $(multirma_LDADD) $(LIBS)
@@ -394,6 +405,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/multiget.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/multirma.Po@am__quote@
 
 .c.o:

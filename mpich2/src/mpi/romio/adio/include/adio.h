@@ -203,7 +203,6 @@ typedef struct ADIOI_FileD {
                                 in bytes */
     ADIOI_Fns *fns;          /* struct of I/O functions to use */
     MPI_Comm comm;           /* communicator indicating who called open */
-    MPI_Comm agg_comm;      /* deferred open: aggregators who called open */
     int is_open;	    /* deferred open: 0: not open yet 1: is open */
     int is_agg;              /* bool: if I am an aggregator */
     char *filename;          
@@ -294,10 +293,10 @@ typedef struct {
 #define ADIO_PANFS               161   /* Panasas FS */
 #define ADIO_GRIDFTP             162   /* Globus GridFTP */
 #define ADIO_LUSTRE              163   /* Lustre */
-// #define ADIO_BGL                 164   /* IBM BGL */
-// #define ADIO_BGLOCKLESS          165   /* IBM BGL (lock-free) */
+/* #define ADIO_BGL              164 */  /* IBM BGL */
+/* #define ADIO_BGLOCKLESS       165 */  /* IBM BGL (lock-free) */
 #define ADIO_ZOIDFS              167   /* ZoidFS: the I/O forwarding fs */
-//#define ADIO_BG                  168
+/* #define ADIO_BG               168 */
 #define ADIO_GPFS                  168
 
 #define ADIO_SEEK_SET            SEEK_SET

@@ -17,7 +17,9 @@
 #include "ad_gpfs.h"
 #include "ad_gpfs_aggrs.h"
 
+#ifdef BGQPLATFORM
 #include <mpix.h>
+#endif
 
 #ifdef AGGREGATION_PROFILE
 #include "mpe.h"
@@ -570,7 +572,7 @@ static void ADIOI_Exch_and_write(ADIO_File fd, const void *buf, MPI_Datatype
       }
     }
 
-    ADIO_Offset st_loc_ion, end_loc_ion, needs_gpfs_access_cleanup=0;
+    ADIO_Offset st_loc_ion=0, end_loc_ion=0, needs_gpfs_access_cleanup=0;
 #ifdef BGQPLATFORM
     if (ntimes > 0) { /* only set the gpfs hint if we have io - ie this rank is
 			 an aggregator -- otherwise will fail for deferred open */
@@ -929,8 +931,8 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, const void *buf, char *write_buf
 		tmp_len[i] = others_req[i].lens[k];
 		others_req[i].lens[k] = partial_recv[i];
 	    }
-	    MPI_Type_hindexed(count[i], 
-                 &(others_req[i].lens[start_pos[i]]),
+	    ADIOI_Type_create_hindexed_x(count[i],
+		  &(others_req[i].lens[start_pos[i]]),
 	             &(others_req[i].mem_ptrs[start_pos[i]]), 
 			 MPI_BYTE, recv_types+j);
 	    /* absolute displacements; use MPI_BOTTOM in recv */
@@ -1284,7 +1286,7 @@ static void ADIOI_Heap_merge(ADIOI_Access *others_req, int *count,
 {
     typedef struct {
 	ADIO_Offset *off_list;
-	int *len_list;
+	ADIO_Offset *len_list;
 	int nelem;
     } heap_struct;
 

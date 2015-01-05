@@ -109,6 +109,7 @@ am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_attr_alias.m4 \
 	$(top_srcdir)/confdb/lt~obsolete.m4 \
 	$(top_srcdir)/maint/version.m4 $(top_srcdir)/subsys_include.m4 \
 	$(top_srcdir)/src/mpid/pamid/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/common/hcoll/subconfigure.m4 \
 	$(top_srcdir)/src/pm/subconfigure.m4 \
 	$(top_srcdir)/src/pm/remshell/subconfigure.m4 \
 	$(top_srcdir)/src/binding/fortran/use_mpi/subconfigure.m4 \
@@ -135,6 +136,7 @@ am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_attr_alias.m4 \
 	$(top_srcdir)/src/mpid/common/sock/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/common/sock/poll/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch3/util/sock/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/mxm/subconfigure.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -271,6 +273,7 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+EXTERNAL_LIBS = @EXTERNAL_LIBS@
 F77 = @F77@
 F77CPP = @F77CPP@
 F77_COMPLEX16 = @F77_COMPLEX16@

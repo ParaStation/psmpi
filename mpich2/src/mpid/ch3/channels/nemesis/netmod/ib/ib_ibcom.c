@@ -13,8 +13,8 @@
  *	  be deallocated. Look at all functions.
  */
 #include "ib_ibcom.h"
-#include <sys/ipc.h>
-#include <sys/shm.h>
+//#include <sys/ipc.h>
+//#include <sys/shm.h>
 #include <sys/types.h>
 #include <assert.h>
 #include <linux/mman.h> /* make it define MAP_ANONYMOUS */
@@ -30,7 +30,6 @@
 #define dprintf(...)
 #endif
 
-static int sendwr_id = 10;
 static MPID_nem_ib_com_t contab[MPID_NEM_IB_COM_SIZE];
 static int ib_initialized = 0;
 static int maxcon;
@@ -47,7 +46,7 @@ static struct ibv_cq *MPID_nem_ib_ud_shared_scq;
 static int MPID_nem_ib_ud_shared_scq_ref_count;
 static struct ibv_cq *MPID_nem_ib_rc_shared_rcq;
 static int MPID_nem_ib_rc_shared_rcq_ref_count;
-static struct ibv_cq *MPID_nem_ib_rc_shared_rcq_scratch_pad;
+struct ibv_cq *MPID_nem_ib_rc_shared_rcq_scratch_pad;
 static int MPID_nem_ib_rc_shared_rcq_scratch_pad_ref_count;
 struct ibv_cq *MPID_nem_ib_ud_shared_rcq;
 static int MPID_nem_ib_ud_shared_rcq_ref_count;
@@ -102,7 +101,8 @@ static int MPID_nem_ib_rdmawr_to_init(uint64_t sz)
 
     memset(start, 0, sz);
 
-    MPID_nem_ib_rdmawr_to_alloc_mr = MPID_nem_ib_com_reg_mr_fetch(start, sz, 0);
+    MPID_nem_ib_rdmawr_to_alloc_mr =
+        MPID_nem_ib_com_reg_mr_fetch(start, sz, 0, MPID_NEM_IB_COM_REG_MR_STICKY);
     MPID_NEM_IB_COM_ERR_CHKANDJUMP(!MPID_nem_ib_rdmawr_to_alloc_mr, -1,
                                    printf("MPID_nem_ib_com_reg_mr_fetchibv_reg_mr failed\n"));
     dprintf("rdmawr_to_init,rkey=%08x\n", MPID_nem_ib_rdmawr_to_alloc_mr->rkey);
@@ -449,8 +449,13 @@ static int MPID_nem_ib_com_clean(MPID_nem_ib_com_t * conp)
             MPIU_Free(conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_INITIATOR].sg_list);
             MPIU_Free(conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_GET].sg_list);
             MPIU_Free(conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_CAS].sg_list);
+            MPIU_Free(conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR].sg_list);
 #endif
             MPIU_Free(conp->icom_sr);
+#ifndef HAVE_LIBDCFA
+            MPIU_Free(conp->icom_rr[MPID_NEM_IB_COM_SCRATCH_PAD_RESPONDER].sg_list);
+#endif
+            MPIU_Free(conp->icom_rr);
             break;
         case MPID_NEM_IB_COM_OPEN_UD:
             MPIU_Assert(MPID_nem_ib_ud_shared_scq_ref_count > 0);
@@ -500,8 +505,6 @@ int MPID_nem_ib_com_open(int ib_port, int open_flag, int *condesc)
     MPID_nem_ib_com_t *conp;
     struct ibv_qp_init_attr qp_init_attr;
     struct ibv_sge *sge;
-    struct ibv_send_wr *sr;
-    struct ibv_recv_wr *rr, *bad_wr;
     int mr_flags;
     int i;
 
@@ -803,7 +806,8 @@ int MPID_nem_ib_com_open(int ib_port, int open_flag, int *condesc)
 
         conp->icom_mrlist[MPID_NEM_IB_COM_SCRATCH_PAD_FROM] =
             MPID_nem_ib_com_reg_mr_fetch(conp->icom_mem[MPID_NEM_IB_COM_SCRATCH_PAD_FROM],
-                                         conp->icom_msize[MPID_NEM_IB_COM_SCRATCH_PAD_FROM], 0);
+                                         conp->icom_msize[MPID_NEM_IB_COM_SCRATCH_PAD_FROM], 0,
+                                         MPID_NEM_IB_COM_REG_MR_STICKY);
         MPID_NEM_IB_COM_ERR_CHKANDJUMP(!conp->icom_mrlist[MPID_NEM_IB_COM_SCRATCH_PAD_FROM], -1,
                                        printf("ibv_reg_mr failed\n"));
 
@@ -849,7 +853,8 @@ int MPID_nem_ib_com_open(int ib_port, int open_flag, int *condesc)
 
         conp->icom_mrlist[MPID_NEM_IB_COM_UDWR_FROM] =
             MPID_nem_ib_com_reg_mr_fetch(conp->icom_mem[MPID_NEM_IB_COM_UDWR_FROM],
-                                         conp->icom_msize[MPID_NEM_IB_COM_UDWR_FROM], 0);
+                                         conp->icom_msize[MPID_NEM_IB_COM_UDWR_FROM], 0,
+                                         MPID_NEM_IB_COM_REG_MR_STICKY);
         MPID_NEM_IB_COM_ERR_CHKANDJUMP(!conp->icom_mrlist[MPID_NEM_IB_COM_UDWR_FROM], -1,
                                        dprintf("ibv_reg_mr failed with mr_flags=0x%x\n", mr_flags));
 
@@ -870,7 +875,8 @@ int MPID_nem_ib_com_open(int ib_port, int open_flag, int *condesc)
 
         conp->icom_mrlist[MPID_NEM_IB_COM_UDWR_TO] =
             MPID_nem_ib_com_reg_mr_fetch(conp->icom_mem[MPID_NEM_IB_COM_UDWR_TO],
-                                         conp->icom_msize[MPID_NEM_IB_COM_UDWR_TO], 0);
+                                         conp->icom_msize[MPID_NEM_IB_COM_UDWR_TO], 0,
+                                         MPID_NEM_IB_COM_REG_MR_STICKY);
         MPID_NEM_IB_COM_ERR_CHKANDJUMP(!conp->icom_mrlist[MPID_NEM_IB_COM_UDWR_TO], -1,
                                        dprintf("ibv_reg_mr failed with mr_flags=0x%x\n", mr_flags));
 
@@ -1060,6 +1066,44 @@ int MPID_nem_ib_com_open(int ib_port, int open_flag, int *condesc)
             conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_CAS].num_sge = 1;
             conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_CAS].opcode = IBV_WR_ATOMIC_CMP_AND_SWP;
             conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_CAS].send_flags = IBV_SEND_SIGNALED;
+
+#ifdef HAVE_LIBDCFA
+            memset(&(conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR].sg_list[0]),
+                   0, sizeof(struct ibv_sge) * WR_SG_NUM);
+#else
+            sge = (struct ibv_sge *) MPIU_Malloc(sizeof(struct ibv_sge));
+            memset(sge, 0, sizeof(struct ibv_sge));
+#endif
+            conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR].next = NULL;
+#ifdef HAVE_LIBDCFA
+#else
+            conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR].sg_list = sge;
+#endif
+            conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR].num_sge = 1;
+            conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR].opcode = IBV_WR_SEND;
+            conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR].send_flags = IBV_SEND_SIGNALED;
+
+            /* RR (receive request) template */
+            conp->icom_rr =
+                (struct ibv_recv_wr *) MPIU_Malloc(sizeof(struct ibv_recv_wr) *
+                                                   MPID_NEM_IB_COM_SCRATCH_PAD_RR_NTEMPLATE);
+            memset(conp->icom_rr, 0,
+                   sizeof(struct ibv_recv_wr) * MPID_NEM_IB_COM_SCRATCH_PAD_RR_NTEMPLATE);
+
+            /* RR (receive request) template for MPID_NEM_IB_COM_SCRATCH_PAD_RESPONDER */
+#ifdef HAVE_LIBDCFA
+            memset(&(conp->icom_rr[MPID_NEM_IB_COM_SCRATCH_PAD_RESPONDER].sg_list[0]), 0,
+                   sizeof(struct ibv_sge) * WR_SG_NUM);
+#else
+            sge = (struct ibv_sge *) MPIU_Malloc(sizeof(struct ibv_sge));
+            memset(sge, 0, sizeof(struct ibv_sge));
+#endif
+            conp->icom_rr[MPID_NEM_IB_COM_SCRATCH_PAD_RESPONDER].next = NULL;
+#ifdef HAVE_LIBDCFA
+#else
+            conp->icom_rr[MPID_NEM_IB_COM_SCRATCH_PAD_RESPONDER].sg_list = sge;
+#endif
+            conp->icom_rr[MPID_NEM_IB_COM_SCRATCH_PAD_RESPONDER].num_sge = 1;
             break;
         }
 
@@ -1154,7 +1198,9 @@ int MPID_nem_ib_com_alloc(int condesc, int sz)
 {
     MPID_nem_ib_com_t *conp;
     int ibcom_errno = 0;
+#ifdef MPID_NEM_IB_DEBUG_IBCOM
     int mr_flags = IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_READ | IBV_ACCESS_REMOTE_WRITE;
+#endif
 
     MPID_NEM_IB_RANGE_CHECK_WITH_ERROR(condesc, conp);
 
@@ -1178,7 +1224,7 @@ int MPID_nem_ib_com_alloc(int condesc, int sz)
         conp->icom_mrlist[MPID_NEM_IB_COM_SCRATCH_PAD_TO] =
             MPID_nem_ib_com_reg_mr_fetch(conp->icom_mem[MPID_NEM_IB_COM_SCRATCH_PAD_TO],
                                          conp->icom_msize[MPID_NEM_IB_COM_SCRATCH_PAD_TO],
-                                         IBV_ACCESS_REMOTE_ATOMIC);
+                                         IBV_ACCESS_REMOTE_ATOMIC, MPID_NEM_IB_COM_REG_MR_STICKY);
         MPID_NEM_IB_COM_ERR_CHKANDJUMP(!conp->icom_mrlist[MPID_NEM_IB_COM_SCRATCH_PAD_TO], -1,
                                        dprintf("ibv_reg_mr failed with mr_flags=0x%x\n", mr_flags));
 
@@ -1396,8 +1442,7 @@ int MPID_nem_ib_com_isend(int condesc,
     uint32_t hdr_ringbuf_type = local_ringbuf_type;
     MPID_NEM_IB_NETMOD_HDR_SZ_SET(buf_from,
                                   MPID_NEM_IB_NETMOD_HDR_SIZEOF(local_ringbuf_type) +
-                                  sz_prefix + sz_hdr + sz_data +
-                                  sizeof(MPID_nem_ib_netmod_trailer_t));
+                                  sz_prefix + sz_hdr + sz_data);
     if (remote_ringbuf_type == MPID_NEM_IB_RINGBUF_EXCLUSIVE) {
         hdr_ringbuf_type |= MPID_NEM_IB_RINGBUF_RELINDEX;
         MPID_NEM_IB_NETMOD_HDR_RELINDEX_SET(buf_from, conp->rsr_seq_num_tail);
@@ -1430,11 +1475,13 @@ int MPID_nem_ib_com_isend(int condesc,
     conp->icom_sr[MPID_NEM_IB_COM_SMT_NOINLINE].sg_list[num_sge].lkey = mr_rdmawr_from->lkey;
     num_sge += 1;
 
+    struct MPID_nem_ib_com_reg_mr_cache_entry_t *mr_cache = NULL;
     if (sz_data) {
         //dprintf("MPID_nem_ib_com_isend,data=%p,sz_data=%d\n", data, sz_data);
-        struct ibv_mr *mr_data = MPID_nem_ib_com_reg_mr_fetch(data, sz_data, 0);
-        MPID_NEM_IB_COM_ERR_CHKANDJUMP(!mr_data, -1,
+        mr_cache = MPID_nem_ib_com_reg_mr_fetch(data, sz_data, 0, MPID_NEM_IB_COM_REG_MR_GLOBAL);
+        MPID_NEM_IB_COM_ERR_CHKANDJUMP(!mr_cache, -1,
                                        printf("MPID_nem_ib_com_isend,ibv_reg_mr_fetch failed\n"));
+        struct ibv_mr *mr_data = mr_cache->mr;
 #ifdef HAVE_LIBDCFA
         conp->icom_sr[MPID_NEM_IB_COM_SMT_NOINLINE].sg_list[num_sge].mic_addr = (uint64_t) data;
         conp->icom_sr[MPID_NEM_IB_COM_SMT_NOINLINE].sg_list[num_sge].addr =
@@ -1474,7 +1521,16 @@ int MPID_nem_ib_com_isend(int condesc,
             off_pow2_aligned, sz_pad, num_sge);
 
     conp->icom_sr[MPID_NEM_IB_COM_SMT_NOINLINE].num_sge = num_sge;
+#if 1
+    MPID_nem_ib_rc_send_request *wrap_wr_id = MPIU_Malloc(sizeof(MPID_nem_ib_rc_send_request));
+    wrap_wr_id->wr_id = wr_id;
+    wrap_wr_id->mf = MPID_NEM_IB_LAST_PKT;
+    wrap_wr_id->mr_cache = (void *) mr_cache;
+
+    conp->icom_sr[MPID_NEM_IB_COM_SMT_NOINLINE].wr_id = (uint64_t) wrap_wr_id;
+#else
     conp->icom_sr[MPID_NEM_IB_COM_SMT_NOINLINE].wr_id = wr_id;
+#endif
     conp->icom_sr[MPID_NEM_IB_COM_SMT_NOINLINE].wr.rdma.remote_addr =
         (uint64_t) conp->local_ringbuf_start +
         MPID_NEM_IB_COM_RDMABUF_SZSEG * ((uint16_t) (conp->sseq_num % conp->local_ringbuf_nslot));
@@ -1893,28 +1949,35 @@ int MPID_nem_ib_com_udrecv(int condesc)
     goto fn_exit;
 }
 
-int MPID_nem_ib_com_lrecv(int condesc, uint64_t wr_id, void *raddr, int sz_data, uint32_t rkey,
-                          void *laddr)
+int MPID_nem_ib_com_lrecv(int condesc, uint64_t wr_id, void *raddr, long sz_data, uint32_t rkey,
+                          void *laddr, int last)
 {
     MPID_nem_ib_com_t *conp;
     int ibcom_errno = 0;
     struct ibv_send_wr *bad_wr;
     int ib_errno;
-    int num_sge;
+    int num_sge = 0;
 
-    dprintf("MPID_nem_ib_com_lrecv,enter,raddr=%p,sz_data=%d,laddr=%p\n", raddr, sz_data, laddr);
+    dprintf("MPID_nem_ib_com_lrecv,enter,raddr=%p,sz_data=%ld,laddr=%p\n", raddr, sz_data, laddr);
 
     MPID_NEM_IB_RANGE_CHECK_WITH_ERROR(condesc, conp);
     MPID_NEM_IB_COM_ERR_CHKANDJUMP(!conp->icom_connected, -1,
                                    dprintf("MPID_nem_ib_com_lrecv,not connected\n"));
     MPID_NEM_IB_COM_ERR_CHKANDJUMP(!sz_data, -1, dprintf("MPID_nem_ib_com_lrecv,sz_data==0\n"));
 
-    num_sge = 0;
-
     /* register memory area containing data */
-    struct ibv_mr *mr_data = MPID_nem_ib_com_reg_mr_fetch(laddr, sz_data, 0);
-    MPID_NEM_IB_COM_ERR_CHKANDJUMP(!mr_data, -1,
+    struct MPID_nem_ib_com_reg_mr_cache_entry_t *mr_cache =
+        MPID_nem_ib_com_reg_mr_fetch(laddr, sz_data, 0, MPID_NEM_IB_COM_REG_MR_GLOBAL);
+    MPID_NEM_IB_COM_ERR_CHKANDJUMP(!mr_cache, -1,
                                    dprintf("MPID_nem_ib_com_lrecv,ibv_reg_mr_fetch failed\n"));
+    struct ibv_mr *mr_data = mr_cache->mr;
+
+    MPID_nem_ib_rc_send_request *wrap_wr_id = MPIU_Malloc(sizeof(MPID_nem_ib_rc_send_request));
+    wrap_wr_id->wr_id = wr_id;
+    wrap_wr_id->mf = last;
+    wrap_wr_id->mr_cache = (void *) mr_cache;
+
+    num_sge = 0;
 
     /* Erase magic, super bug!! */
     //((MPID_nem_ib_netmod_trailer_t*)(laddr + sz_data - sizeof(MPID_nem_ib_netmod_trailer_t)))->magic = 0;
@@ -1930,7 +1993,7 @@ int MPID_nem_ib_com_lrecv(int condesc, uint64_t wr_id, void *raddr, int sz_data,
     num_sge += 1;
 
     conp->icom_sr[MPID_NEM_IB_COM_LMT_INITIATOR].num_sge = num_sge;
-    conp->icom_sr[MPID_NEM_IB_COM_LMT_INITIATOR].wr_id = wr_id;
+    conp->icom_sr[MPID_NEM_IB_COM_LMT_INITIATOR].wr_id = (uint64_t) wrap_wr_id;
     conp->icom_sr[MPID_NEM_IB_COM_LMT_INITIATOR].wr.rdma.remote_addr = (uint64_t) raddr;
     conp->icom_sr[MPID_NEM_IB_COM_LMT_INITIATOR].wr.rdma.rkey = rkey;
 
@@ -1980,9 +2043,11 @@ int MPID_nem_ib_com_put_lmt(int condesc, uint64_t wr_id, void *raddr, int sz_dat
     num_sge = 0;
 
     /* register memory area containing data */
-    struct ibv_mr *mr_data = MPID_nem_ib_com_reg_mr_fetch(laddr, sz_data, 0);
-    MPID_NEM_IB_COM_ERR_CHKANDJUMP(!mr_data, -1,
+    struct MPID_nem_ib_com_reg_mr_cache_entry_t *mr_cache =
+        MPID_nem_ib_com_reg_mr_fetch(laddr, sz_data, 0, MPID_NEM_IB_COM_REG_MR_GLOBAL);
+    MPID_NEM_IB_COM_ERR_CHKANDJUMP(!mr_cache, -1,
                                    dprintf("MPID_nem_ib_com_put_lmt,ibv_reg_mr_fetch failed\n"));
+    struct ibv_mr *mr_data = mr_cache->mr;
 
 #ifdef HAVE_LIBDCFA
     conp->icom_sr[MPID_NEM_IB_COM_LMT_PUT].sg_list[num_sge].mic_addr = (uint64_t) laddr;
@@ -1996,7 +2061,16 @@ int MPID_nem_ib_com_put_lmt(int condesc, uint64_t wr_id, void *raddr, int sz_dat
     num_sge += 1;
 
     conp->icom_sr[MPID_NEM_IB_COM_LMT_PUT].num_sge = num_sge;
+#if 1
+    MPID_nem_ib_rc_send_request *wrap_wr_id = MPIU_Malloc(sizeof(MPID_nem_ib_rc_send_request));
+    wrap_wr_id->wr_id = wr_id;
+    wrap_wr_id->mf = MPID_NEM_IB_LAST_PKT;
+    wrap_wr_id->mr_cache = (void *) mr_cache;
+
+    conp->icom_sr[MPID_NEM_IB_COM_LMT_PUT].wr_id = (uint64_t) wrap_wr_id;
+#else
     conp->icom_sr[MPID_NEM_IB_COM_LMT_PUT].wr_id = wr_id;
+#endif
     conp->icom_sr[MPID_NEM_IB_COM_LMT_PUT].wr.rdma.remote_addr = (uint64_t) raddr;
     conp->icom_sr[MPID_NEM_IB_COM_LMT_PUT].wr.rdma.rkey = rkey;
 
@@ -2015,6 +2089,49 @@ int MPID_nem_ib_com_put_lmt(int condesc, uint64_t wr_id, void *raddr, int sz_dat
 
     conp->ncom += 1;
     dprintf("MPID_nem_ib_com_put_lmt,exit\n");
+
+  fn_exit:
+    return ibcom_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
+int MPID_nem_ib_com_scratch_pad_recv(int condesc, int sz_data)
+{
+    MPID_nem_ib_com_t *conp;
+    struct ibv_recv_wr *bad_wr;
+    int ibcom_errno = 0, ib_errno;
+
+    MPID_NEM_IB_RANGE_CHECK_WITH_ERROR(condesc, conp);
+
+    void *buf_to = MPID_nem_ib_rdmawr_from_alloc(sz_data);
+    struct ibv_mr *mr_buf_to = MPID_NEM_IB_RDMAWR_FROM_ALLOC_ARENA_MR(buf_to);
+
+    /* Create RR */
+
+#ifdef HAVE_LIBDCFA
+    conp->icom_rr[MPID_NEM_IB_COM_SCRATCH_PAD_RESPONDER].sg_list[0].mic_addr = (uint64_t) buf_to;
+    conp->icom_rr[MPID_NEM_IB_COM_SCRATCH_PAD_RESPONDER].sg_list[0].addr =
+        mr_buf_to->host_addr + ((uint64_t) buf_to -
+                                (uint64_t) MPID_NEM_IB_RDMAWR_FROM_ALLOC_ARENA_START(buf_to));
+#else
+    conp->icom_rr[MPID_NEM_IB_COM_SCRATCH_PAD_RESPONDER].sg_list[0].addr = (uint64_t) buf_to;
+#endif
+
+    conp->icom_rr[MPID_NEM_IB_COM_SCRATCH_PAD_RESPONDER].sg_list[0].length = sz_data;
+    conp->icom_rr[MPID_NEM_IB_COM_SCRATCH_PAD_RESPONDER].sg_list[0].lkey = mr_buf_to->lkey;
+
+    conp->icom_rr[MPID_NEM_IB_COM_SCRATCH_PAD_RESPONDER].wr_id = (uint64_t) buf_to;
+
+    /* Post RR to RQ */
+#ifdef HAVE_LIBDCFA
+    ib_errno = ibv_post_recv(conp->icom_qp, &conp->icom_rr[MPID_NEM_IB_COM_SCRATCH_PAD_RESPONDER]);
+#else
+    ib_errno =
+        ibv_post_recv(conp->icom_qp, &conp->icom_rr[MPID_NEM_IB_COM_SCRATCH_PAD_RESPONDER],
+                      &bad_wr);
+#endif
+    MPID_NEM_IB_COM_ERR_CHKANDJUMP(ib_errno, -1, dprintf("ibv_post_recv ib_errno=%d\n", ib_errno));
 
   fn_exit:
     return ibcom_errno;
@@ -2236,6 +2353,60 @@ int MPID_nem_ib_com_cas_scratch_pad(int condesc,
     goto fn_exit;
 }
 
+int MPID_nem_ib_com_wr_scratch_pad(int condesc, uint64_t wr_id,
+                                   void *buf_from, uint32_t buf_from_sz)
+{
+    MPID_nem_ib_com_t *conp;
+    int ibcom_errno = 0;
+    struct ibv_send_wr *bad_wr;
+    int ib_errno;
+
+    dprintf("MPID_nem_ib_com_wr_scratch_pad,enter,wr_id=%llx,buf=%llx,sz=%d\n",
+            (unsigned long long) wr_id, (unsigned long long) buf_from, buf_from_sz);
+
+    MPID_NEM_IB_RANGE_CHECK_WITH_ERROR(condesc, conp);
+
+    struct ibv_mr *mr_rdmawr_from = MPID_NEM_IB_RDMAWR_FROM_ALLOC_ARENA_MR(buf_from);
+
+#ifdef HAVE_LIBDCFA
+    conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR].sg_list[0].mic_addr = (uint64_t) buf_from;
+    conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR].sg_list[0].addr =
+        mr_rdmawr_from->host_addr + ((uint64_t) buf_from - (uint64_t) buf_from);
+#else
+    conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR].sg_list[0].addr = (uint64_t) buf_from;
+#endif
+    conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR].sg_list[0].length = buf_from_sz;
+    conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR].sg_list[0].lkey = mr_rdmawr_from->lkey;
+
+    /* num_sge is defined in MPID_nem_ib_com_open */
+    conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR].wr_id = wr_id;
+
+    dprintf("MPID_nem_ib_com_wr_scratch_pad,wr.rdma.remote_addr=%llx\n",
+            (unsigned long long) conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR].wr.rdma.remote_addr);
+
+#ifdef HAVE_LIBDCFA
+    ib_errno = ibv_post_send(conp->icom_qp, &conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR]);
+    MPID_NEM_IB_COM_ERR_CHKANDJUMP(ib_errno, -1,
+                                   dprintf
+                                   ("MPID_nem_ib_com_wr_scratch_pad, ibv_post_send, rc=%d\n",
+                                    ib_errno));
+#else
+    ib_errno =
+        ibv_post_send(conp->icom_qp, &conp->icom_sr[MPID_NEM_IB_COM_SCRATCH_PAD_WR], &bad_wr);
+    MPID_NEM_IB_COM_ERR_CHKANDJUMP(ib_errno, -1,
+                                   dprintf
+                                   ("MPID_nem_ib_com_wr_scratch_pad, ibv_post_send, rc=%d, bad_wr=%p\n",
+                                    ib_errno, bad_wr));
+#endif
+
+    conp->ncom_scratch_pad += 1;
+
+  fn_exit:
+    return ibcom_errno;
+  fn_fail:
+    goto fn_exit;
+}
+
 /* poll completion queue */
 int MPID_nem_ib_com_poll_cq(int which_cq, struct ibv_wc *wc, int *result)
 {
@@ -2324,7 +2495,6 @@ int MPID_nem_ib_com_connect_ringbuf(int condesc,
 {
     int ibcom_errno = 0;
     MPID_nem_ib_com_t *conp;
-    int i;
 
     MPID_NEM_IB_RANGE_CHECK_WITH_ERROR(condesc, conp);
 
@@ -2354,7 +2524,7 @@ int MPID_nem_ib_com_connect_ringbuf(int condesc,
         conp->icom_sr[MPID_NEM_IB_COM_SMT_NOINLINE].wr.rdma.rkey = rkey;
     }
     dprintf
-        ("connect_ringbuf,ringbuf_type=%d,rkey=%08x,start=%p,nslot=%d,sseq_num=%d,lsr_seq_num_tail=%d,remote_vc=%lx,alloc_new_mr=%d\n",
+        ("connect_ringbuf,ringbuf_type=%d,rkey=%08x,start=%p,nslot=%d,sseq_num=%d,lsr_seq_num_tail=%d,remote_vc=%p,alloc_new_mr=%d\n",
          conp->local_ringbuf_type, conp->local_ringbuf_rkey, conp->local_ringbuf_start,
          conp->local_ringbuf_nslot, conp->sseq_num, conp->lsr_seq_num_tail, conp->remote_vc,
          alloc_new_mr);
@@ -2583,6 +2753,7 @@ int MPID_nem_ib_com_obtain_pointer(int condesc, MPID_nem_ib_com_t ** MPID_nem_ib
     goto fn_exit;
 }
 
+#if 0
 static void MPID_nem_ib_comShow(int condesc)
 {
     MPID_nem_ib_com_t *conp;
@@ -2603,24 +2774,25 @@ static void MPID_nem_ib_comShow(int condesc)
     }
     fprintf(stdout, "\n");
 }
+#endif
 
-static char *strerror_tbl[] = {
+static const char *strerror_tbl[] = {
     [0] = "zero",
     [1] = "one",
     [2] = "two",
     [3] = "three",
 };
 
-char *MPID_nem_ib_com_strerror(int errno)
+char *MPID_nem_ib_com_strerror(int err)
 {
     char *r;
-    if (-errno > 3) {
+    if (-err > 3) {
         r = MPIU_Malloc(256);
-        sprintf(r, "%d", -errno);
+        sprintf(r, "%d", -err);
         goto fn_exit;
     }
     else {
-        r = strerror_tbl[-errno];
+        r = (char *)strerror_tbl[-err];
     }
   fn_exit:
     return r;
@@ -2628,18 +2800,24 @@ char *MPID_nem_ib_com_strerror(int errno)
     goto fn_exit;
 }
 
-int MPID_nem_ib_com_reg_mr(void *addr, int len, struct ibv_mr **mr,
+int MPID_nem_ib_com_reg_mr(void *addr, long len, struct ibv_mr **mr,
                            enum ibv_access_flags additional_flags)
 {
     int ibcom_errno = 0;
-    dprintf("MPID_nem_ib_com_reg_mr,addr=%p,len=%d,mr=%p\n", addr, len, mr);
+    int err = -1;
+    dprintf("MPID_nem_ib_com_reg_mr,addr=%p,len=%ld,mr=%p\n", addr, len, mr);
 
     *mr =
         ibv_reg_mr(ib_pd, addr, len,
                    IBV_ACCESS_LOCAL_WRITE | IBV_ACCESS_REMOTE_WRITE |
                    IBV_ACCESS_REMOTE_READ | additional_flags);
 
-    MPID_NEM_IB_COM_ERR_CHKANDJUMP(*mr == 0, -1,
+    if (*mr == 0) {
+        err = errno;    /* copy errno of ibv_reg_mr */
+    }
+
+    /* return the errno of ibv_reg_mr when error occurs */
+    MPID_NEM_IB_COM_ERR_CHKANDJUMP(*mr == 0, err,
                                    dprintf("MPID_nem_ib_com_reg_mr,cannot register memory\n"));
 
   fn_exit:
@@ -2650,7 +2828,6 @@ int MPID_nem_ib_com_reg_mr(void *addr, int len, struct ibv_mr **mr,
 
 int MPID_nem_ib_com_dereg_mr(struct ibv_mr *mr)
 {
-    int i;
     int ib_errno;
     int ibcom_errno = 0;
 

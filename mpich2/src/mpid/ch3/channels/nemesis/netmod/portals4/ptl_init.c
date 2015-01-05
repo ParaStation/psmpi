@@ -24,6 +24,7 @@ ptl_pt_index_t  MPIDI_nem_ptl_get_pt; /* portal for gets by receiver */
 ptl_pt_index_t  MPIDI_nem_ptl_control_pt; /* portal for MPICH control messages */
 ptl_handle_eq_t MPIDI_nem_ptl_eq;
 ptl_handle_md_t MPIDI_nem_ptl_global_md;
+ptl_ni_limits_t MPIDI_nem_ptl_ni_limits;
 
 static int ptl_init(MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_max_sz_p);
 static int ptl_finalize(void);
@@ -97,13 +98,15 @@ static int ptl_init(MPIDI_PG_t *pg_p, int pg_rank, char **bc_val_p, int *val_max
 
     mpi_errno = MPIDI_CH3I_Register_anysource_notification(MPID_nem_ptl_anysource_posted, MPID_nem_ptl_anysource_matched);
     if (mpi_errno) MPIU_ERR_POP(mpi_errno);
-    
+
+    MPIDI_Anysource_improbe_fn = MPID_nem_ptl_anysource_improbe;
+
     /* init portals */
     ret = PtlInit();
     MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlinit", "**ptlinit %s", MPID_nem_ptl_strerror(ret));
     
     ret = PtlNIInit(PTL_IFACE_DEFAULT, PTL_NI_MATCHING | PTL_NI_PHYSICAL,
-                    PTL_PID_ANY, NULL, NULL, &MPIDI_nem_ptl_ni);
+                    PTL_PID_ANY, NULL, &MPIDI_nem_ptl_ni_limits, &MPIDI_nem_ptl_ni);
     MPIU_ERR_CHKANDJUMP1(ret, mpi_errno, MPI_ERR_OTHER, "**ptlniinit", "**ptlniinit %s", MPID_nem_ptl_strerror(ret));
 
     ret = PtlEQAlloc(MPIDI_nem_ptl_ni, EQ_COUNT, &MPIDI_nem_ptl_eq);
@@ -281,6 +284,13 @@ static int vc_init(MPIDI_VC_t *vc)
     vc_ch->iStartContigMsg = MPID_nem_ptl_iStartContigMsg;
     vc_ch->iSendContig     = MPID_nem_ptl_iSendContig;
 
+    vc_ch->lmt_initiate_lmt  = MPID_nem_ptl_lmt_initiate_lmt;
+    vc_ch->lmt_start_recv    = MPID_nem_ptl_lmt_start_recv;
+    vc_ch->lmt_start_send    = MPID_nem_ptl_lmt_start_send;
+    vc_ch->lmt_handle_cookie = MPID_nem_ptl_lmt_handle_cookie;
+    vc_ch->lmt_done_send     = MPID_nem_ptl_lmt_done_send;
+    vc_ch->lmt_done_recv     = MPID_nem_ptl_lmt_done_recv;
+
     vc->comm_ops = &comm_ops;
 
     vc_ch->next = NULL;
@@ -359,7 +369,7 @@ int vc_terminate(MPIDI_VC_t *vc)
         /* VC is terminated as a result of a fault.  Complete
            outstanding sends with an error and terminate
            connection immediately. */
-        MPIU_ERR_SET1(req_errno, MPIX_ERR_PROC_FAIL_STOP, "**comm_fail", "**comm_fail %d", vc->pg_rank);
+        MPIU_ERR_SET1(req_errno, MPIX_ERR_PROC_FAILED, "**comm_fail", "**comm_fail %d", vc->pg_rank);
         mpi_errno = MPID_nem_ptl_sendq_complete_with_error(vc, req_errno);
         if (mpi_errno) MPIU_ERR_POP(mpi_errno);
         mpi_errno = MPID_nem_ptl_vc_terminated(vc);

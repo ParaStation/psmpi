@@ -67,7 +67,7 @@ typedef struct {
     struct MPID_Request *sendq_next;    /* for sendq */
     void *lmt_raddr;            /* remember this for sendq, it might be better to use sreq->dev.iov[0].MPID_IOV_BUF instead */
     uint32_t lmt_rkey;          /* remember this for sendq, survive over lrecv and referenced when dequeueing from sendq */
-    uint32_t lmt_szsend;        /* remember this for sendq */
+    long lmt_szsend;            /* remember this for sendq */
     uint8_t lmt_tail, lmt_sender_tail, lmt_receiver_tail;       /* survive over lrecv and referenced when polling */
     MPI_Aint lmt_dt_true_lb;    /* to locate the last byte of receive buffer */
     void *lmt_write_to_buf;     /* user buffer or temporary buffer for pack and remember it for lmt_orderq */
@@ -75,6 +75,16 @@ typedef struct {
     void *buf_from;             /* address of RDMA write from buffer */
     uint32_t buf_from_sz;       /* size of RDMA write from buffer. It's set on sending, referenced on freeing */
     uint8_t ask;                /* Issued ask or not on send */
+    union {
+        void *from;
+        void *to;
+    } buf;
+    uint32_t max_msg_sz;        /* remember this for sendq, max message size */
+    MPIDI_msg_sz_t data_sz;
+    int seg_seq_num;            /* sequence number of segments */
+    int seg_num;                /* number of segments */
+    int last;                   /* flag for last packet or not */
+    void *lmt_mr_cache;         /* address of mr_cache_entry */
 } MPID_nem_ib_req_area;
 
 /* macro for secret area in req */
@@ -118,16 +128,22 @@ typedef struct {
 enum MPID_nem_ib_cm_cmd_types {
     MPID_NEM_IB_CM_HEAD_FLAG_ZERO = 0,
     MPID_NEM_IB_CM_CAS,
+    MPID_NEM_IB_CM_CAS_RELEASE,
     MPID_NEM_IB_CM_SYN,
     MPID_NEM_IB_CM_SYNACK,
     MPID_NEM_IB_CM_ACK1,
     MPID_NEM_IB_CM_ACK2,
     MPID_NEM_IB_RINGBUF_ASK_FETCH,
     MPID_NEM_IB_RINGBUF_ASK_CAS,
-    MPID_NEM_IB_CM_CAS_RELEASE,
+    MPID_NEM_IB_CM_CAS_RELEASE2,
     MPID_NEM_IB_CM_ALREADY_ESTABLISHED,
-    MPID_NEM_IB_CM_RESPONDER_IS_CONNECTING
+    MPID_NEM_IB_CM_RESPONDER_IS_CONNECTING,
+    MPID_NEM_IB_NOTIFY_OUTSTANDING_TX_EMPTY
 };
+
+#define NOTIFY_OUTSTANDING_TX_SCQ  (1 << 0)
+#define NOTIFY_OUTSTANDING_TX_RCQ  (1 << 1)
+#define NOTIFY_OUTSTANDING_TX_COMP (NOTIFY_OUTSTANDING_TX_SCQ | NOTIFY_OUTSTANDING_TX_RCQ)
 
 /* Packet types of connection protocol */
 struct MPID_nem_ib_cm_req;
@@ -221,10 +237,22 @@ typedef struct {
     uint32_t buf_from_sz;
 } MPID_nem_ib_cm_cmd_shadow_t;
 
+typedef struct {
+    MPID_nem_ib_cm_cmd_type_t type;
+    int initiator_rank;
+} MPID_nem_ib_cm_notify_send_t;
+
+typedef struct MPID_nem_ib_cm_notify_send_req {
+    MPID_nem_ib_com_t *ibcom;
+    int my_rank;
+    int pg_rank;
+    struct MPID_nem_ib_cm_notify_send_req *sendq_next;
+} MPID_nem_ib_cm_notify_send_req_t;
+
 #define MPID_NEM_IB_CM_RELEASED ((uint64_t)(-1))
 #define MPID_NEM_IB_CM_OFF_SYN (256)    /* Align for 256-byte-write PCI command */
 #define MPID_NEM_IB_CM_OFF_CMD (256*2)  /* Align for 256-byte-write PCI command */
-#define MPID_NEM_IB_CM_NSEG 16  /* number of slots to which responder writes its response */
+#define MPID_NEM_IB_CM_NSEG 64  /* number of slots to which responder writes its response */
 
 typedef GENERIC_Q_DECL(MPID_nem_ib_cm_req_t) MPID_nem_ib_cm_sendq_t;
 
@@ -233,6 +261,14 @@ typedef GENERIC_Q_DECL(MPID_nem_ib_cm_req_t) MPID_nem_ib_cm_sendq_t;
 #define MPID_nem_ib_cm_sendq_next_field(ep, next_field) ((ep)->next_field)
 #define MPID_nem_ib_cm_sendq_next(ep) ((ep)->sendq_next)
 #define MPID_nem_ib_cm_sendq_enqueue(qp, ep) GENERICM_Q_ENQUEUE (qp, ep, MPID_nem_ib_cm_sendq_next_field, sendq_next);
+
+typedef GENERIC_Q_DECL(MPID_nem_ib_cm_notify_send_req_t) MPID_nem_ib_cm_notify_sendq_t;
+
+#define MPID_nem_ib_cm_notify_sendq_empty(q) GENERICM_Q_EMPTY (q)
+#define MPID_nem_ib_cm_notify_sendq_head(q) GENERICM_Q_HEAD (q)
+#define MPID_nem_ib_cm_notify_sendq_next_field(ep, next_field) ((ep)->next_field)
+#define MPID_nem_ib_cm_notify_sendq_next(ep) ((ep)->sendq_next)
+#define MPID_nem_ib_cm_notify_sendq_enqueue(qp, ep) GENERICM_Q_ENQUEUE (qp, ep, MPID_nem_ib_cm_notify_sendq_next_field, sendq_next);
 
 #ifdef HAVE_LIBDCFA
 #define MPID_NEM_IB_CM_COMPOSE_NETWORK_INFO_MR_ADDR host_adddr
@@ -269,8 +305,8 @@ typedef GENERIC_Q_DECL(MPID_nem_ib_cm_req_t) MPID_nem_ib_cm_sendq_t;
     (cmd)->tail_flag.tail_flag = MPID_NEM_IB_COM_MAGIC; \
 }
 
-#define MPID_NEM_IB_CM_COMPOSE_CAS_RELEASE(cmd, req) {  \
-    (cmd)->type = MPID_NEM_IB_CM_CAS_RELEASE; \
+#define MPID_NEM_IB_CM_COMPOSE_CAS_RELEASE2(cmd, req) {  \
+    (cmd)->type = MPID_NEM_IB_CM_CAS_RELEASE2; \
     (cmd)->initiator_req = (req); \
     (cmd)->tail_flag.tail_flag = MPID_NEM_IB_COM_MAGIC; \
 }
@@ -326,6 +362,9 @@ static inline void MPID_nem_ib_cm_request_release(MPID_nem_ib_cm_req_t * req)
 
 int MPID_nem_ib_cm_progress(void);
 int MPID_nem_ib_cm_release(uint16_t index);
+
+int MPID_nem_ib_cm_notify_send(int pg_rank, int myrank);
+int MPID_nem_ib_cm_notify_progress(void);
 #endif
 
 /* Ring buffer protocol
@@ -444,8 +483,8 @@ static inline int MPID_nem_ib_cbf_hash1(uint64_t addr)
     return
         (((addr >> (MPID_nem_ib_cbf_lognslot * 0)) & (MPID_nem_ib_cbf_nslot - 1)) ^
          ((addr >> (MPID_nem_ib_cbf_lognslot * 3)) & (MPID_nem_ib_cbf_nslot - 1)) ^
-         ((addr >> (MPID_nem_ib_cbf_lognslot * 6)) & (MPID_nem_ib_cbf_nslot - 1))
-         + 1) & (MPID_nem_ib_cbf_nslot - 1);
+         (((addr >> (MPID_nem_ib_cbf_lognslot * 6)) & (MPID_nem_ib_cbf_nslot - 1))
+         + 1)) & (MPID_nem_ib_cbf_nslot - 1);
 }
 
 static inline int MPID_nem_ib_cbf_hash2(uint64_t addr)
@@ -454,8 +493,8 @@ static inline int MPID_nem_ib_cbf_hash2(uint64_t addr)
     return
         (((addr >> (MPID_nem_ib_cbf_lognslot * 1)) & (MPID_nem_ib_cbf_nslot - 1)) ^
          ((addr >> (MPID_nem_ib_cbf_lognslot * 4)) & (MPID_nem_ib_cbf_nslot - 1)) ^
-         ((addr >> (MPID_nem_ib_cbf_lognslot * 7)) & (MPID_nem_ib_cbf_nslot - 1))
-         + 1) & (MPID_nem_ib_cbf_nslot - 1);
+         (((addr >> (MPID_nem_ib_cbf_lognslot * 7)) & (MPID_nem_ib_cbf_nslot - 1))
+         + 1)) & (MPID_nem_ib_cbf_nslot - 1);
 }
 
 static inline int MPID_nem_ib_cbf_hash3(uint64_t addr)
@@ -464,8 +503,8 @@ static inline int MPID_nem_ib_cbf_hash3(uint64_t addr)
     return
         (((addr >> (MPID_nem_ib_cbf_lognslot * 2)) & (MPID_nem_ib_cbf_nslot - 1)) ^
          ((addr >> (MPID_nem_ib_cbf_lognslot * 5)) & (MPID_nem_ib_cbf_nslot - 1)) ^
-         ((addr >> (MPID_nem_ib_cbf_lognslot * 8)) & (MPID_nem_ib_cbf_nslot - 1))
-         + 2) & (MPID_nem_ib_cbf_nslot - 1);
+         (((addr >> (MPID_nem_ib_cbf_lognslot * 8)) & (MPID_nem_ib_cbf_nslot - 1))
+         + 2)) & (MPID_nem_ib_cbf_nslot - 1);
 
 }
 
@@ -525,8 +564,11 @@ int MPID_nem_ib_drain_scq_scratch_pad(void);
 int MPID_nem_ib_poll(int in_blocking_poll);
 int MPID_nem_ib_poll_eager(MPID_nem_ib_ringbuf_t * ringbuf);
 int MPID_nem_ib_ring_alloc(MPIDI_VC_t * vc);
+int MPID_nem_ib_handle_pkt_bh(MPIDI_VC_t * vc, MPID_Request * req, char *buf,
+                              MPIDI_msg_sz_t buflen);
 
 int MPID_nem_ib_cm_drain_scq(void);
+int MPID_nem_ib_cm_drain_rcq(void);
 int MPID_nem_ib_cm_poll_syn(void);
 int MPID_nem_ib_cm_poll(void);
 
@@ -549,6 +591,8 @@ int MPID_nem_ib_iStartContigMsg(MPIDI_VC_t * vc, void *hdr, MPIDI_msg_sz_t hdr_s
 
 int MPID_nem_ib_cm_cas_core(int rank, MPID_nem_ib_cm_cmd_shadow_t * shadow);
 int MPID_nem_ib_cm_cas(MPIDI_VC_t * vc, uint32_t ask_on_connect);
+int MPID_nem_ib_cm_cas_release_core(int rank, MPID_nem_ib_cm_cmd_shadow_t * shadow);
+int MPID_nem_ib_cm_cas_release(MPIDI_VC_t * vc);
 int MPID_nem_ib_cm_cmd_core(int rank, MPID_nem_ib_cm_cmd_shadow_t * shadow, void *buf,
                             MPIDI_msg_sz_t sz, uint32_t syn, uint16_t ringbuf_index);
 int MPID_nem_ib_ringbuf_ask_cas(MPIDI_VC_t * vc, MPID_nem_ib_ringbuf_req_t * req);
@@ -568,8 +612,8 @@ int MPID_nem_ib_send_progress(MPIDI_VC_t * vc);
 /* CH3--lmt send/recv functions */
 int MPID_nem_ib_lmt_initiate_lmt(struct MPIDI_VC *vc, union MPIDI_CH3_Pkt *rts_pkt,
                                  struct MPID_Request *req);
-int MPID_nem_ib_lmt_start_recv_core(struct MPID_Request *req, void *raddr, uint32_t rkey,
-                                    void *write_to_buf);
+int MPID_nem_ib_lmt_start_recv_core(struct MPID_Request *req, void *raddr, uint32_t rkey, long len,
+                                    void *write_to_buf, uint32_t max_msg_sz, int end);
 int MPID_nem_ib_lmt_start_recv(struct MPIDI_VC *vc, struct MPID_Request *req, MPID_IOV s_cookie);
 int MPID_nem_ib_lmt_handle_cookie(struct MPIDI_VC *vc, struct MPID_Request *req, MPID_IOV cookie);
 int MPID_nem_ib_lmt_switch_send(struct MPIDI_VC *vc, struct MPID_Request *req);
@@ -618,6 +662,7 @@ extern uint64_t MPID_nem_ib_cm_ringbuf_released[(MPID_NEM_IB_CM_NSEG + 63) / 64]
 
 /* overflow queue when no more slots for responder to write on are available */
 extern MPID_nem_ib_cm_sendq_t MPID_nem_ib_cm_sendq;
+extern MPID_nem_ib_cm_notify_sendq_t MPID_nem_ib_cm_notify_sendq;
 
 extern MPID_nem_ib_ringbuf_sendq_t MPID_nem_ib_ringbuf_sendq;
 
@@ -657,7 +702,19 @@ typedef struct {
     int seq_num_tail;           /* notify RDMA-write-to buffer occupation */
 #endif
     uint8_t tail;               /* last word of payload */
+    uint32_t max_msg_sz;        /* max message size */
+    int seg_seq_num;
+    int seg_num;
 } MPID_nem_ib_lmt_cookie_t;
+
+typedef struct {
+    void *addr;
+    uint32_t rkey;
+    uint8_t tail;               /* last word of payload */
+    int len;
+    MPI_Request sender_req_id;  /* request id of sender side */
+    uint32_t max_msg_sz;        /* max message size */
+} MPID_nem_ib_rma_lmt_cookie_t;
 
 typedef enum MPID_nem_ib_pkt_subtype {
     MPIDI_NEM_IB_PKT_EAGER_SEND,
@@ -669,15 +726,17 @@ typedef enum MPID_nem_ib_pkt_subtype {
     MPIDI_NEM_IB_PKT_GET,
     MPIDI_NEM_IB_PKT_GET_RESP,
     MPIDI_NEM_IB_PKT_LMT_GET_DONE,
+    MPIDI_NEM_IB_PKT_LMT_RTS,
     MPIDI_NEM_IB_PKT_REQ_SEQ_NUM,
     MPIDI_NEM_IB_PKT_REPLY_SEQ_NUM,
     MPIDI_NEM_IB_PKT_CHG_RDMABUF_OCC_NOTIFY_STATE,
+    MPIDI_NEM_IB_PKT_RMA_LMT_GET_DONE,
     MPIDI_NEM_IB_PKT_NUM_PKT_HANDLERS
 } MPID_nem_ib_pkt_subtype_t;
 
 /* derived from MPID_nem_pkt_netmod_t */
 typedef struct MPID_nem_ib_pkt_prefix {
-    MPID_nem_pkt_type_t type;
+    MPIDI_CH3_Pkt_type_t type;
     unsigned subtype;
     /* additional field */
     int16_t seq_num_tail;
@@ -685,16 +744,28 @@ typedef struct MPID_nem_ib_pkt_prefix {
 
 /* derived from MPID_nem_pkt_netmod_t and MPID_nem_pkt_lmt_done_t */
 typedef struct MPID_nem_ib_pkt_lmt_get_done {
-    MPID_nem_pkt_type_t type;
+    MPIDI_CH3_Pkt_type_t type;
     unsigned subtype;
     /* additional field */
     MPI_Request req_id;
     int16_t seq_num_tail;
+    MPI_Request receiver_req_id;
 } MPID_nem_ib_pkt_lmt_get_done_t;
+
+typedef struct MPID_nem_ib_pkt_lmt_rts {
+    MPIDI_CH3_Pkt_type_t type;
+    unsigned subtype;
+    /* additional field */
+    MPI_Request req_id;
+    int16_t seq_num_tail;
+    void *addr;
+    uint32_t rkey;
+    int seg_seq_num;
+} MPID_nem_ib_pkt_lmt_rts_t;
 
 /* derived from MPID_nem_pkt_netmod_t */
 typedef struct MPID_nem_ib_pkt_req_seq_num_t {
-    MPID_nem_pkt_type_t type;
+    MPIDI_CH3_Pkt_type_t type;
     unsigned subtype;
     /* additional field */
     int16_t seq_num_tail;
@@ -702,7 +773,7 @@ typedef struct MPID_nem_ib_pkt_req_seq_num_t {
 
 /* derived from MPID_nem_pkt_netmod_t */
 typedef struct MPID_nem_ib_pkt_reply_seq_num_t {
-    MPID_nem_pkt_type_t type;
+    MPIDI_CH3_Pkt_type_t type;
     unsigned subtype;
     /* additional field */
     int16_t seq_num_tail;
@@ -710,7 +781,7 @@ typedef struct MPID_nem_ib_pkt_reply_seq_num_t {
 
 /* derived from MPID_nem_pkt_netmod_t */
 typedef struct MPID_nem_ib_pkt_change_rdmabuf_occupancy_notify_state_t {
-    MPID_nem_pkt_type_t type;
+    MPIDI_CH3_Pkt_type_t type;
     unsigned subtype;
     /* additional field */
     int state;
@@ -740,6 +811,8 @@ int MPID_nem_ib_PktHandler_lmt_done(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
                                     MPIDI_msg_sz_t * buflen, MPID_Request ** rreqp);
 int MPID_nem_ib_pkt_GET_DONE_handler(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
                                      MPIDI_msg_sz_t * buflen, MPID_Request ** rreqp);
+int MPID_nem_ib_pkt_RTS_handler(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
+                                MPIDI_msg_sz_t * buflen, MPID_Request ** rreqp);
 int MPID_nem_ib_PktHandler_req_seq_num(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
                                        MPIDI_msg_sz_t * buflen, MPID_Request ** rreqp);
 int MPID_nem_ib_PktHandler_reply_seq_num(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt,
@@ -748,6 +821,9 @@ int MPID_nem_ib_PktHandler_change_rdmabuf_occupancy_notify_state(MPIDI_VC_t * vc
                                                                  MPIDI_CH3_Pkt_t * pkt,
                                                                  MPIDI_msg_sz_t * buflen,
                                                                  MPID_Request ** rreqp);
+int MPID_nem_ib_pkt_rma_lmt_getdone(MPIDI_VC_t * vc,
+                                    MPIDI_CH3_Pkt_t * pkt,
+                                    MPIDI_msg_sz_t * buflen, MPID_Request ** rreqp);
 
 /* MPID_nem_ib_PktHandler_lmt_done is a wrapper of pkt_DONE_handler and calls it */
 /* pkt_DONE_handler (in src/mpid/ch3/channels/nemesis/src/mpid_nem_lmt.c) is not exported */
@@ -838,6 +914,58 @@ int pkt_DONE_handler(MPIDI_VC_t * vc, MPIDI_CH3_Pkt_t * pkt, MPIDI_msg_sz_t * bu
         MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending rndv DONE packet"); \
         MPIDI_Pkt_init(_done_pkt, MPIDI_NEM_PKT_NETMOD); \
         _done_pkt->subtype = MPIDI_NEM_IB_PKT_LMT_GET_DONE;\
+        _done_pkt->req_id = (rreq)->ch.lmt_req_id; \
+        _done_pkt->receiver_req_id = (rreq)->handle; \
+            /* embed SR occupancy information */ \
+        _done_pkt->seq_num_tail = VC_FIELD(vc, ibcom->rsr_seq_num_tail); \
+ \
+            /* remember the last one sent */ \
+        VC_FIELD(vc, ibcom->rsr_seq_num_tail_last_sent) = VC_FIELD(vc, ibcom->rsr_seq_num_tail); \
+                                                                                                                \
+        mpi_errno = MPIDI_CH3_iStartMsg((vc), _done_pkt, sizeof(*_done_pkt), &_done_req);                       \
+        MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**MPID_nem_ib_lmt_send_GET_DONE");                                  \
+        if (_done_req != NULL)                                                                                  \
+        {                                                                                                       \
+            MPIU_ERR_CHKANDJUMP(_done_req->status.MPI_ERROR, mpi_errno, MPI_ERR_OTHER, "**MPID_nem_ib_lmt_send_GET_DONE");            \
+            MPID_Request_release(_done_req);                                                                    \
+            dprintf("send_get_done,release,req=%p\n", _done_req);       \
+        }                                                                                                       \
+    } while (0)
+
+#define MPID_nem_ib_lmt_send_RTS(vc, _req_id, _addr, _rkey, _seg_seq_num) do {          \
+        MPID_PKT_DECL_CAST(_upkt, MPID_nem_ib_pkt_lmt_rts_t, _rts_pkt);                                        \
+        MPID_Request *_rts_req;                                                                                \
+                                                                                                               \
+        MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending rndv RTS segment packet"); \
+        MPIDI_Pkt_init(_rts_pkt, MPIDI_NEM_PKT_NETMOD); \
+        _rts_pkt->subtype = MPIDI_NEM_IB_PKT_LMT_RTS;\
+        _rts_pkt->req_id = _req_id; \
+        _rts_pkt->addr = _addr; \
+        _rts_pkt->rkey = _rkey; \
+        _rts_pkt->seg_seq_num = _seg_seq_num; \
+            /* embed SR occupancy information */ \
+        _rts_pkt->seq_num_tail = VC_FIELD(vc, ibcom->rsr_seq_num_tail); \
+ \
+            /* remember the last one sent */ \
+        VC_FIELD(vc, ibcom->rsr_seq_num_tail_last_sent) = VC_FIELD(vc, ibcom->rsr_seq_num_tail); \
+                                                                                                                \
+        mpi_errno = MPIDI_CH3_iStartMsg((vc), _rts_pkt, sizeof(*_rts_pkt), &_rts_req);                       \
+        MPIU_ERR_CHKANDJUMP(mpi_errno, mpi_errno, MPI_ERR_OTHER, "**MPID_nem_ib_lmt_send_RTS");                                  \
+        if (_rts_req != NULL)                                                                                  \
+        {                                                                                                       \
+            MPIU_ERR_CHKANDJUMP(_rts_req->status.MPI_ERROR, mpi_errno, MPI_ERR_OTHER, "**MPID_nem_ib_lmt_send_RTS");            \
+            MPID_Request_release(_rts_req);                                                                    \
+            dprintf("send_rts,release,req=%p\n", _rts_req);       \
+        }                                                                                                       \
+    } while (0)
+
+#define MPID_nem_ib_lmt_send_PKT_LMT_DONE(vc, rreq) do {                                                                   \
+        MPID_PKT_DECL_CAST(_upkt, MPID_nem_ib_pkt_lmt_get_done_t, _done_pkt);                                          \
+        MPID_Request *_done_req;                                                                                \
+                                                                                                                \
+        MPIU_DBG_MSG(CH3_OTHER,VERBOSE,"sending rndv DONE packet"); \
+        MPIDI_Pkt_init(_done_pkt, MPIDI_NEM_PKT_NETMOD); \
+        _done_pkt->subtype = MPIDI_NEM_IB_PKT_RMA_LMT_GET_DONE;\
         _done_pkt->req_id = (rreq)->ch.lmt_req_id; \
             /* embed SR occupancy information */ \
         _done_pkt->seq_num_tail = VC_FIELD(vc, ibcom->rsr_seq_num_tail); \

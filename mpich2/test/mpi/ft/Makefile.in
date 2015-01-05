@@ -90,7 +90,9 @@ noinst_PROGRAMS = die$(EXEEXT) abort$(EXEEXT) sendalive$(EXEEXT) \
 	isendalive$(EXEEXT) senddead$(EXEEXT) recvdead$(EXEEXT) \
 	isenddead$(EXEEXT) irecvdead$(EXEEXT) barrier$(EXEEXT) \
 	gather$(EXEEXT) reduce$(EXEEXT) bcast$(EXEEXT) \
-	scatter$(EXEEXT)
+	scatter$(EXEEXT) failure_ack$(EXEEXT) anysource$(EXEEXT) \
+	revoke_nofail$(EXEEXT) shrink$(EXEEXT) agree$(EXEEXT) \
+	multi_isendalive$(EXEEXT)
 subdir = ft
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -113,6 +115,14 @@ abort_SOURCES = abort.c
 abort_OBJECTS = abort.$(OBJEXT)
 abort_LDADD = $(LDADD)
 abort_DEPENDENCIES = $(top_builddir)/util/mtest.o
+agree_SOURCES = agree.c
+agree_OBJECTS = agree.$(OBJEXT)
+agree_LDADD = $(LDADD)
+agree_DEPENDENCIES = $(top_builddir)/util/mtest.o
+anysource_SOURCES = anysource.c
+anysource_OBJECTS = anysource.$(OBJEXT)
+anysource_LDADD = $(LDADD)
+anysource_DEPENDENCIES = $(top_builddir)/util/mtest.o
 barrier_SOURCES = barrier.c
 barrier_OBJECTS = barrier.$(OBJEXT)
 barrier_LDADD = $(LDADD)
@@ -125,6 +135,10 @@ die_SOURCES = die.c
 die_OBJECTS = die.$(OBJEXT)
 die_LDADD = $(LDADD)
 die_DEPENDENCIES = $(top_builddir)/util/mtest.o
+failure_ack_SOURCES = failure_ack.c
+failure_ack_OBJECTS = failure_ack.$(OBJEXT)
+failure_ack_LDADD = $(LDADD)
+failure_ack_DEPENDENCIES = $(top_builddir)/util/mtest.o
 gather_SOURCES = gather.c
 gather_OBJECTS = gather.$(OBJEXT)
 gather_LDADD = $(LDADD)
@@ -141,6 +155,10 @@ isenddead_SOURCES = isenddead.c
 isenddead_OBJECTS = isenddead.$(OBJEXT)
 isenddead_LDADD = $(LDADD)
 isenddead_DEPENDENCIES = $(top_builddir)/util/mtest.o
+multi_isendalive_SOURCES = multi_isendalive.c
+multi_isendalive_OBJECTS = multi_isendalive.$(OBJEXT)
+multi_isendalive_LDADD = $(LDADD)
+multi_isendalive_DEPENDENCIES = $(top_builddir)/util/mtest.o
 recvdead_SOURCES = recvdead.c
 recvdead_OBJECTS = recvdead.$(OBJEXT)
 recvdead_LDADD = $(LDADD)
@@ -149,6 +167,10 @@ reduce_SOURCES = reduce.c
 reduce_OBJECTS = reduce.$(OBJEXT)
 reduce_LDADD = $(LDADD)
 reduce_DEPENDENCIES = $(top_builddir)/util/mtest.o
+revoke_nofail_SOURCES = revoke_nofail.c
+revoke_nofail_OBJECTS = revoke_nofail.$(OBJEXT)
+revoke_nofail_LDADD = $(LDADD)
+revoke_nofail_DEPENDENCIES = $(top_builddir)/util/mtest.o
 scatter_SOURCES = scatter.c
 scatter_OBJECTS = scatter.$(OBJEXT)
 scatter_LDADD = $(LDADD)
@@ -161,6 +183,10 @@ senddead_SOURCES = senddead.c
 senddead_OBJECTS = senddead.$(OBJEXT)
 senddead_LDADD = $(LDADD)
 senddead_DEPENDENCIES = $(top_builddir)/util/mtest.o
+shrink_SOURCES = shrink.c
+shrink_OBJECTS = shrink.$(OBJEXT)
+shrink_LDADD = $(LDADD)
+shrink_DEPENDENCIES = $(top_builddir)/util/mtest.o
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -189,12 +215,14 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = abort.c barrier.c bcast.c die.c gather.c irecvdead.c \
-	isendalive.c isenddead.c recvdead.c reduce.c scatter.c \
-	sendalive.c senddead.c
-DIST_SOURCES = abort.c barrier.c bcast.c die.c gather.c irecvdead.c \
-	isendalive.c isenddead.c recvdead.c reduce.c scatter.c \
-	sendalive.c senddead.c
+SOURCES = abort.c agree.c anysource.c barrier.c bcast.c die.c \
+	failure_ack.c gather.c irecvdead.c isendalive.c isenddead.c \
+	multi_isendalive.c recvdead.c reduce.c revoke_nofail.c \
+	scatter.c sendalive.c senddead.c shrink.c
+DIST_SOURCES = abort.c agree.c anysource.c barrier.c bcast.c die.c \
+	failure_ack.c gather.c irecvdead.c isendalive.c isenddead.c \
+	multi_isendalive.c recvdead.c reduce.c revoke_nofail.c \
+	scatter.c sendalive.c senddead.c shrink.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -381,6 +409,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 nocxxdistgraph = @nocxxdistgraph@
+nslib = @nslib@
 oldincludedir = @oldincludedir@
 otherlangs = @otherlangs@
 pdfdir = @pdfdir@
@@ -391,6 +420,7 @@ psdir = @psdir@
 rmadir = @rmadir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
@@ -447,6 +477,14 @@ abort$(EXEEXT): $(abort_OBJECTS) $(abort_DEPENDENCIES) $(EXTRA_abort_DEPENDENCIE
 	@rm -f abort$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(abort_OBJECTS) $(abort_LDADD) $(LIBS)
 
+agree$(EXEEXT): $(agree_OBJECTS) $(agree_DEPENDENCIES) $(EXTRA_agree_DEPENDENCIES) 
+	@rm -f agree$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(agree_OBJECTS) $(agree_LDADD) $(LIBS)
+
+anysource$(EXEEXT): $(anysource_OBJECTS) $(anysource_DEPENDENCIES) $(EXTRA_anysource_DEPENDENCIES) 
+	@rm -f anysource$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(anysource_OBJECTS) $(anysource_LDADD) $(LIBS)
+
 barrier$(EXEEXT): $(barrier_OBJECTS) $(barrier_DEPENDENCIES) $(EXTRA_barrier_DEPENDENCIES) 
 	@rm -f barrier$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(barrier_OBJECTS) $(barrier_LDADD) $(LIBS)
@@ -458,6 +496,10 @@ bcast$(EXEEXT): $(bcast_OBJECTS) $(bcast_DEPENDENCIES) $(EXTRA_bcast_DEPENDENCIE
 die$(EXEEXT): $(die_OBJECTS) $(die_DEPENDENCIES) $(EXTRA_die_DEPENDENCIES) 
 	@rm -f die$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(die_OBJECTS) $(die_LDADD) $(LIBS)
+
+failure_ack$(EXEEXT): $(failure_ack_OBJECTS) $(failure_ack_DEPENDENCIES) $(EXTRA_failure_ack_DEPENDENCIES) 
+	@rm -f failure_ack$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(failure_ack_OBJECTS) $(failure_ack_LDADD) $(LIBS)
 
 gather$(EXEEXT): $(gather_OBJECTS) $(gather_DEPENDENCIES) $(EXTRA_gather_DEPENDENCIES) 
 	@rm -f gather$(EXEEXT)
@@ -475,6 +517,10 @@ isenddead$(EXEEXT): $(isenddead_OBJECTS) $(isenddead_DEPENDENCIES) $(EXTRA_isend
 	@rm -f isenddead$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(isenddead_OBJECTS) $(isenddead_LDADD) $(LIBS)
 
+multi_isendalive$(EXEEXT): $(multi_isendalive_OBJECTS) $(multi_isendalive_DEPENDENCIES) $(EXTRA_multi_isendalive_DEPENDENCIES) 
+	@rm -f multi_isendalive$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(multi_isendalive_OBJECTS) $(multi_isendalive_LDADD) $(LIBS)
+
 recvdead$(EXEEXT): $(recvdead_OBJECTS) $(recvdead_DEPENDENCIES) $(EXTRA_recvdead_DEPENDENCIES) 
 	@rm -f recvdead$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(recvdead_OBJECTS) $(recvdead_LDADD) $(LIBS)
@@ -482,6 +528,10 @@ recvdead$(EXEEXT): $(recvdead_OBJECTS) $(recvdead_DEPENDENCIES) $(EXTRA_recvdead
 reduce$(EXEEXT): $(reduce_OBJECTS) $(reduce_DEPENDENCIES) $(EXTRA_reduce_DEPENDENCIES) 
 	@rm -f reduce$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(reduce_OBJECTS) $(reduce_LDADD) $(LIBS)
+
+revoke_nofail$(EXEEXT): $(revoke_nofail_OBJECTS) $(revoke_nofail_DEPENDENCIES) $(EXTRA_revoke_nofail_DEPENDENCIES) 
+	@rm -f revoke_nofail$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(revoke_nofail_OBJECTS) $(revoke_nofail_LDADD) $(LIBS)
 
 scatter$(EXEEXT): $(scatter_OBJECTS) $(scatter_DEPENDENCIES) $(EXTRA_scatter_DEPENDENCIES) 
 	@rm -f scatter$(EXEEXT)
@@ -495,6 +545,10 @@ senddead$(EXEEXT): $(senddead_OBJECTS) $(senddead_DEPENDENCIES) $(EXTRA_senddead
 	@rm -f senddead$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(senddead_OBJECTS) $(senddead_LDADD) $(LIBS)
 
+shrink$(EXEEXT): $(shrink_OBJECTS) $(shrink_DEPENDENCIES) $(EXTRA_shrink_DEPENDENCIES) 
+	@rm -f shrink$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(shrink_OBJECTS) $(shrink_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -502,18 +556,24 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/abort.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/agree.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/anysource.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/barrier.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bcast.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/die.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/failure_ack.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gather.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/irecvdead.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isendalive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isenddead.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/multi_isendalive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/recvdead.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reduce.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/revoke_nofail.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/scatter.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sendalive.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/senddead.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/shrink.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\

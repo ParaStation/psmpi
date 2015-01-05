@@ -25,6 +25,7 @@ dnl _PREREQ handles the former role of mpichprereq, setup_device, etc
 [#] expansion is: PAC_SUBCFG_PREREQ_[]PAC_SUBCFG_AUTO_SUFFIX
 AC_DEFUN([PAC_SUBCFG_PREREQ_]PAC_SUBCFG_AUTO_SUFFIX,[
 AM_CONDITIONAL([BUILD_PAMID],[test "$device_name" = "pamid"])
+AM_CONDITIONAL([QUEUE_BINARY_SEARCH_SUPPORT],[test "$enable_queue_binary_search" = "yes"])
 
 AC_ARG_VAR([PAMILIBNAME],[can be used to override the name of the PAMI library (default: "pami")])
 original_PAMILIBNAME=${PAMILIBNAME}
@@ -99,6 +100,17 @@ PAC_ARG_SHARED_MEMORY
 if test "$with_shared_memory" != "mmap" -a "$with_shared_memory" != "sysv"; then
     AC_MSG_ERROR([cannot support shared memory:  need either sysv shared memory functions or mmap in order to support shared memory])
 fi
+
+dnl
+dnl The default is to enable the use of the recv queue binary search
+dnl ... except on BGQ
+dnl
+enable_queue_binary_search=yes
+if test "${pamid_platform}" = "BGQ" ; then
+  enable_queue_binary_search=no
+fi
+
+AM_CONDITIONAL([QUEUE_BINARY_SEARCH_SUPPORT],[test "$enable_queue_binary_search" = "yes"])
 
 dnl
 dnl This configure option allows "sandbox" bgq system software to be used.
@@ -195,6 +207,17 @@ if test "${pamid_platform}" = "BGQ" ; then
   PAC_APPEND_FLAG([-lrt],             [LIBS])
   PAC_APPEND_FLAG([-lpthread],        [LIBS])
   PAC_APPEND_FLAG([-lstdc++],         [LIBS])
+
+  dnl
+  dnl The wrapper scripts require these libraries.
+  dnl
+  PAC_APPEND_FLAG([-l${PAMILIBNAME}], [WRAPPER_LIBS])
+  PAC_APPEND_FLAG([-lSPI],            [WRAPPER_LIBS])
+  PAC_APPEND_FLAG([-lSPI_cnk],        [WRAPPER_LIBS])
+  PAC_APPEND_FLAG([-lrt],             [WRAPPER_LIBS])
+  PAC_APPEND_FLAG([-lpthread],        [WRAPPER_LIBS])
+  PAC_APPEND_FLAG([-lstdc++],         [WRAPPER_LIBS])
+
 
   AC_SEARCH_LIBS([PAMI_Send], [${PAMILIBNAME} pami-gcc])
 
@@ -304,7 +327,6 @@ if test "$have_pami_geometry_memory_optimize" != "0"; then
 else
   AC_MSG_RESULT('no')
 fi
-
 
 
 

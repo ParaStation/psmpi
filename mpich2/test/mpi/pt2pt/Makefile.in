@@ -89,8 +89,9 @@ DIST_COMMON = $(top_srcdir)/Makefile.mtest $(srcdir)/Makefile.in \
 noinst_PROGRAMS = anyall$(EXEEXT) bottom$(EXEEXT) bsend1$(EXEEXT) \
 	bsend2$(EXEEXT) bsend3$(EXEEXT) bsend4$(EXEEXT) \
 	bsend5$(EXEEXT) bsendalign$(EXEEXT) cancelrecv$(EXEEXT) \
-	isendself$(EXEEXT) issendselfcancel$(EXEEXT) sendself$(EXEEXT) \
-	eagerdt$(EXEEXT) isendselfprobe$(EXEEXT) bsendfrag$(EXEEXT) \
+	cancelanysrc$(EXEEXT) isendself$(EXEEXT) \
+	issendselfcancel$(EXEEXT) sendself$(EXEEXT) eagerdt$(EXEEXT) \
+	isendselfprobe$(EXEEXT) bsendfrag$(EXEEXT) \
 	bsendpending$(EXEEXT) icsend$(EXEEXT) rqstatus$(EXEEXT) \
 	rqfreeb$(EXEEXT) greq1$(EXEEXT) scancel$(EXEEXT) \
 	scancel2$(EXEEXT) rcancel$(EXEEXT) pscancel$(EXEEXT) \
@@ -161,6 +162,10 @@ bsendpending_SOURCES = bsendpending.c
 bsendpending_OBJECTS = bsendpending.$(OBJEXT)
 bsendpending_LDADD = $(LDADD)
 bsendpending_DEPENDENCIES = $(top_builddir)/util/mtest.o
+cancelanysrc_SOURCES = cancelanysrc.c
+cancelanysrc_OBJECTS = cancelanysrc.$(OBJEXT)
+cancelanysrc_LDADD = $(LDADD)
+cancelanysrc_DEPENDENCIES = $(top_builddir)/util/mtest.o
 cancelrecv_SOURCES = cancelrecv.c
 cancelrecv_OBJECTS = cancelrecv.$(OBJEXT)
 cancelrecv_LDADD = $(LDADD)
@@ -299,20 +304,22 @@ am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = anyall.c big_count_status.c bottom.c bsend1.c bsend2.c \
 	bsend3.c bsend4.c bsend5.c bsendalign.c bsendfrag.c \
-	bsendpending.c cancelrecv.c eagerdt.c greq1.c icsend.c \
-	inactivereq.c isendself.c isendselfprobe.c issendselfcancel.c \
-	large_message.c mprobe.c pingping.c probe-unexp.c probenull.c \
-	pscancel.c rcancel.c rqfreeb.c rqstatus.c scancel.c scancel2.c \
-	sendall.c sendflood.c sendrecv1.c sendrecv2.c sendrecv3.c \
-	sendself.c waitany-null.c waittestnull.c
+	bsendpending.c cancelanysrc.c cancelrecv.c eagerdt.c greq1.c \
+	icsend.c inactivereq.c isendself.c isendselfprobe.c \
+	issendselfcancel.c large_message.c mprobe.c pingping.c \
+	probe-unexp.c probenull.c pscancel.c rcancel.c rqfreeb.c \
+	rqstatus.c scancel.c scancel2.c sendall.c sendflood.c \
+	sendrecv1.c sendrecv2.c sendrecv3.c sendself.c waitany-null.c \
+	waittestnull.c
 DIST_SOURCES = anyall.c big_count_status.c bottom.c bsend1.c bsend2.c \
 	bsend3.c bsend4.c bsend5.c bsendalign.c bsendfrag.c \
-	bsendpending.c cancelrecv.c eagerdt.c greq1.c icsend.c \
-	inactivereq.c isendself.c isendselfprobe.c issendselfcancel.c \
-	large_message.c mprobe.c pingping.c probe-unexp.c probenull.c \
-	pscancel.c rcancel.c rqfreeb.c rqstatus.c scancel.c scancel2.c \
-	sendall.c sendflood.c sendrecv1.c sendrecv2.c sendrecv3.c \
-	sendself.c waitany-null.c waittestnull.c
+	bsendpending.c cancelanysrc.c cancelrecv.c eagerdt.c greq1.c \
+	icsend.c inactivereq.c isendself.c isendselfprobe.c \
+	issendselfcancel.c large_message.c mprobe.c pingping.c \
+	probe-unexp.c probenull.c pscancel.c rcancel.c rqfreeb.c \
+	rqstatus.c scancel.c scancel2.c sendall.c sendflood.c \
+	sendrecv1.c sendrecv2.c sendrecv3.c sendself.c waitany-null.c \
+	waittestnull.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -499,6 +506,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 nocxxdistgraph = @nocxxdistgraph@
+nslib = @nslib@
 oldincludedir = @oldincludedir@
 otherlangs = @otherlangs@
 pdfdir = @pdfdir@
@@ -509,6 +517,7 @@ psdir = @psdir@
 rmadir = @rmadir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
@@ -605,6 +614,10 @@ bsendfrag$(EXEEXT): $(bsendfrag_OBJECTS) $(bsendfrag_DEPENDENCIES) $(EXTRA_bsend
 bsendpending$(EXEEXT): $(bsendpending_OBJECTS) $(bsendpending_DEPENDENCIES) $(EXTRA_bsendpending_DEPENDENCIES) 
 	@rm -f bsendpending$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(bsendpending_OBJECTS) $(bsendpending_LDADD) $(LIBS)
+
+cancelanysrc$(EXEEXT): $(cancelanysrc_OBJECTS) $(cancelanysrc_DEPENDENCIES) $(EXTRA_cancelanysrc_DEPENDENCIES) 
+	@rm -f cancelanysrc$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cancelanysrc_OBJECTS) $(cancelanysrc_LDADD) $(LIBS)
 
 cancelrecv$(EXEEXT): $(cancelrecv_OBJECTS) $(cancelrecv_DEPENDENCIES) $(EXTRA_cancelrecv_DEPENDENCIES) 
 	@rm -f cancelrecv$(EXEEXT)
@@ -731,6 +744,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsendalign.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsendfrag.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bsendpending.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cancelanysrc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cancelrecv.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/eagerdt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/greq1.Po@am__quote@

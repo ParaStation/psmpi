@@ -68,6 +68,8 @@ int ADIOI_cb_bcast_rank_map(ADIO_File fd)
     char *value;
 	int error_code = MPI_SUCCESS;
 	static char myname[] = "ADIOI_cb_bcast_rank_map";
+    char *p;
+    int i;
 
     MPI_Bcast(&(fd->hints->cb_nodes), 1, MPI_INT, 0, fd->comm);
     if (fd->hints->cb_nodes > 0) {
@@ -92,11 +94,16 @@ int ADIOI_cb_bcast_rank_map(ADIO_File fd)
     value = (char *) ADIOI_Malloc((MPI_MAX_INFO_VAL+1)*sizeof(char));
     ADIOI_Snprintf(value, MPI_MAX_INFO_VAL+1, "%d", fd->hints->cb_nodes);
     ADIOI_Info_set(fd->info, "cb_nodes", value);
-    char *p = value;
-    int i;
+    p = value;
+    /* the (by MPI rank) list of aggregators can be larger than
+     * MPI_MAX_INFO_VAL, so we will simply truncate when we reach capacity. I
+     * wasn't clever enough to figure out how to rewind and put '...' at the
+     * end in the truncate case */
     for (i=0; i< fd->hints->cb_nodes; i++) {
-	p += ADIOI_Snprintf(p, MPI_MAX_INFO_VAL+1, "%d ", fd->hints->ranklist[i]);
-	if (p - value > MPI_MAX_INFO_VAL+1) break;
+        int incr, remain = (MPI_MAX_INFO_VAL) - (p-value);
+        incr = ADIOI_Snprintf(p, remain, "%d ", fd->hints->ranklist[i]);
+    if (incr >= remain) break;
+        p += incr;
     }
     ADIOI_Info_set(fd->info, "romio_aggregator_list", value);
     ADIOI_Free(value);

@@ -60,9 +60,12 @@ typedef union {
  */
 /* FIXME: Having predefined names makes it harder to add new message types,
    such as different RMA types. */
-enum MPIDI_CH3_Pkt_types
+/* We start with an arbitrarily chosen number (42), to help with
+ * debugging when a packet type is not initialized or wrongly
+ * initialized. */
+typedef enum
 {
-    MPIDI_CH3_PKT_EAGER_SEND = 0,
+    MPIDI_CH3_PKT_EAGER_SEND = 42,
 #if defined(USE_EAGER_SHORT)
     MPIDI_CH3_PKT_EAGERSHORT_SEND,
 #endif /* defined(USE_EAGER_SHORT) */
@@ -97,29 +100,28 @@ enum MPIDI_CH3_Pkt_types
     MPIDI_CH3_PKT_GET_ACCUM_RESP,
     MPIDI_CH3_PKT_FLOW_CNTL_UPDATE,  /* FIXME: Unused */
     MPIDI_CH3_PKT_CLOSE,
-    MPIDI_CH3_PKT_END_CH3
+    MPIDI_CH3_PKT_REVOKE,
+    MPIDI_CH3_PKT_END_CH3,
     /* The channel can define additional types by defining the value
        MPIDI_CH3_PKT_ENUM */
 # if defined(MPIDI_CH3_PKT_ENUM)
-    , MPIDI_CH3_PKT_ENUM
+    MPIDI_CH3_PKT_ENUM,
 # endif    
-    , MPIDI_CH3_PKT_END_ALL,
+    MPIDI_CH3_PKT_END_ALL,
     MPIDI_CH3_PKT_INVALID = -1 /* forces a signed enum to quash warnings */
-};
+} MPIDI_CH3_Pkt_type_t;
 
-typedef int16_t MPIDI_CH3_Pkt_type_t;
-typedef uint16_t MPIDI_CH3_Pkt_flags_t;
-
-                                                   /* Flag vector bits:*/
-#define MPIDI_CH3_PKT_FLAG_NONE                 0
-#define MPIDI_CH3_PKT_FLAG_RMA_LOCK             1  /* ...............X */
-#define MPIDI_CH3_PKT_FLAG_RMA_UNLOCK           2  /* ..............X. */
-#define MPIDI_CH3_PKT_FLAG_RMA_FLUSH            4  /* .............X.. */
-#define MPIDI_CH3_PKT_FLAG_RMA_REQ_ACK          8  /* ............X... */
-#define MPIDI_CH3_PKT_FLAG_RMA_AT_COMPLETE     16  /* ...........X.... */
-#define MPIDI_CH3_PKT_FLAG_RMA_NOCHECK         32  /* ..........X..... */
-#define MPIDI_CH3_PKT_FLAG_RMA_SHARED          64  /* .........X...... */
-#define MPIDI_CH3_PKT_FLAG_RMA_EXCLUSIVE      128  /* ........X....... */
+typedef enum {
+    MPIDI_CH3_PKT_FLAG_NONE = 0,
+    MPIDI_CH3_PKT_FLAG_RMA_LOCK = 1,
+    MPIDI_CH3_PKT_FLAG_RMA_UNLOCK = 2,
+    MPIDI_CH3_PKT_FLAG_RMA_FLUSH = 4,
+    MPIDI_CH3_PKT_FLAG_RMA_REQ_ACK = 8,
+    MPIDI_CH3_PKT_FLAG_RMA_AT_COMPLETE = 16,
+    MPIDI_CH3_PKT_FLAG_RMA_NOCHECK = 32,
+    MPIDI_CH3_PKT_FLAG_RMA_SHARED = 64,
+    MPIDI_CH3_PKT_FLAG_RMA_EXCLUSIVE = 128
+} MPIDI_CH3_Pkt_flags_t;
 
 typedef struct MPIDI_CH3_Pkt_send
 {
@@ -410,6 +412,13 @@ typedef struct MPIDI_CH3_Pkt_close
 }
 MPIDI_CH3_Pkt_close_t;
 
+typedef struct MPIDI_CH3_Pkt_revoke
+{
+    MPIDI_CH3_Pkt_type_t type;
+    MPIR_Context_id_t revoked_comm;
+}
+MPIDI_CH3_Pkt_revoke_t;
+
 typedef union MPIDI_CH3_Pkt
 {
     MPIDI_CH3_Pkt_type_t type;
@@ -444,6 +453,7 @@ typedef union MPIDI_CH3_Pkt
     MPIDI_CH3_Pkt_fop_t fop;
     MPIDI_CH3_Pkt_fop_resp_t fop_resp;
     MPIDI_CH3_Pkt_get_accum_resp_t get_accum_resp;
+    MPIDI_CH3_Pkt_revoke_t revoke;
 # if defined(MPIDI_CH3_PKT_DECL)
     MPIDI_CH3_PKT_DECL
 # endif

@@ -310,8 +310,14 @@
 /* Define to 1 if you have the `ftb' library (-lftb). */
 #undef HAVE_LIBFTB
 
+/* Define to 1 if you have the `hcoll' library (-lhcoll). */
+#undef HAVE_LIBHCOLL
+
 /* Define to 1 if you have the `ibverbs' library (-libverbs). */
 #undef HAVE_LIBIBVERBS
+
+/* Define to 1 if you have the `mxm' library (-lmxm). */
+#undef HAVE_LIBMXM
 
 /* Define to 1 if you have the `myriexpress' library (-lmyriexpress). */
 #undef HAVE_LIBMYRIEXPRESS

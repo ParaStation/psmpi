@@ -88,38 +88,42 @@ DIST_COMMON = $(top_srcdir)/Makefile.mtest $(srcdir)/Makefile.in \
 	$(srcdir)/Makefile.am $(srcdir)/testlist.in \
 	$(top_srcdir)/confdb/depcomp
 noinst_PROGRAMS = allocmem$(EXEEXT) ircpi$(EXEEXT) test1$(EXEEXT) \
-	test2$(EXEEXT) test3$(EXEEXT) test4$(EXEEXT) test5$(EXEEXT) \
+	test2$(EXEEXT) test2_shm$(EXEEXT) test3$(EXEEXT) \
+	test3_shm$(EXEEXT) test4$(EXEEXT) test5$(EXEEXT) \
 	lockcontention$(EXEEXT) lockcontention2$(EXEEXT) \
 	lockcontention3$(EXEEXT) lockopts$(EXEEXT) \
 	contention_put$(EXEEXT) contention_putget$(EXEEXT) \
 	put_base$(EXEEXT) put_bottom$(EXEEXT) locknull$(EXEEXT) \
-	wintest$(EXEEXT) transpose1$(EXEEXT) transpose2$(EXEEXT) \
-	transpose3$(EXEEXT) transpose4$(EXEEXT) transpose5$(EXEEXT) \
-	transpose6$(EXEEXT) transpose7$(EXEEXT) fetchandadd$(EXEEXT) \
-	fetchandadd_tree$(EXEEXT) winname$(EXEEXT) putfence1$(EXEEXT) \
-	putfidx$(EXEEXT) epochtest$(EXEEXT) getfence1$(EXEEXT) \
-	accfence1$(EXEEXT) accfence2$(EXEEXT) adlb_mimic1$(EXEEXT) \
-	putpscw1$(EXEEXT) accpscw1$(EXEEXT) getgroup$(EXEEXT) \
-	contig_displ$(EXEEXT) test1_am$(EXEEXT) test2_am$(EXEEXT) \
-	test3_am$(EXEEXT) test4_am$(EXEEXT) test5_am$(EXEEXT) \
-	fetchandadd_am$(EXEEXT) fetchandadd_tree_am$(EXEEXT) \
-	accfence2_am$(EXEEXT) test1_dt$(EXEEXT) attrorderwin$(EXEEXT) \
-	wincall$(EXEEXT) fkeyvalwin$(EXEEXT) baseattrwin$(EXEEXT) \
-	nullpscw$(EXEEXT) rmanull$(EXEEXT) rmazero$(EXEEXT) \
-	mixedsync$(EXEEXT) manyrma2$(EXEEXT) manyrma3$(EXEEXT) \
-	selfrma$(EXEEXT) strided_acc_onelock$(EXEEXT) \
-	strided_putget_indexed$(EXEEXT) \
+	wintest$(EXEEXT) wintest_shm$(EXEEXT) transpose1$(EXEEXT) \
+	transpose2$(EXEEXT) transpose3$(EXEEXT) \
+	transpose3_shm$(EXEEXT) transpose4$(EXEEXT) \
+	transpose5$(EXEEXT) transpose6$(EXEEXT) transpose7$(EXEEXT) \
+	fetchandadd$(EXEEXT) fetchandadd_tree$(EXEEXT) \
+	winname$(EXEEXT) putfence1$(EXEEXT) putfidx$(EXEEXT) \
+	epochtest$(EXEEXT) getfence1$(EXEEXT) accfence1$(EXEEXT) \
+	accfence2$(EXEEXT) adlb_mimic1$(EXEEXT) putpscw1$(EXEEXT) \
+	accpscw1$(EXEEXT) getgroup$(EXEEXT) contig_displ$(EXEEXT) \
+	test1_am$(EXEEXT) test2_am$(EXEEXT) test2_am_shm$(EXEEXT) \
+	test3_am$(EXEEXT) test3_am_shm$(EXEEXT) test4_am$(EXEEXT) \
+	test5_am$(EXEEXT) fetchandadd_am$(EXEEXT) \
+	fetchandadd_tree_am$(EXEEXT) accfence2_am$(EXEEXT) \
+	test1_dt$(EXEEXT) attrorderwin$(EXEEXT) wincall$(EXEEXT) \
+	fkeyvalwin$(EXEEXT) baseattrwin$(EXEEXT) nullpscw$(EXEEXT) \
+	nullpscw_shm$(EXEEXT) rmanull$(EXEEXT) rmazero$(EXEEXT) \
+	mixedsync$(EXEEXT) manyrma2$(EXEEXT) manyrma2_shm$(EXEEXT) \
+	manyrma3$(EXEEXT) selfrma$(EXEEXT) \
+	strided_acc_onelock$(EXEEXT) strided_putget_indexed$(EXEEXT) \
 	strided_putget_indexed_shared$(EXEEXT) \
 	strided_acc_indexed$(EXEEXT) strided_acc_subarray$(EXEEXT) \
 	strided_get_indexed$(EXEEXT) strided_getacc_indexed$(EXEEXT) \
 	strided_getacc_indexed_shared$(EXEEXT) \
 	window_creation$(EXEEXT) win_flavors$(EXEEXT) \
 	win_shared$(EXEEXT) win_shared_noncontig$(EXEEXT) \
-	win_shared_noncontig_put$(EXEEXT) win_zero$(EXEEXT) \
-	win_large_shm$(EXEEXT) win_dynamic_acc$(EXEEXT) \
-	get_acc_local$(EXEEXT) compare_and_swap$(EXEEXT) \
-	linked_list$(EXEEXT) linked_list_fop$(EXEEXT) \
-	linked_list_lockall$(EXEEXT) \
+	win_shared_noncontig_put$(EXEEXT) win_shared_zerobyte$(EXEEXT) \
+	win_zero$(EXEEXT) win_large_shm$(EXEEXT) \
+	win_dynamic_acc$(EXEEXT) get_acc_local$(EXEEXT) \
+	compare_and_swap$(EXEEXT) linked_list$(EXEEXT) \
+	linked_list_fop$(EXEEXT) linked_list_lockall$(EXEEXT) \
 	linked_list_bench_lock_all$(EXEEXT) \
 	linked_list_bench_lock_excl$(EXEEXT) \
 	linked_list_bench_lock_shr$(EXEEXT) \
@@ -133,11 +137,14 @@ noinst_PROGRAMS = allocmem$(EXEEXT) ircpi$(EXEEXT) test1$(EXEEXT) \
 	get_accumulate_long_derived$(EXEEXT) \
 	get_accumulate_double_derived$(EXEEXT) \
 	get_accumulate_int_derived$(EXEEXT) flush$(EXEEXT) \
-	reqops$(EXEEXT) req_example$(EXEEXT) req_example_shm$(EXEEXT) \
-	win_info$(EXEEXT) pscw_ordering$(EXEEXT) mutex_bench$(EXEEXT) \
+	win_shared_put_flush_get$(EXEEXT) reqops$(EXEEXT) \
+	req_example$(EXEEXT) req_example_shm$(EXEEXT) \
+	win_info$(EXEEXT) pscw_ordering$(EXEEXT) \
+	pscw_ordering_shm$(EXEEXT) mutex_bench$(EXEEXT) \
 	mutex_bench_shared$(EXEEXT) mutex_bench_shm$(EXEEXT) \
-	rma-contig$(EXEEXT) badrma$(EXEEXT) nb_test$(EXEEXT) \
-	acc-loc$(EXEEXT) fence_shm$(EXEEXT)
+	mutex_bench_shm_ordered$(EXEEXT) rma-contig$(EXEEXT) \
+	badrma$(EXEEXT) nb_test$(EXEEXT) acc-loc$(EXEEXT) \
+	fence_shm$(EXEEXT) get-struct$(EXEEXT) at_complete$(EXEEXT)
 subdir = rma
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -184,6 +191,10 @@ allocmem_SOURCES = allocmem.c
 allocmem_OBJECTS = allocmem.$(OBJEXT)
 allocmem_LDADD = $(LDADD)
 allocmem_DEPENDENCIES = $(top_builddir)/util/mtest.o
+at_complete_SOURCES = at_complete.c
+at_complete_OBJECTS = at_complete.$(OBJEXT)
+at_complete_LDADD = $(LDADD)
+at_complete_DEPENDENCIES = $(top_builddir)/util/mtest.o
 attrorderwin_SOURCES = attrorderwin.c
 attrorderwin_OBJECTS = attrorderwin.$(OBJEXT)
 attrorderwin_LDADD = $(LDADD)
@@ -274,6 +285,10 @@ flush_SOURCES = flush.c
 flush_OBJECTS = flush.$(OBJEXT)
 flush_LDADD = $(LDADD)
 flush_DEPENDENCIES = $(top_builddir)/util/mtest.o
+get_struct_SOURCES = get-struct.c
+get_struct_OBJECTS = get-struct.$(OBJEXT)
+get_struct_LDADD = $(LDADD)
+get_struct_DEPENDENCIES = $(top_builddir)/util/mtest.o
 get_acc_local_SOURCES = get_acc_local.c
 get_acc_local_OBJECTS = get_acc_local.$(OBJEXT)
 get_acc_local_LDADD = $(LDADD)
@@ -336,8 +351,7 @@ getgroup_LDADD = $(LDADD)
 getgroup_DEPENDENCIES = $(top_builddir)/util/mtest.o
 ircpi_SOURCES = ircpi.c
 ircpi_OBJECTS = ircpi.$(OBJEXT)
-ircpi_LDADD = $(LDADD)
-ircpi_DEPENDENCIES = $(top_builddir)/util/mtest.o
+ircpi_DEPENDENCIES = $(LDADD)
 linked_list_SOURCES = linked_list.c
 linked_list_OBJECTS = linked_list.$(OBJEXT)
 linked_list_LDADD = $(LDADD)
@@ -398,6 +412,10 @@ manyrma2_SOURCES = manyrma2.c
 manyrma2_OBJECTS = manyrma2.$(OBJEXT)
 manyrma2_LDADD = $(LDADD)
 manyrma2_DEPENDENCIES = $(top_builddir)/util/mtest.o
+am_manyrma2_shm_OBJECTS = manyrma2_shm-manyrma2.$(OBJEXT)
+manyrma2_shm_OBJECTS = $(am_manyrma2_shm_OBJECTS)
+manyrma2_shm_LDADD = $(LDADD)
+manyrma2_shm_DEPENDENCIES = $(top_builddir)/util/mtest.o
 manyrma3_SOURCES = manyrma3.c
 manyrma3_OBJECTS = manyrma3.$(OBJEXT)
 manyrma3_LDADD = $(LDADD)
@@ -421,6 +439,13 @@ am_mutex_bench_shm_OBJECTS = mutex_bench_shm-mutex_bench.$(OBJEXT) \
 mutex_bench_shm_OBJECTS = $(am_mutex_bench_shm_OBJECTS)
 mutex_bench_shm_LDADD = $(LDADD)
 mutex_bench_shm_DEPENDENCIES = $(top_builddir)/util/mtest.o
+am_mutex_bench_shm_ordered_OBJECTS =  \
+	mutex_bench_shm_ordered-mutex_bench.$(OBJEXT) \
+	mutex_bench_shm_ordered-mcs-mutex.$(OBJEXT)
+mutex_bench_shm_ordered_OBJECTS =  \
+	$(am_mutex_bench_shm_ordered_OBJECTS)
+mutex_bench_shm_ordered_LDADD = $(LDADD)
+mutex_bench_shm_ordered_DEPENDENCIES = $(top_builddir)/util/mtest.o
 nb_test_SOURCES = nb_test.c
 nb_test_OBJECTS = nb_test.$(OBJEXT)
 nb_test_LDADD = $(LDADD)
@@ -429,10 +454,19 @@ nullpscw_SOURCES = nullpscw.c
 nullpscw_OBJECTS = nullpscw.$(OBJEXT)
 nullpscw_LDADD = $(LDADD)
 nullpscw_DEPENDENCIES = $(top_builddir)/util/mtest.o
+am_nullpscw_shm_OBJECTS = nullpscw_shm-nullpscw.$(OBJEXT)
+nullpscw_shm_OBJECTS = $(am_nullpscw_shm_OBJECTS)
+nullpscw_shm_LDADD = $(LDADD)
+nullpscw_shm_DEPENDENCIES = $(top_builddir)/util/mtest.o
 pscw_ordering_SOURCES = pscw_ordering.c
 pscw_ordering_OBJECTS = pscw_ordering.$(OBJEXT)
 pscw_ordering_LDADD = $(LDADD)
 pscw_ordering_DEPENDENCIES = $(top_builddir)/util/mtest.o
+am_pscw_ordering_shm_OBJECTS =  \
+	pscw_ordering_shm-pscw_ordering.$(OBJEXT)
+pscw_ordering_shm_OBJECTS = $(am_pscw_ordering_shm_OBJECTS)
+pscw_ordering_shm_LDADD = $(LDADD)
+pscw_ordering_shm_DEPENDENCIES = $(top_builddir)/util/mtest.o
 put_base_SOURCES = put_base.c
 put_base_OBJECTS = put_base.$(OBJEXT)
 put_base_LDADD = $(LDADD)
@@ -529,6 +563,14 @@ test2_am_SOURCES = test2_am.c
 test2_am_OBJECTS = test2_am.$(OBJEXT)
 test2_am_LDADD = $(LDADD)
 test2_am_DEPENDENCIES = $(top_builddir)/util/mtest.o
+am_test2_am_shm_OBJECTS = test2_am_shm-test2_am.$(OBJEXT)
+test2_am_shm_OBJECTS = $(am_test2_am_shm_OBJECTS)
+test2_am_shm_LDADD = $(LDADD)
+test2_am_shm_DEPENDENCIES = $(top_builddir)/util/mtest.o
+am_test2_shm_OBJECTS = test2_shm-test2.$(OBJEXT)
+test2_shm_OBJECTS = $(am_test2_shm_OBJECTS)
+test2_shm_LDADD = $(LDADD)
+test2_shm_DEPENDENCIES = $(top_builddir)/util/mtest.o
 test3_SOURCES = test3.c
 test3_OBJECTS = test3.$(OBJEXT)
 test3_LDADD = $(LDADD)
@@ -537,6 +579,14 @@ test3_am_SOURCES = test3_am.c
 test3_am_OBJECTS = test3_am.$(OBJEXT)
 test3_am_LDADD = $(LDADD)
 test3_am_DEPENDENCIES = $(top_builddir)/util/mtest.o
+am_test3_am_shm_OBJECTS = test3_am_shm-test3_am.$(OBJEXT)
+test3_am_shm_OBJECTS = $(am_test3_am_shm_OBJECTS)
+test3_am_shm_LDADD = $(LDADD)
+test3_am_shm_DEPENDENCIES = $(top_builddir)/util/mtest.o
+am_test3_shm_OBJECTS = test3_shm-test3.$(OBJEXT)
+test3_shm_OBJECTS = $(am_test3_shm_OBJECTS)
+test3_shm_LDADD = $(LDADD)
+test3_shm_DEPENDENCIES = $(top_builddir)/util/mtest.o
 test4_SOURCES = test4.c
 test4_OBJECTS = test4.$(OBJEXT)
 test4_LDADD = $(LDADD)
@@ -565,6 +615,10 @@ transpose3_SOURCES = transpose3.c
 transpose3_OBJECTS = transpose3.$(OBJEXT)
 transpose3_LDADD = $(LDADD)
 transpose3_DEPENDENCIES = $(top_builddir)/util/mtest.o
+am_transpose3_shm_OBJECTS = transpose3_shm-transpose3.$(OBJEXT)
+transpose3_shm_OBJECTS = $(am_transpose3_shm_OBJECTS)
+transpose3_shm_LDADD = $(LDADD)
+transpose3_shm_DEPENDENCIES = $(top_builddir)/util/mtest.o
 transpose4_SOURCES = transpose4.c
 transpose4_OBJECTS = transpose4.$(OBJEXT)
 transpose4_LDADD = $(LDADD)
@@ -609,6 +663,14 @@ win_shared_noncontig_put_SOURCES = win_shared_noncontig_put.c
 win_shared_noncontig_put_OBJECTS = win_shared_noncontig_put.$(OBJEXT)
 win_shared_noncontig_put_LDADD = $(LDADD)
 win_shared_noncontig_put_DEPENDENCIES = $(top_builddir)/util/mtest.o
+win_shared_put_flush_get_SOURCES = win_shared_put_flush_get.c
+win_shared_put_flush_get_OBJECTS = win_shared_put_flush_get.$(OBJEXT)
+win_shared_put_flush_get_LDADD = $(LDADD)
+win_shared_put_flush_get_DEPENDENCIES = $(top_builddir)/util/mtest.o
+win_shared_zerobyte_SOURCES = win_shared_zerobyte.c
+win_shared_zerobyte_OBJECTS = win_shared_zerobyte.$(OBJEXT)
+win_shared_zerobyte_LDADD = $(LDADD)
+win_shared_zerobyte_DEPENDENCIES = $(top_builddir)/util/mtest.o
 win_zero_SOURCES = win_zero.c
 win_zero_OBJECTS = win_zero.$(OBJEXT)
 win_zero_LDADD = $(LDADD)
@@ -629,6 +691,10 @@ wintest_SOURCES = wintest.c
 wintest_OBJECTS = wintest.$(OBJEXT)
 wintest_LDADD = $(LDADD)
 wintest_DEPENDENCIES = $(top_builddir)/util/mtest.o
+am_wintest_shm_OBJECTS = wintest_shm-wintest.$(OBJEXT)
+wintest_shm_OBJECTS = $(am_wintest_shm_OBJECTS)
+wintest_shm_LDADD = $(LDADD)
+wintest_shm_DEPENDENCIES = $(top_builddir)/util/mtest.o
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
 am__v_P_0 = false
@@ -662,45 +728,7 @@ am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
 SOURCES = acc-loc.c accfence1.c accfence2.c accfence2_am.c accpscw1.c \
-	adlb_mimic1.c allocmem.c attrorderwin.c badrma.c baseattrwin.c \
-	compare_and_swap.c contention_put.c contention_putget.c \
-	contig_displ.c epochtest.c fence_shm.c \
-	$(fetch_and_op_char_SOURCES) $(fetch_and_op_double_SOURCES) \
-	$(fetch_and_op_int_SOURCES) $(fetch_and_op_long_SOURCES) \
-	$(fetch_and_op_long_double_SOURCES) \
-	$(fetch_and_op_short_SOURCES) fetchandadd.c fetchandadd_am.c \
-	fetchandadd_tree.c fetchandadd_tree_am.c fkeyvalwin.c flush.c \
-	get_acc_local.c $(get_accumulate_double_SOURCES) \
-	$(get_accumulate_double_derived_SOURCES) \
-	$(get_accumulate_int_SOURCES) \
-	$(get_accumulate_int_derived_SOURCES) \
-	$(get_accumulate_long_SOURCES) \
-	$(get_accumulate_long_derived_SOURCES) \
-	$(get_accumulate_short_SOURCES) \
-	$(get_accumulate_short_derived_SOURCES) getfence1.c getgroup.c \
-	ircpi.c linked_list.c linked_list_bench_lock_all.c \
-	linked_list_bench_lock_excl.c linked_list_bench_lock_shr.c \
-	$(linked_list_bench_lock_shr_nocheck_SOURCES) \
-	linked_list_fop.c linked_list_lockall.c lockcontention.c \
-	lockcontention2.c lockcontention3.c locknull.c lockopts.c \
-	manyrma2.c manyrma3.c mixedsync.c $(mutex_bench_SOURCES) \
-	$(mutex_bench_shared_SOURCES) $(mutex_bench_shm_SOURCES) \
-	nb_test.c nullpscw.c pscw_ordering.c put_base.c put_bottom.c \
-	putfence1.c putfidx.c putpscw1.c req_example.c \
-	$(req_example_shm_SOURCES) reqops.c rma-contig.c rmanull.c \
-	rmazero.c selfrma.c strided_acc_indexed.c \
-	strided_acc_onelock.c strided_acc_subarray.c \
-	strided_get_indexed.c strided_getacc_indexed.c \
-	strided_getacc_indexed_shared.c strided_putget_indexed.c \
-	strided_putget_indexed_shared.c test1.c test1_am.c test1_dt.c \
-	test2.c test2_am.c test3.c test3_am.c test4.c test4_am.c \
-	test5.c test5_am.c transpose1.c transpose2.c transpose3.c \
-	transpose4.c transpose5.c transpose6.c transpose7.c \
-	win_dynamic_acc.c win_flavors.c win_info.c win_large_shm.c \
-	win_shared.c win_shared_noncontig.c win_shared_noncontig_put.c \
-	win_zero.c wincall.c window_creation.c winname.c wintest.c
-DIST_SOURCES = acc-loc.c accfence1.c accfence2.c accfence2_am.c \
-	accpscw1.c adlb_mimic1.c allocmem.c attrorderwin.c badrma.c \
+	adlb_mimic1.c allocmem.c at_complete.c attrorderwin.c badrma.c \
 	baseattrwin.c compare_and_swap.c contention_put.c \
 	contention_putget.c contig_displ.c epochtest.c fence_shm.c \
 	$(fetch_and_op_char_SOURCES) $(fetch_and_op_double_SOURCES) \
@@ -708,7 +736,7 @@ DIST_SOURCES = acc-loc.c accfence1.c accfence2.c accfence2_am.c \
 	$(fetch_and_op_long_double_SOURCES) \
 	$(fetch_and_op_short_SOURCES) fetchandadd.c fetchandadd_am.c \
 	fetchandadd_tree.c fetchandadd_tree_am.c fkeyvalwin.c flush.c \
-	get_acc_local.c $(get_accumulate_double_SOURCES) \
+	get-struct.c get_acc_local.c $(get_accumulate_double_SOURCES) \
 	$(get_accumulate_double_derived_SOURCES) \
 	$(get_accumulate_int_SOURCES) \
 	$(get_accumulate_int_derived_SOURCES) \
@@ -721,9 +749,11 @@ DIST_SOURCES = acc-loc.c accfence1.c accfence2.c accfence2_am.c \
 	$(linked_list_bench_lock_shr_nocheck_SOURCES) \
 	linked_list_fop.c linked_list_lockall.c lockcontention.c \
 	lockcontention2.c lockcontention3.c locknull.c lockopts.c \
-	manyrma2.c manyrma3.c mixedsync.c $(mutex_bench_SOURCES) \
-	$(mutex_bench_shared_SOURCES) $(mutex_bench_shm_SOURCES) \
-	nb_test.c nullpscw.c pscw_ordering.c put_base.c put_bottom.c \
+	manyrma2.c $(manyrma2_shm_SOURCES) manyrma3.c mixedsync.c \
+	$(mutex_bench_SOURCES) $(mutex_bench_shared_SOURCES) \
+	$(mutex_bench_shm_SOURCES) $(mutex_bench_shm_ordered_SOURCES) \
+	nb_test.c nullpscw.c $(nullpscw_shm_SOURCES) pscw_ordering.c \
+	$(pscw_ordering_shm_SOURCES) put_base.c put_bottom.c \
 	putfence1.c putfidx.c putpscw1.c req_example.c \
 	$(req_example_shm_SOURCES) reqops.c rma-contig.c rmanull.c \
 	rmazero.c selfrma.c strided_acc_indexed.c \
@@ -731,12 +761,63 @@ DIST_SOURCES = acc-loc.c accfence1.c accfence2.c accfence2_am.c \
 	strided_get_indexed.c strided_getacc_indexed.c \
 	strided_getacc_indexed_shared.c strided_putget_indexed.c \
 	strided_putget_indexed_shared.c test1.c test1_am.c test1_dt.c \
-	test2.c test2_am.c test3.c test3_am.c test4.c test4_am.c \
-	test5.c test5_am.c transpose1.c transpose2.c transpose3.c \
-	transpose4.c transpose5.c transpose6.c transpose7.c \
-	win_dynamic_acc.c win_flavors.c win_info.c win_large_shm.c \
-	win_shared.c win_shared_noncontig.c win_shared_noncontig_put.c \
-	win_zero.c wincall.c window_creation.c winname.c wintest.c
+	test2.c test2_am.c $(test2_am_shm_SOURCES) \
+	$(test2_shm_SOURCES) test3.c test3_am.c \
+	$(test3_am_shm_SOURCES) $(test3_shm_SOURCES) test4.c \
+	test4_am.c test5.c test5_am.c transpose1.c transpose2.c \
+	transpose3.c $(transpose3_shm_SOURCES) transpose4.c \
+	transpose5.c transpose6.c transpose7.c win_dynamic_acc.c \
+	win_flavors.c win_info.c win_large_shm.c win_shared.c \
+	win_shared_noncontig.c win_shared_noncontig_put.c \
+	win_shared_put_flush_get.c win_shared_zerobyte.c win_zero.c \
+	wincall.c window_creation.c winname.c wintest.c \
+	$(wintest_shm_SOURCES)
+DIST_SOURCES = acc-loc.c accfence1.c accfence2.c accfence2_am.c \
+	accpscw1.c adlb_mimic1.c allocmem.c at_complete.c \
+	attrorderwin.c badrma.c baseattrwin.c compare_and_swap.c \
+	contention_put.c contention_putget.c contig_displ.c \
+	epochtest.c fence_shm.c $(fetch_and_op_char_SOURCES) \
+	$(fetch_and_op_double_SOURCES) $(fetch_and_op_int_SOURCES) \
+	$(fetch_and_op_long_SOURCES) \
+	$(fetch_and_op_long_double_SOURCES) \
+	$(fetch_and_op_short_SOURCES) fetchandadd.c fetchandadd_am.c \
+	fetchandadd_tree.c fetchandadd_tree_am.c fkeyvalwin.c flush.c \
+	get-struct.c get_acc_local.c $(get_accumulate_double_SOURCES) \
+	$(get_accumulate_double_derived_SOURCES) \
+	$(get_accumulate_int_SOURCES) \
+	$(get_accumulate_int_derived_SOURCES) \
+	$(get_accumulate_long_SOURCES) \
+	$(get_accumulate_long_derived_SOURCES) \
+	$(get_accumulate_short_SOURCES) \
+	$(get_accumulate_short_derived_SOURCES) getfence1.c getgroup.c \
+	ircpi.c linked_list.c linked_list_bench_lock_all.c \
+	linked_list_bench_lock_excl.c linked_list_bench_lock_shr.c \
+	$(linked_list_bench_lock_shr_nocheck_SOURCES) \
+	linked_list_fop.c linked_list_lockall.c lockcontention.c \
+	lockcontention2.c lockcontention3.c locknull.c lockopts.c \
+	manyrma2.c $(manyrma2_shm_SOURCES) manyrma3.c mixedsync.c \
+	$(mutex_bench_SOURCES) $(mutex_bench_shared_SOURCES) \
+	$(mutex_bench_shm_SOURCES) $(mutex_bench_shm_ordered_SOURCES) \
+	nb_test.c nullpscw.c $(nullpscw_shm_SOURCES) pscw_ordering.c \
+	$(pscw_ordering_shm_SOURCES) put_base.c put_bottom.c \
+	putfence1.c putfidx.c putpscw1.c req_example.c \
+	$(req_example_shm_SOURCES) reqops.c rma-contig.c rmanull.c \
+	rmazero.c selfrma.c strided_acc_indexed.c \
+	strided_acc_onelock.c strided_acc_subarray.c \
+	strided_get_indexed.c strided_getacc_indexed.c \
+	strided_getacc_indexed_shared.c strided_putget_indexed.c \
+	strided_putget_indexed_shared.c test1.c test1_am.c test1_dt.c \
+	test2.c test2_am.c $(test2_am_shm_SOURCES) \
+	$(test2_shm_SOURCES) test3.c test3_am.c \
+	$(test3_am_shm_SOURCES) $(test3_shm_SOURCES) test4.c \
+	test4_am.c test5.c test5_am.c transpose1.c transpose2.c \
+	transpose3.c $(transpose3_shm_SOURCES) transpose4.c \
+	transpose5.c transpose6.c transpose7.c win_dynamic_acc.c \
+	win_flavors.c win_info.c win_large_shm.c win_shared.c \
+	win_shared_noncontig.c win_shared_noncontig_put.c \
+	win_shared_put_flush_get.c win_shared_zerobyte.c win_zero.c \
+	wincall.c window_creation.c winname.c wintest.c \
+	$(wintest_shm_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -923,6 +1004,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 nocxxdistgraph = @nocxxdistgraph@
+nslib = @nslib@
 oldincludedir = @oldincludedir@
 otherlangs = @otherlangs@
 pdfdir = @pdfdir@
@@ -933,6 +1015,7 @@ psdir = @psdir@
 rmadir = @rmadir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
@@ -985,13 +1068,34 @@ get_accumulate_double_derived_SOURCES = get_accumulate.c
 get_accumulate_int_derived_SOURCES = get_accumulate.c
 req_example_shm_CPPFLAGS = -DUSE_WIN_ALLOC_SHM $(AM_CPPFLAGS)
 req_example_shm_SOURCES = req_example.c
+manyrma2_shm_CPPFLAGS = -DUSE_WIN_ALLOCATE $(AM_CPPFLAGS)
+wintest_shm_CPPFLAGS = -DUSE_WIN_ALLOCATE $(AM_CPPFLAGS)
+transpose3_shm_CPPFLAGS = -DUSE_WIN_ALLOCATE $(AM_CPPFLAGS)
+nullpscw_shm_CPPFLAGS = -DUSE_WIN_ALLOCATE $(AM_CPPFLAGS)
+pscw_ordering_shm_CPPFLAGS = -DUSE_WIN_ALLOCATE $(AM_CPPFLAGS)
+test2_shm_CPPFLAGS = -DUSE_WIN_ALLOCATE $(AM_CPPFLAGS)
+test2_am_shm_CPPFLAGS = -DUSE_WIN_ALLOCATE $(AM_CPPFLAGS)
+test3_shm_CPPFLAGS = -DUSE_WIN_ALLOCATE $(AM_CPPFLAGS)
+test3_am_shm_CPPFLAGS = -DUSE_WIN_ALLOCATE $(AM_CPPFLAGS)
+manyrma2_shm_SOURCES = manyrma2.c
+wintest_shm_SOURCES = wintest.c
+transpose3_shm_SOURCES = transpose3.c
+nullpscw_shm_SOURCES = nullpscw.c
+pscw_ordering_shm_SOURCES = pscw_ordering.c
+test2_shm_SOURCES = test2.c
+test2_am_shm_SOURCES = test2_am.c
+test3_shm_SOURCES = test3.c
+test3_am_shm_SOURCES = test3_am.c
 mutex_bench_SOURCES = mutex_bench.c mcs-mutex.c mcs-mutex.h
 mutex_bench_shared_CPPFLAGS = -DUSE_WIN_SHARED $(AM_CPPFLAGS)
 mutex_bench_shared_SOURCES = mutex_bench.c mcs-mutex.c mcs-mutex.h
 mutex_bench_shm_CPPFLAGS = -DUSE_WIN_ALLOC_SHM $(AM_CPPFLAGS)
 mutex_bench_shm_SOURCES = mutex_bench.c mcs-mutex.c mcs-mutex.h
+mutex_bench_shm_ordered_CPPFLAGS = -DUSE_WIN_ALLOC_SHM -DUSE_CONTIGUOUS_RANK $(AM_CPPFLAGS)
+mutex_bench_shm_ordered_SOURCES = mutex_bench.c mcs-mutex.c mcs-mutex.h
 linked_list_bench_lock_shr_nocheck_SOURCES = linked_list_bench_lock_shr.c
 linked_list_bench_lock_shr_nocheck_CPPFLAGS = -DUSE_MODE_NOCHECK $(AM_CPPFLAGS)
+ircpi_LDADD = $(LDADD) -lm
 all: all-am
 
 .SUFFIXES:
@@ -1060,6 +1164,10 @@ adlb_mimic1$(EXEEXT): $(adlb_mimic1_OBJECTS) $(adlb_mimic1_DEPENDENCIES) $(EXTRA
 allocmem$(EXEEXT): $(allocmem_OBJECTS) $(allocmem_DEPENDENCIES) $(EXTRA_allocmem_DEPENDENCIES) 
 	@rm -f allocmem$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(allocmem_OBJECTS) $(allocmem_LDADD) $(LIBS)
+
+at_complete$(EXEEXT): $(at_complete_OBJECTS) $(at_complete_DEPENDENCIES) $(EXTRA_at_complete_DEPENDENCIES) 
+	@rm -f at_complete$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(at_complete_OBJECTS) $(at_complete_LDADD) $(LIBS)
 
 attrorderwin$(EXEEXT): $(attrorderwin_OBJECTS) $(attrorderwin_DEPENDENCIES) $(EXTRA_attrorderwin_DEPENDENCIES) 
 	@rm -f attrorderwin$(EXEEXT)
@@ -1144,6 +1252,10 @@ fkeyvalwin$(EXEEXT): $(fkeyvalwin_OBJECTS) $(fkeyvalwin_DEPENDENCIES) $(EXTRA_fk
 flush$(EXEEXT): $(flush_OBJECTS) $(flush_DEPENDENCIES) $(EXTRA_flush_DEPENDENCIES) 
 	@rm -f flush$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(flush_OBJECTS) $(flush_LDADD) $(LIBS)
+
+get-struct$(EXEEXT): $(get_struct_OBJECTS) $(get_struct_DEPENDENCIES) $(EXTRA_get_struct_DEPENDENCIES) 
+	@rm -f get-struct$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(get_struct_OBJECTS) $(get_struct_LDADD) $(LIBS)
 
 get_acc_local$(EXEEXT): $(get_acc_local_OBJECTS) $(get_acc_local_DEPENDENCIES) $(EXTRA_get_acc_local_DEPENDENCIES) 
 	@rm -f get_acc_local$(EXEEXT)
@@ -1245,6 +1357,10 @@ manyrma2$(EXEEXT): $(manyrma2_OBJECTS) $(manyrma2_DEPENDENCIES) $(EXTRA_manyrma2
 	@rm -f manyrma2$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(manyrma2_OBJECTS) $(manyrma2_LDADD) $(LIBS)
 
+manyrma2_shm$(EXEEXT): $(manyrma2_shm_OBJECTS) $(manyrma2_shm_DEPENDENCIES) $(EXTRA_manyrma2_shm_DEPENDENCIES) 
+	@rm -f manyrma2_shm$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(manyrma2_shm_OBJECTS) $(manyrma2_shm_LDADD) $(LIBS)
+
 manyrma3$(EXEEXT): $(manyrma3_OBJECTS) $(manyrma3_DEPENDENCIES) $(EXTRA_manyrma3_DEPENDENCIES) 
 	@rm -f manyrma3$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(manyrma3_OBJECTS) $(manyrma3_LDADD) $(LIBS)
@@ -1265,6 +1381,10 @@ mutex_bench_shm$(EXEEXT): $(mutex_bench_shm_OBJECTS) $(mutex_bench_shm_DEPENDENC
 	@rm -f mutex_bench_shm$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(mutex_bench_shm_OBJECTS) $(mutex_bench_shm_LDADD) $(LIBS)
 
+mutex_bench_shm_ordered$(EXEEXT): $(mutex_bench_shm_ordered_OBJECTS) $(mutex_bench_shm_ordered_DEPENDENCIES) $(EXTRA_mutex_bench_shm_ordered_DEPENDENCIES) 
+	@rm -f mutex_bench_shm_ordered$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mutex_bench_shm_ordered_OBJECTS) $(mutex_bench_shm_ordered_LDADD) $(LIBS)
+
 nb_test$(EXEEXT): $(nb_test_OBJECTS) $(nb_test_DEPENDENCIES) $(EXTRA_nb_test_DEPENDENCIES) 
 	@rm -f nb_test$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(nb_test_OBJECTS) $(nb_test_LDADD) $(LIBS)
@@ -1273,9 +1393,17 @@ nullpscw$(EXEEXT): $(nullpscw_OBJECTS) $(nullpscw_DEPENDENCIES) $(EXTRA_nullpscw
 	@rm -f nullpscw$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(nullpscw_OBJECTS) $(nullpscw_LDADD) $(LIBS)
 
+nullpscw_shm$(EXEEXT): $(nullpscw_shm_OBJECTS) $(nullpscw_shm_DEPENDENCIES) $(EXTRA_nullpscw_shm_DEPENDENCIES) 
+	@rm -f nullpscw_shm$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(nullpscw_shm_OBJECTS) $(nullpscw_shm_LDADD) $(LIBS)
+
 pscw_ordering$(EXEEXT): $(pscw_ordering_OBJECTS) $(pscw_ordering_DEPENDENCIES) $(EXTRA_pscw_ordering_DEPENDENCIES) 
 	@rm -f pscw_ordering$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(pscw_ordering_OBJECTS) $(pscw_ordering_LDADD) $(LIBS)
+
+pscw_ordering_shm$(EXEEXT): $(pscw_ordering_shm_OBJECTS) $(pscw_ordering_shm_DEPENDENCIES) $(EXTRA_pscw_ordering_shm_DEPENDENCIES) 
+	@rm -f pscw_ordering_shm$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(pscw_ordering_shm_OBJECTS) $(pscw_ordering_shm_LDADD) $(LIBS)
 
 put_base$(EXEEXT): $(put_base_OBJECTS) $(put_base_DEPENDENCIES) $(EXTRA_put_base_DEPENDENCIES) 
 	@rm -f put_base$(EXEEXT)
@@ -1377,6 +1505,14 @@ test2_am$(EXEEXT): $(test2_am_OBJECTS) $(test2_am_DEPENDENCIES) $(EXTRA_test2_am
 	@rm -f test2_am$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(test2_am_OBJECTS) $(test2_am_LDADD) $(LIBS)
 
+test2_am_shm$(EXEEXT): $(test2_am_shm_OBJECTS) $(test2_am_shm_DEPENDENCIES) $(EXTRA_test2_am_shm_DEPENDENCIES) 
+	@rm -f test2_am_shm$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(test2_am_shm_OBJECTS) $(test2_am_shm_LDADD) $(LIBS)
+
+test2_shm$(EXEEXT): $(test2_shm_OBJECTS) $(test2_shm_DEPENDENCIES) $(EXTRA_test2_shm_DEPENDENCIES) 
+	@rm -f test2_shm$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(test2_shm_OBJECTS) $(test2_shm_LDADD) $(LIBS)
+
 test3$(EXEEXT): $(test3_OBJECTS) $(test3_DEPENDENCIES) $(EXTRA_test3_DEPENDENCIES) 
 	@rm -f test3$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(test3_OBJECTS) $(test3_LDADD) $(LIBS)
@@ -1384,6 +1520,14 @@ test3$(EXEEXT): $(test3_OBJECTS) $(test3_DEPENDENCIES) $(EXTRA_test3_DEPENDENCIE
 test3_am$(EXEEXT): $(test3_am_OBJECTS) $(test3_am_DEPENDENCIES) $(EXTRA_test3_am_DEPENDENCIES) 
 	@rm -f test3_am$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(test3_am_OBJECTS) $(test3_am_LDADD) $(LIBS)
+
+test3_am_shm$(EXEEXT): $(test3_am_shm_OBJECTS) $(test3_am_shm_DEPENDENCIES) $(EXTRA_test3_am_shm_DEPENDENCIES) 
+	@rm -f test3_am_shm$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(test3_am_shm_OBJECTS) $(test3_am_shm_LDADD) $(LIBS)
+
+test3_shm$(EXEEXT): $(test3_shm_OBJECTS) $(test3_shm_DEPENDENCIES) $(EXTRA_test3_shm_DEPENDENCIES) 
+	@rm -f test3_shm$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(test3_shm_OBJECTS) $(test3_shm_LDADD) $(LIBS)
 
 test4$(EXEEXT): $(test4_OBJECTS) $(test4_DEPENDENCIES) $(EXTRA_test4_DEPENDENCIES) 
 	@rm -f test4$(EXEEXT)
@@ -1412,6 +1556,10 @@ transpose2$(EXEEXT): $(transpose2_OBJECTS) $(transpose2_DEPENDENCIES) $(EXTRA_tr
 transpose3$(EXEEXT): $(transpose3_OBJECTS) $(transpose3_DEPENDENCIES) $(EXTRA_transpose3_DEPENDENCIES) 
 	@rm -f transpose3$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(transpose3_OBJECTS) $(transpose3_LDADD) $(LIBS)
+
+transpose3_shm$(EXEEXT): $(transpose3_shm_OBJECTS) $(transpose3_shm_DEPENDENCIES) $(EXTRA_transpose3_shm_DEPENDENCIES) 
+	@rm -f transpose3_shm$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(transpose3_shm_OBJECTS) $(transpose3_shm_LDADD) $(LIBS)
 
 transpose4$(EXEEXT): $(transpose4_OBJECTS) $(transpose4_DEPENDENCIES) $(EXTRA_transpose4_DEPENDENCIES) 
 	@rm -f transpose4$(EXEEXT)
@@ -1457,6 +1605,14 @@ win_shared_noncontig_put$(EXEEXT): $(win_shared_noncontig_put_OBJECTS) $(win_sha
 	@rm -f win_shared_noncontig_put$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(win_shared_noncontig_put_OBJECTS) $(win_shared_noncontig_put_LDADD) $(LIBS)
 
+win_shared_put_flush_get$(EXEEXT): $(win_shared_put_flush_get_OBJECTS) $(win_shared_put_flush_get_DEPENDENCIES) $(EXTRA_win_shared_put_flush_get_DEPENDENCIES) 
+	@rm -f win_shared_put_flush_get$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(win_shared_put_flush_get_OBJECTS) $(win_shared_put_flush_get_LDADD) $(LIBS)
+
+win_shared_zerobyte$(EXEEXT): $(win_shared_zerobyte_OBJECTS) $(win_shared_zerobyte_DEPENDENCIES) $(EXTRA_win_shared_zerobyte_DEPENDENCIES) 
+	@rm -f win_shared_zerobyte$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(win_shared_zerobyte_OBJECTS) $(win_shared_zerobyte_LDADD) $(LIBS)
+
 win_zero$(EXEEXT): $(win_zero_OBJECTS) $(win_zero_DEPENDENCIES) $(EXTRA_win_zero_DEPENDENCIES) 
 	@rm -f win_zero$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(win_zero_OBJECTS) $(win_zero_LDADD) $(LIBS)
@@ -1477,6 +1633,10 @@ wintest$(EXEEXT): $(wintest_OBJECTS) $(wintest_DEPENDENCIES) $(EXTRA_wintest_DEP
 	@rm -f wintest$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(wintest_OBJECTS) $(wintest_LDADD) $(LIBS)
 
+wintest_shm$(EXEEXT): $(wintest_shm_OBJECTS) $(wintest_shm_DEPENDENCIES) $(EXTRA_wintest_shm_DEPENDENCIES) 
+	@rm -f wintest_shm$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(wintest_shm_OBJECTS) $(wintest_shm_LDADD) $(LIBS)
+
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
 
@@ -1490,6 +1650,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/accpscw1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adlb_mimic1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/allocmem.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/at_complete.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/attrorderwin.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/badrma.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/baseattrwin.Po@am__quote@
@@ -1511,6 +1672,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fetchandadd_tree_am.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fkeyvalwin.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/flush.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-struct.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_acc_local.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_accumulate_double-get_accumulate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get_accumulate_double_derived-get_accumulate.Po@am__quote@
@@ -1536,6 +1698,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locknull.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lockopts.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manyrma2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manyrma2_shm-manyrma2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/manyrma3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mcs-mutex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mixedsync.Po@am__quote@
@@ -1544,9 +1707,13 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mutex_bench_shared-mutex_bench.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mutex_bench_shm-mcs-mutex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mutex_bench_shm-mutex_bench.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mutex_bench_shm_ordered-mcs-mutex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mutex_bench_shm_ordered-mutex_bench.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nb_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nullpscw.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/nullpscw_shm-nullpscw.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pscw_ordering.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pscw_ordering_shm-pscw_ordering.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/put_base.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/put_bottom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/putfence1.Po@am__quote@
@@ -1572,8 +1739,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test1_dt.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test2_am.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test2_am_shm-test2_am.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test2_shm-test2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test3_am.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test3_am_shm-test3_am.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test3_shm-test3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test4.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test4_am.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/test5.Po@am__quote@
@@ -1581,6 +1752,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transpose1.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transpose2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transpose3.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transpose3_shm-transpose3.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transpose4.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transpose5.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transpose6.Po@am__quote@
@@ -1592,11 +1764,14 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared_noncontig.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared_noncontig_put.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared_put_flush_get.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_shared_zerobyte.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_zero.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wincall.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/window_creation.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/winname.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wintest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wintest_shm-wintest.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(AM_V_CC)depbase=`echo $@ | sed 's|[^/]*$$|$(DEPDIR)/&|;s|\.o$$||'`;\
@@ -1824,6 +1999,20 @@ linked_list_bench_lock_shr_nocheck-linked_list_bench_lock_shr.obj: linked_list_b
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(linked_list_bench_lock_shr_nocheck_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o linked_list_bench_lock_shr_nocheck-linked_list_bench_lock_shr.obj `if test -f 'linked_list_bench_lock_shr.c'; then $(CYGPATH_W) 'linked_list_bench_lock_shr.c'; else $(CYGPATH_W) '$(srcdir)/linked_list_bench_lock_shr.c'; fi`
 
+manyrma2_shm-manyrma2.o: manyrma2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(manyrma2_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT manyrma2_shm-manyrma2.o -MD -MP -MF $(DEPDIR)/manyrma2_shm-manyrma2.Tpo -c -o manyrma2_shm-manyrma2.o `test -f 'manyrma2.c' || echo '$(srcdir)/'`manyrma2.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/manyrma2_shm-manyrma2.Tpo $(DEPDIR)/manyrma2_shm-manyrma2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='manyrma2.c' object='manyrma2_shm-manyrma2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(manyrma2_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o manyrma2_shm-manyrma2.o `test -f 'manyrma2.c' || echo '$(srcdir)/'`manyrma2.c
+
+manyrma2_shm-manyrma2.obj: manyrma2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(manyrma2_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT manyrma2_shm-manyrma2.obj -MD -MP -MF $(DEPDIR)/manyrma2_shm-manyrma2.Tpo -c -o manyrma2_shm-manyrma2.obj `if test -f 'manyrma2.c'; then $(CYGPATH_W) 'manyrma2.c'; else $(CYGPATH_W) '$(srcdir)/manyrma2.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/manyrma2_shm-manyrma2.Tpo $(DEPDIR)/manyrma2_shm-manyrma2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='manyrma2.c' object='manyrma2_shm-manyrma2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(manyrma2_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o manyrma2_shm-manyrma2.obj `if test -f 'manyrma2.c'; then $(CYGPATH_W) 'manyrma2.c'; else $(CYGPATH_W) '$(srcdir)/manyrma2.c'; fi`
+
 mutex_bench_shared-mutex_bench.o: mutex_bench.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mutex_bench_shared_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mutex_bench_shared-mutex_bench.o -MD -MP -MF $(DEPDIR)/mutex_bench_shared-mutex_bench.Tpo -c -o mutex_bench_shared-mutex_bench.o `test -f 'mutex_bench.c' || echo '$(srcdir)/'`mutex_bench.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mutex_bench_shared-mutex_bench.Tpo $(DEPDIR)/mutex_bench_shared-mutex_bench.Po
@@ -1880,6 +2069,62 @@ mutex_bench_shm-mcs-mutex.obj: mcs-mutex.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mutex_bench_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mutex_bench_shm-mcs-mutex.obj `if test -f 'mcs-mutex.c'; then $(CYGPATH_W) 'mcs-mutex.c'; else $(CYGPATH_W) '$(srcdir)/mcs-mutex.c'; fi`
 
+mutex_bench_shm_ordered-mutex_bench.o: mutex_bench.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mutex_bench_shm_ordered_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mutex_bench_shm_ordered-mutex_bench.o -MD -MP -MF $(DEPDIR)/mutex_bench_shm_ordered-mutex_bench.Tpo -c -o mutex_bench_shm_ordered-mutex_bench.o `test -f 'mutex_bench.c' || echo '$(srcdir)/'`mutex_bench.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mutex_bench_shm_ordered-mutex_bench.Tpo $(DEPDIR)/mutex_bench_shm_ordered-mutex_bench.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mutex_bench.c' object='mutex_bench_shm_ordered-mutex_bench.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mutex_bench_shm_ordered_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mutex_bench_shm_ordered-mutex_bench.o `test -f 'mutex_bench.c' || echo '$(srcdir)/'`mutex_bench.c
+
+mutex_bench_shm_ordered-mutex_bench.obj: mutex_bench.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mutex_bench_shm_ordered_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mutex_bench_shm_ordered-mutex_bench.obj -MD -MP -MF $(DEPDIR)/mutex_bench_shm_ordered-mutex_bench.Tpo -c -o mutex_bench_shm_ordered-mutex_bench.obj `if test -f 'mutex_bench.c'; then $(CYGPATH_W) 'mutex_bench.c'; else $(CYGPATH_W) '$(srcdir)/mutex_bench.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mutex_bench_shm_ordered-mutex_bench.Tpo $(DEPDIR)/mutex_bench_shm_ordered-mutex_bench.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mutex_bench.c' object='mutex_bench_shm_ordered-mutex_bench.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mutex_bench_shm_ordered_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mutex_bench_shm_ordered-mutex_bench.obj `if test -f 'mutex_bench.c'; then $(CYGPATH_W) 'mutex_bench.c'; else $(CYGPATH_W) '$(srcdir)/mutex_bench.c'; fi`
+
+mutex_bench_shm_ordered-mcs-mutex.o: mcs-mutex.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mutex_bench_shm_ordered_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mutex_bench_shm_ordered-mcs-mutex.o -MD -MP -MF $(DEPDIR)/mutex_bench_shm_ordered-mcs-mutex.Tpo -c -o mutex_bench_shm_ordered-mcs-mutex.o `test -f 'mcs-mutex.c' || echo '$(srcdir)/'`mcs-mutex.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mutex_bench_shm_ordered-mcs-mutex.Tpo $(DEPDIR)/mutex_bench_shm_ordered-mcs-mutex.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mcs-mutex.c' object='mutex_bench_shm_ordered-mcs-mutex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mutex_bench_shm_ordered_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mutex_bench_shm_ordered-mcs-mutex.o `test -f 'mcs-mutex.c' || echo '$(srcdir)/'`mcs-mutex.c
+
+mutex_bench_shm_ordered-mcs-mutex.obj: mcs-mutex.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mutex_bench_shm_ordered_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT mutex_bench_shm_ordered-mcs-mutex.obj -MD -MP -MF $(DEPDIR)/mutex_bench_shm_ordered-mcs-mutex.Tpo -c -o mutex_bench_shm_ordered-mcs-mutex.obj `if test -f 'mcs-mutex.c'; then $(CYGPATH_W) 'mcs-mutex.c'; else $(CYGPATH_W) '$(srcdir)/mcs-mutex.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/mutex_bench_shm_ordered-mcs-mutex.Tpo $(DEPDIR)/mutex_bench_shm_ordered-mcs-mutex.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='mcs-mutex.c' object='mutex_bench_shm_ordered-mcs-mutex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(mutex_bench_shm_ordered_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o mutex_bench_shm_ordered-mcs-mutex.obj `if test -f 'mcs-mutex.c'; then $(CYGPATH_W) 'mcs-mutex.c'; else $(CYGPATH_W) '$(srcdir)/mcs-mutex.c'; fi`
+
+nullpscw_shm-nullpscw.o: nullpscw.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nullpscw_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nullpscw_shm-nullpscw.o -MD -MP -MF $(DEPDIR)/nullpscw_shm-nullpscw.Tpo -c -o nullpscw_shm-nullpscw.o `test -f 'nullpscw.c' || echo '$(srcdir)/'`nullpscw.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nullpscw_shm-nullpscw.Tpo $(DEPDIR)/nullpscw_shm-nullpscw.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='nullpscw.c' object='nullpscw_shm-nullpscw.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nullpscw_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nullpscw_shm-nullpscw.o `test -f 'nullpscw.c' || echo '$(srcdir)/'`nullpscw.c
+
+nullpscw_shm-nullpscw.obj: nullpscw.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nullpscw_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT nullpscw_shm-nullpscw.obj -MD -MP -MF $(DEPDIR)/nullpscw_shm-nullpscw.Tpo -c -o nullpscw_shm-nullpscw.obj `if test -f 'nullpscw.c'; then $(CYGPATH_W) 'nullpscw.c'; else $(CYGPATH_W) '$(srcdir)/nullpscw.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/nullpscw_shm-nullpscw.Tpo $(DEPDIR)/nullpscw_shm-nullpscw.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='nullpscw.c' object='nullpscw_shm-nullpscw.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(nullpscw_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o nullpscw_shm-nullpscw.obj `if test -f 'nullpscw.c'; then $(CYGPATH_W) 'nullpscw.c'; else $(CYGPATH_W) '$(srcdir)/nullpscw.c'; fi`
+
+pscw_ordering_shm-pscw_ordering.o: pscw_ordering.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pscw_ordering_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT pscw_ordering_shm-pscw_ordering.o -MD -MP -MF $(DEPDIR)/pscw_ordering_shm-pscw_ordering.Tpo -c -o pscw_ordering_shm-pscw_ordering.o `test -f 'pscw_ordering.c' || echo '$(srcdir)/'`pscw_ordering.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/pscw_ordering_shm-pscw_ordering.Tpo $(DEPDIR)/pscw_ordering_shm-pscw_ordering.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='pscw_ordering.c' object='pscw_ordering_shm-pscw_ordering.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pscw_ordering_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pscw_ordering_shm-pscw_ordering.o `test -f 'pscw_ordering.c' || echo '$(srcdir)/'`pscw_ordering.c
+
+pscw_ordering_shm-pscw_ordering.obj: pscw_ordering.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pscw_ordering_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT pscw_ordering_shm-pscw_ordering.obj -MD -MP -MF $(DEPDIR)/pscw_ordering_shm-pscw_ordering.Tpo -c -o pscw_ordering_shm-pscw_ordering.obj `if test -f 'pscw_ordering.c'; then $(CYGPATH_W) 'pscw_ordering.c'; else $(CYGPATH_W) '$(srcdir)/pscw_ordering.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/pscw_ordering_shm-pscw_ordering.Tpo $(DEPDIR)/pscw_ordering_shm-pscw_ordering.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='pscw_ordering.c' object='pscw_ordering_shm-pscw_ordering.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(pscw_ordering_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o pscw_ordering_shm-pscw_ordering.obj `if test -f 'pscw_ordering.c'; then $(CYGPATH_W) 'pscw_ordering.c'; else $(CYGPATH_W) '$(srcdir)/pscw_ordering.c'; fi`
+
 req_example_shm-req_example.o: req_example.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(req_example_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT req_example_shm-req_example.o -MD -MP -MF $(DEPDIR)/req_example_shm-req_example.Tpo -c -o req_example_shm-req_example.o `test -f 'req_example.c' || echo '$(srcdir)/'`req_example.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/req_example_shm-req_example.Tpo $(DEPDIR)/req_example_shm-req_example.Po
@@ -1893,6 +2138,90 @@ req_example_shm-req_example.obj: req_example.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='req_example.c' object='req_example_shm-req_example.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(req_example_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o req_example_shm-req_example.obj `if test -f 'req_example.c'; then $(CYGPATH_W) 'req_example.c'; else $(CYGPATH_W) '$(srcdir)/req_example.c'; fi`
+
+test2_am_shm-test2_am.o: test2_am.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test2_am_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test2_am_shm-test2_am.o -MD -MP -MF $(DEPDIR)/test2_am_shm-test2_am.Tpo -c -o test2_am_shm-test2_am.o `test -f 'test2_am.c' || echo '$(srcdir)/'`test2_am.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test2_am_shm-test2_am.Tpo $(DEPDIR)/test2_am_shm-test2_am.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test2_am.c' object='test2_am_shm-test2_am.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test2_am_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test2_am_shm-test2_am.o `test -f 'test2_am.c' || echo '$(srcdir)/'`test2_am.c
+
+test2_am_shm-test2_am.obj: test2_am.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test2_am_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test2_am_shm-test2_am.obj -MD -MP -MF $(DEPDIR)/test2_am_shm-test2_am.Tpo -c -o test2_am_shm-test2_am.obj `if test -f 'test2_am.c'; then $(CYGPATH_W) 'test2_am.c'; else $(CYGPATH_W) '$(srcdir)/test2_am.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test2_am_shm-test2_am.Tpo $(DEPDIR)/test2_am_shm-test2_am.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test2_am.c' object='test2_am_shm-test2_am.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test2_am_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test2_am_shm-test2_am.obj `if test -f 'test2_am.c'; then $(CYGPATH_W) 'test2_am.c'; else $(CYGPATH_W) '$(srcdir)/test2_am.c'; fi`
+
+test2_shm-test2.o: test2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test2_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test2_shm-test2.o -MD -MP -MF $(DEPDIR)/test2_shm-test2.Tpo -c -o test2_shm-test2.o `test -f 'test2.c' || echo '$(srcdir)/'`test2.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test2_shm-test2.Tpo $(DEPDIR)/test2_shm-test2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test2.c' object='test2_shm-test2.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test2_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test2_shm-test2.o `test -f 'test2.c' || echo '$(srcdir)/'`test2.c
+
+test2_shm-test2.obj: test2.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test2_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test2_shm-test2.obj -MD -MP -MF $(DEPDIR)/test2_shm-test2.Tpo -c -o test2_shm-test2.obj `if test -f 'test2.c'; then $(CYGPATH_W) 'test2.c'; else $(CYGPATH_W) '$(srcdir)/test2.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test2_shm-test2.Tpo $(DEPDIR)/test2_shm-test2.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test2.c' object='test2_shm-test2.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test2_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test2_shm-test2.obj `if test -f 'test2.c'; then $(CYGPATH_W) 'test2.c'; else $(CYGPATH_W) '$(srcdir)/test2.c'; fi`
+
+test3_am_shm-test3_am.o: test3_am.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test3_am_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test3_am_shm-test3_am.o -MD -MP -MF $(DEPDIR)/test3_am_shm-test3_am.Tpo -c -o test3_am_shm-test3_am.o `test -f 'test3_am.c' || echo '$(srcdir)/'`test3_am.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test3_am_shm-test3_am.Tpo $(DEPDIR)/test3_am_shm-test3_am.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test3_am.c' object='test3_am_shm-test3_am.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test3_am_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test3_am_shm-test3_am.o `test -f 'test3_am.c' || echo '$(srcdir)/'`test3_am.c
+
+test3_am_shm-test3_am.obj: test3_am.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test3_am_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test3_am_shm-test3_am.obj -MD -MP -MF $(DEPDIR)/test3_am_shm-test3_am.Tpo -c -o test3_am_shm-test3_am.obj `if test -f 'test3_am.c'; then $(CYGPATH_W) 'test3_am.c'; else $(CYGPATH_W) '$(srcdir)/test3_am.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test3_am_shm-test3_am.Tpo $(DEPDIR)/test3_am_shm-test3_am.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test3_am.c' object='test3_am_shm-test3_am.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test3_am_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test3_am_shm-test3_am.obj `if test -f 'test3_am.c'; then $(CYGPATH_W) 'test3_am.c'; else $(CYGPATH_W) '$(srcdir)/test3_am.c'; fi`
+
+test3_shm-test3.o: test3.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test3_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test3_shm-test3.o -MD -MP -MF $(DEPDIR)/test3_shm-test3.Tpo -c -o test3_shm-test3.o `test -f 'test3.c' || echo '$(srcdir)/'`test3.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test3_shm-test3.Tpo $(DEPDIR)/test3_shm-test3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test3.c' object='test3_shm-test3.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test3_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test3_shm-test3.o `test -f 'test3.c' || echo '$(srcdir)/'`test3.c
+
+test3_shm-test3.obj: test3.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test3_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT test3_shm-test3.obj -MD -MP -MF $(DEPDIR)/test3_shm-test3.Tpo -c -o test3_shm-test3.obj `if test -f 'test3.c'; then $(CYGPATH_W) 'test3.c'; else $(CYGPATH_W) '$(srcdir)/test3.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/test3_shm-test3.Tpo $(DEPDIR)/test3_shm-test3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='test3.c' object='test3_shm-test3.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(test3_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o test3_shm-test3.obj `if test -f 'test3.c'; then $(CYGPATH_W) 'test3.c'; else $(CYGPATH_W) '$(srcdir)/test3.c'; fi`
+
+transpose3_shm-transpose3.o: transpose3.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transpose3_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT transpose3_shm-transpose3.o -MD -MP -MF $(DEPDIR)/transpose3_shm-transpose3.Tpo -c -o transpose3_shm-transpose3.o `test -f 'transpose3.c' || echo '$(srcdir)/'`transpose3.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/transpose3_shm-transpose3.Tpo $(DEPDIR)/transpose3_shm-transpose3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='transpose3.c' object='transpose3_shm-transpose3.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transpose3_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o transpose3_shm-transpose3.o `test -f 'transpose3.c' || echo '$(srcdir)/'`transpose3.c
+
+transpose3_shm-transpose3.obj: transpose3.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transpose3_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT transpose3_shm-transpose3.obj -MD -MP -MF $(DEPDIR)/transpose3_shm-transpose3.Tpo -c -o transpose3_shm-transpose3.obj `if test -f 'transpose3.c'; then $(CYGPATH_W) 'transpose3.c'; else $(CYGPATH_W) '$(srcdir)/transpose3.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/transpose3_shm-transpose3.Tpo $(DEPDIR)/transpose3_shm-transpose3.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='transpose3.c' object='transpose3_shm-transpose3.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transpose3_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o transpose3_shm-transpose3.obj `if test -f 'transpose3.c'; then $(CYGPATH_W) 'transpose3.c'; else $(CYGPATH_W) '$(srcdir)/transpose3.c'; fi`
+
+wintest_shm-wintest.o: wintest.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wintest_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wintest_shm-wintest.o -MD -MP -MF $(DEPDIR)/wintest_shm-wintest.Tpo -c -o wintest_shm-wintest.o `test -f 'wintest.c' || echo '$(srcdir)/'`wintest.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wintest_shm-wintest.Tpo $(DEPDIR)/wintest_shm-wintest.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wintest.c' object='wintest_shm-wintest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wintest_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wintest_shm-wintest.o `test -f 'wintest.c' || echo '$(srcdir)/'`wintest.c
+
+wintest_shm-wintest.obj: wintest.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wintest_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT wintest_shm-wintest.obj -MD -MP -MF $(DEPDIR)/wintest_shm-wintest.Tpo -c -o wintest_shm-wintest.obj `if test -f 'wintest.c'; then $(CYGPATH_W) 'wintest.c'; else $(CYGPATH_W) '$(srcdir)/wintest.c'; fi`
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) $(DEPDIR)/wintest_shm-wintest.Tpo $(DEPDIR)/wintest_shm-wintest.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='wintest.c' object='wintest_shm-wintest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(wintest_shm_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o wintest_shm-wintest.obj `if test -f 'wintest.c'; then $(CYGPATH_W) 'wintest.c'; else $(CYGPATH_W) '$(srcdir)/wintest.c'; fi`
 
 ID: $(am__tagged_files)
 	$(am__define_uniq_tagged_files); mkid -fID $$unique

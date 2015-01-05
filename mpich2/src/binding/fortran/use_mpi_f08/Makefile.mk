@@ -118,6 +118,7 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/comm_free_keyval_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/comm_get_attr_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/comm_get_errhandler_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/comm_get_info_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/comm_get_name_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/comm_get_parent_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/comm_group_f08ts.F90 \
@@ -128,6 +129,7 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/comm_remote_size_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/comm_set_attr_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/comm_set_errhandler_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/comm_set_info_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/comm_set_name_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/comm_size_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/comm_spawn_f08ts.F90 \
@@ -135,6 +137,7 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/comm_split_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/comm_split_type_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/comm_test_inter_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/compare_and_swap_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/dims_create_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/dist_graph_create_adjacent_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/dist_graph_create_f08ts.F90 \
@@ -145,6 +148,7 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/error_string_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/exscan_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/f_sync_reg_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/fetch_and_op_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/file_call_errhandler_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/file_close_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/file_create_errhandler_f08ts.F90 \
@@ -205,6 +209,7 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/free_mem_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/gather_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/gatherv_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/get_accumulate_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/get_address_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/get_count_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/get_elements_f08ts.F90 \
@@ -299,6 +304,7 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/publish_name_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/put_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/query_thread_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/raccumulate_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/recv_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/recv_init_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/reduce_f08ts.F90 \
@@ -308,6 +314,9 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/register_datarep_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/request_free_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/request_get_status_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/rget_accumulate_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/rget_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/rput_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/rsend_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/rsend_init_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/scan_f08ts.F90 \
@@ -370,26 +379,41 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/waitall_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/waitany_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/waitsome_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/win_allocate_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/win_allocate_shared_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/win_attach_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_call_errhandler_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_complete_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/win_create_dynamic_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_create_errhandler_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_create_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_create_keyval_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_delete_attr_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/win_detach_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_fence_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/win_flush_all_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/win_flush_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/win_flush_local_all_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/win_flush_local_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_free_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_free_keyval_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_get_attr_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_get_errhandler_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_get_group_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/win_get_info_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_get_name_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/win_lock_all_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_lock_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_post_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_set_attr_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_set_errhandler_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/win_set_info_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_set_name_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/win_shared_query_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_start_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/win_sync_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_test_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/win_unlock_all_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_unlock_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/win_wait_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/wtick_f08ts.F90 \
@@ -483,6 +507,8 @@ src/binding/fortran/use_mpi_f08/wrappers_f/comm_get_attr_f08ts.lo: src/binding/f
 
 src/binding/fortran/use_mpi_f08/wrappers_f/comm_get_errhandler_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/comm_get_info_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/comm_get_name_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/comm_get_parent_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
@@ -503,6 +529,8 @@ src/binding/fortran/use_mpi_f08/wrappers_f/comm_set_attr_f08ts.lo: src/binding/f
 
 src/binding/fortran/use_mpi_f08/wrappers_f/comm_set_errhandler_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/comm_set_info_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/comm_set_name_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/comm_size_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
@@ -516,6 +544,8 @@ src/binding/fortran/use_mpi_f08/wrappers_f/comm_split_f08ts.lo: src/binding/fort
 src/binding/fortran/use_mpi_f08/wrappers_f/comm_split_type_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/comm_test_inter_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/compare_and_swap_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/dims_create_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
@@ -536,6 +566,8 @@ src/binding/fortran/use_mpi_f08/wrappers_f/error_string_f08ts.lo: src/binding/fo
 src/binding/fortran/use_mpi_f08/wrappers_f/exscan_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/f_sync_reg_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/fetch_and_op_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/file_call_errhandler_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
@@ -656,6 +688,8 @@ src/binding/fortran/use_mpi_f08/wrappers_f/free_mem_f08ts.lo: src/binding/fortra
 src/binding/fortran/use_mpi_f08/wrappers_f/gather_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/gatherv_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/get_accumulate_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/get_address_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
@@ -845,6 +879,8 @@ src/binding/fortran/use_mpi_f08/wrappers_f/put_f08ts.lo: src/binding/fortran/use
 
 src/binding/fortran/use_mpi_f08/wrappers_f/query_thread_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/raccumulate_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/recv_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/recv_init_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
@@ -862,6 +898,12 @@ src/binding/fortran/use_mpi_f08/wrappers_f/register_datarep_f08ts.lo: src/bindin
 src/binding/fortran/use_mpi_f08/wrappers_f/request_free_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/request_get_status_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/rget_accumulate_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/rget_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/rput_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/rsend_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
@@ -987,9 +1029,17 @@ src/binding/fortran/use_mpi_f08/wrappers_f/waitany_f08ts.lo: src/binding/fortran
 
 src/binding/fortran/use_mpi_f08/wrappers_f/waitsome_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/win_allocate_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/win_allocate_shared_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/win_attach_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/win_call_errhandler_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/win_complete_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/win_create_dynamic_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/win_create_errhandler_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
@@ -999,7 +1049,17 @@ src/binding/fortran/use_mpi_f08/wrappers_f/win_create_keyval_f08ts.lo: src/bindi
 
 src/binding/fortran/use_mpi_f08/wrappers_f/win_delete_attr_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/win_detach_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/win_fence_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/win_flush_all_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/win_flush_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/win_flush_local_all_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/win_flush_local_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/win_free_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
@@ -1011,7 +1071,11 @@ src/binding/fortran/use_mpi_f08/wrappers_f/win_get_errhandler_f08ts.lo: src/bind
 
 src/binding/fortran/use_mpi_f08/wrappers_f/win_get_group_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/win_get_info_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/win_get_name_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/win_lock_all_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/win_lock_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
@@ -1021,11 +1085,19 @@ src/binding/fortran/use_mpi_f08/wrappers_f/win_set_attr_f08ts.lo: src/binding/fo
 
 src/binding/fortran/use_mpi_f08/wrappers_f/win_set_errhandler_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/win_set_info_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/win_set_name_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/win_shared_query_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/win_start_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/win_sync_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/win_test_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/win_unlock_all_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/win_unlock_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
@@ -1080,6 +1152,7 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_free_keyval_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_get_attr_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_get_errhandler_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_get_info_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_get_name_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_get_parent_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_group_f08ts.F90 \
@@ -1090,6 +1163,7 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_remote_size_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_set_attr_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_set_errhandler_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_set_info_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_set_name_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_size_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_spawn_f08ts.F90 \
@@ -1097,6 +1171,7 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_split_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_split_type_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_test_inter_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcompare_and_swap_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pdims_create_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pdist_graph_create_adjacent_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pdist_graph_create_f08ts.F90 \
@@ -1107,6 +1182,7 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/perror_string_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pexscan_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pf_sync_reg_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pfetch_and_op_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pfile_call_errhandler_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pfile_close_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pfile_create_errhandler_f08ts.F90 \
@@ -1167,6 +1243,7 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pfree_mem_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pgather_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pgatherv_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pget_accumulate_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pget_address_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pget_count_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pget_elements_f08ts.F90 \
@@ -1261,6 +1338,7 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/ppublish_name_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pput_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pquery_thread_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/praccumulate_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/precv_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/precv_init_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/preduce_f08ts.F90 \
@@ -1270,6 +1348,9 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pregister_datarep_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/prequest_free_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/prequest_get_status_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/prget_accumulate_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/prget_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/prput_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/prsend_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/prsend_init_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pscan_f08ts.F90 \
@@ -1332,26 +1413,41 @@ mpi_fc_sources += \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwaitall_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwaitany_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwaitsome_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_allocate_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_allocate_shared_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_attach_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_call_errhandler_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_complete_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_create_dynamic_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_create_errhandler_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_create_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_create_keyval_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_delete_attr_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_detach_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_fence_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_flush_all_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_flush_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_flush_local_all_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_flush_local_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_free_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_free_keyval_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_get_attr_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_get_errhandler_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_get_group_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_get_info_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_get_name_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_lock_all_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_lock_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_post_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_set_attr_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_set_errhandler_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_set_info_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_set_name_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_shared_query_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_start_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_sync_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_test_f08ts.F90 \
+	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_unlock_all_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_unlock_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_wait_f08ts.F90 \
 	src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwtick_f08ts.F90 \
@@ -1445,6 +1541,8 @@ src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_get_attr_f08ts.lo: sr
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_get_errhandler_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_get_info_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_get_name_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_get_parent_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
@@ -1465,6 +1563,8 @@ src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_set_attr_f08ts.lo: sr
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_set_errhandler_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_set_info_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_set_name_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_size_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
@@ -1478,6 +1578,8 @@ src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_split_f08ts.lo: src/b
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_split_type_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcomm_test_inter_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pcompare_and_swap_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pdims_create_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
@@ -1498,6 +1600,8 @@ src/binding/fortran/use_mpi_f08/wrappers_f/profiling/perror_string_f08ts.lo: src
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pexscan_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pf_sync_reg_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pfetch_and_op_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pfile_call_errhandler_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
@@ -1618,6 +1722,8 @@ src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pfree_mem_f08ts.lo: src/bin
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pgather_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pgatherv_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pget_accumulate_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pget_address_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
@@ -1807,6 +1913,8 @@ src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pput_f08ts.lo: src/binding/
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pquery_thread_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/praccumulate_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/precv_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/precv_init_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
@@ -1824,6 +1932,12 @@ src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pregister_datarep_f08ts.lo:
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/prequest_free_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/prequest_get_status_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/prget_accumulate_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/prget_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/prput_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/prsend_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
@@ -1949,9 +2063,17 @@ src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwaitany_f08ts.lo: src/bind
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwaitsome_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_allocate_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_allocate_shared_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_attach_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_call_errhandler_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_complete_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_create_dynamic_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_create_errhandler_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
@@ -1961,7 +2083,17 @@ src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_create_keyval_f08ts.lo
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_delete_attr_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_detach_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_fence_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_flush_all_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_flush_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_flush_local_all_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_flush_local_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_free_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
@@ -1973,7 +2105,11 @@ src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_get_errhandler_f08ts.l
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_get_group_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_get_info_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_get_name_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_lock_all_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_lock_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
@@ -1983,11 +2119,19 @@ src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_set_attr_f08ts.lo: src
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_set_errhandler_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_set_info_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_set_name_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_shared_query_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_start_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_sync_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_test_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
+
+src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_unlock_all_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
 src/binding/fortran/use_mpi_f08/wrappers_f/profiling/pwin_unlock_f08ts.lo: src/binding/fortran/use_mpi/mpi_f08.$(MOD) src/binding/fortran/use_mpi/mpi_c_interface.$(MOD)
 
