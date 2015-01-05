@@ -347,6 +347,7 @@ docdir = @docdir@
 dvidir = @dvidir@
 errordir = @errordir@
 exec_prefix = @exec_prefix@
+f08dir = @f08dir@
 f77dir = @f77dir@
 f90dir = @f90dir@
 faultsdir = @faultsdir@
@@ -373,6 +374,7 @@ master_top_srcdir = @master_top_srcdir@
 mkdir_p = @mkdir_p@
 mpich_top_srcdir = @mpich_top_srcdir@
 nocxxdistgraph = @nocxxdistgraph@
+nslib = @nslib@
 oldincludedir = @oldincludedir@
 otherlangs = @otherlangs@
 pdfdir = @pdfdir@
@@ -383,6 +385,7 @@ psdir = @psdir@
 rmadir = @rmadir@
 sbindir = @sbindir@
 sharedstatedir = @sharedstatedir@
+socklib = @socklib@
 spawndir = @spawndir@
 srcdir = @srcdir@
 sysconfdir = @sysconfdir@
@@ -395,14 +398,15 @@ top_srcdir = @top_srcdir@
 # AM_CPPFLAGS are used for C++ code as well
 AM_CPPFLAGS = -I$(top_builddir)/include -I$(top_srcdir)/include
 LDADD = $(top_builddir)/util/mtest.o
-CLEANFILES = summary.xml summary.tap
+CLEANFILES = summary.xml summary.tap summary.junit.xml
 
 # mix in the "make testing" rule and other boilerplate
 ACLOCAL_AMFLAGS = -I confdb
-static_subdirs = util attr basic datatype coll comm errhan group info init \
-                 pt2pt rma topo errors manual perf mpi_t impls parastation
+static_subdirs = parastation \
+                 util attr basic datatype coll comm errhan group info init \
+                 pt2pt rma topo errors manual perf mpi_t impls ckpoint ft
 
-all_lang_subdirs = f77 cxx f90
+all_lang_subdirs = f77 cxx f90 f08
 
 # DIST_SUBDIRS must be a superset of SUBDIRS, and automake must be able to
 # *statically* compute its contents.  The good news is that we can mostly avoid
@@ -412,7 +416,7 @@ DIST_SUBDIRS = $(static_subdirs) io $(all_lang_subdirs) threads spawn .
 SUBDIRS = $(static_subdirs) $(iodir) $(otherlangs) $(threadsdir) $(spawndir) $(ckpointdir) $(ftdir) .
 EXTRA_DIST = maint/common.defn maint/f77tof90.in maint/testmerge.in maint/updatefiles testlist.in
 DISTCLEANFILES = config.system
-noinst_HEADERS = include/mpitest.h include/mpitestcxx.h include/mpithreadtest.h
+noinst_HEADERS = include/mpitest.h include/mpitestcxx.h include/mpithreadtest.h include/dtypes.h rma/squelch.h errors/rma/win_sync.h
 nodist_noinst_HEADERS = include/mpitestconf.h
 all: all-recursive
 
