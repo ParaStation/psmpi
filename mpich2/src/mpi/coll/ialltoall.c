@@ -14,6 +14,10 @@
 #pragma _HP_SECONDARY_DEF PMPI_Ialltoall  MPI_Ialltoall
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Ialltoall as PMPI_Ialltoall
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Ialltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+                  int recvcount, MPI_Datatype recvtype, MPI_Comm comm, MPI_Request *request)
+                  __attribute__((weak,alias("PMPI_Ialltoall")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -600,8 +604,11 @@ int MPI_Ialltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
     {
         MPID_BEGIN_ERROR_CHECKS
         {
-            if (sendbuf != MPI_IN_PLACE)
+            if (sendbuf != MPI_IN_PLACE) {
+                MPIR_ERRTEST_COUNT(sendcount, mpi_errno);
                 MPIR_ERRTEST_DATATYPE(sendtype, "sendtype", mpi_errno);
+            }
+            MPIR_ERRTEST_COUNT(recvcount, mpi_errno);
             MPIR_ERRTEST_DATATYPE(recvtype, "recvtype", mpi_errno);
             MPIR_ERRTEST_COMM(comm, mpi_errno);
 
@@ -641,7 +648,14 @@ int MPI_Ialltoall(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
             }
 
             MPIR_ERRTEST_ARGNULL(request,"request", mpi_errno);
-            /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
+
+            if (comm_ptr->comm_kind == MPID_INTRACOMM &&
+                    sendbuf != MPI_IN_PLACE &&
+                    sendcount == recvcount &&
+                    sendtype == recvtype &&
+                    sendcount != 0)
+                MPIR_ERRTEST_ALIAS_COLL(sendbuf,recvbuf,mpi_errno);
+            /* TODO more checks may be appropriate (counts, in_place, etc) */
         }
         MPID_END_ERROR_CHECKS
     }

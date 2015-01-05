@@ -14,6 +14,10 @@
 #pragma _HP_SECONDARY_DEF PMPI_Iallreduce  MPI_Iallreduce
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Iallreduce as PMPI_Iallreduce
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Iallreduce(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype,
+                   MPI_Op op, MPI_Comm comm, MPI_Request *request)
+                   __attribute__((weak,alias("PMPI_Iallreduce")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -728,6 +732,7 @@ int MPI_Iallreduce(const void *sendbuf, void *recvbuf, int count,
         MPID_BEGIN_ERROR_CHECKS
         {
             MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
+            MPIR_ERRTEST_COUNT(count, mpi_errno);
             MPIR_ERRTEST_OP(op, mpi_errno);
             MPIR_ERRTEST_COMM(comm, mpi_errno);
 
@@ -772,6 +777,10 @@ int MPI_Iallreduce(const void *sendbuf, void *recvbuf, int count,
                 MPIR_ERRTEST_USERBUFFER(sendbuf,count,datatype,mpi_errno);
 
             MPIR_ERRTEST_ARGNULL(request,"request", mpi_errno);
+
+            if (comm_ptr->comm_kind == MPID_INTRACOMM && count != 0 && sendbuf != MPI_IN_PLACE)
+                MPIR_ERRTEST_ALIAS_COLL(sendbuf, recvbuf, mpi_errno);
+
             /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
         }
         MPID_END_ERROR_CHECKS

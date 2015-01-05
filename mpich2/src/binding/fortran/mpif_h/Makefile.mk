@@ -379,12 +379,11 @@ mpi_f77_sources += src/binding/fortran/mpif_h/sendf.c \
 	src/binding/fortran/mpif_h/null_win_copy_fnf.c \
 	src/binding/fortran/mpif_h/dup_type_fnf.c \
 	src/binding/fortran/mpif_h/null_type_del_fnf.c \
-	src/binding/fortran/mpif_h/null_type_copy_fnf.c \
-	src/binding/fortran/mpif_h/statusc2f.c 
+	src/binding/fortran/mpif_h/null_type_copy_fnf.c 
 mpi_core_sources += src/binding/fortran/mpif_h/fdebug.c \
 		src/binding/fortran/mpif_h/setbot.c \
 		src/binding/fortran/mpif_h/setbotf.f
-mpi_sources += src/binding/fortran/mpif_h/statusf2c.c
+mpi_sources += src/binding/fortran/mpif_h/statusf2c.c src/binding/fortran/mpif_h/statusc2f.c
 
 # FIXME does AM_CPPFLAGS need to be included elsewhere somehow in the
 # target-specific variable?

@@ -18,10 +18,12 @@ int MPI_Type_free(MPI_Datatype *datatype)
 <H2>Predefined types</H2>
 <P>
 The MPI standard states that (in Opaque Objects)
-qs
+<BLOCKQUOTE>
+<P>
 MPI provides certain predefined opaque objects and predefined, static handles
 to these objects. Such objects may not be destroyed.
-qe
+</BLOCKQUOTE>
+<P>
 <P>
 Thus, it is an error to free a predefined datatype.  The same section makes
 it clear that it is an error to free a null datatype.
@@ -67,5 +69,5 @@ MPI_Datatype (see <TT>MPI_Type_commit</TT>).
 <DL><DT><B>MPI_ERR_ARG </B> <DD> Invalid argument.  Some argument is invalid and is not
 identified by a specific error class (e.g., <TT>MPI_ERR_RANK</TT>).
 </DL>
-<P><B>Location:</B>/tmp/JGQRosY5vd/mpich-3.1.1/src/mpi/datatype/type_free.c<P>
+<P><B>Location:</B>/tmp/KtKGPV3F99/mpich-3.1.2/src/mpi/datatype/type_free.c<P>
 </BODY></HTML>

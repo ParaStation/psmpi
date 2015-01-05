@@ -7794,12 +7794,6 @@ int main(int argc, char **argv)
     ChkMsg( err, MPI_ERR_OTHER, "**mx_cancel %s" );
     }
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_rsr_seq_num_tail_get", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_rsr_seq_num_tail_get" );
-    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_rsr_seq_num_tail_last_sent_get", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_rsr_seq_num_tail_last_sent_get" );
-    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_sq_occupancy_notify_rate_get", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_sq_occupancy_notify_rate_get" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
@@ -7809,29 +7803,56 @@ int main(int argc, char **argv)
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_rdmabuf_occupancy_notify_rstate_get", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_rdmabuf_occupancy_notify_rstate_get" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_ringbuf_ask_fetch", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_ringbuf_ask_fetch" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_drain_scq", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_drain_scq" );
-    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_lsr_seq_num_tail_get", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_lsr_seq_num_tail_get" );
-    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_sseq_num_get", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_sseq_num_get" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**outofmemory", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**outofmemory" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_cm_connect_cas_core", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_cm_connect_cas_core" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_cm_send_core", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_cm_send_core" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_cas_scratch_pad", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_cas_scratch_pad" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**malloc", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**malloc" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_obtain_pointer", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_obtain_pointer" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_drain_scq_scratch_pad", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_drain_scq_scratch_pad" );
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_cm_cas", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_cm_cas" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_put_scratch_pad", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_put_scratch_pad" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_cm_put", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_cm_put" );
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_open", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_open" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_ring_alloc", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_ring_alloc" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_get_scratch_pad", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_get_scratch_pad" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_ringbuf_ask_cas", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_ringbuf_ask_cas" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_ringbuf_connect_cas_core", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_ringbuf_connect_cas_core" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_ringbuf_send_core", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_ringbuf_send_core" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_poll_eager", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_poll_eager" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**netmod,ib,ibv_poll_cq", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**netmod,ib,ibv_poll_cq" );
@@ -7839,8 +7860,8 @@ int main(int argc, char **argv)
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_poll", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_poll" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_drain_scq_lmt_put", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_drain_scq_lmt_put" );
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_drain_scq_scratch_pad", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_drain_scq_scratch_pad" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_poll_cq", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_poll_cq" );
@@ -7850,6 +7871,18 @@ int main(int argc, char **argv)
      err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_poll_cq", "**MPID_nem_ib_com_poll_cq %s", s1 );
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_poll_cq %s" );
     }
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_ringbuf_free", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_ringbuf_free" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_close", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_close" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_free", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_free" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_send_progress", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_send_progress" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_cm_drain_scq", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_cm_drain_scq" );
@@ -7869,35 +7902,20 @@ int main(int argc, char **argv)
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_rdmabuf_occupancy_notify_lstate_get", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_rdmabuf_occupancy_notify_lstate_get" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_open", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_open" );
-    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_rts", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_rts" );
-    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_reg_mr_connect", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_reg_mr_connect" );
-    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_get_info_conn", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_get_info_conn" );
-    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_get_info_mr", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_get_info_mr" );
-    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_cm_send_core", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_cm_send_core" );
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_ringbuf_alloc", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_ringbuf_alloc" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_cm_poll", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_cm_poll" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_cm_accept", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_cm_accept" );
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_rts", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_rts" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_mem_udwr_to", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_mem_udwr_to" );
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_connect_ringbuf", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_connect_ringbuf" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_mem_udwr_from", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_mem_udwr_from" );
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_rdma_to_alloc", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_rdma_to_alloc" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_lmt.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_reg_mr_fetch", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_reg_mr_fetch" );
@@ -7920,23 +7938,35 @@ int main(int argc, char **argv)
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**PMS_KVS_Get", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**PMS_KVS_Get" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_init.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_udrecv", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_udrecv" );
-    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_init.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**PMI_Barrier", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**PMI_Barrier" );
-    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_init.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**PMI_KVS_Get", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**PMI_KVS_Get" );
-    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_init.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_alloc", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_alloc" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_init.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_get_info_conn", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_get_info_conn" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_init.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_kvs_put_binary", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_kvs_put_binary" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_init.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_get_info_mr", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_get_info_mr" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_init.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**PMI_Barrier", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**PMI_Barrier" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_init.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_reg_mr_connect", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_reg_mr_connect" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_init.c */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_npollingset", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_npollingset" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_init.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_cm_poll_syn", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_cm_poll_syn" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_init.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_cm_progress", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_cm_progress" );
+    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_init.c */
+    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_ringbuf_progress", 0);
+    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_ringbuf_progress" );
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_impl.h */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_send_req_seq_num", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_send_req_seq_num" );
@@ -7949,9 +7979,6 @@ int main(int argc, char **argv)
     /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_impl.h */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_lmt_send_GET_DONE", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_lmt_send_GET_DONE" );
-    /* src/mpid/ch3/channels/nemesis/netmod/ib/ib_finalize.c */
-    err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**MPID_nem_ib_com_close", 0);
-    ChkMsg( err, MPI_ERR_OTHER, "**MPID_nem_ib_com_close" );
     /* src/mpid/ch3/channels/nemesis/include/mpid_nem_impl.h */
     err = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_RECOVERABLE, "errcode::main", __LINE__, MPI_ERR_OTHER, "**rtspkt", 0);
     ChkMsg( err, MPI_ERR_OTHER, "**rtspkt" );

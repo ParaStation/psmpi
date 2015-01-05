@@ -1195,14 +1195,13 @@ DIST_COMMON = $(srcdir)/maint/Makefile.mk $(srcdir)/src/Makefile.mk \
 @BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/null_win_copy_fnf.c \
 @BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/dup_type_fnf.c \
 @BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/null_type_del_fnf.c \
-@BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/null_type_copy_fnf.c \
-@BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/statusc2f.c 
+@BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/null_type_copy_fnf.c 
 
 @BUILD_F77_BINDING_TRUE@am__append_23 = src/binding/fortran/mpif_h/fdebug.c \
 @BUILD_F77_BINDING_TRUE@		src/binding/fortran/mpif_h/setbot.c \
 @BUILD_F77_BINDING_TRUE@		src/binding/fortran/mpif_h/setbotf.f
 
-@BUILD_F77_BINDING_TRUE@am__append_24 = src/binding/fortran/mpif_h/statusf2c.c
+@BUILD_F77_BINDING_TRUE@am__append_24 = src/binding/fortran/mpif_h/statusf2c.c src/binding/fortran/mpif_h/statusc2f.c
 
 # FIXME does AM_CPPFLAGS need to be included elsewhere somehow in the
 # target-specific variable?
@@ -2279,7 +2278,8 @@ DIST_COMMON = $(srcdir)/maint/Makefile.mk $(srcdir)/src/Makefile.mk \
 @BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@    src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.c	\
 @BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@    src/mpid/ch3/channels/nemesis/netmod/ib/ib_reg_mr.c	\
 @BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@    src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c	\
-@BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@    src/mpid/ch3/channels/nemesis/netmod/ib/ib_ibcom.c 
+@BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@    src/mpid/ch3/channels/nemesis/netmod/ib/ib_ibcom.c	\
+@BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@    src/mpid/ch3/channels/nemesis/netmod/ib/ib_malloc.c
 
 @BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@am__append_75 = \
 @BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@    src/mpid/ch3/channels/nemesis/netmod/ib/ib_impl.h           \
@@ -2542,7 +2542,6 @@ DIST_COMMON = $(srcdir)/maint/Makefile.mk $(srcdir)/src/Makefile.mk \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/dataloop/segment_flatten.c \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/dataloop/segment_packunpack.c \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/dataloop/subarray_support.c \
-@BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/dataloop/dataloop_optimize.c \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/mpid_contents_support.c \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/mpid_datatype_contents.c \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/mpid_datatype_free.c \
@@ -3219,7 +3218,6 @@ am__lib_lib@MPIFCLIBNAME@_la_SOURCES_DIST =  \
 	src/binding/fortran/mpif_h/dup_type_fnf.c \
 	src/binding/fortran/mpif_h/null_type_del_fnf.c \
 	src/binding/fortran/mpif_h/null_type_copy_fnf.c \
-	src/binding/fortran/mpif_h/statusc2f.c \
 	src/binding/fortran/use_mpi/typef90cmplxf.c \
 	src/binding/fortran/use_mpi/typef90realf.c \
 	src/binding/fortran/use_mpi/typef90intf.c \
@@ -4370,8 +4368,7 @@ am__lib_lib@MPIFCLIBNAME@_la_SOURCES_DIST =  \
 @BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-null_win_copy_fnf.lo \
 @BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-dup_type_fnf.lo \
 @BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-null_type_del_fnf.lo \
-@BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-null_type_copy_fnf.lo \
-@BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-statusc2f.lo
+@BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-null_type_copy_fnf.lo
 am__objects_4 = $(am__objects_3)
 @BUILD_FC_BINDING_TRUE@am__objects_5 = src/binding/fortran/use_mpi/lib_lib@MPIFCLIBNAME@_la-typef90cmplxf.lo \
 @BUILD_FC_BINDING_TRUE@	src/binding/fortran/use_mpi/lib_lib@MPIFCLIBNAME@_la-typef90realf.lo \
@@ -5349,6 +5346,7 @@ am__lib_lib@MPILIBNAME@_la_SOURCES_DIST = src/mpi/attr/attr_delete.c \
 	src/mpi/topo/nhb_alltoall.c src/mpi/topo/nhb_alltoallv.c \
 	src/mpi/topo/nhb_alltoallw.c \
 	src/binding/fortran/mpif_h/statusf2c.c \
+	src/binding/fortran/mpif_h/statusc2f.c \
 	src/binding/fortran/use_mpi/create_f90_int.c \
 	src/binding/fortran/use_mpi/create_f90_real.c \
 	src/binding/fortran/use_mpi/create_f90_complex.c \
@@ -5507,6 +5505,7 @@ am__lib_lib@MPILIBNAME@_la_SOURCES_DIST = src/mpi/attr/attr_delete.c \
 	src/mpid/ch3/channels/nemesis/netmod/ib/ib_reg_mr.c \
 	src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c \
 	src/mpid/ch3/channels/nemesis/netmod/ib/ib_ibcom.c \
+	src/mpid/ch3/channels/nemesis/netmod/ib/ib_malloc.c \
 	src/mpid/ch3/channels/nemesis/utils/monitor/papi_defs.c \
 	src/mpid/ch3/channels/nemesis/utils/replacements/mkstemp.c \
 	src/mpid/ch3/channels/sock/src/ch3_finalize.c \
@@ -5635,7 +5634,6 @@ am__lib_lib@MPILIBNAME@_la_SOURCES_DIST = src/mpi/attr/attr_delete.c \
 	src/mpid/common/datatype/dataloop/segment_flatten.c \
 	src/mpid/common/datatype/dataloop/segment_packunpack.c \
 	src/mpid/common/datatype/dataloop/subarray_support.c \
-	src/mpid/common/datatype/dataloop/dataloop_optimize.c \
 	src/mpid/common/datatype/mpid_contents_support.c \
 	src/mpid/common/datatype/mpid_datatype_contents.c \
 	src/mpid/common/datatype/mpid_datatype_free.c \
@@ -5664,7 +5662,8 @@ am__lib_lib@MPILIBNAME@_la_SOURCES_DIST = src/mpi/attr/attr_delete.c \
 	src/pmi/pmi2/simple/simple2pmi.c \
 	src/pmi/pmi2/simple/simple_pmiutil.c \
 	src/pmi/simple/simple_pmiutil.c src/pmi/simple/simple_pmi.c
-@BUILD_F77_BINDING_TRUE@am__objects_9 = src/binding/fortran/mpif_h/lib_lib@MPILIBNAME@_la-statusf2c.lo
+@BUILD_F77_BINDING_TRUE@am__objects_9 = src/binding/fortran/mpif_h/lib_lib@MPILIBNAME@_la-statusf2c.lo \
+@BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/lib_lib@MPILIBNAME@_la-statusc2f.lo
 @BUILD_FC_BINDING_TRUE@am__objects_10 = src/binding/fortran/use_mpi/lib_lib@MPILIBNAME@_la-create_f90_int.lo \
 @BUILD_FC_BINDING_TRUE@	src/binding/fortran/use_mpi/lib_lib@MPILIBNAME@_la-create_f90_real.lo \
 @BUILD_FC_BINDING_TRUE@	src/binding/fortran/use_mpi/lib_lib@MPILIBNAME@_la-create_f90_complex.lo
@@ -6134,7 +6133,8 @@ am__objects_11 = src/mpi/attr/lib_lib@MPILIBNAME@_la-attr_delete.lo \
 @BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@	src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_poll.lo \
 @BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@	src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_reg_mr.lo \
 @BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@	src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_send.lo \
-@BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@	src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_ibcom.lo
+@BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@	src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_ibcom.lo \
+@BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@	src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_malloc.lo
 @BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@am__objects_25 = src/mpid/ch3/channels/nemesis/utils/monitor/lib_lib@MPILIBNAME@_la-papi_defs.lo \
 @BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@	src/mpid/ch3/channels/nemesis/utils/replacements/lib_lib@MPILIBNAME@_la-mkstemp.lo
 @BUILD_CH3_SOCK_TRUE@@BUILD_CH3_TRUE@am__objects_26 = src/mpid/ch3/channels/sock/src/lib_lib@MPILIBNAME@_la-ch3_finalize.lo \
@@ -6265,7 +6265,6 @@ am__objects_11 = src/mpi/attr/lib_lib@MPILIBNAME@_la-attr_delete.lo \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/dataloop/lib_lib@MPILIBNAME@_la-segment_flatten.lo \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/dataloop/lib_lib@MPILIBNAME@_la-segment_packunpack.lo \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/dataloop/lib_lib@MPILIBNAME@_la-subarray_support.lo \
-@BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/dataloop/lib_lib@MPILIBNAME@_la-dataloop_optimize.lo \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/lib_lib@MPILIBNAME@_la-mpid_contents_support.lo \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/lib_lib@MPILIBNAME@_la-mpid_datatype_contents.lo \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/lib_lib@MPILIBNAME@_la-mpid_datatype_free.lo \
@@ -6554,6 +6553,7 @@ am__lib_lib@PMPILIBNAME@_la_SOURCES_DIST = src/mpi/attr/attr_delete.c \
 	src/mpi/topo/nhb_alltoall.c src/mpi/topo/nhb_alltoallv.c \
 	src/mpi/topo/nhb_alltoallw.c \
 	src/binding/fortran/mpif_h/statusf2c.c \
+	src/binding/fortran/mpif_h/statusc2f.c \
 	src/binding/fortran/use_mpi/create_f90_int.c \
 	src/binding/fortran/use_mpi/create_f90_real.c \
 	src/binding/fortran/use_mpi/create_f90_complex.c \
@@ -6943,10 +6943,10 @@ am__lib_lib@PMPILIBNAME@_la_SOURCES_DIST = src/mpi/attr/attr_delete.c \
 	src/binding/fortran/mpif_h/dup_type_fnf.c \
 	src/binding/fortran/mpif_h/null_type_del_fnf.c \
 	src/binding/fortran/mpif_h/null_type_copy_fnf.c \
-	src/binding/fortran/mpif_h/statusc2f.c src/mpi/attr/attrutil.c \
-	src/mpi/attr/dup_fn.c src/mpi/coll/allred_group.c \
-	src/mpi/coll/barrier_group.c src/mpi/coll/helper_fns.c \
-	src/mpi/coll/opsum.c src/mpi/coll/opmax.c src/mpi/coll/opmin.c \
+	src/mpi/attr/attrutil.c src/mpi/attr/dup_fn.c \
+	src/mpi/coll/allred_group.c src/mpi/coll/barrier_group.c \
+	src/mpi/coll/helper_fns.c src/mpi/coll/opsum.c \
+	src/mpi/coll/opmax.c src/mpi/coll/opmin.c \
 	src/mpi/coll/opband.c src/mpi/coll/opbor.c \
 	src/mpi/coll/opbxor.c src/mpi/coll/opland.c \
 	src/mpi/coll/oplor.c src/mpi/coll/oplxor.c \
@@ -7082,6 +7082,7 @@ am__lib_lib@PMPILIBNAME@_la_SOURCES_DIST = src/mpi/attr/attr_delete.c \
 	src/mpid/ch3/channels/nemesis/netmod/ib/ib_reg_mr.c \
 	src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.c \
 	src/mpid/ch3/channels/nemesis/netmod/ib/ib_ibcom.c \
+	src/mpid/ch3/channels/nemesis/netmod/ib/ib_malloc.c \
 	src/mpid/ch3/channels/nemesis/utils/monitor/papi_defs.c \
 	src/mpid/ch3/channels/nemesis/utils/replacements/mkstemp.c \
 	src/mpid/ch3/channels/sock/src/ch3_finalize.c \
@@ -7210,7 +7211,6 @@ am__lib_lib@PMPILIBNAME@_la_SOURCES_DIST = src/mpi/attr/attr_delete.c \
 	src/mpid/common/datatype/dataloop/segment_flatten.c \
 	src/mpid/common/datatype/dataloop/segment_packunpack.c \
 	src/mpid/common/datatype/dataloop/subarray_support.c \
-	src/mpid/common/datatype/dataloop/dataloop_optimize.c \
 	src/mpid/common/datatype/mpid_contents_support.c \
 	src/mpid/common/datatype/mpid_datatype_contents.c \
 	src/mpid/common/datatype/mpid_datatype_free.c \
@@ -7239,7 +7239,8 @@ am__lib_lib@PMPILIBNAME@_la_SOURCES_DIST = src/mpi/attr/attr_delete.c \
 	src/pmi/pmi2/simple/simple2pmi.c \
 	src/pmi/pmi2/simple/simple_pmiutil.c \
 	src/pmi/simple/simple_pmiutil.c src/pmi/simple/simple_pmi.c
-@BUILD_F77_BINDING_TRUE@am__objects_38 = src/binding/fortran/mpif_h/statusf2c.lo
+@BUILD_F77_BINDING_TRUE@am__objects_38 = src/binding/fortran/mpif_h/statusf2c.lo \
+@BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/statusc2f.lo
 @BUILD_FC_BINDING_TRUE@am__objects_39 = src/binding/fortran/use_mpi/create_f90_int.lo \
 @BUILD_FC_BINDING_TRUE@	src/binding/fortran/use_mpi/create_f90_real.lo \
 @BUILD_FC_BINDING_TRUE@	src/binding/fortran/use_mpi/create_f90_complex.lo
@@ -7820,8 +7821,7 @@ am__objects_40 = src/mpi/attr/attr_delete.lo src/mpi/attr/attr_get.lo \
 @BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/null_win_copy_fnf.lo \
 @BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/dup_type_fnf.lo \
 @BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/null_type_del_fnf.lo \
-@BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/null_type_copy_fnf.lo \
-@BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/statusc2f.lo
+@BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/null_type_copy_fnf.lo
 am__objects_42 = $(am__objects_41)
 @BUILD_F77_BINDING_TRUE@am__objects_43 =  \
 @BUILD_F77_BINDING_TRUE@	src/binding/fortran/mpif_h/fdebug.lo \
@@ -7950,7 +7950,8 @@ am__objects_42 = $(am__objects_41)
 @BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@	src/mpid/ch3/channels/nemesis/netmod/ib/ib_poll.lo \
 @BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@	src/mpid/ch3/channels/nemesis/netmod/ib/ib_reg_mr.lo \
 @BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@	src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.lo \
-@BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@	src/mpid/ch3/channels/nemesis/netmod/ib/ib_ibcom.lo
+@BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@	src/mpid/ch3/channels/nemesis/netmod/ib/ib_ibcom.lo \
+@BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@@BUILD_NEMESIS_NETMOD_IB_TRUE@	src/mpid/ch3/channels/nemesis/netmod/ib/ib_malloc.lo
 @BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@am__objects_56 = src/mpid/ch3/channels/nemesis/utils/monitor/papi_defs.lo \
 @BUILD_CH3_NEMESIS_TRUE@@BUILD_CH3_TRUE@	src/mpid/ch3/channels/nemesis/utils/replacements/mkstemp.lo
 @BUILD_CH3_SOCK_TRUE@@BUILD_CH3_TRUE@am__objects_57 = src/mpid/ch3/channels/sock/src/ch3_finalize.lo \
@@ -8081,7 +8082,6 @@ am__objects_42 = $(am__objects_41)
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/dataloop/segment_flatten.lo \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/dataloop/segment_packunpack.lo \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/dataloop/subarray_support.lo \
-@BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/dataloop/dataloop_optimize.lo \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/mpid_contents_support.lo \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/mpid_datatype_contents.lo \
 @BUILD_MPID_COMMON_DATATYPE_TRUE@	src/mpid/common/datatype/mpid_datatype_free.lo \
@@ -8738,6 +8738,7 @@ MAKEINFO = @MAKEINFO@
 MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 MPIBASEMODNAME = @MPIBASEMODNAME@
+MPICC_NAME = @MPICC_NAME@
 MPICHLIB_CFLAGS = @MPICHLIB_CFLAGS@
 MPICHLIB_CPPFLAGS = @MPICHLIB_CPPFLAGS@
 MPICHLIB_CXXFLAGS = @MPICHLIB_CXXFLAGS@
@@ -8745,15 +8746,19 @@ MPICHLIB_FCFLAGS = @MPICHLIB_FCFLAGS@
 MPICHLIB_FFLAGS = @MPICHLIB_FFLAGS@
 MPICHLIB_LDFLAGS = @MPICHLIB_LDFLAGS@
 MPICHLIB_LIBS = @MPICHLIB_LIBS@
-MPICH_ATTR_WEAK_ALIAS_DEFINITION = @MPICH_ATTR_WEAK_ALIAS_DEFINITION@
 MPICH_NUMVERSION = @MPICH_NUMVERSION@
 MPICH_RELEASE_DATE = @MPICH_RELEASE_DATE@
 MPICH_TIMER_KIND = @MPICH_TIMER_KIND@
 MPICH_VERSION = @MPICH_VERSION@
 MPICONSTMODNAME = @MPICONSTMODNAME@
+MPICPP_NAME = @MPICPP_NAME@
 MPICXXLIBNAME = @MPICXXLIBNAME@
+MPICXX_NAME = @MPICXX_NAME@
 MPID_TIMER_TYPE = @MPID_TIMER_TYPE@
+MPIF77_NAME = @MPIF77_NAME@
+MPIF90_NAME = @MPIF90_NAME@
 MPIFCLIBNAME = @MPIFCLIBNAME@
+MPIFORT_NAME = @MPIFORT_NAME@
 MPIFPMPI = @MPIFPMPI@
 MPILIBNAME = @MPILIBNAME@
 MPIMODNAME = @MPIMODNAME@
@@ -11008,9 +11013,6 @@ src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-null_type_del_fnf.lo:  \
 	src/binding/fortran/mpif_h/$(am__dirstamp) \
 	src/binding/fortran/mpif_h/$(DEPDIR)/$(am__dirstamp)
 src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-null_type_copy_fnf.lo:  \
-	src/binding/fortran/mpif_h/$(am__dirstamp) \
-	src/binding/fortran/mpif_h/$(DEPDIR)/$(am__dirstamp)
-src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-statusc2f.lo:  \
 	src/binding/fortran/mpif_h/$(am__dirstamp) \
 	src/binding/fortran/mpif_h/$(DEPDIR)/$(am__dirstamp)
 src/binding/fortran/use_mpi/$(am__dirstamp):
@@ -14056,6 +14058,9 @@ src/mpi/topo/lib_lib@MPILIBNAME@_la-nhb_alltoallw.lo:  \
 src/binding/fortran/mpif_h/lib_lib@MPILIBNAME@_la-statusf2c.lo:  \
 	src/binding/fortran/mpif_h/$(am__dirstamp) \
 	src/binding/fortran/mpif_h/$(DEPDIR)/$(am__dirstamp)
+src/binding/fortran/mpif_h/lib_lib@MPILIBNAME@_la-statusc2f.lo:  \
+	src/binding/fortran/mpif_h/$(am__dirstamp) \
+	src/binding/fortran/mpif_h/$(DEPDIR)/$(am__dirstamp)
 src/binding/fortran/use_mpi/lib_lib@MPILIBNAME@_la-create_f90_int.lo:  \
 	src/binding/fortran/use_mpi/$(am__dirstamp) \
 	src/binding/fortran/use_mpi/$(DEPDIR)/$(am__dirstamp)
@@ -14792,6 +14797,9 @@ src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_send.lo:  \
 src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_ibcom.lo:  \
 	src/mpid/ch3/channels/nemesis/netmod/ib/$(am__dirstamp) \
 	src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/$(am__dirstamp)
+src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_malloc.lo:  \
+	src/mpid/ch3/channels/nemesis/netmod/ib/$(am__dirstamp) \
+	src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/$(am__dirstamp)
 src/mpid/ch3/channels/nemesis/utils/monitor/$(am__dirstamp):
 	@$(MKDIR_P) src/mpid/ch3/channels/nemesis/utils/monitor
 	@: > src/mpid/ch3/channels/nemesis/utils/monitor/$(am__dirstamp)
@@ -15365,9 +15373,6 @@ src/mpid/common/datatype/dataloop/lib_lib@MPILIBNAME@_la-segment_packunpack.lo: 
 	src/mpid/common/datatype/dataloop/$(am__dirstamp) \
 	src/mpid/common/datatype/dataloop/$(DEPDIR)/$(am__dirstamp)
 src/mpid/common/datatype/dataloop/lib_lib@MPILIBNAME@_la-subarray_support.lo:  \
-	src/mpid/common/datatype/dataloop/$(am__dirstamp) \
-	src/mpid/common/datatype/dataloop/$(DEPDIR)/$(am__dirstamp)
-src/mpid/common/datatype/dataloop/lib_lib@MPILIBNAME@_la-dataloop_optimize.lo:  \
 	src/mpid/common/datatype/dataloop/$(am__dirstamp) \
 	src/mpid/common/datatype/dataloop/$(DEPDIR)/$(am__dirstamp)
 src/mpid/common/datatype/$(am__dirstamp):
@@ -16154,6 +16159,9 @@ src/mpi/topo/nhb_alltoallv.lo: src/mpi/topo/$(am__dirstamp) \
 src/mpi/topo/nhb_alltoallw.lo: src/mpi/topo/$(am__dirstamp) \
 	src/mpi/topo/$(DEPDIR)/$(am__dirstamp)
 src/binding/fortran/mpif_h/statusf2c.lo:  \
+	src/binding/fortran/mpif_h/$(am__dirstamp) \
+	src/binding/fortran/mpif_h/$(DEPDIR)/$(am__dirstamp)
+src/binding/fortran/mpif_h/statusc2f.lo:  \
 	src/binding/fortran/mpif_h/$(am__dirstamp) \
 	src/binding/fortran/mpif_h/$(DEPDIR)/$(am__dirstamp)
 src/binding/fortran/use_mpi/create_f90_int.lo:  \
@@ -17341,9 +17349,6 @@ src/binding/fortran/mpif_h/null_type_del_fnf.lo:  \
 src/binding/fortran/mpif_h/null_type_copy_fnf.lo:  \
 	src/binding/fortran/mpif_h/$(am__dirstamp) \
 	src/binding/fortran/mpif_h/$(DEPDIR)/$(am__dirstamp)
-src/binding/fortran/mpif_h/statusc2f.lo:  \
-	src/binding/fortran/mpif_h/$(am__dirstamp) \
-	src/binding/fortran/mpif_h/$(DEPDIR)/$(am__dirstamp)
 src/mpi/attr/attrutil.lo: src/mpi/attr/$(am__dirstamp) \
 	src/mpi/attr/$(DEPDIR)/$(am__dirstamp)
 src/mpi/attr/dup_fn.lo: src/mpi/attr/$(am__dirstamp) \
@@ -17787,6 +17792,9 @@ src/mpid/ch3/channels/nemesis/netmod/ib/ib_send.lo:  \
 src/mpid/ch3/channels/nemesis/netmod/ib/ib_ibcom.lo:  \
 	src/mpid/ch3/channels/nemesis/netmod/ib/$(am__dirstamp) \
 	src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/$(am__dirstamp)
+src/mpid/ch3/channels/nemesis/netmod/ib/ib_malloc.lo:  \
+	src/mpid/ch3/channels/nemesis/netmod/ib/$(am__dirstamp) \
+	src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/$(am__dirstamp)
 src/mpid/ch3/channels/nemesis/utils/monitor/papi_defs.lo:  \
 	src/mpid/ch3/channels/nemesis/utils/monitor/$(am__dirstamp) \
 	src/mpid/ch3/channels/nemesis/utils/monitor/$(DEPDIR)/$(am__dirstamp)
@@ -18160,9 +18168,6 @@ src/mpid/common/datatype/dataloop/segment_packunpack.lo:  \
 	src/mpid/common/datatype/dataloop/$(am__dirstamp) \
 	src/mpid/common/datatype/dataloop/$(DEPDIR)/$(am__dirstamp)
 src/mpid/common/datatype/dataloop/subarray_support.lo:  \
-	src/mpid/common/datatype/dataloop/$(am__dirstamp) \
-	src/mpid/common/datatype/dataloop/$(DEPDIR)/$(am__dirstamp)
-src/mpid/common/datatype/dataloop/dataloop_optimize.lo:  \
 	src/mpid/common/datatype/dataloop/$(am__dirstamp) \
 	src/mpid/common/datatype/dataloop/$(DEPDIR)/$(am__dirstamp)
 src/mpid/common/datatype/mpid_contents_support.lo:  \
@@ -19144,7 +19149,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPIFCLIBNAME@_la-statgetclf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPIFCLIBNAME@_la-statsetelf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPIFCLIBNAME@_la-status_set_elements_xf.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPIFCLIBNAME@_la-statusc2f.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPIFCLIBNAME@_la-testallf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPIFCLIBNAME@_la-testanyf.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPIFCLIBNAME@_la-testcancelf.Plo@am__quote@
@@ -19235,6 +19239,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPIFCLIBNAME@_la-wtimef.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPILIBNAME@_la-fdebug.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPILIBNAME@_la-setbot.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPILIBNAME@_la-statusc2f.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPILIBNAME@_la-statusf2c.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/binding/fortran/mpif_h/$(DEPDIR)/lookup_namef.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/binding/fortran/mpif_h/$(DEPDIR)/mprobef.Plo@am__quote@
@@ -20264,6 +20269,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/ib_ibcom.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/ib_init.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/ib_lmt.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/ib_malloc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/ib_poll.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/ib_reg_mr.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/ib_send.Plo@am__quote@
@@ -20271,6 +20277,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/lib_lib@MPILIBNAME@_la-ib_ibcom.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/lib_lib@MPILIBNAME@_la-ib_init.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/lib_lib@MPILIBNAME@_la-ib_lmt.Plo@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/lib_lib@MPILIBNAME@_la-ib_malloc.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/lib_lib@MPILIBNAME@_la-ib_poll.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/lib_lib@MPILIBNAME@_la-ib_reg_mr.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/lib_lib@MPILIBNAME@_la-ib_send.Plo@am__quote@
@@ -20575,7 +20582,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/common/datatype/dataloop/$(DEPDIR)/dataloop_create_pairtype.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/common/datatype/dataloop/$(DEPDIR)/dataloop_create_struct.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/common/datatype/dataloop/$(DEPDIR)/dataloop_create_vector.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/mpid/common/datatype/dataloop/$(DEPDIR)/dataloop_optimize.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/common/datatype/dataloop/$(DEPDIR)/lib_lib@MPILIBNAME@_la-darray_support.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/common/datatype/dataloop/$(DEPDIR)/lib_lib@MPILIBNAME@_la-dataloop.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/common/datatype/dataloop/$(DEPDIR)/lib_lib@MPILIBNAME@_la-dataloop_create.Plo@am__quote@
@@ -20585,7 +20591,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/common/datatype/dataloop/$(DEPDIR)/lib_lib@MPILIBNAME@_la-dataloop_create_pairtype.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/common/datatype/dataloop/$(DEPDIR)/lib_lib@MPILIBNAME@_la-dataloop_create_struct.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/common/datatype/dataloop/$(DEPDIR)/lib_lib@MPILIBNAME@_la-dataloop_create_vector.Plo@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@src/mpid/common/datatype/dataloop/$(DEPDIR)/lib_lib@MPILIBNAME@_la-dataloop_optimize.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/common/datatype/dataloop/$(DEPDIR)/lib_lib@MPILIBNAME@_la-segment.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/common/datatype/dataloop/$(DEPDIR)/lib_lib@MPILIBNAME@_la-segment_count.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@src/mpid/common/datatype/dataloop/$(DEPDIR)/lib_lib@MPILIBNAME@_la-segment_flatten.Plo@am__quote@
@@ -25651,13 +25656,6 @@ src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-null_type_copy_fnf.lo: src/b
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPIFCLIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-null_type_copy_fnf.lo `test -f 'src/binding/fortran/mpif_h/null_type_copy_fnf.c' || echo '$(srcdir)/'`src/binding/fortran/mpif_h/null_type_copy_fnf.c
 
-src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-statusc2f.lo: src/binding/fortran/mpif_h/statusc2f.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPIFCLIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-statusc2f.lo -MD -MP -MF src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPIFCLIBNAME@_la-statusc2f.Tpo -c -o src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-statusc2f.lo `test -f 'src/binding/fortran/mpif_h/statusc2f.c' || echo '$(srcdir)/'`src/binding/fortran/mpif_h/statusc2f.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPIFCLIBNAME@_la-statusc2f.Tpo src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPIFCLIBNAME@_la-statusc2f.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/binding/fortran/mpif_h/statusc2f.c' object='src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-statusc2f.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPIFCLIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/binding/fortran/mpif_h/lib_lib@MPIFCLIBNAME@_la-statusc2f.lo `test -f 'src/binding/fortran/mpif_h/statusc2f.c' || echo '$(srcdir)/'`src/binding/fortran/mpif_h/statusc2f.c
-
 src/binding/fortran/use_mpi/lib_lib@MPIFCLIBNAME@_la-typef90cmplxf.lo: src/binding/fortran/use_mpi/typef90cmplxf.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPIFCLIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/binding/fortran/use_mpi/lib_lib@MPIFCLIBNAME@_la-typef90cmplxf.lo -MD -MP -MF src/binding/fortran/use_mpi/$(DEPDIR)/lib_lib@MPIFCLIBNAME@_la-typef90cmplxf.Tpo -c -o src/binding/fortran/use_mpi/lib_lib@MPIFCLIBNAME@_la-typef90cmplxf.lo `test -f 'src/binding/fortran/use_mpi/typef90cmplxf.c' || echo '$(srcdir)/'`src/binding/fortran/use_mpi/typef90cmplxf.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/binding/fortran/use_mpi/$(DEPDIR)/lib_lib@MPIFCLIBNAME@_la-typef90cmplxf.Tpo src/binding/fortran/use_mpi/$(DEPDIR)/lib_lib@MPIFCLIBNAME@_la-typef90cmplxf.Plo
@@ -28647,6 +28645,13 @@ src/binding/fortran/mpif_h/lib_lib@MPILIBNAME@_la-statusf2c.lo: src/binding/fort
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPILIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/binding/fortran/mpif_h/lib_lib@MPILIBNAME@_la-statusf2c.lo `test -f 'src/binding/fortran/mpif_h/statusf2c.c' || echo '$(srcdir)/'`src/binding/fortran/mpif_h/statusf2c.c
 
+src/binding/fortran/mpif_h/lib_lib@MPILIBNAME@_la-statusc2f.lo: src/binding/fortran/mpif_h/statusc2f.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPILIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/binding/fortran/mpif_h/lib_lib@MPILIBNAME@_la-statusc2f.lo -MD -MP -MF src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPILIBNAME@_la-statusc2f.Tpo -c -o src/binding/fortran/mpif_h/lib_lib@MPILIBNAME@_la-statusc2f.lo `test -f 'src/binding/fortran/mpif_h/statusc2f.c' || echo '$(srcdir)/'`src/binding/fortran/mpif_h/statusc2f.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPILIBNAME@_la-statusc2f.Tpo src/binding/fortran/mpif_h/$(DEPDIR)/lib_lib@MPILIBNAME@_la-statusc2f.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/binding/fortran/mpif_h/statusc2f.c' object='src/binding/fortran/mpif_h/lib_lib@MPILIBNAME@_la-statusc2f.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPILIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/binding/fortran/mpif_h/lib_lib@MPILIBNAME@_la-statusc2f.lo `test -f 'src/binding/fortran/mpif_h/statusc2f.c' || echo '$(srcdir)/'`src/binding/fortran/mpif_h/statusc2f.c
+
 src/binding/fortran/use_mpi/lib_lib@MPILIBNAME@_la-create_f90_int.lo: src/binding/fortran/use_mpi/create_f90_int.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPILIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/binding/fortran/use_mpi/lib_lib@MPILIBNAME@_la-create_f90_int.lo -MD -MP -MF src/binding/fortran/use_mpi/$(DEPDIR)/lib_lib@MPILIBNAME@_la-create_f90_int.Tpo -c -o src/binding/fortran/use_mpi/lib_lib@MPILIBNAME@_la-create_f90_int.lo `test -f 'src/binding/fortran/use_mpi/create_f90_int.c' || echo '$(srcdir)/'`src/binding/fortran/use_mpi/create_f90_int.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/binding/fortran/use_mpi/$(DEPDIR)/lib_lib@MPILIBNAME@_la-create_f90_int.Tpo src/binding/fortran/use_mpi/$(DEPDIR)/lib_lib@MPILIBNAME@_la-create_f90_int.Plo
@@ -30138,6 +30143,13 @@ src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_ibcom.lo: src/
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPILIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_ibcom.lo `test -f 'src/mpid/ch3/channels/nemesis/netmod/ib/ib_ibcom.c' || echo '$(srcdir)/'`src/mpid/ch3/channels/nemesis/netmod/ib/ib_ibcom.c
 
+src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_malloc.lo: src/mpid/ch3/channels/nemesis/netmod/ib/ib_malloc.c
+@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPILIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_malloc.lo -MD -MP -MF src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/lib_lib@MPILIBNAME@_la-ib_malloc.Tpo -c -o src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_malloc.lo `test -f 'src/mpid/ch3/channels/nemesis/netmod/ib/ib_malloc.c' || echo '$(srcdir)/'`src/mpid/ch3/channels/nemesis/netmod/ib/ib_malloc.c
+@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/lib_lib@MPILIBNAME@_la-ib_malloc.Tpo src/mpid/ch3/channels/nemesis/netmod/ib/$(DEPDIR)/lib_lib@MPILIBNAME@_la-ib_malloc.Plo
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/mpid/ch3/channels/nemesis/netmod/ib/ib_malloc.c' object='src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_malloc.lo' libtool=yes @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPILIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/mpid/ch3/channels/nemesis/netmod/ib/lib_lib@MPILIBNAME@_la-ib_malloc.lo `test -f 'src/mpid/ch3/channels/nemesis/netmod/ib/ib_malloc.c' || echo '$(srcdir)/'`src/mpid/ch3/channels/nemesis/netmod/ib/ib_malloc.c
+
 src/mpid/ch3/channels/nemesis/utils/monitor/lib_lib@MPILIBNAME@_la-papi_defs.lo: src/mpid/ch3/channels/nemesis/utils/monitor/papi_defs.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPILIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/mpid/ch3/channels/nemesis/utils/monitor/lib_lib@MPILIBNAME@_la-papi_defs.lo -MD -MP -MF src/mpid/ch3/channels/nemesis/utils/monitor/$(DEPDIR)/lib_lib@MPILIBNAME@_la-papi_defs.Tpo -c -o src/mpid/ch3/channels/nemesis/utils/monitor/lib_lib@MPILIBNAME@_la-papi_defs.lo `test -f 'src/mpid/ch3/channels/nemesis/utils/monitor/papi_defs.c' || echo '$(srcdir)/'`src/mpid/ch3/channels/nemesis/utils/monitor/papi_defs.c
 @am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/mpid/ch3/channels/nemesis/utils/monitor/$(DEPDIR)/lib_lib@MPILIBNAME@_la-papi_defs.Tpo src/mpid/ch3/channels/nemesis/utils/monitor/$(DEPDIR)/lib_lib@MPILIBNAME@_la-papi_defs.Plo
@@ -31040,13 +31052,6 @@ src/mpid/common/datatype/dataloop/lib_lib@MPILIBNAME@_la-subarray_support.lo: sr
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/mpid/common/datatype/dataloop/subarray_support.c' object='src/mpid/common/datatype/dataloop/lib_lib@MPILIBNAME@_la-subarray_support.lo' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPILIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/mpid/common/datatype/dataloop/lib_lib@MPILIBNAME@_la-subarray_support.lo `test -f 'src/mpid/common/datatype/dataloop/subarray_support.c' || echo '$(srcdir)/'`src/mpid/common/datatype/dataloop/subarray_support.c
-
-src/mpid/common/datatype/dataloop/lib_lib@MPILIBNAME@_la-dataloop_optimize.lo: src/mpid/common/datatype/dataloop/dataloop_optimize.c
-@am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPILIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/mpid/common/datatype/dataloop/lib_lib@MPILIBNAME@_la-dataloop_optimize.lo -MD -MP -MF src/mpid/common/datatype/dataloop/$(DEPDIR)/lib_lib@MPILIBNAME@_la-dataloop_optimize.Tpo -c -o src/mpid/common/datatype/dataloop/lib_lib@MPILIBNAME@_la-dataloop_optimize.lo `test -f 'src/mpid/common/datatype/dataloop/dataloop_optimize.c' || echo '$(srcdir)/'`src/mpid/common/datatype/dataloop/dataloop_optimize.c
-@am__fastdepCC_TRUE@	$(AM_V_at)$(am__mv) src/mpid/common/datatype/dataloop/$(DEPDIR)/lib_lib@MPILIBNAME@_la-dataloop_optimize.Tpo src/mpid/common/datatype/dataloop/$(DEPDIR)/lib_lib@MPILIBNAME@_la-dataloop_optimize.Plo
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	$(AM_V_CC)source='src/mpid/common/datatype/dataloop/dataloop_optimize.c' object='src/mpid/common/datatype/dataloop/lib_lib@MPILIBNAME@_la-dataloop_optimize.lo' libtool=yes @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(AM_V_CC@am__nodep@)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPILIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o src/mpid/common/datatype/dataloop/lib_lib@MPILIBNAME@_la-dataloop_optimize.lo `test -f 'src/mpid/common/datatype/dataloop/dataloop_optimize.c' || echo '$(srcdir)/'`src/mpid/common/datatype/dataloop/dataloop_optimize.c
 
 src/mpid/common/datatype/lib_lib@MPILIBNAME@_la-mpid_contents_support.lo: src/mpid/common/datatype/mpid_contents_support.c
 @am__fastdepCC_TRUE@	$(AM_V_CC)$(LIBTOOL) $(AM_V_lt) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(lib_lib@MPILIBNAME@_la_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT src/mpid/common/datatype/lib_lib@MPILIBNAME@_la-mpid_contents_support.lo -MD -MP -MF src/mpid/common/datatype/$(DEPDIR)/lib_lib@MPILIBNAME@_la-mpid_contents_support.Tpo -c -o src/mpid/common/datatype/lib_lib@MPILIBNAME@_la-mpid_contents_support.lo `test -f 'src/mpid/common/datatype/mpid_contents_support.c' || echo '$(srcdir)/'`src/mpid/common/datatype/mpid_contents_support.c
@@ -33814,8 +33819,8 @@ test-clean:
 	( cd test && $(MAKE) $(AM_MAKEFLAGS) clean )
 
 install-exec-hook:
-	for e in ${DESTDIR}${bindir}/mpicc ${DESTDIR}${bindir}/mpicxx \
-		${DESTDIR}${bindir}/mpif77 ${DESTDIR}${bindir}/mpifort ; do \
+	for e in ${DESTDIR}${bindir}/@MPICC_NAME@ ${DESTDIR}${bindir}/@MPICXX_NAME@ \
+		${DESTDIR}${bindir}/@MPIF77_NAME@ ${DESTDIR}${bindir}/@MPIFORT_NAME@ ; do \
 		if test -e $${e} ; then \
 			sed -e 's|__PREFIX_TO_BE_FILLED_AT_INSTALL_TIME__|${prefix}|g' \
 				-e 's|__EXEC_PREFIX_TO_BE_FILLED_AT_INSTALL_TIME__|${exec_prefix}|g' \
@@ -33826,12 +33831,12 @@ install-exec-hook:
 			rm -f $${e}.tmp ; \
 		fi ; \
 	done ; \
-	if test -e ${DESTDIR}${bindir}/mpicxx ; then \
-		cd ${DESTDIR}${bindir} && ln -f -s mpicxx mpic++ ; fi ; \
-	if test -e ${DESTDIR}${bindir}/mpifort ; then \
-		cd ${DESTDIR}${bindir} && ln -f -s mpifort mpif90 ; fi ; \
-	if test -e ${DESTDIR}${bindir}/mpifort -a ! -e ${DESTDIR}${bindir}/mpif77 ; then \
-		cd ${DESTDIR}${bindir} && ln -f -s mpifort mpif77 ; fi ; \
+	if test -e ${DESTDIR}${bindir}/@MPICXX_NAME@ ; then \
+		cd ${DESTDIR}${bindir} && ln -f -s @MPICXX_NAME@ @MPICPP_NAME@ ; fi ; \
+	if test -e ${DESTDIR}${bindir}/@MPIFORT_NAME@ ; then \
+		cd ${DESTDIR}${bindir} && ln -f -s @MPIFORT_NAME@ @MPIF90_NAME@ ; fi ; \
+	if test -e ${DESTDIR}${bindir}/@MPIFORT_NAME@ -a ! -e ${DESTDIR}${bindir}/@MPIF77_NAME@ ; then \
+		cd ${DESTDIR}${bindir} && ln -f -s @MPIFORT_NAME@ @MPIF77_NAME@ ; fi ; \
 	if test -e ${DESTDIR}${libdir}/lib@MPILIBNAME@@SHLIB_EXT@ ; then \
 		cd ${DESTDIR}${libdir} && ln -f -s lib@MPILIBNAME@@SHLIB_EXT@ libmpl@SHLIB_EXT@ ; \
 		cd ${DESTDIR}${libdir} && ln -f -s lib@MPILIBNAME@@SHLIB_EXT@ libopa@SHLIB_EXT@ ; \

@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Copyright © 2009-2013 Inria.  All rights reserved.
+# Copyright © 2009-2014 Inria.  All rights reserved.
 # Copyright © 2009-2012 Université Bordeaux 1
 # Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 # Copyright © 2011-2012 Oracle and/or its affiliates.  All rights reserved.
@@ -115,7 +115,7 @@ target_triplet = @target@
 @HWLOC_HAVE_FREEBSD_TRUE@am__append_24 = topology-freebsd.c
 @HWLOC_HAVE_NETBSD_TRUE@am__append_25 = topology-netbsd.c
 @HWLOC_HAVE_NETBSD_TRUE@am__append_26 = -lpthread
-@HWLOC_HAVE_CPUID_TRUE@am__append_27 = topology-x86.c
+@HWLOC_HAVE_X86_CPUID_TRUE@am__append_27 = topology-x86.c
 @HWLOC_HAVE_GCC_TRUE@am__append_28 = -no-undefined
 @HWLOC_HAVE_WINDOWS_TRUE@am__append_29 = -Xlinker --output-def -Xlinker .libs/libhwloc.def
 @HWLOC_HAVE_PLUGINS_TRUE@am__append_30 = $(LTDLINCL)
@@ -283,7 +283,7 @@ am__libhwloc_la_SOURCES_DIST = topology.c traversal.c distances.c \
 @HWLOC_HAVE_DARWIN_TRUE@am__objects_14 = topology-darwin.lo
 @HWLOC_HAVE_FREEBSD_TRUE@am__objects_15 = topology-freebsd.lo
 @HWLOC_HAVE_NETBSD_TRUE@am__objects_16 = topology-netbsd.lo
-@HWLOC_HAVE_CPUID_TRUE@am__objects_17 = topology-x86.lo
+@HWLOC_HAVE_X86_CPUID_TRUE@am__objects_17 = topology-x86.lo
 am__objects_18 = topology.lo traversal.lo distances.lo components.lo \
 	bind.lo bitmap.lo pci-common.lo diff.lo misc.lo base64.lo \
 	topology-noos.lo topology-synthetic.lo topology-custom.lo \

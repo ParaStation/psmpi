@@ -14,6 +14,10 @@
 #pragma _HP_SECONDARY_DEF PMPI_Ireduce_scatter  MPI_Ireduce_scatter
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Ireduce_scatter as PMPI_Ireduce_scatter
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Ireduce_scatter(const void *sendbuf, void *recvbuf, const int recvcounts[],
+                        MPI_Datatype datatype, MPI_Op op, MPI_Comm comm, MPI_Request *request)
+                        __attribute__((weak,alias("PMPI_Ireduce_scatter")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -1082,6 +1086,7 @@ int MPI_Ireduce_scatter(const void *sendbuf, void *recvbuf, const int recvcounts
     int mpi_errno = MPI_SUCCESS;
     MPID_Comm *comm_ptr = NULL;
     MPID_MPI_STATE_DECL(MPID_STATE_MPI_IREDUCE_SCATTER);
+    int i = 0;
 
     MPIU_THREAD_CS_ENTER(ALLFUNC,);
     MPID_MPI_FUNC_ENTER(MPID_STATE_MPI_IREDUCE_SCATTER);
@@ -1133,7 +1138,12 @@ int MPI_Ireduce_scatter(const void *sendbuf, void *recvbuf, const int recvcounts
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
             MPIR_ERRTEST_ARGNULL(request,"request", mpi_errno);
-            /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
+
+            while (i < comm_ptr->remote_size && recvcounts[i] == 0) ++i;
+
+            if (comm_ptr->comm_kind == MPID_INTRACOMM && sendbuf != MPI_IN_PLACE && i < comm_ptr->remote_size)
+                MPIR_ERRTEST_ALIAS_COLL(sendbuf, recvbuf, mpi_errno)
+            /* TODO more checks may be appropriate (counts, in_place, etc) */
         }
         MPID_END_ERROR_CHECKS
     }

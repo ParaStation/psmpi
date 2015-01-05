@@ -1352,6 +1352,13 @@ fi
 export MPICH_THREAD_LEVEL
 AC_DEFINE_UNQUOTED(MPICH_THREAD_LEVEL,$MPICH_THREAD_LEVEL,[Level of thread support selected at compile time])
 
+# If not in MPI_THREAD_SINGLE, we need -D_REENTRANT to get thread-safe "errno".
+# Most POSIX systems provide this by default when using -lpthread, but we only use it in MPI_THREAD_MULTIPLE.
+# Some systems (Solaris) still require an explicit define in any case.
+if test "$MPICH_THREAD_LEVEL" != "MPI_THREAD_SINGLE"; then
+    PAC_APPEND_FLAG([-D_REENTRANT], [CPPFLAGS])
+fi
+
 # Check for value thread_cs choice; set the refcount default if necessary
 thread_granularity=MPIU_THREAD_GRANULARITY_SINGLE
 thread_refcount=MPIU_REFCOUNT_NONE
@@ -1786,12 +1793,7 @@ if test $enable_weak_symbols = "yes" ; then
     # Check for the ability to support multiple weak symbols
     if test "$pac_cv_prog_c_weak_symbols" = "pragma weak" ; then
        PAC_PROG_C_MULTIPLE_WEAK_SYMBOLS(AC_DEFINE(HAVE_MULTIPLE_PRAGMA_WEAK,1,[Define if multiple weak symbols may be defined]))
-    else
-        if test "$pac_cv_prog_c_weak_symbols" = "no" -a "$pac_cv_attr_weak_alias" = "yes"; then
-            MPICH_ATTR_WEAK_ALIAS_DEFINITION="__attribute__((weak,alias(fname)))"
-        fi
     fi
-    AC_SUBST(MPICH_ATTR_WEAK_ALIAS_DEFINITION)
 fi
 export NEEDSPLIB
 
@@ -5903,6 +5905,20 @@ MPI_NO_SPAWN=$MPID_NO_SPAWN
 export MPI_NO_SPAWN
 MPI_NO_RMA=$MPID_NO_RMA
 export MPI_NO_RMA
+
+# Attach program prefix and suffix to executable names for Makefile
+AC_SUBST(MPICC_NAME)
+AC_SUBST(MPICXX_NAME)
+AC_SUBST(MPICPP_NAME)
+AC_SUBST(MPIFORT_NAME)
+AC_SUBST(MPIF90_NAME)
+AC_SUBST(MPIF77_NAME)
+PAC_GET_EXENAME("mpicc", MPICC_NAME)
+PAC_GET_EXENAME("mpicxx", MPICXX_NAME)
+PAC_GET_EXENAME("mpic++", MPICPP_NAME)
+PAC_GET_EXENAME("mpifort", MPIFORT_NAME)
+PAC_GET_EXENAME("mpif90", MPIF90_NAME)
+PAC_GET_EXENAME("mpif77", MPIF77_NAME)
 
 AC_CONFIG_SUBDIRS([test/mpi])
 dnl

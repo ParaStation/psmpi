@@ -278,6 +278,14 @@ void ADIOI_GPFS_WriteStridedColl(ADIO_File fd, const void *buf, int count,
 		    error_code, st_offsets, end_offsets, fd_start, fd_end);
 	    /* NOTE: we are skipping the rest of two-phase in this path */
             GPFSMPIO_T_CIO_REPORT( 1, fd, myrank, nprocs)
+
+            ADIOI_Free(offset_list);
+            ADIOI_Free(len_list);
+            ADIOI_Free(st_offsets);
+            ADIOI_Free(end_offsets);
+            ADIOI_Free(fd_start);
+            ADIOI_Free(fd_end);
+
 	    return;
 	}
     }
@@ -378,7 +386,7 @@ void ADIOI_GPFS_WriteStridedColl(ADIO_File fd, const void *buf, int count,
 #endif
 }
 
-void gpfs_wr_access_start(int fd, ADIO_Offset offset, ADIO_Offset length)
+static void gpfs_wr_access_start(int fd, ADIO_Offset offset, ADIO_Offset length)
 {
         int rc=0;
 #ifdef HAVE_GPFS_FCNTL_H
@@ -402,7 +410,7 @@ void gpfs_wr_access_start(int fd, ADIO_Offset offset, ADIO_Offset length)
         ADIOI_Assert(rc == 0);
 }
 
-void gpfs_wr_access_end(int fd, ADIO_Offset offset, ADIO_Offset length)
+static void gpfs_wr_access_end(int fd, ADIO_Offset offset, ADIO_Offset length)
 {
         int rc=0;
 #ifdef HAVE_GPFS_FCNTL_H
@@ -429,7 +437,7 @@ void gpfs_wr_access_end(int fd, ADIO_Offset offset, ADIO_Offset length)
 #ifdef BGQPLATFORM
 /* my_start, my_end: this processes file domain.  coudd be -1,-1 for "no i/o"
  * fd_start, fd_end: arrays of length fd->hints->cb_nodes specifying all file domains */
-int gpfs_find_access_for_ion(ADIO_File fd,
+static int gpfs_find_access_for_ion(ADIO_File fd,
 	ADIO_Offset my_start, ADIO_Offset my_end,
 	ADIO_Offset *fd_start, ADIO_Offset *fd_end,
 	ADIO_Offset *start, ADIO_Offset *end)
@@ -979,7 +987,7 @@ static void ADIOI_W_Exchange_data(ADIO_File fd, const void *buf, char *write_buf
 
     if (nprocs_recv) {
 	if (*hole) {
-	    char * stuff = "data-sieve-in-two-phase";
+	    const char * stuff = "data-sieve-in-two-phase";
 	    setenv("LIBIOLOG_EXTRA_INFO", stuff, 1);
 	    ADIO_ReadContig(fd, write_buf, size, MPI_BYTE, 
 			    ADIO_EXPLICIT_OFFSET, off, &status, &err);

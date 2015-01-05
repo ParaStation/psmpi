@@ -14,6 +14,9 @@
 #pragma _HP_SECONDARY_DEF PMPI_Ibcast  MPI_Ibcast
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Ibcast as PMPI_Ibcast
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Ibcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm,
+               MPI_Request *request) __attribute__((weak,alias("PMPI_Ibcast")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -938,6 +941,7 @@ int MPI_Ibcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Com
         MPID_BEGIN_ERROR_CHECKS
         {
             MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
+            MPIR_ERRTEST_COUNT(count, mpi_errno);
             MPIR_ERRTEST_COMM(comm, mpi_errno);
 
             /* TODO more checks may be appropriate */

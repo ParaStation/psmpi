@@ -89,7 +89,8 @@ DIST_COMMON = $(top_srcdir)/Makefile.mtest $(srcdir)/Makefile.in \
 noinst_PROGRAMS = rdwrord$(EXEEXT) rdwrzero$(EXEEXT) \
 	getextent$(EXEEXT) setinfo$(EXEEXT) setviewcur$(EXEEXT) \
 	i_noncontig$(EXEEXT) async$(EXEEXT) async_any$(EXEEXT) \
-	userioerr$(EXEEXT) resized$(EXEEXT) resized2$(EXEEXT)
+	userioerr$(EXEEXT) resized$(EXEEXT) resized2$(EXEEXT) \
+	bigtype$(EXEEXT)
 subdir = io
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -116,6 +117,10 @@ async_any_SOURCES = async_any.c
 async_any_OBJECTS = async_any.$(OBJEXT)
 async_any_LDADD = $(LDADD)
 async_any_DEPENDENCIES = $(top_builddir)/util/mtest.o
+bigtype_SOURCES = bigtype.c
+bigtype_OBJECTS = bigtype.$(OBJEXT)
+bigtype_LDADD = $(LDADD)
+bigtype_DEPENDENCIES = $(top_builddir)/util/mtest.o
 getextent_SOURCES = getextent.c
 getextent_OBJECTS = getextent.$(OBJEXT)
 getextent_LDADD = $(LDADD)
@@ -180,12 +185,12 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = async.c async_any.c getextent.c i_noncontig.c rdwrord.c \
-	rdwrzero.c resized.c resized2.c setinfo.c setviewcur.c \
-	userioerr.c
-DIST_SOURCES = async.c async_any.c getextent.c i_noncontig.c rdwrord.c \
-	rdwrzero.c resized.c resized2.c setinfo.c setviewcur.c \
-	userioerr.c
+SOURCES = async.c async_any.c bigtype.c getextent.c i_noncontig.c \
+	rdwrord.c rdwrzero.c resized.c resized2.c setinfo.c \
+	setviewcur.c userioerr.c
+DIST_SOURCES = async.c async_any.c bigtype.c getextent.c i_noncontig.c \
+	rdwrord.c rdwrzero.c resized.c resized2.c setinfo.c \
+	setviewcur.c userioerr.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -443,6 +448,10 @@ async_any$(EXEEXT): $(async_any_OBJECTS) $(async_any_DEPENDENCIES) $(EXTRA_async
 	@rm -f async_any$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(async_any_OBJECTS) $(async_any_LDADD) $(LIBS)
 
+bigtype$(EXEEXT): $(bigtype_OBJECTS) $(bigtype_DEPENDENCIES) $(EXTRA_bigtype_DEPENDENCIES) 
+	@rm -f bigtype$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(bigtype_OBJECTS) $(bigtype_LDADD) $(LIBS)
+
 getextent$(EXEEXT): $(getextent_OBJECTS) $(getextent_DEPENDENCIES) $(EXTRA_getextent_DEPENDENCIES) 
 	@rm -f getextent$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(getextent_OBJECTS) $(getextent_LDADD) $(LIBS)
@@ -487,6 +496,7 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/async.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/async_any.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/bigtype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getextent.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/i_noncontig.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/rdwrord.Po@am__quote@

@@ -13,6 +13,11 @@
 #pragma _HP_SECONDARY_DEF PMPI_Iscatterv  MPI_Iscatterv
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Iscatterv as PMPI_Iscatterv
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Iscatterv(const void *sendbuf, const int sendcounts[], const int displs[],
+                  MPI_Datatype sendtype, void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                  int root, MPI_Comm comm, MPI_Request *request)
+                  __attribute__((weak,alias("PMPI_Iscatterv")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -256,6 +261,13 @@ int MPI_Iscatterv(const void *sendbuf, const int sendcounts[], const int displs[
                             break;
                         }
                     }
+                    /* catch common aliasing cases */
+                    if (recvbuf != MPI_IN_PLACE && sendtype == recvtype && sendcounts[comm_ptr->rank] != 0 && recvcount != 0) {
+                        int sendtype_size;
+                        MPID_Datatype_get_size_macro(sendtype, sendtype_size);
+                        MPIR_ERRTEST_ALIAS_COLL(recvbuf, (char*)sendbuf + displs[comm_ptr->rank]*sendtype_size, mpi_errno);
+                    }
+
                 }
                 else
                     MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, recvcount, mpi_errno);

@@ -23,7 +23,9 @@ function MPIR_Cancel_c(request) &
     use, intrinsic :: iso_c_binding, only : c_int
     use :: mpi_c_interface_types, only : c_Request
     implicit none
-    integer(c_Request), value, intent(in) :: request
+    ! No value attribute for request due to an oversight in MPI-1.0
+    ! See P72 of MPI-3.0
+    integer(c_Request), intent(in) :: request
     integer(c_int) :: ierror
 end function MPIR_Cancel_c
 
@@ -2347,12 +2349,12 @@ function MPIR_Comm_spawn_multiple_c(count, array_of_commands, array_of_argv, arr
     use, intrinsic :: iso_c_binding, only : c_int, c_char, c_ptr
     use :: mpi_c_interface_types, only : c_Info, c_Comm
     implicit none
-    integer(c_int), intent(in) :: count
+    integer(c_int), value, intent(in) :: count
     type(c_ptr), value, intent(in) :: array_of_commands
     type(c_ptr), value, intent(in) :: array_of_argv
     integer(c_int), intent(in) ::  array_of_maxprocs(*)
     integer(c_Info), intent(in) :: array_of_info(*)
-    integer(c_int), intent(in) ::  root
+    integer(c_int), value, intent(in) :: root
     integer(c_Comm), value, intent(in) :: comm
     integer(c_Comm), intent(out) :: intercomm
     type(c_ptr), value, intent(in) :: array_of_errcodes

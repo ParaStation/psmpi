@@ -5,7 +5,7 @@
  */
 /* automatically generated
  *   by:   ./maint/extractcvars
- *   at:   Wed Jun  4 15:02:51 2014
+ *   at:   Mon Jul 21 16:00:50 2014
  *
  * DO NOT EDIT!!!
  */
@@ -243,15 +243,20 @@ int MPIR_CVAR_ABORT_ON_LEAKED_HANDLES = 0;
 #endif /* MPID_ABORT_ON_LEAKED_HANDLES */
 
 int MPIR_CVAR_NEMESIS_POLLS_BEFORE_YIELD = 1000;
-int MPIR_CVAR_DATALOOP_OPTIMIZE = 1;
-int MPIR_CVAR_DATALOOP_FLATTEN = 1;
-int MPIR_CVAR_DATALOOP_FLATTEN_MULT = 2;
+#if defined MPID_COLL_ALIAS_CHECK
+int MPIR_CVAR_COLL_ALIAS_CHECK = MPID_COLL_ALIAS_CHECK;
+#else
+int MPIR_CVAR_COLL_ALIAS_CHECK = 1;
+#endif /* MPID_COLL_ALIAS_CHECK */
+
 int MPIR_CVAR_CH3_NOLOCAL = 0;
 int MPIR_CVAR_CH3_ODD_EVEN_CLIQUES = 0;
 int MPIR_CVAR_CH3_EAGER_MAX_MSG_SIZE = 131072;
 int MPIR_CVAR_CH3_RMA_ACC_IMMED = 1;
 int MPIR_CVAR_CH3_RMA_NREQUEST_THRESHOLD = 4000;
 int MPIR_CVAR_CH3_RMA_NREQUEST_NEW_THRESHOLD = 128;
+int MPIR_CVAR_CH3_RMA_GC_NUM_COMPLETED = 1;
+int MPIR_CVAR_CH3_RMA_GC_NUM_TESTED = (-1);
 int MPIR_CVAR_CH3_RMA_LOCK_IMMED = 0;
 int MPIR_CVAR_CH3_RMA_MERGE_LOCK_OP_UNLOCK = 1;
 char * MPIR_CVAR_NEMESIS_NETMOD = (char*)"";
@@ -281,51 +286,47 @@ int MPIR_T_cvar_init(void)
         return MPI_SUCCESS;
     initialized = TRUE;
 
-    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpi/init/initthread.c */
+    /* declared in /tmp/KtKGPV3F99/mpich-3.1.2/maint/../src/mpi/init/initthread.c */
     MPIR_T_cat_add_desc("DEBUGGER",
         "cvars relevant to the \"MPIR\" debugger interface");
 
-    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpi/init/init.c */
+    /* declared in /tmp/KtKGPV3F99/mpich-3.1.2/maint/../src/mpi/init/init.c */
     MPIR_T_cat_add_desc("THREADS",
         "multi-threading cvars");
 
-    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpi/init/finalize.c */
+    /* declared in /tmp/KtKGPV3F99/mpich-3.1.2/maint/../src/mpi/init/finalize.c */
     MPIR_T_cat_add_desc("DEVELOPER",
         "useful for developers working on MPICH itself");
 
-    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpi/errhan/errutil.c */
+    /* declared in /tmp/KtKGPV3F99/mpich-3.1.2/maint/../src/mpi/errhan/errutil.c */
     MPIR_T_cat_add_desc("ERROR_HANDLING",
         "cvars that control error handling behavior (stack traces, aborts, etc)");
 
-    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpi/comm/comm_split.c */
+    /* declared in /tmp/KtKGPV3F99/mpich-3.1.2/maint/../src/mpi/comm/comm_split.c */
     MPIR_T_cat_add_desc("COMMUNICATOR",
         "cvars that control communicator construction and operation");
 
-    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpi/coll/helper_fns.c */
+    /* declared in /tmp/KtKGPV3F99/mpich-3.1.2/maint/../src/mpi/coll/helper_fns.c */
     MPIR_T_cat_add_desc("FAULT_TOLERANCE",
         "cvars that control fault tolerance behavior");
 
-    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpi/coll/alltoall.c */
+    /* declared in /tmp/KtKGPV3F99/mpich-3.1.2/maint/../src/mpi/coll/alltoall.c */
     MPIR_T_cat_add_desc("COLLECTIVE",
         "A category for collective communication variables.");
 
-    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/nameserv/file/file_nameserv.c */
+    /* declared in /tmp/KtKGPV3F99/mpich-3.1.2/maint/../src/nameserv/file/file_nameserv.c */
     MPIR_T_cat_add_desc("PROCESS_MANAGER",
         "cvars that control the client-side process manager code");
 
-    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/util/mem/handlemem.c */
+    /* declared in /tmp/KtKGPV3F99/mpich-3.1.2/maint/../src/util/mem/handlemem.c */
     MPIR_T_cat_add_desc("MEMORY",
         "affects memory allocation and usage, including MPI object handles");
 
-    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpid/common/datatype/dataloop/dataloop_create_struct.c */
-    MPIR_T_cat_add_desc("DATATYPE",
-        "Datatype optimization parameters");
-
-    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpid/ch3/src/ch3u_rma_sync.c */
+    /* declared in /tmp/KtKGPV3F99/mpich-3.1.2/maint/../src/mpid/ch3/src/ch3u_rma_sync.c */
     MPIR_T_cat_add_desc("CH3",
         "cvars that control behavior of ch3");
 
-    /* declared in /tmp/JGQRosY5vd/mpich-3.1.1/maint/../src/mpid/ch3/channels/nemesis/src/mpid_nem_init.c */
+    /* declared in /tmp/KtKGPV3F99/mpich-3.1.2/maint/../src/mpid/ch3/channels/nemesis/src/mpid_nem_init.c */
     MPIR_T_cat_add_desc("NEMESIS",
         "cvars that control behavior of the ch3:nemesis channel");
 
@@ -1082,56 +1083,20 @@ int MPIR_T_cvar_init(void)
     defaultval.d = 1;
     MPIR_T_CVAR_REGISTER_STATIC(
         MPI_INT,
-        MPIR_CVAR_DATALOOP_OPTIMIZE, /* name */
-        &MPIR_CVAR_DATALOOP_OPTIMIZE, /* address */
+        MPIR_CVAR_COLL_ALIAS_CHECK, /* name */
+        &MPIR_CVAR_COLL_ALIAS_CHECK, /* address */
         1, /* count */
         MPI_T_VERBOSITY_USER_BASIC,
-        MPI_T_SCOPE_LOCAL,
+        MPI_T_SCOPE_ALL_EQ,
         defaultval,
-        "DATATYPE", /* category */
-        "By default, the internal representation of an MPI datatype that is used by MPICH to move data is very similar to the original description of the datatype.  If this flag is true, additional optimizations are used to improve the performance of datatypes.");
-    rc = MPL_env2bool("MPICH_DATALOOP_OPTIMIZE", &(MPIR_CVAR_DATALOOP_OPTIMIZE));
-    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_DATALOOP_OPTIMIZE");
-    rc = MPL_env2bool("MPIR_PARAM_DATALOOP_OPTIMIZE", &(MPIR_CVAR_DATALOOP_OPTIMIZE));
-    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_DATALOOP_OPTIMIZE");
-    rc = MPL_env2bool("MPIR_CVAR_DATALOOP_OPTIMIZE", &(MPIR_CVAR_DATALOOP_OPTIMIZE));
-    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_CVAR_DATALOOP_OPTIMIZE");
-
-    defaultval.d = 1;
-    MPIR_T_CVAR_REGISTER_STATIC(
-        MPI_INT,
-        MPIR_CVAR_DATALOOP_FLATTEN, /* name */
-        &MPIR_CVAR_DATALOOP_FLATTEN, /* address */
-        1, /* count */
-        MPI_T_VERBOSITY_USER_BASIC,
-        MPI_T_SCOPE_LOCAL,
-        defaultval,
-        "DATATYPE", /* category */
-        "If true, attempt to \"flatten\" the internal representation of MPI struct datatypes (created with MPI_Type_create_struct).");
-    rc = MPL_env2bool("MPICH_DATALOOP_FLATTEN", &(MPIR_CVAR_DATALOOP_FLATTEN));
-    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_DATALOOP_FLATTEN");
-    rc = MPL_env2bool("MPIR_PARAM_DATALOOP_FLATTEN", &(MPIR_CVAR_DATALOOP_FLATTEN));
-    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_DATALOOP_FLATTEN");
-    rc = MPL_env2bool("MPIR_CVAR_DATALOOP_FLATTEN", &(MPIR_CVAR_DATALOOP_FLATTEN));
-    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_CVAR_DATALOOP_FLATTEN");
-
-    defaultval.d = 2;
-    MPIR_T_CVAR_REGISTER_STATIC(
-        MPI_INT,
-        MPIR_CVAR_DATALOOP_FLATTEN_MULT, /* name */
-        &MPIR_CVAR_DATALOOP_FLATTEN_MULT, /* address */
-        1, /* count */
-        MPI_T_VERBOSITY_USER_BASIC,
-        MPI_T_SCOPE_LOCAL,
-        defaultval,
-        "DATATYPE", /* category */
-        "Flattening an MPI struct datatype does not always improve performance.  This parameter is a threshold that is used in comparing the size of the description with the amount of data moved.  Larger values make it more likely that a struct datatype will be flattened.  The default value is adequate for flattening simple structs, and will usually avoid flattening structs containing vectors or block-indexed data.");
-    rc = MPL_env2int("MPICH_DATALOOP_FLATTEN_MULT", &(MPIR_CVAR_DATALOOP_FLATTEN_MULT));
-    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_DATALOOP_FLATTEN_MULT");
-    rc = MPL_env2int("MPIR_PARAM_DATALOOP_FLATTEN_MULT", &(MPIR_CVAR_DATALOOP_FLATTEN_MULT));
-    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_DATALOOP_FLATTEN_MULT");
-    rc = MPL_env2int("MPIR_CVAR_DATALOOP_FLATTEN_MULT", &(MPIR_CVAR_DATALOOP_FLATTEN_MULT));
-    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_CVAR_DATALOOP_FLATTEN_MULT");
+        "COLLECTIVE", /* category */
+        "Enable checking of aliasing in collective operations");
+    rc = MPL_env2int("MPICH_COLL_ALIAS_CHECK", &(MPIR_CVAR_COLL_ALIAS_CHECK));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_COLL_ALIAS_CHECK");
+    rc = MPL_env2int("MPIR_PARAM_COLL_ALIAS_CHECK", &(MPIR_CVAR_COLL_ALIAS_CHECK));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_COLL_ALIAS_CHECK");
+    rc = MPL_env2int("MPIR_CVAR_COLL_ALIAS_CHECK", &(MPIR_CVAR_COLL_ALIAS_CHECK));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_CVAR_COLL_ALIAS_CHECK");
 
     defaultval.d = 0;
     MPIR_T_CVAR_REGISTER_STATIC(
@@ -1252,6 +1217,42 @@ int MPIR_T_cvar_init(void)
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_CH3_RMA_NREQUEST_NEW_THRESHOLD");
     rc = MPL_env2int("MPIR_CVAR_CH3_RMA_NREQUEST_NEW_THRESHOLD", &(MPIR_CVAR_CH3_RMA_NREQUEST_NEW_THRESHOLD));
     MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_CVAR_CH3_RMA_NREQUEST_NEW_THRESHOLD");
+
+    defaultval.d = 1;
+    MPIR_T_CVAR_REGISTER_STATIC(
+        MPI_INT,
+        MPIR_CVAR_CH3_RMA_GC_NUM_COMPLETED, /* name */
+        &MPIR_CVAR_CH3_RMA_GC_NUM_COMPLETED, /* address */
+        1, /* count */
+        MPI_T_VERBOSITY_USER_BASIC,
+        MPI_T_SCOPE_ALL_EQ,
+        defaultval,
+        "CH3", /* category */
+        "Threshold for the number of completed requests the runtime finds before it stops trying to find more completed requests in garbage collection function. Note that it works with MPIR_CVAR_CH3_RMA_GC_NUM_TESTED as an OR relation, which means runtime will stop checking when either one of its following conditions is satisfied or one of conditions of MPIR_CVAR_CH3_RMA_GC_NUM_TESTED is satisfied. When it is set to negative value, it means runtime will not stop checking the operation list until it reaches the end of the list. When it is set to positive value, it means runtime will not stop checking the operation list until it finds certain number of completed requests. When it is set to zero value, the outcome is undefined. Note that in garbage collection function, if runtime finds a chain of completed RMA requests, it will temporarily ignore this CVAR and try to find continuous completed requests as many as possible, until it meets an incomplete request.");
+    rc = MPL_env2int("MPICH_CH3_RMA_GC_NUM_COMPLETED", &(MPIR_CVAR_CH3_RMA_GC_NUM_COMPLETED));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_CH3_RMA_GC_NUM_COMPLETED");
+    rc = MPL_env2int("MPIR_PARAM_CH3_RMA_GC_NUM_COMPLETED", &(MPIR_CVAR_CH3_RMA_GC_NUM_COMPLETED));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_CH3_RMA_GC_NUM_COMPLETED");
+    rc = MPL_env2int("MPIR_CVAR_CH3_RMA_GC_NUM_COMPLETED", &(MPIR_CVAR_CH3_RMA_GC_NUM_COMPLETED));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_CVAR_CH3_RMA_GC_NUM_COMPLETED");
+
+    defaultval.d = (-1);
+    MPIR_T_CVAR_REGISTER_STATIC(
+        MPI_INT,
+        MPIR_CVAR_CH3_RMA_GC_NUM_TESTED, /* name */
+        &MPIR_CVAR_CH3_RMA_GC_NUM_TESTED, /* address */
+        1, /* count */
+        MPI_T_VERBOSITY_USER_BASIC,
+        MPI_T_SCOPE_ALL_EQ,
+        defaultval,
+        "CH3", /* category */
+        "Threshold for the number of RMA requests the runtime tests before it stops trying to check more requests in garbage collection routine. Note that it works with MPIR_CVAR_CH3_RMA_GC_NUM_COMPLETED as an OR relation, which means runtime will stop checking when either one of its following conditions is satisfied or one of conditions of MPIR_CVAR_CH3_RMA_GC_NUM_COMPLETED is satisfied. When it is set to negative value, runtime will not stop checking operation list until runtime reaches the end of the list. It has the risk of O(N) traversing overhead if there is no completed request in the list. When it is set to positive value, it means runtime will not stop checking the operation list until it visits such number of requests. Higher values may make more completed requests to be found, but it has the risk of visiting too many requests, leading to significant performance overhead. When it is set to zero value, runtime will stop checking the operation list immediately, which may cause weird performance in practice. Note that in garbage collection function, if runtime finds a chain of completed RMA requests, it will temporarily ignore this CVAR and try to find continuous completed requests as many as possible, until it meets an incomplete request.");
+    rc = MPL_env2int("MPICH_CH3_RMA_GC_NUM_TESTED", &(MPIR_CVAR_CH3_RMA_GC_NUM_TESTED));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPICH_CH3_RMA_GC_NUM_TESTED");
+    rc = MPL_env2int("MPIR_PARAM_CH3_RMA_GC_NUM_TESTED", &(MPIR_CVAR_CH3_RMA_GC_NUM_TESTED));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_PARAM_CH3_RMA_GC_NUM_TESTED");
+    rc = MPL_env2int("MPIR_CVAR_CH3_RMA_GC_NUM_TESTED", &(MPIR_CVAR_CH3_RMA_GC_NUM_TESTED));
+    MPIU_ERR_CHKANDJUMP1((-1 == rc),mpi_errno,MPI_ERR_OTHER,"**envvarparse","**envvarparse %s","MPIR_CVAR_CH3_RMA_GC_NUM_TESTED");
 
     defaultval.d = 0;
     MPIR_T_CVAR_REGISTER_STATIC(

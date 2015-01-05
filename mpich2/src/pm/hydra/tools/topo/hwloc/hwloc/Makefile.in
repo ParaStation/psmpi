@@ -14,7 +14,7 @@
 
 @SET_MAKE@
 
-# Copyright © 2009      inria.  All rights reserved.
+# Copyright © 2009-2014 Inria.  All rights reserved.
 # Copyright © 2009      Université Bordeaux 1
 # Copyright © 2009-2010 Cisco Systems, Inc.  All rights reserved.
 # See COPYING in top-level directory.
@@ -84,6 +84,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
+
+# Only install entire visual studio subdirectory if we're building in standalone mode
+@HWLOC_BUILD_STANDALONE_TRUE@am__append_1 = contrib/windows
 subdir = tools/topo/hwloc/hwloc
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(am__dist_pkgdata_DATA_DIST) AUTHORS COPYING NEWS README
@@ -425,11 +428,9 @@ DIST_SUBDIRS = $(SUBDIRS)
 # "make distcheck" requires that tarballs are able to be able to "make
 # dist", so we have to include config/distscript.csh.
 #
-EXTRA_DIST = \
-        README VERSION COPYING AUTHORS \
-        config/hwloc_get_version.sh \
-        config/distscript.csh
-
+EXTRA_DIST = README VERSION COPYING AUTHORS \
+	config/hwloc_get_version.sh config/distscript.csh \
+	$(am__append_1)
 all: all-recursive
 
 .SUFFIXES:
@@ -799,31 +800,15 @@ uninstall-am: uninstall-dist_pkgdataDATA uninstall-local \
 	uninstall-pkgconfigDATA
 
 
-#
-# Double check that we generated both the doxygen docs and a new copy
-# of the top-level README file.
-#
-@HWLOC_BUILD_STANDALONE_TRUE@cannot-dist:
-@HWLOC_BUILD_STANDALONE_TRUE@	@echo "ERROR: Did not build both of the doxygen docs and README."
-@HWLOC_BUILD_STANDALONE_TRUE@	@echo "ERROR: This tarball is not complete!"
-@HWLOC_BUILD_STANDALONE_TRUE@	@echo "ERROR: Cowardly refusing to complete successfully..."
-@HWLOC_BUILD_STANDALONE_TRUE@	@exit 1
-
-# Refuse to make dist if we can't make the doxygen stuff (note that
-# BUILD_DOXYGEN will automatically be false if we're not building
-# standalone).
-@HWLOC_BUILD_DOXYGEN_FALSE@@HWLOC_BUILD_STANDALONE_TRUE@dist-hook: cannot-dist
-@HWLOC_BUILD_DOXYGEN_TRUE@@HWLOC_BUILD_README_FALSE@@HWLOC_BUILD_STANDALONE_TRUE@dist-hook: cannot-dist
-@HWLOC_BUILD_DOXYGEN_TRUE@@HWLOC_BUILD_README_TRUE@@HWLOC_BUILD_STANDALONE_TRUE@dist-hook:
-@HWLOC_BUILD_DOXYGEN_TRUE@@HWLOC_BUILD_README_TRUE@@HWLOC_BUILD_STANDALONE_TRUE@	csh "$(top_srcdir)/config/distscript.csh" "$(top_srcdir)" "$(distdir)" "$(HWLOC_VERSION)"
+@HWLOC_BUILD_STANDALONE_TRUE@dist-hook:
+@HWLOC_BUILD_STANDALONE_TRUE@	csh "$(top_srcdir)/config/distscript.csh" "$(top_srcdir)" "$(distdir)" "$(HWLOC_VERSION)"
 
 #
-# Build the top-level README file
+# Build the documenation and top-level README file
 #
-
 @HWLOC_BUILD_STANDALONE_TRUE@.PHONY: doc readme
 @HWLOC_BUILD_STANDALONE_TRUE@doc readme:
-@HWLOC_BUILD_STANDALONE_TRUE@	$(MAKE) -C doc readme
+@HWLOC_BUILD_STANDALONE_TRUE@	$(MAKE) -C doc
 
 #
 # Winball specific rules

@@ -57,14 +57,24 @@ subroutine MPIR_Fortran_string_f2c(fstring, cstring)
     implicit none
     character(len=*), intent(in) :: fstring
     character(kind=c_char), intent(out) :: cstring(:)
-    integer :: i
+    integer :: i, j
+    logical :: met_non_blank
 
+    ! Trim the leading and trailing blank characters
+    j = 1
+    met_non_blank = .false.
     do i = 1, len_trim(fstring)
-        cstring(i) = fstring(i:i)
+        if (met_non_blank) then
+            cstring(j) = fstring(i:i)
+            j = j + 1
+        else if (fstring(i:i) /= ' ') then
+            met_non_blank = .true.
+            cstring(j) = fstring(i:i)
+            j = j + 1
+        end if
     end do
 
-    cstring(i) = C_NULL_CHAR
-
+    cstring(j) = C_NULL_CHAR
 end subroutine MPIR_Fortran_string_f2c
 
 ! Copy C charater array to Fortran string
@@ -76,11 +86,8 @@ subroutine MPIR_Fortran_string_c2f(cstring, fstring)
 
     i = 1
     do while (cstring(i) /= C_NULL_CHAR)
+        fstring(i:i) = cstring(i)
         i = i + 1
-    end do
-
-    do j = 1, i - 1
-        fstring(j:j) = cstring(j)
     end do
 
     ! Zero out the trailing characters

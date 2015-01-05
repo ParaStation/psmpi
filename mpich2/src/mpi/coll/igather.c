@@ -13,6 +13,11 @@
 #pragma _HP_SECONDARY_DEF PMPI_Igather  MPI_Igather
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Igather as PMPI_Igather
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Igather(const void *sendbuf, int sendcount, MPI_Datatype sendtype, void *recvbuf,
+                int recvcount, MPI_Datatype recvtype, int root, MPI_Comm comm,
+                MPI_Request *request)
+                __attribute__((weak,alias("PMPI_Igather")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -597,6 +602,12 @@ int MPI_Igather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
         MPID_BEGIN_ERROR_CHECKS
         {
             MPIR_ERRTEST_COMM(comm, mpi_errno);
+            if (sendbuf != MPI_IN_PLACE) {
+                MPIR_ERRTEST_COUNT(sendcount, mpi_errno);
+                MPIR_ERRTEST_DATATYPE(sendtype, "sendtype", mpi_errno);
+            }
+            MPIR_ERRTEST_COUNT(recvcount, mpi_errno);
+            MPIR_ERRTEST_DATATYPE(recvtype, "recvtype", mpi_errno);
 
             /* TODO more checks may be appropriate */
         }
@@ -649,8 +660,11 @@ int MPI_Igather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
                     MPIR_ERRTEST_USERBUFFER(recvbuf,recvcount,recvtype,mpi_errno);
 
                     /* catch common aliasing cases */
-                    if (recvbuf != MPI_IN_PLACE && sendtype == recvtype && sendcount == recvcount && sendcount != 0)
-                        MPIR_ERRTEST_ALIAS_COLL(sendbuf,recvbuf,mpi_errno);
+                    if (recvbuf != MPI_IN_PLACE && sendtype == recvtype && sendcount == recvcount && sendcount != 0) {
+                        int recvtype_size;
+                        MPID_Datatype_get_size_macro(recvtype, recvtype_size);
+                        MPIR_ERRTEST_ALIAS_COLL(sendbuf, (char*)recvbuf + comm_ptr->rank*recvcount*recvtype_size, mpi_errno);
+                    }
                 }
                 else
                     MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, sendcount, mpi_errno);

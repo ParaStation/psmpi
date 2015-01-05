@@ -89,8 +89,8 @@ DIST_COMMON = $(top_srcdir)/Makefile.mtest $(srcdir)/Makefile.in \
 noinst_PROGRAMS = anyall$(EXEEXT) bottom$(EXEEXT) bsend1$(EXEEXT) \
 	bsend2$(EXEEXT) bsend3$(EXEEXT) bsend4$(EXEEXT) \
 	bsend5$(EXEEXT) bsendalign$(EXEEXT) cancelrecv$(EXEEXT) \
-	isendself$(EXEEXT) sendself$(EXEEXT) eagerdt$(EXEEXT) \
-	isendselfprobe$(EXEEXT) bsendfrag$(EXEEXT) \
+	isendself$(EXEEXT) issendselfcancel$(EXEEXT) sendself$(EXEEXT) \
+	eagerdt$(EXEEXT) isendselfprobe$(EXEEXT) bsendfrag$(EXEEXT) \
 	bsendpending$(EXEEXT) icsend$(EXEEXT) rqstatus$(EXEEXT) \
 	rqfreeb$(EXEEXT) greq1$(EXEEXT) scancel$(EXEEXT) \
 	scancel2$(EXEEXT) rcancel$(EXEEXT) pscancel$(EXEEXT) \
@@ -189,6 +189,10 @@ isendselfprobe_SOURCES = isendselfprobe.c
 isendselfprobe_OBJECTS = isendselfprobe.$(OBJEXT)
 isendselfprobe_LDADD = $(LDADD)
 isendselfprobe_DEPENDENCIES = $(top_builddir)/util/mtest.o
+issendselfcancel_SOURCES = issendselfcancel.c
+issendselfcancel_OBJECTS = issendselfcancel.$(OBJEXT)
+issendselfcancel_LDADD = $(LDADD)
+issendselfcancel_DEPENDENCIES = $(top_builddir)/util/mtest.o
 large_message_SOURCES = large_message.c
 large_message_OBJECTS = large_message.$(OBJEXT)
 large_message_LDADD = $(LDADD)
@@ -296,19 +300,19 @@ am__v_CCLD_1 =
 SOURCES = anyall.c big_count_status.c bottom.c bsend1.c bsend2.c \
 	bsend3.c bsend4.c bsend5.c bsendalign.c bsendfrag.c \
 	bsendpending.c cancelrecv.c eagerdt.c greq1.c icsend.c \
-	inactivereq.c isendself.c isendselfprobe.c large_message.c \
-	mprobe.c pingping.c probe-unexp.c probenull.c pscancel.c \
-	rcancel.c rqfreeb.c rqstatus.c scancel.c scancel2.c sendall.c \
-	sendflood.c sendrecv1.c sendrecv2.c sendrecv3.c sendself.c \
-	waitany-null.c waittestnull.c
+	inactivereq.c isendself.c isendselfprobe.c issendselfcancel.c \
+	large_message.c mprobe.c pingping.c probe-unexp.c probenull.c \
+	pscancel.c rcancel.c rqfreeb.c rqstatus.c scancel.c scancel2.c \
+	sendall.c sendflood.c sendrecv1.c sendrecv2.c sendrecv3.c \
+	sendself.c waitany-null.c waittestnull.c
 DIST_SOURCES = anyall.c big_count_status.c bottom.c bsend1.c bsend2.c \
 	bsend3.c bsend4.c bsend5.c bsendalign.c bsendfrag.c \
 	bsendpending.c cancelrecv.c eagerdt.c greq1.c icsend.c \
-	inactivereq.c isendself.c isendselfprobe.c large_message.c \
-	mprobe.c pingping.c probe-unexp.c probenull.c pscancel.c \
-	rcancel.c rqfreeb.c rqstatus.c scancel.c scancel2.c sendall.c \
-	sendflood.c sendrecv1.c sendrecv2.c sendrecv3.c sendself.c \
-	waitany-null.c waittestnull.c
+	inactivereq.c isendself.c isendselfprobe.c issendselfcancel.c \
+	large_message.c mprobe.c pingping.c probe-unexp.c probenull.c \
+	pscancel.c rcancel.c rqfreeb.c rqstatus.c scancel.c scancel2.c \
+	sendall.c sendflood.c sendrecv1.c sendrecv2.c sendrecv3.c \
+	sendself.c waitany-null.c waittestnull.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -630,6 +634,10 @@ isendselfprobe$(EXEEXT): $(isendselfprobe_OBJECTS) $(isendselfprobe_DEPENDENCIES
 	@rm -f isendselfprobe$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(isendselfprobe_OBJECTS) $(isendselfprobe_LDADD) $(LIBS)
 
+issendselfcancel$(EXEEXT): $(issendselfcancel_OBJECTS) $(issendselfcancel_DEPENDENCIES) $(EXTRA_issendselfcancel_DEPENDENCIES) 
+	@rm -f issendselfcancel$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(issendselfcancel_OBJECTS) $(issendselfcancel_LDADD) $(LIBS)
+
 large_message$(EXEEXT): $(large_message_OBJECTS) $(large_message_DEPENDENCIES) $(EXTRA_large_message_DEPENDENCIES) 
 	@rm -f large_message$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(large_message_OBJECTS) $(large_message_LDADD) $(LIBS)
@@ -730,6 +738,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/inactivereq.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isendself.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/isendselfprobe.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/issendselfcancel.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/large_message.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mprobe.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pingping.Po@am__quote@

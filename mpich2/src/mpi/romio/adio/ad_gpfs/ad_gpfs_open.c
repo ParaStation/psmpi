@@ -12,12 +12,14 @@
  *   See COPYRIGHT notice in top-level directory.
  */
 
+#include "ad_gpfs.h"
 #include "ad_gpfs_tuning.h"
 
-#include <sys/statfs.h>
-#include <sys/vfs.h>
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
+
 
 #ifdef HAVE_GPFS_H
 #include <gpfs.h>
@@ -27,7 +29,7 @@
 #endif
 
 #ifdef HAVE_GPFS_FCNTL_H
-void gpfs_free_all_locks(int fd)
+static void gpfs_free_all_locks(int fd)
 {
     int rc;
     struct {

@@ -14,6 +14,10 @@
 #pragma _HP_SECONDARY_DEF PMPI_Scan  MPI_Scan
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Scan as PMPI_Scan
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Scan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op,
+             MPI_Comm comm)
+             __attribute__((weak,alias("PMPI_Scan")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -548,6 +552,9 @@ int MPI_Scan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatyp
                     ( * MPIR_OP_HDL_TO_DTYPE_FN(op) )(datatype); 
             }
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
+
+            if (sendbuf != MPI_IN_PLACE && count != 0)
+                MPIR_ERRTEST_ALIAS_COLL(sendbuf, recvbuf, mpi_errno);
         }
         MPID_END_ERROR_CHECKS;
     }

@@ -1,4 +1,4 @@
-.TH MPI_Intercomm_merge 3 "6/4/2014" " " "MPI"
+.TH MPI_Intercomm_merge 3 "7/21/2014" " " "MPI"
 .SH NAME
 MPI_Intercomm_merge \-  Creates an intracommuncator from an intercommunicator 
 .SH SYNOPSIS
@@ -70,12 +70,14 @@ All MPI objects (e.g.,
 in Fortran.
 
 .SH ALGORITHM
-b
-Allocate contexts
-Local and remote group leaders swap high values
-Determine the high value.
-Merge the two groups and make the intra-communicator
-e
+.nr e 1 1
+
+\\neAllocate contexts
+\\neLocal and remote group leaders swap high values
+\\neDetermine the high value.
+\\neMerge the two groups and make the intra-communicator
+.rr e
+
 
 .SH ERRORS
 
@@ -130,4 +132,4 @@ implementation is unable to acquire memory.
 MPI_Intercomm_create, MPI_Comm_free
 .br
 .SH LOCATION
-/tmp/JGQRosY5vd/mpich-3.1.1/src/mpi/comm/intercomm_merge.c
+/tmp/KtKGPV3F99/mpich-3.1.2/src/mpi/comm/intercomm_merge.c

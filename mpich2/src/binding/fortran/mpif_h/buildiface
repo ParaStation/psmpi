@@ -1023,7 +1023,7 @@ EOT
 mpi_core_sources += src/binding/fortran/mpif_h/fdebug.c \\
 		src/binding/fortran/mpif_h/setbot.c \\
 		src/binding/fortran/mpif_h/setbotf.f
-mpi_sources += src/binding/fortran/mpif_h/statusf2c.c
+mpi_sources += src/binding/fortran/mpif_h/statusf2c.c src/binding/fortran/mpif_h/statusc2f.c
 
 # FIXME does AM_CPPFLAGS need to be included elsewhere somehow in the
 # target-specific variable?
@@ -4567,7 +4567,6 @@ print $OUTFD "\
     $OUTFD = "STATUSC2F";
     $filename = "statusc2f.c";
     open ($OUTFD, ">$filename.new" ) || die "Cannot open $filename.new\n";
-    $files[$#files+1] = $filename;
     print $OUTFD "
 /* -*- Mode: C; c-basic-offset:4 ; -*- */
 /*  
@@ -5265,17 +5264,17 @@ extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null_ ( void*v1, MPI_Fint*v
 #elif defined(HAVE_WEAK_ATTRIBUTE) /* If support weak attribute */
 extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null__ ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr )
 #ifndef MPICH_MPI_FROM_PMPI
-MPICH_ATTR_WEAK_ALIAS(\"mpi_conversion_fn_null_\")
+__attribute__((weak,alias(\"mpi_conversion_fn_null_\")))
 #endif
 ;
 extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr )
 #ifndef MPICH_MPI_FROM_PMPI
-MPICH_ATTR_WEAK_ALIAS(\"mpi_conversion_fn_null_\")
+__attribute__((weak,alias(\"mpi_conversion_fn_null_\")))
 #endif
 ;
 extern FORT_DLL_SPEC int FORT_CALL MPI_CONVERSION_FN_NULL ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr )
 #ifndef MPICH_MPI_FROM_PMPI
-MPICH_ATTR_WEAK_ALIAS(\"mpi_conversion_fn_null_\")
+__attribute__((weak,alias(\"mpi_conversion_fn_null_\")))
 #endif
 ;
 #endif

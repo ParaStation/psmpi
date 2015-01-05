@@ -14,6 +14,10 @@
 #pragma _HP_SECONDARY_DEF PMPI_Iscan  MPI_Iscan
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Iscan as PMPI_Iscan
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Iscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype datatype, MPI_Op op,
+              MPI_Comm comm, MPI_Request *request)
+              __attribute__((weak,alias("PMPI_Iscan")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -400,6 +404,7 @@ int MPI_Iscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype dataty
         MPID_BEGIN_ERROR_CHECKS
         {
             MPIR_ERRTEST_DATATYPE(datatype, "datatype", mpi_errno);
+            MPIR_ERRTEST_COUNT(count, mpi_errno);
             MPIR_ERRTEST_OP(op, mpi_errno);
             MPIR_ERRTEST_COMM(comm, mpi_errno);
 
@@ -441,7 +446,10 @@ int MPI_Iscan(const void *sendbuf, void *recvbuf, int count, MPI_Datatype dataty
             if (mpi_errno != MPI_SUCCESS) goto fn_fail;
 
             MPIR_ERRTEST_ARGNULL(request,"request", mpi_errno);
-            /* TODO more checks may be appropriate (counts, in_place, buffer aliasing, etc) */
+
+            if (sendbuf != MPI_IN_PLACE && count != 0)
+                MPIR_ERRTEST_ALIAS_COLL(sendbuf, recvbuf, mpi_errno);
+            /* TODO more checks may be appropriate (counts, in_place, etc) */
         }
         MPID_END_ERROR_CHECKS
     }

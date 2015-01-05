@@ -6,7 +6,11 @@
  */
 
 
+#ifdef _STDC_C99
+#define _XOPEN_SOURCE 600
+#else
 #define _XOPEN_SOURCE 500
+#endif
 #include <unistd.h>
 
 #include "adio.h"
@@ -16,6 +20,10 @@
 
 #ifdef ROMIO_GPFS
 #include "adio/ad_gpfs/ad_gpfs_tuning.h"
+#endif
+
+#ifdef HAVE_LIMITS_H
+#include <limits.h>
 #endif
 
 
@@ -29,7 +37,9 @@ void ADIOI_GEN_WriteContig(ADIO_File fd, const void *buf, int count,
     ADIO_Offset len, bytes_xfered=0;
     size_t wr_count;
     static char myname[] = "ADIOI_GEN_WRITECONTIG";
+#ifdef ROMIO_GPFS
     double io_time=0;
+#endif
     char * p;
 
 #ifdef AGGREGATION_PROFILE
@@ -39,8 +49,8 @@ void ADIOI_GEN_WriteContig(ADIO_File fd, const void *buf, int count,
     MPI_Type_size_x(datatype, &datatype_size);
     len = (ADIO_Offset)datatype_size * (ADIO_Offset)count;
 
-    io_time = MPI_Wtime();
 #ifdef ROMIO_GPFS
+    io_time = MPI_Wtime();
     if (gpfsmpio_timing) {
 	gpfsmpio_prof_cw[ GPFSMPIO_CIO_DATA_SIZE ] += len;
     }
@@ -56,6 +66,10 @@ void ADIOI_GEN_WriteContig(ADIO_File fd, const void *buf, int count,
 	MPE_Log_event( ADIOI_MPE_write_a, 0, NULL );
 #endif
 	wr_count = len - bytes_xfered;
+	/* Frustrating! FreeBSD and OS X do not like a count larger than 2^31 */
+        if (wr_count > INT_MAX)
+            wr_count = INT_MAX;
+
 #ifdef ROMIO_GPFS
 	if (gpfsmpio_devnullio)
 	    err = pwrite(fd->null_fd, p, wr_count, offset+bytes_xfered);

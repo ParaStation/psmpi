@@ -137,7 +137,7 @@ noinst_PROGRAMS = allocmem$(EXEEXT) ircpi$(EXEEXT) test1$(EXEEXT) \
 	win_info$(EXEEXT) pscw_ordering$(EXEEXT) mutex_bench$(EXEEXT) \
 	mutex_bench_shared$(EXEEXT) mutex_bench_shm$(EXEEXT) \
 	rma-contig$(EXEEXT) badrma$(EXEEXT) nb_test$(EXEEXT) \
-	acc-loc$(EXEEXT)
+	acc-loc$(EXEEXT) fence_shm$(EXEEXT)
 subdir = rma
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -216,6 +216,10 @@ epochtest_SOURCES = epochtest.c
 epochtest_OBJECTS = epochtest.$(OBJEXT)
 epochtest_LDADD = $(LDADD)
 epochtest_DEPENDENCIES = $(top_builddir)/util/mtest.o
+fence_shm_SOURCES = fence_shm.c
+fence_shm_OBJECTS = fence_shm.$(OBJEXT)
+fence_shm_LDADD = $(LDADD)
+fence_shm_DEPENDENCIES = $(top_builddir)/util/mtest.o
 am_fetch_and_op_char_OBJECTS =  \
 	fetch_and_op_char-fetch_and_op.$(OBJEXT)
 fetch_and_op_char_OBJECTS = $(am_fetch_and_op_char_OBJECTS)
@@ -660,9 +664,9 @@ am__v_CCLD_1 =
 SOURCES = acc-loc.c accfence1.c accfence2.c accfence2_am.c accpscw1.c \
 	adlb_mimic1.c allocmem.c attrorderwin.c badrma.c baseattrwin.c \
 	compare_and_swap.c contention_put.c contention_putget.c \
-	contig_displ.c epochtest.c $(fetch_and_op_char_SOURCES) \
-	$(fetch_and_op_double_SOURCES) $(fetch_and_op_int_SOURCES) \
-	$(fetch_and_op_long_SOURCES) \
+	contig_displ.c epochtest.c fence_shm.c \
+	$(fetch_and_op_char_SOURCES) $(fetch_and_op_double_SOURCES) \
+	$(fetch_and_op_int_SOURCES) $(fetch_and_op_long_SOURCES) \
 	$(fetch_and_op_long_double_SOURCES) \
 	$(fetch_and_op_short_SOURCES) fetchandadd.c fetchandadd_am.c \
 	fetchandadd_tree.c fetchandadd_tree_am.c fkeyvalwin.c flush.c \
@@ -698,7 +702,7 @@ SOURCES = acc-loc.c accfence1.c accfence2.c accfence2_am.c accpscw1.c \
 DIST_SOURCES = acc-loc.c accfence1.c accfence2.c accfence2_am.c \
 	accpscw1.c adlb_mimic1.c allocmem.c attrorderwin.c badrma.c \
 	baseattrwin.c compare_and_swap.c contention_put.c \
-	contention_putget.c contig_displ.c epochtest.c \
+	contention_putget.c contig_displ.c epochtest.c fence_shm.c \
 	$(fetch_and_op_char_SOURCES) $(fetch_and_op_double_SOURCES) \
 	$(fetch_and_op_int_SOURCES) $(fetch_and_op_long_SOURCES) \
 	$(fetch_and_op_long_double_SOURCES) \
@@ -1088,6 +1092,10 @@ contig_displ$(EXEEXT): $(contig_displ_OBJECTS) $(contig_displ_DEPENDENCIES) $(EX
 epochtest$(EXEEXT): $(epochtest_OBJECTS) $(epochtest_DEPENDENCIES) $(EXTRA_epochtest_DEPENDENCIES) 
 	@rm -f epochtest$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(epochtest_OBJECTS) $(epochtest_LDADD) $(LIBS)
+
+fence_shm$(EXEEXT): $(fence_shm_OBJECTS) $(fence_shm_DEPENDENCIES) $(EXTRA_fence_shm_DEPENDENCIES) 
+	@rm -f fence_shm$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(fence_shm_OBJECTS) $(fence_shm_LDADD) $(LIBS)
 
 fetch_and_op_char$(EXEEXT): $(fetch_and_op_char_OBJECTS) $(fetch_and_op_char_DEPENDENCIES) $(EXTRA_fetch_and_op_char_DEPENDENCIES) 
 	@rm -f fetch_and_op_char$(EXEEXT)
@@ -1490,6 +1498,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/contention_putget.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/contig_displ.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/epochtest.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fence_shm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fetch_and_op_char-fetch_and_op.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fetch_and_op_double-fetch_and_op.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/fetch_and_op_int-fetch_and_op.Po@am__quote@

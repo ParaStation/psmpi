@@ -3,7 +3,7 @@
 
 Automatically generated
   by:   ./maint/extractcvars
-  at:   Wed Jun  4 15:02:51 2014
+  at:   Mon Jul 21 16:00:50 2014
 DO NOT EDIT!!!
 
 This file lists the various environment variables available to change the
@@ -366,33 +366,11 @@ MPIR_CVAR_NEMESIS_POLLS_BEFORE_YIELD
         disables yielding.
     Default: 1000
 
-MPIR_CVAR_DATALOOP_OPTIMIZE
-    Aliases: MPIR_PARAM_DATALOOP_OPTIMIZE
-             MPICH_DATALOOP_OPTIMIZE
-    Description: By default, the internal representation of an MPI datatype
-        that is used by MPICH to move data is very similar to the original
-        description of the datatype.  If this flag is true, additional
-        optimizations are used to improve the performance of datatypes.
+MPIR_CVAR_COLL_ALIAS_CHECK
+    Aliases: MPIR_PARAM_COLL_ALIAS_CHECK
+             MPICH_COLL_ALIAS_CHECK
+    Description: Enable checking of aliasing in collective operations
     Default: 1
-
-MPIR_CVAR_DATALOOP_FLATTEN
-    Aliases: MPIR_PARAM_DATALOOP_FLATTEN
-             MPICH_DATALOOP_FLATTEN
-    Description: If true, attempt to "flatten" the internal representation
-        of MPI struct datatypes (created with MPI_Type_create_struct).
-    Default: 1
-
-MPIR_CVAR_DATALOOP_FLATTEN_MULT
-    Aliases: MPIR_PARAM_DATALOOP_FLATTEN_MULT
-             MPICH_DATALOOP_FLATTEN_MULT
-    Description: Flattening an MPI struct datatype does not always improve
-        performance.  This parameter is a threshold that is used in
-        comparing the size of the description with the amount of data
-        moved.  Larger values make it more likely that a struct datatype
-        will be flattened.  The default value is adequate for flattening
-        simple structs, and will usually avoid flattening structs
-        containing vectors or block-indexed data.
-    Default: 2
 
 MPIR_CVAR_CH3_NOLOCAL
     Aliases: MPIR_PARAM_CH3_NOLOCAL
@@ -446,6 +424,52 @@ MPIR_CVAR_CH3_RMA_NREQUEST_NEW_THRESHOLD
         performance, but may run the risk of exceeding the available number
         of requests or other internal resources.
     Default: 128
+
+MPIR_CVAR_CH3_RMA_GC_NUM_COMPLETED
+    Aliases: MPIR_PARAM_CH3_RMA_GC_NUM_COMPLETED
+             MPICH_CH3_RMA_GC_NUM_COMPLETED
+    Description: Threshold for the number of completed requests the runtime
+        finds before it stops trying to find more completed requests in
+        garbage collection function. Note that it works with
+        MPIR_CVAR_CH3_RMA_GC_NUM_TESTED as an OR relation, which means
+        runtime will stop checking when either one of its following
+        conditions is satisfied or one of conditions of
+        MPIR_CVAR_CH3_RMA_GC_NUM_TESTED is satisfied. When it is set to
+        negative value, it means runtime will not stop checking the
+        operation list until it reaches the end of the list. When it is set
+        to positive value, it means runtime will not stop checking the
+        operation list until it finds certain number of completed requests.
+        When it is set to zero value, the outcome is undefined. Note that
+        in garbage collection function, if runtime finds a chain of
+        completed RMA requests, it will temporarily ignore this CVAR and
+        try to find continuous completed requests as many as possible,
+        until it meets an incomplete request.
+    Default: 1
+
+MPIR_CVAR_CH3_RMA_GC_NUM_TESTED
+    Aliases: MPIR_PARAM_CH3_RMA_GC_NUM_TESTED
+             MPICH_CH3_RMA_GC_NUM_TESTED
+    Description: Threshold for the number of RMA requests the runtime tests
+        before it stops trying to check more requests in garbage collection
+        routine. Note that it works with MPIR_CVAR_CH3_RMA_GC_NUM_COMPLETED
+        as an OR relation, which means runtime will stop checking when
+        either one of its following conditions is satisfied or one of
+        conditions of MPIR_CVAR_CH3_RMA_GC_NUM_COMPLETED is satisfied. When
+        it is set to negative value, runtime will not stop checking
+        operation list until runtime reaches the end of the list. It has
+        the risk of O(N) traversing overhead if there is no completed
+        request in the list. When it is set to positive value, it means
+        runtime will not stop checking the operation list until it visits
+        such number of requests. Higher values may make more completed
+        requests to be found, but it has the risk of visiting too many
+        requests, leading to significant performance overhead. When it is
+        set to zero value, runtime will stop checking the operation list
+        immediately, which may cause weird performance in practice. Note
+        that in garbage collection function, if runtime finds a chain of
+        completed RMA requests, it will temporarily ignore this CVAR and
+        try to find continuous completed requests as many as possible,
+        until it meets an incomplete request.
+    Default: (-1)
 
 MPIR_CVAR_CH3_RMA_LOCK_IMMED
     Aliases: MPIR_PARAM_CH3_RMA_LOCK_IMMED

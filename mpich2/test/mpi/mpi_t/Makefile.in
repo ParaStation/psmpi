@@ -86,7 +86,8 @@ build_triplet = @build@
 host_triplet = @host@
 DIST_COMMON = $(top_srcdir)/Makefile.mtest $(srcdir)/Makefile.in \
 	$(srcdir)/Makefile.am $(top_srcdir)/confdb/depcomp
-noinst_PROGRAMS = mpi_t_str$(EXEEXT) mpit_vars$(EXEEXT)
+noinst_PROGRAMS = mpi_t_str$(EXEEXT) mpit_vars$(EXEEXT) \
+	cvarwrite$(EXEEXT)
 subdir = mpi_t
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -105,6 +106,10 @@ CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+cvarwrite_SOURCES = cvarwrite.c
+cvarwrite_OBJECTS = cvarwrite.$(OBJEXT)
+cvarwrite_LDADD = $(LDADD)
+cvarwrite_DEPENDENCIES = $(top_builddir)/util/mtest.o
 mpi_t_str_SOURCES = mpi_t_str.c
 mpi_t_str_OBJECTS = mpi_t_str.$(OBJEXT)
 mpi_t_str_LDADD = $(LDADD)
@@ -141,8 +146,8 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = mpi_t_str.c mpit_vars.c
-DIST_SOURCES = mpi_t_str.c mpit_vars.c
+SOURCES = cvarwrite.c mpi_t_str.c mpit_vars.c
+DIST_SOURCES = cvarwrite.c mpi_t_str.c mpit_vars.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -392,6 +397,10 @@ $(am__aclocal_m4_deps):
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 
+cvarwrite$(EXEEXT): $(cvarwrite_OBJECTS) $(cvarwrite_DEPENDENCIES) $(EXTRA_cvarwrite_DEPENDENCIES) 
+	@rm -f cvarwrite$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(cvarwrite_OBJECTS) $(cvarwrite_LDADD) $(LIBS)
+
 mpi_t_str$(EXEEXT): $(mpi_t_str_OBJECTS) $(mpi_t_str_DEPENDENCIES) $(EXTRA_mpi_t_str_DEPENDENCIES) 
 	@rm -f mpi_t_str$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(mpi_t_str_OBJECTS) $(mpi_t_str_LDADD) $(LIBS)
@@ -406,6 +415,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cvarwrite.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpi_t_str.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpit_vars.Po@am__quote@
 

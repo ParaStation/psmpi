@@ -113,7 +113,7 @@ noinst_PROGRAMS = blockindexed-misc$(EXEEXT) \
 	triangular-pack$(EXEEXT) typecommit$(EXEEXT) typefree$(EXEEXT) \
 	typelb$(EXEEXT) typename$(EXEEXT) unpack$(EXEEXT) \
 	unusual-noncontigs$(EXEEXT) vecblklen$(EXEEXT) \
-	zeroblks$(EXEEXT) zeroparms$(EXEEXT)
+	zeroblks$(EXEEXT) zeroparms$(EXEEXT) get-struct$(EXEEXT)
 subdir = datatype
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -180,6 +180,10 @@ get_elements_pairtype_SOURCES = get-elements-pairtype.c
 get_elements_pairtype_OBJECTS = get-elements-pairtype.$(OBJEXT)
 get_elements_pairtype_LDADD = $(LDADD)
 get_elements_pairtype_DEPENDENCIES = $(top_builddir)/util/mtest.o
+get_struct_SOURCES = get-struct.c
+get_struct_OBJECTS = get-struct.$(OBJEXT)
+get_struct_LDADD = $(LDADD)
+get_struct_DEPENDENCIES = $(top_builddir)/util/mtest.o
 getpartelm_SOURCES = getpartelm.c
 getpartelm_OBJECTS = getpartelm.$(OBJEXT)
 getpartelm_LDADD = $(LDADD)
@@ -409,25 +413,7 @@ am__v_CCLD_1 =
 SOURCES = blockindexed-misc.c blockindexed-zero-count.c contents.c \
 	contig-zero-count.c contigstruct.c cxx-types.c darray-cyclic.c \
 	darray-pack.c dataalign.c gaddress.c get-elements.c \
-	get-elements-pairtype.c getpartelm.c hindexed-zeros.c \
-	hindexed_block.c hindexed_block_contents.c hvecblklen.c \
-	indexed-misc.c large-count.c large_type.c large_type_sendrec.c \
-	lbub.c localpack.c longdouble.c lots-of-types.c \
-	pairtype-pack.c pairtype-size-extent.c sendrecvt2.c \
-	sendrecvt4.c simple-commit.c simple-pack.c \
-	simple-pack-external.c simple-resized.c simple-size-extent.c \
-	sizedtypes.c slice-pack.c slice-pack-external.c \
-	struct-derived-zeros.c struct-empty-el.c struct-ezhov.c \
-	struct-no-real-types.c struct-pack.c struct-verydeep.c \
-	struct-zero-count.c structpack2.c subarray.c subarray-pack.c \
-	tfree.c tmatchsize.c transpose-pack.c tresized.c tresized2.c \
-	triangular-pack.c typecommit.c typefree.c typelb.c typename.c \
-	unpack.c unusual-noncontigs.c vecblklen.c zeroblks.c \
-	zeroparms.c
-DIST_SOURCES = blockindexed-misc.c blockindexed-zero-count.c \
-	contents.c contig-zero-count.c contigstruct.c cxx-types.c \
-	darray-cyclic.c darray-pack.c dataalign.c gaddress.c \
-	get-elements.c get-elements-pairtype.c getpartelm.c \
+	get-elements-pairtype.c get-struct.c getpartelm.c \
 	hindexed-zeros.c hindexed_block.c hindexed_block_contents.c \
 	hvecblklen.c indexed-misc.c large-count.c large_type.c \
 	large_type_sendrec.c lbub.c localpack.c longdouble.c \
@@ -442,6 +428,24 @@ DIST_SOURCES = blockindexed-misc.c blockindexed-zero-count.c \
 	triangular-pack.c typecommit.c typefree.c typelb.c typename.c \
 	unpack.c unusual-noncontigs.c vecblklen.c zeroblks.c \
 	zeroparms.c
+DIST_SOURCES = blockindexed-misc.c blockindexed-zero-count.c \
+	contents.c contig-zero-count.c contigstruct.c cxx-types.c \
+	darray-cyclic.c darray-pack.c dataalign.c gaddress.c \
+	get-elements.c get-elements-pairtype.c get-struct.c \
+	getpartelm.c hindexed-zeros.c hindexed_block.c \
+	hindexed_block_contents.c hvecblklen.c indexed-misc.c \
+	large-count.c large_type.c large_type_sendrec.c lbub.c \
+	localpack.c longdouble.c lots-of-types.c pairtype-pack.c \
+	pairtype-size-extent.c sendrecvt2.c sendrecvt4.c \
+	simple-commit.c simple-pack.c simple-pack-external.c \
+	simple-resized.c simple-size-extent.c sizedtypes.c \
+	slice-pack.c slice-pack-external.c struct-derived-zeros.c \
+	struct-empty-el.c struct-ezhov.c struct-no-real-types.c \
+	struct-pack.c struct-verydeep.c struct-zero-count.c \
+	structpack2.c subarray.c subarray-pack.c tfree.c tmatchsize.c \
+	transpose-pack.c tresized.c tresized2.c triangular-pack.c \
+	typecommit.c typefree.c typelb.c typename.c unpack.c \
+	unusual-noncontigs.c vecblklen.c zeroblks.c zeroparms.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -748,6 +752,10 @@ get-elements-pairtype$(EXEEXT): $(get_elements_pairtype_OBJECTS) $(get_elements_
 	@rm -f get-elements-pairtype$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(get_elements_pairtype_OBJECTS) $(get_elements_pairtype_LDADD) $(LIBS)
 
+get-struct$(EXEEXT): $(get_struct_OBJECTS) $(get_struct_DEPENDENCIES) $(EXTRA_get_struct_DEPENDENCIES) 
+	@rm -f get-struct$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(get_struct_OBJECTS) $(get_struct_LDADD) $(LIBS)
+
 getpartelm$(EXEEXT): $(getpartelm_OBJECTS) $(getpartelm_DEPENDENCIES) $(EXTRA_getpartelm_DEPENDENCIES) 
 	@rm -f getpartelm$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(getpartelm_OBJECTS) $(getpartelm_LDADD) $(LIBS)
@@ -966,6 +974,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gaddress.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-elements-pairtype.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-elements.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-struct.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/getpartelm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hindexed-zeros.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hindexed_block.Po@am__quote@

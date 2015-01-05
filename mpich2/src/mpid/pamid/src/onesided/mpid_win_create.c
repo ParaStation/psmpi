@@ -81,7 +81,7 @@ MPIDI_Win_init( MPI_Aint length,
   win->mpid.info_args.no_locks            = 0;
   win->mpid.info_args.accumulate_ordering =
       (MPIDI_ACCU_ORDER_RAR | MPIDI_ACCU_ORDER_RAW | MPIDI_ACCU_ORDER_WAR | MPIDI_ACCU_ORDER_WAW);
-  win->mpid.info_args.accumulate_ops      = MPIDI_ACCU_OPS_SAME_OP_NO_OP; /*default */
+  win->mpid.info_args.accumulate_ops      = MPIDI_ACCU_SAME_OP_NO_OP; /*default */
   win->mpid.info_args.same_size           = 0;
   win->mpid.info_args.alloc_shared_noncontig = 0;
 
@@ -123,7 +123,7 @@ MPIDI_Win_allgather( MPI_Aint size, MPID_Win **win_ptr )
 #ifdef USE_PAMI_RDMA
   if (size != 0)
     {
-      rc = PAMI_Memregion_create(MPIDI_Context[0], win->base, win->size, &length_out, &winfo->memregion);
+      rc = PAMI_Memregion_create(MPIDI_Context[0], win->mpid.info[rank].base_addr, win->mpid.info[rank].base_size, &length_out, &winfo->memregion);
 
       MPIU_ERR_CHKANDJUMP((rc != PAMI_SUCCESS), mpi_errno, MPI_ERR_OTHER, "**nomem");
       MPIU_ERR_CHKANDJUMP((win->size < length_out), mpi_errno, MPI_ERR_OTHER, "**nomem");
@@ -131,7 +131,7 @@ MPIDI_Win_allgather( MPI_Aint size, MPID_Win **win_ptr )
 #else
   if ( (!MPIDI_Process.mp_s_use_pami_get) && (size != 0) )
     {
-      rc = PAMI_Memregion_create(MPIDI_Context[0], win->base, win->size, &length_out, &winfo->memregion);
+      rc = PAMI_Memregion_create(MPIDI_Context[0], win->mpid.info[rank].base_addr, win->mpid.info[rank].base_size, &length_out, &winfo->memregion);
       if(rc == PAMI_SUCCESS)
         {
           winfo->memregion_used = 1;

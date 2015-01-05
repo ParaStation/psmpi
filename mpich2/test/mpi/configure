@@ -6630,13 +6630,6 @@ if test "$enable_strict_done" != "yes" ; then
     #	    msg_sz_t) variables.
     #   -Wno-format-zero-length -- this warning is irritating and useless, since
     #                              a zero-length format string is very well defined
-    #   -Wno-type-limits -- There are places where we compare an unsigned to
-    #	    a constant that happens to be zero e.g., if x is unsigned and
-    #	    MIN_VAL is zero, we'd like to do "MPIU_Assert(x >= MIN_VAL);".
-    #       Note this option is not supported by gcc 4.2.  This needs to be added
-    #	    after most other warning flags, so that we catch a gcc bug on 32-bit
-    #	    that doesn't give a warning that this is unsupported, unless another
-    #	    warning is triggered, and then if gives an error.
     # These were removed to reduce warnings:
     #   -Wcast-qual -- Sometimes we need to cast "volatile char*" to
     #	    "char*", e.g., for memcpy.
@@ -6668,6 +6661,18 @@ if test "$enable_strict_done" != "yes" ; then
     #       important check, but is temporarily disabled, since it is
     #       throwing too many (correct) warnings currently, causing us
     #       to miss other warnings.
+    #
+    # This was removed because it masks important failures (see ticket #2094).
+    # However, since Intel compiler currently does not include -Wtype-limits
+    # in -Wextra, -Wtype-limits was added to handle warnings with the Intel
+    # compiler.
+    #   -Wno-type-limits -- There are places where we compare an unsigned to
+    #	    a constant that happens to be zero e.g., if x is unsigned and
+    #	    MIN_VAL is zero, we'd like to do "MPIU_Assert(x >= MIN_VAL);".
+    #       Note this option is not supported by gcc 4.2.  This needs to be added
+    #	    after most other warning flags, so that we catch a gcc bug on 32-bit
+    #	    that doesn't give a warning that this is unsupported, unless another
+    #	    warning is triggered, and then if gives an error.
     # the embedded newlines in this string are safe because we evaluate each
     # argument in the for-loop below and append them to the CFLAGS with a space
     # as the separator instead
@@ -6698,7 +6703,7 @@ if test "$enable_strict_done" != "yes" ; then
         -Wno-pointer-sign
         -Wvariadic-macros
         -Wno-format-zero-length
-	-Wno-type-limits
+        -Wtype-limits
         -Werror-implicit-function-declaration
     "
 
@@ -6815,6 +6820,19 @@ else
 
 fi
 
+          # Use -D_STDC_C99= for Solaris compilers. See
+          # http://lists.gnu.org/archive/html/autoconf/2010-12/msg00059.html
+          # for discussion on why not to use -xc99
+
+
+	if echo "$pac_cc_strict_flags" | $FGREP -e '-D_STDC_C99=' >/dev/null 2>&1; then :
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') contains '-D_STDC_C99=', not appending" >&5
+else
+  echo "pac_cc_strict_flags(='$pac_cc_strict_flags') does not contain '-D_STDC_C99=', appending" >&5
+		pac_cc_strict_flags="$pac_cc_strict_flags -D_STDC_C99="
+
+fi
+
        elif test "${enable_c89}" = "yes" ; then
 
 
@@ -6867,13 +6885,16 @@ pac_result="unknown"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
+	#include <stdio.h>
+                          const char hw[] = "Hello, World\n";
 int
 main ()
 {
-
+fputs (hw, stdout);
   ;
   return 0;
 }
+
 _ACEOF
 CFLAGS="$CFLAGS_orig"
 rm -f pac_test1.log
@@ -12288,7 +12309,7 @@ ac_config_commands="$ac_config_commands default-3"
 
 ac_config_commands="$ac_config_commands default-4"
 
-ac_config_files="$ac_config_files maint/testmerge runtests checktests Makefile basic/Makefile attr/Makefile util/Makefile coll/Makefile comm/Makefile datatype/Makefile datatype/testlist errhan/Makefile group/Makefile info/Makefile init/Makefile pt2pt/Makefile mpi_t/Makefile rma/Makefile rma/testlist spawn/Makefile topo/Makefile io/Makefile f77/Makefile f77/attr/Makefile f77/attr/attraints.h f77/pt2pt/attr1aints.h f77/ext/add1size.h f77/datatype/Makefile f77/datatype/typeaints.h f77/util/Makefile f77/coll/Makefile f77/comm/Makefile f77/topo/Makefile f77/init/Makefile f77/rma/addsize.h f77/pt2pt/Makefile f77/info/Makefile f77/spawn/Makefile f77/spawn/testlist f77/spawn/type1aint.h f77/rma/Makefile f77/ext/Makefile f77/ext/testlist f77/io/Makefile f77/io/iooffset.h f77/io/iodisp.h f77/io/ioaint.h f77/profile/Makefile f90/Makefile f90/attr/Makefile f90/datatype/Makefile f90/f90types/Makefile f90/util/Makefile f90/coll/Makefile f90/comm/Makefile f90/topo/Makefile f90/init/Makefile f90/pt2pt/Makefile f90/rma/Makefile f90/info/Makefile f90/spawn/Makefile f90/spawn/testlist f90/timer/Makefile f90/ext/Makefile f90/ext/testlist f90/io/Makefile f90/misc/Makefile f90/profile/Makefile f08/Makefile f08/util/Makefile f08/pt2pt/Makefile f08/coll/Makefile f08/datatype/Makefile f08/attr/Makefile f08/comm/Makefile f08/rma/Makefile f08/subarray/Makefile cxx/Makefile cxx/util/Makefile cxx/attr/Makefile cxx/pt2pt/Makefile cxx/comm/Makefile cxx/coll/Makefile cxx/errhan/Makefile cxx/info/Makefile cxx/datatype/Makefile cxx/io/Makefile cxx/init/Makefile cxx/rma/Makefile cxx/spawn/Makefile cxx/topo/Makefile threads/Makefile threads/pt2pt/Makefile threads/util/Makefile threads/comm/Makefile threads/init/Makefile threads/mpi_t/Makefile threads/spawn/Makefile threads/rma/Makefile errors/Makefile errors/attr/Makefile errors/basic/Makefile errors/coll/Makefile errors/comm/Makefile errors/datatype/Makefile errors/faults/Makefile errors/group/Makefile errors/pt2pt/Makefile errors/rma/Makefile errors/spawn/Makefile errors/topo/Makefile errors/io/Makefile errors/cxx/Makefile errors/cxx/errhan/Makefile errors/cxx/io/Makefile errors/f77/Makefile errors/f77/io/Makefile errors/f77/io/addsize.h errors/f77/io/iooffset.h errors/f90/Makefile errors/f90/io/Makefile errors/f08/Makefile errors/f08/io/Makefile ckpoint/Makefile ft/Makefile manual/Makefile manual/manyconnect manual/mpi_t/Makefile perf/Makefile testlist cxx/testlist cxx/topo/testlist f77/testlist f90/testlist threads/testlist errors/testlist errors/cxx/testlist errors/f77/testlist errors/f90/testlist impls/testlist impls/Makefile impls/hydra/Makefile impls/hydra/proc_binding.sh impls/mpich/Makefile impls/mpich/testlist impls/mpich/mpi_t/Makefile"
+ac_config_files="$ac_config_files maint/testmerge runtests checktests Makefile basic/Makefile attr/Makefile util/Makefile coll/Makefile comm/Makefile datatype/Makefile datatype/testlist errhan/Makefile group/Makefile info/Makefile init/Makefile pt2pt/Makefile mpi_t/Makefile rma/Makefile rma/testlist spawn/Makefile topo/Makefile io/Makefile f77/Makefile f77/attr/Makefile f77/attr/attraints.h f77/pt2pt/attr1aints.h f77/ext/add1size.h f77/datatype/Makefile f77/datatype/typeaints.h f77/util/Makefile f77/coll/Makefile f77/comm/Makefile f77/topo/Makefile f77/init/Makefile f77/rma/addsize.h f77/pt2pt/Makefile f77/info/Makefile f77/spawn/Makefile f77/spawn/testlist f77/spawn/type1aint.h f77/rma/Makefile f77/ext/Makefile f77/ext/testlist f77/io/Makefile f77/io/iooffset.h f77/io/iodisp.h f77/io/ioaint.h f77/profile/Makefile f90/Makefile f90/attr/Makefile f90/datatype/Makefile f90/f90types/Makefile f90/util/Makefile f90/coll/Makefile f90/comm/Makefile f90/topo/Makefile f90/init/Makefile f90/pt2pt/Makefile f90/rma/Makefile f90/info/Makefile f90/spawn/Makefile f90/spawn/testlist f90/timer/Makefile f90/ext/Makefile f90/ext/testlist f90/io/Makefile f90/misc/Makefile f90/profile/Makefile f08/Makefile f08/attr/Makefile f08/datatype/Makefile f08/util/Makefile f08/coll/Makefile f08/comm/Makefile f08/pt2pt/Makefile f08/rma/Makefile f08/subarray/Makefile f08/topo/Makefile f08/io/Makefile f08/init/Makefile f08/info/Makefile f08/spawn/Makefile f08/timer/Makefile f08/ext/Makefile f08/misc/Makefile f08/profile/Makefile cxx/Makefile cxx/util/Makefile cxx/attr/Makefile cxx/pt2pt/Makefile cxx/comm/Makefile cxx/coll/Makefile cxx/errhan/Makefile cxx/info/Makefile cxx/datatype/Makefile cxx/io/Makefile cxx/init/Makefile cxx/rma/Makefile cxx/spawn/Makefile cxx/topo/Makefile threads/Makefile threads/pt2pt/Makefile threads/util/Makefile threads/comm/Makefile threads/init/Makefile threads/mpi_t/Makefile threads/spawn/Makefile threads/rma/Makefile errors/Makefile errors/attr/Makefile errors/basic/Makefile errors/coll/Makefile errors/comm/Makefile errors/datatype/Makefile errors/faults/Makefile errors/group/Makefile errors/pt2pt/Makefile errors/rma/Makefile errors/spawn/Makefile errors/topo/Makefile errors/io/Makefile errors/cxx/Makefile errors/cxx/errhan/Makefile errors/cxx/io/Makefile errors/f77/Makefile errors/f77/io/Makefile errors/f77/io/addsize.h errors/f77/io/iooffset.h errors/f90/Makefile errors/f90/io/Makefile errors/f08/Makefile errors/f08/io/Makefile ckpoint/Makefile ft/Makefile manual/Makefile manual/manyconnect manual/mpi_t/Makefile perf/Makefile testlist cxx/testlist cxx/topo/testlist f77/testlist f90/testlist threads/testlist errors/testlist errors/cxx/testlist errors/f77/testlist errors/f90/testlist impls/testlist impls/Makefile impls/hydra/Makefile impls/hydra/proc_binding.sh impls/mpich/Makefile impls/mpich/testlist impls/mpich/mpi_t/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -13114,14 +13135,23 @@ do
     "f90/misc/Makefile") CONFIG_FILES="$CONFIG_FILES f90/misc/Makefile" ;;
     "f90/profile/Makefile") CONFIG_FILES="$CONFIG_FILES f90/profile/Makefile" ;;
     "f08/Makefile") CONFIG_FILES="$CONFIG_FILES f08/Makefile" ;;
-    "f08/util/Makefile") CONFIG_FILES="$CONFIG_FILES f08/util/Makefile" ;;
-    "f08/pt2pt/Makefile") CONFIG_FILES="$CONFIG_FILES f08/pt2pt/Makefile" ;;
-    "f08/coll/Makefile") CONFIG_FILES="$CONFIG_FILES f08/coll/Makefile" ;;
-    "f08/datatype/Makefile") CONFIG_FILES="$CONFIG_FILES f08/datatype/Makefile" ;;
     "f08/attr/Makefile") CONFIG_FILES="$CONFIG_FILES f08/attr/Makefile" ;;
+    "f08/datatype/Makefile") CONFIG_FILES="$CONFIG_FILES f08/datatype/Makefile" ;;
+    "f08/util/Makefile") CONFIG_FILES="$CONFIG_FILES f08/util/Makefile" ;;
+    "f08/coll/Makefile") CONFIG_FILES="$CONFIG_FILES f08/coll/Makefile" ;;
     "f08/comm/Makefile") CONFIG_FILES="$CONFIG_FILES f08/comm/Makefile" ;;
+    "f08/pt2pt/Makefile") CONFIG_FILES="$CONFIG_FILES f08/pt2pt/Makefile" ;;
     "f08/rma/Makefile") CONFIG_FILES="$CONFIG_FILES f08/rma/Makefile" ;;
     "f08/subarray/Makefile") CONFIG_FILES="$CONFIG_FILES f08/subarray/Makefile" ;;
+    "f08/topo/Makefile") CONFIG_FILES="$CONFIG_FILES f08/topo/Makefile" ;;
+    "f08/io/Makefile") CONFIG_FILES="$CONFIG_FILES f08/io/Makefile" ;;
+    "f08/init/Makefile") CONFIG_FILES="$CONFIG_FILES f08/init/Makefile" ;;
+    "f08/info/Makefile") CONFIG_FILES="$CONFIG_FILES f08/info/Makefile" ;;
+    "f08/spawn/Makefile") CONFIG_FILES="$CONFIG_FILES f08/spawn/Makefile" ;;
+    "f08/timer/Makefile") CONFIG_FILES="$CONFIG_FILES f08/timer/Makefile" ;;
+    "f08/ext/Makefile") CONFIG_FILES="$CONFIG_FILES f08/ext/Makefile" ;;
+    "f08/misc/Makefile") CONFIG_FILES="$CONFIG_FILES f08/misc/Makefile" ;;
+    "f08/profile/Makefile") CONFIG_FILES="$CONFIG_FILES f08/profile/Makefile" ;;
     "cxx/Makefile") CONFIG_FILES="$CONFIG_FILES cxx/Makefile" ;;
     "cxx/util/Makefile") CONFIG_FILES="$CONFIG_FILES cxx/util/Makefile" ;;
     "cxx/attr/Makefile") CONFIG_FILES="$CONFIG_FILES cxx/attr/Makefile" ;;

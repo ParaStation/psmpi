@@ -21,6 +21,10 @@
 #pragma _HP_SECONDARY_DEF PMPI_Reduce_scatter_block  MPI_Reduce_scatter_block
 #elif defined(HAVE_PRAGMA_CRI_DUP)
 #pragma _CRI duplicate MPI_Reduce_scatter_block as PMPI_Reduce_scatter_block
+#elif defined(HAVE_WEAK_ATTRIBUTE)
+int MPI_Reduce_scatter_block(const void *sendbuf, void *recvbuf, int recvcount,
+                             MPI_Datatype datatype, MPI_Op op, MPI_Comm comm)
+                             __attribute__((weak,alias("PMPI_Reduce_scatter_block")));
 #endif
 /* -- End Profiling Symbol Block */
 
@@ -1136,8 +1140,10 @@ int MPI_Reduce_scatter_block(const void *sendbuf, void *recvbuf,
             }
 
             MPIR_ERRTEST_RECVBUF_INPLACE(recvbuf, recvcount, mpi_errno);
-	    if (comm_ptr->comm_kind == MPID_INTERCOMM) 
+            if (comm_ptr->comm_kind == MPID_INTERCOMM) {
                 MPIR_ERRTEST_SENDBUF_INPLACE(sendbuf, recvcount, mpi_errno);
+            } else if (sendbuf != MPI_IN_PLACE && recvcount != 0)
+                MPIR_ERRTEST_ALIAS_COLL(sendbuf, recvbuf, mpi_errno)
 
             MPIR_ERRTEST_USERBUFFER(recvbuf,recvcount,datatype,mpi_errno);
             MPIR_ERRTEST_USERBUFFER(sendbuf,recvcount,datatype,mpi_errno); 

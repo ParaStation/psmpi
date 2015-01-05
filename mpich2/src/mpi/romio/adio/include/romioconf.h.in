@@ -45,6 +45,9 @@
 /* Define if int smaller than pointer */
 #undef HAVE_INT_LT_POINTER
 
+/* Define to 1 if you have the <limits.h> header file. */
+#undef HAVE_LIMITS_H
+
 /* Define if long long is 64 bits */
 #undef HAVE_LONG_LONG_64
 
