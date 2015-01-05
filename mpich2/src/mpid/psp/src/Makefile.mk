@@ -1,6 +1,6 @@
 ## -*- Mode: Makefile -*-
 
-lib_lib@MPILIBNAME@_la_SOURCES += src/mpid/psp/src/mpid_abort.c			\
+mpi_core_sources +=               src/mpid/psp/src/mpid_abort.c			\
                                   src/mpid/psp/src/mpid_cancel.c		\
                                   src/mpid/psp/src/mpid_collective.c		\
                                   src/mpid/psp/src/mpid_debug.c			\
@@ -25,6 +25,6 @@ lib_lib@MPILIBNAME@_la_SOURCES += src/mpid/psp/src/mpid_abort.c			\
                                   src/mpid/psp/src/mpid_unresolved.c		\
                                   src/mpid/psp/src/mpid_vc.c
 
-lib_lib@MPILIBNAME@_la_LIBADD += -lpscom
-lib_lib@MPILIBNAME@_la_LDFLAGS += @PSCOM_LDFLAGS@
+external_libs += -lpscom
+external_ldflags += @PSCOM_LDFLAGS@
 AM_CPPFLAGS += @PSCOM_CPPFLAGS@
