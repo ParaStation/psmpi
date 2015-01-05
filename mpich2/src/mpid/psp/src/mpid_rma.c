@@ -190,8 +190,8 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
 	win_ptr->lock_cnt = 0;
 	INIT_LIST_HEAD(&win_ptr->lock_list_internal);
 	win_ptr->lock_internal = 0;
-        win_ptr->epoch_state = MPID_PSP_EPOCH_NONE;
-        win_ptr->epoch_lock_count = 0;
+	win_ptr->epoch_state = MPID_PSP_EPOCH_NONE;
+	win_ptr->epoch_lock_count = 0;
 
 
 	/* get the addresses of the windows, window objects, and completion counters
@@ -825,8 +825,9 @@ fn_fail:
 }
 
 int MPID_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info_ptr, MPID_Comm *comm_ptr,
-			     void **base_ptr, MPID_Win **win_ptr)
+			     void *base_ptr, MPID_Win **win_ptr)
 {
+	void **base_pp = (void **) base_ptr;
 	int mpi_errno = MPI_SUCCESS;
 
 	if(!is_comm_self_clone(comm_ptr)) {
@@ -861,7 +862,7 @@ int MPID_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info_ptr, 
 			/* store shmem region related information as an attribute of win: */
 			MPID_PSP_shm_rma_set_attr(*win_ptr, shm_attr);
 
-			(*win_ptr)->base = *base_ptr;
+			(*win_ptr)->base = *base_pp;
 			(*win_ptr)->size = size;
 			(*win_ptr)->disp_unit = disp_unit;
 
