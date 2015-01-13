@@ -145,6 +145,30 @@ int MPID_Comm_remote_group_failed(MPID_Comm *comm, MPID_Group **failed_group_ptr
 	return MPI_ERR_UNSUPPORTED_OPERATION;
 }
 
+int MPID_Comm_failure_get_acked(MPID_Comm *comm, MPID_Group **failed_group_ptr)
+{
+	WARN_NOT_IMPLEMENTED;
+	return MPI_ERR_UNSUPPORTED_OPERATION;
+}
+
+int MPID_Comm_get_all_failed_procs(MPID_Comm *comm_ptr, MPID_Group **failed_group, int tag)
+{
+	WARN_NOT_IMPLEMENTED;
+	return MPI_ERR_UNSUPPORTED_OPERATION;
+}
+
+int MPID_Comm_revoke(MPID_Comm *comm, int is_remote)
+{
+	WARN_NOT_IMPLEMENTED;
+	return MPI_ERR_UNSUPPORTED_OPERATION;
+}
+
+int MPID_Comm_failure_ack(MPID_Comm *comm)
+{
+	WARN_NOT_IMPLEMENTED;
+	return MPI_ERR_UNSUPPORTED_OPERATION;
+}
+
 int MPID_Win_set_info(MPID_Win *win, MPID_Info *info)
 {
 	int mpi_errno = MPI_SUCCESS;
@@ -162,4 +186,3 @@ int MPID_Win_get_info(MPID_Win *win, MPID_Info **info_used)
 
 	return mpi_errno;
 }
-
