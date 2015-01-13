@@ -588,7 +588,7 @@ LIBOBJS
 EXTRA_VERSION_INFO
 MODULEFILE
 CONFSET
-ENABLE_MPD
+ENABLE_HYDRA
 MPICH_RELEASE_DATE
 MPICH_VERSION
 CONFIGARGS
@@ -647,7 +647,7 @@ SHELL'
 ac_subst_files=''
 ac_user_opts='
 enable_option_checking
-with_mpd
+with_hydra
 with_confset
 with_mpichconf
 with_threading
@@ -1268,7 +1268,7 @@ Optional Packages:
   --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
 
-  --with-mpd            Install also default mpd.
+  --with-hydra            Install also Hydra (mpiexec).
 
 
   --with-confset=set  Use predefined configuration set "none"
@@ -1901,14 +1901,14 @@ fi
 # configure mpich2
 
 
-# Check whether --with-mpd was given.
-if test "${with_mpd+set}" = set; then :
-  withval=$with_mpd;
-	ENABLE_MPD="true"
+# Check whether --with-hydra was given.
+if test "${with_hydra+set}" = set; then :
+  withval=$with_hydra;
+	ENABLE_HYDRA="true"
 
 else
 
-	ENABLE_MPD="false"
+	ENABLE_HYDRA="false"
 
 fi
 
@@ -2169,7 +2169,7 @@ case $CONFSET in
 
 	CONF_OPS="$CONF_OPS CC=gcc CXX=g++ FC=gfortran CFLAGS=-O3"
 
-	ENABLE_MPD="true"
+	ENABLE_HYDRA="true"
 	;;
 *)
 	echo "Sorry. Unknown confset ${CONFSET}"
