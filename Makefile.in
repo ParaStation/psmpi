@@ -19,7 +19,7 @@ exec_prefix=@exec_prefix@
 prefix=@prefix@
 libdir=@libdir@
 MODULEFILE=@MODULEFILE@
-ENABLE_MPD=@ENABLE_MPD@
+ENABLE_HYDRA=@ENABLE_HYDRA@
 MPICH_VERSION=@MPICH_VERSION@
 MPICH_RELEASE_DATE=@MPICH_RELEASE_DATE@
 EXTRA_VERSION_INFO="@EXTRA_VERSION_INFO@"
@@ -31,7 +31,7 @@ ifneq ($(CONFSET),none)
 SUBDIRS += mpich2
 all: mpich2_all
 
-ifeq ($(ENABLE_MPD),false)
+ifeq ($(ENABLE_HYDRA),false)
 MPIEXEC=/opt/parastation/bin/mpiexec
 else
 MPIEXEC=$(DESTDIR)$(prefix)/bin/mpiexec.hydra
@@ -67,28 +67,21 @@ endif
 ########################################################
 install: install_mpich2 modulefile install_version $(DESTDIR)$(prefix)/ChangeLog
 
-MPD_BIN += mpd mpdallexit mpdboot mpdcheck mpdchkpyver mpdcleanup mpdexit mpdgdbdrv
-MPD_BIN += mpdhelp mpdkilljob mpdlib mpdlistjobs mpdman mpdringtest mpdroot mpdrun
-MPD_BIN += mpdsigjob mpdtrace mpiexec mpirun
-MPD_BIN += mpiexec.hydra hydra_pmi_proxy hydra_persist hydra_nameserver
-MPD_FILES += $(MPD_BIN:%=bin/%) $(MPD_BIN:%=bin/%.py) $(MPD_BIN:%=bin/%.pyc) $(MPD_BIN:%=bin/%.pyo)
-MPD_FILES += share/man/man1/mpiexec.1 share/doc/www1/mpiexec.html
+HYDRA_BIN += mpiexec mpirun
+HYDRA_BIN += mpiexec.hydra hydra_pmi_proxy hydra_persist hydra_nameserver
+HYDRA_FILES += $(HYDRA_BIN:%=bin/%) $(HYDRA_BIN:%=bin/%.py) $(HYDRA_BIN:%=bin/%.pyc) $(HYDRA_BIN:%=bin/%.pyo)
+HYDRA_FILES += share/man/man1/mpiexec.1 share/doc/www1/mpiexec.html
 LA_FILES += libmpichcxx.la libfmpich.la libmpl.la libopa.la libmpich.la libmpichf90.la
 
 
 install_mpich2:
 	$(MAKE) ACLOCAL=/bin/true AUTOCONF=/bin/true AUTOHEADER=/bin/true AUTOMAKE=/bin/true -C mpich2 install 
-	$(RM) $(DESTDIR)$(prefix)/sbin/mpeuninstall
-	$(RM) $(DESTDIR)$(prefix)/sbin/mpecheckinstall
-	$(RM) $(DESTDIR)$(prefix)/sbin/mpetestexec
-	$(RM) $(DESTDIR)$(prefix)/sbin/mpetestexeclog
-	$(RM) $(DESTDIR)$(prefix)/sbin/mpetestlink
-	@rmdir $(DESTDIR)$(prefix)/sbin || echo ok
+	$(RM) $(DESTDIR)$(prefix)/bin/parkill
 # Remove libtool files	
 	$(RM) $(LA_FILES:%=$(DESTDIR)$(libdir)/%)
-ifeq ($(ENABLE_MPD),false)
-# remove installed mpd files
-	$(RM) $(MPD_FILES:%=$(DESTDIR)$(prefix)/%)
+ifeq ($(ENABLE_HYDRA),false)
+# remove installed hydra files
+	$(RM) $(HYDRA_FILES:%=$(DESTDIR)$(prefix)/%)
 endif
 ifneq ($(fixpath),)
 #  sed optinon -i is not available in sed version 3.x !!!

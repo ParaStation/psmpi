@@ -37,14 +37,14 @@ AC_SUBST([MPICH_VERSION])
 AC_SUBST([MPICH_RELEASE_DATE])
 # configure mpich2
 
-AC_ARG_WITH([mpd], [
-  --with-mpd            Install also default mpd.
+AC_ARG_WITH([hydra], [
+  --with-hydra            Install also Hydra (mpiexec).
 ],[
-	ENABLE_MPD="true"
+	ENABLE_HYDRA="true"
 ],[
-	ENABLE_MPD="false"
+	ENABLE_HYDRA="false"
 ])
-AC_SUBST([ENABLE_MPD])
+AC_SUBST([ENABLE_HYDRA])
 
 
 AC_ARG_WITH([confset], [
@@ -308,7 +308,7 @@ case $CONFSET in
 
 	CONF_OPS="$CONF_OPS CC=gcc CXX=g++ FC=gfortran CFLAGS=-O3"
 
-	ENABLE_MPD="true"
+	ENABLE_HYDRA="true"
 	;;
 *)
 	echo "Sorry. Unknown confset ${CONFSET}"
