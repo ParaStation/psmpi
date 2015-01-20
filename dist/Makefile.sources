@@ -5132,7 +5132,6 @@ mpich2/test/mpi/errors/f08/io/uerrhandf08.f90 \
 mpich2/test/mpi/errors/f08/testlist \
 mpich2/test/mpi/errors/f77/Makefile.am \
 mpich2/test/mpi/errors/f77/Makefile.in \
-mpich2/test/mpi/errors/f77/errhan/Makefile.in \
 mpich2/test/mpi/errors/f77/io/Makefile.am \
 mpich2/test/mpi/errors/f77/io/Makefile.in \
 mpich2/test/mpi/errors/f77/io/addsize.h.in \
@@ -5142,11 +5141,6 @@ mpich2/test/mpi/errors/f77/io/uerrhandf.f \
 mpich2/test/mpi/errors/f77/testlist.in \
 mpich2/test/mpi/errors/f90/Makefile.am \
 mpich2/test/mpi/errors/f90/Makefile.in \
-mpich2/test/mpi/errors/f90/errhan/Makefile.am \
-mpich2/test/mpi/errors/f90/errhan/Makefile.am-stamp \
-mpich2/test/mpi/errors/f90/errhan/Makefile.in \
-mpich2/test/mpi/errors/f90/errhan/testlist \
-mpich2/test/mpi/errors/f90/errhan/uerrhandf90.f90 \
 mpich2/test/mpi/errors/f90/io/Makefile.am \
 mpich2/test/mpi/errors/f90/io/Makefile.am-stamp \
 mpich2/test/mpi/errors/f90/io/Makefile.in \
