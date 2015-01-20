@@ -1,26 +1,24 @@
-For 5.1.0-1 (master_3.1)
+For 5.1.1-1 preview (master_3.1.3 dc564033acd)
 
 with hydra mpiexec, confset=default
 
-17 tests failed out of 793
-Issue #1: (1 test)
-      YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Killed (signal
-      9)
-      large_type_sendrec np=2: running out of mem?
+7 tests failed out of 833
 
-Other Issues: (2 tests)
-
-from
-test-5.1.0-1_2014-07-14_13:50:34.log
--------------------------------------------------
-./datatype/large_type_sendrec np=2:		#1
-
-YOUR APPLICATION TERMINATED WITH THE EXIT STRING: Killed (signal 9)
--------------------------------------------------
-./rma/reqops np=4:
-3 - Got 1, expected 2
--------------------------------------------------
-./spawn/spaiccreate np=2:
-Fatal error in PMPI_Intercomm_create: Invalid communicator, error stack:
--------------------------------------------------
-3 tests failed out of 801
+not ok 269 - ./datatype/large_type_sendrec 2
+  Out of mem on single node.
+not ok 334 - ./pt2pt/mprobe 2
+  Check failed.
+  "ok" in 5.1.0-1
+not ok 415 - ./rma/win_zero 4
+  Caught signal 11 (Segmentation fault).
+  "ok" in 5.1.0-1
+not ok 437 - ./rma/reqops 4
+  ## 3 - Got 1, expected 2
+not ok 453 - ./rma/acc-loc 4
+  ## Expected: { loc = 0, val = 4 }  Actual: { loc = -1, val = 0 }
+  New test. Not part of 5.1.0-1
+not ok 472 - ./spawn/spaiccreate 2
+  ## Fatal error in PMPI_Intercomm_create: Invalid communicator, error stack:
+not ok 514 - ./io/bigtype 1
+  ## [mpiexec@phoenix] APPLICATION TIMED OUT
+  New test. Not part of 5.1.0-1
