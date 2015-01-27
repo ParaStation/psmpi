@@ -91,6 +91,21 @@ void mreceive_done(pscom_request_t *request)
 }
 
 static
+void mreceive_done_noncontig(pscom_request_t *request)
+{
+	MPID_PSCOM_XHeader_t *xhead = &request->xheader.user.common;
+
+	/* Restore original message type: */
+	if (xhead->type == MPID_PSP_MSGTYPE_MPROBE_RESERVED_REQUEST) {
+		xhead->type = MPID_PSP_MSGTYPE_DATA;
+	} else {
+		xhead->type = MPID_PSP_MSGTYPE_DATA_REQUEST_ACK;
+	}
+
+	receive_done_noncontig(request);
+}
+
+static
 void prepare_mrecvreq(MPID_Request *req)
 {
 	struct MPID_DEV_Request_recv *rreq = &req->dev.kind.recv;
@@ -109,7 +124,7 @@ void prepare_mrecv_cleanup(MPID_Request *req, void * buf, int count, MPI_Datatyp
 	pscom_request_t *preq = rreq->common.pscom_req;
 
 	prepare_cleanup(req, buf, count, datatype);
-	preq->ops.io_done = mreceive_done;
+	preq->ops.io_done = preq->ops.io_done == receive_done ? mreceive_done : mreceive_done_noncontig;
 }
 
 
