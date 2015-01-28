@@ -596,6 +596,7 @@ int MPID_PSP_shm_attr_delete_fn(MPI_Comm comm, int keyval, void *attribute_val, 
 {
 	int i;
 	MPID_PSP_shm_attr_t *attr = (MPID_PSP_shm_attr_t*)attribute_val;
+	MPID_Comm *comm_ptr = NULL;
 
 	if(attr) {
 
@@ -610,7 +611,10 @@ int MPID_PSP_shm_attr_delete_fn(MPI_Comm comm, int keyval, void *attribute_val, 
 		MPIU_Free(attr->disp_buf);
 		MPIU_Free(attr->shmid_buf);
 
-		pthread_mutex_destroy(attr->lock);
+		MPID_Comm_get_ptr(comm, comm_ptr);
+		if(comm_ptr->rank == 0) {
+			pthread_mutex_destroy(attr->lock);
+		}
 		shmdt(attr->lock);
 
 		MPIU_Free(attr);
@@ -647,6 +651,9 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPID_Info *info,
 	disp_buf = MPIU_Malloc(comm_ptr->local_size * sizeof(int));
 	shmid_buf = MPIU_Malloc(comm_ptr->local_size * sizeof(int));
 	ptr_buf = MPIU_Malloc(comm_ptr->local_size * sizeof(void*));
+
+	/* Initialize shmid_buf[] */
+	for (i = 0; i < comm_ptr->local_size; i++) shmid_buf[i] = -1;
 
 	mpi_errno = MPIR_Allgather_impl(&size, 1, MPI_INT, size_buf, 1, MPI_INT, comm_ptr, &errflag);
 	if (mpi_errno) {
@@ -695,10 +702,11 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPID_Info *info,
 				shmctl(shmid, IPC_RMID, NULL);
 			}
 
-			mpi_errno = MPIR_Allgather_impl(&shmid, 1, MPI_INT, shmid_buf, 1, MPI_INT, comm_ptr, &errflag);
+			mpi_errno = MPIR_Bcast_impl(&shmid, 1, MPI_INT, 0, comm_ptr, &errflag);
 			if (mpi_errno) {
 				goto fn_fail;
 			}
+			shmid_buf[0] = shmid;
 
 			if(comm_ptr->rank != 0) {
 				shm = shmat(shmid_buf[0], 0, 0);
@@ -777,6 +785,7 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPID_Info *info,
 	if(comm_ptr->rank == 0) {
 
 		pthread_mutexattr_t mutex_attr;
+		int rval;
 
 		shmid = shmget(0, sizeof(pthread_mutex_t), IPC_CREAT | 0777);
 
@@ -788,7 +797,9 @@ int MPID_PSP_Win_allocate_shmget(MPI_Aint size, int disp_unit, MPID_Info *info,
 		shmctl(shmid, IPC_RMID, NULL);
 
 		pthread_mutexattr_init(&mutex_attr);
-		pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_SHARED);
+		rval = pthread_mutexattr_setpshared(&mutex_attr, PTHREAD_PROCESS_SHARED);
+		if (rval) goto err_setpshared;
+
 		pthread_mutex_init(attr->lock, &mutex_attr);
 		pthread_mutexattr_destroy(&mutex_attr);
 	}
@@ -815,6 +826,7 @@ fn_exit:
 err_shmget:
 	mpi_errno = MPI_ERR_RMA_SHARED;
 	goto fn_exit;
+err_setpshared:
 err_shmat:
 	shmctl(shmid, IPC_RMID, NULL);
 	mpi_errno = MPI_ERR_RMA_SHARED;
