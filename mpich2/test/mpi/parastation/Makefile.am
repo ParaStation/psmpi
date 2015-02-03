@@ -17,4 +17,5 @@ mprobe_LDADD = -lpthread
 noinst_PROGRAMS =  \
     mprobe locknull \
     win_sync_err_flush win_sync_err_flushall win_sync_err_lockall_pt win_sync_err_lockall_at win_sync_err_unlockall \
-    win_flavor_err_shm win_flavor_err_dyn
+    win_flavor_err_shm win_flavor_err_dyn \
+    mpi_spawn_isend
