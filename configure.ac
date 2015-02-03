@@ -3,7 +3,7 @@
 AC_INIT([psmpi],[],[hauke@par-tec.com])
 AC_CONFIG_SRCDIR([configure.ac])
 
-AC_CONFIG_AUX_DIR(["scripts"])
+AC_CONFIG_AUX_DIR([scripts])
 AC_CANONICAL_TARGET([])
 
 # AC_PROG_INSTALL
