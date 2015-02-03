@@ -91,7 +91,7 @@ noinst_PROGRAMS = mprobe$(EXEEXT) locknull$(EXEEXT) \
 	win_sync_err_lockall_pt$(EXEEXT) \
 	win_sync_err_lockall_at$(EXEEXT) \
 	win_sync_err_unlockall$(EXEEXT) win_flavor_err_shm$(EXEEXT) \
-	win_flavor_err_dyn$(EXEEXT)
+	win_flavor_err_dyn$(EXEEXT) mpi_spawn_isend$(EXEEXT)
 subdir = parastation
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -114,6 +114,10 @@ locknull_SOURCES = locknull.c
 locknull_OBJECTS = locknull.$(OBJEXT)
 locknull_LDADD = $(LDADD)
 locknull_DEPENDENCIES = $(top_builddir)/util/mtest.o
+mpi_spawn_isend_SOURCES = mpi_spawn_isend.c
+mpi_spawn_isend_OBJECTS = mpi_spawn_isend.$(OBJEXT)
+mpi_spawn_isend_LDADD = $(LDADD)
+mpi_spawn_isend_DEPENDENCIES = $(top_builddir)/util/mtest.o
 mprobe_SOURCES = mprobe.c
 mprobe_OBJECTS = mprobe.$(OBJEXT)
 mprobe_DEPENDENCIES =
@@ -173,12 +177,12 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = locknull.c mprobe.c win_flavor_err_dyn.c \
+SOURCES = locknull.c mpi_spawn_isend.c mprobe.c win_flavor_err_dyn.c \
 	win_flavor_err_shm.c win_sync_err_flush.c \
 	win_sync_err_flushall.c win_sync_err_lockall_at.c \
 	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
-DIST_SOURCES = locknull.c mprobe.c win_flavor_err_dyn.c \
-	win_flavor_err_shm.c win_sync_err_flush.c \
+DIST_SOURCES = locknull.c mpi_spawn_isend.c mprobe.c \
+	win_flavor_err_dyn.c win_flavor_err_shm.c win_sync_err_flush.c \
 	win_sync_err_flushall.c win_sync_err_lockall_at.c \
 	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
 am__can_run_installinfo = \
@@ -437,6 +441,10 @@ locknull$(EXEEXT): $(locknull_OBJECTS) $(locknull_DEPENDENCIES) $(EXTRA_locknull
 	@rm -f locknull$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(locknull_OBJECTS) $(locknull_LDADD) $(LIBS)
 
+mpi_spawn_isend$(EXEEXT): $(mpi_spawn_isend_OBJECTS) $(mpi_spawn_isend_DEPENDENCIES) $(EXTRA_mpi_spawn_isend_DEPENDENCIES) 
+	@rm -f mpi_spawn_isend$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(mpi_spawn_isend_OBJECTS) $(mpi_spawn_isend_LDADD) $(LIBS)
+
 mprobe$(EXEEXT): $(mprobe_OBJECTS) $(mprobe_DEPENDENCIES) $(EXTRA_mprobe_DEPENDENCIES) 
 	@rm -f mprobe$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(mprobe_OBJECTS) $(mprobe_LDADD) $(LIBS)
@@ -476,6 +484,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locknull.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpi_spawn_isend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mprobe.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_flavor_err_dyn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_flavor_err_shm.Po@am__quote@

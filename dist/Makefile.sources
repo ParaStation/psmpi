@@ -6219,6 +6219,7 @@ mpich2/test/mpi/mpi_t/testlist \
 mpich2/test/mpi/parastation/Makefile.am \
 mpich2/test/mpi/parastation/Makefile.in \
 mpich2/test/mpi/parastation/locknull.c \
+mpich2/test/mpi/parastation/mpi_spawn_isend.c \
 mpich2/test/mpi/parastation/mprobe.c \
 mpich2/test/mpi/parastation/reqops_fixed.c \
 mpich2/test/mpi/parastation/testlist \
