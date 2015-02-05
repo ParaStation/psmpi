@@ -33,9 +33,16 @@ fi
 
 PSCOM_CPPFLAGS="${PSCOM_CPPFLAGS-"-I/opt/parastation/include"}"
 PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
+PSCOM_RPATHLINK="${PSCOM_RPATHLINK-"${PSCOM_LDFLAGS//-L/-Wl,-rpath-link=}"}"
 # AX_CHECK_LIBRARY([PSCOM], [pscom.h], [pscom])
-AC_ARG_VAR([PSCOM_CPPFLAGS], [C preprocessor flags for PSCOM headers])
-AC_ARG_VAR([PSCOM_LDFLAGS], [linker flags for PSCOM libraries])
+AC_ARG_VAR([PSCOM_CPPFLAGS], [C preprocessor flags for PSCOM headers
+			    (default: "-I/opt/parastation/include")])
+AC_ARG_VAR([PSCOM_LDFLAGS], [linker flags for PSCOM libraries
+			    (default: "-L/opt/parastation/lib64")])
+AC_ARG_VAR([PSCOM_RPATHLINK], [mpicc wrapper option for -Wl,-rpath-link
+			    (default: "-Wl,-rpath-link=/opt/parastation/lib64")])
+
+PAC_APPEND_FLAG([${PSCOM_RPATHLINK}],[WRAPPER_LDFLAGS])
 
 # todo: check whether we need all of them
 build_mpid_common_sched=yes
