@@ -343,6 +343,10 @@ AC_SUBST([CONFSET])
 AC_SUBST([MODULEFILE])
 AC_SUBST([EXTRA_VERSION_INFO])
 
+# ToDo: directly  use PSCOM_LDFLAGS from mpich2/src/mpid/psp/subconfigure.m4
+PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
+AC_SUBST([PSCOM_LDFLAGS])
+
 AC_CONFIG_FILES([Makefile])
 AC_CONFIG_FILES([scripts/generate_modulefile.sh], [chmod +x scripts/generate_modulefile.sh])
 

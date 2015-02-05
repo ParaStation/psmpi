@@ -5,6 +5,8 @@ exec_prefix="@exec_prefix@"
 libdir="@libdir@"
 bindir="@bindir@"
 EXTRA_VERSION_INFO="@EXTRA_VERSION_INFO@"
+PSCOM_LDFLAGS="@PSCOM_LDFLAGS@"
+PSCOM_LIBDIR="${PSCOM_LDFLAGS#-L}"
 
 function error() {
     echo "error: $*"
@@ -19,13 +21,12 @@ function generate() {
 	_extra_version_info=" ($EXTRA_VERSION_INFO)"
 	_extra_version_info_long="  $EXTRA_VERSION_INFO"
     fi
-    # Search for libpscom and libpsi
-    libdir_pscom=$(findlibdir libpscom.so "$libdir/libmpich.so") || echo "/opt/parastation/lib64"
-    libdir_psi=$(findlibdir libpsi.so "$(which mpiexec)" || echo "/opt/parastation/lib64")
+    # Path to libpscom
+    ld_library_path="$PSCOM_LIBDIR"
 
-    ld_library_path="$libdir_pscom"
-    if [ "$libdir_pscom" != "$libdir_psi" ]; then
-	ld_library_path="$ld_library_path:$libdir_psi"
+    if [ "$PSCOM_LIBDIR" != "/opt/parastation/lib64" ]; then
+	# Path to libpsi, if different to libpscom
+	ld_library_path="$ld_library_path:/opt/parastation/lib64"
     fi
 
     mpi_home="$prefix"
@@ -61,17 +62,6 @@ prepend-path MANPATH \${mpi_home}/share/man:/opt/parastation/share/man
 prepend-path --delim , PSI_EXPORTS FORT_BUFFERED
 
 EOF
-}
-
-function findlibdir() {
-    lib=${1?"library"}
-    consumer=${2?"consumer"}
-    dir=$(ldd "$consumer" |grep "$lib"|sed 's#.*=> \(.*\)/'"$lib"'.*#\1#')
-
-    if [ ! -e "$dir/$lib" ]; then
-	echo "Library $lib not found by $consumer"; exit 1
-    fi
-    echo $dir
 }
 
 generate
