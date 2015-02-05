@@ -585,6 +585,7 @@ ac_unique_file="psmpi"
 ac_unique_file="configure.ac"
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+PSCOM_LDFLAGS
 EXTRA_VERSION_INFO
 MODULEFILE
 CONFSET
@@ -2084,6 +2085,7 @@ case $CONFSET in
 
 	CONF_OPS="$CONF_OPS CFLAGS=-O3"
 	EXTRA_VERSION_INFO=" compiler: $(x86_64-k1om-linux-gcc --version|head -n 1)"
+	MODULEFILE_CONFSET="mic"
 	;;
 "micintel")
 	echo "Using confset=micintel"
@@ -2125,6 +2127,7 @@ case $CONFSET in
 
 	CONF_OPS="$CONF_OPS CFLAGS=-O3"
 	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
+	MODULEFILE_CONFSET="intel-mic"
 	;;
 "cellgcc")
 	echo "Using confset=cellgcc"
@@ -2183,7 +2186,7 @@ esac
 if test "${with_threading+set}" = set; then :
   withval=$with_threading;
 	export PSP_THREADING=multiple
-	MODULEFILE_CONFSET="$MODULEFILE_CONFSET-mt"
+	MODULEFILE_CONFSET="$MODULEFILE_CONFSET${MODULEFILE_CONFSET:+-}mt"
 
 fi
 
@@ -2209,6 +2212,10 @@ fi
 
 
 
+
+
+# ToDo: directly  use PSCOM_LDFLAGS from mpich2/src/mpid/psp/subconfigure.m4
+PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
 
 
 ac_config_files="$ac_config_files Makefile"

@@ -44,6 +44,10 @@ AC_ARG_VAR([PSCOM_RPATHLINK], [mpicc wrapper option for -Wl,-rpath-link
 
 PAC_APPEND_FLAG([${PSCOM_RPATHLINK}],[WRAPPER_LDFLAGS])
 
+AC_SUBST([PSCOM_CPPFLAGS])
+AC_SUBST([PSCOM_LDFLAGS])
+AC_SUBST([PSCOM_RPATHLINK])
+
 # todo: check whether we need all of them
 build_mpid_common_sched=yes
 build_mpid_common_datatype=yes

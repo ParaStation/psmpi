@@ -965,6 +965,7 @@ BUILD_CH3_UTIL_FTB_FALSE
 BUILD_CH3_UTIL_FTB_TRUE
 BUILD_CH3_FALSE
 BUILD_CH3_TRUE
+PSCOM_RPATHLINK
 PSCOM_LDFLAGS
 PSCOM_CPPFLAGS
 BUILD_PSP_FALSE
@@ -1286,6 +1287,7 @@ FFLAGS
 PAMILIBNAME
 PSCOM_CPPFLAGS
 PSCOM_LDFLAGS
+PSCOM_RPATHLINK
 MPILIBNAME
 PMPILIBNAME
 MPICXXLIBNAME
@@ -2275,9 +2277,14 @@ Some influential environment variables:
   PAMILIBNAME can be used to override the name of the PAMI library (default:
               "pami")
   PSCOM_CPPFLAGS
-              C preprocessor flags for PSCOM headers
+              C preprocessor flags for PSCOM headers (default:
+              "-I/opt/parastation/include")
   PSCOM_LDFLAGS
-              linker flags for PSCOM libraries
+              linker flags for PSCOM libraries (default:
+              "-L/opt/parastation/lib64")
+  PSCOM_RPATHLINK
+              mpicc wrapper option for -Wl,-rpath-link (default:
+              "-Wl,-rpath-link=/opt/parastation/lib64")
   MPILIBNAME  can be used to override the name of the MPI library (default:
               "mpi")
   PMPILIBNAME can be used to override the name of the MPI profiling library
@@ -25387,8 +25394,21 @@ fi
 
 PSCOM_CPPFLAGS="${PSCOM_CPPFLAGS-"-I/opt/parastation/include"}"
 PSCOM_LDFLAGS="${PSCOM_LDFLAGS-"-L/opt/parastation/lib64"}"
+PSCOM_RPATHLINK="${PSCOM_RPATHLINK-"${PSCOM_LDFLAGS//-L/-Wl,-rpath-link=}"}"
 # AX_CHECK_LIBRARY([PSCOM], [pscom.h], [pscom])
 
+
+
+
+
+
+	if echo "$WRAPPER_LDFLAGS" | $FGREP -e '${PSCOM_RPATHLINK}' >/dev/null 2>&1; then :
+  echo "WRAPPER_LDFLAGS(='$WRAPPER_LDFLAGS') contains '${PSCOM_RPATHLINK}', not appending" >&5
+else
+  echo "WRAPPER_LDFLAGS(='$WRAPPER_LDFLAGS') does not contain '${PSCOM_RPATHLINK}', appending" >&5
+		WRAPPER_LDFLAGS="$WRAPPER_LDFLAGS ${PSCOM_RPATHLINK}"
+
+fi
 
 
 # todo: check whether we need all of them
