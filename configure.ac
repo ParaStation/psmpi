@@ -223,6 +223,7 @@ case $CONFSET in
 
 	CONF_OPS="$CONF_OPS CFLAGS=-O3"
 	EXTRA_VERSION_INFO=" compiler: $(x86_64-k1om-linux-gcc --version|head -n 1)"
+	MODULEFILE_CONFSET="mic"
 	;;
 "micintel")
 	echo "Using confset=micintel"
@@ -264,6 +265,7 @@ case $CONFSET in
 
 	CONF_OPS="$CONF_OPS CFLAGS=-O3"
 	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
+	MODULEFILE_CONFSET="intel-mic"
 	;;
 "cellgcc")
 	echo "Using confset=cellgcc"
@@ -321,7 +323,7 @@ AC_ARG_WITH([threading], [
   --with-threading      Enable threading 'multiple' in device psp
 ],[
 	export PSP_THREADING=multiple
-	MODULEFILE_CONFSET="$MODULEFILE_CONFSET-mt"
+	MODULEFILE_CONFSET="$MODULEFILE_CONFSET${MODULEFILE_CONFSET:+-}mt"
 ])
 
 AC_ARG_WITH([modulefile], [
