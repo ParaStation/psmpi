@@ -48,8 +48,8 @@
 /* Application checkpointing enabled */
 #undef ENABLE_CHECKPOINTING
 
-/* define to add per-vc function pointers to override send and recv functions
-   */
+/* define to add per-vc function pointers to override send and recv functions,
+   registered in ib_init.c */
 #undef ENABLE_COMM_OVERRIDES
 
 /* Define if FTB is enabled */
@@ -414,7 +414,7 @@
 /* Define to 1 if you have the <netinet/tcp.h> header file. */
 #undef HAVE_NETINET_TCP_H
 
-/* Define to 1 if you have the <net/if.h> header file. */
+/* Define if you have the <net/if.h> header file. */
 #undef HAVE_NET_IF_H
 
 /* Define if the Fortran types are not available in C */

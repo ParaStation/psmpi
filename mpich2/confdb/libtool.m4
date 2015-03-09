@@ -1118,10 +1118,7 @@ m4_defun([_LT_DARWIN_LINKER_FEATURES],
   _LT_TAGVAR(link_all_deplibs, $1)=yes
   _LT_TAGVAR(allow_undefined_flag, $1)=$_lt_dar_allow_undefined
   case $cc_basename in
-     ifort*|nagfor*)
-        _LT_TAGVAR(lt_prog_compiler_wl, $1)='-Wl,'
-        _lt_dar_can_shared=yes
-      ;;
+     ifort*|nagfor*) _lt_dar_can_shared=yes ;;
      *) _lt_dar_can_shared=$GCC ;;
   esac
   if test yes = "$_lt_dar_can_shared"; then

@@ -117,36 +117,37 @@ am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_attr_alias.m4 \
 	$(top_srcdir)/confdb/ltversion.m4 \
 	$(top_srcdir)/confdb/lt~obsolete.m4 \
 	$(top_srcdir)/maint/version.m4 $(top_srcdir)/subsys_include.m4 \
-	$(top_srcdir)/src/mpid/pamid/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/common/hcoll/subconfigure.m4 \
 	$(top_srcdir)/src/pm/subconfigure.m4 \
-	$(top_srcdir)/src/pm/remshell/subconfigure.m4 \
 	$(top_srcdir)/src/binding/fortran/use_mpi/subconfigure.m4 \
 	$(top_srcdir)/src/pm/gforker/subconfigure.m4 \
+	$(top_srcdir)/src/pm/remshell/subconfigure.m4 \
 	$(top_srcdir)/src/pm/util/subconfigure.m4 \
-	$(top_srcdir)/src/pmi/subconfigure.m4 \
-	$(top_srcdir)/src/pmi/slurm/subconfigure.m4 \
-	$(top_srcdir)/src/pmi/pmi2/subconfigure.m4 \
-	$(top_srcdir)/src/pmi/pmi2/simple/subconfigure.m4 \
-	$(top_srcdir)/src/pmi/pmi2/poe/subconfigure.m4 \
-	$(top_srcdir)/src/pmi/simple/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/ch3/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/sock/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/util/sock/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/psp/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/pamid/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/common/datatype/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/newmad/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/scif/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/portals4/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/mx/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/ib/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/ofi/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/tcp/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/common/thread/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/common/sched/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/sock/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/newmad/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/mxm/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/tcp/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/mx/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/portals4/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/scif/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/ofi/subconfigure.m4 \
+	$(top_srcdir)/src/pmi/subconfigure.m4 \
+	$(top_srcdir)/src/pmi/slurm/subconfigure.m4 \
+	$(top_srcdir)/src/pmi/simple/subconfigure.m4 \
+	$(top_srcdir)/src/pmi/pmi2/subconfigure.m4 \
+	$(top_srcdir)/src/pmi/pmi2/poe/subconfigure.m4 \
+	$(top_srcdir)/src/pmi/pmi2/simple/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/common/sock/subconfigure.m4 \
 	$(top_srcdir)/src/mpid/common/sock/poll/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/util/sock/subconfigure.m4 \
-	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/mxm/subconfigure.m4 \
+	$(top_srcdir)/src/mpid/ch3/channels/nemesis/netmod/ib/subconfigure.m4 \
 	$(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
@@ -530,6 +531,9 @@ PAPI_INCLUDE = @PAPI_INCLUDE@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PERL = @PERL@
 PMPILIBNAME = @PMPILIBNAME@
+PSCOM_CPPFLAGS = @PSCOM_CPPFLAGS@
+PSCOM_LDFLAGS = @PSCOM_LDFLAGS@
+PSCOM_RPATHLINK = @PSCOM_RPATHLINK@
 RANLIB = @RANLIB@
 REQD = @REQD@
 REQI1 = @REQI1@

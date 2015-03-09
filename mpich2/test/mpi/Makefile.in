@@ -180,7 +180,8 @@ am__DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/checktests.in \
 	$(top_srcdir)/include/mpitestconf.h.in \
 	$(top_srcdir)/maint/testmerge.in README confdb/ar-lib \
 	confdb/compile confdb/config.guess confdb/config.rpath \
-	confdb/config.sub confdb/install-sh confdb/missing
+	confdb/config.sub confdb/depcomp confdb/install-sh \
+	confdb/missing
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -415,7 +416,8 @@ CLEANFILES = summary.xml summary.tap summary.junit.xml
 
 # mix in the "make testing" rule and other boilerplate
 ACLOCAL_AMFLAGS = -I confdb
-static_subdirs = util attr basic datatype coll comm errhan group info init \
+static_subdirs = parastation \
+                 util attr basic datatype coll comm errhan group info init \
                  pt2pt rma topo errors manual perf mpi_t impls ckpoint ft
 
 all_lang_subdirs = f77 cxx f90 f08

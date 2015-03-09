@@ -162,6 +162,7 @@ mpich2/examples/f77/hellow.f \
 mpich2/examples/f90/pi3f90.f90 \
 mpich2/examples/hellow.c \
 mpich2/examples/icpi.c \
+mpich2/examples/ircpi.c \
 mpich2/examples/parent.c \
 mpich2/examples/pmandel.c \
 mpich2/examples/pmandel_fence.c \
@@ -172,7 +173,6 @@ mpich2/examples/spawn_merge_child1.c \
 mpich2/examples/spawn_merge_child2.c \
 mpich2/examples/spawn_merge_parent.c \
 mpich2/examples/srtest.c \
-mpich2/maint/0001-libtool-powerpc-le-linux-support.patch \
 mpich2/maint/Makefile.mk \
 mpich2/maint/Version \
 mpich2/maint/Version.base.m4 \
@@ -191,6 +191,7 @@ mpich2/maint/createhtmlindex \
 mpich2/maint/createhtmlindex.in \
 mpich2/maint/cvardirs \
 mpich2/maint/cvardirs.in \
+mpich2/maint/darwin-ifort.patch \
 mpich2/maint/decode_handle \
 mpich2/maint/docnotes \
 mpich2/maint/errmsgdirs \
@@ -220,7 +221,6 @@ mpich2/maint/genstates \
 mpich2/maint/genstates.in \
 mpich2/maint/getcoverage \
 mpich2/maint/getcoverage.in \
-mpich2/maint/libtool.m4.patch \
 mpich2/maint/local_perl/README \
 mpich2/maint/local_perl/YAML-Tiny-1.41.tar.gz \
 mpich2/maint/local_perl/lib/YAML/Tiny.pm \
@@ -2166,7 +2166,6 @@ mpich2/src/mpi/errhan/errhandler_create.c \
 mpich2/src/mpi/errhan/errhandler_free.c \
 mpich2/src/mpi/errhan/errhandler_get.c \
 mpich2/src/mpi/errhan/errhandler_set.c \
-mpich2/src/mpi/errhan/errnames-old.txt \
 mpich2/src/mpi/errhan/errnames.txt \
 mpich2/src/mpi/errhan/error_class.c \
 mpich2/src/mpi/errhan/error_string.c \
@@ -3088,6 +3087,17 @@ mpich2/src/mpid/ch3/channels/nemesis/netmod/newmad/subconfigure.m4 \
 mpich2/src/mpid/ch3/channels/nemesis/netmod/none/.state-cache \
 mpich2/src/mpid/ch3/channels/nemesis/netmod/none/Makefile.mk \
 mpich2/src/mpid/ch3/channels/nemesis/netmod/none/none.c \
+mpich2/src/mpid/ch3/channels/nemesis/netmod/ofi/.state-cache \
+mpich2/src/mpid/ch3/channels/nemesis/netmod/ofi/Makefile.mk \
+mpich2/src/mpid/ch3/channels/nemesis/netmod/ofi/errnames.txt \
+mpich2/src/mpid/ch3/channels/nemesis/netmod/ofi/ofi_cm.c \
+mpich2/src/mpid/ch3/channels/nemesis/netmod/ofi/ofi_data.c \
+mpich2/src/mpid/ch3/channels/nemesis/netmod/ofi/ofi_impl.h \
+mpich2/src/mpid/ch3/channels/nemesis/netmod/ofi/ofi_init.c \
+mpich2/src/mpid/ch3/channels/nemesis/netmod/ofi/ofi_msg.c \
+mpich2/src/mpid/ch3/channels/nemesis/netmod/ofi/ofi_progress.c \
+mpich2/src/mpid/ch3/channels/nemesis/netmod/ofi/ofi_tagged.c \
+mpich2/src/mpid/ch3/channels/nemesis/netmod/ofi/subconfigure.m4 \
 mpich2/src/mpid/ch3/channels/nemesis/netmod/portals4/.state-cache \
 mpich2/src/mpid/ch3/channels/nemesis/netmod/portals4/Makefile.mk \
 mpich2/src/mpid/ch3/channels/nemesis/netmod/portals4/errnames.txt \
@@ -3100,6 +3110,10 @@ mpich2/src/mpid/ch3/channels/nemesis/netmod/portals4/ptl_poll.c \
 mpich2/src/mpid/ch3/channels/nemesis/netmod/portals4/ptl_probe.c \
 mpich2/src/mpid/ch3/channels/nemesis/netmod/portals4/ptl_recv.c \
 mpich2/src/mpid/ch3/channels/nemesis/netmod/portals4/ptl_send.c \
+mpich2/src/mpid/ch3/channels/nemesis/netmod/portals4/rptl.c \
+mpich2/src/mpid/ch3/channels/nemesis/netmod/portals4/rptl.h \
+mpich2/src/mpid/ch3/channels/nemesis/netmod/portals4/rptl_init.c \
+mpich2/src/mpid/ch3/channels/nemesis/netmod/portals4/rptl_op.c \
 mpich2/src/mpid/ch3/channels/nemesis/netmod/portals4/subconfigure.m4 \
 mpich2/src/mpid/ch3/channels/nemesis/netmod/scif/.state-cache \
 mpich2/src/mpid/ch3/channels/nemesis/netmod/scif/Makefile.mk \
@@ -3196,7 +3210,6 @@ mpich2/src/mpid/ch3/channels/sock/src/ch3i_errno.c \
 mpich2/src/mpid/ch3/channels/sock/src/errnames.txt \
 mpich2/src/mpid/ch3/channels/sock/subconfigure.m4 \
 mpich2/src/mpid/ch3/doc/ch3.tex \
-mpich2/src/mpid/ch3/errnames-old.txt \
 mpich2/src/mpid/ch3/errnames.txt \
 mpich2/src/mpid/ch3/include/.state-cache \
 mpich2/src/mpid/ch3/include/mpidftb.h \
@@ -3273,7 +3286,6 @@ mpich2/src/mpid/ch3/util/sock/ch3u_connect_sock.c \
 mpich2/src/mpid/ch3/util/sock/ch3u_getinterfaces.c \
 mpich2/src/mpid/ch3/util/sock/ch3u_init_sock.c \
 mpich2/src/mpid/ch3/util/sock/ch3usock.h \
-mpich2/src/mpid/ch3/util/sock/errnames-old.txt \
 mpich2/src/mpid/ch3/util/sock/errnames.txt \
 mpich2/src/mpid/ch3/util/sock/findinterfaces.c \
 mpich2/src/mpid/ch3/util/sock/subconfigure.m4 \
@@ -3348,7 +3360,6 @@ mpich2/src/mpid/common/sched/mpid_sched_pre.h \
 mpich2/src/mpid/common/sched/subconfigure.m4 \
 mpich2/src/mpid/common/sock/.state-cache \
 mpich2/src/mpid/common/sock/Makefile.mk \
-mpich2/src/mpid/common/sock/errnames-old.txt \
 mpich2/src/mpid/common/sock/errnames.txt \
 mpich2/src/mpid/common/sock/iocp/.state-cache \
 mpich2/src/mpid/common/sock/iocp/Makefile.sm \
@@ -3357,7 +3368,6 @@ mpich2/src/mpid/common/sock/iocp/sock.c \
 mpich2/src/mpid/common/sock/mpidu_sock.h \
 mpich2/src/mpid/common/sock/poll/.state-cache \
 mpich2/src/mpid/common/sock/poll/Makefile.mk \
-mpich2/src/mpid/common/sock/poll/errnames-old.txt \
 mpich2/src/mpid/common/sock/poll/errnames.txt \
 mpich2/src/mpid/common/sock/poll/mpidu_socki.h \
 mpich2/src/mpid/common/sock/poll/sock.c \
@@ -4542,7 +4552,6 @@ mpich2/src/pm/util/test/forktest.c \
 mpich2/src/pm/util/test/servtest.c \
 mpich2/src/pm/util/test/servtest2.c \
 mpich2/src/pmi/Makefile.mk \
-mpich2/src/pmi/errnames-old.txt \
 mpich2/src/pmi/errnames.txt \
 mpich2/src/pmi/pmi2/Makefile.mk \
 mpich2/src/pmi/pmi2/poe/.state-cache \
@@ -5019,6 +5028,7 @@ mpich2/test/mpi/datatype/indexed-misc.c \
 mpich2/test/mpi/datatype/large-count.c \
 mpich2/test/mpi/datatype/large_type.c \
 mpich2/test/mpi/datatype/large_type_sendrec.c \
+mpich2/test/mpi/datatype/large_vec.c \
 mpich2/test/mpi/datatype/lbub.c \
 mpich2/test/mpi/datatype/localpack.c \
 mpich2/test/mpi/datatype/longdouble.c \
@@ -5067,6 +5077,7 @@ mpich2/test/mpi/errhan/Makefile.am \
 mpich2/test/mpi/errhan/Makefile.in \
 mpich2/test/mpi/errhan/adderr.c \
 mpich2/test/mpi/errhan/commcall.c \
+mpich2/test/mpi/errhan/dynamic_errcode_predefined_errclass.c \
 mpich2/test/mpi/errhan/errcode.c \
 mpich2/test/mpi/errhan/errfatal.c \
 mpich2/test/mpi/errhan/errmsg.c \
@@ -6150,6 +6161,7 @@ mpich2/test/mpi/info/Makefile.in \
 mpich2/test/mpi/info/infodel.c \
 mpich2/test/mpi/info/infodup.c \
 mpich2/test/mpi/info/infoenv.c \
+mpich2/test/mpi/info/infoget.c \
 mpich2/test/mpi/info/infomany.c \
 mpich2/test/mpi/info/infomany2.c \
 mpich2/test/mpi/info/infoorder.c \
@@ -6302,6 +6314,9 @@ mpich2/test/mpi/rma/accpscw1.c \
 mpich2/test/mpi/rma/adlb_mimic1.c \
 mpich2/test/mpi/rma/allocmem.c \
 mpich2/test/mpi/rma/at_complete.c \
+mpich2/test/mpi/rma/atomic_rmw_cas.c \
+mpich2/test/mpi/rma/atomic_rmw_fop.c \
+mpich2/test/mpi/rma/atomic_rmw_gacc.c \
 mpich2/test/mpi/rma/attrorderwin.c \
 mpich2/test/mpi/rma/badrma.c \
 mpich2/test/mpi/rma/baseattrwin.c \
@@ -6323,7 +6338,6 @@ mpich2/test/mpi/rma/get_acc_local.c \
 mpich2/test/mpi/rma/get_accumulate.c \
 mpich2/test/mpi/rma/getfence1.c \
 mpich2/test/mpi/rma/getgroup.c \
-mpich2/test/mpi/rma/ircpi.c \
 mpich2/test/mpi/rma/linked_list.c \
 mpich2/test/mpi/rma/linked_list_bench_lock_all.c \
 mpich2/test/mpi/rma/linked_list_bench_lock_excl.c \
@@ -6349,11 +6363,13 @@ mpich2/test/mpi/rma/put_bottom.c \
 mpich2/test/mpi/rma/putfence1.c \
 mpich2/test/mpi/rma/putfidx.c \
 mpich2/test/mpi/rma/putpscw1.c \
+mpich2/test/mpi/rma/racc_local_comp.c \
 mpich2/test/mpi/rma/req_example.c \
 mpich2/test/mpi/rma/reqops.c \
 mpich2/test/mpi/rma/rma-contig.c \
 mpich2/test/mpi/rma/rmanull.c \
 mpich2/test/mpi/rma/rmazero.c \
+mpich2/test/mpi/rma/rput_local_comp.c \
 mpich2/test/mpi/rma/selfrma.c \
 mpich2/test/mpi/rma/squelch.h \
 mpich2/test/mpi/rma/strided_acc_indexed.c \
@@ -6388,6 +6404,7 @@ mpich2/test/mpi/rma/win_flavors.c \
 mpich2/test/mpi/rma/win_info.c \
 mpich2/test/mpi/rma/win_large_shm.c \
 mpich2/test/mpi/rma/win_shared.c \
+mpich2/test/mpi/rma/win_shared_create.c \
 mpich2/test/mpi/rma/win_shared_noncontig.c \
 mpich2/test/mpi/rma/win_shared_noncontig_put.c \
 mpich2/test/mpi/rma/win_shared_put_flush_get.c \
@@ -6503,8 +6520,12 @@ mpich2/test/mpi/util/Makefile.am \
 mpich2/test/mpi/util/Makefile.in \
 mpich2/test/mpi/util/dtypes.c \
 mpich2/test/mpi/util/mtest.c \
+mpich2/test/mpi/util/mtest_datatype.c \
+mpich2/test/mpi/util/mtest_datatype.h \
+mpich2/test/mpi/util/mtest_datatype_gen.c \
 mpich2/test/mpi/util/mtestcheck.c \
 mpich2/test/mpi/util/nbc_pmpi_adapter.c \
+mpich2/test/mpi/version.m4 \
 mpich2/test/mpid/atomic.c \
 mpich2/test/mpid/atomic_fai.c \
 mpich2/test/mpid/ch3/failed_bitmask.c \
