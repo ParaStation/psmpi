@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_revoke_( MPI_Fint *, MPI_Fint * )
 #define mpix_comm_revoke_ pmpix_comm_revoke_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPIX_Comm_revoke
 #define MPIX_Comm_revoke PMPIX_Comm_revoke 
+#endif
 
 #else
 

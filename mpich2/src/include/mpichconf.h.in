@@ -307,6 +307,9 @@
 /* Define to 1 if you have the `dcfa' library (-ldcfa). */
 #undef HAVE_LIBDCFA
 
+/* Define to 1 if you have the `fabric' library (-lfabric). */
+#undef HAVE_LIBFABRIC
+
 /* Define to 1 if you have the `ftb' library (-lftb). */
 #undef HAVE_LIBFTB
 
@@ -732,8 +735,7 @@
 /* Define which x86 cycle counter to use */
 #undef LINUX86_CYCLE_RDTSCP
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Define to enable checking of handles still allocated at MPI_Finalize */

@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_error_class_( MPI_Fint *, MPI_Fint *, M
 #define mpi_error_class_ pmpi_error_class_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Error_class
 #define MPI_Error_class PMPI_Error_class 
+#endif
 
 #else
 

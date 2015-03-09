@@ -25,8 +25,12 @@ static int type_create_contiguous_x(MPI_Count count,
     int blocklens[2];
     MPI_Datatype types[2];
 
-    MPI_Count c = count/INT_MAX;
-    MPI_Count r = count%INT_MAX;
+    /* truly stupendously large counts will overflow an integer with this math,
+     * but that is a problem for a few decades from now.  Sorry, few decades
+     * from now! */
+    ADIOI_Assert(count/INT_MAX == (int)(count/INT_MAX));
+    int c = (int)(count/INT_MAX); /* OK to cast until 'count' is 256 bits */
+    int r = count%INT_MAX;
 
     MPI_Type_vector(c, INT_MAX, INT_MAX, oldtype, &chunks);
     MPI_Type_contiguous(r, oldtype, &remainder);
@@ -59,17 +63,40 @@ int ADIOI_Type_create_hindexed_x(int count,
     int i, ret;
     MPI_Datatype *types;
     int *blocklens;
+    int is_big=0;
 
     types = ADIOI_Malloc(count*sizeof(MPI_Datatype));
     blocklens = ADIOI_Malloc(count*sizeof(int));
 
+    /* squashing two loops into one.
+     * - Look in the array_of_blocklengths for any large values
+     * - convert MPI_Count items (if they are not too big) into int-sized items
+     * after this loop we will know if we can use MPI_type_hindexed or if we
+     * need a more complicated BigMPI-style struct-of-chunks.
+     *
+     * Why not use the struct-of-chunks in all cases?  HDF5 reported a bug,
+     * which I have not yet precicesly nailed down, but appears to have
+     * something to do with struct-of-chunks when the chunks are small */
+
     for(i=0; i<count; i++) {
-	blocklens[i] = 1;
-	type_create_contiguous_x(array_of_blocklengths[i], oldtype,  &(types[i]));
+	if (array_of_blocklengths[i] > INT_MAX) {
+	    blocklens[i] = 1;
+	    is_big=1;
+	    type_create_contiguous_x(array_of_blocklengths[i], oldtype,  &(types[i]));
+	} else {
+	    /* OK to cast: checked for "bigness" above */
+	    blocklens[i] = (int)array_of_blocklengths[i];
+	    MPI_Type_contiguous(blocklens[i], oldtype, &(types[i]));
+	}
     }
 
-    ret = MPI_Type_create_struct(count, blocklens, array_of_displacements,
-	    types, newtype);
+    if (is_big) {
+	ret = MPI_Type_create_struct(count, blocklens, array_of_displacements,
+		types, newtype);
+    } else {
+	ret = MPI_Type_hindexed(count, blocklens,
+		array_of_displacements, oldtype, newtype);
+    }
     for (i=0; i< count; i++)
 	MPI_Type_free(&(types[i]));
     ADIOI_Free(types);

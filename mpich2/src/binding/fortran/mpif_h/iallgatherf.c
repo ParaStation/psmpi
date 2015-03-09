@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_iallgather_( void*, MPI_Fint *, MPI_Fin
 #define mpi_iallgather_ pmpi_iallgather_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Iallgather
 #define MPI_Iallgather PMPI_Iallgather 
+#endif
 
 #else
 

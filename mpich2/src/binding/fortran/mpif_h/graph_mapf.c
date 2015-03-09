@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_graph_map_( MPI_Fint *, MPI_Fint *, MPI
 #define mpi_graph_map_ pmpi_graph_map_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Graph_map
 #define MPI_Graph_map PMPI_Graph_map 
+#endif
 
 #else
 

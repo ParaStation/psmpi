@@ -1,4 +1,4 @@
-.TH MPI_Type_commit 3 "10/7/2014" " " "MPI"
+.TH MPI_Type_commit 3 "2/20/2015" " " "MPI"
 .SH NAME
 MPI_Type_commit \-  Commits the datatype 
 .SH SYNOPSIS
@@ -81,8 +81,9 @@ possible.
 .PD 0
 .TP
 .B MPI_ERR_TYPE 
-- Invalid datatype argument.  May be an uncommitted 
-MPI_Datatype (see 
+- Invalid datatype argument.  Additionally, this error can
+occur if an uncommitted MPI_Datatype (see 
 .I MPI_Type_commit
-).
+) is used
+in a communication call.
 .PD 1

@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_cart_rank_( MPI_Fint *, MPI_Fint [], MP
 #define mpi_cart_rank_ pmpi_cart_rank_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Cart_rank
 #define MPI_Cart_rank PMPI_Cart_rank 
+#endif
 
 #else
 

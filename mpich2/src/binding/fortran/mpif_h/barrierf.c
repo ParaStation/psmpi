@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_barrier_( MPI_Fint *, MPI_Fint * ) __at
 #define mpi_barrier_ pmpi_barrier_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Barrier
 #define MPI_Barrier PMPI_Barrier 
+#endif
 
 #else
 

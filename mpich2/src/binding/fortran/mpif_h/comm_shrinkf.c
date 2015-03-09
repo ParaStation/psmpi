@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpix_comm_shrink_( MPI_Fint *, MPI_Fint *, 
 #define mpix_comm_shrink_ pmpix_comm_shrink_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPIX_Comm_shrink
 #define MPIX_Comm_shrink PMPIX_Comm_shrink 
+#endif
 
 #else
 

@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_neighbor_alltoall_( void*, MPI_Fint *, 
 #define mpi_neighbor_alltoall_ pmpi_neighbor_alltoall_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Neighbor_alltoall
 #define MPI_Neighbor_alltoall PMPI_Neighbor_alltoall 
+#endif
 
 #else
 

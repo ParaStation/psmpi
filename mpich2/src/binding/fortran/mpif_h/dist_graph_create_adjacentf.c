@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_dist_graph_create_adjacent_( MPI_Fint *
 #define mpi_dist_graph_create_adjacent_ pmpi_dist_graph_create_adjacent_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Dist_graph_create_adjacent
 #define MPI_Dist_graph_create_adjacent PMPI_Dist_graph_create_adjacent 
+#endif
 
 #else
 

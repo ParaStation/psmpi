@@ -7,14 +7,13 @@
 
 include $(top_srcdir)/Makefile.mtest
 
-EXTRA_DIST = testlist
+EXTRA_DIST = testlist.in
 
 ## for all programs that are just built from the single corresponding source
 ## file, we don't need per-target _SOURCES rules, automake will infer them
 ## correctly
 noinst_PROGRAMS =          \
     allocmem               \
-    ircpi                  \
     test1                  \
     test2                  \
     test2_shm              \
@@ -93,6 +92,8 @@ noinst_PROGRAMS =          \
     win_shared_noncontig   \
     win_shared_noncontig_put \
     win_shared_zerobyte    \
+    win_shared_create_allocshm    \
+    win_shared_create_no_allocshm \
     win_zero               \
     win_large_shm          \
     win_dynamic_acc        \
@@ -137,7 +138,12 @@ noinst_PROGRAMS =          \
     acc-loc                \
     fence_shm              \
     get-struct             \
-    at_complete
+    rput_local_comp        \
+    racc_local_comp        \
+    at_complete            \
+    atomic_rmw_fop         \
+    atomic_rmw_cas         \
+    atomic_rmw_gacc
 
 strided_acc_indexed_LDADD       = $(LDADD) -lm
 strided_acc_onelock_LDADD       = $(LDADD) -lm
@@ -214,4 +220,6 @@ mutex_bench_shm_ordered_SOURCES  = mutex_bench.c mcs-mutex.c mcs-mutex.h
 linked_list_bench_lock_shr_nocheck_SOURCES  = linked_list_bench_lock_shr.c
 linked_list_bench_lock_shr_nocheck_CPPFLAGS = -DUSE_MODE_NOCHECK $(AM_CPPFLAGS)
 
-ircpi_LDADD    = $(LDADD) -lm
+win_shared_create_allocshm_SOURCES = win_shared_create.c
+win_shared_create_no_allocshm_SOURCES = win_shared_create.c
+win_shared_create_allocshm_CPPFLAGS = -DUSE_INFO_ALLOC_SHM $(AM_CPPFLAGS)

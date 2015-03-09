@@ -36,14 +36,14 @@ cpi_DEPENDENCIES =
 # the make-time instances of libpmpi.la and libmpi.la live here
 AM_LDFLAGS += -L../lib
 # the make-time instances of libmpl.la and libopa.la live here
-AM_LDFLAGS += -L@mpllibdir@ -L@opalibdir@
+AM_LDFLAGS += @mpllibdir@ @opalibdir@
 
 # Wrapper LDFLAGS need to be added at the end to make sure we link
 # with the libraries we just built, and not any previously installed
 # libraries.
 AM_LDFLAGS += $(WRAPPER_LDFLAGS)
 
-external_libs = -l@MPLLIBNAME@ -l@OPALIBNAME@ $(WRAPPER_LIBS)
+external_libs = $(WRAPPER_LIBS)
 if BUILD_PROFILING_LIB
 LIBS += -l@PMPILIBNAME@
 cpi_DEPENDENCIES += ../lib/lib@PMPILIBNAME@.la
@@ -57,7 +57,7 @@ noinst_PROGRAMS = cpi
 # pmandel requires a separate set of socket calls (its a long story)
 # and may not build on most platforms
 EXTRA_PROGRAMS = pmandel pmandel_spawn pmandel_service pmandel_spaserv    \
-                 pmandel_fence hellow icpi parent child srtest \
+                 pmandel_fence hellow icpi ircpi parent child srtest \
                  spawn_merge_parent spawn_merge_child1 spawn_merge_child2
 
 # LIBS includes -lmpich and other libraries (e.g., -lpmpich if
@@ -82,6 +82,8 @@ cpi_LDFLAGS = $(AM_LDFLAGS) $(mpich_libtool_static_flag)
 
 icpi_SOURCES = icpi.c
 icpi_LDADD = -lm
+ircpi_SOURCES = ircpi.c
+ircpi_LDADD = -lm
 pmandel_SOURCES = pmandel.c
 pmandel_LDADD = -lm
 pmandel_spawn_SOURCES = pmandel_spawn.c

@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_op_create_( MPI_User_function*, MPI_Fin
 #define mpi_op_create_ pmpi_op_create_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Op_create
 #define MPI_Op_create PMPI_Op_create 
+#endif
 
 #else
 

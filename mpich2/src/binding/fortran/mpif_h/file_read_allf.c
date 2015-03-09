@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_read_all_( MPI_Fint *, void*, MPI_
 #define mpi_file_read_all_ pmpi_file_read_all_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_File_read_all
 #define MPI_File_read_all PMPI_File_read_all 
+#endif
 
 #else
 

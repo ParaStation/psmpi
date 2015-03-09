@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_graphdims_get_( MPI_Fint *, MPI_Fint *,
 #define mpi_graphdims_get_ pmpi_graphdims_get_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Graphdims_get
 #define MPI_Graphdims_get PMPI_Graphdims_get 
+#endif
 
 #else
 

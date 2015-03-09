@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_compare_and_swap_( void*, void*, void*,
 #define mpi_compare_and_swap_ pmpi_compare_and_swap_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Compare_and_swap
 #define MPI_Compare_and_swap PMPI_Compare_and_swap 
+#endif
 
 #else
 
