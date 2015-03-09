@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_get_( void*, MPI_Fint *, MPI_Fint *, MP
 #define mpi_get_ pmpi_get_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Get
 #define MPI_Get PMPI_Get 
+#endif
 
 #else
 

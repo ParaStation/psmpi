@@ -367,10 +367,10 @@ void ADIOI_GPFS_Calc_file_domains(ADIO_File fd,
 	/* BG/L- and BG/P-style distribution of file domains: simple allocation of
 	 * file domins to each aggregator */
 	for (i=0; i<naggs; i++) {
-	    if (i < naggs_small) {
-		fd_size[i] = nb_cn_small     * blksize;
-	    } else {
+	    if (i < naggs_large) {
 		fd_size[i] = (nb_cn_small+1) * blksize;
+	    } else {
+		fd_size[i] = nb_cn_small     * blksize;
 	    }
 	}
     }
@@ -387,12 +387,12 @@ void ADIOI_GPFS_Calc_file_domains(ADIO_File fd,
 
 #else // not BGQ platform
 	for (i=0; i<naggs; i++) {
-	    if (i < naggs_small) {
-		fd_size[i] = nb_cn_small     * blksize;
-	    } else {
+	    if (i < naggs_large) {
 		fd_size[i] = (nb_cn_small+1) * blksize;
+	    } else {
+		fd_size[i] = nb_cn_small     * blksize;
 	    }
-	}
+    }
 
 #endif
 
@@ -607,7 +607,7 @@ void ADIOI_GPFS_Calc_my_req(ADIO_File fd, ADIO_Offset *offset_list, ADIO_Offset 
 	    DBG_FPRINTF(stderr, "data needed from %d (count = %d):\n", i,
 		    my_req[i].count);
 	    for (l=0; l < my_req[i].count; l++) {
-		DBG_FPRINTF(stderr, "   off[%d] = %lld, len[%d] = %d\n", l,
+		DBG_FPRINTF(stderr, "   off[%d] = %lld, len[%d] = %lld\n", l,
 			my_req[i].offsets[l], l, my_req[i].lens[l]);
 	    }
 	}

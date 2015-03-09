@@ -18,7 +18,13 @@ extern ptl_handle_ni_t MPIDI_nem_ptl_ni;
 extern ptl_pt_index_t  MPIDI_nem_ptl_pt;
 extern ptl_pt_index_t  MPIDI_nem_ptl_get_pt; /* portal for gets by receiver */
 extern ptl_pt_index_t  MPIDI_nem_ptl_control_pt; /* portal for MPICH control messages */
+extern ptl_pt_index_t  MPIDI_nem_ptl_rpt_pt; /* portal for MPICH control messages */
+extern ptl_handle_eq_t MPIDI_nem_ptl_origin_eq;
 extern ptl_handle_eq_t MPIDI_nem_ptl_eq;
+extern ptl_handle_eq_t MPIDI_nem_ptl_get_eq;
+extern ptl_handle_eq_t MPIDI_nem_ptl_control_eq;
+extern ptl_handle_eq_t MPIDI_nem_ptl_origin_eq;
+extern ptl_handle_eq_t MPIDI_nem_ptl_rpt_eq;
 
 extern ptl_handle_md_t MPIDI_nem_ptl_global_md;
 extern ptl_ni_limits_t MPIDI_nem_ptl_ni_limits;
@@ -40,7 +46,11 @@ typedef struct {
     int noncontig;
     int large;
     ptl_handle_md_t md;
-    ptl_handle_me_t me;
+    ptl_handle_me_t put_me;
+    ptl_handle_me_t *get_me_p;
+    int num_gets;
+    int put_done;
+    ptl_size_t chunk_offset;
     void *chunk_buffer[MPID_NEM_PTL_NUM_CHUNK_BUFFERS];
     MPIDI_msg_sz_t bytes_put;
     int found; /* used in probes with PtlMESearch() */
@@ -48,7 +58,9 @@ typedef struct {
 } MPID_nem_ptl_req_area;
 
 /* macro for ptl private in req */
-#define REQ_PTL(req) ((MPID_nem_ptl_req_area *)((req)->ch.netmod_area.padding))
+static inline MPID_nem_ptl_req_area * REQ_PTL(MPID_Request *req) {
+    return (MPID_nem_ptl_req_area *)req->ch.netmod_area.padding;
+}
 
 #define MPID_nem_ptl_init_req(req_) do {                        \
         int i;                                                  \
@@ -59,8 +71,12 @@ typedef struct {
         REQ_PTL(req_)->noncontig     = FALSE;                   \
         REQ_PTL(req_)->large         = FALSE;                   \
         REQ_PTL(req_)->md            = PTL_INVALID_HANDLE;      \
-        REQ_PTL(req_)->me            = PTL_INVALID_HANDLE;      \
+        REQ_PTL(req_)->put_me        = PTL_INVALID_HANDLE;      \
+        REQ_PTL(req_)->get_me_p      = NULL;                    \
+        REQ_PTL(req_)->num_gets      = 0;                       \
+        REQ_PTL(req_)->put_done     = 0;                       \
         REQ_PTL(req_)->event_handler = NULL;                    \
+        REQ_PTL(req_)->chunk_offset  = 0;                       \
     } while (0)
 
 #define MPID_nem_ptl_request_create_sreq(sreq_, errno_, comm_) do {                                             \
@@ -88,6 +104,9 @@ typedef struct {
     ptl_pt_index_t pt;
     ptl_pt_index_t ptg;
     ptl_pt_index_t ptc;
+    ptl_pt_index_t ptr;
+    ptl_pt_index_t ptrg;
+    ptl_pt_index_t ptrc;
     int id_initialized; /* TRUE iff id and pt have been initialized */
     MPIDI_msg_sz_t num_queued_sends; /* number of reqs for this vc in sendq */
 } MPID_nem_ptl_vc_area;
@@ -142,7 +161,7 @@ typedef struct {
 
 int MPID_nem_ptl_nm_init(void);
 int MPID_nem_ptl_nm_finalize(void);
-int MPID_nem_ptl_nm_event_handler(const ptl_event_t *e);
+int MPID_nem_ptl_nm_ctl_event_handler(const ptl_event_t *e);
 int MPID_nem_ptl_sendq_complete_with_error(MPIDI_VC_t *vc, int req_errno);
 int MPID_nem_ptl_SendNoncontig(MPIDI_VC_t *vc, MPID_Request *sreq, void *hdr, MPIDI_msg_sz_t hdr_sz);
 int MPID_nem_ptl_iStartContigMsg(MPIDI_VC_t *vc, void *hdr, MPIDI_msg_sz_t hdr_sz, void *data, MPIDI_msg_sz_t data_sz,
@@ -154,7 +173,7 @@ int MPID_nem_ptl_poll_finalize(void);
 int MPID_nem_ptl_poll(int is_blocking_poll);
 int MPID_nem_ptl_vc_terminated(MPIDI_VC_t *vc);
 int MPID_nem_ptl_get_id_from_bc(const char *business_card, ptl_process_t *id, ptl_pt_index_t *pt, ptl_pt_index_t *ptg,
-                                ptl_pt_index_t *ptc);
+                                ptl_pt_index_t *ptc, ptl_pt_index_t *ptr, ptl_pt_index_t *ptrg, ptl_pt_index_t *ptrc);
 void MPI_nem_ptl_pack_byte(MPID_Segment *segment, MPI_Aint first, MPI_Aint last, void *buf,
                            MPID_nem_ptl_pack_overflow_t *overflow);
 int MPID_nem_ptl_unpack_byte(MPID_Segment *segment, MPI_Aint first, MPI_Aint last, void *buf,
@@ -189,6 +208,56 @@ int MPID_nem_ptl_lmt_handle_cookie(MPIDI_VC_t *vc, MPID_Request *req, MPID_IOV s
 int MPID_nem_ptl_lmt_done_send(MPIDI_VC_t *vc, MPID_Request *req);
 int MPID_nem_ptl_lmt_done_recv(MPIDI_VC_t *vc, MPID_Request *req);
 
+/* a safe PtlMEAppend for when there is no space available */
+static inline int MPID_nem_ptl_me_append(ptl_handle_ni_t  ni_handle,
+                                         ptl_pt_index_t   pt_index,
+                                         const ptl_me_t  *me,
+                                         ptl_list_t       ptl_list,
+                                         void            *user_ptr,
+                                         ptl_handle_me_t *me_handle)
+{
+    int ret;
+
+    while (1) {
+        ret = PtlMEAppend(ni_handle, pt_index, me, ptl_list, user_ptr, me_handle);
+        if (ret != PTL_NO_SPACE)
+            break;
+        MPID_nem_ptl_poll(1);
+    }
+
+    return ret;
+}
+
+/* packet handlers */
+
+int MPID_nem_ptl_pkt_cancel_send_req_handler(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
+                                             MPIDI_msg_sz_t *buflen, MPID_Request **rreqp);
+int MPID_nem_ptl_pkt_cancel_send_resp_handler(MPIDI_VC_t *vc, MPIDI_CH3_Pkt_t *pkt,
+                                              MPIDI_msg_sz_t *buflen, MPID_Request **rreqp);
+
+/* local packet types */
+
+typedef enum MPIDI_nem_ptl_pkt_type {
+    MPIDI_NEM_PTL_PKT_CANCEL_SEND_REQ,
+    MPIDI_NEM_PTL_PKT_CANCEL_SEND_RESP,
+    MPIDI_NEM_TCP_PKT_INVALID = -1 /* force signed, to avoid warnings */
+} MPIDI_nem_ptl_pkt_type_t;
+
+typedef struct MPIDI_nem_ptl_pkt_cancel_send_req
+{
+    MPIDI_CH3_Pkt_type_t type;
+    unsigned subtype;
+    MPIDI_Message_match match;
+    MPI_Request sender_req_id;
+} MPIDI_nem_ptl_pkt_cancel_send_req_t;
+
+typedef struct MPIDI_nem_ptl_pkt_cancel_send_resp
+{
+    MPIDI_CH3_Pkt_type_t type;
+    unsigned subtype;
+    MPI_Request sender_req_id;
+    int ack;
+} MPIDI_nem_ptl_pkt_cancel_send_resp_t;
 
 /* debugging */
 const char *MPID_nem_ptl_strerror(int ret);
@@ -197,7 +266,7 @@ const char *MPID_nem_ptl_strnifail(ptl_ni_fail_t ni_fail);
 const char *MPID_nem_ptl_strlist(ptl_list_t list);
 
 #define DBG_MSG_PUT(md_, data_sz_, pg_rank_, match_, header_) do {                                                                          \
-        MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "PtlPut: md=%s data_sz=%lu pg_rank=%d", md_, data_sz_, pg_rank_));          \
+        MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "MPID_nem_ptl_rptl_put: md=%s data_sz=%lu pg_rank=%d", md_, data_sz_, pg_rank_));          \
         MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "        tag=%#lx ctx=%#lx rank=%ld match=%#lx",                            \
                                                 NPTL_MATCH_GET_TAG(match_), NPTL_MATCH_GET_CTX(match_), NPTL_MATCH_GET_RANK(match_), match_)); \
         MPIU_DBG_MSG_FMT(CH3_CHANNEL, VERBOSE, (MPIU_DBG_FDEST, "        flags=%c%c%c data_sz=%ld header=%#lx",                             \

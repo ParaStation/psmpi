@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_status_set_cancelled_( MPI_Fint *, MPI_
 #define mpi_status_set_cancelled_ pmpi_status_set_cancelled_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Status_set_cancelled
 #define MPI_Status_set_cancelled PMPI_Status_set_cancelled 
+#endif
 
 #else
 

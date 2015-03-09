@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_free_mem_( void*, MPI_Fint * ) __attrib
 #define mpi_free_mem_ pmpi_free_mem_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Free_mem
 #define MPI_Free_mem PMPI_Free_mem 
+#endif
 
 #else
 

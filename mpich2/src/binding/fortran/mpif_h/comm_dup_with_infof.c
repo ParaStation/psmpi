@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_dup_with_info_( MPI_Fint *, MPI_Fi
 #define mpi_comm_dup_with_info_ pmpi_comm_dup_with_info_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Comm_dup_with_info
 #define MPI_Comm_dup_with_info PMPI_Comm_dup_with_info 
+#endif
 
 #else
 

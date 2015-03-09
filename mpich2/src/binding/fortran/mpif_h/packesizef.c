@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_pack_external_size_( char * FORT_MIXED_
 #define mpi_pack_external_size_ pmpi_pack_external_size_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Pack_external_size
 #define MPI_Pack_external_size PMPI_Pack_external_size 
+#endif
 
 #else
 

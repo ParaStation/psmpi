@@ -1557,11 +1557,11 @@ interface MPI_Comm_set_attr
 end interface MPI_Comm_set_attr
 
 interface MPI_Comm_set_info
-    subroutine MPI_Comm_set_info_f08(comm, info_used, ierror)
+    subroutine MPI_Comm_set_info_f08(comm, info, ierror)
         use :: mpi_f08_types, only : MPI_Comm, MPI_Info
         implicit none
         type(MPI_Comm), intent(in) :: comm
-        type(MPI_Info), intent(in) :: info_used
+        type(MPI_Info), intent(in) :: info
         integer, optional, intent(out) :: ierror
     end subroutine MPI_Comm_set_info_f08
 end interface MPI_Comm_set_info
@@ -4090,16 +4090,16 @@ interface MPI_Ineighbor_alltoallw
 end interface MPI_Ineighbor_alltoallw
 
 interface MPI_Wtick
-    function  MPI_Wtick_f08()
+    function  MPI_Wtick_f08() result(res)
         implicit none
-        double precision :: MPI_Wtick_f08
+        double precision :: res
     end function MPI_Wtick_f08
 end interface MPI_Wtick
 
 interface MPI_Wtime
-    function MPI_Wtime_f08()
+    function MPI_Wtime_f08() result(res)
         implicit none
-        double precision :: MPI_Wtime_f08
+        double precision :: res
     end function MPI_Wtime_f08
 end interface MPI_Wtime
 

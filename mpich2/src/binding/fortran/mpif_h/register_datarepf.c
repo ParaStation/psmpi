@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_register_datarep_( char * FORT_MIXED_LE
 #define mpi_register_datarep_ pmpi_register_datarep_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Register_datarep
 #define MPI_Register_datarep PMPI_Register_datarep 
+#endif
 
 #else
 
@@ -340,12 +342,10 @@ extern FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null_ ( void*v1, MPI_Fint*v
 
 #endif
 
-#ifndef MPICH_MPI_FROM_PMPI
 /* This isn't a callable function */
 FORT_DLL_SPEC int FORT_CALL mpi_conversion_fn_null_ ( void*v1, MPI_Fint*v2, MPI_Fint*v3, void*v4, MPI_Offset*v5, MPI_Fint *v6, MPI_Fint*v7, MPI_Fint *ierr ) {
     return 0;
 }
-#endif
 
 FORT_DLL_SPEC void FORT_CALL mpi_register_datarep_ ( char *v1 FORT_MIXED_LEN(d1), MPI_Datarep_conversion_function*v2, MPI_Datarep_conversion_function*v3, MPI_Datarep_extent_function*v4, void*v5, MPI_Fint *ierr FORT_END_LEN(d1) ){
 #ifdef MPI_MODE_RDONLY

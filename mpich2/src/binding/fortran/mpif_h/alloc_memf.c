@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_alloc_mem_( MPI_Aint *, MPI_Fint *, voi
 #define mpi_alloc_mem_ pmpi_alloc_mem_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Alloc_mem
 #define MPI_Alloc_mem PMPI_Alloc_mem 
+#endif
 
 #else
 

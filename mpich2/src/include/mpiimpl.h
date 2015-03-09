@@ -36,6 +36,8 @@
    do not want mpi.h to depend on any other files or configure flags */
 #include "mpichconf.h"
 
+#include "opa_primitives.h"
+
 /* if we are defining this, we must define it before including mpl.h */
 #if defined(MPICH_DEBUG_MEMINIT)
 #define MPL_VG_ENABLED 1
@@ -2165,8 +2167,11 @@ extern struct MPID_CommOps  *MPID_Comm_fns; /* Communicator creation functions *
 
 
 /* Per process data */
-typedef enum MPIR_MPI_State_t { MPICH_PRE_INIT=0, MPICH_WITHIN_MPI=1,
-               MPICH_POST_FINALIZED=2 } MPIR_MPI_State_t;
+typedef enum MPIR_MPI_State_t {
+    MPICH_PRE_INIT=0,
+    MPICH_WITHIN_MPI,
+    MPICH_POST_FINALIZED
+} MPIR_MPI_State_t;
 
 typedef struct PreDefined_attrs {
     int appnum;          /* Application number provided by mpiexec (MPI-2) */
@@ -4346,7 +4351,7 @@ int MPIR_Cart_map_impl(const MPID_Comm *comm_ptr, int ndims, const int dims[],
                        const int periodic[], int *newrank);
 int MPIR_Close_port_impl(const char *port_name);
 int MPIR_Open_port_impl(MPID_Info *info_ptr, char *port_name);
-void MPIR_Info_get_impl(MPID_Info *info_ptr, const char *key, int valuelen, char *value, int *flag);
+int MPIR_Info_get_impl(MPID_Info *info_ptr, const char *key, int valuelen, char *value, int *flag);
 void MPIR_Info_get_nkeys_impl(MPID_Info *info_ptr, int *nkeys);
 int MPIR_Info_get_nthkey_impl(MPID_Info *info, int n, char *key);
 void MPIR_Info_get_valuelen_impl(MPID_Info *info_ptr, const char *key, int *valuelen, int *flag);

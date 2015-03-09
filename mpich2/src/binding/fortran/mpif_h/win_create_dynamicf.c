@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_create_dynamic_( MPI_Fint *, MPI_Fi
 #define mpi_win_create_dynamic_ pmpi_win_create_dynamic_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Win_create_dynamic
 #define MPI_Win_create_dynamic PMPI_Win_create_dynamic 
+#endif
 
 #else
 

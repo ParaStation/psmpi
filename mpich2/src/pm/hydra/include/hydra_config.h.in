@@ -756,8 +756,7 @@
 /* Hydra version information */
 #undef HYDRA_VERSION
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Define if environ decl needed */

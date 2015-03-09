@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_match_size_( MPI_Fint *, MPI_Fint 
 #define mpi_type_match_size_ pmpi_type_match_size_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Type_match_size
 #define MPI_Type_match_size PMPI_Type_match_size 
+#endif
 
 #else
 

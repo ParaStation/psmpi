@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_ssend_( void*, MPI_Fint *, MPI_Fint *, 
 #define mpi_ssend_ pmpi_ssend_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Ssend
 #define MPI_Ssend PMPI_Ssend 
+#endif
 
 #else
 

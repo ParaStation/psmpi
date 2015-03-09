@@ -33,10 +33,15 @@ int main( int argc, char *argv[] )
 	MPI_Comm_size( comm, &size );
 	
 	count = 1;
-	/* This must be very large to ensure that we reach the long message
-	   algorithms */
-	for (count = 4; count < 66000; count = count * 4) {
-	    while (MTestGetDatatypes( &sendtype, &recvtype, count-1 )) {
+	MTEST_DATATYPE_FOR_EACH_COUNT(count) {
+
+        /* To shorten test time, only run the default version of datatype tests
+         * for comm world and run the minimum version for other communicators. */
+        if (comm != MPI_COMM_WORLD) {
+            MTestInitMinDatatypes();
+        }
+
+	    while (MTestGetDatatypes( &sendtype, &recvtype, count )) {
 		for (root=0; root<size; root++) {
 		    if (rank == root) {
 			sendtype.InitBuf( &sendtype );

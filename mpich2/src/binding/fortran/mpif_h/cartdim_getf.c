@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_cartdim_get_( MPI_Fint *, MPI_Fint *, M
 #define mpi_cartdim_get_ pmpi_cartdim_get_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Cartdim_get
 #define MPI_Cartdim_get PMPI_Cartdim_get 
+#endif
 
 #else
 

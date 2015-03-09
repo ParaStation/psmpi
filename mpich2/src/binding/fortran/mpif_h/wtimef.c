@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC double FORT_CALL pmpi_wtime_(void) __attribute__((weak,alia
 #define mpi_wtime_ pmpi_wtime_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Wtime
 #define MPI_Wtime PMPI_Wtime 
+#endif
 
 #else
 

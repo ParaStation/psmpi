@@ -1,4 +1,4 @@
-.TH MPI_Pack_external_size 3 "10/7/2014" " " "MPI"
+.TH MPI_Pack_external_size 3 "2/20/2015" " " "MPI"
 .SH NAME
 MPI_Pack_external_size \-  Returns the upper bound on the amount of space needed to pack a message using MPI_Pack_external. 
 .SH SYNOPSIS
@@ -101,10 +101,11 @@ possible.
 .PD 0
 .TP
 .B MPI_ERR_TYPE 
-- Invalid datatype argument.  May be an uncommitted 
-MPI_Datatype (see 
+- Invalid datatype argument.  Additionally, this error can
+occur if an uncommitted MPI_Datatype (see 
 .I MPI_Type_commit
-).
+) is used
+in a communication call.
 .PD 1
 .PD 0
 .TP

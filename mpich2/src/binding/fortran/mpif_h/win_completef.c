@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_win_complete_( MPI_Fint *, MPI_Fint * )
 #define mpi_win_complete_ pmpi_win_complete_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Win_complete
 #define MPI_Win_complete PMPI_Win_complete 
+#endif
 
 #else
 
