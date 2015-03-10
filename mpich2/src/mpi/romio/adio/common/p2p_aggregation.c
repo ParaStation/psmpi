@@ -667,6 +667,7 @@ void ADIOI_P2PContigReadAggregation(ADIO_File fd,
 		ADIO_ReadContig(fd, read_buf,amountDataToReadThisRound,
 			MPI_BYTE, ADIO_EXPLICIT_OFFSET, currentRoundFDStart,
 			&status, error_code);
+        currentReadBuf = 1;
 
 #ifdef ROMIO_GPFS
 		endTimeBase = MPI_Wtime();
@@ -732,10 +733,10 @@ void ADIOI_P2PContigReadAggregation(ADIO_File fd,
 
 		    }
 		    if (currentReadBuf == 0) {
-			read_buf = read_buf0;
+			read_buf = read_buf1;
 		    }
 		    else {
-			read_buf = read_buf1;
+			read_buf = read_buf0;
 		    }
 
 		}

@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_sendrecv_replace_( void*, MPI_Fint *, M
 #define mpi_sendrecv_replace_ pmpi_sendrecv_replace_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Sendrecv_replace
 #define MPI_Sendrecv_replace PMPI_Sendrecv_replace 
+#endif
 
 #else
 

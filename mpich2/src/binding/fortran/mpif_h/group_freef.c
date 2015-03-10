@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_group_free_( MPI_Fint *, MPI_Fint * ) _
 #define mpi_group_free_ pmpi_group_free_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Group_free
 #define MPI_Group_free PMPI_Group_free 
+#endif
 
 #else
 

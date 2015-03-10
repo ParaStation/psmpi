@@ -8,4 +8,5 @@ mpich2/autom4te.cache/*
 mpich2/src/openpa/autom4te.cache/*
 mpich2/src/pm/hydra/autom4te.cache/*
 mpich2/test/mpi/autom4te.cache/*
+mpich2/**/Makefile.am-stamp
 dist/psmpi-*

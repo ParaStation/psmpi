@@ -15,10 +15,14 @@ mpi_core_sources +=					\
     src/mpid/ch3/channels/nemesis/netmod/portals4/ptl_recv.c		\
     src/mpid/ch3/channels/nemesis/netmod/portals4/ptl_nm.c	        \
     src/mpid/ch3/channels/nemesis/netmod/portals4/ptl_send.c            \
-    src/mpid/ch3/channels/nemesis/netmod/portals4/ptl_lmt.c
+    src/mpid/ch3/channels/nemesis/netmod/portals4/ptl_lmt.c             \
+    src/mpid/ch3/channels/nemesis/netmod/portals4/rptl.c                \
+    src/mpid/ch3/channels/nemesis/netmod/portals4/rptl_init.c           \
+    src/mpid/ch3/channels/nemesis/netmod/portals4/rptl_op.c
 
 noinst_HEADERS +=                                                \
-    src/mpid/ch3/channels/nemesis/netmod/portals4/ptl_impl.h 
+    src/mpid/ch3/channels/nemesis/netmod/portals4/ptl_impl.h     \
+    src/mpid/ch3/channels/nemesis/netmod/portals4/rptl.h
 
 endif BUILD_NEMESIS_NETMOD_PORTALS4
 

@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_info_set_( MPI_Fint *, char * FORT_MIXE
 #define mpi_info_set_ pmpi_info_set_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Info_set
 #define MPI_Info_set PMPI_Info_set 
+#endif
 
 #else
 

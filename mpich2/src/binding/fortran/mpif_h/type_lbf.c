@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_type_lb_( MPI_Fint *, MPI_Fint *, MPI_F
 #define mpi_type_lb_ pmpi_type_lb_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Type_lb
 #define MPI_Type_lb PMPI_Type_lb 
+#endif
 
 #else
 

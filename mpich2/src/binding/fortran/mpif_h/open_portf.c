@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_open_port_( MPI_Fint *, char * FORT_MIX
 #define mpi_open_port_ pmpi_open_port_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Open_port
 #define MPI_Open_port PMPI_Open_port 
+#endif
 
 #else
 

@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_rget_( void*, MPI_Fint *, MPI_Fint *, M
 #define mpi_rget_ pmpi_rget_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Rget
 #define MPI_Rget PMPI_Rget 
+#endif
 
 #else
 

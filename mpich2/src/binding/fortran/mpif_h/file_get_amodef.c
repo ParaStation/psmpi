@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_file_get_amode_( MPI_Fint *, MPI_Fint *
 #define mpi_file_get_amode_ pmpi_file_get_amode_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_File_get_amode
 #define MPI_File_get_amode PMPI_File_get_amode 
+#endif
 
 #else
 

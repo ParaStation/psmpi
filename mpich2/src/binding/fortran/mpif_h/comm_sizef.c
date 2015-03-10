@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_size_( MPI_Fint *, MPI_Fint *, MPI
 #define mpi_comm_size_ pmpi_comm_size_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Comm_size
 #define MPI_Comm_size PMPI_Comm_size 
+#endif
 
 #else
 

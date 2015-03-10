@@ -329,7 +329,7 @@ AC_ARG_ENABLE(error-checking,
         runtime   - error checking controllable at runtime through environment 
                     variables
         all       - error checking always enabled (default)
-],,enable_error_checking=default)
+],,enable_error_checking=all)
 
 AC_ARG_ENABLE(error-messages,
 [  --enable-error-messages=level - Control the amount of detail in error messages.
@@ -916,7 +916,7 @@ fi
 
 # error-checking
 # Change default into the specific value of the default
-if test "$enable_error_checking" = "default" ; then
+if test "$enable_error_checking" = "yes" ; then
    enable_error_checking=all
 fi
 # glue_romio.h needs the variable HAVE_ERROR_CHECKING to have the value 0 or 1
@@ -927,7 +927,7 @@ case "$enable_error_checking" in
     # checking tests in the test suite
     ac_configure_args="${ac_configure_args} --disable-checkerrors"
     ;;
-    all|yes|runtime)
+    all|runtime)
     error_checking_kind=`echo $enable_error_checking | \
     tr 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
     error_checking_kind=MPID_ERROR_LEVEL_$error_checking_kind
@@ -1163,11 +1163,12 @@ AC_SUBST([mpllibdir])
 mpllib=""
 AC_SUBST([mpllib])
 if test "$with_mpl_prefix" = "embedded" ; then
-    PAC_CONFIG_SUBDIR(src/mpl,,AC_MSG_ERROR(MPL configure failed))
+    # no need for libtool versioning when embedding MPL
+    mpl_subdir_args="--disable-versioning"
+    PAC_CONFIG_SUBDIR_ARGS([src/mpl],[$mpl_subdir_args],[],[AC_MSG_ERROR(MPL configure failed)])
     PAC_APPEND_FLAG([-I${master_top_builddir}/src/mpl/include], [CPPFLAGS])
     PAC_APPEND_FLAG([-I${use_top_srcdir}/src/mpl/include], [CPPFLAGS])
 
-    mpllibdir="${master_top_builddir}/src/mpl"
     mplsrcdir="${master_top_builddir}/src/mpl"
     mpllib="src/mpl/lib${MPLLIBNAME}.la"
 else
@@ -1178,7 +1179,7 @@ else
     PAC_APPEND_FLAG([-I${with_mpl_prefix}/include],[CPPFLAGS])
     PAC_PREPEND_FLAG([-l${MPLLIBNAME}],[EXTERNAL_LIBS])
     PAC_APPEND_FLAG([-L${with_mpl_prefix}/lib],[WRAPPER_LDFLAGS])
-    mpllibdir="${with_mpl_prefix}/lib"
+    mpllibdir="-L${with_mpl_prefix}/lib"
 fi
 
 # OpenPA
@@ -1218,7 +1219,6 @@ AC_SUBST([opalib])
 if test "$with_openpa_prefix" = "embedded" ; then
     if test -e "${use_top_srcdir}/src/openpa" ; then
         opasrcdir="${master_top_builddir}/src/openpa"
-        opalibdir="${master_top_builddir}/src/openpa/src"
         opalib="${master_top_builddir}/src/openpa/src/lib${OPALIBNAME}.la"
         PAC_APPEND_FLAG([-I${use_top_srcdir}/src/openpa/src],[CPPFLAGS])
         PAC_APPEND_FLAG([-I${master_top_builddir}/src/openpa/src],[CPPFLAGS])
@@ -1231,9 +1231,10 @@ if test "$with_openpa_prefix" = "embedded" ; then
                                      implementation.  See the src/openpa directory
                                      for more info.])],
                     [],[with_atomic_primitives=not_specified])
-        opa_subdir_args=""
+        # no need for libtool versioning when embedding OPA
+        opa_subdir_args="--disable-versioning"
         if test "$with_atomic_primitives" = "not_specified" ; then
-            opa_subdir_args="--with-atomic-primitives=auto_allow_emulation"
+            PAC_APPEND_FLAG([--with-atomic-primitives=auto_allow_emulation], [opa_subdir_args])
         fi
         PAC_CONFIG_SUBDIR_ARGS([src/openpa],[$opa_subdir_args],[],[AC_MSG_ERROR([OpenPA configure failed])])
     else
@@ -1254,9 +1255,9 @@ else
     PAC_PREPEND_FLAG([-l${OPALIBNAME}],[EXTERNAL_LIBS])
     if test -d ${with_openpa_prefix}/lib64 ; then
         PAC_APPEND_FLAG([-L${with_openpa_prefix}/lib64],[WRAPPER_LDFLAGS])
-        opalibdir="${with_openpa_prefix}/lib64"
+        opalibdir="-L${with_openpa_prefix}/lib64"
     else
-        opalibdir="${with_openpa_prefix}/lib"
+        opalibdir="-L${with_openpa_prefix}/lib"
     fi
     PAC_APPEND_FLAG([-L${with_openpa_prefix}/lib],[WRAPPER_LDFLAGS])
 fi
@@ -1880,13 +1881,15 @@ fi
 # Handle default choices for the Fortran compilers
 # Note that these have already been set above
 
-if test "$enable_f77" = "yes" -a "$F77" = "no" ; then
-   # No Fortran 77 compiler found; abort
-   AC_MSG_ERROR([No Fortran 77 compiler found. If you don't need to
-   build any Fortran programs, you can disable Fortran support using
-   --disable-fortran. If you do want to build Fortran
-   programs, you need to install a Fortran compiler such as gfortran
-   or ifort before you can proceed.])
+if test "$enable_f77" = "yes"; then
+    if test "$F77" = "" -o "$F77" = "no"; then
+        # No Fortran 77 compiler found; abort
+        AC_MSG_ERROR([No Fortran 77 compiler found. If you don't need to
+        build any Fortran programs, you can disable Fortran support using
+        --disable-fortran. If you do want to build Fortran
+        programs, you need to install a Fortran compiler such as gfortran
+        or ifort before you can proceed.])
+    fi
 fi
 
 if test "$enable_f77" = yes ; then
@@ -2054,13 +2057,15 @@ if test "$enable_fc" = "yes" -a "$enable_f77" = yes ; then
         AC_MSG_WARN([Use --disable-fc to keep configure from searching for a Fortran 90 compiler])
     fi
 
-    if test "$enable_fc" = "yes" -a "$FC" = "no" ; then
-       # No Fortran 90 compiler found; abort
-       AC_MSG_ERROR([No Fortran 90 compiler found. If you don't need
-       to build any Fortran 90 programs, you can disable Fortran 90
-       support using --disable-fc. If you do want to build Fortran 90
-       programs, you need to install a Fortran 90 compiler such as
-       gfortran or ifort before you can proceed.])
+    if test "$enable_fc" = "yes"; then
+        if test "$FC" = "no" -o "$FC" = ""; then
+            # No Fortran 90 compiler found; abort
+            AC_MSG_ERROR([No Fortran 90 compiler found. If you don't need
+            to build any Fortran 90 programs, you can disable Fortran 90
+            support using --disable-fc. If you do want to build Fortran 90
+            programs, you need to install a Fortran 90 compiler such as
+            gfortran or ifort before you can proceed.])
+        fi
     fi
 fi
 
@@ -5977,7 +5982,7 @@ AC_DEFINE(HAVE_MPICHCONF,1,[Define so that we can test whether the mpichconf.h f
 # add the LDFLAGS/LIBS we got so far to WRAPPERs
 if test "$INTERLIB_DEPS" = "no" ; then
    WRAPPER_LDFLAGS="$WRAPPER_LDFLAGS $LDFLAGS"
-   WRAPPER_LIBS="$WRAPPER_LIBS $EXTERNAL_LIBS $ROMIO_EXTERNAL_LIBS"
+   WRAPPER_LIBS="$WRAPPER_LIBS $EXTERNAL_LIBS"
 fi
 
 if test "$USE_PMI2_API" = "yes" ; then

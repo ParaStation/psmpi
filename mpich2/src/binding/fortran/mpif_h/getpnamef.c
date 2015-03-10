@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_get_processor_name_( char * FORT_MIXED_
 #define mpi_get_processor_name_ pmpi_get_processor_name_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Get_processor_name
 #define MPI_Get_processor_name PMPI_Get_processor_name 
+#endif
 
 #else
 

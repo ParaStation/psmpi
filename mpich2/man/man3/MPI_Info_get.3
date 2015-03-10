@@ -1,4 +1,4 @@
-.TH MPI_Info_get 3 "10/7/2014" " " "MPI"
+.TH MPI_Info_get 3 "2/20/2015" " " "MPI"
 .SH NAME
 MPI_Info_get \-  Retrieves the value associated with a key 
 .SH SYNOPSIS
@@ -24,7 +24,7 @@ int MPI_Info_get(MPI_Info info, const char *key, int valuelen, char *value,
 .PD 0
 .TP
 .B valuelen 
-- length of value argument (integer)
+- length of value argument, not including null terminator (integer)
 .PD 1
 
 .SH OUTPUT PARAMETERS

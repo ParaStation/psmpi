@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_info_get_nthkey_( MPI_Fint *, MPI_Fint 
 #define mpi_info_get_nthkey_ pmpi_info_get_nthkey_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Info_get_nthkey
 #define MPI_Info_get_nthkey PMPI_Info_get_nthkey 
+#endif
 
 #else
 

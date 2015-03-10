@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_comm_call_errhandler_( MPI_Fint *, MPI_
 #define mpi_comm_call_errhandler_ pmpi_comm_call_errhandler_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Comm_call_errhandler
 #define MPI_Comm_call_errhandler PMPI_Comm_call_errhandler 
+#endif
 
 #else
 

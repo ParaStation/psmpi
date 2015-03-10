@@ -241,11 +241,13 @@ extern FORT_DLL_SPEC void FORT_CALL pmpi_init_thread_( MPI_Fint *, MPI_Fint *, M
 #define mpi_init_thread_ pmpi_init_thread_
 #endif /* Test on name mapping */
 
+#ifdef F77_USE_PMPI
 /* This defines the routine that we call, which must be the PMPI version
    since we're renaming the Fortran entry as the pmpi version.  The MPI name
    must be undefined first to prevent any conflicts with previous renamings. */
 #undef MPI_Init_thread
 #define MPI_Init_thread PMPI_Init_thread 
+#endif
 
 #else
 
