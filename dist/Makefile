@@ -27,7 +27,11 @@ DISTNAME=$(PKG_NAME)-$(VERSION)-$(RELEASE)
 RPMBUILDDIR=/var/tmp/$(DISTNAME)-$(USER)
 RPMBUILDLOG=$(PKG_NAME)$(shell echo -n $(CONFIGARGS)|tr -c "[0-9A-Za-z]" "_")-$(VERSION)-$(RELEASE).rpmbuild.log
 CHANGELOG=$(TOP_SRCDIR)/ChangeLog
-
+# Disable buildin rules! Without, some builtin rules have higher priority than
+# $(DISTNAME)/%: $(TOP_SRCDIR)/%
+# e.g. "foo/bar" would be (re)build from "foo/bar.c" if both exist and bar.c is newer.
+# Instead we just want to copy "foo/bar" and "foo/bar.c" for the tar file.
+MAKEFLAGS += --no-builtin-rules
 
 $(DISTNAME)/%: $(TOP_SRCDIR)/%
 	@mkdir -p $(dir $@)
