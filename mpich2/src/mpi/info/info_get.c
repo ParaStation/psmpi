@@ -148,9 +148,10 @@ int MPI_Info_get(MPI_Info info, const char *key, int valuelen, char *value,
     /* ... body of routine ...  */
     mpi_errno = MPIR_Info_get_impl(info_ptr, key, valuelen, value, flag);
     /* ... end of body of routine ... */
-    if (mpi_errno) goto fn_fail;
 
 #ifdef HAVE_ERROR_CHECKING
+    if (mpi_errno) goto fn_fail;
+
   fn_exit:
 #endif
     MPID_MPI_FUNC_EXIT(MPID_STATE_MPI_INFO_GET);
