@@ -79,12 +79,6 @@ void MPID_enable_receive_dispach(pscom_socket_t *socket);
 void MPID_PSP_packed_msg_acc(const void *target_addr, int target_count, MPI_Datatype datatype,
 			     void *msg, unsigned int msg_sz, MPI_Op op);
 
-inline
-void MPID_PSP_Request_add_ref(MPID_Request *req);
-
-
-inline
-void MPID_PSP_Request_release_ref(MPID_Request * req);
 void MPID_req_queue_cleanup(void);
 
 /* return connection_t for rank, NULL on error */
