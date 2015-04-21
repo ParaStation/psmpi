@@ -179,10 +179,15 @@ void init_intercomm(MPID_Comm *comm, MPIR_Context_id_t remote_context_id, unsign
 
 
 	/* init sizes */
+	intercomm->attributes   = NULL;
 	intercomm->remote_size = remote_comm_size;
 	intercomm->local_size  = comm->local_size;
 	intercomm->rank = comm->rank;
+	intercomm->local_group  = NULL;
+	intercomm->remote_group = NULL;
 	intercomm->comm_kind = MPID_INTERCOMM;
+	intercomm->local_comm   = NULL;
+	intercomm->coll_fns     = NULL;
 
 	/* Point local vcr, vcrt at those of incoming intracommunicator */
 	intercomm->local_vcrt = comm->vcrt;
