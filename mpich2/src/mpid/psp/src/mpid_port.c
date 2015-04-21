@@ -201,6 +201,9 @@ void init_intercomm(MPID_Comm *comm, MPIR_Context_id_t remote_context_id, unsign
 	assert(mpi_errno == MPI_SUCCESS);
 
 	/* MPID_VCR_Initialize() will be called later for every intercomm->remote_size rank */
+
+	mpi_errno = MPIR_Comm_commit(intercomm);
+	assert(mpi_errno == MPI_SUCCESS);
 }
 
 

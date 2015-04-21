@@ -252,6 +252,12 @@ int MPID_PSP_comm_create_hook(MPID_Comm * comm)
 {
 	pscom_connection_t *con1st;
 	int i;
+
+	if (comm->comm_kind == MPID_INTERCOMM) {
+		/* do nothing on Intercomms */
+		return MPI_SUCCESS;
+	}
+
 	comm->group = NULL;
 
 	/* ToDo: Fixme! Hack: Use pscom_socket from the rank 0 connection. This will fail
