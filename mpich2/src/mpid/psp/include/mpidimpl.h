@@ -126,9 +126,9 @@ const char *mpid_msgtype_str(enum MPID_PSP_MSGTYPE msg_type);
 #define MPID_PSP_LOCKFREE_CALL(code) code;
 #else
 #define MPID_PSP_LOCKFREE_CALL(code) do {				\
-	MPID_Thread_mutex_unlock(&MPIR_ThreadInfo.global_mutex);	\
+	MPIU_THREAD_CS_EXIT(ALLFUNC,);					\
 	code;								\
-	MPID_Thread_mutex_lock(&MPIR_ThreadInfo.global_mutex);		\
+	MPIU_THREAD_CS_ENTER(ALLFUNC,);					\
 } while (0);
 #endif
 
