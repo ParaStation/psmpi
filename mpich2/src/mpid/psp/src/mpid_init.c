@@ -467,23 +467,31 @@ int MPID_Init(int *argc, char ***argv,
 
 	if (pg_rank < 0) pg_rank = 0;
 	if (pg_size <= 0) pg_size = 1;
+
+	if (
 #ifndef MPICH_IS_THREADED
-	rc = pscom_init(PSCOM_VERSION);
-	if (rc != PSCOM_SUCCESS) {
-		fprintf(stderr, "pscom_init(0x%04x) failed : %s\n",
-			PSCOM_VERSION,
-			pscom_err_str(rc));
-		exit(1);
-	}
+		1
 #else
-	rc = pscom_init_thread(PSCOM_VERSION);
-	if (rc != PSCOM_SUCCESS) {
-		fprintf(stderr, "pscom_init_thread(0x%04x) failed : %s\n",
-			PSCOM_VERSION,
-			pscom_err_str(rc));
-		exit(1);
-	}
+		threadlevel_requested < MPI_THREAD_MULTIPLE
 #endif
+	) {
+		rc = pscom_init(PSCOM_VERSION);
+		if (rc != PSCOM_SUCCESS) {
+			fprintf(stderr, "pscom_init(0x%04x) failed : %s\n",
+				PSCOM_VERSION,
+				pscom_err_str(rc));
+			exit(1);
+		}
+	} else {
+		rc = pscom_init_thread(PSCOM_VERSION);
+		if (rc != PSCOM_SUCCESS) {
+			fprintf(stderr, "pscom_init_thread(0x%04x) failed : %s\n",
+				PSCOM_VERSION,
+				pscom_err_str(rc));
+			exit(1);
+		}
+	}
+
 	/* Initialize the switches */
 	pscom_env_get_uint(&MPIDI_Process.env.enable_collectives, "PSP_COLLECTIVES");
 #ifdef PSCOM_HAS_ON_DEMAND_CONNECTIONS
