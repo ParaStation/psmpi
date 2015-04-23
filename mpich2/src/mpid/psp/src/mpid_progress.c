@@ -84,6 +84,11 @@ void MPID_DEV_Request_wait(MPID_Request *req)
 #		define MPID_REQUEST_MPROBE_NOT_IMPLEMENTED 0
 		assert(MPID_REQUEST_MPROBE_NOT_IMPLEMENTED);
 		break;
+	case MPID_WIN_REQUEST:
+		/* ToDo: Unhandled request type!!! */
+#		define MPID_WIN_REQUEST_NOT_IMPLEMENTED 0
+		assert(MPID_WIN_REQUEST_NOT_IMPLEMENTED);
+		break;
 	case MPID_UREQUEST:
 	case MPID_REQUEST_UNDEFINED:
 	case MPID_LAST_REQUEST_KIND:

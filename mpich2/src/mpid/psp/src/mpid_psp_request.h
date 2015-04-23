@@ -75,6 +75,7 @@ void MPID_DEV_Request_release_ref(MPID_Request *req, MPID_Request_kind_t kind)
 		case MPID_UREQUEST:
 			MPID_DEV_Request_ureq_destroy(req);
 			break;
+		case MPID_WIN_REQUEST:
 		case MPID_COLL_REQUEST:
 			MPID_DEV_Request_coll_destroy(req);
 			break;
