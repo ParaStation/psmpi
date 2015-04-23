@@ -10,9 +10,9 @@
  * Author:	Jens Hauke <hauke@par-tec.com>
  */
 
-#define _SVID_SOURCE
+#define _GNU_SOURCE 1
 #include <pthread.h>
-#include <sys/ipc.h>
+#include <sys/types.h>
 #include <sys/shm.h>
 
 #include "mpidimpl.h"
@@ -342,7 +342,6 @@ fn_fail:
 int MPID_Win_free(MPID_Win **_win_ptr)
 {
 	int mpi_errno = MPI_SUCCESS /*, total_pt_rma_puts_accs, i, *recvcnts, comm_size */;
-	int errflag = FALSE;
 	/* MPID_Comm *comm_ptr; */
 	MPID_Win *win_ptr = *_win_ptr;
 #if 0
