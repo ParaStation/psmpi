@@ -126,25 +126,6 @@ do {									\
 } while (0)
 
 
-int MPID_Comm_group_failed(MPID_Comm *comm_ptr, MPID_Group **failed_group_ptr)
-{
-	WARN_NOT_IMPLEMENTED;
-	return MPI_ERR_UNSUPPORTED_OPERATION;
-}
-
-int MPID_Comm_reenable_anysource(MPID_Comm *comm,
-				 MPID_Group **failed_group_ptr)
-{
-	WARN_NOT_IMPLEMENTED;
-	return MPI_ERR_UNSUPPORTED_OPERATION;
-}
-
-int MPID_Comm_remote_group_failed(MPID_Comm *comm, MPID_Group **failed_group_ptr)
-{
-	WARN_NOT_IMPLEMENTED;
-	return MPI_ERR_UNSUPPORTED_OPERATION;
-}
-
 int MPID_Comm_failure_get_acked(MPID_Comm *comm, MPID_Group **failed_group_ptr)
 {
 	WARN_NOT_IMPLEMENTED;
