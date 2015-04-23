@@ -432,6 +432,7 @@ typedef struct MPID_Win_rank_info
 #define unlikely(x)	__builtin_expect((x),0)
 */
 void MPID_PSP_rma_cleanup(void);
+void MPID_PSP_rma_pscom_sockets_cleanup(void);
 
 int MPID_PSP_comm_create_hook(struct MPID_Comm * comm);
 int MPID_PSP_comm_destroy_hook(struct MPID_Comm * comm);

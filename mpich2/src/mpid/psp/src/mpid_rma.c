@@ -54,63 +54,154 @@ int is_comm_self_clone(MPID_Comm * comm_ptr)
 	return 0;
 }
 
-pscom_request_t *dummy_req_any_source_for_rma = NULL;
 
 static
-void MPID_PSP_rma_init(pscom_socket_t *socket)
+void MPID_PSP_rma_init(pscom_socket_t *socket, pscom_request_t **req)
 {
 	assert(socket != NULL);
 
+	pscom_request_t *dummy_req = *req;
+
 	MPID_enable_receive_dispach(socket);
 
-	if (!dummy_req_any_source_for_rma) {
+	if (!dummy_req) {
 		/* Post a dummy ANY_SOURCE receive to listen on all
 		   connections for incoming RMA messages. */
-		dummy_req_any_source_for_rma = pscom_request_create(0, 0);
-		dummy_req_any_source_for_rma->xheader_len = 0;
-		dummy_req_any_source_for_rma->data_len = 0;
-		dummy_req_any_source_for_rma->connection = NULL;
-		dummy_req_any_source_for_rma->socket = socket; /* ToDo: get socket from comm? */
-		dummy_req_any_source_for_rma->ops.recv_accept = _accept_never;
-		pscom_post_recv(dummy_req_any_source_for_rma);
+		dummy_req = pscom_request_create(0, 0);
+		dummy_req->xheader_len = 0;
+		dummy_req->data_len = 0;
+		dummy_req->connection = NULL;
+		dummy_req->socket = socket; /* ToDo: get socket from comm? */
+		dummy_req->ops.recv_accept = _accept_never;
+		pscom_post_recv(dummy_req);
+
+		*req = dummy_req;
 	}
 }
 
 static
-void MPID_PSP_rma_fini()
+void MPID_PSP_rma_fini(pscom_socket_t *socket, pscom_request_t **req)
 {
-	if (dummy_req_any_source_for_rma) {
+	pscom_request_t *dummy_req = *req;
+
+	if (dummy_req) {
 		/* cancel and free the any_source dummy request */
-		pscom_cancel_recv(dummy_req_any_source_for_rma);
-		assert(pscom_req_is_done(dummy_req_any_source_for_rma));
-		pscom_request_free(dummy_req_any_source_for_rma);
-		dummy_req_any_source_for_rma = NULL;
+		pscom_cancel_recv(dummy_req);
+		assert(pscom_req_is_done(dummy_req));
+		pscom_request_free(dummy_req);
+		dummy_req = NULL;
+		*req = dummy_req;
 	}
 }
 
-static int rma_init_counter = 0;
+
+/*
+ * Handling of pscom dummy any source receives for all rma using pscom_socket_t's.
+ */
+
+struct rma_pscom_socket {
+	struct list_head next;
+	unsigned ref_cnt;
+	pscom_socket_t *pscom_socket;
+	pscom_request_t *req;
+};
+
 
 static
-void MPID_PSP_rma_check_init(pscom_socket_t *socket)
-{
-	/* ToDo: Every socket has to be initialized!!! */
+struct list_head rma_pscom_sockets = LIST_HEAD_INIT(rma_pscom_sockets);
 
-	if (rma_init_counter == 0) {
-		MPID_PSP_rma_init(socket);
-	}
-	rma_init_counter++;
-}
 
 static
-void MPID_PSP_rma_check_fini()
-{
-	assert(rma_init_counter > 0);
-
-	if(rma_init_counter == 1) {
-		MPID_PSP_rma_fini();
+struct rma_pscom_socket *rma_pscom_sockets_find(pscom_socket_t *socket) {
+	struct list_head *pos;
+	list_for_each(pos, &rma_pscom_sockets) {
+		struct rma_pscom_socket *rma_sock  = list_entry(pos, struct rma_pscom_socket, next);
+		if (rma_sock->pscom_socket == socket) return rma_sock;
 	}
-	rma_init_counter--;
+	return NULL;
 }
+
+
+static
+struct rma_pscom_socket *rma_pscom_sockets_create(unsigned ref_cnt, pscom_socket_t *socket) {
+	struct rma_pscom_socket *rma_sock = (struct rma_pscom_socket *) MPIU_Malloc(sizeof(*rma_sock));
+
+	rma_sock->ref_cnt = ref_cnt;
+	rma_sock->pscom_socket = socket;
+	rma_sock->req = NULL;
+
+	list_add(&rma_sock->next, &rma_pscom_sockets);
+
+	/* Initialize RMA for this pscom socket */
+	MPID_PSP_rma_init(socket, &rma_sock->req);
+
+	return rma_sock;
+}
+
+
+static
+void rma_pscom_sockets_destroy(struct rma_pscom_socket *rma_sock) {
+	/* Cleanup RMA for this pscom socket */
+	MPID_PSP_rma_fini(rma_sock->pscom_socket, &rma_sock->req);
+
+	list_del(&rma_sock->next);
+
+	MPIU_Free(rma_sock);
+}
+
+
+/* Add reference to socket. Return ref_cnt */
+static
+unsigned rma_pscom_socket_add_ref(pscom_socket_t *socket) {
+	struct rma_pscom_socket *rma_sock = rma_pscom_sockets_find(socket);
+	if (!rma_sock) rma_sock = rma_pscom_sockets_create(0, socket);
+
+	return ++rma_sock->ref_cnt;
+}
+
+
+/* Delete a reference to socket. Return ref_cnt */
+static
+unsigned rma_pscom_socket_del_ref(pscom_socket_t *socket) {
+	struct rma_pscom_socket *rma_sock = rma_pscom_sockets_find(socket);
+	assert(rma_sock != NULL);
+	if (--rma_sock->ref_cnt == 0) {
+		rma_pscom_sockets_destroy(rma_sock);
+		return 0;
+	} else {
+		return rma_sock->ref_cnt;
+	}
+}
+
+
+void MPID_PSP_rma_pscom_sockets_cleanup(void) {
+	struct list_head *pos, *next;
+	list_for_each_safe(pos, next, &rma_pscom_sockets) {
+		struct rma_pscom_socket *rma_sock  = list_entry(pos, struct rma_pscom_socket, next);
+		rma_pscom_sockets_destroy(rma_sock);
+	}
+}
+
+
+static
+void MPID_PSP_rma_check_init(MPID_Comm *comm)
+{
+	int i;
+	for (i = 0; i < comm->local_size; i++) {
+		rma_pscom_socket_add_ref(MPID_PSCOM_rank2connection(comm, i)->socket);
+	}
+}
+
+
+static
+void MPID_PSP_rma_check_fini(MPID_Comm *comm)
+{
+	int i;
+	for (i = 0; i < comm->local_size; i++) {
+		rma_pscom_socket_del_ref(MPID_PSCOM_rank2connection(comm, i)->socket);
+	}
+}
+
 
 typedef struct MPID_Wincreate_msg
 {
@@ -134,7 +225,7 @@ int MPID_Win_create(void *base, MPI_Aint size, int disp_unit, MPID_Info *info,
 	MPIU_CHKPMEM_DECL(7);
 	MPIU_CHKLMEM_DECL(1);
 
-	MPID_PSP_rma_check_init(comm_ptr->pscom_socket);
+	MPID_PSP_rma_check_init(comm_ptr);
 
 	comm_size = comm_ptr->local_size;
 	rank = comm_ptr->rank;
@@ -304,6 +395,9 @@ int MPID_Win_free(MPID_Win **_win_ptr)
 		MPID_Progress_end(&progress_state);
 	}
 #endif
+	/* check whether this was the last active window */
+	MPID_PSP_rma_check_fini(win_ptr->comm_ptr);
+
 	MPIU_Free(win_ptr->rank_info);
 
 	MPIU_Free(win_ptr->rma_puts_accs);
@@ -329,10 +423,6 @@ int MPID_Win_free(MPID_Win **_win_ptr)
 	/* check whether refcount needs to be decremented here as in group_free */
 	MPIU_Handle_obj_free(&MPID_Win_mem, win_ptr);
 	(*_win_ptr) = win_ptr;
-
-	/* check whether this was the last active window */
-	MPID_PSP_rma_check_fini();
-
 fn_exit:
 #if 0
 	MPIU_CHKLMEM_FREEALL();

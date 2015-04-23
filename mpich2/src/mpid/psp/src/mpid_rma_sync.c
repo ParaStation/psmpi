@@ -125,20 +125,12 @@ fn_fail:
 }
 
 
-extern pscom_request_t *dummy_req_any_source_for_rma;
-
 void MPID_PSP_rma_cleanup(void)
 {
 	cleanup_array_1();
 	cleanup_array_123();
 
-	if (dummy_req_any_source_for_rma) {
-		/* cancel and free the any_source dummy request */
-		pscom_cancel_recv(dummy_req_any_source_for_rma);
-		assert(pscom_req_is_done(dummy_req_any_source_for_rma));
-		pscom_request_free(dummy_req_any_source_for_rma);
-		dummy_req_any_source_for_rma = NULL;
-	}
+	MPID_PSP_rma_pscom_sockets_cleanup();
 }
 
 
