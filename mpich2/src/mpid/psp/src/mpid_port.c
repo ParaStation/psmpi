@@ -377,6 +377,7 @@ int connect_all_ports(int root, MPID_Comm *comm, MPID_Comm *intercomm,
 		/* assure equal local context_id on all ranks */
 		MPIR_Context_id_t context_id = remote_ididsize[0];
 		assert(context_id == intercomm->context_id);
+		assert(all_ports_remote == NULL);
 
 		/* set non root context_id and size */
 		remote_context_id = remote_ididsize[1];
@@ -637,6 +638,8 @@ int MPID_Comm_accept(const char * port_name, MPID_Info * info, int root,
 		inter_barrier(con);
 		pscom_flush(con);
 		pscom_close_connection(con);
+
+		free_all_ports(all_ports); all_ports = NULL;
 	} else {
 		assert(all_ports == NULL);
 
@@ -705,6 +708,8 @@ int MPID_Comm_connect(const char * port_name, MPID_Info * info, int root,
 		}
 		pscom_close_connection(con);
 		pscom_close_socket(socket);
+
+		free_all_ports(all_ports); all_ports = NULL;
 	} else {
 		assert(all_ports == NULL);
 
@@ -770,9 +775,9 @@ int MPID_Comm_disconnect(MPID_Comm *comm_ptr)
 #define MPIDI_MAX_KVS_VALUE_LEN    4096
 
 
-static char *parent_port_name = NULL; /* Name of parent port if this
-					 process was spawned (and is root
-					 of comm world) or null */
+/* Name of parent port if this process was spawned (and is root of comm world) or null */
+static char parent_port_name[MPIDI_MAX_KVS_VALUE_LEN] = { 0 };
+
 #undef FUNCNAME
 #define FUNCNAME MPID_PSP_GetParentPort
 #undef FCNAME
@@ -781,24 +786,18 @@ int MPID_PSP_GetParentPort(char **parent_port)
 {
 	int mpi_errno = MPI_SUCCESS;
 	int pmi_errno;
-	char val[MPIDI_MAX_KVS_VALUE_LEN];
 
-	if (parent_port_name == NULL) {
+	if (!parent_port_name[0]) {
 		char *pg_id = MPIDI_Process.pg_id;
 
 		MPIU_THREAD_CS_ENTER(PMI,);
-		pmi_errno = PMI_KVS_Get(pg_id, PARENT_PORT_KVSKEY, val, sizeof(val));
+		pmi_errno = PMI_KVS_Get(pg_id, PARENT_PORT_KVSKEY, parent_port_name, sizeof(parent_port_name));
 		MPIU_THREAD_CS_EXIT(PMI,);
 		if (pmi_errno) {
 			mpi_errno = MPIR_Err_create_code(MPI_SUCCESS, MPIR_ERR_FATAL, FCNAME,
 							 __LINE__, MPI_ERR_OTHER,
 							 "**pmi_kvsget", "**pmi_kvsget %d", pmi_errno);
 			goto fn_exit;
-		}
-
-		parent_port_name = MPIU_Strdup(val);
-		if (parent_port_name == NULL) {
-			MPIU_ERR_POP(mpi_errno); /* FIXME DARIUS */
 		}
 	}
 
@@ -850,6 +849,19 @@ int  mpi_to_pmi_keyvals(MPID_Info *info_ptr, const PMI_keyval_t **kv_ptr,
 	return mpi_errno;
 }
 
+
+static
+void pmi_keyvals_free(const PMI_keyval_t *kv, int nkeys)
+{
+	int i;
+	if (!kv) return;
+
+	for (i = 0; i < nkeys; i++) {
+		MPIU_Free((char *)kv[i].key);
+		MPIU_Free(kv[i].val);
+	}
+	MPIU_Free(kv);
+}
 
 
 static
@@ -972,7 +984,14 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 			}
 			/* should_accept = !should_accept; *//* the `N' in NAND */
 		}
+
 		MPIU_Free(pmi_errcodes);
+		for (i = 0; i < count; i++) {
+			pmi_keyvals_free(info_keyval_vectors[i],
+					 info_keyval_sizes[i]);
+		}
+		MPIU_Free(info_keyval_vectors);
+		MPIU_Free(info_keyval_sizes);
 
 		/*
 		printf("%s:%u:%s Spawn done\n", __FILE__, __LINE__, __func__);
