@@ -141,3 +141,6 @@ clean:
 distclean: clean
 	$(RM) $(DISTCLEAN)
 	$(RM) -r $(DISTNAMEPATTERN)
+
+# disable all built-in rules
+.SUFFIXES:
