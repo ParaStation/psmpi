@@ -2016,7 +2016,13 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
-	CONF_OPS="$CONF_OPS CC=icc CXX=icpc FC=ifort"
+	CONF_OPS="$CONF_OPS CC=icc CXX=icpc"
+	# Append "-reentrancy threaded" to FC.
+	# FFLAGS, FCFLAGS, MPICHLIB_FCFLAGS, MPICHLIB_LDFLAGS and friends
+	# are not forwarded to the final linking with libtool which uses $(FC).
+	# "libtool -XCClinker" should be set somehow. Up to than we have
+	# '-reentrancy threaded' also inside mpif77, mpif90 and mpifort.
+	CONF_OPS="$CONF_OPS FC='ifort -reentrancy threaded'"
 	CONF_OPS="$CONF_OPS CFLAGS=-O3"
 	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
 	;;
