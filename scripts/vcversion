@@ -9,6 +9,7 @@
 # file.
 #
 # Author:	Jens Hauke <hauke@par-tec.com>
+# 		Thomas Moschny <moschny@par-tec.com>
 #
 
 function error() {
@@ -58,6 +59,26 @@ Get a version string from the last tag of the version control.
 EOF
     exit 0
 }
+
+IFS='' read -r -d '' svn_xslt <<'EOF'
+<?xml version="1.0"?>
+<xsl:stylesheet xmlns:xsl="http://www.w3.org/1999/XSL/Transform" xmlns:exslt="http://exslt.org/common" version="1.0" extension-element-prefixes="exslt">
+  <xsl:output omit-xml-declaration="yes" indent="no"/>
+  <xsl:template match="/">
+    <xsl:call-template name="value-of-template">
+      <xsl:with-param name="select" select="/log/logentry/paths/path/@copyfrom-path"/>
+    </xsl:call-template>
+  </xsl:template>
+  <xsl:template name="value-of-template">
+    <xsl:param name="select"/>
+    <xsl:value-of select="$select"/>
+    <xsl:for-each select="exslt:node-set($select)[position()&gt;1]">
+      <xsl:value-of select="'&#10;'"/>
+      <xsl:value-of select="."/>
+    </xsl:for-each>
+  </xsl:template>
+</xsl:stylesheet>
+EOF
 
 arg_prjroot="."
 arg_fmt="all"
@@ -124,7 +145,7 @@ case "$arg_vc" in
     svn)
 	vecho "Tag from svn"
 
-	url="$({ svn info || echo "URL: ERROR";}|grep "^URL:"|{ read a b;echo $b;})"
+	url="$({ LC_ALL=C svn info || echo "URL: ERROR"; } | grep "^URL:" | { read a b; echo $b; })"
 	[ "$url" = "ERROR" ] && error "svn info : failed"
 
 	project="${url#*/trunk/}"	# remove up to trunk
@@ -160,7 +181,10 @@ case "$arg_vc" in
 	vecho "url:     $url"
 	vecho "tag url: $tagurl"
 
-	copyfrom=$(svn log --verbose --limit 1 --xml "$tagurl"| xmlstarlet sel -t -v '/log/logentry/paths/path/@copyfrom-path')
+	tmpfile=$(mktemp) || error "cannot create tmpfile"
+	echo "$svn_xslt" > "$tmpfile"
+	copyfrom=$(LC_ALL=C svn log --verbose --limit 1 --xml "$tagurl" | xsltproc "$tmpfile" -)
+	rm "$tmpfile"
 
 	prefix="/tags/$project/$project-"
 	version="${copyfrom#$prefix}"
