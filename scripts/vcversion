@@ -47,6 +47,8 @@ Get a version string from the last tag of the version control.
                       "release" : print the release (everything after the first "-")
                       "version" : print the version (everything before the first "-")
 
+  -n|--no-newline     do not output the trailing newline
+
   --isrelease         test, if version number matches "x.y-r" or "x.y.z-r" with xyzr digits only.
 
   -v|--verbose        verbose
@@ -67,10 +69,10 @@ function parse_arg() {
 	    --svn)		arg_vc="svn";;
 	    -r|--prjroot)	arg_prjroot="$2";shift;;
 	    --fmt)		arg_fmt="$2";shift;;
+	    -n|--no-newline)	arg_newline="-n";;
 	    --isrelease)	arg_isrelease="1"; arg_fmt="none";;
 	    --help|-h)		usage;;
 	    --verbose|-v)	arg_verbose=1;;
-	    -n)			arg_newline="-n";;
 	    *)			echo "WARNING: unhandled option '$1'";;
 	esac
 	shift
