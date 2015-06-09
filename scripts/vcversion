@@ -62,7 +62,7 @@ EOF
 arg_prjroot="."
 arg_fmt="all"
 arg_newline=""
-arg_dirty="--dirty"
+arg_dirty="--dirty=_dirty"
 
 function parse_arg() {
     while [ $# -gt 0 ]; do
