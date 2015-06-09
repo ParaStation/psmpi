@@ -40,7 +40,7 @@ Get a version string from the last tag of the version control.
   --git               force usage of git
   --svn               force usage of svn
 
-  -r,--prjroot dir    project root (default ".")
+  -r|--prjroot dir    project root (default ".")
 
   --fmt format        with format:
                       "all"     : print full versionstring (default)
