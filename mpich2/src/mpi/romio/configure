@@ -22285,6 +22285,7 @@ else
   SYSDEP_INC=
 fi
 
+if test -n "$file_system_gpfs"; then
 for ac_header in gpfs.h gpfs_fcntl.h
 do :
   as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
@@ -22359,6 +22360,7 @@ else
 fi
 
 
+fi
 fi
 # Check for presence and characteristics of async. I/O calls if
 # not disabled.
