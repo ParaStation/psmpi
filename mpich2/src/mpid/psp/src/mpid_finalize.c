@@ -50,10 +50,10 @@ int MPID_Finalize(void)
 
 		MPIR_Barrier_impl(MPIR_Process.comm_world, &errflag);
 
-		/* Finalize timeout: Default: 5sec.
+		/* Finalize timeout: Default: 30sec.
 		   Overwrite with PSP_FINALIZE_TIMEOUT.
 		   Disable with PSP_FINALIZE_TIMEOUT=0 */
-		timeout = _getenv_i("PSP_FINALIZE_TIMEOUT", 5);
+		timeout = _getenv_i("PSP_FINALIZE_TIMEOUT", 30);
 		if (timeout > 0) {
 			signal(SIGALRM, sig_finalize_timeout);
 			alarm(timeout);

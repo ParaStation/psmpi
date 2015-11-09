@@ -1,3 +1,7 @@
+2015-11-09  Jens Hauke  <hauke@par-tec.com>
+
+	* Change PSP_FINALIZE_TIMEOUT default from 5 to 30 seconds
+
 2015-05-28  Jens Hauke  <hauke@par-tec.com>	-	5.1.4-1
 
 	* Fix for OpenMp with Intels ifort 15 compiler
