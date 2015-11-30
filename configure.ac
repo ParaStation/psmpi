@@ -97,7 +97,7 @@ AC_ARG_WITH([mpichconf], [
 
 EXTRA_VERSION_INFO=""
 # CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-error-messages=generic"
-CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-fast=all"
+CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-fast=O3,ndebug"
 CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-cache"
 CONF_OPS_COMMON="$CONF_OPS_COMMON --enable-lib-depend"
 CONF_OPS_COMMON="$CONF_OPS_COMMON --disable-rpath"
@@ -122,7 +122,7 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-error-checking=all"
 	CONF_OPS="$CONF_OPS --enable-strict" # Compile with -Wall and other checks.
 
-	CONF_OPS="$CONF_OPS CFLAGS=-O3"
+	CONF_OPS="$CONF_OPS"
 	;;
 "gcc"|\
 "default")
@@ -134,7 +134,7 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
-	CONF_OPS="$CONF_OPS CC=gcc CXX=g++ CFLAGS=-O3"
+	CONF_OPS="$CONF_OPS CC=gcc CXX=g++"
 	if which gfortran >/dev/null 2>&1 ;then
 	   # found gfortran
 	   CONF_OPS="$CONF_OPS --enable-f77"
@@ -161,7 +161,7 @@ case $CONFSET in
 	# "libtool -XCClinker" should be set somehow. Up to than we have
 	# '-reentrancy threaded' also inside mpif77, mpif90 and mpifort.
 	CONF_OPS="$CONF_OPS FC='ifort -reentrancy threaded'"
-	CONF_OPS="$CONF_OPS CFLAGS=-O3"
+	CONF_OPS="$CONF_OPS"
 	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
 	;;
 "pgi")
@@ -175,7 +175,7 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
 	CONF_OPS="$CONF_OPS CC=pgcc CXX=pgCC FC=pgf90"
-	CONF_OPS="$CONF_OPS CFLAGS=-O3"
+	CONF_OPS="$CONF_OPS"
 	;;
 "psc")
 	echo "Using confset=psc"
@@ -188,7 +188,7 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
 	CONF_OPS="$CONF_OPS CC=pathcc CXX=pathCC FC=pathf90"
-	CONF_OPS="$CONF_OPS CFLAGS=-O3"
+	CONF_OPS="$CONF_OPS"
 	;;
 "micgcc")
 	echo "Using confset=micgcc"
@@ -227,7 +227,7 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_REAL=4'"
 	CONF_OPS="$CONF_OPS 'CROSS_MPI_STATUS_SIZE=5'"
 
-	CONF_OPS="$CONF_OPS CFLAGS=-O3"
+	CONF_OPS="$CONF_OPS"
 	EXTRA_VERSION_INFO=" compiler: $(x86_64-k1om-linux-gcc --version|head -n 1)"
 	MODULEFILE_CONFSET="mic"
 	;;
@@ -269,7 +269,7 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS 'CROSS_F90_SIZEOF_REAL=4'"
 	CONF_OPS="$CONF_OPS 'CROSS_MPI_STATUS_SIZE=5'"
 
-	CONF_OPS="$CONF_OPS CFLAGS=-O3"
+	CONF_OPS="$CONF_OPS"
 	EXTRA_VERSION_INFO=" compiler: $(icc -V 2>&1 |head -n 1)"
 	MODULEFILE_CONFSET="intel-mic"
 	;;
@@ -284,7 +284,7 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
 	CONF_OPS="$CONF_OPS CC=ppu-gcc CXX=ppu-c++ FC=ppu-gfortran"
-	CONF_OPS="$CONF_OPS CFLAGS=-O3"
+	CONF_OPS="$CONF_OPS"
 	;;
 "cellxlc")
 	echo "Using confset=cellxlc"
@@ -297,7 +297,7 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
 	CONF_OPS="$CONF_OPS CC='ppuxlc -q64' CXX='ppuxlC -q64' FC='ppuxlf -q64'"
-	CONF_OPS="$CONF_OPS CFLAGS=-O3"
+	CONF_OPS="$CONF_OPS"
 	;;
 "none")
 	# No build
@@ -314,7 +314,7 @@ case $CONFSET in
 	CONF_OPS="$CONF_OPS --enable-romio"
 	CONF_OPS="$CONF_OPS --enable-mpe"	# need also romio!
 
-	CONF_OPS="$CONF_OPS CC=gcc CXX=g++ FC=gfortran CFLAGS=-O3"
+	CONF_OPS="$CONF_OPS CC=gcc CXX=g++ FC=gfortran"
 
 	ENABLE_HYDRA="true"
 	;;

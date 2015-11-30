@@ -1,3 +1,7 @@
+2015-11-30  Jens Hauke  <hauke@par-tec.com>
+
+	* Remove -O3 flag from mpicc wrapper script
+
 2015-11-09  Jens Hauke  <hauke@par-tec.com>
 
 	* Change PSP_FINALIZE_TIMEOUT default from 5 to 30 seconds
