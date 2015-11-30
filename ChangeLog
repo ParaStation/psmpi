@@ -1,4 +1,4 @@
-2015-11-30  Jens Hauke  <hauke@par-tec.com>
+2015-11-30  Jens Hauke  <hauke@par-tec.com>	-	5.1.5-1
 
 	* Remove -O3 flag from mpicc wrapper script
 
