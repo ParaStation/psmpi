@@ -40,6 +40,7 @@ Get a version string from the last tag of the version control.
   --file              force usage of VERSION file
   --git               force usage of git
   --svn               force usage of svn
+  --parentdir         force usage of parent dir name
 
   -r|--prjroot dir    project root (default ".")
 
@@ -91,6 +92,7 @@ function parse_arg() {
 	    --file)		arg_vc="file";;
 	    --git)		arg_vc="git";;
 	    --svn)		arg_vc="svn";;
+	    --parentdir)	arg_vc="parentdir";;
 	    -r|--prjroot)	arg_prjroot="$2";shift;;
 	    --fmt)		arg_fmt="$2";shift;;
 	    -n|--no-newline)	arg_newline="-n";;
@@ -116,6 +118,8 @@ if [ -z "$arg_vc" ]; then
 	arg_vc="git"
     elif [ -d ".svn" ]; then
 	arg_vc="svn"
+    else
+	arg_vc="parentdir_try"
     fi
 fi
 
@@ -198,8 +202,22 @@ case "$arg_vc" in
 	    version="$version-r$(LC_ALL=C svnversion -n $root | tr -c [:alnum:] "_")"
 	fi
 	;;
+    parentdir|parentdir_try)
+	vecho "Tag from parent dir name"
+	version="$PWD"
+	if [ -z "$version" ]; then
+	    version="$(pwd)"
+	fi
+	version="${version%/}"
+	version="${version##*/}" # tail dir name
+	version="${version#[a-zA-Z]*-}" # remove optional package name
+	case "${version//[^.-]}-${arg_vc}" in # version need a '.' or '-' inside to be a version.
+	    -parentdir) error "Can not guess a version string from the parent dir name." ;;
+	    -parentdir_try) error "No .git, .svn or VERSION found and can not guess a version string from the parent dir name." ;;
+	esac
+       	;;
     *)
-	error No .git or .svn found
+	error "No .git, .svn or VERSION found"
 	;;
 esac
 
