@@ -15,6 +15,8 @@
 TOP_SRCDIR?= ..
 CONFIGARGS?=
 
+SHELL := /bin/bash
+
 # Makefile.sources have to define $(PKG_NAME) and $(SOURCE_FILES)
 -include $(TOP_SRCDIR)/dist/Makefile.sources
 ######################################################
@@ -59,8 +61,7 @@ $(RPMBUILDLOG): $(DISTNAME)/$(DISTNAME).spec $(DISTNAME).tar.gz
 		-bb --define="_sourcedir $$PWD" --define "_rpmdir $$PWD" \
 		--define="_rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm" \
 		--define="_builddir $(RPMBUILDDIR)" $(CONFIGARGS) \
-		$< > $(RPMBUILDLOG)_ 2>&1 \
-		|| { cat $(RPMBUILDLOG)_; exit 1; }
+		$< 2>&1 | tee $(RPMBUILDLOG)_ ; test $${PIPESTATUS[0]} -eq 0
 	mv $(RPMBUILDLOG)_ $(RPMBUILDLOG)
 	@grep -B4 -E "warn|error|Wrote:" $(RPMBUILDLOG) || :
 	-rmdir $(RPMBUILDDIR)
