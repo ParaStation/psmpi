@@ -56,9 +56,11 @@ int main( int argc, char *argv[] )
 		}
 		if (rank == 0) {
 			MPI_Request request[rsize];
+			int send_buf[rsize];
 
 			for (i=0; i<rsize; i++) {
-				MPI_Isend( &i, 1, MPI_INT, i, 0, intercomm, request + i );
+				send_buf[i] = i;
+				MPI_Isend( &send_buf[i], 1, MPI_INT, i, 0, intercomm, request + i );
 			}
 
 			for (i=0; i<rsize; i++) {
