@@ -2,10 +2,10 @@
 #include <mpi.h>
 #include <stdio.h>
 
-/* Check for 8k custom/dynamic communicators: (minus COMM_SELF, COMM_WORLD, and ICOMM_WORLD if needed) */
-#define NUM_COMMS (8 * 1024 - 3)
+/* Check for 16k custom/dynamic communicators: (minus COMM_SELF, COMM_WORLD, and ICOMM_WORLD if needed) */
+#define NUM_COMMS (16 * 1024 - 3)
 
-/* If this test fails, then try to set MPID_CONTEXT_SUBCOMM_WIDTH to (0) in mpich2/src/include/mpiimpl.h */
+/* If this test fails, then try to set MPID_CONTEXT_SUBCOMM_WIDTH and MPID_CONTEXT_DYNAMIC_PROC_WIDTH to (0) in mpich2/src/include/mpiimpl.h */
 
 int main(int argc, char* argv[])
 {
@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
 
 		if(rc != MPI_SUCCESS) {
 			printf("\nThe maximum number of custom/dynamic communicators/contexts is %d but this test checks for %d\n", i, NUM_COMMS);
-			printf("Try to set MPID_CONTEXT_SUBCOMM_WIDTH to (0) in mpich2/src/include/mpiimpl.h to get more contexts\n\n");
+			printf("Try to set MPID_CONTEXT_SUBCOMM_WIDTH and MPID_CONTEXT_DYNAMIC_PROC_WIDTH to (0) in mpich2/src/include/mpiimpl.h to get more contexts\n\n");
 			MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
 			MPI_Comm_split(MPI_COMM_WORLD, color, world_rank, &comm_array[i]);
 		}

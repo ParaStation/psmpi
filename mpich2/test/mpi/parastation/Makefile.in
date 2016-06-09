@@ -92,7 +92,8 @@ noinst_PROGRAMS = mprobe$(EXEEXT) locknull$(EXEEXT) \
 	win_sync_err_lockall_at$(EXEEXT) \
 	win_sync_err_unlockall$(EXEEXT) win_flavor_err_shm$(EXEEXT) \
 	win_flavor_err_dyn$(EXEEXT) mpi_spawn_isend$(EXEEXT) \
-	numcontexts2k$(EXEEXT) numcontexts8k$(EXEEXT)
+	numcontexts2k$(EXEEXT) numcontexts4k$(EXEEXT) \
+	numcontexts8k$(EXEEXT) numcontexts16k$(EXEEXT)
 subdir = parastation
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -126,10 +127,22 @@ mpi_spawn_isend_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 mprobe_SOURCES = mprobe.c
 mprobe_OBJECTS = mprobe.$(OBJEXT)
 mprobe_DEPENDENCIES =
+numcontexts16k_SOURCES = numcontexts16k.c
+numcontexts16k_OBJECTS = numcontexts16k.$(OBJEXT)
+numcontexts16k_LDADD = $(LDADD)
+numcontexts16k_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 numcontexts2k_SOURCES = numcontexts2k.c
 numcontexts2k_OBJECTS = numcontexts2k.$(OBJEXT)
 numcontexts2k_LDADD = $(LDADD)
 numcontexts2k_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+numcontexts4k_SOURCES = numcontexts4k.c
+numcontexts4k_OBJECTS = numcontexts4k.$(OBJEXT)
+numcontexts4k_LDADD = $(LDADD)
+numcontexts4k_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 numcontexts8k_SOURCES = numcontexts8k.c
@@ -208,16 +221,16 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = locknull.c mpi_spawn_isend.c mprobe.c numcontexts2k.c \
-	numcontexts8k.c win_flavor_err_dyn.c win_flavor_err_shm.c \
-	win_sync_err_flush.c win_sync_err_flushall.c \
-	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
-	win_sync_err_unlockall.c
-DIST_SOURCES = locknull.c mpi_spawn_isend.c mprobe.c numcontexts2k.c \
-	numcontexts8k.c win_flavor_err_dyn.c win_flavor_err_shm.c \
-	win_sync_err_flush.c win_sync_err_flushall.c \
-	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
-	win_sync_err_unlockall.c
+SOURCES = locknull.c mpi_spawn_isend.c mprobe.c numcontexts16k.c \
+	numcontexts2k.c numcontexts4k.c numcontexts8k.c \
+	win_flavor_err_dyn.c win_flavor_err_shm.c win_sync_err_flush.c \
+	win_sync_err_flushall.c win_sync_err_lockall_at.c \
+	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
+DIST_SOURCES = locknull.c mpi_spawn_isend.c mprobe.c numcontexts16k.c \
+	numcontexts2k.c numcontexts4k.c numcontexts8k.c \
+	win_flavor_err_dyn.c win_flavor_err_shm.c win_sync_err_flush.c \
+	win_sync_err_flushall.c win_sync_err_lockall_at.c \
+	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -485,9 +498,17 @@ mprobe$(EXEEXT): $(mprobe_OBJECTS) $(mprobe_DEPENDENCIES) $(EXTRA_mprobe_DEPENDE
 	@rm -f mprobe$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(mprobe_OBJECTS) $(mprobe_LDADD) $(LIBS)
 
+numcontexts16k$(EXEEXT): $(numcontexts16k_OBJECTS) $(numcontexts16k_DEPENDENCIES) $(EXTRA_numcontexts16k_DEPENDENCIES) 
+	@rm -f numcontexts16k$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(numcontexts16k_OBJECTS) $(numcontexts16k_LDADD) $(LIBS)
+
 numcontexts2k$(EXEEXT): $(numcontexts2k_OBJECTS) $(numcontexts2k_DEPENDENCIES) $(EXTRA_numcontexts2k_DEPENDENCIES) 
 	@rm -f numcontexts2k$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(numcontexts2k_OBJECTS) $(numcontexts2k_LDADD) $(LIBS)
+
+numcontexts4k$(EXEEXT): $(numcontexts4k_OBJECTS) $(numcontexts4k_DEPENDENCIES) $(EXTRA_numcontexts4k_DEPENDENCIES) 
+	@rm -f numcontexts4k$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(numcontexts4k_OBJECTS) $(numcontexts4k_LDADD) $(LIBS)
 
 numcontexts8k$(EXEEXT): $(numcontexts8k_OBJECTS) $(numcontexts8k_DEPENDENCIES) $(EXTRA_numcontexts8k_DEPENDENCIES) 
 	@rm -f numcontexts8k$(EXEEXT)
@@ -530,7 +551,9 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locknull.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpi_spawn_isend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mprobe.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/numcontexts16k.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/numcontexts2k.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/numcontexts4k.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/numcontexts8k.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_flavor_err_dyn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_flavor_err_shm.Po@am__quote@

@@ -10,4 +10,6 @@ win_flavor_err_shm 2 mpiversion=3.0
 win_flavor_err_dyn 2 mpiversion=3.0
 mpi_spawn_isend 2 mpiversion=3.0
 numcontexts2k 1
-numcontexts8k 1
+#numcontexts4k 1
+#numcontexts8k 1
+#numcontexts16k 1
