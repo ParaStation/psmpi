@@ -101,7 +101,7 @@ MPI_User_function *get_op(MPI_Op op)
 {
 	unsigned int idx = (op - MPI_MAX);
 
-	if (idx < MPI_MAXLOC - MPI_MAX) {
+	if (idx <= MPI_MAXLOC - MPI_MAX) {
 		return MPIR_Op_table[idx];
 	} else if (op == MPI_REPLACE) {
 		return MPIR_REPLACE;
