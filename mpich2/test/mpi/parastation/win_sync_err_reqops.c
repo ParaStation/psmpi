@@ -3,7 +3,13 @@
  *
  *  (C) 2012 by Argonne National Laboratory.
  *      See COPYRIGHT in top-level directory.
+ *
+ *  Portions of this code were written/modified by
+ *  ParTec Cluster Competence Center GmbH, Munich
+ *  (C) 2016 ParTec Cluster Competence Center GmbH
+ *
  */
+
 #include "mpi.h"
 #include <stdio.h>
 #include "../errors/rma/win_sync.h"
