@@ -37,6 +37,8 @@ typedef struct MPIDI_Process
 
 	char *pg_id; /* from PMI_Get_id(), initialized in mpid_init(). */
 
+	int shm_attr_key;
+
 	struct {
 		unsigned enable_collectives;
 		unsigned enable_ondemand;

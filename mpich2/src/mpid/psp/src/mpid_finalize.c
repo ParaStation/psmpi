@@ -31,8 +31,6 @@ void sig_finalize_timeout(int signo)
 	_exit(0);
 }
 
-extern int MPID_PSP_shm_attr_key;
-
 int MPID_Finalize(void)
 {
 	unsigned int i;
@@ -66,7 +64,7 @@ int MPID_Finalize(void)
 
 	MPID_PSP_rma_cleanup();
 
-	MPIR_Comm_free_keyval_impl(MPID_PSP_shm_attr_key);
+	MPIR_Comm_free_keyval_impl(MPIDI_Process.shm_attr_key);
 
 /*	fprintf(stderr, "%d PMI_Finalize\n", MPIDI_Process.my_pg_rank); */
 	PMI_Finalize();
