@@ -13,11 +13,14 @@
 #include <assert.h>
 #include "mpidimpl.h"
 
+static int ENABLE_REAL_DISCONNECT = 0;
+static int ENABLE_LAZY_DISCONNECT = 0;
+
+
 /*
 typedef struct MPIDIx_VCRT * MPID_VCRT;
 typedef struct MPIDIx_VC * MPID_VCR;
 */
-
 
 struct MPIDIx_VCRT {
 	unsigned int refcnt;
@@ -27,7 +30,7 @@ struct MPIDIx_VCRT {
 
 
 static
-MPID_VCR new_VCR(pscom_connection_t *con, int lpid)
+MPID_VCR new_VCR(MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid)
 {
 	MPID_VCR vcr = MPIU_Malloc(sizeof(*vcr));
 	assert(vcr);
@@ -36,15 +39,35 @@ MPID_VCR new_VCR(pscom_connection_t *con, int lpid)
 	vcr->lpid = lpid;
 	vcr->refcnt = 1;
 
+	vcr->pg = pg;
+	vcr->pg_rank = pg_rank;
+
+	if(pg) {
+		pg->vcr[pg_rank] = vcr;
+		pg->cons[pg_rank] = con;
+		pg->lpids[pg_rank] = lpid;
+
+		pg->refcnt++;
+	}
+
 	return vcr;
 }
 
 
 static
-void VCR_put(MPID_VCR vcr)
+void VCR_put(MPID_VCR vcr, int isDisconnect)
 {
 	vcr->refcnt--;
-	if (vcr->refcnt <= 0) {
+
+	if(ENABLE_REAL_DISCONNECT && isDisconnect && (vcr->refcnt == 1)) {
+
+		MPID_VCR_DeleteFromPG(vcr);
+
+		if(!ENABLE_LAZY_DISCONNECT) {
+			/* Finally, tear down this connection: */
+			pscom_close_connection(vcr->con);
+		}
+
 		MPIU_Free(vcr);
 	}
 }
@@ -94,7 +117,7 @@ int MPID_VCRT_Create(int size, MPID_VCRT *vcrt_ptr)
 
 
 static
-void MPID_VCRT_Destroy(MPID_VCRT vcrt)
+void MPID_VCRT_Destroy(MPID_VCRT vcrt, int isDisconnect)
 {
 	int i;
 	if (!vcrt) return;
@@ -102,7 +125,7 @@ void MPID_VCRT_Destroy(MPID_VCRT vcrt)
 	for (i = 0; i < vcrt->size; i++) {
 		MPID_VCR vcr = vcrt->vcr[i];
 		vcrt->vcr[i] = NULL;
-		if (vcr) VCR_put(vcr);
+		if (vcr) VCR_put(vcr, isDisconnect);
 	}
 
 	MPIU_Free(vcrt);
@@ -126,7 +149,8 @@ int MPID_VCRT_Release(MPID_VCRT vcrt, int isDisconnect)
 	vcrt->refcnt--;
 
 	if (vcrt->refcnt <= 0) {
-		MPID_VCRT_Destroy(vcrt);
+		assert(vcrt->refcnt == 0);
+		MPID_VCRT_Destroy(vcrt, isDisconnect);
 	}
 
 	return MPI_SUCCESS;
@@ -141,14 +165,14 @@ int MPID_VCRT_Get_ptr(MPID_VCRT vcrt, MPID_VCR **vc_pptr)
 }
 
 /* used in mpid_init.c to set comm_world */
-int MPID_VCR_Initialize(MPID_VCR *vcr_ptr, pscom_connection_t *con, int lpid)
+int MPID_VCR_Initialize(MPID_VCR *vcr_ptr, MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid)
 {
 	Dprintf("(vcr_ptr=%p, con=%p, lpid=%d)", vcr_ptr, con, lpid);
 
 	assert(!(*vcr_ptr)); /* vcr must be uninitialized. */
 	/* if (*vcr_ptr) VCR_put(*vcr_ptr); */
 
-	*vcr_ptr = new_VCR(con, lpid);
+	*vcr_ptr = new_VCR(pg, pg_rank, con, lpid);
 
 	return MPI_SUCCESS;
 }
@@ -180,6 +204,34 @@ int MPID_VCR_Get_lpid(MPID_VCR vcr, int * lpid_ptr)
 	*lpid_ptr = vcr->lpid;
 
 	Dprintf("(vcr=%p, lpid_ptr=%p), lpid=%d", vcr, lpid_ptr, *lpid_ptr);
+
+	return MPI_SUCCESS;
+}
+
+int MPID_VCR_DeleteFromPG(MPID_VCR vcr)
+{
+	MPIDI_PG_t * pg = vcr->pg;
+
+	assert(vcr->con == pg->cons[vcr->pg_rank]);
+
+	pg->vcr[vcr->pg_rank] = NULL;
+
+	if(!ENABLE_LAZY_DISCONNECT) {
+		/* For lazy disconnect, we keep this information! */
+		pg->lpids[vcr->pg_rank] = -1;
+		pg->cons[vcr->pg_rank] = NULL;
+	}
+
+	pg->refcnt--;
+
+	if(pg->refcnt <= 0) {
+		/* If this PG has got no more connections, remove it, too! */
+		assert(pg->refcnt == 0);
+		MPIDI_PG_Destroy(pg);
+	}
+
+	vcr->pg_rank = -1;
+	vcr->pg = NULL;
 
 	return MPI_SUCCESS;
 }

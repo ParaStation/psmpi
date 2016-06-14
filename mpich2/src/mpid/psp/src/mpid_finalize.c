@@ -33,8 +33,6 @@ void sig_finalize_timeout(int signo)
 
 int MPID_Finalize(void)
 {
-	unsigned int i;
-
 	MPIDI_STATE_DECL(MPID_STATE_MPID_FINALIZE);
 	MPIDI_FUNC_ENTER(MPID_STATE_MPID_FINALIZE);
 /* ToDo: */
@@ -83,15 +81,17 @@ int MPID_Finalize(void)
 	   MPID_VCRT_Release(MPIR_Process.comm_self->vcrt, 0);*/
 
 	/* Cleanups */
-	for(i=0; i<MPIDI_Process.my_pg_size; i++) {
-		pscom_close_connection(MPIDI_Process.grank2con[i]);
-	}
+	MPIDI_PG_t* pg_ptr = MPIDI_Process.my_pg->next;
+	while(pg_ptr) {
+		pg_ptr = MPIDI_PG_Destroy(pg_ptr);
+        }
+	MPIDI_PG_Destroy(MPIDI_Process.my_pg);
 
 	MPIU_Free(MPIDI_Process.grank2con);
 	MPIDI_Process.grank2con = NULL;
 
-	MPIU_Free(MPIDI_Process.pg_id);
-	MPIDI_Process.pg_id = NULL;
+	MPIU_Free(MPIDI_Process.pg_id_name);
+	MPIDI_Process.pg_id_name = NULL;
 
 
 	MPIDI_FUNC_EXIT(MPID_STATE_MPID_FINALIZE);

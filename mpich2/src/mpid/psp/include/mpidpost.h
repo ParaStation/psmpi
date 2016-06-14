@@ -18,7 +18,9 @@
 
 int MPID_PG_ForwardPGInfo( MPID_Comm *peer_ptr, MPID_Comm *comm_ptr,
 			   int nPGids, int gpids[],
-			   int root );
+			   int root, int remote_leader, int cts_tag,
+			   pscom_connection_t *con, char *all_ports[], pscom_socket_t *pscom_socket );
+
 int MPID_GPID_Get(MPID_Comm *comm_ptr, int rank, int gpid[]);
 
 #define MPID_REQUEST_SET_COMPLETED(req_)	\

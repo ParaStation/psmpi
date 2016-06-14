@@ -366,6 +366,8 @@ int connect_all_ports(int root, MPID_Comm *comm, MPID_Comm *intercomm,
 	int rank;
 	unsigned remote_ididsize[3] = { intercomm->context_id, remote_context_id, remote_size };
 	static int next_lpid = 0;
+	MPIDI_PG_t *pg_ptr;
+	int pg_id_num;
 
 	/* distribute remote values */
 	mpi_errno = MPIR_Bcast(&remote_ididsize, 3, MPI_INT, root, comm, &errflag);
@@ -395,6 +397,9 @@ int connect_all_ports(int root, MPID_Comm *comm, MPID_Comm *intercomm,
 
 	if (!next_lpid) next_lpid = MPIR_Process.comm_world->remote_size;
 
+	MPIDI_PG_Convert_id(MPIDI_Process.pg_id_name, &pg_id_num);
+	MPIDI_PG_Create(remote_size, pg_id_num, &pg_ptr);
+
 	for (rank = 0; rank < remote_size; rank++) {
 		pscom_err_t rc;
 		pscom_connection_t *con = pscom_open_connection(intercomm->pscom_socket);
@@ -412,8 +417,7 @@ int connect_all_ports(int root, MPID_Comm *comm, MPID_Comm *intercomm,
 		Dprintf("(size=%d, vcrt_ptr=%p, init rank %d), vcrt=%p", remote_size, intercomm->vcrt_ptr, rank, intercomm->vcrt);
 
 		/* Using the next so far unused lpid > np.*/
-		MPID_VCR_Initialize(intercomm->vcr + rank,
-				    con, next_lpid++ /* rank + 12000*/ /* lpid */);
+		MPID_VCR_Initialize(intercomm->vcr + rank, pg_ptr, rank, con, next_lpid++ /* rank + 12000*/ /* lpid */);
 	}
 
 	free_all_ports(all_ports_remote);
@@ -521,36 +525,6 @@ MPID_Comm *create_intercomm(MPID_Comm * comm)
 	intercomm->recvcontext_id = recvcontext_id;
 
 	return intercomm;
-}
-
-
-/*
- * used only in src/mpi/comm/intercomm_merge.c.
- * Assume this function should return a global unique gpid[2] array for
- * each MPI process. Used just for ordering?
- */
-int MPID_GPID_Get( MPID_Comm *comm_ptr, int rank, int gpid[] )
-{
-	static int nodeid = 0;
-	static int pid = 0;
-	static int pg_id_x = 1;
-	/* MPID_VCR vc = comm_ptr->vcr[rank]; */
-	/* vc->lpid; */
-	/* MPIR_Process.attrs.appnum is always 0 ? */
-	/* Use IP of this node and process id */
-	if (!nodeid || !pid) {
-		char *x;
-		nodeid = pscom_get_nodeid();
-		pid = getpid();
-		/* Calculate a hash from my pg name and use this for gpid[0] */
-		for (x = MPIDI_Process.pg_id; *x; x++) {
-			pg_id_x = 11 * pg_id_x + *x;
-		}
-	}
-	gpid[0] = pg_id_x;
-	gpid[1] = comm_ptr->vcr[rank]->lpid;
-
-	return 0;
 }
 
 
@@ -788,7 +762,7 @@ int MPID_PSP_GetParentPort(char **parent_port)
 	int pmi_errno;
 
 	if (!parent_port_name[0]) {
-		char *pg_id = MPIDI_Process.pg_id;
+		char *pg_id = MPIDI_Process.pg_id_name;
 
 		MPIU_THREAD_CS_ENTER(PMI,);
 		pmi_errno = PMI_KVS_Get(pg_id, PARENT_PORT_KVSKEY, parent_port_name, sizeof(parent_port_name));
@@ -860,7 +834,7 @@ void pmi_keyvals_free(const PMI_keyval_t *kv, int nkeys)
 		MPIU_Free((char *)kv[i].key);
 		MPIU_Free(kv[i].val);
 	}
-	MPIU_Free(kv);
+	MPIU_Free((void*)kv);
 }
 
 
@@ -1008,3 +982,5 @@ int MPID_Comm_spawn_multiple(int count, char *array_of_commands[],
 }
 #undef FUNCNAME
 #undef FCNAME
+
+#include "mpid_pg.c"
