@@ -13,3 +13,4 @@ numcontexts2k 1
 #numcontexts4k 1
 #numcontexts8k 1
 #numcontexts16k 1
+get-acc-loc 4

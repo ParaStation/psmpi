@@ -93,7 +93,8 @@ noinst_PROGRAMS = mprobe$(EXEEXT) locknull$(EXEEXT) \
 	win_sync_err_unlockall$(EXEEXT) win_flavor_err_shm$(EXEEXT) \
 	win_flavor_err_dyn$(EXEEXT) mpi_spawn_isend$(EXEEXT) \
 	numcontexts2k$(EXEEXT) numcontexts4k$(EXEEXT) \
-	numcontexts8k$(EXEEXT) numcontexts16k$(EXEEXT)
+	numcontexts8k$(EXEEXT) numcontexts16k$(EXEEXT) \
+	get-acc-loc$(EXEEXT)
 subdir = parastation
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -112,6 +113,12 @@ CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
+get_acc_loc_SOURCES = get-acc-loc.c
+get_acc_loc_OBJECTS = get-acc-loc.$(OBJEXT)
+get_acc_loc_LDADD = $(LDADD)
+get_acc_loc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
 locknull_SOURCES = locknull.c
 locknull_OBJECTS = locknull.$(OBJEXT)
 locknull_LDADD = $(LDADD)
@@ -221,16 +228,18 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = locknull.c mpi_spawn_isend.c mprobe.c numcontexts16k.c \
-	numcontexts2k.c numcontexts4k.c numcontexts8k.c \
-	win_flavor_err_dyn.c win_flavor_err_shm.c win_sync_err_flush.c \
-	win_sync_err_flushall.c win_sync_err_lockall_at.c \
-	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
-DIST_SOURCES = locknull.c mpi_spawn_isend.c mprobe.c numcontexts16k.c \
-	numcontexts2k.c numcontexts4k.c numcontexts8k.c \
-	win_flavor_err_dyn.c win_flavor_err_shm.c win_sync_err_flush.c \
-	win_sync_err_flushall.c win_sync_err_lockall_at.c \
-	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
+SOURCES = get-acc-loc.c locknull.c mpi_spawn_isend.c mprobe.c \
+	numcontexts16k.c numcontexts2k.c numcontexts4k.c \
+	numcontexts8k.c win_flavor_err_dyn.c win_flavor_err_shm.c \
+	win_sync_err_flush.c win_sync_err_flushall.c \
+	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
+	win_sync_err_unlockall.c
+DIST_SOURCES = get-acc-loc.c locknull.c mpi_spawn_isend.c mprobe.c \
+	numcontexts16k.c numcontexts2k.c numcontexts4k.c \
+	numcontexts8k.c win_flavor_err_dyn.c win_flavor_err_shm.c \
+	win_sync_err_flush.c win_sync_err_flushall.c \
+	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
+	win_sync_err_unlockall.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -486,6 +495,10 @@ $(am__aclocal_m4_deps):
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
 
+get-acc-loc$(EXEEXT): $(get_acc_loc_OBJECTS) $(get_acc_loc_DEPENDENCIES) $(EXTRA_get_acc_loc_DEPENDENCIES) 
+	@rm -f get-acc-loc$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(get_acc_loc_OBJECTS) $(get_acc_loc_LDADD) $(LIBS)
+
 locknull$(EXEEXT): $(locknull_OBJECTS) $(locknull_DEPENDENCIES) $(EXTRA_locknull_DEPENDENCIES) 
 	@rm -f locknull$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(locknull_OBJECTS) $(locknull_LDADD) $(LIBS)
@@ -548,6 +561,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-acc-loc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locknull.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpi_spawn_isend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mprobe.Po@am__quote@
