@@ -208,7 +208,7 @@ fn_fail:
 */
 int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 			   int nPGids, int gpids[], int root, int remote_leader, int cts_tag,
-			   pscom_connection_t *peer_con, char *all_ports[], pscom_socket_t *pscom_socket )
+			   pscom_connection_t *peer_con, char *all_ports, pscom_socket_t *pscom_socket )
 {
 	int errflag = FALSE;
 	int mpi_errno = MPI_SUCCESS;
@@ -478,10 +478,14 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 		   If not, a socket should already be opened in MPID_Comm_connect()/accept()... */
 		if(pscom_socket) {
 			comm_socket = pscom_socket;
-			all_ports_local = all_ports;
+			all_ports_local = (pscom_port_str_t*)all_ports;
 		} else {
+			MPID_Comm intercomm_dummy;
 			assert(!all_ports);
-			all_ports_local = open_all_ports(root, comm_ptr, &comm_socket);
+			/* We just want to get the socket, but open_all_ports() expects an (inter)comm.
+			   So we fetch it via an intercomm_dummy: */
+			all_ports_local = open_all_ports(root, comm_ptr, &intercomm_dummy);
+			comm_socket = intercomm_dummy.pscom_socket;
 		}
 
 		local_size = comm_ptr->local_size;

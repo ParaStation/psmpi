@@ -13,8 +13,8 @@
 #include <assert.h>
 #include "mpidimpl.h"
 
-static int ENABLE_REAL_DISCONNECT = 0;
-static int ENABLE_LAZY_DISCONNECT = 0;
+static int ENABLE_REAL_DISCONNECT = 1;
+static int ENABLE_LAZY_DISCONNECT = 1;
 
 
 /*
