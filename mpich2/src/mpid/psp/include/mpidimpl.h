@@ -26,6 +26,11 @@ void MPID_PSP_shm_rma_mutex_destroy(MPID_Win *win_ptr);
 
 #define PRINTERROR(fmt, args...) fprintf(stderr, "Error:" fmt "\n" ,##args)
 
+#define PSCOM_PORT_MAXLEN 64 /* "xxx.xxx.xxx.xxx:xxxxx@01234567____" */
+typedef char pscom_port_str_t[PSCOM_PORT_MAXLEN];
+
+pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPID_Comm *comm, MPID_Comm *intercomm);
+
 typedef struct MPIDI_PG
 {
 	struct MPIDI_PG * next;

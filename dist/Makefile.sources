@@ -3571,6 +3571,7 @@ mpich2/src/mpid/psp/src/mpid_irecv.h \
 mpich2/src/mpid/psp/src/mpid_isend.c \
 mpich2/src/mpid/psp/src/mpid_mprobe.c \
 mpich2/src/mpid/psp/src/mpid_persistent.c \
+mpich2/src/mpid/psp/src/mpid_pg.c \
 mpich2/src/mpid/psp/src/mpid_port.c \
 mpich2/src/mpid/psp/src/mpid_progress.c \
 mpich2/src/mpid/psp/src/mpid_psp_datatype.c \
@@ -6215,9 +6216,14 @@ mpich2/test/mpi/mpi_t/mpit_vars.c \
 mpich2/test/mpi/mpi_t/testlist \
 mpich2/test/mpi/parastation/Makefile.am \
 mpich2/test/mpi/parastation/Makefile.in \
+mpich2/test/mpi/parastation/get-acc-loc.c \
 mpich2/test/mpi/parastation/locknull.c \
 mpich2/test/mpi/parastation/mpi_spawn_isend.c \
 mpich2/test/mpi/parastation/mprobe.c \
+mpich2/test/mpi/parastation/numcontexts16k.c \
+mpich2/test/mpi/parastation/numcontexts2k.c \
+mpich2/test/mpi/parastation/numcontexts4k.c \
+mpich2/test/mpi/parastation/numcontexts8k.c \
 mpich2/test/mpi/parastation/reqops_fixed.c \
 mpich2/test/mpi/parastation/testlist \
 mpich2/test/mpi/parastation/win_flavor_err_dyn.c \

@@ -10,8 +10,9 @@ mpi_core_sources +=               src/mpid/psp/src/mpid_abort.c			\
                                   src/mpid/psp/src/mpid_irecv.c			\
                                   src/mpid/psp/src/mpid_isend.c			\
                                   src/mpid/psp/src/mpid_persistent.c		\
-                                  src/mpid/psp/src/mpid_port.c			\
                                   src/mpid/psp/src/mpid_progress.c		\
+                                  src/mpid/psp/src/mpid_port.c			\
+                                  src/mpid/psp/src/mpid_pg.c			\
                                   src/mpid/psp/src/mpid_psp_datatype.c		\
                                   src/mpid/psp/src/mpid_psp_packed_msg_acc.c	\
                                   src/mpid/psp/src/mpid_psp_request.c		\

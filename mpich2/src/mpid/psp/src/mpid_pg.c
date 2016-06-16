@@ -484,7 +484,7 @@ int MPID_PG_ForwardPGInfo( MPID_Comm *peer_comm_ptr, MPID_Comm *comm_ptr,
 			assert(!all_ports);
 			/* We just want to get the socket, but open_all_ports() expects an (inter)comm.
 			   So we fetch it via an intercomm_dummy: */
-			all_ports_local = open_all_ports(root, comm_ptr, &intercomm_dummy);
+			all_ports_local = MPID_PSP_open_all_ports(root, comm_ptr, &intercomm_dummy);
 			comm_socket = intercomm_dummy.pscom_socket;
 		}
 
