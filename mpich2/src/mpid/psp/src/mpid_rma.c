@@ -534,7 +534,6 @@ fn_fail:
 
 extern struct MPID_CommOps  *MPID_Comm_fns;
 struct MPID_CommOps MPID_PSP_Comm_fns;
-int MPID_PSP_shm_attr_key;
 
 typedef struct _MPID_PSP_shm_attr_t
 {
@@ -555,7 +554,7 @@ void MPID_PSP_shm_rma_init(void)
 {
 	MPID_Comm_fns = &MPID_PSP_Comm_fns;
 	MPID_Comm_fns->split_type = MPID_PSP_split_type;
-	MPIR_Comm_create_keyval_impl(MPI_COMM_DUP_FN, MPID_PSP_shm_attr_delete_fn, &MPID_PSP_shm_attr_key, NULL);
+	MPIR_Comm_create_keyval_impl(MPI_COMM_DUP_FN, MPID_PSP_shm_attr_delete_fn, &MPIDI_Process.shm_attr_key, NULL);
 }
 
 void MPID_PSP_shm_rma_mutex_lock(MPID_Win *win_ptr)
@@ -583,7 +582,7 @@ void MPID_PSP_shm_rma_set_attr(MPID_Win *win_ptr, MPID_PSP_shm_attr_t *attr)
 	MPID_Attribute *new_p;
 
 	/* store shmem region related information as an attribute of win: */
-	MPID_Keyval_get_ptr(MPID_PSP_shm_attr_key, keyval_ptr);
+	MPID_Keyval_get_ptr(MPIDI_Process.shm_attr_key, keyval_ptr);
 	MPIR_Keyval_add_ref(keyval_ptr);
 
 	new_p = (MPID_Attribute *)MPIU_Handle_obj_alloc(&MPID_Attr_mem);
@@ -609,7 +608,7 @@ void MPID_PSP_shm_rma_get_attr(MPID_Win *win_ptr, MPID_PSP_shm_attr_t **attr)
 
 	/* retrieve the stored information about the shared region: */
 	while (p) {
-		if (p->keyval->handle == MPID_PSP_shm_attr_key) {
+		if (p->keyval->handle == MPIDI_Process.shm_attr_key) {
 			assert(p->value != NULL);
 			/* found attribute! */
 			*attr = (MPID_PSP_shm_attr_t*)p->value;
@@ -670,7 +669,7 @@ int MPID_PSP_split_type(MPID_Comm * comm_ptr, int split_type, int key,
 		mpi_errno = MPIR_Comm_split_impl(comm_ptr, color, key, newcomm_ptr);
 
 		if(mpi_errno == MPI_SUCCESS) {
-			mpi_errno = MPIR_Comm_set_attr_impl(*newcomm_ptr, MPID_PSP_shm_attr_key, NULL, MPIR_ATTR_PTR);
+			mpi_errno = MPIR_Comm_set_attr_impl(*newcomm_ptr, MPIDI_Process.shm_attr_key, NULL, MPIR_ATTR_PTR);
 		}
 
 	} else {
@@ -940,7 +939,7 @@ int MPID_Win_allocate_shared(MPI_Aint size, int disp_unit, MPID_Info *info_ptr, 
 
 		/* Check for the MPI_COMM_TYPE_SHARED attribute in comm: */
 		while (p) {
-			if (p->keyval->handle == MPID_PSP_shm_attr_key) {
+			if (p->keyval->handle == MPIDI_Process.shm_attr_key) {
 				assert(p->value == NULL);
 				/* found attribute! */
 				flag = 1;

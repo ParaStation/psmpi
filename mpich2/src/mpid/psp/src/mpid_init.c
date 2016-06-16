@@ -27,7 +27,7 @@ MPIDI_Process_t MPIDI_Process = {
 	dinit(grank2con)	NULL,
 	dinit(my_pg_rank)	-1,
 	dinit(my_pg_size)	0,
-	dinit(pg_id)		NULL,
+	dinit(pg_id_name)	NULL,
 	dinit(env)		{
 		dinit(enable_collectives)	0,
 		dinit(enable_ondemand)		0,
@@ -229,7 +229,7 @@ int InitPortConnections(pscom_socket_t *socket) {
 
 	int pg_rank = MPIDI_Process.my_pg_rank;
 	int pg_size = MPIDI_Process.my_pg_size;
-	char *pg_id = MPIDI_Process.pg_id;
+	char *pg_id = MPIDI_Process.pg_id_name;
 	char *listen_socket;
 	char **psp_port = NULL;
 
@@ -336,7 +336,7 @@ int InitPscomConnections(pscom_socket_t *socket) {
 
 	int pg_rank = MPIDI_Process.my_pg_rank;
 	int pg_size = MPIDI_Process.my_pg_size;
-	char *pg_id = MPIDI_Process.pg_id;
+	char *pg_id = MPIDI_Process.pg_id_name;
 	char *listen_socket;
 	char **psp_port = NULL;
 
@@ -443,7 +443,7 @@ int MPID_Init(int *argc, char ***argv,
 	int has_parent;
 	pscom_socket_t *socket;
 	pscom_err_t rc;
-	char *pg_id;
+	char *pg_id_name;
 	char *parent_port;
 
 	mpid_debug_init();
@@ -557,16 +557,16 @@ int MPID_Init(int *argc, char ***argv,
 
 	PMICALL(PMI_KVS_Get_name_length_max(&pg_id_sz));
 
-	pg_id = MPIU_Malloc(pg_id_sz + 1);
-	if (!pg_id) { PRINTERROR("MPIU_Malloc()"); goto fn_fail; }
+	pg_id_name = MPIU_Malloc(pg_id_sz + 1);
+	if (!pg_id_name) { PRINTERROR("MPIU_Malloc()"); goto fn_fail; }
 
-	PMICALL(PMI_KVS_Get_my_name(pg_id, pg_id_sz));
+	PMICALL(PMI_KVS_Get_my_name(pg_id_name, pg_id_sz));
 
 	/* safe */
 	/* MPIDI_Process.socket = socket; */
 	MPIDI_Process.my_pg_rank = pg_rank;
 	MPIDI_Process.my_pg_size = pg_size;
-	MPIDI_Process.pg_id = pg_id;
+	MPIDI_Process.pg_id_name = pg_id_name;
 
 	if (!MPIDI_Process.env.enable_ondemand) {
 		/* Create and establish all connections */
@@ -582,6 +582,9 @@ int MPID_Init(int *argc, char ***argv,
 	{
 		MPID_Comm * comm;
 		int grank;
+		MPIDI_PG_t * pg_ptr;
+		int pg_id_num;
+
 		comm = MPIR_Process.comm_world;
 
 		comm->rank        = pg_rank;
@@ -595,15 +598,20 @@ int MPID_Init(int *argc, char ***argv,
 		mpi_errno = MPID_VCRT_Get_ptr(comm->vcrt, &comm->vcr);
 		assert(mpi_errno == MPI_SUCCESS);
 
+		MPIDI_PG_Convert_id(pg_id_name, &pg_id_num);
+		MPIDI_PG_Create(pg_size, pg_id_num, &pg_ptr);
+		assert(pg_ptr == MPIDI_Process.my_pg);
+
 		for (grank = 0; grank < pg_size; grank++) {
 			/* MPIR_CheckDisjointLpids() in mpi/comm/intercomm_create.c expect
 			   lpid to be smaller than 4096!!!
 			   Else you will see an "Fatal error in MPI_Intercomm_create"
 			*/
 
-			MPID_VCR_Initialize(comm->vcr + grank,
-					    grank2con_get(grank),
-					    grank /*+ 12000*/ /* lpid */);
+			pscom_connection_t *con = grank2con_get(grank);
+
+			MPID_VCR_Initialize(pg_ptr->vcr + grank, pg_ptr, grank, con, grank);
+			MPID_VCR_Dup(pg_ptr->vcr[grank], comm->vcr + grank);
 		}
 
 		mpi_errno = MPIR_Comm_commit(comm);

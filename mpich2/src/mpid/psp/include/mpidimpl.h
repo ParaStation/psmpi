@@ -26,6 +26,27 @@ void MPID_PSP_shm_rma_mutex_destroy(MPID_Win *win_ptr);
 
 #define PRINTERROR(fmt, args...) fprintf(stderr, "Error:" fmt "\n" ,##args)
 
+#define PSCOM_PORT_MAXLEN 64 /* "xxx.xxx.xxx.xxx:xxxxx@01234567____" */
+typedef char pscom_port_str_t[PSCOM_PORT_MAXLEN];
+
+pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPID_Comm *comm, MPID_Comm *intercomm);
+
+typedef struct MPIDI_PG
+{
+	struct MPIDI_PG * next;
+	int refcnt;
+	int size;
+	int id_num;
+	MPID_VCR *vcr;
+	int * lpids;
+	pscom_connection_t **cons;
+
+} MPIDI_PG_t;
+
+int MPIDI_PG_Create(int pg_size, int pg_id_num, MPIDI_PG_t ** pg_ptr);
+MPIDI_PG_t* MPIDI_PG_Destroy(MPIDI_PG_t * pg_ptr);
+void MPIDI_PG_Convert_id(char *pg_id_name, int *pg_id_num);
+
 typedef struct MPIDI_Process
 {
 	/* pscom_socket_t *socket; // moved To comm_ptr->pscom_socket */
@@ -35,7 +56,11 @@ typedef struct MPIDI_Process
 	int		my_pg_rank;
 	unsigned int	my_pg_size;
 
-	char *pg_id; /* from PMI_Get_id(), initialized in mpid_init(). */
+	char *pg_id_name;
+	int next_lpid;
+	MPIDI_PG_t * my_pg;
+
+	int shm_attr_key;
 
 	struct {
 		unsigned enable_collectives;
@@ -97,13 +122,15 @@ int MPID_Win_lock_internal(int dest, MPID_Win *win_ptr);
 int MPID_Win_unlock_internal(int dest, MPID_Win *win_ptr);
 int MPID_Win_wait_local_completion(int rank, MPID_Win *win_ptr);
 
-int MPID_VCR_Initialize(MPID_VCR *vcr_ptr, pscom_connection_t *con, int lpid);
+int MPID_VCR_Initialize(MPID_VCR *vcr_ptr, MPIDI_PG_t * pg, int pg_rank, pscom_connection_t *con, int lpid);
+int MPID_VCR_DeleteFromPG(MPID_VCR vcr);
 
 
 struct MPIDIx_VC {
 	pscom_connection_t *con;
 	int lpid;
-
+	int pg_rank;
+	MPIDI_PG_t * pg;
 	int refcnt;
 };
 

@@ -18,7 +18,9 @@
 
 int MPID_PG_ForwardPGInfo( MPID_Comm *peer_ptr, MPID_Comm *comm_ptr,
 			   int nPGids, int gpids[],
-			   int root );
+			   int root, int remote_leader, int cts_tag,
+			   pscom_connection_t *con, char *all_ports, pscom_socket_t *pscom_socket );
+
 int MPID_GPID_Get(MPID_Comm *comm_ptr, int rank, int gpid[]);
 
 #define MPID_REQUEST_SET_COMPLETED(req_)	\
@@ -26,5 +28,7 @@ int MPID_GPID_Get(MPID_Comm *comm_ptr, int rank, int gpid[]);
     MPID_cc_set((req_)->cc_ptr, 0);             \
 }
 
+#define MPID_ICCREATE_REMOTECOMM_HOOK(peer_comm_ptr, local_comm_ptr, remote_size, remote_gpids, local_leader) \
+  MPID_PG_ForwardPGInfo(peer_comm_ptr, local_comm_ptr, remote_size, remote_gpids, local_leader, remote_leader, cts_tag, NULL, NULL, NULL)
 
 #endif /* _MPIDPOST_H_ */
