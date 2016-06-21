@@ -364,7 +364,13 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPID_Comm *comm, MPID_Comm *
 		socket_new = pscom_open_socket(0, 0);
 		{
 			char name[10];
-			snprintf(name, sizeof(name), "i%07u", comm->rank);
+			/* We have to provide a socket name that is locally unique
+			 * (e.g. for retrieving the right connection via pscom_ondemand_find_con)
+			 * and that in addition is distinct with respect to remote socket names in other PGs
+			 * (e.g. for distinguishing between direct/indirect connect in pscom_ondemand_write_start).
+			 * Local PG id plus local PG rank would be applicable here, however, we are limited in the number of chars:
+			 */
+			snprintf(name, sizeof(name), "i%03u%04u", MPIDI_Process.my_pg->id_num % 1000, MPIDI_Process.my_pg_rank % 10000);
 			pscom_socket_set_name(socket_new, name);
 		}
 
