@@ -15,6 +15,7 @@
 #include <unistd.h>
 #include <sys/types.h>
 #include "pmi.h"
+#include "mpid_debug.h"
 
 /*
 Strategy of a MPID_Open_port, Accept, Connect
@@ -368,9 +369,19 @@ pscom_port_str_t *MPID_PSP_open_all_ports(int root, MPID_Comm *comm, MPID_Comm *
 			 * (e.g. for retrieving the right connection via pscom_ondemand_find_con)
 			 * and that in addition is distinct with respect to remote socket names in other PGs
 			 * (e.g. for distinguishing between direct/indirect connect in pscom_ondemand_write_start).
-			 * Local PG id plus local PG rank would be applicable here, however, we are limited in the number of chars:
+			 * Local PG id plus local PG rank would be applicable here, however, we are limited in the number of chars.
+			 * So, for the debug case, we want some kind of readable format whereas for the non-debug case, we adjust the digits used:
 			 */
-			snprintf(name, sizeof(name), "i%03u%04u", MPIDI_Process.my_pg->id_num % 1000, MPIDI_Process.my_pg_rank % 10000);
+			if (mpid_psp_debug_level) {
+				snprintf(name, sizeof(name), "i%03ur%03u", MPIDI_Process.my_pg->id_num % 1000, MPIDI_Process.my_pg_rank % 1000);
+			} else {
+				int rank_range = 1;
+				int pg_id_mod = 1;
+				int pg_size = MPIDI_Process.my_pg_size;
+				while (pg_size >>= 4) rank_range++;
+				pg_id_mod = 1 << (8-rank_range)*4;
+				snprintf(name, sizeof(name), "%0*x%0*x", 8-rank_range, MPIDI_Process.my_pg->id_num % pg_id_mod, rank_range, MPIDI_Process.my_pg_rank);
+			}
 			pscom_socket_set_name(socket_new, name);
 		}
 
