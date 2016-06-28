@@ -18,6 +18,6 @@ noinst_PROGRAMS =  \
     mprobe locknull \
     win_sync_err_flush win_sync_err_flushall win_sync_err_lockall_pt win_sync_err_lockall_at win_sync_err_unlockall \
     win_flavor_err_shm win_flavor_err_dyn \
-    mpi_spawn_isend mpi_spawn_anysrc \
-    numcontexts2k numcontexts4k numcontexts8k numcontexts16k \
+    spawn_isend spawn_anysrc spawn_ssend spawn_rma spawn_universe \
+    num_contexts_2k num_contexts_4k num_contexts_8k num_contexts_16k \
     get-acc-loc

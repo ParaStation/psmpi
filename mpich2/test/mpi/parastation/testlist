@@ -8,10 +8,13 @@ win_sync_err_unlockall 2 mpiversion=3.0
 win_sync_err_reqops 2 mpiversion=3.0
 win_flavor_err_shm 2 mpiversion=3.0
 win_flavor_err_dyn 2 mpiversion=3.0
-mpi_spawn_isend 2
-mpi_spawn_anysrc 2 timeLimit=30
-numcontexts2k 1
-#numcontexts4k 1
-#numcontexts8k 1
-#numcontexts16k 1
+spawn_isend 2
+spawn_ssend 2
+spawn_anysrc 2 timeLimit=30
+spawn_rma 2
+spawn_universe 2
+num_contexts_2k 1
+#num_contexts_4k 1
+#num_contexts_8k 1
+#num_contexts_16k 1
 get-acc-loc 4 mpiversion=3.0

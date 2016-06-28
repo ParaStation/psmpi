@@ -99,10 +99,11 @@ noinst_PROGRAMS = mprobe$(EXEEXT) locknull$(EXEEXT) \
 	win_sync_err_lockall_pt$(EXEEXT) \
 	win_sync_err_lockall_at$(EXEEXT) \
 	win_sync_err_unlockall$(EXEEXT) win_flavor_err_shm$(EXEEXT) \
-	win_flavor_err_dyn$(EXEEXT) mpi_spawn_isend$(EXEEXT) \
-	mpi_spawn_anysrc$(EXEEXT) numcontexts2k$(EXEEXT) \
-	numcontexts4k$(EXEEXT) numcontexts8k$(EXEEXT) \
-	numcontexts16k$(EXEEXT) get-acc-loc$(EXEEXT)
+	win_flavor_err_dyn$(EXEEXT) spawn_isend$(EXEEXT) \
+	spawn_anysrc$(EXEEXT) spawn_ssend$(EXEEXT) spawn_rma$(EXEEXT) \
+	spawn_universe$(EXEEXT) num_contexts_2k$(EXEEXT) \
+	num_contexts_4k$(EXEEXT) num_contexts_8k$(EXEEXT) \
+	num_contexts_16k$(EXEEXT) get-acc-loc$(EXEEXT)
 subdir = parastation
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -134,43 +135,61 @@ locknull_LDADD = $(LDADD)
 locknull_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
-mpi_spawn_anysrc_SOURCES = mpi_spawn_anysrc.c
-mpi_spawn_anysrc_OBJECTS = mpi_spawn_anysrc.$(OBJEXT)
-mpi_spawn_anysrc_LDADD = $(LDADD)
-mpi_spawn_anysrc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
-mpi_spawn_isend_SOURCES = mpi_spawn_isend.c
-mpi_spawn_isend_OBJECTS = mpi_spawn_isend.$(OBJEXT)
-mpi_spawn_isend_LDADD = $(LDADD)
-mpi_spawn_isend_DEPENDENCIES = $(top_builddir)/util/mtest.o \
-	$(top_builddir)/util/mtest_datatype.o \
-	$(top_builddir)/util/mtest_datatype_gen.o
 mprobe_SOURCES = mprobe.c
 mprobe_OBJECTS = mprobe.$(OBJEXT)
 mprobe_DEPENDENCIES =
-numcontexts16k_SOURCES = numcontexts16k.c
-numcontexts16k_OBJECTS = numcontexts16k.$(OBJEXT)
-numcontexts16k_LDADD = $(LDADD)
-numcontexts16k_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+num_contexts_16k_SOURCES = num_contexts_16k.c
+num_contexts_16k_OBJECTS = num_contexts_16k.$(OBJEXT)
+num_contexts_16k_LDADD = $(LDADD)
+num_contexts_16k_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
-numcontexts2k_SOURCES = numcontexts2k.c
-numcontexts2k_OBJECTS = numcontexts2k.$(OBJEXT)
-numcontexts2k_LDADD = $(LDADD)
-numcontexts2k_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+num_contexts_2k_SOURCES = num_contexts_2k.c
+num_contexts_2k_OBJECTS = num_contexts_2k.$(OBJEXT)
+num_contexts_2k_LDADD = $(LDADD)
+num_contexts_2k_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
-numcontexts4k_SOURCES = numcontexts4k.c
-numcontexts4k_OBJECTS = numcontexts4k.$(OBJEXT)
-numcontexts4k_LDADD = $(LDADD)
-numcontexts4k_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+num_contexts_4k_SOURCES = num_contexts_4k.c
+num_contexts_4k_OBJECTS = num_contexts_4k.$(OBJEXT)
+num_contexts_4k_LDADD = $(LDADD)
+num_contexts_4k_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
-numcontexts8k_SOURCES = numcontexts8k.c
-numcontexts8k_OBJECTS = numcontexts8k.$(OBJEXT)
-numcontexts8k_LDADD = $(LDADD)
-numcontexts8k_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+num_contexts_8k_SOURCES = num_contexts_8k.c
+num_contexts_8k_OBJECTS = num_contexts_8k.$(OBJEXT)
+num_contexts_8k_LDADD = $(LDADD)
+num_contexts_8k_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+spawn_anysrc_SOURCES = spawn_anysrc.c
+spawn_anysrc_OBJECTS = spawn_anysrc.$(OBJEXT)
+spawn_anysrc_LDADD = $(LDADD)
+spawn_anysrc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+spawn_isend_SOURCES = spawn_isend.c
+spawn_isend_OBJECTS = spawn_isend.$(OBJEXT)
+spawn_isend_LDADD = $(LDADD)
+spawn_isend_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+spawn_rma_SOURCES = spawn_rma.c
+spawn_rma_OBJECTS = spawn_rma.$(OBJEXT)
+spawn_rma_LDADD = $(LDADD)
+spawn_rma_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+spawn_ssend_SOURCES = spawn_ssend.c
+spawn_ssend_OBJECTS = spawn_ssend.$(OBJEXT)
+spawn_ssend_LDADD = $(LDADD)
+spawn_ssend_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+spawn_universe_SOURCES = spawn_universe.c
+spawn_universe_OBJECTS = spawn_universe.$(OBJEXT)
+spawn_universe_LDADD = $(LDADD)
+spawn_universe_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 win_flavor_err_dyn_SOURCES = win_flavor_err_dyn.c
@@ -243,18 +262,20 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = get-acc-loc.c locknull.c mpi_spawn_anysrc.c \
-	mpi_spawn_isend.c mprobe.c numcontexts16k.c numcontexts2k.c \
-	numcontexts4k.c numcontexts8k.c win_flavor_err_dyn.c \
-	win_flavor_err_shm.c win_sync_err_flush.c \
-	win_sync_err_flushall.c win_sync_err_lockall_at.c \
-	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
-DIST_SOURCES = get-acc-loc.c locknull.c mpi_spawn_anysrc.c \
-	mpi_spawn_isend.c mprobe.c numcontexts16k.c numcontexts2k.c \
-	numcontexts4k.c numcontexts8k.c win_flavor_err_dyn.c \
-	win_flavor_err_shm.c win_sync_err_flush.c \
-	win_sync_err_flushall.c win_sync_err_lockall_at.c \
-	win_sync_err_lockall_pt.c win_sync_err_unlockall.c
+SOURCES = get-acc-loc.c locknull.c mprobe.c num_contexts_16k.c \
+	num_contexts_2k.c num_contexts_4k.c num_contexts_8k.c \
+	spawn_anysrc.c spawn_isend.c spawn_rma.c spawn_ssend.c \
+	spawn_universe.c win_flavor_err_dyn.c win_flavor_err_shm.c \
+	win_sync_err_flush.c win_sync_err_flushall.c \
+	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
+	win_sync_err_unlockall.c
+DIST_SOURCES = get-acc-loc.c locknull.c mprobe.c num_contexts_16k.c \
+	num_contexts_2k.c num_contexts_4k.c num_contexts_8k.c \
+	spawn_anysrc.c spawn_isend.c spawn_rma.c spawn_ssend.c \
+	spawn_universe.c win_flavor_err_dyn.c win_flavor_err_shm.c \
+	win_sync_err_flush.c win_sync_err_flushall.c \
+	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
+	win_sync_err_unlockall.c
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -519,33 +540,45 @@ locknull$(EXEEXT): $(locknull_OBJECTS) $(locknull_DEPENDENCIES) $(EXTRA_locknull
 	@rm -f locknull$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(locknull_OBJECTS) $(locknull_LDADD) $(LIBS)
 
-mpi_spawn_anysrc$(EXEEXT): $(mpi_spawn_anysrc_OBJECTS) $(mpi_spawn_anysrc_DEPENDENCIES) $(EXTRA_mpi_spawn_anysrc_DEPENDENCIES) 
-	@rm -f mpi_spawn_anysrc$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(mpi_spawn_anysrc_OBJECTS) $(mpi_spawn_anysrc_LDADD) $(LIBS)
-
-mpi_spawn_isend$(EXEEXT): $(mpi_spawn_isend_OBJECTS) $(mpi_spawn_isend_DEPENDENCIES) $(EXTRA_mpi_spawn_isend_DEPENDENCIES) 
-	@rm -f mpi_spawn_isend$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(mpi_spawn_isend_OBJECTS) $(mpi_spawn_isend_LDADD) $(LIBS)
-
 mprobe$(EXEEXT): $(mprobe_OBJECTS) $(mprobe_DEPENDENCIES) $(EXTRA_mprobe_DEPENDENCIES) 
 	@rm -f mprobe$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(mprobe_OBJECTS) $(mprobe_LDADD) $(LIBS)
 
-numcontexts16k$(EXEEXT): $(numcontexts16k_OBJECTS) $(numcontexts16k_DEPENDENCIES) $(EXTRA_numcontexts16k_DEPENDENCIES) 
-	@rm -f numcontexts16k$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(numcontexts16k_OBJECTS) $(numcontexts16k_LDADD) $(LIBS)
+num_contexts_16k$(EXEEXT): $(num_contexts_16k_OBJECTS) $(num_contexts_16k_DEPENDENCIES) $(EXTRA_num_contexts_16k_DEPENDENCIES) 
+	@rm -f num_contexts_16k$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(num_contexts_16k_OBJECTS) $(num_contexts_16k_LDADD) $(LIBS)
 
-numcontexts2k$(EXEEXT): $(numcontexts2k_OBJECTS) $(numcontexts2k_DEPENDENCIES) $(EXTRA_numcontexts2k_DEPENDENCIES) 
-	@rm -f numcontexts2k$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(numcontexts2k_OBJECTS) $(numcontexts2k_LDADD) $(LIBS)
+num_contexts_2k$(EXEEXT): $(num_contexts_2k_OBJECTS) $(num_contexts_2k_DEPENDENCIES) $(EXTRA_num_contexts_2k_DEPENDENCIES) 
+	@rm -f num_contexts_2k$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(num_contexts_2k_OBJECTS) $(num_contexts_2k_LDADD) $(LIBS)
 
-numcontexts4k$(EXEEXT): $(numcontexts4k_OBJECTS) $(numcontexts4k_DEPENDENCIES) $(EXTRA_numcontexts4k_DEPENDENCIES) 
-	@rm -f numcontexts4k$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(numcontexts4k_OBJECTS) $(numcontexts4k_LDADD) $(LIBS)
+num_contexts_4k$(EXEEXT): $(num_contexts_4k_OBJECTS) $(num_contexts_4k_DEPENDENCIES) $(EXTRA_num_contexts_4k_DEPENDENCIES) 
+	@rm -f num_contexts_4k$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(num_contexts_4k_OBJECTS) $(num_contexts_4k_LDADD) $(LIBS)
 
-numcontexts8k$(EXEEXT): $(numcontexts8k_OBJECTS) $(numcontexts8k_DEPENDENCIES) $(EXTRA_numcontexts8k_DEPENDENCIES) 
-	@rm -f numcontexts8k$(EXEEXT)
-	$(AM_V_CCLD)$(LINK) $(numcontexts8k_OBJECTS) $(numcontexts8k_LDADD) $(LIBS)
+num_contexts_8k$(EXEEXT): $(num_contexts_8k_OBJECTS) $(num_contexts_8k_DEPENDENCIES) $(EXTRA_num_contexts_8k_DEPENDENCIES) 
+	@rm -f num_contexts_8k$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(num_contexts_8k_OBJECTS) $(num_contexts_8k_LDADD) $(LIBS)
+
+spawn_anysrc$(EXEEXT): $(spawn_anysrc_OBJECTS) $(spawn_anysrc_DEPENDENCIES) $(EXTRA_spawn_anysrc_DEPENDENCIES) 
+	@rm -f spawn_anysrc$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(spawn_anysrc_OBJECTS) $(spawn_anysrc_LDADD) $(LIBS)
+
+spawn_isend$(EXEEXT): $(spawn_isend_OBJECTS) $(spawn_isend_DEPENDENCIES) $(EXTRA_spawn_isend_DEPENDENCIES) 
+	@rm -f spawn_isend$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(spawn_isend_OBJECTS) $(spawn_isend_LDADD) $(LIBS)
+
+spawn_rma$(EXEEXT): $(spawn_rma_OBJECTS) $(spawn_rma_DEPENDENCIES) $(EXTRA_spawn_rma_DEPENDENCIES) 
+	@rm -f spawn_rma$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(spawn_rma_OBJECTS) $(spawn_rma_LDADD) $(LIBS)
+
+spawn_ssend$(EXEEXT): $(spawn_ssend_OBJECTS) $(spawn_ssend_DEPENDENCIES) $(EXTRA_spawn_ssend_DEPENDENCIES) 
+	@rm -f spawn_ssend$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(spawn_ssend_OBJECTS) $(spawn_ssend_LDADD) $(LIBS)
+
+spawn_universe$(EXEEXT): $(spawn_universe_OBJECTS) $(spawn_universe_DEPENDENCIES) $(EXTRA_spawn_universe_DEPENDENCIES) 
+	@rm -f spawn_universe$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(spawn_universe_OBJECTS) $(spawn_universe_LDADD) $(LIBS)
 
 win_flavor_err_dyn$(EXEEXT): $(win_flavor_err_dyn_OBJECTS) $(win_flavor_err_dyn_DEPENDENCIES) $(EXTRA_win_flavor_err_dyn_DEPENDENCIES) 
 	@rm -f win_flavor_err_dyn$(EXEEXT)
@@ -583,13 +616,16 @@ distclean-compile:
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/get-acc-loc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/locknull.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpi_spawn_anysrc.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mpi_spawn_isend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/mprobe.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/numcontexts16k.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/numcontexts2k.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/numcontexts4k.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/numcontexts8k.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/num_contexts_16k.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/num_contexts_2k.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/num_contexts_4k.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/num_contexts_8k.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_anysrc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_isend.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_rma.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_ssend.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_universe.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_flavor_err_dyn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_flavor_err_shm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_sync_err_flush.Po@am__quote@
