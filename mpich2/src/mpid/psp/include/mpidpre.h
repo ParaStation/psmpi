@@ -17,6 +17,9 @@
 #include <stdint.h>
 #include "mpid_sched_pre.h"
 
+#define MPID_CONTEXT_SUBCOMM_WIDTH (0)
+#define MPID_CONTEXT_DYNAMIC_PROC_WIDTH (0)
+
 /*********************************************
  * PSCOM Network header
  */

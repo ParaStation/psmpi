@@ -1359,7 +1359,9 @@ extern MPID_Comm MPID_Comm_direct[];
 /* Used to derive context IDs for sub-communicators from a parent communicator's
    context ID value.  This field comes after the one bit suffix.
    values are shifted left by 1. */
+#ifndef MPID_CONTEXT_SUBCOMM_WIDTH
 #define MPID_CONTEXT_SUBCOMM_WIDTH (2)
+#endif
 #define MPID_CONTEXT_SUBCOMM_SHIFT (MPID_CONTEXT_SUFFIX_WIDTH + MPID_CONTEXT_SUFFIX_SHIFT)
 #define MPID_CONTEXT_SUBCOMM_MASK      (((1 << MPID_CONTEXT_SUBCOMM_WIDTH) - 1) << MPID_CONTEXT_SUBCOMM_SHIFT)
 
@@ -1394,7 +1396,9 @@ extern MPID_Comm MPID_Comm_direct[];
 #define MPID_CONTEXT_PREFIX_WIDTH (MPIR_CONTEXT_ID_BITS - (MPID_CONTEXT_PREFIX_SHIFT + MPID_CONTEXT_DYNAMIC_PROC_WIDTH))
 #define MPID_CONTEXT_PREFIX_MASK (((1 << MPID_CONTEXT_PREFIX_WIDTH) - 1) << MPID_CONTEXT_PREFIX_SHIFT)
 
+#ifndef MPID_CONTEXT_DYNAMIC_PROC_WIDTH
 #define MPID_CONTEXT_DYNAMIC_PROC_WIDTH (1) /* the upper half is reserved for dynamic procs */
+#endif
 #define MPID_CONTEXT_DYNAMIC_PROC_SHIFT (MPIR_CONTEXT_ID_BITS - MPID_CONTEXT_DYNAMIC_PROC_WIDTH) /* the upper half is reserved for dynamic procs */
 #define MPID_CONTEXT_DYNAMIC_PROC_MASK (((1 << MPID_CONTEXT_DYNAMIC_PROC_WIDTH) - 1) << MPID_CONTEXT_DYNAMIC_PROC_SHIFT)
 

@@ -14,7 +14,7 @@ spawn_anysrc 2 timeLimit=30
 spawn_rma 2
 spawn_universe 2
 num_contexts_2k 1
-#num_contexts_4k 1
-#num_contexts_8k 1
-#num_contexts_16k 1
+num_contexts_4k 1
+num_contexts_8k 1
+num_contexts_16k 1
 get-acc-loc 4 mpiversion=3.0

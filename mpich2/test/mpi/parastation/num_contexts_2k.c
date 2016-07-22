@@ -39,7 +39,7 @@ int main(int argc, char* argv[])
 		rc = MPI_Comm_split(MPI_COMM_WORLD, color, world_rank, &comm_array[i]);
 
 		if(rc != MPI_SUCCESS) {
-			printf("\nThe maximum number of custom/dynamic communicators/contexts is %d but this test checks for %d\n", i, NUM_COMMS);
+			printf("\nThe maximum number of custom/dynamic communicators/contexts is %d but this test checks for %d.\n", i, NUM_COMMS);
 			MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
 			MPI_Comm_split(MPI_COMM_WORLD, color, world_rank, &comm_array[i]);
 		}

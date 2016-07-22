@@ -39,8 +39,9 @@ int main(int argc, char* argv[])
 		rc = MPI_Comm_split(MPI_COMM_WORLD, color, world_rank, &comm_array[i]);
 
 		if(rc != MPI_SUCCESS) {
-			printf("\nThe maximum number of custom/dynamic communicators/contexts is %d but this test checks for %d\n", i, NUM_COMMS);
-			printf("Try to set MPID_CONTEXT_DYNAMIC_PROC to (0) in mpich2/src/include/mpiimpl.h to get more contexts\n\n");
+			printf("\nThe maximum number of custom/dynamic communicators/contexts is %d but this test checks for %d.\n", i, NUM_COMMS);
+			printf("Try to set MPID_CONTEXT_DYNAMIC_PROC to (0) in mpich2/src/include/mpiimpl.h to get more contexts.\n");
+			printf("This test is known to fail with CH3 device.\n\n");
 			MPI_Errhandler_set(MPI_COMM_WORLD, MPI_ERRORS_ARE_FATAL);
 			MPI_Comm_split(MPI_COMM_WORLD, color, world_rank, &comm_array[i]);
 		}
