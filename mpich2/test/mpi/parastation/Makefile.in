@@ -94,16 +94,18 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = mprobe$(EXEEXT) locknull$(EXEEXT) \
+bin_PROGRAMS = mprobe$(EXEEXT)
+noinst_PROGRAMS = locknull$(EXEEXT) get-acc-loc$(EXEEXT) \
 	win_sync_err_flush$(EXEEXT) win_sync_err_flushall$(EXEEXT) \
 	win_sync_err_lockall_pt$(EXEEXT) \
 	win_sync_err_lockall_at$(EXEEXT) \
 	win_sync_err_unlockall$(EXEEXT) win_flavor_err_shm$(EXEEXT) \
 	win_flavor_err_dyn$(EXEEXT) spawn_isend$(EXEEXT) \
 	spawn_anysrc$(EXEEXT) spawn_ssend$(EXEEXT) spawn_rma$(EXEEXT) \
-	spawn_universe$(EXEEXT) num_contexts_2k$(EXEEXT) \
+	spawn_universe$(EXEEXT) spawn_univ_comm$(EXEEXT) \
+	spawn_univ_anysrc$(EXEEXT) num_contexts_2k$(EXEEXT) \
 	num_contexts_4k$(EXEEXT) num_contexts_8k$(EXEEXT) \
-	num_contexts_16k$(EXEEXT) get-acc-loc$(EXEEXT)
+	num_contexts_16k$(EXEEXT)
 subdir = parastation
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/confdb/aclocal_cache.m4 \
@@ -122,7 +124,8 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/include/mpitestconf.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-PROGRAMS = $(noinst_PROGRAMS)
+am__installdirs = "$(DESTDIR)$(bindir)"
+PROGRAMS = $(bin_PROGRAMS) $(noinst_PROGRAMS)
 get_acc_loc_SOURCES = get-acc-loc.c
 get_acc_loc_OBJECTS = get-acc-loc.$(OBJEXT)
 get_acc_loc_LDADD = $(LDADD)
@@ -135,8 +138,8 @@ locknull_LDADD = $(LDADD)
 locknull_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
-mprobe_SOURCES = mprobe.c
-mprobe_OBJECTS = mprobe.$(OBJEXT)
+am_mprobe_OBJECTS = mprobe.$(OBJEXT)
+mprobe_OBJECTS = $(am_mprobe_OBJECTS)
 mprobe_DEPENDENCIES =
 num_contexts_16k_SOURCES = num_contexts_16k.c
 num_contexts_16k_OBJECTS = num_contexts_16k.$(OBJEXT)
@@ -184,6 +187,18 @@ spawn_ssend_SOURCES = spawn_ssend.c
 spawn_ssend_OBJECTS = spawn_ssend.$(OBJEXT)
 spawn_ssend_LDADD = $(LDADD)
 spawn_ssend_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+spawn_univ_anysrc_SOURCES = spawn_univ_anysrc.c
+spawn_univ_anysrc_OBJECTS = spawn_univ_anysrc.$(OBJEXT)
+spawn_univ_anysrc_LDADD = $(LDADD)
+spawn_univ_anysrc_DEPENDENCIES = $(top_builddir)/util/mtest.o \
+	$(top_builddir)/util/mtest_datatype.o \
+	$(top_builddir)/util/mtest_datatype_gen.o
+spawn_univ_comm_SOURCES = spawn_univ_comm.c
+spawn_univ_comm_OBJECTS = spawn_univ_comm.$(OBJEXT)
+spawn_univ_comm_LDADD = $(LDADD)
+spawn_univ_comm_DEPENDENCIES = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 spawn_universe_SOURCES = spawn_universe.c
@@ -262,16 +277,18 @@ AM_V_CCLD = $(am__v_CCLD_@AM_V@)
 am__v_CCLD_ = $(am__v_CCLD_@AM_DEFAULT_V@)
 am__v_CCLD_0 = @echo "  CCLD    " $@;
 am__v_CCLD_1 = 
-SOURCES = get-acc-loc.c locknull.c mprobe.c num_contexts_16k.c \
-	num_contexts_2k.c num_contexts_4k.c num_contexts_8k.c \
-	spawn_anysrc.c spawn_isend.c spawn_rma.c spawn_ssend.c \
+SOURCES = get-acc-loc.c locknull.c $(mprobe_SOURCES) \
+	num_contexts_16k.c num_contexts_2k.c num_contexts_4k.c \
+	num_contexts_8k.c spawn_anysrc.c spawn_isend.c spawn_rma.c \
+	spawn_ssend.c spawn_univ_anysrc.c spawn_univ_comm.c \
 	spawn_universe.c win_flavor_err_dyn.c win_flavor_err_shm.c \
 	win_sync_err_flush.c win_sync_err_flushall.c \
 	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
 	win_sync_err_unlockall.c
-DIST_SOURCES = get-acc-loc.c locknull.c mprobe.c num_contexts_16k.c \
-	num_contexts_2k.c num_contexts_4k.c num_contexts_8k.c \
-	spawn_anysrc.c spawn_isend.c spawn_rma.c spawn_ssend.c \
+DIST_SOURCES = get-acc-loc.c locknull.c $(mprobe_SOURCES) \
+	num_contexts_16k.c num_contexts_2k.c num_contexts_4k.c \
+	num_contexts_8k.c spawn_anysrc.c spawn_isend.c spawn_rma.c \
+	spawn_ssend.c spawn_univ_anysrc.c spawn_univ_comm.c \
 	spawn_universe.c win_flavor_err_dyn.c win_flavor_err_shm.c \
 	win_sync_err_flush.c win_sync_err_flushall.c \
 	win_sync_err_lockall_at.c win_sync_err_lockall_pt.c \
@@ -493,6 +510,7 @@ LDADD = $(top_builddir)/util/mtest.o \
 	$(top_builddir)/util/mtest_datatype_gen.o
 CLEANFILES = summary.xml summary.tap summary.junit.xml
 EXTRA_DIST = testlist
+mprobe_SOURCES = mprobe.c
 mprobe_LDADD = -lpthread
 all: all-am
 
@@ -528,6 +546,48 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
+install-binPROGRAMS: $(bin_PROGRAMS)
+	@$(NORMAL_INSTALL)
+	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(bindir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(bindir)" || exit 1; \
+	fi; \
+	for p in $$list; do echo "$$p $$p"; done | \
+	sed 's/$(EXEEXT)$$//' | \
+	while read p p1; do if test -f $$p \
+	  ; then echo "$$p"; echo "$$p"; else :; fi; \
+	done | \
+	sed -e 'p;s,.*/,,;n;h' \
+	    -e 's|.*|.|' \
+	    -e 'p;x;s,.*/,,;s/$(EXEEXT)$$//;$(transform);s/$$/$(EXEEXT)/' | \
+	sed 'N;N;N;s,\n, ,g' | \
+	$(AWK) 'BEGIN { files["."] = ""; dirs["."] = 1 } \
+	  { d=$$3; if (dirs[d] != 1) { print "d", d; dirs[d] = 1 } \
+	    if ($$2 == $$4) files[d] = files[d] " " $$1; \
+	    else { print "f", $$3 "/" $$4, $$1; } } \
+	  END { for (d in files) print "f", d, files[d] }' | \
+	while read type dir files; do \
+	    if test "$$dir" = .; then dir=; else dir=/$$dir; fi; \
+	    test -z "$$files" || { \
+	      echo " $(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $$files '$(DESTDIR)$(bindir)$$dir'"; \
+	      $(INSTALL_PROGRAM_ENV) $(INSTALL_PROGRAM) $$files "$(DESTDIR)$(bindir)$$dir" || exit $$?; \
+	    } \
+	; done
+
+uninstall-binPROGRAMS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(bin_PROGRAMS)'; test -n "$(bindir)" || list=; \
+	files=`for p in $$list; do echo "$$p"; done | \
+	  sed -e 'h;s,^.*/,,;s/$(EXEEXT)$$//;$(transform)' \
+	      -e 's/$$/$(EXEEXT)/' \
+	`; \
+	test -n "$$list" || exit 0; \
+	echo " ( cd '$(DESTDIR)$(bindir)' && rm -f" $$files ")"; \
+	cd "$(DESTDIR)$(bindir)" && rm -f $$files
+
+clean-binPROGRAMS:
+	-test -z "$(bin_PROGRAMS)" || rm -f $(bin_PROGRAMS)
 
 clean-noinstPROGRAMS:
 	-test -z "$(noinst_PROGRAMS)" || rm -f $(noinst_PROGRAMS)
@@ -575,6 +635,14 @@ spawn_rma$(EXEEXT): $(spawn_rma_OBJECTS) $(spawn_rma_DEPENDENCIES) $(EXTRA_spawn
 spawn_ssend$(EXEEXT): $(spawn_ssend_OBJECTS) $(spawn_ssend_DEPENDENCIES) $(EXTRA_spawn_ssend_DEPENDENCIES) 
 	@rm -f spawn_ssend$(EXEEXT)
 	$(AM_V_CCLD)$(LINK) $(spawn_ssend_OBJECTS) $(spawn_ssend_LDADD) $(LIBS)
+
+spawn_univ_anysrc$(EXEEXT): $(spawn_univ_anysrc_OBJECTS) $(spawn_univ_anysrc_DEPENDENCIES) $(EXTRA_spawn_univ_anysrc_DEPENDENCIES) 
+	@rm -f spawn_univ_anysrc$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(spawn_univ_anysrc_OBJECTS) $(spawn_univ_anysrc_LDADD) $(LIBS)
+
+spawn_univ_comm$(EXEEXT): $(spawn_univ_comm_OBJECTS) $(spawn_univ_comm_DEPENDENCIES) $(EXTRA_spawn_univ_comm_DEPENDENCIES) 
+	@rm -f spawn_univ_comm$(EXEEXT)
+	$(AM_V_CCLD)$(LINK) $(spawn_univ_comm_OBJECTS) $(spawn_univ_comm_LDADD) $(LIBS)
 
 spawn_universe$(EXEEXT): $(spawn_universe_OBJECTS) $(spawn_universe_DEPENDENCIES) $(EXTRA_spawn_universe_DEPENDENCIES) 
 	@rm -f spawn_universe$(EXEEXT)
@@ -625,6 +693,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_isend.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_rma.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_ssend.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_univ_anysrc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_univ_comm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/spawn_universe.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_flavor_err_dyn.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/win_flavor_err_shm.Po@am__quote@
@@ -736,6 +806,9 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(PROGRAMS)
 installdirs:
+	for dir in "$(DESTDIR)$(bindir)"; do \
+	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
+	done
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -769,7 +842,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-noinstPROGRAMS mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-noinstPROGRAMS \
+	mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -795,7 +869,7 @@ install-dvi: install-dvi-am
 
 install-dvi-am:
 
-install-exec-am:
+install-exec-am: install-binPROGRAMS
 
 install-html: install-html-am
 
@@ -834,14 +908,15 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am:
+uninstall-am: uninstall-binPROGRAMS
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS TAGS all all-am check check-am clean clean-generic \
-	clean-noinstPROGRAMS cscopelist-am ctags ctags-am distclean \
-	distclean-compile distclean-generic distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
+.PHONY: CTAGS GTAGS TAGS all all-am check check-am clean \
+	clean-binPROGRAMS clean-generic clean-noinstPROGRAMS \
+	cscopelist-am ctags ctags-am distclean distclean-compile \
+	distclean-generic distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-binPROGRAMS \
 	install-data install-data-am install-dvi install-dvi-am \
 	install-exec install-exec-am install-html install-html-am \
 	install-info install-info-am install-man install-pdf \
@@ -849,7 +924,7 @@ uninstall-am:
 	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic pdf pdf-am ps ps-am tags tags-am uninstall \
-	uninstall-am
+	uninstall-am uninstall-binPROGRAMS
 
 .PRECIOUS: Makefile
 

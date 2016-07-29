@@ -18,9 +18,8 @@
 
 int main( int argc, char *argv[] )
 {
-	int i;
+	int i, j;
 	int high;
-	int color;
 	int leader;
 	int buffer[3];
 	int errcodes[2];
@@ -33,15 +32,12 @@ int main( int argc, char *argv[] )
 	int inter_loc_size;
 	int univ_rank;
 	int univ_size;
-	int split_rank;
-	int split_size;
-	MPI_Comm parent_comm = MPI_COMM_NULL; 
+	MPI_Comm parent_comm = MPI_COMM_NULL;
 	MPI_Comm spawn_comm  = MPI_COMM_NULL;
 	MPI_Comm merge_comm  = MPI_COMM_NULL;
 	MPI_Comm peer_comm   = MPI_COMM_NULL;
 	MPI_Comm inter_comm  = MPI_COMM_NULL;
 	MPI_Comm univ_comm   = MPI_COMM_NULL;
-	MPI_Comm split_comm  = MPI_COMM_NULL;
 
 	MPI_Init(&argc, &argv);
 
@@ -54,10 +50,10 @@ int main( int argc, char *argv[] )
 	}
 
 	MPI_Comm_get_parent( &parent_comm );
-   
+
 	if(parent_comm == MPI_COMM_NULL) {
-		MPI_Comm_spawn((char*)"./spawn_universe", MPI_ARGV_NULL, 2, MPI_INFO_NULL, 0, MPI_COMM_SELF, &spawn_comm, errcodes);
-	  
+		MPI_Comm_spawn((char*)"./spawn_univ_comm", MPI_ARGV_NULL, 2, MPI_INFO_NULL, 0, MPI_COMM_SELF, &spawn_comm, errcodes);
+
 	} else {
 		spawn_comm = parent_comm;
 	}
@@ -76,10 +72,10 @@ int main( int argc, char *argv[] )
 	MPI_Comm_size(merge_comm, &merge_size);
 
 	/* Determine the leader (rank 0 & 1 of the origin world): */
-	       
+
 	if(parent_comm == MPI_COMM_NULL) leader = merge_rank;
 	else leader = -1;
-	       
+
 	MPI_Allgather(&leader, 1, MPI_INT, buffer, 1, MPI_INT, merge_comm);
 	for(i=0; i<merge_size; i++) {
 		if(buffer[i] != -1) {
@@ -87,22 +83,20 @@ int main( int argc, char *argv[] )
 			break;
 		}
 	}
-	       
+
 	/* Create an intercomm between the two merged intracomms (and use the origin world as bridge/peer communicator): */
 	peer_comm = MPI_COMM_WORLD;
 	MPI_Intercomm_create(merge_comm, leader, peer_comm, (world_rank+1)%2, 123, &inter_comm);
-	     
+
 	MPI_Comm_rank(inter_comm, &inter_rank);
 	MPI_Comm_size(inter_comm, &inter_loc_size);
 	MPI_Comm_remote_size(inter_comm, &inter_rem_size);
-     
+
 	/* Merge the new intercomm into one single univeser: */
 	MPI_Intercomm_merge(inter_comm, 0, &univ_comm);
 
 	MPI_Comm_rank(univ_comm, &univ_rank);
 	MPI_Comm_size(univ_comm, &univ_size);
-
-	sleep(1);
 
 	/* The following disconnects() will only decrement the VCR reference counters: */
 	/* (and could thus also be replaced by MPI_Comm_free()...) */
@@ -112,19 +106,41 @@ int main( int argc, char *argv[] )
 
 	/* Now, the MPI universe is almost flat: just three worlds forming one universe! */
 
-	color = world_rank;
-	/* This splits the universe across the process groups! */
-	MPI_Comm_split(univ_comm, color, world_rank, &split_comm);
+	/* Loop over all ranks for acting as root: */
+	for(j=0; j<univ_size; j++) {
 
-	MPI_Comm_rank(split_comm, &split_rank);
-	MPI_Comm_size(split_comm, &split_size);
+		/* Test, if simple communication works in this new and flat universe: */
+		if(univ_rank == j) {
+
+			int remote_ranks[univ_size];
+			MPI_Request send_req;
+			MPI_Request recv_reqs[univ_size];
+			MPI_Status status_array[univ_size];
+
+			for(i=0; i<univ_size; i++) {
+				MPI_Irecv(&remote_ranks[i], 1, MPI_INT, i, j, univ_comm, &recv_reqs[i]);
+			}
+
+			MPI_Isend(&univ_rank, 1, MPI_INT, j, j, univ_comm, &send_req);
+
+			MPI_Waitall(univ_size, recv_reqs, status_array);
+
+			for(i=0; i<univ_size; i++) {
+				if(remote_ranks[i] != i) {
+					printf("ERROR: Wrong sender in universe! (got %d /& expected %d)\n", i, remote_ranks[i]);
+				}
+			}
+
+			MPI_Wait(&send_req, MPI_STATUS_IGNORE);
+
+		} else {
+			MPI_Send(&univ_rank, 1, MPI_INT, j, j, univ_comm);
+		}
+	}
 
 	/* The following disconnect() might already shutdown certain pscom connections */
 	/* (depending on the setting of ENABLE_LAZY_DISCONNECT in mpid_vc.c ...*/
 	MPI_Comm_disconnect(&univ_comm);
-
-	/* Finally, this disconnect will tear down all still open connections between the PGs: */     
-	MPI_Comm_disconnect(&split_comm);
 
 	if(univ_rank == 0) {
 		printf(" No errors\n");

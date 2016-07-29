@@ -1,5 +1,6 @@
 mprobe 2 mpiversion=3.0
 locknull 2 mpiversion=3.0
+get-acc-loc 4 mpiversion=3.0
 win_sync_err_flush 2 mpiversion=3.0
 win_sync_err_flushall 2 mpiversion=3.0
 win_sync_err_lockall_pt 2 mpiversion=3.0
@@ -13,8 +14,9 @@ spawn_ssend 2
 spawn_anysrc 2 timeLimit=30
 spawn_rma 2
 spawn_universe 2
+#spawn_univ_comm 2 timeLimit=30
+#spawn_univ_anysrc 2 timeLimit=30
 num_contexts_2k 1
 num_contexts_4k 1
 num_contexts_8k 1
 num_contexts_16k 1
-get-acc-loc 4 mpiversion=3.0
